@@ -25,7 +25,7 @@ interpret $0
     ↓
 PATH lookup only if required
     ↓
-physical canonicalization
+realpath -e physical canonicalization
     ↓
 validate bootstrap regular file
     ↓
@@ -33,7 +33,7 @@ derive + validate RumiAI_ROOT
     ↓
 export + readonly fundamental state
     ↓
-remove phase-0 helper state
+remove phase-0 internal state
     ↓
 PHASE 1
     ↓
@@ -54,7 +54,7 @@ Failures that occur before the script itself starts are outside this boundary an
 
 ## POSIX primitives
 
-The accepted implementation intentionally remains small:
+The implementation intentionally remains small:
 
 ```text
 shell parameter expansion
@@ -69,11 +69,51 @@ readonly
 unset
 ```
 
-The design does not introduce a custom symlink resolver or a generic path library.
+There is no custom symlink resolver, generic path library or output-capture helper in phase 0.
+
+## Controlled naming simplifies phase 0
+
+RumiAI-controlled filesystem names follow:
+
+```text
+specifications/rumiai-os/FILESYSTEM-NAMING.md
+```
+
+The real entrypoint final component is fixed as:
+
+```text
+rumiai-os
+```
+
+and RumiAI-controlled names do not contain whitespace/control characters such as newline.
+
+Therefore phase 0 does not preserve arbitrary trailing-newline filename data with a sentinel protocol. Ordinary command substitution is sufficient for the two utility outputs it captures.
+
+This does **not** mean RumiAI assumes all external filenames are simple. User/external path components remain opaque data and may contain spaces or newlines. Newlines in parent components are embedded inside the complete canonical executable pathname and are preserved; an externally named direct symlink is preserved in `$0` before canonicalization.
+
+## PATH resolution
+
+When `$0` contains no slash, phase 0 uses the caller's current `PATH`:
+
+```sh
+command -v -- "$0"
+```
+
+The result is not required to be absolute. Relative `PATH` components are valid input to the subsequent canonicalization step.
+
+## Canonicalization
+
+Phase 0 uses:
+
+```sh
+command -p -- realpath -e -- "$RumiAI_BOOTSTRAP_BIN"
+```
+
+`realpath -e` is the single physical canonicalization boundary.
 
 ## Root derivation
 
-The canonical executable path is the source of truth.
+The canonical executable pathname is the source of truth:
 
 ```sh
 RumiAI_ROOT=${RumiAI_BOOTSTRAP_BIN%/*}
