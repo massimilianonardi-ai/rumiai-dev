@@ -30,10 +30,21 @@ RumiAI OS sviluppa contro **POSIX**, non contro Linux, macOS, Windows o una spec
 
 POSIX è il contratto di piattaforma. Il fatto che una soluzione funzioni su GNU/Linux o su un particolare Unix-like non è sufficiente a considerarla portabile.
 
+Il progetto assume come **standard POSIX di riferimento la revisione più recente** che sia concretamente utilizzabile sugli host di riferimento correnti. Alla data di questa regola lo standard di riferimento è **POSIX.1-2024 / The Open Group Base Specifications Issue 8**.
+
+L'adozione dello standard più recente non implica che gli host di riferimento implementino ogni singola feature della revisione. Il portable core di RumiAI OS usa il profilo comune effettivamente disponibile e verificato sugli host di riferimento:
+
+- ultima Ubuntu LTS stabile;
+- ultima versione stabile di macOS.
+
+Una feature POSIX recente può essere usata nel portable core quando la sua semantica necessaria è disponibile e verificata su entrambi gli host di riferimento. Se una feature dello standard non è ancora disponibile su uno dei due, non viene assunta come requisito runtime senza fallback, adapter o decisione esplicita.
+
+Questo profilo viene riesaminato quando cambiano le release di riferimento. L'obiettivo è evitare sia dipendenze proprietarie/non standard sia compatibilità artificiale con sistemi troppo vecchi rispetto ai requisiti hardware e software del progetto IA.
+
 Di conseguenza:
 
 - non si devono introdurre dipendenze accidentali da estensioni GNU, Bash o da peculiarità di uno specifico host;
-- comportamento specifico dell'host è ammesso soltanto dietro un'astrazione o adapter esplicito quando POSIX non fornisce la funzionalità necessaria;
+- comportamento specifico dell'host è ammesso soltanto dietro un'astrazione o adapter esplicito quando POSIX o il profilo comune verificato non forniscono la funzionalità necessaria;
 - gli adapter specifici non devono contaminare il modello generale del sistema;
 - la portabilità deve essere verificata automaticamente su implementazioni POSIX o POSIX-compatible differenti e non affidata soltanto alla disciplina dello sviluppatore.
 
@@ -47,9 +58,9 @@ Gli script implementati in shell devono essere POSIX-compliant e, quando diretta
 #!/bin/sh
 ```
 
-Non devono essere usate accidentalmente funzionalità specifiche di Bash o di altre shell, né opzioni GNU non previste da POSIX. Esempi tipici da non assumere includono array Bash, `[[ ... ]]`, `BASH_SOURCE`, process substitution e `readlink -f` GNU.
+Non devono essere usate accidentalmente funzionalità specifiche di Bash o di altre shell, né opzioni GNU non previste dal contratto POSIX/profilo adottato. Esempi tipici da non assumere includono array Bash, `[[ ... ]]`, `BASH_SOURCE`, process substitution e `$RANDOM`.
 
-L'uso di una shell diversa, di una funzionalità non POSIX o di una dipendenza GNU-specifica è un'eccezione e richiede:
+L'uso di una shell diversa, di una funzionalità non POSIX o di una dipendenza implementation-specific è un'eccezione e richiede:
 
 1. una ragione tecnica concreta;
 2. approvazione esplicita;
@@ -59,7 +70,7 @@ In assenza di questi tre requisiti, l'eccezione non è ammessa.
 
 Un comando di RumiAI OS può essere implementato in futuro con un interprete o runtime diverso da `sh`, purché tale dipendenza sia prevista dal relativo profilo/capability e rispetti le regole del progetto. Il nome pubblico del comando non deve dipendere dal linguaggio usato per implementarlo.
 
-Quando una funzionalità utile non è disponibile in POSIX, si preferisce una primitiva portabile e riutilizzabile, purché la sua correttezza, sicurezza e portabilità siano verificabili.
+Quando una funzionalità utile non è disponibile direttamente nel profilo POSIX adottato, si preferisce una primitiva portabile e riutilizzabile, purché la sua correttezza, sicurezza e portabilità siano verificabili.
 
 ## Naming dei file eseguibili, librerie e sorgenti
 
@@ -84,6 +95,21 @@ Le estensioni di linguaggio restano appropriate quando il file è realmente un s
 
 Un file JavaScript eseguito direttamente tramite uno shebang Node.js, se previsto e autorizzato dall'architettura, segue invece la regola degli eseguibili e non porta `.js` nel nome pubblico.
 
+## Sintassi dei comandi e delimitatore `--`
+
+I comandi di RumiAI OS che accettano opzioni devono seguire, salvo eccezioni motivate, le POSIX Utility Syntax Guidelines.
+
+Quando un comando supporta il delimitatore `--`, esso deve essere riconosciuto come fine delle opzioni: tutti gli argomenti successivi sono operandi/parametri anche se iniziano con `-`.
+
+Nel codice che invoca altre utility, `--` deve essere usato quando:
+
+- la utility lo supporta secondo il proprio contratto;
+- serve a separare senza ambiguità opzioni e operandi, in particolare quando un operando può iniziare con `-`.
+
+`--` non deve essere passato meccanicamente a utility che non lo supportano. Le eccezioni previste dallo standard o dall'implementazione verificata devono essere rispettate.
+
+La regola generale è: **opzioni prima, `--` quando supportato e utile a chiudere il parsing delle opzioni, poi operandi**.
+
 ## Portabilità, root e path
 
 RumiAI OS deve poter operare come ambiente relocatable e non deve dipendere da installazioni particolari, layout locali o path specifici della macchina.
@@ -103,7 +129,7 @@ La regola generale è: **default portabile, override esplicito**.
 
 Spostare l'albero di RumiAI OS su un altro path non deve richiedere modifiche al codice o agli script.
 
-L'invocazione di un comando tramite symbolic link non deve essere rifiutata per principio. Quando il path reale del comando è necessario per determinare la root o altre risorse, la risoluzione del symlink deve avere una semantica esplicita, essere POSIX-compatible rispetto alla baseline adottata e venire validata con test specifici, incluse catene di symlink, target relativi e invocazione tramite `PATH`.
+L'invocazione di un comando tramite symbolic link non deve essere rifiutata per principio. Quando il path reale del comando è necessario per determinare la root o altre risorse, la risoluzione del symlink deve avere una semantica esplicita, essere compatibile con il profilo POSIX adottato e venire validata con test specifici, incluse catene di symlink, target relativi, symlink in componenti intermedi e invocazione tramite `PATH`.
 
 ## Root del repository `rumiai-os`
 
@@ -115,6 +141,8 @@ La radice del repository `rumiai-os` deve contenere soltanto due file, oltre all
 `rumiai-os` è l'entrypoint principale ed è un front controller: inizializza il minimo indispensabile e delega la logica a componenti interni. Non deve diventare uno script monolitico.
 
 La sua implementazione iniziale prevista è POSIX shell con `#!/bin/sh`, ma il nome `rumiai-os` non incorpora il linguaggio utilizzato.
+
+Tra le responsabilità minime dell'entrypoint rientra la risoluzione delle informazioni fondamentali necessarie per inizializzare il sistema, incluse almeno la root reale di RumiAI OS e le informazioni essenziali sull'host necessarie al dispatch iniziale. Il set esatto di variabili fondamentali deve essere definito e mantenuto piccolo; dopo questa inizializzazione l'entrypoint deve delegare a comandi interni o librerie sourced appropriate.
 
 L'avvio iniziale da un altro sistema operativo non limita la generalità del progetto: lo stesso ambiente avviato può in seguito esporre comandi per deployment hosted, container, immagini/device e, in futuro, installazioni complete o bare-metal.
 
