@@ -47,7 +47,7 @@ Se `$0` non contiene `/`, viene risolto usando il `PATH` corrente:
 command -v -- "$0"
 ```
 
-Il risultato deve essere un pathname assoluto per il caso supportato dell'entrypoint esterno.
+Il risultato **non deve essere necessariamente assoluto**: un `PATH` POSIX può contenere directory relative. La canonicalizzazione assoluta è responsabilità del passaggio `realpath -e` immediatamente successivo.
 
 ## Canonicalizzazione
 
@@ -59,9 +59,7 @@ command -p -- realpath -e -- "$RumiAI_BOOTSTRAP_BIN"
 
 `command -p` evita che una utility omonima precedente nel `PATH` del chiamante diventi accidentalmente la dipendenza del bootstrap.
 
-`realpath -e` è scelto esplicitamente perché POSIX.1-2024 segnala differenze implementative quando non viene specificato né `-e` né `-E`, e il contratto RumiAI richiede che ogni componente del pathname esista.
-
-La precedente decisione di non dipendere da `realpath -e` è quindi **superata**.
+`realpath -e` è scelto esplicitamente perché il contratto RumiAI richiede che ogni componente del pathname esista.
 
 ## Root
 
@@ -77,6 +75,32 @@ RumiAI_ROOT=${RumiAI_BOOTSTRAP_BIN%/*}
 devono stabilire gli invarianti del bootstrap.
 
 `dirname` non viene usato in questo dominio ristretto.
+
+## Naming controllato e newline
+
+La naming convention RumiAI è definita in:
+
+```text
+specifications/rumiai-os/FILESYSTEM-NAMING.md
+```
+
+Il componente finale reale del bootstrap è controllato ed è fissato a:
+
+```text
+rumiai-os
+```
+
+Per questo phase 0 non usa più alcun protocollo sentinel per preservare newline terminali nella command substitution.
+
+La semplificazione è corretta anche se directory parent o symlink esterni hanno nomi arbitrari: eventuali newline nei parent sono interni al pathname completo, mentre un symlink invocato direttamente viene conservato in `$0` prima della canonicalizzazione.
+
+La gestione generale di pathname esterni arbitrari rimane responsabilità dei sottosistemi che li trattano; questa decisione non autorizza ad assumere globalmente che i nomi esterni rispettino la naming convention RumiAI.
+
+Decisione specifica correlata:
+
+```text
+decisions/rumiai-os/2026-08-28-filesystem-naming-and-bootstrap-newlines.md
+```
 
 ## Stato esportato
 
@@ -106,18 +130,21 @@ Prima implementazione prodotto:
 massimilianonardi-ai/rumiai-os/rumiai-os
 ```
 
-Il file è un executable Git mode `100755` con shebang:
+Il file usa:
 
 ```sh
 #!/bin/sh
 ```
 
+ed è executable Git mode `100755`.
+
 ## Supersession
 
-Questa decisione supersede le parti incompatibili delle decisioni precedenti relative a:
+Questa decisione, insieme alla decisione sulla naming convention, supersede le parti precedenti incompatibili relative a:
 
 - uso di `realpath` senza scelta esplicita `-e`/`-E`;
-- diagnostica generica `exit 1` come unico contratto di fallimento della root-resolution;
-- possibilità di messaggi esplicativi pre-logger.
+- requisito che `command -v` produca già un pathname assoluto;
+- sentinel per newline terminali nel bootstrap controllato;
+- diagnostica esplicativa pre-logger.
 
-Le altre decisioni su naming, symlink support, POSIX baseline e `--` restano valide.
+Le altre decisioni su naming dei comandi, symbolic link, POSIX baseline e `--` restano valide.
