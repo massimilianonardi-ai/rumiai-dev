@@ -1,515 +1,800 @@
 
-riguardo rumiai-os, penso che il repository nella sua radice potrebbe essere organizzato con diverse cartelle che riteniamo più opportune, ma con solo due file: rumiai-os e readme. il primo file sarebbe lo script che avvia rumiai-os da un altro host os e questa assunzione non credo che ci faccia perdere di generalità perchè chi clona quel repository probabilmente vuole avviarlo così, oppure se vuole installare rumi come os completo, comunque l'installazione deve partire da un altro os per preparare un supporto da inserire in un altro pc. in ogni caso una volta partito rumi, poi ci sono a disposizione i comandi per fare il deployment mirato. comunque "github.com/massimilianonardi/m" è un repository pubblico accessibile senza credenziali, non è collegato al tuo account github, ma è leggibile da chiunque, puoi verificare che sia così, altrimenti ti invio lo zip, ma sono moltissimi files e pesa quasi 90 mega.
+workflow tra chatgpt e me
 
-Elaborato per 1m 28s
+Possiamo formalizzare un workflow operativo stabile tra te e ChatGPT, pensato per lavorare insieme su attività lunghe e complesse senza perdere continuità.
 
-Sì, questa impostazione della radice mi piace molto, e la renderei una **regola di progetto**:
+Workflow proposto
+1. Tu definisci obiettivo e vincoli
+Puoi farlo anche in modo molto sintetico. Non serve descrivere ogni passaggio: mi dai soprattutto il risultato che vuoi ottenere e gli eventuali limiti.
 
-`rumiai-os/ ├── rumiai-os ├── README.md ├── bootstrap/ ├── lib/ ├── cmd/ ├── pkg/ ├── profiles/ ├── targets/ ├── ...`
+2. Io ricostruisco il contesto
+Uso ciò che è già emerso nella chat e, quando necessario, il contesto precedente disponibile. Non ti richiedo informazioni che mi hai già dato.
 
-Quindi **solo due file nella root**; le directory possono essere quante servono.
+3. Io procedo autonomamente
+La regola predefinita diventa:
 
-rumiai-os dovrebbe essere il **front controller** del sistema, non uno script enorme: #!/bin/sh, determinazione della propria root senza path hardcoded, inizializzazione minima e delega ai moduli interni. Il clone diventa così immediatamente riconoscibile: per avviare il sistema esiste un solo punto d'ingresso.
+obiettivo → analisi → decisione → esecuzione
 
-La tua assunzione sull'avvio da un altro OS non ci fa perdere generalità. Anzi, vedo un ciclo molto pulito:
+Non:
 
-`HOST OS    │    │ ./rumiai-os    ▼ RumiAI OS hosted    │    ├── deploy container    ├── deploy portable environment    ├── build OS image    ├── flash device    └── install/deploy bare metal             │             ▼         RumiAI OS`
+obiettivo → domanda → conferma → altra domanda → esecuzione
 
-Quindi anche quando RumiAI OS sarà un vero OS autonomo, **la sua costruzione/installazione può legittimamente partire da un altro sistema**. Dopo il boot, invece, sarà RumiAI OS stesso a esporre tutti i propri comandi di provisioning e deployment.
+Ti coinvolgo prima di procedere solo quando una decisione:
 
-### C'è un solo punto delicato: Windows
+cambia sostanzialmente l'obiettivo;
+è irreversibile o rischiosa;
+presenta alternative realmente equivalenti che dipendono da una tua preferenza personale.
+4. Per lavori lunghi ti tengo aggiornato
+Gli aggiornamenti devono essere brevi e utili, per esempio:
 
-Qui dobbiamo essere rigorosi.
+Ho completato X. È emerso Y, quindi sto procedendo con Z.
 
-Se rumiai-os è, come vogliamo, uno script POSIX con:
+Non descrivo ogni operazione tecnica.
 
-`#!/bin/sh`
+5. Ti mostro subito ciò che emerge
+Se durante il lavoro individuo un errore, una decisione importante o un risultato parziale utile, non aspetto necessariamente la fine per dirtelo.
 
-Windows “puro” non è in grado di eseguirlo prima che esista Cygwin o un'altra implementazione di sh.
+6. Tu puoi correggere la rotta in qualsiasi momento
+Comandi semplici come:
 
-Non cambierei per questo la nostra regola. Separerei invece **Stage 0** e **Stage 1**:
+avanti → continuo autonomamente
+ferma → interrompo la direzione corrente
+torna a X → riprendo da quel punto
+approfondisci X → sospendo il resto e analizzo X
+procedi tu → scelgo autonomamente anche tra alternative
+non modificare X → X diventa un vincolo
+consolida → trasformo quanto deciso in uno stato coerente e stabile
 
-`Windows    │    ▼ bootstrap/windows/    │    │ installa/prepara Cygwin    ▼ POSIX substrate    │    ▼ ./rumiai-os`
+7. Distinguerei tre livelli di decisione
 
-mentre:
+Livello	Comportamento
+Operativo	decido io
+Architetturale/strategico reversibile	propongo e normalmente procedo
+Strategico difficilmente reversibile	ti coinvolgo
+Questo evita micro-conferme continue senza toglierti il controllo.
 
-`Linux/macOS    │    ▼ ./rumiai-os`
-
-In questo modo **l'entrypoint RumiAI rimane uno solo e POSIX**, mentre i pochi prerequisiti inevitabilmente host-native sono confinati in bootstrap/.
-
-Per esempio:
-
-`bootstrap/ ├── linux/ ├── macos/ └── windows/`
-
-Su Windows potrebbe esserci un piccolo bootstrap PowerShell, ma sarebbe chiaramente un'eccezione necessaria: **non è uno script RumiAI che arbitrariamente usa PowerShell; è l'adapter necessario per creare il substrato POSIX prima che RumiAI possa esistere**. È esattamente il genere di eccezione motivata che la nostra regola consente.
-
-### Separerei quindi il bootstrap in stadi
-
-`STAGE 0 — Host bootstrap prepara il minimo necessario per eseguire RumiAI OS  STAGE 1 — RumiAI bootstrap ./rumiai-os costruisce/inizializza l'ambiente RumiAI  STAGE 2 — RumiAI OS espone package manager, servizi, comandi, capability  STAGE 3 — Deployment hosted | container | image | device | bare-metal`
-
-Questo secondo me sarà molto utile anche quando analizzeremo il tuo vecchio codice: potremo capire immediatamente **a quale stadio appartiene ogni script**.
-
----
-
-### massimilianonardi/m: confermato
-
-Sono riuscito ad accedervi usando l'interfaccia GitHub per repository pubblici, distinta dal collegamento al tuo account.
-
-Confermo che **massimilianonardi/m è pubblico** (private: false, visibility: public) e posso leggerlo senza credenziali dell'account collegato. Il branch predefinito è master; GitHub riporta una dimensione di 95733 KB, quindi la tua indicazione dei circa 90 MB è corretta.
-
-Ho verificato anche il contenuto della root e posso già vedere, tra le altre, le directory:
-
-`ai/ cmd/ cpp/ java/ js/ note/ var/`
-
-oltre a LICENSE e README.md.
-
-Quindi **non serve che mi invii lo ZIP**. Questa è una notizia importante: possiamo analizzare m direttamente, file per file e directory per directory, senza trasferire 90 MB nella conversazione.
-
-E direi che è persino meglio dello ZIP, perché possiamo sempre riferirci allo stato preciso del branch/commit analizzato.
-
-### Come procederei con m
-
-Non partirei cercando soltanto “package manager”. Prima farei una **ricognizione strutturale completa** per capire la filosofia del progetto. Poi restringerei l'analisi ai sottosistemi interessanti per rumiai-os.
-
-In particolare voglio individuare:
-
-`bootstrap environment abstraction package management repository/package format dependency resolution portable filesystem host detection OS abstraction Cygwin integration container support image/deployment concepts command infrastructure configuration path management download/cache versioning update rollback tests`
-
-E soprattutto leggere il codice con due domande contemporaneamente:
-
-> **Che cosa volevi ottenere?**
-
-e
-
-> **Come lo hai implementato all'epoca?**
-
-Perché, come dicevamo, la prima potrebbe essere molto più preziosa della seconda.
-
-C'è infine una conseguenza della struttura root che fisserei già adesso: **rumiai-os non deve contenere logica specifica di Linux, macOS, Cygwin, Podman o flashing**. Deve essere il punto stabile dal quale quella logica viene risolta e delegata. Così potrà sopravvivere praticamente invariato mentre RumiAI passa da portable environment a vero sistema operativo.
-
-windows non ci deve preoccupare o influenzare, noi rimaniamo fedeli allo standard posix per un motivo fondamentale: posix è uno standard solido e professionale che, sebbene non sia perfetto, ha dimostrato nei decenni di essere lo standard migliore. difatti, macos ad un certo punto della sua storia, ha abbandonato il suo standard proprietario ed ha progettato l'architettura attuale di macos che anche se non posix compliant, certamente è molto compatibile, lo stesso windows da anni include un sistema di compatibilità linux che permette di eseguire script linux, inoltre possiamo mettere posix come requirement e specificare nella documentazione che per windows si consiglia cygwin.
-
-Sono d’accordo. In questo modo Windows smette completamente di essere un problema architetturale: **RumiAI OS definisce il proprio ambiente in termini POSIX e considera tutto il resto responsabilità dell’host**.
-
-La regola la formulerei così:
-
-> **POSIX is the platform contract of RumiAI OS.**
-> RumiAI OS è progettato rispetto alle specifiche POSIX, non rispetto alle peculiarità dei singoli sistemi operativi. Un host che non fornisce nativamente l’ambiente richiesto deve fornire un compatibility layer adeguato.
-
-Questo cambia anche ciò che avevo proposto prima: **non inserirei un bootstrap Windows nativo nel core di rumiai-os**. Sarebbe proprio il tipo di contaminazione che vogliamo evitare.
+8. Separiamo esplorazione e stato consolidato
+Durante una discussione possiamo cambiare idea liberamente. Quando dici “consolida”, considero le decisioni raggiunte come nuova baseline.
 
 Quindi:
 
-`Linux / BSD / Unix-like         │         ├─ ambiente POSIX disponibile         │         ▼     ./rumiai-os`
+ipotesi → discussione → prova → validazione → consolidamento
 
-`macOS         │         ├─ ambiente sufficientemente POSIX-compatible         │         ▼     ./rumiai-os`
+È particolarmente utile per progetti come RumiAI, perché impedisce che un'idea esplorativa venga successivamente confusa con una decisione definitiva.
 
-`Windows         │         ├─ Cygwin consigliato         │   oppure altro ambiente compatibile         ▼     ./rumiai-os`
+9. Documentazione solo quando serve
+Prima lavoriamo e validiamo. Dopo consolidiamo la documentazione. Evitiamo quindi di riscrivere documenti a ogni piccola modifica.
 
-E il requisito non sarebbe:
+10. Fine di una fase
+Quando una fase è conclusa, idealmente ti restituisco quattro cose:
 
-> RumiAI OS supporta Windows.
+Risultato raggiunto → decisioni prese → questioni ancora aperte → prossimo passo consigliato.
 
-Sarebbe:
+In forma estremamente compatta, il nostro workflow diventerebbe:
 
-> **RumiAI OS richiede un ambiente POSIX.**
+Tu dai la direzione → io sviluppo autonomamente → ti segnalo solo ciò che conta → tu correggi quando vuoi → validiamo → consolidiamo → continuiamo.
 
-Windows può ospitarlo se l’utente fornisce quell’ambiente.
+E adotterei come principio generale “autonomia con controllo dell'utente”: tu mantieni la governance delle decisioni importanti, mentre io mi faccio carico della complessità operativa.
 
-Questo è molto più professionale perché separa nettamente **standard** e **implementazione**.
+fermo. ho notato che perdi pezzi importanti regole ben chiare precisate più volte e che la memoria di progetto e delle chat, non è fatta per mantenere regole precise. quindi, in questa chat vorrei trovare una soluzione. la mia proposta è di utilizzare il repository github rumiai-dev come memoria di regole precise, workflows, chat e tutto quello che riguarda lo sviluppo. rumiai-dev-PoCs, invece è il repository che raccoglie i test eseguibili, con relativo codice sorgente, le sessioni di test effettuate ed i risultati dettagliati. che ne pensi?
 
-### Anche la portabilità cambia significato
+Sì. La separazione che proponi è molto più robusta della memoria interna di ChatGPT per un progetto come RumiAI, soprattutto perché trasforma le regole da “contesto probabilistico” a stato esplicito, versionato e verificabile.
 
-Non dobbiamo cercare la massima portabilità possibile nel senso di:
+La imposterei così:
 
-> funziona nativamente dappertutto.
+rumiai-dev = memoria autorevole del progetto.
+Qui vive ciò che dobbiamo ricordare con precisione: principi, regole, decisioni, architettura, workflow, terminologia, specifiche, cronologia delle chat e documentazione consolidata.
 
-Dobbiamo cercare:
+rumiai-dev-PoCs = laboratorio sperimentale.
+Qui vive ciò che deve essere eseguito e verificato: codice dei PoC, configurazioni, istruzioni di esecuzione, sessioni di test, input, output, log significativi, risultati e conclusioni.
 
-> **funziona correttamente su qualsiasi ambiente conforme al contratto POSIX adottato.**
+La distinzione fondamentale sarebbe quindi:
 
-È una differenza importante.
+rumiai-dev dice cosa RumiAI è e quali regole deve rispettare.
+rumiai-dev-PoCs dimostra sperimentalmente cosa funziona e cosa non funziona.
 
-Altrimenti si finisce inevitabilmente con:
-
-`case "$OS" in     linux)         ...         ;;     darwin)         ...         ;;     windows)         ...         ;;     freebsd)         ...         ;; esac`
-
-sparso in tutto il progetto.
-
-Quello non è software portabile: è una collezione di eccezioni.
-
-Il modello RumiAI dovrebbe invece essere:
-
-`              RumiAI OS                   │              POSIX contract                   │        ┌──────────┼──────────┐        │          │          │      Linux      macOS      Cygwin        │          │          │       host       host      Windows`
-
-Solo dove POSIX deliberatamente **non specifica qualcosa di cui abbiamo bisogno** introduciamo un adapter.
-
-Per esempio, se dobbiamo conoscere la quantità di RAM:
-
-`POSIX   ↓ non fornisce una API uniforme sufficiente   ↓ platform adapter   ├─ Linux   ├─ macOS   └── ...`
-
-Ma l’adapter è l’eccezione confinata, non il modello generale.
-
-### #!/bin/sh assume quindi un significato più profondo
-
-Non è soltanto una regola stilistica.
-
-`#!/bin/sh`
-
-dice:
-
-> questo programma dipende dal contratto della shell POSIX.
-
-Di conseguenza non dovremmo usare accidentalmente:
-
-`[[ ... ]] arrays source function foo ${BASH_SOURCE} process substitution`
-
-e altre estensioni Bash.
-
-Se una funzionalità richiedesse davvero qualcosa fuori standard, dovremmo prima chiederci se sia possibile ottenere lo stesso risultato attraverso strumenti POSIX. Solo in caso contrario l’eccezione dovrebbe essere progettata e documentata.
-
-### Distinguerei anche POSIX da Unix-like
-
-Questo ci proteggerà da un’altra fonte di errori.
-
-Non basta che qualcosa “funzioni su Linux e macOS” per poterla considerare POSIX.
-
-Ad esempio potremmo usare inconsapevolmente un’opzione GNU:
-
-`readlink -f`
-
-che funziona in molti ambienti Linux ma non è una soluzione POSIX portabile.
-
-Quindi la regola dovrebbe essere:
-
-> **Non sviluppiamo contro Linux. Sviluppiamo contro POSIX e testiamo su implementazioni differenti.**
-
-Idealmente i test di compatibilità dovranno essere eseguiti almeno su due famiglie significativamente differenti, ad esempio Linux e macOS/Cygwin, proprio per intercettare dipendenze accidentali da GNU.
-
-### Cygwin come raccomandazione, non dipendenza
-
-Sono d’accordo anche su questo.
-
-Nel README:
-
-`Requirements ------------  RumiAI OS requires a POSIX-compatible environment.  Linux:     generally available natively  macOS:     supported through its Unix/POSIX-compatible environment  Windows:     a POSIX compatibility environment is required.     Cygwin is the recommended environment.`
-
-Poi eventualmente documentiamo:
-
-`Windows + Cygwin`
-
-come configurazione **testata ufficialmente**, senza modificare l’architettura per Windows.
-
-Questo lascia inoltre aperta la possibilità di usare WSL o altre soluzioni senza che RumiAI debba conoscerle.
-
-### E introducerei due concetti distinti
-
-**Required platform**
-
-`POSIX`
-
-**Certified hosts**
-
-`Linux + ... macOS + ... Windows + Cygwin + ...`
-
-Il primo è il contratto.
-
-I secondi sono ambienti sui quali noi abbiamo realmente verificato che quel contratto funzioni.
-
-È un modello molto più serio del semplice elenco:
-
-`Supported OS: Linux macOS Windows`
-
-perché dice esattamente **cosa garantiamo e perché**.
-
-E questa regola dovrebbe avere priorità molto alta in rumiai-dev, perché influenzerà praticamente ogni riga shell che scriveremo per rumiai-os:
-
-> **RumiAI OS targets POSIX, not operating systems. Host-specific behavior is permitted only behind explicit abstractions where POSIX does not provide the required functionality.**
-
-Con questo principio, anche la futura evoluzione verso un vero OS diventa più naturale: l’host attuale è semplicemente una delle possibili implementazioni del substrato POSIX su cui RumiAI OS nasce.
-
-hai perfettamente ragione su tutto. infatti noterai nel repository "m" che ci sono molte implementazioni posix che forniscono estensioni tipiche gnu o bash, come ad esempio gli array di bash, o readlink -f, ecc. ok cerchiamo di definire un piano d'azione.
-
-Sì. A questo punto conviene fermare l’implementazione e definire un percorso preciso, perché abbiamo ormai tre cose diverse da coordinare: **regole canoniche**, **analisi di m** e **nascita di rumiai-os**.
-
-Io procederei così.
-
-## Fase 0 — Fissare il contratto prima del codice
-
-Prima di analizzare o migrare qualsiasi cosa, consoliderei in rumiai-dev le regole già emerse, perché saranno il metro con cui giudicheremo tutto il codice di m.
-
-| **AreaRegola**     |                                                                                                |
-| ------------------ | ---------------------------------------------------------------------------------------------- |
-| Platform contract  | RumiAI OS sviluppa contro **POSIX**, non contro Linux/macOS/Windows                            |
-| Shell              | #!/bin/sh, POSIX shell                                                                         |
-| Estensioni         | Bash/GNU/non-POSIX solo con motivazione esplicita e approvazione                               |
-| Windows            | non influenza l’architettura; richiede ambiente POSIX, Cygwin raccomandato                     |
-| Path               | nessun path host-specific hardcoded                                                            |
-| Portabilità        | root e percorsi derivati dinamicamente                                                         |
-| Host-specific code | confinato dietro adapter quando POSIX non basta                                                |
-| Software           | risultato libero → RumiAI sceglie il mezzo; mezzo richiesto → va rispettato                    |
-| Repository         | rumiai-dev = verità progettuale; rumiai-dev-PoCs = evidenza sperimentale; rumiai-os = prodotto |
-| Radice rumiai-os   | solo rumiai-os, README.md e directory                                                          |
-| Entry point        | rumiai-os è il front controller, non contiene tutta la logica                                  |
-
-Questa diventa la **baseline 0**.
-
----
-
-# Fase 1 — Audit strutturale di m
-
-Non partirei correggendo file.
-
-Prima dobbiamo capire **che cosa esiste realmente**.
-
-Ricostruiamo:
-
-`m/    ↓ subsystems    ↓ bootstrap package manager portable environment command infrastructure POSIX compatibility GNU/Bash compatibility implementations path abstraction OS abstraction downloads repositories dependencies configuration deployment containers device/image handling utilities ...`
-
-Per ogni sottosistema produciamo una scheda sintetica:
-
-`Purpose Current implementation Dependencies POSIX status Host assumptions Known/likely problems Interesting ideas Relationship with rumiai-os`
-
-Qui non modifichiamo nulla.
-
-L’obiettivo è capire **l’architettura effettiva**, non quella che immaginiamo ci sia.
-
----
-
-# Fase 2 — Inventario delle primitive POSIX estese
-
-Questa secondo me sarà una parte particolarmente interessante di m.
-
-Come hai anticipato, hai implementato equivalenti POSIX di funzionalità normalmente associate a GNU/Bash:
-
-`array readlink -f ...`
-
-Queste vanno isolate e studiate come possibile sottosistema autonomo.
-
-Provvisoriamente lo chiamerei:
-
-`POSIX compatibility library`
-
-o:
-
-`POSIX extensions`
-
-ma il nome lo decidiamo dopo.
-
-Per ciascuna funzione dobbiamo valutare:
-
-`funzionalità fornita ↓ necessità reale ↓ correttezza POSIX ↓ edge cases ↓ prestazioni ↓ portabilità ↓ API ↓ riutilizzabilità`
-
-Potrebbe emergere uno dei componenti fondamentali di rumiai-os.
-
-Non voglio però assumere che ogni reimplementazione sia necessariamente da mantenere. Se una funzione può essere ottenuta in modo POSIX più semplice e sicuro, scegliamo quella.
-
----
-
-# Fase 3 — Audit del package manager
-
-Qui farei un’analisi separata e approfondita.
-
-Dobbiamo capire almeno:
-
-`package format repository format dependency model version model resolver installation uninstallation upgrade downgrade cache download checksum/signature environment transactionality rollback idempotency offline behavior cross-platform behavior`
-
-E poi rispondere a una domanda fondamentale:
-
-> Il package manager di m è un package manager di software, oppure contiene già implicitamente il modello di provisioning di un sistema?
-
-Se la seconda risposta fosse almeno parzialmente vera, potrebbe diventare il cuore di rumiai-os.
-
----
-
-# Fase 4 — Separare idea e implementazione
-
-A questo punto classifichiamo ogni componente di m in quattro categorie:
-
-`KEEP idea e implementazione valide  REIMPLEMENT idea valida, codice da rifare  REDESIGN problema valido, soluzione da ripensare  DROP residuo storico o non più utile`
-
-Questo passaggio deve avvenire **prima di copiare qualsiasi codice**.
-
-È essenziale perché m ha anni di storia e non vogliamo che rumiai-os nasca già con debito tecnico ereditato.
-
----
-
-# Fase 5 — Definire l’architettura minima di rumiai-os
-
-Solo ora decidiamo la struttura.
-
-Non partirei da una struttura enorme. Partirei da ciò che l’audit dimostra essere necessario.
-
-Probabilmente emergeranno concetti simili a:
-
-`rumiai-os README.md  cmd/ lib/ pkg/ platform/ targets/ profiles/ etc/ test/`
-
-ma **non fisserei oggi questi nomi**.
-
-Prima deve essere l’architettura a giustificare le directory, non il contrario.
-
-L’unica cosa che considero già stabile è:
-
-`rumiai-os`
-
-come entrypoint principale.
-
----
-
-# Fase 6 — Primo bootstrap minimo
-
-Il primo obiettivo eseguibile dovrebbe essere estremamente piccolo.
+Aggiungerei però una cosa molto importante: non userei semplicemente GitHub come archivio, ma stabilirei una gerarchia formale delle fonti.
 
 Per esempio:
 
-`git clone ... cd rumiai-os ./rumiai-os`
+Regole canoniche nel repository
+Decisioni consolidate
+Specifiche correnti
+Risultati dei PoC
+Chat archiviate
+Memoria ChatGPT / contesto della conversazione
+Quindi, se la mia memoria dice una cosa e rumiai-dev ne dice un'altra, vince sempre il repository.
 
-e il sistema deve essere capace almeno di:
+Questa singola regola risolverebbe gran parte del problema che hai notato.
 
-`determinare la propria root verificare i requirement POSIX inizializzare l’ambiente caricare la propria libreria esporre i primi comandi`
+Per rumiai-dev vedrei bene una struttura iniziale simile:
 
-Niente AI.
+rumiai-dev/
+├── README.md
+├── RULES.md
+├── WORKFLOW.md
+├── GLOSSARY.md
+├── architecture/
+├── specifications/
+├── decisions/
+├── notebook/
+├── chat/
+└── archive/
+Con ruoli distinti:
 
-Niente QGIS.
+RULES.md: regole che io non devo reinterpretare o dimenticare.
+WORKFLOW.md: come lavoriamo tu ed io, come procedere, quando documentare, quando chiedere conferma, ecc.
+GLOSSARY.md: significato canonico di termini come Senso, Espressione, nervo, kernel-mod, capability.
+decisions/: decisioni architetturali consolidate, idealmente una per file.
+architecture/: descrizione dello stato architetturale corrente.
+specifications/: specifiche tecniche precise.
+notebook/: conoscenza riorganizzata e consolidata.
+chat/: archivio delle conversazioni con data, titolo, materiali e riassunto fedele.
+archive/: documenti superati ma che non vogliamo perdere.
+E rumiai-dev-PoCs:
 
-Niente ffmpeg.
+rumiai-dev-PoCs/
+├── README.md
+├── pocs/
+│   ├── poc-001-...
+│   │   ├── README.md
+│   │   ├── src/
+│   │   ├── config/
+│   │   ├── tests/
+│   │   └── sessions/
+│   └── ...
+└── archive/
+Ogni PoC dovrebbe essere autosufficiente e riproducibile. Una sessione di test potrebbe contenere:
 
-Niente container.
+sessions/
+└── 2026-08-27-test-001/
+    ├── environment.md
+    ├── procedure.md
+    ├── inputs/
+    ├── outputs/
+    ├── logs/
+    └── result.md
+C'è poi un secondo punto che considero ancora più importante della struttura delle directory: il mio workflow deve partire dal repository.
 
-Prima dimostriamo che **RumiAI OS può nascere correttamente e in modo relocatable**.
+Quando lavoriamo seriamente su RumiAI, il comportamento dovrebbe essere:
 
----
+repository → contesto di lavoro → discussione → PoC → risultato → decisione → aggiornamento repository
 
-# Fase 7 — Test di portabilità
+e non:
 
-Qui le regole diventano verifiche automatiche.
+mia memoria → supposizione → discussione.
 
-Voglio test che intercettino:
+In altre parole, la memoria di ChatGPT diventerebbe soltanto una cache utile per orientarmi, mai il database autorevole del progetto.
 
-`#!/bin/bash #!/usr/bin/env bash  [[ ... ]]  source ...  ${BASH_SOURCE}  readlink -f   quando non passa dal nostro abstraction layer  /Users/... /Volumes/... /home/nomeutente/... /opt/homebrew/...`
+Per le chat farei inoltre una distinzione precisa: una chat è una fonte storica, non una specifica. Se durante una conversazione diciamo cinque cose diverse e alla fine ne scegliamo una, non voglio che in futuro recuperando la chat io possa accidentalmente ripescare una delle quattro ipotesi scartate. La decisione definitiva deve finire in decisions/, RULES.md o nella specifica pertinente.
 
-e più in generale assunzioni accidentali sull’host.
+Quindi avremmo:
 
-Il principio è quello che abbiamo appena definito:
+Chat = cosa è successo.
+Notebook = cosa abbiamo imparato.
+Decision = cosa abbiamo deciso.
+Specification = cosa deve essere vero.
+Rule = cosa non devo violare.
+PoC = evidenza sperimentale.
 
-> **la portabilità deve essere verificata, non affidata alla disciplina.**
+Questa, secondo me, può diventare una base estremamente solida per lavorare insieme a lungo termine senza dipendere dalla capacità della memoria conversazionale di conservare fedelmente ogni dettaglio. E soprattutto introduce qualcosa che finora ci mancava: una fonte di verità esplicita per il rapporto di lavoro tra te e me, non soltanto per il software che stiamo progettando.
 
----
+sono pienamente d'accordo. procediamo così. ti dico alcune cose che ho notato che non mi andavano bene: gli script shell devono essere posix compliant ed avere uno shebang con /bin/sh, contravvenire a questa regola deve essere esplicitamente approvata e per una buona ragione; un'altra cosa che non mi piace è che abbiamo un portable runtime che deve proteggerci da installazioni particolari, path specifici, ecc. sia nei test che in altri script o sorgenti, ci sono dei path hardcoded e questo non è accettabile, per cui bisogna trovore il modo migliore
 
-# Fase 8 — Integrare il package manager
+Sì. E credo che qui possiamo trasformare il problema che hai individuato in una regola architetturale, non in una serie di correzioni locali.
 
-Quando il bootstrap minimo è solido, integriamo il package manager.
+Ho già creato in rumiai-dev il file canonico RULES.md con le regole che abbiamo appena concordato: autorità dei due repository, shell POSIX con #!/bin/sh, divieto di path host-specific hardcoded e requisito di relocatability del portable runtime. Commit: 2c3b203f35c694a700690e50d111543ef34685a0.
 
-Primo test concreto:
+Sul problema dei path, ho controllato il portable runtime. La filosofia dichiarata è già corretta: il clone deve essere contemporaneamente repository dei comandi e workspace operativo, con app/, bin/, home/, models/, run/, log/, ecc. interni all'albero del runtime. Anche cmd/env calcola già dinamicamente ROOT dalla posizione del comando. Ma nello stesso file compare:
 
-`RumiAI OS vuoto       ↓ package manager       ↓ installa un piccolo tool       ↓ tool disponibile       ↓ uninstall       ↓ stato iniziale ripristinato`
+export MODEL_VOL="/Volumes/AI-Models"
+con successiva selezione automatica di quel volume. Questo è esattamente il tipo di dipendenza ambientale che dobbiamo eliminare.
 
-Poi:
+Il modello che adotterei
+Vorrei che esistesse una sola origine della topologia dei path:
 
-`dependency versioning upgrade cache offline rollback`
+RUMIAI_RUNTIME_ROOT
+        │
+        ├── app
+        ├── bin
+        ├── cmd
+        ├── data
+        ├── etc
+        ├── home
+        ├── lib
+        ├── log
+        ├── models
+        ├── run
+        ├── srv
+        └── test
+Il runtime viene installato dove vuoi:
 
-uno alla volta.
+/home/max/rumiai-runtime
+/opt/rumiai
+/mnt/disk/rumiai
+/Volumes/RumiAI/portable-runtime
+C:\...        ← quando affronteremo Windows
+e nessuno dei componenti deve saperlo.
 
----
+La root viene determinata dinamicamente dall'entrypoint:
 
-# Fase 9 — Target abstraction
-
-Solo quando l’ambiente hosted funziona bene introduciamo:
-
-`hosted container image device`
-
-La stessa definizione logica deve poter essere materializzata da backend differenti.
+RUMIAI_RUNTIME_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+export RUMIAI_RUNTIME_ROOT
+e da quel momento ogni path interno deriva da quella root.
 
 Per esempio:
 
-`profile    ↓ packages + config + services    ↓ target    ├── current host    ├── Podman    └── disk image`
+RUMIAI_APP_DIR="$RUMIAI_RUNTIME_ROOT/app"
+RUMIAI_BIN_DIR="$RUMIAI_RUNTIME_ROOT/bin"
+RUMIAI_DATA_DIR="$RUMIAI_RUNTIME_ROOT/data"
+RUMIAI_HOME_DIR="$RUMIAI_RUNTIME_ROOT/home"
+RUMIAI_LOG_DIR="$RUMIAI_RUNTIME_ROOT/log"
+RUMIAI_MODELS_DIR="$RUMIAI_RUNTIME_ROOT/models"
+RUMIAI_RUN_DIR="$RUMIAI_RUNTIME_ROOT/run"
+RUMIAI_TEST_DIR="$RUMIAI_RUNTIME_ROOT/test"
+E per risorse esterne?
+Qui secondo me c'è la distinzione importante.
 
-Questo sarà probabilmente uno dei punti architetturali centrali di rumiai-os.
+Il portable runtime non deve cercare di indovinare il computer sul quale sta girando.
 
----
+Quindi niente:
 
-# Fase 10 — Software registry e capability stack
+if [ -d /Volumes/AI-Models ]
+niente:
 
-Solo successivamente introduciamo il concetto discusso prima:
+/Users/massimiliano/...
+/opt/homebrew/...
+/usr/local/...
+~/Documents/...
+Se vuoi mettere i modelli su un disco esterno, deve essere una configurazione esplicita:
 
-`capability    ↓ candidate software    ↓ tool/application    ↓ interaction method`
+RUMIAI_MODELS_DIR=/Volumes/AI-Models/models
+Altrimenti il default rimane:
 
-Esempio:
+$RUMIAI_RUNTIME_ROOT/models
+Quindi la regola diventa molto semplice:
 
-`geospatial conversion         ↓      GDAL      QGIS`
+Default portabile, override esplicito. Mai autodetection basata su path della macchina.
 
-con resolver:
+Questo vale anche per Python, Node, Ollama, ComfyUI, repository, modelli, cache, log, test data, ecc.
 
-`"converti"      → GDAL  "apri QGIS e converti"      → QGIS`
+Ancora più importante: i componenti non devono costruire i path
+Per esempio un sorgente JavaScript non dovrebbe fare:
 
-Da qui nasceranno poi i **Reference Software Stack**.
+const model = "/Volumes/AI-Models/models/...";
+ma nemmeno idealmente:
 
----
+const model = runtimeRoot + "/models/...";
+La seconda forma è migliore, ma continua a duplicare la conoscenza del layout.
 
-# Fase 11 — Computer-use specialization
+Meglio:
 
-Quando avremo software registry e capability resolver, iniziamo a costruire conoscenza specifica dei programmi:
+const modelsDir = process.env.RUMIAI_MODELS_DIR;
+Il portable runtime conosce la topologia.
 
-`documentation skills CLI API GUI examples evaluation`
+Il componente conosce soltanto concetti semantici:
 
-e solo se i test lo giustificano:
+RUMIAI_MODELS_DIR
+RUMIAI_DATA_DIR
+RUMIAI_LOG_DIR
+RUMIAI_RUN_DIR
+...
+Questo crea un vero confine architetturale.
 
-`fine-tuning / specialized models`
+Test
+Qui applicherei la regola in maniera ancora più severa.
 
----
+Un test non può assumere:
 
-## Parallelamente: rumiai-dev-PoCs
+directory corrente
+nome della home
+posizione del repository
+mount point
+path di Node/Python
+path di un modello
+Il test deve ricevere tutto dal runtime oppure derivarlo dalla propria posizione.
 
-Ogni nuova idea non dimostrata va prima lì.
+Per dati temporanei deve usare strutture temporanee generate durante il test, non path inventati:
 
-Il ciclo diventa:
+tmp_dir="$(mktemp -d)"
+trap 'rm -rf "$tmp_dir"' EXIT HUP INT TERM
+oppure una directory di run fornita dal runtime.
 
-`rumiai-dev     specifica / decisione           ↓ rumiai-dev-PoCs     esperimento           ↓ sessione di test           ↓ risultato           ↓ rumiai-dev     consolidamento           ↓ rumiai-os     implementazione stabile`
+C'è anche una sottigliezza POSIX importante
+Attualmente cmd/env determina ROOT usando $0.
 
-Questo secondo me è il workflow che ci mancava.
+Funziona nell'uso attuale perché, ad esempio, computer-use-poc-start viene eseguito come comando e poi include env.
 
----
+Ma in POSIX shell un file sourced non ha un equivalente portabile di BASH_SOURCE. Quindi eviterei di affidare a env la responsabilità di scoprire dove si trova.
 
-## Il prossimo passo concreto
+Fare invece:
 
-Io partirei adesso esclusivamente da **Fase 0 + Fase 1**.
+entrypoint
+    ↓
+determina RUMIAI_RUNTIME_ROOT usando $0
+    ↓
+source env
+    ↓
+env costruisce tutti i path semantici
+È molto più pulito e realmente POSIX.
 
-Prima consolidiamo in rumiai-dev il contratto di sviluppo che abbiamo appena definito.
+Enforcement automatico
+E qui farei un ulteriore passo: queste non devono rimanere soltanto regole scritte.
 
-Poi faccio una **mappatura completa di massimilianonardi/m**, senza ancora esprimere giudizi definitivi e senza toccare rumiai-os.
+Dovremo avere un controllo automatico che fallisce se trova, per esempio:
 
-Il primo deliverable dovrebbe essere qualcosa del tipo:
+#!/bin/bash
+#!/usr/bin/env bash
+/Users/...
+/Volumes/...
+/opt/homebrew/...
+/usr/local/...
+nelle aree dove non sono consentiti.
 
-`M architecture inventory  1. struttura generale 2. sottosistemi identificati 3. dipendenze 4. package manager 5. compatibility layer POSIX 6. bootstrap/environment 7. deployment 8. parti potenzialmente rilevanti per rumiai-os 9. aree da approfondire`
+Naturalmente non possiamo banalmente vietare ogni stringa che comincia con /, perché esistono path di sistema legittimi e soprattutto #!/bin/sh. Il controllo dovrà distinguere host-specific path da path che fanno parte deliberatamente di un'interfaccia OS.
 
-Poi lo analizziamo insieme e iniziamo l’audit vero e proprio.
+Questo ci porta a un principio che aggiungerei alle regole:
 
-In altre parole: **prima comprendiamo integralmente ciò che hai già costruito; poi progettiamo rumiai-os; infine scriviamo codice.**
+La portabilità non deve dipendere dalla disciplina dello sviluppatore: deve essere verificabile automaticamente.
 
-ok procedi
+Per me quindi la soluzione definitiva è:
 
-Procedo in due binari coordinati: prima consolido in rumiai-dev il contratto operativo emerso; in parallelo mappo massimilianonardi/m per sottosistemi, senza ancora migrare codice. Il primo obiettivo è produrre una fotografia affidabile di ciò che esiste e di ciò che merita un audit più profondo.
+root dinamica → path semantici centralizzati → default interni al runtime → override espliciti → nessuna autodetection host-specific → componenti ignari del layout → test relocatable → controllo automatico delle violazioni.
 
-Ispezionato il repository RumiAI e recuperato l’albero GitHub ricorsivo
+E non modificherei ancora rumiai-portable-runtime: prima consoliderei questo contratto preciso con te, poi correggerei il runtime in modo sistematico anziché eliminare /Volumes/AI-Models come semplice patch isolata.
 
-La prima ricognizione conferma già un punto importante: m contiene davvero un nucleo che sembra direttamente pertinente a rumiai-os: cmd/inst, una libreria shell in cmd/lib, componenti Podman e varie utility. Ho anche trovato subito array.lib.sh, quindi la compatibilità POSIX che ricordavi non è marginale: è un sottosistema reale da isolare e valutare.
+sono pienamente d'accordo con tutto, forse conviene usare un nuovo repository al posto di rumiai-portable-runtime? tipo rumiai-bin? dico questo perchè ho un altro progetto con diverse cose che ci possono tornare utili tipo un package manager portable e quindi potremme approfittare per dare un'architettura più professionale al runtime anche perchè ho delle idee in mente che ancora non ti ho detto, ad esempio per ogni os scegliere per ogni categoria di software il miglior candidato free o open source fare addestramento su quello ed eventualmente proporlo come opzionale all'utente che voglia che il computer use sfrutti tutte le sue capacità.
 
-Ispezionata la struttura del repository e analizzati i file chiave pkg
 
-Primo finding concreto: il package manager ha già un buon front controller POSIX (#!/bin/sh), ma il file cmd/pkg/pkg incorpora direttamente /m/... per configurazione, package root, bin, app, lib, home e conf. Quindi l’idea del filesystem portabile è presente, ma l’implementazione lega ancora il sistema a una root fisica fissa: è un chiaro candidato **REIMPLEMENT**, non da copiare tale e quale.
+Elaborato per 9s
+Sì, secondo me conviene creare un nuovo repository, ma farei attenzione al nome perché ciò che stai descrivendo è ormai più ampio di un semplice “bin”.
 
-Mappata l’architettura del repository e rilevati percorsi hardcoded
+rumiai-portable-runtime nasceva sostanzialmente come ambiente portabile. Quello che stai delineando ora è invece una vera base di sistema RumiAI: runtime, bootstrap, package management, selezione software, integrazione con l'OS, capability disponibili al computer-use e potenzialmente conoscenza specializzata dei programmi installati.
 
-Consolidato le fonti e proseguito l’audit dell’inventario
+Io vedrei questa separazione:
 
-Clonato il repository per l’audit complessivo
+rumiai-dev
+    fonte autorevole:
+    regole, architettura, specifiche, decisioni, workflow, chat
 
-Definiti i principi
+rumiai-dev-PoCs
+    laboratorio:
+    codice sperimentale, test, sessioni, risultati
 
-Consolidato e verificato
+rumiai-???
+    prodotto/runtime:
+    ambiente eseguibile, bootstrap, package manager,
+    integrazioni OS, catalogo software, capability packs
+Il vecchio rumiai-portable-runtime potrebbe poi diventare un predecessore storico, dal quale recuperiamo soltanto ciò che supera le nuove regole.
 
-Ispezionata la struttura e le regole del repository ricorsivamente
+Sul nome rumiai-bin
+Mi piace come concetto di “parte eseguibile di RumiAI”, ma semanticamente /bin in Unix significa soprattutto eseguibili. Se dentro dovranno vivere package manager, configurazione, runtime, registry software, integration layer, profili OS ecc., rischia di diventare un nome troppo stretto.
 
-Integrati i risultati dell’audit
+Valuterei soprattutto:
 
-Recuperate regole, commit master e riferimenti Podman/Cygwin
+rumiai-runtime — preciso, ma forse ancora riduttivo;
+rumiai-system — descrive bene una base di sistema;
+rumiai-platform — più ampio, forse troppo generico;
+rumiai-base — interessante come sistema base;
+rumiai-bin — molto semplice e riconoscibile, se decidiamo deliberatamente di attribuirgli un significato RumiAI più ampio.
+Non deciderei ancora il nome. Prima capirei bene cosa deve contenere.
+
+La tua idea sul software per ogni OS è molto importante
+Secondo me apre una parte dell'architettura che finora non avevamo esplicitato.
+
+RumiAI potrebbe avere un catalogo di software di riferimento, organizzato per capability.
+
+Per esempio, concettualmente:
+
+browser
+office
+image-editing
+video-editing
+audio-editing
+terminal
+file-management
+cad
+3d
+development
+email
+calendar
+...
+Per ogni categoria:
+
+capability: image-editing
+
+Linux:
+    reference: GIMP
+    alternatives: ...
+
+macOS:
+    reference: GIMP
+    alternatives: ...
+
+Windows:
+    reference: GIMP
+    alternatives: ...
+Ma il punto fondamentale è che il kernel/agent non dovrebbe ragionare:
+
+“devo usare GIMP”
+
+bensì:
+
+“mi serve la capability image-editing”.
+
+Poi il sistema risolve:
+
+image-editing
+      ↓
+software disponibile
+      ↓
+provider selezionato
+      ↓
+GIMP
+      ↓
+skill/adattatore specifico
+Questa è perfettamente coerente con l'architettura per capabilities che abbiamo già impostato per RumiAI.
+
+E qui nasce qualcosa di molto interessante: i software provider
+Un'applicazione supportata potrebbe avere una descrizione strutturata, per esempio:
+
+software/
+└── gimp/
+    ├── manifest
+    ├── install/
+    │   ├── linux
+    │   ├── macos
+    │   └── windows
+    ├── capabilities/
+    ├── integration/
+    ├── skills/
+    ├── knowledge/
+    ├── examples/
+    └── tests/
+Il manifest potrebbe dichiarare concetti come:
+
+software: gimp
+license: GPL
+capabilities:
+    - image-editing
+    - raster-graphics
+    - image-conversion
+
+interfaces:
+    - gui
+    - cli
+    - scripting
+
+supported-os:
+    - linux
+    - macos
+    - windows
+Così il computer-use non conoscerebbe soltanto l'interfaccia grafica, ma potrebbe sfruttare il miglior canale disponibile.
+
+Per esempio:
+
+                GIMP
+                  │
+       ┌──────────┼───────────┐
+       │          │           │
+      GUI        CLI       scripting
+       │          │           │
+computer-use    exec        adapter
+E RumiAI può scegliere dinamicamente.
+
+Questo è molto più potente del computer-use inteso semplicemente come:
+
+guarda lo schermo e clicca.
+
+Sul tuo concetto di “addestramento”
+Qui farei una distinzione importante.
+
+Non partirei assumendo che per ogni programma dobbiamo fine-tunare un modello.
+
+Prima costruirei un livello più economico, aggiornabile e deterministico:
+
+software knowledge
++ manuali/documentazione
++ capability map
++ UI knowledge
++ esempi di utilizzo
++ procedure
++ demonstrations
++ adapters/API/CLI
++ evaluation tests
+Questo costituisce una specie di skill package per quel software.
+
+Solo dopo, se i test dimostrano che serve davvero, possiamo arrivare a:
+
+fine-tuning
+LoRA
+specialized vision/action model
+policy addestrata sul software
+Perché un addestramento direttamente legato alla UI di un'applicazione rischierebbe di diventare fragile rispetto alle versioni.
+
+Quindi penserei a tre livelli:
+
+LEVEL 1
+conoscenza strutturata del software
+
+LEVEL 2
+skill + adapter + esempi + computer-use
+
+LEVEL 3
+modello/addestramento specializzato
+Il terzo solo quando produce un vantaggio misurabile.
+
+E il package manager diventa centrale
+L'altro progetto che hai citato potrebbe quindi essere molto più importante di quanto sembrasse inizialmente.
+
+Il package manager non servirebbe soltanto a:
+
+installare software.
+
+Potrebbe diventare il resolver dell'ambiente RumiAI.
+
+Per esempio l'utente dice:
+
+voglio abilitare sviluppo software
+e il sistema può proporre un profilo:
+
+Developer capability pack
+
+✓ Git
+✓ editor
+✓ Python
+✓ Node.js
+✓ compiler
+✓ terminal tools
+✓ browser
+
++ relative skill RumiAI
++ adapters
++ knowledge
++ tests
+Oppure:
+
+Creative Image Pack
+
+✓ GIMP
+✓ ImageMagick
+✓ ...
+L'utente rimane libero di dire no, installare alternative o utilizzare software già presente.
+
+Quindi eviterei di parlare di dipendenze obbligatorie.
+
+Parlerei di:
+
+Reference Software
+
+e:
+
+Optional Capability Packs
+
+Questo è molto coerente con la sovranità dell'utente.
+
+Il modello potrebbe diventare
+                    RumiAI
+                       │
+                 capabilities
+                       │
+             ┌─────────┴─────────┐
+             │                   │
+       internal capability   OS capability
+                                 │
+                         Software Registry
+                                 │
+                   ┌─────────────┼─────────────┐
+                   │             │             │
+                Browser       Graphics      Office
+                   │             │             │
+                Firefox        GIMP       LibreOffice
+                   │             │             │
+                 skill         skill          skill
+                   │             │             │
+             GUI/API/etc.  GUI/CLI/etc.  GUI/UNO/etc.
+Ed è qui che vedo una conseguenza molto interessante della tua idea:
+
+RumiAI potrebbe avere un proprio "userland" cognitivo consigliato.
+
+Non un sistema operativo nel senso tradizionale e neppure una distribuzione Linux, ma un insieme scelto di strumenti free/open-source dei quali l'IA possiede una conoscenza particolarmente profonda.
+
+L'utente potrebbe usare qualunque software, ma con il RumiAI Reference Stack otterrebbe le capacità migliori.
+
+Questa per me è una direzione molto forte.
+
+Quindi farei così
+Non toccherei ulteriormente rumiai-portable-runtime.
+
+Lo considererei da questo momento materiale di riferimento/prototipo, non la base che dobbiamo continuare a far crescere.
+
+Prima definirei nel repository rumiai-dev cosa deve essere questa nuova componente:
+
+Runtime
+Bootstrap
+Portable Package Manager
+Environment
+Software Registry
+OS Abstraction
+Reference Software
+Capability Packs
+Skills
+Adapters
+Knowledge
+Evaluation
+E solo quando abbiamo chiarito quei confini scegliamo il nome del nuovo repository e iniziamo ad implementarlo.
+
+Questa volta possiamo quindi progettare la struttura senza portarci dietro accidentalmente decisioni prese quando stavamo semplicemente cercando di rendere portabile un PoC.
+
+come nome credo che il miglior candidato sia rumiai-os, che ne pensi? riguardo i software aggiungo un'altra considerazione: ci sono tools come gdal, ffmpeg, ecc. che svolgono operazione complesse da linea di comando; se l'utente chiede di convertire un file di autocad in shape, basta farlo in gdal, se invece l'utente chiede "apri q-gis e converti il file da autocad a shape", allora si usa il software richiesto.
+
+Sì, rumiai-os mi sembra il nome migliore finora. È più ampio e corretto di rumiai-runtime o rumiai-bin, perché ciò che stiamo delineando non è più soltanto un ambiente portabile: è il livello che mette in relazione RumiAI con sistema operativo, software, tool, package management, capability e automazione.
+
+Va solo chiarito bene nella documentazione che RumiAI OS non è un sistema operativo tradizionale e non sostituisce Linux, macOS o Windows. È piuttosto il livello operativo di RumiAI sopra l'OS ospite.
+
+La tua osservazione su GDAL/QGIS aggiunge poi una regola molto importante: dobbiamo distinguere nettamente l'intento dell'utente dal mezzo di esecuzione.
+
+Se l'utente dice:
+
+converti questo file AutoCAD in shapefile
+
+l'obiettivo è la conversione. RumiAI è libero di scegliere il percorso migliore. Potrebbe quindi determinare:
+
+intent
+  ↓
+CAD → Shapefile
+  ↓
+capability richiesta
+geospatial-conversion
+  ↓
+provider disponibili
+GDAL
+QGIS
+altro
+  ↓
+scelta ottimale
+GDAL CLI
+Nessun motivo di aprire QGIS, muovere mouse, attendere rendering della GUI e simulare operazioni umane se GDAL può ottenere direttamente il risultato.
+
+Se invece l'utente dice:
+
+apri QGIS e converti questo file AutoCAD in shapefile
+
+allora ha introdotto un vincolo sul mezzo:
+
+goal:
+    CAD → Shapefile
+
+constraint:
+    software = QGIS
+e RumiAI deve rispettarlo.
+
+Questo secondo me ci porta a una regola canonica:
+
+RumiAI ottimizza liberamente il mezzo quando l'utente specifica soltanto il risultato; quando l'utente specifica anche il mezzo, il mezzo diventa parte dell'intento e deve essere rispettato.
+
+E vale per moltissimi casi.
+
+"ridimensiona queste 200 immagini"
+    → ImageMagick CLI
+
+"aprile in GIMP e ridimensionale"
+    → GIMP
+
+"converti questo video in H.265"
+    → ffmpeg
+
+"fallo con HandBrake"
+    → HandBrake
+
+"estrai le pagine 10-20 dal PDF"
+    → tool CLI/library appropriata
+
+"apri il PDF in Acrobat e..."
+    → Acrobat, se disponibile e consentito
+Questo evita un errore comune dei sistemi computer-use attuali: usare la GUI come se fosse il computer.
+
+La GUI è invece soltanto uno dei possibili canali operativi.
+
+Io modellerei quindi i software provider in rumiai-os più o meno così:
+
+                    capability
+                        │
+                geospatial-conversion
+                        │
+         ┌──────────────┼──────────────┐
+         │              │              │
+       GDAL            QGIS          altro
+         │              │
+     CLI/API        CLI/API/GUI
+RumiAI dovrebbe preferire normalmente l'interfaccia più:
+
+deterministica;
+efficiente;
+affidabile;
+verificabile;
+economica in termini di risorse.
+Indicativamente:
+
+native API
+    ↓
+CLI
+    ↓
+scripting/plugin interface
+    ↓
+structured application automation
+    ↓
+computer-use GUI
+Non la renderei però una gerarchia assoluta. È una strategia di selezione, perché alcune applicazioni possono offrire una GUI che espone funzionalità non disponibili altrove, o API migliori della CLI.
+
+Questo modifica anche il significato del computer-use
+Il computer-use non dovrebbe essere:
+
+il sistema che permette a RumiAI di usare il computer.
+
+Piuttosto:
+
+una delle capability attraverso cui RumiAI può interagire con software e sistema operativo quando non esiste un'interfaccia migliore o quando l'utente richiede esplicitamente l'interazione visuale.
+
+È una differenza architetturale molto importante.
+
+rumiai-os potrebbe quindi avere un resolver del tipo:
+
+USER INTENT
+    │
+    ├── goal
+    ├── constraints
+    └── preferences
+          │
+          ▼
+CAPABILITY RESOLVER
+          │
+          ▼
+SOFTWARE RESOLVER
+          │
+          ▼
+INTERACTION RESOLVER
+          │
+    ┌─────┼──────┬────────┐
+    API   CLI   SCRIPT    GUI
+                       computer-use
+E arriviamo anche a una distinzione utile tra software e tool.
+
+GDAL, ffmpeg, ImageMagick, pandoc e simili sono spesso strumenti ideali per l'esecuzione automatizzata. QGIS, Blender, LibreOffice, GIMP ecc. sono ambienti applicativi molto più ampi.
+
+Potremmo quindi avere nel catalogo di rumiai-os almeno:
+
+tools/
+    gdal
+    ffmpeg
+    imagemagick
+    pandoc
+    ...
+
+applications/
+    qgis
+    blender
+    gimp
+    libreoffice
+    ...
+senza però trasformare questa distinzione in una barriera rigida: entrambi espongono capabilities.
+
+La conseguenza più interessante è che il nostro futuro Reference Stack non dovrebbe scegliere soltanto “il miglior programma per categoria”, ma anche il miglior insieme complementare di tool e applicazioni.
+
+Per GIS, per esempio, potrebbe essere:
+
+RumiAI Reference Geospatial Stack
+
+QGIS
+    lavoro interattivo / visualizzazione / editing
+
+GDAL/OGR
+    conversione / processing / automazione
+
+PROJ
+    trasformazioni coordinate
+
+altri strumenti...
+A quel punto RumiAI conosce l'intero ecosistema e sceglie lo strumento adeguato alla singola operazione.
+
+Questa impostazione rende rumiai-os qualcosa di molto più interessante di un runtime: diventa lo strato che traduce intenzioni cognitive in operazioni native sul computer, scegliendo in autonomia il percorso migliore ma mantenendo i vincoli imposti dall'utente.
