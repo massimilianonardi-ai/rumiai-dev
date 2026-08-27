@@ -1,4 +1,4 @@
-# Decisione — Entrypoint e `RUMIAI_ROOT` fisici/canonicalizzati
+# Decisione — Entrypoint e root fisici/canonicalizzati
 
 Date: 2026-08-27  
 Status: **Accepted**
@@ -7,39 +7,34 @@ Status: **Accepted**
 
 Il bootstrap iniziale di `rumiai-os` deve determinare una root fisica/canonicalizzata indipendentemente da invocazione diretta, `PATH` o symbolic link.
 
-Il contratto richiesto stabilisce che:
-
-- tutti i symlink devono essere risolti;
-- `RUMIAI_ROOT` deve essere una directory esistente e accessibile;
-- `cd -- "$RUMIAI_ROOT"` deve riuscire;
-- l'invocazione tramite `PATH` deve essere risolta correttamente;
-- i link circolari devono causare fallimento;
-- la soluzione deve restare semplice e robusta, delegando il lavoro a utility POSIX quando possibile.
-
 Baseline:
 
 **POSIX.1-2024 / The Open Group Base Specifications Issue 8**.
 
 ## Decisione
 
-### 1. Risoluzione tramite facility POSIX standard
+### 1. Nomi canonici dello stato fondamentale
 
-Il bootstrap usa:
+Le variabili esportate dal bootstrap sono esattamente:
 
 ```text
-command -v
-realpath
+RumiAI_BOOTSTRAP_BIN
+RumiAI_ROOT
 ```
 
-invece di implementare un resolver ricorsivo di symbolic link in shell.
+La capitalizzazione è normativa.
 
-`realpath` è parte della baseline Issue 8 e viene usato come primitive normativa per la canonicalizzazione fisica.
+`RumiAI_BOOTSTRAP_BIN` identifica il pathname assoluto fisico/canonicalizzato del file eseguibile `rumiai-os` realmente raggiunto dopo la risoluzione di tutti i symbolic link.
 
-### 2. Risoluzione di `$0`
+`RumiAI_ROOT` identifica la directory assoluta fisica/canonicalizzata che contiene `RumiAI_BOOTSTRAP_BIN`.
 
-Se `$0` contiene `/`, viene trattato come pathname di invocazione.
+I precedenti nomi `RUMIAI_ENTRY` e `RUMIAI_ROOT` sono superati come nomi di contratto e restano eventualmente presenti solo in evidenza storica precedente a questa decisione.
 
-Se `$0` non contiene `/`, il bootstrap risolve il command name attraverso `PATH` con:
+### 2. Risoluzione tramite facility POSIX standard
+
+Il bootstrap usa `command -v` e `realpath` invece di implementare un resolver ricorsivo di symbolic link in shell.
+
+Se `$0` contiene `/`, viene trattato come pathname di invocazione. Se `$0` non contiene `/`, viene risolto attraverso `PATH` con:
 
 ```sh
 command -v -- "$0"
@@ -52,52 +47,36 @@ Un fallimento causa il fallimento del bootstrap.
 Il pathname di invocazione viene canonicalizzato con:
 
 ```sh
-realpath -- "$RUMIAI_ENTRY"
+realpath -- "$RumiAI_BOOTSTRAP_BIN"
 ```
 
-Il bootstrap non usa:
+Il bootstrap non usa parsing di `ls -l`, resolver ricorsivi custom, GNU `readlink -f` o opzioni GNU-specifiche di `realpath`.
 
-```text
-ls -l parsing
-custom recursive symlink walker
-GNU readlink -f
-GNU-specific realpath options
-```
-
-Non viene richiesto `realpath -e`: il dominio del bootstrap richiede già un entrypoint esistente e il risultato viene verificato esplicitamente come regular file. Questo evita una dipendenza non necessaria da opzioni Issue 8 che gli host correnti possono non avere ancora esposto uniformemente.
-
-### 4. Entry point finale
+### 4. Verifica dell'eseguibile finale
 
 Il risultato canonicalizzato deve essere un regular file esistente:
 
 ```sh
-[ -f "$RUMIAI_ENTRY" ]
+[ -f "$RumiAI_BOOTSTRAP_BIN" ]
 ```
 
-Un dangling link o un target non valido causa fallimento.
+Un dangling link, loop o target non valido causa fallimento.
 
-### 5. Derivazione di `RUMIAI_ROOT`
+### 5. Derivazione di `RumiAI_ROOT`
 
-Dato `RUMIAI_ENTRY` già assoluto e canonicalizzato, la root viene derivata tramite parameter expansion:
+Dato `RumiAI_BOOTSTRAP_BIN` già assoluto e canonicalizzato, la root viene derivata tramite parameter expansion:
 
 ```sh
-RUMIAI_ROOT=${RUMIAI_ENTRY%/*}
-[ -n "$RUMIAI_ROOT" ] || RUMIAI_ROOT=/
+RumiAI_ROOT=${RumiAI_BOOTSTRAP_BIN%/*}
+[ -n "$RumiAI_ROOT" ] || RumiAI_ROOT=/
 ```
 
 Per questo specifico bootstrap viene preferita questa soluzione a `dirname`.
 
-Motivazione:
-
-- dominio di input già ristretto e noto;
-- nessun processo aggiuntivo;
-- nessun nuovo output testuale da ricatturare;
-- nessuna semantica generale di `dirname` necessaria.
-
 Se nello stesso dominio servisse il basename, si preferisce:
 
 ```sh
-${RUMIAI_ENTRY##*/}
+${RumiAI_BOOTSTRAP_BIN##*/}
 ```
 
 Questa scelta non vieta globalmente `dirname` o `basename`.
@@ -107,22 +86,24 @@ Questa scelta non vieta globalmente `dirname` o `basename`.
 Prima di esportare la root deve riuscire:
 
 ```sh
-(cd -- "$RUMIAI_ROOT")
+(cd -- "$RumiAI_ROOT")
 ```
 
-La subshell evita di modificare la current working directory del processo principale.
+### 7. Failure semantics
 
-### 7. Symbolic-link loops
+Le condizioni di errore del top-level bootstrap terminano il processo con stato non-zero, normalmente:
 
-I loop devono causare fallimento.
+```sh
+exit 1
+```
 
-La rilevazione viene delegata alla pathname resolution / `realpath` standard; non viene duplicata con un algoritmo shell ad hoc.
+Il termine `fail` usato in precedenti pseudocodici non indica una utility POSIX e non fa parte dell'architettura o dell'API di RumiAI.
+
+Funzioni/librerie riutilizzabili seguono invece la regola generale di ritornare uno status al chiamante quando non è loro responsabilità terminare il processo.
 
 ### 8. Pathname con newline finali
 
-Poiché la command substitution rimuove newline terminali, la cattura degli output pathname usa un piccolo protocollo sentinel in modo da non perdere automaticamente newline che fanno parte del pathname.
-
-La soluzione resta locale al bootstrap e non diventa una generic serialization abstraction.
+Poiché la command substitution rimuove newline terminali, la cattura degli output pathname usa nel PoC un piccolo protocollo sentinel in modo da non perdere automaticamente newline che fanno parte del pathname.
 
 ## Evidenza
 
@@ -132,54 +113,20 @@ PoC:
 rumiai-dev-PoCs/pocs/003-entrypoint-symlink-resolution/
 ```
 
-Sessione di consolidamento:
+La sessione:
 
 ```text
 sessions/2026-08-27-linux-local-002/
 ```
 
-Matrice locale:
-
-```text
-dash          14 pass / 0 fail
-bash --posix  14 pass / 0 fail
-busybox sh    14 pass / 0 fail
-TOTAL         42 pass / 0 fail
-```
-
-Sono inclusi test per:
-
-- invocazione relativa e assoluta;
-- `PATH`;
-- symlink relativi e assoluti;
-- catena di symlink;
-- symlink in componente intermedio;
-- spazi e testo ` -> `;
-- componente che inizia con `-`;
-- link circolare con fallimento atteso;
-- dangling link con fallimento atteso;
-- root con newline finale;
-- verifica reale di `cd -- "$RUMIAI_ROOT"`.
+è evidenza storica valida ma precede la decisione finale sui nomi delle variabili; non viene riscritta retroattivamente.
 
 ## Stato host di riferimento
 
 L'algoritmo è consolidato come design rispetto alla baseline Issue 8 e all'evidenza cross-shell locale.
 
-La certificazione runtime sugli host di riferimento correnti, in particolare macOS e Ubuntu LTS, resta una validazione distinta da eseguire. Eventuali divergenze reali verranno gestite secondo la decisione sulla baseline POSIX e la sua evoluzione.
-
-## Supersession
-
-Questa decisione completa e sostituisce le parti ancora aperte relative alla scelta dell'algoritmo in:
-
-```text
-decisions/rumiai-os/2026-08-27-command-naming-and-symlink-resolution.md
-architecture/rumiai-os/INITIAL-BOOTSTRAP.md
-```
-
-Il principio di supportare i symbolic link e le regole di naming contenuti nella decisione precedente restano validi.
+La certificazione runtime sugli host di riferimento correnti, in particolare macOS e Ubuntu LTS, resta una validazione distinta da eseguire.
 
 ## Authorization
 
 Questa decisione **non autorizza** la scrittura dell'implementazione nel repository `rumiai-os` durante la fase iniziale.
-
-La promozione nel prodotto richiede ancora consenso esplicito dell'utente.
