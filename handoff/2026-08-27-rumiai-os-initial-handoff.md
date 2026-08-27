@@ -78,12 +78,26 @@ Host-specific behavior is allowed only where POSIX cannot provide the required f
 
 Windows is not an architectural target in itself. A POSIX-compatible environment is a requirement; Cygwin may be recommended on Windows.
 
-The user currently prefers adopting the **most recent POSIX standard that is effectively supported by the current reference operating systems**, specifically:
+### POSIX baseline selection and evolution
 
-- current Ubuntu LTS;
-- current macOS.
+The POSIX baseline is selected initially according to an explicit user decision; the initial choice may be arbitrary and does not need to be the newest published POSIX version or the newest version implemented by the reference operating systems.
 
-This baseline has **not yet been formally verified or frozen**. Verification against the actual standards/features available on those two current OS references is the next required research step before relying on newer POSIX facilities.
+After that initial selection, the standard is upgraded only when a concrete RumiAI requirement creates a reason to do so.
+
+The governing process is:
+
+1. start from the currently selected POSIX version;
+2. when RumiAI needs a feature, utility, command behavior, interface or semantic guarantee that belongs to a later POSIX version, verify the concrete requirement rather than upgrading pre-emptively;
+3. validate that the newer facility is actually needed by RumiAI;
+4. verify its real behavior on the relevant reference operating systems through documentation and, where behavior matters, PoCs;
+5. if the requirement is validated and the later POSIX version is the appropriate contract, explicitly adopt that newer POSIX version as the new baseline;
+6. if actual behavior on one or more reference operating systems does not match the standard expected by RumiAI, evaluate the available implementation, compatibility, fallback, abstraction and/or baseline-standard choices before proceeding.
+
+This means RumiAI does **not** need to proactively verify every feature introduced by later POSIX versions. A newer standardized feature may be unsupported or behave differently on a reference OS without being relevant to RumiAI; if RumiAI does not use it, there is no requirement to investigate it.
+
+Verification becomes mandatory when RumiAI actually introduces or depends on that feature and the observed behavior from the PoCs does not correspond to the currently assumed POSIX contract on one or more reference operating systems.
+
+The POSIX baseline is therefore an explicit, evolving architectural contract driven by validated RumiAI needs and empirical evidence, not by a policy of automatically tracking the newest standard.
 
 ---
 
@@ -151,9 +165,7 @@ A pure JavaScript source module can therefore use `.js`; a directly executable N
 
 ## 5. Command-line parsing rule: `--`
 
-New rule requested and pending formal insertion into the canonical rules/specifications:
-
-> Commands that support it should adopt `--` as the explicit delimiter separating options from positional parameters.
+For every tool, POSIX or non-POSIX, that supports `--` with the specific semantic function of terminating option parsing and delimiting subsequent positional/data arguments, use of that delimiter is **mandatory** when one or more positional/data arguments are passed.
 
 Conceptual form:
 
@@ -161,16 +173,32 @@ Conceptual form:
 command [options] -- [parameters]
 ```
 
-This is intended to remove ambiguity where positional values can begin with `-` or otherwise resemble options.
+The rule is based on the actual command/tool interface, not on an assumption that every POSIX command supports `--`.
 
-The exact CLI parsing convention still needs to be formalized, including:
+Therefore:
 
-- whether `--` is mandatory or recommended when positional parameters are present;
-- behavior when there are no options;
-- compatibility with commands/utilities that already have standard POSIX option parsing semantics;
-- interaction with subcommands.
+- if the specific tool supports `--` as the option/operand delimiter and there is at least one positional/data argument, `--` **must** be used;
+- if the command is invoked with zero positional/data arguments, `--` **must not** be present;
+- if the specific tool does not support `--` with this semantic function, the delimiter is not required and must not be invented or forced;
+- the rule applies equally to POSIX and non-POSIX tools;
+- POSIX compliance alone must never be taken as proof that a particular utility supports `--`, because not all POSIX utilities do.
 
-No implementation decision has yet been frozen beyond the principle of using `--` where supported to distinguish options from data/parameters.
+Examples of the intended distinction:
+
+```text
+# Tool supports -- and receives positional/data arguments
+command [options] -- parameter
+
+# Tool supports -- but receives no positional/data arguments
+command [options]
+
+# Tool does not support -- with delimiter semantics
+command [tool-specific syntax]
+```
+
+The purpose is to remove ambiguity where data or positional values may begin with `-` or otherwise resemble options, while remaining faithful to each tool's real command-line contract.
+
+For every tool introduced into RumiAI, support for this delimiter must therefore be established from that tool's actual specification/documentation and, when necessary, verified empirically.
 
 ---
 
@@ -444,29 +472,24 @@ Some of these documents were created before the latest corrections. When continu
 
 The next phase should remain narrow.
 
-### Step 1 — formalize the new CLI `--` rule
+### Step 1 — formalize the CLI `--` rule
 
-Add the delimiter rule to the canonical development rules/specification after defining its exact scope.
+Promote the exact rule from this handoff into the canonical development rules/specifications:
 
-### Step 2 — determine the practical POSIX baseline
+- `--` is mandatory when a tool supports it with option-termination/delimiter semantics and one or more positional/data arguments are present;
+- `--` is absent when the positional/data argument count is zero;
+- unsupported delimiter syntax must never be forced;
+- support must be established per tool, whether POSIX or non-POSIX.
 
-Verify the most recent POSIX version/features that can actually be relied upon on the current:
+### Step 2 — select the initial POSIX baseline
 
-```text
-Ubuntu LTS
-macOS
-```
+Choose the initial POSIX version according to the user's explicit decision logic. The initial baseline does not need to be the newest standard or the newest standard substantially implemented by the reference operating systems.
 
-Do not assume that the newest published POSIX issue is fully implemented merely because it exists.
+Do not perform a broad audit of all facilities introduced by later POSIX versions.
 
-The output should distinguish:
+From that point onward, evaluate a later POSIX version only when a concrete RumiAI requirement needs a later feature, tool, interface or semantic guarantee. Validate the need, verify relevant real-world behavior on the reference operating systems and use PoCs where necessary.
 
-```text
-standardized by POSIX
-available on Ubuntu LTS
-available on macOS
-safe to use in RumiAI portable core
-```
+If the requirement is validated, adopt the later POSIX version when appropriate. If PoC behavior on one or more reference operating systems does not match the expected standard contract, explicitly evaluate compatibility strategies and whether the current POSIX baseline itself should change.
 
 ### Step 3 — symlink-resolution design
 
