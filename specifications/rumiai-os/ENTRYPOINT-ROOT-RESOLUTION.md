@@ -5,7 +5,7 @@ Date: 2026-08-27
 
 ## 1. Scope
 
-This specification defines the bootstrap contract for resolving the physical entrypoint pathname and `RUMIAI_ROOT`.
+This specification defines the bootstrap contract for resolving the physical bootstrap executable pathname and `RumiAI_ROOT`.
 
 It refines the path requirements in `POSIX-PORTABILITY-LAYER.md` for the `rumiai-os` primary entrypoint.
 
@@ -19,9 +19,18 @@ Normative keywords **MUST**, **MUST NOT**, **SHOULD**, **SHOULD NOT**, and **MAY
 
 ## 2. Fundamental state
 
-### ENTRY-ROOT-001 — `RUMIAI_ENTRY`
+The canonical exported bootstrap variables are exactly:
 
-After successful bootstrap, `RUMIAI_ENTRY` MUST be the absolute physical/canonical pathname of the actual `rumiai-os` executable file.
+```text
+RumiAI_BOOTSTRAP_BIN
+RumiAI_ROOT
+```
+
+Their capitalization is normative.
+
+### ENTRY-ROOT-001 — `RumiAI_BOOTSTRAP_BIN`
+
+After successful bootstrap, `RumiAI_BOOTSTRAP_BIN` MUST be the absolute physical/canonical pathname of the actual `rumiai-os` executable file.
 
 It MUST:
 
@@ -31,9 +40,9 @@ It MUST:
 - refer to an existing regular file;
 - identify the final target when invocation occurred through one or more symbolic links.
 
-### ENTRY-ROOT-002 — `RUMIAI_ROOT`
+### ENTRY-ROOT-002 — `RumiAI_ROOT`
 
-After successful bootstrap, `RUMIAI_ROOT` MUST be the absolute physical/canonical pathname of the directory containing `RUMIAI_ENTRY`.
+After successful bootstrap, `RumiAI_ROOT` MUST be the absolute physical/canonical pathname of the directory containing `RumiAI_BOOTSTRAP_BIN`.
 
 It MUST:
 
@@ -44,7 +53,7 @@ It MUST:
 - satisfy a successful:
 
 ```sh
-cd -- "$RUMIAI_ROOT"
+cd -- "$RumiAI_ROOT"
 ```
 
 ### ENTRY-ROOT-003 — no caller-CWD dependency
@@ -97,7 +106,7 @@ The bootstrap MUST delegate physical pathname canonicalization to the POSIX Issu
 Required conceptual operation:
 
 ```sh
-realpath -- "$RUMIAI_ENTRY"
+realpath -- "$RumiAI_BOOTSTRAP_BIN"
 ```
 
 The implementation MUST NOT parse `ls -l` output to discover symbolic-link targets.
@@ -106,26 +115,19 @@ The implementation MUST NOT depend on GNU `readlink -f` or GNU-specific `realpat
 
 ### ENTRY-ROOT-007 — no mandatory `realpath -e` dependency
 
-The bootstrap MUST NOT require `realpath -e` solely to enforce existence of the entrypoint.
+The bootstrap MUST NOT require `realpath -e` solely to enforce existence of the bootstrap executable.
 
-Rationale:
-
-- the entrypoint domain requires the invoked executable to exist already;
-- Issue 8 canonicalization is sufficient when the underlying pathname resolution succeeds;
-- current reference hosts may expose different subsets of the new Issue 8 CLI options;
-- existence is explicitly verified after canonicalization.
-
-A future decision MAY use `-e` if reference-host verification establishes a reason and uniform support relevant to RumiAI.
+The final target is explicitly verified after canonicalization. A future decision MAY use `-e` if reference-host verification establishes a concrete RumiAI need and suitable support.
 
 ### ENTRY-ROOT-008 — final regular-file check
 
-After canonicalization, the resolved entrypoint MUST satisfy:
+After canonicalization, the resolved bootstrap executable MUST satisfy:
 
 ```sh
-[ -f "$RUMIAI_ENTRY" ]
+[ -f "$RumiAI_BOOTSTRAP_BIN" ]
 ```
 
-A dangling link, missing final target, non-regular target, or otherwise invalid entrypoint MUST fail bootstrap.
+A dangling link, missing final target, non-regular target, or otherwise invalid bootstrap executable MUST fail bootstrap.
 
 ### ENTRY-ROOT-009 — symbolic-link cycles
 
@@ -139,27 +141,27 @@ The bootstrap SHOULD rely on POSIX pathname resolution / `realpath` to detect th
 
 ### ENTRY-ROOT-010 — parameter expansion is the bootstrap primitive
 
-After `RUMIAI_ENTRY` has been canonicalized and verified as an absolute regular-file pathname, its parent directory MUST be derived with shell parameter expansion:
+After `RumiAI_BOOTSTRAP_BIN` has been canonicalized and verified as an absolute regular-file pathname, its parent directory MUST be derived with shell parameter expansion:
 
 ```sh
-RUMIAI_ROOT=${RUMIAI_ENTRY%/*}
-[ -n "$RUMIAI_ROOT" ] || RUMIAI_ROOT=/
+RumiAI_ROOT=${RumiAI_BOOTSTRAP_BIN%/*}
+[ -n "$RumiAI_ROOT" ] || RumiAI_ROOT=/
 ```
 
 The root-level entrypoint edge case MUST normalize an empty result to `/`.
 
 ### ENTRY-ROOT-011 — `dirname` is not used in the accepted bootstrap path
 
-The accepted bootstrap algorithm MUST NOT invoke `dirname` to derive `RUMIAI_ROOT` from the already canonicalized `RUMIAI_ENTRY`.
+The accepted bootstrap algorithm MUST NOT invoke `dirname` to derive `RumiAI_ROOT` from the already canonicalized `RumiAI_BOOTSTRAP_BIN`.
 
 This is not a general prohibition on `dirname`; it is a local design choice because the constrained canonical input makes parameter expansion sufficient and avoids an unnecessary process/output round trip.
 
 ### ENTRY-ROOT-012 — basename if needed
 
-If the basename of the already canonicalized entrypoint is needed in this bootstrap domain, the preferred operation is:
+If the basename of the already canonicalized bootstrap executable is needed in this bootstrap domain, the preferred operation is:
 
 ```sh
-${RUMIAI_ENTRY##*/}
+${RumiAI_BOOTSTRAP_BIN##*/}
 ```
 
 This does not prohibit the POSIX `basename` utility in contexts that require its general semantics.
@@ -170,10 +172,10 @@ This does not prohibit the POSIX `basename` utility in contexts that require its
 
 ### ENTRY-ROOT-013 — mandatory `cd` validation
 
-Before exporting `RUMIAI_ROOT`, bootstrap MUST verify:
+Before exporting `RumiAI_ROOT`, bootstrap MUST verify:
 
 ```sh
-(cd -- "$RUMIAI_ROOT")
+(cd -- "$RumiAI_ROOT")
 ```
 
 The subshell form is REQUIRED so the validation does not alter the main process current working directory.
@@ -192,16 +194,9 @@ All utility invocations in this algorithm MUST comply with the canonical RumiAI 
 - if zero operands/data arguments are present, `--` MUST NOT be added;
 - if the utility does not support that delimiter semantic, it MUST NOT be forced.
 
-For the accepted algorithm this includes, where operands are present:
+Support MUST be established per utility contract rather than inferred merely from POSIX conformance.
 
-```sh
-command -v -- "$0"
-realpath -- "$RUMIAI_ENTRY"
-cd -- "$RUMIAI_ROOT"
-printf -- ...
-```
-
-`test` / `[` MUST NOT receive an invented `--` delimiter because its POSIX syntax is an exception to the general Utility Syntax Guidelines.
+`test` / `[` MUST NOT receive an invented `--` delimiter where its syntax does not support that semantic.
 
 ---
 
@@ -211,10 +206,7 @@ printf -- ...
 
 The implementation MUST NOT accidentally assume that ordinary shell command substitution preserves trailing newline bytes belonging to a pathname.
 
-If utility output is captured through command substitution, the bootstrap SHOULD use a small sentinel protocol or another proven mechanism that distinguishes:
-
-- the utility's line terminator;
-- newline bytes that are part of the pathname data.
+If utility output is captured through command substitution, the bootstrap SHOULD use a small sentinel protocol or another proven mechanism that distinguishes the utility's line terminator from newline bytes that are part of pathname data.
 
 This requirement MUST remain local/minimal unless a broader RumiAI serialization requirement emerges.
 
@@ -227,25 +219,34 @@ Conceptually:
 ```sh
 case $0 in
   */*)
-    RUMIAI_ENTRY=$0
+    RumiAI_BOOTSTRAP_BIN=$0
     ;;
   *)
-    RUMIAI_ENTRY=$(command -v -- "$0") || fail
+    if ! RumiAI_BOOTSTRAP_BIN=$(command -v -- "$0")
+    then
+      exit 1
+    fi
     ;;
 esac
 
-RUMIAI_ENTRY=$(realpath -- "$RUMIAI_ENTRY") || fail
-[ -f "$RUMIAI_ENTRY" ] || fail
+if ! RumiAI_BOOTSTRAP_BIN=$(realpath -- "$RumiAI_BOOTSTRAP_BIN")
+then
+  exit 1
+fi
 
-RUMIAI_ROOT=${RUMIAI_ENTRY%/*}
-[ -n "$RUMIAI_ROOT" ] || RUMIAI_ROOT=/
+[ -f "$RumiAI_BOOTSTRAP_BIN" ] || exit 1
 
-(cd -- "$RUMIAI_ROOT") || fail
+RumiAI_ROOT=${RumiAI_BOOTSTRAP_BIN%/*}
+[ -n "$RumiAI_ROOT" ] || RumiAI_ROOT=/
 
-export RUMIAI_ENTRY RUMIAI_ROOT
+(cd -- "$RumiAI_ROOT") || exit 1
+
+export RumiAI_BOOTSTRAP_BIN RumiAI_ROOT
 ```
 
-The actual shell implementation MUST incorporate the pathname-output capture rule from `ENTRY-ROOT-015` where needed.
+This is conceptual code. The actual shell implementation MUST incorporate the pathname-output capture rule from `ENTRY-ROOT-015` where needed and MAY emit diagnostics before `exit 1`.
+
+No non-POSIX `fail` command or implicit helper is part of this contract.
 
 ---
 
@@ -267,7 +268,7 @@ pathname with spaces
 pathname containing text resembling " -> "
 leading-dash pathname component
 arbitrary caller CWD
-successful cd -- "$RUMIAI_ROOT"
+successful cd -- "$RumiAI_ROOT"
 ```
 
 Newline-containing pathname cases SHOULD be retained as robustness tests on hosts/filesystems that permit them.
@@ -290,14 +291,7 @@ Consolidation session:
 sessions/2026-08-27-linux-local-002/
 ```
 
-Local Linux result:
-
-```text
-dash          14 pass / 0 fail
-bash --posix  14 pass / 0 fail
-busybox sh    14 pass / 0 fail
-TOTAL         42 pass / 0 fail
-```
+The archived consolidation session predates the final variable-name decision and therefore may contain the former names in historical output. Historical session evidence MUST NOT be rewritten merely to make it look current.
 
 Host-specific runtime certification on the current macOS and Ubuntu LTS references remains a separate validation step.
 
@@ -313,5 +307,7 @@ Bootstrap MUST fail clearly and non-zero when any required invariant cannot be e
 - dangling target;
 - final target not a regular file;
 - root not accessible by `cd`.
+
+Top-level bootstrap failure is expressed with a non-zero process exit status, normally `exit 1` for these generic bootstrap failures.
 
 Partial or guessed values MUST NOT be exported as valid fundamental state.
