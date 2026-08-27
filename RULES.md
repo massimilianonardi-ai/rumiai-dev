@@ -30,23 +30,31 @@ RumiAI OS sviluppa contro **POSIX**, non contro Linux, macOS, Windows o una spec
 
 POSIX è il contratto di piattaforma. Il fatto che una soluzione funzioni su GNU/Linux o su un particolare Unix-like non è sufficiente a considerarla portabile.
 
-Il progetto assume come **standard POSIX di riferimento la revisione più recente** che sia concretamente utilizzabile sugli host di riferimento correnti. Alla data di questa regola lo standard di riferimento è **POSIX.1-2024 / The Open Group Base Specifications Issue 8**.
+La baseline POSIX iniziale di RumiAI OS è fissata a:
 
-L'adozione dello standard più recente non implica che gli host di riferimento implementino ogni singola feature della revisione. Il portable core di RumiAI OS usa il profilo comune effettivamente disponibile e verificato sugli host di riferimento:
+**POSIX.1-2024 / The Open Group Base Specifications Issue 8**.
 
-- ultima Ubuntu LTS stabile;
-- ultima versione stabile di macOS.
+La scelta iniziale della baseline è una decisione esplicita di progetto e non deriva da una regola che imponga di adottare automaticamente la revisione POSIX più recente o quella maggiormente implementata dagli host correnti.
 
-Una feature POSIX recente può essere usata nel portable core quando la sua semantica necessaria è disponibile e verificata su entrambi gli host di riferimento. Se una feature dello standard non è ancora disponibile su uno dei due, non viene assunta come requisito runtime senza fallback, adapter o decisione esplicita.
+Dopo la scelta iniziale, la baseline viene modificata solo quando emerge una necessità concreta di RumiAI relativa a una feature, utility, interfaccia o garanzia semantica appartenente a una revisione POSIX successiva.
 
-Questo profilo viene riesaminato quando cambiano le release di riferimento. L'obiettivo è evitare sia dipendenze proprietarie/non standard sia compatibilità artificiale con sistemi troppo vecchi rispetto ai requisiti hardware e software del progetto IA.
+In quel caso il processo obbligatorio è:
+
+1. identificare il requisito reale emerso in RumiAI;
+2. verificare che la feature o il comportamento della revisione successiva sia effettivamente necessario;
+3. verificare la specifica normativa pertinente;
+4. verificare il comportamento reale sugli OS di riferimento quando tale comportamento è materialmente rilevante, usando PoC quando opportuno;
+5. se il requisito è validato e la revisione successiva è il contratto corretto, adottare esplicitamente la nuova baseline;
+6. se il comportamento osservato su uno o più OS di riferimento non corrisponde al contratto POSIX atteso, valutare soluzione, compatibilità, fallback, astrazione e/o modifica della baseline prima di consolidare l'implementazione.
+
+Non è necessario verificare preventivamente tutte le feature introdotte dalle revisioni POSIX successive. Se RumiAI non dipende da una feature, la sua disponibilità o mancata disponibilità pratica sugli host di riferimento non richiede investigazione.
 
 Di conseguenza:
 
 - non si devono introdurre dipendenze accidentali da estensioni GNU, Bash o da peculiarità di uno specifico host;
-- comportamento specifico dell'host è ammesso soltanto dietro un'astrazione o adapter esplicito quando POSIX o il profilo comune verificato non forniscono la funzionalità necessaria;
+- comportamento specifico dell'host è ammesso soltanto dietro un'astrazione o adapter esplicito quando POSIX non fornisce la funzionalità necessaria o quando una divergenza reale dagli host di riferimento è stata verificata e accettata;
 - gli adapter specifici non devono contaminare il modello generale del sistema;
-- la portabilità deve essere verificata automaticamente su implementazioni POSIX o POSIX-compatible differenti e non affidata soltanto alla disciplina dello sviluppatore.
+- la portabilità delle funzionalità realmente usate da RumiAI deve essere verificata automaticamente su implementazioni POSIX o POSIX-compatible differenti e non affidata soltanto alla disciplina dello sviluppatore.
 
 Windows non influenza l'architettura di RumiAI OS. RumiAI OS richiede un ambiente POSIX-compatible; su Windows la documentazione può raccomandare Cygwin o indicare altri ambienti compatibili. L'eventuale preparazione dell'ambiente host non cambia il contratto interno di RumiAI OS.
 
@@ -99,16 +107,38 @@ Un file JavaScript eseguito direttamente tramite uno shebang Node.js, se previst
 
 I comandi di RumiAI OS che accettano opzioni devono seguire, salvo eccezioni motivate, le POSIX Utility Syntax Guidelines.
 
-Quando un comando supporta il delimitatore `--`, esso deve essere riconosciuto come fine delle opzioni: tutti gli argomenti successivi sono operandi/parametri anche se iniziano con `-`.
+Per ogni tool, POSIX o non-POSIX, che supporta `--` con la specifica funzione semantica di terminare il parsing delle opzioni e delimitare gli operandi/argomenti dati successivi, l'uso di `--` è **obbligatorio** quando vengono passati uno o più operandi/argomenti dati.
 
-Nel codice che invoca altre utility, `--` deve essere usato quando:
+La regola è determinata dal contratto reale del singolo tool, non dal fatto che il tool sia POSIX.
 
-- la utility lo supporta secondo il proprio contratto;
-- serve a separare senza ambiguità opzioni e operandi, in particolare quando un operando può iniziare con `-`.
+Quindi:
 
-`--` non deve essere passato meccanicamente a utility che non lo supportano. Le eccezioni previste dallo standard o dall'implementazione verificata devono essere rispettate.
+- se il tool supporta `--` come delimitatore e riceve almeno un operando/argomento dato, `--` deve essere presente;
+- se il numero di operandi/argomenti dati è zero, `--` non deve essere presente;
+- se il tool non supporta `--` con questa funzione, il delimitatore non deve essere inventato né forzato;
+- la stessa regola vale per tool POSIX e non-POSIX;
+- non si deve assumere che tutti i tool POSIX supportino Guideline 10: le eccezioni definite dal relativo contratto devono essere rispettate.
 
-La regola generale è: **opzioni prima, `--` quando supportato e utile a chiudere il parsing delle opzioni, poi operandi**.
+Forma generale quando supportata:
+
+```text
+command [options] -- [operands]
+```
+
+Esempi concettuali:
+
+```text
+# tool con supporto a -- e almeno un operando
+command [options] -- operand
+
+# tool con supporto a -- e zero operandi
+command [options]
+
+# tool senza supporto a --
+command [tool-specific syntax]
+```
+
+Il supporto di `--` deve essere stabilito dalla specifica/documentazione effettiva del tool e, quando necessario, verificato empiricamente.
 
 ## Portabilità, root e path
 
