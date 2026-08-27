@@ -1,6 +1,6 @@
 # RumiAI OS — Initial Bootstrap Architecture
 
-Status: **Initial accepted architecture**  
+Status: **Initial accepted architecture — amended 2026-08-27**  
 Date: 2026-08-27
 
 ## 1. Scope
@@ -10,6 +10,8 @@ This document defines only the first stable bootstrap boundary of `rumiai-os`.
 It deliberately excludes package management, software capability resolution, container/image/device deployment and the future complete OS architecture.
 
 The goal is to establish a minimal relocatable system root and a stable entrypoint from which those subsystems can later be loaded.
+
+No implementation may be written into the `rumiai-os` repository during the current initial phase without explicit user approval.
 
 ---
 
@@ -34,21 +36,62 @@ No additional regular file is introduced at repository root without a new archit
 
 ## 3. Entrypoint responsibility
 
-The root `rumiai-os` script is a **front controller**, not the implementation of the system.
+The root `rumiai-os` command is a **front controller**, not the implementation of the system.
 
 Its responsibilities are limited to:
 
-1. run under `#!/bin/sh`;
-2. determine the RumiAI OS root according to the accepted bootstrap contract;
+1. execute using the interpreter required by its current implementation;
+2. determine the real RumiAI OS root according to the accepted bootstrap contract;
 3. export the semantic root variable;
 4. load/delegate to the internal bootstrap implementation;
 5. propagate the resulting process exit status.
 
-It must not accumulate package-manager, deployment, application, AI, or host-specific logic.
+The initial implementation is expected to be POSIX shell with:
+
+```sh
+#!/bin/sh
+```
+
+but the filename remains `rumiai-os` and does not encode the implementation language. A future reimplementation using another approved runtime must not require renaming the public command.
+
+The entrypoint must not accumulate package-manager, deployment, application, AI, or host-specific logic.
 
 ---
 
-## 4. Root variable
+## 4. Naming contract
+
+Executable commands use semantic names without extensions that expose the interpreter or implementation language.
+
+Examples:
+
+```text
+rumiai-os
+pkg
+path
+install
+```
+
+not:
+
+```text
+rumiai-os.sh
+pkg.sh
+path.py
+install.js
+```
+
+Files sourced by shell code use semantic extensions. Initial conventions include:
+
+```text
+*.lib   sourced libraries
+*.conf  configuration
+```
+
+Language extensions remain valid for source artifacts whose identity is genuinely tied to the source language, such as `.c`, `.cpp`, `.java`, or pure-source `.js` files.
+
+---
+
+## 5. Root variable
 
 The semantic root exposed by the entrypoint is:
 
@@ -62,29 +105,38 @@ The initial bootstrap must not infer external resources from host-specific conve
 
 ---
 
-## 5. Initial invocation contract
+## 6. Invocation and real-path contract
 
-Supported:
+The bootstrap must support at least:
 
 ```text
 ./rumiai-os
 /path/to/rumiai-os
 PATH=/path/to/repository:$PATH rumiai-os
+invocation through a symbolic link
 ```
 
 The result must not depend on the caller current working directory.
 
-Not initially supported:
+When invoked through a symbolic link, root discovery must resolve the actual executable location rather than treating the directory containing the link as the RumiAI OS root.
 
-```text
-/path/to/symlink -> /actual/repository/rumiai-os
-```
+The exact resolution algorithm is not yet frozen. Before implementation it must be validated by a dedicated PoC against the selected POSIX baseline and tested for at least:
 
-Symlink invocation must fail clearly until its semantics are separately specified and tested.
+- direct invocation;
+- relative and absolute pathnames;
+- invocation through `PATH`;
+- absolute symlink targets;
+- relative symlink targets;
+- chains of symbolic links;
+- loop/cycle detection;
+- names containing spaces and shell metacharacters;
+- independence from current working directory.
+
+Historical implementations in `massimilianonardi/m`, including code that derives `THIS_PATH` and `THIS_DIR` from `$0`, are reference material for this PoC and must be audited rather than copied automatically.
 
 ---
 
-## 6. Internal delegation boundary
+## 7. Internal delegation boundary
 
 After root discovery, the entrypoint delegates to code located below the repository root.
 
@@ -111,7 +163,7 @@ Only directories justified by concrete subsystem boundaries should be introduced
 
 ---
 
-## 7. POSIX portability layer
+## 8. POSIX portability layer
 
 Reusable low-level helpers are governed by:
 
@@ -119,68 +171,12 @@ Reusable low-level helpers are governed by:
 specifications/rumiai-os/POSIX-PORTABILITY-LAYER.md
 ```
 
-The portability layer is intentionally minimal.
-
-It is not a Bash compatibility library and is not a general recreation of GNU utilities.
-
-A primitive is added only when required by the architecture and after its contract can be tested.
+The portability layer must not expose implementation-language details through public command filenames.
 
 ---
 
-## 8. Data-output baseline
+## 9. Authorization boundary
 
-The initial foundation may provide safe output primitives equivalent to:
+An accepted architecture or successful PoC does not authorize writes to the `rumiai-os` repository during the current initial phase.
 
-```sh
-printf '%s' "$value"
-printf '%s\n' "$value"
-```
-
-These exist to standardize exact data emission where a reusable helper adds value.
-
-They must not become wrappers that obscure normal POSIX behavior unnecessarily.
-
----
-
-## 9. Static checks
-
-Portable-core shell code must be eligible for automated static checks derived from the canonical rules and portability specification.
-
-The initial enforcement prototype is validated by:
-
-```text
-rumiai-dev-PoCs/pocs/002-posix-bootstrap-foundation/
-```
-
-The stable repository should eventually contain or invoke an equivalent project check, but the exact development-tool placement is not fixed by this bootstrap architecture.
-
----
-
-## 10. Promotion rule
-
-Code from PoC 002 is a validated design candidate, not an automatic copy source.
-
-Before entering `rumiai-os`, the stable implementation must:
-
-1. preserve the accepted behavior;
-2. comply with the canonical rules;
-3. remain minimal;
-4. avoid test-only behavior in the production entrypoint;
-5. maintain the front-controller boundary.
-
----
-
-## 11. Next architectural boundary
-
-Once the stable bootstrap exists, the next subsystem to define should be the environment/package foundation recovered conceptually from the historical `m` project.
-
-That work must keep separate:
-
-```text
-system definition
-package resolution
-package materialization/integration
-deployment backend
-```
-
-so that hosted, container, image and device deployments can eventually share one logical system model without duplicating installation logic.
+Promotion from `rumiai-dev-PoCs` into `rumiai-os` requires explicit user approval.
