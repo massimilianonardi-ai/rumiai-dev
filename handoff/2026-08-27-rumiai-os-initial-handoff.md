@@ -80,24 +80,28 @@ Windows is not an architectural target in itself. A POSIX-compatible environment
 
 ### POSIX baseline selection and evolution
 
-The POSIX baseline is selected initially according to an explicit user decision; the initial choice may be arbitrary and does not need to be the newest published POSIX version or the newest version implemented by the reference operating systems.
+The initial POSIX baseline for RumiAI OS is explicitly fixed as:
 
-After that initial selection, the standard is upgraded only when a concrete RumiAI requirement creates a reason to do so.
+> **POSIX.1-2024, The Open Group Base Specifications Issue 8**
+
+This is the initial architectural contract. It is not derived from a policy of selecting whichever POSIX version happens to be most completely implemented by the current reference operating systems.
+
+After this initial selection, the standard is changed only when a concrete RumiAI requirement creates a reason to do so.
 
 The governing process is:
 
-1. start from the currently selected POSIX version;
+1. start from **POSIX.1-2024, The Open Group Base Specifications Issue 8** as the current baseline;
 2. when RumiAI needs a feature, utility, command behavior, interface or semantic guarantee that belongs to a later POSIX version, verify the concrete requirement rather than upgrading pre-emptively;
 3. validate that the newer facility is actually needed by RumiAI;
 4. verify its real behavior on the relevant reference operating systems through documentation and, where behavior matters, PoCs;
 5. if the requirement is validated and the later POSIX version is the appropriate contract, explicitly adopt that newer POSIX version as the new baseline;
 6. if actual behavior on one or more reference operating systems does not match the standard expected by RumiAI, evaluate the available implementation, compatibility, fallback, abstraction and/or baseline-standard choices before proceeding.
 
-This means RumiAI does **not** need to proactively verify every feature introduced by later POSIX versions. A newer standardized feature may be unsupported or behave differently on a reference OS without being relevant to RumiAI; if RumiAI does not use it, there is no requirement to investigate it.
+RumiAI does **not** need to proactively verify every feature defined by the current baseline or introduced by future POSIX versions merely to establish global conformance of every reference operating system. A standardized feature may be unsupported or behave differently on a reference OS without being relevant to RumiAI; if RumiAI does not use it, there is no requirement to investigate it.
 
-Verification becomes mandatory when RumiAI actually introduces or depends on that feature and the observed behavior from the PoCs does not correspond to the currently assumed POSIX contract on one or more reference operating systems.
+Verification becomes mandatory when RumiAI actually introduces or depends on a feature, tool, interface or semantic guarantee and the observed behavior from the PoCs does not correspond to the POSIX contract assumed by RumiAI on one or more reference operating systems.
 
-The POSIX baseline is therefore an explicit, evolving architectural contract driven by validated RumiAI needs and empirical evidence, not by a policy of automatically tracking the newest standard.
+The POSIX baseline is therefore an explicit, evolving architectural contract driven by validated RumiAI needs and empirical evidence, not by a policy of automatically tracking host implementation completeness or future standards.
 
 ---
 
@@ -481,13 +485,17 @@ Promote the exact rule from this handoff into the canonical development rules/sp
 - unsupported delimiter syntax must never be forced;
 - support must be established per tool, whether POSIX or non-POSIX.
 
-### Step 2 — select the initial POSIX baseline
+### Step 2 — apply the initial POSIX baseline
 
-Choose the initial POSIX version according to the user's explicit decision logic. The initial baseline does not need to be the newest standard or the newest standard substantially implemented by the reference operating systems.
+The initial baseline is now fixed and no longer an open design decision:
 
-Do not perform a broad audit of all facilities introduced by later POSIX versions.
+> **POSIX.1-2024, The Open Group Base Specifications Issue 8**
 
-From that point onward, evaluate a later POSIX version only when a concrete RumiAI requirement needs a later feature, tool, interface or semantic guarantee. Validate the need, verify relevant real-world behavior on the reference operating systems and use PoCs where necessary.
+Use this as the normative POSIX contract for the next design and PoC work.
+
+Do not perform a broad audit merely to determine whether every feature of Issue 8 is implemented by every reference operating system. Investigate implementation support when a concrete RumiAI dependency on a specific feature, utility, interface or semantic behavior makes that information relevant.
+
+Evaluate a future POSIX baseline only when a concrete RumiAI requirement needs a facility or guarantee belonging to a later standard. Validate the need, verify relevant real-world behavior on the reference operating systems and use PoCs where necessary.
 
 If the requirement is validated, adopt the later POSIX version when appropriate. If PoC behavior on one or more reference operating systems does not match the expected standard contract, explicitly evaluate compatibility strategies and whether the current POSIX baseline itself should change.
 
@@ -495,7 +503,7 @@ If the requirement is validated, adopt the later POSIX version when appropriate.
 
 Audit all relevant symlink/path implementations in `m`, not only the single snippet quoted above.
 
-Compare them against the selected POSIX baseline and define the exact desired semantics of entrypoint resolution.
+Compare them against **POSIX.1-2024 / Issue 8** and define the exact desired semantics of entrypoint resolution.
 
 ### Step 4 — dedicated symlink-resolution PoC
 
