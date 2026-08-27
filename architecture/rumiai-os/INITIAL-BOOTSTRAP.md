@@ -1,6 +1,6 @@
 # RumiAI OS — Initial Bootstrap Architecture
 
-Status: **Initial accepted architecture — amended 2026-08-27**  
+Status: **Initial accepted architecture — root resolution consolidated 2026-08-27**  
 Date: 2026-08-27
 
 ## 1. Scope
@@ -41,10 +41,11 @@ The root `rumiai-os` command is a **front controller**, not the implementation o
 Its responsibilities are limited to:
 
 1. execute using the interpreter required by its current implementation;
-2. determine the real RumiAI OS root according to the accepted bootstrap contract;
-3. export the semantic root variable;
-4. load/delegate to the internal bootstrap implementation;
-5. propagate the resulting process exit status.
+2. determine the real physical/canonical RumiAI OS entrypoint and root according to the accepted bootstrap contract;
+3. verify the root invariant;
+4. export the fundamental semantic state;
+5. load/delegate to the internal bootstrap implementation;
+6. propagate the resulting process exit status.
 
 The initial implementation is expected to be POSIX shell with:
 
@@ -91,61 +92,252 @@ Language extensions remain valid for source artifacts whose identity is genuinel
 
 ---
 
-## 5. Root variable
+## 5. Fundamental root state
 
-The semantic root exposed by the entrypoint is:
+The bootstrap exposes at least:
 
 ```text
+RUMIAI_ENTRY
 RUMIAI_ROOT
 ```
 
-All paths managed by the system must ultimately derive from this root or from semantic roots explicitly configured by the system.
+### `RUMIAI_ENTRY`
 
-The initial bootstrap must not infer external resources from host-specific conventional paths.
+`RUMIAI_ENTRY` is the absolute physical/canonical pathname of the actual `rumiai-os` regular file after all symbolic links and pathname indirections have been resolved.
+
+It must:
+
+- be absolute;
+- have all symlinks resolved, including intermediate components;
+- contain no effective `.` or `..` components;
+- refer to an existing regular file.
+
+### `RUMIAI_ROOT`
+
+`RUMIAI_ROOT` is the absolute physical/canonical directory containing `RUMIAI_ENTRY`.
+
+It must:
+
+- exist;
+- be a directory that can be entered in the bootstrap execution context;
+- satisfy:
+
+```sh
+cd -- "$RUMIAI_ROOT"
+```
+
+The validation is executed in a subshell so it does not mutate the main process current working directory.
+
+All RumiAI-managed paths must ultimately derive from this root or from semantic roots explicitly configured by the system.
 
 ---
 
-## 6. Invocation and real-path contract
+## 6. Invocation contract
 
-The bootstrap must support at least:
+The bootstrap supports:
 
 ```text
 ./rumiai-os
-/path/to/rumiai-os
-PATH=/path/to/repository:$PATH rumiai-os
-invocation through a symbolic link
+relative/path/rumiai-os
+/absolute/path/rumiai-os
+PATH=/some/location:$PATH rumiai-os
+invocation through one or more symbolic links
 ```
 
-The result must not depend on the caller current working directory.
+Equivalent invocations must resolve to the same physical RumiAI root regardless of the caller's unrelated current working directory.
 
-When invoked through a symbolic link, root discovery must resolve the actual executable location rather than treating the directory containing the link as the RumiAI OS root.
+When invoked through symbolic links, the location of the final real executable defines the root, not the directory containing the externally visible link.
 
-The exact resolution algorithm is not yet frozen. Before implementation it must be validated by a dedicated PoC against the selected POSIX baseline and tested for at least:
-
-- direct invocation;
-- relative and absolute pathnames;
-- invocation through `PATH`;
-- absolute symlink targets;
-- relative symlink targets;
-- chains of symbolic links;
-- loop/cycle detection;
-- names containing spaces and shell metacharacters;
-- independence from current working directory.
-
-Historical implementations in `massimilianonardi/m`, including code that derives `THIS_PATH` and `THIS_DIR` from `$0`, are reference material for this PoC and must be audited rather than copied automatically.
+Symbolic-link cycles and dangling links are errors and must fail bootstrap rather than producing guessed or partial state.
 
 ---
 
-## 7. Internal delegation boundary
+## 7. Accepted root-resolution algorithm
 
-After root discovery, the entrypoint delegates to code located below the repository root.
+The bootstrap algorithm is now consolidated.
+
+### Step 1 — resolve command-name invocation only when needed
+
+If `$0` contains `/`, it is used as the invocation pathname.
+
+If `$0` contains no `/`, resolve it through `PATH` with:
+
+```sh
+command -v -- "$0"
+```
+
+A failure is fatal.
+
+### Step 2 — physical canonicalization
+
+Canonicalize the invocation pathname with the POSIX.1-2024 Issue 8 utility:
+
+```sh
+realpath -- "$RUMIAI_ENTRY"
+```
+
+This delegates to the platform pathname-resolution machinery:
+
+- conversion to an absolute pathname;
+- symbolic-link resolution;
+- relative symbolic-link target handling;
+- symbolic-link chains;
+- intermediate symbolic links;
+- `.` / `..` normalization;
+- loop detection/failure.
+
+No custom recursive symbolic-link resolver is part of the accepted bootstrap.
+
+No parsing of `ls -l` is used.
+
+No GNU `readlink -f` or GNU-specific `realpath` option is required.
+
+### Step 3 — verify the final executable
+
+The canonical result must be an existing regular file:
+
+```sh
+[ -f "$RUMIAI_ENTRY" ]
+```
+
+A failed check is fatal.
+
+### Step 4 — derive the root
+
+Because the input is now an absolute canonical regular-file pathname:
+
+```sh
+RUMIAI_ROOT=${RUMIAI_ENTRY%/*}
+[ -n "$RUMIAI_ROOT" ] || RUMIAI_ROOT=/
+```
+
+The second statement handles the root-level entrypoint case.
+
+### Step 5 — validate the root
+
+Before export:
+
+```sh
+(cd -- "$RUMIAI_ROOT")
+```
+
+must succeed.
+
+### Step 6 — export fundamental state
+
+Only after successful validation:
+
+```sh
+export RUMIAI_ENTRY RUMIAI_ROOT
+```
+
+---
+
+## 8. Why `dirname` is not used here
+
+`dirname` remains a valid POSIX utility, but the accepted bootstrap does not need its general pathname semantics.
+
+After `realpath`, `RUMIAI_ENTRY` has a deliberately constrained domain: absolute, canonical, regular file, no trailing slash.
+
+For this domain:
+
+```sh
+${RUMIAI_ENTRY%/*}
+```
+
+is preferred because it:
+
+- expresses exactly the required operation;
+- requires no subprocess;
+- produces no additional utility output that must be recaptured;
+- avoids unnecessary edge semantics from the more general `dirname` contract.
+
+If the basename is later needed in the same constrained domain, prefer:
+
+```sh
+${RUMIAI_ENTRY##*/}
+```
+
+This is a local bootstrap design decision, not a project-wide prohibition of `dirname` or `basename`.
+
+---
+
+## 9. POSIX baseline and host behavior
+
+The normative baseline is:
+
+**POSIX.1-2024 / The Open Group Base Specifications Issue 8**.
+
+Issue 8 provides the standard `realpath` facility needed by this design.
+
+The bootstrap intentionally does not require `realpath -e` merely to establish entrypoint existence. The entrypoint is required to exist by the RumiAI contract and is checked explicitly after canonicalization. This also avoids needlessly depending on newer CLI options that may not yet be exposed uniformly by all reference hosts.
+
+Any real divergence discovered on a reference host is handled under the canonical POSIX baseline-evolution rule; the algorithm is not pre-emptively expanded with host-specific branches.
+
+---
+
+## 10. Pathname capture
+
+When pathname output is captured through shell command substitution, the implementation must account for removal of trailing newlines.
+
+The validated PoC uses a small sentinel protocol to preserve pathname newline data while removing the utility's line terminator.
+
+This remains a bootstrap-local mechanism unless a broader serialization requirement later justifies a reusable primitive.
+
+---
+
+## 11. PoC evidence
+
+Normative detail:
+
+```text
+specifications/rumiai-os/ENTRYPOINT-ROOT-RESOLUTION.md
+```
+
+Analysis:
+
+```text
+analysis/rumiai-os/2026-08-27-entrypoint-root-resolution.md
+```
+
+PoC:
+
+```text
+rumiai-dev-PoCs/pocs/003-entrypoint-symlink-resolution/
+```
+
+Consolidation session:
+
+```text
+sessions/2026-08-27-linux-local-002/
+```
+
+Local result:
+
+```text
+dash          14 pass / 0 fail
+bash --posix  14 pass / 0 fail
+busybox sh    14 pass / 0 fail
+TOTAL         42 pass / 0 fail
+```
+
+The matrix includes direct/absolute/`PATH` invocation, relative and absolute symbolic links, chains, intermediate links, loops, dangling links, spaces, leading-dash path components, newline-containing pathnames and explicit root `cd` validation.
+
+Runtime certification on the current reference macOS and Ubuntu LTS remains a separate validation step.
+
+---
+
+## 12. Internal delegation boundary
+
+After validated root discovery, the entrypoint delegates to code located below the repository root.
 
 Conceptually:
 
 ```text
 rumiai-os
    │
-   ├─ discover RUMIAI_ROOT
+   ├─ resolve physical RUMIAI_ENTRY
+   ├─ derive + verify RUMIAI_ROOT
    │
    └─ delegate
           │
@@ -157,25 +349,13 @@ rumiai-os
           └─ future subsystems
 ```
 
-The exact internal directory names are intentionally not fully frozen by this document.
+The exact internal directory names remain intentionally unfrozen.
 
 Only directories justified by concrete subsystem boundaries should be introduced.
 
 ---
 
-## 8. POSIX portability layer
-
-Reusable low-level helpers are governed by:
-
-```text
-specifications/rumiai-os/POSIX-PORTABILITY-LAYER.md
-```
-
-The portability layer must not expose implementation-language details through public command filenames.
-
----
-
-## 9. Authorization boundary
+## 13. Authorization boundary
 
 An accepted architecture or successful PoC does not authorize writes to the `rumiai-os` repository during the current initial phase.
 
