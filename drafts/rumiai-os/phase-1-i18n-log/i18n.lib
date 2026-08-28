@@ -2,6 +2,7 @@
 # Final product path and loading strategy are intentionally undecided.
 
 RumiAI_I18N_FALLBACK_LANGUAGE=en_US
+RumiAI_I18N_FALLBACK_TEXT_ENCODING=UTF-8
 
 RumiAI_i18n_identifier_valid()
 {
@@ -20,6 +21,86 @@ RumiAI_i18n_identifier_valid()
 
   return 0
 }
+
+# Normalize the subset of host/RumiAI locale syntax needed by the bootstrap.
+# Advanced normalization remains an i18n responsibility and can replace this
+# primitive later without changing the front-controller contract.
+RumiAI_i18n_normalize_language()
+(
+  [ "$#" -eq 1 ] || return 2
+
+  RumiAI_i18n_raw=$1
+
+  case $RumiAI_i18n_raw in
+    C | POSIX | C.* | POSIX.*)
+      printf -- '%s\n' "$RumiAI_I18N_FALLBACK_LANGUAGE"
+      return 0
+      ;;
+  esac
+
+  # Host locale input may use language_TERRITORY.codeset@modifier.
+  RumiAI_i18n_raw=${RumiAI_i18n_raw%%@*}
+  RumiAI_i18n_raw=${RumiAI_i18n_raw%%.*}
+
+  RumiAI_i18n_language=${RumiAI_i18n_raw%%_*}
+  [ "$RumiAI_i18n_language" != "$RumiAI_i18n_raw" ] || return 1
+  RumiAI_i18n_territory=${RumiAI_i18n_raw#*_}
+
+  case $RumiAI_i18n_language in
+    [a-z][a-z] | [a-z][a-z][a-z])
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+
+  case $RumiAI_i18n_territory in
+    [A-Z][A-Z] | [0-9][0-9][0-9])
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+
+  printf -- '%s_%s\n' "$RumiAI_i18n_language" "$RumiAI_i18n_territory"
+)
+
+# Select the effective bootstrap language. A syntactically invalid or currently
+# unavailable requested language falls back to en_US and returns non-zero so the
+# caller can emit a localized warning after the logger becomes active.
+RumiAI_i18n_select_language()
+(
+  [ "$#" -eq 1 ] || return 2
+
+  if RumiAI_i18n_language=$(RumiAI_i18n_normalize_language "$1") && \
+     [ -d "$RumiAI_LANG_DIR/$RumiAI_i18n_language" ]
+  then
+    printf -- '%s\n' "$RumiAI_i18n_language"
+    return 0
+  fi
+
+  printf -- '%s\n' "$RumiAI_I18N_FALLBACK_LANGUAGE"
+  return 1
+)
+
+# Initial implementation supports UTF-8 only. Common spelling variants are
+# normalized to the canonical RumiAI value. Other encodings can be added later
+# at this boundary without changing the internal UTF-8 model.
+RumiAI_i18n_select_text_encoding()
+(
+  [ "$#" -eq 1 ] || return 2
+
+  case $1 in
+    UTF-8 | UTF8 | utf-8 | utf8)
+      printf -- '%s\n' UTF-8
+      return 0
+      ;;
+    *)
+      printf -- '%s\n' "$RumiAI_I18N_FALLBACK_TEXT_ENCODING"
+      return 1
+      ;;
+  esac
+)
 
 RumiAI_i18n_read_message()
 (
