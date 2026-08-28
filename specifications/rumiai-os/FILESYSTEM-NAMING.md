@@ -87,7 +87,7 @@ An executable does not gain `.sh`, `.py`, `.js` or a similar suffix merely becau
 
 A pathname component that intentionally encodes an identifier governed by a separate semantic convention MAY depart from the default lowercase naming form when preserving that identifier is valuable.
 
-The first accepted case is the RumiAI language identifier, whose current language/territory form is:
+The first accepted case is the RumiAI language identifier:
 
 ```text
 language_TERRITORY
@@ -102,14 +102,24 @@ it_IT
 
 Therefore language directories under `lang/` MAY use this form and the uppercase territory component is intentional rather than an accidental violation of the generic naming convention.
 
-Whether the character encoding/codeset is also part of this identifier or of the corresponding language-directory name is intentionally **not yet decided**. Forms such as:
+The codeset/encoding is NOT part of the RumiAI language identifier and MUST NOT be appended to the language directory name.
+
+Canonical examples:
 
 ```text
-it_IT
-it_IT.UTF-8
+lang/en_US/
+lang/it_IT/
 ```
 
-remain under architectural evaluation until the i18n encoding contract is fixed.
+Non-canonical examples:
+
+```text
+lang/en_US.UTF-8/
+lang/it_IT.UTF-8/
+lang/it_IT/UTF-8/
+```
+
+RumiAI language catalogs are always UTF-8; configurable external text encoding is handled at the interaction boundary and does not alter filesystem catalog identity.
 
 Semantic exceptions MUST be documented by the subsystem that owns the identifier and MUST NOT become a general excuse for arbitrary naming variation.
 
