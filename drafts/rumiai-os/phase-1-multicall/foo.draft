@@ -1,0 +1,21 @@
+#!/bin/sh
+
+# DRAFT ONLY — example private command.
+# Expected conceptual product location in this proposal:
+#   $RumiAI_COMMAND_DIR/foo
+# where RumiAI_COMMAND_DIR currently maps to placeholder directory cmd/.
+
+# The command receives the initialized RumiAI environment from rumiai-os.
+# It does NOT inherit the shell function log(), because this is a new process.
+# It can nevertheless call the public language-neutral command `log`, which is
+# found through the already initialized PATH and re-enters rumiai-os via bin/log.
+
+log info foo started command "$RumiAI_COMMAND"
+RumiAI_foo_status=$?
+
+if [ "$RumiAI_foo_status" -ne 0 ]
+then
+  exit "$RumiAI_foo_status"
+fi
+
+exit 0
