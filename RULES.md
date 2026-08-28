@@ -6,9 +6,13 @@ Questo documento contiene regole canoniche per lo sviluppo di RumiAI.
 
 `rumiai-dev` è la fonte autorevole per regole, workflow, decisioni, specifiche, terminologia, architettura, chat e memoria dello sviluppo.
 
-`rumiai-dev-PoCs` è il laboratorio dei test eseguibili: contiene codice sorgente dei PoC, sessioni di test, input, output, log significativi e risultati dettagliati.
+`rumiai-os` è il repository del sistema/prodotto stabile. Il codice vi entra solo dopo che principi, specifiche e decisioni rilevanti sono stati consolidati e, quando necessario, validati sperimentalmente.
 
-`rumiai-os` è il repository del sistema/prodotto stabile. Il codice vi entra solo dopo che principi, specifiche e decisioni rilevanti sono stati consolidati e, quando necessario, validati tramite PoC.
+`rumiai-dev-PoCs` è il laboratorio sperimentale: contiene proof-of-concept, prototipi, fixture, sessioni sperimentali, input, output, log significativi e risultati usati per rispondere a domande ancora aperte. Il suo contenuto può essere temporaneo, evolutivo o specifico di una particolare indagine.
+
+`rumiai-tests` è il repository della suite permanente di test e validazione: contiene test ripetibili, runner, supporto ai test e sessioni di validazione associate a revisioni precise. Protegge nel tempo proprietà consolidate di RumiAI e delle dipendenze esterne effettivamente utilizzate.
+
+PoC e test permanenti hanno ruoli distinti: un PoC può essere modificato, sostituito o eliminato quando ha esaurito il proprio scopo; un test permanente deve restare finché la proprietà che protegge rimane parte del contratto o del comportamento atteso.
 
 I repository storici o di riferimento, incluso `massimilianonardi/m`, sono materiale da analizzare: non sono fonti normative e il loro codice non deve essere copiato o migrato automaticamente.
 
@@ -16,13 +20,15 @@ La memoria conversazionale di ChatGPT è solo un supporto operativo e non preval
 
 In caso di conflitto tra memoria/conversazione e repository, prevale il repository.
 
+Le regole specifiche per test permanenti, runner, development run, validation run e workspace locale sono definite in `TESTING.md`.
+
 ## Autorizzazione alle modifiche di `rumiai-os`
 
 Almeno nella fase iniziale del progetto, nessun file deve essere creato, copiato, modificato o eliminato nel repository `rumiai-os` senza consenso esplicito dell'utente per quella fase di implementazione.
 
-Una decisione consolidata, un PoC riuscito o una raccomandazione tecnica non costituiscono da soli autorizzazione a scrivere nel repository `rumiai-os`.
+Una decisione consolidata, un PoC riuscito, un test riuscito o una raccomandazione tecnica non costituiscono da soli autorizzazione a scrivere nel repository `rumiai-os`.
 
-`rumiai-dev` e `rumiai-dev-PoCs` possono essere usati per analisi, specifiche, decisioni e sperimentazione secondo il workflow concordato; la promozione nel prodotto richiede invece il consenso esplicito.
+`rumiai-dev`, `rumiai-dev-PoCs` e `rumiai-tests` possono essere usati rispettivamente per consolidamento, sperimentazione e validazione secondo il workflow concordato; la promozione nel prodotto richiede invece il consenso esplicito.
 
 ## Contratto di piattaforma
 
@@ -176,6 +182,26 @@ Tra le responsabilità minime dell'entrypoint rientra la risoluzione delle infor
 
 L'avvio iniziale da un altro sistema operativo non limita la generalità del progetto: lo stesso ambiente avviato può in seguito esporre comandi per deployment hosted, container, immagini/device e, in futuro, installazioni complete o bare-metal.
 
+## Workspace locale di sviluppo
+
+RumiAI OS può contenere la directory tracciata `.dev/` esclusivamente come punto di ancoraggio del workspace locale di sviluppo.
+
+Il contenuto operativo di `.dev/` non fa parte del prodotto e deve essere ignorato da Git. La configurazione iniziale prevista è:
+
+```text
+rumiai-os/.dev/rumiai-tests/
+```
+
+come clone indipendente del repository `rumiai-tests`.
+
+Quando necessario per attività sperimentali può essere presente anche:
+
+```text
+rumiai-os/.dev/rumiai-dev-PoCs/
+```
+
+Questi repository locali non devono essere submodule né dipendenze runtime del prodotto. Le regole dettagliate sono definite in `TESTING.md`.
+
 ## Scelta di software e mezzo di esecuzione
 
 RumiAI distingue tra **obiettivo** e **mezzo richiesto dall'utente**.
@@ -193,8 +219,11 @@ La GUI e il computer-use sono quindi modalità operative tra le altre, non il mo
 Il flusso di riferimento è:
 
 1. regola, specifica o decisione in `rumiai-dev`;
-2. quando serve evidenza sperimentale, PoC e sessione di test in `rumiai-dev-PoCs`;
-3. consolidamento dei risultati in `rumiai-dev`;
-4. implementazione stabile in `rumiai-os` solo dopo consenso esplicito dell'utente nella fase iniziale del progetto.
+2. quando serve esplorare una domanda aperta, PoC e relativa evidenza in `rumiai-dev-PoCs`;
+3. consolidamento dei risultati rilevanti in `rumiai-dev`;
+4. implementazione stabile in `rumiai-os` solo dopo consenso esplicito dell'utente nella fase iniziale del progetto;
+5. trasformazione delle proprietà consolidate e dei bug riproducibili in test permanenti dentro `rumiai-tests` quando il costo è ragionevole;
+6. development run durante l'iterazione e validation run su revisioni committed e pulite secondo `TESTING.md`;
+7. consolidamento in `rumiai-dev` delle conclusioni di validazione rilevanti.
 
 Un repository storico o sperimentale può fornire idee e codice di riferimento, ma ogni elemento deve essere valutato rispetto alle regole correnti prima del riuso.
