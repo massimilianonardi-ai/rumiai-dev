@@ -30,15 +30,14 @@ No generic `share/` or `resources/` directory exists at this stage.
 
 Minimal bootstrap primitives are allowed when needed to break dependency cycles; advanced subsystems become authoritative once initialized.
 
-Accepted language primitive:
+Accepted interaction bootstrap primitives:
 
 ```text
 $RumiAI_CONF_DIR/bootstrap/language
+$RumiAI_CONF_DIR/bootstrap/text-encoding
 ```
 
-It is data, not sourced shell code.
-
-The exact bootstrap configuration file/path for the configurable text encoding remains to be named before implementation.
+They are data, not sourced shell code.
 
 ## Language
 
@@ -79,6 +78,12 @@ Canonical interaction text-encoding variable:
 
 ```text
 RumiAI_TEXT_ENCODING
+```
+
+Explicit bootstrap preference:
+
+```text
+$RumiAI_CONF_DIR/bootstrap/text-encoding
 ```
 
 Initial implementation and guaranteed fallback:
@@ -149,7 +154,6 @@ decisions/rumiai-os/2026-08-28-text-encoding-boundary.md
 
 Before implementing phase 1 in `rumiai-os`:
 
-1. decide the minimal bootstrap configuration path/name for `RumiAI_TEXT_ENCODING`;
-2. define the minimal i18n catalog file/API contract;
-3. design the logger API and initialization based on the audited `m` logger concepts;
-4. keep i18n/logger failures non-fatal where a usable `en_US` + UTF-8 fallback exists.
+1. define the minimal i18n catalog file/API contract;
+2. design the logger API and initialization based on the audited `m` logger concepts;
+3. keep i18n/logger failures non-fatal where a usable `en_US` + UTF-8 fallback exists.
