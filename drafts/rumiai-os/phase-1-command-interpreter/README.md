@@ -3,11 +3,7 @@
 Status: **draft / non-normative / not product code**  
 Date: 2026-08-28
 
-This directory contains the code proposal derived from the accepted decision:
-
-```text
-#!/usr/bin/env rumiai-os
-```
+This directory contains the current near-code proposal for the RumiAI runtime CLI and command/source interpreter.
 
 The previous multicall/symlink + `cmd/` proposal remains preserved under:
 
@@ -17,24 +13,40 @@ drafts/rumiai-os/phase-1-multicall/
 
 but is superseded.
 
-## Core idea
+## CLI currently defined
 
-A RumiAI command file is simultaneously:
+```text
+rumiai-os
+    bootstrap RumiAI and enter the interactive Rumi shell
 
-- the public executable entrypoint;
-- the command implementation body;
-- the pathname passed to the active RumiAI runtime.
+rumiai-os file [args...]
+    bootstrap RumiAI and source file with args as its positional parameters
+```
 
-There is no mandatory launcher/implementation split.
+A source file that should also be directly executable by the host can use:
 
-Example:
+```text
+#!/usr/bin/env rumiai-os
+```
+
+The shebang is required only for direct host execution. It is not part of the validity contract for:
+
+```text
+rumiai-os file
+```
+
+An explicitly supplied source therefore needs to resolve to a readable regular file; it does not need an executable permission bit and does not need a shebang.
+
+## Directly executable RumiAI commands
+
+A directly executable RumiAI command can contain both the interpreter declaration and its implementation body:
 
 ```sh
 #!/usr/bin/env rumiai-os
 log "$@"
 ```
 
-Execution conceptually becomes:
+Host execution conceptually becomes:
 
 ```text
 command file
@@ -43,9 +55,7 @@ command file
     ↓ PATH
 active rumiai-os
     ↓
-phase 0
-    ↓
-phase 1 + i18n + logger
+bootstrap
     ↓
 realpath(command-file)
     ↓
@@ -60,14 +70,56 @@ The sourced body sees the original user arguments in `$@`.
 
 ```text
 rumiai-os.draft
-    integrated bootstrap + command interpreter proposal
+    integrated bootstrap + defined CLI proposal
+
+shell.lib
+    proposed sourced shell-launch module; intended product role lib/shell.lib
+
+rumi-shell.draft
+    earlier standalone shell-launch draft retained for history; shell.lib is the integrated form
 
 bin/log.draft
-    minimal example using the already-loaded log() function
+    minimal directly executable example using the already-loaded log() function
 
 examples/foo.draft
-    sample command containing its implementation directly
+    sample source/command containing its implementation directly
 ```
+
+## No-argument path
+
+After phase 0, environment setup, i18n and logger initialization, the no-argument branch lazily loads:
+
+```text
+$RumiAI_LIB_DIR/shell.lib
+```
+
+and calls:
+
+```text
+RumiAI_shell
+```
+
+The current shell proposal prefers Bash and falls back to POSIX `sh`, using Rumi-specific shell configuration and prompt state.
+
+## Explicit source path
+
+For:
+
+```text
+rumiai-os file arg1 arg2
+```
+
+`rumiai-os`:
+
+1. canonicalizes `file` with `realpath -e`;
+2. requires a readable regular file;
+3. rejects sourcing the runtime file itself;
+4. records the canonical pathname in `RumiAI_COMMAND_BIN`;
+5. removes the source pathname from `$@`;
+6. sources the file in the initialized RumiAI shell;
+7. propagates its status.
+
+No shebang validation is performed in this path.
 
 ## Removed concepts
 
@@ -84,9 +136,9 @@ multicall alias validation
 command-path shadow mapping
 ```
 
-## Why the command is sourced
+## Why the command/source is sourced
 
-The command body is sourced into the initialized `rumiai-os` shell so it immediately has access to:
+The body is sourced into the initialized `rumiai-os` shell so it immediately has access to:
 
 ```text
 RumiAI_ROOT
@@ -107,11 +159,11 @@ This makes `bin/log` particularly small:
 log "$@"
 ```
 
-and avoids recursive invocation of the public `log` command.
+and avoids recursively invoking the public `log` command.
 
 ## Alias behavior
 
-A renamed external alias can point to the command file itself:
+A renamed external alias can point to a directly executable command file itself:
 
 ```text
 /usr/local/bin/my-log -> /opt/rumiai/bin/log
@@ -132,27 +184,31 @@ The selected file pathname is passed to `rumiai-os`, so the runtime does not nee
 
 ## Active runtime
 
-`/usr/bin/env` chooses `rumiai-os` from the inherited `PATH`.
+`/usr/bin/env` chooses `rumiai-os` from the inherited `PATH` for directly executable command files.
 
 Therefore the active runtime is an environment choice, not a property derived from the command-file location.
-
-This is intentional and must be documented for multiple-installation/version scenarios.
 
 ## Deliberate portability exception
 
 POSIX.1-2024 does not normatively define general `#!` execution semantics and does not guarantee `/usr/bin/env` as a pathname.
 
-The accepted model therefore adds a small explicit RumiAI host-profile requirement rather than implementing multicall complexity to remain inside the abstract POSIX contract.
+The accepted direct-execution model therefore adds a small explicit RumiAI host-profile requirement. Explicit invocation through:
 
-Before product promotion a cross-host PoC must verify at least Linux, macOS and Cygwin/reference Windows environment behavior.
+```text
+rumiai-os file
+```
+
+does not depend on the file containing a shebang.
+
+Before product promotion a cross-host PoC must verify at least Linux, macOS and Cygwin/reference Windows environment behavior for direct shebang execution.
 
 ## Still open
 
 This proposal intentionally does not yet freeze:
 
-1. direct `rumiai-os` CLI syntax when no command file is supplied;
-2. compatibility/version metadata between command files and the runtime selected from PATH;
-3. command-entry error/status numbers beyond the current draft assignments;
-4. policy for third-party/untrusted command files;
-5. whether sourced command bodies should follow additional lifecycle rules (`return` versus `exit`);
-6. whether future non-shell command formats need metadata or a thin shell adapter.
+1. compatibility/version metadata between source files and the runtime selected from PATH;
+2. final shell configuration filenames and all shell lifecycle details;
+3. command/source error-status numbers beyond the current draft assignments;
+4. policy for third-party/untrusted source files;
+5. lifecycle rules for sourced bodies (`return`, `exit`, traps/signals);
+6. future non-shell command/source formats or runtime adapters.
