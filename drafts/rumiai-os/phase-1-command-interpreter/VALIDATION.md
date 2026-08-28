@@ -272,6 +272,38 @@ This physically validates both currently supported Rumi shell selections on macO
 
 Two later zsh errors referring to literal paths such as `.../bin/rumiai-os` were caused only by example/expected-output lines being pasted as shell commands; they are not RumiAI failures.
 
+### Phase 0 pathname/symlink matrix — PASS
+
+A diagnostic source printed only:
+
+```text
+RumiAI_BOOTSTRAP_BIN
+RumiAI_ROOT
+```
+
+and returned `0`. The promoted product was then invoked through all of the following forms on the physical macOS host:
+
+```text
+relative pathname
+absolute pathname
+PATH command-name lookup
+relative symbolic link
+absolute symbolic link
+symbolic-link chain
+symbolic link in an intermediate pathname component
+external invocation pathname containing spaces
+```
+
+Every case produced exactly the same physical runtime identity:
+
+```text
+BOOTSTRAP=/private/tmp/rumiai-os-test/rumiai-os
+ROOT=/private/tmp/rumiai-os-test
+STATUS=0
+```
+
+This physically confirms that Phase 0 converges invocation aliases and pathname indirection onto the canonical product runtime and relocatable root on macOS.
+
 ## Physical Ubuntu 26.04 evidence
 
 Reference host evidence supplied from an Ubuntu 26.04 physical test on 2026-08-28:
@@ -295,10 +327,11 @@ Full `rumiai-os` physical execution on Ubuntu/Linux is still pending.
 
 Physical macOS validation should still cover at minimum:
 
-- phase-0 relative/absolute/PATH/symlink edge cases;
-- spaces and symbolic links in relevant paths;
+- PATH invocation with a relative PATH component and arbitrary caller CWD;
+- explicit source pathname containing spaces;
+- explicit source through symbolic links;
 - language fallback variations;
-- basic signal/exit behavior of sourced commands.
+- basic sourced-command exit/return/signal behavior.
 
 Full Linux product validation remains pending.
 
