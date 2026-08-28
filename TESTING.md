@@ -102,7 +102,7 @@ Il nome `rumiai-test` è namespaced, identifica chiaramente la suite RumiAI e no
 
 I test permanenti devono essere organizzati principalmente per oggetto o capability verificata, non per tecnologia di implementazione.
 
-Ogni directory sotto `tests/` rappresenta un gruppo di test. I gruppi possono contenere test e sottogruppi e possono quindi essere nidificati quanto necessario dalla struttura logica della suite.
+Ogni directory normale sotto `tests/` rappresenta un gruppo di test. I gruppi possono contenere test e sottogruppi e possono quindi essere nidificati quanto necessario dalla struttura logica della suite.
 
 Esempio:
 
@@ -129,7 +129,47 @@ Il pathname relativo a `tests/` costituisce l'identificatore gerarchico naturale
 
 Classificazioni come `unit`, `integration`, `system` o `e2e` possono essere aggiunte solo quando producono un vantaggio concreto e non devono sostituire l'identificazione dell'oggetto verificato.
 
-## 7. Indipendenza assoluta dei test
+## 7. Discovery dei test e materiale interno
+
+Il riconoscimento dei test deve dipendere da regole semplici e deterministiche del filesystem.
+
+Un file regolare il cui nome termina in:
+
+```text
+.test
+```
+
+identifica un test permanente.
+
+L'estensione `.test` ha significato semantico: identifica il ruolo del file nella suite e non il linguaggio con cui il test è implementato.
+
+Una directory il cui nome inizia con `.` è materiale interno e non è un gruppo. Il runner non deve attraversarla durante la discovery ricorsiva.
+
+Questa convenzione permette di collocare accanto ai test fixture, helper, dati o altro materiale di supporto, ad esempio:
+
+```text
+tests/rumiai-os/bootstrap/
+├── absolute.test
+├── relative.test
+├── README.md
+├── .fixtures/
+│   └── source
+└── .support/
+    └── helper
+```
+
+Un pathname nascosto viene escluso dalla discovery prima di applicare la regola `.test`; di conseguenza un file nascosto che termina in `.test` non viene scoperto come test.
+
+Ogni file che non termina in `.test` e che non ha un altro ruolo esplicitamente richiesto viene ignorato dal discovery del runner.
+
+Le regole canoniche di discovery sono quindi:
+
+1. `*.test` identifica esclusivamente un test;
+2. ogni directory normale sotto `tests/` identifica un gruppo;
+3. directory e pathname nascosti il cui nome inizia con `.` sono esclusi dalla discovery;
+4. ogni altro file viene ignorato dal runner.
+
+## 8. Indipendenza assoluta dei test
 
 Ogni test è un'unità autonoma di validazione.
 
@@ -149,7 +189,7 @@ Se una proprietà richiede una sequenza coordinata di operazioni prima del clean
 
 L'indipendenza prevale sull'ottimizzazione. Non si deve introdurre stato condiviso tra test soltanto per evitare il costo di setup o cleanup ripetuti.
 
-## 8. Gruppi senza orchestrazione
+## 9. Gruppi senza orchestrazione
 
 Un gruppo è esclusivamente un contenitore gerarchico e un'unità di selezione ricorsiva.
 
@@ -166,22 +206,17 @@ Non sono ammessi come proprietà del gruppo:
 
 Se una validazione necessita di operazioni coordinate, tali operazioni appartengono a un singolo test indipendente e non al gruppo.
 
-## 9. Ordine deterministico ma semanticamente irrilevante
+## 10. Ordine deterministico ma semanticamente irrilevante
 
 Quando viene eseguito un gruppo, il runner deve attraversarne deterministicamente test e sottogruppi in ordine lessicografico dei rispettivi identificatori.
 
-L'ordine lessicografico serve esclusivamente a rendere l'esecuzione:
-
-- prevedibile;
-- riproducibile;
-- leggibile;
-- facilmente confrontabile tra host e sessioni.
+L'ordine lessicografico serve esclusivamente a rendere l'esecuzione prevedibile, riproducibile, leggibile e facilmente confrontabile tra host e sessioni.
 
 L'ordine non ha alcun significato funzionale e nessun test può fare affidamento sul fatto di essere eseguito prima o dopo un altro test.
 
 Il runner può in futuro adottare forme di esecuzione parallela soltanto se preservano il contratto osservabile della suite e l'indipendenza dei test. La correttezza di un test non deve dipendere dall'esecuzione seriale.
 
-## 10. Responsabilità di un test
+## 11. Responsabilità di un test
 
 Ogni test deve verificare una proprietà chiaramente identificabile.
 
@@ -191,7 +226,7 @@ La presenza di più step interni è appropriata quando tali step sono necessari 
 
 Il nome del test deve descrivere la proprietà verificata e non il linguaggio con cui il test è implementato.
 
-## 11. Determinismo
+## 12. Determinismo
 
 A parità di:
 
@@ -204,7 +239,7 @@ il risultato deve essere riproducibile.
 
 Quando una dipendenza rende il comportamento intrinsecamente non deterministico, il test deve dichiararlo esplicitamente e deve verificare invarianti deterministiche quando possibile.
 
-## 12. Esito del test e stato del programma testato
+## 13. Esito del test e stato del programma testato
 
 Lo stato del test deve essere distinto dallo stato del programma o componente testato.
 
@@ -221,12 +256,53 @@ Significato:
 
 - `PASS`: il comportamento osservato corrisponde al comportamento atteso;
 - `FAIL`: il test è stato eseguito correttamente ma il comportamento osservato non corrisponde a quello atteso;
-- `SKIP`: il test non è applicabile o una precondizione dichiarata non è disponibile;
+- `SKIP`: il test non è applicabile o una precondizione dichiarata necessaria all'esecuzione non è disponibile;
 - `ERROR`: il test non ha potuto stabilire il risultato per un errore del test, del runner o dell'ambiente di esecuzione.
+
+Una incompatibilità reale dell'host rispetto alla proprietà richiesta non deve essere convertita artificialmente in `PASS` o `SKIP`: deve produrre `FAIL`.
+
+`SKIP` non significa "incompatibilità nota e accettata". Una incompatibilità nota rimane evidenza di `FAIL`; la decisione di accettarla appartiene alla valutazione della sessione e alla politica di compatibilità, non al test.
 
 Esempio: se il comportamento atteso del target è terminare con status `143`, il test restituisce `0` quando osserva correttamente `143`.
 
-## 13. Portabilità dei test
+## 14. Universalità rispetto agli host
+
+La proprietà verificata da un test deve essere espressa in modo universale rispetto agli host sui quali quel test è applicabile.
+
+La suite non deve duplicare normalmente lo stesso test in alberi separati per macOS, Ubuntu, Windows o architetture differenti. Lo stesso test deve essere eseguito sui diversi host e produrre l'esito corrispondente al comportamento realmente osservato.
+
+Un test non deve contenere eccezioni host-specifiche introdotte allo scopo di trasformare una incompatibilità reale in `PASS` o `SKIP`.
+
+Quando un comportamento è intenzionalmente e intrinsecamente specifico di una piattaforma, tale specificità può essere parte della proprietà testata; ciò non modifica il principio generale secondo cui una proprietà comune deve avere un unico test.
+
+La suite descrive quindi **cosa deve essere verificato**; la sessione descrive **dove e in quali condizioni è stato verificato**.
+
+## 15. Host di riferimento e host periodici
+
+Gli host stabili di riferimento correnti sono:
+
+```text
+macOS
+Ubuntu 26.04 ARM64
+```
+
+Host aggiuntivi usati periodicamente includono:
+
+```text
+Ubuntu 26.04 x64
+Windows 10 x64
+Windows 11 x64
+```
+
+La classificazione degli host può evolvere senza richiedere modifiche ai test.
+
+Un `PASS` su un host non sostituisce l'evidenza richiesta su un altro host di riferimento.
+
+Quando un test fallisce, il fallimento deve essere valutato insieme alle caratteristiche dell'host registrate nella sessione. Il progetto può decidere, quando l'incompatibilità non è abbastanza importante da giustificare una modifica al prodotto, di accettarla esplicitamente e lasciarla nota.
+
+L'accettazione di una incompatibilità non modifica retroattivamente l'esito del test: il risultato della sessione resta `FAIL` per quell'host.
+
+## 16. Portabilità dei test
 
 I test devono rispettare il contratto di piattaforma di RumiAI quando testano funzionalità portabili.
 
@@ -236,9 +312,7 @@ I path del target devono essere derivati dal target stesso o forniti esplicitame
 
 Le risorse temporanee devono essere create tramite meccanismi portabili appropriati e non devono assumere una specifica installazione locale.
 
-Un test specifico di un host è ammesso quando verifica intenzionalmente una proprietà host-specifica; in quel caso tale requisito deve essere esplicito.
-
-## 14. Isolamento
+## 17. Isolamento
 
 Un test non deve modificare il target reale quando la stessa verifica può essere eseguita senza modificarlo.
 
@@ -248,25 +322,19 @@ La working tree dello sviluppatore non deve essere usata come area temporanea di
 
 Ogni test deve possedere e gestire autonomamente le proprie risorse temporanee. Le risorse create da un test non devono diventare precondizioni per altri test.
 
-## 15. Cleanup
+## 18. Cleanup
 
 Ogni test deve lasciare l'ambiente nello stato precedente all'esecuzione, per quanto sotto il suo controllo.
 
 Il cleanup deve essere tentato anche dopo un `FAIL` o `ERROR`.
 
-Al termine di un test non devono rimanere inutilmente:
-
-- modifiche al target;
-- file temporanei;
-- configurazioni temporanee;
-- processi o servizi avviati dal test;
-- mount, socket, lock o altre risorse create dal test.
+Al termine di un test non devono rimanere inutilmente modifiche al target, file temporanei, configurazioni temporanee, processi o servizi avviati dal test, mount, socket, lock o altre risorse create dal test.
 
 Un test che lascia stato residuo non dichiarato è difettoso.
 
 Il cleanup appartiene al test che ha creato la risorsa e non può essere delegato a un test successivo o a un gruppo.
 
-## 16. Diagnostica dei fallimenti
+## 19. Diagnostica dei fallimenti
 
 Un `FAIL` o `ERROR` deve fornire informazioni sufficienti a comprendere almeno:
 
@@ -276,7 +344,7 @@ Un `FAIL` o `ERROR` deve fornire informazioni sufficienti a comprendere almeno:
 
 La diagnostica deve essere concisa e utile. Non deve dipendere dalla lettura di log voluminosi quando il confronto essenziale può essere mostrato direttamente.
 
-## 17. Test di tool esterni
+## 20. Test di tool esterni
 
 Un tool esterno viene testato soltanto rispetto alle capability o proprietà necessarie a RumiAI.
 
@@ -284,7 +352,9 @@ Esempio: se RumiAI richiede la canonicalizzazione di un pathname, il test deve v
 
 La disponibilità di opzioni o comportamenti non usati da RumiAI non costituisce di per sé materia di test.
 
-## 18. Development run
+Un test di una proprietà esterna deve restare unico anche quando implementazioni host differenti del tool producono risultati differenti: tali differenze emergono attraverso le sessioni e gli esiti del test.
+
+## 21. Development run
 
 Una development run serve al ciclo rapido:
 
@@ -300,7 +370,7 @@ Durante una development run:
 
 Il runner deve comunque evitare di danneggiare o sporcare il target.
 
-## 19. Validation run
+## 22. Validation run
 
 Una validation run produce evidenza riproducibile associata a revisioni precise.
 
@@ -314,8 +384,11 @@ Una validation run deve registrare almeno:
 
 - identificatore/versione o commit del target;
 - commit di `rumiai-tests`;
-- sistema operativo e informazioni host rilevanti;
+- sistema operativo;
+- versione del sistema operativo;
 - architettura;
+- shell o ambiente POSIX rilevante quando materialmente significativo;
+- altre caratteristiche host necessarie a interpretare i risultati;
 - data della sessione;
 - test eseguiti;
 - risultati `PASS`, `FAIL`, `SKIP`, `ERROR`;
@@ -329,7 +402,7 @@ rumiai-tests/sessions/
 
 Le sessioni sperimentali dei PoC restano invece nel relativo materiale sotto `rumiai-dev-PoCs`.
 
-## 20. Ripetibilità della procedura
+## 23. Ripetibilità della procedura
 
 La stessa suite deve poter essere eseguita su host diversi senza modificare manualmente i test per adattarli al pathname locale del checkout.
 
@@ -337,7 +410,7 @@ Il target deve essere identificato dal runner tramite una regola esplicita e ver
 
 La collocazione di `rumiai-tests` sotto `$RumiAI_ROOT/.dev/` non deve essere l'unico modo possibile per indicare il target.
 
-## 21. Runner `rumiai-test`
+## 24. Runner `rumiai-test`
 
 Il runner deve essere mantenuto semplice.
 
@@ -347,19 +420,18 @@ Le sue responsabilità iniziali sono:
 - selezionare un singolo test o un gruppo;
 - trattare `tests/` come gruppo radice dell'intera suite;
 - attraversare ricorsivamente i gruppi selezionati;
-- eseguire test e sottogruppi in ordine lessicografico deterministico, senza attribuire significato funzionale a tale ordine;
+- applicare le regole canoniche di discovery;
 - eseguire ogni test come unità indipendente;
+- mantenere un ordine lessicografico deterministico quando l'esecuzione è seriale;
 - raccogliere gli exit status `PASS/FAIL/SKIP/ERROR`;
 - produrre un riepilogo leggibile;
-- per le validation run, registrare i metadati necessari alla riproducibilità.
+- per le validation run, registrare i metadati necessari alla riproducibilità e all'interpretazione host-specifica dei risultati.
 
 Il runner non deve incorporare logica specifica dei singoli componenti quando tale logica può restare nel relativo test.
 
-Il runner non deve fornire primitive di orchestrazione tra test, dipendenze, setup/teardown condivisi o ordine custom con significato funzionale.
-
 La sua CLI precisa deve essere definita e validata prima dell'implementazione stabile; non va introdotta complessità preventiva.
 
-## 22. Regola di promozione
+## 25. Regola di promozione
 
 Quando un PoC o una validazione manuale scopre una proprietà che deve restare vera nel tempo, tale proprietà deve essere trasformata in un test permanente quando il costo è ragionevole.
 
@@ -376,7 +448,7 @@ esperimento
     -> evidenza permanente
 ```
 
-## 23. Fonte di verità
+## 26. Fonte di verità
 
 `rumiai-dev` definisce le regole e il comportamento atteso.
 
