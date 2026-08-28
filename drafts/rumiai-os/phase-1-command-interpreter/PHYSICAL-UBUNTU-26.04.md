@@ -1,7 +1,7 @@
 # RumiAI OS — Physical Ubuntu 26.04 validation
 
 Date: 2026-08-28  
-Status: **physical validation in progress**
+Status: **first Phase 1 physical validation cycle complete — PASS**
 
 ## Product under test
 
@@ -16,6 +16,8 @@ Tested product commit:
 ```text
 4f311d1fb5b35a722cf9575d890a9fa616040199
 ```
+
+No product change was required during the Ubuntu validation cycle.
 
 ## Reference host
 
@@ -32,17 +34,17 @@ readlink -> /usr/bin/readlink
 env -> /usr/bin/env
 ```
 
-## Clone and repository state — PASS
+## Clone, modes and syntax — PASS
 
-The repository cloned successfully at the expected product commit and `git status --short` was empty.
+The repository cloned at the expected product commit with a clean worktree.
 
-Checkout exposure observed:
+Structural runtime exposure:
 
 ```text
 bin/rumiai-os -> ../rumiai-os
 ```
 
-Git index modes were physically confirmed as:
+Git index modes:
 
 ```text
 100755 bin/log
@@ -50,7 +52,12 @@ Git index modes were physically confirmed as:
 100755 rumiai-os
 ```
 
-The host checkout permissions showed group-write bits (`775`) because working-tree permissions are affected by the host umask; Git tracks the executable bit rather than the full POSIX mode. No repository modification was reported.
+The runtime, libraries and `bin/log` passed syntax checking under both:
+
+```text
+sh -n              # host sh is dash
+bash --posix -n
+```
 
 ## Native canonicalization utilities — PASS
 
@@ -62,39 +69,17 @@ realpath -- pathname -> success, status 0
 readlink -e pathname -> success, status 0
 ```
 
-This confirms the earlier Ubuntu capability observation and, more importantly for the current RumiAI contract, confirms that the cross-host form used by the product works:
+The product intentionally uses the smaller cross-host form:
 
 ```sh
 command -p -- realpath -- "$pathname"
 ```
 
-## Syntax — PASS
-
-The following files passed syntax checking under the host default `sh` (dash):
-
-```text
-rumiai-os
-lib/i18n.lib
-lib/log.lib
-lib/shell.lib
-bin/log
-```
-
-The same files also passed:
-
-```text
-bash --posix -n
-```
+followed by explicit RumiAI object validation.
 
 ## Explicit source — PASS
 
-A readable, non-executable source without a shebang was invoked as:
-
-```text
-./rumiai-os /tmp/rumiai-source-test 'hello world' second
-```
-
-Observed:
+A readable, non-executable source without a shebang produced:
 
 ```text
 SOURCE_OK
@@ -105,32 +90,24 @@ ARG2=second
 STATUS=23
 ```
 
-This physically confirms on Ubuntu 26.04/aarch64 that:
-
-- the POSIX `#!/bin/sh` bootstrap executes under dash;
-- runtime root discovery is correct;
-- explicit source canonicalization is correct;
-- positional arguments are preserved;
-- source status `23` propagates exactly.
+This confirms explicit-source interpretation, canonical source identity, positional argument preservation and exact status propagation under the host POSIX shell environment.
 
 ## Direct `#!/usr/bin/env rumiai-os` execution — PASS
 
-The RumiAI `bin/` directory was prepended to PATH. Observed:
+With the RumiAI `bin/` directory prepended to PATH:
 
 ```text
 RUNTIME_IN_PATH=/tmp/rumiai-os-ubuntu-test/bin/rumiai-os
 RUNTIME_REAL=/tmp/rumiai-os-ubuntu-test/rumiai-os
 ```
 
-An executable source beginning with:
+A direct executable source beginning with:
 
 ```text
 #!/usr/bin/env rumiai-os
 ```
 
-was executed directly with two arguments.
-
-Observed:
+produced:
 
 ```text
 DIRECT_OK
@@ -141,24 +118,11 @@ ARG2=second
 DIRECT_STATUS=24
 ```
 
-This physically confirms on Ubuntu 26.04/aarch64 that:
-
-- `/usr/bin/env` resolves `rumiai-os` through inherited PATH;
-- the structural `bin/rumiai-os -> ../rumiai-os` exposure works;
-- direct host shebang execution forwards the source pathname correctly;
-- runtime and source canonicalization are correct;
-- original arguments are preserved;
-- source status `24` propagates unchanged.
+This validates the host shebang profile, `/usr/bin/env` PATH resolution, structural runtime exposure, argument forwarding and exact status propagation.
 
 ## Public logger — PASS
 
-`command -v log` and `realpath` both resolved to:
-
-```text
-/tmp/rumiai-os-ubuntu-test/bin/log
-```
-
-Observed logger statuses:
+Observed statuses:
 
 ```text
 valid log           -> 0
@@ -170,25 +134,13 @@ invalid log level   -> 16
 filtered debug      -> 0
 ```
 
-The valid log record was localized through the Italian catalog. A debug record filtered by the default `info` threshold emitted no record and returned success.
-
-This reproduces the macOS logger contract on Ubuntu 26.04/aarch64.
+The valid event was localized through the Italian catalog. A debug event filtered at the default `info` threshold emitted no record and returned success.
 
 ## Interactive Bash Rumi shell — PASS
 
-Running:
+Default `./rumiai-os` entered Bash with the configured RumiAI prompt.
 
-```text
-./rumiai-os
-```
-
-with the default shell configuration entered Bash with the configured prompt:
-
-```text
-[RumiAI] admino@vmdev:/tmp/rumiai-os-ubuntu-test $
-```
-
-Observed state:
+Observed:
 
 ```text
 $0=bash
@@ -204,23 +156,23 @@ log status            -> 0
 shell exit status     -> 0
 ```
 
-No host-specific banner or unexpected startup output was emitted.
+No unexpected startup output was emitted.
 
 ## Interactive POSIX sh / dash Rumi shell — PASS
 
-The tracked shell selection was temporarily changed:
+With temporary:
 
 ```text
-conf/shell/default: bash -> sh
+conf/shell/default = sh
 ```
 
-Running `./rumiai-os` entered the POSIX shell branch with:
+RumiAI entered the POSIX shell branch with:
 
 ```text
 [RumiAI] $
 ```
 
-Observed state:
+Observed:
 
 ```text
 $0=/usr/bin/sh
@@ -231,37 +183,146 @@ command -v log       -> /tmp/rumiai-os-ubuntu-test/bin/log
 log status            -> 0
 ```
 
-The host had already established:
+Because `/usr/bin/sh` resolves to dash on this host, this physically validates the `sh` branch under dash.
+
+One interactive paste boundary produced `exitprintf: not found`; this was a terminal-input artifact after the RumiAI checks had already passed, not a product failure. The shell subsequently exited with status `0`, the tracked config was restored to `bash`, and the worktree was clean.
+
+## Runtime pathname / symlink / spaces matrix — PASS
+
+The runtime was invoked through:
 
 ```text
-/usr/bin/sh -> dash
+relative pathname
+absolute pathname
+PATH lookup
+relative symbolic link
+absolute symbolic link
+symbolic-link chain
+symbolic link in an intermediate pathname component
+invocation pathname containing spaces
 ```
 
-so this physically validates the `sh` branch under dash on Ubuntu 26.04/aarch64.
-
-During interactive paste, one input boundary joined `exit` and the following `printf`, producing:
+Every case converged to:
 
 ```text
-/usr/bin/sh: 8: exitprintf: not found
+BOOTSTRAP=/tmp/rumiai-os-ubuntu-test/rumiai-os
+ROOT=/tmp/rumiai-os-ubuntu-test
+STATUS=0
 ```
 
-This was a terminal paste/input artifact, not a RumiAI failure. All RumiAI state and logger checks had already passed, and the shell subsequently exited with status `0`.
+## Relative PATH from arbitrary CWD — PASS
 
-After the test:
+From `/tmp/rumiai-caller`, PATH contained the relative component:
 
 ```text
-SH_RUMI_EXIT_STATUS=0
+../rumiai-os-ubuntu-test/bin
+```
+
+Observed:
+
+```text
+COMMAND_V=../rumiai-os-ubuntu-test/bin/rumiai-os
+BOOTSTRAP=/tmp/rumiai-os-ubuntu-test/rumiai-os
+ROOT=/tmp/rumiai-os-ubuntu-test
+STATUS=0
+```
+
+This confirms that runtime identity does not depend on caller CWD or an absolute PATH entry.
+
+## Explicit source with spaces and symlink aliases — PASS
+
+The physical source:
+
+```text
+/tmp/rumiai source space/source file
+```
+
+was invoked directly and through relative, absolute and chained symbolic links.
+
+All cases converged to:
+
+```text
+COMMAND=/tmp/rumiai source space/source file
+```
+
+Arguments were preserved and every case propagated:
+
+```text
+STATUS=31
+```
+
+## i18n and bootstrap configuration — PASS
+
+Observed language precedence:
+
+```text
+LC_ALL=it_IT.UTF-8, LC_MESSAGES=en_US.UTF-8, LANG=en_US.UTF-8 -> it_IT
+LC_ALL empty, LC_MESSAGES=en_US.UTF-8, LANG=it_IT.UTF-8      -> en_US
+LC_ALL empty, LC_MESSAGES empty, LANG=it_IT.UTF-8            -> it_IT
+LC_ALL=C                                                     -> en_US
+```
+
+This confirms:
+
+```text
+bootstrap config > LC_ALL > LC_MESSAGES > LANG > en_US fallback
+```
+
+Additional results:
+
+```text
+unsupported fr_FR locale          -> en_US + expected English warning
+conf/bootstrap/language=it_IT      -> overrides en_US environment
+conf/bootstrap/language=fr_FR      -> en_US fallback + warning
+malformed language config          -> warning, then environment fallback
+conf/bootstrap/text-encoding=utf8  -> UTF-8
+unsupported ASCII encoding         -> UTF-8 + warning
+malformed text-encoding config     -> UTF-8 + warning
+```
+
+All diagnostic invocations returned status `0`. Warning localization matched the selected catalog language exactly as on macOS.
+
+Temporary bootstrap configuration was removed after the tests.
+
+## Explicit-source lifecycle — PASS
+
+Observed:
+
+```text
+return 41        -> STATUS=41
+final `false`    -> STATUS=1
+exit 42          -> STATUS=42
+SIGTERM self     -> STATUS=143
+```
+
+No statement after `return`, `exit` or SIGTERM executed.
+
+For SIGTERM the host shell printed:
+
+```text
+Terminato
+```
+
+which is the normal localized host-shell signal diagnostic, not RumiAI output.
+
+## Final repository state — PASS
+
+After all temporary configuration and source files were cleaned up:
+
+```text
 git status --short -> empty
-conf/shell/default -> bash
 ```
 
-Therefore both interactive shell branches are physically validated on Ubuntu 26.04/aarch64.
+## Conclusion
 
-## Next validation
+The first Phase 1 physical validation cycle is complete and passing on Ubuntu 26.04 LTS/aarch64 with dash as `/bin/sh`.
 
-Continue with:
+The tested product commit is unchanged:
 
-1. pathname/symlink/space canonicalization matrix;
-2. relative PATH invocation from arbitrary CWD and source symlink/space matrix;
-3. i18n/configuration matrix;
-4. source lifecycle matrix.
+```text
+4f311d1fb5b35a722cf9575d890a9fa616040199
+```
+
+The same principal behavioral matrix has also passed on the physical macOS reference host. The two hosts differ materially in userland and shell behavior — notably macOS native `realpath` lacks Issue-8 `-e`, while Ubuntu supports it; Ubuntu `/bin/sh` is dash — yet the current RumiAI common-subset implementation behaves consistently on both.
+
+This is not a universal portability certification. Later gates still include additional host/architecture coverage and the Windows POSIX-compatible profile (currently expected to use Cygwin).
