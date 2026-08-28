@@ -1,0 +1,14 @@
+#!/usr/bin/env rumiai-os
+
+# DRAFT ONLY.
+# This is the command implementation itself; there is no cmd/ shadow copy.
+
+log info example command-started command "$RumiAI_COMMAND_BIN"
+
+printf -- 'foo:'
+while [ "$#" -gt 0 ]
+do
+  printf -- ' <%s>' "$1"
+  shift
+done
+printf -- '\n'
