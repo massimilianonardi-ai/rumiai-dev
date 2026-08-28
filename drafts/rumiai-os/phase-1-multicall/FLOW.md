@@ -25,7 +25,12 @@ RumiAI_ROOT
 
 phase 1
     ↓
-semantic roots + PATH + i18n + log.lib
+semantic roots
+PATH
+bootstrap preference reader
+i18n normalization/selection
+log.lib
+LOGGER ACTIVE
 
 normal command selection
     ↓
@@ -68,12 +73,9 @@ RumiAI_BOOTSTRAP_BIN = /opt/rumiai/rumiai-os
 RumiAI_ROOT = /opt/rumiai
 ```
 
-Validation checks:
+Registration/target validation:
 
 ```text
-realpath(dirname(RumiAI_INVOKED_BIN))
-    == realpath(RumiAI_BIN_DIR)
-
 realpath(RumiAI_BIN_DIR/log)
     == RumiAI_BOOTSTRAP_BIN
 ```
@@ -88,7 +90,7 @@ and the same in-process `log "$@"` branch is used.
 
 ## 3. Generic public command backed by a private executable
 
-Provisional tree:
+Accepted tree shape:
 
 ```text
 bin/foo -> ../rumiai-os
@@ -110,98 +112,153 @@ rumiai-os
     ↓
 full bootstrap
     ↓
-validate official multicall link
+validate official public command registration
     ↓
 RumiAI_COMMAND=foo
     ↓
 $RumiAI_COMMAND_DIR/foo arg1 arg2
 ```
 
+`RumiAI_COMMAND_DIR` is:
+
+```text
+$RumiAI_ROOT/cmd
+```
+
+and is intentionally outside `PATH`.
+
 The child receives exported RumiAI semantic environment variables.
 
-If the child is POSIX shell it does not automatically inherit the `log()` shell function. It may either:
+A child POSIX shell does not automatically inherit the `log()` shell function. It may explicitly source `lib/log.lib` or use the public process command `log`, which re-enters the canonical front controller through `bin/log`.
 
-```text
-source the canonical log library explicitly
-```
+## 4. External symlink alias — accepted when registered
 
-or use the public process interface:
-
-```text
-log info foo event ...
-```
-
-The latter resolves `bin/log` through the RumiAI-prepended PATH and therefore re-enters the canonical bootstrap.
-
-## 4. Arbitrary external symlink — rejected by first proposal
-
-Example:
+Example absolute target:
 
 ```text
 /usr/local/bin/log -> /opt/rumiai/rumiai-os
 ```
 
-Invocation directory:
+Example relative target:
 
 ```text
-/usr/local/bin
+/usr/local/bin/log -> ../../opt/rumiai/rumiai-os
 ```
 
-Canonical RumiAI bin directory:
+In either case `realpath -e` canonicalizes the invoked path to:
 
 ```text
-/opt/rumiai/bin
+/opt/rumiai/rumiai-os
 ```
 
-They differ, so the first draft rejects the invocation as an invalid multicall alias.
-
-This is a policy choice, not yet a decision. A later design could permit external aliases by validating that the invoked basename corresponds to an official RumiAI `bin/<name>` entry even when the caller reached it through another symlink.
-
-## 5. Why basename alone is insufficient
-
-If phase 0 keeps only:
+so phase 0 derives:
 
 ```text
-RumiAI_INVOKED_AS=log
+RumiAI_BOOTSTRAP_BIN=/opt/rumiai/rumiai-os
+RumiAI_ROOT=/opt/rumiai
 ```
 
-and immediately canonicalizes:
+The directory `/usr/local/bin` does not become part of the RumiAI root.
+
+The alias basename `log` is accepted only if the actual installation also contains an official registration:
 
 ```text
-bin/log -> rumiai-os
-external/log -> rumiai-os
+$RumiAI_BIN_DIR/log
 ```
 
-both become indistinguishable after `realpath`.
+whose canonical target is the same `RumiAI_BOOTSTRAP_BIN`.
 
-Therefore the draft preserves the pre-realpath invocation pathname in:
+Therefore external placement is allowed, but arbitrary names are not.
+
+## 5. Arbitrary external alias — rejected
+
+Example:
 
 ```text
+/usr/local/bin/log-copy -> /opt/rumiai/rumiai-os
+```
+
+If the installation has no official:
+
+```text
+/opt/rumiai/bin/log-copy
+```
+
+resolving to the same front controller, the invocation fails as `invalid-multicall`.
+
+This makes `bin/` the registry of valid public multicall command names even when aliases are installed elsewhere.
+
+## 6. External symlink named `rumiai-os`
+
+Example:
+
+```text
+/usr/local/bin/rumiai-os -> /opt/rumiai/rumiai-os
+```
+
+Because the invoked basename equals the physical front-controller basename, this is treated as the normal front-controller form:
+
+```text
+rumiai-os <command> ...
+```
+
+The first operand selects the command.
+
+## 7. Why invocation identity is preserved
+
+The draft keeps:
+
+```text
+RumiAI_INVOKED_AS
 RumiAI_INVOKED_BIN
 ```
 
-and separately stores the final physical entrypoint in:
+before canonicalization and separately stores:
 
 ```text
 RumiAI_BOOTSTRAP_BIN
 ```
 
-## 6. Status propagation
+after physical canonicalization.
 
-For in-process `log`:
+`RumiAI_INVOKED_AS` is required for multicall command selection. `RumiAI_INVOKED_BIN` is the path actually canonicalized by phase 0 and remains useful for diagnostics/review of how the entrypoint was reached.
 
-```text
-log returns N
-    ↓
-rumiai-os exits N
-```
+## 8. Bootstrap preference flow
 
-For a private external command:
+The integrated draft now performs the actual bootstrap sequence:
 
 ```text
-private command exits N
+conf/bootstrap/language
+    ↓ if absent
+LC_ALL
     ↓
-rumiai-os exits N
+LC_MESSAGES
+    ↓
+LANG
+    ↓
+en_US
+
+conf/bootstrap/text-encoding
+    ↓ if absent/invalid/unsupported
+UTF-8
 ```
 
-Bootstrap/front-controller errors may occur before command execution and therefore share the same external status channel. This is why bootstrap-reserved status values must not collide with command meanings if numeric status alone is expected to identify an exact failure.
+The raw requests are passed to the i18n library, which normalizes/selects the effective values. Non-fatal fallback conditions are remembered until `log.lib` is loaded and are then reported through the logger.
+
+## 9. Shared status sequence
+
+Current shared front-controller statuses:
+
+```text
+1  PATH resolution failure
+2  canonical realpath failure
+3  invalid bootstrap binary
+4  invalid/inaccessible root
+5  i18n load failure
+6  log load failure
+7  invalid multicall
+8  invalid command
+9  private command unavailable
+```
+
+The remaining question is the final mapping between command-local/library return statuses and external CLI exit statuses. They must not collide with the shared front-controller meanings if a numeric CLI status is required to identify one exact failure.
