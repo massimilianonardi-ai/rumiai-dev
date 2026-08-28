@@ -186,7 +186,7 @@ filtered debug      -> 0
 
 The valid record was localized through the Italian catalog, and a debug record filtered by the default `info` threshold produced no output while returning success.
 
-### Interactive Rumi shell — PASS with one UX compatibility finding
+### Interactive Rumi shell — PASS
 
 Running:
 
@@ -214,13 +214,13 @@ command -v log       -> /private/tmp/rumiai-os-test/bin/log
 
 `log` worked from inside the Rumi shell and the shell exited with status `0`.
 
-Apple's bundled Bash emitted its host-specific deprecation banner before the RumiAI prompt:
+Apple's bundled Bash initially emitted its host-specific deprecation banner before the RumiAI prompt:
 
 ```text
 The default interactive shell is now zsh.
 ```
 
-This is not a functional failure but is undesirable RumiAI startup output. Product `lib/shell.lib` was therefore updated to export:
+Product `lib/shell.lib` was updated to export:
 
 ```text
 BASH_SILENCE_DEPRECATION_WARNING=1
@@ -234,7 +234,9 @@ Product banner-suppression commit:
 4f311d1fb5b35a722cf9575d890a9fa616040199
 ```
 
-A physical macOS re-test of clean shell startup is required after pulling this commit.
+After pulling that commit, physical macOS re-test produced the RumiAI prompt immediately with no Apple zsh/deprecation banner, and `$0` remained `bash`.
+
+This validates the Bash branch of the interactive Rumi shell on the tested macOS host.
 
 ## Physical Ubuntu 26.04 evidence
 
@@ -259,8 +261,7 @@ Full `rumiai-os` physical execution on Ubuntu/Linux is still pending.
 
 Physical macOS validation should still cover at minimum:
 
-- clean Rumi shell startup after Apple Bash banner suppression;
-- POSIX sh fallback;
+- POSIX sh shell selection/fallback branch;
 - phase-0 relative/absolute/PATH/symlink edge cases;
 - spaces and symbolic links in relevant paths;
 - language fallback variations;
