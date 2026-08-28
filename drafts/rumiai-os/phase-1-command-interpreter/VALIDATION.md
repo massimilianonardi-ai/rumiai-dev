@@ -304,6 +304,46 @@ STATUS=0
 
 This physically confirms that Phase 0 converges invocation aliases and pathname indirection onto the canonical product runtime and relocatable root on macOS.
 
+### Relative PATH / source canonicalization matrix — PASS
+
+From an arbitrary caller directory, `PATH` was configured with a relative component:
+
+```text
+../rumiai-os-test/bin
+```
+
+`command -v rumiai-os` therefore returned:
+
+```text
+../rumiai-os-test/bin/rumiai-os
+```
+
+The runtime still resolved to:
+
+```text
+BOOTSTRAP=/private/tmp/rumiai-os-test/rumiai-os
+ROOT=/private/tmp/rumiai-os-test
+STATUS=0
+```
+
+An explicit source file located at a pathname containing spaces was then invoked directly and through:
+
+```text
+relative symbolic link
+absolute symbolic link
+symbolic-link chain
+```
+
+Every source invocation converged to the same physical source identity:
+
+```text
+COMMAND=/private/tmp/rumiai source space/source file
+```
+
+The supplied argument was preserved in each case and source status `31` propagated unchanged.
+
+This physically confirms on macOS that both runtime identity and explicit-source identity are canonicalized independently of caller CWD, relative PATH entries, spaces, and symlink aliases.
+
 ## Physical Ubuntu 26.04 evidence
 
 Reference host evidence supplied from an Ubuntu 26.04 physical test on 2026-08-28:
@@ -327,11 +367,9 @@ Full `rumiai-os` physical execution on Ubuntu/Linux is still pending.
 
 Physical macOS validation should still cover at minimum:
 
-- PATH invocation with a relative PATH component and arbitrary caller CWD;
-- explicit source pathname containing spaces;
-- explicit source through symbolic links;
-- language fallback variations;
-- basic sourced-command exit/return/signal behavior.
+- language selection/fallback and malformed bootstrap config;
+- text-encoding selection/fallback and malformed bootstrap config;
+- basic sourced-command return/exit/signal behavior.
 
 Full Linux product validation remains pending.
 
