@@ -31,14 +31,15 @@ PHASE 1B — command environment
     prepend RumiAI_BIN_DIR to PATH
     ↓
 PHASE 1C — bootstrap interaction preferences
-    language preference
-    text-encoding preference/default
-    host locale fallback where applicable
+    conf/bootstrap/language
+    conf/bootstrap/text-encoding
+    host locale fallback for language
     ↓
 PHASE 1D — i18n
     normalize language request
     resolve UTF-8 catalog
     guarantee en_US fallback
+    normalize/fallback interaction encoding to UTF-8 when required
     prepare boundary transcoding if required
     ↓
 PHASE 1E — logger
@@ -78,21 +79,20 @@ Libraries are loaded explicitly from `RumiAI_LIB_DIR`; data is loaded explicitly
 
 The bootstrap must be able to initialize advanced infrastructure without already depending on that infrastructure.
 
-The first concrete primitive is:
+The accepted first primitives are:
 
 ```text
 conf/bootstrap/language
+conf/bootstrap/text-encoding
 ```
 
-This is a minimal bootstrap primitive, not the final general configuration architecture.
+They are minimal bootstrap data, not the final general configuration architecture and not sourced shell code.
 
 Once the advanced configuration system is initialized, it may become authoritative and supersede bootstrap primitives according to:
 
 ```text
 minimal primitive → initialize advanced subsystem → advanced subsystem authoritative
 ```
-
-The exact bootstrap file/path for the configurable text-encoding preference remains to be named before implementation.
 
 ## Interaction language model
 
@@ -135,6 +135,12 @@ Canonical user-interaction text-encoding variable:
 
 ```text
 RumiAI_TEXT_ENCODING
+```
+
+The explicit bootstrap preference is read from:
+
+```text
+conf/bootstrap/text-encoding
 ```
 
 Initial and guaranteed fallback value:
@@ -188,4 +194,4 @@ The i18n path should minimize bootstrap-fatal conditions.
 
 Missing requested language data normally falls back to `en_US`.
 
-Unsupported requested external encoding should normally fall back to UTF-8 when the boundary remains usable in UTF-8, allowing the logger to report the degraded condition once active.
+Missing, invalid or unsupported `conf/bootstrap/text-encoding` normally falls back to UTF-8 when the boundary remains usable in UTF-8, allowing the logger to report the degraded condition once active.
