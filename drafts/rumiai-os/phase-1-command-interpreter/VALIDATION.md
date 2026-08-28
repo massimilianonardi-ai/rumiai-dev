@@ -1,13 +1,15 @@
-# Command-interpreter local validation
+# Command-interpreter validation
 
 Date: 2026-08-28
-Status: **local validation complete; reference-host certification pending**
+Status: **physical reference-host validation in progress**
+
+## Local pre-promotion validation
 
 The consolidated candidate was checked before promotion to `rumiai-os`.
 
-## Syntax
+### Syntax
 
-The current candidate sources passed syntax checking under:
+The candidate sources passed syntax checking under:
 
 ```text
 dash
@@ -24,7 +26,7 @@ lib/log.lib
 lib/shell.lib
 ```
 
-## Explicit source invocation
+### Explicit source invocation
 
 For a readable, non-executable source file returning status `23`:
 
@@ -32,7 +34,7 @@ For a readable, non-executable source file returning status `23`:
 rumiai-os source-test value
 ```
 
-all three reference local shells produced:
+all three local shell implementations produced:
 
 ```text
 status = 23
@@ -43,7 +45,7 @@ RumiAI_COMMAND_BIN canonical and correct
 
 This validates the intended distinction between source interpretation and direct host execution: no shebang or executable bit is required for `rumiai-os file`.
 
-## Direct shebang execution
+### Direct shebang execution
 
 With the runtime exposed in `PATH` through the RumiAI `bin/` directory, an executable file beginning with:
 
@@ -53,7 +55,7 @@ With the runtime exposed in `PATH` through the RumiAI `bin/` directory, an execu
 
 was executed successfully and observed the expected original user arguments and RumiAI environment.
 
-## Logger status contract
+### Logger status contract
 
 The cleaned logger candidate was exercised for the distinct validation failures:
 
@@ -65,31 +67,96 @@ invalid fields      -> 15
 invalid log level   -> 16
 ```
 
-Invalid structured fields are now detected before any log record is emitted, so validation failure does not leave a partial stderr line.
+Invalid structured fields are detected before any log record is emitted, so validation failure does not leave a partial stderr line.
 
-## Previously validated command-entry properties
+### Previously validated command-entry properties
 
-Local earlier checks also confirmed:
+Earlier local checks also confirmed:
 
 - renamed symlink aliases to command files;
 - duplicate basenames in distinct directories;
 - active runtime selection by `PATH`;
 - sourcing command files whose first line is `#!/usr/bin/env rumiai-os` under `dash`, `bash --posix` and BusyBox `sh`.
 
-## Important limitation
+## Physical macOS evidence
 
-This remains local/ad hoc evidence, not physical reference-host certification.
+Reference host: physical macOS system tested on 2026-08-28.
 
-The next validation gate is execution of the promoted product tree on actual:
+The native utility behavior was observed as:
 
 ```text
-macOS
-Linux
+/bin/realpath -e pathname    -> unsupported, status 1
+/bin/realpath -- pathname    -> success
+/bin/realpath pathname       -> success
+/bin/realpath -q pathname    -> success
 ```
 
-with Cygwin/reference Windows validation to follow when that host profile is addressed.
+This finding caused the product compatibility correction from `realpath -e --` to:
 
-Physical tests should cover at minimum:
+```sh
+command -p -- realpath -- "$pathname"
+```
+
+followed by explicit RumiAI object validation.
+
+Product compatibility-fix commit:
+
+```text
+c245cff5d1bec949f72be9f8b41c77789978342b
+```
+
+After updating to that commit, physical macOS explicit-source execution passed with a non-executable source containing no shebang:
+
+```text
+./rumiai-os /tmp/rumiai-source-test 'hello world' second
+```
+
+Observed result:
+
+```text
+SOURCE_OK
+ROOT=/private/tmp/rumiai-os-test
+COMMAND=/private/tmp/rumiai-source-test
+ARG1=hello world
+ARG2=second
+STATUS=23
+```
+
+The `/tmp` -> `/private/tmp` change is the expected physical canonicalization on this macOS host.
+
+Therefore the following are physically confirmed on macOS so far:
+
+- phase 0 completes with `realpath --`;
+- the runtime root is physical/canonical;
+- an explicit readable source needs neither shebang nor executable bit;
+- source arguments are preserved;
+- `RumiAI_COMMAND_BIN` is physical/canonical;
+- source status is propagated unchanged.
+
+Direct `#!/usr/bin/env rumiai-os`, logger and interactive Rumi shell tests remain pending on this host.
+
+## Physical Ubuntu 26.04 evidence
+
+Reference host evidence supplied from an Ubuntu 26.04 physical test on 2026-08-28:
+
+```text
+realpath -e   supported
+readlink -e   supported
+```
+
+This is recorded as host capability evidence, not as a reason to restore `-e` to the RumiAI runtime contract. The product intentionally uses the smaller cross-host invocation:
+
+```sh
+command -p -- realpath -- "$pathname"
+```
+
+and performs required existence/type/readability validation itself.
+
+Full `rumiai-os` physical execution on Ubuntu/Linux is still pending.
+
+## Remaining reference-host validation
+
+Physical tests should still cover at minimum:
 
 - phase-0 relative/absolute/PATH/symlink cases;
 - `/usr/bin/env rumiai-os` behavior;
@@ -98,9 +165,10 @@ Physical tests should cover at minimum:
 - custom Rumi prompt/configuration;
 - `bin/rumiai-os` structural symlink;
 - `bin/log` direct invocation;
-- explicit source without shebang/executable bit;
 - language selection and English fallback;
 - logger filtering, fields and exact statuses;
 - spaces and symbolic links in relevant paths;
 - status propagation;
 - basic signal/exit behavior of sourced commands.
+
+Cygwin/reference Windows validation remains a later host-profile gate.
