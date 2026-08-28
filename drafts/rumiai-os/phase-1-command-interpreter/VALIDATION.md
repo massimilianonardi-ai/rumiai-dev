@@ -168,18 +168,73 @@ This physically confirms on macOS that:
 - original user arguments are preserved;
 - source status `24` propagates unchanged.
 
-Therefore the following are physically confirmed on macOS so far:
+### Public logger — PASS
 
-- phase 0 completes with `realpath --`;
-- the runtime root is physical/canonical;
-- an explicit readable source needs neither shebang nor executable bit;
-- direct `#!/usr/bin/env rumiai-os` execution works;
-- the structural `bin/rumiai-os` symlink works;
-- source arguments are preserved in both invocation forms;
-- `RumiAI_COMMAND_BIN` is physical/canonical;
-- source status is propagated unchanged.
+Physical `bin/log` invocation passed on macOS.
 
-Logger and interactive Rumi shell tests remain pending on this host.
+Observed public statuses:
+
+```text
+valid log           -> 0
+invalid severity    -> 12
+invalid domain      -> 13
+invalid message-id  -> 14
+invalid fields      -> 15
+invalid log level   -> 16
+filtered debug      -> 0
+```
+
+The valid record was localized through the Italian catalog, and a debug record filtered by the default `info` threshold produced no output while returning success.
+
+### Interactive Rumi shell — PASS with one UX compatibility finding
+
+Running:
+
+```text
+./rumiai-os
+```
+
+successfully entered Bash and produced the configured RumiAI prompt:
+
+```text
+[RumiAI] user@host:/tmp/rumiai-os-test $
+```
+
+Observed state inside the shell:
+
+```text
+$0=bash
+RumiAI_ROOT=/private/tmp/rumiai-os-test
+RumiAI_BIN_DIR=/private/tmp/rumiai-os-test/bin
+RumiAI_LANGUAGE=it_IT
+RumiAI_TEXT_ENCODING=UTF-8
+command -v rumiai-os -> /private/tmp/rumiai-os-test/bin/rumiai-os
+command -v log       -> /private/tmp/rumiai-os-test/bin/log
+```
+
+`log` worked from inside the Rumi shell and the shell exited with status `0`.
+
+Apple's bundled Bash emitted its host-specific deprecation banner before the RumiAI prompt:
+
+```text
+The default interactive shell is now zsh.
+```
+
+This is not a functional failure but is undesirable RumiAI startup output. Product `lib/shell.lib` was therefore updated to export:
+
+```text
+BASH_SILENCE_DEPRECATION_WARNING=1
+```
+
+before launching Bash.
+
+Product banner-suppression commit:
+
+```text
+4f311d1fb5b35a722cf9575d890a9fa616040199
+```
+
+A physical macOS re-test of clean shell startup is required after pulling this commit.
 
 ## Physical Ubuntu 26.04 evidence
 
@@ -202,16 +257,15 @@ Full `rumiai-os` physical execution on Ubuntu/Linux is still pending.
 
 ## Remaining reference-host validation
 
-Physical tests should still cover at minimum:
+Physical macOS validation should still cover at minimum:
 
-- phase-0 relative/absolute/PATH/symlink cases;
-- portable Rumi shell startup;
-- Bash selection and POSIX sh fallback;
-- custom Rumi prompt/configuration;
-- `bin/log` direct invocation;
-- language selection and English fallback;
-- logger filtering, fields and exact statuses;
+- clean Rumi shell startup after Apple Bash banner suppression;
+- POSIX sh fallback;
+- phase-0 relative/absolute/PATH/symlink edge cases;
 - spaces and symbolic links in relevant paths;
+- language fallback variations;
 - basic signal/exit behavior of sourced commands.
+
+Full Linux product validation remains pending.
 
 Cygwin/reference Windows validation remains a later host-profile gate.
