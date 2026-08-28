@@ -1,6 +1,8 @@
 # Draft only — sourced POSIX shell library.
 # Proposed product role: $RumiAI_LIB_DIR/shell.lib
 
+RumiAI_SHELL_ERROR_LAUNCH=10
+
 RumiAI_shell_read_value()
 (
   [ "$#" -eq 1 ] || return 3
@@ -42,7 +44,6 @@ RumiAI_shell()
 {
   RumiAI_shell_conf_dir=$RumiAI_CONF_DIR/shell
   RumiAI_shell_default_file=$RumiAI_shell_conf_dir/default
-
   RumiAI_shell_requested=bash
 
   if [ -f "$RumiAI_shell_default_file" ]
@@ -93,5 +94,14 @@ RumiAI_shell()
     export PS1
   fi
 
-  exec sh -i
+  if ! RumiAI_shell_sh=$(command -p -v sh 2>/dev/null)
+  then
+    log error shell launch-failed requested sh
+    return "$RumiAI_SHELL_ERROR_LAUNCH"
+  fi
+
+  exec "$RumiAI_shell_sh" -i
+
+  log error shell launch-failed requested sh
+  return "$RumiAI_SHELL_ERROR_LAUNCH"
 }
