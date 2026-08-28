@@ -64,7 +64,16 @@ $RumiAI_CONF_DIR/bootstrap/
 
 ### `RumiAI_LANG_DIR`
 
-Contains RumiAI language/i18n data. It is distinct from the i18n implementation code, which belongs under `RumiAI_LIB_DIR`.
+Contains RumiAI language/i18n catalogs. Catalog identity is based on language/territory, not output text encoding.
+
+Canonical shape:
+
+```text
+$RumiAI_LANG_DIR/en_US/
+$RumiAI_LANG_DIR/it_IT/
+```
+
+All RumiAI-controlled language catalogs are encoded in UTF-8.
 
 No generic `share/` or `resources/` directory is introduced at this stage. Such a directory may be introduced only if a concrete future requirement establishes a useful common semantic category.
 
@@ -115,17 +124,21 @@ The initial implementation SHOULD keep the file format deliberately minimal: a s
 
 The full configuration subsystem may later supersede this primitive after it becomes available.
 
+The exact bootstrap configuration source/path for the user-interaction text encoding remains to be specified before phase-1 product implementation. This does not change the accepted runtime variable or encoding model below.
+
 ---
 
-## 6. RumiAI language selection
+## 6. Language and interaction encoding
 
-The canonical variable representing the language selected for RumiAI is:
+### `RumiAI_LANGUAGE`
+
+The canonical variable representing the selected user-interaction language is:
 
 ```text
 RumiAI_LANGUAGE
 ```
 
-The preferred RumiAI language identifier currently preserves language and territory using the form:
+Its canonical identity preserves language and territory using:
 
 ```text
 language_TERRITORY
@@ -138,9 +151,35 @@ en_US
 it_IT
 ```
 
-The role of a codeset/encoding component such as `.UTF-8` is intentionally **open** until the i18n encoding contract is decided.
+A codeset suffix MUST NOT be appended to `RumiAI_LANGUAGE`.
 
-### Selection precedence
+### `RumiAI_TEXT_ENCODING`
+
+The canonical variable representing the text encoding requested at the user-interaction boundary is:
+
+```text
+RumiAI_TEXT_ENCODING
+```
+
+The only encoding implemented initially is:
+
+```text
+UTF-8
+```
+
+`RumiAI_TEXT_ENCODING` is intentionally configurable so later implementations may support additional external encodings without changing the internal RumiAI text model.
+
+The guaranteed bootstrap/default fallback is UTF-8.
+
+### Internal text invariant
+
+RumiAI-controlled internal text uses UTF-8.
+
+The RumiAI control plane uses English identifiers/messages and UTF-8 as its canonical internal representation. User payloads and external data may contain any language; when represented as internal text they are normalized to UTF-8 rather than changing the system's internal encoding.
+
+---
+
+## 7. Language selection
 
 The bootstrap/i18n initialization SHOULD resolve the requested language in this order:
 
@@ -156,38 +195,86 @@ The host locale variables are fallback input; they are not themselves the RumiAI
 
 RumiAI MUST NOT needlessly overwrite the host's `LANG`, `LC_ALL`, or `LC_MESSAGES` merely to record its own selected language.
 
-The final guaranteed fallback is:
+The final guaranteed language fallback is:
 
 ```text
 en_US
 ```
 
-because the bootstrap must retain a usable technological lingua franca even when the requested or host language cannot be loaded.
+The final guaranteed text-encoding fallback is:
+
+```text
+UTF-8
+```
 
 ---
 
-## 7. i18n responsibility
+## 8. Catalog and transcoding model
+
+Language catalogs are always stored in UTF-8 and are selected only by language identity.
+
+Canonical catalog path shape:
+
+```text
+$RumiAI_LANG_DIR/$RumiAI_LANGUAGE/
+```
+
+Examples:
+
+```text
+lang/en_US/
+lang/it_IT/
+```
+
+The following forms are NOT part of the catalog identity:
+
+```text
+lang/it_IT.UTF-8/
+lang/it_IT/UTF-8/
+```
+
+RumiAI MUST NOT duplicate the same translation catalog merely to materialize different output encodings.
+
+Encoding conversion belongs at the interaction boundary:
+
+```text
+external/user text in configured encoding
+        ↓ decode/transcode
+internal UTF-8
+        ↓ RumiAI processing / catalog rendering
+internal UTF-8
+        ↓ encode/transcode
+external/user text in RumiAI_TEXT_ENCODING
+```
+
+When `RumiAI_TEXT_ENCODING=UTF-8`, no transcoding is required.
+
+Additional encodings may be implemented later through boundary adapters/transcoders while catalogs and internal RumiAI-controlled text remain UTF-8.
+
+---
+
+## 9. i18n responsibility
 
 The i18n module, not the pre-i18n bootstrap, owns normalization and catalog resolution.
 
-This includes, as required by the final encoding decision:
+Its responsibilities include as needed:
 
 ```text
 host locale parsing
 language/territory normalization
-codeset/encoding normalization
 catalog lookup
-fallback from specific to less-specific language data
-fallback to en_US
+fallback from requested language to en_US
+boundary encoding normalization
+selection of an available transcoder/adapter
 ```
 
-The pre-i18n bootstrap SHOULD pass the selected/requested value with minimal interpretation.
+The pre-i18n bootstrap SHOULD pass requested/fallback values with minimal interpretation.
 
-The i18n subsystem SHOULD have as few fatal initialization errors as possible. Missing or unsupported requested language data SHOULD normally fall back rather than terminate bootstrap when an English catalog remains available.
+The i18n subsystem SHOULD have as few fatal initialization errors as possible. Missing requested language data SHOULD normally fall back to `en_US` when the English catalog is available. Missing support for a requested external text encoding SHOULD normally fall back to UTF-8 when the interaction boundary remains usable in UTF-8, and the condition can be reported after the logger becomes active.
 
 ---
 
-## 8. Logger boundary
+## 10. Logger boundary
 
 The intended startup order is:
 
@@ -200,6 +287,8 @@ PATH
     ↓
 minimal bootstrap language preference
     ↓
+RumiAI_LANGUAGE + RumiAI_TEXT_ENCODING
+    ↓
 i18n initialization
     ↓
 logger initialization
@@ -209,4 +298,4 @@ LOGGER ACTIVE
 
 After the logger becomes active, normal RumiAI diagnostics SHOULD be routed through it rather than printed directly by bootstrap code.
 
-The exact logger API, catalog format and encoding model are outside this specification and remain the next design step.
+The exact logger API and catalog file format remain separate design work; the language/catalog encoding model is fixed by this specification.
