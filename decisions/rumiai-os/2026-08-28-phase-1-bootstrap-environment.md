@@ -28,15 +28,18 @@ Solo directory di comandi eseguibili partecipano a questo PATH. Le librerie veng
 
 Quando un sottosistema avanzato non può essere inizializzato senza una piccola quantità di dati che in seguito esso stesso governerà, RumiAI può usare una primitive bootstrap minimale per spezzare la dipendenza ciclica.
 
-Prima applicazione accettata:
+Primitive accettate:
 
 ```text
 $RumiAI_CONF_DIR/bootstrap/language
+$RumiAI_CONF_DIR/bootstrap/text-encoding
 ```
 
-Il file contiene dati e non viene sourced come codice shell.
+Entrambi i file contengono dati e non vengono sourced come codice shell.
 
-Il nome/path della bootstrap primitive per la codifica testuale configurabile resta da definire prima dell'implementazione della phase 1; il modello runtime è invece già fissato.
+`language` fornisce la preferenza esplicita per la lingua di interazione.
+
+`text-encoding` fornisce la preferenza esplicita per la codifica testuale del boundary di interazione.
 
 ## Linguaggio di interazione
 
@@ -85,6 +88,12 @@ Variabile canonica:
 
 ```text
 RumiAI_TEXT_ENCODING
+```
+
+La preferenza bootstrap esplicita viene letta da:
+
+```text
+$RumiAI_CONF_DIR/bootstrap/text-encoding
 ```
 
 Valore inizialmente implementato e fallback garantito:
