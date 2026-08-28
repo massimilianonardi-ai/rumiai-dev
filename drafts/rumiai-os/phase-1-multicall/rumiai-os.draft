@@ -9,13 +9,12 @@ RumiAI_INVOKED_AS=${0##*/}
 RumiAI_INVOKED_BIN=
 
 # -----------------------------------------------------------------------------
-# Phase 0 — accepted physical bootstrap discovery, with one draft addition:
-# RumiAI_INVOKED_BIN preserves the pre-realpath invocation pathname.
+# Phase 0 — physical bootstrap discovery, with invocation identity preserved.
 
-RumiAI_BOOTSTRAP_FATAL_PATH_RESOLUTION_ERROR=10
-RumiAI_BOOTSTRAP_FATAL_REALPATH_ERROR=11
-RumiAI_BOOTSTRAP_FATAL_BIN_ERROR=12
-RumiAI_BOOTSTRAP_FATAL_ROOT_ERROR=13
+RumiAI_BOOTSTRAP_FATAL_PATH_RESOLUTION_ERROR=1
+RumiAI_BOOTSTRAP_FATAL_REALPATH_ERROR=2
+RumiAI_BOOTSTRAP_FATAL_BIN_ERROR=3
+RumiAI_BOOTSTRAP_FATAL_ROOT_ERROR=4
 
 case $0 in
   */*)
@@ -63,41 +62,116 @@ unset -v -- \
   RumiAI_BOOTSTRAP_FATAL_ROOT_ERROR
 
 # -----------------------------------------------------------------------------
-# Phase 1 — semantic roots.
+# Phase 1A — semantic roots.
 
 RumiAI_BIN_DIR=$RumiAI_ROOT/bin
+RumiAI_COMMAND_DIR=$RumiAI_ROOT/cmd
 RumiAI_LIB_DIR=$RumiAI_ROOT/lib
 RumiAI_CONF_DIR=$RumiAI_ROOT/conf
 RumiAI_LANG_DIR=$RumiAI_ROOT/lang
-
-# DRAFT PLACEHOLDER NAME ONLY. The final private command directory is undecided.
-RumiAI_COMMAND_DIR=$RumiAI_ROOT/cmd
 
 PATH=$RumiAI_BIN_DIR${PATH:+:$PATH}
 
 export -- \
   RumiAI_BIN_DIR \
+  RumiAI_COMMAND_DIR \
   RumiAI_LIB_DIR \
   RumiAI_CONF_DIR \
   RumiAI_LANG_DIR \
-  RumiAI_COMMAND_DIR \
   PATH
 
-# DRAFT integration shortcut only.
-# The accepted final flow reads conf/bootstrap/language and
-# conf/bootstrap/text-encoding, applies host-language fallback, then initializes
-# i18n. That reader is deliberately not duplicated here.
-: "${RumiAI_LANGUAGE:=en_US}"
-: "${RumiAI_TEXT_ENCODING:=UTF-8}"
-export -- RumiAI_LANGUAGE RumiAI_TEXT_ENCODING
+# -----------------------------------------------------------------------------
+# Phase 1B — minimal bootstrap preference reader.
+#
+# Bootstrap preference files are data, never sourced shell code. The current
+# draft contract is one non-empty newline-terminated physical line per file.
+
+RumiAI_bootstrap_read_value()
+(
+  [ "$#" -eq 1 ] || return 3
+
+  RumiAI_bootstrap_file=$1
+  [ -f "$RumiAI_bootstrap_file" ] || return 1
+  [ -r "$RumiAI_bootstrap_file" ] || return 2
+
+  if ! exec 3< "$RumiAI_bootstrap_file"
+  then
+    return 2
+  fi
+
+  RumiAI_bootstrap_value=
+  if ! IFS= read -r RumiAI_bootstrap_value <&3
+  then
+    exec 3<&-
+    return 3
+  fi
+
+  if [ -z "$RumiAI_bootstrap_value" ]
+  then
+    exec 3<&-
+    return 3
+  fi
+
+  RumiAI_bootstrap_extra=
+  if IFS= read -r RumiAI_bootstrap_extra <&3 || [ -n "$RumiAI_bootstrap_extra" ]
+  then
+    exec 3<&-
+    return 3
+  fi
+
+  exec 3<&-
+  printf -- '%s\n' "$RumiAI_bootstrap_value"
+)
+
+RumiAI_BOOTSTRAP_LANGUAGE_FILE=$RumiAI_CONF_DIR/bootstrap/language
+RumiAI_BOOTSTRAP_TEXT_ENCODING_FILE=$RumiAI_CONF_DIR/bootstrap/text-encoding
+
+RumiAI_BOOTSTRAP_LANGUAGE_CONFIG_INVALID=
+RumiAI_BOOTSTRAP_TEXT_ENCODING_CONFIG_INVALID=
+
+RumiAI_LANGUAGE_REQUESTED=
+
+if [ -f "$RumiAI_BOOTSTRAP_LANGUAGE_FILE" ]
+then
+  if ! RumiAI_LANGUAGE_REQUESTED=$(RumiAI_bootstrap_read_value "$RumiAI_BOOTSTRAP_LANGUAGE_FILE")
+  then
+    RumiAI_BOOTSTRAP_LANGUAGE_CONFIG_INVALID=1
+    RumiAI_LANGUAGE_REQUESTED=
+  fi
+fi
+
+if [ -z "$RumiAI_LANGUAGE_REQUESTED" ]
+then
+  if [ -n "${LC_ALL-}" ]
+  then
+    RumiAI_LANGUAGE_REQUESTED=$LC_ALL
+  elif [ -n "${LC_MESSAGES-}" ]
+  then
+    RumiAI_LANGUAGE_REQUESTED=$LC_MESSAGES
+  elif [ -n "${LANG-}" ]
+  then
+    RumiAI_LANGUAGE_REQUESTED=$LANG
+  else
+    RumiAI_LANGUAGE_REQUESTED=en_US
+  fi
+fi
+
+RumiAI_TEXT_ENCODING_REQUESTED=UTF-8
+
+if [ -f "$RumiAI_BOOTSTRAP_TEXT_ENCODING_FILE" ]
+then
+  if ! RumiAI_TEXT_ENCODING_REQUESTED=$(RumiAI_bootstrap_read_value "$RumiAI_BOOTSTRAP_TEXT_ENCODING_FILE")
+  then
+    RumiAI_BOOTSTRAP_TEXT_ENCODING_CONFIG_INVALID=1
+    RumiAI_TEXT_ENCODING_REQUESTED=UTF-8
+  fi
+fi
 
 # -----------------------------------------------------------------------------
-# Phase-1 pre-logger load errors.
-# 10..13 already exist in accepted phase 0. New draft front-controller errors
-# continue at 14 to preserve those existing meanings.
+# Phase 1C — i18n initialization.
 
-RumiAI_BOOTSTRAP_FATAL_I18N_LOAD_ERROR=14
-RumiAI_BOOTSTRAP_FATAL_LOG_LOAD_ERROR=15
+RumiAI_BOOTSTRAP_FATAL_I18N_LOAD_ERROR=5
+RumiAI_BOOTSTRAP_FATAL_LOG_LOAD_ERROR=6
 
 if [ ! -f "$RumiAI_LIB_DIR/i18n.lib" ] || [ ! -r "$RumiAI_LIB_DIR/i18n.lib" ]
 then
@@ -112,6 +186,27 @@ then
   printf -- '%s\n' 'RumiAI_BOOTSTRAP_FATAL_I18N_LOAD_ERROR' >&2
   exit "$RumiAI_BOOTSTRAP_FATAL_I18N_LOAD_ERROR"
 fi
+
+RumiAI_LANGUAGE_FALLBACK=
+if RumiAI_LANGUAGE=$(RumiAI_i18n_select_language "$RumiAI_LANGUAGE_REQUESTED")
+then
+  :
+else
+  RumiAI_LANGUAGE_FALLBACK=1
+fi
+
+RumiAI_TEXT_ENCODING_FALLBACK=
+if RumiAI_TEXT_ENCODING=$(RumiAI_i18n_select_text_encoding "$RumiAI_TEXT_ENCODING_REQUESTED")
+then
+  :
+else
+  RumiAI_TEXT_ENCODING_FALLBACK=1
+fi
+
+export -- RumiAI_LANGUAGE RumiAI_TEXT_ENCODING
+
+# -----------------------------------------------------------------------------
+# Phase 1D — logger initialization.
 
 if [ ! -f "$RumiAI_LIB_DIR/log.lib" ] || [ ! -r "$RumiAI_LIB_DIR/log.lib" ]
 then
@@ -133,6 +228,38 @@ unset -v -- \
   RumiAI_load_status
 
 # LOGGER ACTIVE from here onward.
+
+if [ -n "$RumiAI_BOOTSTRAP_LANGUAGE_CONFIG_INVALID" ]
+then
+  log warn bootstrap language-config-invalid \
+    path "$RumiAI_BOOTSTRAP_LANGUAGE_FILE"
+fi
+
+if [ -n "$RumiAI_BOOTSTRAP_TEXT_ENCODING_CONFIG_INVALID" ]
+then
+  log warn bootstrap text-encoding-config-invalid \
+    path "$RumiAI_BOOTSTRAP_TEXT_ENCODING_FILE"
+fi
+
+if [ -n "$RumiAI_LANGUAGE_FALLBACK" ]
+then
+  log warn bootstrap language-fallback \
+    requested "$RumiAI_LANGUAGE_REQUESTED" \
+    selected "$RumiAI_LANGUAGE"
+fi
+
+if [ -n "$RumiAI_TEXT_ENCODING_FALLBACK" ]
+then
+  log warn bootstrap text-encoding-fallback \
+    requested "$RumiAI_TEXT_ENCODING_REQUESTED" \
+    selected "$RumiAI_TEXT_ENCODING"
+fi
+
+unset -v -- \
+  RumiAI_BOOTSTRAP_LANGUAGE_CONFIG_INVALID \
+  RumiAI_BOOTSTRAP_TEXT_ENCODING_CONFIG_INVALID \
+  RumiAI_LANGUAGE_FALLBACK \
+  RumiAI_TEXT_ENCODING_FALLBACK
 
 # -----------------------------------------------------------------------------
 # Public command name validation.
@@ -156,11 +283,15 @@ RumiAI_command_name_valid()
 }
 
 # -----------------------------------------------------------------------------
-# Draft front-controller/dispatch errors.
+# Front-controller/dispatch errors.
+#
+# Shared bootstrap/front-controller numbering is sequential in this proposal.
+# Command-specific/library error namespaces still require a final mapping policy
+# before the CLI contracts are frozen.
 
-RumiAI_DISPATCH_ERROR_INVALID_MULTICALL=16
-RumiAI_DISPATCH_ERROR_INVALID_COMMAND=17
-RumiAI_DISPATCH_ERROR_COMMAND_UNAVAILABLE=18
+RumiAI_DISPATCH_ERROR_INVALID_MULTICALL=7
+RumiAI_DISPATCH_ERROR_INVALID_COMMAND=8
+RumiAI_DISPATCH_ERROR_COMMAND_UNAVAILABLE=9
 
 RumiAI_BOOTSTRAP_NAME=${RumiAI_BOOTSTRAP_BIN##*/}
 RumiAI_COMMAND=
@@ -168,9 +299,13 @@ RumiAI_COMMAND=
 # Normal form:
 #   rumiai-os log warn ...
 #
-# Multicall form:
-#   bin/log -> ../rumiai-os
-#   log warn ...
+# Multicall forms:
+#   $RumiAI_BIN_DIR/log -> ../rumiai-os
+#   /external/path/log  -> /path/to/RumiAI/rumiai-os
+#
+# An external alias is accepted only when its basename identifies an official
+# RumiAI public command whose canonical bin entry resolves to this same physical
+# rumiai-os. The location of the external alias itself is therefore irrelevant.
 
 if [ "$RumiAI_INVOKED_AS" = "$RumiAI_BOOTSTRAP_NAME" ]
 then
@@ -180,27 +315,7 @@ then
     shift
   fi
 else
-  # A multicall candidate must have been reached through the canonical bin dir,
-  # and the corresponding official bin entry must resolve back to this exact
-  # physical rumiai-os entrypoint.
-
-  case $RumiAI_INVOKED_BIN in
-    */*)
-      RumiAI_INVOKED_DIR=${RumiAI_INVOKED_BIN%/*}
-      [ -n "$RumiAI_INVOKED_DIR" ] || RumiAI_INVOKED_DIR=/
-      ;;
-    *)
-      RumiAI_INVOKED_DIR=.
-      ;;
-  esac
-
-  if ! RumiAI_INVOKED_DIR=$(command -p -- realpath -e -- "$RumiAI_INVOKED_DIR" 2>/dev/null)
-  then
-    log error bootstrap invalid-multicall invoked-as "$RumiAI_INVOKED_AS"
-    exit "$RumiAI_DISPATCH_ERROR_INVALID_MULTICALL"
-  fi
-
-  if ! RumiAI_BIN_DIR_PHYSICAL=$(command -p -- realpath -e -- "$RumiAI_BIN_DIR" 2>/dev/null)
+  if ! RumiAI_command_name_valid "$RumiAI_INVOKED_AS"
   then
     log error bootstrap invalid-multicall invoked-as "$RumiAI_INVOKED_AS"
     exit "$RumiAI_DISPATCH_ERROR_INVALID_MULTICALL"
@@ -214,8 +329,7 @@ else
     exit "$RumiAI_DISPATCH_ERROR_INVALID_MULTICALL"
   fi
 
-  if [ "$RumiAI_INVOKED_DIR" != "$RumiAI_BIN_DIR_PHYSICAL" ] || \
-     [ "$RumiAI_PUBLIC_COMMAND_TARGET" != "$RumiAI_BOOTSTRAP_BIN" ]
+  if [ "$RumiAI_PUBLIC_COMMAND_TARGET" != "$RumiAI_BOOTSTRAP_BIN" ]
   then
     log error bootstrap invalid-multicall invoked-as "$RumiAI_INVOKED_AS"
     exit "$RumiAI_DISPATCH_ERROR_INVALID_MULTICALL"
@@ -251,7 +365,6 @@ case $RumiAI_COMMAND in
     ;;
 
   *)
-    # DRAFT: cmd/ is only a placeholder private directory name.
     RumiAI_COMMAND_BIN=$RumiAI_COMMAND_DIR/$RumiAI_COMMAND
 
     if [ ! -f "$RumiAI_COMMAND_BIN" ] || [ ! -x "$RumiAI_COMMAND_BIN" ]
