@@ -112,19 +112,22 @@ When bootstrap code explicitly requires a standard POSIX utility rather than a R
 
 The bootstrap MUST NOT require the advanced RumiAI configuration subsystem merely to obtain the information needed to initialize that subsystem and the logger.
 
-The initial language preference is stored, when explicitly configured, at:
+The accepted bootstrap interaction-preference files are:
 
 ```text
 $RumiAI_CONF_DIR/bootstrap/language
+$RumiAI_CONF_DIR/bootstrap/text-encoding
 ```
 
-This file is bootstrap data, not shell code. It MUST NOT be sourced as executable shell configuration.
+They are bootstrap data, not shell code, and MUST NOT be sourced as executable shell configuration.
 
-The initial implementation SHOULD keep the file format deliberately minimal: a single language/locale preference value after the bootstrap reader's defined whitespace/line handling rules are established.
+`language` supplies the explicit user-interaction language preference when present.
 
-The full configuration subsystem may later supersede this primitive after it becomes available.
+`text-encoding` supplies the explicit user-interaction text encoding preference when present.
 
-The exact bootstrap configuration source/path for the user-interaction text encoding remains to be specified before phase-1 product implementation. This does not change the accepted runtime variable or encoding model below.
+The initial implementation SHOULD keep both formats deliberately minimal: one value per file after the bootstrap reader's defined line-handling rules are established.
+
+The full configuration subsystem may later supersede these primitives after it becomes available.
 
 ---
 
@@ -201,7 +204,13 @@ The final guaranteed language fallback is:
 en_US
 ```
 
-The final guaranteed text-encoding fallback is:
+For text encoding, an explicit value from:
+
+```text
+$RumiAI_CONF_DIR/bootstrap/text-encoding
+```
+
+is the bootstrap preference. If it is absent, invalid or unsupported by the current implementation, the guaranteed fallback is:
 
 ```text
 UTF-8
@@ -285,7 +294,8 @@ fundamental directories
     ↓
 PATH
     ↓
-minimal bootstrap language preference
+minimal bootstrap interaction preferences
+    language + text-encoding
     ↓
 RumiAI_LANGUAGE + RumiAI_TEXT_ENCODING
     ↓
