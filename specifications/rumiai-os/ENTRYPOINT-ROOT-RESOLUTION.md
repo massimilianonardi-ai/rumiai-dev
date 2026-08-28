@@ -122,7 +122,7 @@ command -v -- "$0"
 
 The current `PATH` is required because the purpose is to reconstruct the command selected for the actual invocation.
 
-The result is **not required to be absolute**. POSIX `PATH` may contain relative directory entries. The result MUST be passed to `realpath -e`, which performs the final absolute physical canonicalization.
+The result is **not required to be absolute**. POSIX `PATH` may contain relative directory entries. The result MUST be passed to `realpath`, which performs the final absolute physical canonicalization.
 
 Failure terminates with `RumiAI_BOOTSTRAP_FATAL_PATH_RESOLUTION_ERROR`.
 
@@ -130,17 +130,19 @@ Failure terminates with `RumiAI_BOOTSTRAP_FATAL_PATH_RESOLUTION_ERROR`.
 
 ## 5. Physical canonicalization
 
-Phase 0 MUST delegate canonicalization to the POSIX Issue 8 `realpath` utility rather than implement a custom symbolic-link resolver.
+Phase 0 MUST delegate canonicalization to `realpath` rather than implement a custom symbolic-link resolver.
 
 The standard utility SHOULD be selected through the POSIX default utility path:
 
 ```sh
-command -p -- realpath -e -- "$RumiAI_BOOTSTRAP_BIN"
+command -p -- realpath -- "$RumiAI_BOOTSTRAP_BIN"
 ```
 
-`command -p` intentionally differs from the current-`PATH` lookup used for the entrypoint: the bootstrap should depend on the standard `realpath`, not on an arbitrary utility earlier in the caller's `PATH`.
+`command -p` intentionally differs from the current-`PATH` lookup used for the entrypoint: the bootstrap should depend on the host's standard `realpath`, not on an arbitrary utility earlier in the caller's `PATH`.
 
-`realpath -e` is mandatory for this contract because every pathname component, including the final bootstrap file, must exist.
+POSIX.1-2024 defines the `-e` option, but physical validation on macOS on 2026-08-28 demonstrated that the host implementation rejects `-e` while accepting both `realpath -- pathname` and plain `realpath pathname`. RumiAI therefore uses the common optionless canonicalization interface with `--` and validates the resulting final file explicitly in the next step.
+
+The required invariant is the resulting absolute physical/canonical pathname, not use of a particular `realpath` option.
 
 Phase 0 MUST NOT use:
 
@@ -151,7 +153,9 @@ GNU readlink -f
 GNU-specific realpath options
 ```
 
-A loop, dangling target, inaccessible required component or other canonicalization failure terminates with `RumiAI_BOOTSTRAP_FATAL_REALPATH_ERROR` when phase 0 has already begun.
+A loop, dangling target, inaccessible required component or other canonicalization failure that causes `realpath` itself to fail terminates with `RumiAI_BOOTSTRAP_FATAL_REALPATH_ERROR` when phase 0 has already begun.
+
+A pathname that `realpath` can canonicalize but that does not identify the required regular bootstrap file is rejected by the explicit final-file validation and terminates with `RumiAI_BOOTSTRAP_FATAL_BIN_ERROR`.
 
 ---
 
@@ -164,6 +168,8 @@ After canonicalization:
 ```
 
 MUST succeed.
+
+This explicit validation is part of the portability contract and does not rely on `realpath -e` semantics.
 
 Failure terminates with `RumiAI_BOOTSTRAP_FATAL_BIN_ERROR`.
 
@@ -221,7 +227,7 @@ Ordinary command substitution is therefore sufficient in phase 0:
 
 ```sh
 RumiAI_BOOTSTRAP_BIN=$(command -v -- "$0")
-RumiAI_BOOTSTRAP_BIN=$(command -p -- realpath -e -- "$RumiAI_BOOTSTRAP_BIN")
+RumiAI_BOOTSTRAP_BIN=$(command -p -- realpath -- "$RumiAI_BOOTSTRAP_BIN")
 ```
 
 This is a phase-0 consequence of the controlled naming contract, not a general rule for arbitrary external pathnames. Later subsystems that capture uncontrolled pathname output MUST evaluate trailing-newline preservation according to their own data contract.
@@ -231,6 +237,8 @@ This is a phase-0 consequence of the controlled naming contract, not a general r
 ## 9. CLI delimiter policy
 
 Every phase-0 utility invocation MUST obey the canonical RumiAI `--` rule: use it when the specific utility supports it as an option terminator and receives operand/data arguments; do not invent it where unsupported.
+
+Physical macOS validation confirmed that its `/bin/realpath` supports `--`, even though it does not support `-e`.
 
 `test` / `[` does not receive an invented `--` delimiter.
 
@@ -248,8 +256,6 @@ The stable state crossing the phase boundary is primarily:
 RumiAI_BOOTSTRAP_BIN
 RumiAI_ROOT
 ```
-
-A later multicall layer MAY preserve additional pre-canonicalization invocation identity before phase 0 so public aliases can be distinguished from the physical bootstrap target. Such dispatch state does not change the phase-0 physical-root contract above.
 
 ---
 
@@ -271,7 +277,7 @@ case $0 in
     ;;
 esac
 
-if ! RumiAI_BOOTSTRAP_BIN=$(command -p -- realpath -e -- "$RumiAI_BOOTSTRAP_BIN" 2>/dev/null)
+if ! RumiAI_BOOTSTRAP_BIN=$(command -p -- realpath -- "$RumiAI_BOOTSTRAP_BIN" 2>/dev/null)
 then
   printf -- '%s\n' 'RumiAI_BOOTSTRAP_FATAL_REALPATH_ERROR' >&2
   exit "$RumiAI_BOOTSTRAP_FATAL_REALPATH_ERROR"
@@ -328,6 +334,8 @@ controlled realpath failure -> identifier + status 2
 controlled invalid-bin failure -> identifier + status 3
 controlled root failure -> identifier + status 4
 ```
+
+Reference-host validation MUST also verify the exact supported `realpath` interface. The current common requirement is successful `realpath -- pathname`; support for `-e` is not required.
 
 A `PATH` resolution failure MUST be separately exercised when a harness can create that state after script execution has begun and MUST produce status `1`.
 
