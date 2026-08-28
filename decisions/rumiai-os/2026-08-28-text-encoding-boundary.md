@@ -45,6 +45,12 @@ Variabile canonica:
 RumiAI_TEXT_ENCODING
 ```
 
+La bootstrap primitive esplicita è:
+
+```text
+$RumiAI_CONF_DIR/bootstrap/text-encoding
+```
+
 Prima implementazione e fallback garantito:
 
 ```text
