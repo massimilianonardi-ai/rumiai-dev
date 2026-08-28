@@ -45,13 +45,13 @@ $RumiAI_ROOT/.dev/
 
 Il contenuto operativo di `.dev/` non appartiene al prodotto e deve essere ignorato dal repository `rumiai-os`.
 
-La configurazione canonica iniziale è:
+La configurazione locale consigliata è:
 
 ```text
 $RumiAI_ROOT/.dev/rumiai-tests/
 ```
 
-come clone locale del repository `rumiai-tests`.
+come clone del repository `rumiai-tests`.
 
 Quando serve attività sperimentale può essere presente anche:
 
@@ -61,7 +61,7 @@ $RumiAI_ROOT/.dev/rumiai-dev-PoCs/
 
 I repository sotto `.dev/` restano repository Git autonomi. Non devono essere incorporati in `rumiai-os` come submodule e non devono diventare dipendenze necessarie all'esecuzione del prodotto.
 
-La collocazione sotto `.dev/` è una convenienza del workspace locale, non un requisito per poter eseguire la suite contro un target fornito esplicitamente.
+La collocazione sotto `.dev/` è soltanto una convenienza di sviluppo. I test non devono dipendere da uno specifico pathname del checkout e devono poter effettuare autonomamente il discovery necessario anche quando la suite è collocata altrove.
 
 ## 4. Struttura iniziale di `rumiai-tests`
 
@@ -160,7 +160,7 @@ tests/rumiai-os/bootstrap/
 
 Un pathname nascosto viene escluso dalla discovery prima di applicare la regola `.test`; di conseguenza un file nascosto che termina in `.test` non viene scoperto come test.
 
-Ogni file che non termina in `.test` e che non ha un altro ruolo esplicitamente richiesto viene ignorato dal discovery del runner.
+Ogni file che non termina in `.test` viene ignorato dal discovery del runner.
 
 Le regole canoniche di discovery sono quindi:
 
@@ -216,7 +216,7 @@ L'ordine non ha alcun significato funzionale e nessun test può fare affidamento
 
 Il runner può in futuro adottare forme di esecuzione parallela soltanto se preservano il contratto osservabile della suite e l'indipendenza dei test. La correttezza di un test non deve dipendere dall'esecuzione seriale.
 
-## 11. Responsabilità di un test
+## 11. Responsabilità del singolo test
 
 Ogni test deve verificare una proprietà chiaramente identificabile.
 
@@ -224,9 +224,70 @@ Un test non deve aggregare comportamenti indipendenti se il loro fallimento può
 
 La presenza di più step interni è appropriata quando tali step sono necessari per verificare una singola proprietà o scenario autonomo e vengono interamente gestiti, verificati e ripuliti dalla stessa unità di test.
 
+Tutta la conoscenza specifica necessaria alla verifica appartiene al test. In particolare appartengono al test:
+
+- discovery e identificazione del target;
+- individuazione di fixture e file di supporto;
+- verifica delle precondizioni specifiche;
+- preparazione dell'ambiente specificamente necessario alla prova;
+- creazione e gestione di risorse temporanee;
+- esecuzione dei comandi e delle operazioni da verificare;
+- definizione dei risultati attesi;
+- confronti e decisione finale dell'esito;
+- diagnostica specifica;
+- cleanup delle risorse create dal test.
+
+Il runner non deve conoscere né duplicare questa logica.
+
 Il nome del test deve descrivere la proprietà verificata e non il linguaggio con cui il test è implementato.
 
-## 12. Determinismo
+## 12. Self-discovery e riferimenti hardcoded
+
+Un test deve essere autosufficiente nel localizzare sé stesso e ciò di cui ha bisogno.
+
+Quando il test necessita della propria posizione fisica, deve risolvere in modo robusto il pathname con cui è stato invocato, gli eventuali symlink e la canonicalizzazione necessaria, secondo principi analoghi a quelli usati dal bootstrap di RumiAI OS.
+
+Dalla propria posizione canonicalizzata il test può derivare directory e pathname relativi necessari al proprio funzionamento.
+
+È corretto hardcodare nel test nomi e relazioni logiche stabili, per esempio:
+
+```text
+.fixtures/input
+.support/helper
+bin/log
+rumiai-os
+expected/status
+```
+
+Non è corretto hardcodare pathname dipendenti dal singolo host o checkout, per esempio home directory personali, pathname Homebrew, directory locali dello sviluppatore o altri pathname assoluti non appartenenti alla proprietà da verificare.
+
+La strategia con cui individuare il target è parte della logica del test. Test differenti possono usare strategie differenti quando verificano target differenti.
+
+Il runner non passa al test il pathname del target e non effettua target discovery per conto del test.
+
+L'uso di eventuali librerie comuni, incluso `lib/test.lib`, è facoltativo e serve esclusivamente a riusare codice realmente comune. Una libreria condivisa non costituisce un servizio del runner e non deve diventare necessaria per definire la semantica del test se tale astrazione non è ancora giustificata dall'esperienza.
+
+## 13. Esecuzione diretta e interprete del test
+
+Un file `.test` è un programma autonomo e deve poter essere eseguito direttamente, per esempio:
+
+```text
+./canonicalization.test
+```
+
+L'esecuzione diretta e l'esecuzione dello stesso file tramite `rumiai-test` devono esercitare la stessa logica di verifica. Il runner aggiunge osservazione, raccolta del contesto, logging, aggregazione e conservazione dei risultati; non cambia la semantica interna del test.
+
+Il shebang del test identifica esclusivamente l'interprete necessario alla sua implementazione. Non deve usare `rumiai-test` come interprete e non deve usare `rumiai-os` come interprete per il solo fatto di appartenere alla suite.
+
+Quando un test è implementato in shell POSIX, il shebang normale è:
+
+```sh
+#!/bin/sh
+```
+
+L'estensione `.test` resta indipendente dal linguaggio di implementazione.
+
+## 14. Determinismo
 
 A parità di:
 
@@ -239,7 +300,7 @@ il risultato deve essere riproducibile.
 
 Quando una dipendenza rende il comportamento intrinsecamente non deterministico, il test deve dichiararlo esplicitamente e deve verificare invarianti deterministiche quando possibile.
 
-## 13. Esito del test e stato del programma testato
+## 15. Esito del test e stato del programma testato
 
 Lo stato del test deve essere distinto dallo stato del programma o componente testato.
 
@@ -265,7 +326,7 @@ Una incompatibilità reale dell'host rispetto alla proprietà richiesta non deve
 
 Esempio: se il comportamento atteso del target è terminare con status `143`, il test restituisce `0` quando osserva correttamente `143`.
 
-## 14. Universalità rispetto agli host
+## 16. Universalità rispetto agli host
 
 La proprietà verificata da un test deve essere espressa in modo universale rispetto agli host sui quali quel test è applicabile.
 
@@ -277,7 +338,7 @@ Quando un comportamento è intenzionalmente e intrinsecamente specifico di una p
 
 La suite descrive quindi **cosa deve essere verificato**; la sessione descrive **dove e in quali condizioni è stato verificato**.
 
-## 15. Host di riferimento e host periodici
+## 17. Host di riferimento e host periodici
 
 Gli host stabili di riferimento correnti sono:
 
@@ -302,27 +363,33 @@ Quando un test fallisce, il fallimento deve essere valutato insieme alle caratte
 
 L'accettazione di una incompatibilità non modifica retroattivamente l'esito del test: il risultato della sessione resta `FAIL` per quell'host.
 
-## 16. Portabilità dei test
+## 18. Portabilità dei test
 
 I test devono rispettare il contratto di piattaforma di RumiAI quando testano funzionalità portabili.
 
 Non devono contenere path host-specifici hardcoded, nomi utente, home directory, path Homebrew, directory locali convenzionali o altre assunzioni non dichiarate.
 
-I path del target devono essere derivati dal target stesso o forniti esplicitamente.
+I path necessari devono essere scoperti o derivati autonomamente dal test secondo la proprietà verificata e la propria posizione canonicalizzata.
 
-Le risorse temporanee devono essere create tramite meccanismi portabili appropriati e non devono assumere una specifica installazione locale.
+Le risorse temporanee devono essere create e gestite dal test tramite meccanismi portabili appropriati e non devono assumere una specifica installazione locale.
 
-## 17. Isolamento
+## 19. Isolamento e responsabilità del runner
 
 Un test non deve modificare il target reale quando la stessa verifica può essere eseguita senza modificarlo.
 
-Quando sono necessarie modifiche a configurazioni, file, symlink, permessi o layout, il test deve preferire una sandbox o copia temporanea isolata del materiale necessario.
+Quando sono necessarie modifiche a configurazioni, file, symlink, permessi o layout, il test deve preferire una sandbox, copia temporanea o altro meccanismo di isolamento appropriato quando ciò è ragionevolmente realizzabile senza alterare la proprietà verificata.
 
 La working tree dello sviluppatore non deve essere usata come area temporanea di test salvo che ciò sia esattamente la proprietà che il test deve verificare.
 
 Ogni test deve possedere e gestire autonomamente le proprie risorse temporanee. Le risorse create da un test non devono diventare precondizioni per altri test.
 
-## 18. Cleanup
+Il runner iniziale non crea workspace temporanei per i test, non modifica `HOME`, `TMPDIR` o altre variabili per fornire isolamento, non cambia la current working directory per preparare l'esecuzione e non implementa una sandbox implicita.
+
+Una eventuale futura modalità di containment o sandboxing, inclusi meccanismi host-specifici come `chroot` o equivalenti, deve essere trattata come capacità esplicita separata e non come proprietà implicita del contratto base. Se usata in una validation run, deve essere registrata nella sessione perché può influire sull'interpretazione del risultato.
+
+Il runner non deve promettere di proteggere l'host da un test scritto male. La sicurezza e il cleanup delle operazioni specifiche della prova restano responsabilità del test.
+
+## 20. Cleanup
 
 Ogni test deve lasciare l'ambiente nello stato precedente all'esecuzione, per quanto sotto il suo controllo.
 
@@ -332,9 +399,21 @@ Al termine di un test non devono rimanere inutilmente modifiche al target, file 
 
 Un test che lascia stato residuo non dichiarato è difettoso.
 
-Il cleanup appartiene al test che ha creato la risorsa e non può essere delegato a un test successivo o a un gruppo.
+Il cleanup appartiene al test che ha creato la risorsa e non può essere delegato a un test successivo, a un gruppo o al runner.
 
-## 19. Diagnostica dei fallimenti
+## 21. Logging e diagnostica
+
+Il test deve produrre soltanto output e diagnostica relativi alla propria verifica. Il contesto globale della sessione appartiene al runner e non deve essere duplicato nel codice dei singoli test.
+
+Il runner deve catturare `stdout` e `stderr` del test in un unico stream ordinato. Il modello canonico è equivalente a:
+
+```sh
+1>logfile 2>&1
+```
+
+Il runner non deve registrare i due stream in file separati per poi tentare di ricostruirne l'ordine tramite timestamp.
+
+Il log del test deve preservare il flusso combinato realmente emesso dal processo. I metadati globali e il risultato osservato dal runner devono essere conservati separatamente dal contenuto prodotto dal test.
 
 Un `FAIL` o `ERROR` deve fornire informazioni sufficienti a comprendere almeno:
 
@@ -344,7 +423,7 @@ Un `FAIL` o `ERROR` deve fornire informazioni sufficienti a comprendere almeno:
 
 La diagnostica deve essere concisa e utile. Non deve dipendere dalla lettura di log voluminosi quando il confronto essenziale può essere mostrato direttamente.
 
-## 20. Test di tool esterni
+## 22. Test di tool esterni
 
 Un tool esterno viene testato soltanto rispetto alle capability o proprietà necessarie a RumiAI.
 
@@ -354,7 +433,7 @@ La disponibilità di opzioni o comportamenti non usati da RumiAI non costituisce
 
 Un test di una proprietà esterna deve restare unico anche quando implementazioni host differenti del tool producono risultati differenti: tali differenze emergono attraverso le sessioni e gli esiti del test.
 
-## 21. Development run
+## 23. Development run
 
 Una development run serve al ciclo rapido:
 
@@ -368,19 +447,19 @@ Durante una development run:
 - `rumiai-tests` può avere modifiche non committed;
 - la sessione non costituisce evidenza formale di validazione di un commit.
 
-Il runner deve comunque evitare di danneggiare o sporcare il target.
+Il runner deve limitarsi alle proprie responsabilità di discovery, esecuzione, osservazione e logging. Non deve preparare o modificare il target per conto dei test.
 
-## 22. Validation run
+## 24. Validation run
 
 Una validation run produce evidenza riproducibile associata a revisioni precise.
 
 Prima di una validation run, salvo eccezioni esplicitamente documentate:
 
-- il target deve essere committed;
+- il target deve essere committed quando è rappresentato da un repository Git;
 - `rumiai-tests` deve essere committed;
 - le working tree coinvolte devono essere pulite.
 
-Una validation run deve registrare almeno:
+Una validation run deve registrare almeno, quando disponibili o applicabili:
 
 - identificatore/versione o commit del target;
 - commit di `rumiai-tests`;
@@ -389,10 +468,13 @@ Una validation run deve registrare almeno:
 - architettura;
 - shell o ambiente POSIX rilevante quando materialmente significativo;
 - altre caratteristiche host necessarie a interpretare i risultati;
-- data della sessione;
-- test eseguiti;
+- data e ora della sessione;
+- test o gruppo selezionato;
+- test effettivamente eseguiti;
 - risultati `PASS`, `FAIL`, `SKIP`, `ERROR`;
-- eventuali condizioni o eccezioni rilevanti.
+- log combinato di ciascun test;
+- eventuali condizioni o eccezioni rilevanti;
+- eventuale modalità esplicita di containment o sandboxing, se in futuro utilizzata.
 
 Le sessioni di validazione permanente devono essere conservate sotto:
 
@@ -402,36 +484,55 @@ rumiai-tests/sessions/
 
 Le sessioni sperimentali dei PoC restano invece nel relativo materiale sotto `rumiai-dev-PoCs`.
 
-## 23. Ripetibilità della procedura
+## 25. Contratto minimale del runner `rumiai-test`
 
-La stessa suite deve poter essere eseguita su host diversi senza modificare manualmente i test per adattarli al pathname locale del checkout.
+`rumiai-test` deve essere mantenuto intenzionalmente semplice e agnostico rispetto alla semantica dei test.
 
-Il target deve essere identificato dal runner tramite una regola esplicita e verificabile.
+Il principio fondamentale è:
 
-La collocazione di `rumiai-tests` sotto `$RumiAI_ROOT/.dev/` non deve essere l'unico modo possibile per indicare il target.
+> `rumiai-test` osserva l'esecuzione; non la prepara e non determina se il comportamento del target è corretto.
 
-## 24. Runner `rumiai-test`
+Le responsabilità iniziali del runner sono:
 
-Il runner deve essere mantenuto semplice.
-
-Le sue responsabilità iniziali sono:
-
-- individuare o ricevere esplicitamente il target;
+- individuare la propria suite e applicare le regole canoniche di discovery;
 - selezionare un singolo test o un gruppo;
 - trattare `tests/` come gruppo radice dell'intera suite;
 - attraversare ricorsivamente i gruppi selezionati;
-- applicare le regole canoniche di discovery;
-- eseguire ogni test come unità indipendente;
 - mantenere un ordine lessicografico deterministico quando l'esecuzione è seriale;
-- raccogliere gli exit status `PASS/FAIL/SKIP/ERROR`;
+- raccogliere il contesto globale dell'host e della sessione;
+- eseguire direttamente ogni `.test` rispettandone il shebang;
+- catturare `stdout` e `stderr` in un unico stream;
+- raccogliere l'exit status `PASS/FAIL/SKIP/ERROR` prodotto dal test;
 - produrre un riepilogo leggibile;
-- per le validation run, registrare i metadati necessari alla riproducibilità e all'interpretazione host-specifica dei risultati.
+- salvare log, risultati e metadati della sessione.
 
-Il runner non deve incorporare logica specifica dei singoli componenti quando tale logica può restare nel relativo test.
+Il contratto runner -> test è intenzionalmente vuoto.
 
-La sua CLI precisa deve essere definita e validata prima dell'implementazione stabile; non va introdotta complessità preventiva.
+Il runner non deve:
 
-## 25. Regola di promozione
+- passare argomenti RumiAI-specifici al test;
+- definire variabili d'ambiente RumiAI-specifiche per comunicare target, test-id, directory temporanee o metadata;
+- individuare o interpretare il target per conto del test;
+- individuare fixture o file di supporto per conto del test;
+- preparare setup o cleanup;
+- creare workspace temporanei impliciti;
+- cambiare la current working directory per preparare il test;
+- modificare `HOME`, `TMPDIR` o altre variabili allo scopo di costruire un ambiente artificiale;
+- implementare assertion o logica specifica dei componenti testati;
+- interpretare semanticamente l'output del test per decidere se il target è corretto.
+
+Il test eredita il normale contesto di processo nel quale viene avviato e contiene autonomamente tutta la logica necessaria alla verifica.
+
+Il contratto test -> runner è limitato ai meccanismi elementari del processo:
+
+```text
+stream combinato stdout/stderr
+exit status 0..3
+```
+
+La CLI precisa del runner deve restare coerente con questo contratto e va definita e validata senza introdurre complessità preventiva.
+
+## 26. Regola di promozione
 
 Quando un PoC o una validazione manuale scopre una proprietà che deve restare vera nel tempo, tale proprietà deve essere trasformata in un test permanente quando il costo è ragionevole.
 
@@ -448,7 +549,7 @@ esperimento
     -> evidenza permanente
 ```
 
-## 26. Fonte di verità
+## 27. Fonte di verità
 
 `rumiai-dev` definisce le regole e il comportamento atteso.
 
