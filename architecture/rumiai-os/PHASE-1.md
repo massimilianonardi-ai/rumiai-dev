@@ -12,25 +12,28 @@ RumiAI_BOOTSTRAP_BIN
 RumiAI_ROOT
 ```
 
-Its purpose is to initialize the smallest deterministic environment required to reach an internationalized logger and public-command dispatch without creating circular dependencies on the full configuration or package/runtime subsystems.
+Its purpose is to initialize the smallest deterministic environment required to reach an internationalized logger and then execute a RumiAI command file through the active `rumiai-os` interpreter.
 
 ## Flow
 
 ```text
-PHASE 0
+COMMAND FILE
+    #!/usr/bin/env rumiai-os
     ↓
-RumiAI_ROOT
+PATH selects active rumiai-os
+    ↓
+PHASE 0
+    RumiAI_BOOTSTRAP_BIN
+    RumiAI_ROOT
     ↓
 PHASE 1A — semantic roots
     RumiAI_BIN_DIR
-    RumiAI_COMMAND_DIR
     RumiAI_LIB_DIR
     RumiAI_CONF_DIR
     RumiAI_LANG_DIR
     ↓
 PHASE 1B — command environment
     prepend RumiAI_BIN_DIR to PATH
-    cmd remains outside PATH
     ↓
 PHASE 1C — bootstrap interaction preferences
     conf/bootstrap/language
@@ -49,9 +52,13 @@ PHASE 1E — logger
     ↓
 LOGGER ACTIVE
     ↓
-PHASE 1F — public command selection/dispatch
-    rumiai-os <command> ...
-    or multicall alias <command> ...
+PHASE 1F — command interpreter
+    canonicalize command-file operand
+    validate RumiAI command shebang
+    expose RumiAI_COMMAND_BIN
+    remove command-file operand from "$@"
+    source command file in-process
+    propagate command status
 ```
 
 The labels describe dependency order and do not require separate product files or processes.
@@ -61,8 +68,7 @@ The labels describe dependency order and do not require separate product files o
 Current minimal roots:
 
 ```text
-bin/   public command entrypoints participating in PATH
-cmd/   private command implementations outside PATH
+bin/   executable commands intended for PATH
 lib/   sourced/imported implementation libraries
 conf/  configuration
 lang/  language/i18n catalogs
@@ -71,18 +77,19 @@ lang/  language/i18n catalogs
 Canonical variables:
 
 ```text
-RumiAI_BIN_DIR     = $RumiAI_ROOT/bin
-RumiAI_COMMAND_DIR = $RumiAI_ROOT/cmd
-RumiAI_LIB_DIR     = $RumiAI_ROOT/lib
-RumiAI_CONF_DIR    = $RumiAI_ROOT/conf
-RumiAI_LANG_DIR    = $RumiAI_ROOT/lang
+RumiAI_BIN_DIR  = $RumiAI_ROOT/bin
+RumiAI_LIB_DIR  = $RumiAI_ROOT/lib
+RumiAI_CONF_DIR = $RumiAI_ROOT/conf
+RumiAI_LANG_DIR = $RumiAI_ROOT/lang
 ```
+
+`cmd/` and `RumiAI_COMMAND_DIR` are no longer part of the accepted architecture. The command file is its own implementation entrypoint.
 
 No `share/` or generic `resources/` root is created before a real cross-cutting resource category exists.
 
 ## PATH model
 
-Only `bin/` participates in command lookup.
+`RumiAI_BIN_DIR` is prepended to the inherited `PATH` after bootstrap:
 
 ```text
 RumiAI bin
@@ -90,9 +97,62 @@ RumiAI bin
 caller/host PATH
 ```
 
-`cmd/` is intentionally outside `PATH`; the front controller dispatches private implementations through explicit pathnames derived from `RumiAI_COMMAND_DIR`.
-
 Libraries are loaded explicitly from `RumiAI_LIB_DIR`; data is loaded explicitly from its semantic root.
+
+The command-interpreter model has one additional pre-bootstrap requirement: the caller environment must already be able to resolve an executable named:
+
+```text
+rumiai-os
+```
+
+through `PATH`, because `/usr/bin/env` must find the interpreter before RumiAI itself starts.
+
+How an installation or activation process exposes `rumiai-os` in the caller's `PATH` is a separate installation/environment concern and is not solved by phase 1 itself.
+
+## Command entrypoint model
+
+Canonical first line:
+
+```text
+#!/usr/bin/env rumiai-os
+```
+
+A command file contains its own POSIX shell implementation body.
+
+Example:
+
+```sh
+#!/usr/bin/env rumiai-os
+log "$@"
+```
+
+The host passes the command-file pathname to the active `rumiai-os` runtime. After phase 1 initializes i18n and the logger, the runtime canonicalizes the command file, removes its pathname from the positional arguments, and sources the file in the initialized shell.
+
+This gives the command direct access to bootstrap state and sourced libraries without a second bootstrap or an implementation shadow tree.
+
+Canonical command pathname variable:
+
+```text
+RumiAI_COMMAND_BIN
+```
+
+`RumiAI_COMMAND_BIN` is the absolute physical/canonical pathname of the command file being interpreted.
+
+## Host-profile extension
+
+The command-entry mechanism intentionally relies on behavior outside the abstract POSIX.1-2024 guarantee.
+
+RumiAI therefore requires reference hosts to provide and validate:
+
+```text
+/usr/bin/env
+executable #! scripts
+PATH-based resolution of rumiai-os
+command-file pathname forwarded to rumiai-os
+source-compatible treatment of the initial #! line by the reference /bin/sh
+```
+
+POSIX remains the contract for the shell code and standard utilities used after the runtime has started; the shebang/interpreter bootstrap is an explicit documented host-profile extension.
 
 ## Bootstrap configuration model
 
@@ -181,28 +241,32 @@ lang/it_IT/
 
 The codeset is not part of `RumiAI_LANGUAGE` and is not encoded in catalog directory names.
 
-## Multicall/public command direction
+## Command aliases and duplicate names
 
-Public `bin/<command>` entries may be symbolic links to `../rumiai-os`.
+Because the command-file pathname is passed to the interpreter, routing does not depend on a global basename registry.
 
-Both forms converge to the same command identity:
-
-```text
-log warn ...
-rumiai-os log warn ...
-```
-
-An external symlink/alias may live outside `RumiAI_ROOT`. Its physical location does not define the RumiAI root: phase 0 canonicalizes the symlink target and derives `RumiAI_ROOT` from the physical `rumiai-os` target.
-
-For an alias basename to be accepted as a RumiAI multicall command, a corresponding official:
+These can coexist:
 
 ```text
-$RumiAI_BIN_DIR/<basename>
+package-a/bin/foo
+package-b/bin/foo
 ```
 
-must exist and canonicalize to the same `RumiAI_BOOTSTRAP_BIN`.
+A renamed symlink may point to a command file:
 
-This permits external installation aliases while preventing arbitrary unregistered basenames from becoming RumiAI commands.
+```text
+/usr/local/bin/my-log -> /opt/rumiai/bin/log
+```
+
+The runtime canonicalizes the command-file pathname, so the external alias name does not determine the implementation.
+
+## Active runtime semantics
+
+The active interpreter is the `rumiai-os` selected by the inherited `PATH`.
+
+A command file physically belonging to one installation may therefore be interpreted by another active runtime if the environment's `PATH` selects it.
+
+This is intentional. Runtime/version/capability compatibility checks are deferred until a concrete requirement emerges.
 
 ## Failure philosophy
 
@@ -210,4 +274,13 @@ Missing requested language data normally falls back to `en_US`.
 
 Missing, invalid or unsupported text-encoding configuration normally falls back to UTF-8 when the boundary remains usable in UTF-8.
 
-Shared front-controller failures use exact stable numeric statuses. The current accepted pre-stability sequence begins at `1` and is append-only; command-local status mapping remains a separate contract to finalize before public CLI stabilization.
+Shared bootstrap failures use exact stable numeric statuses. The accepted pre-stability phase-0 sequence is:
+
+```text
+1  PATH resolution failure
+2  realpath/canonicalization failure
+3  invalid bootstrap binary
+4  invalid/inaccessible RumiAI root
+```
+
+The current command-interpreter draft tentatively continues with i18n/logger load and command-entry errors. Final external command status mapping remains to be consolidated before public CLI stabilization.
