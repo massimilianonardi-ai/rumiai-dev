@@ -12,7 +12,7 @@ RumiAI_BOOTSTRAP_BIN
 RumiAI_ROOT
 ```
 
-Its purpose is to initialize the smallest deterministic environment required to reach an internationalized logger without creating circular dependencies on the full configuration or package/runtime subsystems.
+Its purpose is to initialize the smallest deterministic environment required to reach an internationalized logger and public-command dispatch without creating circular dependencies on the full configuration or package/runtime subsystems.
 
 ## Flow
 
@@ -23,12 +23,14 @@ RumiAI_ROOT
     ↓
 PHASE 1A — semantic roots
     RumiAI_BIN_DIR
+    RumiAI_COMMAND_DIR
     RumiAI_LIB_DIR
     RumiAI_CONF_DIR
     RumiAI_LANG_DIR
     ↓
 PHASE 1B — command environment
     prepend RumiAI_BIN_DIR to PATH
+    cmd remains outside PATH
     ↓
 PHASE 1C — bootstrap interaction preferences
     conf/bootstrap/language
@@ -37,28 +39,43 @@ PHASE 1C — bootstrap interaction preferences
     ↓
 PHASE 1D — i18n
     normalize language request
-    resolve UTF-8 catalog
+    select available language
     guarantee en_US fallback
-    normalize/fallback interaction encoding to UTF-8 when required
-    prepare boundary transcoding if required
+    normalize/fallback interaction encoding to UTF-8
     ↓
 PHASE 1E — logger
     initialize logger
+    report non-fatal bootstrap fallback conditions
     ↓
 LOGGER ACTIVE
+    ↓
+PHASE 1F — public command selection/dispatch
+    rumiai-os <command> ...
+    or multicall alias <command> ...
 ```
 
-The labels 1A–1E describe dependency order and do not require separate product files or processes.
+The labels describe dependency order and do not require separate product files or processes.
 
 ## Semantic roots
 
 Current minimal roots:
 
 ```text
-bin/   executable commands
+bin/   public command entrypoints participating in PATH
+cmd/   private command implementations outside PATH
 lib/   sourced/imported implementation libraries
 conf/  configuration
 lang/  language/i18n catalogs
+```
+
+Canonical variables:
+
+```text
+RumiAI_BIN_DIR     = $RumiAI_ROOT/bin
+RumiAI_COMMAND_DIR = $RumiAI_ROOT/cmd
+RumiAI_LIB_DIR     = $RumiAI_ROOT/lib
+RumiAI_CONF_DIR    = $RumiAI_ROOT/conf
+RumiAI_LANG_DIR    = $RumiAI_ROOT/lang
 ```
 
 No `share/` or generic `resources/` root is created before a real cross-cutting resource category exists.
@@ -73,20 +90,24 @@ RumiAI bin
 caller/host PATH
 ```
 
-Libraries are loaded explicitly from `RumiAI_LIB_DIR`; data is loaded explicitly from its semantic root. This avoids implicit discovery and command/library namespace collisions.
+`cmd/` is intentionally outside `PATH`; the front controller dispatches private implementations through explicit pathnames derived from `RumiAI_COMMAND_DIR`.
+
+Libraries are loaded explicitly from `RumiAI_LIB_DIR`; data is loaded explicitly from its semantic root.
 
 ## Bootstrap configuration model
 
 The bootstrap must be able to initialize advanced infrastructure without already depending on that infrastructure.
 
-The accepted first primitives are:
+Accepted primitives:
 
 ```text
 conf/bootstrap/language
 conf/bootstrap/text-encoding
 ```
 
-They are minimal bootstrap data, not the final general configuration architecture and not sourced shell code.
+They are minimal bootstrap data, not sourced shell code.
+
+The initial reader treats them as one-value files. Missing configuration is not inherently an error. Invalid/unreadable explicit configuration should normally degrade to the defined fallback path and can be reported after logger activation.
 
 Once the advanced configuration system is initialized, it may become authoritative and supersede bootstrap primitives according to:
 
@@ -115,7 +136,7 @@ en_US
 it_IT
 ```
 
-Fallback input order:
+Preference order:
 
 ```text
 bootstrap config
@@ -125,9 +146,7 @@ LANG
 en_US
 ```
 
-Host locale variables are input to language selection, not authoritative RumiAI state.
-
-The i18n layer normalizes host locale syntax and avoids fatal failures whenever a usable English fallback exists.
+The i18n layer normalizes host locale syntax, strips host codeset/modifier information needed only for locale parsing, selects an available language catalog, and falls back to `en_US` when required.
 
 ## Text encoding model
 
@@ -137,7 +156,7 @@ Canonical user-interaction text-encoding variable:
 RumiAI_TEXT_ENCODING
 ```
 
-The explicit bootstrap preference is read from:
+Explicit preference:
 
 ```text
 conf/bootstrap/text-encoding
@@ -149,16 +168,7 @@ Initial and guaranteed fallback value:
 UTF-8
 ```
 
-The value is configurable at the interaction boundary so future implementations can support additional external encodings.
-
-The internal RumiAI text model does not change with this setting:
-
-```text
-internal controlled text = UTF-8
-internal control-plane language = English
-```
-
-User payloads may be in any language. Text entering RumiAI through a non-UTF-8 boundary is transcoded to UTF-8 before internal processing; UTF-8 internal text is transcoded to the configured external encoding only when leaving such a boundary.
+The internal RumiAI text model remains UTF-8 regardless of this interaction-boundary setting.
 
 ## Catalog model
 
@@ -171,27 +181,33 @@ lang/it_IT/
 
 The codeset is not part of `RumiAI_LANGUAGE` and is not encoded in catalog directory names.
 
-Rejected catalog identities include:
+## Multicall/public command direction
+
+Public `bin/<command>` entries may be symbolic links to `../rumiai-os`.
+
+Both forms converge to the same command identity:
 
 ```text
-lang/it_IT.UTF-8/
-lang/it_IT/UTF-8/
+log warn ...
+rumiai-os log warn ...
 ```
 
-Multiple external encodings MUST NOT require duplicate translation catalogs. Encoding adaptation belongs at the boundary.
+An external symlink/alias may live outside `RumiAI_ROOT`. Its physical location does not define the RumiAI root: phase 0 canonicalizes the symlink target and derives `RumiAI_ROOT` from the physical `rumiai-os` target.
 
-This yields the architectural separation:
+For an alias basename to be accepted as a RumiAI multicall command, a corresponding official:
 
 ```text
-language identity         RumiAI_LANGUAGE=it_IT
-catalog representation    UTF-8
-interaction encoding      RumiAI_TEXT_ENCODING=UTF-8 or future supported value
+$RumiAI_BIN_DIR/<basename>
 ```
+
+must exist and canonicalize to the same `RumiAI_BOOTSTRAP_BIN`.
+
+This permits external installation aliases while preventing arbitrary unregistered basenames from becoming RumiAI commands.
 
 ## Failure philosophy
 
-The i18n path should minimize bootstrap-fatal conditions.
-
 Missing requested language data normally falls back to `en_US`.
 
-Missing, invalid or unsupported `conf/bootstrap/text-encoding` normally falls back to UTF-8 when the boundary remains usable in UTF-8, allowing the logger to report the degraded condition once active.
+Missing, invalid or unsupported text-encoding configuration normally falls back to UTF-8 when the boundary remains usable in UTF-8.
+
+Shared front-controller failures use exact stable numeric statuses. The current accepted pre-stability sequence begins at `1` and is append-only; command-local status mapping remains a separate contract to finalize before public CLI stabilization.
