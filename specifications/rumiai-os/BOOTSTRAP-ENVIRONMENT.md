@@ -41,6 +41,7 @@ Immediately after successful phase 0, the bootstrap environment defines exactly 
 
 ```sh
 RumiAI_BIN_DIR=$RumiAI_ROOT/bin
+RumiAI_COMMAND_DIR=$RumiAI_ROOT/cmd
 RumiAI_LIB_DIR=$RumiAI_ROOT/lib
 RumiAI_CONF_DIR=$RumiAI_ROOT/conf
 RumiAI_LANG_DIR=$RumiAI_ROOT/lang
@@ -48,7 +49,21 @@ RumiAI_LANG_DIR=$RumiAI_ROOT/lang
 
 ### `RumiAI_BIN_DIR`
 
-Contains RumiAI executable commands intended to participate in command lookup.
+Contains public RumiAI executable command entrypoints intended to participate in command lookup.
+
+Public commands may be multicall symbolic links to the canonical `rumiai-os` front controller.
+
+### `RumiAI_COMMAND_DIR`
+
+Contains private command implementations that are dispatched explicitly by the front controller and MUST NOT be added to `PATH` merely to make them callable.
+
+Canonical path:
+
+```text
+$RumiAI_ROOT/cmd
+```
+
+A public `bin/<command>` and its private `cmd/<command>` implementation are different architectural roles: `bin/` is the public command namespace; `cmd/` is an implementation location outside command lookup.
 
 ### `RumiAI_LIB_DIR`
 
@@ -77,13 +92,13 @@ All RumiAI-controlled language catalogs are encoded in UTF-8.
 
 No generic `share/` or `resources/` directory is introduced at this stage. Such a directory may be introduced only if a concrete future requirement establishes a useful common semantic category.
 
-The four directory variables SHOULD be exported if child processes initialized during bootstrap require the same semantic roots, and SHOULD be marked readonly after their values are successfully established.
+The five directory variables SHOULD be exported if child processes initialized during bootstrap require the same semantic roots, and SHOULD be marked readonly after their values are successfully established when later mutation is not required.
 
 ---
 
 ## 4. PATH initialization
 
-RumiAI commands take precedence over the inherited host/caller path while preserving the inherited path as fallback.
+RumiAI public commands take precedence over the inherited host/caller path while preserving the inherited path as fallback.
 
 Required conceptual form:
 
@@ -92,17 +107,18 @@ PATH=$RumiAI_BIN_DIR${PATH:+:$PATH}
 export PATH
 ```
 
-Only executable-command directories belong in this bootstrap `PATH` construction.
+Only public executable-command directories belong in this bootstrap `PATH` construction.
 
-The following MUST NOT be added merely to make sourcing/discovery convenient:
+The following MUST NOT be added merely to make sourcing/discovery/dispatch convenient:
 
 ```text
+$RumiAI_COMMAND_DIR
 $RumiAI_LIB_DIR
 $RumiAI_CONF_DIR
 $RumiAI_LANG_DIR
 ```
 
-Libraries and data are addressed explicitly through their semantic roots.
+Private commands, libraries and data are addressed explicitly through their semantic roots.
 
 When bootstrap code explicitly requires a standard POSIX utility rather than a RumiAI command or caller override, it MAY use `command -p` according to the existing POSIX/tool contract.
 
@@ -297,9 +313,9 @@ PATH
 minimal bootstrap interaction preferences
     language + text-encoding
     ↓
-RumiAI_LANGUAGE + RumiAI_TEXT_ENCODING
-    ↓
 i18n initialization
+    ↓
+RumiAI_LANGUAGE + RumiAI_TEXT_ENCODING
     ↓
 logger initialization
     ↓
