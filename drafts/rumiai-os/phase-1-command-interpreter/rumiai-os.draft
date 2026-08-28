@@ -1,12 +1,21 @@
 #!/bin/sh
 
 # DRAFT ONLY — non-normative code proposal.
-# Current design: RumiAI command files use:
+#
+# CLI semantics in this proposal:
+#
+#   rumiai-os
+#       bootstrap RumiAI and enter the interactive Rumi shell.
+#
+#   rumiai-os file [args...]
+#       bootstrap RumiAI and source file with args as its positional parameters.
+#
+# A source file MAY additionally be directly executable through:
 #
 #   #!/usr/bin/env rumiai-os
 #
-# The host invokes this runtime with the command-file pathname as the first
-# operand. After bootstrap, rumiai-os sources that same command file.
+# but that shebang belongs to direct host execution and is NOT required when
+# the source is passed explicitly as an operand to rumiai-os.
 
 # -----------------------------------------------------------------------------
 # Phase 0 — physical runtime discovery.
@@ -76,10 +85,12 @@ export -- \
   RumiAI_LANG_DIR \
   PATH
 
-# No RumiAI_COMMAND_DIR and no cmd/ shadow tree.
-
 # -----------------------------------------------------------------------------
 # Phase 1B — minimal bootstrap preference reader.
+#
+# This helper reads the small bootstrap configuration values needed before the
+# future full configuration subsystem exists. It has no role in command/source
+# dispatch.
 
 RumiAI_bootstrap_read_value()
 (
@@ -254,30 +265,42 @@ unset -v -- \
   RumiAI_TEXT_ENCODING_FALLBACK
 
 # -----------------------------------------------------------------------------
-# Phase 1E — command interpreter.
-#
-# Draft shared error numbers. 7..9 from the old multicall proposal are
-# superseded; these meanings belong to the new interpreter proposal.
+# Phase 1E — CLI.
 
-RumiAI_COMMAND_ERROR_RESOLUTION=7
-RumiAI_COMMAND_ERROR_INVALID_ENTRY=8
+RumiAI_SHELL_ERROR_LOAD=7
+RumiAI_COMMAND_ERROR_RESOLUTION=8
+RumiAI_COMMAND_ERROR_INVALID_ENTRY=9
 
-# No operand: rumiai-os was invoked as the front controller itself.
-# Its default direct CLI behavior remains outside this draft.
+# No operands: enter the configured interactive Rumi shell.
 if [ "$#" -eq 0 ]
 then
-  exit 0
+  RumiAI_SHELL_LIB=$RumiAI_LIB_DIR/shell.lib
+
+  if [ ! -f "$RumiAI_SHELL_LIB" ] || [ ! -r "$RumiAI_SHELL_LIB" ]
+  then
+    log error shell load-failed path "$RumiAI_SHELL_LIB"
+    exit "$RumiAI_SHELL_ERROR_LOAD"
+  fi
+
+  . "$RumiAI_SHELL_LIB"
+  RumiAI_load_status=$?
+  if [ "$RumiAI_load_status" -ne 0 ]
+  then
+    log error shell load-failed path "$RumiAI_SHELL_LIB"
+    exit "$RumiAI_SHELL_ERROR_LOAD"
+  fi
+
+  unset -v -- RumiAI_SHELL_LIB RumiAI_SHELL_ERROR_LOAD RumiAI_load_status
+
+  RumiAI_shell
+  exit $?
 fi
 
+# One or more operands: the first operand is source code explicitly supplied to
+# the RumiAI interpreter. It does NOT need a shebang and does NOT need the
+# executable permission bit. It only needs to resolve to a readable regular
+# file.
 RumiAI_COMMAND_ENTRY=$1
-
-# Interpreter mode is entered only for an existing regular-file operand.
-# Other direct rumiai-os CLI syntax remains available for future definition.
-if [ ! -f "$RumiAI_COMMAND_ENTRY" ]
-then
-  log error bootstrap invalid-command-entry path "$RumiAI_COMMAND_ENTRY"
-  exit "$RumiAI_COMMAND_ERROR_INVALID_ENTRY"
-fi
 
 if ! RumiAI_COMMAND_BIN=$(command -p -- realpath -e -- "$RumiAI_COMMAND_ENTRY" 2>/dev/null)
 then
@@ -291,30 +314,8 @@ then
   exit "$RumiAI_COMMAND_ERROR_INVALID_ENTRY"
 fi
 
-# Guard against accidentally treating the runtime itself as a command file.
+# Prevent the runtime from sourcing itself as a command body.
 if [ "$RumiAI_COMMAND_BIN" = "$RumiAI_BOOTSTRAP_BIN" ]
-then
-  log error bootstrap invalid-command-entry path "$RumiAI_COMMAND_BIN"
-  exit "$RumiAI_COMMAND_ERROR_INVALID_ENTRY"
-fi
-
-# Validate the exact RumiAI command shebang before sourcing arbitrary content.
-if ! exec 3< "$RumiAI_COMMAND_BIN"
-then
-  log error bootstrap invalid-command-entry path "$RumiAI_COMMAND_BIN"
-  exit "$RumiAI_COMMAND_ERROR_INVALID_ENTRY"
-fi
-
-RumiAI_COMMAND_SHEBANG=
-if ! IFS= read -r RumiAI_COMMAND_SHEBANG <&3
-then
-  exec 3<&-
-  log error bootstrap invalid-command-entry path "$RumiAI_COMMAND_BIN"
-  exit "$RumiAI_COMMAND_ERROR_INVALID_ENTRY"
-fi
-exec 3<&-
-
-if [ "$RumiAI_COMMAND_SHEBANG" != '#!/usr/bin/env rumiai-os' ]
 then
   log error bootstrap invalid-command-entry path "$RumiAI_COMMAND_BIN"
   exit "$RumiAI_COMMAND_ERROR_INVALID_ENTRY"
@@ -327,13 +328,13 @@ readonly -- RumiAI_COMMAND_BIN
 
 unset -v -- \
   RumiAI_COMMAND_ENTRY \
-  RumiAI_COMMAND_SHEBANG \
+  RumiAI_SHELL_ERROR_LOAD \
   RumiAI_COMMAND_ERROR_RESOLUTION \
   RumiAI_COMMAND_ERROR_INVALID_ENTRY
 
-# Source the command in the already initialized RumiAI shell.
-# The command sees the user's original arguments in "$@" and has direct access
-# to loaded functions such as log().
+# Source the explicitly selected file in the already initialized RumiAI shell.
+# The source observes the user's remaining arguments in "$@" and has direct
+# access to loaded RumiAI functions such as log().
 . "$RumiAI_COMMAND_BIN"
 RumiAI_COMMAND_STATUS=$?
 
