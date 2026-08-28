@@ -1,32 +1,53 @@
 # Decisione — Multicall commands, `cmd/` e bootstrap status
 
 Date: 2026-08-28
-Status: **Accepted design decision**
+Status: **Superseded**
 
-## Directory dei comandi privati
+Superseded by:
 
-La directory privata per le implementazioni dei comandi fuori `PATH` è:
+```text
+decisions/rumiai-os/2026-08-28-command-interpreter-shebang.md
+```
+
+## Valore storico
+
+Questa decisione documenta una proposta precedentemente accettata durante l'esplorazione del bootstrap command model. Non rappresenta più l'architettura corrente.
+
+Il modello esplorato era:
+
+```text
+bin/<command> -> ../rumiai-os
+cmd/<command>
+```
+
+con `bin/` come namespace pubblico nel `PATH` e `cmd/` come directory privata delle implementazioni.
+
+Il lavoro successivo ha mostrato che questo modello richiedeva progressivamente:
+
+- preservare `RumiAI_INVOKED_AS` e il pathname pre-realpath;
+- distinguere symlink interni ed esterni;
+- stabilire regole per alias esterni rinominati;
+- risolvere collisioni di basename in directory diverse;
+- trasformare `cmd/` in uno shadow tree dei pathname pubblici;
+- introdurre dispatch e mapping aggiuntivi nel front controller.
+
+Questa complessità è diventata la motivazione principale per abbandonare il multicall.
+
+## Stato precedente della proposta
+
+La directory privata proposta era:
 
 ```text
 $RumiAI_ROOT/cmd
 ```
 
-Variabile canonica:
+con:
 
 ```text
 RumiAI_COMMAND_DIR=$RumiAI_ROOT/cmd
 ```
 
-Ruoli distinti:
-
-```text
-bin/  namespace pubblico dei comandi; partecipa a PATH
-cmd/  implementazioni private; non partecipa a PATH
-```
-
-## Multicall
-
-I comandi pubblici possono essere symlink verso il front controller:
+I comandi pubblici erano symlink:
 
 ```text
 bin/log -> ../rumiai-os
@@ -40,107 +61,54 @@ log ...
 rumiai-os log ...
 ```
 
-convergono sullo stesso bootstrap e sullo stesso `RumiAI_COMMAND=log`.
+avrebbero dovuto convergere sullo stesso bootstrap e su `RumiAI_COMMAND`.
 
-`log`, essendo già disponibile come funzione dopo il source di `lib/log.lib`, può essere dispatchato in-process. Gli altri comandi possono essere eseguiti esplicitamente da:
+## Alias esterni esplorati
 
-```text
-$RumiAI_COMMAND_DIR/$RumiAI_COMMAND
-```
-
-## Alias esterni
-
-Un symlink esterno può essere relativo o assoluto e può trovarsi fuori da `RumiAI_ROOT`.
-
-Phase 0 canonicalizza il pathname invocato tramite `realpath -e`; `RumiAI_ROOT` viene quindi derivata dal target fisico `rumiai-os`, non dalla directory che contiene l'alias.
-
-Un alias multicall con basename `<name>` viene accettato solo se esiste il comando pubblico ufficiale:
+Era stata esplorata una policy in cui un alias esterno con basename `<name>` veniva accettato quando esisteva:
 
 ```text
 $RumiAI_BIN_DIR/<name>
 ```
 
-ed esso canonicalizza allo stesso:
+che canonicalizzava allo stesso `RumiAI_BOOTSTRAP_BIN`.
 
-```text
-RumiAI_BOOTSTRAP_BIN
-```
-
-La directory fisica dell'alias esterno non deve coincidere con `RumiAI_BIN_DIR`.
-
-Questo consente, per esempio:
+Questo permetteva, per esempio:
 
 ```text
 /usr/local/bin/log -> /opt/rumiai/rumiai-os
 ```
 
-purché `/opt/rumiai/bin/log` sia un comando pubblico ufficiale registrato sullo stesso front controller.
+ma non un alias rinominato `my-log` senza ulteriore mapping. Questo limite ha contribuito alla revisione del modello.
 
-Un basename arbitrario privo della corrispondente registrazione `bin/<name>` viene rifiutato.
+## Bootstrap preferences e status
 
-Un alias esterno chiamato `rumiai-os` è invece un alias del front controller stesso e usa la forma:
-
-```text
-rumiai-os <command> ...
-```
-
-## Invocation identity
-
-Prima della canonicalizzazione vengono preservati:
-
-```text
-RumiAI_INVOKED_AS
-RumiAI_INVOKED_BIN
-```
-
-Dopo phase 0:
-
-```text
-RumiAI_BOOTSTRAP_BIN
-RumiAI_ROOT
-```
-
-`RumiAI_INVOKED_AS` identifica il basename usato dal caller. `RumiAI_INVOKED_BIN` conserva il pathname pre-realpath che ha condotto al target fisico.
-
-## Bootstrap preferences
-
-La code proposal non usa più valori hardcoded come shortcut.
-
-Il flusso è:
+Durante questa esplorazione sono rimaste valide e sono state conservate nelle decisioni successive le parti indipendenti dal multicall:
 
 ```text
 conf/bootstrap/language
-    -> LC_ALL
-    -> LC_MESSAGES
-    -> LANG
-    -> en_US
-
 conf/bootstrap/text-encoding
-    -> UTF-8 fallback
 ```
 
-I valori richiesti vengono passati a `i18n.lib` per normalizzazione/selezione. Eventuali fallback non fatali vengono diagnosticati tramite logger solo dopo la sua attivazione.
+con fallback di lingua e UTF-8 già definiti.
 
-## Error status condivisi
-
-Prima della stabilizzazione pubblica, la sequenza del front controller viene rinumerata a partire da 1:
+È stata inoltre accettata la rinumerazione pre-stability degli errori condivisi della phase 0:
 
 ```text
 1  PATH resolution failure
 2  realpath/canonicalization failure
 3  invalid bootstrap binary
 4  invalid/inaccessible RumiAI root
-5  i18n library load failure
-6  log library load failure
-7  invalid multicall invocation
-8  invalid command name
-9  private command unavailable
 ```
 
-La regola è append-only: un numero assegnato non cambia significato e non viene riutilizzato.
+La regola append-only dei codici di errore resta valida; i codici `7..9` che erano specifici del dispatcher multicall non devono essere considerati assegnazioni canoniche del nuovo modello.
 
-Resta da definire separatamente come i return code locali delle librerie/comandi vengono mappati sugli exit status CLI senza collidere con questi status condivisi.
+## Nuovo modello
 
-## Product boundary
+Il modello corrente usa command file direttamente interpretabili da RumiAI:
 
-Questa decisione aggiorna design, specifiche e bozze in `rumiai-dev`. Non costituisce ancora implementazione autorizzata della phase 1 nel repository `rumiai-os`.
+```text
+#!/usr/bin/env rumiai-os
+```
+
+Il command file contiene la propria implementazione POSIX shell e viene sourced da `rumiai-os` dopo il bootstrap. Non è più necessario `cmd/` né un symlink multicall interno.
