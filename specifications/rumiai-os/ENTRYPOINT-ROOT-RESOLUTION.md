@@ -81,11 +81,13 @@ A controlled phase-0 failure after the script has started MUST, where possible:
 Current mapping:
 
 ```text
-RumiAI_BOOTSTRAP_FATAL_PATH_RESOLUTION_ERROR = 10
-RumiAI_BOOTSTRAP_FATAL_REALPATH_ERROR        = 11
-RumiAI_BOOTSTRAP_FATAL_BIN_ERROR             = 12
-RumiAI_BOOTSTRAP_FATAL_ROOT_ERROR            = 13
+RumiAI_BOOTSTRAP_FATAL_PATH_RESOLUTION_ERROR = 1
+RumiAI_BOOTSTRAP_FATAL_REALPATH_ERROR        = 2
+RumiAI_BOOTSTRAP_FATAL_BIN_ERROR             = 3
+RumiAI_BOOTSTRAP_FATAL_ROOT_ERROR            = 4
 ```
+
+The mapping is append-only once published: a numeric status MUST NOT later be reassigned to a different error condition.
 
 Failures that prevent the shell from starting `rumiai-os` at all are pre-phase-0 failures and are outside RumiAI's control.
 
@@ -247,6 +249,8 @@ RumiAI_BOOTSTRAP_BIN
 RumiAI_ROOT
 ```
 
+A later multicall layer MAY preserve additional pre-canonicalization invocation identity before phase 0 so public aliases can be distinguished from the physical bootstrap target. Such dispatch state does not change the phase-0 physical-root contract above.
+
 ---
 
 ## 11. Accepted phase-0 algorithm
@@ -320,12 +324,12 @@ RumiAI_BOOTSTRAP_BIN is absolute/canonical/regular
 RumiAI_ROOT is absolute/canonical/accessibile
 exported variables are visible to child processes
 bootstrap variables are readonly in the bootstrap shell
-controlled realpath failure -> identifier + status 11
-controlled invalid-bin failure -> identifier + status 12
-controlled root failure -> identifier + status 13
+controlled realpath failure -> identifier + status 2
+controlled invalid-bin failure -> identifier + status 3
+controlled root failure -> identifier + status 4
 ```
 
-A `PATH` resolution failure MUST be separately exercised when a harness can create that state after script execution has begun.
+A `PATH` resolution failure MUST be separately exercised when a harness can create that state after script execution has begun and MUST produce status `1`.
 
 Symbolic-link loops that prevent the script from being opened at all MUST be classified as pre-phase-0 loader failures, not as evidence that RumiAI's own phase-0 error path ran.
 
@@ -345,4 +349,4 @@ both are readonly in the bootstrap shell
 phase-0 helper state is cleaned up
 ```
 
-Immediately after that boundary, phase 1 initializes the minimal i18n infrastructure and the RumiAI logger. After the logger becomes active, normal RumiAI diagnostics MUST be routed through it rather than printed directly by bootstrap code.
+Immediately after that boundary, phase 1 initializes the minimal RumiAI environment, i18n infrastructure and logger. After the logger becomes active, normal RumiAI diagnostics MUST be routed through it rather than printed directly by bootstrap code.
