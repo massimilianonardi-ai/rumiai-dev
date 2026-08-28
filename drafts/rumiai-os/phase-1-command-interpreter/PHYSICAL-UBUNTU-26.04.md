@@ -42,7 +42,15 @@ Checkout exposure observed:
 bin/rumiai-os -> ../rumiai-os
 ```
 
-Executable files were executable after checkout. The host checkout permissions showed group-write bits (`775`) because working-tree permissions are affected by the host umask; Git tracks the executable bit rather than the full POSIX mode. No repository modification was reported.
+Git index modes were physically confirmed as:
+
+```text
+100755 bin/log
+120000 bin/rumiai-os
+100755 rumiai-os
+```
+
+The host checkout permissions showed group-write bits (`775`) because working-tree permissions are affected by the host umask; Git tracks the executable bit rather than the full POSIX mode. No repository modification was reported.
 
 ## Native canonicalization utilities — PASS
 
@@ -105,13 +113,72 @@ This physically confirms on Ubuntu 26.04/aarch64 that:
 - positional arguments are preserved;
 - source status `23` propagates exactly.
 
+## Direct `#!/usr/bin/env rumiai-os` execution — PASS
+
+The RumiAI `bin/` directory was prepended to PATH. Observed:
+
+```text
+RUNTIME_IN_PATH=/tmp/rumiai-os-ubuntu-test/bin/rumiai-os
+RUNTIME_REAL=/tmp/rumiai-os-ubuntu-test/rumiai-os
+```
+
+An executable source beginning with:
+
+```text
+#!/usr/bin/env rumiai-os
+```
+
+was executed directly with two arguments.
+
+Observed:
+
+```text
+DIRECT_OK
+ROOT=/tmp/rumiai-os-ubuntu-test
+COMMAND=/tmp/rumiai-direct-test
+ARG1=hello direct
+ARG2=second
+DIRECT_STATUS=24
+```
+
+This physically confirms on Ubuntu 26.04/aarch64 that:
+
+- `/usr/bin/env` resolves `rumiai-os` through inherited PATH;
+- the structural `bin/rumiai-os -> ../rumiai-os` exposure works;
+- direct host shebang execution forwards the source pathname correctly;
+- runtime and source canonicalization are correct;
+- original arguments are preserved;
+- source status `24` propagates unchanged.
+
+## Public logger — PASS
+
+`command -v log` and `realpath` both resolved to:
+
+```text
+/tmp/rumiai-os-ubuntu-test/bin/log
+```
+
+Observed logger statuses:
+
+```text
+valid log           -> 0
+invalid severity    -> 12
+invalid domain      -> 13
+invalid message-id  -> 14
+invalid fields      -> 15
+invalid log level   -> 16
+filtered debug      -> 0
+```
+
+The valid log record was localized through the Italian catalog. A debug record filtered by the default `info` threshold emitted no record and returned success.
+
+This reproduces the macOS logger contract on Ubuntu 26.04/aarch64.
+
 ## Next validation
 
 Continue with:
 
-1. direct `#!/usr/bin/env rumiai-os` execution through the structural runtime exposure;
-2. public logger and validation statuses;
-3. Bash and POSIX sh interactive Rumi shells;
-4. pathname/symlink/space canonicalization matrix;
-5. i18n/configuration matrix;
-6. source lifecycle matrix.
+1. Bash and POSIX sh interactive Rumi shells;
+2. pathname/symlink/space canonicalization matrix;
+3. i18n/configuration matrix;
+4. source lifecycle matrix.
