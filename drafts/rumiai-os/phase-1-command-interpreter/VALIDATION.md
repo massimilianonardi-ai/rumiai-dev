@@ -105,7 +105,9 @@ Product compatibility-fix commit:
 c245cff5d1bec949f72be9f8b41c77789978342b
 ```
 
-After updating to that commit, physical macOS explicit-source execution passed with a non-executable source containing no shebang:
+### Explicit source — PASS
+
+Physical macOS explicit-source execution passed with a non-executable source containing no shebang:
 
 ```text
 ./rumiai-os /tmp/rumiai-source-test 'hello world' second
@@ -124,16 +126,60 @@ STATUS=23
 
 The `/tmp` -> `/private/tmp` change is the expected physical canonicalization on this macOS host.
 
+### Direct shebang execution — PASS
+
+The RumiAI `bin/` directory was prepended to the caller PATH:
+
+```text
+RUNTIME_IN_PATH=/tmp/rumiai-os-test/bin/rumiai-os
+RUNTIME_REAL=/private/tmp/rumiai-os-test/rumiai-os
+```
+
+An executable source beginning with:
+
+```text
+#!/usr/bin/env rumiai-os
+```
+
+was then executed directly as:
+
+```text
+/tmp/rumiai-direct-test 'hello direct' second
+```
+
+Observed result:
+
+```text
+DIRECT_OK
+ROOT=/private/tmp/rumiai-os-test
+COMMAND=/private/tmp/rumiai-direct-test
+ARG1=hello direct
+ARG2=second
+STATUS=24
+```
+
+This physically confirms on macOS that:
+
+- `/usr/bin/env` resolves `rumiai-os` through PATH;
+- `bin/rumiai-os -> ../rumiai-os` works as the structural runtime exposure;
+- the host passes the executable source pathname to `rumiai-os` in the required form;
+- phase 0 canonicalizes the runtime through the structural symlink;
+- `RumiAI_COMMAND_BIN` canonicalizes the directly executed source;
+- original user arguments are preserved;
+- source status `24` propagates unchanged.
+
 Therefore the following are physically confirmed on macOS so far:
 
 - phase 0 completes with `realpath --`;
 - the runtime root is physical/canonical;
 - an explicit readable source needs neither shebang nor executable bit;
-- source arguments are preserved;
+- direct `#!/usr/bin/env rumiai-os` execution works;
+- the structural `bin/rumiai-os` symlink works;
+- source arguments are preserved in both invocation forms;
 - `RumiAI_COMMAND_BIN` is physical/canonical;
 - source status is propagated unchanged.
 
-Direct `#!/usr/bin/env rumiai-os`, logger and interactive Rumi shell tests remain pending on this host.
+Logger and interactive Rumi shell tests remain pending on this host.
 
 ## Physical Ubuntu 26.04 evidence
 
@@ -159,16 +205,13 @@ Full `rumiai-os` physical execution on Ubuntu/Linux is still pending.
 Physical tests should still cover at minimum:
 
 - phase-0 relative/absolute/PATH/symlink cases;
-- `/usr/bin/env rumiai-os` behavior;
 - portable Rumi shell startup;
 - Bash selection and POSIX sh fallback;
 - custom Rumi prompt/configuration;
-- `bin/rumiai-os` structural symlink;
 - `bin/log` direct invocation;
 - language selection and English fallback;
 - logger filtering, fields and exact statuses;
 - spaces and symbolic links in relevant paths;
-- status propagation;
 - basic signal/exit behavior of sourced commands.
 
 Cygwin/reference Windows validation remains a later host-profile gate.
