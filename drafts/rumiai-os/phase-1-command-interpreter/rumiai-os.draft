@@ -2,7 +2,7 @@
 
 # DRAFT ONLY — non-normative code proposal.
 #
-# CLI semantics in this proposal:
+# CLI semantics:
 #
 #   rumiai-os
 #       bootstrap RumiAI and enter the interactive Rumi shell.
@@ -14,8 +14,8 @@
 #
 #   #!/usr/bin/env rumiai-os
 #
-# but that shebang belongs to direct host execution and is NOT required when
-# the source is passed explicitly as an operand to rumiai-os.
+# The shebang belongs to direct host execution and is not required when the
+# source is supplied explicitly to rumiai-os.
 
 # -----------------------------------------------------------------------------
 # Phase 0 — physical runtime discovery.
@@ -88,9 +88,8 @@ export -- \
 # -----------------------------------------------------------------------------
 # Phase 1B — minimal bootstrap preference reader.
 #
-# This helper reads the small bootstrap configuration values needed before the
-# future full configuration subsystem exists. It has no role in command/source
-# dispatch.
+# Bootstrap preference files are data, never sourced shell code. The current
+# primitive accepts exactly one non-empty newline-terminated physical line.
 
 RumiAI_bootstrap_read_value()
 (
@@ -176,7 +175,6 @@ fi
 # Phase 1C — i18n.
 
 RumiAI_BOOTSTRAP_FATAL_I18N_LOAD_ERROR=5
-RumiAI_BOOTSTRAP_FATAL_LOG_LOAD_ERROR=6
 
 if [ ! -f "$RumiAI_LIB_DIR/i18n.lib" ] || [ ! -r "$RumiAI_LIB_DIR/i18n.lib" ]
 then
@@ -184,9 +182,7 @@ then
   exit "$RumiAI_BOOTSTRAP_FATAL_I18N_LOAD_ERROR"
 fi
 
-. "$RumiAI_LIB_DIR/i18n.lib"
-RumiAI_load_status=$?
-if [ "$RumiAI_load_status" -ne 0 ]
+if ! . "$RumiAI_LIB_DIR/i18n.lib"
 then
   printf -- '%s\n' 'RumiAI_BOOTSTRAP_FATAL_I18N_LOAD_ERROR' >&2
   exit "$RumiAI_BOOTSTRAP_FATAL_I18N_LOAD_ERROR"
@@ -213,15 +209,15 @@ export -- RumiAI_LANGUAGE RumiAI_TEXT_ENCODING
 # -----------------------------------------------------------------------------
 # Phase 1D — logger.
 
+RumiAI_BOOTSTRAP_FATAL_LOG_LOAD_ERROR=6
+
 if [ ! -f "$RumiAI_LIB_DIR/log.lib" ] || [ ! -r "$RumiAI_LIB_DIR/log.lib" ]
 then
   printf -- '%s\n' 'RumiAI_BOOTSTRAP_FATAL_LOG_LOAD_ERROR' >&2
   exit "$RumiAI_BOOTSTRAP_FATAL_LOG_LOAD_ERROR"
 fi
 
-. "$RumiAI_LIB_DIR/log.lib"
-RumiAI_load_status=$?
-if [ "$RumiAI_load_status" -ne 0 ]
+if ! . "$RumiAI_LIB_DIR/log.lib"
 then
   printf -- '%s\n' 'RumiAI_BOOTSTRAP_FATAL_LOG_LOAD_ERROR' >&2
   exit "$RumiAI_BOOTSTRAP_FATAL_LOG_LOAD_ERROR"
@@ -229,8 +225,7 @@ fi
 
 unset -v -- \
   RumiAI_BOOTSTRAP_FATAL_I18N_LOAD_ERROR \
-  RumiAI_BOOTSTRAP_FATAL_LOG_LOAD_ERROR \
-  RumiAI_load_status
+  RumiAI_BOOTSTRAP_FATAL_LOG_LOAD_ERROR
 
 # LOGGER ACTIVE from here onward.
 
@@ -282,24 +277,20 @@ then
     exit "$RumiAI_SHELL_ERROR_LOAD"
   fi
 
-  . "$RumiAI_SHELL_LIB"
-  RumiAI_load_status=$?
-  if [ "$RumiAI_load_status" -ne 0 ]
+  if ! . "$RumiAI_SHELL_LIB"
   then
     log error shell load-failed path "$RumiAI_SHELL_LIB"
     exit "$RumiAI_SHELL_ERROR_LOAD"
   fi
 
-  unset -v -- RumiAI_SHELL_LIB RumiAI_SHELL_ERROR_LOAD RumiAI_load_status
+  unset -v -- RumiAI_SHELL_LIB RumiAI_SHELL_ERROR_LOAD
 
   RumiAI_shell
   exit $?
 fi
 
 # One or more operands: the first operand is source code explicitly supplied to
-# the RumiAI interpreter. It does NOT need a shebang and does NOT need the
-# executable permission bit. It only needs to resolve to a readable regular
-# file.
+# the RumiAI interpreter. It does not need a shebang or executable permission.
 RumiAI_COMMAND_ENTRY=$1
 
 if ! RumiAI_COMMAND_BIN=$(command -p -- realpath -e -- "$RumiAI_COMMAND_ENTRY" 2>/dev/null)
@@ -314,7 +305,6 @@ then
   exit "$RumiAI_COMMAND_ERROR_INVALID_ENTRY"
 fi
 
-# Prevent the runtime from sourcing itself as a command body.
 if [ "$RumiAI_COMMAND_BIN" = "$RumiAI_BOOTSTRAP_BIN" ]
 then
   log error bootstrap invalid-command-entry path "$RumiAI_COMMAND_BIN"
@@ -332,9 +322,6 @@ unset -v -- \
   RumiAI_COMMAND_ERROR_RESOLUTION \
   RumiAI_COMMAND_ERROR_INVALID_ENTRY
 
-# Source the explicitly selected file in the already initialized RumiAI shell.
-# The source observes the user's remaining arguments in "$@" and has direct
-# access to loaded RumiAI functions such as log().
 . "$RumiAI_COMMAND_BIN"
 RumiAI_COMMAND_STATUS=$?
 
