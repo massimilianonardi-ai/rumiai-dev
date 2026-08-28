@@ -186,7 +186,7 @@ filtered debug      -> 0
 
 The valid record was localized through the Italian catalog, and a debug record filtered by the default `info` threshold produced no output while returning success.
 
-### Interactive Rumi shell — PASS
+### Interactive Bash Rumi shell — PASS
 
 Running:
 
@@ -194,7 +194,7 @@ Running:
 ./rumiai-os
 ```
 
-successfully entered Bash and produced the configured RumiAI prompt:
+entered Bash and produced the configured RumiAI prompt:
 
 ```text
 [RumiAI] user@host:/tmp/rumiai-os-test $
@@ -210,17 +210,11 @@ RumiAI_LANGUAGE=it_IT
 RumiAI_TEXT_ENCODING=UTF-8
 command -v rumiai-os -> /private/tmp/rumiai-os-test/bin/rumiai-os
 command -v log       -> /private/tmp/rumiai-os-test/bin/log
+log status            -> 0
+shell exit status     -> 0
 ```
 
-`log` worked from inside the Rumi shell and the shell exited with status `0`.
-
-Apple's bundled Bash initially emitted its host-specific deprecation banner before the RumiAI prompt:
-
-```text
-The default interactive shell is now zsh.
-```
-
-Product `lib/shell.lib` was updated to export:
+Apple's bundled Bash initially emitted its host-specific zsh/deprecation banner. Product `lib/shell.lib` was updated to export:
 
 ```text
 BASH_SILENCE_DEPRECATION_WARNING=1
@@ -234,9 +228,49 @@ Product banner-suppression commit:
 4f311d1fb5b35a722cf9575d890a9fa616040199
 ```
 
-After pulling that commit, physical macOS re-test produced the RumiAI prompt immediately with no Apple zsh/deprecation banner, and `$0` remained `bash`.
+A physical re-test confirmed clean startup with no Apple banner and `$0=bash`.
 
-This validates the Bash branch of the interactive Rumi shell on the tested macOS host.
+### Interactive POSIX sh Rumi shell — PASS
+
+The tracked shell selection was temporarily changed from `bash` to `sh` in:
+
+```text
+conf/shell/default
+```
+
+Running:
+
+```text
+./rumiai-os
+```
+
+entered the POSIX `sh` branch with prompt:
+
+```text
+[RumiAI] $
+```
+
+Observed state:
+
+```text
+$0=/bin/sh
+RumiAI_ROOT=/private/tmp/rumiai-os-test
+RumiAI_BIN_DIR=/private/tmp/rumiai-os-test/bin
+command -v rumiai-os -> /private/tmp/rumiai-os-test/bin/rumiai-os
+command -v log       -> /private/tmp/rumiai-os-test/bin/log
+log status            -> 0
+```
+
+The shell exited normally. The temporary configuration change was then restored with Git:
+
+```text
+git status --short -> empty
+conf/shell/default -> bash
+```
+
+This physically validates both currently supported Rumi shell selections on macOS.
+
+Two later zsh errors referring to literal paths such as `.../bin/rumiai-os` were caused only by example/expected-output lines being pasted as shell commands; they are not RumiAI failures.
 
 ## Physical Ubuntu 26.04 evidence
 
@@ -261,7 +295,6 @@ Full `rumiai-os` physical execution on Ubuntu/Linux is still pending.
 
 Physical macOS validation should still cover at minimum:
 
-- POSIX sh shell selection/fallback branch;
 - phase-0 relative/absolute/PATH/symlink edge cases;
 - spaces and symbolic links in relevant paths;
 - language fallback variations;
