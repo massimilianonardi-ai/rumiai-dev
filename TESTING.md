@@ -98,9 +98,11 @@ Il nome `test` non deve essere usato perché collide semanticamente e operativam
 
 Il nome `rumiai-test` è namespaced, identifica chiaramente la suite RumiAI e non dipende dal linguaggio con cui il runner è implementato.
 
-## 6. Organizzazione dei test
+## 6. Organizzazione gerarchica dei test
 
 I test permanenti devono essere organizzati principalmente per oggetto o capability verificata, non per tecnologia di implementazione.
+
+Ogni directory sotto `tests/` rappresenta un gruppo di test. I gruppi possono contenere test e sottogruppi e possono quindi essere nidificati quanto necessario dalla struttura logica della suite.
 
 Esempio:
 
@@ -108,6 +110,8 @@ Esempio:
 tests/
 ├── rumiai-os/
 │   ├── bootstrap/
+│   │   ├── path/
+│   │   └── status/
 │   ├── command/
 │   ├── i18n/
 │   ├── log/
@@ -115,17 +119,79 @@ tests/
 └── external/
 ```
 
+Un singolo test può essere selezionato ed eseguito individualmente.
+
+La selezione di un gruppo significa eseguire ricorsivamente tutti i test appartenenti a quel gruppo e ai suoi sottogruppi.
+
+La directory `tests/` è il gruppo radice e rappresenta l'intera suite. L'esecuzione del gruppo radice equivale quindi all'esecuzione dell'intera suite applicabile.
+
+Il pathname relativo a `tests/` costituisce l'identificatore gerarchico naturale di un test o di un gruppo ed è il riferimento da usare per selezione, output, diagnostica e registrazione delle sessioni.
+
 Classificazioni come `unit`, `integration`, `system` o `e2e` possono essere aggiunte solo quando producono un vantaggio concreto e non devono sostituire l'identificazione dell'oggetto verificato.
 
-## 7. Responsabilità di un test
+## 7. Indipendenza assoluta dei test
+
+Ogni test è un'unità autonoma di validazione.
+
+Ogni test deve poter essere eseguito singolarmente e deve produrre lo stesso risultato, a parità di target, configurazione dichiarata e condizioni rilevanti dell'host, indipendentemente dai test eseguiti prima o dopo.
+
+Un test non può dipendere da:
+
+- un altro test già eseguito;
+- stato lasciato da un altro test;
+- setup o cleanup appartenenti a un altro test;
+- file, processi, servizi, configurazioni o risultati intermedi prodotti da un altro test;
+- posizione del test nell'ordine di esecuzione della suite.
+
+Qualunque test che passi soltanto perché un altro test è stato eseguito prima è, per definizione, un test invalido.
+
+Se una proprietà richiede una sequenza coordinata di operazioni prima del cleanup, l'intera sequenza deve essere implementata all'interno di un singolo test indipendente. Dal punto di vista della suite quel test resta una sola unità, anche se internamente contiene più fasi o step.
+
+L'indipendenza prevale sull'ottimizzazione. Non si deve introdurre stato condiviso tra test soltanto per evitare il costo di setup o cleanup ripetuti.
+
+## 8. Gruppi senza orchestrazione
+
+Un gruppo è esclusivamente un contenitore gerarchico e un'unità di selezione ricorsiva.
+
+Un gruppo non può definire semantica di orchestrazione tra i test che contiene.
+
+Non sono ammessi come proprietà del gruppo:
+
+- dipendenze tra test;
+- setup condiviso necessario al funzionamento dei test;
+- teardown condiviso necessario alla correttezza dei test;
+- comunicazione o passaggio di stato tra test;
+- ordine personalizzato con significato funzionale;
+- primitive `before`, `after` o equivalenti che rendano un test dipendente dal gruppo.
+
+Se una validazione necessita di operazioni coordinate, tali operazioni appartengono a un singolo test indipendente e non al gruppo.
+
+## 9. Ordine deterministico ma semanticamente irrilevante
+
+Quando viene eseguito un gruppo, il runner deve attraversarne deterministicamente test e sottogruppi in ordine lessicografico dei rispettivi identificatori.
+
+L'ordine lessicografico serve esclusivamente a rendere l'esecuzione:
+
+- prevedibile;
+- riproducibile;
+- leggibile;
+- facilmente confrontabile tra host e sessioni.
+
+L'ordine non ha alcun significato funzionale e nessun test può fare affidamento sul fatto di essere eseguito prima o dopo un altro test.
+
+Il runner può in futuro adottare forme di esecuzione parallela soltanto se preservano il contratto osservabile della suite e l'indipendenza dei test. La correttezza di un test non deve dipendere dall'esecuzione seriale.
+
+## 10. Responsabilità di un test
 
 Ogni test deve verificare una proprietà chiaramente identificabile.
 
 Un test non deve aggregare comportamenti indipendenti se il loro fallimento può essere diagnosticato meglio con test separati.
 
+La presenza di più step interni è appropriata quando tali step sono necessari per verificare una singola proprietà o scenario autonomo e vengono interamente gestiti, verificati e ripuliti dalla stessa unità di test.
+
 Il nome del test deve descrivere la proprietà verificata e non il linguaggio con cui il test è implementato.
 
-## 8. Determinismo
+## 11. Determinismo
 
 A parità di:
 
@@ -138,7 +204,7 @@ il risultato deve essere riproducibile.
 
 Quando una dipendenza rende il comportamento intrinsecamente non deterministico, il test deve dichiararlo esplicitamente e deve verificare invarianti deterministiche quando possibile.
 
-## 9. Esito del test e stato del programma testato
+## 12. Esito del test e stato del programma testato
 
 Lo stato del test deve essere distinto dallo stato del programma o componente testato.
 
@@ -160,7 +226,7 @@ Significato:
 
 Esempio: se il comportamento atteso del target è terminare con status `143`, il test restituisce `0` quando osserva correttamente `143`.
 
-## 10. Portabilità dei test
+## 13. Portabilità dei test
 
 I test devono rispettare il contratto di piattaforma di RumiAI quando testano funzionalità portabili.
 
@@ -172,7 +238,7 @@ Le risorse temporanee devono essere create tramite meccanismi portabili appropri
 
 Un test specifico di un host è ammesso quando verifica intenzionalmente una proprietà host-specifica; in quel caso tale requisito deve essere esplicito.
 
-## 11. Isolamento
+## 14. Isolamento
 
 Un test non deve modificare il target reale quando la stessa verifica può essere eseguita senza modificarlo.
 
@@ -180,7 +246,9 @@ Quando sono necessarie modifiche a configurazioni, file, symlink, permessi o lay
 
 La working tree dello sviluppatore non deve essere usata come area temporanea di test salvo che ciò sia esattamente la proprietà che il test deve verificare.
 
-## 12. Cleanup
+Ogni test deve possedere e gestire autonomamente le proprie risorse temporanee. Le risorse create da un test non devono diventare precondizioni per altri test.
+
+## 15. Cleanup
 
 Ogni test deve lasciare l'ambiente nello stato precedente all'esecuzione, per quanto sotto il suo controllo.
 
@@ -196,7 +264,9 @@ Al termine di un test non devono rimanere inutilmente:
 
 Un test che lascia stato residuo non dichiarato è difettoso.
 
-## 13. Diagnostica dei fallimenti
+Il cleanup appartiene al test che ha creato la risorsa e non può essere delegato a un test successivo o a un gruppo.
+
+## 16. Diagnostica dei fallimenti
 
 Un `FAIL` o `ERROR` deve fornire informazioni sufficienti a comprendere almeno:
 
@@ -206,7 +276,7 @@ Un `FAIL` o `ERROR` deve fornire informazioni sufficienti a comprendere almeno:
 
 La diagnostica deve essere concisa e utile. Non deve dipendere dalla lettura di log voluminosi quando il confronto essenziale può essere mostrato direttamente.
 
-## 14. Test di tool esterni
+## 17. Test di tool esterni
 
 Un tool esterno viene testato soltanto rispetto alle capability o proprietà necessarie a RumiAI.
 
@@ -214,7 +284,7 @@ Esempio: se RumiAI richiede la canonicalizzazione di un pathname, il test deve v
 
 La disponibilità di opzioni o comportamenti non usati da RumiAI non costituisce di per sé materia di test.
 
-## 15. Development run
+## 18. Development run
 
 Una development run serve al ciclo rapido:
 
@@ -230,7 +300,7 @@ Durante una development run:
 
 Il runner deve comunque evitare di danneggiare o sporcare il target.
 
-## 16. Validation run
+## 19. Validation run
 
 Una validation run produce evidenza riproducibile associata a revisioni precise.
 
@@ -259,7 +329,7 @@ rumiai-tests/sessions/
 
 Le sessioni sperimentali dei PoC restano invece nel relativo materiale sotto `rumiai-dev-PoCs`.
 
-## 17. Ripetibilità della procedura
+## 20. Ripetibilità della procedura
 
 La stessa suite deve poter essere eseguita su host diversi senza modificare manualmente i test per adattarli al pathname locale del checkout.
 
@@ -267,24 +337,29 @@ Il target deve essere identificato dal runner tramite una regola esplicita e ver
 
 La collocazione di `rumiai-tests` sotto `$RumiAI_ROOT/.dev/` non deve essere l'unico modo possibile per indicare il target.
 
-## 18. Runner `rumiai-test`
+## 21. Runner `rumiai-test`
 
 Il runner deve essere mantenuto semplice.
 
 Le sue responsabilità iniziali sono:
 
 - individuare o ricevere esplicitamente il target;
-- selezionare i test richiesti;
-- eseguire ogni test in modo isolato quanto necessario;
+- selezionare un singolo test o un gruppo;
+- trattare `tests/` come gruppo radice dell'intera suite;
+- attraversare ricorsivamente i gruppi selezionati;
+- eseguire test e sottogruppi in ordine lessicografico deterministico, senza attribuire significato funzionale a tale ordine;
+- eseguire ogni test come unità indipendente;
 - raccogliere gli exit status `PASS/FAIL/SKIP/ERROR`;
 - produrre un riepilogo leggibile;
 - per le validation run, registrare i metadati necessari alla riproducibilità.
 
 Il runner non deve incorporare logica specifica dei singoli componenti quando tale logica può restare nel relativo test.
 
+Il runner non deve fornire primitive di orchestrazione tra test, dipendenze, setup/teardown condivisi o ordine custom con significato funzionale.
+
 La sua CLI precisa deve essere definita e validata prima dell'implementazione stabile; non va introdotta complessità preventiva.
 
-## 19. Regola di promozione
+## 22. Regola di promozione
 
 Quando un PoC o una validazione manuale scopre una proprietà che deve restare vera nel tempo, tale proprietà deve essere trasformata in un test permanente quando il costo è ragionevole.
 
@@ -301,7 +376,7 @@ esperimento
     -> evidenza permanente
 ```
 
-## 20. Fonte di verità
+## 23. Fonte di verità
 
 `rumiai-dev` definisce le regole e il comportamento atteso.
 
