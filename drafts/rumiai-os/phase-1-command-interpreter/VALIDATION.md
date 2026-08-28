@@ -1,71 +1,13 @@
 # Command-interpreter local validation
 
 Date: 2026-08-28
-Status: **ad hoc local validation, not reference-host certification**
+Status: **local validation complete; reference-host certification pending**
 
-The accepted command-interpreter concept was exercised locally using executable files beginning with:
+The consolidated candidate was checked before promotion to `rumiai-os`.
 
-```text
-#!/usr/bin/env rumiai-os
-```
+## Syntax
 
-## Validated behaviors
-
-### Interpreter argv shape
-
-For:
-
-```text
-/path/to/foo "a b" c
-```
-
-local host behavior was:
-
-```text
-rumiai-os argv[1] = /path/to/foo
-remaining args     = "a b", c
-```
-
-After `shift`, the sourced command body observed the original user arguments unchanged.
-
-### Renamed symlink alias
-
-For:
-
-```text
-aliases/my-foo -> ../pkg-a/bin/foo
-```
-
-invoking `my-foo` caused `rumiai-os` to receive the alias pathname. Canonicalizing it with `realpath -e` produced the actual command file:
-
-```text
-pkg-a/bin/foo
-```
-
-The external basename therefore had no routing role.
-
-### Duplicate basenames
-
-Both:
-
-```text
-pkg-a/bin/foo
-pkg-b/bin/foo
-```
-
-were executed correctly and remained distinguishable because the pathname, not basename, reached the runtime.
-
-### PATH-selected runtime
-
-Two independent executables named `rumiai-os` were placed in different PATH directories.
-
-The same command file was successfully interpreted by runtime A or runtime B solely according to PATH order.
-
-This confirms the intended active-environment semantics.
-
-### Sourcing command file with initial `#!`
-
-The command body was sourced successfully under:
+The current candidate sources passed syntax checking under:
 
 ```text
 dash
@@ -73,44 +15,92 @@ bash --posix
 busybox sh
 ```
 
-The initial:
+Checked files:
+
+```text
+rumiai-os
+lib/i18n.lib
+lib/log.lib
+lib/shell.lib
+```
+
+## Explicit source invocation
+
+For a readable, non-executable source file returning status `23`:
+
+```text
+rumiai-os source-test value
+```
+
+all three reference local shells produced:
+
+```text
+status = 23
+source argument preserved
+RumiAI_ROOT correct
+RumiAI_COMMAND_BIN canonical and correct
+```
+
+This validates the intended distinction between source interpretation and direct host execution: no shebang or executable bit is required for `rumiai-os file`.
+
+## Direct shebang execution
+
+With the runtime exposed in `PATH` through the RumiAI `bin/` directory, an executable file beginning with:
 
 ```text
 #!/usr/bin/env rumiai-os
 ```
 
-was treated compatibly with a shell comment in these local implementations and the body received the expected positional parameters.
+was executed successfully and observed the expected original user arguments and RumiAI environment.
+
+## Logger status contract
+
+The cleaned logger candidate was exercised for the distinct validation failures:
+
+```text
+invalid severity    -> 12
+invalid domain      -> 13
+invalid message-id  -> 14
+invalid fields      -> 15
+invalid log level   -> 16
+```
+
+Invalid structured fields are now detected before any log record is emitted, so validation failure does not leave a partial stderr line.
+
+## Previously validated command-entry properties
+
+Local earlier checks also confirmed:
+
+- renamed symlink aliases to command files;
+- duplicate basenames in distinct directories;
+- active runtime selection by `PATH`;
+- sourcing command files whose first line is `#!/usr/bin/env rumiai-os` under `dash`, `bash --posix` and BusyBox `sh`.
 
 ## Important limitation
 
-This evidence does NOT make the behavior POSIX-guaranteed.
+This remains local/ad hoc evidence, not physical reference-host certification.
 
-POSIX.1-2024 explicitly leaves general `#!` behavior unspecified for shell command files, and does not guarantee `/usr/bin/env` as a fixed pathname.
-
-Therefore the command-interpreter model remains dependent on an explicit RumiAI host profile and MUST receive formal validation on the actual reference hosts, especially:
+The next validation gate is execution of the promoted product tree on actual:
 
 ```text
-Linux reference host(s)
 macOS
-Cygwin / selected Windows POSIX environment
+Linux
 ```
 
-before product implementation is certified.
+with Cygwin/reference Windows validation to follow when that host profile is addressed.
 
-## Other unresolved validation
+Physical tests should cover at minimum:
 
-Formal PoC should also cover:
-
-- relative and absolute command-file invocation;
-- relative and absolute symlink aliases;
-- symlink chains;
-- command path containing spaces;
-- PATH entries with spaces/relative components where relevant;
-- missing `/usr/bin/env` classification;
-- `rumiai-os` absent from PATH;
-- incompatible/multiple runtime selection;
-- unreadable command file;
-- command file changed between validation and source;
-- exact behavior of `return`, `exit`, signals and traps in sourced commands;
-- syntax errors in sourced command bodies;
-- status propagation.
+- phase-0 relative/absolute/PATH/symlink cases;
+- `/usr/bin/env rumiai-os` behavior;
+- portable Rumi shell startup;
+- Bash selection and POSIX sh fallback;
+- custom Rumi prompt/configuration;
+- `bin/rumiai-os` structural symlink;
+- `bin/log` direct invocation;
+- explicit source without shebang/executable bit;
+- language selection and English fallback;
+- logger filtering, fields and exact statuses;
+- spaces and symbolic links in relevant paths;
+- status propagation;
+- basic signal/exit behavior of sourced commands.
