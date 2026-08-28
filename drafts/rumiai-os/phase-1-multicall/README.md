@@ -5,11 +5,23 @@ Date: 2026-08-28
 
 This directory contains a near-code proposal for making every public `bin/<command>` entrypoint pass through the canonical `rumiai-os` bootstrap without duplicating bootstrap logic inside each command.
 
-Nothing here changes the accepted product code in `rumiai-os`.
+Nothing here changes the product code in `rumiai-os`.
 
-## Proposed public/private shape
+## Accepted public/private shape
 
-`cmd/` is used in this draft only as a placeholder name for a directory outside `PATH`. Its final name is explicitly undecided.
+The private command directory is now accepted as:
+
+```text
+cmd/
+```
+
+It is outside `PATH` and is addressed through:
+
+```text
+RumiAI_COMMAND_DIR=$RumiAI_ROOT/cmd
+```
+
+Current intended shape:
 
 ```text
 RumiAI_ROOT/
@@ -18,13 +30,16 @@ RumiAI_ROOT/
 │   ├── log -> ../rumiai-os
 │   ├── foo -> ../rumiai-os
 │   └── ...
-├── cmd/                 # placeholder name, NOT accepted yet
+├── cmd/
 │   ├── foo
 │   └── ...
 ├── lib/
 │   ├── i18n.lib
 │   └── log.lib
 ├── conf/
+│   └── bootstrap/
+│       ├── language
+│       └── text-encoding
 └── lang/
 ```
 
@@ -39,17 +54,16 @@ foo ...
 rumiai-os foo ...
 ```
 
-## Critical distinction exposed by the draft
+## Invocation identity
 
-The front controller must preserve two different facts before phase 0 canonicalizes the physical entrypoint:
+Before phase 0 canonicalizes the physical entrypoint the front controller preserves:
 
 ```text
 RumiAI_INVOKED_AS
     basename used by the caller, e.g. log
 
 RumiAI_INVOKED_BIN
-    pathname used to reach that basename before final realpath,
-    e.g. /opt/rumiai/bin/log
+    pathname used to reach that basename before final realpath
 ```
 
 After phase 0:
@@ -59,7 +73,47 @@ RumiAI_BOOTSTRAP_BIN
     physical canonical entrypoint, e.g. /opt/rumiai/rumiai-os
 ```
 
-The pre-realpath pathname is necessary to distinguish an official `bin/log` invocation from an arbitrary external symlink that eventually resolves to the same `rumiai-os` file.
+`realpath -e` follows relative or absolute symbolic-link chains to the physical `rumiai-os`; therefore `RumiAI_ROOT` is derived from the actual RumiAI target, not from the directory containing an external alias.
+
+## External aliases
+
+An alias is no longer required to live physically inside `RumiAI_BIN_DIR`.
+
+For a multicall invocation whose basename is `log`, the decisive check is:
+
+```text
+realpath($RumiAI_BIN_DIR/log)
+    == RumiAI_BOOTSTRAP_BIN
+```
+
+Therefore an external alias such as:
+
+```text
+/usr/local/bin/log -> /opt/rumiai/rumiai-os
+```
+
+or a relative symlink resolving to the same target is accepted when `bin/log` is an official RumiAI public command resolving to that same `rumiai-os`.
+
+An arbitrary alias name is rejected when no corresponding official `bin/<name>` entry exists or when that entry resolves somewhere else.
+
+A symlink named `rumiai-os` is treated as an alias of the front controller itself and uses the normal `rumiai-os <command> ...` form.
+
+## Bootstrap preferences
+
+The integrated draft no longer uses hardcoded `RumiAI_LANGUAGE` / `RumiAI_TEXT_ENCODING` shortcuts.
+
+It now:
+
+1. reads `conf/bootstrap/language` when present;
+2. otherwise uses `LC_ALL`, `LC_MESSAGES`, `LANG`, then `en_US`;
+3. reads `conf/bootstrap/text-encoding` when present;
+4. otherwise requests `UTF-8`;
+5. loads `i18n.lib`;
+6. normalizes/selects the effective language and text encoding;
+7. loads `log.lib`;
+8. after logger activation, reports non-fatal configuration/fallback conditions.
+
+Bootstrap preference files are treated as one-line data, not sourced shell code.
 
 ## Command selection
 
@@ -78,14 +132,6 @@ rumiai-os log warn ...
     args=warn ...
 ```
 
-For multicall invocation, the draft accepts the command only when:
-
-1. the invocation directory resolves to the physical `RumiAI_BIN_DIR`;
-2. `$RumiAI_BIN_DIR/$RumiAI_INVOKED_AS` exists;
-3. that official public entry resolves to `RumiAI_BOOTSTRAP_BIN`.
-
-This intentionally rejects arbitrary external aliases in the first proposal. Whether external aliases should later be accepted is still open.
-
 ## Dispatch
 
 The draft uses a hybrid dispatch model:
@@ -100,42 +146,27 @@ other command
     -> propagate its status
 ```
 
-The private command directory name and the final in-process/external dispatch policy remain open.
+Whether generic private commands should eventually use `exec` instead of child invocation remains open.
 
-## Error status issue surfaced by multicall
+## Shared front-controller error statuses
 
-The accepted direction is:
-
-- one exact status per error condition;
-- assignments are append-only;
-- never renumber or reuse a published status;
-- success is `0`;
-- application-defined statuses stay within `1..125`.
-
-The existing accepted phase-0 code already assigns:
+The pre-stability numbering has been reset to follow the accepted sequential rule:
 
 ```text
-10 PATH resolution failure
-11 realpath failure
-12 bootstrap binary failure
-13 root failure
+1  PATH resolution failure
+2  canonical realpath failure
+3  invalid bootstrap binary
+4  invalid/inaccessible RumiAI root
+5  i18n library load failure
+6  log library load failure
+7  invalid multicall invocation
+8  invalid command name
+9  private command unavailable
 ```
 
-This predates the new sequential/append-only rule.
+These values describe the shared front controller only.
 
-Because every multicall command shares the bootstrap, these statuses are visible through every public command. Therefore a command such as `log` cannot independently reuse `10..13` without making its external CLI status ambiguous.
-
-The code proposal preserves phase 0 unchanged and allocates new front-controller draft errors starting at `14`. This is NOT yet a normative numbering decision; it exposes a real design question:
-
-```text
-A. preserve accepted 10..13 forever and treat them as globally reserved bootstrap statuses;
-
-or
-
-B. before product/public API stabilization, perform a one-time renumbering of phase-0 errors to fit the new global convention.
-```
-
-This should be decided before finalizing public command error tables.
+A separate remaining design point is how command-local/library return codes map to CLI exit statuses without colliding with shared bootstrap/front-controller statuses. That mapping must be fixed before public command contracts are frozen.
 
 ## Files
 
