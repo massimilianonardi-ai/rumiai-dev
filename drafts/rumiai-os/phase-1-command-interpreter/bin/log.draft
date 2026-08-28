@@ -1,0 +1,5 @@
+#!/usr/bin/env rumiai-os
+
+# DRAFT ONLY.
+# log.lib has already been sourced by rumiai-os before this file is sourced.
+log "$@"
