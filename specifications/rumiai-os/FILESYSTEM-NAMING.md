@@ -83,7 +83,37 @@ Examples already accepted by the project include:
 
 An executable does not gain `.sh`, `.py`, `.js` or a similar suffix merely because that is its implementation language.
 
-## 6. Hidden and conventional names
+## 6. Semantic identifiers used as pathname components
+
+A pathname component that intentionally encodes an identifier governed by a separate semantic convention MAY depart from the default lowercase naming form when preserving that identifier is valuable.
+
+The first accepted case is the RumiAI language identifier, whose current language/territory form is:
+
+```text
+language_TERRITORY
+```
+
+Examples:
+
+```text
+en_US
+it_IT
+```
+
+Therefore language directories under `lang/` MAY use this form and the uppercase territory component is intentional rather than an accidental violation of the generic naming convention.
+
+Whether the character encoding/codeset is also part of this identifier or of the corresponding language-directory name is intentionally **not yet decided**. Forms such as:
+
+```text
+it_IT
+it_IT.UTF-8
+```
+
+remain under architectural evaluation until the i18n encoding contract is fixed.
+
+Semantic exceptions MUST be documented by the subsystem that owns the identifier and MUST NOT become a general excuse for arbitrary naming variation.
+
+## 7. Hidden and conventional names
 
 A leading period is reserved for cases where hidden-file semantics are intentional and explicitly specified.
 
@@ -97,7 +127,7 @@ is such an accepted exception.
 
 Exceptions MUST be deliberate rather than accidental.
 
-## 7. User and external names
+## 8. User and external names
 
 Names supplied by users or external tools are outside the RumiAI-controlled naming convention.
 
@@ -114,7 +144,7 @@ Code handling external pathnames MUST:
 
 If a RumiAI tool automatically generates a new internal name from external/user data rather than preserving the supplied name, the generated name MUST follow this convention and the transformation/collision policy must be explicit for that tool.
 
-## 8. Bootstrap consequence
+## 9. Bootstrap consequence
 
 The canonical product entrypoint name is fixed as:
 
