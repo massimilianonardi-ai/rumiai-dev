@@ -1,0 +1,269 @@
+#!/bin/sh
+
+# DRAFT ONLY — non-normative code proposal.
+# This file is intentionally close to executable POSIX shell so the multicall
+# bootstrap/dispatch model can be reviewed before product implementation.
+
+# Preserve invocation identity BEFORE phase 0 resolves the final symlink.
+RumiAI_INVOKED_AS=${0##*/}
+RumiAI_INVOKED_BIN=
+
+# -----------------------------------------------------------------------------
+# Phase 0 — accepted physical bootstrap discovery, with one draft addition:
+# RumiAI_INVOKED_BIN preserves the pre-realpath invocation pathname.
+
+RumiAI_BOOTSTRAP_FATAL_PATH_RESOLUTION_ERROR=10
+RumiAI_BOOTSTRAP_FATAL_REALPATH_ERROR=11
+RumiAI_BOOTSTRAP_FATAL_BIN_ERROR=12
+RumiAI_BOOTSTRAP_FATAL_ROOT_ERROR=13
+
+case $0 in
+  */*)
+    RumiAI_INVOKED_BIN=$0
+    ;;
+  *)
+    if ! RumiAI_INVOKED_BIN=$(command -v -- "$0" 2>/dev/null)
+    then
+      printf -- '%s\n' 'RumiAI_BOOTSTRAP_FATAL_PATH_RESOLUTION_ERROR' >&2
+      exit "$RumiAI_BOOTSTRAP_FATAL_PATH_RESOLUTION_ERROR"
+    fi
+    ;;
+esac
+
+RumiAI_BOOTSTRAP_BIN=$RumiAI_INVOKED_BIN
+
+if ! RumiAI_BOOTSTRAP_BIN=$(command -p -- realpath -e -- "$RumiAI_BOOTSTRAP_BIN" 2>/dev/null)
+then
+  printf -- '%s\n' 'RumiAI_BOOTSTRAP_FATAL_REALPATH_ERROR' >&2
+  exit "$RumiAI_BOOTSTRAP_FATAL_REALPATH_ERROR"
+fi
+
+if [ ! -f "$RumiAI_BOOTSTRAP_BIN" ]
+then
+  printf -- '%s\n' 'RumiAI_BOOTSTRAP_FATAL_BIN_ERROR' >&2
+  exit "$RumiAI_BOOTSTRAP_FATAL_BIN_ERROR"
+fi
+
+RumiAI_ROOT=${RumiAI_BOOTSTRAP_BIN%/*}
+[ -n "$RumiAI_ROOT" ] || RumiAI_ROOT=/
+
+if ! (cd -- "$RumiAI_ROOT" 2>/dev/null)
+then
+  printf -- '%s\n' 'RumiAI_BOOTSTRAP_FATAL_ROOT_ERROR' >&2
+  exit "$RumiAI_BOOTSTRAP_FATAL_ROOT_ERROR"
+fi
+
+export -- RumiAI_BOOTSTRAP_BIN RumiAI_ROOT
+readonly -- RumiAI_BOOTSTRAP_BIN RumiAI_ROOT
+
+unset -v -- \
+  RumiAI_BOOTSTRAP_FATAL_PATH_RESOLUTION_ERROR \
+  RumiAI_BOOTSTRAP_FATAL_REALPATH_ERROR \
+  RumiAI_BOOTSTRAP_FATAL_BIN_ERROR \
+  RumiAI_BOOTSTRAP_FATAL_ROOT_ERROR
+
+# -----------------------------------------------------------------------------
+# Phase 1 — semantic roots.
+
+RumiAI_BIN_DIR=$RumiAI_ROOT/bin
+RumiAI_LIB_DIR=$RumiAI_ROOT/lib
+RumiAI_CONF_DIR=$RumiAI_ROOT/conf
+RumiAI_LANG_DIR=$RumiAI_ROOT/lang
+
+# DRAFT PLACEHOLDER NAME ONLY. The final private command directory is undecided.
+RumiAI_COMMAND_DIR=$RumiAI_ROOT/cmd
+
+PATH=$RumiAI_BIN_DIR${PATH:+:$PATH}
+
+export -- \
+  RumiAI_BIN_DIR \
+  RumiAI_LIB_DIR \
+  RumiAI_CONF_DIR \
+  RumiAI_LANG_DIR \
+  RumiAI_COMMAND_DIR \
+  PATH
+
+# DRAFT integration shortcut only.
+# The accepted final flow reads conf/bootstrap/language and
+# conf/bootstrap/text-encoding, applies host-language fallback, then initializes
+# i18n. That reader is deliberately not duplicated here.
+: "${RumiAI_LANGUAGE:=en_US}"
+: "${RumiAI_TEXT_ENCODING:=UTF-8}"
+export -- RumiAI_LANGUAGE RumiAI_TEXT_ENCODING
+
+# -----------------------------------------------------------------------------
+# Phase-1 pre-logger load errors.
+# 10..13 already exist in accepted phase 0. New draft front-controller errors
+# continue at 14 to preserve those existing meanings.
+
+RumiAI_BOOTSTRAP_FATAL_I18N_LOAD_ERROR=14
+RumiAI_BOOTSTRAP_FATAL_LOG_LOAD_ERROR=15
+
+if [ ! -f "$RumiAI_LIB_DIR/i18n.lib" ] || [ ! -r "$RumiAI_LIB_DIR/i18n.lib" ]
+then
+  printf -- '%s\n' 'RumiAI_BOOTSTRAP_FATAL_I18N_LOAD_ERROR' >&2
+  exit "$RumiAI_BOOTSTRAP_FATAL_I18N_LOAD_ERROR"
+fi
+
+. "$RumiAI_LIB_DIR/i18n.lib"
+RumiAI_load_status=$?
+if [ "$RumiAI_load_status" -ne 0 ]
+then
+  printf -- '%s\n' 'RumiAI_BOOTSTRAP_FATAL_I18N_LOAD_ERROR' >&2
+  exit "$RumiAI_BOOTSTRAP_FATAL_I18N_LOAD_ERROR"
+fi
+
+if [ ! -f "$RumiAI_LIB_DIR/log.lib" ] || [ ! -r "$RumiAI_LIB_DIR/log.lib" ]
+then
+  printf -- '%s\n' 'RumiAI_BOOTSTRAP_FATAL_LOG_LOAD_ERROR' >&2
+  exit "$RumiAI_BOOTSTRAP_FATAL_LOG_LOAD_ERROR"
+fi
+
+. "$RumiAI_LIB_DIR/log.lib"
+RumiAI_load_status=$?
+if [ "$RumiAI_load_status" -ne 0 ]
+then
+  printf -- '%s\n' 'RumiAI_BOOTSTRAP_FATAL_LOG_LOAD_ERROR' >&2
+  exit "$RumiAI_BOOTSTRAP_FATAL_LOG_LOAD_ERROR"
+fi
+
+unset -v -- \
+  RumiAI_BOOTSTRAP_FATAL_I18N_LOAD_ERROR \
+  RumiAI_BOOTSTRAP_FATAL_LOG_LOAD_ERROR \
+  RumiAI_load_status
+
+# LOGGER ACTIVE from here onward.
+
+# -----------------------------------------------------------------------------
+# Public command name validation.
+
+RumiAI_command_name_valid()
+{
+  case $1 in
+    [a-z0-9]*)
+      case $1 in
+        *[!a-z0-9-]* | *-)
+          return 1
+          ;;
+      esac
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+
+  return 0
+}
+
+# -----------------------------------------------------------------------------
+# Draft front-controller/dispatch errors.
+
+RumiAI_DISPATCH_ERROR_INVALID_MULTICALL=16
+RumiAI_DISPATCH_ERROR_INVALID_COMMAND=17
+RumiAI_DISPATCH_ERROR_COMMAND_UNAVAILABLE=18
+
+RumiAI_BOOTSTRAP_NAME=${RumiAI_BOOTSTRAP_BIN##*/}
+RumiAI_COMMAND=
+
+# Normal form:
+#   rumiai-os log warn ...
+#
+# Multicall form:
+#   bin/log -> ../rumiai-os
+#   log warn ...
+
+if [ "$RumiAI_INVOKED_AS" = "$RumiAI_BOOTSTRAP_NAME" ]
+then
+  if [ "$#" -gt 0 ]
+  then
+    RumiAI_COMMAND=$1
+    shift
+  fi
+else
+  # A multicall candidate must have been reached through the canonical bin dir,
+  # and the corresponding official bin entry must resolve back to this exact
+  # physical rumiai-os entrypoint.
+
+  case $RumiAI_INVOKED_BIN in
+    */*)
+      RumiAI_INVOKED_DIR=${RumiAI_INVOKED_BIN%/*}
+      [ -n "$RumiAI_INVOKED_DIR" ] || RumiAI_INVOKED_DIR=/
+      ;;
+    *)
+      RumiAI_INVOKED_DIR=.
+      ;;
+  esac
+
+  if ! RumiAI_INVOKED_DIR=$(command -p -- realpath -e -- "$RumiAI_INVOKED_DIR" 2>/dev/null)
+  then
+    log error bootstrap invalid-multicall invoked-as "$RumiAI_INVOKED_AS"
+    exit "$RumiAI_DISPATCH_ERROR_INVALID_MULTICALL"
+  fi
+
+  if ! RumiAI_BIN_DIR_PHYSICAL=$(command -p -- realpath -e -- "$RumiAI_BIN_DIR" 2>/dev/null)
+  then
+    log error bootstrap invalid-multicall invoked-as "$RumiAI_INVOKED_AS"
+    exit "$RumiAI_DISPATCH_ERROR_INVALID_MULTICALL"
+  fi
+
+  RumiAI_PUBLIC_COMMAND=$RumiAI_BIN_DIR/$RumiAI_INVOKED_AS
+
+  if ! RumiAI_PUBLIC_COMMAND_TARGET=$(command -p -- realpath -e -- "$RumiAI_PUBLIC_COMMAND" 2>/dev/null)
+  then
+    log error bootstrap invalid-multicall invoked-as "$RumiAI_INVOKED_AS"
+    exit "$RumiAI_DISPATCH_ERROR_INVALID_MULTICALL"
+  fi
+
+  if [ "$RumiAI_INVOKED_DIR" != "$RumiAI_BIN_DIR_PHYSICAL" ] || \
+     [ "$RumiAI_PUBLIC_COMMAND_TARGET" != "$RumiAI_BOOTSTRAP_BIN" ]
+  then
+    log error bootstrap invalid-multicall invoked-as "$RumiAI_INVOKED_AS"
+    exit "$RumiAI_DISPATCH_ERROR_INVALID_MULTICALL"
+  fi
+
+  RumiAI_COMMAND=$RumiAI_INVOKED_AS
+fi
+
+# Empty command means the front controller itself was invoked with no command.
+# Its eventual default behavior is outside this draft.
+if [ -z "$RumiAI_COMMAND" ]
+then
+  exit 0
+fi
+
+if ! RumiAI_command_name_valid "$RumiAI_COMMAND"
+then
+  log error bootstrap invalid-command command "$RumiAI_COMMAND"
+  exit "$RumiAI_DISPATCH_ERROR_INVALID_COMMAND"
+fi
+
+export -- RumiAI_COMMAND
+
+# -----------------------------------------------------------------------------
+# Hybrid dispatch.
+
+case $RumiAI_COMMAND in
+  log)
+    # log.lib is already sourced in this shell, so no second executable or
+    # second bootstrap is needed.
+    log "$@"
+    exit $?
+    ;;
+
+  *)
+    # DRAFT: cmd/ is only a placeholder private directory name.
+    RumiAI_COMMAND_BIN=$RumiAI_COMMAND_DIR/$RumiAI_COMMAND
+
+    if [ ! -f "$RumiAI_COMMAND_BIN" ] || [ ! -x "$RumiAI_COMMAND_BIN" ]
+    then
+      log error bootstrap command-unavailable command "$RumiAI_COMMAND"
+      exit "$RumiAI_DISPATCH_ERROR_COMMAND_UNAVAILABLE"
+    fi
+
+    # Deliberately not using exec in this draft. Keeping the front-controller
+    # process makes failure/status propagation explicit while we review the
+    # contract. A later implementation can evaluate exec as an optimization.
+    "$RumiAI_COMMAND_BIN" "$@"
+    exit $?
+    ;;
+esac
