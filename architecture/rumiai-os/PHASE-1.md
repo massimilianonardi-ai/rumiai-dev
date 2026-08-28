@@ -1,6 +1,6 @@
 # RumiAI OS — Phase 1 bootstrap environment
 
-Status: **Accepted architecture, encoding detail open**  
+Status: **Accepted architecture**  
 Date: 2026-08-28
 
 ## Purpose
@@ -30,14 +30,16 @@ PHASE 1A — semantic roots
 PHASE 1B — command environment
     prepend RumiAI_BIN_DIR to PATH
     ↓
-PHASE 1C — bootstrap language preference
-    conf/bootstrap/language
-    or host locale fallback
+PHASE 1C — bootstrap interaction preferences
+    language preference
+    text-encoding preference/default
+    host locale fallback where applicable
     ↓
 PHASE 1D — i18n
-    normalize request
-    resolve catalog
+    normalize language request
+    resolve UTF-8 catalog
     guarantee en_US fallback
+    prepare boundary transcoding if required
     ↓
 PHASE 1E — logger
     initialize logger
@@ -55,7 +57,7 @@ Current minimal roots:
 bin/   executable commands
 lib/   sourced/imported implementation libraries
 conf/  configuration
-lang/  language/i18n data
+lang/  language/i18n catalogs
 ```
 
 No `share/` or generic `resources/` root is created before a real cross-cutting resource category exists.
@@ -76,7 +78,7 @@ Libraries are loaded explicitly from `RumiAI_LIB_DIR`; data is loaded explicitly
 
 The bootstrap must be able to initialize advanced infrastructure without already depending on that infrastructure.
 
-The first concrete example is:
+The first concrete primitive is:
 
 ```text
 conf/bootstrap/language
@@ -84,21 +86,23 @@ conf/bootstrap/language
 
 This is a minimal bootstrap primitive, not the final general configuration architecture.
 
-Once the advanced configuration system is initialized, it may become authoritative and supersede the primitive according to the general progression:
+Once the advanced configuration system is initialized, it may become authoritative and supersede bootstrap primitives according to:
 
 ```text
 minimal primitive → initialize advanced subsystem → advanced subsystem authoritative
 ```
 
-## Language model
+The exact bootstrap file/path for the configurable text-encoding preference remains to be named before implementation.
 
-Canonical RumiAI variable:
+## Interaction language model
+
+Canonical variable:
 
 ```text
 RumiAI_LANGUAGE
 ```
 
-Current language/territory identity:
+Language/territory identity:
 
 ```text
 language_TERRITORY
@@ -121,21 +125,67 @@ LANG
 en_US
 ```
 
-Host locale variables are input to language selection, not the authoritative RumiAI language state.
+Host locale variables are input to language selection, not authoritative RumiAI state.
 
-The i18n layer should normalize host locale syntax and avoid fatal failures whenever a usable English fallback exists.
+The i18n layer normalizes host locale syntax and avoids fatal failures whenever a usable English fallback exists.
 
-## Open encoding decision
+## Text encoding model
 
-The architecture deliberately does not yet decide whether language catalog pathnames and/or `RumiAI_LANGUAGE` include a codeset suffix.
-
-The open alternatives include at least:
+Canonical user-interaction text-encoding variable:
 
 ```text
-lang/it_IT/
-lang/it_IT.UTF-8/
+RumiAI_TEXT_ENCODING
 ```
 
-and the deeper question is whether RumiAI supports multiple catalog encodings or standardizes its own controlled text resources on one encoding while treating host locale codesets only as input metadata.
+Initial and guaranteed fallback value:
 
-This issue must be resolved before the concrete i18n catalog layout and implementation are frozen.
+```text
+UTF-8
+```
+
+The value is configurable at the interaction boundary so future implementations can support additional external encodings.
+
+The internal RumiAI text model does not change with this setting:
+
+```text
+internal controlled text = UTF-8
+internal control-plane language = English
+```
+
+User payloads may be in any language. Text entering RumiAI through a non-UTF-8 boundary is transcoded to UTF-8 before internal processing; UTF-8 internal text is transcoded to the configured external encoding only when leaving such a boundary.
+
+## Catalog model
+
+Language catalogs are always UTF-8 and are identified only by language/territory:
+
+```text
+lang/en_US/
+lang/it_IT/
+```
+
+The codeset is not part of `RumiAI_LANGUAGE` and is not encoded in catalog directory names.
+
+Rejected catalog identities include:
+
+```text
+lang/it_IT.UTF-8/
+lang/it_IT/UTF-8/
+```
+
+Multiple external encodings MUST NOT require duplicate translation catalogs. Encoding adaptation belongs at the boundary.
+
+This yields the architectural separation:
+
+```text
+language identity         RumiAI_LANGUAGE=it_IT
+catalog representation    UTF-8
+interaction encoding      RumiAI_TEXT_ENCODING=UTF-8 or future supported value
+```
+
+## Failure philosophy
+
+The i18n path should minimize bootstrap-fatal conditions.
+
+Missing requested language data normally falls back to `en_US`.
+
+Unsupported requested external encoding should normally fall back to UTF-8 when the boundary remains usable in UTF-8, allowing the logger to report the degraded condition once active.
