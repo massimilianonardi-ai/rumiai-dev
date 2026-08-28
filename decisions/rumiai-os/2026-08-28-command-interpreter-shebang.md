@@ -13,7 +13,7 @@ I command entrypoint RumiAI direttamente eseguibili usano come prima riga:
 
 `rumiai-os` deve essere risolvibile tramite il `PATH` dell'ambiente RumiAI attivo.
 
-Il command file è esso stesso il comando: non esiste una seconda implementazione shadow obbligatoria sotto `cmd/` e non è richiesto un symlink multicall verso `rumiai-os`.
+Il file contiene direttamente il proprio corpo di implementazione: non esiste una seconda implementazione shadow obbligatoria sotto `cmd/` e non è richiesto un symlink multicall verso `rumiai-os`.
 
 Il modello precedente basato su:
 
@@ -24,7 +24,39 @@ cmd/<command>
 
 è superseded da questa decisione.
 
-## Modello di esecuzione
+## Distinzione fondamentale: eseguibile vs sorgente esplicito
+
+Lo shebang appartiene al meccanismo di **esecuzione diretta da parte dell'host**.
+
+Quindi:
+
+```text
+./foo
+```
+
+richiede che `foo` sia un file eseguibile e, per usare RumiAI come interprete, che inizi con:
+
+```text
+#!/usr/bin/env rumiai-os
+```
+
+Invece:
+
+```text
+rumiai-os foo
+```
+
+nomina già esplicitamente l'interprete.
+
+In questo secondo caso `foo`:
+
+- non deve obbligatoriamente contenere uno shebang;
+- non deve obbligatoriamente avere il bit executable;
+- deve essere un file regolare leggibile e risolvibile.
+
+`rumiai-os` non deve quindi verificare lo shebang di un file ricevuto esplicitamente come operando.
+
+## Modello di esecuzione diretta
 
 Quando l'host supporta la convenzione scelta, l'esecuzione di un command file come:
 
@@ -46,23 +78,41 @@ porta concettualmente a:
 
 `env` seleziona `rumiai-os` dal `PATH` e il runtime RumiAI riceve il pathname del command file come primo operando, seguito dagli argomenti originali.
 
-`rumiai-os`:
+Da quel punto il percorso è lo stesso di:
 
-1. risolve la propria root fisica con la phase 0 già definita;
-2. inizializza il bootstrap environment, i18n e logger;
-3. canonicalizza il command file ricevuto;
-4. rende disponibili le variabili RumiAI;
-5. esegue il corpo del command file nello stesso processo shell tramite source, così le librerie bootstrap già caricate restano disponibili;
-6. propaga lo status finale del command file.
+```text
+rumiai-os /path/to/foo arg1 arg2
+```
 
-Esempio minimale:
+Il runtime:
+
+1. risolve la propria root fisica con la phase 0;
+2. inizializza bootstrap environment, i18n e logger;
+3. canonicalizza il file ricevuto;
+4. verifica che sia un file regolare leggibile;
+5. rende disponibili le variabili RumiAI;
+6. rimuove il pathname del file dagli argomenti;
+7. esegue il corpo nello stesso processo shell tramite source;
+8. propaga lo status finale.
+
+Esempio direttamente eseguibile:
 
 ```sh
 #!/usr/bin/env rumiai-os
 log "$@"
 ```
 
-`log` in questo esempio è la funzione caricata da `lib/log.lib`, non un secondo processo.
+Esempio valido solo come sorgente esplicito, ma ugualmente interpretabile:
+
+```sh
+log "$@"
+```
+
+tramite:
+
+```text
+rumiai-os file
+```
 
 ## Nessun command shadow
 
@@ -76,58 +126,49 @@ non è più una root semantica accettata e `RumiAI_COMMAND_DIR` non fa più part
 
 I command file possono esistere nei pathname appropriati del sistema, anche in directory annidate e con basename uguali in directory differenti.
 
-L'identità operativa del comando è il pathname del file ricevuto dal runtime, non il solo basename.
-
-Questo evita collisioni artificiali fra, per esempio:
-
-```text
-package-a/bin/foo
-package-b/bin/foo
-```
+L'identità operativa è il pathname del file ricevuto dal runtime, non il solo basename.
 
 ## Alias e symlink
 
-Un symlink esterno può rinominare liberamente un command file:
+Un symlink esterno può rinominare liberamente un command file direttamente eseguibile:
 
 ```text
 /usr/local/bin/my-log -> /opt/rumiai/bin/log
 ```
 
-L'host esegue comunque il command file RumiAI e il runtime canonicalizza il pathname ricevuto prima di eseguire il corpo reale.
+Il runtime canonicalizza il pathname ricevuto prima di eseguire il corpo reale.
 
 Il nome esterno dell'alias non è quindi usato per determinare quale implementazione eseguire.
 
-Un symlink che punta direttamente a `rumiai-os` non diventa per questo un alias di un command file: esegue il front controller stesso.
-
 ## Runtime selezionato dal PATH
 
-Il `rumiai-os` che interpreta il command file è quello risolto da `env` nel `PATH` corrente.
+Per l'esecuzione diretta tramite shebang, il `rumiai-os` che interpreta il command file è quello risolto da `env` nel `PATH` corrente.
 
-Questa è una proprietà intenzionale del modello, analoga all'uso di `/usr/bin/env` per scegliere un interprete attivo in un ambiente.
-
-Di conseguenza, in presenza di più installazioni RumiAI, il `PATH` determina quale runtime è attivo. Un command file può quindi essere interpretato da un runtime diverso da quello fisicamente vicino al file se il `PATH` seleziona tale runtime.
+Questa è una proprietà intenzionale del modello.
 
 La compatibilità tra command file e runtime/versione dovrà essere gestita separatamente quando emergerà il requisito di versioning/capability; non viene introdotto ora un meccanismo di pinning del runtime.
 
 ## Portabilità e eccezione deliberata
 
-POSIX.1-2024 non specifica la semantica generale della convenzione `#!`: la Shell Command Language dichiara unspecified i risultati quando un file di shell commands inizia con `#!`.
+POSIX.1-2024 non specifica la semantica generale della convenzione `#!` e non garantisce che `env` sia installato esattamente in `/usr/bin/env`.
 
-POSIX standardizza la utility `env` e il suo uso del `PATH`, ma non garantisce che la utility sia installata esattamente come `/usr/bin/env`.
-
-Pertanto questa decisione è una **eccezione deliberata al solo contratto POSIX astratto** ed estende il profilo host richiesto da RumiAI con i seguenti requisiti:
+Pertanto l'esecuzione diretta tramite:
 
 ```text
-/usr/bin/env esiste ed è eseguibile
-l'host supporta executable scripts con #!
-#!/usr/bin/env rumiai-os passa il pathname del command file a rumiai-os
-rumiai-os viene risolto tramite PATH
-il command file può essere successivamente sourced dal /bin/sh di riferimento con la prima riga #! trattata in modo compatibile
+#!/usr/bin/env rumiai-os
 ```
+
+è una **eccezione deliberata al solo contratto POSIX astratto** ed estende il profilo host richiesto da RumiAI.
 
 Questi requisiti devono essere verificati con PoC sui reference host prima della promozione a product implementation.
 
-La scelta è stata accettata perché elimina una quantità sostanziale di logica e casi limite dal bootstrap/multicall e rende esplicito un requisito host semplice e verificabile.
+L'invocazione esplicita:
+
+```text
+rumiai-os file
+```
+
+non dipende invece dalla presenza dello shebang nel file.
 
 ## Confronto con alternative scartate
 
@@ -161,7 +202,7 @@ Alternativa considerata:
 exec rumiai-os "$0" "$@"
 ```
 
-Evita `/usr/bin/env`, ma mantiene un launcher shell aggiuntivo e non elimina il problema se si separano launcher e implementazione. È stata scartata in favore del modello in cui `rumiai-os` è direttamente l'interprete del command file.
+È stata scartata in favore del modello in cui `rumiai-os` è direttamente l'interprete dei command file eseguibili.
 
 ## Error status
 
@@ -174,7 +215,7 @@ Resta valida la regola già accettata:
 
 I codici assegnati sono sequenziali al momento dell'introduzione, append-only, non vengono rinumerati né riutilizzati dopo pubblicazione.
 
-La mappatura definitiva fra errori condivisi del bootstrap e return status dei singoli command file resta un tema separato.
+La mappatura definitiva fra errori condivisi del bootstrap e return status dei singoli source/command file resta un tema separato.
 
 ## Product boundary
 
