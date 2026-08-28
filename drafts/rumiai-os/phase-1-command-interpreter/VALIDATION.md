@@ -1,15 +1,34 @@
 # Command-interpreter validation
 
-Date: 2026-08-28
-Status: **physical reference-host validation in progress**
+Date: 2026-08-28  
+Status: **first physical reference-host validation cycle complete — PASS on macOS and Ubuntu 26.04/aarch64**
+
+## Product under test
+
+Repository:
+
+```text
+massimilianonardi-ai/rumiai-os
+```
+
+Current physically validated product commit:
+
+```text
+4f311d1fb5b35a722cf9575d890a9fa616040199
+```
+
+Two product corrections were made from physical macOS evidence during the cycle:
+
+```text
+c245cff5d1bec949f72be9f8b41c77789978342b  Fix realpath portability on macOS
+4f311d1fb5b35a722cf9575d890a9fa616040199  Silence macOS Bash deprecation banner
+```
+
+No further product changes were required after `4f311d1`.
 
 ## Local pre-promotion validation
 
-The consolidated candidate was checked before promotion to `rumiai-os`.
-
-### Syntax
-
-The candidate sources passed syntax checking under:
+Before promotion, the consolidated candidate passed syntax checks under:
 
 ```text
 dash
@@ -17,7 +36,7 @@ bash --posix
 busybox sh
 ```
 
-Checked files:
+for:
 
 ```text
 rumiai-os
@@ -26,351 +45,131 @@ lib/log.lib
 lib/shell.lib
 ```
 
-### Explicit source invocation
+Local checks also covered:
 
-For a readable, non-executable source file returning status `23`:
+- explicit readable/non-executable source without shebang;
+- exact source status propagation;
+- direct `#!/usr/bin/env rumiai-os` execution through RumiAI PATH exposure;
+- logger validation statuses `12..16`;
+- renamed source symlink aliases;
+- duplicate source basenames in different directories;
+- active runtime selection by PATH;
+- sourcing files whose first line is `#!/usr/bin/env rumiai-os` under dash, Bash POSIX mode and BusyBox sh.
 
-```text
-rumiai-os source-test value
-```
+## Physical macOS — PASS
 
-all three local shell implementations produced:
-
-```text
-status = 23
-source argument preserved
-RumiAI_ROOT correct
-RumiAI_COMMAND_BIN canonical and correct
-```
-
-This validates the intended distinction between source interpretation and direct host execution: no shebang or executable bit is required for `rumiai-os file`.
-
-### Direct shebang execution
-
-With the runtime exposed in `PATH` through the RumiAI `bin/` directory, an executable file beginning with:
+Detailed report:
 
 ```text
-#!/usr/bin/env rumiai-os
+drafts/rumiai-os/phase-1-command-interpreter/PHYSICAL-MACOS.md
 ```
 
-was executed successfully and observed the expected original user arguments and RumiAI environment.
+Key physical findings and passes:
 
-### Logger status contract
+- native macOS `realpath -e` is unsupported;
+- native `realpath -- pathname` works;
+- product was corrected to use the smaller common form `command -p -- realpath -- pathname` plus explicit validation;
+- explicit source without shebang/executable bit, exact status `23`;
+- direct `#!/usr/bin/env rumiai-os`, exact status `24`;
+- structural `bin/rumiai-os -> ../rumiai-os` exposure;
+- public logger, localized records, filtering and statuses `12..16`;
+- default Bash Rumi shell, including clean Apple startup after banner suppression;
+- POSIX `sh` Rumi shell;
+- runtime invocation via relative path, absolute path, PATH, relative/absolute symlink, symlink chain, intermediate symlink and pathname containing spaces;
+- relative PATH component from arbitrary caller CWD;
+- explicit source pathname containing spaces and source symlink chains;
+- language/config precedence, locale normalization and fallback;
+- malformed language and text-encoding bootstrap configuration handling;
+- text encoding normalization/fallback;
+- source lifecycle: return, fall-through status, exit and SIGTERM;
+- clean worktree after tests.
 
-The cleaned logger candidate was exercised for the distinct validation failures:
+Canonical macOS runtime identity consistently converged to the physical `/private/tmp/...` path as expected for that host.
+
+## Physical Ubuntu 26.04/aarch64 — PASS
+
+Detailed report:
 
 ```text
-invalid severity    -> 12
-invalid domain      -> 13
-invalid message-id  -> 14
-invalid fields      -> 15
-invalid log level   -> 16
+drafts/rumiai-os/phase-1-command-interpreter/PHYSICAL-UBUNTU-26.04.md
 ```
 
-Invalid structured fields are detected before any log record is emitted, so validation failure does not leave a partial stderr line.
-
-### Previously validated command-entry properties
-
-Earlier local checks also confirmed:
-
-- renamed symlink aliases to command files;
-- duplicate basenames in distinct directories;
-- active runtime selection by `PATH`;
-- sourcing command files whose first line is `#!/usr/bin/env rumiai-os` under `dash`, `bash --posix` and BusyBox `sh`.
-
-## Physical macOS evidence
-
-Reference host: physical macOS system tested on 2026-08-28.
-
-The native utility behavior was observed as:
+Reference host:
 
 ```text
-/bin/realpath -e pathname    -> unsupported, status 1
-/bin/realpath -- pathname    -> success
-/bin/realpath pathname       -> success
-/bin/realpath -q pathname    -> success
+Ubuntu 26.04 LTS (Resolute Raccoon)
+Linux 7.0.0-30-generic
+aarch64
+/bin/sh -> /usr/bin/dash
 ```
 
-This finding caused the product compatibility correction from `realpath -e --` to:
+Key physical findings and passes:
 
-```sh
-command -p -- realpath -- "$pathname"
-```
+- `realpath -e`, `realpath --` and `readlink -e` all work on this host;
+- syntax passes under host `sh` (dash) and `bash --posix`;
+- Git index modes are correct: `100755` runtime/logger and `120000` structural symlink;
+- explicit source without shebang/executable bit, exact status `23`;
+- direct `#!/usr/bin/env rumiai-os`, exact status `24`;
+- public logger, localized records, filtering and statuses `12..16`;
+- default Bash Rumi shell;
+- POSIX `sh` branch physically executing through `/usr/bin/sh` -> dash;
+- runtime invocation via relative path, absolute path, PATH, relative/absolute symlink, symlink chain, intermediate symlink and pathname containing spaces;
+- relative PATH component from arbitrary caller CWD;
+- explicit source pathname containing spaces and source symlink chains;
+- language/config precedence and locale fallback behavior identical to macOS;
+- malformed language/text-encoding bootstrap config handling;
+- text encoding normalization/fallback;
+- source lifecycle: `return 41 -> 41`, final `false -> 1`, `exit 42 -> 42`, SIGTERM -> `143`;
+- clean final worktree.
 
-followed by explicit RumiAI object validation.
+## Cross-host result
 
-Product compatibility-fix commit:
+The same principal Phase 1 behavioral matrix now passes on two materially different POSIX-like reference environments:
 
 ```text
-c245cff5d1bec949f72be9f8b41c77789978342b
+macOS physical host
+Ubuntu 26.04 LTS / aarch64 / dash
 ```
 
-### Explicit source — PASS
+The hosts differ in relevant implementation details:
 
-Physical macOS explicit-source execution passed with a non-executable source containing no shebang:
+- macOS native `realpath` does not support Issue-8 `-e`;
+- Ubuntu 26.04 supports `realpath -e` and `readlink -e`;
+- Ubuntu `/bin/sh` is dash;
+- macOS bundled Bash required host-specific deprecation-banner suppression for clean UX.
+
+Despite these differences, the current common-subset implementation at product commit `4f311d1` behaves consistently across both tested environments.
+
+## Status-map evidence
+
+Physically observed public/source statuses during this validation cycle include:
 
 ```text
-./rumiai-os /tmp/rumiai-source-test 'hello world' second
+0   success / filtered logger event
+1   sourced-command natural failure (`false`)
+12  invalid logger severity
+13  invalid logger domain
+14  invalid logger message-id
+15  invalid logger fields
+16  invalid logger level
+23  explicit-source test return
+24  direct-shebang test return
+31  canonicalization source test return
+41  explicit source `return`
+42  explicit source `exit`
+143 SIGTERM termination
 ```
 
-Observed result:
+The designed bootstrap/CLI status map `1..10` remains defined by the product contract; not every negative bootstrap/error branch has yet been physically forced on both reference hosts.
 
-```text
-SOURCE_OK
-ROOT=/private/tmp/rumiai-os-test
-COMMAND=/private/tmp/rumiai-source-test
-ARG1=hello world
-ARG2=second
-STATUS=23
-```
+## Validation boundary
 
-The `/tmp` -> `/private/tmp` change is the expected physical canonicalization on this macOS host.
+This result closes the **first physical Phase 1 reference-host cycle**, not universal portability certification.
 
-### Direct shebang execution — PASS
+Further validation can still add value for:
 
-The RumiAI `bin/` directory was prepended to the caller PATH:
-
-```text
-RUNTIME_IN_PATH=/tmp/rumiai-os-test/bin/rumiai-os
-RUNTIME_REAL=/private/tmp/rumiai-os-test/rumiai-os
-```
-
-An executable source beginning with:
-
-```text
-#!/usr/bin/env rumiai-os
-```
-
-was then executed directly as:
-
-```text
-/tmp/rumiai-direct-test 'hello direct' second
-```
-
-Observed result:
-
-```text
-DIRECT_OK
-ROOT=/private/tmp/rumiai-os-test
-COMMAND=/private/tmp/rumiai-direct-test
-ARG1=hello direct
-ARG2=second
-STATUS=24
-```
-
-This physically confirms on macOS that:
-
-- `/usr/bin/env` resolves `rumiai-os` through PATH;
-- `bin/rumiai-os -> ../rumiai-os` works as the structural runtime exposure;
-- the host passes the executable source pathname to `rumiai-os` in the required form;
-- phase 0 canonicalizes the runtime through the structural symlink;
-- `RumiAI_COMMAND_BIN` canonicalizes the directly executed source;
-- original user arguments are preserved;
-- source status `24` propagates unchanged.
-
-### Public logger — PASS
-
-Physical `bin/log` invocation passed on macOS.
-
-Observed public statuses:
-
-```text
-valid log           -> 0
-invalid severity    -> 12
-invalid domain      -> 13
-invalid message-id  -> 14
-invalid fields      -> 15
-invalid log level   -> 16
-filtered debug      -> 0
-```
-
-The valid record was localized through the Italian catalog, and a debug record filtered by the default `info` threshold produced no output while returning success.
-
-### Interactive Bash Rumi shell — PASS
-
-Running:
-
-```text
-./rumiai-os
-```
-
-entered Bash and produced the configured RumiAI prompt:
-
-```text
-[RumiAI] user@host:/tmp/rumiai-os-test $
-```
-
-Observed state inside the shell:
-
-```text
-$0=bash
-RumiAI_ROOT=/private/tmp/rumiai-os-test
-RumiAI_BIN_DIR=/private/tmp/rumiai-os-test/bin
-RumiAI_LANGUAGE=it_IT
-RumiAI_TEXT_ENCODING=UTF-8
-command -v rumiai-os -> /private/tmp/rumiai-os-test/bin/rumiai-os
-command -v log       -> /private/tmp/rumiai-os-test/bin/log
-log status            -> 0
-shell exit status     -> 0
-```
-
-Apple's bundled Bash initially emitted its host-specific zsh/deprecation banner. Product `lib/shell.lib` was updated to export:
-
-```text
-BASH_SILENCE_DEPRECATION_WARNING=1
-```
-
-before launching Bash.
-
-Product banner-suppression commit:
-
-```text
-4f311d1fb5b35a722cf9575d890a9fa616040199
-```
-
-A physical re-test confirmed clean startup with no Apple banner and `$0=bash`.
-
-### Interactive POSIX sh Rumi shell — PASS
-
-The tracked shell selection was temporarily changed from `bash` to `sh` in:
-
-```text
-conf/shell/default
-```
-
-Running:
-
-```text
-./rumiai-os
-```
-
-entered the POSIX `sh` branch with prompt:
-
-```text
-[RumiAI] $
-```
-
-Observed state:
-
-```text
-$0=/bin/sh
-RumiAI_ROOT=/private/tmp/rumiai-os-test
-RumiAI_BIN_DIR=/private/tmp/rumiai-os-test/bin
-command -v rumiai-os -> /private/tmp/rumiai-os-test/bin/rumiai-os
-command -v log       -> /private/tmp/rumiai-os-test/bin/log
-log status            -> 0
-```
-
-The shell exited normally. The temporary configuration change was then restored with Git:
-
-```text
-git status --short -> empty
-conf/shell/default -> bash
-```
-
-This physically validates both currently supported Rumi shell selections on macOS.
-
-Two later zsh errors referring to literal paths such as `.../bin/rumiai-os` were caused only by example/expected-output lines being pasted as shell commands; they are not RumiAI failures.
-
-### Phase 0 pathname/symlink matrix — PASS
-
-A diagnostic source printed only:
-
-```text
-RumiAI_BOOTSTRAP_BIN
-RumiAI_ROOT
-```
-
-and returned `0`. The promoted product was then invoked through all of the following forms on the physical macOS host:
-
-```text
-relative pathname
-absolute pathname
-PATH command-name lookup
-relative symbolic link
-absolute symbolic link
-symbolic-link chain
-symbolic link in an intermediate pathname component
-external invocation pathname containing spaces
-```
-
-Every case produced exactly the same physical runtime identity:
-
-```text
-BOOTSTRAP=/private/tmp/rumiai-os-test/rumiai-os
-ROOT=/private/tmp/rumiai-os-test
-STATUS=0
-```
-
-This physically confirms that Phase 0 converges invocation aliases and pathname indirection onto the canonical product runtime and relocatable root on macOS.
-
-### Relative PATH / source canonicalization matrix — PASS
-
-From an arbitrary caller directory, `PATH` was configured with a relative component:
-
-```text
-../rumiai-os-test/bin
-```
-
-`command -v rumiai-os` therefore returned:
-
-```text
-../rumiai-os-test/bin/rumiai-os
-```
-
-The runtime still resolved to:
-
-```text
-BOOTSTRAP=/private/tmp/rumiai-os-test/rumiai-os
-ROOT=/private/tmp/rumiai-os-test
-STATUS=0
-```
-
-An explicit source file located at a pathname containing spaces was then invoked directly and through:
-
-```text
-relative symbolic link
-absolute symbolic link
-symbolic-link chain
-```
-
-Every source invocation converged to the same physical source identity:
-
-```text
-COMMAND=/private/tmp/rumiai source space/source file
-```
-
-The supplied argument was preserved in each case and source status `31` propagated unchanged.
-
-This physically confirms on macOS that both runtime identity and explicit-source identity are canonicalized independently of caller CWD, relative PATH entries, spaces, and symlink aliases.
-
-## Physical Ubuntu 26.04 evidence
-
-Reference host evidence supplied from an Ubuntu 26.04 physical test on 2026-08-28:
-
-```text
-realpath -e   supported
-readlink -e   supported
-```
-
-This is recorded as host capability evidence, not as a reason to restore `-e` to the RumiAI runtime contract. The product intentionally uses the smaller cross-host invocation:
-
-```sh
-command -p -- realpath -- "$pathname"
-```
-
-and performs required existence/type/readability validation itself.
-
-Full `rumiai-os` physical execution on Ubuntu/Linux is still pending.
-
-## Remaining reference-host validation
-
-Physical macOS validation should still cover at minimum:
-
-- language selection/fallback and malformed bootstrap config;
-- text-encoding selection/fallback and malformed bootstrap config;
-- basic sourced-command return/exit/signal behavior.
-
-Full Linux product validation remains pending.
-
-Cygwin/reference Windows validation remains a later host-profile gate.
+- negative bootstrap/error-path forcing, especially statuses `1..10`;
+- additional Linux architectures/distributions;
+- additional macOS versions/architectures;
+- Cygwin / Windows POSIX-compatible host profile;
+- automated regression execution of the now-stable physical matrix.
