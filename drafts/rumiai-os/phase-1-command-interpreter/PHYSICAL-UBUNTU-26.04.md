@@ -174,11 +174,94 @@ The valid log record was localized through the Italian catalog. A debug record f
 
 This reproduces the macOS logger contract on Ubuntu 26.04/aarch64.
 
+## Interactive Bash Rumi shell — PASS
+
+Running:
+
+```text
+./rumiai-os
+```
+
+with the default shell configuration entered Bash with the configured prompt:
+
+```text
+[RumiAI] admino@vmdev:/tmp/rumiai-os-ubuntu-test $
+```
+
+Observed state:
+
+```text
+$0=bash
+RumiAI_ROOT=/tmp/rumiai-os-ubuntu-test
+RumiAI_BIN_DIR=/tmp/rumiai-os-ubuntu-test/bin
+RumiAI_LANGUAGE=it_IT
+RumiAI_TEXT_ENCODING=UTF-8
+command -v rumiai-os -> /tmp/rumiai-os-ubuntu-test/bin/rumiai-os
+command -v log       -> /tmp/rumiai-os-ubuntu-test/bin/log
+realpath rumiai-os    -> /tmp/rumiai-os-ubuntu-test/rumiai-os
+realpath log          -> /tmp/rumiai-os-ubuntu-test/bin/log
+log status            -> 0
+shell exit status     -> 0
+```
+
+No host-specific banner or unexpected startup output was emitted.
+
+## Interactive POSIX sh / dash Rumi shell — PASS
+
+The tracked shell selection was temporarily changed:
+
+```text
+conf/shell/default: bash -> sh
+```
+
+Running `./rumiai-os` entered the POSIX shell branch with:
+
+```text
+[RumiAI] $
+```
+
+Observed state:
+
+```text
+$0=/usr/bin/sh
+RumiAI_ROOT=/tmp/rumiai-os-ubuntu-test
+RumiAI_BIN_DIR=/tmp/rumiai-os-ubuntu-test/bin
+command -v rumiai-os -> /tmp/rumiai-os-ubuntu-test/bin/rumiai-os
+command -v log       -> /tmp/rumiai-os-ubuntu-test/bin/log
+log status            -> 0
+```
+
+The host had already established:
+
+```text
+/usr/bin/sh -> dash
+```
+
+so this physically validates the `sh` branch under dash on Ubuntu 26.04/aarch64.
+
+During interactive paste, one input boundary joined `exit` and the following `printf`, producing:
+
+```text
+/usr/bin/sh: 8: exitprintf: not found
+```
+
+This was a terminal paste/input artifact, not a RumiAI failure. All RumiAI state and logger checks had already passed, and the shell subsequently exited with status `0`.
+
+After the test:
+
+```text
+SH_RUMI_EXIT_STATUS=0
+git status --short -> empty
+conf/shell/default -> bash
+```
+
+Therefore both interactive shell branches are physically validated on Ubuntu 26.04/aarch64.
+
 ## Next validation
 
 Continue with:
 
-1. Bash and POSIX sh interactive Rumi shells;
-2. pathname/symlink/space canonicalization matrix;
+1. pathname/symlink/space canonicalization matrix;
+2. relative PATH invocation from arbitrary CWD and source symlink/space matrix;
 3. i18n/configuration matrix;
 4. source lifecycle matrix.
