@@ -1,7 +1,7 @@
 # Handoff — RumiAI OS permanent bootstrap tests
 
 Date: 2026-08-29
-Status: **PASS 40 validated; Phase 1F portability defect isolated; stable canonicalization fix awaiting cross-host validation**
+Status: **PASS 53 physically validated; interactive sh fallback validation prepared**
 
 ## Repositories
 
@@ -27,45 +27,30 @@ git pull --ff-only
 ./rumiai-test
 ```
 
-## Last fully validated baseline
+All setup, fixtures, host-specific automation, assertions and cleanup belong inside autonomous `.test` files.
+
+## Current physically validated baseline — PASS 53
 
 Product:
 
 ```text
-4d1250b02a25050ff60da2b9818519026523d6b0
+8698504f715ed61cec8a31b46ded5b79f3924eb5
+Separate pathname validation from canonicalization
 ```
 
 Suite:
 
 ```text
-9b0c5a6d42b3f8e07d372862f11907a76441d532
-```
-
-Both macOS and Ubuntu 26.04 ARM64 produced:
-
-```text
-PASS   40
-FAIL   0
-SKIP   0
-ERROR  0
-TOTAL  40
-```
-
-## Phase 1F suite
-
-Current test suite:
-
-```text
 c259b2805377bb33d9bb70c9758d6af60a27a9e2
+Add Phase 1F command and shell tests
 ```
 
-It adds command-interpreter, direct `#!/usr/bin/env rumiai-os` host-profile and initial no-argument shell tests, bringing the complete suite to 53 tests.
+Both stable hosts were physically exercised against that exact pair:
 
-## First PASS-53 attempt — portability defect discovered
+- macOS;
+- Ubuntu 26.04 ARM64.
 
-Against product `4d1250b0...`:
-
-macOS:
+Both produced:
 
 ```text
 PASS   53
@@ -75,43 +60,21 @@ ERROR  0
 TOTAL  53
 ```
 
-Ubuntu 26.04 ARM64:
+This closes the Phase 1F command-interpreter and initial shell gate, including direct `#!/usr/bin/env rumiai-os` host-profile behavior.
 
-```text
-PASS   52
-FAIL   1
-SKIP   0
-ERROR  0
-TOTAL  53
-```
+## Path canonicalization portability history
 
-Only:
+### Defect discovered
+
+With product `4d1250b0...` and suite `c259b280...`, macOS produced PASS 53 while Ubuntu produced PASS 52 / FAIL 1. The only failure was:
 
 ```text
 rumiai-os/command/resolution-failure.test
 ```
 
-failed on Ubuntu.
+The product was passing an unchecked nonexistent pathname to optionless `realpath`. GNU/Linux accepted the missing final component and later classified the entry as invalid (status 9); macOS rejected the path during canonicalization (status 8).
 
-The product was calling optionless:
-
-```sh
-realpath -- "$RumiAI_COMMAND_ENTRY"
-```
-
-on an unchecked missing pathname.
-
-GNU/Linux accepted the missing final component and returned a canonical pathname, producing later status 9. macOS rejected it during canonicalization, producing status 8.
-
-This demonstrated that RumiAI was depending on precisely the optionless missing-final-component behavior that POSIX.1-2024 says portable applications must not depend on.
-
-## Rejected attempted fix — commit 01db051c
-
-An attempted product fix changed both canonicalization calls to:
-
-```sh
-realpath -e -- "$path"
-```
+### Rejected attempted fix
 
 Commit:
 
@@ -120,48 +83,20 @@ Commit:
 Require existing paths during canonicalization
 ```
 
-This commit is **rejected as a portability solution**.
+changed the product to `realpath -e`. This is permanently rejected because the reference macOS `/bin/realpath` physically rejects `-e`.
 
-It contradicted already-recorded physical evidence from 2026-08-28:
-
-```text
-macOS /bin/realpath -e pathname -> illegal option -- e
-```
-
-and the normative compatibility correction already recorded in:
+Observed against suite `c259b280...`:
 
 ```text
-handoff/2026-08-28-rumiai-os-macos-realpath-compatibility-handoff.md
-specifications/rumiai-os/ENTRYPOINT-ROOT-RESOLUTION.md
+macOS:              PASS 19 / FAIL 34
+Ubuntu 26.04 ARM64: PASS 53 / FAIL 0
 ```
 
-Physical result against `01db051c...` and suite `c259b280...`:
+This failed result is historical evidence and MUST NOT be rewritten or presented as a viable portability solution.
 
-macOS:
+### Stable accepted rule
 
-```text
-PASS   19
-FAIL   34
-SKIP   0
-ERROR  0
-TOTAL  53
-```
-
-Ubuntu 26.04 ARM64:
-
-```text
-PASS   53
-FAIL   0
-SKIP   0
-ERROR  0
-TOTAL  53
-```
-
-This is preserved as historical evidence and MUST NOT be rewritten or presented as a viable candidate.
-
-## Stable decision — validation and canonicalization are separate
-
-The accepted portability rule from this point onward is:
+RumiAI now separates validation from canonicalization:
 
 ```text
 VALIDATE EXISTENCE
@@ -171,46 +106,27 @@ CANONICALIZE EXISTING PATH
 VALIDATE REQUIRED TYPE
 ```
 
-`realpath` is used only as a canonicalizer. It is never used to decide whether an unchecked pathname exists.
+`realpath` is never used to decide whether an unchecked pathname exists.
 
-The product now defines one internal primitive:
+The product primitive:
 
 ```text
 RumiAI_path_canonicalize_existing
 ```
 
-Its contract is:
+requires existence first with `test -e`, calls only:
 
-1. require exactly one pathname;
-2. require `[ -e "$pathname" ]` before invoking `realpath`;
-3. invoke only `command -p -- realpath -- "$pathname"`;
-4. require successful status;
-5. require an absolute result;
-6. require the canonical result still resolves to an existing object;
-7. let the caller separately validate the required object type/readability.
-
-This means RumiAI defines no behavior and has no dependency on:
-
-```text
-realpath -- missing-path
+```sh
+command -p -- realpath -- "$pathname"
 ```
 
-`realpath -e` and `realpath -E` are not required by the current reference-host profile.
+on that already-existing pathname, then verifies an absolute still-existing result. Callers separately enforce regular-file/readability requirements.
 
-The primitive is reused for both:
+The same primitive is used for both:
 
 ```text
 RumiAI_BOOTSTRAP_BIN
 RumiAI_COMMAND_BIN
-```
-
-so there is no second canonicalization policy to drift independently.
-
-Current candidate product commit:
-
-```text
-8698504f715ed61cec8a31b46ded5b79f3924eb5
-Separate pathname validation from canonicalization
 ```
 
 Normative specification commit:
@@ -220,37 +136,14 @@ Normative specification commit:
 Separate pathname validation from realpath semantics
 ```
 
-The normative specification explicitly supersedes both earlier incorrect assumptions:
+The specification explicitly supersedes both earlier incorrect shortcuts:
 
-1. requiring `realpath -e` merely because Issue 8 defines it;
+1. requiring `realpath -e` merely because POSIX Issue 8 defines it;
 2. passing an unchecked pathname to optionless `realpath` and validating only afterwards.
 
-## Why `realpath` is retained
+The unchanged regression `rumiai-os/command/resolution-failure.test` now passes on both hosts and permanently protects the missing-source status-8 contract.
 
-RumiAI does not currently reintroduce a hand-written symbolic-link resolver.
-
-The problematic cross-host variability was in using `realpath` as an existence/error-policy mechanism. For an already-resolved existing pathname, RumiAI uses only the common canonicalization operation physically available on both reference hosts and verifies the result independently.
-
-A future replacement of this primitive is allowed, including a RumiAI-owned path tool, but it must demonstrate a concrete improvement over this restricted contract and pass the complete pathname matrix on all reference hosts before promotion.
-
-## Regression evidence already in the suite
-
-The existing Phase 1F tests deliberately remain unchanged.
-
-In particular:
-
-```text
-rumiai-os/command/resolution-failure.test
-```
-
-requires a missing source pathname to produce status 8 on every host.
-
-Together with the existing absolute/relative/PATH/symlink/canonical command tests, this prevents either of the two bad simplifications from silently returning:
-
-- adding mandatory `realpath -e` breaks the macOS suite;
-- removing the pre-existence gate breaks the Linux missing-path regression.
-
-## Canonical level-2 test-authoring references
+## Canonical level-2 authoring references
 
 ```text
 interactive TTY:
@@ -263,24 +156,47 @@ isolated RumiAI OS fixture:
 massimilianonardi-ai/rumiai-tests@251ec2bde45a197590ec7dc23b8b41e60a79543f:lib/rumiai-os-fixture.lib
 ```
 
-All three are already physically validated on macOS and Ubuntu ARM64.
+All three references are physically validated on macOS and Ubuntu ARM64.
 
-## Next physical gate
+## Prepared interactive shell block — expected PASS 56
 
-Run the unchanged complete suite `c259b280...` against product candidate `8698504f...` on both stable hosts.
-
-Required result:
+Current `rumiai-tests/main`:
 
 ```text
-PASS   53
+c15cb2aaaaa0a7d209f6437f529b22840e4f1b98
+Add interactive sh fallback tests
+```
+
+New permanent tests:
+
+```text
+tests/rumiai-os/shell/sh-selection.test
+tests/rumiai-os/shell/bash-fallback-to-sh.test
+tests/rumiai-os/shell/unsupported-fallback-to-sh.test
+```
+
+They copy the already validated interactive TTY primitive inline with immutable provenance and drive a real host `sh -i` through a PTY. No operator interaction is required.
+
+Contracts:
+
+- explicit `conf/shell/default = sh` enters the RumiAI sh branch and exposes the RumiAI prompt without a fallback warning;
+- requested `bash` with `bash` deliberately absent from inherited `PATH` emits `shell.fallback`, selects `sh`, reaches the RumiAI prompt and exits autonomously;
+- a structurally valid but unsupported shell value (`zsh`) emits `shell.unsupported`, selects `sh`, reaches the RumiAI prompt and exits autonomously.
+
+The bash-fallback test restricts only the child wrapper's inherited `PATH`; product calls that intentionally use `command -p` continue to resolve through the implementation-provided standard utility path. This specifically tests the documented distinction between caller-PATH shell preference lookup and standard-path `sh` fallback.
+
+The next complete physical run should contain:
+
+```text
+PASS   56
 FAIL   0
 SKIP   0
 ERROR  0
-TOTAL  53
+TOTAL  56
 ```
 
-Only after both hosts pass may the new pathname-canonicalization contract be marked physically validated.
+on both stable hosts before this shell block is declared validated.
 
 ## Forward-only rule
 
-All repository updates remain forward-only. Rejected commits and failed physical results remain part of the historical evidence; they are corrected by later commits, never rewritten.
+All repository updates remain forward-only. Rejected commits and failed physical results remain part of the historical evidence; they are corrected only by later commits, never rewritten.
