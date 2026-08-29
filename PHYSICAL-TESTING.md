@@ -172,4 +172,65 @@ Nel test isolato del bootstrap con `$HOME` temporanea, una prima esecuzione Ubun
 - la procedura fisica non deve accodare comandi dopo un programma che legge interattivamente da `/dev/tty`;
 - una volta disponibile una suite permanente, isolamento, PTY, input simulato e cleanup devono essere spostati dentro un `.test`, lasciando all'operatore soltanto sincronizzazione dei repository e invocazione del runner.
 
-Il bootstrap è stato quindi irrigidito e il relativo scenario viene trasferito nella suite permanente `rumiai-tests`.
+Il bootstrap è stato quindi irrigidito e lo scenario è stato trasferito nella suite permanente sotto:
+
+```text
+tests/rumiai-dev/setup-dev/
+```
+
+## Validazione fisica `setup-dev` / Git identity
+
+Il 2026-08-29 il gruppo permanente:
+
+```text
+./rumiai-test rumiai-dev/setup-dev
+```
+
+è stato esercitato sul commit di `rumiai-tests`:
+
+```text
+a68a7a69ac45bc397dec3d78f39f4275aef56d57
+```
+
+su entrambi gli host stabili di riferimento.
+
+Risultato macOS:
+
+```text
+PASS   rumiai-dev/setup-dev/identity-cancel.test
+PASS   rumiai-dev/setup-dev/identity-positive.test
+PASS   rumiai-dev/setup-dev/invalid-email.test
+
+PASS   3
+FAIL   0
+SKIP   0
+ERROR  0
+TOTAL  3
+```
+
+Risultato Ubuntu 26.04 ARM64:
+
+```text
+PASS   rumiai-dev/setup-dev/identity-cancel.test
+PASS   rumiai-dev/setup-dev/identity-positive.test
+PASS   rumiai-dev/setup-dev/invalid-email.test
+
+PASS   3
+FAIL   0
+SKIP   0
+ERROR  0
+TOTAL  3
+```
+
+La sessione valida fisicamente sui due host:
+
+- rifiuto di una `user.email` non valida prima della creazione del workspace;
+- nessuna persistenza di identità quando la conferma viene annullata;
+- persistenza dell'identità valida dopo conferma esplicita;
+- `user.useConfigOnly=true`;
+- costruzione valida di `GIT_AUTHOR_IDENT` e `GIT_COMMITTER_IDENT`;
+- commit Git reale con autore e committer attesi;
+- clone isolato dei tre repository di sviluppo;
+- cleanup autonomo del test.
+
+Il supporto PTY è host-specifico soltanto internamente alla suite: macOS usa `expect`, Ubuntu usa `script(1)`. Questa differenza non cambia il contratto operativo dell'utente, che resta sincronizzazione dei due repository e singola invocazione del runner.
