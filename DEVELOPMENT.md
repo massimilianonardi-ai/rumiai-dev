@@ -57,6 +57,31 @@ Interactive input is read from `/dev/tty`, not standard input. This is necessary
 
 On Windows this form assumes a POSIX-compatible shell environment such as Git Bash. WSL is detected as Linux and uses the Linux credential policy.
 
+## Git identity
+
+The bootstrap assumes that Git may have been freshly installed and therefore does not assume any pre-existing global author identity.
+
+Before cloning repositories, `setup-dev.sh` checks the explicit global values:
+
+```text
+user.name
+user.email
+```
+
+If either value is missing, the script requests only the missing value through `/dev/tty` and persists it with `git config --global`.
+
+The bootstrap also configures:
+
+```text
+user.useConfigOnly=true
+```
+
+This prevents Git from silently synthesizing an author or committer identity from the local operating-system username and hostname. A development environment is not considered correctly configured if Git cannot construct both `GIT_AUTHOR_IDENT` and `GIT_COMMITTER_IDENT` from the explicit configuration.
+
+A usable `$HOME` is therefore required because the bootstrap intentionally verifies and, when necessary, writes global Git configuration.
+
+The script does not impose unrelated global preferences such as `init.defaultBranch`, editor choice, pull strategy or line-ending policy. Those settings are not prerequisites of the RumiAI development workspace.
+
 ## Repository handling
 
 The bootstrap uses HTTPS clone URLs for new clones:
@@ -68,6 +93,8 @@ https://github.com/massimilianonardi-ai/rumiai-dev-PoCs.git
 ```
 
 If a destination already exists, the script requires it to be a Git working tree whose `origin` identifies the expected repository. Existing HTTPS or SSH origins are accepted.
+
+New `git clone` processes receive standard input from `/dev/null`. This is intentional: in the `curl | sh` form standard input contains the bootstrap itself and must never be consumed by a child Git process.
 
 The script does not automatically run `git pull`, merge branches, reset working trees, discard local changes, create commits or push changes.
 
@@ -108,6 +135,8 @@ git credential approve
 ```
 
 After storage, the shell variable containing the token is cleared and push capability is checked again.
+
+Secure token entry requires `stty`. The script checks for it only when token entry is actually required.
 
 ## Credential storage policy
 
@@ -167,6 +196,17 @@ Observed successfully:
 
 The Ubuntu run validates the explicit insecure-fallback path, not the preferred Git Credential Manager or `libsecret` paths.
 
+### Git identity hardening discovered during validation workflow
+
+A later physical workflow exposed that the original bootstrap had not verified global Git author identity:
+
+- on macOS Git automatically synthesized a committer identity from the local username and hostname and emitted a warning;
+- on Ubuntu 26.04 ARM64 a commit failed because neither global `user.name` nor `user.email` was configured.
+
+This showed that clone and push capability alone were insufficient to declare a development environment ready. The bootstrap was therefore hardened to require explicit global identity and `user.useConfigOnly=true` before repository setup.
+
+The earlier bootstrap validation remains valid for clone/layout/credential/push behavior, but the new Git identity path requires its own physical exercise.
+
 ## Requirements
 
 The bootstrap requires:
@@ -175,6 +215,13 @@ The bootstrap requires:
 POSIX sh
 git
 uname
+HOME suitable for Git global configuration
+```
+
+For interactive secret token input it also requires:
+
+```text
+stty
 ```
 
 For persistent secure token storage it additionally requires one of the supported credential helpers appropriate for the host.
