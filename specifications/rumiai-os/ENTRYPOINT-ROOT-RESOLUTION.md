@@ -1,7 +1,7 @@
 # RumiAI OS — Entrypoint and Root Resolution
 
 Status: **Normative specification**  
-Date: 2026-08-28
+Date: 2026-08-29
 
 ## 1. Scope
 
@@ -23,6 +23,12 @@ Filesystem naming is governed by:
 ```text
 specifications/rumiai-os/FILESYSTEM-NAMING.md
 ```
+
+The portability rule established by this specification is fundamental:
+
+> pathname existence/validity and pathname canonicalization are separate operations.
+
+`realpath` MUST NOT be used by RumiAI to decide whether an unchecked pathname exists.
 
 ---
 
@@ -87,7 +93,7 @@ RumiAI_BOOTSTRAP_FATAL_BIN_ERROR             = 3
 RumiAI_BOOTSTRAP_FATAL_ROOT_ERROR            = 4
 ```
 
-The mapping is append-only once published: a numeric status MUST NOT later be reassigned to a different error condition.
+The historical `REALPATH_ERROR` identifier/status is retained for append-only compatibility. Its contract is now the failure of the existing-path canonicalization primitive, not permission to depend on unspecified `realpath` behavior.
 
 Failures that prevent the shell from starting `rumiai-os` at all are pre-phase-0 failures and are outside RumiAI's control.
 
@@ -122,46 +128,97 @@ command -v -- "$0"
 
 The current `PATH` is required because the purpose is to reconstruct the command selected for the actual invocation.
 
-The result is **not required to be absolute**. POSIX `PATH` may contain relative directory entries. The result MUST be passed to `realpath`, which performs the final absolute physical canonicalization.
+The result is not required to be absolute. It is passed to the existing-path canonicalization primitive defined below.
 
-Failure terminates with `RumiAI_BOOTSTRAP_FATAL_PATH_RESOLUTION_ERROR`.
+Failure of the `PATH` lookup terminates with `RumiAI_BOOTSTRAP_FATAL_PATH_RESOLUTION_ERROR`.
 
 ---
 
-## 5. Physical canonicalization
+## 5. Existing-path canonicalization contract
 
-Phase 0 MUST delegate canonicalization to `realpath` rather than implement a custom symbolic-link resolver.
+### 5.1 Decision
 
-The standard utility SHOULD be selected through the POSIX default utility path:
-
-```sh
-command -p -- realpath -- "$RumiAI_BOOTSTRAP_BIN"
-```
-
-`command -p` intentionally differs from the current-`PATH` lookup used for the entrypoint: the bootstrap should depend on the host's standard `realpath`, not on an arbitrary utility earlier in the caller's `PATH`.
-
-POSIX.1-2024 defines the `-e` option, but physical validation on macOS on 2026-08-28 demonstrated that the host implementation rejects `-e` while accepting both `realpath -- pathname` and plain `realpath pathname`. RumiAI therefore uses the common optionless canonicalization interface with `--` and validates the resulting final file explicitly in the next step.
-
-The required invariant is the resulting absolute physical/canonical pathname, not use of a particular `realpath` option.
-
-Phase 0 MUST NOT use:
+RumiAI MUST NOT rely on any implementation's default behavior for:
 
 ```text
-ls -l parsing
-manual recursive symbolic-link traversal
-GNU readlink -f
-GNU-specific realpath options
+realpath pathname
 ```
 
-A loop, dangling target, inaccessible required component or other canonicalization failure that causes `realpath` itself to fail terminates with `RumiAI_BOOTSTRAP_FATAL_REALPATH_ERROR` when phase 0 has already begun.
+when `pathname` does not resolve to an existing directory entry.
 
-A pathname that `realpath` can canonicalize but that does not identify the required regular bootstrap file is rejected by the explicit final-file validation and terminates with `RumiAI_BOOTSTRAP_FATAL_BIN_ERROR`.
+POSIX.1-2024 defines `realpath -e` and `realpath -E`, and explicitly warns that behavior without either option varies when canonicalization would otherwise fail. Physical validation on the reference macOS host on 2026-08-28 also established that its `/bin/realpath` rejects `-e`.
+
+Therefore RumiAI does **not** toggle between `-e` and no `-e` as application semantics.
+
+The permanent RumiAI contract is instead:
+
+```text
+validate that the input pathname already resolves to an existing object
+        ↓
+canonicalize that existing pathname
+        ↓
+validate the canonical result and required object type
+```
+
+`realpath` is a canonicalizer in this contract, not an existence validator.
+
+### 5.2 Precondition
+
+Before invoking `realpath`, the pathname MUST successfully resolve to an existing directory entry using the independent POSIX `test` primary:
+
+```sh
+[ -e "$pathname" ]
+```
+
+If this fails, `realpath` MUST NOT be used to classify the missing pathname.
+
+This rule removes RumiAI's dependency on the differing GNU/BSD behavior for a missing final component.
+
+### 5.3 Canonicalization
+
+For a pathname that passed the existence gate, RumiAI uses the host's standard `realpath` through the default POSIX utility path:
+
+```sh
+command -p -- realpath -- "$pathname"
+```
+
+The result MUST:
+
+- be produced with status 0;
+- be absolute;
+- itself resolve to an existing directory entry.
+
+If these conditions fail, the existing-path canonicalization primitive fails.
+
+The host-profile requirement is therefore limited to optionless canonicalization of a pathname that already exists. RumiAI defines **no required behavior** for optionless `realpath` on missing pathnames.
+
+### 5.4 Why this is portable within the supported host profile
+
+POSIX.1-2024 requires the canonical pathname result when the corresponding `realpath()` pathname resolution succeeds. RumiAI establishes successful pathname resolution independently before invoking the utility and verifies the result again afterwards.
+
+If the filesystem changes between checks, or the utility otherwise fails, RumiAI treats the operation as a canonicalization failure. This primitive is not a filesystem transaction and does not claim to eliminate ordinary pathname TOCTOU races.
+
+### 5.5 Prohibited dependencies
+
+RumiAI phase 0 MUST NOT depend on:
+
+```text
+realpath -e being implemented by every reference host
+realpath -E being implemented by every reference host
+optionless realpath behavior for missing pathnames
+GNU readlink -f
+GNU-specific realpath options
+ls -l output parsing
+manual recursive symbolic-link traversal
+```
+
+A future replacement is permitted only if it preserves the same externally tested canonical-path contract and is separately validated on every reference host.
 
 ---
 
-## 6. Final bootstrap file validation
+## 6. Bootstrap file validation
 
-After canonicalization:
+After existing-path canonicalization:
 
 ```sh
 [ -f "$RumiAI_BOOTSTRAP_BIN" ]
@@ -169,7 +226,7 @@ After canonicalization:
 
 MUST succeed.
 
-This explicit validation is part of the portability contract and does not rely on `realpath -e` semantics.
+This establishes the bootstrap-specific regular-file invariant independently of canonicalization.
 
 Failure terminates with `RumiAI_BOOTSTRAP_FATAL_BIN_ERROR`.
 
@@ -184,13 +241,7 @@ RumiAI_ROOT=${RumiAI_BOOTSTRAP_BIN%/*}
 [ -n "$RumiAI_ROOT" ] || RumiAI_ROOT=/
 ```
 
-`dirname` is intentionally not used in this constrained post-`realpath` domain. This is not a project-wide prohibition of `dirname`.
-
-If the basename is needed in the same constrained domain, prefer:
-
-```sh
-${RumiAI_BOOTSTRAP_BIN##*/}
-```
+`dirname` is intentionally not used in this constrained post-canonicalization domain. This is not a project-wide prohibition of `dirname`.
 
 Before export, phase 0 MUST verify:
 
@@ -202,60 +253,44 @@ Failure terminates with `RumiAI_BOOTSTRAP_FATAL_ROOT_ERROR`.
 
 ---
 
-## 8. Command substitution and newline handling
+## 8. Reuse by command entry resolution
+
+The same existing-path canonicalization primitive MUST be reused for the Phase-1 command/source operand rather than maintaining a second raw `realpath` call with different semantics.
+
+This ensures that:
+
+```text
+missing command source
+```
+
+is rejected by RumiAI before `realpath` can expose host-dependent missing-final-component behavior.
+
+An existing directory can still be canonicalized successfully and then rejected by the separate command-entry regular-file validation. Thus the existing public distinction remains:
+
+```text
+missing/unresolvable source -> command resolution failure
+existing but invalid source -> invalid command entry
+```
+
+---
+
+## 9. Command substitution and newline handling
 
 POSIX command substitution removes trailing newline bytes from captured output.
 
-Phase 0 deliberately does **not** implement a sentinel protocol for this general behavior.
+Phase 0 deliberately does not implement a general sentinel protocol for this behavior because the final RumiAI-controlled product entrypoint name is fixed as `rumiai-os` and RumiAI filesystem naming prohibits newline characters in controlled names.
 
-The RumiAI-controlled final product entrypoint is fixed as:
-
-```text
-rumiai-os
-```
-
-and the RumiAI filesystem naming convention prohibits newline characters in RumiAI-controlled names.
-
-Therefore:
-
-- `command -v` resolves the fixed command name `rumiai-os` when invocation is command-name based;
-- `realpath` canonicalizes to the controlled final product entrypoint;
-- newline characters in externally controlled parent directory components are embedded within the complete executable pathname rather than trailing at its end, and command substitution preserves them;
-- an externally named direct symlink is first preserved in `$0` without command substitution and is then canonicalized to the controlled product target.
-
-Ordinary command substitution is therefore sufficient in phase 0:
-
-```sh
-RumiAI_BOOTSTRAP_BIN=$(command -v -- "$0")
-RumiAI_BOOTSTRAP_BIN=$(command -p -- realpath -- "$RumiAI_BOOTSTRAP_BIN")
-```
-
-This is a phase-0 consequence of the controlled naming contract, not a general rule for arbitrary external pathnames. Later subsystems that capture uncontrolled pathname output MUST evaluate trailing-newline preservation according to their own data contract.
+This is a constrained bootstrap rule, not a general pathname serialization rule. Other subsystems handling arbitrary external final components MUST define their own byte-preservation contract.
 
 ---
 
-## 9. CLI delimiter policy
+## 10. CLI delimiter policy
 
 Every phase-0 utility invocation MUST obey the canonical RumiAI `--` rule: use it when the specific utility supports it as an option terminator and receives operand/data arguments; do not invent it where unsupported.
 
-Physical macOS validation confirmed that its `/bin/realpath` supports `--`, even though it does not support `-e`.
+Physical macOS validation confirmed that its `/bin/realpath` supports `--` even though it does not support `-e`.
 
 `test` / `[` does not receive an invented `--` delimiter.
-
----
-
-## 10. Internal phase-0 state
-
-Phase-0 helper variables SHOULD use the `RumiAI_` application namespace and MUST NOT be exported unless they are part of the public bootstrap contract.
-
-After successful export/readonly protection, phase-0-only helper state SHOULD be removed before phase 1 starts.
-
-The stable state crossing the phase boundary is primarily:
-
-```text
-RumiAI_BOOTSTRAP_BIN
-RumiAI_ROOT
-```
 
 ---
 
@@ -264,6 +299,27 @@ RumiAI_ROOT
 Conceptually:
 
 ```sh
+RumiAI_path_canonicalize_existing()
+(
+  [ "$#" -eq 1 ] || return 1
+
+  RumiAI_path_input=$1
+  [ -e "$RumiAI_path_input" ] || return 1
+
+  if ! RumiAI_path_output=$(command -p -- realpath -- "$RumiAI_path_input" 2>/dev/null)
+  then
+    return 1
+  fi
+
+  case $RumiAI_path_output in
+    /*) : ;;
+    *) return 1 ;;
+  esac
+
+  [ -e "$RumiAI_path_output" ] || return 1
+  printf -- '%s\n' "$RumiAI_path_output"
+)
+
 case $0 in
   */*)
     RumiAI_BOOTSTRAP_BIN=$0
@@ -277,7 +333,7 @@ case $0 in
     ;;
 esac
 
-if ! RumiAI_BOOTSTRAP_BIN=$(command -p -- realpath -- "$RumiAI_BOOTSTRAP_BIN" 2>/dev/null)
+if ! RumiAI_BOOTSTRAP_BIN=$(RumiAI_path_canonicalize_existing "$RumiAI_BOOTSTRAP_BIN")
 then
   printf -- '%s\n' 'RumiAI_BOOTSTRAP_FATAL_REALPATH_ERROR' >&2
   exit "$RumiAI_BOOTSTRAP_FATAL_REALPATH_ERROR"
@@ -302,7 +358,7 @@ export -- RumiAI_BOOTSTRAP_BIN RumiAI_ROOT
 readonly -- RumiAI_BOOTSTRAP_BIN RumiAI_ROOT
 ```
 
-Implementation-only phase-0 state is removed before phase 1.
+The same `RumiAI_path_canonicalize_existing` primitive is used later for `RumiAI_COMMAND_BIN`.
 
 ---
 
@@ -314,38 +370,66 @@ Validation MUST include at least:
 success produces no stdout/stderr
 relative invocation
 absolute invocation
-PATH invocation with absolute PATH component
-PATH invocation with relative PATH component
+PATH invocation
 relative symbolic link
 absolute symbolic link
 symbolic-link chain
 symbolic link in an intermediate component
-pathname with spaces from external/user-controlled components
-external pathname component containing newline
-external direct symlink with arbitrary valid POSIX name
-leading-hyphen external pathname component
 arbitrary caller CWD
 successful cd -- "$RumiAI_ROOT"
 RumiAI_BOOTSTRAP_BIN is absolute/canonical/regular
-RumiAI_ROOT is absolute/canonical/accessibile
-exported variables are visible to child processes
-bootstrap variables are readonly in the bootstrap shell
-controlled realpath failure -> identifier + status 2
+RumiAI_ROOT is absolute/canonical/accessible
+controlled existing-path canonicalization failure -> identifier + status 2
 controlled invalid-bin failure -> identifier + status 3
 controlled root failure -> identifier + status 4
+missing command source -> status 8 on every reference host
+existing directory command source -> status 9 on every reference host
 ```
 
-Reference-host validation MUST also verify the exact supported `realpath` interface. The current common requirement is successful `realpath -- pathname`; support for `-e` is not required.
+Reference-host validation MUST verify only the `realpath` behavior RumiAI actually depends on:
+
+```text
+realpath -- existing-path -> successful absolute physical canonical pathname
+```
+
+Reference-host certification MUST NOT require or infer any particular result for:
+
+```text
+realpath -- missing-path
+```
+
+because RumiAI deliberately never uses that behavior as part of its contract.
+
+Support for `realpath -e` or `realpath -E` is not a reference-host requirement.
 
 A `PATH` resolution failure MUST be separately exercised when a harness can create that state after script execution has begun and MUST produce status `1`.
 
-Symbolic-link loops that prevent the script from being opened at all MUST be classified as pre-phase-0 loader failures, not as evidence that RumiAI's own phase-0 error path ran.
+Symbolic-link loops that prevent the script from being opened at all remain pre-phase-0 loader failures.
 
-The same contract SHOULD be run on multiple independent `/bin/sh` implementations and on each reference host before host certification.
+The same contract MUST be run on each reference host before host certification.
 
 ---
 
-## 13. Phase boundary
+## 13. Superseded reasoning
+
+The following two earlier claims are explicitly superseded:
+
+1. that `realpath -e` can be required merely because Issue 8 standardizes it;
+2. that optionless `realpath` may safely receive an unchecked pathname and be followed only by later object validation.
+
+The first failed on the reference macOS implementation. The second exposed host-dependent missing-final-component behavior between macOS and GNU/Linux.
+
+The stable rule from this specification onward is:
+
+```text
+VALIDATE EXISTENCE -> CANONICALIZE EXISTING PATH -> VALIDATE REQUIRED TYPE
+```
+
+This rule must not be changed merely to accommodate a single host implementation; a future change requires a new normative decision and cross-host physical validation.
+
+---
+
+## 14. Phase boundary
 
 A successful phase 0 ends when:
 
@@ -354,7 +438,6 @@ RumiAI_BOOTSTRAP_BIN is valid
 RumiAI_ROOT is valid
 both are exported
 both are readonly in the bootstrap shell
-phase-0 helper state is cleaned up
 ```
 
-Immediately after that boundary, phase 1 initializes the minimal RumiAI environment, i18n infrastructure and logger. After the logger becomes active, normal RumiAI diagnostics MUST be routed through it rather than printed directly by bootstrap code.
+Immediately after that boundary, phase 1 initializes the minimal RumiAI environment, i18n infrastructure and logger.
