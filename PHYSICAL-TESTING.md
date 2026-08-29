@@ -47,6 +47,22 @@ In questo modo una sessione non può produrre evidenza contro un checkout stale 
 
 I comandi che appartengono alla stessa sessione devono essere forniti all'operatore in un unico blocco di codice quando ragionevolmente possibile. Se una divisione è tecnicamente necessaria, il numero di blocchi deve essere ridotto al minimo.
 
+### Comandi interattivi
+
+Un comando che legge direttamente dal terminale, per esempio tramite `/dev/tty`, costituisce un confine obbligatorio del blocco da incollare.
+
+Non devono essere presenti comandi successivi nello stesso blocco di paste quando il comando interattivo può attendere input. Le righe già incollate possono infatti trovarsi nel buffer del terminale ed essere consumate dal prompt come risposta, anziché essere eseguite successivamente dalla shell.
+
+La regola operativa è quindi:
+
+```text
+- i comandi preparatori possono stare nello stesso blocco;
+- il comando interattivo deve essere l'ultima riga del blocco;
+- eventuali verifiche successive devono stare in un nuovo blocco, eseguito solo dopo che il comando interattivo è terminato.
+```
+
+Questa eccezione prevale sulla preferenza generale per un singolo blocco per sessione.
+
 Il prefisso operativo normale di una sessione è quindi:
 
 ```text
@@ -144,3 +160,12 @@ sessions/20260829T110518+0200-16081/
 Questa seconda sessione ha esercitato realmente i rami host-specifici di metadata/hash snapshot, l'esclusione autoreferenziale della run corrente e la pubblicazione di validation session.
 
 Nota: durante questa seconda sessione `rumiai-os` non era stato sincronizzato esplicitamente all'inizio. Ciò non invalida questi risultati specifici perché i quattro test eseguiti appartengono al gruppo `runner` e non esercitano `rumiai-os`. La procedura è stata successivamente irrigidita imponendo il pull di `rumiai-os` prima del pull di `rumiai-tests` per tutte le sessioni future.
+
+## Bootstrap Git identity: lezione operativa
+
+Nel test isolato del bootstrap con `$HOME` temporanea, una prima esecuzione Ubuntu ha ricevuto accidentalmente una riga del blocco di test al prompt `Git user.email`. Il problema ha mostrato due aspetti distinti:
+
+- il bootstrap necessitava di validazione e conferma dell'identità prima di scriverla;
+- la procedura fisica non deve accodare comandi dopo un programma che legge interattivamente da `/dev/tty`.
+
+Il bootstrap è stato quindi irrigidito e la regola sui confini dei blocchi interattivi è diventata parte della procedura fisica.
