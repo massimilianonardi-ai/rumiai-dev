@@ -84,6 +84,14 @@ Se in futuro viene scoperto un bug grave in una primitive canonica, è possibile
 
 Un aggiornamento della reference implementation non modifica automaticamente i test che ne hanno incorporato una copia precedente. La modifica dei test storici deve essere deliberata e deve preservare la tracciabilità dell'evidenza già prodotta.
 
+Quando una versione viene dichiarata difettosa, il processo normale è:
+
+1. correggere prima la reference implementation;
+2. identificare le copie derivate tramite il commit di provenance;
+3. aggiornare deliberatamente soltanto i test interessati;
+4. aggiornare nei test il commit sorgente;
+5. rieseguire la validazione applicabile sugli host di riferimento.
+
 ### 3.3 Uso diretto di librerie condivise
 
 Fare `source` di una libreria comune da un test permanente introduce una dipendenza runtime dalla versione corrente di quella libreria.
@@ -91,6 +99,16 @@ Fare `source` di una libreria comune da un test permanente introduce una dipende
 Questo può essere accettabile per primitive molto piccole, stabili e deliberatamente parte del contratto della piattaforma di test, ma non deve essere il default per logica materialmente necessaria a stabilire l'esito del test.
 
 Quando l'indipendenza e la riproducibilità storica sono più importanti della deduplicazione, la primitive deve essere copiata inline con riferimento al commit di origine.
+
+### 3.4 Gate di validazione della reference implementation
+
+L'estrazione di codice già funzionante da un test non dimostra automaticamente che la nuova astrazione generalizzata sia corretta.
+
+Una reference implementation deve quindi avere un proprio test permanente che la eserciti come oggetto di validazione. Quando contiene rami host-specifici materialmente diversi, tali rami devono essere esercitati fisicamente sugli host stabili applicabili prima che quella versione venga considerata una sorgente canonica affidabile per nuove copie inline.
+
+In particolare non deve essere assunto che una trasformazione da codice specializzato a primitive generica sia semanticamente neutra. Parametrizzazione, escaping, quoting, parsing dei dati e selezione host-specifica possono introdurre nuovi failure mode anche quando il codice originario era già validato.
+
+Una versione nuova o sostanzialmente modificata della reference implementation resta quindi **non validata** fino al passaggio del proprio test sugli host applicabili. I test già esistenti non devono essere migrati in massa alla nuova versione prima di tale validazione, salvo quando la migrazione stessa è necessaria per diagnosticare o correggere un bug noto e viene seguita immediatamente dalla validazione fisica.
 
 ## 4. Livello 3 — promozione a tool di RumiAI OS
 
@@ -177,6 +195,7 @@ Durante la prima implementazione sono emersi almeno questi problemi:
 2. In Tcl/Expect, stringhe tra doppi apici contenenti `[y/N]` interpretano le parentesi quadre come command substitution. I prompt letterali devono essere trattati come dati e non come codice Tcl.
 3. Una strategia di logging Expect che disabilita `log_user` può rendere la cattura dell'output meno trasparente e complicare la diagnosi. Il driver deve preservare un transcript osservabile quando fallisce.
 4. Inserire manualmente molti comandi dopo un programma che legge da `/dev/tty` può far consumare al prompt righe già incollate nel terminale. Questo è uno dei motivi per cui l'interazione deve essere automatizzata dentro il `.test`.
+5. Generalizzare un prompt letterale a un pattern dinamico dentro un blocco Tcl braced può cambiare le regole di sostituzione: una variabile come `$prompt` non deve essere assunta equivalente al precedente pattern letterale. Per i prompt generati dinamicamente la strategia corrente usa il matching esatto `expect -ex "$prompt"`; il valore ottenuto dalla variabile viene trattato come dato e timeout/EOF sono gestiti esplicitamente.
 
 ### Stato di promozione
 
