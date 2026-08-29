@@ -253,7 +253,7 @@ if choose_secure_helper; then
 else
     warn 'no supported secure Git credential helper was found on this host'
     warn 'recommended helpers: osxkeychain (macOS), Git Credential Manager (Windows/Linux), libsecret (Linux)'
-    if ask_yes_no 'Use git crdential-store instead? WARNING: it stores the token in plaintext'; then
+    if ask_yes_no 'Use git credential-store instead? WARNING: it stores the token in plaintext'; then
         CREDENTIAL_HELPER=store
     else
         die 'credential configuration cancelled; install a secure credential helper and rerun'

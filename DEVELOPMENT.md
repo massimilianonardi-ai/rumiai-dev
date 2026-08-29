@@ -67,7 +67,7 @@ https://github.com/massimilianonardi-ai/rumiai-tests.git
 https://github.com/massimilianonardi-ai/rumiai-dev-PoCs.git
 ```
 
-If a destination already exists, the script requires it to be a Git working tree whose `origin` identifies the expected repository. Existing HTTPPS or SSH origins are accepted.
+If a destination already exists, the script requires it to be a Git working tree whose `origin` identifies the expected repository. Existing HTTPS or SSH origins are accepted.
 
 The script does not automatically run `git pull`, merge branches, reset working trees, discard local changes, create commits or push changes.
 
@@ -134,6 +134,38 @@ The selected helper is configured locally in the affected repository rather than
 `credential.useHttpPath=true` is also configured locally so the stored credential is keyed by the repository path and does not unnecessarily replace credentials for unrelated GitHub repositories.
 
 If no supported secure persistent helper is available, the script does not silently downgrade security. It explains the situation and asks explicitly whether `git credential-store` may be used. That helper stores credentials in plaintext and should only be selected knowingly.
+
+## Physical validation
+
+The bootstrap was physically exercised on the two stable reference hosts on 2026-08-29 using the piped `curl | sh` form and an explicit `RumiAI_ROOT`.
+
+### macOS
+
+Observed successfully:
+
+- clone of `rumiai-os`;
+- creation of `.dev/`;
+- clone of `rumiai-tests` and `rumiai-dev-PoCs` in the canonical layout;
+- dry-run push verification on all three repositories;
+- successful completion when existing Git credentials already provide write access.
+
+Because valid credentials were already present, the interactive PAT configuration path and the `osxkeychain` storage path were not exercised in this run.
+
+### Ubuntu 26.04 ARM64
+
+Observed successfully:
+
+- clone of all three repositories in the canonical layout;
+- initial detection of unavailable push access;
+- interactive confirmation through `/dev/tty` while the script itself was supplied on standard input;
+- username and PAT input, including non-echoed token entry;
+- detection that no supported secure helper was installed;
+- explicit user authorization before falling back to `git credential-store`;
+- storage through `git credential approve`;
+- successful dry-run push verification for all three repositories after credential configuration;
+- successful completion of the bootstrap.
+
+The Ubuntu run validates the explicit insecure-fallback path, not the preferred Git Credential Manager or `libsecret` paths.
 
 ## Requirements
 
