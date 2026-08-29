@@ -1,0 +1,150 @@
+# RumiAI development environment bootstrap
+
+`setup-dev.sh` creates the canonical local workspace used to develop and validate RumiAI.
+
+The script is intentionally independent from the product runtime. It lives in `rumiai-dev`, clones the product repository first, and then places development-only repositories under the ignored `.dev/` workspace of `rumiai-os`.
+
+## Layout
+
+With the default destination the resulting layout is:
+
+```text
+./rumiai-os/
+├── ...                         rumiai-os working tree
+└── .dev/
+    ├── rumiai-tests/           independent Git repository
+    └── rumiai-dev-PoCs/        independent Git repository
+```
+
+The nested repositories are normal independent Git repositories. They are not submodules and are not runtime dependencies of `rumiai-os`.
+
+## Direct execution
+
+From a checkout of `rumiai-dev`:
+
+```sh
+./setup-dev.sh
+```
+
+The default `RumiAI_ROOT` is:
+
+```text
+$PWD/rumiai-os
+```
+
+A different destination can be supplied as the only positional argument:
+
+```sh
+./setup-dev.sh /path/to/rumiai-os
+```
+
+## `curl | sh`
+
+The bootstrap is designed to be usable without first cloning `rumiai-dev`:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/massimilianonardi-ai/rumiai-dev/main/setup-dev.sh | sh
+```
+
+A custom destination can be passed to the shell:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/massimilianonardi-ai/rumiai-dev/main/setup-dev.sh \
+    | sh -s -- /path/to/rumiai-os
+```
+
+Interactive input is read from `/dev/tty`, not standard input. This is necessary because in the piped form standard input contains the script itself.
+
+On Windows this form assumes a POSIX-compatible shell environment such as Git Bash. WSL is detected as Linux and uses the Linux credential policy.
+
+## Repository handling
+
+The bootstrap uses HTTPS clone URLs for new clones:
+
+```text
+https://github.com/massimilianonardi-ai/rumiai-os.git
+https://github.com/massimilianonardi-ai/rumiai-tests.git
+https://github.com/massimilianonardi-ai/rumiai-dev-PoCs.git
+```
+
+If a destination already exists, the script requires it to be a Git working tree whose `origin` identifies the expected repository. Existing HTTPPS or SSH origins are accepted.
+
+The script does not automatically run `git pull`, merge branches, reset working trees, discard local changes, create commits or push changes.
+
+This makes repeated execution safe with respect to existing development state.
+
+## Push capability check
+
+After the repositories are available, the script checks whether the current Git authentication can perform a push.
+
+The check uses:
+
+```text
+git push --dry-run
+```
+
+toward a temporary, non-created branch ref. The check therefore exercises push authorization without creating a branch or changing remote repository state.
+
+Interactive credential prompts from Git, SSH and Git Credential Manager are disabled during this probe so that the script can first determine whether credentials are already usable.
+
+A successful generic dry-run confirms that the current credentials can perform that push operation. Repository rules or branch protection can still impose additional restrictions on particular refs or operations.
+
+## Access token setup
+
+If push access is unavailable for one or more repositories, the script asks whether the developer wants to configure a GitHub personal access token.
+
+A fine-grained personal access token is recommended. It should grant access only to the repositories the developer needs and should include:
+
+```text
+Repository permissions -> Contents: Read and write
+```
+
+The token is entered with terminal echo disabled. It is never added to a Git remote URL and is never passed as a command-line argument.
+
+The token is handed to Git through the standard credential protocol using:
+
+```text
+git credential approve
+```
+
+After storage, the shell variable containing the token is cleared and push capability is checked again.
+
+## Credential storage policy
+
+The bootstrap chooses a persistent credential helper according to the host and installed helpers.
+
+Preferred order:
+
+```text
+macOS
+    osxkeychain
+    Git Credential Manager
+
+Windows / Git Bash
+    Git Credential Manager
+    wincred
+
+Linux / WSL
+    Git Credential Manager
+    libsecret
+```
+
+The selected helper is configured locally in the affected repository rather than changing the user's global Git credential policy.
+
+`credential.useHttpPath=true` is also configured locally so the stored credential is keyed by the repository path and does not unnecessarily replace credentials for unrelated GitHub repositories.
+
+If no supported secure persistent helper is available, the script does not silently downgrade security. It explains the situation and asks explicitly whether `git credential-store` may be used. That helper stores credentials in plaintext and should only be selected knowingly.
+
+## Requirements
+
+The bootstrap requires:
+
+```text
+POSIX sh
+git
+uname
+```
+
+For persistent secure token storage it additionally requires one of the supported credential helpers appropriate for the host.
+
+No package manager is invoked automatically and the script does not install system software or credential helpers on behalf of the developer.
