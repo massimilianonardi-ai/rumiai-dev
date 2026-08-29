@@ -68,7 +68,15 @@ user.name
 user.email
 ```
 
-If either value is missing, the script requests only the missing value through `/dev/tty` and persists it with `git config --global`.
+A usable name must contain at least one non-whitespace character and must not contain angle brackets. A usable email must have a minimal `local@domain` form and must not contain whitespace, angle brackets or multiple `@` characters. This is deliberately a conservative operational validation rather than a complete RFC email parser.
+
+If either value is missing or unusable, the script requests the replacement through `/dev/tty`. It then displays the complete proposed identity:
+
+```text
+name <email>
+```
+
+and requires explicit confirmation before writing any newly requested identity value to global Git configuration. This prevents an accidental pasted shell command from silently becoming `user.name` or `user.email`.
 
 The bootstrap also configures:
 
@@ -205,7 +213,27 @@ A later physical workflow exposed that the original bootstrap had not verified g
 
 This showed that clone and push capability alone were insufficient to declare a development environment ready. The bootstrap was therefore hardened to require explicit global identity and `user.useConfigOnly=true` before repository setup.
 
-The earlier bootstrap validation remains valid for clone/layout/credential/push behavior, but the new Git identity path requires its own physical exercise.
+### Isolated clean-Git-home exercise
+
+The identity bootstrap was then exercised physically on both stable hosts with a temporary empty `$HOME` and a temporary workspace, leaving the real user configuration and canonical repositories untouched.
+
+On both macOS and Ubuntu 26.04 ARM64 the successful run demonstrated:
+
+- an initially empty global Git configuration;
+- detection of missing `user.name` and `user.email`;
+- interactive collection through `/dev/tty` while the script arrived through standard input;
+- persistence of the supplied identity in the temporary global `.gitconfig`;
+- `user.useConfigOnly=true`;
+- successful `GIT_AUTHOR_IDENT` and `GIT_COMMITTER_IDENT` construction;
+- a real temporary Git commit with the expected author and committer;
+- successful clone of `rumiai-os`, `rumiai-tests` and `rumiai-dev-PoCs` into the temporary workspace;
+- complete cleanup of the isolated test environment.
+
+Because the isolated `$HOME` intentionally hid normal user authentication and the operator declined PAT setup in these runs, the isolated exercise ended in the supported read-only state. The PAT/storage path had already been physically exercised on Ubuntu in the earlier bootstrap validation.
+
+During the first Ubuntu isolated attempt, an operator paste error supplied the shell command `cd /m/src/git/rumiai-os` at the `Git user.email` prompt. The then-current bootstrap accepted any non-empty string, exposing an input-validation gap. A subsequent clean rerun with the intended identity succeeded. The implementation was therefore hardened again to validate the minimal shape of both identity fields and require explicit confirmation of the full proposed identity before persisting newly requested values.
+
+The validation/confirmation hardening must be physically exercised after its publication before this specific input-safety path is considered closed.
 
 ## Requirements
 
