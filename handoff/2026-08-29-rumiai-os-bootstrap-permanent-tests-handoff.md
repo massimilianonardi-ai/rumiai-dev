@@ -1,7 +1,7 @@
 # Handoff — RumiAI OS permanent bootstrap tests
 
 Date: 2026-08-29
-Status: **PASS 40 physically validated; PASS 53 Phase 1F/CLI validation prepared**
+Status: **PASS 40 validated; Phase 1F exposed realpath portability bug; product fix awaiting cross-host validation**
 
 ## Product under test
 
@@ -11,13 +11,19 @@ Repository:
 massimilianonardi-ai/rumiai-os
 ```
 
-Validated/current product commit:
+Last fully validated product commit:
 
 ```text
 4d1250b02a25050ff60da2b9818519026523d6b0
 ```
 
-No product code was changed while building these permanent tests.
+Current candidate product commit:
+
+```text
+01db051c8bcaac840ce1eda9a9f5339ef1198388
+```
+
+The candidate changes both bootstrap-binary and command-entry canonicalization from unspecified default `realpath` semantics to explicit `realpath -e`, requiring the resolved pathname to exist.
 
 ## Canonical physical invocation
 
@@ -37,6 +43,12 @@ The complete suite at:
 
 ```text
 9b0c5a6d42b3f8e07d372862f11907a76441d532
+```
+
+against product commit:
+
+```text
+4d1250b02a25050ff60da2b9818519026523d6b0
 ```
 
 was physically executed on both stable hosts:
@@ -78,15 +90,13 @@ massimilianonardi-ai/rumiai-tests@251ec2bde45a197590ec7dc23b8b41e60a79543f:lib/r
 
 All three immutable references above have passed their physical validation gates on macOS and Ubuntu ARM64.
 
-## Prepared Phase 1F / CLI block — expected PASS 53
+## Phase 1F / CLI suite
 
 Current `rumiai-tests/main`:
 
 ```text
 c259b2805377bb33d9bb70c9758d6af60a27a9e2
 ```
-
-This commit is a direct forward-only child of the physically validated `PASS 40` suite commit.
 
 ### Explicit source / command interpreter
 
@@ -118,16 +128,7 @@ tests/rumiai-os/command/active-runtime-selection.test
 tests/rumiai-os/command/direct-symlink-alias.test
 ```
 
-These tests exercise the explicit host-profile extension rather than inferring it from explicit-source behavior:
-
-- executable `#!/usr/bin/env rumiai-os` command files;
-- command-file pathname forwarding through `/usr/bin/env`;
-- command arguments under direct execution;
-- physical `RumiAI_COMMAND_BIN` for direct execution;
-- renamed symlink aliases canonicalizing to the implementation file;
-- active runtime selected by inherited `PATH`, even when the command file physically belongs to another isolated RumiAI root.
-
-These properties must pass independently on each stable host before host-profile support is considered physically validated.
+Coverage includes executable `#!/usr/bin/env rumiai-os` files, argument forwarding, physical `RumiAI_COMMAND_BIN`, renamed symlink aliases, and active runtime selection through inherited `PATH`.
 
 ### Initial no-argument shell branch
 
@@ -137,19 +138,11 @@ tests/rumiai-os/shell/bash-selection.test
 tests/rumiai-os/shell/default-config-invalid.test
 ```
 
-Contracts:
+The bash-launch tests use a controlled fake `bash` inside the isolated environment and do not open an operator-controlled interactive session.
 
-- missing `shell.lib` after logger activation -> status 7 + `shell.load-failed` event;
-- default `bash` selection invokes bash with `--noprofile --rcfile <RumiAI bashrc> -i` and `BASH_SILENCE_DEPRECATION_WARNING=1`;
-- structurally invalid `conf/shell/default` emits `shell.default-config-invalid` and falls back to bash.
+## Physical result at c259b280 / product 4d1250b0
 
-The bash-launch tests use a controlled fake `bash` inside the isolated test environment, so they validate selection/arguments/environment without opening an operator-controlled interactive session.
-
-The remaining actual `sh` interactive fallback/unsupported-shell path should be implemented only after this block is physically green, using the already validated interactive TTY reference rather than ad-hoc terminal commands.
-
-All 13 new `.test` files were authored against the accepted Phase 1 / command-entry specifications, checked with `sh -n` and `dash -n` before publication, and committed with executable Git mode.
-
-The next complete physical run should therefore contain:
+macOS:
 
 ```text
 PASS   53
@@ -159,7 +152,70 @@ ERROR  0
 TOTAL  53
 ```
 
-on both stable hosts before this block is declared validated.
+Ubuntu 26.04 ARM64:
+
+```text
+PASS   52
+FAIL   1
+SKIP   0
+ERROR  0
+TOTAL  53
+```
+
+The only Linux failure was:
+
+```text
+rumiai-os/command/resolution-failure.test
+```
+
+All other Phase 1F, direct-execution host-profile, shell, bootstrap, i18n, logger, runner and authoring-reference tests passed.
+
+## realpath portability defect
+
+The failing test deliberately supplies a nonexistent command pathname and requires command-entry resolution failure status 8.
+
+The product used:
+
+```sh
+realpath -- "$path"
+```
+
+without selecting existence semantics.
+
+POSIX.1-2024 defines both `realpath -e` and `realpath -E` and explicitly states that when neither is supplied implementation behavior may differ; portable applications should always specify one. GNU `realpath` accepts a missing final pathname component by default, so Ubuntu canonicalized the nonexistent command and then classified it as invalid entry status 9. The macOS implementation failed canonicalization and produced status 8.
+
+RumiAI requires the command source to exist. The product fix therefore uses explicit:
+
+```sh
+realpath -e -- "$path"
+```
+
+for both bootstrap-binary and command-entry canonicalization.
+
+Candidate product fix:
+
+```text
+01db051c8bcaac840ce1eda9a9f5339ef1198388
+Require existing paths during canonicalization
+```
+
+The existing regression test is intentionally unchanged. The next complete physical run must validate the candidate product against the same `c259b280...` test suite on both stable hosts.
+
+Expected result:
+
+```text
+PASS   53
+FAIL   0
+SKIP   0
+ERROR  0
+TOTAL  53
+```
+
+Only after that result should the Phase 1F block and the explicit `realpath -e` portability rule be marked physically validated.
+
+## Next block after PASS 53
+
+Complete the actual `sh` interactive fallback and unsupported-shell behavior using the already validated interactive TTY reference rather than ad-hoc operator commands.
 
 ## Forward-only rule
 
