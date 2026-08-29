@@ -40,16 +40,28 @@ L'ordine è normativo:
 2. git pull --ff-only di rumiai-os
 3. cd nel repository rumiai-tests dell'host
 4. git pull --ff-only di rumiai-tests
-5. comandi del test fisico
+5. comando del runner
 ```
 
 In questo modo una sessione non può produrre evidenza contro un checkout stale di `rumiai-os` o contro una suite stale di `rumiai-tests`.
 
-I comandi che appartengono alla stessa sessione devono essere forniti all'operatore in un unico blocco di codice quando ragionevolmente possibile. Se una divisione è tecnicamente necessaria, il numero di blocchi deve essere ridotto al minimo.
+La forma normale di un test fisico deve restare intenzionalmente minima:
+
+```text
+cd <rumiai-os-path-for-host>
+git pull --ff-only
+cd <rumiai-tests-path-for-host>
+git pull --ff-only
+./rumiai-test <selection>
+```
+
+Setup specifico, fixture, directory temporanee, isolamento di `HOME`, pseudo-terminali, input simulato, assert e cleanup appartengono ai file `.test` e non devono essere trasferiti all'operatore come sequenze manuali di shell. Se una proprietà può essere automatizzata in modo affidabile dentro la suite, deve essere automatizzata lì.
+
+I comandi manuali aggiuntivi sono ammessi soltanto quando la proprietà stessa non è ancora rappresentabile dalla suite o quando si sta diagnosticando un fallimento concreto. Non costituiscono la forma normale di validazione fisica.
 
 ### Comandi interattivi
 
-Un comando che legge direttamente dal terminale, per esempio tramite `/dev/tty`, costituisce un confine obbligatorio del blocco da incollare.
+Quando un'attività manuale eccezionale richiede realmente un comando che legge direttamente dal terminale, per esempio tramite `/dev/tty`, tale comando costituisce un confine obbligatorio del blocco da incollare.
 
 Non devono essere presenti comandi successivi nello stesso blocco di paste quando il comando interattivo può attendere input. Le righe già incollate possono infatti trovarsi nel buffer del terminale ed essere consumate dal prompt come risposta, anziché essere eseguite successivamente dalla shell.
 
@@ -58,20 +70,11 @@ La regola operativa è quindi:
 ```text
 - i comandi preparatori possono stare nello stesso blocco;
 - il comando interattivo deve essere l'ultima riga del blocco;
-- eventuali verifiche successive devono stare in un nuovo blocco, eseguito solo dopo che il comando interattivo è terminato.
+- eventuali verifiche successive devono stare in un nuovo blocco, eseguito solo dopo che il comando interattivo è terminato;
+- se il comando interattivo può fallire o essere annullato, le verifiche successive devono prima controllarne l'exit status e non assumere che lo stato atteso sia stato creato.
 ```
 
-Questa eccezione prevale sulla preferenza generale per un singolo blocco per sessione.
-
-Il prefisso operativo normale di una sessione è quindi:
-
-```text
-cd <rumiai-os-path-for-host>
-git pull --ff-only
-cd <rumiai-tests-path-for-host>
-git pull --ff-only
-<physical-test-commands>
-```
+Questa è un'eccezione per attività manuali diagnostiche, non il modello desiderato per i test permanenti.
 
 ## Path correnti degli host di riferimento
 
@@ -163,9 +166,10 @@ Nota: durante questa seconda sessione `rumiai-os` non era stato sincronizzato es
 
 ## Bootstrap Git identity: lezione operativa
 
-Nel test isolato del bootstrap con `$HOME` temporanea, una prima esecuzione Ubuntu ha ricevuto accidentalmente una riga del blocco di test al prompt `Git user.email`. Il problema ha mostrato due aspetti distinti:
+Nel test isolato del bootstrap con `$HOME` temporanea, una prima esecuzione Ubuntu ha ricevuto accidentalmente una riga del blocco di test al prompt `Git user.email`. Il problema ha mostrato tre aspetti distinti:
 
 - il bootstrap necessitava di validazione e conferma dell'identità prima di scriverla;
-- la procedura fisica non deve accodare comandi dopo un programma che legge interattivamente da `/dev/tty`.
+- la procedura fisica non deve accodare comandi dopo un programma che legge interattivamente da `/dev/tty`;
+- una volta disponibile una suite permanente, isolamento, PTY, input simulato e cleanup devono essere spostati dentro un `.test`, lasciando all'operatore soltanto sincronizzazione dei repository e invocazione del runner.
 
-Il bootstrap è stato quindi irrigidito e la regola sui confini dei blocchi interattivi è diventata parte della procedura fisica.
+Il bootstrap è stato quindi irrigidito e il relativo scenario viene trasferito nella suite permanente `rumiai-tests`.
