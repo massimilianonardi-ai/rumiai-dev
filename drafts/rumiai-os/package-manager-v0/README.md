@@ -2,7 +2,7 @@
 
 Data: 2026-08-29
 
-Stato: **draft di design — proposta da discutere prima della promozione a specifica normativa**
+Stato: **draft di design — concetti v0 fissati per proseguire con il modello di integration**
 
 Questo documento formalizza il primo confine del nuovo package manager RumiAI OS: il problema di acquisire o produrre i binari resta fuori scope; il package manager comincia quando esiste già un payload eseguibile candidato all'inclusione nel `rumiai-store`.
 
@@ -19,7 +19,7 @@ sorgenti già locali compilati localmente
 altro processo di produzione
 ```
 
-La discovery, il download dei binari, il download dei sorgenti, la scelta della toolchain e la compilazione sono problemi importanti, ma appartengono all'altro lato del confine e verranno ripresi separatamente.
+Discovery, download, scelta della toolchain e compilazione appartengono all'altro lato del confine e verranno ripresi separatamente.
 
 Il package manager v0 assume invece:
 
@@ -30,12 +30,12 @@ HO GIÀ UN PAYLOAD ESEGUIBILE
             ↓
 dove e come lo rappresento?
             ↓
-quali dipendenze runtime possiede?
+quali dipendenze runtime RumiAI deve gestire?
             ↓
 come potrà essere integrato, usato e rimosso?
 ```
 
-Storicamente la separazione concettuale resta coerente con:
+La separazione storica resta concettualmente coerente con:
 
 ```text
 src/
@@ -49,46 +49,45 @@ Il significato fisico definitivo di queste directory non è ancora deciso.
 
 ---
 
-## 2. Principio centrale: RumiAI Execution Closure
+# 2. Principio centrale: RumiAI Execution Closure
 
-Un package eseguibile può essere ammesso nel `rumiai-store` solo se la sua intera closure runtime è conoscibile e controllabile.
+Una Package Instance deve essere sufficientemente self-contained da poter essere gestita da RumiAI senza trasformare il package manager in un installer del sistema host.
 
-La **RumiAI Execution Closure** di una Package Instance è l'insieme di tutto ciò che è necessario affinché il suo software possa essere eseguito correttamente.
+La **RumiAI Execution Closure** di una Package Instance è l'insieme di ciò che serve alla sua esecuzione corretta.
 
-Nel v0 ogni elemento necessario all'esecuzione DEVE appartenere a uno e un solo insieme ammesso:
+Nel modello v0 distinguiamo:
 
 ```text
-1. file contenuti nella Package Instance stessa
+1. contenuto della Package Instance
 
 2. altre Package Instance RumiAI dichiarate come Execution Dependency
 
-3. elementi esplicitamente ammessi dal Platform Baseline della piattaforma
+3. facility native dell'host utilizzate dal payload
 ```
 
-Formalmente:
+I primi due insiemi sono sotto controllo diretto del package manager.
+
+Il terzo NON viene modellato attraverso una whitelist teorica o una Platform Baseline. La compatibilità con le facility native dell'host viene accettata esclusivamente tramite **validazione fisica su installazioni di riferimento** della piattaforma.
+
+Quindi il criterio operativo è:
 
 ```text
-ExecutionClosure(P)
-    ⊆
 Content(P)
-∪ ResolvedPackageDependencies(P)
-∪ PlatformBaseline(P.platform)
++
+ResolvedExecutionDependencies(P)
++
+ReferenceHostFacilities(P.execution_platform)
+        ↓
+physical validation
+        ↓
+ADMITTED oppure REJECTED
 ```
 
-Qualunque requisito runtime esterno a questi insiemi rende il package **non ammissibile nel v0**.
+`ReferenceHostFacilities` non è un catalogo che RumiAI tenta di enumerare. È semplicemente ciò che il sistema operativo/reference installation fornisce realmente durante la validazione.
 
-Esempi inizialmente NON ammessi:
+Questo limite è intenzionale.
 
-```text
-"deve essere installato libfoo con apt"
-"richiede una libreria presente in /usr/local/lib"
-"richiede Homebrew"
-"richiede una DLL installata globalmente da un MSI"
-"al primo avvio scarica il runtime mancante"
-"funziona solo se l'utente ha già configurato una variabile host non dichiarata"
-```
-
-Il fatto che RumiAI sia tecnicamente in grado di rendere funzionante un software non implica che quel software sia ammissibile nel `rumiai-store`.
+RumiAI NON pretende nel v0 di garantire che un package validato su una reference installation Linux funzioni su ogni distribuzione Linux esistente.
 
 ---
 
@@ -110,11 +109,34 @@ macos-x86_64
 windows-x86_64
 ```
 
-La nomenclatura canonica di OS e architetture verrà specificata separatamente; questi nomi sono esempi del modello.
+La nomenclatura canonica verrà specificata separatamente.
 
-## 3.2 Piattaforme virtuali / runtime-neutral rispetto all'host
+Nel v0 un identificatore nativo come:
 
-Alcuni payload non dipendono direttamente dall'ABI nativa dell'host, ma da una macchina/runtime portabile.
+```text
+linux-arm64
+```
+
+NON significa:
+
+```text
+compatibile con qualunque distribuzione/versione Linux ARM64
+```
+
+Significa invece:
+
+```text
+questa Package Instance è stata ammessa per il dominio linux-arm64
+sulla base dei reference host fisicamente validati dal progetto
+```
+
+Le installazioni concrete usate per la validazione devono essere registrate come evidenza di test, ma non sono necessariamente parte dell'identità logica della Package Instance.
+
+Questo è un limite conosciuto e accettato del v0.
+
+## 3.2 Execution domain non nativi
+
+Alcuni payload non dipendono direttamente dall'ABI nativa dell'host ma da una macchina/runtime portabile.
 
 Il primo caso rilevante è la JVM.
 
@@ -137,9 +159,9 @@ perché:
 
 - un `.jar` è solo un formato/archive e può contenere librerie native;
 - bytecode JVM può provenire anche da Kotlin, Scala o altri linguaggi;
-- `portable` è troppo generico e non dice quale runtime soddisfa l'esecuzione.
+- `portable` è troppo generico e non identifica il runtime necessario.
 
-Il modello potrà in futuro essere esteso ad altri domini, ad esempio `wasm-wasi` o altri runtime, ma non vengono definiti nel v0.
+Il modello potrà essere esteso in futuro ad altri execution domain, per esempio WASM/WASI, ma non vengono definiti nel v0.
 
 ## 3.3 Regola JVM v0
 
@@ -151,7 +173,7 @@ platform = jvm
 
 SOLO se l'intera parte del payload necessaria all'esecuzione è indipendente dall'OS e dall'architettura.
 
-Un package `jvm` DEVE dichiarare come Execution Dependency il runtime Java/JVM richiesto, per esempio concettualmente:
+Un package `jvm` DEVE dichiarare come Execution Dependency il runtime Java/JVM richiesto, per esempio:
 
 ```text
 java-runtime >=17 <22
@@ -165,14 +187,14 @@ java-runtime 21 / macos-arm64
 java-runtime 21 / windows-x86_64
 ```
 
-Quindi la catena diventa:
+La catena diventa:
 
 ```text
 application / jvm
         ↓ execution dependency
 java-runtime / <native-platform>
         ↓
-Platform Baseline della piattaforma nativa
+physical validation sul reference host nativo
 ```
 
 ## 3.4 JAR con componenti native
@@ -185,7 +207,7 @@ Esempio:
 
 ```text
 foo.jar
-└── native/libfoo.so   # necessario
+└── native/libfoo.so
 
 platform = linux-x86_64
 execution dependency = java-runtime >=17
@@ -217,13 +239,9 @@ foo / 1.0 / windows-x86_64
 
 anche se il payload originario fosse lo stesso archive.
 
-La regola mantiene semplice e verificabile la compatibilità di ogni Package Instance.
-
 ## 3.6 Componenti native opzionali
 
-Un componente native opzionale che non è necessario alla corretta esecuzione di base non rende automaticamente il package platform-specific.
-
-La distinzione v0 è:
+Un componente native opzionale che non è necessario al contratto di esecuzione della Package Instance non rende automaticamente il package platform-specific.
 
 ```text
 necessario alla Execution Closure
@@ -258,7 +276,7 @@ Non è:
 
 ## 4.2 Identità logica proposta
 
-Nel v0 l'identità logica di una Package Instance deve distinguere almeno:
+Nel v0 l'identità logica deve distinguere almeno:
 
 ```text
 package name
@@ -268,7 +286,7 @@ execution platform
 content digest
 ```
 
-Esempio concettuale:
+Esempio:
 
 ```text
 name      = java-runtime
@@ -282,7 +300,7 @@ digest    = <content digest>
 
 `revision` permette a RumiAI di correggere o modificare il packaging della stessa versione upstream senza fingere che sia una nuova versione del software.
 
-Il digest verifica il contenuto concreto. Due contenuti differenti NON devono essere accettati silenziosamente come la stessa identità logica.
+Il digest identifica/verifica il contenuto concreto. Due contenuti differenti NON devono essere accettati silenziosamente come la stessa Package Instance.
 
 La sintassi finale dell'identificatore e il layout filesystem NON sono ancora definiti.
 
@@ -292,11 +310,11 @@ Dopo l'ammissione nello store, il contenuto di una Package Instance DEVE essere 
 
 Qualunque modifica necessaria al payload produce una nuova Package Instance/revision, non una mutazione silenziosa di quella esistente.
 
-Questo include l'auto-update del vendor: una Package Instance ammessa NON deve aggiornare autonomamente i propri eseguibili o librerie.
+Una Package Instance ammessa NON deve auto-aggiornare i propri eseguibili o librerie.
 
 ## 4.4 Relocatability
 
-La Package Instance DEVE poter essere collocata in una directory arbitraria gestita da RumiAI senza richiedere pathname assoluti di installazione predefiniti.
+La Package Instance DEVE poter essere collocata in una directory arbitraria gestita da RumiAI senza richiedere un pathname assoluto di installazione predefinito.
 
 NON è ammissibile nel v0 un payload che richieda necessariamente, per esempio:
 
@@ -306,13 +324,13 @@ NON è ammissibile nel v0 un payload che richieda necessariamente, per esempio:
 C:\Program Files\Vendor\Foo
 ```
 
-salvo che tali pathname siano puramente interni a un ambiente di encapsulation che diventerà oggetto di un modello successivo.
+salvo futuri modelli di encapsulation esplicitamente separati.
 
 ## 4.5 Stato mutabile
 
 Una Package Instance DEVE poter essere eseguita senza usare la propria directory come storage mutabile indispensabile.
 
-Configurazione, dati, cache, log, PID, temporary files e home applicativa devono poter essere:
+Configurazione, dati, cache, log, PID, file temporanei e home applicativa devono poter essere:
 
 - esterni alla Package Instance;
 - esplicitamente indirizzati verso aree RumiAI;
@@ -322,7 +340,7 @@ Se un software scrive necessariamente nel proprio installation tree e tale compo
 
 ## 4.6 Privilegi e host mutation
 
-Materializzazione, integrazione ordinaria, esecuzione e rimozione di una Package Instance NON devono richiedere:
+Materializzazione, integrazione ordinaria, esecuzione e rimozione NON devono richiedere:
 
 ```text
 root
@@ -338,7 +356,7 @@ L'integrazione è responsabilità di RumiAI.
 
 ## 4.7 Offline execution
 
-Una Package Instance ammessa DEVE essere eseguibile offline una volta che le sue Execution Dependency sono già disponibili.
+Una Package Instance ammessa DEVE essere eseguibile offline una volta che le sue Execution Dependency RumiAI sono già disponibili.
 
 Il first run non può essere usato per:
 
@@ -346,96 +364,94 @@ Il first run non può essere usato per:
 - recuperare librerie mancanti;
 - completare l'installazione del payload.
 
-Network access può naturalmente essere una funzione dell'applicazione durante il suo normale utilizzo; ciò che è vietato è dipendere dalla rete per completare la propria Execution Closure.
+Network access può naturalmente essere una funzione dell'applicazione durante il normale utilizzo; ciò che è vietato è dipendere dalla rete per completare l'ambiente software necessario all'avvio.
 
 ---
 
-# 5. Platform Baseline
+# 5. Physical Platform Validation
 
-## 5.1 Definizione
+## 5.1 Nessuna Platform Baseline formale
 
-Il **Platform Baseline** è la whitelist minima, esplicita e versionata di primitive/facility esterne al `rumiai-store` che RumiAI considera garantite da una specifica piattaforma nativa supportata.
+Il v0 NON definisce una whitelist teorica delle facility garantite da Linux, macOS o Windows.
 
-Non significa:
+Questa strada viene respinta perché:
 
-```text
-"tutto quello che normalmente trovo installato su Linux/macOS/Windows"
-```
+- le distribuzioni Linux e le loro versioni sono troppo numerose e differenti;
+- le installazioni Windows possono differire sostanzialmente;
+- anche fra release della stessa famiglia possono cambiare runtime, loader, librerie e facility disponibili;
+- mantenere un catalogo normativo completo diventerebbe un progetto enorme e fragile.
 
-Significa esclusivamente:
+RumiAI accetta invece un modello empirico.
 
-```text
-"questi precisi elementi fanno parte del contratto host che RumiAI accetta come dipendenza esterna"
-```
+## 5.2 Reference installations
 
-## 5.2 Proprietà
+Per ogni Execution Platform Identifier nativo il progetto mantiene una o più **reference installations** fisicamente disponibili.
 
-Un Platform Baseline DEVE essere:
-
-- associato a una piattaforma nativa concreta;
-- esplicito;
-- documentato;
-- versionato;
-- sufficientemente stabile da poter essere verificato sui reference host;
-- indipendente dal package manager host;
-- disponibile senza operazioni di installazione da parte di RumiAI.
-
-## 5.3 Whitelist, non discovery implicita
-
-La presenza accidentale di una libreria sul sistema NON la rende parte del baseline.
-
-Esempio:
-
-```text
-/usr/lib/libfoo.so esiste
-```
-
-non implica:
-
-```text
-libfoo ∈ PlatformBaseline(linux-arm64)
-```
-
-Deve essere esplicitamente ammessa dal profilo baseline.
-
-## 5.4 Il baseline è il limite delle dipendenze host
-
-Nel v0 un package nativo può dipendere dall'host solo attraverso il Platform Baseline.
-
-Quindi:
-
-```text
-libc / dynamic loader / OS frameworks / system DLL / kernel ABI / altre facility
-```
-
-sono utilizzabili solo se la specifica baseline della piattaforma li include esplicitamente.
-
-Questo documento NON decide ancora quali elementi includere nei baseline Linux, macOS e Windows.
-
-In particolare non si assume automaticamente che una specifica glibc, Homebrew library, framework opzionale macOS o runtime Windows appartengano al baseline.
-
-## 5.5 Versione del baseline
-
-La versione del baseline deve essere distinta dall'Execution Platform Identifier.
+Una Package Instance è ammessa per quella piattaforma solo dopo aver superato i test fisici richiesti su tali installazioni.
 
 Esempio concettuale:
 
 ```text
-platform = macos-arm64
-baseline = v0
+foo / linux-arm64
+    physical validation:
+        Ubuntu ARM64 reference host → PASS
+
+foo / macos-arm64
+    physical validation:
+        macOS ARM64 reference host → PASS
 ```
 
-Questo consente di evolvere il contratto host senza cambiare artificialmente il nome della piattaforma.
+Il dettaglio concreto della reference installation appartiene all'evidenza di validazione, non necessariamente all'identità logica del package.
 
-Un aggiornamento incompatibile del Platform Baseline è un evento di compatibilità esplicito.
+## 5.3 Limite dichiarato
 
-## 5.6 Piattaforme virtuali
+Il risultato della validazione garantisce soltanto ciò che è stato realmente dimostrato.
 
-`jvm` non possiede un baseline host equivalente a `linux-arm64` o `macos-arm64`.
+Per esempio:
 
-Il runtime JVM NON viene assunto come facility dell'host: deve essere soddisfatto da una Package Instance RumiAI dichiarata come Execution Dependency.
+```text
+foo/linux-arm64 validato su Ubuntu ARM64 reference host
+```
 
-Questa regola evita di dipendere da una Java installata casualmente sulla macchina.
+NON significa automaticamente:
+
+```text
+foo funziona su Alpine, Arch, Debian, Fedora e ogni altra Linux ARM64
+```
+
+Il package può risultare funzionante anche altrove, ma il progetto non lo considera dimostrato finché non esiste evidenza fisica appropriata.
+
+Questa limitazione è accettata nel v0 in cambio di un modello semplice e verificabile.
+
+## 5.4 Dipendenze native dell'host
+
+RumiAI non tenta nel v0 di rappresentare singolarmente:
+
+```text
+libc
+dynamic loader
+system frameworks
+system DLL
+kernel ABI
+altre facility native
+```
+
+come nodi del dependency graph del package manager.
+
+La loro adeguatezza è assorbita dalla physical validation della Package Instance sulla reference installation.
+
+Resta invece vietato richiedere che RumiAI installi componenti host aggiuntivi tramite:
+
+```text
+apt
+dnf
+brew
+Chocolatey
+MSI
+installer vendor globali
+```
+
+per rendere eseguibile il package.
 
 ---
 
@@ -443,30 +459,30 @@ Questa regola evita di dipendere da una Java installata casualmente sulla macchi
 
 ## 6.1 Definizione
 
-Una **Execution Dependency** è qualunque requisito necessario all'esecuzione corretta di una Package Instance che non è contenuto nella Package Instance stessa.
+Una **Execution Dependency** è un requisito runtime che RumiAI deve soddisfare tramite un'altra Package Instance gestita dal `rumiai-store`.
 
-Nel v0 ogni Execution Dependency deve essere dichiarata esplicitamente e deve appartenere a una delle due classi:
+Nel v0 il dependency graph del package manager contiene quindi esclusivamente dipendenze fra Package Instance RumiAI.
+
+Le facility native dell'host NON sono modellate come Execution Dependency: sono coperte dalla Physical Platform Validation.
+
+Non esiste una categoria implicita del tipo:
 
 ```text
-PACKAGE DEPENDENCY
-    soddisfatta da un'altra Package Instance RumiAI
-
-PLATFORM DEPENDENCY
-    soddisfatta da un elemento del Platform Baseline
+"installalo sul computer e poi dovrebbe funzionare"
 ```
 
-Non esiste una terza categoria implicita "presente sul computer".
+Se una dipendenza runtime esterna deve essere procurata o versionata da RumiAI, deve diventare una Package Instance RumiAI.
 
-## 6.2 Package Dependency
+## 6.2 Dependency constraint
 
-Una Package Dependency identifica almeno:
+Una Execution Dependency identifica almeno:
 
 ```text
 package richiesto
 version constraint
 ```
 
-Esempio concettuale:
+Esempio:
 
 ```text
 pulsar
@@ -486,50 +502,44 @@ Quindi:
 ```text
 constraint
     !=
-resolved dependency
+resolved execution dependency
 ```
 
-Il modello di version range e il resolver non vengono ancora specificati.
+Il modello dei version range e il resolver non vengono ancora specificati.
 
-## 6.3 Platform Dependency
+## 6.3 Dipendenze nascoste gestibili da RumiAI vietate
 
-Una Platform Dependency è un requisito verso un elemento esplicitamente elencato nel Platform Baseline applicabile.
-
-Non viene installata, aggiornata o rimossa dal package manager.
-
-Se il requisito non appartiene al baseline, deve essere convertito in una Package Dependency RumiAI oppure il package non è ammissibile.
-
-## 6.4 Dipendenze nascoste vietate
-
-Un package v0 non può possedere dipendenze runtime non dichiarate.
+Un package v0 non può affidarsi implicitamente a un altro software che RumiAI dovrebbe invece gestire.
 
 Esempi:
 
 ```text
-eseguibile linkato a una libreria non inclusa e non baseline
-JAR che invoca un comando host non dichiarato
-script che presume python/node/java dal PATH host
-plugin che richiede una libreria installata globalmente
+JAR che presume `java` dal PATH host
+script che presume python/node dal PATH host
+package che presume PostgreSQL già installato
+plugin che richiede un altro runtime non dichiarato
 ```
 
-Questi casi devono essere esplicitati come Execution Dependency o rendono il package non ammissibile.
+Questi requisiti devono diventare Execution Dependency esplicite.
 
-## 6.5 Runtime come Package Dependency
+Le dipendenze native dell'OS sono una categoria diversa e vengono validate empiricamente attraverso la reference installation.
 
-Runtime come Java sono normali Package Dependency.
+## 6.4 Runtime come Execution Dependency
 
-Questo permette la semantica storicamente importante:
+Runtime come Java sono normali Execution Dependency.
+
+Questo preserva la semantica storicamente importante:
 
 ```text
-package A → java latest compatibile
-package B → java 8
+package A → Java compatibile più recente
+package B → Java 8
 ```
 
 senza imporre una sola Java globale.
 
-La futura integration può costruire environment differenti e rendere disponibile la versione risolta corretta per ogni contesto.
+La futura integration può costruire context differenti e rendere disponibile la versione corretta per ogni package/context.
 
-## 6.6 Build dependency fuori scope
+## 6.5 Build dependency fuori scope
 
 Una dipendenza necessaria soltanto a produrre i binari NON è una Execution Dependency del package risultante.
 
@@ -545,7 +555,7 @@ source-generation tools
 
 Appartengono al dominio di produzione/build posto dall'altro lato del confine.
 
-Se invece uno di questi tool è richiesto anche durante l'esecuzione, allora diventa Execution Dependency.
+Se invece uno di questi tool è richiesto anche durante l'esecuzione, allora deve essere gestito come Execution Dependency.
 
 ---
 
@@ -557,59 +567,63 @@ Un payload può diventare una Package Instance del `rumiai-store` per una specif
 
 Deve essere possibile assegnare un Execution Platform Identifier corretto.
 
-## PA-02 — Execution Closure completa
+## PA-02 — Physical validation
 
-Tutto ciò che serve all'esecuzione deve appartenere al payload, a Package Dependency dichiarate o al Platform Baseline.
+La Package Instance deve superare la validazione fisica richiesta sulle reference installations della piattaforma dichiarata.
 
 ## PA-03 — Nessuna dipendenza dal package manager host
 
-Non può richiedere `apt`, `dnf`, `brew`, Chocolatey, MSI install di runtime o equivalenti per completare l'ambiente runtime.
+Non può richiedere `apt`, `dnf`, `brew`, Chocolatey, MSI install di runtime o equivalenti per completare il proprio ambiente runtime.
 
-## PA-04 — Nessuna installazione globale host obbligatoria
+## PA-04 — Execution Dependency esplicite
+
+Qualunque software/runtime che RumiAI deve procurare e gestire deve essere dichiarato come Execution Dependency.
+
+## PA-05 — Nessuna installazione globale host obbligatoria
 
 Il payload deve poter funzionare senza copiare componenti indispensabili nelle directory globali del sistema.
 
-## PA-05 — Nessun privilegio amministrativo ordinario
+## PA-06 — Nessun privilegio amministrativo ordinario
 
-Installazione/materializzazione, integrazione ordinaria, uso e rimozione non devono richiedere privilegi elevati.
+Materializzazione, integrazione ordinaria, uso e rimozione non devono richiedere privilegi elevati.
 
-## PA-06 — Relocatability
+## PA-07 — Relocatability
 
 La Package Instance deve funzionare quando collocata in una directory arbitraria della root RumiAI.
 
-## PA-07 — Immutabilità del payload
+## PA-08 — Immutabilità del payload
 
-Il software installato deve poter essere trattato come immutabile.
+Il software ammesso deve poter essere trattato come immutabile.
 
-## PA-08 — Stato separabile
+## PA-09 — Stato separabile
 
 Lo stato mutabile necessario deve poter vivere fuori dalla Package Instance in aree gestite da RumiAI.
 
-## PA-09 — Nessun first-run installation
+## PA-10 — Nessun first-run installation
 
-Il package non può completare la propria Execution Closure scaricando o installando componenti al primo avvio.
+Il package non può completare il proprio ambiente obbligatorio scaricando o installando componenti al primo avvio.
 
-## PA-10 — Offline-ready
+## PA-11 — Offline-ready
 
-Con le Execution Dependency già presenti, il software deve poter raggiungere uno stato eseguibile senza accesso alla rete.
+Con le Execution Dependency RumiAI già presenti, il software deve poter raggiungere uno stato eseguibile senza accesso alla rete.
 
-## PA-11 — No auto-update della Package Instance
+## PA-12 — No auto-update della Package Instance
 
 Il package non può modificare autonomamente i propri binari/librerie/versione nello store.
 
-## PA-12 — Coesistenza
+## PA-13 — Coesistenza
 
 La presenza di una versione/revision della stessa applicazione non deve richiedere la rimozione fisica di altre Package Instance dal `rumiai-store`.
 
-## PA-13 — Integrazione esterna
+## PA-14 — Integrazione esterna
 
 PATH, environment, command aliases, launchers e altre forme di attivazione devono poter essere gestiti da RumiAI senza modificare il payload immutabile.
 
-## PA-14 — Rimozione locale
+## PA-15 — Rimozione locale
 
 La Package Instance deve poter essere rimossa senza un uninstaller vendor che modifichi lo stato globale dell'host.
 
-## PA-15 — Contenuto verificabile
+## PA-16 — Contenuto verificabile
 
 Deve essere possibile inventariare e verificare il contenuto concreto della Package Instance.
 
@@ -623,18 +637,17 @@ L'ammissibilità appartiene alla coppia:
 software/release × execution platform
 ```
 
-non al software in astratto.
+ed è sostenuta da evidenza fisica sulle reference installations.
 
-È quindi perfettamente valido avere:
+È perfettamente valido avere:
 
 ```text
 pulsar / linux-arm64       ADMITTED
-pulsar / linux-x86_64      ADMITTED
 pulsar / macos-arm64       ADMITTED
 pulsar / windows-x86_64    REJECTED
 ```
 
-se la variante Windows richiede, per esempio, componenti installati globalmente mentre le altre varianti possiedono una Execution Closure compatibile con il contratto RumiAI.
+se la variante Windows richiede, per esempio, componenti installati globalmente mentre le altre varianti soddisfano il contratto RumiAI sulle rispettive reference installations.
 
 Il package manager non deve abbassare i requisiti comuni per ottenere artificialmente parità fra piattaforme.
 
@@ -648,7 +661,7 @@ Il package manager non deve abbassare i requisiti comuni per ottenere artificial
 artifact: application.jar
 contiene: bytecode + resources
 native code: none
-requires: Java >= 17
+requires: Java >=17
 ```
 
 Proposta:
@@ -657,8 +670,6 @@ Proposta:
 platform = jvm
 execution dependency = java-runtime >=17
 ```
-
-Ammissibile se tutti gli altri requisiti PA sono soddisfatti.
 
 ## Caso B — JAR con JNI Linux
 
@@ -685,9 +696,7 @@ Non è `jvm` anche se l'entrypoint è un JAR.
 java -jar application.jar
 ```
 
-senza dipendenza Java dichiarata.
-
-Proposta:
+senza dipendenza Java dichiarata:
 
 ```text
 REJECTED
@@ -695,17 +704,15 @@ REJECTED
 
 La Java deve essere una Execution Dependency RumiAI.
 
-## Caso D — JAR che usa `/usr/bin/foo`
+## Caso D — JAR che usa un comando host
 
-Se `foo` non appartiene al Platform Baseline:
+Se il JAR invoca `/usr/bin/foo` e `foo` è semplicemente una facility presente sulla reference installation, il package può essere ammesso solo se il comportamento completo viene fisicamente validato su quella piattaforma.
 
-```text
-REJECTED
-```
+Se invece `foo` è software che RumiAI deve procurare/versionare/gestire, deve essere una Execution Dependency RumiAI.
 
-oppure `foo` deve diventare una Package Dependency esplicita.
+Questa distinzione viene decisa dal contratto del package, non dalla semplice esistenza del pathname.
 
-## Caso E — stesso JAR contiene native library per più OS
+## Caso E — stesso JAR con native library per più OS
 
 Il v0 produce Package Instance platform-specific separate, anche se il blob upstream originale è identico.
 
@@ -722,7 +729,7 @@ Docker/Podman image
 VM image
 ```
 
-Queste tecnologie possono aiutare a chiudere la Execution Closure, ma introducono a loro volta un execution backend e requisiti specifici della piattaforma.
+Queste tecnologie possono chiudere o modificare l'ambiente di esecuzione, ma introducono a loro volta un backend con requisiti specifici della piattaforma.
 
 Per ora si distinguono concettualmente:
 
@@ -736,13 +743,13 @@ encapsulated execution package
 
 La seconda categoria verrà studiata separatamente.
 
-In particolare il fatto che Docker su macOS utilizzi un ambiente Linux virtualizzato dimostra che il backend di esecuzione non può essere nascosto dentro un generico identificatore `portable`.
+In particolare il fatto che Docker su macOS utilizzi normalmente un ambiente Linux virtualizzato mostra che il backend di esecuzione non può essere nascosto dentro un generico identificatore `portable`.
 
 ---
 
 # 11. Conseguenze per `integrate` / `deintegrate`
 
-Questo draft non specifica ancora integration e dependency resolution, ma conserva esplicitamente la semantica storica utile:
+Il v0 conserva esplicitamente la semantica storica:
 
 ```text
 presenza nel pkg/store
@@ -752,30 +759,45 @@ attivazione nell'ambiente
 
 Una Package Instance può esistere nello store senza essere integrata.
 
-`integrate` dovrà poter costruire un contesto di esecuzione che soddisfi le Execution Dependency risolte, per esempio selezionando Java differenti per package differenti.
+`integrate` dovrà poter costruire un **Integration Context** che soddisfi le Execution Dependency risolte e renda il package utilizzabile senza modificarne il contenuto immutabile.
 
-Esempio storico da preservare come requisito concettuale:
+Esempi storici da preservare come requisito concettuale:
 
 ```text
-java latest come default generale
-java 8 per un package che la richiede
-comando java8 esplicito
+Java più recente come default generale
+Java 8 per un package che la richiede
+comando `java8` esplicito
 shell/context in cui `java` risolve a Java 8
 ```
 
-`deintegrate` deve rimuovere l'attivazione senza necessariamente rimuovere la Package Instance dallo store.
-
-La forma concreta del nuovo integration model viene lasciata al passo successivo.
+`deintegrate` deve rimuovere un'attivazione/context senza necessariamente rimuovere la Package Instance dallo store.
 
 ---
 
 # 12. Definizione condensata v0
 
-> **Una Package Instance RumiAI è una rappresentazione concreta, immutabile, relocatable e verificabile di software già prodotto, ammessa per uno specifico Execution Platform Identifier. Deve poter essere eseguita offline e senza privilegi amministrativi, senza modificare obbligatoriamente l'host e senza dipendenze runtime nascoste. La sua intera Execution Closure deve essere costituita esclusivamente dai file della Package Instance, da Execution Dependency esplicite verso altre Package Instance RumiAI e dagli elementi ammessi dal Platform Baseline applicabile. Lo stato mutabile e l'integrazione devono poter essere gestiti esternamente da RumiAI.**
+> **Una Package Instance RumiAI è una rappresentazione concreta, immutabile, relocatable e verificabile di software già prodotto, ammessa per uno specifico Execution Platform Identifier sulla base di validazione fisica sulle reference installations del progetto. Deve poter essere materializzata, integrata, eseguita e rimossa senza richiedere installazioni globali dell'host o package manager host, e senza privilegi amministrativi ordinari. Qualunque software/runtime che RumiAI deve procurare o versionare deve essere una Execution Dependency esplicita verso un'altra Package Instance RumiAI. Le facility native dell'host non vengono enumerate in una Platform Baseline: la loro adeguatezza è parte dell'evidenza fisica di compatibilità della Package Instance. Stato mutabile e integrazione devono poter essere gestiti esternamente da RumiAI.**
 
 ---
 
-# 13. Questioni aperte successive
+# 13. Concetti v0 fissati
+
+Per il seguito del design assumiamo:
+
+```text
+Package Instance
+Execution Platform Identifier
+Execution Dependency
+Physical Platform Validation
+Reference Installation
+RumiAI Execution Closure
+```
+
+Il concetto di **Platform Baseline formale viene esplicitamente respinto nel v0**.
+
+---
+
+# 14. Questioni aperte successive
 
 Questo draft NON decide ancora:
 
@@ -783,14 +805,16 @@ Questo draft NON decide ancora:
 - sintassi canonica della Package Instance identity;
 - grammatica version/range;
 - solver delle dipendenze;
-- capability/provider alternativi;
 - struttura del metadata/manifest;
 - modello preciso `integrate` / `deintegrate`;
-- environment/view e scoping delle versioni;
-- receipt/state dell'integrazione;
-- baseline concreti Linux/macOS/Windows;
-- verifica automatica della Execution Closure (`ldd`, `otool`, PE inspection, JAR inspection, ecc.);
+- Integration Context e relativo scope;
+- selezione/default/override delle versioni;
+- integrazione di comandi, environment, librerie e altri elementi;
+- stato/receipt dell'integrazione;
+- matrice concreta delle reference installations;
+- profondità dei test fisici richiesti per l'admission;
+- verifica automatica/assistita della compatibilità (`ldd`, `otool`, PE/JAR inspection, ecc.);
 - package encapsulati tramite AppImage/container/VM;
 - produzione/acquisizione dei binari e relazione futura con `src/` e build system.
 
-Il passo successivo corretto è definire il modello di **integration context** sopra queste tre primitive: Package Instance, Platform Baseline ed Execution Dependency.
+Il passo successivo è definire il modello di **Integration Context** sopra le primitive appena fissate.
