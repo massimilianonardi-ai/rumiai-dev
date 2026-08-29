@@ -1,8 +1,8 @@
-# RumiAI package manager — Integration Context draft
+# RumiAI package manager — Integration model draft
 
 Data: 2026-08-29
 
-Stato: **design draft — proposta successiva ai concetti Package Admission v0**
+Stato: **design draft — ragionamento successivo a Package Admission v0**
 
 Prerequisito:
 
@@ -10,7 +10,27 @@ Prerequisito:
 drafts/rumiai-os/package-manager-v0/README.md
 ```
 
-Questo documento parte da una proprietà già presente nel package manager storico di `m`:
+Questo documento evolve il primo modello `Integration Context → Binding → Materialized View` dopo averlo stressato contro i casi storici di `m`, in particolare Java multi-versione, dipendenze private, alias espliciti e shell con ambiente differente.
+
+La conclusione principale è che un solo oggetto `Integration Context` mescolava tre responsabilità differenti.
+
+Il modello viene quindi separato in:
+
+```text
+Package Interface
+        ↓
+Integration Profile (desired + resolved)
+        ↓
+Execution Environment
+        ↓
+Execution View / launcher materialization
+```
+
+---
+
+# 1. Proprietà storica da preservare
+
+Il package manager storico aveva già la proprietà corretta:
 
 ```text
 package presente in pkg
@@ -18,507 +38,782 @@ package presente in pkg
 package integrato/attivo
 ```
 
-L'antenato possedeva già `integrate` / `deintegrate` e supportava PATH, environment, command alias, app, librerie e profilo. Il nuovo modello cerca di mantenere quella capacità eliminando la dipendenza da mutazioni globali difficili da ricostruire.
+`integrate` gestiva almeno:
+
+```text
+PATH
+environment
+command alias
+application
+library
+profile/state defaults
+```
+
+Il problema non era l'esistenza di queste capacità, ma il fatto che venissero materializzate principalmente come mutazioni incrementali di stato globale, che `deintegrate` doveva successivamente cercare di sottrarre.
+
+La nuova architettura deve preservare le capacità evitando di usare il filesystem e l'environment globale come unica fonte di verità.
 
 ---
 
-# 1. Problema
+# 2. Package Interface
 
-Dopo l'admission abbiamo già:
+## 2.1 Definizione
+
+La **Package Interface** descrive le risorse che una Package Instance rende disponibili al resto di RumiAI.
+
+La Package Interface appartiene alla Package Instance ed è immutabile con essa.
+
+Non significa che tali risorse siano automaticamente visibili in una shell o in un altro package.
+
+La distinzione fondamentale è:
 
 ```text
-Package Instance immutabili
-Execution Dependency risolte in Package Instance concrete
+PACKAGE RESOURCE
+    ciò che il package possiede e può offrire
+
+BINDING
+    come una risorsa viene resa visibile in uno specifico ambiente
 ```
 
-Resta da decidere come renderle utilizzabili.
+## 2.2 Risorse tipizzate
 
-Esempio storico Java:
+Il v0 di integrazione dovrebbe partire da poche risorse tipizzate.
+
+Candidate iniziali:
 
 ```text
-Java corrente/default disponibile come `java`
-Java 8 disponibile contemporaneamente
-comando esplicito `java8`
-package legacy che deve usare Java 8
-shell in cui `java` deve significare Java 8
+command
+    entrypoint eseguibile interno alla Package Instance
+
+directory
+    directory semanticamente rilevante che altri binding possono referenziare
 ```
 
-La directory `pkg/` da sola non deve decidere quale versione sia attiva.
+Esempio Java:
+
+```text
+Package Interface: java-runtime 21
+
+command:java
+    -> bin/java
+
+command:javac
+    -> bin/javac
+
+directory:home
+    -> .
+```
+
+Il package NON deve necessariamente esportare direttamente:
+
+```text
+JAVA_HOME=<qualcosa>
+```
+
+perché `JAVA_HOME` è un nome dell'environment esterno, non una proprietà intrinseca del package.
+
+Un Integration Profile o un Execution Environment può invece decidere:
+
+```text
+JAVA_HOME = java-runtime.directory:home
+```
+
+Questa separazione evita che una dipendenza imponga mutazioni globali solo perché possiede una risorsa utile.
+
+## 2.3 Export non implica integrazione
+
+Più Package Instance possono esportare contemporaneamente:
+
+```text
+command:java
+```
+
+senza conflitto nello store.
+
+Il conflitto può esistere solo quando due risorse vengono candidate allo stesso binding visibile nello stesso namespace di uno specifico profile/environment.
 
 ---
 
-# 2. Integration Context
+# 3. Execution Dependency con slot locale
 
-Un **Integration Context** è uno stato esplicito e risolto che descrive come un insieme di Package Instance viene reso utilizzabile in uno specifico contesto RumiAI.
+Una Package Instance può dichiarare Execution Dependency tramite un **dependency slot locale**.
 
-Non è una Package Instance.
-
-Non modifica il contenuto delle Package Instance.
-
-Non è necessariamente globale.
-
-Non è necessariamente permanente.
-
-Concettualmente:
+Esempio concettuale:
 
 ```text
-Package Instance disponibili
-        ↓
-selezione / dependency resolution / override espliciti
-        ↓
-Integration Context risolto
-        ↓
-materializzazione della view di esecuzione
+dependency slot: jvm
+requires: java-runtime >=8 <9
 ```
 
-Un context contiene solo riferimenti a Package Instance concrete; i version range devono essere già risolti.
+Il nome `jvm` è locale al package richiedente.
+
+Dopo la resolution:
+
+```text
+jvm
+    -> java-runtime 8.0.x / <platform concreta>
+```
+
+Questo permette ai metadata di integrazione/esecuzione del package di referenziare:
+
+```text
+dependency:jvm.command:java
+dependency:jvm.directory:home
+```
+
+senza hardcodare pathname né una Package Instance specifica prima della resolution.
+
+La sintassi concreta non è ancora definita.
 
 ---
 
-# 3. Binding
+# 4. Dipendenze private per default
 
-Il risultato fondamentale dell'integrazione è un insieme di **binding**.
+Una Execution Dependency necessaria a un package NON deve diventare automaticamente visibile nel profilo generale.
 
-Un binding associa un nome/ruolo visibile nel context a una risorsa proveniente da una Package Instance.
+Esempio:
+
+```text
+legacy-app
+└── jvm -> Java 8
+```
+
+L'installazione/integration di `legacy-app` non deve automaticamente produrre:
+
+```text
+shell globale: java -> Java 8
+```
+
+Java 8 è una dipendenza dell'Execution Environment di `legacy-app`.
+
+Per renderla visibile anche all'utente serve una decisione di integrazione esplicita, per esempio:
+
+```text
+java8 -> Java 8.command:java
+```
+
+Regola candidata:
+
+> **Le dipendenze transitive/private soddisfano l'esecuzione del package che le richiede; non acquisiscono automaticamente visibilità pubblica.**
+
+---
+
+# 5. Integration Profile
+
+## 5.1 Definizione
+
+Un **Integration Profile** descrive ciò che utente o sistema vuole rendere normalmente disponibile in un determinato scope persistente.
+
+Esempi:
+
+```text
+default profile
+legacy-java8 profile
+sviluppo-java17 profile
+```
+
+Un Integration Profile non è l'environment concreto di un singolo processo.
+
+È il desired state persistente da cui possono derivare ambienti di esecuzione.
+
+## 5.2 Desired profile e resolved profile
+
+Occorre distinguere due rappresentazioni.
+
+### Desired Integration Profile
+
+Può contenere selector/constraint dinamici:
+
+```text
+integrate java-runtime latest
+integrate python >=3.12 <3.14
+alias java8 -> java-runtime 8 / command:java
+```
+
+Descrive l'intenzione persistente.
+
+### Resolved Integration Profile
+
+Contiene esclusivamente Package Instance concrete e binding deterministici:
+
+```text
+java
+    -> java-runtime 21.0.8 revision 1 / macos-arm64 / command:java
+
+java8
+    -> java-runtime 8.0.462 revision 1 / macos-arm64 / command:java
+```
+
+Quindi:
+
+```text
+Desired Profile
+      ↓ resolve
+Resolved Profile
+```
+
+Questa distinzione è importante per update e rollback.
+
+`latest` può vivere nel desired state, ma non nell'environment realmente eseguito.
+
+---
+
+# 6. Public bindings
+
+Il Resolved Integration Profile contiene i **public bindings** dello scope.
 
 Categorie iniziali candidate:
 
 ```text
 command binding
 environment binding
-application binding
-library/search-path binding
 ```
-
-Il v0 successivo dovrebbe partire da `command` ed `environment`; le altre categorie verranno introdotte soltanto quando necessarie.
 
 Esempio:
 
 ```text
-command `java`
-    → java-runtime 21.0.8 / macos-arm64 / bin/java
+command java
+    -> Java 21.command:java
 
-JAVA_HOME
-    → directory della stessa Package Instance
+command java8
+    -> Java 8.command:java
+
+environment JAVA_HOME
+    -> Java 21.directory:home
 ```
 
-Il meccanismo fisico usato per applicare il binding — symlink, launcher, PATH, environment file o altro — è una decisione di materializzazione separata dal modello logico.
+L'ordine di installazione non determina precedence.
+
+Due binding pubblici incompatibili sullo stesso nome sono un errore salvo override/alias esplicito.
 
 ---
 
-# 4. Package Integration Contribution
+# 7. Profile derivation
 
-Una Package Instance può dichiarare quali elementi **può contribuire** a un Integration Context.
-
-Esempio concettuale Java:
-
-```text
-exports command:
-    java  -> bin/java
-    javac -> bin/javac
-
-exports environment contribution:
-    JAVA_HOME -> <package-root>
-```
-
-Questa dichiarazione non significa che i binding siano automaticamente attivi in ogni context.
-
-Distinguiamo quindi:
-
-```text
-EXPORT
-    ciò che una Package Instance rende disponibile all'integrazione
-
-BINDING
-    ciò che uno specifico Integration Context decide di rendere visibile
-```
-
-Questo consente a più versioni della stessa Package Instance di esportare lo stesso nome senza conflitto finché non vengono selezionate nello stesso namespace del context.
-
----
-
-# 5. Context default, named e package-specific
-
-Non servono tre meccanismi differenti. Sono tutte istanze dello stesso concetto `Integration Context` con scope/lifecycle differenti.
-
-## 5.1 Default context
-
-È il context normalmente utilizzato da shell e command execution RumiAI quando non viene richiesto altro.
-
-Esempio:
-
-```text
-default:
-    java -> java-runtime 21
-```
-
-## 5.2 Named context
-
-Un context può essere persistente e selezionabile esplicitamente.
-
-Esempio:
-
-```text
-legacy-java8:
-    java -> java-runtime 8
-```
-
-Una shell aperta nel context `legacy-java8` vede quindi:
-
-```text
-java -version
-→ Java 8
-```
-
-senza modificare il default context.
-
-## 5.3 Package execution context
-
-Quando un package deve essere eseguito con dipendenze specifiche, RumiAI può costruire un context dedicato derivato dalle Execution Dependency già risolte.
-
-Esempio:
-
-```text
-legacy-app
-└── execution dependency: java-runtime 8
-
-execution context legacy-app:
-    java -> java-runtime 8
-    JAVA_HOME -> java-runtime 8
-```
-
-Il default context può contemporaneamente continuare a usare Java 21.
-
----
-
-# 6. Context derivation / override
-
-Un Integration Context può opzionalmente derivare da un altro context.
-
-La relazione serve a riutilizzare un ambiente generale sostituendo solo ciò che deve cambiare.
+Un profile può opzionalmente derivare da un altro profile.
 
 Esempio:
 
 ```text
 default
     java -> Java 21
+    JAVA_HOME -> Java 21.home
     python -> Python 3.13
 
 legacy-java8 extends default
     override java -> Java 8
+    override JAVA_HOME -> Java 8.home
 ```
 
-Il context risultante vede:
+Il risultato è deterministico:
 
 ```text
-java   -> Java 8
-python -> Python 3.13
+legacy-java8:
+    java -> Java 8
+    JAVA_HOME -> Java 8.home
+    python -> Python 3.13
 ```
 
-L'override deve essere esplicito. L'ordine casuale di installazione non deve determinare quale binding vince.
-
-La necessità di inheritance multipla/composizione di più parent non viene assunta nel v0.
+Nel v0 non viene ancora richiesta inheritance multipla.
 
 ---
 
-# 7. Alias espliciti
+# 8. Execution Environment
 
-Il caso storico `java8` può essere rappresentato come binding addizionale senza cambiare il default `java`.
+## 8.1 Definizione
 
-Esempio nel default context:
+Un **Execution Environment** è l'ambiente completamente risolto con cui viene avviato uno specifico processo/process tree.
 
-```text
-java  -> Java 21 / bin/java
-java8 -> Java 8  / bin/java
-```
+Contiene solo riferimenti a Package Instance concrete.
 
-Quindi:
+Può derivare da:
 
 ```text
-java -version
-→ 21
-
-java8 -version
-→ 8
+Resolved Integration Profile
+        +
+Package Instance da eseguire
+        +
+Execution Dependency risolte di quel package
+        +
+override espliciti dell'invocazione
 ```
 
-Questo non richiede che Java 8 sia il runtime di default e non impedisce a un package-specific context di associare direttamente `java` a Java 8.
+È normalmente effimero.
 
----
-
-# 8. Conflict model
-
-Se due Package Instance contribuiscono allo stesso namespace e il context tenta di attivarle entrambe senza regola esplicita, l'integrazione deve fallire come conflitto.
+## 8.2 Package-specific overlay
 
 Esempio:
 
 ```text
-foo-A exports command `tool`
-foo-B exports command `tool`
+default profile:
+    java -> Java 21
+    JAVA_HOME -> Java 21.home
 
-context requests both as `tool`
-→ CONFLICT
+legacy-app:
+    dependency:jvm -> Java 8
 ```
 
-Non sono soluzioni accettabili:
+Execution Environment di `legacy-app`:
 
 ```text
-vince l'ultimo installato
-vince quello trovato prima nel filesystem
-vince quello processato per ultimo
+public/default resources ereditate dove non in conflitto
+
+private runtime binding:
+    java -> dependency:jvm.command:java
+    JAVA_HOME -> dependency:jvm.directory:home
 ```
 
-Le soluzioni ammissibili sono esplicite, per esempio:
+Il processo legacy vede Java 8 senza cambiare il default profile.
+
+## 8.3 Stesso package, processi differenti
+
+Il sistema può quindi avere simultaneamente:
 
 ```text
-selezione di una delle due
-alias differente
-override dichiarato in un derived context
+normal shell       -> Java 21
+legacy shell       -> Java 8
+legacy-app process -> Java 8
+modern-app process -> Java 17
 ```
 
-Il conflitto riguarda il **binding nel context**, non necessariamente la coesistenza delle Package Instance nello store.
+senza mutare le Package Instance e senza sostituire globalmente una Java con un'altra.
 
 ---
 
-# 9. Integration context e dependency graph
+# 9. Regola stretta sulle versioni dentro un Execution Environment
 
-Il dependency graph risolve **quali Package Instance servono**.
+La coesistenza nello store non implica che versioni incompatibili della stessa dipendenza possano essere caricate nello stesso processo.
 
-L'Integration Context decide **come quelle istanze diventano visibili durante l'esecuzione**.
+Regola v0 proposta:
 
-Sono problemi correlati ma distinti.
+> **Per una stessa dependency identity/slot risolta dentro un singolo Execution Environment deve esistere una soluzione coerente unica, salvo che un futuro execution backend dichiari esplicitamente isolamento interno.**
 
 Esempio:
 
 ```text
-package A
-└── requires java-runtime >=8 <9
-        ↓ resolver
-java-runtime 8.0.x / macos-arm64
-        ↓ integration
-execution context A:
-    command java -> <java8>/bin/java
-    JAVA_HOME    -> <java8>
+root C
+├── A -> requires D >=7 <8
+└── B -> requires D >=8 <9
 ```
 
-Questa separazione permette allo stesso sistema di avere contemporaneamente:
+Se A e B devono vivere nello stesso Execution Environment/process tree e non esiste una versione D che soddisfa entrambi:
 
 ```text
-default context → Java 21
-package A       → Java 8
-package B       → Java 17
-java8 alias      → Java 8
+RESOLUTION CONFLICT
 ```
+
+Il fatto che `D7` e `D8` possano convivere fisicamente nello store non risolve automaticamente un conflitto runtime interno allo stesso ambiente.
+
+Processi/environment distinti possono invece usare versioni differenti senza conflitto.
 
 ---
 
-# 10. `integrate`
+# 10. Environment binding dichiarativo
 
-Nel nuovo modello, `integrate` non dovrebbe significare "esegui una serie di side effect irreversibili".
-
-Concettualmente dovrebbe significare:
+Il vecchio `m` usava shell code come:
 
 ```text
-modifica la definizione/desiderata selezione di un Integration Context
-        ↓
-resolve bindings
-        ↓
-validate conflicts
-        ↓
-materialize/rebuild la execution view del context
+export JAVA_HOME=...
+export JAVA_TOOL_OPTIONS=...
 ```
 
-La Package Instance resta invariata.
+Il nuovo modello non dovrebbe richiedere shell code arbitrario.
 
-Il context risultante deve essere conoscibile e riproducibile.
+Gli environment binding devono poter essere descritti come dati.
+
+Operazioni candidate minime:
+
+```text
+set
+set-if-unset
+unset
+prepend
+append
+```
+
+Ma queste operazioni non vengono ancora fissate come API definitiva.
+
+Il requisito già fissabile è:
+
+> **Un environment binding deve poter referenziare risorse Package Interface e dependency slot senza `eval`, senza pathname hardcoded e senza eseguire codice arbitrario per ottenere il valore.**
+
+Esempio concettuale:
+
+```text
+set JAVA_HOME = dependency:jvm.directory:home
+set-if-unset CLASSPATH = "."
+```
+
+`PATH` può essere trattato separatamente dal namespace dei command binding; non è necessario modellare ogni comando come semplice concatenazione di directory PATH.
 
 ---
 
-# 11. `deintegrate`
+# 11. Command binding come Launch Specification
 
-`deintegrate` non dovrebbe tentare di ricostruire al contrario ogni modifica fatta da `integrate` leggendo di nuovo i metadata del package.
-
-Dovrebbe invece significare:
+Un command binding non deve essere ridotto semanticamente a:
 
 ```text
-rimuovi una selezione/binding dal desired state del context
-        ↓
-ricalcola context
-        ↓
-rebuild/materialize la nuova view
+nome -> pathname eseguibile
 ```
 
-Questa differenza è importante rispetto all'antenato, dove la deintegration modificava file globali e cercava di sottrarre PATH/env/link precedentemente applicati.
+Per un package con dipendenze private, lanciare il comando può richiedere la costruzione dell'Execution Environment corretto.
 
-Il nuovo modello rende `deintegrate` una trasformazione di stato dichiarato, non una procedura di undo euristica.
+Il binding logico è quindi più vicino a una **Launch Specification**:
+
+```text
+command name
+    -> Package Instance
+    -> entrypoint esportato
+    -> Execution Environment da costruire
+```
+
+Esempio:
+
+```text
+pulsar
+    -> Pulsar Package Instance
+    -> command:pulsar
+    -> execution env con Java 17 risolta
+```
+
+La materializzazione fisica può poi essere:
+
+```text
+symlink diretto       se semanticamente sufficiente
+launcher minimale     se serve costruire environment
+resolver dinamico     in implementazioni future
+```
+
+Il modello logico non dipende da una di queste tecniche.
 
 ---
 
-# 12. Materialized View
+# 12. Execution View / materialization
 
-Un Integration Context è logico.
+Il Resolved Integration Profile e l'Execution Environment sono oggetti logici.
 
-Per essere usato deve poter produrre una **Materialized View**.
+Una **Execution View** è una loro possibile materializzazione fisica.
 
-Possibili elementi della view:
+Può includere:
 
 ```text
 bin namespace
-environment
+environment representation
 application namespace
-library/search namespace
 ```
 
-La forma fisica non è ancora decisa.
+La view NON è la fonte di verità.
 
-Per esempio, un command binding potrebbe essere materializzato mediante:
+Deve poter essere eliminata e rigenerata completamente dal resolved state.
 
-```text
-symlink
-launcher minimale
-resolver command
-```
+Per un profile persistente può essere utile mantenere una view persistente/cache.
 
-Il modello non deve dipendere da una di queste implementazioni.
-
-Una view dovrebbe poter essere rigenerata completamente dal context, rendendo superfluo affidarsi a mutazioni incrementali non registrate.
+Per un Execution Environment package-specific può essere creata on-demand o non essere materializzata affatto se il launcher può costruire direttamente processo ed environment.
 
 ---
 
-# 13. Context lifecycle
+# 13. `integrate`
 
-Un Integration Context può essere:
+Nel nuovo modello:
 
 ```text
-persistent
-    default o named context conservato dal sistema
-
-ephemeral
-    creato per una singola esecuzione/process tree
+integrate
 ```
 
-Questa distinzione riguarda il lifecycle, non il modello dei binding.
+significa concettualmente:
 
-Un package execution context potrebbe quindi essere ephemeral senza lasciare stato globale dopo l'esecuzione.
+```text
+modifica Desired Integration Profile
+        ↓
+resolve package selectors + dependencies
+        ↓
+produce Resolved Integration Profile
+        ↓
+validate public binding conflicts
+        ↓
+rebuild/refresh eventuale Execution View
+```
+
+Non modifica la Package Instance.
+
+Non dipende da side effect incrementali non registrati.
 
 ---
 
-# 14. Relazione con mutable application state
+# 14. `deintegrate`
 
-Integration Context e stato applicativo non sono la stessa cosa.
-
-Il context può indicare dove si trovano configurazione/home/data di una specifica execution profile, ma tali dati non devono diventare parte della Package Instance né del binding stesso.
-
-La relazione precisa fra:
+`deintegrate` significa:
 
 ```text
-Package Instance
-Integration Context
-State/Profile
+rimuovi selector/binding dal Desired Integration Profile
+        ↓
+risolvi nuovamente
+        ↓
+produce nuovo Resolved Integration Profile
+        ↓
+rigenera eventuale Execution View
 ```
 
-va progettata separatamente dopo aver fissato il modello base dell'integrazione.
+Non tenta di ricostruire a ritroso le mutazioni precedenti leggendo metadata correnti del package.
+
+La rimozione della Package Instance dallo store è un problema separato.
 
 ---
 
-# 15. Invarianti candidate
+# 15. Installazione, integrazione e garbage collection restano distinti
+
+Il modello separa tre operazioni:
 
 ```text
-IC-01 Package Instance nello store != package attivo
+STORE / INSTALL
+    Package Instance presente nel rumiai-store
 
-IC-02 Integration Context contiene solo riferimenti a Package Instance concrete
+INTEGRATE
+    Package Instance selezionata come root/public binding di un profile
 
-IC-03 version range non esistono nella Materialized View: sono già risolti
-
-IC-04 package exports != context bindings
-
-IC-05 stesso package/versioni diverse possono coesistere nello store
-
-IC-06 conflitti di namespace sono errori salvo decisione esplicita
-
-IC-07 install order non determina precedence
-
-IC-08 context può essere persistent o ephemeral
-
-IC-09 package-specific dependencies possono produrre context differenti dal default
-
-IC-10 integrate modifica desired context state, non la Package Instance
-
-IC-11 deintegrate ricostruisce la view dal nuovo desired state, non tenta undo euristici
-
-IC-12 la Materialized View deve poter essere rigenerata dal context
+EXECUTE
+    costruzione di un Execution Environment concreto
 ```
+
+La rimozione di un root dal profile non implica necessariamente la rimozione fisica delle Package Instance non più utilizzate.
+
+Quelle Package Instance diventano candidate a una futura garbage collection basata sulle reference reali del sistema.
 
 ---
 
-# 16. Esempio completo Java
+# 16. Stato applicativo resta separato
+
+Package Instance, Integration Profile ed Execution Environment NON sono application state.
+
+Lo stato persistente deve rimanere un concetto distinto.
+
+Un Execution Environment potrà in futuro bindare risorse come:
+
+```text
+config directory
+data directory
+home directory
+cache directory
+```
+
+verso una State Instance/profile specifica.
+
+Ma lo state non deve essere incorporato nella Package Instance né confuso con il desired integration state.
+
+---
+
+# 17. Casi di stress
+
+## 17.1 Java default + Java 8 esplicita
 
 Store:
 
 ```text
-pkg/
-    java-runtime 8
-    java-runtime 17
-    java-runtime 21
-    legacy-app
-    modern-app
+Java 8
+Java 21
 ```
 
-Default context:
+Desired default profile:
 
 ```text
-java  -> Java 21
-java8 -> Java 8
+integrate Java latest as default Java
+alias java8 -> Java 8.command:java
 ```
 
-Named context:
+Resolved profile:
 
 ```text
-legacy-shell extends default
-    java -> Java 8
+java  -> Java 21.command:java
+java8 -> Java 8.command:java
+JAVA_HOME -> Java 21.directory:home
 ```
 
-Package execution contexts:
+## 17.2 Shell Java 8
+
+```text
+legacy-java8 extends default
+    override java -> Java 8.command:java
+    override JAVA_HOME -> Java 8.directory:home
+```
+
+Una shell lanciata con questo profile vede Java 8.
+
+## 17.3 Package legacy con Java 8 privata
 
 ```text
 legacy-app
-    java -> Java 8
-
-modern-app
-    java -> Java 17
+    dependency slot jvm -> java-runtime >=8 <9
 ```
 
-Risultato:
+Resolved dependency:
 
 ```text
-normal shell:       java → 21
-normal shell:       java8 → 8
-legacy-shell:       java → 8
-legacy-app process: java → 8
-modern-app process: java → 17
+jvm -> Java 8
 ```
 
-Tutte le Java restano Package Instance distinte e immutabili nello store.
+Execution Environment:
+
+```text
+java -> dependency:jvm.command:java
+JAVA_HOME -> dependency:jvm.directory:home
+```
+
+Java 8 NON diventa pubblica nel default profile.
+
+## 17.4 Package modern con Java 17
+
+Parallelamente:
+
+```text
+modern-app
+    dependency slot jvm -> Java 17
+```
+
+Il suo processo vede Java 17 mentre shell normale usa Java 21 e legacy-app Java 8.
+
+## 17.5 Due package esportano `tool`
+
+Store:
+
+```text
+A exports command:tool
+B exports command:tool
+```
+
+Non esiste conflitto finché restano nello store.
+
+Desired profile che integra entrambi implicitamente come `tool`:
+
+```text
+CONFLICT
+```
+
+Soluzioni esplicite:
+
+```text
+tool  -> A.command:tool
+btool -> B.command:tool
+```
+
+oppure derived profile con override esplicito.
+
+## 17.6 Dipendenza incompatibile nello stesso processo
+
+```text
+C
+├── A -> D 7.x
+└── B -> D 8.x
+```
+
+Se C/A/B devono condividere lo stesso Execution Environment e il modello runtime non offre isolamento:
+
+```text
+RESOLUTION CONFLICT
+```
+
+La presenza di D7 e D8 nello store non basta a rendere il grafo eseguibile.
 
 ---
 
-# 17. Questioni ancora aperte
+# 18. Invarianti candidate aggiornate
 
-Questo draft non decide ancora:
+```text
+IM-01 Package Instance nello store != package integrato
 
-- layout filesystem dei context;
-- formato dei metadata `exports`;
-- formato dei binding;
-- come si materializza `bin`;
-- come si applicano environment binding senza `eval`;
-- precedence fra context parent/child oltre al singolo override;
-- se il default context debba essere unico o esistano più root/user context;
-- integrazione di shared libraries;
-- applicazioni GUI;
-- servizi;
-- relazione precisa fra context e state/profile;
-- atomicità del rebuild della Materialized View;
-- persistenza/receipt del context;
-- garbage collection delle Package Instance non più referenziate.
+IM-02 Package Interface descrive risorse, non side effect globali
 
-Il prossimo punto da discutere è se il modello `Integration Context → Binding → Materialized View` rappresenta correttamente tutti i casi storici che vogliamo preservare prima di fissare layout o metadata.
+IM-03 export != binding
+
+IM-04 Execution Dependency è privata per default
+
+IM-05 Desired Integration Profile può contenere selector/constraint
+
+IM-06 Resolved Integration Profile contiene solo Package Instance concrete
+
+IM-07 Execution Environment contiene solo dipendenze concrete e binding risolti
+
+IM-08 version range/latest non esistono nell'Execution Environment
+
+IM-09 install order non determina precedence
+
+IM-10 namespace conflict richiede decisione esplicita
+
+IM-11 package-specific dependency può override il default solo dentro il proprio Execution Environment
+
+IM-12 integrate modifica desired state, non la Package Instance
+
+IM-13 deintegrate ricalcola desired/resolved state, non esegue undo euristico
+
+IM-14 Execution View è derivata e rigenerabile, non fonte di verità
+
+IM-15 command binding può richiedere una Launch Specification, non solo un symlink
+
+IM-16 state applicativo resta separato da store e integration profile
+
+IM-17 versioni differenti possono convivere nello store; la compatibilità nello stesso Execution Environment richiede invece una resolution coerente
+```
+
+---
+
+# 19. Conseguenze architetturali
+
+Il modello risultante è:
+
+```text
+                 RUMIAI STORE
+                     │
+             Package Instance
+                     │
+              Package Interface
+                     │
+          ┌──────────┴───────────┐
+          │                      │
+Desired Integration      Execution Dependencies
+     Profile                    │
+          │                      │
+          └────── resolve ───────┘
+                     │
+          Resolved Integration Profile
+                     │
+          + package da eseguire
+          + private dependencies
+                     │
+              Execution Environment
+                     │
+              Launch Specification
+                     │
+           optional Execution View
+                     │
+                   process
+```
+
+Questa separazione preserva le capacità storiche di `integrate/deintegrate` ma evita che il modello dipenda da una singola mutazione globale di PATH/environment/filesystem.
+
+---
+
+# 20. Questioni da affrontare prima di un PoC
+
+Il modello non decide ancora:
+
+- identità e layout fisico del `rumiai-store`;
+- struttura concreta della Package Interface;
+- grammatica delle Execution Dependency e dependency slot;
+- regole esatte di version comparison/range;
+- formato Desired/Resolved Integration Profile;
+- semantica completa degli environment binding;
+- modello di State Instance;
+- atomicità e persistenza dei resolved profile;
+- risoluzione di provider alternativi per la stessa capability;
+- applicazioni GUI e servizi;
+- shared library integration fra Package Instance;
+- execution backend isolati/container/VM;
+- garbage collection e reference accounting.
+
+Prima di progettare il PoC conviene ancora ragionare su due problemi centrali:
+
+```text
+A. dependency model / version resolution
+B. package state / execution state
+```
+
+perché entrambi influenzano direttamente l'Integration Profile e l'Execution Environment.
