@@ -69,28 +69,68 @@ global_git_value() {
     git config --global --get "$1" 2>/dev/null || printf ''
 }
 
+valid_git_name() {
+    case $1 in
+        *[![:space:]]*) : ;;
+        *) return 1 ;;
+    esac
+    case $1 in
+        *'<'*|*'>'*) return 1 ;;
+    esac
+    return 0
+}
+
+valid_git_email() {
+    case $1 in
+        ''|*[[:space:]]*|*'<'*|*'>'*|@*|*@|*@*@*) return 1 ;;
+        *@*) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
 ensure_git_identity() {
     [ -n "${HOME:-}" ] || die 'HOME is required for Git global configuration'
 
     git_user_name=$(global_git_value user.name)
     git_user_email=$(global_git_value user.email)
+    configure_name=0
+    configure_email=0
 
-    if [ -z "$git_user_name" ] || [ -z "$git_user_email" ]; then
+    if ! valid_git_name "$git_user_name"; then
+        if [ -n "$git_user_name" ]; then
+            warn 'global Git user.name is not usable as an explicit identity'
+        else
+            warn 'Git global author identity is incomplete'
+        fi
+        tty_available || die 'a controlling terminal is required to configure Git user.name'
+        prompt_text 'Git user.name: ' || die 'cannot read Git user.name'
+        git_user_name=$REPLY
+        valid_git_name "$git_user_name" || die 'Git user.name must contain a non-whitespace name without angle brackets'
+        configure_name=1
+    fi
+
+    if ! valid_git_email "$git_user_email"; then
+        if [ -n "$git_user_email" ]; then
+            warn 'global Git user.email is not a usable email address'
+        elif [ "$configure_name" -eq 0 ]; then
+            warn 'Git global author identity is incomplete'
+        fi
+        tty_available || die 'a controlling terminal is required to configure Git user.email'
+        prompt_text 'Git user.email: ' || die 'cannot read Git user.email'
+        git_user_email=$REPLY
+        valid_git_email "$git_user_email" || die 'Git user.email must have the form local@domain with no whitespace or angle brackets'
+        configure_email=1
+    fi
+
+    if [ "$configure_name" -eq 1 ] || [ "$configure_email" -eq 1 ]; then
         say ''
-        warn 'Git global author identity is incomplete'
-        tty_available || die 'a controlling terminal is required to configure Git user.name and user.email'
+        say "Proposed Git identity: $git_user_name <$git_user_email>"
+        ask_yes_no 'Use this Git identity globally?' || die 'Git identity configuration cancelled'
 
-        if [ -z "$git_user_name" ]; then
-            prompt_text 'Git user.name: ' || die 'cannot read Git user.name'
-            git_user_name=$REPLY
-            [ -n "$git_user_name" ] || die 'Git user.name cannot be empty'
+        if [ "$configure_name" -eq 1 ]; then
             git config --global user.name "$git_user_name" || die 'cannot configure global Git user.name'
         fi
-
-        if [ -z "$git_user_email" ]; then
-            prompt_text 'Git user.email: ' || die 'cannot read Git user.email'
-            git_user_email=$REPLY
-            [ -n "$git_user_email" ] || die 'Git user.email cannot be empty'
+        if [ "$configure_email" -eq 1 ]; then
             git config --global user.email "$git_user_email" || die 'cannot configure global Git user.email'
         fi
     fi
@@ -100,8 +140,8 @@ ensure_git_identity() {
 
     git_user_name=$(global_git_value user.name)
     git_user_email=$(global_git_value user.email)
-    [ -n "$git_user_name" ] || die 'global Git user.name is not configured'
-    [ -n "$git_user_email" ] || die 'global Git user.email is not configured'
+    valid_git_name "$git_user_name" || die 'global Git user.name is not usable'
+    valid_git_email "$git_user_email" || die 'global Git user.email is not usable'
 
     git var GIT_AUTHOR_IDENT >/dev/null 2>&1 || die 'Git cannot construct an author identity from the configured values'
     git var GIT_COMMITTER_IDENT >/dev/null 2>&1 || die 'Git cannot construct a committer identity from the configured values'
