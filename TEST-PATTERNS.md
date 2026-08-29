@@ -197,6 +197,37 @@ Durante la prima implementazione sono emersi almeno questi problemi:
 4. Inserire manualmente molti comandi dopo un programma che legge da `/dev/tty` può far consumare al prompt righe già incollate nel terminale. Questo è uno dei motivi per cui l'interazione deve essere automatizzata dentro il `.test`.
 5. Generalizzare un prompt letterale a un pattern dinamico dentro un blocco Tcl braced può cambiare le regole di sostituzione: una variabile come `$prompt` non deve essere assunta equivalente al precedente pattern letterale. Per i prompt generati dinamicamente la strategia corrente usa il matching esatto `expect -ex "$prompt"`; il valore ottenuto dalla variabile viene trattato come dato e timeout/EOF sono gestiti esplicitamente.
 
+### Validazione fisica corrente
+
+La versione corretta della reference implementation è stata congelata in:
+
+```text
+massimilianonardi-ai/rumiai-tests@7eed87d7cba441d248ae68de82762b73b2320f77:lib/interactive.lib
+```
+
+Le tre copie inline usate dai test `rumiai-dev/setup-dev` sono state aggiornate dichiarando la stessa provenance e la suite completa al commit:
+
+```text
+c9d0c1757f64d66d1f460a00b3cd33574540b6f1
+```
+
+è stata eseguita fisicamente con esito:
+
+```text
+PASS   8
+FAIL   0
+SKIP   0
+ERROR  0
+TOTAL  8
+```
+
+su entrambi gli host stabili correnti:
+
+- macOS;
+- Ubuntu 26.04 ARM64.
+
+Questo chiude il gate di validazione della versione `7eed87d7...` come reference implementation canonica corrente per nuove copie inline.
+
 ### Stato di promozione
 
 Questa capability è attualmente classificata come **livello 2**.
