@@ -1,7 +1,7 @@
 # Handoff — RumiAI OS permanent bootstrap tests
 
 Date: 2026-08-29
-Status: **PASS 53 physically validated; interactive sh fallback validation prepared**
+Status: **PASS 53 validated; interactive shell block isolated to one macOS test-fixture defect; corrected PASS 56 candidate prepared**
 
 ## Repositories
 
@@ -158,9 +158,9 @@ massimilianonardi-ai/rumiai-tests@251ec2bde45a197590ec7dc23b8b41e60a79543f:lib/r
 
 All three references are physically validated on macOS and Ubuntu ARM64.
 
-## Prepared interactive shell block — expected PASS 56
+## Interactive shell block
 
-Current `rumiai-tests/main`:
+Original shell-block suite commit:
 
 ```text
 c15cb2aaaaa0a7d209f6437f529b22840e4f1b98
@@ -183,9 +183,21 @@ Contracts:
 - requested `bash` with `bash` deliberately absent from inherited `PATH` emits `shell.fallback`, selects `sh`, reaches the RumiAI prompt and exits autonomously;
 - a structurally valid but unsupported shell value (`zsh`) emits `shell.unsupported`, selects `sh`, reaches the RumiAI prompt and exits autonomously.
 
-The bash-fallback test restricts only the child wrapper's inherited `PATH`; product calls that intentionally use `command -p` continue to resolve through the implementation-provided standard utility path. This specifically tests the documented distinction between caller-PATH shell preference lookup and standard-path `sh` fallback.
+### First physical result
 
-The next complete physical run should contain:
+Against unchanged product `8698504f...` and shell-block suite `c15cb2a...`:
+
+macOS:
+
+```text
+PASS   55
+FAIL   1
+SKIP   0
+ERROR  0
+TOTAL  56
+```
+
+Ubuntu 26.04 ARM64:
 
 ```text
 PASS   56
@@ -195,7 +207,83 @@ ERROR  0
 TOTAL  56
 ```
 
-on both stable hosts before this shell block is declared validated.
+The only macOS failure was:
+
+```text
+rumiai-os/shell/bash-fallback-to-sh.test
+```
+
+Both other new interactive tests passed on both hosts. The complete previous 53-test baseline also remained green on both hosts. This isolates the failure to the bash-unavailability test fixture rather than to the product's general `sh` branch or PTY automation.
+
+### Test-fixture defect
+
+The first version simulated unavailable `bash` by replacing the child PATH with only:
+
+```text
+$fixture/bin
+```
+
+That achieved the target condition but also removed every unrelated inherited PATH component. It therefore tested two changes simultaneously:
+
+1. `bash` is not resolvable;
+2. the interactive child receives an artificially starved PATH.
+
+Linux happened to tolerate that environment while the reference macOS interactive path did not. This is too invasive for a focused regression test.
+
+The corrected test now follows this rule:
+
+```text
+preserve inherited PATH
+        ↓
+remove only components containing executable bash
+        ↓
+prepend fixture/bin
+        ↓
+assert command -v bash fails in /bin/sh
+        ↓
+run unchanged product
+```
+
+It also repeats the bash-absence precondition in the PTY wrapper and emits a dedicated test-only failure marker if the condition is unexpectedly violated.
+
+No product code changed.
+
+Corrected `rumiai-tests/main` candidate:
+
+```text
+620c0620c01e7b182d4783225406211db738d585
+Isolate bash absence without starving PATH
+```
+
+The updated file remains executable (`100755`).
+
+## Next physical gate
+
+Run the complete suite against unchanged product:
+
+```text
+8698504f715ed61cec8a31b46ded5b79f3924eb5
+```
+
+and corrected tests:
+
+```text
+620c0620c01e7b182d4783225406211db738d585
+```
+
+Required result on both stable hosts:
+
+```text
+PASS   56
+FAIL   0
+SKIP   0
+ERROR  0
+TOTAL  56
+```
+
+Only after both hosts pass should the interactive shell block be declared physically validated.
+
+After validation, the PATH-fixture lesson should be extracted into `TEST-PATTERNS.md`: when simulating absence of one command, mutate the environment minimally and assert the intended precondition rather than replacing the whole search environment with an unrelated artificial one.
 
 ## Forward-only rule
 
