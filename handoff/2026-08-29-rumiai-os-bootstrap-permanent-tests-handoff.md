@@ -1,7 +1,7 @@
 # Handoff — RumiAI OS permanent bootstrap tests
 
 Date: 2026-08-29
-Status: **PASS 28 validated; PASS 40 validation prepared**
+Status: **PASS 40 physically validated; Phase 1F / CLI test block next**
 
 ## Product under test
 
@@ -11,7 +11,7 @@ Repository:
 massimilianonardi-ai/rumiai-os
 ```
 
-Current product commit:
+Validated product commit:
 
 ```text
 4d1250b02a25050ff60da2b9818519026523d6b0
@@ -29,14 +29,14 @@ git pull --ff-only
 ./rumiai-test
 ```
 
-All setup, fixtures, mutations, assertions and cleanup belong inside autonomous `.test` files.
+All setup, fixtures, mutations, host-specific automation, assertions and cleanup belong inside autonomous `.test` files.
 
-## Physically validated baseline — PASS 28
+## Physically validated baseline — PASS 40
 
 The complete suite at:
 
 ```text
-07a9a6a1fb3918c1763e8ce3ffe4982d9c369d22
+9b0c5a6d42b3f8e07d372862f11907a76441d532
 ```
 
 was physically executed on both stable hosts:
@@ -47,18 +47,47 @@ was physically executed on both stable hosts:
 Both produced:
 
 ```text
-PASS   28
+PASS   40
 FAIL   0
 SKIP   0
 ERROR  0
-TOTAL  28
+TOTAL  40
 ```
 
-Validated coverage includes Phase 0 invocation/root resolution/failures, Phase 1 semantic roots and PATH, language/encoding selection and fallback, isolated bootstrap preferences, preference structural validation, and the data-not-code property for bootstrap configuration.
+Validated coverage now includes:
 
-The runner, setup-dev and reference-library groups also remained green.
+- Phase 0 absolute, relative, PATH and symlink invocation;
+- physical/canonical `RumiAI_BOOTSTRAP_BIN` and `RumiAI_ROOT`;
+- CWD independence;
+- Phase-0 PATH-resolution and circular-symlink/realpath failures;
+- semantic roots and `PATH` prepend;
+- locale language selection and language fallback;
+- text-encoding default, normalization and fallback;
+- isolated bootstrap preference files;
+- structural validation of preference files;
+- bootstrap preference data-not-code behavior;
+- missing and failing-source `i18n.lib` load boundaries with status 5 and raw fatal token;
+- missing and failing-source `log.lib` load boundaries with status 6 and raw fatal token;
+- direct i18n selected-language -> `en_US` -> stable identifier resolution order;
+- direct i18n catalog data-not-code behavior;
+- invalid/multiline catalog fallback;
+- logger severity threshold filtering;
+- invalid severity status 12;
+- invalid structured-field status 15;
+- invalid log-level status 16;
+- logger escaping of backslash, quote, tab and newline while preserving one physical line.
+
+The existing runner, setup-dev and reference-library groups remained green in the same complete-suite runs.
 
 ## Canonical level-2 test-authoring references
+
+### Interactive TTY automation
+
+```text
+massimilianonardi-ai/rumiai-tests@7eed87d7cba441d248ae68de82762b73b2320f77:lib/interactive.lib
+```
+
+Physically validated on macOS and Ubuntu ARM64.
 
 ### Target discovery
 
@@ -74,9 +103,7 @@ Physically validated on both stable hosts.
 massimilianonardi-ai/rumiai-tests@251ec2bde45a197590ec7dc23b8b41e60a79543f:lib/rumiai-os-fixture.lib
 ```
 
-The fixture self-test and all first preference tests passed in the complete `PASS 28` run on both stable hosts. This immutable version is therefore canonical for new inline copies until superseded by a separately validated version.
-
-The fixture copies runtime material into a temporary root and creates a fresh empty:
+Physically validated on both stable hosts. It copies runtime material into a temporary root and creates a fresh empty:
 
 ```text
 conf/bootstrap/
@@ -84,79 +111,29 @@ conf/bootstrap/
 
 so tests can mutate configuration and runtime files without touching the real product checkout.
 
-## Prepared validation block — expected PASS 40
+## Next block — Phase 1F / CLI
 
-Current `rumiai-tests/main`:
+The next permanent-test block should follow the accepted command-interpreter architecture and normative command-entry specification.
 
-```text
-9b0c5a6d42b3f8e07d372862f11907a76441d532
-```
-
-### Bootstrap pre-logger load boundaries
+Primary contracts to exercise separately:
 
 ```text
-tests/rumiai-os/bootstrap/i18n-load-missing.test
-tests/rumiai-os/bootstrap/i18n-load-source-failure.test
-tests/rumiai-os/bootstrap/log-load-missing.test
-tests/rumiai-os/bootstrap/log-load-source-failure.test
+explicit readable source without shebang/executable bit
+canonical RumiAI_COMMAND_BIN
+source operand removed from positional arguments
+command/source return status propagation
+explicit symlink source canonicalization
+source resolution failure -> status 8 + structured logger event
+invalid/non-readable/non-regular source -> status 9 + structured logger event
+self-entry rejection -> status 9
+host-profile direct #!/usr/bin/env rumiai-os execution
+PATH-selected active runtime semantics
+no-argument shell load/default/fallback behavior
 ```
 
-Expected contracts:
+Direct executable command behavior is an explicit RumiAI host-profile extension and must be physically exercised on each stable host; it must not be inferred merely from explicit `rumiai-os file` tests.
 
-```text
-i18n library missing          -> status 5 + RumiAI_BOOTSTRAP_FATAL_I18N_LOAD_ERROR
-i18n library source failure   -> status 5 + RumiAI_BOOTSTRAP_FATAL_I18N_LOAD_ERROR
-log library missing           -> status 6 + RumiAI_BOOTSTRAP_FATAL_LOG_LOAD_ERROR
-log library source failure    -> status 6 + RumiAI_BOOTSTRAP_FATAL_LOG_LOAD_ERROR
-```
-
-The raw fatal token is intentional because the normal logger is not active yet.
-
-### Direct i18n behavior
-
-```text
-tests/rumiai-os/i18n/resolution-order.test
-tests/rumiai-os/i18n/catalog-data-not-code.test
-tests/rumiai-os/i18n/invalid-catalog-fallback.test
-```
-
-Coverage:
-
-- selected-language catalog -> `en_US` -> stable `domain.message-id`;
-- catalog text is data and is never executed as shell code;
-- structurally invalid/multiline catalog objects are skipped and resolution continues to the next fallback.
-
-### Direct logger behavior
-
-```text
-tests/rumiai-os/log/severity-filter.test
-tests/rumiai-os/log/invalid-severity.test
-tests/rumiai-os/log/invalid-fields.test
-tests/rumiai-os/log/invalid-level.test
-tests/rumiai-os/log/field-escaping.test
-```
-
-Coverage:
-
-- threshold filtering;
-- explicit invalid-severity status 12;
-- invalid structured-field status 15;
-- invalid log-level status 16;
-- escaping of backslash, quote, tab and newline while preserving one physical log line.
-
-All 12 newly added tests were linted with both `sh -n` and `dash -n` before publication. All `.test` files are executable in Git.
-
-The next physical complete-suite run should therefore contain:
-
-```text
-PASS   40
-FAIL   0
-SKIP   0
-ERROR  0
-TOTAL  40
-```
-
-on both stable hosts before this block is declared validated.
+The shell branch must remain separate from explicit source execution so failures identify whether the regression belongs to command interpretation or no-argument interactive-shell startup.
 
 ## Forward-only rule
 
