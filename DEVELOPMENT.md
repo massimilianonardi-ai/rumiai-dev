@@ -233,7 +233,35 @@ Because the isolated `$HOME` intentionally hid normal user authentication and th
 
 During the first Ubuntu isolated attempt, an operator paste error supplied the shell command `cd /m/src/git/rumiai-os` at the `Git user.email` prompt. The then-current bootstrap accepted any non-empty string, exposing an input-validation gap. A subsequent clean rerun with the intended identity succeeded. The implementation was therefore hardened again to validate the minimal shape of both identity fields and require explicit confirmation of the full proposed identity before persisting newly requested values.
 
-The validation/confirmation hardening must be physically exercised after its publication before this specific input-safety path is considered closed.
+The resulting regression coverage was moved into the permanent `rumiai-tests` group:
+
+```text
+tests/rumiai-dev/setup-dev/
+```
+
+and physically exercised on both stable hosts against `rumiai-tests` commit:
+
+```text
+a68a7a69ac45bc397dec3d78f39f4275aef56d57
+```
+
+with:
+
+```text
+./rumiai-test rumiai-dev/setup-dev
+```
+
+Both macOS and Ubuntu 26.04 ARM64 produced:
+
+```text
+PASS   3
+FAIL   0
+SKIP   0
+ERROR  0
+TOTAL  3
+```
+
+This closes the Git-identity input-safety path: invalid email input is rejected before workspace creation, cancellation persists no identity, and confirmed valid identity is persisted with `user.useConfigOnly=true`, supports Git author/committer construction, a real commit, and isolated cloning of the three development repositories.
 
 ## Requirements
 
