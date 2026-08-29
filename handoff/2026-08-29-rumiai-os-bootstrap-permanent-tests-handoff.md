@@ -1,102 +1,26 @@
-# Handoff — RumiAI OS permanent bootstrap tests
+# Handoff — RumiAI OS bootstrap milestone closed
 
 Date: 2026-08-29
-Status: **PASS 53 validated; interactive shell block isolated to one macOS test-fixture defect; corrected PASS 56 candidate prepared**
+Status: **BOOTSTRAP PHASE 0/1 CLOSED — move development upward**
 
-## Repositories
+## Stable product baseline
 
-Product:
+Repository:
 
 ```text
 massimilianonardi-ai/rumiai-os
 ```
 
-Tests:
-
-```text
-massimilianonardi-ai/rumiai-tests
-```
-
-Canonical physical invocation remains:
-
-```text
-cd <rumiai-os>
-git pull --ff-only
-cd <rumiai-tests>
-git pull --ff-only
-./rumiai-test
-```
-
-All setup, fixtures, host-specific automation, assertions and cleanup belong inside autonomous `.test` files.
-
-## Current physically validated baseline — PASS 53
-
-Product:
+Validated product commit:
 
 ```text
 8698504f715ed61cec8a31b46ded5b79f3924eb5
 Separate pathname validation from canonicalization
 ```
 
-Suite:
+The Phase 0/1 bootstrap, semantic roots, PATH model, bootstrap preferences, i18n, logger, command interpreter, direct `#!/usr/bin/env rumiai-os` host profile, Bash selection where available, and POSIX `sh` path have been physically exercised on both stable hosts.
 
-```text
-c259b2805377bb33d9bb70c9758d6af60a27a9e2
-Add Phase 1F command and shell tests
-```
-
-Both stable hosts were physically exercised against that exact pair:
-
-- macOS;
-- Ubuntu 26.04 ARM64.
-
-Both produced:
-
-```text
-PASS   53
-FAIL   0
-SKIP   0
-ERROR  0
-TOTAL  53
-```
-
-This closes the Phase 1F command-interpreter and initial shell gate, including direct `#!/usr/bin/env rumiai-os` host-profile behavior.
-
-## Path canonicalization portability history
-
-### Defect discovered
-
-With product `4d1250b0...` and suite `c259b280...`, macOS produced PASS 53 while Ubuntu produced PASS 52 / FAIL 1. The only failure was:
-
-```text
-rumiai-os/command/resolution-failure.test
-```
-
-The product was passing an unchecked nonexistent pathname to optionless `realpath`. GNU/Linux accepted the missing final component and later classified the entry as invalid (status 9); macOS rejected the path during canonicalization (status 8).
-
-### Rejected attempted fix
-
-Commit:
-
-```text
-01db051c8bcaac840ce1eda9a9f5339ef1198388
-Require existing paths during canonicalization
-```
-
-changed the product to `realpath -e`. This is permanently rejected because the reference macOS `/bin/realpath` physically rejects `-e`.
-
-Observed against suite `c259b280...`:
-
-```text
-macOS:              PASS 19 / FAIL 34
-Ubuntu 26.04 ARM64: PASS 53 / FAIL 0
-```
-
-This failed result is historical evidence and MUST NOT be rewritten or presented as a viable portability solution.
-
-### Stable accepted rule
-
-RumiAI now separates validation from canonicalization:
+The accepted pathname rule remains:
 
 ```text
 VALIDATE EXISTENCE
@@ -106,185 +30,159 @@ CANONICALIZE EXISTING PATH
 VALIDATE REQUIRED TYPE
 ```
 
-`realpath` is never used to decide whether an unchecked pathname exists.
+`realpath` is only a canonicalizer of an already-existing pathname. The rejected `realpath -e` commit remains historical evidence and must not be revived for the reference macOS host.
 
-The product primitive:
+## Permanent test suite
 
-```text
-RumiAI_path_canonicalize_existing
-```
-
-requires existence first with `test -e`, calls only:
-
-```sh
-command -p -- realpath -- "$pathname"
-```
-
-on that already-existing pathname, then verifies an absolute still-existing result. Callers separately enforce regular-file/readability requirements.
-
-The same primitive is used for both:
+The artificial test:
 
 ```text
-RumiAI_BOOTSTRAP_BIN
-RumiAI_COMMAND_BIN
-```
-
-Normative specification commit:
-
-```text
-1bc4b4f204a2448f0bac229146aac6afe94e0ca0
-Separate pathname validation from realpath semantics
-```
-
-The specification explicitly supersedes both earlier incorrect shortcuts:
-
-1. requiring `realpath -e` merely because POSIX Issue 8 defines it;
-2. passing an unchecked pathname to optionless `realpath` and validating only afterwards.
-
-The unchanged regression `rumiai-os/command/resolution-failure.test` now passes on both hosts and permanently protects the missing-source status-8 contract.
-
-## Canonical level-2 authoring references
-
-```text
-interactive TTY:
-massimilianonardi-ai/rumiai-tests@7eed87d7cba441d248ae68de82762b73b2320f77:lib/interactive.lib
-
-target discovery:
-massimilianonardi-ai/rumiai-tests@5af68cbff09ce979df3dff91e398e287eadd48b7:lib/rumiai-os-target.lib
-
-isolated RumiAI OS fixture:
-massimilianonardi-ai/rumiai-tests@251ec2bde45a197590ec7dc23b8b41e60a79543f:lib/rumiai-os-fixture.lib
-```
-
-All three references are physically validated on macOS and Ubuntu ARM64.
-
-## Interactive shell block
-
-Original shell-block suite commit:
-
-```text
-c15cb2aaaaa0a7d209f6437f529b22840e4f1b98
-Add interactive sh fallback tests
-```
-
-New permanent tests:
-
-```text
-tests/rumiai-os/shell/sh-selection.test
 tests/rumiai-os/shell/bash-fallback-to-sh.test
-tests/rumiai-os/shell/unsupported-fallback-to-sh.test
 ```
 
-They copy the already validated interactive TTY primitive inline with immutable provenance and drive a real host `sh -i` through a PTY. No operator interaction is required.
+has been removed intentionally.
 
-Contracts:
+Reason: absence of Bash is not a material RumiAI portability requirement. POSIX `sh` is the required portable shell baseline; Bash is only an optional user-facing convenience when available. A permanent test that manufactures Bash absence added complexity without protecting an important product contract.
 
-- explicit `conf/shell/default = sh` enters the RumiAI sh branch and exposes the RumiAI prompt without a fallback warning;
-- requested `bash` with `bash` deliberately absent from inherited `PATH` emits `shell.fallback`, selects `sh`, reaches the RumiAI prompt and exits autonomously;
-- a structurally valid but unsupported shell value (`zsh`) emits `shell.unsupported`, selects `sh`, reaches the RumiAI prompt and exits autonomously.
-
-### First physical result
-
-Against unchanged product `8698504f...` and shell-block suite `c15cb2a...`:
-
-macOS:
+The removal commit is:
 
 ```text
-PASS   55
-FAIL   1
-SKIP   0
-ERROR  0
-TOTAL  56
+e6534b734a170ad5334aedcfe0e6347d5da64814
+Remove irrelevant bash absence test
 ```
 
-Ubuntu 26.04 ARM64:
+The remaining suite contains 55 tests.
+
+No additional full-suite run is required merely because this test was deleted. In the immediately preceding macOS run all other 55 tests were PASS and the deleted test was the sole FAIL. In the corresponding Ubuntu ARM64 run all 56 tests were PASS. Therefore every remaining test has already physically passed on both stable hosts against the unchanged product baseline.
+
+## New validation policy — selective by impact
+
+Physical validation is no longer automatically equivalent to running the complete suite after every change.
+
+Use the smallest test scope that proves the changed contract:
 
 ```text
-PASS   56
-FAIL   0
-SKIP   0
-ERROR  0
-TOTAL  56
+single test
+    when one isolated behavior changes
+
+group / subsystem
+    when shared code inside that subsystem changes
+
+full suite
+    only when a cross-cutting bootstrap/runtime/runner primitive changes,
+    at a major milestone,
+    or before a release/certification checkpoint
 ```
 
-The only macOS failure was:
+Do not re-run tests for unchanged behavior merely to reproduce already-established evidence.
+
+Do not create permanent tests for hypothetical failure modes that are outside the product contract or contradict the selected platform baseline. External properties should be tested only when RumiAI materially relies on them and their failure would change a supported behavior.
+
+## Development direction
+
+The bootstrap is now infrastructure, not the development focus. New bootstrap edge-case work is deferred unless a real development task exposes a regression or a missing requirement.
+
+Development proceeds top-down and PoC-first through the following milestones.
+
+### M2 — RumiAI component execution model
+
+Define the minimum contract by which a real RumiAI component is represented and launched on top of the now-stable `rumiai-os` environment.
+
+Questions to settle through a PoC, not prolonged abstract design:
+
+- component entrypoint and layout;
+- configuration boundary;
+- lifecycle start/stop/status semantics;
+- environment inherited from `rumiai-os`;
+- process identity and observability;
+- distinction between product component and development tooling.
+
+Deliverable: one trivial real component launched through the accepted model.
+
+Tests: only the component contract and lifecycle properties actually introduced.
+
+### M3 — Nervo / ai-channel transport
+
+Implement the first real communication substrate between RumiAI components.
+
+Start with the simplest useful transport already aligned with the architecture: local TCP socket, explicit framing/protocol adapter, request/response first.
+
+Keep transport separate from semantic protocols so OpenAI-compatible messages and future protocols are adapters rather than transport assumptions.
+
+Deliverable: two independent components communicating through a nervo with observable request/response behavior.
+
+Tests: connection, framing, disconnect/error semantics and one physical cross-process round trip. Do not test networking scenarios the product does not claim to handle.
+
+### M4 — Core-AI microkernel skeleton
+
+Promote the accepted kernel architecture into executable code:
 
 ```text
-rumiai-os/shell/bash-fallback-to-sh.test
+minimal kernel
+    dispatch
+    lifecycle
+    flow trace/logging
+    kernel-mod loading
+
+kernel-mod contract
+    capabilities
+    declared I/O / communication behavior
 ```
 
-Both other new interactive tests passed on both hosts. The complete previous 53-test baseline also remained green on both hosts. This isolates the failure to the bash-unavailability test fixture rather than to the product's general `sh` branch or PTY automation.
+The orchestrator remains a kernel-mod, not hardcoded kernel behavior.
 
-### Test-fixture defect
+Deliverable: kernel loads at least two trivial mods and dispatches a capability request deterministically.
 
-The first version simulated unavailable `bash` by replacing the child PATH with only:
+Tests: plugin loading, lifecycle, capability dispatch, failure isolation and trace production.
 
-```text
-$fixture/bin
-```
+### M5 — First end-to-end cognitive vertical slice
 
-That achieved the target condition but also removed every unrelated inherited PATH component. It therefore tested two changes simultaneously:
+Connect one Senso/Espressione path to Core-AI through the nervo and an existing local model backend.
 
-1. `bash` is not resolvable;
-2. the interactive child receives an artificially starved PATH.
-
-Linux happened to tolerate that environment while the reference macOS interactive path did not. This is too invasive for a focused regression test.
-
-The corrected test now follows this rule:
+Preferred first slice:
 
 ```text
-preserve inherited PATH
+Terminal Senso/Espressione
         ↓
-remove only components containing executable bash
+Nervo
         ↓
-prepend fixture/bin
+Core-AI kernel
         ↓
-assert command -v bash fails in /bin/sh
+minimal orchestrator mod
         ↓
-run unchanged product
+local model adapter / Ollama
+        ↓
+Nervo
+        ↓
+Terminal output
 ```
 
-It also repeats the bash-absence precondition in the PTY wrapper and emits a dedicated test-only failure marker if the condition is unexpectedly violated.
+This milestone proves architecture, not feature richness.
 
-No product code changed.
+Tests: one permanent end-to-end conversation contract plus targeted subsystem tests for defects actually discovered.
 
-Corrected `rumiai-tests/main` candidate:
+### M6 — Parallel capability expansion
 
-```text
-620c0620c01e7b182d4783225406211db738d585
-Isolate bash absence without starving PATH
-```
+Only after the vertical slice is stable, expand independently:
 
-The updated file remains executable (`100755`).
+- REST/OpenAI-compatible gateway;
+- Open-WebUI adapter;
+- memory/RAG;
+- tool-use;
+- computer-use;
+- speech/vision senses and expressions;
+- asynchronous events;
+- full-duplex streaming;
+- additional devices/sensors.
 
-## Next physical gate
+Each capability should remain replaceable and independently testable.
 
-Run the complete suite against unchanged product:
+## Immediate next action
 
-```text
-8698504f715ed61cec8a31b46ded5b79f3924eb5
-```
+Start M2 in `rumiai-dev-PoCs` with a minimal component-execution PoC. Do not add more bootstrap tests first.
 
-and corrected tests:
+Once the PoC establishes the smallest viable contract, promote only the proven pieces to the appropriate product repository and add a small permanent test set for that contract.
 
-```text
-620c0620c01e7b182d4783225406211db738d585
-```
+## Git rule
 
-Required result on both stable hosts:
-
-```text
-PASS   56
-FAIL   0
-SKIP   0
-ERROR  0
-TOTAL  56
-```
-
-Only after both hosts pass should the interactive shell block be declared physically validated.
-
-After validation, the PATH-fixture lesson should be extracted into `TEST-PATTERNS.md`: when simulating absence of one command, mutate the environment minimally and assert the intended precondition rather than replacing the whole search environment with an unrelated artificial one.
-
-## Forward-only rule
-
-All repository updates remain forward-only. Rejected commits and failed physical results remain part of the historical evidence; they are corrected only by later commits, never rewritten.
+All repositories remain forward-only. Failed experiments and superseded decisions stay in Git history; current operational documents should describe only the accepted state and active next steps.
