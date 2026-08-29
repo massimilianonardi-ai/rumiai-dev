@@ -49,6 +49,7 @@ prompt_text() {
 prompt_secret() {
     prompt=$1
     tty_available || return 1
+    have stty || return 1
     old_stty=$(stty -g </dev/tty 2>/dev/null) || return 1
     RUMIAI_BOOTSTRAP_STTY=$old_stty
     trap 'stty "$RUMIAI_BOOTSTRAP_STTY" </dev/tty >/dev/null 2>&1 || :' 0
@@ -62,6 +63,50 @@ prompt_secret() {
     trap - 0 HUP INT TERM
     RUMIAI_BOOTSTRAP_STTY=
     return "$read_status"
+}
+
+global_git_value() {
+    git config --global --get "$1" 2>/dev/null || printf ''
+}
+
+ensure_git_identity() {
+    [ -n "${HOME:-}" ] || die 'HOME is required for Git global configuration'
+
+    git_user_name=$(global_git_value user.name)
+    git_user_email=$(global_git_value user.email)
+
+    if [ -z "$git_user_name" ] || [ -z "$git_user_email" ]; then
+        say ''
+        warn 'Git global author identity is incomplete'
+        tty_available || die 'a controlling terminal is required to configure Git user.name and user.email'
+
+        if [ -z "$git_user_name" ]; then
+            prompt_text 'Git user.name: ' || die 'cannot read Git user.name'
+            git_user_name=$REPLY
+            [ -n "$git_user_name" ] || die 'Git user.name cannot be empty'
+            git config --global user.name "$git_user_name" || die 'cannot configure global Git user.name'
+        fi
+
+        if [ -z "$git_user_email" ]; then
+            prompt_text 'Git user.email: ' || die 'cannot read Git user.email'
+            git_user_email=$REPLY
+            [ -n "$git_user_email" ] || die 'Git user.email cannot be empty'
+            git config --global user.email "$git_user_email" || die 'cannot configure global Git user.email'
+        fi
+    fi
+
+    # Never allow Git to invent an identity from the local account/hostname.
+    git config --global user.useConfigOnly true || die 'cannot require explicit Git identity'
+
+    git_user_name=$(global_git_value user.name)
+    git_user_email=$(global_git_value user.email)
+    [ -n "$git_user_name" ] || die 'global Git user.name is not configured'
+    [ -n "$git_user_email" ] || die 'global Git user.email is not configured'
+
+    git var GIT_AUTHOR_IDENT >/dev/null 2>&1 || die 'Git cannot construct an author identity from the configured values'
+    git var GIT_COMMITTER_IDENT >/dev/null 2>&1 || die 'Git cannot construct a committer identity from the configured values'
+
+    say "Git identity: $git_user_name <$git_user_email>"
 }
 
 expected_origin() {
@@ -99,7 +144,7 @@ clone_or_validate() {
     [ "$parent" != "$dest" ] || parent=.
     mkdir -p "$parent" || die "cannot create $parent"
     say "cloning $repo -> $dest"
-    git clone "$(expected_origin "$repo")" "$dest" || die "cannot clone $repo"
+    git clone "$(expected_origin "$repo")" "$dest" </dev/null || die "cannot clone $repo"
 }
 
 probe_push() {
@@ -193,6 +238,8 @@ if [ "$#" -gt 1 ]; then
     die 'usage: setup-dev.sh [RumiAI_ROOT]'
 fi
 
+ensure_git_identity
+
 if [ "$#" -eq 1 ]; then
     RUMIAI_ROOT=$1
 else
@@ -265,6 +312,7 @@ GITHUB_USERNAME=$REPLY
 [ -n "$GITHUB_USERNAME" ] || die 'GitHub username cannot be empty'
 
 say 'Use a fine-grained token with access to the required repositories and Contents: Read and write.'
+have stty || die 'stty is required to enter a GitHub access token securely'
 prompt_secret 'GitHub personal access token: ' || die 'cannot read GitHub access token'
 GITHUB_TOKEN=$REPLY
 [ -n "$GITHUB_TOKEN" ] || die 'GitHub access token cannot be empty'
