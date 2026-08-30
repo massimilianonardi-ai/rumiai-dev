@@ -1,12 +1,12 @@
-# RumiAI system layer — `rumi` bootstrap contract v0
+# RumiAI system layer — bootstrap contract v0
 
 Data: 2026-08-30
 
 Stato: **architectural contract — v0**
 
-Questo documento definisce il contratto del bootstrap `rumi` usato dai tool del RumiAI system layer.
+Questo documento definisce il contratto del bootstrap del RumiAI system layer.
 
-Il bootstrap reale esistente in `rumiai-os` fornisce già il nucleo iniziale:
+Il bootstrap reale esistente in `rumiai-os` fornisce il nucleo iniziale:
 
 ```text
 POSIX /bin/sh
@@ -24,67 +24,45 @@ SHA-256 primitives
 same-directory atomic replace
 ```
 
-Le semantiche delle API dati e delle primitive platform sopra elencate sono state fisicamente validate su macOS arm64 e Ubuntu 26.04 ARM64 alle revisioni registrate in `PHYSICAL-VALIDATION-2026-08-30.md`.
+Non esiste nel contratto v0 un nuovo command/interpreter dedicato al bootstrap. Nessun nome di command viene inferito da abbreviazioni usate in conversazione.
 
-Dopo tali gate è stata corretta la spelling delle nuove API da un namespace lowercase erroneamente introdotto al namespace canonico `RumiAI_*`; la revisione corrente risultante sarà ri-validata insieme al prossimo gate fisico sostanziale, senza attribuire retroattivamente la nuova spelling alle evidenze precedenti.
+Gli script shell direttamente eseguibili seguono la regola canonica di `RULES.md`:
 
-Il v0 estende questo modello senza introdurre un runtime Python/Node/JSON.
+```sh
+#!/bin/sh
+```
+
+Le semantiche delle API dati e delle primitive platform sono state fisicamente validate sulle reference installation registrate in `PHYSICAL-VALIDATION-2026-08-30.md`. Le successive correzioni nominali e di coerenza restano distinte dall'evidenza storica delle revisioni effettivamente esercitate.
 
 ---
 
 # 1. System tool model
 
-Un tool del system layer è:
+Un tool shell del system layer è codice POSIX `sh` che usa le API bootstrap RumiAI già inizializzate dal relativo entrypoint/dispatch contract.
 
-```text
-POSIX sh source
-+
-shebang Rumi
-+
-bootstrap API
-```
+Non viene introdotto implicitamente un interprete diverso da `/bin/sh`.
 
-Forma logica dello shebang:
-
-```text
-#!/usr/bin/env rumi
-```
-
-`rumi` è il command bootstrap/interpreter del system layer.
-
-La reference installation deve rendere `rumi` discoverable per la semantica dello shebang; la tecnica fisica di installazione/discovery è oggetto di Physical Platform Validation.
+Se in futuro emergerà la necessità di un diverso meccanismo di bootstrap/dispatch, nome, invocazione e semantica dovranno essere definiti esplicitamente prima dell'implementazione.
 
 ---
 
-# 2. Execution semantics
+# 2. Current execution semantics
 
-Quando il kernel/`env` invoca:
-
-```text
-rumi <command-script> [argv...]
-```
-
-il bootstrap:
+Il front controller `rumiai-os`:
 
 ```text
 1 scopre/canonicalizza sé stesso
 2 determina RumiAI_ROOT
 3 inizializza il system environment
 4 carica le bootstrap libraries richieste
-5 canonicalizza/valida command-script
+5 canonicalizza/valida un eventuale command-script
 6 espone RumiAI_COMMAND_BIN
 7 rimuove command-script dagli argv
 8 source il command-script nello stesso POSIX sh
 9 restituisce lo status del command
 ```
 
-Il command script non viene lanciato da un secondo shell interpreter.
-
----
-
-# 3. `$0` e command identity
-
-Poiché il command script viene sourced, non deve dipendere da `$0` per conoscere il proprio pathname.
+Il command script sourced non deve dipendere da `$0` per conoscere il proprio pathname.
 
 Path canonico del command:
 
@@ -92,21 +70,13 @@ Path canonico del command:
 RumiAI_COMMAND_BIN
 ```
 
-Gli argv utente restano:
-
-```text
-$1 ... $N
-```
-
-dopo lo shift del command-entry.
-
 ---
 
-# 4. Bootstrap independence
+# 3. Bootstrap independence
 
-`rumi` precede `pkg` nella catena di bootstrap.
+Il bootstrap precede `pkg` nella catena del system layer.
 
-Quindi `rumi` NON può dipendere da:
+Quindi non può dipendere da:
 
 ```text
 pkg
@@ -123,15 +93,15 @@ Può usare soltanto:
 ```text
 POSIX sh
 host facilities necessarie e fisicamente validate
-bootstrap/platform adapter Rumi
+bootstrap/platform adapter RumiAI
 bootstrap libraries contenute nel system layer
 ```
 
 ---
 
-# 5. POSIX code rule
+# 4. POSIX code rule
 
-I system tool, incluso `pkg`, sono POSIX `sh`.
+I system tool shell, incluso `pkg`, sono POSIX `sh`.
 
 Non assumono:
 
@@ -144,11 +114,11 @@ bash-specific parameter expansion
 non-POSIX shell syntax
 ```
 
-Quando una semantica richiesta non è portabile in POSIX sh, viene fornita dal bootstrap/platform adapter invece di essere implementata con branch host-specific sparsi nei tool.
+Quando una semantica richiesta non è portabile in POSIX `sh`, viene fornita dal bootstrap/platform adapter RumiAI invece di essere implementata con branch host-specific sparsi nei tool.
 
 ---
 
-# 6. Shell naming convention
+# 5. Shell naming convention
 
 Il namespace canonico di funzioni e variabili RumiAI è:
 
@@ -158,29 +128,13 @@ RumiAI_*
 
 Questo vale sia per API esposte ai system tool sia per helper interni namespaced.
 
-Il namespace alternativo lowercase:
-
-```text
-rumi_*
-```
-
-è vietato.
-
-Il nome pubblico lowercase:
-
-```text
-rumi
-```
-
-identifica il command/interpreter e non definisce un namespace di funzioni.
-
 Interfacce unnamespaced già specificate separatamente, per esempio gli entrypoint `log` e `i18n`, restano eccezioni esplicite e non costituiscono una seconda naming convention generale.
 
-Una modifica futura della convenzione richiede una decisione esplicita; non può essere introdotta localmente da una nuova API.
+Abbreviazioni conversazionali non hanno autorità di naming e non possono diventare command, namespace o componenti senza decisione esplicita.
 
 ---
 
-# 7. Semantic root environment
+# 6. Semantic root environment
 
 Il bootstrap espone almeno:
 
@@ -193,15 +147,15 @@ RumiAI_LANG_DIR
 RumiAI_COMMAND_BIN
 ```
 
-Il bootstrap/pkg model può aggiungere root semantiche quando vengono fissate dal layout RumiAI.
+Il bootstrap/package-manager model può aggiungere root semantiche soltanto quando vengono fissate dal layout RumiAI.
 
-Tutti i pathname persistiti dai package metadata restano relocatable; gli absolute pathname vengono materializzati soltanto runtime.
+I pathname persistiti dai package metadata restano relocatable; absolute pathname vengono materializzati soltanto runtime.
 
 ---
 
-# 8. Native platform identity
+# 7. Native platform identity
 
-Il bootstrap/platform adapter espone l'host concreto:
+Il bootstrap/platform adapter espone:
 
 ```text
 RumiAI_PLATFORM
@@ -226,13 +180,11 @@ RumiAI_execution_platform
 
 Platform detection è Physical Platform Validation concern e non viene duplicata in `pkg`.
 
-La semantica v0 è stata fisicamente validata su macOS arm64 e Ubuntu 26.04 ARM64 prima della correzione puramente nominale dell'API.
-
 ---
 
-# 9. PATH baseline
+# 8. PATH baseline
 
-Dopo native platform discovery il system environment segue la precedence RumiAI:
+Dopo native platform discovery:
 
 ```text
 RUMIAI_ROOT/bin/@platforms/<current-platform>-<architecture>
@@ -242,13 +194,9 @@ RUMIAI_ROOT/bin
 
 La native specialization precede la cross-platform view.
 
-Bootstrap commands necessari prima della platform discovery devono restare raggiungibili senza dipendere da questa view.
-
-La semantica v0 è stata fisicamente validata su macOS arm64 e Ubuntu 26.04 ARM64.
-
 ---
 
-# 10. Default filesystem creation policy
+# 9. Default filesystem creation policy
 
 Per operazioni system-layer che creano contenuto privato:
 
@@ -258,13 +206,9 @@ umask 0077
 
 salvo contratto specifico fisicamente validato.
 
-Il bootstrap può applicare questa policy prima di entrare nel command system-layer o tramite primitive di creazione dedicate.
-
 ---
 
-# 11. System Configuration Field API
-
-Il bootstrap fornisce un parser/access layer unico per SCF.
+# 10. System Configuration Field API
 
 API v0:
 
@@ -276,8 +220,6 @@ RumiAI_conf_validate <file>
 RumiAI_conf_set <file> <field-name> <field-value>
 RumiAI_conf_remove <file> <field-name>
 ```
-
-Una mutation autorevole deve rispettare il transaction/atomic-write contract; nessuna API implica inplace byte editing del file attivo.
 
 Il parser garantisce:
 
@@ -291,13 +233,11 @@ exact field-value preservation
 no source/eval
 ```
 
-La semantica è stata fisicamente validata su macOS arm64 e Ubuntu 26.04 ARM64 con la precedente spelling API; la spelling `RumiAI_*` corrente viene coperta dal prossimo gate sostanziale.
+Una mutation autorevole deve rispettare il transaction/atomic-write contract.
 
 ---
 
-# 12. System Tabular Data API
-
-Il bootstrap fornisce primitive comuni per dataset TSV con header.
+# 11. System Tabular Data API
 
 API v0:
 
@@ -309,7 +249,7 @@ RumiAI_table_column
 RumiAI_table_select
 ```
 
-Il contratto importante è:
+Contratto:
 
 ```text
 header validato
@@ -318,33 +258,21 @@ single-pass streaming possibile
 nessun quoting/escaping implicito
 ```
 
-Gli inventory integrity usano questa API/classe di primitive, non `RumiAI_conf_get` ripetuto.
-
-La semantica è stata fisicamente validata su macOS arm64 e Ubuntu 26.04 ARM64 con la precedente spelling API; la spelling `RumiAI_*` corrente viene coperta dal prossimo gate sostanziale.
+Gli inventory integrity usano questa classe di primitive, non lookup SCF ripetuti per ogni record.
 
 ---
 
-# 13. No automatic shell-variable materialization
+# 12. No automatic shell-variable materialization
 
 SCF field-name non viene trasformato automaticamente in shell variable.
 
-Non si usa:
+Non si usa `eval` e non si trasforma genericamente `.` in `_` per generare variabili.
 
-```text
-dot -> underscore
-+
-eval
-```
-
-perché può creare collisioni e trasformare dati in codice.
-
-Il tool accede ai dati tramite API bootstrap.
+I file restano dati, non codice.
 
 ---
 
-# 14. Path/filesystem primitives
-
-Il bootstrap espone semantiche uniformi per ciò che non è sufficientemente portabile come command host ad hoc.
+# 13. Path/filesystem primitives
 
 Implementato:
 
@@ -355,13 +283,13 @@ RumiAI_fs_mode
 RumiAI_fs_readlink
 ```
 
-Da implementare/validare separatamente:
+Da implementare/validare separatamente quando richiesto:
 
 ```text
 RumiAI_fs_walk
 ```
 
-Le primitive preservano la distinzione:
+Resta fissata la distinzione:
 
 ```text
 validate existence
@@ -369,82 +297,35 @@ validate existence
 → validate required type
 ```
 
-come già fissato nel bootstrap RumiAI.
-
-La semantica delle primitive già implementate è stata fisicamente validata su macOS arm64 e Ubuntu 26.04 ARM64 prima della correzione nominale delle nuove API.
-
 ---
 
-# 15. Digest primitives
+# 14. Digest and Unicode primitives
 
-`pkg` non sceglie fra:
-
-```text
-sha256sum
-shasum
-openssl
-certutil
-...
-```
-
-Il bootstrap/platform adapter espone:
+Digest implementato:
 
 ```text
 RumiAI_digest_file sha256 <file>
 RumiAI_digest_text sha256 <exact-text>
 ```
 
-L'implementazione corrente isola inoltre gli host digest command dal PATH RumiAI.
-
-La semantica v0 è stata fisicamente validata su macOS arm64 e Ubuntu 26.04 ARM64 prima della correzione nominale.
-
----
-
-# 16. Unicode primitives
-
-Integrity Method 1 richiede:
-
-```text
-Unicode NFC
-Unicode default case-fold
-```
-
-POSIX sh non le fornisce portabilmente.
-
-Il bootstrap/platform adapter deve quindi fornire semanticamente:
+Unicode richiesto da Integrity Method 1 ma non ancora implementato/validato:
 
 ```text
 RumiAI_unicode_nfc
 RumiAI_unicode_casefold
 ```
 
-oppure una primitive equivalente che produca le stesse canonical/collision key.
-
-La semantica è normativa; l'implementazione è platform-specific.
-
-Stato corrente: **non ancora implementato/validato**.
+La semantica Unicode è normativa; l'implementazione può essere platform-specific dietro l'adapter.
 
 ---
 
-# 17. Transaction primitives
-
-Il persistence model di `pkg` richiede primitive uniformi per:
-
-```text
-exclusive lock
-file flush/durability
-directory durability quando necessaria
-atomic rename/publish
-atomic replace
-```
+# 15. Transaction primitives
 
 Implementato:
 
 ```text
 RumiAI_atomic_replace
 ```
-
-Il v0 corrente limita questa primitive a source/destination nella stessa directory, rendendo esplicita la precondizione necessaria per affidarsi alla rename atomica del filesystem.
 
 Da implementare/validare separatamente:
 
@@ -456,30 +337,38 @@ RumiAI_directory_sync
 RumiAI_atomic_publish
 ```
 
-`pkg` non implementa direttamente `flock` vs `fcntl` vs platform-specific alternatives.
+`pkg` non implementa direttamente alternative host-specific come `flock`/`fcntl`.
 
 ---
 
-# 18. Platform adapters
+# 16. Library loading
 
-Una primitive può essere implementata:
+Quando una libreria obbligatoria deve essere sourced e tutte le failure di load appartengono alla stessa classe di errore, non si duplicano precheck di esistenza/leggibilità che anticipano la stessa operazione.
 
-```text
-in POSIX sh comune
-tramite POSIX utility comune
-tramite adapter specifico della reference platform
-tramite piccolo bootstrap helper nativo quando inevitabile
+Il pattern v0 è una singola source operation controllata:
+
+```sh
+if ! command -- . -- "$LIB"
+then
+  <single diagnostic/error path>
+fi
 ```
 
-Questa è una decisione di implementazione/Physical Platform Validation.
+`command` è intenzionale: `.` è un POSIX special built-in e una sua failure diretta per file non trovato/non leggibile può terminare una shell non interattiva prima che il caller possa gestire lo status. Invocandolo tramite `command`, il bootstrap conserva l'effetto di source nello stesso environment ma può gestire la failure nel proprio branch.
 
-Il consumer (`pkg`) vede sempre lo stesso contratto semantico e lo stesso namespace `RumiAI_*`.
+Quindi:
+
+```text
+one semantic operation
+one failure branch
+no duplicate existence/readability precheck
+```
 
 ---
 
-# 19. Bootstrap libraries
+# 17. Bootstrap libraries
 
-Il bootstrap organizza attualmente le nuove API comuni in:
+Organizzazione corrente:
 
 ```text
 lib/data.lib
@@ -493,69 +382,23 @@ lib/platform.lib
     atomic replace
 ```
 
-Restano candidati moduli separati quando emergono primitive che lo richiedono:
-
-```text
-unicode
-transaction/durability
-```
+Moduli ulteriori vengono introdotti solo quando emerge una necessità concreta.
 
 ---
 
-# 20. Core vs lazy modules
+# 18. Logging/output discipline
 
-Il bootstrap deve rimanere piccolo.
-
-Sono core le primitive necessarie a inizializzare/dispatchare qualsiasi system command.
-
-Primitive costose/specialistiche possono essere caricate on-demand tramite una futura API:
-
-```text
-RumiAI_require
-```
-
-o equivalente esplicitamente specificata.
-
-Non si forza il caricamento Unicode/durability per un semplice command che non li usa.
-
----
-
-# 21. Logging/output discipline
-
-Le API bootstrap che restituiscono dati via stdout non devono mischiare log/diagnostics sullo stesso stream.
-
-Regola:
+Le API bootstrap che restituiscono dati via stdout non devono mischiare diagnostics sullo stesso stream.
 
 ```text
 stdout = result data
 stderr/logger = diagnostic
-exit status = success/failure/negative query secondo API
+exit status = semantic result
 ```
-
-Questo è necessario perché POSIX command substitution e pipeline restino affidabili.
 
 ---
 
-# 22. Library load failure pattern
-
-Quando una libreria obbligatoria deve esistere, essere leggibile e poter essere sourced, e tutte queste failure appartengono alla stessa classe di errore, il bootstrap usa un singolo failure branch:
-
-```sh
-if [ ! -f "$LIB" ] || \
-   [ ! -r "$LIB" ] || \
-   ! . "$LIB"
-then
-  <single diagnostic/error path>
-fi
-```
-
-Non si duplicano consecutivamente branch con lo stesso identico esito solo per separare precheck e source.
-
-I precheck restano nello stesso conditional perché `.` è uno special builtin e il bootstrap non deve affidarsi a una failure non controllata.
-
----
-
-# 23. Current implementation mapping
+# 19. Current implementation mapping
 
 Il bootstrap corrente implementa:
 
@@ -575,38 +418,32 @@ i18n
 logger
 CLI/command source dispatch
 RumiAI_COMMAND_BIN
+single controlled source operation for required libraries
 ```
 
-Dopo i primi due physical gate sono state applicate due correzioni di coerenza:
+Le evidenze di Physical Platform Validation restano associate alle revisioni precise riportate nel documento di validation. Le correzioni successive non vengono retroattivamente attribuite a revisioni non esercitate.
+
+Follow-up già identificati:
 
 ```text
-new API function prefix: rumi_* -> RumiAI_*
-redundant same-error library load branches -> single branch
-```
-
-Le semantiche sottostanti erano già validate; la revisione corrente corretta viene ri-esercitata nel prossimo physical gate sostanziale invece di imporre una validation separata puramente nominale.
-
-Restano implementation follow-up:
-
-```text
-logical command name `rumi`
 SCF bootstrap preferences instead of legacy single-value preference files
 filesystem walk
 Unicode NFC/default case-fold adapter
 exclusive process lock
 file/directory durability sync
 atomic generation publish protocol
-logical shebang installation/discovery validation
 ```
+
+Non esiste un follow-up implicito relativo a un nuovo command/interpreter o a un nuovo shebang: un simile concetto richiederebbe una decisione architetturale esplicita.
 
 ---
 
-# 24. `pkg` relationship
+# 20. `pkg` relationship
 
 ```text
 host validated facilities
         ↓
-rumi bootstrap
+RumiAI bootstrap/platform layer
         ↓
 RumiAI_* SCF / TSV / platform primitive API
         ↓
@@ -619,53 +456,45 @@ Package Instance / resolver / generations / launcher
 
 ---
 
-# 25. Development consistency gate
+# 21. Development consistency gate
 
-Le modifiche a questo sottosistema sono soggette a:
+Ogni modifica a questo sottosistema è soggetta a `CONSISTENCY-GATE.md`.
+
+Prima di analizzare o modificare il bootstrap devono essere recuperati almeno:
 
 ```text
+RULES.md
 CONSISTENCY-GATE.md
+questa specifica
+HEAD remoti correnti
+test permanenti pertinenti
 ```
 
-in `rumiai-dev`.
-
-In particolare, prima di dichiarare completata una modifica al bootstrap devono essere verificati almeno:
-
-```text
-naming convention corrente
-riuso di primitive esistenti
-assenza di spelling superseded nel prodotto
-allineamento di test e documenti
-file mode dei test/eseguibili
-stato reale della Physical Platform Validation
-```
-
-La convenzione non può essere cambiata implicitamente da una nuova implementazione locale.
+Conversational shorthand, memoria e convenienza locale non possono introdurre nuove decisioni.
 
 ---
 
-# 26. Invarianti
+# 22. Invarianti
 
 ```text
-RB-01 system tool = POSIX sh + Rumi shebang/bootstrap
-RB-02 logical shebang command = rumi
-RB-03 bootstrap precede pkg and cannot depend on pkg
-RB-04 command script viene sourced nello stesso POSIX sh
-RB-05 RumiAI_COMMAND_BIN identifica il command source
-RB-06 system tools non dipendono da bash/Python/Node/jq
-RB-07 non-portable semantics vivono nel bootstrap/platform adapter
-RB-08 bootstrap espone SCF query/validation
-RB-09 bootstrap espone TSV validation/streaming
-RB-10 data non viene source/eval/materializzata automaticamente in shell variables
-RB-11 bootstrap espone native platform/architecture identity
-RB-12 runtime PATH usa native @platforms before cross-platform bin
-RB-13 digest/Unicode/transaction semantics hanno API uniformi
-RB-14 stdout delle query contiene solo result data
-RB-15 bootstrap resta minimal; specialized modules possono essere lazy
-RB-16 Physical Platform Validation decide implementazione concreta delle adapter primitive
-RB-17 functions/variables namespaced use exact RumiAI_* prefix
-RB-18 lowercase rumi_* function namespace is forbidden
-RB-19 command name `rumi` is distinct from shell API namespace
-RB-20 equivalent consecutive library-load failures share one failure branch
-RB-21 established invariants are checked through CONSISTENCY-GATE.md before completion
+RB-01 shell system tools follow POSIX sh and canonical #!/bin/sh rule
+RB-02 no dedicated bootstrap command/interpreter is implied by v0
+RB-03 bootstrap precedes pkg and cannot depend on pkg
+RB-04 command script dispatch currently sources into the same POSIX sh
+RB-05 RumiAI_COMMAND_BIN identifies the command source
+RB-06 system shell tools do not depend on bash/Python/Node/jq
+RB-07 non-portable semantics live behind bootstrap/platform adapter
+RB-08 bootstrap exposes SCF query/validation
+RB-09 bootstrap exposes TSV validation/streaming
+RB-10 data is never source/eval/materialized automatically into shell variables
+RB-11 bootstrap exposes native platform/architecture identity
+RB-12 runtime PATH uses native @platforms before cross-platform bin
+RB-13 digest/Unicode/transaction semantics have uniform RumiAI APIs
+RB-14 stdout of data-returning queries contains result data only
+RB-15 bootstrap remains minimal
+RB-16 Physical Platform Validation decides concrete adapter implementation
+RB-17 namespaced RumiAI shell functions/variables use exact RumiAI_* namespace
+RB-18 conversational shorthand has no product naming authority
+RB-19 required library load uses one controlled source operation, without duplicate prechecks
+RB-20 established invariants are checked through CONSISTENCY-GATE.md before work and before completion
 ```
