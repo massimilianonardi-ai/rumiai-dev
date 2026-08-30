@@ -2,14 +2,14 @@
 
 Data: 2026-08-30
 
-Stato: **design decision — modello logico + System Field Format v0 fissati**
+Stato: **design decision — modello logico + SCF v0 fissati**
 
 `@package` è il descriptor dichiarativo immutabile della Package Instance.
 
 Serializzazione normativa:
 
 ```text
-RumiAI System Field Format v0
+RumiAI System Configuration Field Format v0
 ```
 
 Non è codice eseguibile e non richiede una directory `env/`.
@@ -29,7 +29,7 @@ requirements
 environment
 ```
 
-Le sezioni logiche vengono flattenate in field-name POSIX-safe; strutture ripetibili usano count + indici contigui `1..N`.
+Le sezioni vengono rappresentate tramite dot notation.
 
 ---
 
@@ -38,22 +38,22 @@ Le sezioni logiche vengono flattenate in field-name POSIX-safe; strutture ripeti
 ```text
 kind	package
 schema	1
-identity_name	netbeans
-identity_version	26
-identity_revision	1
-identity_platform	any
-identity_architecture	any
-identity_display_name	NetBeans 26
+identity.name	netbeans
+identity.version	26
+identity.revision	1
+identity.platform	any
+identity.architecture	any
+identity.display_name	NetBeans 26
 ```
 
 I campi canonici:
 
 ```text
-identity_name
-identity_version
-identity_revision
-identity_platform
-identity_architecture
+identity.name
+identity.version
+identity.revision
+identity.platform
+identity.architecture
 ```
 
 devono concordare con:
@@ -62,9 +62,9 @@ devono concordare con:
 <name>@<version-token>@r<revision>@<platform>-<architecture>
 ```
 
-`identity_version` è upstream semanticamente opaca.
+`identity.version` è upstream semanticamente opaca.
 
-`identity_display_name` è human-readable e non entra nel pathname.
+`identity.display_name` è human-readable e non entra nel pathname.
 
 Platform descrive i vincoli propri del contenuto; Java/JDK/JRE/Python sono requirements, non platform.
 
@@ -73,39 +73,43 @@ Platform descrive i vincoli propri del contenuto; Java/JDK/JRE/Python sono requi
 # 3. Release
 
 ```text
-release_order	123
+release.order	123
 ```
 
-`release_order` è un intero positivo monotono nella stessa logical provider/package family.
+`release.order` è intero positivo monotono nella stessa logical provider/package family.
 
 Non fa parte dell'identity e non è comparabile fra family differenti.
 
 ---
 
-# 4. Integrity
+# 4. Integrity metadata
 
-`@package` contiene metadata dei due inventory esterni:
+`@package` contiene metadata dei due inventory tabellari esterni:
 
 ```text
-integrity_method	1
-integrity_algorithm	sha256
-integrity_root_inventory	@integrity-root.tsv
-integrity_root_files	120
-integrity_root_directories	24
-integrity_root_links	3
-integrity_root_manifest_digest	...
-integrity_run_default_inventory	@integrity-run-default.tsv
-integrity_run_default_files	8
-integrity_run_default_directories	4
-integrity_run_default_links	0
-integrity_run_default_manifest_digest	...
+integrity.method	1
+integrity.algorithm	sha256
+integrity.root.inventory	@integrity-root.tsv
+integrity.root.files	120
+integrity.root.directories	24
+integrity.root.links	3
+integrity.root.manifest_digest	...
+integrity.run_default.inventory	@integrity-run-default.tsv
+integrity.run_default.files	8
+integrity.run_default.directories	4
+integrity.run_default.links	0
+integrity.run_default.manifest_digest	...
 ```
 
-Il bulk inventory non viene inserito in `@package`.
+Gli inventory sono System Tabular Data con header:
 
-Ogni inventory esterno usa anch'esso System Field Format v0 a due campi, con collection separate per directory/file/link.
+```text
+type	mode	digest	target	path
+```
 
-`manifest_digest` verifica i byte canonici dell'intero relativo inventory.
+Il bulk inventory non viene flattenato dentro `@package`.
+
+`manifest_digest` verifica i byte canonici dell'intero TSV, header incluso.
 
 ---
 
@@ -114,14 +118,14 @@ Ogni inventory esterno usa anch'esso System Field Format v0 a due campi, con col
 Quando presente:
 
 ```text
-state_present	true
-state_compatibility_version	1
-state_scope	shared
-state_mapping_count	2
-state_mapping_1_path	etc
-state_mapping_1_area	conf
-state_mapping_2_path	cache
-state_mapping_2_area	cache
+state.present	true
+state.compatibility_version	1
+state.scope	shared
+state.mappings.count	2
+state.mappings.1.path	etc
+state.mappings.1.area	conf
+state.mappings.2.path	cache
+state.mappings.2.area	cache
 ```
 
 Scope:
@@ -145,9 +149,7 @@ run
 tmp
 ```
 
-Ogni writable island appartiene esattamente a una state area.
-
-Se `state_present=false`, i field `state_*` ulteriori sono vietati e `state_mapping_count` non compare.
+Se `state.present=false`, gli altri field `state.*` sono vietati.
 
 ---
 
@@ -163,30 +165,30 @@ command
 
 `file` e `directory` sono path relativi sotto `root/`.
 
-`command` è una Launch Template, non necessariamente un executable pathname diretto.
+`command` è una Launch Template.
 
 Esempio:
 
 ```text
-interface_file_count	1
-interface_file_1_id	launcher
-interface_file_1_path	bin/netbeans
+interface.files.count	1
+interface.files.1.id	launcher
+interface.files.1.path	bin/netbeans
 
-interface_directory_count	0
+interface.directories.count	0
 
-interface_command_count	1
-interface_command_1_id	netbeans
-interface_command_1_executable_source	self
-interface_command_1_executable_resource_type	file
-interface_command_1_executable_resource	launcher
-interface_command_1_arg_count	0
+interface.commands.count	1
+interface.commands.1.id	netbeans
+interface.commands.1.executable.source	self
+interface.commands.1.executable.resource_type	file
+interface.commands.1.executable.resource	launcher
+interface.commands.1.args.count	0
 ```
 
 ---
 
 # 7. Provides / Execution Capability
 
-Una capability è identificata da:
+Capability identity:
 
 ```text
 capability name + contract version
@@ -197,20 +199,20 @@ Compatibility version resta separata.
 Esempio:
 
 ```text
-interface_provide_count	1
-interface_provide_1_capability	java-runtime
-interface_provide_1_contract	1
-interface_provide_1_version	21
-interface_provide_1_resource_count	3
-interface_provide_1_resource_1_key	command
-interface_provide_1_resource_1_resource_type	command
-interface_provide_1_resource_1_resource	java
-interface_provide_1_resource_2_key	home
-interface_provide_1_resource_2_resource_type	directory
-interface_provide_1_resource_2_resource	home
-interface_provide_1_resource_3_key	bin
-interface_provide_1_resource_3_resource_type	directory
-interface_provide_1_resource_3_resource	bin
+interface.provides.count	1
+interface.provides.1.capability	java-runtime
+interface.provides.1.contract	1
+interface.provides.1.version	21
+interface.provides.1.resources.count	3
+interface.provides.1.resources.1.key	command
+interface.provides.1.resources.1.resource_type	command
+interface.provides.1.resources.1.resource	java
+interface.provides.1.resources.2.key	home
+interface.provides.1.resources.2.resource_type	directory
+interface.provides.1.resources.2.resource	home
+interface.provides.1.resources.3.key	bin
+interface.provides.1.resources.3.resource_type	directory
+interface.provides.1.resources.3.resource	bin
 ```
 
 ---
@@ -219,18 +221,16 @@ interface_provide_1_resource_3_resource	bin
 
 Requirements descrivono ciò che serve, non provider selection.
 
-Esempio NetBeans:
-
 ```text
-requirement_count	1
-requirement_1_slot	jdk
-requirement_1_target	capability
-requirement_1_capability	java-development-kit
-requirement_1_contract	1
-requirement_1_constraint	>=17 <22
+requirements.count	1
+requirements.1.slot	jdk
+requirements.1.target	capability
+requirements.1.capability	java-development-kit
+requirements.1.contract	1
+requirements.1.constraint	>=17 <22
 ```
 
-Non appartengono a `requirements`:
+Non appartengono ai requirements:
 
 ```text
 latest/newest
@@ -265,32 +265,53 @@ path-list
 Esempio:
 
 ```text
-environment_count	2
+environment.count	2
 
-environment_1_name	JAVA_HOME
-environment_1_operation	set
-environment_1_type	path
-environment_1_value_source	dependency
-environment_1_value_slot	jdk
-environment_1_value_resource_type	directory
-environment_1_value_resource	home
+environment.1.name	JAVA_HOME
+environment.1.operation	set
+environment.1.type	path
+environment.1.value.source	dependency
+environment.1.value.slot	jdk
+environment.1.value.resource_type	directory
+environment.1.value.resource	home
 
-environment_2_name	PATH
-environment_2_operation	prepend
-environment_2_type	path-list
-environment_2_value_source	dependency
-environment_2_value_slot	jdk
-environment_2_value_resource_type	directory
-environment_2_value_resource	bin
+environment.2.name	PATH
+environment.2.operation	prepend
+environment.2.type	path-list
+environment.2.value.source	dependency
+environment.2.value.slot	jdk
+environment.2.value.resource_type	directory
+environment.2.value.resource	bin
 ```
 
 Non sono ammessi shell snippet, `eval`, `source`, command substitution o absolute host paths persistiti.
 
-Field-value contenenti TAB/CR/LF/NUL non sono rappresentabili nel v0 e rendono il descriptor non ammissibile.
+Field-value contenente TAB/CR/LF/NUL è non rappresentabile nel v0.
 
 ---
 
-# 10. Cosa NON vive in `@package`
+# 10. Arbitrary identifiers
+
+Identificatori arbitrari restano nei value.
+
+Non si costruiscono field-name come:
+
+```text
+requirements.default-java.constraint
+```
+
+se `default-java` è un ID arbitrario.
+
+Si usa:
+
+```text
+requirements.1.id	default-java
+requirements.1.constraint	...
+```
+
+---
+
+# 11. Cosa NON vive in `@package`
 
 ```text
 resolved provider
@@ -305,7 +326,7 @@ Integration Profile corrente
 
 ---
 
-# 11. Revision rule
+# 12. Revision rule
 
 Qualunque modifica semantica a:
 
@@ -321,26 +342,28 @@ environment
 Launch Template
 ```
 
-produce una nuova RumiAI package revision.
+produce nuova RumiAI package revision.
 
 ---
 
-# 12. Invarianti
+# 13. Invarianti
 
 ```text
-PD-01 @package usa System Field Format ed è dichiarativo/immutabile
+PD-01 @package usa SCF dot-notation ed è dichiarativo/immutabile
 PD-02 kind=package + schema esplicito
 PD-03 pathname identity == descriptor identity
 PD-04 display-name non entra nel pathname
 PD-05 release-order è selection metadata
-PD-06 integrity bulk vive nei due inventory esterni System Field Format
-PD-07 state descrive contract/mappings, non contenuto mutabile
-PD-08 Package Interface resource = file|directory|command
-PD-09 capability identity = name+contract
-PD-10 requirements descrivono bisogno, non policy
-PD-11 environment è dati dichiarativi, non shell code
-PD-12 absolute pathname non vengono persistiti
-PD-13 semantic change => new package revision
-PD-14 collection usa count + indici contigui
-PD-15 structured reference viene flattenata senza mini-language nei value
+PD-06 integrity bulk vive nei due TSV tabellari esterni
+PD-07 integrity header = type,mode,digest,target,path
+PD-08 state descrive contract/mappings, non contenuto mutabile
+PD-09 Package Interface resource = file|directory|command
+PD-10 capability identity = name+contract
+PD-11 requirements descrivono bisogno, non policy
+PD-12 environment è dati dichiarativi, non shell code
+PD-13 absolute pathname non vengono persistiti
+PD-14 semantic change => new package revision
+PD-15 array usa count + indici contigui
+PD-16 arbitrary IDs restano nei value
+PD-17 structured reference usa namespace SCF senza mini-language
 ```
