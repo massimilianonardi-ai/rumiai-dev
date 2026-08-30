@@ -37,12 +37,12 @@ drafts/rumiai-os/system-bootstrap-v0/README.md
 
 The former examples using flattened names such as `identity_name` or multi-row-per-file integrity records are historical and must not be used for implementation.
 
-Likewise, the current canonical RumiAI shell namespace is:
+The current canonical RumiAI shell namespace is:
 
 ```text
 RumiAI_*
 ```
 
-and lowercase `rumi_*` is forbidden as a function namespace. The lowercase name `rumi` is reserved for the logical bootstrap/interpreter command.
+Conversational abbreviations do not define product commands, interpreters, namespaces or architectural components.
 
 No implementation or new specification may derive current behavior from the superseded analysis at this path.
