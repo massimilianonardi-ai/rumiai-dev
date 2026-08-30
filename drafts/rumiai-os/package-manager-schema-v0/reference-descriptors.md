@@ -2,15 +2,21 @@
 
 Data: 2026-08-30
 
-Stato: **architectural schema stress test — all capability references aligned to contract v1**
+Stato: **architectural schema stress test — capability references aligned to contract v1 and platform/content separation**
 
 Questi frammenti verificano le sezioni semantiche che differiscono fra i casi. Identity/release/integrity seguono lo schema v0 già fissato; gli integrity inventory completi non vengono ripetuti qui.
 
 Non sono manifest upstream normativi: rappresentano packaging RumiAI normalizzati di riferimento.
 
+Principio platform fissato:
+
+> `platform`/`architecture` descrivono soltanto i vincoli propri del contenuto della Package Instance. Runtime/interpreti/SDK richiesti sono Execution Requirements.
+
 ---
 
 # 1. Temurin 21 provider
+
+Temurin è un provider native per la piattaforma/architettura concreta, per esempio `linux-arm64`.
 
 ```toml
 [[interface.directories]]
@@ -98,6 +104,12 @@ PASS
 
 # 2. NetBeans consumer
 
+Identity di riferimento quando il contenuto normalizzato non ha vincoli nativi propri:
+
+```text
+netbeans@26@r1@any-any
+```
+
 Normalized writable islands:
 
 ```text
@@ -160,17 +172,25 @@ value = { source = "dependency", slot = "jdk", resource-type = "directory", reso
 Possible resolution on Linux ARM64:
 
 ```text
-netbeans@26@r1@jvm-any
+netbeans@26@r1@any-any
 └── jdk
     └── temurin@21.0.8+9@r1@linux-arm64
         satisfies java-development-kit contract 1 version 21
 ```
 
+Possible resolution on macOS ARM64:
+
+```text
+netbeans@26@r1@any-any
+└── jdk
+    └── temurin@21.0.8+9@r1@macos-arm64
+```
+
 Stress result:
 
 ```text
-cross-domain consumer
-private native runtime
+portable-content consumer
+private native runtime provider
 state routing
 JAVA_HOME/PATH isolation
 PASS
@@ -179,6 +199,8 @@ PASS
 ---
 
 # 3. Python 3.12 provider
+
+Il runtime Python concreto è normalmente una Package Instance native, per esempio `linux-arm64`.
 
 ```toml
 [[interface.directories]]
@@ -223,12 +245,19 @@ Stress result:
 
 ```text
 major.minor capability version scheme
+native provider of a runtime capability
 PASS
 ```
 
 ---
 
 # 4. Python hosted application
+
+Identity di riferimento se script/resource propri sono OS/CPU-independent:
+
+```text
+example-app@...@any-any
+```
 
 ```toml
 [state]
@@ -271,15 +300,20 @@ value = { source = "dependency", slot = "python", resource-type = "directory", r
 Stress result:
 
 ```text
+any-any package content
 hosted command
 fixed argv
-private interpreter
+private native interpreter provider
 PASS
 ```
+
+Se la Package Instance contiene una native extension obbligatoria, l'identity deve invece riflettere il relativo native platform/architecture.
 
 ---
 
 # 5. Pulsar Electron/self-contained
+
+Pulsar non viene considerato Java-dependent. La sua identity platform/architecture dipende dal contenuto concreto dell'artifact normalizzato.
 
 ```toml
 [state]
@@ -308,13 +342,14 @@ executable = { source = "self", resource-type = "file", resource = "pulsar-exe" 
 args = []
 ```
 
-No `requirements` section.
+No `requirements` section per Java.
 
 Stress result:
 
 ```text
 self-contained Electron app
 no artificial Java dependency
+platform determined by own artifact content
 PASS
 ```
 
@@ -325,8 +360,8 @@ PASS
 Covered:
 
 ```text
-native provider
-execution-domain consumer
+native runtime provider
+any-any consumer content
 capability contract identity
 capability compatibility constraint
 private runtime resolution
@@ -338,11 +373,13 @@ writable islands
 environment set/prepend
 multiple capabilities
 self-contained app
+orthogonality of platform identity and Execution Requirements
 ```
 
 Not required:
 
 ```text
+jvm/python execution-domain platform
 shell metadata
 env/ physical directory
 absolute path
