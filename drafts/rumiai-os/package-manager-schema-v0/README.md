@@ -2,7 +2,7 @@
 
 Data: 2026-08-30
 
-Stato: **design draft — schema concreto v0 formalizzato**
+Stato: **design decision — schema concreto v0 fissato**
 
 Prerequisiti:
 
@@ -11,15 +11,13 @@ drafts/rumiai-os/package-manager-package-descriptor/README.md
 drafts/rumiai-os/package-manager-serialization-v0/README.md
 drafts/rumiai-os/package-manager-dependency-model/README.md
 drafts/rumiai-os/package-manager-state-model/README.md
+drafts/rumiai-os/package-manager-platform-vocabulary-v0/README.md
+drafts/rumiai-os/package-manager-capability-contracts-v0/README.md
 ```
-
-Obiettivo: fissare i campi e le regole di validazione del descriptor `@package` senza ancora implementare il parser/package manager.
 
 ---
 
 # 1. Top-level
-
-Sezioni v0:
 
 ```text
 schema          required scalar
@@ -32,52 +30,36 @@ requirements    optional ordered array-of-table
 environment     optional ordered array-of-table
 ```
 
-Top-level TOML:
-
 ```toml
 schema = 1
 ```
 
-Nel medesimo `schema = 1`, una key strutturale sconosciuta è errore.
+Unknown structural key nello schema v0 è errore.
 
 ---
 
-# 2. Identificatori logici
+# 2. Logical identifiers
 
-Per i namespace interni v0 si usa una grammatica conservativa ASCII:
+Namespace interni:
 
 ```text
 logical-id = [a-z][a-z0-9-]*
 ```
 
-Si applica a:
+Usato per:
 
 ```text
 dependency slot
-resource id
-command id
+file/directory/command resource id
 capability name
+capability resource key
 ```
 
-Gli identificatori sono case-sensitive ma canonici lowercase.
-
-Namespace distinti possono riusare lo stesso token senza collisione:
-
-```text
-resource:java
-command:java
-capability:java-runtime
-```
-
-All'interno dello stesso namespace un ID deve essere unico.
-
-Il package `name` continua a seguire la grammatica pathname/package già fissata e non viene ristretto retroattivamente da `logical-id`.
+Lowercase canonico; ID unico nel proprio namespace.
 
 ---
 
-# 3. `identity`
-
-Required:
+# 3. Identity
 
 ```toml
 [identity]
@@ -89,46 +71,37 @@ architecture = "any"
 display-name = "NetBeans 26"
 ```
 
-Regole:
+Required:
 
 ```text
-name             required string, canonical package name
-version          required non-empty string, upstream semantic opaque
-revision         required positive integer
-platform         required canonical platform token
-architecture     required canonical architecture token
-display-name     required non-empty human-readable UTF-8 string
+name
+version                  non-empty upstream opaque string
+revision                 positive integer
+platform                 vocabulary v0 token
+architecture             vocabulary v0 token
+display-name             non-empty UTF-8 human-readable string
 ```
 
-I primi cinque campi canonici devono concordare con il package pathname secondo le regole version-token già fissate.
+I campi canonici devono concordare con:
+
+```text
+<name>@<version-token>@r<revision>@<platform>-<architecture>
+```
 
 ---
 
-# 4. `release`
-
-Required:
+# 4. Release
 
 ```toml
 [release]
 release-order = 123
 ```
 
-`release-order`:
-
-```text
-positive integer
-monotono nella stessa logical provider/package family
-non identity
-non confrontabile fra famiglie differenti
-```
-
-A parità di release-order, il resolver può usare la RumiAI `revision` più alta quando la policy chiede la più recente revision della medesima release.
+Positive integer monotono nella stessa provider/package family; non identity e non comparabile fra family differenti.
 
 ---
 
-# 5. `integrity`
-
-Required:
+# 5. Integrity
 
 ```toml
 [integrity]
@@ -136,79 +109,56 @@ method = 1
 algorithm = "sha256"
 ```
 
-Sub-table required:
+Required:
 
 ```text
 integrity.root
 integrity.run-default
 ```
 
-Entrambe contengono:
+Ogni tree:
 
 ```text
 files            non-negative integer
-directories      positive integer, include root entry
+directories      positive integer including root
 links            non-negative integer
-manifest-digest  digest string secondo algorithm
-records          ordered array of canonical record strings
+manifest-digest  digest string
+records          ordered canonical line records
 ```
 
-Esempio:
-
-```toml
-[integrity.root]
-files = 1
-directories = 2
-links = 0
-manifest-digest = "..."
-records = [
-  "D\t0500\t.",
-  "D\t0500\t./bin",
-  "abc...\tF\t0500\t./bin/tool",
-]
-```
-
-Validation:
+Record v0:
 
 ```text
-record count/type concorda con counts
-records in canonical order
-manifest digest concorda con canonical LF-joined records
-physical tree concorda con records
+D<TAB><mode><TAB><relative-path>
+<digest><TAB>F<TAB><mode><TAB><relative-path>
+<digest-target><TAB>L<TAB><relative-path><TAB><relative-target>
 ```
 
-La grammatica pathname/escaping canonica appartiene a `integrity.method`.
+Manifest digest = digest dei record TOML decodificati concatenati con LF finale per ogni record.
 
 ---
 
-# 6. `state`
+# 6. State
 
-`state` è optional.
+`[state]` optional.
 
-Assenza di `[state]` significa:
+Assenza:
 
 ```text
-Package Instance non richiede State Instance propria
-nessun runtime mapping package-local
-nessuna state reference ammessa nel suo Environment Specification
+nessuna State Instance propria
+nessun runtime mapping
+nessuna state reference nel package environment
 ```
 
-Quando presente:
+Presenza:
 
 ```toml
 [state]
-compatibility-version = 2
+compatibility-version = 1
 scope = "shared"
 ```
 
-Required fields:
-
-```text
-compatibility-version  positive integer
-scope                  enum
-```
-
-Scope enum:
+Scope:
 
 ```text
 shared
@@ -217,7 +167,7 @@ architecture
 platform-architecture
 ```
 
-Mappings optional ordered array:
+Mappings:
 
 ```toml
 [[state.mappings]]
@@ -225,129 +175,81 @@ path = "etc"
 area = "conf"
 ```
 
-Area enum:
+Area:
 
 ```text
-conf
-data
-home
-cache
-log
-run
-tmp
+conf data home cache log run tmp
 ```
 
-Regole mapping:
+Mapping rules:
 
 ```text
-path relativo canonico
-nessun leading slash
-nessun `..`
-nessuna coppia di mapping ancestor/descendant
-ogni path unico
-root/<path> deve essere safe relative symlink verso ../run/<path>
-run-default/<path> deve esistere come default physical counterpart
+canonical relative path
+no leading slash
+no ..
+unique
+no ancestor/descendant overlap
+root/<path> = validated relative symlink to ../run/<path>
+run-default/<path> exists
 ```
-
-Una Package Instance può avere `[state]` senza mappings quando usa State Instance soltanto tramite environment/launch references.
 
 ---
 
-# 7. `interface.files`
-
-File resource optional:
+# 7. Interface files/directories
 
 ```toml
 [[interface.files]]
 id = "launcher"
 path = "bin/netbeans"
-```
 
-Required:
-
-```text
-id      logical-id unico nel file resource namespace
-path    canonical relative pathname sotto root/
-```
-
-La physical target deve esistere ed essere regular file nel tree integro.
-
-Un file resource non implica executable semantics.
-
----
-
-# 8. `interface.directories`
-
-Directory resource optional:
-
-```toml
 [[interface.directories]]
 id = "home"
 path = "."
-
-[[interface.directories]]
-id = "bin"
-path = "bin"
 ```
 
-Required:
+`path` è relativo a `root/`; `.` è ammesso per root stesso.
 
-```text
-id      logical-id unico nel directory namespace
-path    canonical relative pathname sotto root/
-```
-
-`.` è ammesso esclusivamente per rappresentare `root/` stesso.
-
-La physical target deve esistere ed essere directory nel tree integro.
+Physical target e type devono concordare con l'integrity tree.
 
 ---
 
-# 9. Resource reference v0
+# 8. Structured references
 
-Le reference non sono stringhe composite.
-
-Forme semantiche:
-
-## self resource
+Self:
 
 ```toml
 { source = "self", resource-type = "file", resource = "launcher" }
 ```
 
-## dependency resource
+Dependency:
 
 ```toml
 { source = "dependency", slot = "jdk", resource-type = "directory", resource = "home" }
 ```
 
-## state reference
+State:
 
 ```toml
 { source = "state", area = "home" }
 ```
 
-## literal
+Literal:
 
 ```toml
-{ source = "literal", value = "-J-Xmx2g" }
+{ source = "literal", value = "-jar" }
 ```
 
-`resource-type` enum:
+`resource-type`:
 
 ```text
-file
-directory
-command
+file directory command
 ```
 
-Validation è context-sensitive: non tutte le source/type sono ammesse in ogni campo.
+Le reference non sono mini-language string.
 
 ---
 
-# 10. `interface.commands`
-
-Command resource optional, ID unico:
+# 9. Commands
 
 ```toml
 [[interface.commands]]
@@ -356,57 +258,38 @@ executable = { source = "self", resource-type = "file", resource = "launcher" }
 args = []
 ```
 
-Required:
+Executable v0:
 
 ```text
-id          logical-id
-executable  executable reference
-```
-
-Optional:
-
-```text
-args         ordered array of argument reference table
-environment  ordered array of environment operation table
-```
-
-Executable reference v0 può puntare a:
-
-```text
-self file resource con executable mode
+self executable file resource
 dependency command resource
 ```
 
-Non può essere literal host pathname.
+No literal host executable pathname.
 
-Ogni argomento è strutturato, per esempio:
+Args = ordered array di structured reference; ogni elemento materializza esattamente un argv element, mai una shell command string.
 
-```toml
-args = [
-  { source = "literal", value = "-jar" },
-  { source = "self", resource-type = "file", resource = "app-jar" },
-]
-```
-
-Al materialize ogni elemento produce esattamente un argv element; non viene costruita una shell command string.
+Command-specific `environment` può usare le stesse operation package-level.
 
 ---
 
-# 11. `interface.provides`
+# 10. Capability provides
 
-Ogni provide:
+Ogni provide include **capability contract version** e compatibility version:
 
 ```toml
 [[interface.provides]]
 capability = "java-runtime"
+contract = 1
 version = "21"
 ```
 
 Required:
 
 ```text
-capability  logical-id
-version     non-empty capability-version string
+capability    known capability logical-id
+contract      positive known contract version
+version       canonical compatibility version secondo contract
 ```
 
 Resource mapping:
@@ -416,39 +299,33 @@ Resource mapping:
 key = "command"
 resource-type = "command"
 resource = "java"
-
-[[interface.provides.resources]]
-key = "home"
-resource-type = "directory"
-resource = "home"
 ```
 
-`key` è definita dal capability contract, non dal provider.
-
-Validation capability contract verifica:
+Il registry `(capability, contract)` definisce:
 
 ```text
-version scheme
-required resource keys
-optional resource keys
+compatibility version scheme
+required/optional resource keys
 resource type per key
+contract semantics
 ```
 
-Un provider non può inventare una semantica diversa per una key standard dello stesso capability contract.
+Provider non può ridefinire il contract.
 
 ---
 
-# 12. `requirements`
+# 11. Requirements
 
-Ogni requirement è mandatory nel v0.
+Tutti mandatory nel v0.
 
-## capability requirement
+Capability requirement:
 
 ```toml
 [[requirements]]
 slot = "jdk"
 target = "capability"
 capability = "java-development-kit"
+contract = 1
 constraint = ">=17 <22"
 ```
 
@@ -456,12 +333,13 @@ Required:
 
 ```text
 slot
- target = capability
+target = capability
 capability
+contract
 constraint
 ```
 
-## package requirement
+Package requirement:
 
 ```toml
 [[requirements]]
@@ -470,31 +348,23 @@ target = "package"
 package = "specific-engine"
 ```
 
-Optional per package target:
+Optional exact upstream version:
 
-```text
-version = exact upstream version string
+```toml
+version = "1.4"
 ```
 
-Nel v0 un package-target requirement NON supporta range generici sulla software version upstream.
-
-Se `version` manca, qualsiasi release della logical package family può essere candidata e la Selection Policy/resolver decide la release concreta tramite release-order.
-
-Dependency slot ID deve essere unico nel package.
+No generic software-version range v0.
 
 ---
 
-# 13. Constraint grammar v0
-
-Capability constraints v0 rappresentano **solo intersezioni** di comparator.
-
-Grammar concettuale:
+# 12. Capability constraint grammar
 
 ```text
 constraint  = comparator *( SP comparator )
 comparator  = operator version
-operator    = "=" / ">" / ">=" / "<" / "<="
-version     = token valido secondo il capability version scheme
+operator    = = | > | >= | < | <=
+version     = token valido secondo (capability, contract)
 ```
 
 Esempi:
@@ -505,29 +375,13 @@ Esempi:
 >=3.11 <3.14
 ```
 
-Non esistono nel v0:
-
-```text
-OR
-!=
-wildcard
-caret
-tilde
-implicit latest
-provider name dentro constraint
-```
-
-La validità e comparazione di `version` appartengono al capability contract.
+No OR, !=, wildcard, caret, tilde, provider name, implicit latest.
 
 ---
 
-# 14. `environment` come sequenza ordinata
+# 13. Environment Specification
 
-L'Environment Specification package-level è un **array ordinato di operazioni**, non una map per variable name.
-
-Questo permette più operazioni sulla stessa variabile, soprattutto `PATH`.
-
-Esempio:
+Ordered operation list:
 
 ```toml
 [[environment]]
@@ -543,16 +397,7 @@ type = "path-list"
 value = { source = "dependency", slot = "jdk", resource-type = "directory", resource = "bin" }
 ```
 
-Field:
-
-```text
-name       required environment variable name
-operation  required enum
-type       required salvo unset
-value      required salvo unset
-```
-
-Operation enum:
+Operations:
 
 ```text
 set
@@ -562,7 +407,7 @@ prepend
 append
 ```
 
-Type enum:
+Types:
 
 ```text
 scalar
@@ -573,114 +418,39 @@ path-list
 Rules:
 
 ```text
-unset: nessun value/type richiesto
-prepend/append: type deve essere path-list
-set/set-if-unset: scalar, path o path-list
+unset => no value/type
+prepend/append => path-list
+set/set-if-unset => scalar|path|path-list
+absolute host path literal forbidden
+no variable expansion during descriptor parse
 ```
 
-Un `path` reference deve risolversi a un singolo pathname.
-
-Un `path-list` operation inserisce uno o più pathname come elementi logici; il platform adapter decide il separator della process environment.
-
----
-
-# 15. Environment variable names
-
-Grammatica portabile v0:
+Environment variable name:
 
 ```text
 [A-Za-z_][A-Za-z0-9_]*
 ```
 
-Nel medesimo Environment Specification non possono esistere due nomi che collidono case-insensitively quando il target platform tratta l'environment in modo case-insensitive.
+---
 
-La validazione fisica/platform completa resta platform-specific.
+# 14. Environment precedence
+
+Dal meno al più specifico:
+
+```text
+1 inherited/sanitized Host Base Environment
+2 RumiAI Base Environment
+3 Resolved Integration Profile environment
+4 Package Environment Specification
+5 Command-specific environment overlay
+6 explicit invocation override
+```
+
+Una package private dependency può quindi sostituire `JAVA_HOME`/prepend `PATH` senza modificare il profile pubblico.
 
 ---
 
-# 16. Environment value source rules
-
-`scalar`:
-
-```text
-literal ammesso
-resource path può essere convertito a scalar pathname solo se semanticamente richiesto
-```
-
-`path`:
-
-```text
-self file/directory resource
-dependency file/directory resource
-state area/path
-```
-
-`path-list`:
-
-```text
-self directory resource
-dependency directory resource
-state directory/path
-```
-
-Un host absolute pathname literal non è ammesso in `@package`.
-
-Environment variable expansion tipo:
-
-```text
-$HOME
-%PATH%
-${VAR}
-```
-
-non viene eseguita dal parser descriptor.
-
----
-
-# 17. Environment precedence v0
-
-La composizione dell'Execution Environment segue dal layer meno specifico al più specifico:
-
-```text
-1. inherited/sanitized Host Base Environment
-2. RumiAI Base Environment
-3. Resolved Integration Profile environment
-4. Package Environment Specification
-5. Command-specific environment overlay
-6. explicit invocation override
-```
-
-Ogni layer opera sul risultato del precedente.
-
-Quindi una Package Instance che fa:
-
-```text
-set JAVA_HOME = dependency:jdk.directory:home
-```
-
-sostituisce eventuale `JAVA_HOME` ereditato dall'host/profile per quel processo senza modificare il profile globale.
-
-`prepend PATH` del package inserisce la dependency privata davanti al PATH già composto.
-
----
-
-# 18. Command-specific environment
-
-Ogni `interface.commands` può contenere una lista `environment` con la stessa struttura delle operazioni package-level.
-
-Precedence:
-
-```text
-package environment
-        ↓
-command environment
-```
-
-Non è consentito shell/eval/script come operation.
-
----
-
-# 19. Required/optional summary
+# 15. Required/optional summary
 
 ```text
 schema                         required
@@ -688,55 +458,54 @@ identity                       required
 release                        required
 integrity                      required
 state                          optional
-interface                      required, può essere vuota solo se il package non espone risorse pubblicabili/usabili
-requirements                   optional; se presenti tutti mandatory
-environment                    optional
+interface                      required
+requirements                   optional
+package environment            optional
 
-identity.*                     required
-release.release-order          required
-integrity.method               required
-integrity.algorithm            required
-integrity.root                 required
-integrity.run-default          required
-state.compatibility-version    required se state presente
-state.scope                    required se state presente
-state.mappings                 optional
 interface.files                optional
 interface.directories          optional
 interface.commands             optional
 interface.provides             optional
 ```
 
----
-
-# 20. Validation order
-
-Un descriptor viene validato per fasi:
+Un `interface.provides` capability richiede sempre:
 
 ```text
-1. TOML parse
-2. schema version
-3. structural schema / required fields / types
-4. identifier grammar + uniqueness
-5. pathname identity agreement
-6. integrity metadata syntax
-7. root/run-default physical integrity
-8. state contract + writable mapping validation
-9. Package Interface physical target validation
-10. capability contract validation
-11. Requirement syntax/slot validation
-12. Environment/command reference validation
-13. cross-reference validation
-14. admission/platform physical validation already required dal package lifecycle
+capability + contract + version
 ```
 
-Parsing puro non risolve dependency né State Instance concrete.
+Un capability requirement richiede sempre:
+
+```text
+capability + contract + constraint
+```
 
 ---
 
-# 21. Error classes v0
+# 16. Validation order
 
-Classi logiche candidate da rendere stabili nell'implementazione:
+```text
+1 TOML parse
+2 schema
+3 structural fields/types
+4 logical ID grammar/uniqueness
+5 pathname identity agreement
+6 platform vocabulary validation
+7 integrity syntax + physical verification
+8 state mappings
+9 interface physical resources
+10 capability registry/contract validation
+11 requirements/constraint validation
+12 environment/command references
+13 cross-reference validation
+14 Physical Platform Validation
+```
+
+Parsing, semantic validation, physical verification e dependency resolution restano fasi distinte.
+
+---
+
+# 17. Error classes
 
 ```text
 DESCRIPTOR_PARSE_ERROR
@@ -753,44 +522,43 @@ REFERENCE_ERROR
 PLATFORM_VALIDATION_ERROR
 ```
 
-Queste classi descrivono il dominio; messaggi e codici numerici concreti verranno definiti nell'API/CLI implementation contract.
-
 ---
 
-# 22. Invarianti schema v0
+# 18. Invarianti
 
 ```text
-PS-01 schema v0 è strict e typed
-PS-02 logical identifiers interni sono lowercase ASCII logical-id
-PS-03 software version resta stringa opaca
-PS-04 release-order è positive integer per family ranking
-PS-05 state section assente => nessuna State Instance propria
-PS-06 resources sono referenziate per namespace+id, non path host
-PS-07 command materializza argv, mai shell command string
-PS-08 requirements v0 sono mandatory
-PS-09 capability constraint v0 è intersezione di comparator semplici
-PS-10 package requirement non usa generic upstream version range
-PS-11 environment è ordered operation list
-PS-12 PATH è semanticamente path-list, separator platform-specific
-PS-13 host environment può essere ereditato ma package-specific set/unset può dominarlo
-PS-14 absolute host path non vive nel descriptor
-PS-15 parser, semantic validation, physical validation e resolution sono fasi distinte
+PS-01 schema v0 strict + typed
+PS-02 logical internal ID lowercase ASCII
+PS-03 software version opaque string
+PS-04 release-order family-local positive integer
+PS-05 state absent => no own State Instance
+PS-06 resource references by namespace+id
+PS-07 command creates argv, never shell string
+PS-08 requirements v0 mandatory
+PS-09 capability identity = name + contract
+PS-10 compatibility version != capability contract version
+PS-11 capability constraint is simple comparator intersection
+PS-12 package requirement has no generic upstream version range
+PS-13 environment ordered operation list
+PS-14 PATH semantic path-list, platform separator materialized later
+PS-15 absolute host path absent from @package
+PS-16 parser/validation/resolution separate
 ```
 
 ---
 
-# 23. Prossimo passo
+# 19. Reference descriptors
 
-Lo schema è abbastanza concreto da scrivere **descriptor di riferimento completi** e stressarli senza implementazione:
+Gli esempi architetturali sono in:
 
 ```text
-JDK provider
-NetBeans consumer
-Python runtime provider
-Python application consumer
-Pulsar Electron/self-contained
+drafts/rumiai-os/package-manager-schema-v0/reference-descriptors.md
 ```
 
-Il test deve cercare campi/primitives mancanti e non ottimizzare la sintassi per estetica.
+La versione normativa corretta richiede `contract = 1` negli esempi capability secondo il capability registry v0.
 
-Se i descriptor completi passano senza introdurre nuovi concetti, il passo successivo sarà fissare lo schema del Desired/Resolved Integration State con lo stesso livello di precisione.
+---
+
+# 20. Next
+
+Dopo l'allineamento dei reference descriptor, il prossimo punto è il physical persistence/transaction layout di Desired/Resolved state.
