@@ -10,6 +10,7 @@ Prerequisiti:
 drafts/rumiai-os/package-manager-package-descriptor/README.md
 drafts/rumiai-os/package-manager-resolved-state/README.md
 drafts/rumiai-os/package-manager-package-instance-layout/README.md
+drafts/rumiai-os/package-manager-platform-vocabulary-v0/README.md
 ```
 
 Questo documento fissa la rappresentazione testuale v0 di:
@@ -55,21 +56,20 @@ YAML
     alias/tag/implicit typing e superficie parser non necessaria
 
 JSON
-    valido tecnicamente, ma meno leggibile per descriptor complessi e strutture ripetute
+    valido tecnicamente e generalmente più veloce da parsare in molte implementazioni,
+    ma meno leggibile per descriptor complessi e strutture ripetute
 
 formato RumiAI generale proprietario
     evitato per non creare un parser/config language senza necessità
 ```
 
-L'inventory di integrità mantiene comunque una grammatica line-oriented propria **dentro valori TOML**, perché è un dominio specifico già definito e può contenere molte migliaia di entry.
+La performance non viene affidata alla scelta del formato: i grandi inventory integrity usano un singolo blocco line-oriented, e il launch non deve parsare l'intero `@package` di tutte le dependency.
 
 ---
 
 # 2. Restricted TOML profile RumiAI v0
 
-RumiAI non usa necessariamente tutta la superficie dati TOML.
-
-Tipi ammessi nel modello v0:
+Tipi ammessi:
 
 ```text
 UTF-8 string
@@ -80,7 +80,7 @@ table
 array of tables
 ```
 
-Non sono usati nei file v0:
+Non usati:
 
 ```text
 float
@@ -90,38 +90,31 @@ time
 datetime
 ```
 
-Un serializer RumiAI deve emettere interi in base 10.
+Un serializer RumiAI emette interi in base 10.
 
-Le chiavi duplicate sono errore.
+Duplicate key sono errore.
 
-Un parser che incontra uno `schema` non supportato deve rifiutare il documento; non deve tentare di reinterpretarlo euristicamente.
+Uno `schema` unsupported viene rifiutato; non viene reinterpretato euristicamente.
 
-Nel medesimo schema v0, chiavi strutturali sconosciute sono errore per default: questo evita che un typo venga silenziosamente ignorato.
+Nel medesimo schema v0, chiavi strutturali sconosciute sono errore per default.
 
-I commenti TOML possono esistere ma non hanno significato semantico.
+I commenti TOML non hanno significato semantico.
 
-L'ordine delle table/key non ha significato semantico salvo dove il modello dichiara esplicitamente una sequenza ordinata, per esempio:
-
-```text
-provider preference/fallback order
-fixed command arguments
-PATH prepend/append sequence
-integrity inventory entry order canonico
-```
+L'ordine delle table/key non ha significato salvo dove il modello definisce una sequenza ordinata.
 
 ---
 
 # 3. `@package`
 
-Il file fisico resta:
+File fisico:
 
 ```text
 pkg/<package-instance-id>/@package
 ```
 
-Non viene aggiunta un'estensione obbligatoria.
+Nessuna estensione obbligatoria.
 
-Il contenuto è TOML e contiene le sezioni logiche già fissate:
+Sezioni logiche:
 
 ```text
 schema
@@ -134,7 +127,7 @@ requirements
 environment
 ```
 
-Esempio minimo concettuale:
+Esempio minimo:
 
 ```toml
 schema = 1
@@ -143,7 +136,7 @@ schema = 1
 name = "netbeans"
 version = "26"
 revision = 1
-platform = "jvm"
+platform = "any"
 architecture = "any"
 display-name = "NetBeans 26"
 
@@ -151,13 +144,13 @@ display-name = "NetBeans 26"
 release-order = 26
 ```
 
-La `version` upstream resta stringa semanticamente opaca.
+`platform`/`architecture` descrivono il contenuto della Package Instance. Java/Python/JDK/JRE necessari vengono rappresentati tramite requirements/capability, non come platform token.
 
 ---
 
 # 4. Value reference: struttura, non mini-language
 
-Le notazioni usate nei documenti architetturali come:
+Notazioni architetturali come:
 
 ```text
 dependency:jdk.directory:home
@@ -165,56 +158,32 @@ self:file:launcher
 state:home
 ```
 
-sono abbreviazioni concettuali, **non** la sintassi serializzata v0.
+sono abbreviazioni concettuali.
 
-Nel TOML le reference vengono rappresentate strutturalmente.
-
-Esempio concettuale:
+Nel TOML le reference sono strutturate, per esempio:
 
 ```toml
-[environment.JAVA_HOME]
-operation = "set"
-type = "path"
-source = "dependency"
-slot = "jdk"
-resource-type = "directory"
-resource = "home"
+value = { source = "dependency", slot = "jdk", resource-type = "directory", resource = "home" }
 ```
 
-Una reference `self` può essere rappresentata come:
-
-```toml
-source = "self"
-resource-type = "file"
-resource = "netbeans-launcher"
-```
-
-Una reference a state area:
-
-```toml
-source = "state"
-area = "home"
-```
-
-Questo evita parsing di stringhe composite e rende errori/validazione deterministici.
+Questo evita parsing di stringhe composite.
 
 ---
 
 # 5. Requirements
 
-Ogni dependency slot viene serializzato come struttura propria.
-
-Esempio concettuale:
+Esempio:
 
 ```toml
 [[requirements]]
 slot = "jdk"
 target = "capability"
 capability = "java-development-kit"
+contract = 1
 constraint = ">=17 <22"
 ```
 
-La stringa `constraint` viene interpretata esclusivamente secondo il version scheme della capability relativa; non è un comparatore universale di software version.
+La capability compatibility version è interpretata esclusivamente secondo il relativo `(capability, contract)`.
 
 Provider preference, fallback e pin non vengono inseriti qui.
 
@@ -222,39 +191,15 @@ Provider preference, fallback e pin non vengono inseriti qui.
 
 # 6. Package Interface
 
-Le risorse sono dichiarate tramite array-of-table.
+Le risorse sono strutture TOML tipizzate secondo lo schema `@package` v0.
 
-Esempio:
-
-```toml
-[[interface.resources]]
-name = "home"
-type = "directory"
-path = "."
-
-[[interface.resources]]
-name = "bin"
-type = "directory"
-path = "bin"
-
-[[interface.resources]]
-name = "java-exe"
-type = "file"
-path = "bin/java"
-
-[[interface.commands]]
-name = "java"
-executable-source = "self"
-executable-resource = "java-exe"
-```
-
-La forma concreta può essere resa più compatta durante la futura specifica schema, ma non deve trasformarsi in codice eseguibile o in pathname host assoluti.
+Il modello non usa shell code né pathname host assoluti.
 
 ---
 
 # 7. Integrity inventory line-oriented dentro TOML
 
-L'inventory non viene rappresentato come una table TOML per ogni file.
+L'inventory può contenere molte migliaia di entry e **non** viene rappresentato come table o array TOML per ogni record.
 
 Ogni tree immutabile mantiene:
 
@@ -263,10 +208,10 @@ files count
 directories count
 links count
 manifest digest
-ordered inventory records
+canonical inventory records
 ```
 
-I record sono serializzati come **array ordinato di stringhe**, una stringa per record canonico.
+I record sono serializzati in un'unica **multiline literal string TOML**, in ordine canonico, una riga per entry.
 
 Esempio:
 
@@ -280,14 +225,16 @@ files = 2
 directories = 2
 links = 1
 manifest-digest = "..."
-records = [
-  "D\t0500\t.",
-  "D\t0500\t./bin",
-  "<digest>\tF\t0500\t./bin/foo",
-  "<digest>\tF\t0400\t./app.jar",
-  "<digest-target>\tL\t./log\t../run/log",
-]
+records = '''
+D\t0500\t.
+D\t0500\t./bin
+<digest>\tF\t0500\t./bin/foo
+<digest>\tF\t0400\t./app.jar
+<digest-target>\tL\t./log\t../run/log
+'''
 ```
+
+Nel file reale i separatori fra campi sono TAB reali e le righe terminano con LF canonico; `\t` sopra serve soltanto a renderli visibili nel documento.
 
 Stessa struttura per:
 
@@ -295,30 +242,37 @@ Stessa struttura per:
 [integrity.run-default]
 ```
 
-Dopo parsing TOML, ciascuna stringa rappresenta esattamente una riga canonica dell'inventory.
+Dopo il parsing TOML, `records` è una singola stringa UTF-8.
 
-Il manifest canonico usato per il digest è:
+Il manifest canonico usato per il digest è **esattamente il contenuto canonico della stringa `records`**, con:
 
 ```text
-record-1 + LF
-record-2 + LF
-...
-record-N + LF
+una riga per record
+LF come line separator
+LF finale obbligatorio
+nessuna riga vuota aggiuntiva
 ```
 
 Il digest non dipende da:
 
 ```text
 indentazione TOML
-quote style
 commenti
 ordine delle key TOML
-line wrapping del serializer
+serializer TOML
 ```
 
-ma soltanto dalla sequenza canonica dei record decodificati.
+ma soltanto dal blocco canonico decodificato.
 
-I conteggi vengono validati contro i record e contro il tree fisico.
+Questa forma è preferita all'array di stringhe perché:
+
+```text
+corrisponde direttamente al modello find-like fissato
+riduce overhead sintattico
+riduce numero di oggetti allocati dal parser
+migliora sensibilmente il parse di inventory grandi
+consente processing line-oriented successivo
+```
 
 ---
 
@@ -337,16 +291,7 @@ SYMLINK
 <digest-of-target-text><TAB>L<TAB><relative-path><TAB><relative-target>
 ```
 
-Esempi:
-
-```text
-D\t0500\t.
-D\t0500\t./bin
-abc...\tF\t0500\t./bin/foo
-def...\tL\t./log\t../run/log
-```
-
-Restano valide le regole già fissate:
+Restano valide:
 
 ```text
 directory senza content digest
@@ -356,13 +301,13 @@ mode solo per regular file/directory
 ordinamento canonico
 ```
 
-La specifica esatta di escaping/canonicalizzazione dei pathname resta una sotto-specifica dell'integrity method/version; non viene affidata alle regole di quoting TOML.
+Escaping/canonicalizzazione dei pathname appartengono all'Integrity Method 1.
 
 ---
 
-# 9. Nessun nuovo file `env/` o metadata tree
+# 9. Nessun nuovo metadata file
 
-La scelta TOML non cambia la wrapper fissata:
+La wrapper resta:
 
 ```text
 pkg/<id>/
@@ -372,9 +317,7 @@ pkg/<id>/
 └── run/
 ```
 
-Environment Specification, requirements, interface e inventory restano nel singolo `@package`.
-
-Non vengono introdotti nel v0:
+Non vengono introdotti:
 
 ```text
 env/
@@ -382,32 +325,31 @@ env/
 @integrity separato
 ```
 
-Se in futuro la dimensione reale degli inventory rendesse necessario separare storage e descriptor, questo potrà essere un'evoluzione di schema esplicita e non una modifica implicita del v0.
+Environment Specification, requirements, interface e inventory restano nel singolo `@package`.
 
 ---
 
-# 10. Resolved state usa lo stesso formato
+# 10. Resolved state usa lo stesso restricted TOML
 
-Desired state e Resolution Snapshot sono TOML conformi allo stesso restricted profile.
+Desired state e Resolution Snapshot sono TOML.
 
-Il resolved state è machine-generated ma resta facilmente ispezionabile.
-
-Esempio concettuale:
+Esempio:
 
 ```toml
 schema = 1
 generation = 17
 
 [[roots]]
-package = "netbeans@26@r1@jvm-any"
+package = "netbeans@26@r1@any-any"
 command = "netbeans"
 state = "netbeans@s2"
 
 [[dependencies]]
-consumer = "netbeans@26@r1@jvm-any"
+consumer = "netbeans@26@r1@any-any"
 slot = "jdk"
 provider = "temurin@21.0.8+9@r1@linux-arm64"
 capability = "java-development-kit"
+contract = 1
 satisfied-version = "21"
 ```
 
@@ -419,63 +361,42 @@ Non vengono persistiti pathname assoluti RUMIAI_ROOT.
 
 # 11. Generation ID v0
 
-Per il v0 la generation identity è un **intero positivo monotono locale all'environment RumiAI**:
+Generation identity = intero positivo monotono locale all'environment RumiAI:
 
 ```text
-1
-2
-3
-...
+1 2 3 ...
 ```
 
-La rappresentazione human-readable può essere:
+Rappresentazione human-readable:
 
 ```text
-g1
-g2
-g3
+g1 g2 g3 ...
 ```
-
-Il numero identifica l'ordine dei commit di resolved state, non una software version.
-
-Non viene richiesto un digest-based generation ID nel v0.
-
-L'integrità fisica e la futura firma/checksum del resolved snapshot sono responsabilità separabili dalla sua identità logica.
 
 ---
 
 # 12. Atomic active-generation pointer
 
-Il resolved state persistente deve distinguere:
+Si distinguono:
 
 ```text
 immutable generation snapshot
 active generation pointer
 ```
 
-Il pointer contiene soltanto la generation attiva e deve poter essere sostituito atomicamente dalla primitive filesystem appropriata della reference platform.
+Il pointer contiene soltanto la generation attiva ed è sostituito atomicamente con la primitive filesystem validata per la reference platform.
 
-Il pointer non è un symlink obbligatorio: questo evita di imporre semantiche Unix a Windows.
-
-La primitive fisica concreta di atomic replace/locking resta parte della Physical Platform Validation.
+Non è obbligatoriamente un symlink.
 
 ---
 
 # 13. Canonicality
 
-RumiAI non richiede una canonical byte serialization generale di TOML.
+Non serve una canonical byte serialization generale di TOML.
 
-La semantica è il parsed data model validato dallo `schema`.
+Quando serve un digest, il dominio definisce la propria rappresentazione canonica.
 
-Quando serve un digest canonico, il relativo dominio definisce la propria canonical representation esplicita.
-
-Nel v0 questo è già vero per l'integrity inventory:
-
-```text
-ordered canonical record lines
-```
-
-Questo evita di fare dipendere integrity/reproducibility dalle differenze fra serializer TOML equivalenti.
+Per l'integrity v0 questa è il blocco line-oriented `records` definito dall'Integrity Method 1.
 
 ---
 
@@ -488,7 +409,7 @@ leggere UTF-8
 rifiutare schema unsupported
 rifiutare duplicate key
 rifiutare type mismatch
-rifiutare structural unknown field nel medesimo schema v0
+rifiutare structural unknown field nel medesimo schema
 rifiutare reference incomplete/non valide
 non eseguire codice
 non espandere environment variable durante parsing
@@ -499,7 +420,22 @@ Parsing, semantic validation, filesystem validation e resolution restano fasi di
 
 ---
 
-# 15. Invarianti di serializzazione
+# 15. Performance boundary
+
+Regole v0:
+
+```text
+launch path non rilegge/verifica tutti gli inventory @package
+integrity inventory viene parsato quando serve validation/integrity/admission/recovery
+generation resolved attiva deve restare relativamente piccola e direttamente parsabile
+implementazioni possono mantenere cache in-memory derivata; cache != fonte di verità
+```
+
+La scelta TOML privilegia leggibilità e schema; i grandi payload line-oriented vengono rappresentati come blocchi stringa per limitarne l'overhead.
+
+---
+
+# 16. Invarianti di serializzazione
 
 ```text
 SER-01 TOML 1.0 è il formato metadata v0
@@ -507,32 +443,13 @@ SER-02 @package e resolved/desired state usano lo stesso restricted TOML profile
 SER-03 il formato è dati, mai codice
 SER-04 software version è stringa opaca
 SER-05 reference sono strutture, non mini-language string
-SER-06 inventory usa ordered canonical line records dentro array TOML
-SER-07 manifest digest dipende dai record decodificati, non dai byte TOML
+SER-06 inventory usa un canonical multiline line-record block
+SER-07 manifest digest dipende dal blocco records decodificato, non dai byte TOML
 SER-08 nessuna env/ o @integrity separata nel v0
 SER-09 unknown structural fields nello schema v0 sono errore
 SER-10 generation ID v0 è monotono locale
 SER-11 active generation pointer è separato dallo snapshot ed atomicamente sostituibile
 SER-12 canonical byte TOML non è requisito generale
+SER-13 platform any-any è distinta dai runtime requirements
+SER-14 inventory grandi non appartengono al critical launch parsing path
 ```
-
----
-
-# 16. Prossimo passo
-
-Con modello logico e serializzazione fissati, il prossimo lavoro architetturale non è ancora un PoC completo.
-
-Conviene ora definire lo **schema v0 concreto di `@package` campo per campo**:
-
-```text
-key names definitivi
-required / optional
-cardinalità
-namespace dei resource/capability/slot
-constraint grammar minima
-Environment Specification operations
-validation order
-error classes
-```
-
-Dopo lo schema concreto possiamo costruire alcuni descriptor completi di riferimento (JDK, NetBeans, Python, Pulsar) e verificarne la sufficienza prima di qualunque implementazione.
