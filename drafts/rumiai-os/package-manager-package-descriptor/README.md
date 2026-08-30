@@ -11,6 +11,7 @@ drafts/rumiai-os/package-manager-package-instance-layout/README.md
 drafts/rumiai-os/package-manager-state-model/README.md
 drafts/rumiai-os/package-manager-dependency-model/README.md
 drafts/rumiai-os/package-manager-integration-context/README.md
+drafts/rumiai-os/package-manager-platform-vocabulary-v0/README.md
 ```
 
 Serializzazione:
@@ -70,7 +71,7 @@ Esempio:
 name = "netbeans"
 version = "26"
 revision = 1
-platform = "jvm"
+platform = "any"
 architecture = "any"
 display-name = "NetBeans 26"
 ```
@@ -90,6 +91,16 @@ devono concordare con:
 ```text
 <name>@<version-token>@r<revision>@<platform>-<architecture>
 ```
+
+`platform` e `architecture` descrivono esclusivamente i vincoli propri del contenuto della Package Instance. Runtime/interpreti/SDK necessari non entrano nell'identity e vengono espressi tramite `requirements`.
+
+Quindi una Package Instance Java/Python realmente OS/CPU-independent usa:
+
+```text
+any-any
+```
+
+non `jvm-any` o `python-any`.
 
 `version` è la software version upstream semanticamente opaca.
 
@@ -209,6 +220,8 @@ tmp
 
 La mapping associa pathname relativo software e state area RumiAI; non contiene pathname host assoluti.
 
+La qualificazione platform/architecture dello state è indipendente da quella della Package Instance e descrive esclusivamente i vincoli dello state.
+
 ---
 
 # 6. `interface`
@@ -243,7 +256,9 @@ Dichiara Execution Capability offerte dalla Package Instance e collega il capabi
 Esempio logico:
 
 ```text
-java-runtime = 21
+java-runtime
+    contract = 1
+    version = 21
     command -> command:java
     home    -> directory:home
     bin     -> directory:bin
@@ -252,10 +267,13 @@ java-runtime = 21
 Il capability contract definisce:
 
 ```text
+contract version
 version scheme
 resource key richieste/opzionali
 semantica del contratto
 ```
+
+`contract` e capability compatibility `version` sono concetti distinti.
 
 ---
 
@@ -270,8 +288,19 @@ Esempio serializzato:
 slot = "jdk"
 target = "capability"
 capability = "java-development-kit"
+contract = 1
 constraint = ">=17 <22"
 ```
+
+Java/JRE/JDK/Python sono quindi rappresentati qui tramite capability come:
+
+```text
+java-runtime
+java-development-kit
+python-runtime
+```
+
+non come Package Instance platform.
 
 Non appartengono a `requirements`:
 
@@ -316,17 +345,17 @@ dependency resource
 state area/path
 ```
 
-Esempio:
+Esempio concettuale:
 
-```toml
-[environment.JAVA_HOME]
-operation = "set"
-type = "path"
-source = "dependency"
-slot = "jdk"
-resource-type = "directory"
-resource = "home"
+```text
+JAVA_HOME
+    set dependency jdk / directory home
+
+PATH
+    prepend dependency jdk / directory bin
 ```
+
+Le operation concrete sono array TOML ordinati secondo lo schema v0.
 
 La notazione architetturale:
 
@@ -402,7 +431,7 @@ Gli absolute pathname vengono materializzati soltanto al launch usando la RUMIAI
 
 ```text
 identity
-    temurin / 21.0.8+9 / r1 / platform concreta
+    temurin / 21.0.8+9 / r1 / native platform concreta
 
 interface
     directory:home
@@ -413,8 +442,8 @@ interface
     command:javac
 
 provides
-    java-runtime = 21
-    java-development-kit = 21
+    java-runtime contract 1 version 21
+    java-development-kit contract 1 version 21
 ```
 
 ---
@@ -424,9 +453,12 @@ provides
 Stress architetturale, non dichiarazione normativa sui requirement reali di una release specifica:
 
 ```text
+identity
+    netbeans / 26 / r1 / any-any
+
 requirements
     slot jdk
-        java-development-kit >=17 <22
+        java-development-kit contract 1 >=17 <22
 
 environment
     JAVA_HOME = dependency jdk / directory home
@@ -436,11 +468,28 @@ interface
     command:netbeans
 ```
 
-Il provider JDK concreto non compare nel descriptor.
+Il provider JDK concreto non compare nel descriptor. La necessità del JDK non modifica `platform = any` della Package Instance NetBeans.
 
 ---
 
-# 16. Esempio logico — Pulsar
+# 16. Esempio logico — Python application
+
+Un'applicazione Python priva di contenuto nativo proprio può essere:
+
+```text
+identity
+    my-app / ... / any-any
+
+requirements
+    slot python
+        python-runtime contract 1 =3.12
+```
+
+Se contiene una native extension obbligatoria, l'identity diventa invece native/platform-specific per il relativo contenuto, pur continuando a richiedere `python-runtime` separatamente.
+
+---
+
+# 17. Esempio logico — Pulsar
 
 Pulsar è modellato come applicazione Electron/self-contained:
 
@@ -452,48 +501,48 @@ interface
     command:pulsar
 ```
 
-Non viene usato come esempio di dependency Java.
+La sua platform/architecture concreta dipende esclusivamente dal contenuto dell'artifact normalizzato distribuito; non vengono introdotte dependency Java artificiali.
 
 ---
 
-# 17. Invarianti fissate
+# 18. Invarianti fissate
 
 ```text
 PD-01 @package è dichiarativo e immutabile
 PD-02 schema è esplicito
 PD-03 pathname identity e descriptor identity devono concordare
 PD-04 display-name è human-readable e non entra nel pathname
-PD-05 release-order è metadata di selection, non identity
-PD-06 integrity descrive root/ e run-default/
-PD-07 state descrive contract/mappings, non contenuto mutabile
-PD-08 interface resource = file, directory, command
-PD-09 provides collega capability contract a Package Interface resource
-PD-10 requirements descrive bisogno, non selection policy
-PD-11 environment è dichiarativo, non environment snapshot
-PD-12 env/ fisica non è necessaria
-PD-13 descriptor non contiene absolute pathname persistenti
-PD-14 resolved/user policy state non vive in @package
-PD-15 modifica semantica richiede nuova revision
-PD-16 serializzazione v0 = restricted TOML 1.0
-PD-17 reference serializzate strutturalmente, non come mini-language
-PD-18 Pulsar non viene usato come esempio Java
+PD-05 platform/architecture descrivono il contenuto, non runtime/interprete/SDK richiesti
+PD-06 any-any rappresenta contenuto realmente OS/CPU-independent
+PD-07 release-order è metadata di selection, non identity
+PD-08 integrity descrive root/ e run-default/
+PD-09 state descrive contract/mappings, non contenuto mutabile
+PD-10 interface resource = file, directory, command
+PD-11 provides collega capability contract/version a Package Interface resource
+PD-12 requirements descrive bisogno, non selection policy
+PD-13 Java/JDK/JRE/Python necessari appartengono ai requirements, non alla platform
+PD-14 environment è dichiarativo, non environment snapshot
+PD-15 env/ fisica non è necessaria
+PD-16 descriptor non contiene absolute pathname persistenti
+PD-17 resolved/user policy state non vive in @package
+PD-18 modifica semantica richiede nuova revision
+PD-19 serializzazione v0 = restricted TOML 1.0
+PD-20 reference serializzate strutturalmente, non come mini-language
+PD-21 Pulsar non viene usato come esempio Java
 ```
 
 ---
 
-# 18. Prossimo livello
+# 19. Schema concreto
 
-La serializzazione è fissata. Il prossimo passo è definire lo **schema v0 concreto campo-per-campo**:
+Lo schema campo-per-campo è definito in:
 
 ```text
-key name definitive
-required / optional
-cardinalità
-namespace di resource/capability/slot
-constraint grammar
-Environment Specification operations
-validation order
-error classes
+drafts/rumiai-os/package-manager-schema-v0/README.md
 ```
 
-Dopo lo schema si possono scrivere descriptor completi di riferimento per JDK, NetBeans, Python e Pulsar e stressare la sufficienza prima di un PoC.
+I reference descriptor sono in:
+
+```text
+drafts/rumiai-os/package-manager-schema-v0/reference-descriptors.md
+```
