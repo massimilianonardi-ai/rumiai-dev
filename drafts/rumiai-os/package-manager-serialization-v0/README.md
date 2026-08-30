@@ -2,119 +2,103 @@
 
 Data: 2026-08-30
 
-Stato: **design decision — serializzazione v0 fissata**
+Stato: **design decision — JSON + TSV v0 fissati**
 
-Prerequisiti:
-
-```text
-drafts/rumiai-os/package-manager-package-descriptor/README.md
-drafts/rumiai-os/package-manager-resolved-state/README.md
-drafts/rumiai-os/package-manager-package-instance-layout/README.md
-drafts/rumiai-os/package-manager-platform-vocabulary-v0/README.md
-```
-
-Questo documento fissa la rappresentazione testuale v0 di:
-
-```text
-@package
-resolved / desired state persistente
-```
-
-senza cambiare il modello logico già definito.
+Questa specifica sostituisce la precedente scelta TOML.
 
 ---
 
-# 1. Formato scelto: TOML
+# 1. Formato strutturato standard: JSON
 
-RumiAI v0 usa **TOML 1.0** come formato di serializzazione per metadata dichiarativi del package manager.
-
-Lo stesso formato viene usato per:
+RumiAI usa **JSON UTF-8** come formato strutturato di riferimento per lo sviluppo e, nel package manager v0, per:
 
 ```text
 @package
 Desired Integration Profile
 Resolution Snapshot / resolved state
 Selection Policy persistita
+altri metadata strutturati del package manager
 ```
 
-Motivazioni:
+Motivazioni principali:
 
 ```text
-parser standard disponibili su Linux/macOS/Windows
-formato dichiarativo, non eseguibile
-strutture tipizzate
-buona leggibilità umana
-duplicate key non ammesse
-supporto naturale a table, array e array-of-table
-un solo parser/config model nel package manager
+standard estremamente diffuso e stabile
+ecosistema parser maturo su praticamente ogni piattaforma
+leggibile e trasformabile con jq
+nativamente supportato da Node.js
+nessuna dipendenza da Python
+buona interoperabilità con shell/tooling multipiattaforma
+parsing normalmente molto veloce
 ```
 
-Non vengono usati nel v0:
-
-```text
-YAML
-    alias/tag/implicit typing e superficie parser non necessaria
-
-JSON
-    valido tecnicamente e generalmente più veloce da parsare in molte implementazioni,
-    ma meno leggibile per descriptor complessi e strutture ripetute
-
-formato RumiAI generale proprietario
-    evitato per non creare un parser/config language senza necessità
-```
-
-La performance non viene affidata alla scelta del formato: i grandi inventory integrity usano un singolo blocco line-oriented, e il launch non deve parsare l'intero `@package` di tutte le dependency.
+La scelta JSON è una decisione architetturale di riferimento RumiAI, non soltanto un dettaglio del package manager.
 
 ---
 
-# 2. Restricted TOML profile RumiAI v0
+# 2. Restricted JSON profile RumiAI v0
 
-Tipi ammessi:
+Encoding:
 
 ```text
-UTF-8 string
-base-10 integer
-boolean
+UTF-8
+no BOM
+```
+
+Tipi ammessi quando previsti dallo schema:
+
+```text
+object
 array
-table
-array of tables
+string
+integer
+boolean
+null soltanto dove esplicitamente previsto
 ```
 
-Non usati:
+Non vengono usati come valori normativi:
 
 ```text
-float
-NaN / infinity
-date
-time
-datetime
+floating point
+NaN / Infinity
+commenti
+estensioni JSON non standard
 ```
 
-Un serializer RumiAI emette interi in base 10.
+Regole parser:
 
-Duplicate key sono errore.
+```text
+duplicate object member name -> errore
+schema non supportato -> errore
+unknown structural field nello stesso schema -> errore salvo esplicita estensione
+integer overflow/range error -> errore
+```
 
-Uno `schema` unsupported viene rifiutato; non viene reinterpretato euristicamente.
+L'ordine delle proprietà di un object non ha significato semantico.
 
-Nel medesimo schema v0, chiavi strutturali sconosciute sono errore per default.
+L'ordine degli elementi di un array ha significato quando il modello lo dichiara, per esempio:
 
-I commenti TOML non hanno significato semantico.
+```text
+provider preference
+fixed argv
+environment operation sequence
+```
 
-L'ordine delle table/key non ha significato salvo dove il modello definisce una sequenza ordinata.
+Non è richiesta una canonical byte serialization JSON generale.
 
 ---
 
 # 3. `@package`
 
-File fisico:
+Il pathname fisico resta:
 
 ```text
 pkg/<package-instance-id>/@package
 ```
 
-Nessuna estensione obbligatoria.
+`@package` è un documento JSON anche se non usa estensione `.json`.
 
-Sezioni logiche:
+Struttura logica v0:
 
 ```text
 schema
@@ -127,30 +111,30 @@ requirements
 environment
 ```
 
-Esempio minimo:
+Esempio:
 
-```toml
-schema = 1
-
-[identity]
-name = "netbeans"
-version = "26"
-revision = 1
-platform = "any"
-architecture = "any"
-display-name = "NetBeans 26"
-
-[release]
-release-order = 26
+```json
+{
+  "schema": 1,
+  "identity": {
+    "name": "netbeans",
+    "version": "26",
+    "revision": 1,
+    "platform": "any",
+    "architecture": "any",
+    "display-name": "NetBeans 26"
+  },
+  "release": {
+    "release-order": 26
+  }
+}
 ```
-
-`platform`/`architecture` descrivono il contenuto della Package Instance. Java/Python/JDK/JRE necessari vengono rappresentati tramite requirements/capability, non come platform token.
 
 ---
 
-# 4. Value reference: struttura, non mini-language
+# 4. Reference strutturate
 
-Notazioni architetturali come:
+Notazioni descrittive come:
 
 ```text
 dependency:jdk.directory:home
@@ -158,298 +142,270 @@ self:file:launcher
 state:home
 ```
 
-sono abbreviazioni concettuali.
+non sono una mini-language persistita.
 
-Nel TOML le reference sono strutturate, per esempio:
+Le reference sono object JSON espliciti, per esempio:
 
-```toml
-value = { source = "dependency", slot = "jdk", resource-type = "directory", resource = "home" }
+```json
+{
+  "source": "dependency",
+  "slot": "jdk",
+  "resource-type": "directory",
+  "resource": "home"
+}
 ```
 
-Questo evita parsing di stringhe composite.
+Questo mantiene parsing e validazione deterministici.
 
 ---
 
-# 5. Requirements
+# 5. Integrity inventory separati
 
-Esempio:
+Il bulk inventory NON vive dentro `@package`.
 
-```toml
-[[requirements]]
-slot = "jdk"
-target = "capability"
-capability = "java-development-kit"
-contract = 1
-constraint = ">=17 <22"
-```
-
-La capability compatibility version è interpretata esclusivamente secondo il relativo `(capability, contract)`.
-
-Provider preference, fallback e pin non vengono inseriti qui.
-
----
-
-# 6. Package Interface
-
-Le risorse sono strutture TOML tipizzate secondo lo schema `@package` v0.
-
-Il modello non usa shell code né pathname host assoluti.
-
----
-
-# 7. Integrity inventory line-oriented dentro TOML
-
-L'inventory può contenere molte migliaia di entry e **non** viene rappresentato come table o array TOML per ogni record.
-
-Ogni tree immutabile mantiene:
+La wrapper contiene due file di testo canonici TSV:
 
 ```text
-files count
-directories count
-links count
-manifest digest
-canonical inventory records
+@integrity-root.tsv
+@integrity-run-default.tsv
 ```
 
-I record sono serializzati in un'unica **multiline literal string TOML**, in ordine canonico, una riga per entry.
-
-Esempio:
-
-```toml
-[integrity]
-method = 1
-algorithm = "sha256"
-
-[integrity.root]
-files = 2
-directories = 2
-links = 1
-manifest-digest = "..."
-records = '''
-D\t0500\t.
-D\t0500\t./bin
-<digest>\tF\t0500\t./bin/foo
-<digest>\tF\t0400\t./app.jar
-<digest-target>\tL\t./log\t../run/log
-'''
-```
-
-Nel file reale i separatori fra campi sono TAB reali e le righe terminano con LF canonico; `\t` sopra serve soltanto a renderli visibili nel documento.
-
-Stessa struttura per:
-
-```toml
-[integrity.run-default]
-```
-
-Dopo il parsing TOML, `records` è una singola stringa UTF-8.
-
-Il manifest canonico usato per il digest è **esattamente il contenuto canonico della stringa `records`**, con:
-
-```text
-una riga per record
-LF come line separator
-LF finale obbligatorio
-nessuna riga vuota aggiuntiva
-```
-
-Il digest non dipende da:
-
-```text
-indentazione TOML
-commenti
-ordine delle key TOML
-serializer TOML
-```
-
-ma soltanto dal blocco canonico decodificato.
-
-Questa forma è preferita all'array di stringhe perché:
-
-```text
-corrisponde direttamente al modello find-like fissato
-riduce overhead sintattico
-riduce numero di oggetti allocati dal parser
-migliora sensibilmente il parse di inventory grandi
-consente processing line-oriented successivo
-```
-
----
-
-# 8. Grammatica semantica dei record inventory
-
-Forma v0:
-
-```text
-DIRECTORY
-D<TAB><mode><TAB><relative-path>
-
-REGULAR FILE
-<digest><TAB>F<TAB><mode><TAB><relative-path>
-
-SYMLINK
-<digest-of-target-text><TAB>L<TAB><relative-path><TAB><relative-target>
-```
-
-Restano valide:
-
-```text
-directory senza content digest
-file digest dei bytes
-symlink digest del target testuale senza dereference
-mode solo per regular file/directory
-ordinamento canonico
-```
-
-Escaping/canonicalizzazione dei pathname appartengono all'Integrity Method 1.
-
----
-
-# 9. Nessun nuovo metadata file
-
-La wrapper resta:
+La Package Instance fisica diventa:
 
 ```text
 pkg/<id>/
 ├── root/
 ├── run-default/
 ├── @package
+├── @integrity-root.tsv
+├── @integrity-run-default.tsv
 └── run/
 ```
 
-Non vengono introdotti:
+`@package` contiene per ciascun tree:
 
 ```text
-env/
-@meta/
-@integrity separato
+inventory file name
+files count
+directories count
+links count
+manifest digest
 ```
-
-Environment Specification, requirements, interface e inventory restano nel singolo `@package`.
-
----
-
-# 10. Resolved state usa lo stesso restricted TOML
-
-Desired state e Resolution Snapshot sono TOML.
 
 Esempio:
 
-```toml
-schema = 1
-generation = 17
-
-[[roots]]
-package = "netbeans@26@r1@any-any"
-command = "netbeans"
-state = "netbeans@s2"
-
-[[dependencies]]
-consumer = "netbeans@26@r1@any-any"
-slot = "jdk"
-provider = "temurin@21.0.8+9@r1@linux-arm64"
-capability = "java-development-kit"
-contract = 1
-satisfied-version = "21"
-```
-
-Tutti i binding resolved puntano a exact Package Instance identity.
-
-Non vengono persistiti pathname assoluti RUMIAI_ROOT.
-
----
-
-# 11. Generation ID v0
-
-Generation identity = intero positivo monotono locale all'environment RumiAI:
-
-```text
-1 2 3 ...
-```
-
-Rappresentazione human-readable:
-
-```text
-g1 g2 g3 ...
+```json
+{
+  "integrity": {
+    "method": 1,
+    "algorithm": "sha256",
+    "root": {
+      "inventory": "@integrity-root.tsv",
+      "files": 120,
+      "directories": 24,
+      "links": 3,
+      "manifest-digest": "..."
+    },
+    "run-default": {
+      "inventory": "@integrity-run-default.tsv",
+      "files": 8,
+      "directories": 4,
+      "links": 0,
+      "manifest-digest": "..."
+    }
+  }
+}
 ```
 
 ---
 
-# 12. Atomic active-generation pointer
+# 6. TSV inventory record v0
 
-Si distinguono:
+Ogni record usa esattamente **cinque campi** separati da un singolo TAB:
 
 ```text
-immutable generation snapshot
-active generation pointer
+type<TAB>mode<TAB>digest<TAB>target<TAB>path
 ```
 
-Il pointer contiene soltanto la generation attiva ed è sostituito atomicamente con la primitive filesystem validata per la reference platform.
+`path` è sempre l'ultimo campo.
 
-Non è obbligatoriamente un symlink.
+Questo permette parsing shell semplice senza rompere pathname contenenti spazi.
 
----
-
-# 13. Canonicality
-
-Non serve una canonical byte serialization generale di TOML.
-
-Quando serve un digest, il dominio definisce la propria rappresentazione canonica.
-
-Per l'integrity v0 questa è il blocco line-oriented `records` definito dall'Integrity Method 1.
-
----
-
-# 14. Security / parser rules
-
-Il parser deve:
+Semantica:
 
 ```text
-leggere UTF-8
-rifiutare schema unsupported
-rifiutare duplicate key
-rifiutare type mismatch
-rifiutare structural unknown field nel medesimo schema
-rifiutare reference incomplete/non valide
-non eseguire codice
-non espandere environment variable durante parsing
-non risolvere symlink/path durante parsing puro
+type
+    D = directory
+    F = regular file
+    L = symbolic link
+
+mode
+    4-digit canonical POSIX mode per D/F
+    - per L
+
+digest
+    - per D
+    digest dei file bytes per F
+    digest del symlink target text per L
+
+target
+    - per D/F
+    relative symlink target text per L
+
+path
+    canonical relative pathname dell'entry
 ```
 
-Parsing, semantic validation, filesystem validation e resolution restano fasi distinte.
-
----
-
-# 15. Performance boundary
-
-Regole v0:
+Esempio:
 
 ```text
-launch path non rilegge/verifica tutti gli inventory @package
-integrity inventory viene parsato quando serve validation/integrity/admission/recovery
-generation resolved attiva deve restare relativamente piccola e direttamente parsabile
-implementazioni possono mantenere cache in-memory derivata; cache != fonte di verità
+D	0500	-	-	.
+D	0500	-	-	./bin
+F	0500	<digest>	-	./bin/foo
+F	0400	<digest>	-	./lib/foo.jar
+L	-	<digest-target>	../run/log	./log
 ```
 
-La scelta TOML privilegia leggibilità e schema; i grandi payload line-oriented vengono rappresentati come blocchi stringa per limitarne l'overhead.
+Il file:
+
+```text
+UTF-8
+LF line ending
+no BOM
+no header
+one record per line
+final LF required
+canonical order
+```
+
+I conteggi e l'algoritmo non vengono duplicati nel TSV: sono nel `@package` JSON.
+
+La specifica Integrity Method 1 definisce in modo normativo canonical pathname, caratteri ammessi/escaping, sort order e digest input.
 
 ---
 
-# 16. Invarianti di serializzazione
+# 7. Manifest digest
+
+`manifest-digest` è il digest dei **byte canonici completi del TSV inventory**.
+
+Quindi dipende da:
 
 ```text
-SER-01 TOML 1.0 è il formato metadata v0
-SER-02 @package e resolved/desired state usano lo stesso restricted TOML profile
-SER-03 il formato è dati, mai codice
-SER-04 software version è stringa opaca
-SER-05 reference sono strutture, non mini-language string
-SER-06 inventory usa un canonical multiline line-record block
-SER-07 manifest digest dipende dal blocco records decodificato, non dai byte TOML
-SER-08 nessuna env/ o @integrity separata nel v0
-SER-09 unknown structural fields nello schema v0 sono errore
-SER-10 generation ID v0 è monotono locale
-SER-11 active generation pointer è separato dallo snapshot ed atomicamente sostituibile
-SER-12 canonical byte TOML non è requisito generale
-SER-13 platform any-any è distinta dai runtime requirements
-SER-14 inventory grandi non appartengono al critical launch parsing path
+record order
+TAB separators
+LF separators
+mode
+digest/target/path fields
+final LF
+```
+
+Non dipende dalla formattazione JSON di `@package`.
+
+---
+
+# 8. Immutabilità
+
+Sono parte del core immutabile della Package Instance:
+
+```text
+root/
+run-default/
+@package
+@integrity-root.tsv
+@integrity-run-default.tsv
+```
+
+`run/` resta derivata e mutabile nel contenuto.
+
+Unix-like default:
+
+```text
+@package                    0400
+@integrity-root.tsv         0400
+@integrity-run-default.tsv  0400
+```
+
+---
+
+# 9. Desired / resolved state
+
+Desired state e Resolution Snapshot sono JSON conformi allo stesso restricted JSON profile.
+
+I pathname possono restare semanticamente:
+
+```text
+var/pkg/profiles/<profile>/generations/gN/desired
+var/pkg/profiles/<profile>/generations/gN/resolved
+```
+
+L'estensione `.json` non è obbligatoria perché il ruolo del file ne determina già il content type.
+
+Esempio resolved:
+
+```json
+{
+  "schema": 1,
+  "generation": 17,
+  "profile": "default",
+  "dependencies": [
+    {
+      "consumer": "netbeans@26@r1@any-any",
+      "slot": "jdk",
+      "provider": "temurin@21.0.8+9@r1@linux-arm64",
+      "capability": "java-development-kit",
+      "contract": 1,
+      "satisfied-version": "21"
+    }
+  ]
+}
+```
+
+---
+
+# 10. Active pointer
+
+`active` NON è JSON.
+
+Resta volutamente il formato bootstrap/recovery minimale:
+
+```text
+g17\n
+```
+
+Non ogni file RumiAI deve essere JSON quando una rappresentazione più semplice ha semantica migliore.
+
+---
+
+# 11. Tooling principle
+
+JSON è scelto anche per permettere operazioni portabili come:
+
+```text
+jq
+Node.js JSON.parse / JSON.stringify
+browser/runtime JavaScript
+parser JSON di Go/Rust/C/C++/Java/etc.
+```
+
+Nessuna funzione fondamentale del package manager deve dipendere dall'esistenza di Python sull'host.
+
+Python può essere una Package Instance/runtime gestita come qualunque altro requirement, non una baseline implicita RumiAI.
+
+---
+
+# 12. Invarianti
+
+```text
+SER-01 JSON UTF-8 è il formato strutturato di riferimento RumiAI v0
+SER-02 @package, desired e resolved usano restricted JSON
+SER-03 duplicate object member name è errore
+SER-04 metadata JSON non è codice
+SER-05 reference sono object strutturati, non mini-language
+SER-06 bulk integrity inventory è esterno a JSON
+SER-07 inventory v0 = canonical five-field TSV con path ultimo
+SER-08 root e run-default hanno inventory distinti
+SER-09 manifest-digest = digest dei byte canonici del relativo TSV
+SER-10 JSON formatting/order non partecipa all'integrity tree digest
+SER-11 active pointer resta formato minimale non-JSON
+SER-12 nessuna dipendenza architetturale da Python
 ```
