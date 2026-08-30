@@ -1,67 +1,18 @@
-# `@package` schema v0 — reference descriptors
+# `@package` schema v0 — reference descriptor stress cases
 
 Data: 2026-08-30
 
-Stato: **architectural schema stress test — no PoC**
+Stato: **architectural schema stress test — all capability references aligned to contract v1**
 
-Questi esempi verificano che lo schema v0 possa rappresentare casi differenti senza introdurre nuove primitive.
+Questi frammenti verificano le sezioni semantiche che differiscono fra i casi. Identity/release/integrity seguono lo schema v0 già fissato; gli integrity inventory completi non vengono ripetuti qui.
 
-Non sono manifest di release reali e non pretendono di descrivere esattamente i layout upstream dei prodotti citati. I tree sono **normalizzati RumiAI di riferimento** e gli integrity digest sono abbreviati.
+Non sono manifest upstream normativi: rappresentano packaging RumiAI normalizzati di riferimento.
 
 ---
 
-# 1. JDK provider — Temurin 21 / Linux ARM64
-
-Obiettivi stressati:
-
-```text
-native Package Instance
-multiple Package Interface resources
-multiple command resources
-multiple provided capabilities
-no State Instance
-no Execution Requirement
-```
+# 1. Temurin 21 provider
 
 ```toml
-schema = 1
-
-[identity]
-name = "temurin"
-version = "21.0.8+9"
-revision = 1
-platform = "linux"
-architecture = "arm64"
-display-name = "Eclipse Temurin 21"
-
-[release]
-release-order = 108
-
-[integrity]
-method = 1
-algorithm = "sha256"
-
-[integrity.root]
-files = 2
-directories = 2
-links = 0
-manifest-digest = "root-manifest-digest-placeholder"
-records = [
-  "D\t0500\t.",
-  "D\t0500\t./bin",
-  "java-digest\tF\t0500\t./bin/java",
-  "javac-digest\tF\t0500\t./bin/javac",
-]
-
-[integrity.run-default]
-files = 0
-directories = 1
-links = 0
-manifest-digest = "defaults-manifest-digest-placeholder"
-records = [
-  "D\t0500\t.",
-]
-
 [[interface.directories]]
 id = "home"
 path = "."
@@ -90,6 +41,7 @@ args = []
 
 [[interface.provides]]
 capability = "java-runtime"
+contract = 1
 version = "21"
 
 [[interface.provides.resources]]
@@ -109,6 +61,7 @@ resource = "bin"
 
 [[interface.provides]]
 capability = "java-development-kit"
+contract = 1
 version = "21"
 
 [[interface.provides.resources]]
@@ -132,29 +85,20 @@ resource-type = "directory"
 resource = "bin"
 ```
 
-Esito:
+Stress result:
 
 ```text
-PASS — nessuna nuova primitive richiesta
+native provider
+multiple commands
+multiple capability contracts
+PASS
 ```
 
 ---
 
-# 2. NetBeans consumer — JVM-any
+# 2. NetBeans consumer
 
-Obiettivi stressati:
-
-```text
-cross-platform Package Instance
-private native JDK dependency
-State Instance
-writable-island routing
-JAVA_HOME override
-PATH private prepend
-public command che usa self executable
-```
-
-Il layout normalizzato di riferimento assume:
+Normalized writable islands:
 
 ```text
 root/etc      -> ../run/etc
@@ -164,52 +108,6 @@ root/log      -> ../run/log
 ```
 
 ```toml
-schema = 1
-
-[identity]
-name = "netbeans"
-version = "26"
-revision = 1
-platform = "jvm"
-architecture = "any"
-display-name = "NetBeans 26"
-
-[release]
-release-order = 26
-
-[integrity]
-method = 1
-algorithm = "sha256"
-
-[integrity.root]
-files = 1
-directories = 2
-links = 4
-manifest-digest = "root-manifest-digest-placeholder"
-records = [
-  "D\t0500\t.",
-  "D\t0500\t./bin",
-  "launcher-digest\tF\t0500\t./bin/netbeans",
-  "etc-target-digest\tL\t./etc\t../run/etc",
-  "userdir-target-digest\tL\t./userdir\t../run/userdir",
-  "cache-target-digest\tL\t./cache\t../run/cache",
-  "log-target-digest\tL\t./log\t../run/log",
-]
-
-[integrity.run-default]
-files = 1
-directories = 5
-links = 0
-manifest-digest = "defaults-manifest-digest-placeholder"
-records = [
-  "D\t0500\t.",
-  "D\t0500\t./cache",
-  "D\t0500\t./etc",
-  "D\t0500\t./log",
-  "D\t0500\t./userdir",
-  "config-digest\tF\t0400\t./etc/netbeans.conf",
-]
-
 [state]
 compatibility-version = 1
 scope = "shared"
@@ -243,6 +141,7 @@ args = []
 slot = "jdk"
 target = "capability"
 capability = "java-development-kit"
+contract = 1
 constraint = ">=17 <22"
 
 [[environment]]
@@ -258,72 +157,30 @@ type = "path-list"
 value = { source = "dependency", slot = "jdk", resource-type = "directory", resource = "bin" }
 ```
 
-Resolution possibile su Linux ARM64:
+Possible resolution on Linux ARM64:
 
 ```text
 netbeans@26@r1@jvm-any
-└── slot jdk
+└── jdk
     └── temurin@21.0.8+9@r1@linux-arm64
+        satisfies java-development-kit contract 1 version 21
 ```
 
-Il default Java pubblico del sistema non viene modificato.
-
-Esito:
+Stress result:
 
 ```text
-PASS — private runtime isolation rappresentata senza wrapper shell o absolute path
+cross-domain consumer
+private native runtime
+state routing
+JAVA_HOME/PATH isolation
+PASS
 ```
 
 ---
 
-# 3. Python runtime provider — Python 3.12
-
-Obiettivi stressati:
-
-```text
-capability version scheme major.minor
-native runtime provider
-command + home + bin resources
-```
+# 3. Python 3.12 provider
 
 ```toml
-schema = 1
-
-[identity]
-name = "python"
-version = "3.12.11"
-revision = 1
-platform = "linux"
-architecture = "arm64"
-display-name = "Python 3.12"
-
-[release]
-release-order = 31211
-
-[integrity]
-method = 1
-algorithm = "sha256"
-
-[integrity.root]
-files = 1
-directories = 2
-links = 0
-manifest-digest = "root-manifest-digest-placeholder"
-records = [
-  "D\t0500\t.",
-  "D\t0500\t./bin",
-  "python-digest\tF\t0500\t./bin/python3",
-]
-
-[integrity.run-default]
-files = 0
-directories = 1
-links = 0
-manifest-digest = "defaults-manifest-digest-placeholder"
-records = [
-  "D\t0500\t.",
-]
-
 [[interface.directories]]
 id = "home"
 path = "."
@@ -343,6 +200,7 @@ args = []
 
 [[interface.provides]]
 capability = "python-runtime"
+contract = 1
 version = "3.12"
 
 [[interface.provides.resources]]
@@ -361,68 +219,18 @@ resource-type = "directory"
 resource = "bin"
 ```
 
-Esito:
+Stress result:
 
 ```text
+major.minor capability version scheme
 PASS
 ```
 
 ---
 
-# 4. Python application consumer — hosted command
-
-Obiettivi stressati:
-
-```text
-command executable fornito da dependency
-fixed argv resource
-private Python runtime
-State Instance separata
-```
+# 4. Python hosted application
 
 ```toml
-schema = 1
-
-[identity]
-name = "example-python-app"
-version = "1.0"
-revision = 1
-platform = "python"
-architecture = "any"
-display-name = "Example Python App"
-
-[release]
-release-order = 1
-
-[integrity]
-method = 1
-algorithm = "sha256"
-
-[integrity.root]
-files = 1
-directories = 2
-links = 2
-manifest-digest = "root-manifest-digest-placeholder"
-records = [
-  "D\t0500\t.",
-  "D\t0500\t./app",
-  "app-digest\tF\t0400\t./app/main.py",
-  "config-target-digest\tL\t./config\t../run/config",
-  "data-target-digest\tL\t./data\t../run/data",
-]
-
-[integrity.run-default]
-files = 1
-directories = 3
-links = 0
-manifest-digest = "defaults-manifest-digest-placeholder"
-records = [
-  "D\t0500\t.",
-  "D\t0500\t./config",
-  "D\t0500\t./data",
-  "settings-digest\tF\t0400\t./config/settings.toml",
-]
-
 [state]
 compatibility-version = 1
 scope = "shared"
@@ -450,6 +258,7 @@ args = [
 slot = "python"
 target = "capability"
 capability = "python-runtime"
+contract = 1
 constraint = "=3.12"
 
 [[environment]]
@@ -459,69 +268,20 @@ type = "path-list"
 value = { source = "dependency", slot = "python", resource-type = "directory", resource = "bin" }
 ```
 
-Esito:
+Stress result:
 
 ```text
-PASS — hosted command/argv espresso senza shell
+hosted command
+fixed argv
+private interpreter
+PASS
 ```
 
 ---
 
-# 5. Pulsar — Electron/self-contained
-
-Obiettivi stressati:
-
-```text
-self-contained native application
-nessuna Java dependency
-state routing
-single direct command
-```
+# 5. Pulsar Electron/self-contained
 
 ```toml
-schema = 1
-
-[identity]
-name = "pulsar"
-version = "1.130.0"
-revision = 1
-platform = "linux"
-architecture = "arm64"
-display-name = "Pulsar"
-
-[release]
-release-order = 113000
-
-[integrity]
-method = 1
-algorithm = "sha256"
-
-[integrity.root]
-files = 1
-directories = 2
-links = 3
-manifest-digest = "root-manifest-digest-placeholder"
-records = [
-  "D\t0500\t.",
-  "D\t0500\t./bin",
-  "pulsar-digest\tF\t0500\t./bin/pulsar",
-  "config-target-digest\tL\t./config\t../run/config",
-  "cache-target-digest\tL\t./cache\t../run/cache",
-  "log-target-digest\tL\t./log\t../run/log",
-]
-
-[integrity.run-default]
-files = 0
-directories = 4
-links = 0
-manifest-digest = "defaults-manifest-digest-placeholder"
-records = [
-  "D\t0500\t.",
-  "D\t0500\t./cache",
-  "D\t0500\t./config",
-  "D\t0500\t./log",
-]
-
 [state]
 compatibility-version = 1
 scope = "shared"
@@ -548,41 +308,44 @@ executable = { source = "self", resource-type = "file", resource = "pulsar-exe" 
 args = []
 ```
 
-Esito:
+No `requirements` section.
+
+Stress result:
 
 ```text
-PASS — nessun requirement artificiale
+self-contained Electron app
+no artificial Java dependency
+PASS
 ```
 
 ---
 
-# 6. Cross-case result
+# 6. Cross-case conclusion
 
-I cinque descriptor esercitano:
+Covered:
 
 ```text
-native and cross-platform identity
-provider and consumer roles
-capability constraints
+native provider
+execution-domain consumer
+capability contract identity
+capability compatibility constraint
 private runtime resolution
 direct command
 hosted command
-fixed argv
-state/no-state packages
-writable-island mappings
-persistent + disposable state areas
-environment set
-PATH prepend
-multiple capabilities from one provider
-self-contained Electron app
+argv composition
+state/no-state
+writable islands
+environment set/prepend
+multiple capabilities
+self-contained app
 ```
 
-Non è emersa la necessità di aggiungere nel v0:
+Not required:
 
 ```text
-shell script metadata
+shell metadata
 env/ physical directory
-absolute pathname
+absolute path
 virtual package
 optional dependency
 OR constraint
@@ -590,45 +353,10 @@ runtime re-resolution
 provider fallback at launch
 ```
 
----
-
-# 7. Osservazione emersa: execution-domain vocabulary
-
-Gli esempi usano:
-
-```text
-jvm-any
-python-any
-```
-
-come execution domain cross-platform.
-
-Questo conferma la necessità già emersa di distinguere concettualmente:
-
-```text
-native platform target
-execution domain target
-```
-
-ma non richiede una nuova primitive nello schema: entrambi continuano a essere rappresentati dai campi canonici:
-
-```text
-platform
-architecture
-```
-
-La lista normativa dei platform/domain token deve essere fissata separatamente.
-
----
-
-# 8. Schema stress conclusion
-
-Esito complessivo:
+Result:
 
 ```text
 PASS
 ```
 
-Lo schema `@package` v0 è sufficiente per i reference case scelti senza introdurre nuovi concetti fondamentali.
-
-Il prossimo nodo è lo **schema Desired/Resolved Integration State v0**.
+No new primitive is required by these reference cases.
