@@ -71,7 +71,7 @@ I JSON **generati da RumiAI** devono essere pretty-printed secondo uno stile sta
 Regole v0:
 
 ```text
-indentation               4 spazi per livello
+indentation               2 spazi per livello
 tab di indentazione       vietati
 newline                   LF
 final newline             obbligatoria
@@ -86,23 +86,23 @@ Esempio normativo di stile:
 
 ```json
 {
-    "schema": 1,
-    "identity":
+  "schema": 1,
+  "identity":
+  {
+    "name": "netbeans",
+    "platform": "any",
+    "architecture": "any"
+  },
+  "requirements":
+  [
     {
-        "name": "netbeans",
-        "platform": "any",
-        "architecture": "any"
-    },
-    "requirements":
-    [
-        {
-            "slot": "jdk",
-            "target": "capability",
-            "capability": "java-development-kit",
-            "contract": 1,
-            "constraint": ">=17 <22"
-        }
-    ]
+      "slot": "jdk",
+      "target": "capability",
+      "capability": "java-development-kit",
+      "contract": 1,
+      "constraint": ">=17 <22"
+    }
+  ]
 }
 ```
 
@@ -110,14 +110,14 @@ Quindi non viene generato lo stile compatto:
 
 ```json
 {
-    "identity": {
-        "name": "netbeans"
-    },
-    "requirements": [
-        {
-            "slot": "jdk"
-        }
-    ]
+  "identity": {
+    "name": "netbeans"
+  },
+  "requirements": [
+    {
+      "slot": "jdk"
+    }
+  ]
 }
 ```
 
@@ -175,7 +175,7 @@ JS-06 JSON non è codice e non viene eval/source
 JS-07 canonical JSON byte serialization non è requisito generale
 JS-08 domini bulk/streaming possono usare formati più appropriati
 JS-09 nessuna dipendenza architetturale da Python per leggere metadata RumiAI
-JS-10 JSON generato da RumiAI usa indentation di 4 spazi, LF e newline finale
+JS-10 JSON generato da RumiAI usa indentation di 2 spazi, LF e newline finale
 JS-11 opening/closing object/array delimiter sono su righe proprie; `{` e `[` non vengono appesi alla riga che introduce il valore
 JS-12 Unicode viene mantenuto come UTF-8; non si impone ASCII escaping generale
 JS-13 la formattazione generata è stabile ma non modifica la semantica del parser JSON
