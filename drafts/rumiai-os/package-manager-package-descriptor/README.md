@@ -2,14 +2,14 @@
 
 Data: 2026-08-30
 
-Stato: **design decision — modello logico + JSON v0 fissati**
+Stato: **design decision — modello logico + System Field Format v0 fissati**
 
 `@package` è il descriptor dichiarativo immutabile della Package Instance.
 
 Serializzazione normativa:
 
 ```text
-JSON UTF-8 secondo RumiAI JSON standard v0
+RumiAI System Field Format v0
 ```
 
 Non è codice eseguibile e non richiede una directory `env/`.
@@ -19,7 +19,7 @@ Non è codice eseguibile e non richiede una directory `env/`.
 # 1. Sezioni logiche
 
 ```text
-schema
+kind/schema
 identity
 release
 integrity
@@ -29,31 +29,31 @@ requirements
 environment
 ```
 
+Le sezioni logiche vengono flattenate in field-name POSIX-safe; strutture ripetibili usano count + indici contigui `1..N`.
+
 ---
 
 # 2. Identity
 
-```json
-{
-  "identity": {
-    "name": "netbeans",
-    "version": "26",
-    "revision": 1,
-    "platform": "any",
-    "architecture": "any",
-    "display-name": "NetBeans 26"
-  }
-}
+```text
+kind	package
+schema	1
+identity_name	netbeans
+identity_version	26
+identity_revision	1
+identity_platform	any
+identity_architecture	any
+identity_display_name	NetBeans 26
 ```
 
 I campi canonici:
 
 ```text
-name
-version
-revision
-platform
-architecture
+identity_name
+identity_version
+identity_revision
+identity_platform
+identity_architecture
 ```
 
 devono concordare con:
@@ -62,9 +62,9 @@ devono concordare con:
 <name>@<version-token>@r<revision>@<platform>-<architecture>
 ```
 
-`version` è upstream semanticamente opaca.
+`identity_version` è upstream semanticamente opaca.
 
-`display-name` è human-readable e non entra nel pathname.
+`identity_display_name` è human-readable e non entra nel pathname.
 
 Platform descrive i vincoli propri del contenuto; Java/JDK/JRE/Python sono requirements, non platform.
 
@@ -72,15 +72,11 @@ Platform descrive i vincoli propri del contenuto; Java/JDK/JRE/Python sono requi
 
 # 3. Release
 
-```json
-{
-  "release": {
-    "release-order": 123
-  }
-}
+```text
+release_order	123
 ```
 
-`release-order` è un intero positivo monotono nella stessa logical provider/package family.
+`release_order` è un intero positivo monotono nella stessa logical provider/package family.
 
 Non fa parte dell'identity e non è comparabile fra family differenti.
 
@@ -90,40 +86,26 @@ Non fa parte dell'identity e non è comparabile fra family differenti.
 
 `@package` contiene metadata dei due inventory esterni:
 
-```json
-{
-  "integrity": {
-    "method": 1,
-    "algorithm": "sha256",
-    "root": {
-      "inventory": "@integrity-root.tsv",
-      "files": 120,
-      "directories": 24,
-      "links": 3,
-      "manifest-digest": "..."
-    },
-    "run-default": {
-      "inventory": "@integrity-run-default.tsv",
-      "files": 8,
-      "directories": 4,
-      "links": 0,
-      "manifest-digest": "..."
-    }
-  }
-}
-```
-
-Il bulk inventory non viene inserito nel JSON.
-
-Ogni inventory TSV usa record canonici:
-
 ```text
-type<TAB>mode<TAB>digest<TAB>target<TAB>path
+integrity_method	1
+integrity_algorithm	sha256
+integrity_root_inventory	@integrity-root.tsv
+integrity_root_files	120
+integrity_root_directories	24
+integrity_root_links	3
+integrity_root_manifest_digest	...
+integrity_run_default_inventory	@integrity-run-default.tsv
+integrity_run_default_files	8
+integrity_run_default_directories	4
+integrity_run_default_links	0
+integrity_run_default_manifest_digest	...
 ```
 
-con `path` ultimo.
+Il bulk inventory non viene inserito in `@package`.
 
-`manifest-digest` verifica i byte canonici dell'intero relativo TSV.
+Ogni inventory esterno usa anch'esso System Field Format v0 a due campi, con collection separate per directory/file/link.
+
+`manifest_digest` verifica i byte canonici dell'intero relativo inventory.
 
 ---
 
@@ -131,17 +113,15 @@ con `path` ultimo.
 
 Quando presente:
 
-```json
-{
-  "state": {
-    "compatibility-version": 1,
-    "scope": "shared",
-    "mappings": [
-      { "path": "etc", "area": "conf" },
-      { "path": "cache", "area": "cache" }
-    ]
-  }
-}
+```text
+state_present	true
+state_compatibility_version	1
+state_scope	shared
+state_mapping_count	2
+state_mapping_1_path	etc
+state_mapping_1_area	conf
+state_mapping_2_path	cache
+state_mapping_2_area	cache
 ```
 
 Scope:
@@ -167,6 +147,8 @@ tmp
 
 Ogni writable island appartiene esattamente a una state area.
 
+Se `state_present=false`, i field `state_*` ulteriori sono vietati e `state_mapping_count` non compare.
+
 ---
 
 # 6. Package Interface
@@ -185,25 +167,19 @@ command
 
 Esempio:
 
-```json
-{
-  "interface": {
-    "files": [
-      { "id": "launcher", "path": "bin/netbeans" }
-    ],
-    "commands": [
-      {
-        "id": "netbeans",
-        "executable": {
-          "source": "self",
-          "resource-type": "file",
-          "resource": "launcher"
-        },
-        "args": []
-      }
-    ]
-  }
-}
+```text
+interface_file_count	1
+interface_file_1_id	launcher
+interface_file_1_path	bin/netbeans
+
+interface_directory_count	0
+
+interface_command_count	1
+interface_command_1_id	netbeans
+interface_command_1_executable_source	self
+interface_command_1_executable_resource_type	file
+interface_command_1_executable_resource	launcher
+interface_command_1_arg_count	0
 ```
 
 ---
@@ -220,23 +196,21 @@ Compatibility version resta separata.
 
 Esempio:
 
-```json
-{
-  "interface": {
-    "provides": [
-      {
-        "capability": "java-runtime",
-        "contract": 1,
-        "version": "21",
-        "resources": [
-          { "key": "command", "resource-type": "command", "resource": "java" },
-          { "key": "home", "resource-type": "directory", "resource": "home" },
-          { "key": "bin", "resource-type": "directory", "resource": "bin" }
-        ]
-      }
-    ]
-  }
-}
+```text
+interface_provide_count	1
+interface_provide_1_capability	java-runtime
+interface_provide_1_contract	1
+interface_provide_1_version	21
+interface_provide_1_resource_count	3
+interface_provide_1_resource_1_key	command
+interface_provide_1_resource_1_resource_type	command
+interface_provide_1_resource_1_resource	java
+interface_provide_1_resource_2_key	home
+interface_provide_1_resource_2_resource_type	directory
+interface_provide_1_resource_2_resource	home
+interface_provide_1_resource_3_key	bin
+interface_provide_1_resource_3_resource_type	directory
+interface_provide_1_resource_3_resource	bin
 ```
 
 ---
@@ -247,18 +221,13 @@ Requirements descrivono ciò che serve, non provider selection.
 
 Esempio NetBeans:
 
-```json
-{
-  "requirements": [
-    {
-      "slot": "jdk",
-      "target": "capability",
-      "capability": "java-development-kit",
-      "contract": 1,
-      "constraint": ">=17 <22"
-    }
-  ]
-}
+```text
+requirement_count	1
+requirement_1_slot	jdk
+requirement_1_target	capability
+requirement_1_capability	java-development-kit
+requirement_1_contract	1
+requirement_1_constraint	>=17 <22
 ```
 
 Non appartengono a `requirements`:
@@ -275,7 +244,7 @@ resolved provider
 
 # 9. Environment Specification
 
-Environment è una lista ordinata di operazioni dichiarative:
+Environment è una sequenza ordinata di operazioni dichiarative:
 
 ```text
 set
@@ -295,36 +264,29 @@ path-list
 
 Esempio:
 
-```json
-{
-  "environment": [
-    {
-      "name": "JAVA_HOME",
-      "operation": "set",
-      "type": "path",
-      "value": {
-        "source": "dependency",
-        "slot": "jdk",
-        "resource-type": "directory",
-        "resource": "home"
-      }
-    },
-    {
-      "name": "PATH",
-      "operation": "prepend",
-      "type": "path-list",
-      "value": {
-        "source": "dependency",
-        "slot": "jdk",
-        "resource-type": "directory",
-        "resource": "bin"
-      }
-    }
-  ]
-}
+```text
+environment_count	2
+
+environment_1_name	JAVA_HOME
+environment_1_operation	set
+environment_1_type	path
+environment_1_value_source	dependency
+environment_1_value_slot	jdk
+environment_1_value_resource_type	directory
+environment_1_value_resource	home
+
+environment_2_name	PATH
+environment_2_operation	prepend
+environment_2_type	path-list
+environment_2_value_source	dependency
+environment_2_value_slot	jdk
+environment_2_value_resource_type	directory
+environment_2_value_resource	bin
 ```
 
 Non sono ammessi shell snippet, `eval`, `source`, command substitution o absolute host paths persistiti.
+
+Field-value contenenti TAB/CR/LF/NUL non sono rappresentabili nel v0 e rendono il descriptor non ammissibile.
 
 ---
 
@@ -366,12 +328,12 @@ produce una nuova RumiAI package revision.
 # 12. Invarianti
 
 ```text
-PD-01 @package è JSON dichiarativo e immutabile
-PD-02 schema esplicito
+PD-01 @package usa System Field Format ed è dichiarativo/immutabile
+PD-02 kind=package + schema esplicito
 PD-03 pathname identity == descriptor identity
 PD-04 display-name non entra nel pathname
 PD-05 release-order è selection metadata
-PD-06 integrity bulk vive nei due TSV inventory esterni
+PD-06 integrity bulk vive nei due inventory esterni System Field Format
 PD-07 state descrive contract/mappings, non contenuto mutabile
 PD-08 Package Interface resource = file|directory|command
 PD-09 capability identity = name+contract
@@ -379,5 +341,6 @@ PD-10 requirements descrivono bisogno, non policy
 PD-11 environment è dati dichiarativi, non shell code
 PD-12 absolute pathname non vengono persistiti
 PD-13 semantic change => new package revision
-PD-14 JSON è il formato strutturato v0
+PD-14 collection usa count + indici contigui
+PD-15 structured reference viene flattenata senza mini-language nei value
 ```
