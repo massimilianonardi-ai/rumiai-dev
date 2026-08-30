@@ -2,7 +2,7 @@
 
 Data: 2026-08-30
 
-Stato: **design draft — resolved state v0 formalizzato**
+Stato: **design decision — resolved state + serializzazione v0 fissati**
 
 Prerequisiti:
 
@@ -10,6 +10,7 @@ Prerequisiti:
 drafts/rumiai-os/package-manager-dependency-model/README.md
 drafts/rumiai-os/package-manager-integration-context/README.md
 drafts/rumiai-os/package-manager-package-descriptor/README.md
+drafts/rumiai-os/package-manager-serialization-v0/README.md
 ```
 
 Il resolved state è la barriera fra:
@@ -38,7 +39,7 @@ Resolved Command Binding
 Resolved State Binding
 ```
 
-La Materialized Process Environment e i pathname assoluti non sono persisted lock state.
+La Materialized Process Environment e gli absolute pathname non sono persisted lock state.
 
 ---
 
@@ -57,11 +58,11 @@ alias/override intent
 Resolved state contiene soltanto:
 
 ```text
-exact Package Instance identities
-exact dependency slot bindings
-exact Package Interface resource bindings
+exact Package Instance identity
+exact dependency slot binding
+exact Package Interface resource binding
 exact State Instance identity
-validated environment expressions riferite a provider exact
+validated relocatable environment reference
 ```
 
 Regola:
@@ -77,43 +78,71 @@ RESOLVED must be exact
 
 Una **Resolution Snapshot** è una rappresentazione immutabile di un risultato di resolution validato.
 
-Contiene logicamente almeno:
+Contiene almeno:
 
 ```text
-schema/version del resolved state
-root/selectors risolti
+schema
+resolution generation
+resolved roots/selectors
 Resolved Integration Profile
-Resolved Dependency Graph per root command/package
+Resolved Dependency Graph
 Resolved Command Bindings
-State Instance binding dove applicabile
+State Instance bindings
 provenance minima della Selection Policy
 ```
 
 Non contiene absolute pathname.
 
+Nel v0 è serializzata in restricted TOML 1.0.
+
 ---
 
-# 4. Provenance
+# 4. Resolution generation
 
-La provenance non serve a rivalutare la resolution durante il launch.
+La generation identity v0 è un **intero positivo monotono locale all'environment RumiAI**:
 
-Serve per audit e spiegazione.
+```text
+1
+2
+3
+...
+```
 
-Può preservare almeno:
+Rappresentazione human-readable possibile:
+
+```text
+g1
+g2
+g3
+```
+
+Una generation è immutabile.
+
+Una nuova resolution crea una nuova generation e non modifica retroattivamente le precedenti.
+
+Non è richiesto un digest-based generation ID nel v0.
+
+---
+
+# 5. Provenance
+
+La provenance serve per audit/spiegazione, non per rivalutare la resolution durante il launch.
+
+Può preservare:
 
 ```text
 Requirement originale
 Selection Policy effettiva
 provider preference usata
 pin usato, se presente
-reason/timestamp/generation della resolution
+reason/timestamp/generation
 ```
 
-Il provider concreto rimane comunque l'unica sorgente del launch.
+Il provider exact resta l'unica sorgente del launch.
 
 ---
 
-# 5. Resolved Dependency Graph
+# 6. Resolved Dependency Graph
 
 Per ogni edge:
 
@@ -122,7 +151,7 @@ consumer exact Package Instance
 slot
 Requirement snapshot
 provider exact Package Instance
-capability/version con cui il Requirement è stato soddisfatto
+capability/version soddisfatta
 ```
 
 Esempio:
@@ -135,17 +164,17 @@ netbeans@26@r1@jvm-any
     satisfied   = java-development-kit 21
 ```
 
-Il grafo non contiene:
+Non esistono edge resolved verso:
 
 ```text
-provider = latest
-provider = preferred-java
-provider = qualsiasi Java 21
+latest
+preferred-java
+any compatible provider
 ```
 
 ---
 
-# 6. Resolved Command Binding
+# 7. Resolved Command Binding
 
 Un binding pubblico persistito collega:
 
@@ -153,62 +182,41 @@ Un binding pubblico persistito collega:
 public command name
 → exact root Package Instance
 → exact command resource
-→ Resolution Snapshot / exact dependency graph necessario
+→ exact resolution generation/graph
 ```
 
-Esempio:
-
-```text
-netbeans
-→ netbeans@26@r1@jvm-any
-→ command:netbeans
-→ resolution generation X
-```
-
-La materializzazione in `bin/` può essere ricostruita da questo binding.
+La materializzazione in `bin/` è derivata da questo stato.
 
 ---
 
-# 7. State binding
+# 8. State binding
 
-Quando il command/package richiede State Instance, il resolved execution state associa l'identity compatibile concreta:
+Quando un command/package usa stato, il resolved state associa l'identity concreta:
 
 ```text
 <pkg-name>[@<platform>-<architecture>]@sN
 ```
 
-Esempio:
+Il binding non contiene i contenuti dello stato.
 
-```text
-netbeans@s2
-```
-
-oppure:
-
-```text
-foo@linux-arm64@s4
-```
-
-Il binding non contiene i contenuti dello stato; li referenzia.
-
-`run/` package-local viene materializzata coerentemente con questa State Instance attiva.
+`run/` package-local viene materializzata coerentemente con la State Instance attiva.
 
 ---
 
-# 8. Environment nel resolved state
+# 9. Environment nel resolved state
 
-Non viene persistita una mappa di absolute string tipo:
+Non viene persistito:
 
 ```text
-JAVA_HOME=/Volumes/RumiAI/pkg/...
+JAVA_HOME=/absolute/path/...
 ```
 
-Si persistono o si ricostruiscono deterministicamente reference exact relocatable:
+Si persiste o si ricostruisce deterministicamente una reference exact relocatable:
 
 ```text
-JAVA_HOME
-→ provider temurin@21.0.8+9@r1@linux-arm64
-→ directory:home
+provider exact Package Instance
++
+resource type/name
 ```
 
 Al launch:
@@ -221,24 +229,51 @@ absolute process value
 
 ---
 
-# 9. Resolution generation
+# 10. TOML v0
 
-Ogni commit di un nuovo resolved state produce una nuova **resolution generation**.
+Desired state e Resolution Snapshot usano lo stesso restricted TOML profile di `@package`.
 
-La forma concreta dell'identifier non è ancora fissata; può essere sequenziale, digest-based o entrambe.
+Esempio concettuale:
 
-Semantica richiesta:
+```toml
+schema = 1
+generation = 17
 
-```text
-una generation è immutabile
-una nuova resolution non modifica retroattivamente la precedente
+[[roots]]
+package = "netbeans@26@r1@jvm-any"
+command = "netbeans"
+state = "netbeans@s2"
+
+[[dependencies]]
+consumer = "netbeans@26@r1@jvm-any"
+slot = "jdk"
+provider = "temurin@21.0.8+9@r1@linux-arm64"
+capability = "java-development-kit"
+satisfied-version = "21"
 ```
 
-Questo permette confronto e rollback del resolved state.
+La struttura schema definitiva viene fissata separatamente; il formato di serializzazione è già deciso.
 
 ---
 
-# 10. Transaction boundary
+# 11. Active generation pointer
+
+Lo stato persistente distingue:
+
+```text
+immutable generation snapshots
+active generation pointer
+```
+
+Il pointer contiene soltanto l'ID della generation attiva.
+
+Non è obbligatoriamente un symlink; deve poter essere sostituito atomicamente usando una primitive validata sulla reference platform/filesystem.
+
+Questo evita di imporre semantiche Unix a Windows.
+
+---
+
+# 12. Transaction boundary
 
 Una resolution non diventa attiva progressivamente.
 
@@ -263,114 +298,88 @@ validate Environment/Launch Specification
         ↓
 materialize candidate Execution View, se necessario
         ↓
-atomic commit active generation
+write immutable candidate generation
+        ↓
+atomic replace active-generation pointer
 ```
 
 In caso di errore, la generation corrente resta attiva.
 
 ---
 
-# 11. New package arrival does not mutate resolved state
+# 13. New package arrival does not mutate resolved state
 
-Esempio:
-
-```text
-active:
-    jdk -> Java 21 release-order 100
-
-arriva localmente:
-    Java 21 release-order 101
-```
-
-Nessuna modifica automatica:
+Se arriva localmente una Package Instance migliore secondo la Selection Policy:
 
 ```text
-active remains release-order 100
+active binding resta invariato
 ```
 
-Solo una nuova resolution esplicita può creare una generation che usa 101.
+Solo una nuova resolution esplicita può produrre una nuova generation.
 
 ---
 
-# 12. Missing provider
+# 14. Missing provider
 
-Se una generation attiva referenzia:
-
-```text
-provider X
-```
-
-ma X viene rimosso o corrotto:
+Se una generation attiva referenzia un provider mancante/corrotto:
 
 ```text
 BROKEN_RESOLUTION
 ```
 
-Il sistema non rivaluta:
+Non viene rivalutato automaticamente:
 
 ```text
-fallback provider
+fallback
 latest
 PATH host
 JAVA_HOME host
 ```
 
-Una repair/re-resolve esplicita può generare una nuova generation.
+Repair/re-resolve crea eventualmente una nuova generation.
 
 ---
 
-# 13. Reference accounting
+# 15. Reference accounting
 
-Una active/in-retention Resolution Snapshot crea reference alle Package Instance esatte che contiene.
+Una active/in-retention Resolution Snapshot crea reference alle exact Package Instance che contiene.
 
-Una Package Instance referenziata non è garbage.
-
-Reference source candidate:
+Reference source v0 candidate:
 
 ```text
 active Resolved Integration Profile
-retained Resolution Snapshot necessarie a rollback
+retained Resolution Snapshot per rollback
 explicit pin/keep state
 ```
 
-La futura garbage collection deve considerare queste reference, non soltanto i public binding attivi.
+Una Package Instance referenziata non è garbage.
 
 ---
 
-# 14. Rollback del resolved state
+# 16. Rollback
 
-Se una precedente generation è ancora materializzabile:
+Rollback riattiva una precedente exact generation se:
 
 ```text
-all exact Package Instance presenti e sane
-State Instance compatibile/presente
+tutte le Package Instance esistono e sono sane
+State Instance necessaria è disponibile/compatibile
 ```
 
-il rollback può riattivarla senza nuova provider selection.
-
-Se una dependency esatta della vecchia generation non esiste più:
+Altrimenti:
 
 ```text
 ROLLBACK_UNAVAILABLE
 ```
 
-Non si sostituisce silenziosamente con un provider simile: quello sarebbe una nuova resolution, non un rollback.
+Non si sostituisce un provider mancante con uno simile: sarebbe una nuova resolution.
 
 ---
 
-# 15. Upgrade preview
+# 17. Upgrade preview
 
-Poiché desired e resolved state sono separati, un update può produrre una candidate generation senza attivarla immediatamente.
+Una candidate generation può essere confrontata con quella attiva prima del commit.
 
-Confronto concettuale:
-
-```text
-current generation
-vs
-candidate generation
-```
-
-può mostrare:
+Il diff può mostrare:
 
 ```text
 root Package Instance changed
@@ -382,13 +391,11 @@ State compatibility change
 public binding change
 ```
 
-Questa è una conseguenza naturale del modello, non richiede reinterpretare il filesystem.
-
 ---
 
-# 16. `why-installed`
+# 18. `why-installed`
 
-Una Package Instance può spiegare la propria presenza tramite reference chain:
+Il resolved graph permette reference chain esplicite:
 
 ```text
 public root binding
@@ -401,20 +408,16 @@ provider Package Instance
 oppure:
 
 ```text
-retained rollback generation
+retained generation
     ↓
 exact Package Instance
 ```
 
-Il resolved graph è quindi la base autorevole per questa spiegazione.
-
 ---
 
-# 17. Integration View rebuild
+# 19. Execution View rebuild
 
-`bin/` e altri namespace materializzati non sono lock state autorevole.
-
-Se vengono rimossi/corrotti:
+`bin/` e gli altri namespace materializzati non sono lock state autorevole.
 
 ```text
 active Resolution Snapshot
@@ -422,61 +425,35 @@ active Resolution Snapshot
 rebuild Execution View
 ```
 
-Se invece il resolved state stesso è incoerente o referenzia Package Instance mancanti:
-
-```text
-BROKEN_RESOLUTION
-```
-
-La view non può correggere il grafo.
+Se il resolved state è broken, la view non re-resolve il grafo.
 
 ---
 
-# 18. Multi-command package
+# 20. State migration
 
-Più command della stessa Package Instance possono condividere lo stesso Resolved Dependency Graph quando i Requirement sono comuni.
+Se una nuova Package Instance richiede una diversa state-compatibility-version, la nuova generation richiede prima la migration esplicita definita nel State model.
 
-Se command-specific requirement/environment differiscono in futuro, il resolved state può associare graph/launch state differenti ai singoli command.
-
-Il v0 non obbliga a duplicare fisicamente il grafo quando può essere condiviso semanticamente.
+Dependency re-resolution e state migration restano operazioni distinte.
 
 ---
 
-# 19. State migration e generation
+# 21. Canonical serialization boundary
 
-Se una nuova Package Instance richiede:
+Il resolved state non richiede una canonical byte representation TOML generale.
 
-```text
-s4
-```
+La generation identity è sequenziale, non un digest del file TOML.
 
-mentre l'active generation usa:
-
-```text
-s3
-```
-
-la nuova generation non può essere attivata come semplice re-resolution.
-
-Serve la state migration esplicita definita nel State model.
-
-Dopo migration/validation la candidate generation può bindare:
-
-```text
-package@s4
-```
-
-La vecchia generation resta rollback-valid soltanto se il relativo `s3`/snapshot necessario è ancora disponibile.
+Se in futuro servono checksum/firme del snapshot, verrà definita una canonical representation specifica senza cambiare la semantica di generation.
 
 ---
 
-# 20. Invarianti fissate
+# 22. Invarianti fissate
 
 ```text
 RS-01 desired state != resolved state
 RS-02 resolved state contiene soltanto binding exact
 RS-03 Resolution Snapshot è immutabile
-RS-04 nuova resolution produce una nuova generation
+RS-04 nuova resolution produce una nuova monotonic generation
 RS-05 active generation cambia atomicamente dopo validazione completa
 RS-06 resolved state non persiste absolute RUMIAI_ROOT pathname
 RS-07 Materialized Process Environment è effimera
@@ -484,25 +461,28 @@ RS-08 new Package Instance arrival non muta la generation attiva
 RS-09 missing/corrupt provider => BROKEN_RESOLUTION
 RS-10 broken resolution non fa provider/host fallback automatico
 RS-11 resolved state crea reference per package retention/GC
-RS-12 rollback riattiva exact old binding o fallisce; non re-resolve silenziosamente
+RS-12 rollback riattiva exact old binding o fallisce
 RS-13 Execution View è derivata dalla generation attiva
 RS-14 state migration è separata dalla dependency re-resolution
 RS-15 provenance serve ad audit, non a dynamic launch selection
+RS-16 serializzazione v0 = restricted TOML 1.0
+RS-17 active-generation pointer è separato dallo snapshot
+RS-18 generation ID v0 = positive local monotonic integer
 ```
 
 ---
 
-# 21. Dettagli fisici ancora aperti
+# 23. Dettagli fisici successivi
 
-Restano decisioni di implementazione/serializzazione:
+Restano da definire nello schema/persistence layer concreto:
 
 ```text
-pathname concreto dei resolved state
-formato file/database
-resolution generation ID concreto
-retention policy delle generation precedenti
-atomic commit primitive cross-platform
-locking/concorrenza durante resolve/integrate
+pathname dei generation snapshot
+pathname active pointer
+retention policy
+atomic replace primitive per reference platform
+locking/concorrenza
+schema field-by-field
 ```
 
 Questi dettagli non cambiano la semantica del lock v0.
