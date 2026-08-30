@@ -2,475 +2,345 @@
 
 Data: 2026-08-30
 
-Stato: **design decision — schema concreto v0 fissato**
+Stato: **design decision — JSON schema model v0 fissato**
 
-Prerequisiti:
-
-```text
-drafts/rumiai-os/package-manager-package-descriptor/README.md
-drafts/rumiai-os/package-manager-serialization-v0/README.md
-drafts/rumiai-os/package-manager-dependency-model/README.md
-drafts/rumiai-os/package-manager-state-model/README.md
-drafts/rumiai-os/package-manager-platform-vocabulary-v0/README.md
-drafts/rumiai-os/package-manager-capability-contracts-v0/README.md
-```
+Questa specifica sostituisce la precedente rappresentazione TOML senza cambiare il modello logico.
 
 ---
 
-# 1. Top-level
+# 1. Top-level JSON object
+
+Required members:
 
 ```text
-schema          required scalar
-identity        required table
-release         required table
-integrity       required table
-state           optional table
-interface       required table
-requirements    optional ordered array-of-table
-environment     optional ordered array-of-table
+schema
+identity
+release
+integrity
+interface
 ```
 
-```toml
-schema = 1
+Optional members:
+
+```text
+state
+requirements
+environment
 ```
 
-Unknown structural key nello schema v0 è errore.
+```json
+{ "schema": 1 }
+```
+
+Duplicate member e unknown structural member sono errori nello schema v0.
 
 ---
 
 # 2. Logical identifiers
 
 ```text
-logical-id = [a-z][a-z0-9-]*
+[a-z][a-z0-9-]*
 ```
 
-Usato per:
-
-```text
-dependency slot
-file/directory/command resource id
-capability name
-capability resource key
-```
-
-Lowercase canonico; ID unico nel proprio namespace.
+per dependency slot, resource ID, command ID, capability name/resource key.
 
 ---
 
-# 3. Identity
+# 3. `identity`
 
-```toml
-[identity]
-name = "netbeans"
-version = "26"
-revision = 1
-platform = "any"
-architecture = "any"
-display-name = "NetBeans 26"
+```json
+{
+  "identity": {
+    "name": "netbeans",
+    "version": "26",
+    "revision": 1,
+    "platform": "any",
+    "architecture": "any",
+    "display-name": "NetBeans 26"
+  }
+}
 ```
 
-Required:
+Platform v0:
 
 ```text
-name
-version                  non-empty upstream opaque string
-revision                 positive integer
-platform                 any | linux | macos | windows
-architecture             any | arm64 | x86_64
-display-name             non-empty UTF-8 human-readable string
+any linux macos windows
 ```
 
-I campi canonici devono concordare con:
+Architecture v0:
 
 ```text
-<name>@<version-token>@r<revision>@<platform>-<architecture>
+any arm64 x86_64
 ```
 
-`platform`/`architecture` descrivono esclusivamente vincoli propri del contenuto della Package Instance.
-
-Runtime/interpreti/SDK necessari, inclusi Java/JDK/JRE/Python, sono requirements/capability e non platform token.
-
-`any-any` è la forma canonica per contenuto realmente OS/CPU-independent dopo Physical Platform Validation.
+Pathname identity e descriptor identity devono coincidere.
 
 ---
 
-# 4. Release
+# 4. `release`
 
-```toml
-[release]
-release-order = 123
+```json
+{ "release": { "release-order": 123 } }
 ```
 
-Positive integer monotono nella stessa provider/package family; non identity e non comparabile fra family differenti.
+Positive integer, family-local, non identity.
 
 ---
 
-# 5. Integrity
+# 5. `integrity`
 
-```toml
-[integrity]
-method = 1
-algorithm = "sha256"
+```json
+{
+  "integrity": {
+    "method": 1,
+    "algorithm": "sha256",
+    "root": {
+      "inventory": "@integrity-root.tsv",
+      "files": 1,
+      "directories": 2,
+      "links": 0,
+      "manifest-digest": "..."
+    },
+    "run-default": {
+      "inventory": "@integrity-run-default.tsv",
+      "files": 0,
+      "directories": 1,
+      "links": 0,
+      "manifest-digest": "..."
+    }
+  }
+}
 ```
 
-Required:
+Required per tree:
 
 ```text
-integrity.root
-integrity.run-default
+inventory
+files
+directories
+links
+manifest-digest
 ```
 
-Ogni tree contiene:
+Inventory filename v0 deve coincidere con i due nomi canonici fissati.
+
+TSV record:
 
 ```text
-files            non-negative integer
-directories      positive integer including root
-links            non-negative integer
-manifest-digest  digest string
-records          canonical multiline literal string
+type<TAB>mode<TAB>digest<TAB>target<TAB>path
 ```
 
-Record v0:
-
-```text
-D<TAB><mode><TAB><relative-path>
-<digest><TAB>F<TAB><mode><TAB><relative-path>
-<digest-target><TAB>L<TAB><relative-path><TAB><relative-target>
-```
-
-Esempio TOML illustrativo:
-
-```toml
-[integrity.root]
-files = 1
-directories = 2
-links = 0
-manifest-digest = "..."
-records = '''
-D\t0500\t.
-D\t0500\t./bin
-abc...\tF\t0500\t./bin/tool
-'''
-```
-
-Nel file reale i separator fra campi sono TAB reali; `\t` sopra è solo visualizzazione documentale.
-
-Canonical rules:
-
-```text
-records contiene una riga per entry
-LF canonico fra record
-LF finale obbligatorio
-nessuna riga vuota extra
-record in canonical order
-counts concordano con record e tree fisico
-manifest-digest = digest del blocco records canonico decodificato
-```
-
-La grammatica pathname/escaping canonica appartiene a `integrity.method`.
+Il parser JSON non interpreta il TSV; integrity validation è una fase separata e streamabile.
 
 ---
 
-# 6. State
+# 6. `state`
 
-`[state]` optional.
-
-Assenza:
-
-```text
-nessuna State Instance propria
-nessun runtime mapping
-nessuna state reference nel package environment
-```
-
-Presenza:
-
-```toml
-[state]
-compatibility-version = 1
-scope = "shared"
+```json
+{
+  "state": {
+    "compatibility-version": 1,
+    "scope": "shared",
+    "mappings": [
+      { "path": "etc", "area": "conf" }
+    ]
+  }
+}
 ```
 
 Scope:
 
 ```text
-shared
-platform
-architecture
-platform-architecture
-```
-
-Mappings:
-
-```toml
-[[state.mappings]]
-path = "etc"
-area = "conf"
+shared | platform | architecture | platform-architecture
 ```
 
 Area:
 
 ```text
-conf data home cache log run tmp
+conf | data | home | cache | log | run | tmp
 ```
 
-Mapping rules:
-
-```text
-canonical relative path
-no leading slash
-no ..
-unique
-no ancestor/descendant overlap
-root/<path> = validated relative symlink to ../run/<path>
-run-default/<path> exists
-```
-
-State platform/architecture qualification è indipendente dalla Package Instance identity e descrive i vincoli dello state.
+Mapping path canonico, relativo, unico, no `..`, no overlap ancestor/descendant.
 
 ---
 
-# 7. Interface files/directories
+# 7. Package Interface resources
 
-```toml
-[[interface.files]]
-id = "launcher"
-path = "bin/netbeans"
-
-[[interface.directories]]
-id = "home"
-path = "."
+```json
+{
+  "interface": {
+    "files": [
+      { "id": "launcher", "path": "bin/netbeans" }
+    ],
+    "directories": [
+      { "id": "home", "path": "." }
+    ],
+    "commands": [] ,
+    "provides": []
+  }
+}
 ```
 
-`path` è relativo a `root/`; `.` è ammesso per root stesso.
-
-Physical target e type devono concordare con l'integrity tree.
+`files`, `directories`, `commands`, `provides` sono optional arrays; `interface` object è required.
 
 ---
 
-# 8. Structured references
+# 8. Structured reference
 
 Self:
 
-```toml
-{ source = "self", resource-type = "file", resource = "launcher" }
+```json
+{ "source": "self", "resource-type": "file", "resource": "launcher" }
 ```
 
 Dependency:
 
-```toml
-{ source = "dependency", slot = "jdk", resource-type = "directory", resource = "home" }
+```json
+{ "source": "dependency", "slot": "jdk", "resource-type": "directory", "resource": "home" }
 ```
 
 State:
 
-```toml
-{ source = "state", area = "home" }
+```json
+{ "source": "state", "area": "home" }
 ```
 
 Literal:
 
-```toml
-{ source = "literal", value = "-jar" }
+```json
+{ "source": "literal", "value": "-jar" }
 ```
-
-`resource-type`:
-
-```text
-file directory command
-```
-
-Le reference non sono mini-language string.
 
 ---
 
-# 9. Commands
+# 9. Command
 
-```toml
-[[interface.commands]]
-id = "netbeans"
-executable = { source = "self", resource-type = "file", resource = "launcher" }
-args = []
+```json
+{
+  "id": "netbeans",
+  "executable": {
+    "source": "self",
+    "resource-type": "file",
+    "resource": "launcher"
+  },
+  "args": []
+}
 ```
 
-Executable v0:
+Executable può essere self executable file o dependency command resource.
 
-```text
-self executable file resource
-dependency command resource
-```
-
-No literal host executable pathname.
-
-Args = ordered array di structured reference; ogni elemento materializza esattamente un argv element, mai una shell command string.
-
-Command-specific `environment` può usare le stesse operation package-level.
+Args è ordered array; ogni elemento produce un argv element, mai una shell command string.
 
 ---
 
-# 10. Capability provides
+# 10. Capability provide
 
-Ogni provide include capability contract version e compatibility version:
-
-```toml
-[[interface.provides]]
-capability = "java-runtime"
-contract = 1
-version = "21"
+```json
+{
+  "capability": "java-runtime",
+  "contract": 1,
+  "version": "21",
+  "resources": [
+    { "key": "command", "resource-type": "command", "resource": "java" },
+    { "key": "home", "resource-type": "directory", "resource": "home" },
+    { "key": "bin", "resource-type": "directory", "resource": "bin" }
+  ]
+}
 ```
 
-Required:
-
-```text
-capability    known capability logical-id
-contract      positive known contract version
-version       canonical compatibility version secondo contract
-```
-
-Resource mapping:
-
-```toml
-[[interface.provides.resources]]
-key = "command"
-resource-type = "command"
-resource = "java"
-```
-
-Il registry `(capability, contract)` definisce:
-
-```text
-compatibility version scheme
-required/optional resource keys
-resource type per key
-contract semantics
-```
-
-Provider non può ridefinire il contract.
+Capability identity = name + contract.
 
 ---
 
 # 11. Requirements
 
-Tutti mandatory nel v0.
+Capability target:
 
-Capability requirement:
-
-```toml
-[[requirements]]
-slot = "jdk"
-target = "capability"
-capability = "java-development-kit"
-contract = 1
-constraint = ">=17 <22"
+```json
+{
+  "slot": "jdk",
+  "target": "capability",
+  "capability": "java-development-kit",
+  "contract": 1,
+  "constraint": ">=17 <22"
+}
 ```
 
-Required:
+Package target:
 
-```text
-slot
-target = capability
-capability
-contract
-constraint
+```json
+{
+  "slot": "engine",
+  "target": "package",
+  "package": "specific-engine"
+}
 ```
 
-Package requirement:
+Optional exact upstream `version` per package-target; no generic upstream range v0.
 
-```toml
-[[requirements]]
-slot = "engine"
-target = "package"
-package = "specific-engine"
-```
-
-Optional exact upstream version:
-
-```toml
-version = "1.4"
-```
-
-No generic software-version range v0.
+Tutti i requirements sono mandatory nel v0.
 
 ---
 
 # 12. Capability constraint grammar
 
 ```text
-constraint  = comparator *( SP comparator )
-comparator  = operator version
-operator    = = | > | >= | < | <=
-version     = token valido secondo (capability, contract)
+constraint = comparator *(SP comparator)
+operator   = = | > | >= | < | <=
 ```
 
-Esempi:
-
-```text
-=8
->=17 <22
->=3.11 <3.14
-```
-
-No OR, !=, wildcard, caret, tilde, provider name, implicit latest.
+No OR, wildcard, caret, tilde, provider name o implicit latest.
 
 ---
 
-# 13. Environment Specification
+# 13. Environment
 
-Ordered operation list:
+Ordered array:
 
-```toml
-[[environment]]
-name = "JAVA_HOME"
-operation = "set"
-type = "path"
-value = { source = "dependency", slot = "jdk", resource-type = "directory", resource = "home" }
-
-[[environment]]
-name = "PATH"
-operation = "prepend"
-type = "path-list"
-value = { source = "dependency", slot = "jdk", resource-type = "directory", resource = "bin" }
+```json
+[
+  {
+    "name": "JAVA_HOME",
+    "operation": "set",
+    "type": "path",
+    "value": {
+      "source": "dependency",
+      "slot": "jdk",
+      "resource-type": "directory",
+      "resource": "home"
+    }
+  },
+  {
+    "name": "PATH",
+    "operation": "prepend",
+    "type": "path-list",
+    "value": {
+      "source": "dependency",
+      "slot": "jdk",
+      "resource-type": "directory",
+      "resource": "bin"
+    }
+  }
+]
 ```
 
 Operations:
 
 ```text
-set
-set-if-unset
-unset
-prepend
-append
+set | set-if-unset | unset | prepend | append
 ```
 
 Types:
 
 ```text
-scalar
-path
-path-list
+scalar | path | path-list
 ```
 
-Rules:
-
-```text
-unset => no value/type
-prepend/append => path-list
-set/set-if-unset => scalar|path|path-list
-absolute host path literal forbidden
-no variable expansion during descriptor parse
-```
-
-Environment variable name:
-
-```text
-[A-Za-z_][A-Za-z0-9_]*
-```
+No host absolute literal pathname, shell expansion o eval.
 
 ---
 
 # 14. Environment precedence
-
-Dal meno al più specifico:
 
 ```text
 1 inherited/sanitized Host Base Environment
@@ -481,66 +351,32 @@ Dal meno al più specifico:
 6 explicit invocation override
 ```
 
-Una package private dependency può quindi sostituire `JAVA_HOME`/prepend `PATH` senza modificare il profile pubblico.
-
 ---
 
-# 15. Required/optional summary
+# 15. Validation order
 
 ```text
-schema                         required
-identity                       required
-release                        required
-integrity                      required
-state                          optional
-interface                      required
-requirements                   optional
-package environment            optional
-
-interface.files                optional
-interface.directories          optional
-interface.commands             optional
-interface.provides             optional
-```
-
-Un `interface.provides` capability richiede sempre:
-
-```text
-capability + contract + version
-```
-
-Un capability requirement richiede sempre:
-
-```text
-capability + contract + constraint
+1 JSON parse UTF-8
+2 duplicate-member rejection
+3 schema
+4 structural fields/types
+5 logical IDs
+6 pathname identity agreement
+7 platform vocabulary
+8 integrity metadata syntax
+9 TSV inventory + physical tree verification
+10 state mappings
+11 Package Interface physical target validation
+12 capability contract validation
+13 requirements
+14 environment/reference validation
+15 cross-reference validation
+16 Physical Platform Validation
 ```
 
 ---
 
-# 16. Validation order
-
-```text
-1 TOML parse
-2 schema
-3 structural fields/types
-4 logical ID grammar/uniqueness
-5 pathname identity agreement
-6 platform vocabulary validation
-7 integrity syntax + physical verification
-8 state mappings
-9 interface physical resources
-10 capability registry/contract validation
-11 requirements/constraint validation
-12 environment/command references
-13 cross-reference validation
-14 Physical Platform Validation
-```
-
-Parsing, semantic validation, physical verification e dependency resolution restano fasi distinte.
-
----
-
-# 17. Error classes
+# 16. Error classes
 
 ```text
 DESCRIPTOR_PARSE_ERROR
@@ -559,36 +395,19 @@ PLATFORM_VALIDATION_ERROR
 
 ---
 
-# 18. Invarianti
+# 17. Invarianti
 
 ```text
-PS-01 schema v0 strict + typed
-PS-02 logical internal ID lowercase ASCII
+PS-01 @package schema v0 = strict JSON object
+PS-02 duplicate/unknown structural members rejected
 PS-03 software version opaque string
-PS-04 platform/architecture descrivono il contenuto, non runtime requirements
-PS-05 any-any rappresenta contenuto realmente OS/CPU-independent
-PS-06 release-order family-local positive integer
-PS-07 state absent => no own State Instance
-PS-08 resource references by namespace+id
-PS-09 command creates argv, never shell string
-PS-10 requirements v0 mandatory
-PS-11 capability identity = name + contract
-PS-12 compatibility version != capability contract version
-PS-13 capability constraint is simple comparator intersection
-PS-14 package requirement has no generic upstream version range
-PS-15 environment ordered operation list
-PS-16 PATH semantic path-list, platform separator materialized later
-PS-17 absolute host path absent from @package
-PS-18 integrity records = canonical multiline line block
-PS-19 parser/validation/resolution separate
-```
-
----
-
-# 19. Reference descriptors
-
-Gli esempi architetturali sono in:
-
-```text
-drafts/rumiai-os/package-manager-schema-v0/reference-descriptors.md
+PS-04 identity platform/architecture orthogonal to runtime requirements
+PS-05 integrity inventories external TSV files
+PS-06 TSV bulk parse separate dal JSON parse
+PS-07 resource reference strutturata
+PS-08 command argv-based, no shell string
+PS-09 capability = name + contract + compatibility version
+PS-10 requirements mandatory
+PS-11 environment ordered operation array
+PS-12 absolute host paths absent from descriptor
 ```
