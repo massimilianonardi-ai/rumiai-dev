@@ -2,41 +2,30 @@
 
 Data: 2026-08-30
 
-Stato: **design decision — JSON schema model v0 fissato**
+Stato: **design decision — System Field Format schema v0 fissato**
 
-Questa specifica sostituisce la precedente rappresentazione TOML senza cambiare il modello logico.
+Questa specifica mantiene invariato il modello logico e sostituisce la precedente rappresentazione JSON.
 
 ---
 
-# 1. Top-level JSON object
+# 1. Header
 
-Required members:
-
-```text
-schema
-identity
-release
-integrity
-interface
-```
-
-Optional members:
+Required:
 
 ```text
-state
-requirements
-environment
+kind	package
+schema	1
 ```
 
-```json
-{ "schema": 1 }
-```
+Unknown field non previsto dallo schema v0 è errore.
 
-Duplicate member e unknown structural member sono errori nello schema v0.
+Duplicate field-name è errore di System Field Format.
 
 ---
 
 # 2. Logical identifiers
+
+Valori logical-id:
 
 ```text
 [a-z][a-z0-9-]*
@@ -44,21 +33,21 @@ Duplicate member e unknown structural member sono errori nello schema v0.
 
 per dependency slot, resource ID, command ID, capability name/resource key.
 
+Questi identificatori restano field-value; non vengono incorporati nei field-name.
+
 ---
 
-# 3. `identity`
+# 3. Identity
 
-```json
-{
-  "identity": {
-    "name": "netbeans",
-    "version": "26",
-    "revision": 1,
-    "platform": "any",
-    "architecture": "any",
-    "display-name": "NetBeans 26"
-  }
-}
+Required:
+
+```text
+identity_name	netbeans
+identity_version	26
+identity_revision	1
+identity_platform	any
+identity_architecture	any
+identity_display_name	NetBeans 26
 ```
 
 Platform v0:
@@ -77,75 +66,57 @@ Pathname identity e descriptor identity devono coincidere.
 
 ---
 
-# 4. `release`
+# 4. Release
 
-```json
-{ "release": { "release-order": 123 } }
+```text
+release_order	123
 ```
 
 Positive integer, family-local, non identity.
 
 ---
 
-# 5. `integrity`
+# 5. Integrity
 
-```json
-{
-  "integrity": {
-    "method": 1,
-    "algorithm": "sha256",
-    "root": {
-      "inventory": "@integrity-root.tsv",
-      "files": 1,
-      "directories": 2,
-      "links": 0,
-      "manifest-digest": "..."
-    },
-    "run-default": {
-      "inventory": "@integrity-run-default.tsv",
-      "files": 0,
-      "directories": 1,
-      "links": 0,
-      "manifest-digest": "..."
-    }
-  }
-}
-```
-
-Required per tree:
+Required:
 
 ```text
-inventory
-files
-directories
-links
-manifest-digest
+integrity_method	1
+integrity_algorithm	sha256
+integrity_root_inventory	@integrity-root.tsv
+integrity_root_files	1
+integrity_root_directories	2
+integrity_root_links	0
+integrity_root_manifest_digest	...
+integrity_run_default_inventory	@integrity-run-default.tsv
+integrity_run_default_files	0
+integrity_run_default_directories	1
+integrity_run_default_links	0
+integrity_run_default_manifest_digest	...
 ```
 
-Inventory filename v0 deve coincidere con i due nomi canonici fissati.
+Inventory filename v0 deve coincidere con i nomi canonici fissati.
 
-TSV record:
-
-```text
-type<TAB>mode<TAB>digest<TAB>target<TAB>path
-```
-
-Il parser JSON non interpreta il TSV; integrity validation è una fase separata e streamabile.
+I due inventory usano System Field Format `kind=integrity`, non una seconda grammatica TSV a cinque campi.
 
 ---
 
-# 6. `state`
+# 6. State
 
-```json
-{
-  "state": {
-    "compatibility-version": 1,
-    "scope": "shared",
-    "mappings": [
-      { "path": "etc", "area": "conf" }
-    ]
-  }
-}
+Presence marker required:
+
+```text
+state_present	true|false
+```
+
+Se true:
+
+```text
+state_compatibility_version	1
+state_scope	shared
+state_mapping_count	1
+state_mapping_1_path	etc
+state_mapping_1_area	conf
 ```
 
 Scope:
@@ -164,88 +135,107 @@ Mapping path canonico, relativo, unico, no `..`, no overlap ancestor/descendant.
 
 ---
 
-# 7. Package Interface resources
+# 7. Package Interface file/directory resources
 
-```json
-{
-  "interface": {
-    "files": [
-      { "id": "launcher", "path": "bin/netbeans" }
-    ],
-    "directories": [
-      { "id": "home", "path": "." }
-    ],
-    "commands": [] ,
-    "provides": []
-  }
-}
+Collections obbligatorie anche quando vuote:
+
+```text
+interface_file_count	N
+interface_directory_count	N
+interface_command_count	N
+interface_provide_count	N
 ```
 
-`files`, `directories`, `commands`, `provides` sono optional arrays; `interface` object è required.
+File:
+
+```text
+interface_file_1_id	launcher
+interface_file_1_path	bin/netbeans
+```
+
+Directory:
+
+```text
+interface_directory_1_id	home
+interface_directory_1_path	.
+```
 
 ---
 
-# 8. Structured reference
+# 8. Structured reference pattern
+
+Una reference usa un prefix di schema e field condizionali.
 
 Self:
 
-```json
-{ "source": "self", "resource-type": "file", "resource": "launcher" }
+```text
+<prefix>_source	self
+<prefix>_resource_type	file
+<prefix>_resource	launcher
 ```
 
 Dependency:
 
-```json
-{ "source": "dependency", "slot": "jdk", "resource-type": "directory", "resource": "home" }
+```text
+<prefix>_source	dependency
+<prefix>_slot	jdk
+<prefix>_resource_type	directory
+<prefix>_resource	home
 ```
 
 State:
 
-```json
-{ "source": "state", "area": "home" }
+```text
+<prefix>_source	state
+<prefix>_area	home
 ```
 
 Literal:
 
-```json
-{ "source": "literal", "value": "-jar" }
+```text
+<prefix>_source	literal
+<prefix>_literal	-jar
 ```
+
+Non esiste mini-language persistita nei value.
 
 ---
 
 # 9. Command
 
-```json
-{
-  "id": "netbeans",
-  "executable": {
-    "source": "self",
-    "resource-type": "file",
-    "resource": "launcher"
-  },
-  "args": []
-}
+```text
+interface_command_1_id	netbeans
+interface_command_1_executable_source	self
+interface_command_1_executable_resource_type	file
+interface_command_1_executable_resource	launcher
+interface_command_1_arg_count	0
 ```
 
 Executable può essere self executable file o dependency command resource.
 
-Args è ordered array; ogni elemento produce un argv element, mai una shell command string.
+Args è ordered collection; ogni indice produce un argv element, mai una shell command string.
+
+Literal argv contenente TAB/CR/LF/NUL è non rappresentabile e viene rifiutato nel v0.
 
 ---
 
 # 10. Capability provide
 
-```json
-{
-  "capability": "java-runtime",
-  "contract": 1,
-  "version": "21",
-  "resources": [
-    { "key": "command", "resource-type": "command", "resource": "java" },
-    { "key": "home", "resource-type": "directory", "resource": "home" },
-    { "key": "bin", "resource-type": "directory", "resource": "bin" }
-  ]
-}
+```text
+interface_provide_count	1
+interface_provide_1_capability	java-runtime
+interface_provide_1_contract	1
+interface_provide_1_version	21
+interface_provide_1_resource_count	3
+interface_provide_1_resource_1_key	command
+interface_provide_1_resource_1_resource_type	command
+interface_provide_1_resource_1_resource	java
+interface_provide_1_resource_2_key	home
+interface_provide_1_resource_2_resource_type	directory
+interface_provide_1_resource_2_resource	home
+interface_provide_1_resource_3_key	bin
+interface_provide_1_resource_3_resource_type	directory
+interface_provide_1_resource_3_resource	bin
 ```
 
 Capability identity = name + contract.
@@ -256,33 +246,32 @@ Capability identity = name + contract.
 
 Capability target:
 
-```json
-{
-  "slot": "jdk",
-  "target": "capability",
-  "capability": "java-development-kit",
-  "contract": 1,
-  "constraint": ">=17 <22"
-}
+```text
+requirement_count	1
+requirement_1_slot	jdk
+requirement_1_target	capability
+requirement_1_capability	java-development-kit
+requirement_1_contract	1
+requirement_1_constraint	>=17 <22
 ```
 
 Package target:
 
-```json
-{
-  "slot": "engine",
-  "target": "package",
-  "package": "specific-engine"
-}
+```text
+requirement_1_slot	engine
+requirement_1_target	package
+requirement_1_package	specific-engine
 ```
 
-Optional exact upstream `version` per package-target; no generic upstream range v0.
+Optional exact upstream `requirement_<i>_version` per package-target; no generic upstream range v0.
 
 Tutti i requirements sono mandatory nel v0.
 
 ---
 
 # 12. Capability constraint grammar
+
+Field-value constraint:
 
 ```text
 constraint = comparator *(SP comparator)
@@ -295,33 +284,24 @@ No OR, wildcard, caret, tilde, provider name o implicit latest.
 
 # 13. Environment
 
-Ordered array:
+```text
+environment_count	2
 
-```json
-[
-  {
-    "name": "JAVA_HOME",
-    "operation": "set",
-    "type": "path",
-    "value": {
-      "source": "dependency",
-      "slot": "jdk",
-      "resource-type": "directory",
-      "resource": "home"
-    }
-  },
-  {
-    "name": "PATH",
-    "operation": "prepend",
-    "type": "path-list",
-    "value": {
-      "source": "dependency",
-      "slot": "jdk",
-      "resource-type": "directory",
-      "resource": "bin"
-    }
-  }
-]
+environment_1_name	JAVA_HOME
+environment_1_operation	set
+environment_1_type	path
+environment_1_value_source	dependency
+environment_1_value_slot	jdk
+environment_1_value_resource_type	directory
+environment_1_value_resource	home
+
+environment_2_name	PATH
+environment_2_operation	prepend
+environment_2_type	path-list
+environment_2_value_source	dependency
+environment_2_value_slot	jdk
+environment_2_value_resource_type	directory
+environment_2_value_resource	bin
 ```
 
 Operations:
@@ -356,15 +336,15 @@ No host absolute literal pathname, shell expansion o eval.
 # 15. Validation order
 
 ```text
-1 JSON parse UTF-8
-2 duplicate-member rejection
-3 schema
-4 structural fields/types
+1 System Field Format parse UTF-8
+2 field-name/duplicate/kind/schema validation
+3 required/unknown field validation
+4 canonical count + contiguous indices
 5 logical IDs
 6 pathname identity agreement
 7 platform vocabulary
 8 integrity metadata syntax
-9 TSV inventory + physical tree verification
+9 integrity inventory + physical tree verification
 10 state mappings
 11 Package Interface physical target validation
 12 capability contract validation
@@ -381,6 +361,7 @@ No host absolute literal pathname, shell expansion o eval.
 ```text
 DESCRIPTOR_PARSE_ERROR
 UNSUPPORTED_SCHEMA
+WRONG_FILE_KIND
 DESCRIPTOR_SCHEMA_ERROR
 IDENTITY_MISMATCH
 INTEGRITY_ERROR
@@ -398,16 +379,16 @@ PLATFORM_VALIDATION_ERROR
 # 17. Invarianti
 
 ```text
-PS-01 @package schema v0 = strict JSON object
-PS-02 duplicate/unknown structural members rejected
-PS-03 software version opaque string
-PS-04 identity platform/architecture orthogonal to runtime requirements
-PS-05 integrity inventories external TSV files
-PS-06 TSV bulk parse separate dal JSON parse
-PS-07 resource reference strutturata
+PS-01 @package schema v0 = strict System Field Format kind=package
+PS-02 duplicate/unknown field rejected
+PS-03 collection usa count + contiguous 1..N
+PS-04 software version opaque string
+PS-05 identity platform/architecture orthogonal to runtime requirements
+PS-06 integrity inventories esterni usano lo stesso System Field Format
+PS-07 resource reference strutturata via field prefix
 PS-08 command argv-based, no shell string
 PS-09 capability = name + contract + compatibility version
 PS-10 requirements mandatory
-PS-11 environment ordered operation array
+PS-11 environment ordered operation collection
 PS-12 absolute host paths absent from descriptor
 ```
