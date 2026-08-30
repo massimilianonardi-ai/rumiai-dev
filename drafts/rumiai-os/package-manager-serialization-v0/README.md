@@ -96,7 +96,7 @@ Non è richiesta una canonical byte serialization JSON generale.
 I JSON generati da RumiAI seguono inoltre la formatting policy normativa del JSON standard v0:
 
 ```text
-4 spazi di indentation
+2 spazi di indentation
 LF
 newline finale
 opening/closing `{` e `[`/`]` su righe proprie
@@ -135,20 +135,20 @@ Esempio di stile generato:
 
 ```json
 {
-    "schema": 1,
-    "identity":
-    {
-        "name": "netbeans",
-        "version": "26",
-        "revision": 1,
-        "platform": "any",
-        "architecture": "any",
-        "display-name": "NetBeans 26"
-    },
-    "release":
-    {
-        "release-order": 26
-    }
+  "schema": 1,
+  "identity":
+  {
+    "name": "netbeans",
+    "version": "26",
+    "revision": 1,
+    "platform": "any",
+    "architecture": "any",
+    "display-name": "NetBeans 26"
+  },
+  "release":
+  {
+    "release-order": 26
+  }
 }
 ```
 
@@ -170,10 +170,10 @@ Le reference sono object JSON espliciti, per esempio:
 
 ```json
 {
-    "source": "dependency",
-    "slot": "jdk",
-    "resource-type": "directory",
-    "resource": "home"
+  "source": "dependency",
+  "slot": "jdk",
+  "resource-type": "directory",
+  "resource": "home"
 }
 ```
 
@@ -218,27 +218,27 @@ Esempio:
 
 ```json
 {
-    "integrity":
+  "integrity":
+  {
+    "method": 1,
+    "algorithm": "sha256",
+    "root":
     {
-        "method": 1,
-        "algorithm": "sha256",
-        "root":
-        {
-            "inventory": "@integrity-root.tsv",
-            "files": 120,
-            "directories": 24,
-            "links": 3,
-            "manifest-digest": "..."
-        },
-        "run-default":
-        {
-            "inventory": "@integrity-run-default.tsv",
-            "files": 8,
-            "directories": 4,
-            "links": 0,
-            "manifest-digest": "..."
-        }
+      "inventory": "@integrity-root.tsv",
+      "files": 120,
+      "directories": 24,
+      "links": 3,
+      "manifest-digest": "..."
+    },
+    "run-default":
+    {
+      "inventory": "@integrity-run-default.tsv",
+      "files": 8,
+      "directories": 4,
+      "links": 0,
+      "manifest-digest": "..."
     }
+  }
 }
 ```
 
@@ -284,11 +284,11 @@ path
 Esempio:
 
 ```text
-D	0500	-	-	.
-D	0500	-	-	./bin
-F	0500	<digest>	-	./bin/foo
-F	0400	<digest>	-	./lib/foo.jar
-L	-	<digest-target>	../run/log	./log
+D\t0500\t-\t-\t.
+D\t0500\t-\t-\t./bin
+F\t0500\t<digest>\t-\t./bin/foo
+F\t0400\t<digest>\t-\t./lib/foo.jar
+L\t-\t<digest-target>\t../run/log\t./log
 ```
 
 Il file usa:
@@ -380,20 +380,20 @@ Esempio resolved:
 
 ```json
 {
-    "schema": 1,
-    "generation": 17,
-    "profile": "default",
-    "dependencies":
-    [
-        {
-            "consumer": "netbeans@26@r1@any-any",
-            "slot": "jdk",
-            "provider": "temurin@21.0.8+9@r1@linux-arm64",
-            "capability": "java-development-kit",
-            "contract": 1,
-            "satisfied-version": "21"
-        }
-    ]
+  "schema": 1,
+  "generation": 17,
+  "profile": "default",
+  "dependencies":
+  [
+    {
+      "consumer": "netbeans@26@r1@any-any",
+      "slot": "jdk",
+      "provider": "temurin@21.0.8+9@r1@linux-arm64",
+      "capability": "java-development-kit",
+      "contract": 1,
+      "satisfied-version": "21"
+    }
+  ]
 }
 ```
 
@@ -437,7 +437,7 @@ SER-01 JSON UTF-8 è il formato strutturato di riferimento RumiAI v0
 SER-02 @package, desired e resolved usano restricted JSON
 SER-03 duplicate object member name è errore
 SER-04 metadata JSON non è codice
-SER-05 JSON generato da RumiAI usa la formatting policy JSON standard v0
+SER-05 JSON generato da RumiAI usa la formatting policy JSON standard v0 con indentation di 2 spazi
 SER-06 reference sono object strutturati, non mini-language
 SER-07 bulk integrity inventory è esterno a JSON
 SER-08 inventory v0 = canonical five-field TSV con path ultimo
