@@ -10,7 +10,6 @@ Prerequisiti:
 drafts/rumiai-os/package-manager-v0/README.md
 drafts/rumiai-os/package-manager-local-layout/README.md
 drafts/rumiai-os/package-manager-state-model/README.md
-drafts/rumiai-os/package-manager-platform-vocabulary-v0/README.md
 drafts/rumiai-os/package-manager-serialization-v0/README.md
 ```
 
@@ -21,61 +20,88 @@ drafts/rumiai-os/package-manager-serialization-v0/README.md
 ```text
 pkg/<package-instance-id>/
 ├── root/
+│   └── execution tree immutabile
 ├── run-default/
+│   └── factory writable view immutabile
 ├── @package
+│   JSON descriptor immutabile
+├── @integrity-root.tsv
+│   canonical integrity inventory di root/
+├── @integrity-run-default.tsv
+│   canonical integrity inventory di run-default/
 └── run/
+    derived active runtime routing view
 ```
 
-Core immutabile:
+Il core immutabile che definisce la Package Instance è:
 
 ```text
 root/
 run-default/
 @package
+@integrity-root.tsv
+@integrity-run-default.tsv
 ```
 
-`run/` è derivata, ricostruibile e non partecipa a identity/integrity.
+`run/` non partecipa a identity/integrity e viene ricostruita.
 
-Package pathname:
+---
+
+# 2. Package Instance identity
+
+Pathname:
 
 ```text
 <name>@<version-token>@r<revision>@<platform>-<architecture>
 ```
 
-Platform/architecture v0 descrivono soltanto vincoli del contenuto:
+Platform v0:
 
 ```text
-platform     any | linux | macos | windows
-architecture any | arm64 | x86_64
+any
+linux
+macos
+windows
 ```
 
-Runtime/interpreti/SDK come Java/JDK/JRE/Python sono requirements, non platform token.
+Architecture v0:
+
+```text
+any
+arm64
+x86_64
+```
+
+La platform/architecture descrive i vincoli propri del contenuto della Package Instance.
+
+Runtime come:
+
+```text
+Java/JRE/JDK
+Python
+```
+
+NON sono platform: sono Execution Requirements/capability.
 
 ---
 
-# 2. `root/`
+# 3. `root/`
 
 `root/` è l'execution tree normalizzato e immutabile.
 
-Non deve coincidere byte-per-byte con il vendor tree.
+Prima dell'admission il producer può trasformare il tree vendor per separare writable islands.
 
-Prima dell'admission il producer può normalizzare writable paths; dopo admission:
+Regola forte:
 
-```text
-root/ non cambia durante install/integrate/execute
-```
+> se non è possibile produrre una `root/` che resti immutabile durante l'esecuzione normale attraverso una configurazione di link sicura e fisicamente validata, il package non è ammissibile allo store RumiAI per quella platform.
 
-Se non è possibile produrre una root fissa e sicura:
-
-```text
-REJECTED
-```
+Il package manager locale assume che questa normalizzazione sia già stata completata.
 
 ---
 
-# 3. Writable islands
+# 4. Writable islands
 
-Preferenza forte per redirection a livello directory:
+Si preferiscono link a livello directory:
 
 ```text
 root/log   -> ../run/log
@@ -83,62 +109,65 @@ root/conf  -> ../run/conf
 root/cache -> ../run/cache
 ```
 
-Questo evita che atomic replace/unlink di singoli file distrugga file-level symlink.
+Questo evita che software che salva tramite unlink/rename/atomic replace cancelli un symlink file-level.
 
 File-level redirection è ammessa solo se fisicamente validata come sicura.
 
-I symlink `root -> run` fanno parte dell'integrity di `root/`; si verifica il target testuale senza dereferenziare lo state mutabile.
+---
+
+# 5. `run-default/`
+
+Contiene gli analoghi fisici iniziali delle writable islands distribuiti dal vendor o prodotti dalla normalizzazione.
+
+Serve per:
+
+```text
+first state initialization
+factory reset
+controlled recovery
+```
+
+È immutabile.
+
+Un factory reset copia/materializza i default nello State Instance target; non rende writable `run-default/` e non fa puntare `run/` direttamente ad essa.
 
 ---
 
-# 4. `run/`
+# 6. `run/`
 
 Ogni Package Instance ha una sola runtime view attiva.
 
 Esempio:
 
 ```text
-root/log -> ../run/log
-run/log  -> ../../../log/<state-id>/log
+root/log
+    -> ../run/log
+
+run/log
+    -> ../../../log/<state-id>/log
 ```
 
-`run/` viene creata prima del sealing della wrapper.
+`run/` è precreata prima del sealing della wrapper.
 
-Dopo commit non si sostituisce normalmente la directory `run/`; si ricostruisce il suo contenuto.
+Dopo il commit si ricostruisce il contenuto di `run/`, non la directory `run/` stessa.
 
 ---
 
-# 5. `run-default/`
+# 7. `@package`
 
-Contiene factory defaults immutabili delle writable islands nei pathname attesi dal software.
+`@package` è JSON UTF-8 secondo il restricted JSON profile RumiAI v0.
 
-Serve per:
-
-```text
-first State Instance initialization
-factory reset
-controlled default recovery
-```
-
-Factory reset copia/materializza default verso state mutabile; non rende mai `run-default/` writable.
-
----
-
-# 6. `@package`
-
-Descriptor dichiarativo immutabile, restricted TOML 1.0.
-
-Contiene:
+Contiene logicamente:
 
 ```text
 schema
 identity
 release
-integrity
-state
-interface
-requirements
-environment
+integrity metadata
+state mappings
+Package Interface
+Execution Requirements
+Environment Specification
 ```
 
 Identity minima:
@@ -152,254 +181,180 @@ architecture
 display-name
 ```
 
-I primi cinque campi canonici devono concordare con il pathname.
+I campi canonici devono concordare con il pathname.
 
 `display-name` è human-readable e non entra nel pathname.
 
-Nessun `source`, `eval` o codice eseguibile.
-
 ---
 
-# 7. Integrity
+# 8. Integrity inventories separati
 
-Si verificano separatamente:
+`root/` e `run-default/` hanno inventory distinti:
 
 ```text
-root/
-run-default/
+@integrity-root.tsv
+@integrity-run-default.tsv
 ```
 
-Metadata:
+`@package` contiene per ogni inventory:
 
 ```text
-integrity method/version
-digest algorithm
-file count
-directory count
-link count
+file name
+files count
+directories count
+links count
 manifest digest
-canonical line inventory
 ```
 
-Il v0 serializza `records` in `@package` come una singola multiline literal string TOML line-oriented.
-
-Semantic record:
+L'inventory usa record TSV canonici a cinque campi:
 
 ```text
-D<TAB><mode><TAB><relative-path>
-<digest><TAB>F<TAB><mode><TAB><relative-path>
-<digest-target><TAB>L<TAB><relative-path><TAB><relative-target>
+type<TAB>mode<TAB>digest<TAB>target<TAB>path
 ```
 
-Regole:
+con `path` sempre ultimo.
+
+Semantica:
 
 ```text
-regular file: digest bytes + canonical mode
-directory: canonical mode, no content digest
-symlink: digest target text, no dereference
-LF canonical line endings
-LF finale obbligatorio
-canonical record order
-UID/GID/ACL/symlink mode excluded
+D    directory; mode; digest=-; target=-
+F    regular file; mode; digest=file bytes; target=-
+L    symlink; mode=-; digest=target text; target=relative target
 ```
 
-Manifest digest = digest del canonical `records` block decodificato.
+Il manifest digest è il digest dei byte canonici completi del TSV.
 
-`run/` e target mutabili sono esclusi.
+La sotto-specifica Integrity Method 1 fissa pathname grammar, escaping, sort order, digest input e line-ending requirements.
 
 ---
 
-# 8. Mode normalizzati
+# 9. Mode immutabili
 
-Unix-like core immutable:
-
-```text
-regular non-executable  0400
-regular executable      0500
-directory immutable     0500
-@package                0400
-```
-
-Write bit sotto `root/` o `run-default/` è incompatibile con v0.
-
-Vietati nel core v0:
+Unix-like v0:
 
 ```text
-POSIX ACL aggiuntive
-setuid
-setgid
-sticky bit
+regular non-executable       0400
+regular executable           0500
+immutable directory          0500
+@package                     0400
+@integrity-root.tsv          0400
+@integrity-run-default.tsv   0400
 ```
+
+Qualunque write bit sotto `root/` o `run-default/` viola il core immutable v0.
+
+UID/GID non entrano nell'identity/integrity.
+
+ACL aggiuntive, setuid, setgid e sticky bit non sono ammessi nel core Package Instance v0.
 
 ---
 
-# 9. Environment Owner
+# 10. Environment Owner e sealing
 
-Nessun requisito `root:root`, utente `rumiai` o gruppo speciale.
+RumiAI non richiede `root:root`, un utente `rumiai` o un gruppo speciale.
 
-Ogni RumiAI environment ha un solo Environment Owner.
+Ogni environment ha un solo Environment Owner.
 
-UID/GID numerici:
+Wrapper Unix-like dopo sealing:
 
 ```text
-non identity
-non integrity
-non persisted RumiAI identity
+pkg/<id>/                    0500
+├── root/                    0500
+├── run-default/             0500
+├── @package                 0400
+├── @integrity-root.tsv      0400
+├── @integrity-run-default.tsv 0400
+└── run/                     0700
 ```
 
-Group sharing non supportato nel v0.
+Le permission proteggono da modifiche accidentali; l'integrity rileva alterazioni. Non costituiscono una security boundary contro l'Environment Owner.
 
 ---
 
-# 10. Permission layout Unix-like
-
-Default:
-
-```text
-RUMIAI_ROOT/  0700
-pkg/          0700
-bin/          0700
-conf/         0700
-data/         0700
-home/         0700
-cache/        0700
-log/          0700
-run/          0700
-tmp/          0700
-```
-
-Wrapper sealed:
-
-```text
-pkg/<id>/      0500
-├── root/      0500
-├── run-default/ 0500
-├── @package   0400
-└── run/       0700
-```
-
-Default process `umask`:
-
-```text
-0077
-```
-
----
-
-# 11. Immutability boundary
-
-Permission proteggono dalle modifiche accidentali ma non creano security boundary contro l'Environment Owner, che possiede gli inode.
-
-Contratto:
-
-```text
-immutability by contract
-+
-filesystem accidental-write protection
-+
-integrity verification
-```
-
-Non richiede:
-
-```text
-root ownership
-privileged helper
-read-only mount
-immutable filesystem flag
-```
-
----
-
-# 12. Relocatability
-
-Persisted reference relative/logical only.
-
-Esempio:
-
-```text
-root/log -> ../run/log
-run/log  -> ../../../log/<state-id>/log
-```
-
-Nessun absolute RUMIAI_ROOT nel descriptor.
-
-Filesystem/mount semantics sono Physical Platform Validation input.
-
----
-
-# 13. Materialization transaction
+# 11. Materializzazione transazionale
 
 ```text
 candidate software
         ↓
-pre-admission normalization
+normalization/adaptation pre-admission
         ↓
-build root + run-default + @package + empty run in staging
+build root/ + run-default/
         ↓
-normalize modes/ownership semantics
+write @package JSON
         ↓
-verify identity/integrity/writable mappings
+write canonical integrity TSV files
         ↓
-atomic commit pkg/<package-id>
+verify pathname identity + descriptor identity
+        ↓
+verify inventory counts/digests + physical trees
+        ↓
+create empty run/
+        ↓
+normalize modes/ownership
+        ↓
+atomic commit into pkg/<id>
         ↓
 seal wrapper
 ```
 
-Staging non è un immediate child ordinario di `pkg/`.
+Staging non è una normale child directory di `pkg/`.
 
 ---
 
-# 14. Recovery
+# 12. Recovery / anti-ghost
+
+Il pathname permette sempre di ricostruire l'identità minima anche se metadata interni sono mancanti/corrotti.
+
+Classificazione minima:
 
 ```text
-@package missing/corrupt
-    pathname still recovers minimal identity
-
-root/run-default mismatch
-    Package Instance corrupt
-
-run missing/corrupt contents
-    core may remain healthy; rebuild run contents
+HEALTHY
+RECOVERABLE
+IDENTITY_MISMATCH
+UNKNOWN
 ```
 
-`pkg/` anti-ghost inventory classifica ogni immediate child.
+Mancanza/corruzione di `@package` o degli inventory non rende il contenuto invisibile: la directory resta classificabile e segnalabile.
+
+`pkg/` resta la physical truth delle Package Instance presenti.
 
 ---
 
-# 15. Uninstall
+# 13. State separation
 
-Dopo reference/integration checks:
+Mutable state vive fuori dalla Package Instance:
 
 ```text
-unseal with Environment Owner permissions
-remove pkg/<id>/
+conf
+data
+home
+cache
+log
+run
+tmp
 ```
 
-Nessun vendor uninstaller.
+`run/` package-local è soltanto routing verso la State Instance attiva.
 
-Uninstall non implica State Instance purge.
+Uninstall della Package Instance non implica purge dello stato.
 
 ---
 
-# 16. Invarianti
+# 14. Invarianti
 
 ```text
-PI-01 immutable core = root + run-default + @package
-PI-02 run is derived and excluded from identity/integrity
-PI-03 one active run view per Package Instance
-PI-04 root remains immutable during normal execution
-PI-05 unsafe/non-separable mutable tree => package rejected
-PI-06 writable islands prefer directory-level relative symlink routing
-PI-07 run-default contains immutable factory writable view
-PI-08 @package = restricted TOML declarative descriptor
-PI-09 package platform/architecture describes own content only
-PI-10 Java/JDK/JRE/Python requirements do not alter package platform identity
-PI-11 root/run-default integrity uses canonical line inventory + modes
-PI-12 UID/GID are not portable identity/integrity
-PI-13 no ACL/setuid/setgid/sticky in core v0
-PI-14 single Environment Owner
-PI-15 wrapper non-writable; run precreated and content-rebuilt
-PI-16 staging not ordinary pkg child
-PI-17 uninstall removes unique wrapper but not external state implicitly
+PI-01 immutable Package Instance core = root + run-default + @package + two integrity TSV inventories
+PI-02 run/ è derived runtime routing view
+PI-03 root/ è immutable normalized execution tree
+PI-04 no safe fixed root => package rejected before store promotion
+PI-05 writable islands prefer directory-level relative symlink
+PI-06 run-default conserva immutable factory writable view
+PI-07 @package è JSON dichiarativo e immutabile
+PI-08 root e run-default inventory sono file TSV distinti
+PI-09 TSV record = fixed five fields, path last
+PI-10 manifest digest verifica i byte canonici del TSV
+PI-11 wrapper viene sigillata, run/ precreata e writable nel contenuto
+PI-12 UID/GID concreti non fanno parte di identity/integrity
+PI-13 mutable application state resta fuori dalla Package Instance
+PI-14 Package Instance platform descrive il contenuto; runtime/interpreter sono requirements
 ```
