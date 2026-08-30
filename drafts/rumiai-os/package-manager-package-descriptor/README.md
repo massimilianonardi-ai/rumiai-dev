@@ -1,8 +1,8 @@
-# RumiAI package manager — `@package` logical descriptor model
+# RumiAI package manager — `@package` descriptor model
 
 Data: 2026-08-30
 
-Stato: **design draft — modello logico fissato, serializzazione non ancora scelta**
+Stato: **design decision — modello logico + serializzazione v0 fissati**
 
 Prerequisiti:
 
@@ -13,11 +13,17 @@ drafts/rumiai-os/package-manager-dependency-model/README.md
 drafts/rumiai-os/package-manager-integration-context/README.md
 ```
 
+Serializzazione:
+
+```text
+drafts/rumiai-os/package-manager-serialization-v0/README.md
+```
+
 `@package` è il descriptor dichiarativo immutabile di una Package Instance.
 
-Non è codice eseguibile e non richiede una directory `env/` separata.
+Non è codice eseguibile, non richiede una directory `env/` separata e nel v0 è serializzato tramite il **restricted TOML 1.0 profile RumiAI**.
 
-Il modello logico v0 contiene le seguenti sezioni:
+Il modello logico contiene:
 
 ```text
 schema
@@ -30,23 +36,17 @@ requirements
 environment
 ```
 
-La sintassi concreta resta volutamente aperta.
-
 ---
 
 # 1. `schema`
 
-Identifica la versione dello schema del descriptor RumiAI.
+Versione esplicita dello schema descriptor:
 
-Concettualmente:
-
-```text
+```toml
 schema = 1
 ```
 
-Serve a permettere evoluzione esplicita del descriptor.
-
-Il parser non deve inferire uno schema dalla presenza/assenza casuale di campi.
+Un parser non deve inferire lo schema dalla forma del documento.
 
 ---
 
@@ -63,15 +63,16 @@ architecture
 display-name
 ```
 
-Esempio concettuale:
+Esempio:
 
-```text
-name         = netbeans
-version      = 26
-revision     = 1
-platform     = jvm
-architecture = any
-display-name = NetBeans 26
+```toml
+[identity]
+name = "netbeans"
+version = "26"
+revision = 1
+platform = "jvm"
+architecture = "any"
+display-name = "NetBeans 26"
 ```
 
 I campi canonici:
@@ -84,11 +85,13 @@ platform
 architecture
 ```
 
-devono concordare con il pathname:
+devono concordare con:
 
 ```text
 <name>@<version-token>@r<revision>@<platform>-<architecture>
 ```
+
+`version` è la software version upstream semanticamente opaca.
 
 `display-name` è human-readable e non entra nel pathname canonico.
 
@@ -96,7 +99,7 @@ devono concordare con il pathname:
 
 # 3. `release`
 
-Contiene metadata necessari alla selezione di release senza interpretare genericamente la software version upstream.
+Metadata di ranking della release senza interpretare genericamente la software version upstream.
 
 Campo v0:
 
@@ -104,75 +107,72 @@ Campo v0:
 release-order
 ```
 
-`release-order` è un intero positivo monotono all'interno della stessa famiglia logica di package/provider.
+È un intero positivo monotono all'interno della stessa famiglia logica di provider/package.
 
-Esempio:
-
-```text
-software version = 8u462
-release-order    = 382
-```
-
-Non fa parte dell'identity/pathname.
-
-Non è confrontato tra provider/famiglie differenti.
-
-Serve al resolver quando una Selection Policy richiede la release compatibile più recente della famiglia scelta.
+Non fa parte dell'identity e non viene confrontato fra famiglie/provider differenti.
 
 ---
 
 # 4. `integrity`
 
-Descrive l'integrità dei tree immutabili:
+Descrive:
 
 ```text
 root/
 run-default/
 ```
 
-Contiene logicamente almeno:
+Contiene almeno:
 
 ```text
 integrity method/version
 digest algorithm
-root inventory
-root manifest digest
-run-default inventory
-run-default manifest digest
-```
-
-Ogni inventory contiene:
-
-```text
 file count
 directory count
 link count
-entry type
-relative pathname
-regular-file digest
-POSIX canonical mode per regular file/directory
-symlink target + digest del target testuale
+ordered canonical inventory records
+manifest digest
 ```
 
-Non contiene come identità portabile:
+Nel TOML v0 l'inventory è un array ordinato di record line-oriented, non una table per ogni file.
+
+Esempio:
+
+```toml
+[integrity]
+method = 1
+algorithm = "sha256"
+
+[integrity.root]
+files = 2
+directories = 2
+links = 1
+manifest-digest = "..."
+records = [
+  "D\t0500\t.",
+  "D\t0500\t./bin",
+  "<digest>\tF\t0500\t./bin/foo",
+  "<digest>\tF\t0400\t./app.jar",
+  "<digest-target>\tL\t./log\t../run/log",
+]
+```
+
+Il digest canonico viene calcolato sui record TOML già decodificati, concatenati con LF, non sui byte del serializer TOML.
+
+Restano fissati:
 
 ```text
-UID
-GID
-symlink ownership
-symlink mode
-ACL
+file: digest bytes + mode
+directory: mode, nessun content digest
+symlink: digest target testuale, nessun dereference
+UID/GID/ACL/symlink mode esclusi dall'identità portabile
 ```
-
-Restano valide le permission/integrity invariants del Package Instance layout.
 
 ---
 
 # 5. `state`
 
-Descrive il contratto di stato della Package Instance.
-
-Contiene almeno:
+Contiene:
 
 ```text
 state-compatibility-version
@@ -186,7 +186,7 @@ State Instance ID:
 <pkg-name>[@<platform>-<architecture>]@s<state-compatibility-version>
 ```
 
-State scope:
+Scope:
 
 ```text
 shared
@@ -195,7 +195,7 @@ architecture
 platform-architecture
 ```
 
-Le runtime mappings associano ogni writable island a esattamente una state area:
+Ogni writable island appartiene esattamente a una fra:
 
 ```text
 conf
@@ -207,24 +207,7 @@ run
 tmp
 ```
 
-Esempio concettuale:
-
-```text
-etc        -> conf
-workspace  -> data
-logs       -> log
-temp       -> tmp
-```
-
-Il pathname relativo della writable island è condiviso semanticamente fra:
-
-```text
-root/<path>         symlink verso ../run/<path>
-run-default/<path>  factory default immutabile
-run/<path>          routing derivato verso la State Instance
-```
-
-`state` non contiene pathname assoluti RumiAI.
+La mapping associa pathname relativo software e state area RumiAI; non contiene pathname host assoluti.
 
 ---
 
@@ -232,14 +215,7 @@ run/<path>          routing derivato verso la State Instance
 
 Descrive ciò che la Package Instance offre.
 
-Contiene:
-
-```text
-resources
-provides
-```
-
-Resource type v0:
+Resource v0:
 
 ```text
 file
@@ -247,32 +223,24 @@ directory
 command
 ```
 
-`file` e `directory` puntano a pathname relativi sotto `root/`.
+`file` e `directory` referenziano path relativi sotto `root/`.
 
-`command` descrive una Launch Template e può essere diretto oppure ospitato da una dependency.
-
-Esempio diretto:
+`command` descrive una Launch Template e può essere:
 
 ```text
-command:tool
-    executable = self:file:tool-executable
+direct
+hosted da dependency
 ```
 
-Esempio hosted:
-
-```text
-command:app
-    executable = dependency:jvm.command:java
-    fixed-args = [ self:file:app-jar ]
-```
+Le reference sono strutture TOML validate, non mini-language string.
 
 ---
 
 # 7. `provides`
 
-`provides` dichiara Execution Capability offerte dalla Package Instance e mappa il contratto alle resource della Package Interface.
+Dichiara Execution Capability offerte dalla Package Instance e collega il capability contract alle risorse della Package Interface.
 
-Esempio concettuale:
+Esempio logico:
 
 ```text
 java-runtime = 21
@@ -281,13 +249,11 @@ java-runtime = 21
     bin     -> directory:bin
 ```
 
-Una Package Instance può fornire più capability.
-
-Il capability contract, non il provider, definisce:
+Il capability contract definisce:
 
 ```text
 version scheme
-resource key obbligatorie/opzionali
+resource key richieste/opzionali
 semantica del contratto
 ```
 
@@ -295,48 +261,33 @@ semantica del contratto
 
 # 8. `requirements`
 
-Descrive gli Execution Requirement mandatory della Package Instance.
+Descrive gli Execution Requirement mandatory usando dependency slot locali.
 
-Ogni requirement usa un dependency slot locale.
+Esempio serializzato:
 
-Esempio:
-
-```text
-slot jdk:
-    target = capability
-    capability = java-development-kit
-    constraint = >=17 <22
-```
-
-Oppure provider-specific quando realmente necessario:
-
-```text
-slot engine:
-    target = package
-    package = specific-engine
+```toml
+[[requirements]]
+slot = "jdk"
+target = "capability"
+capability = "java-development-kit"
+constraint = ">=17 <22"
 ```
 
 Non appartengono a `requirements`:
 
 ```text
 provider preference
-latest/newest policy
-fallback order
-exact pin scelto dall'utente/profile
-resolved Package Instance
+latest/newest
+fallback
+user/profile pin
+resolved provider
 ```
-
-Questi appartengono alla Selection Policy / resolved state esterni alla Package Instance.
 
 ---
 
 # 9. `environment`
 
-Descrive la Environment Specification dichiarativa della Package Instance.
-
-Non è una snapshot dell'environment concreto.
-
-Non contiene absolute pathname.
+Environment Specification dichiarativa.
 
 Primitive v0:
 
@@ -348,7 +299,7 @@ prepend
 append
 ```
 
-Value type v0:
+Value type:
 
 ```text
 scalar
@@ -356,76 +307,78 @@ path
 path-list
 ```
 
-Value reference v0:
+Source:
 
 ```text
 literal
 self resource
-dependency slot resource
+dependency resource
 state area/path
 ```
 
-Esempio concettuale:
+Esempio:
 
-```text
-JAVA_HOME
-    set dependency:jdk.directory:home
-
-PATH
-    prepend dependency:jdk.directory:bin
+```toml
+[environment.JAVA_HOME]
+operation = "set"
+type = "path"
+source = "dependency"
+slot = "jdk"
+resource-type = "directory"
+resource = "home"
 ```
 
-La sintassi serializzata non deve richiedere shell, `eval`, command substitution o path separator platform-specific.
+La notazione architetturale:
+
+```text
+dependency:jdk.directory:home
+```
+
+resta solo abbreviazione descrittiva, non sintassi serializzata.
 
 ---
 
 # 10. Command-specific environment
 
-Una `command` resource può aggiungere un environment overlay specifico alla Environment Specification generale del package.
+Una command resource può aggiungere un overlay specifico alla Environment Specification generale.
 
-Questo permette a due command dello stesso package di avere esigenze differenti senza introdurre script arbitrari.
-
-Precedence logica interna:
+Precedence interna:
 
 ```text
 package Environment Specification
         ↓
-command-specific environment overlay
+command-specific overlay
 ```
 
-Il modello di integrazione definisce gli altri layer esterni.
+Gli altri layer appartengono al modello di integrazione/execution.
 
 ---
 
 # 11. Cosa NON vive in `@package`
 
-Non devono essere persistiti nel descriptor immutabile:
-
 ```text
 resolved provider Package Instance
-current Selection Policy dell'utente/profile
+Selection Policy corrente
 absolute RUMIAI_ROOT
-absolute package pathname
+absolute package path
 Materialized Process Environment
-current run/ symlink targets concreti
-mutable State Instance contents
+current run/ target concreti
+State Instance contents
 logs/cache/PID/tmp
 Integration Profile corrente
 ```
-
-Questi sono resolved/derived/mutable state esterni.
 
 ---
 
 # 12. Semantic revision rule
 
-Una modifica a uno dei seguenti elementi cambia il significato operativo della Package Instance:
+Una modifica semantica a:
 
 ```text
-identity canonica
-release metadata usato dal resolver
-integrity declaration
-state compatibility/mappings
+identity
+release metadata
+integrity
+state contract/mappings
 Package Interface
 provided capabilities
 Execution Requirements
@@ -433,114 +386,63 @@ Environment Specification
 Launch Template
 ```
 
-Non viene riscritta in-place una Package Instance esistente.
-
-La modifica produce una nuova `revision` RumiAI della Package Instance, anche se la software version upstream non cambia.
+produce una nuova RumiAI package `revision` e non modifica una Package Instance in-place.
 
 ---
 
 # 13. Relocatability
 
-Tutti i riferimenti del descriptor sono logici/relativi:
+Tutti i riferimenti descriptor sono logici/relativi.
 
-```text
-self resources
-dependency slot resources
-state areas
-relative root path
-```
-
-Il mapping verso:
-
-```text
-/current/RUMIAI_ROOT/...
-```
-
-avviene soltanto durante materializzazione/launch.
+Gli absolute pathname vengono materializzati soltanto al launch usando la RUMIAI_ROOT corrente.
 
 ---
 
 # 14. Esempio logico — JDK provider
 
-Senza fissare una sintassi concreta:
-
 ```text
-schema
-    1
-
 identity
-    name = temurin
-    version = 21.0.8+9
-    revision = 1
-    platform = linux
-    architecture = arm64
-    display-name = Eclipse Temurin 21
-
-release
-    release-order = <packaging assigned order>
+    temurin / 21.0.8+9 / r1 / platform concreta
 
 interface
-    directory:home -> root/
-    directory:bin  -> root/bin
-    file:java-exe  -> root/bin/java
-    file:javac-exe -> root/bin/javac
-
+    directory:home
+    directory:bin
+    file:java-exe
+    file:javac-exe
     command:java
-        executable = self:file:java-exe
-
     command:javac
-        executable = self:file:javac-exe
 
 provides
     java-runtime = 21
-        command = command:java
-        home = directory:home
-        bin = directory:bin
-
     java-development-kit = 21
-        java = command:java
-        javac = command:javac
-        home = directory:home
-        bin = directory:bin
 ```
 
 ---
 
-# 15. Esempio logico — NetBeans consumer
+# 15. Esempio logico — NetBeans
 
-Esempio di stress architetturale, non dichiarazione normativa sui requirement di una specifica release reale:
+Stress architetturale, non dichiarazione normativa sui requirement reali di una release specifica:
 
 ```text
-identity
-    name = netbeans
-    version = 26
-    display-name = NetBeans 26
-
 requirements
     slot jdk
-        requires java-development-kit >=17 <22
+        java-development-kit >=17 <22
 
 environment
-    JAVA_HOME
-        set dependency:jdk.directory:home
-
-    PATH
-        prepend dependency:jdk.directory:bin
+    JAVA_HOME = dependency jdk / directory home
+    PATH prepend dependency jdk / directory bin
 
 interface
     command:netbeans
-        executable = self:file:netbeans-launcher
 ```
 
-Il provider JDK concreto non compare nel descriptor NetBeans.
+Il provider JDK concreto non compare nel descriptor.
 
 ---
 
 # 16. Esempio logico — Pulsar
 
-Pulsar viene modellato come applicazione Electron/self-contained, non come consumer JVM.
-
-Esempio:
+Pulsar è modellato come applicazione Electron/self-contained:
 
 ```text
 requirements
@@ -548,10 +450,9 @@ requirements
 
 interface
     command:pulsar
-        executable = self:file:pulsar-executable
 ```
 
-Questo evita dependency artificiali introdotte soltanto come esempi.
+Non viene usato come esempio di dependency Java.
 
 ---
 
@@ -559,36 +460,40 @@ Questo evita dependency artificiali introdotte soltanto come esempi.
 
 ```text
 PD-01 @package è dichiarativo e immutabile
-PD-02 schema version è esplicita
-PD-03 identity pathname e descriptor devono concordare
+PD-02 schema è esplicito
+PD-03 pathname identity e descriptor identity devono concordare
 PD-04 display-name è human-readable e non entra nel pathname
-PD-05 release-order è metadata di selezione, non identity/software version
-PD-06 integrity descrive root/ e run-default/ immutabili
-PD-07 state descrive compatibility/scope/runtime mappings, non contenuto mutabile
-PD-08 interface descrive resource file/directory/command
-PD-09 provides mappa capability contract a Package Interface resource
-PD-10 requirements descrive bisogno, non provider preference/resolution
-PD-11 environment è Environment Specification dichiarativa, non env snapshot
-PD-12 env/ fisica non è necessaria come fonte di verità
+PD-05 release-order è metadata di selection, non identity
+PD-06 integrity descrive root/ e run-default/
+PD-07 state descrive contract/mappings, non contenuto mutabile
+PD-08 interface resource = file, directory, command
+PD-09 provides collega capability contract a Package Interface resource
+PD-10 requirements descrive bisogno, non selection policy
+PD-11 environment è dichiarativo, non environment snapshot
+PD-12 env/ fisica non è necessaria
 PD-13 descriptor non contiene absolute pathname persistenti
-PD-14 resolved state/user policy non vive in @package
-PD-15 modifica semantica del descriptor richiede nuova RumiAI revision
-PD-16 Pulsar non viene usato come esempio di dependency Java
+PD-14 resolved/user policy state non vive in @package
+PD-15 modifica semantica richiede nuova revision
+PD-16 serializzazione v0 = restricted TOML 1.0
+PD-17 reference serializzate strutturalmente, non come mini-language
+PD-18 Pulsar non viene usato come esempio Java
 ```
 
 ---
 
 # 18. Prossimo livello
 
-Con il modello logico definito, la decisione successiva può essere la **serializzazione concreta di `@package`** e del resolved state.
-
-Quella scelta deve preservare:
+La serializzazione è fissata. Il prossimo passo è definire lo **schema v0 concreto campo-per-campo**:
 
 ```text
-parsing deterministico
-schema/version esplicita
-nessuna esecuzione di codice
-round-trip non necessario per la semantica
-rappresentazione non ambigua di path/value expressions
-portabilità Linux/macOS/Windows
+key name definitive
+required / optional
+cardinalità
+namespace di resource/capability/slot
+constraint grammar
+Environment Specification operations
+validation order
+error classes
 ```
+
+Dopo lo schema si possono scrivere descriptor completi di riferimento per JDK, NetBeans, Python e Pulsar e stressare la sufficienza prima di un PoC.
