@@ -4,7 +4,7 @@ Data: 2026-08-30
 
 Stato: **architectural contract — v0**
 
-Questa specifica definisce le primitive transazionali che il bootstrap/platform adapter Rumi deve esporre ai tool system-layer, in particolare a `pkg`.
+Questa specifica definisce le primitive transazionali che il bootstrap/platform adapter RumiAI deve esporre ai tool system-layer, in particolare a `pkg`.
 
 Obiettivo:
 
@@ -36,7 +36,7 @@ sync utility variants
 platform-specific helper
 ```
 
-Queste differenze appartengono al bootstrap/platform adapter.
+Queste differenze appartengono al bootstrap/platform adapter RumiAI.
 
 ---
 
@@ -109,7 +109,7 @@ operation failure non lascia target parzialmente scritto
 
 È usata per `active`.
 
-La primitive v0 corrente è già implementata per source/destination nella stessa directory ed è stata fisicamente validata su macOS arm64 e Ubuntu 26.04 ARM64 nella precedente spelling API; la correzione di namespace `RumiAI_` verrà ri-validata insieme al prossimo gate sostanziale.
+La primitive v0 corrente è implementata per source/destination nella stessa directory. La relativa evidenza di Physical Platform Validation resta associata alle revisioni effettivamente esercitate.
 
 ---
 
@@ -148,19 +148,9 @@ Primitive:
 RumiAI_file_sync <file>
 ```
 
-Dopo successo, il bootstrap/platform adapter garantisce il livello di durability definito e fisicamente validato per la reference platform/filesystem.
+Dopo successo, il bootstrap/platform adapter RumiAI garantisce il livello di durability definito e fisicamente validato per la reference platform/filesystem.
 
-La write API non confonde:
-
-```text
-close
-```
-
-con:
-
-```text
-durable flush
-```
+La write API non confonde `close` con durable flush.
 
 ---
 
@@ -172,7 +162,7 @@ Primitive:
 RumiAI_directory_sync <directory>
 ```
 
-Serve dove il filesystem/OS richiede sync del parent directory per rendere durable:
+Serve dove filesystem/OS richiede sync del parent directory per rendere durable:
 
 ```text
 new entry
@@ -216,13 +206,7 @@ Sotto manager lock:
 7 RumiAI_directory_sync generations/
 ```
 
-Dopo il punto 6:
-
-```text
-gN è committed/inactive
-```
-
-anche se non è active.
+Dopo il punto 6 `gN` è committed/inactive anche se non è active.
 
 ---
 
@@ -336,19 +320,13 @@ Non costituiscono security boundary contro lo stesso Environment Owner che modif
 
 # 16. Naming invariant
 
-Il nome pubblico del comando/interprete può essere `rumi`, ma le funzioni shell namespaced usano sempre:
+Le funzioni shell namespaced RumiAI usano sempre:
 
 ```text
 RumiAI_*
 ```
 
-Il namespace alternativo lowercase:
-
-```text
-rumi_*
-```
-
-è vietato.
+Abbreviazioni conversazionali non definiscono command, namespace o API.
 
 ---
 
@@ -366,5 +344,5 @@ TX-08 file/directory durability sono esplicite
 TX-09 reader vede old oppure new complete active state
 TX-10 valid active resta authoritative dopo recovery
 TX-11 Physical Platform Validation copre OS+filesystem+mount semantics
-TX-12 API shell namespaced = RumiAI_*; lowercase rumi_* forbidden
+TX-12 namespaced RumiAI shell APIs use exact RumiAI_* namespace
 ```
