@@ -37,23 +37,23 @@ pkg/
 └── native-tool@2.0@r1@linux-x86_64/
 ```
 
-`platform` e `architecture` descrivono soltanto vincoli propri del contenuto della Package Instance.
+`platform` e `architecture` descrivono soltanto vincoli propri del contenuto.
 
-Java/JDK/JRE/Python e altri runtime/interpreti/SDK necessari sono Execution Requirements e non compaiono come platform token.
+Java/JDK/JRE/Python e altri runtime/interpreti/SDK necessari sono Execution Requirements.
 
 ---
 
 # 2. `bin/` fisica e namespace `@platforms`
 
-`RUMIAI_ROOT/bin/` resta una directory fisica.
+`RUMIAI_ROOT/bin/` resta directory fisica.
 
-Binding di Package Instance con contenuto `platform = any` vivono direttamente in:
+Binding `platform = any`:
 
 ```text
 RUMIAI_ROOT/bin/
 ```
 
-Binding platform-specific vivono in:
+Binding platform-specific:
 
 ```text
 RUMIAI_ROOT/bin/@platforms/<platform>-<architecture>/
@@ -74,45 +74,29 @@ bin/
 └── java-app
 ```
 
-`@platforms` è reserved sotto `bin/` e non può essere un command binding ordinario.
-
-La directory platform-specific viene creata on demand.
+`@platforms` è reserved sotto `bin/`.
 
 ---
 
 # 3. Bootstrap PATH
 
-Il bootstrap determina il current native host target e usa:
+Il bootstrap determina current native host target e usa:
 
 ```text
-RUMIAI_ROOT/bin/@platforms/<current-native-platform>-<current-architecture>
+RUMIAI_ROOT/bin/@platforms/<current-platform>-<current-architecture>
 RUMIAI_ROOT/bin
 <inherited PATH>
 ```
 
-La specialization native ha precedence sulla variante `platform = any`.
-
-Questa precedence non è un conflict resolver generale: same-name base/specialization deve essere dichiarato dal resolved integration state; collisioni non correlate restano errori.
-
-Esempio generico:
-
-```text
-bin/tool
-    Package Instance any-any
-
-bin/@platforms/linux-arm64/tool
-    specialization linux-arm64
-```
-
-Su Linux ARM64 vince la specialization; sugli altri host resta disponibile la variante `any-any` se compatibile e risolta.
+Native specialization ha precedence sulla variante `any` soltanto quando la relazione è dichiarata nel resolved integration state.
 
 ---
 
 # 4. Nessuna generalizzazione preventiva di `@platforms`
 
-Il pattern può essere applicato in futuro ad altre aree soltanto se un requisito reale lo richiede.
+Il pattern può essere applicato altrove soltanto se emerge un requisito reale.
 
-State Instance ha già una propria qualificazione platform/architecture indipendente e non richiede un albero globale preventivo.
+State Instance mantiene qualificazione platform/architecture indipendente.
 
 ---
 
@@ -137,25 +121,25 @@ Significato:
 
 ```text
 name          normalized logical package identity
-version-token canonical reversible upstream-version representation
+version-token canonical reversible upstream-version encoding
 revision      RumiAI packaging revision
 platform      any | linux | macos | windows
 architecture  any | arm64 | x86_64
 ```
 
-`@` è il separatore strutturale riservato.
+`@` è separatore strutturale riservato.
 
 ---
 
 # 6. Package name e revision
 
-Package name candidato/fissato come forma conservativa:
+Package name:
 
 ```text
 [a-z0-9][a-z0-9._-]*
 ```
 
-Lowercase canonico per evitare collisioni case-insensitive.
+Lowercase canonico.
 
 Revision:
 
@@ -169,36 +153,58 @@ intero positivo base 10.
 
 ---
 
-# 7. Version token
+# 7. Version token — decisione v0
 
 La software version upstream resta semanticamente opaca.
 
-Il pathname usa un token:
+Il token usa canonical byte-wise percent encoding definito in:
 
 ```text
-filesystem-safe
-canonical
-reversible
-senza @
-case-insensitive-safe
+drafts/rumiai-os/package-manager-version-token-v0/README.md
 ```
 
-Versioni semplici possono restare letterali, per esempio:
+Safe literal set:
 
 ```text
-21.0.8+9
-8u462
-1.130.0
-2.0-beta-3
+[a-z0-9._+-]
 ```
 
-Per versioni problematiche resta candidato un encoding tipo:
+Ogni altro byte UTF-8 viene encoded:
 
 ```text
-b32-<base32-lowercase-utf8-senza-padding>
+%hh
 ```
 
-Il requisito normativo è canonicalità + round-trip; l'algoritmo finale di encoding resta dettaglio tecnico separato.
+con hex lowercase.
+
+Esempi:
+
+```text
+21.0.8+9      -> 21.0.8+9
+8u462         -> 8u462
+2.0-beta-3    -> 2.0-beta-3
+1.0-RC1       -> 1.0-%52%431
+1@2           -> 1%402
+100%          -> 100%25
+é              -> %c3%a9
+```
+
+Vengono sempre encoded, fra gli altri:
+
+```text
+uppercase ASCII
+%
+@
+space
+/
+\\
+Windows-reserved punctuation
+non-ASCII UTF-8 bytes
+```
+
+Il token è ASCII, reversible, canonical e case-insensitive-safe.
+
+Safe byte percent-encoded non è canonico; uppercase hex non è canonico.
 
 ---
 
@@ -215,7 +221,13 @@ Split canonico sui tre `@` strutturali produce:
 
 Platform/architecture sono token controllati dal vocabulary v0.
 
-Il parsing non dipende da `@package`.
+Il parser pathname non dipende da `@package`.
+
+Version-token viene validato/decoded secondo Version Token v0 e deve round-trip con:
+
+```text
+@package identity.version
+```
 
 ---
 
@@ -227,13 +239,13 @@ Ridondanza intenzionale:
 identity(pathname) == identity(@package)
 ```
 
-Una divergenza è integrity error, non precedence decision.
+Una divergenza è integrity error.
 
 ---
 
 # 10. Anti-ghost inventory
 
-Ogni immediate child di `pkg/` deve essere classificato:
+Ogni immediate child di `pkg/` deve classificarsi:
 
 ```text
 HEALTHY
@@ -242,15 +254,11 @@ IDENTITY_MISMATCH
 UNKNOWN
 ```
 
-`RECOVERABLE` significa pathname parseable ma descriptor mancante/corrotto.
+`RECOVERABLE` = pathname parseable ma descriptor mancante/corrotto.
 
-Una Package Instance recuperabile resta visibile e rimovibile/riparabile, ma non viene usata automaticamente per nuove resolution finché i metadata non sono verificati.
+Una Package Instance recuperabile resta visibile/rimovibile/riparabile ma non entra automaticamente in nuove resolution.
 
-Invariante:
-
-> Nessun contenuto fisicamente presente sotto `pkg/` può diventare semanticamente invisibile perché manca un indice o descriptor.
-
-`pkg/` è physical truth della presenza locale; indici/cache sono rebuildable.
+`pkg/` è physical truth; indici/cache sono rebuildable.
 
 ---
 
@@ -267,15 +275,11 @@ bin/
     derived Execution View / command stubs
 ```
 
-La perdita/corruzione di `bin/` è riparabile dalla active generation.
-
-Uno stale stub non prova che una Package Instance sia installata o attiva.
+Perdita/corruzione `bin/` è riparabile dalla active generation.
 
 ---
 
 # 12. Cross-platform content + native runtime requirement
-
-Esempio:
 
 ```text
 netbeans@26@r1@any-any
@@ -294,15 +298,13 @@ Su macOS ARM64:
 jdk -> temurin@...@macos-arm64
 ```
 
-La stessa Package Instance `any-any` può quindi essere usata con provider runtime native differenti senza cambiare identity.
+Stessa Package Instance `any-any`, provider runtime nativo differente.
 
 ---
 
 # 13. Native content
 
-Se il contenuto stesso richiede una piattaforma/CPU, l'identity la rappresenta anche se esiste contemporaneamente un runtime requirement.
-
-Esempio:
+Se il contenuto stesso richiede platform/CPU, l'identity la rappresenta anche con runtime requirement.
 
 ```text
 Java app + required JNI Linux ARM64
@@ -320,15 +322,16 @@ Requirement:
 
 ```text
 LL-01 tutte le Package Instance locali vivono sotto un unico pkg/
-LL-02 Package Instance pathname = <name>@<version-token>@r<revision>@<platform>-<architecture>
+LL-02 pathname = <name>@<version-token>@r<revision>@<platform>-<architecture>
 LL-03 platform v0 = any, linux, macos, windows
 LL-04 architecture v0 = any, arm64, x86_64
 LL-05 JVM/JRE/JDK/Python non sono platform token
-LL-06 any-any rappresenta contenuto OS/CPU-independent fisicamente validato
+LL-06 any-any = contenuto OS/CPU-independent fisicamente validato
 LL-07 bin/@platforms usa native host platform-architecture
-LL-08 native specialization precede cross-platform binding ma richiede relazione esplicita
+LL-08 native specialization precede cross-platform binding solo con relazione esplicita
 LL-09 @platforms è reserved sotto bin/
-LL-10 pathname identity e descriptor identity devono concordare
-LL-11 ogni immediate child di pkg/ è classificabile; niente package ghost
-LL-12 pkg/ è physical truth; bin/ è derived view
+LL-10 version-token usa canonical percent encoding v0
+LL-11 pathname identity e descriptor identity devono concordare
+LL-12 ogni immediate child di pkg/ è classificabile
+LL-13 pkg/ è physical truth; bin/ è derived view
 ```
