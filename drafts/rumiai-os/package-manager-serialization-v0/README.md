@@ -2,236 +2,210 @@
 
 Data: 2026-08-30
 
-Stato: **design decision — System Field Format v0 fissato per tutti i file dati `pkg`**
+Stato: **design decision — configurazione gerarchica + dati tabellari fissati**
 
 Prerequisiti:
 
 ```text
 drafts/rumiai-os/system-field-format-v0/README.md
+drafts/rumiai-os/system-tabular-data-v0/README.md
 drafts/rumiai-os/package-manager-integrity-method-1/README.md
 ```
 
-Questa specifica sostituisce le precedenti rappresentazioni TOML/JSON del package manager.
-
-JSON resta lo standard strutturato del development/application layer RumiAI, ma non è una dipendenza del system layer né di `pkg`.
+JSON resta lo standard del development/application layer RumiAI. `pkg` appartiene al system layer e non dipende da parser JSON.
 
 ---
 
-# 1. Principio
+# 1. Due famiglie di file
 
-`pkg` è un tool del RumiAI system layer, implementato in POSIX `sh` e avviato tramite shebang/bootstrap Rumi.
-
-Tutti i **file dati/configurazione/control state parsati da `pkg`** usano System Field Format v0:
+`pkg` distingue semanticamente:
 
 ```text
-field-name<TAB>field-value
+CONFIGURATION / METADATA / CONTROL STATE
+    System Configuration Field Format (SCF)
+    field-name<TAB>field-value
+    dot notation
+
+TABULAR DATA
+    System Tabular Data (STD)
+    header TSV
+    una riga per record
 ```
 
-Questo include:
+Non si tenta di rappresentare dataset tabellari come migliaia di field di configurazione.
+
+---
+
+# 2. File SCF di pkg
+
+Usano SCF almeno:
 
 ```text
 pkg configuration
 @package
-@integrity-root.tsv
-@integrity-run-default.tsv
 Desired Integration Profile
 Resolution Snapshot / resolved state
-active generation pointer
+active generation state
 selection policy persistita
-altri metadata persistiti letti da pkg
+altri metadata/control-state gerarchici letti da pkg
 ```
 
-Non sono file dati e quindi non usano System Field Format:
+Esempio:
 
 ```text
-script POSIX sh
-Command Stub
-filesystem directory/symlink
-manager.lock usato esclusivamente come OS lock handle
+kind	package
+schema	1
+identity.name	netbeans
+identity.version	26
+identity.revision	1
+identity.platform	any
+identity.architecture	any
+release.order	26
 ```
 
 ---
 
-# 2. Header comune
+# 3. Dot notation
 
-Ogni file machine-readable di `pkg` dichiara almeno:
-
-```text
-kind	<canonical-kind>
-schema	<positive-integer>
-```
-
-Esempi kind v0:
+Field gerarchico:
 
 ```text
-pkg_config
-package
-integrity
-profile_desired
-profile_resolved
-active
+identity.name
+integrity.root.manifest_digest
+requirements.1.constraint
+interface.commands.2.executable.source
 ```
 
-`kind` permette di rilevare un file valido nel formato base ma aperto con lo schema sbagliato.
-
----
-
-# 3. Collezioni
-
-Ogni struttura ripetibile usa:
-
-```text
-<prefix>_count	N
-<prefix>_1_...
-<prefix>_2_...
-...
-<prefix>_N_...
-```
-
-Gli indici sono contigui `1..N`, base 10, senza zero iniziali.
-
-Empty collection:
-
-```text
-requirement_count	0
-```
-
-Nested collection:
-
-```text
-interface_provide_count	1
-interface_provide_1_resource_count	3
-interface_provide_1_resource_1_key	command
-```
-
-L'ordine semantico di una sequenza è dato dagli indici, non dalla posizione fisica delle righe.
-
----
-
-# 4. Arbitrary identifiers
-
-Package ID, logical ID, provider name, capability name e altri valori arbitrari restano sempre `field-value`.
-
-Non vengono incorporati dinamicamente nei field-name.
-
-Corretto:
-
-```text
-selector_1_id	default-java
-selector_1_provider_1	microsoft-openjdk
-```
-
-Da non fare:
-
-```text
-selector_default-java_provider_...
-```
-
-Questo mantiene tutti i field-name conformi alla grammar POSIX:
+Named segment:
 
 ```text
 [A-Za-z_][A-Za-z0-9_]*
 ```
 
+Array index segment:
+
+```text
+[1-9][0-9]*
+```
+
+Identificatori arbitrari restano nei value.
+
 ---
 
-# 5. `@package`
+# 4. Collection SCF
 
-Pathname fisico:
+Ogni array usa count esplicito + indici contigui:
+
+```text
+requirements.count	1
+requirements.1.id	jdk
+requirements.1.target	capability
+requirements.1.capability	java-development-kit
+requirements.1.contract	1
+requirements.1.constraint	>=17 <22
+```
+
+Array annidato:
+
+```text
+interface.provides.count	1
+interface.provides.1.resources.count	3
+interface.provides.1.resources.1.key	command
+```
+
+---
+
+# 5. Structured reference SCF
+
+Nessuna mini-language nei value.
+
+Dependency reference:
+
+```text
+environment.1.value.source	dependency
+environment.1.value.slot	jdk
+environment.1.value.resource_type	directory
+environment.1.value.resource	home
+```
+
+Literal:
+
+```text
+interface.commands.1.args.1.source	literal
+interface.commands.1.args.1.value	-jar
+```
+
+---
+
+# 6. `@package`
+
+Path:
 
 ```text
 pkg/<package-instance-id>/@package
 ```
 
-Esempio parziale:
+SCF parziale:
 
 ```text
 kind	package
 schema	1
-identity_name	netbeans
-identity_version	26
-identity_revision	1
-identity_platform	any
-identity_architecture	any
-identity_display_name	NetBeans 26
-release_order	26
-integrity_method	1
-integrity_algorithm	sha256
-integrity_root_inventory	@integrity-root.tsv
-integrity_root_files	120
-integrity_root_directories	24
-integrity_root_links	3
-integrity_root_manifest_digest	...
+identity.name	netbeans
+identity.version	26
+identity.revision	1
+identity.platform	any
+identity.architecture	any
+identity.display_name	NetBeans 26
+release.order	26
+integrity.method	1
+integrity.algorithm	sha256
+integrity.root.inventory	@integrity-root.tsv
+integrity.root.files	120
+integrity.root.directories	24
+integrity.root.links	3
+integrity.root.manifest_digest	...
 ```
 
-Il descriptor resta dichiarativo e immutabile.
+`@package` è dichiarativo, immutabile e non viene source/eval.
 
 ---
 
-# 6. Structured reference
+# 7. Integrity = tabular data
 
-Le reference non usano mini-language nel value.
-
-Esempio dependency reference:
-
-```text
-environment_1_value_source	dependency
-environment_1_value_slot	jdk
-environment_1_value_resource_type	directory
-environment_1_value_resource	home
-```
-
-Esempio literal:
-
-```text
-interface_command_1_arg_1_source	literal
-interface_command_1_arg_1_literal	-jar
-```
-
----
-
-# 7. Integrity inventory
-
-I due file:
+Gli inventory:
 
 ```text
 @integrity-root.tsv
 @integrity-run-default.tsv
 ```
 
-restano separati per i due tree ma usano anch'essi System Field Format v0 a due campi.
+sono System Tabular Data, NON SCF.
 
-Non esiste più il precedente record a cinque colonne.
+Header canonico Integrity Method 1:
+
+```text
+type<TAB>mode<TAB>digest<TAB>target<TAB>path
+```
 
 Esempio:
 
 ```text
-kind	integrity
-schema	1
-directory_count	2
-directory_1_path	.
-directory_1_mode	0500
-directory_2_path	./bin
-directory_2_mode	0500
-file_count	1
-file_1_path	./bin/foo
-file_1_mode	0500
-file_1_digest	<digest>
-link_count	1
-link_1_path	./log
-link_1_target	../run/log
-link_1_digest	<digest-target>
+type	mode	digest	target	path
+D	0500	-	-	.
+D	0500	-	-	./bin
+F	0500	<digest>	-	./bin/foo
+L	-	<digest-target>	../run/log	./log
 ```
 
-Ogni collection è indicizzata secondo l'ordine canonico dei pathname definito da Integrity Method 1.
+Una filesystem entry corrisponde a una data row.
 
-Il manifest digest è il digest dei byte canonici completi del relativo inventory System Field Format.
+`path` resta l'ultima colonna.
 
 ---
 
 # 8. Integrity Method 1
 
-Restano valide le regole pathname/target già fissate:
+Restano normative:
 
 ```text
 Unicode ammesso
@@ -242,32 +216,113 @@ TAB/CR/LF/NUL/backslash vietati nei pathname e symlink target
 path `.` oppure `./...`
 symlink target relativo
 nessun escape fuori dalla Package Instance wrapper
+canonical row ordering
 ```
 
-La normalizzazione Unicode/full case-fold non è implementabile portabilmente in puro POSIX `sh`; il bootstrap Rumi deve quindi esporre la primitive normativa necessaria oppure delegarla a un validator/producer fidato. La scelta bootstrap è separata dalla serializzazione.
+NFC/full case-fold richiedono primitive bootstrap/validator dedicate perché non sono implementabili portabilmente in puro POSIX `sh`.
 
 ---
 
-# 9. Manifest digest
+# 9. Integrity whole-file digest
 
-`manifest-digest` verifica i byte canonici dell'intero inventory file.
+`manifest_digest` è il digest dei byte canonici completi del TSV.
 
-Dipende quindi da:
+Partecipa anche la prima riga header:
 
 ```text
-canonical field order definito dallo schema integrity
-field-name
+type<TAB>mode<TAB>digest<TAB>target<TAB>path<LF>
+```
+
+Il digest include:
+
+```text
+header
 TAB
-field-value
 LF
+all data rows
+canonical row order
 final LF
 ```
 
-Per collection indicizzate il canonical writer usa ordine numerico `1..N`, non ordinamento lessicografico dei field-name.
+---
+
+# 10. Desired / resolved
+
+Path:
+
+```text
+var/pkg/profiles/<profile>/generations/gN/desired
+var/pkg/profiles/<profile>/generations/gN/resolved
+```
+
+Entrambi sono SCF.
+
+Resolved parziale:
+
+```text
+kind	profile_resolved
+schema	1
+generation	17
+profile	default
+dependencies.count	1
+dependencies.1.consumer	netbeans@26@r1@any-any
+dependencies.1.slot	jdk
+dependencies.1.provider	temurin@21.0.8+9@r1@linux-arm64
+dependencies.1.capability	java-development-kit
+dependencies.1.contract	1
+dependencies.1.satisfied_version	21
+```
 
 ---
 
-# 10. Immutabilità
+# 11. Active
+
+`active` è un piccolo control-state SCF:
+
+```text
+kind	active
+schema	1
+generation	17
+```
+
+L'atomic replace del file resta la sola operazione che attiva una generation completamente validata.
+
+---
+
+# 12. Query model
+
+Per SCF:
+
+```text
+rumi_conf_get
+rumi_conf_has
+rumi_conf_namespace
+rumi_conf_validate
+```
+
+Per STD:
+
+```text
+rumi_table_validate
+rumi_table_rows
+rumi_table_filter
+```
+
+Il package manager non implementa parser ad hoc per ogni file.
+
+---
+
+# 13. Performance rule
+
+Configurazioni/metadata: lookup puntuali o per namespace.
+
+Dataset tabellari grandi: single-pass row streaming.
+
+Vietato trasformare un inventory da N entry in O(N) namespace con più righe per entry quando una riga tabellare rappresenta naturalmente il record.
+
+---
+
+# 14. Immutabilità
 
 Core immutabile Package Instance:
 
@@ -279,94 +334,15 @@ run-default/
 @integrity-run-default.tsv
 ```
 
-`run/` resta derivata.
+`@package` = SCF.
 
-Unix-like default:
-
-```text
-@package                    0400
-@integrity-root.tsv         0400
-@integrity-run-default.tsv  0400
-```
+Inventory = canonical STD.
 
 ---
 
-# 11. Desired / resolved state
+# 15. Tooling principle
 
-Pathname:
-
-```text
-var/pkg/profiles/<profile>/generations/gN/desired
-var/pkg/profiles/<profile>/generations/gN/resolved
-```
-
-Entrambi usano System Field Format v0.
-
-Esempio resolved parziale:
-
-```text
-kind	profile_resolved
-schema	1
-generation	17
-profile	default
-dependency_count	1
-dependency_1_consumer	netbeans@26@r1@any-any
-dependency_1_slot	jdk
-dependency_1_provider	temurin@21.0.8+9@r1@linux-arm64
-dependency_1_capability	java-development-kit
-dependency_1_contract	1
-dependency_1_satisfied_version	21
-```
-
----
-
-# 12. Active pointer
-
-Anche `active` usa lo stesso formato:
-
-```text
-kind	active
-schema	1
-generation	17
-```
-
-L'atomic replace del file resta la sola operazione che attiva una generation completamente validata.
-
-Non esiste più una seconda grammatica `g17\n` specifica per questo file.
-
----
-
-# 13. Performance rule
-
-`rumi_file_get` può essere usato per pochi lookup puntuali.
-
-Collection grandi NON vengono elaborate tramite repeated full-file lookup.
-
-Si usa:
-
-```text
-<count>
-+
-rumi_file_fields <file> <prefix>
-```
-
-con singola passata streaming.
-
-Questo vale in particolare per:
-
-```text
-resolved dependency graph
-integrity inventories
-resource collection grandi
-```
-
-Il bootstrap può usare POSIX `awk` o una primitive equivalente senza introdurre un parser diverso.
-
----
-
-# 14. Tooling principle
-
-Il package manager non richiede:
+`pkg` non richiede:
 
 ```text
 JSON parser
@@ -375,30 +351,24 @@ Node.js
 jq
 ```
 
-per leggere il proprio stato autorevole.
-
-Tutti i tool system-layer usano le primitive file esposte dal bootstrap Rumi.
-
-JSON continua ad essere disponibile nel development/application layer e per tool che non appartengono al bootstrap/system layer.
+Il bootstrap Rumi fornisce primitive SCF/STD comuni.
 
 ---
 
-# 15. Invarianti
+# 16. Invarianti
 
 ```text
-SER-01 tutti i file dati parsati da pkg usano System Field Format v0
-SER-02 record base = field-name<TAB>field-value
-SER-03 ogni file machine-readable dichiara kind + schema
-SER-04 field-name segue grammar POSIX variable name
-SER-05 arbitrary IDs/keys restano nei value
-SER-06 collection = count + indici contigui 1..N
-SER-07 structured reference viene flattenata in field strutturali, non mini-language
-SER-08 @package usa System Field Format
-SER-09 desired/resolved usano System Field Format
-SER-10 active usa System Field Format
-SER-11 integrity inventory usa System Field Format a due campi
+SER-01 pkg distingue configuration/metadata da tabular data
+SER-02 SCF = field-name<TAB>field-value + dot notation
+SER-03 @package/desired/resolved/active usano SCF
+SER-04 SCF collection = count + indici contigui 1..N
+SER-05 arbitrary IDs restano nei value
+SER-06 structured references usano namespace SCF, non mini-language
+SER-07 integrity inventory usa STD con header
+SER-08 integrity header = type,mode,digest,target,path nell'ordine fissato
+SER-09 one filesystem entry = one inventory data row
+SER-10 path è ultima colonna inventory
+SER-11 manifest digest include header + tutte le row + final LF
 SER-12 root e run-default hanno inventory distinti
-SER-13 manifest digest = digest dei byte canonici del relativo inventory
-SER-14 large collection usa streaming/per-prefix, non repeated get
-SER-15 nessuna dipendenza JSON/Python/Node/jq nel package-manager system layer
+SER-13 nessuna dipendenza JSON/Python/Node/jq nel package-manager system layer
 ```
