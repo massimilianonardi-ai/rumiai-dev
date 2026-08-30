@@ -58,7 +58,7 @@ State Instance compatible binding
 environment exact references
 ```
 
-Lo stub delega al Rumi Launcher, che legge `active` una sola volta.
+Lo stub delega al RumiAI launcher, che legge `active` una sola volta.
 
 ---
 
@@ -108,31 +108,29 @@ Il pathname determina scope/name.
 
 ---
 
-# 5. POSIX-shebang stub v0
+# 5. Stub physical form
 
-Sulle reference platform dove l'execution environment supporta lo shebang Rumi, il Command Stub è un **piccolo file regolare generato**, non un symlink.
+Il Command Stub v0 è un **piccolo file regolare generato**, non un symlink.
 
-Forma concettuale canonica:
-
-```sh
-#!/usr/bin/env rumi
-RumiAI_require launcher || exit $?
-RumiAI_launch "$@"
-```
-
-Il nome/scope NON sono embedded nel body.
-
-`RumiAI_launch` usa:
+La semantica richiesta è:
 
 ```text
-RumiAI_COMMAND_BIN
+preserve invoked public pathname identity
+forward argv exactly
+delegate to the RumiAI launcher
+non embed provider/generation/name/scope metadata
+rebuildable from authoritative integration state
 ```
 
-esposto dal bootstrap per ricavare il pathname dello stub effettivamente invocato.
+Non è fissato alcun nuovo command/interpreter dedicato allo stub.
 
-Il body può essere identico byte-per-byte per tutti i public command stub della stessa stub schema/version.
+Se lo stub viene implementato come script shell direttamente eseguibile, deve rispettare `RULES.md` e quindi usare esattamente:
 
-Il command name `rumi` e il function namespace `RumiAI_*` sono concetti distinti; lowercase `rumi_*` non è un namespace API ammesso.
+```sh
+#!/bin/sh
+```
+
+L'esatto meccanismo fisico relocatable con cui uno stub shell raggiunge il launcher RumiAI resta da definire/validare prima dell'implementazione. Non viene inferito da abbreviazioni conversazionali e non viene introdotto un nuovo shebang/interprete senza decisione esplicita.
 
 ---
 
@@ -162,15 +160,13 @@ La scelta evita di dipendere da `argv[0]`/symlink-preservation semantics variabi
 
 # 7. Perché non hardlink
 
-Un hardlink potrebbe preservare il pathname invocato ma condivide lo stesso inode/content e aggiunge filesystem semantics non necessarie.
+Un hardlink potrebbe preservare il pathname invocato ma condivide inode/content e aggiunge filesystem semantics non necessarie.
 
 V0 preferisce:
 
 ```text
 canonical generated regular-file copy
 ```
-
-per semplicità, inspection e repair deterministici.
 
 Hardlink non è richiesto dal modello.
 
@@ -244,7 +240,7 @@ Binding nativo incompatibile non viene lanciato accidentalmente.
 
 ---
 
-# 11. Rumi Launcher abstraction
+# 11. RumiAI Launcher abstraction
 
 Input logico:
 
@@ -388,12 +384,12 @@ Il logical stub contract resta:
 ```text
 preserve invoked public pathname identity
 forward argv exactly
-enter rumi launcher
+enter RumiAI launcher
 non embed provider/generation
 rebuildable
 ```
 
-Se la reference Windows environment non esegue direttamente POSIX shebang script dal native command surface, serve un platform adapter/shim fisicamente validato.
+Se una reference Windows environment non esegue direttamente il physical stub scelto dal progetto, serve un platform adapter/shim fisicamente validato.
 
 La semantica launcher non cambia.
 
@@ -569,7 +565,7 @@ LM-01 command stub = derived Execution View
 LM-02 stub non embed provider/generation/name/scope metadata
 LM-03 public key = profile + scope + name
 LM-04 profile/scope/name derivano dal stub pathname v0
-LM-05 POSIX-like stub v0 = generated regular file with Rumi shebang
+LM-05 public stub physical form = generated regular file; no new interpreter/shebang is implied
 LM-06 POSIX-like symlink stub forbidden
 LM-07 launcher legge active una sola volta
 LM-08 launch usa exact immutable generation
@@ -582,5 +578,7 @@ LM-14 run/ è verificata/ricostruita prima del launch
 LM-15 root bin namespace = public default profile
 LM-16 bin listing non è authoritative integration state
 LM-17 Windows/non-POSIX-native surface può richiedere platform shim validato
-LM-18 RumiAI shell API use exact RumiAI_* namespace; lowercase rumi_* forbidden
+LM-18 namespaced RumiAI shell APIs use exact RumiAI_* namespace
+LM-19 directly executable shell scripts follow canonical #!/bin/sh rule
+LM-20 conversational shorthand has no product naming authority
 ```
