@@ -64,7 +64,72 @@ Se un dominio richiede digest/firma deterministica, quel dominio definisce una p
 
 ---
 
-# 4. Eccezioni intenzionali
+# 4. Formattazione dei JSON generati da RumiAI
+
+I JSON **generati da RumiAI** devono essere pretty-printed secondo uno stile stabile e leggibile.
+
+Regole v0:
+
+```text
+indentation               4 spazi per livello
+tab di indentazione       vietati
+newline                   LF
+final newline             obbligatoria
+opening `{` / `[`         su una nuova riga
+closing `}` / `]`         su una propria riga
+object/array delimiter    non appeso alla fine della riga che introduce il valore
+trailing comma            vietata, come richiesto da JSON standard
+Unicode                   emesso normalmente come UTF-8; nessun ASCII escaping generale richiesto
+```
+
+Esempio normativo di stile:
+
+```json
+{
+    "schema": 1,
+    "identity":
+    {
+        "name": "netbeans",
+        "platform": "any",
+        "architecture": "any"
+    },
+    "requirements":
+    [
+        {
+            "slot": "jdk",
+            "target": "capability",
+            "capability": "java-development-kit",
+            "contract": 1,
+            "constraint": ">=17 <22"
+        }
+    ]
+}
+```
+
+Quindi non viene generato lo stile compatto:
+
+```json
+{
+    "identity": {
+        "name": "netbeans"
+    },
+    "requirements": [
+        {
+            "slot": "jdk"
+        }
+    ]
+}
+```
+
+anche se è JSON semanticamente equivalente.
+
+La formattazione riguarda l'output prodotto da RumiAI. Un parser RumiAI deve comunque accettare qualunque JSON valido che soddisfi schema e restricted profile, indipendentemente da whitespace/indentation.
+
+Per rendere i diff stabili, quando uno schema definisce un ordine raccomandato dei member, i generatori RumiAI devono emettere i member in quell'ordine. Questo ordine resta una regola di presentazione, non entra nella semantica JSON.
+
+---
+
+# 5. Eccezioni intenzionali
 
 JSON non viene imposto quando una rappresentazione più semplice è migliore.
 
@@ -84,7 +149,7 @@ Principio:
 
 ---
 
-# 5. Tooling baseline
+# 6. Tooling baseline
 
 Un file JSON RumiAI deve poter essere ispezionato almeno concettualmente tramite tool standard come:
 
@@ -98,7 +163,7 @@ La logica RumiAI non deve richiedere parser proprietari per il formato base.
 
 ---
 
-# 6. Invarianti
+# 7. Invarianti
 
 ```text
 JS-01 JSON UTF-8 è il structured data format di riferimento RumiAI v0
@@ -110,4 +175,8 @@ JS-06 JSON non è codice e non viene eval/source
 JS-07 canonical JSON byte serialization non è requisito generale
 JS-08 domini bulk/streaming possono usare formati più appropriati
 JS-09 nessuna dipendenza architetturale da Python per leggere metadata RumiAI
+JS-10 JSON generato da RumiAI usa indentation di 4 spazi, LF e newline finale
+JS-11 opening/closing object/array delimiter sono su righe proprie; `{` e `[` non vengono appesi alla riga che introduce il valore
+JS-12 Unicode viene mantenuto come UTF-8; non si impone ASCII escaping generale
+JS-13 la formattazione generata è stabile ma non modifica la semantica del parser JSON
 ```
