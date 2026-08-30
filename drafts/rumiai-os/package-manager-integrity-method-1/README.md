@@ -37,7 +37,7 @@ deterministico
 streamabile
 una riga per filesystem entry
 semplice da verificare
-leggibile da POSIX sh/awk tramite bootstrap Rumi
+leggibile da POSIX sh/awk tramite bootstrap RumiAI
 indipendente da JSON/Python/Node/jq
 compatibile con Unicode
 senza quoting/escaping del pathname
@@ -125,8 +125,8 @@ D<TAB><mode><TAB>-<TAB>-<TAB><path>
 Esempio:
 
 ```text
-D	0500	-	-	.
-D	0500	-	-	./bin
+D\t0500\t-\t-\t.
+D\t0500\t-\t-\t./bin
 ```
 
 `.` rappresenta la root del tree inventariato.
@@ -146,8 +146,8 @@ F<TAB><mode><TAB><digest><TAB>-<TAB><path>
 Esempio:
 
 ```text
-F	0500	<sha256>	-	./bin/foo
-F	0400	<sha256>	-	./lib/foo.jar
+F\t0500\t<sha256>\t-\t./bin/foo
+F\t0400\t<sha256>\t-\t./lib/foo.jar
 ```
 
 Digest = digest dei byte esatti del contenuto secondo `integrity.algorithm` dichiarato in `@package`.
@@ -172,7 +172,7 @@ L<TAB>-<TAB><digest-target><TAB><target><TAB><path>
 Esempio:
 
 ```text
-L	-	<sha256-target>	../run/log	./log
+L\t-\t<sha256-target>\t../run/log\t./log
 ```
 
 Il symlink non viene dereferenziato per calcolare il proprio digest.
@@ -226,7 +226,7 @@ Unicode NFC normalization
 Unicode default case-fold
 ```
 
-Il bootstrap/platform adapter Rumi deve quindi esporre primitive normative per queste operazioni, oppure la validazione deve essere eseguita da un validator fidato con semantica equivalente.
+Il bootstrap/platform adapter RumiAI deve quindi esporre primitive normative per queste operazioni, oppure la validazione deve essere eseguita da un validator fidato con semantica equivalente.
 
 ---
 
@@ -400,18 +400,18 @@ header/schema columns
 Esempio SCF:
 
 ```text
-integrity.method	1
-integrity.algorithm	sha256
-integrity.root.inventory	@integrity-root.tsv
-integrity.root.files	120
-integrity.root.directories	24
-integrity.root.links	3
-integrity.root.manifest_digest	...
-integrity.run_default.inventory	@integrity-run-default.tsv
-integrity.run_default.files	8
-integrity.run_default.directories	5
-integrity.run_default.links	0
-integrity.run_default.manifest_digest	...
+integrity.method\t1
+integrity.algorithm\tsha256
+integrity.root.inventory\t@integrity-root.tsv
+integrity.root.files\t120
+integrity.root.directories\t24
+integrity.root.links\t3
+integrity.root.manifest_digest\t...
+integrity.run_default.inventory\t@integrity-run-default.tsv
+integrity.run_default.files\t8
+integrity.run_default.directories\t5
+integrity.run_default.links\t0
+integrity.run_default.manifest_digest\t...
 ```
 
 I nomi inventory sono wrapper-relative, non host absolute path.
