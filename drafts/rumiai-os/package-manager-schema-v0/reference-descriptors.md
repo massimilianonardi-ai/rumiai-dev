@@ -2,7 +2,7 @@
 
 Data: 2026-08-30
 
-Stato: **architectural schema stress test — System Field Format v0**
+Stato: **architectural schema stress test — SCF dot notation + tabular integrity**
 
 Gli esempi mostrano soltanto le sezioni rilevanti; identity/release/integrity metadata seguono lo schema v0.
 
@@ -11,64 +11,64 @@ Gli esempi mostrano soltanto le sezioni rilevanti; identity/release/integrity me
 # 1. Temurin 21 provider
 
 ```text
-interface_directory_count	2
-interface_directory_1_id	home
-interface_directory_1_path	.
-interface_directory_2_id	bin
-interface_directory_2_path	bin
+interface.directories.count	2
+interface.directories.1.id	home
+interface.directories.1.path	.
+interface.directories.2.id	bin
+interface.directories.2.path	bin
 
-interface_file_count	2
-interface_file_1_id	java-exe
-interface_file_1_path	bin/java
-interface_file_2_id	javac-exe
-interface_file_2_path	bin/javac
+interface.files.count	2
+interface.files.1.id	java-exe
+interface.files.1.path	bin/java
+interface.files.2.id	javac-exe
+interface.files.2.path	bin/javac
 
-interface_command_count	2
-interface_command_1_id	java
-interface_command_1_executable_source	self
-interface_command_1_executable_resource_type	file
-interface_command_1_executable_resource	java-exe
-interface_command_1_arg_count	0
-interface_command_2_id	javac
-interface_command_2_executable_source	self
-interface_command_2_executable_resource_type	file
-interface_command_2_executable_resource	javac-exe
-interface_command_2_arg_count	0
+interface.commands.count	2
+interface.commands.1.id	java
+interface.commands.1.executable.source	self
+interface.commands.1.executable.resource_type	file
+interface.commands.1.executable.resource	java-exe
+interface.commands.1.args.count	0
+interface.commands.2.id	javac
+interface.commands.2.executable.source	self
+interface.commands.2.executable.resource_type	file
+interface.commands.2.executable.resource	javac-exe
+interface.commands.2.args.count	0
 
-interface_provide_count	2
-interface_provide_1_capability	java-runtime
-interface_provide_1_contract	1
-interface_provide_1_version	21
-interface_provide_1_resource_count	3
-interface_provide_1_resource_1_key	command
-interface_provide_1_resource_1_resource_type	command
-interface_provide_1_resource_1_resource	java
-interface_provide_1_resource_2_key	home
-interface_provide_1_resource_2_resource_type	directory
-interface_provide_1_resource_2_resource	home
-interface_provide_1_resource_3_key	bin
-interface_provide_1_resource_3_resource_type	directory
-interface_provide_1_resource_3_resource	bin
+interface.provides.count	2
+interface.provides.1.capability	java-runtime
+interface.provides.1.contract	1
+interface.provides.1.version	21
+interface.provides.1.resources.count	3
+interface.provides.1.resources.1.key	command
+interface.provides.1.resources.1.resource_type	command
+interface.provides.1.resources.1.resource	java
+interface.provides.1.resources.2.key	home
+interface.provides.1.resources.2.resource_type	directory
+interface.provides.1.resources.2.resource	home
+interface.provides.1.resources.3.key	bin
+interface.provides.1.resources.3.resource_type	directory
+interface.provides.1.resources.3.resource	bin
 
-interface_provide_2_capability	java-development-kit
-interface_provide_2_contract	1
-interface_provide_2_version	21
-interface_provide_2_resource_count	4
-interface_provide_2_resource_1_key	java
-interface_provide_2_resource_1_resource_type	command
-interface_provide_2_resource_1_resource	java
-interface_provide_2_resource_2_key	javac
-interface_provide_2_resource_2_resource_type	command
-interface_provide_2_resource_2_resource	javac
-interface_provide_2_resource_3_key	home
-interface_provide_2_resource_3_resource_type	directory
-interface_provide_2_resource_3_resource	home
-interface_provide_2_resource_4_key	bin
-interface_provide_2_resource_4_resource_type	directory
-interface_provide_2_resource_4_resource	bin
+interface.provides.2.capability	java-development-kit
+interface.provides.2.contract	1
+interface.provides.2.version	21
+interface.provides.2.resources.count	4
+interface.provides.2.resources.1.key	java
+interface.provides.2.resources.1.resource_type	command
+interface.provides.2.resources.1.resource	java
+interface.provides.2.resources.2.key	javac
+interface.provides.2.resources.2.resource_type	command
+interface.provides.2.resources.2.resource	javac
+interface.provides.2.resources.3.key	home
+interface.provides.2.resources.3.resource_type	directory
+interface.provides.2.resources.3.resource	home
+interface.provides.2.resources.4.key	bin
+interface.provides.2.resources.4.resource_type	directory
+interface.provides.2.resources.4.resource	bin
 ```
 
-Provider identity resta native, per esempio:
+Provider identity native, per esempio:
 
 ```text
 temurin@21.0.8+9@r1@linux-arm64
@@ -80,7 +80,7 @@ PASS.
 
 # 2. NetBeans consumer `any-any`
 
-Normalized writable islands:
+Writable islands:
 
 ```text
 root/etc      -> ../run/etc
@@ -89,54 +89,56 @@ root/cache    -> ../run/cache
 root/log      -> ../run/log
 ```
 
+Descriptor sections:
+
 ```text
-state_present	true
-state_compatibility_version	1
-state_scope	shared
-state_mapping_count	4
-state_mapping_1_path	etc
-state_mapping_1_area	conf
-state_mapping_2_path	userdir
-state_mapping_2_area	home
-state_mapping_3_path	cache
-state_mapping_3_area	cache
-state_mapping_4_path	log
-state_mapping_4_area	log
+state.present	true
+state.compatibility_version	1
+state.scope	shared
+state.mappings.count	4
+state.mappings.1.path	etc
+state.mappings.1.area	conf
+state.mappings.2.path	userdir
+state.mappings.2.area	home
+state.mappings.3.path	cache
+state.mappings.3.area	cache
+state.mappings.4.path	log
+state.mappings.4.area	log
 
-interface_file_count	1
-interface_file_1_id	launcher
-interface_file_1_path	bin/netbeans
-interface_directory_count	0
-interface_command_count	1
-interface_command_1_id	netbeans
-interface_command_1_executable_source	self
-interface_command_1_executable_resource_type	file
-interface_command_1_executable_resource	launcher
-interface_command_1_arg_count	0
-interface_provide_count	0
+interface.files.count	1
+interface.files.1.id	launcher
+interface.files.1.path	bin/netbeans
+interface.directories.count	0
+interface.commands.count	1
+interface.commands.1.id	netbeans
+interface.commands.1.executable.source	self
+interface.commands.1.executable.resource_type	file
+interface.commands.1.executable.resource	launcher
+interface.commands.1.args.count	0
+interface.provides.count	0
 
-requirement_count	1
-requirement_1_slot	jdk
-requirement_1_target	capability
-requirement_1_capability	java-development-kit
-requirement_1_contract	1
-requirement_1_constraint	>=17 <22
+requirements.count	1
+requirements.1.slot	jdk
+requirements.1.target	capability
+requirements.1.capability	java-development-kit
+requirements.1.contract	1
+requirements.1.constraint	>=17 <22
 
-environment_count	2
-environment_1_name	JAVA_HOME
-environment_1_operation	set
-environment_1_type	path
-environment_1_value_source	dependency
-environment_1_value_slot	jdk
-environment_1_value_resource_type	directory
-environment_1_value_resource	home
-environment_2_name	PATH
-environment_2_operation	prepend
-environment_2_type	path-list
-environment_2_value_source	dependency
-environment_2_value_slot	jdk
-environment_2_value_resource_type	directory
-environment_2_value_resource	bin
+environment.count	2
+environment.1.name	JAVA_HOME
+environment.1.operation	set
+environment.1.type	path
+environment.1.value.source	dependency
+environment.1.value.slot	jdk
+environment.1.value.resource_type	directory
+environment.1.value.resource	home
+environment.2.name	PATH
+environment.2.operation	prepend
+environment.2.type	path-list
+environment.2.value.source	dependency
+environment.2.value.slot	jdk
+environment.2.value.resource_type	directory
+environment.2.value.resource	bin
 ```
 
 Possible resolution:
@@ -153,37 +155,37 @@ PASS.
 # 3. Python runtime provider
 
 ```text
-interface_directory_count	2
-interface_directory_1_id	home
-interface_directory_1_path	.
-interface_directory_2_id	bin
-interface_directory_2_path	bin
-interface_file_count	1
-interface_file_1_id	python-exe
-interface_file_1_path	bin/python3
-interface_command_count	1
-interface_command_1_id	python
-interface_command_1_executable_source	self
-interface_command_1_executable_resource_type	file
-interface_command_1_executable_resource	python-exe
-interface_command_1_arg_count	0
-interface_provide_count	1
-interface_provide_1_capability	python-runtime
-interface_provide_1_contract	1
-interface_provide_1_version	3.12
-interface_provide_1_resource_count	3
-interface_provide_1_resource_1_key	command
-interface_provide_1_resource_1_resource_type	command
-interface_provide_1_resource_1_resource	python
-interface_provide_1_resource_2_key	home
-interface_provide_1_resource_2_resource_type	directory
-interface_provide_1_resource_2_resource	home
-interface_provide_1_resource_3_key	bin
-interface_provide_1_resource_3_resource_type	directory
-interface_provide_1_resource_3_resource	bin
+interface.directories.count	2
+interface.directories.1.id	home
+interface.directories.1.path	.
+interface.directories.2.id	bin
+interface.directories.2.path	bin
+interface.files.count	1
+interface.files.1.id	python-exe
+interface.files.1.path	bin/python3
+interface.commands.count	1
+interface.commands.1.id	python
+interface.commands.1.executable.source	self
+interface.commands.1.executable.resource_type	file
+interface.commands.1.executable.resource	python-exe
+interface.commands.1.args.count	0
+interface.provides.count	1
+interface.provides.1.capability	python-runtime
+interface.provides.1.contract	1
+interface.provides.1.version	3.12
+interface.provides.1.resources.count	3
+interface.provides.1.resources.1.key	command
+interface.provides.1.resources.1.resource_type	command
+interface.provides.1.resources.1.resource	python
+interface.provides.1.resources.2.key	home
+interface.provides.1.resources.2.resource_type	directory
+interface.provides.1.resources.2.resource	home
+interface.provides.1.resources.3.key	bin
+interface.provides.1.resources.3.resource_type	directory
+interface.provides.1.resources.3.resource	bin
 ```
 
-Provider è native, per esempio `cpython@...@linux-arm64`.
+Provider native, per esempio `cpython@...@linux-arm64`.
 
 PASS.
 
@@ -192,28 +194,27 @@ PASS.
 # 4. Python hosted application `any-any`
 
 ```text
-interface_file_count	1
-interface_file_1_id	main-script
-interface_file_1_path	app/main.py
-interface_directory_count	0
-interface_command_count	1
-interface_command_1_id	example-app
-interface_command_1_executable_source	dependency
-interface_command_1_executable_slot	python
-interface_command_1_executable_resource_type	command
-interface_command_1_executable_resource	python
-interface_command_1_arg_count	1
-interface_command_1_arg_1_source	self
-interface_command_1_arg_1_resource_type	file
-interface_command_1_arg_1_resource	main-script
-interface_provide_count	0
-requirement_count	1
-requirement_1_slot	python
-requirement_1_target	capability
-requirement_1_capability	python-runtime
-requirement_1_contract	1
-requirement_1_constraint	=3.12
-environment_count	0
+interface.files.count	1
+interface.files.1.id	main-script
+interface.files.1.path	app/main.py
+interface.directories.count	0
+interface.commands.count	1
+interface.commands.1.id	example-app
+interface.commands.1.executable.source	dependency
+interface.commands.1.executable.slot	python
+interface.commands.1.executable.resource_type	command
+interface.commands.1.executable.resource	python
+interface.commands.1.args.count	1
+interface.commands.1.args.1.source	self
+interface.commands.1.args.1.resource_type	file
+interface.commands.1.args.1.resource	main-script
+interface.provides.count	0
+requirements.count	1
+requirements.1.slot	python
+requirements.1.target	capability
+requirements.1.capability	python-runtime
+requirements.1.contract	1
+requirements.1.constraint	=3.12
 ```
 
 PASS.
@@ -223,76 +224,85 @@ PASS.
 # 5. Pulsar Electron/self-contained
 
 ```text
-interface_file_count	1
-interface_file_1_id	pulsar-exe
-interface_file_1_path	bin/pulsar
-interface_directory_count	0
-interface_command_count	1
-interface_command_1_id	pulsar
-interface_command_1_executable_source	self
-interface_command_1_executable_resource_type	file
-interface_command_1_executable_resource	pulsar-exe
-interface_command_1_arg_count	0
-interface_provide_count	0
-requirement_count	0
-environment_count	0
+interface.files.count	1
+interface.files.1.id	pulsar-exe
+interface.files.1.path	bin/pulsar
+interface.directories.count	0
+interface.commands.count	1
+interface.commands.1.id	pulsar
+interface.commands.1.executable.source	self
+interface.commands.1.executable.resource_type	file
+interface.commands.1.executable.resource	pulsar-exe
+interface.commands.1.args.count	0
+interface.provides.count	0
+requirements.count	0
 ```
 
-Nessun requirement artificiale Java.
+Nessun requirement Java artificiale.
 
 PASS.
 
 ---
 
-# 6. Integrity metadata + inventory
+# 6. Integrity metadata + tabular data
 
-Descriptor:
+`@package` metadata:
 
 ```text
-integrity_method	1
-integrity_algorithm	sha256
-integrity_root_inventory	@integrity-root.tsv
-integrity_root_files	2
-integrity_root_directories	2
-integrity_root_links	1
-integrity_root_manifest_digest	...
-integrity_run_default_inventory	@integrity-run-default.tsv
-integrity_run_default_files	0
-integrity_run_default_directories	1
-integrity_run_default_links	0
-integrity_run_default_manifest_digest	...
+integrity.method	1
+integrity.algorithm	sha256
+integrity.root.inventory	@integrity-root.tsv
+integrity.root.files	2
+integrity.root.directories	2
+integrity.root.links	1
+integrity.root.manifest_digest	...
+integrity.run_default.inventory	@integrity-run-default.tsv
+integrity.run_default.files	0
+integrity.run_default.directories	1
+integrity.run_default.links	0
+integrity.run_default.manifest_digest	...
 ```
 
 `@integrity-root.tsv`:
 
 ```text
-kind	integrity
-schema	1
-directory_count	2
-directory_1_path	.
-directory_1_mode	0500
-directory_2_path	./bin
-directory_2_mode	0500
-file_count	2
-file_1_path	./app.jar
-file_1_mode	0400
-file_1_digest	<digest>
-file_2_path	./bin/foo
-file_2_mode	0500
-file_2_digest	<digest>
-link_count	1
-link_1_path	./log
-link_1_target	../run/log
-link_1_digest	<digest-target>
+type	mode	digest	target	path
+D	0500	-	-	.
+F	0400	<digest>	-	./app.jar
+D	0500	-	-	./bin
+F	0500	<digest>	-	./bin/foo
+L	-	<digest-target>	../run/log	./log
 ```
+
+Le data row sono ordinate per canonical pathname; il type non raggruppa le row.
 
 PASS.
 
 ---
 
-# 7. Conclusion
+# 7. Dot notation stress result
 
-Il modello a due campi copre senza nuove primitive:
+Il modello rappresenta senza mini-language aggiuntive:
+
+```text
+namespace
+nested object
+array scalare
+array di object
+nested array
+structured reference
+arbitrary logical ID nei value
+```
+
+Nessuna scalar/namespace collision necessaria.
+
+PASS.
+
+---
+
+# 8. Conclusion
+
+Il modello copre senza nuove primitive:
 
 ```text
 native runtime provider
@@ -303,8 +313,7 @@ environment isolation
 hosted/direct commands
 capability contracts
 self-contained app
-integrity inventory nello stesso System Field Format
-nested collections con count + indici
+external streaming tabular integrity inventory
 ```
 
 Result:
