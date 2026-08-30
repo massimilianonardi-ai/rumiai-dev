@@ -25,16 +25,16 @@ pkg/<package-instance-id>/
 ├── run-default/
 │   └── factory writable view immutabile
 ├── @package
-│   System Field Format descriptor immutabile
+│   System Configuration Field descriptor immutabile
 ├── @integrity-root.tsv
-│   canonical System Field Format integrity inventory di root/
+│   canonical System Tabular Data integrity inventory di root/
 ├── @integrity-run-default.tsv
-│   canonical System Field Format integrity inventory di run-default/
+│   canonical System Tabular Data integrity inventory di run-default/
 └── run/
     derived active runtime routing view
 ```
 
-Il core immutabile che definisce la Package Instance è:
+Core immutabile:
 
 ```text
 root/
@@ -73,36 +73,27 @@ arm64
 x86_64
 ```
 
-La platform/architecture descrive i vincoli propri del contenuto della Package Instance.
+Platform/architecture descrivono i vincoli propri del contenuto della Package Instance.
 
-Runtime come:
-
-```text
-Java/JRE/JDK
-Python
-```
-
-NON sono platform: sono Execution Requirements/capability.
+Java/JRE/JDK/Python sono Execution Requirements/capability, non platform.
 
 ---
 
 # 3. `root/`
 
-`root/` è l'execution tree normalizzato e immutabile.
+`root/` è execution tree normalizzato e immutabile.
 
-Prima dell'admission il producer può trasformare il tree vendor per separare writable islands.
+Prima dell'admission il producer può trasformare il vendor tree per separare writable island.
 
 Regola forte:
 
-> se non è possibile produrre una `root/` che resti immutabile durante l'esecuzione normale attraverso una configurazione di link sicura e fisicamente validata, il package non è ammissibile allo store RumiAI per quella platform.
-
-Il package manager locale assume che questa normalizzazione sia già stata completata.
+> se non è possibile produrre una `root/` fissa e immutabile durante l'esecuzione normale tramite una configurazione di link sicura e fisicamente validata, il package non è ammissibile per quella platform.
 
 ---
 
 # 4. Writable islands
 
-Si preferiscono link a livello directory:
+Preferenza directory-level:
 
 ```text
 root/log   -> ../run/log
@@ -110,15 +101,13 @@ root/conf  -> ../run/conf
 root/cache -> ../run/cache
 ```
 
-Questo evita che software che salva tramite unlink/rename/atomic replace cancelli un symlink file-level.
-
-File-level redirection è ammessa solo se fisicamente validata come sicura.
+File-level redirection soltanto se fisicamente validata.
 
 ---
 
 # 5. `run-default/`
 
-Contiene gli analoghi fisici iniziali delle writable islands distribuiti dal vendor o prodotti dalla normalizzazione.
+Contiene factory/default writable island contents immutabili.
 
 Serve per:
 
@@ -128,15 +117,13 @@ factory reset
 controlled recovery
 ```
 
-È immutabile.
-
-Un factory reset copia/materializza i default nello State Instance target; non rende writable `run-default/` e non fa puntare `run/` direttamente ad essa.
+Non diventa mai writable.
 
 ---
 
 # 6. `run/`
 
-Ogni Package Instance ha una sola runtime view attiva.
+Una sola runtime routing view attiva per Package Instance.
 
 Esempio:
 
@@ -148,21 +135,25 @@ run/log
     -> ../../../log/<state-id>/log
 ```
 
-`run/` è precreata prima del sealing della wrapper.
-
-Dopo il commit si ricostruisce il contenuto di `run/`, non la directory `run/` stessa.
+`run/` è precreata prima del sealing; si ricostruisce il contenuto, non normalmente la directory stessa.
 
 ---
 
 # 7. `@package`
 
-`@package` usa System Field Format v0.
+`@package` usa System Configuration Field Format v0.
 
-Header:
+Esempio:
 
 ```text
 kind	package
 schema	1
+identity.name	netbeans
+identity.version	26
+identity.revision	1
+identity.platform	any
+identity.architecture	any
+identity.display_name	NetBeans 26
 ```
 
 Contiene logicamente:
@@ -177,94 +168,63 @@ Execution Requirements
 Environment Specification
 ```
 
-Identity minima:
-
-```text
-identity_name
-identity_version
-identity_revision
-identity_platform
-identity_architecture
-identity_display_name
-```
-
-I campi canonici devono concordare con il pathname.
-
-`identity_display_name` è human-readable e non entra nel pathname.
+I campi identity canonici devono concordare col pathname.
 
 ---
 
-# 8. Integrity inventories separati
+# 8. Integrity inventories
 
-`root/` e `run-default/` hanno inventory distinti:
+`root/` e `run-default/` hanno inventory separati:
 
 ```text
 @integrity-root.tsv
 @integrity-run-default.tsv
 ```
 
-Nonostante l'estensione storica `.tsv`, entrambi usano il System Field Format v0 a **due campi**:
+Sono dataset System Tabular Data, una row per filesystem entry.
+
+Header canonico:
 
 ```text
-field-name<TAB>field-value
+type	mode	digest	target	path
 ```
 
-Non esiste più il precedente record a cinque colonne.
-
-Schema concettuale:
+Esempio:
 
 ```text
-kind	integrity
-schema	1
-
-directory_count	N
-directory_1_path	...
-directory_1_mode	0500
-...
-
-file_count	N
-file_1_path	...
-file_1_mode	0400|0500
-file_1_digest	...
-...
-
-link_count	N
-link_1_path	...
-link_1_target	...
-link_1_digest	...
+type	mode	digest	target	path
+D	0500	-	-	.
+F	0500	<digest>	-	./bin/foo
+L	-	<digest-target>	../run/log	./log
 ```
 
-`@package` contiene per ogni inventory:
+`@package` contiene inventory filename, count e manifest digest.
 
-```text
-inventory file name
-files count
-directories count
-links count
-manifest digest
-```
+Il manifest digest verifica i byte canonici completi del TSV, **header incluso**.
 
-Il manifest digest è il digest dei byte canonici completi del relativo System Field Format inventory.
+---
 
-**Integrity Method 1** è normativo e fissa:
+# 9. Integrity Method 1
+
+Normativo:
 
 ```text
 UTF-8 + Unicode NFC
 TAB/CR/LF/NUL/backslash vietati nei pathname e symlink target
-nessun escaping/quoting
-pathname canonico `.` oppure `./...`
+nessun quoting/escaping
+pathname `.` oppure `./...`
 collision check NFC + Unicode case-fold + NFC
 symlink target relativo; `..` ammesso quando semanticamente valido
-nessun symlink inventariato può risolvere fuori dalla Package Instance wrapper
-ordine canonico per collection + pathname
+nessun symlink inventariato può risolvere fuori dalla wrapper
+row ordinate per canonical pathname UTF-8 bytes
 LF finale obbligatorio
 ```
 
-La normalizzazione Unicode/full case-fold deve essere esposta dal bootstrap Rumi o da un validator fidato perché non è implementabile portabilmente in puro POSIX `sh`.
+NFC/full case-fold richiedono primitive bootstrap/validator dedicate.
 
 ---
 
-# 9. Mode immutabili
+# 10. Mode immutabili
 
 Unix-like v0:
 
@@ -279,35 +239,33 @@ immutable directory          0500
 
 Qualunque write bit sotto `root/` o `run-default/` viola il core immutable v0.
 
-UID/GID non entrano nell'identity/integrity.
+UID/GID non entrano identity/integrity.
 
-ACL aggiuntive, setuid, setgid e sticky bit non sono ammessi nel core Package Instance v0.
+ACL aggiuntive, setuid, setgid e sticky bit non sono ammessi nel core v0.
 
 ---
 
-# 10. Environment Owner e sealing
+# 11. Environment Owner e sealing
 
-RumiAI non richiede `root:root`, un utente `rumiai` o un gruppo speciale.
-
-Ogni environment ha un solo Environment Owner.
+Un solo Environment Owner.
 
 Wrapper Unix-like dopo sealing:
 
 ```text
-pkg/<id>/                    0500
-├── root/                    0500
-├── run-default/             0500
-├── @package                 0400
-├── @integrity-root.tsv      0400
-├── @integrity-run-default.tsv 0400
-└── run/                     0700
+pkg/<id>/                       0500
+├── root/                       0500
+├── run-default/                0500
+├── @package                    0400
+├── @integrity-root.tsv         0400
+├── @integrity-run-default.tsv  0400
+└── run/                        0700
 ```
 
-Le permission proteggono da modifiche accidentali; l'integrity rileva alterazioni. Non costituiscono una security boundary contro l'Environment Owner.
+Permission = protezione accidentale, non security boundary contro Environment Owner.
 
 ---
 
-# 11. Materializzazione transazionale
+# 12. Materializzazione transazionale
 
 ```text
 candidate software
@@ -316,11 +274,11 @@ normalization/adaptation pre-admission
         ↓
 build root/ + run-default/
         ↓
-canonicalize/validate pathname + symlink targets secondo Integrity Method 1
+canonicalize/validate pathname + symlink target
         ↓
-write @package System Field Format
+write @package SCF
         ↓
-write canonical integrity System Field Format files
+write canonical integrity TSV with header
         ↓
 verify pathname identity + descriptor identity
         ↓
@@ -339,11 +297,9 @@ Staging non è una normale child directory di `pkg/`.
 
 ---
 
-# 12. Recovery / anti-ghost
+# 13. Recovery / anti-ghost
 
-Il pathname permette sempre di ricostruire l'identità minima anche se metadata interni sono mancanti/corrotti.
-
-Classificazione minima:
+Classificazione minima di ogni child `pkg/`:
 
 ```text
 HEALTHY
@@ -352,13 +308,13 @@ IDENTITY_MISMATCH
 UNKNOWN
 ```
 
-Mancanza/corruzione di `@package` o degli inventory non rende il contenuto invisibile: la directory resta classificabile e segnalabile.
+Mancanza/corruzione di `@package` o inventory non rende la directory invisibile.
 
-`pkg/` resta la physical truth delle Package Instance presenti.
+`pkg/` resta physical truth.
 
 ---
 
-# 13. State separation
+# 14. State separation
 
 Mutable state vive fuori dalla Package Instance:
 
@@ -374,27 +330,28 @@ tmp
 
 `run/` package-local è soltanto routing verso la State Instance attiva.
 
-Uninstall della Package Instance non implica purge dello stato.
+Uninstall Package Instance non implica purge state.
 
 ---
 
-# 14. Invarianti
+# 15. Invarianti
 
 ```text
-PI-01 immutable Package Instance core = root + run-default + @package + two integrity inventories
+PI-01 immutable core = root + run-default + @package + two integrity inventories
 PI-02 run/ è derived runtime routing view
 PI-03 root/ è immutable normalized execution tree
-PI-04 no safe fixed root => package rejected before store promotion
+PI-04 no safe fixed root => package rejected
 PI-05 writable islands prefer directory-level relative symlink
 PI-06 run-default conserva immutable factory writable view
-PI-07 @package usa System Field Format dichiarativo e immutabile
-PI-08 root e run-default inventory usano System Field Format a due campi
-PI-09 collection integrity = count + indici contigui per directory/file/link
-PI-10 manifest digest verifica i byte canonici del relativo inventory
-PI-11 Integrity Method 1 vieta TAB/CR/LF/NUL/backslash e usa Unicode NFC senza ASCII-only
-PI-12 Integrity Method 1 usa portable case-fold collision detection e canonical ordering
-PI-13 wrapper viene sigillata, run/ precreata e writable nel contenuto
-PI-14 UID/GID concreti non fanno parte di identity/integrity
-PI-15 mutable application state resta fuori dalla Package Instance
-PI-16 Package Instance platform descrive il contenuto; runtime/interpreter sono requirements
+PI-07 @package usa System Configuration Field Format
+PI-08 integrity inventory usa System Tabular Data con header
+PI-09 one filesystem entry = one inventory data row
+PI-10 inventory header = type,mode,digest,target,path
+PI-11 path è ultima colonna
+PI-12 manifest digest include header + rows + final LF
+PI-13 Integrity Method 1 mantiene Unicode NFC/case-fold/path rules
+PI-14 wrapper viene sigillata; run/ precreata e writable nel contenuto
+PI-15 UID/GID concreti non fanno parte di identity/integrity
+PI-16 mutable application state resta fuori dalla Package Instance
+PI-17 Package Instance platform descrive il contenuto; runtime/interpreter sono requirements
 ```
