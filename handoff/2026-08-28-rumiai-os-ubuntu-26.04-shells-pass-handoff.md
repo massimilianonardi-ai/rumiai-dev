@@ -1,97 +1,34 @@
-# Handoff — Ubuntu 26.04 Bash and sh shell passes
+# Handoff — RumiAI OS — Ubuntu 26.04 shell branches PASS
 
-Date: 2026-08-28
-Status: **physical Ubuntu 26.04 validation in progress**
+Data: 2026-08-28
+Stato: **Bash and POSIX sh interactive branches physically validated on Ubuntu 26.04 ARM64**
 
-## Product under test
+## Esito
 
-Repository:
+Entrambi i rami interattivi della RumiAI shell sono stati validati sull'host di riferimento Ubuntu 26.04 ARM64.
 
-```text
-massimilianonardi-ai/rumiai-os
-```
-
-Tested product commit:
+Sono stati verificati:
 
 ```text
-4f311d1fb5b35a722cf9575d890a9fa616040199
+Bash branch
+    conf/shell/default = bash
+    RumiAI-specific bashrc
+    recognizable RumiAI prompt
+
+POSIX sh branch
+    conf/shell/default = sh
+    RumiAI-specific shrc via ENV quando previsto
+    recognizable RumiAI prompt
 ```
 
-Reference host:
+## Portabilità
 
-```text
-Ubuntu 26.04 LTS (Resolute Raccoon)
-Linux 7.0.0-30-generic
-aarch64
-/usr/bin/sh -> dash
-```
+La validazione conferma il comportamento dei due rami sull'host di riferimento registrato. Non modifica il contratto generale POSIX né introduce terminologia diversa dal nome del prodotto `RumiAI`.
 
-## Bash Rumi shell — PASS
+## Evidenza
 
-Default `./rumiai-os` entered Bash with the configured RumiAI prompt.
+La revisione prodotto e le sessioni di test storiche restano l'evidenza esatta delle revisioni esercitate.
 
-Observed:
+## Nota terminologica
 
-```text
-$0=bash
-RumiAI_ROOT=/tmp/rumiai-os-ubuntu-test
-RumiAI_BIN_DIR=/tmp/rumiai-os-ubuntu-test/bin
-RumiAI_LANGUAGE=it_IT
-RumiAI_TEXT_ENCODING=UTF-8
-command -v rumiai-os -> /tmp/rumiai-os-ubuntu-test/bin/rumiai-os
-command -v log       -> /tmp/rumiai-os-ubuntu-test/bin/log
-realpath rumiai-os    -> /tmp/rumiai-os-ubuntu-test/rumiai-os
-realpath log          -> /tmp/rumiai-os-ubuntu-test/bin/log
-log status            -> 0
-exit status           -> 0
-```
-
-## POSIX sh / dash Rumi shell — PASS
-
-`conf/shell/default` was temporarily changed from `bash` to `sh`.
-
-Observed:
-
-```text
-[RumiAI] $
-$0=/usr/bin/sh
-RumiAI_ROOT=/tmp/rumiai-os-ubuntu-test
-RumiAI_BIN_DIR=/tmp/rumiai-os-ubuntu-test/bin
-command -v rumiai-os -> /tmp/rumiai-os-ubuntu-test/bin/rumiai-os
-command -v log       -> /tmp/rumiai-os-ubuntu-test/bin/log
-log status            -> 0
-exit status           -> 0
-```
-
-The host had already physically established that `/usr/bin/sh` resolves to dash, so the POSIX branch is validated under dash.
-
-One interactive paste joined `exit` and a following `printf`, yielding:
-
-```text
-/usr/bin/sh: 8: exitprintf: not found
-```
-
-This was a paste/input artifact and not a RumiAI defect. All RumiAI checks had already passed, and the shell subsequently exited normally.
-
-After the test:
-
-```text
-git status --short -> empty
-conf/shell/default -> bash
-```
-
-## Ubuntu validation passed so far
-
-- clean clone at product commit;
-- Git modes and structural symlink;
-- dash and Bash POSIX syntax;
-- `realpath -e`, `realpath --`, `readlink -e` host capabilities;
-- explicit source status `23`;
-- direct `#!/usr/bin/env rumiai-os` status `24`;
-- logger statuses `12..16` and filtering;
-- interactive Bash Rumi shell;
-- interactive POSIX sh/dash Rumi shell.
-
-## Immediate next work
-
-Run the pathname/symlink/space canonicalization matrix already validated on macOS, followed by the relative-PATH/source-alias matrix, then i18n/configuration and source lifecycle.
+Il componente è la `RumiAI shell`. Abbreviazioni usate informalmente in conversazione non sono nomi di prodotto, command, namespace o componenti.
