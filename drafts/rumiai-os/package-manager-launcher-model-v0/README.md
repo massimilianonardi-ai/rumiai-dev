@@ -116,13 +116,13 @@ Forma concettuale canonica:
 
 ```sh
 #!/usr/bin/env rumi
-rumi_require launcher || exit $?
-rumi_launch "$@"
+RumiAI_require launcher || exit $?
+RumiAI_launch "$@"
 ```
 
 Il nome/scope NON sono embedded nel body.
 
-`rumi_launch` usa:
+`RumiAI_launch` usa:
 
 ```text
 RumiAI_COMMAND_BIN
@@ -131,6 +131,8 @@ RumiAI_COMMAND_BIN
 esposto dal bootstrap per ricavare il pathname dello stub effettivamente invocato.
 
 Il body può essere identico byte-per-byte per tutti i public command stub della stessa stub schema/version.
+
+Il command name `rumi` e il function namespace `RumiAI_*` sono concetti distinti; lowercase `rumi_*` non è un namespace API ammesso.
 
 ---
 
@@ -580,4 +582,5 @@ LM-14 run/ è verificata/ricostruita prima del launch
 LM-15 root bin namespace = public default profile
 LM-16 bin listing non è authoritative integration state
 LM-17 Windows/non-POSIX-native surface può richiedere platform shim validato
+LM-18 RumiAI shell API use exact RumiAI_* namespace; lowercase rumi_* forbidden
 ```
