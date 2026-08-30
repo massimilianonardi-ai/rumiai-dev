@@ -2,13 +2,33 @@
 
 Data: 2026-08-30
 
-Stato: **design decision — standard di riferimento fissato**
+Stato: **design decision — standard di riferimento fissato per development/application layer**
 
-RumiAI usa **JSON UTF-8** come formato strutturato di riferimento per nuovi metadata, configurazioni dichiarative, snapshot e interfacce persistite, salvo casi in cui un formato più semplice sia semanticamente migliore.
+RumiAI usa **JSON UTF-8** come formato strutturato di riferimento per sviluppo, applicazioni e tool RumiAI che **non appartengono al system layer**.
+
+Il system layer costituisce un dominio separato: i suoi tool sono POSIX `sh` con bootstrap/shebang Rumi e usano formati system-layer progettati per essere letti direttamente tramite le primitive fornite dal bootstrap, senza imporre un parser JSON al bootstrap stesso.
 
 ---
 
-# 1. Motivazione
+# 1. Scope
+
+JSON è lo standard strutturato di riferimento per:
+
+```text
+application layer
+strumenti di sviluppo
+servizi/tool RumiAI non appartenenti al system layer
+API e interfacce strutturate dove JSON è appropriato
+metadata/configurazioni del non-system layer
+```
+
+JSON NON è una dipendenza del bootstrap/system layer.
+
+Il system layer definisce separatamente i propri formati dichiarativi POSIX-sh-friendly.
+
+---
+
+# 2. Motivazione
 
 JSON viene scelto perché combina:
 
@@ -23,11 +43,11 @@ assenza di dipendenza architetturale da Python
 buone performance di parsing
 ```
 
-Python può essere gestito da RumiAI come runtime/package requirement, ma non è una baseline implicita per leggere i metadata fondamentali del sistema.
+Python, Node.js e altri runtime possono essere gestiti da RumiAI come package/runtime requirement, ma non sono baseline implicite del system layer.
 
 ---
 
-# 2. Restricted profile v0
+# 3. Restricted profile v0
 
 ```text
 encoding = UTF-8
@@ -52,7 +72,7 @@ Floating point non viene usato per identity, version, count, generation, revisio
 
 ---
 
-# 3. Semantica
+# 4. Semantica
 
 Object member order non è semantico.
 
@@ -64,7 +84,7 @@ Se un dominio richiede digest/firma deterministica, quel dominio definisce una p
 
 ---
 
-# 4. Formattazione dei JSON generati da RumiAI
+# 5. Formattazione dei JSON generati da RumiAI
 
 I JSON **generati da RumiAI** devono essere pretty-printed secondo uno stile stabile e leggibile.
 
@@ -89,39 +109,18 @@ Esempio normativo di stile:
   "schema": 1,
   "identity":
   {
-    "name": "netbeans",
-    "platform": "any",
-    "architecture": "any"
+    "name": "example",
+    "platform": "any"
   },
   "requirements":
   [
     {
-      "slot": "jdk",
-      "target": "capability",
-      "capability": "java-development-kit",
-      "contract": 1,
-      "constraint": ">=17 <22"
+      "name": "example-runtime",
+      "version": ">=1"
     }
   ]
 }
 ```
-
-Quindi non viene generato lo stile compatto:
-
-```json
-{
-  "identity": {
-    "name": "netbeans"
-  },
-  "requirements": [
-    {
-      "slot": "jdk"
-    }
-  ]
-}
-```
-
-anche se è JSON semanticamente equivalente.
 
 La formattazione riguarda l'output prodotto da RumiAI. Un parser RumiAI deve comunque accettare qualunque JSON valido che soddisfi schema e restricted profile, indipendentemente da whitespace/indentation.
 
@@ -129,29 +128,32 @@ Per rendere i diff stabili, quando uno schema definisce un ordine raccomandato d
 
 ---
 
-# 5. Eccezioni intenzionali
+# 6. Eccezioni e system layer
 
-JSON non viene imposto quando una rappresentazione più semplice è migliore.
+JSON non viene imposto quando una rappresentazione più semplice è migliore e soprattutto non viene imposto al **RumiAI system layer**.
 
-Esempi package-manager v0:
+Esempi:
 
 ```text
-active generation pointer
-    minimal text: gN + LF
+system-layer configuration
+    Rumi System Field Format
 
-integrity inventory
+integrity bulk inventory
     canonical TSV streaming format
+
+minimal bootstrap pointer
+    plain text minimale quando semanticamente sufficiente
 ```
 
 Principio:
 
-> JSON è lo standard strutturato di riferimento, non un obbligo a trasformare qualunque byte persistito in JSON.
+> JSON è lo standard strutturato del development/application layer, non una dipendenza universale del system layer.
 
 ---
 
-# 6. Tooling baseline
+# 7. Tooling baseline
 
-Un file JSON RumiAI deve poter essere ispezionato almeno concettualmente tramite tool standard come:
+Un file JSON RumiAI del non-system layer deve poter essere ispezionato almeno concettualmente tramite tool standard come:
 
 ```text
 jq
@@ -159,24 +161,25 @@ Node.js JSON.parse
 standard library JSON parser del linguaggio di implementazione
 ```
 
-La logica RumiAI non deve richiedere parser proprietari per il formato base.
+Il system layer non assume la presenza di questi tool.
 
 ---
 
-# 7. Invarianti
+# 8. Invarianti
 
 ```text
-JS-01 JSON UTF-8 è il structured data format di riferimento RumiAI v0
-JS-02 duplicate keys sono errore
-JS-03 schema versioning è esplicito dove necessario
-JS-04 object order non è semanticamente significativo
-JS-05 array order è significativo solo dove dichiarato
-JS-06 JSON non è codice e non viene eval/source
-JS-07 canonical JSON byte serialization non è requisito generale
-JS-08 domini bulk/streaming possono usare formati più appropriati
-JS-09 nessuna dipendenza architetturale da Python per leggere metadata RumiAI
-JS-10 JSON generato da RumiAI usa indentation di 2 spazi, LF e newline finale
-JS-11 opening/closing object/array delimiter sono su righe proprie; `{` e `[` non vengono appesi alla riga che introduce il valore
-JS-12 Unicode viene mantenuto come UTF-8; non si impone ASCII escaping generale
-JS-13 la formattazione generata è stabile ma non modifica la semantica del parser JSON
+JS-01 JSON UTF-8 è lo structured data format di riferimento del development/application layer RumiAI v0
+JS-02 il RumiAI system layer è escluso dall'obbligo JSON
+JS-03 duplicate keys sono errore
+JS-04 schema versioning è esplicito dove necessario
+JS-05 object order non è semanticamente significativo
+JS-06 array order è significativo solo dove dichiarato
+JS-07 JSON non è codice e non viene eval/source
+JS-08 canonical JSON byte serialization non è requisito generale
+JS-09 domini bulk/streaming possono usare formati più appropriati
+JS-10 nessuna dipendenza architetturale da Python/Node/jq è richiesta al system layer
+JS-11 JSON generato da RumiAI usa indentation di 2 spazi, LF e newline finale
+JS-12 opening/closing object/array delimiter sono su righe proprie; `{` e `[` non vengono appesi alla riga che introduce il valore
+JS-13 Unicode viene mantenuto come UTF-8; non si impone ASCII escaping generale
+JS-14 la formattazione generata è stabile ma non modifica la semantica del parser JSON
 ```
