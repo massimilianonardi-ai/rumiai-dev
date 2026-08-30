@@ -3,34 +3,43 @@
 Status: **canonical development rule**  
 Date: 2026-08-30
 
-This document defines the mandatory consistency gate for changes to already-established RumiAI subsystems.
+This document defines the mandatory consistency gate for work on RumiAI.
 
-Its purpose is to prevent implementation drift from decisions, conventions and invariants already recorded in `rumiai-dev`.
+Its purpose is broader than preventing one naming mistake: it exists to prevent any implementation, documentation or architectural drift from rules and decisions already fixed in the authoritative project material.
 
-`rumiai-dev` remains authoritative. Conversation memory, implementation convenience and newly drafted local terminology never override an existing canonical decision silently.
-
----
-
-## 1. Authority preflight
-
-Before modifying an established subsystem, the change author must read or retrieve the current authoritative material relevant to that subsystem, including at least:
-
-1. `RULES.md`;
-2. the active architecture/specification documents for the touched subsystem;
-3. the current remote implementation at the actual branch HEAD;
-4. the permanent tests protecting that subsystem when they exist.
-
-A remembered convention is not sufficient when the repository can answer the question.
+`rumiai-dev` is authoritative. Conversation memory, summaries, implementation convenience, model assumptions and newly drafted terminology never override an existing canonical decision.
 
 ---
 
-## 2. Change invariant list
+## 1. Mandatory authority preflight
 
-Before writing code, the change must identify the invariants that can constrain it.
+Before analysing, proposing or modifying an established RumiAI subsystem, the change author MUST retrieve the current authoritative material relevant to that task.
 
-The list is scoped to the change and includes, when applicable:
+At minimum:
+
+1. current `rumiai-dev/RULES.md`;
+2. this `CONSISTENCY-GATE.md`;
+3. the active architecture/specification/handoff documents for the touched subsystem;
+4. the current remote HEAD of every repository that may be changed;
+5. the permanent tests protecting the touched subsystem, when they exist.
+
+This is an execution precondition, not a recommendation.
+
+Remembering a rule is not equivalent to reading the current rule. A conversation summary is not a substitute for repository retrieval when the repository can answer the question.
+
+If the preflight has not been performed, implementation work is not ready to start.
+
+---
+
+## 2. Applicable-rule extraction
+
+After the preflight and before writing, identify the rules and invariants that constrain the specific task.
+
+Depending on the change, these include:
 
 ```text
+architecture boundaries
+product/component terminology
 names and namespaces
 public/private API spelling
 file and directory naming
@@ -40,19 +49,57 @@ POSIX/platform contract
 exit statuses and error classes
 ownership/mode rules
 transaction semantics
+Git workflow
 physical-validation requirements
+testing policy
 previous explicit user corrections
 ```
 
-If a proposed implementation would change one of these invariants, that is a design change, not an implementation detail.
-
-A design invariant must not be changed silently. The change must first be surfaced explicitly and, where the project process requires it, approved before implementation.
+The purpose is not to restate the entire project. It is to make the relevant constraints explicit before choosing an implementation.
 
 ---
 
-## 3. Existing primitive first
+## 3. No silent rule changes
 
-Before introducing a new helper, alias, namespace, suffix, format or abstraction, search the current subsystem for an existing primitive with the same semantic role.
+If a proposed solution would contradict or modify an established rule or invariant, that is a design change, not an implementation detail.
+
+It MUST NOT be introduced silently.
+
+The conflict must be surfaced before implementation and, where the project workflow requires it, explicitly approved before the established rule is changed.
+
+Local convenience is never sufficient reason to reinterpret an existing decision.
+
+---
+
+## 4. Conversational language has no design authority
+
+Abbreviations, shorthand, temporary labels and informal wording used in conversation are not automatically product terminology.
+
+They MUST NOT be promoted into:
+
+```text
+component names
+commands
+executables
+interpreters
+namespaces
+APIs
+filesystem names
+configuration keys
+architecture concepts
+```
+
+unless the user or an authoritative project document explicitly establishes them as such.
+
+When terminology is uncertain, retrieve the canonical project vocabulary instead of inferring a new concept from conversational wording.
+
+The product name is `RumiAI` and existing canonical repository/component names remain exactly as specified by the project.
+
+---
+
+## 5. Existing primitive first
+
+Before introducing a new helper, alias, namespace, suffix, format, component or abstraction, search the current subsystem for an existing primitive with the same semantic role.
 
 Rule:
 
@@ -71,29 +118,23 @@ unless a genuinely different contract has first been specified.
 
 ---
 
-## 4. Naming consistency
+## 6. Naming consistency
 
-For RumiAI shell code, namespaced functions and variables use the exact project namespace:
+For RumiAI shell code, namespaced RumiAI functions and variables use the exact canonical namespace:
 
 ```text
 RumiAI_*
 ```
 
-Lowercase alternate namespace:
+No alternate product namespace is inferred from conversational abbreviations or local implementation choices.
 
-```text
-rumi_*
-```
+Separately specified unnamespaced interfaces such as the existing `log` and `i18n` entrypoints remain explicit exceptions. An exception does not establish a second general naming convention.
 
-is forbidden.
-
-The lowercase word `rumi` may be the public command/interpreter name; this does not create a lowercase function namespace.
-
-Separately specified unnamespaced interfaces such as the existing `log` and `i18n` entrypoints remain explicit exceptions. An exception does not establish an alternate general naming convention.
+A future change of naming convention requires an explicit project decision.
 
 ---
 
-## 5. Correction propagation rule
+## 7. Correction propagation
 
 When an established invariant is corrected, the same work unit must inspect and, where applicable, update all of:
 
@@ -104,83 +145,120 @@ permanent tests
 examples/reference descriptors
 physical-validation documentation
 related active drafts that consume the interface
+handoff/current-state material
 ```
 
-After propagation, the affected subsystem must be scanned for the superseded spelling/pattern.
+After propagation, scan the affected active subsystem for the superseded pattern.
 
 A correction is not complete when only the file where the inconsistency was noticed has changed.
 
+Historical Git commits and immutable validation evidence are not rewritten. Current documentation must distinguish historical evidence from current rules without re-promoting obsolete terminology.
+
 ---
 
-## 6. Minimal-change rule
+## 8. Minimal-change rule
 
 An implementation change must solve the requested problem without opportunistically introducing unrelated conventions or abstractions.
 
 In particular:
 
 - do not create aliases that are not required;
+- do not invent product/component names from shorthand;
 - do not generalize a physical namespace before a real use case exists;
 - do not replace an established mechanism with a locally preferred one without an explicit architectural decision;
 - do not reinterpret a previously fixed term as a new concept;
-- do not turn implementation convenience into a new project convention.
+- do not turn implementation convenience into a project convention;
+- do not add defensive checks that duplicate the semantics of the operation they guard unless the extra check has a distinct required contract.
 
 ---
 
-## 7. Post-change consistency scan
+## 9. Mechanical enforcement where possible
 
-Before declaring an implementation complete, perform a subsystem-wide consistency check appropriate to the change.
+Rules that can be checked mechanically at reasonable cost should be protected by permanent tests or equivalent deterministic checks.
+
+Mechanical tests are supplements to the authority preflight, not substitutes for it.
+
+Many project rules are semantic and cannot be reduced to a grep pattern. The existence of passing tests never authorizes ignoring the canonical documents.
+
+---
+
+## 10. Post-change consistency scan
+
+Before declaring work complete, perform a subsystem-wide consistency check appropriate to the change.
 
 At minimum verify:
 
 ```text
-no superseded/forbidden names remain
-new public names match the authoritative namespace
-call sites and tests use the current names
+no superseded/forbidden active terminology remains
+new public names match authoritative terminology
+call sites and tests use current interfaces
 file modes are correct, especially executable tests/commands
-serialization/layout still matches the active specification
+serialization/layout still matches active specifications
 no accidental host-specific dependency was introduced
-Git history remains forward-only and based on the current remote HEAD
+no already-fixed rule was silently reinterpreted
+current remote HEAD was used for every write
+Git history remains forward-only
 ```
 
-Where an invariant is mechanically checkable at reasonable cost, add or update a permanent test so future violations fail automatically.
+If a mismatch is found, the work is not complete.
 
 ---
 
-## 8. Physical validation discipline
+## 11. Physical validation discipline
 
 A semantic implementation change that requires physical validation must be validated on the current stable reference installations according to the testing contract.
 
-Pure naming/documentation corrections should normally be bundled into the next meaningful physical gate rather than imposing repeated operator work, unless the rename itself changes observable execution behavior or prevents the existing tests from exercising the code.
+Pure naming/documentation corrections should normally be bundled into the next meaningful physical gate rather than imposing repeated operator work, unless the correction itself changes observable execution behavior or prevents existing tests from exercising the code.
 
-Previously recorded evidence remains evidence for the exact revision/API spelling that was exercised; documentation must not silently relabel old evidence as validation of a later untested revision.
-
----
-
-## 9. No memory-only continuation
-
-When resuming work on an established subsystem after enough context has accumulated that a convention could be uncertain, retrieve the canonical documents and current HEAD instead of guessing from conversational memory.
-
-This rule applies even when the remembered answer seems likely.
-
-Repository evidence is cheaper than propagating an incorrect assumption through code, tests and documentation.
+Previously recorded evidence remains evidence for the exact revisions that were exercised. Documentation must not silently relabel old evidence as validation of a later untested revision.
 
 ---
 
-## 10. Completion checklist
+## 12. No memory-only continuation
 
-A change to an established subsystem is ready to be reported as complete only when the answer to every applicable item is yes:
+When continuing RumiAI work, repository retrieval is the default whenever a current rule, decision, name, boundary or implementation detail can materially affect the answer.
+
+This applies even when the remembered answer seems likely.
+
+The required sequence is:
 
 ```text
-[ ] authoritative documents were consulted
-[ ] current remote HEAD was used
-[ ] relevant invariants were identified
-[ ] no invariant changed silently
+retrieve authority
+→ extract applicable invariants
+→ reason within those invariants
+→ implement
+→ verify consistency
+```
+
+not:
+
+```text
+remember approximately
+→ implement
+→ repair drift later
+```
+
+---
+
+## 13. Completion checklist
+
+A change to an established subsystem is ready to be reported as complete only when every applicable item is satisfied:
+
+```text
+[ ] current RULES.md was retrieved
+[ ] current CONSISTENCY-GATE.md was retrieved
+[ ] relevant active specifications/handoffs were retrieved
+[ ] current remote HEADs were verified
+[ ] relevant permanent tests were inspected
+[ ] applicable rules/invariants were identified before writing
+[ ] no canonical rule changed silently
+[ ] no conversational shorthand was promoted into product terminology
 [ ] existing primitives were reused where semantically equivalent
-[ ] code follows established naming/layout/format rules
-[ ] correction propagated to dependent docs/tests/examples
+[ ] code follows established naming/layout/format/platform rules
+[ ] correction propagated to dependent active docs/tests/examples
 [ ] stale superseded patterns were scanned for
 [ ] executable/file modes were checked
-[ ] permanent mechanical guard added when justified
+[ ] mechanical guard was added where justified
 [ ] physical-validation status is stated accurately
 [ ] Git changes are forward-only
 ```
