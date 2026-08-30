@@ -2,7 +2,7 @@
 
 Data: 2026-08-30
 
-Stato: **design decision — resolved state + System Field Format v0 fissati**
+Stato: **design decision — resolved state + SCF v0 fissati**
 
 Il resolved state è la barriera fra:
 
@@ -51,20 +51,20 @@ RESOLVED must be exact
 
 # 2. Resolution Snapshot
 
-Una Resolution Snapshot è immutabile e serializzata in System Field Format v0.
+Una Resolution Snapshot è immutabile e serializzata in System Configuration Field Format v0.
 
-Header:
+Base:
 
 ```text
 kind	profile_resolved
 schema	1
+generation	17
+profile	default
 ```
 
 Contiene almeno:
 
 ```text
-generation
-profile
 resolved selectors
 Resolved Dependency Graph
 Resolved Command Bindings
@@ -84,7 +84,7 @@ Generation ID v0:
 positive monotonic integer
 ```
 
-Human-readable pathname:
+Pathname:
 
 ```text
 g1
@@ -92,7 +92,7 @@ g2
 g17
 ```
 
-Una nuova resolution crea una nuova generation; non riscrive la precedente.
+Nuova resolution => nuova generation; la precedente non viene riscritta.
 
 ---
 
@@ -103,27 +103,45 @@ kind	profile_resolved
 schema	1
 generation	17
 profile	default
-graph_count	1
-graph_1_id	netbeans-graph
-graph_1_root_package	netbeans@26@r1@any-any
-dependency_count	1
-dependency_1_graph	netbeans-graph
-dependency_1_consumer	netbeans@26@r1@any-any
-dependency_1_slot	jdk
-dependency_1_provider	temurin@21.0.8+9@r1@linux-arm64
-dependency_1_capability	java-development-kit
-dependency_1_contract	1
-dependency_1_constraint	>=17 <22
-dependency_1_satisfied_version	21
+graphs.count	1
+graphs.1.id	netbeans-graph
+graphs.1.root_package	netbeans@26@r1@any-any
+dependencies.count	1
+dependencies.1.graph	netbeans-graph
+dependencies.1.consumer	netbeans@26@r1@any-any
+dependencies.1.slot	jdk
+dependencies.1.provider	temurin@21.0.8+9@r1@linux-arm64
+dependencies.1.capability	java-development-kit
+dependencies.1.contract	1
+dependencies.1.constraint	>=17 <22
+dependencies.1.satisfied_version	21
 ```
 
-Un `any-any` consumer può quindi avere una native provider dependency senza diventare platform-specific.
-
-Collection grandi usano count + indici contigui e streaming/per-prefix bootstrap.
+Un `any-any` consumer può quindi avere native provider dependency senza diventare platform-specific.
 
 ---
 
-# 5. Resolved environment
+# 5. Query model
+
+Resolved è struttura gerarchica, non tabella omogenea.
+
+Lookup puntuale:
+
+```text
+rumi_conf_get resolved dependencies.1.provider
+```
+
+Lettura di un intero elemento/namespace:
+
+```text
+rumi_conf_namespace resolved dependencies.1
+```
+
+Questo evita repeated full-file scansions per leggere più proprietà dello stesso edge.
+
+---
+
+# 6. Resolved environment
 
 Non viene persistito:
 
@@ -139,15 +157,15 @@ resource type
 resource id
 ```
 
-Il launcher materializza l'absolute pathname usando la current RUMIAI_ROOT.
+Il launcher materializza l'absolute pathname usando current RUMIAI_ROOT.
 
 ---
 
-# 6. Active generation
+# 7. Active generation
 
-Snapshots immutabili e active pointer sono separati.
+Snapshots immutabili e active state sono separati.
 
-`active` usa lo stesso System Field Format:
+`active` è SCF:
 
 ```text
 kind	active
@@ -155,11 +173,11 @@ schema	1
 generation	17
 ```
 
-Questo elimina una grammatica di parsing speciale durante bootstrap/recovery.
+Atomic replace del file è lo switch autorevole.
 
 ---
 
-# 7. Transaction boundary
+# 8. Transaction boundary
 
 ```text
 current active generation
@@ -172,26 +190,26 @@ validate Package Instance health/integrity
         ↓
 validate dependency graph/state/environment/bindings
         ↓
-write immutable candidate generation System Field Format
+write immutable candidate generation SCF
         ↓
 validate candidate Execution View
         ↓
-atomic replace active file
+atomic replace active
 ```
 
-Errore prima dello switch: la previous generation resta autorevole.
+Errore prima dello switch: previous generation resta autorevole.
 
 ---
 
-# 8. New package arrival
+# 9. New package arrival
 
-Una nuova Package Instance compatibile disponibile localmente NON modifica la active generation.
+Nuova Package Instance compatibile disponibile localmente NON modifica active generation.
 
-Solo una nuova resolution esplicita può produrre binding diversi.
+Solo nuova resolution esplicita può produrre binding diversi.
 
 ---
 
-# 9. Missing provider
+# 10. Missing provider
 
 Provider exact mancante/corrotto:
 
@@ -210,7 +228,7 @@ host JAVA_HOME/PYTHONHOME
 
 ---
 
-# 10. Rollback
+# 11. Rollback
 
 Rollback riattiva una previous exact generation se tutte le Package Instance/State Instance necessarie sono ancora disponibili.
 
@@ -220,23 +238,23 @@ Altrimenti:
 ROLLBACK_UNAVAILABLE
 ```
 
-Scegliere un provider equivalente sarebbe una nuova resolution, non rollback.
+Scegliere provider equivalente sarebbe nuova resolution, non rollback.
 
 ---
 
-# 11. Reference accounting / GC
+# 12. Reference accounting / GC
 
 Ogni retained generation crea reference alle exact Package Instance che usa.
 
-Con retention v0 conservativa, una Package Instance referenziata non è garbage.
+Una Package Instance referenziata non è garbage.
 
 `why-installed` deriva dalle reference chain del resolved graph.
 
 ---
 
-# 12. Execution View
+# 13. Execution View
 
-`bin/` e namespace materializzati sono derivati.
+`bin/` e namespace materializzati sono derivati:
 
 ```text
 active Resolution Snapshot
@@ -244,36 +262,36 @@ active Resolution Snapshot
 rebuild Execution View
 ```
 
-La view non può correggere un resolved graph broken tramite re-resolution implicita.
+La view non corregge un graph broken tramite re-resolution implicita.
 
 ---
 
-# 13. State migration
+# 14. State migration
 
 Dependency re-resolution e State Instance migration sono operazioni distinte.
 
-Cambio da `sN` a `sN+1` richiede migration esplicita prima dell'attivazione della candidate generation che la usa.
+Cambio `sN -> sN+1` richiede migration esplicita prima dell'attivazione della candidate generation che la usa.
 
 ---
 
-# 14. Serialization boundary
+# 15. Serialization boundary
 
-L'ordine fisico dei field non è semanticamente significativo salvo gli indici espliciti delle collection.
+SCF field order non è semanticamente significativo; array order è espresso da indici numerici.
 
-I file generated usano comunque ordine canonico di schema.
+Generated file usa ordine canonico di schema.
 
-Generation identity è il numero monotono locale, non un digest della serializzazione.
+Generation identity è il numero monotono locale, non digest della serializzazione.
 
-Se serviranno firme/checksum dello snapshot sarà definita una canonical representation specifica.
+Dataset tabellari come integrity inventory non vengono flattenati dentro Resolution Snapshot.
 
 ---
 
-# 15. Invarianti
+# 16. Invarianti
 
 ```text
 RS-01 desired != resolved
 RS-02 resolved contiene solo binding exact
-RS-03 Resolution Snapshot è immutable System Field Format
+RS-03 Resolution Snapshot = immutable SCF dot-notation
 RS-04 new resolution => new generation
 RS-05 active switch atomico
 RS-06 no absolute RUMIAI_ROOT path persistiti
@@ -283,7 +301,8 @@ RS-09 missing provider => BROKEN_RESOLUTION
 RS-10 rollback exact o fallisce
 RS-11 retained generations creano package references
 RS-12 State migration separata dalla re-resolution
-RS-13 active usa System Field Format, non una grammatica speciale
+RS-13 active usa SCF ed è separato
 RS-14 Package Instance platform e runtime requirement restano ortogonali
-RS-15 large collection usa streaming bootstrap
+RS-15 array/graph usano count + numeric indices
+RS-16 arbitrary IDs restano values
 ```
