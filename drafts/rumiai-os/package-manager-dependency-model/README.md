@@ -1,8 +1,8 @@
-# RumiAI package manager — Dependency and resolution model
+# RumiAI package manager — Dependency and resolution model v0
 
 Data: 2026-08-30
 
-Stato: **design draft — resolver v0 formalizzato**
+Stato: **design decision — resolver v0 formalizzato**
 
 Prerequisiti:
 
@@ -10,215 +10,178 @@ Prerequisiti:
 drafts/rumiai-os/package-manager-v0/README.md
 drafts/rumiai-os/package-manager-package-instance-layout/README.md
 drafts/rumiai-os/package-manager-state-model/README.md
-drafts/rumiai-os/package-manager-integration-context/README.md
+drafts/rumiai-os/package-manager-platform-vocabulary-v0/README.md
+drafts/rumiai-os/package-manager-capability-contracts-v0/README.md
 ```
 
-Questo documento formalizza il resolver locale. Resta interamente sul lato locale del confine già fissato:
+Il resolver è locale: vede soltanto Package Instance sane già presenti sotto `RUMIAI_ROOT/pkg/`.
 
-> il resolver vede soltanto Package Instance già presenti sotto `pkg/`; non acquisisce software, non consulta package manager host e non usa runtime trovati casualmente nel `PATH`.
+Non acquisisce software, non consulta host package manager e non usa runtime casuali trovati nel PATH.
 
 ---
 
-# 1. Separazione fondamentale
-
-Il modello distingue quattro oggetti:
+# 1. Oggetti fondamentali
 
 ```text
 Requirement
     cosa serve
 
 Selection Policy
-    come scegliere tra più soluzioni valide
+    come scegliere fra candidate valide
 
 Resolved Binding
-    scelta concreta per un dependency slot
+    exact provider scelto per uno slot
 
 Resolved Dependency Graph
-    insieme persistibile delle scelte concrete
+    closure esatta persistibile
 ```
 
-Regola centrale:
+Regola:
 
 ```text
 Requirement != Resolved Binding
 ```
 
-La selezione può essere dinamica durante una nuova resolution; l'esecuzione usa sempre binding concreti già risolti.
+Selection dinamica soltanto durante resolution; execution usa exact binding.
 
 ---
 
-# 2. Execution Capability
+# 2. Package platform non è runtime requirement
 
-Nel namespace del package manager una **Execution Capability** è un contratto nominato che una Package Instance può fornire e un'altra può richiedere.
-
-Non è una capability del Core-AI.
-
-Esempi:
-
-```text
-java-runtime
-python-runtime
-java-development-kit
-```
-
-Una Package Instance può dichiarare:
-
-```text
-provides:
-    java-runtime = 21
-```
-
-Il consumer può richiedere:
-
-```text
-requires:
-    java-runtime >=17 <22
-```
-
-senza conoscere il provider concreto.
-
----
-
-# 3. Software version, capability version e release-order
-
-Tre concetti sono separati.
-
-## 3.1 Software version
-
-Identifica la release upstream concreta:
-
-```text
-21.0.8+9
-8u462
-3.13.7
-release-42
-```
-
-RumiAI la tratta semanticamente come stringa upstream opaca.
-
-Non esiste un comparatore universale implicito delle software version.
-
-## 3.2 Capability compatibility version
-
-Appartiene al contratto della Execution Capability.
-
-Esempi concettuali:
-
-```text
-java-runtime
-    compatibility version = feature release intera
-    8, 11, 17, 21, ...
-
-python-runtime
-    compatibility version = major.minor
-    3.11, 3.12, 3.13, ...
-```
-
-Il capability contract definisce la propria rappresentazione canonica e il proprio ordinamento.
-
-Il resolver confronta capability version, non interpreta genericamente le software version upstream.
-
-## 3.3 `release-order`
-
-Ogni Package Instance può contenere metadata immutabile:
-
-```text
-release-order = <positive integer>
-```
-
-`release-order` ordina le release **all'interno della stessa famiglia logica di package/provider**.
+Package Instance platform/architecture descrive esclusivamente il contenuto della Package Instance.
 
 Esempio:
 
 ```text
-temurin 8u452
-release-order = 381
-
-temurin 8u462
-release-order = 382
+netbeans@26@r1@any-any
 ```
 
-Il valore viene assegnato dal lato packaging/store, che conosce l'ordine reale delle release upstream.
-
-Il package manager locale non deve dedurre che `8u462 > 8u452` dalla stringa.
-
-`release-order`:
+può richiedere:
 
 ```text
-non fa parte del pathname Package Instance
-non sostituisce software version
-non è confrontabile semanticamente tra famiglie provider differenti
+java-development-kit contract 1 >=17 <22
 ```
 
-La `revision` RumiAI resta separata e ordina differenti revisioni di packaging della stessa release.
+Su Linux ARM64 il provider può essere `temurin@...@linux-arm64`; su macOS ARM64 `temurin@...@macos-arm64`.
+
+`jvm`, `jdk`, `jre`, `python` non sono platform token.
 
 ---
 
-# 4. Dependency slot
+# 3. Execution Capability
 
-Ogni requirement di una Package Instance possiede un nome locale, il **dependency slot**.
+Una Execution Capability è un contratto nominato del package manager, distinto dalle capability Core-AI.
+
+Identity:
+
+```text
+capability name + contract version
+```
+
+Esempi v0:
+
+```text
+java-runtime contract 1
+java-development-kit contract 1
+python-runtime contract 1
+```
+
+Il contract definisce:
+
+```text
+compatibility version scheme
+required/optional resource keys
+resource type per key
+semantica
+```
+
+---
+
+# 4. Software version vs capability version vs contract
+
+Separati:
+
+```text
+software version
+    upstream release identity opaca
+
+capability contract version
+    versione della semantica RumiAI del contratto
+
+capability compatibility version
+    livello di compatibilità fornito/richiesto
+```
 
 Esempio:
 
 ```text
-slot jvm:
-    requires java-runtime = 21
+Temurin software version = 21.0.8+9
+provides java-runtime contract 1 version 21
 ```
 
-`jvm` appartiene al namespace del consumer.
-
-Dopo la resolution:
-
-```text
-jvm
-    -> temurin@21.0.8+9@r1@linux-arm64
-```
-
-I metadata del consumer possono quindi referenziare risorse attraverso lo slot:
-
-```text
-dependency:jvm.command:java
-dependency:jvm.directory:home
-dependency:jvm.directory:bin
-```
-
-senza conoscere prima della resolution provider e pathname concreti.
+Non esiste comparatore universale delle software version upstream.
 
 ---
 
-# 5. Requirement
+# 5. `release-order`
 
-Un Requirement è immutabile e appartiene a `@package`.
-
-Nel v0 esistono due target.
-
-## 5.1 Capability Requirement
-
-Forma concettuale:
+Metadata immutabile family-local:
 
 ```text
-slot jvm:
-    target = capability
-    capability = java-runtime
-    constraint = =21
+release-order = positive integer
 ```
 
-oppure:
+Ordina release della stessa logical package/provider family senza interpretare stringhe upstream.
+
+Esempio:
 
 ```text
-slot python:
-    target = capability
-    capability = python-runtime
-    constraint = >=3.11 <3.14
+Temurin 8u452 -> 381
+Temurin 8u462 -> 382
 ```
 
-È la forma preferita quando il provider concreto non è semanticamente rilevante.
+Non viene confrontato semanticamente fra provider family differenti.
 
-## 5.2 Package Requirement
+A parità di release-order può prevalere la RumiAI revision più alta quando la policy richiede newest packaging revision.
 
-Usata soltanto quando il consumer dipende realmente da una specifica famiglia/provider.
+---
 
-Forma concettuale:
+# 6. Dependency slot
+
+Ogni Requirement ha un nome locale al consumer:
+
+```text
+slot jdk
+slot python
+slot engine
+```
+
+Dopo resolution:
+
+```text
+netbeans@26@r1@any-any
+└── jdk -> temurin@21.0.8+9@r1@linux-arm64
+```
+
+Environment/Launch Template possono referenziare risorse tramite lo slot senza conoscere il provider prima della resolution.
+
+---
+
+# 7. Requirement v0
+
+Due target.
+
+Capability Requirement:
+
+```text
+slot jdk:
+    target = capability
+    capability = java-development-kit
+    contract = 1
+    constraint = >=17 <22
+```
+
+Package Requirement, solo se l'identità family/provider è realmente significativa:
 
 ```text
 slot engine:
@@ -226,18 +189,26 @@ slot engine:
     package = specific-engine
 ```
 
-Una Package Requirement limita il candidate set a quella famiglia logica; la scelta della release concreta resta separata e usa Selection Policy / release-order, salvo pin esatto.
+Tutti i Requirement v0 sono mandatory.
 
-## 5.3 Constraint v0
+Un Requirement non risolvibile produce:
 
-Il v0 supporta constraint congiuntivi semplici sul version scheme della capability:
+```text
+DEPENDENCY_UNAVAILABLE
+```
+
+---
+
+# 8. Constraint grammar v0
+
+Solo intersezione di comparator sul version scheme della capability:
 
 ```text
 =
->=
 >
-<=
+>=
 <
+<=
 ```
 
 Esempi:
@@ -248,113 +219,85 @@ Esempi:
 >=3.11 <3.14
 ```
 
-Non vengono introdotti nel v0:
+Non v0:
 
 ```text
 OR
-NOT
-wildcard complesse
-constraint sulle stringhe software version upstream
+!=
+wildcard
+caret
+tilde
+constraint generico sulla software version upstream
 ```
-
-Se in futuro servono, evolvono il capability contract/schema, non vengono inferiti implicitamente.
 
 ---
 
-# 6. Requirement mandatory nel v0
+# 9. Candidate set
 
-Tutte le Execution Dependency dichiarate nel v0 sono obbligatorie.
-
-Se un Requirement non è risolvibile:
+Per un Requirement il resolver considera solo Package Instance locali che:
 
 ```text
-DEPENDENCY_UNAVAILABLE
+sono HEALTHY
+sono utilizzabili sul current native host secondo la propria platform/architecture identity
+soddisfano target package/capability
+soddisfano exact capability contract
+soddisfano capability compatibility constraint
 ```
 
-Il v0 non introduce `optional dependency` o auto-enable di feature in base a ciò che capita nello store.
-
-Funzionalità opzionali possono essere modellate in futuro esplicitamente; non devono introdurre comportamento non deterministico ora.
-
----
-
-# 7. Candidate set locale
-
-Per ogni Requirement il resolver costruisce candidati esclusivamente da Package Instance locali sane sotto:
-
-```text
-RUMIAI_ROOT/pkg/
-```
-
-Una candidata deve almeno:
-
-```text
-essere HEALTHY secondo identity/integrity
-essere compatibile con l'Execution Platform corrente richiesta
-soddisfare il target package/capability
-soddisfare il capability constraint
-```
+Una Package Instance consumer `any-any` non obbliga il provider a essere `any-any`; il provider può essere native.
 
 Non sono candidate:
 
 ```text
-software disponibile solo nel rumiai-store remoto/catalogo
-runtime host trovato nel PATH
-apt/dnf/brew/Chocolatey/MSI installati globalmente
-package corrotti/inconsistenti
-Package Instance per piattaforma incompatibile
+software solo remoto
+host runtime in PATH
+apt/dnf/brew/Chocolatey/MSI package
+package corrotti
+platform-incompatible Package Instance
 ```
-
-Acquisire una Package Instance mancante è un'altra operazione, fuori dal resolver locale.
 
 ---
 
-# 8. Selection Policy
+# 10. Selection Policy
 
-La Selection Policy è separata dal Requirement.
+Separata dal consumer Requirement.
 
-Il consumer deve dichiarare ciò che gli serve; non deve hardcodare preferenze di vendor quando il vendor non è parte del requisito semantico.
-
-La policy può derivare, in ordine di precedenza, da:
+Precedence v0:
 
 ```text
-1. exact pin esplicito dello scope/operazione corrente
-2. override esplicito dell'Integration Profile / desired state
-3. policy dell'environment RumiAI
-4. nessuna preferenza
+1 exact pin esplicito
+2 Desired Integration Profile override/preference
+3 RumiAI environment policy
+4 nessuna preference
 ```
 
-Il package consumer non impone una provider preference per un Capability Requirement generico.
+Il consumer generic capability requirement non impone vendor preference.
 
-Se vuole davvero un provider specifico usa una Package Requirement.
+Se richiede davvero una family specifica usa Package Requirement.
 
 ---
 
-# 9. Pin vs preference
-
-## 9.1 Exact pin
-
-Un pin identifica una Package Instance concreta.
-
-Esempio:
+# 11. Exact pin
 
 ```text
-slot jvm
-pin = temurin@21.0.8+9@r1@linux-arm64
+pin jdk -> temurin@21.0.8+9@r1@linux-arm64
 ```
 
-Se l'istanza non esiste, è corrotta o non soddisfa il Requirement:
+Deve esistere, essere HEALTHY e soddisfare il Requirement.
+
+Altrimenti:
 
 ```text
 PIN_UNAVAILABLE
 ```
 
-Un pin **non fa fallback**.
+Pin non fa fallback.
 
-## 9.2 Provider preference
+---
 
-Una preference ordina provider/famiglie preferite ma consente fallback.
+# 12. Provider preference / fallback
 
-Esempio concettuale:
+Esempio:
 
 ```text
 provider-order:
@@ -363,85 +306,44 @@ provider-order:
     any-compatible
 ```
 
-Significa:
+Fallback viene applicato soltanto durante una nuova explicit resolution.
 
-```text
-prima prova un candidato Temurin valido
-se assente prova Microsoft OpenJDK
-se assente considera altri provider compatibili
-```
-
-Il fallback esiste soltanto durante una nuova resolution.
-
-Non viene rivalutato durante il launch.
+Dopo il commit il launch usa exact provider.
 
 ---
 
-# 10. `latest` / `newest`
+# 13. `newest`
 
-`latest` non è una software version e non è una Package Instance.
+`newest/latest` è Selection Policy, non version/identity.
 
-È una Selection Policy.
-
-Nel v0 il comportamento equivalente a `newest compatible` è:
+Ranking v0:
 
 ```text
-1. usa soltanto candidati che soddisfano il Requirement
-2. applica provider preference/pin
-3. se il constraint ammette più capability compatibility version, preferisce la più alta secondo il capability contract
-4. dentro la stessa famiglia/provider + capability compatibility version, preferisce il release-order più alto
-5. a parità di release-order, preferisce la revision RumiAI più alta
+1 requirement-compatible candidates
+2 exact pin se presente
+3 provider preference
+4 highest compatible capability version secondo contract
+5 highest release-order nella chosen provider family
+6 highest RumiAI revision a parità di release-order
 ```
 
-`release-order` non viene confrontato fra provider differenti.
-
-Se dopo l'applicazione delle policy restano più provider equivalenti e non esiste un criterio semantico che li ordini:
+Se restano provider equivalenti senza criterio semantico:
 
 ```text
 RESOLUTION_AMBIGUOUS
 ```
 
-Il resolver non usa ordine filesystem, data di installazione o ordine di enumerazione come tie-breaker nascosto.
+Nessun install-order/filesystem-order tie breaker.
 
 ---
 
-# 11. Resolution algorithm v0
+# 14. Resolved Binding
 
-Per ogni dependency slot:
-
-```text
-Requirement
-    ↓
-build local candidate set
-    ↓
-filter platform + health
-    ↓
-filter requirement target/constraint
-    ↓
-apply exact pin, se presente
-    ↓
-apply provider preference
-    ↓
-select capability compatibility version secondo policy
-    ↓
-select release-order nella famiglia scelta
-    ↓
-select RumiAI revision
-    ↓
-Resolved Binding
-```
-
-Il resolver procede sull'intera dependency closure fino a ottenere un grafo concreto o un errore.
-
----
-
-# 12. Resolved Binding
-
-Un Resolved Binding associa in modo deterministico:
+Associa:
 
 ```text
-consumer Package Instance
-+ dependency slot
+consumer exact Package Instance
++ slot
 + Requirement
 → exact provider Package Instance
 ```
@@ -449,413 +351,159 @@ consumer Package Instance
 Esempio:
 
 ```text
-consumer:
-    netbeans@26@r1@jvm-any
-
-slot:
-    jdk
-
-requirement:
-    java-development-kit >=17 <22
-
-resolved:
-    temurin@21.0.8+9@r1@linux-arm64
+consumer  netbeans@26@r1@any-any
+slot      jdk
+requires  java-development-kit contract 1 >=17 <22
+resolved  temurin@21.0.8+9@r1@linux-arm64
+satisfies java-development-kit contract 1 version 21
 ```
 
-Dopo il commit della resolution, `jdk` significa **quella esatta Package Instance**, non “qualunque JDK compatibile”.
+Da quel momento `jdk` significa quella exact Package Instance.
 
 ---
 
-# 13. Dynamic during resolution, static during execution
-
-Regola fissata:
+# 15. Dynamic during resolution, static during execution
 
 ```text
-dynamic selection
-    soltanto durante resolution
-
-exact binding
-    durante execution
+dynamic selection  only resolution
+exact binding       execution
 ```
 
-Esempio:
-
-```text
-policy:
-    prefer Temurin
-    fallback Microsoft
-
-resolution:
-    jdk -> Temurin 21
-```
-
-Se successivamente Temurin viene rimosso/corrotto, il prossimo launch NON passa automaticamente a Microsoft.
-
-Risultato:
+Se il provider exact scompare/corrompe dopo il commit:
 
 ```text
 BROKEN_RESOLUTION
 ```
 
-Serve una nuova resolution esplicita.
+Non automatic fallback a provider alternativo, host JAVA_HOME, PATH runtime o newest.
 
-Questo preserva:
+Repair/re-resolve è un'altra explicit transaction/generation.
+
+---
+
+# 16. Eventi di nuova resolution
+
+Solo operazioni esplicite:
 
 ```text
-reproducibility
-audit
+first integration
+explicit update
+explicit re-resolve
+Desired Profile / Selection Policy change
+new root Package Instance selection
+repair
+```
+
+Non:
+
+```text
+every launch
+reboot
+new candidate merely appearing in pkg/
+```
+
+---
+
+# 17. Resolved Dependency Graph
+
+Contiene exact Package Instance identity per tutti gli edge.
+
+Serve per:
+
+```text
+launch
 rollback
-assenza di mutazioni invisibili
-```
-
----
-
-# 14. Eventi che possono produrre una nuova resolution
-
-Nel v0 una nuova resolution avviene soltanto come effetto di un'operazione esplicita, per esempio:
-
-```text
-prima integrazione/attivazione
-update esplicito
-re-resolve esplicito
-cambio Selection Policy
-cambio Desired Integration Profile
-switch a una nuova Package Instance con Requirement differenti
-riparazione esplicita di una BROKEN_RESOLUTION
-```
-
-Non avviene automaticamente:
-
-```text
-a ogni launch
-a ogni reboot
-perché compare una Package Instance più nuova
-perché cambia l'ordine del filesystem
-```
-
-Installare una nuova Java 21 non cambia da sola un binding già risolto verso una Java 21 precedente.
-
----
-
-# 15. Resolved Dependency Graph
-
-Il resolver produce una closure concreta:
-
-```text
-root Package Instance
-├── slot A -> exact Package Instance
-│   └── ... transitive bindings ...
-└── slot B -> exact Package Instance
-    └── ...
-```
-
-Il grafo contiene soltanto Package Instance concrete.
-
-Per ogni edge devono essere preservabili almeno:
-
-```text
-consumer identity
-slot name
-Requirement snapshot
-provider identity
-capability/version usata per soddisfare il Requirement, se applicabile
-```
-
-Il resolved graph è stato derivato e persistibile; non appartiene alla Package Instance immutabile.
-
----
-
-# 16. Persistenza e relocatability del resolved graph
-
-Il persisted resolved state NON contiene pathname assoluti della RumiAI root.
-
-Persistisce riferimenti logici/esatti alle Package Instance e alle loro risorse.
-
-Esempio:
-
-```text
-jdk
-    -> temurin@21.0.8+9@r1@linux-arm64
-```
-
-non:
-
-```text
-jdk
-    -> /Volumes/.../RumiAI/pkg/temurin.../root
-```
-
-Il pathname fisico viene ricostruito dalla RumiAI root corrente al momento della materializzazione/launch.
-
-Questo mantiene l'environment relocatable.
-
----
-
-# 17. Private dependencies
-
-Le dipendenze sono private per default.
-
-Se NetBeans risolve:
-
-```text
-jdk -> Java 21
-```
-
-questo non crea automaticamente nel default Integration Profile:
-
-```text
-java
-javac
-JAVA_HOME
-```
-
-La dipendenza serve all'Execution Environment di NetBeans.
-
-Una risorsa del provider diventa pubblica soltanto tramite un binding di integrazione esplicito.
-
----
-
-# 18. Coesistenza e conflitti
-
-Package Instance incompatibili possono convivere fisicamente nello store locale.
-
-Esempio:
-
-```text
-Java 8
-Java 17
-Java 21
-Python 3.12
-Python 3.13
-```
-
-Possono essere usate in Execution Environment distinti.
-
-Nel v0, dentro lo stesso Execution Environment, una stessa Execution Capability richiede una soluzione coerente unica, salvo futuro isolation model esplicito.
-
-Esempio:
-
-```text
-A requires D >=7 <8
-B requires D >=8 <9
-```
-
-se A e B devono condividere lo stesso environment e non esiste soluzione comune:
-
-```text
-RESOLUTION_CONFLICT
-```
-
-La semplice presenza contemporanea di D7 e D8 sotto `pkg/` non risolve il conflitto.
-
----
-
-# 19. Dependency cycles
-
-Nel v0 un ciclo nella dependency closure è un errore:
-
-```text
-RESOLUTION_CYCLE
-```
-
-Non vengono introdotte ora semantiche speciali di mutual bootstrap, component groups o lazy cyclic dependencies.
-
-Se un prodotto reale richiederà un ciclo legittimo, dovrà emergere come requisito architetturale esplicito.
-
----
-
-# 20. Reference accounting
-
-Ogni Resolved Dependency Graph crea reference esplicite alle Package Instance che contiene.
-
-Una Package Instance non può essere rimossa fisicamente se è ancora referenziata da uno stato risolto valido.
-
-Questo è il fondamento futuro per:
-
-```text
+upgrade preview
 why-installed
 reference accounting
 garbage collection
-upgrade preview
-rollback
 ```
 
-L'ordine o la semplice presenza di directory non sostituisce le reference.
+Non contiene `latest`, fallback o selector dinamici.
 
 ---
 
-# 21. Casi di stress v0
+# 18. Dependency privacy
 
-## 21.1 Java default
+Transitive/private dependencies soddisfano il consumer ma non diventano public binding automaticamente.
 
-Desired integration:
-
-```text
-require java-runtime
-selection = newest compatible
-provider preference = temurin, any-compatible
-```
-
-Resolved:
+Esempio:
 
 ```text
-java-runtime
-    -> exact Java Package Instance
+public shell java -> Java 21 A
+NetBeans private jdk -> Java 21 B
+legacy app private jvm -> Java 8
 ```
 
-Il binding pubblico `java` viene trattato dal modello di integrazione, non dal resolver stesso.
-
-## 21.2 Java 8 esplicita
-
-```text
-slot java8-runtime:
-    requires java-runtime = 8
-```
-
-Resolved:
-
-```text
-java8-runtime
-    -> exact Java 8 Package Instance
-```
-
-## 21.3 NetBeans con JDK privata
-
-Esempio architetturale:
-
-```text
-NetBeans Package Instance
-
-slot jdk:
-    requires java-development-kit >=17 <22
-```
-
-Resolved su host Linux ARM64:
-
-```text
-jdk
-    -> temurin@21.0.8+9@r1@linux-arm64
-```
-
-Il JDK resta privato all'Execution Environment di NetBeans salvo integrazione pubblica esplicita.
-
-## 21.4 Python app privata
-
-```text
-python-app
-
-slot python:
-    requires python-runtime = 3.12
-```
-
-può convivere con un default pubblico Python 3.13 perché i due binding appartengono a execution/integration scope differenti.
-
-## 21.5 Pulsar
-
-Pulsar viene usato come caso di applicazione Electron/self-contained nel modello di stress.
-
-Non viene modellato come consumer Java e non dichiara un requirement JVM solo per convenienza d'esempio.
-
-Questo caso verifica anche che una Package Instance senza Execution Dependency possa avere un Launch Specification diretto.
+Possono convivere se usati in Execution Environment distinti.
 
 ---
 
-# 22. Errori normativi v0
+# 19. Resolution scope e conflicts
+
+Store coexistence != same-environment coexistence.
+
+Se una singola Execution Environment richiede incompatibilmente la stessa capability e non esiste isolation model esplicito:
 
 ```text
-DEPENDENCY_UNAVAILABLE
-    nessuna Package Instance locale soddisfa il Requirement
-
-PIN_UNAVAILABLE
-    il pin esatto non è disponibile/sano/compatibile
-
-RESOLUTION_AMBIGUOUS
-    più candidati restano semanticamente equivalenti senza policy sufficiente
-
 RESOLUTION_CONFLICT
-    constraint incompatibili nello stesso Execution Environment
-
-RESOLUTION_CYCLE
-    dependency closure ciclica
-
-BROKEN_RESOLUTION
-    un binding esatto persistito non è più materializzabile/sano
 ```
 
-Nessuno di questi errori autorizza fallback impliciti al software host.
+Più versioni possono invece convivere in environment/processi distinti.
 
 ---
 
-# 23. Invarianti fissate
+# 20. Cycles
+
+Dependency cycle nel v0:
+
+```text
+RESOLUTION_CYCLE
+```
+
+Nessuna lazy/implicit cycle semantics.
+
+---
+
+# 21. Optional dependencies
+
+Non supportate nel v0.
+
+Il package non cambia feature automaticamente in base a ciò che capita localmente nello store.
+
+---
+
+# 22. Physical platform interaction
+
+Resolver selection usa l'identity Package Instance già ammessa e il current native host target.
+
+La reale validità delle facility host resta coperta dalla Physical Platform Validation.
+
+`any-any` consumer + native runtime provider è un caso normale, non una special case.
+
+---
+
+# 23. Invarianti
 
 ```text
 DM-01 Requirement != Resolved Binding
-DM-02 Requirement appartiene alla Package Instance; Selection Policy è separata
-DM-03 software version != capability compatibility version != release-order != RumiAI revision
-DM-04 non esiste comparatore universale delle software version upstream
-DM-05 il capability contract definisce il version scheme confrontabile
-DM-06 release-order è assegnato dal packaging e vale soltanto dentro una famiglia provider
-DM-07 dependency slot è locale al consumer
-DM-08 Capability Requirement non hardcoda provider non semanticamente necessario
-DM-09 Package Requirement si usa quando la famiglia/provider è semanticamente necessaria
-DM-10 tutte le dependency v0 sono mandatory
-DM-11 candidate set = sole Package Instance locali sane e platform-compatible
-DM-12 exact pin non fa fallback
-DM-13 provider preference può fare fallback soltanto durante resolution
-DM-14 latest/newest è Selection Policy, non versione/identity
-DM-15 install order/filesystem order non determinano selection
-DM-16 ambiguità non risolta => RESOLUTION_AMBIGUOUS
-DM-17 ogni Resolved Binding punta a una Package Instance concreta
-DM-18 selection dinamica avviene soltanto durante resolution
-DM-19 launch non rivaluta requirement/preference/latest
-DM-20 provider mancante dopo resolution => BROKEN_RESOLUTION, non fallback implicito
-DM-21 resolved graph è persistibile senza pathname assoluti
-DM-22 dependency private non diventa automaticamente public binding
-DM-23 incompatibilità possono convivere in environment distinti
-DM-24 una capability ha una soluzione coerente per Execution Environment salvo isolation model esplicito
-DM-25 dependency cycle è errore nel v0
-DM-26 resolved graph crea reference esplicite per accounting/GC
-DM-27 il resolver locale non acquisisce software e non usa runtime host casuali
+DM-02 package platform/architecture != runtime requirement
+DM-03 Java/JDK/JRE/Python sono capability requirements, non platform token
+DM-04 software version != capability contract != compatibility version
+DM-05 no universal upstream version comparator
+DM-06 release-order is family-local
+DM-07 dependency slot local to consumer
+DM-08 resolved dependency always exact Package Instance
+DM-09 provider preference separate from Requirement
+DM-10 pin strict, no fallback
+DM-11 newest is selection policy
+DM-12 ambiguous provider selection fails explicitly
+DM-13 dependencies private by default
+DM-14 new package arrival does not mutate active generation
+DM-15 execution does not re-resolve
+DM-16 broken exact provider => BROKEN_RESOLUTION
+DM-17 store coexistence != same-environment compatibility
+DM-18 cycles rejected v0
+DM-19 optional dependencies absent v0
+DM-20 Resolved Dependency Graph persistible and authoritative for exact closure
 ```
-
----
-
-# 24. Confine con Package Interface ed Environment Specification
-
-Il resolver decide **chi soddisfa un dependency slot**.
-
-Non decide da solo come usare il provider.
-
-Dopo la resolution:
-
-```text
-slot jdk
-    -> exact Java Package Instance
-```
-
-la Package Interface del provider rende disponibili risorse tipizzate, per esempio:
-
-```text
-command:java
-directory:home
-directory:bin
-```
-
-L'Environment Specification del consumer può quindi dichiarare:
-
-```text
-JAVA_HOME = dependency:jdk.directory:home
-PATH prepend dependency:jdk.directory:bin
-```
-
-Il modello completo prosegue in:
-
-```text
-Package Interface
-Execution Requirements
-Environment Specification
-Resolved Environment
-Launch Specification
-```
-
-formalizzati nel draft di integrazione.
