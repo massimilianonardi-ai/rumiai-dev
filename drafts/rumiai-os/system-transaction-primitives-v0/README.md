@@ -68,14 +68,14 @@ La mera esistenza del pathname non indica ownership.
 Forma astratta ammessa:
 
 ```text
-rumi_lock_acquire <path>
-rumi_lock_release <handle>
+RumiAI_lock_acquire <path>
+RumiAI_lock_release <handle>
 ```
 
 oppure una forma scoped:
 
 ```text
-rumi_lock_with <path> <callback> [args...]
+RumiAI_lock_with <path> <callback> [args...]
 ```
 
 La physical API finale può scegliere la forma più affidabile per POSIX sh, purché conservi le stesse invarianti.
@@ -89,7 +89,7 @@ Per `pkg` v0 esiste un solo mutation lock, quindi non serve progettare lock orde
 Primitive semantica:
 
 ```text
-rumi_atomic_replace <prepared-file> <target-file>
+RumiAI_atomic_replace <prepared-file> <target-file>
 ```
 
 Precondizione:
@@ -109,6 +109,8 @@ operation failure non lascia target parzialmente scritto
 
 È usata per `active`.
 
+La primitive v0 corrente è già implementata per source/destination nella stessa directory ed è stata fisicamente validata su macOS arm64 e Ubuntu 26.04 ARM64 nella precedente spelling API; la correzione di namespace `RumiAI_` verrà ri-validata insieme al prossimo gate sostanziale.
+
 ---
 
 # 5. Atomic publish/rename directory
@@ -116,7 +118,7 @@ operation failure non lascia target parzialmente scritto
 Primitive semantica:
 
 ```text
-rumi_atomic_publish <staging-path> <final-path>
+RumiAI_atomic_publish <staging-path> <final-path>
 ```
 
 Semantica:
@@ -143,7 +145,7 @@ Single manager lock rende sufficiente una precondition check contro collisioni n
 Primitive:
 
 ```text
-rumi_file_sync <file>
+RumiAI_file_sync <file>
 ```
 
 Dopo successo, il bootstrap/platform adapter garantisce il livello di durability definito e fisicamente validato per la reference platform/filesystem.
@@ -167,7 +169,7 @@ durable flush
 Primitive:
 
 ```text
-rumi_directory_sync <directory>
+RumiAI_directory_sync <directory>
 ```
 
 Serve dove il filesystem/OS richiede sync del parent directory per rendere durable:
@@ -191,9 +193,9 @@ Per un piccolo control-state file:
 1 create temp in target parent
 2 write complete canonical content
 3 close
-4 rumi_file_sync temp
-5 rumi_atomic_replace temp -> target
-6 rumi_directory_sync target parent
+4 RumiAI_file_sync temp
+5 RumiAI_atomic_replace temp -> target
+6 RumiAI_directory_sync target parent
 ```
 
 Il target non viene modificato inplace.
@@ -210,8 +212,8 @@ Sotto manager lock:
 3 sync desired/resolved
 4 apply final read-only modes
 5 sync staging directory metadata as required
-6 rumi_atomic_publish staging -> gN
-7 rumi_directory_sync generations/
+6 RumiAI_atomic_publish staging -> gN
+7 RumiAI_directory_sync generations/
 ```
 
 Dopo il punto 6:
@@ -231,8 +233,8 @@ Dopo generation publish e stub preparation:
 ```text
 1 build temporary active SCF in profile directory
 2 sync temporary active
-3 rumi_atomic_replace temp -> active
-4 rumi_directory_sync profile directory
+3 RumiAI_atomic_replace temp -> active
+4 RumiAI_directory_sync profile directory
 ```
 
 Il semantic commit point è l'atomic replace di `active`.
@@ -332,7 +334,25 @@ Non costituiscono security boundary contro lo stesso Environment Owner che modif
 
 ---
 
-# 16. Invarianti
+# 16. Naming invariant
+
+Il nome pubblico del comando/interprete può essere `rumi`, ma le funzioni shell namespaced usano sempre:
+
+```text
+RumiAI_*
+```
+
+Il namespace alternativo lowercase:
+
+```text
+rumi_*
+```
+
+è vietato.
+
+---
+
+# 17. Invarianti
 
 ```text
 TX-01 pkg usa bootstrap transaction API, non OS-specific locking code
@@ -346,4 +366,5 @@ TX-08 file/directory durability sono esplicite
 TX-09 reader vede old oppure new complete active state
 TX-10 valid active resta authoritative dopo recovery
 TX-11 Physical Platform Validation copre OS+filesystem+mount semantics
+TX-12 API shell namespaced = RumiAI_*; lowercase rumi_* forbidden
 ```
