@@ -11,6 +11,7 @@ drafts/rumiai-os/package-manager-v0/README.md
 drafts/rumiai-os/package-manager-local-layout/README.md
 drafts/rumiai-os/package-manager-state-model/README.md
 drafts/rumiai-os/package-manager-serialization-v0/README.md
+drafts/rumiai-os/package-manager-integrity-method-1/README.md
 ```
 
 ---
@@ -219,12 +220,24 @@ Semantica:
 ```text
 D    directory; mode; digest=-; target=-
 F    regular file; mode; digest=file bytes; target=-
-L    symlink; mode=-; digest=target text; target=relative target
+L    symlink; mode=-; digest=canonical target text; target=relative canonical target
 ```
 
 Il manifest digest è il digest dei byte canonici completi del TSV.
 
-La sotto-specifica Integrity Method 1 fissa pathname grammar, escaping, sort order, digest input e line-ending requirements.
+**Integrity Method 1** è normativo e fissa definitivamente:
+
+```text
+UTF-8 + Unicode NFC
+TAB/CR/LF/NUL/backslash vietati nei pathname e symlink target
+nessun escaping/quoting nel TSV
+pathname canonico `.` oppure `./...`
+collision check NFC + Unicode case-fold + NFC
+symlink target relativo; `..` ammesso quando semanticamente valido
+nessun symlink inventariato può risolvere fuori dalla Package Instance wrapper
+ordine crescente dei byte UTF-8 del canonical pathname
+LF finale obbligatorio
+```
 
 ---
 
@@ -279,6 +292,8 @@ candidate software
 normalization/adaptation pre-admission
         ↓
 build root/ + run-default/
+        ↓
+canonicalize/validate pathname + symlink targets secondo Integrity Method 1
         ↓
 write @package JSON
         ↓
@@ -353,8 +368,10 @@ PI-07 @package è JSON dichiarativo e immutabile
 PI-08 root e run-default inventory sono file TSV distinti
 PI-09 TSV record = fixed five fields, path last
 PI-10 manifest digest verifica i byte canonici del TSV
-PI-11 wrapper viene sigillata, run/ precreata e writable nel contenuto
-PI-12 UID/GID concreti non fanno parte di identity/integrity
-PI-13 mutable application state resta fuori dalla Package Instance
-PI-14 Package Instance platform descrive il contenuto; runtime/interpreter sono requirements
+PI-11 Integrity Method 1 vieta TAB/CR/LF/NUL/backslash e usa Unicode NFC senza ASCII-only
+PI-12 Integrity Method 1 usa portable case-fold collision detection e canonical UTF-8 byte ordering
+PI-13 wrapper viene sigillata, run/ precreata e writable nel contenuto
+PI-14 UID/GID concreti non fanno parte di identity/integrity
+PI-15 mutable application state resta fuori dalla Package Instance
+PI-16 Package Instance platform descrive il contenuto; runtime/interpreter sono requirements
 ```
