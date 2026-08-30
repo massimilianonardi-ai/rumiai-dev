@@ -4,7 +4,7 @@ Data: 2026-08-30
 
 Stato: **design decision — formato configurazione/metadata system-layer fissato**
 
-Il RumiAI system layer è composto da tool POSIX `sh` eseguiti tramite shebang/bootstrap Rumi.
+Il RumiAI system layer usa tool POSIX `sh` e bootstrap API RumiAI.
 
 Per configurazioni, metadata e control-state gerarchici letti direttamente dal system layer viene usato un formato dichiarativo minimale a due campi.
 
@@ -51,7 +51,7 @@ Il punto è sintassi del formato, non parte dei singoli segmenti.
 
 # 3. Segmenti nominali
 
-Ogni segmento nominale segue le stesse regole POSIX shell per un nome di variabile:
+Ogni segmento nominale segue:
 
 ```text
 [A-Za-z_][A-Za-z0-9_]*
@@ -89,12 +89,7 @@ Per array/list sono ammessi segmenti indice numerici:
 ...
 ```
 
-Un indice è:
-
-```text
-positive base-10 integer
-senza zero iniziali
-```
+Un indice è un positive base-10 integer senza zero iniziali.
 
 Esempio:
 
@@ -131,11 +126,7 @@ Ogni array persistito contiene un count esplicito:
 <prefix>.count	N
 ```
 
-e indici contigui:
-
-```text
-1..N
-```
+e indici contigui `1..N`.
 
 Array vuoto:
 
@@ -204,12 +195,7 @@ foo	value
 foo.bar	other
 ```
 
-Vietato anche il contrario:
-
-```text
-foo.bar	other
-foo	value
-```
+Vietato anche il contrario.
 
 Sono invece validi:
 
@@ -270,7 +256,7 @@ Non esiste quoting o escaping nel v0.
 
 Un empty string è distinto da field assente.
 
-Se un dominio richiede un valore multilinea/binario, il contenuto vive in un file separato e la configurazione mantiene una reference; non si estende il formato con escaping.
+Se un dominio richiede un valore multilinea/binario, il contenuto vive in un file separato e la configurazione mantiene una reference.
 
 ---
 
@@ -368,7 +354,7 @@ In particolare non si sostituiscono `.` con `_` per creare variabili: ciò intro
 
 # 16. Query bootstrap
 
-Il bootstrap Rumi espone primitive di configurazione:
+Il bootstrap RumiAI espone primitive di configurazione:
 
 ```text
 RumiAI_conf_get <file> <field-name>
@@ -389,7 +375,7 @@ field begins with prefix + "."
 
 La query per prefix non richiede una regex costruita dal chiamante.
 
-Le funzioni RumiAI namespaced usano sempre il prefisso esatto `RumiAI_`; `rumi_*` non è un namespace API ammesso.
+Le funzioni RumiAI namespaced usano il namespace canonico `RumiAI_*`; abbreviazioni conversazionali non definiscono namespace API.
 
 ---
 
@@ -437,7 +423,7 @@ RumiAI development/application layer
     JSON standard v0
 
 RumiAI system layer
-    POSIX sh + Rumi bootstrap
+    POSIX sh + RumiAI bootstrap
     System Configuration Field Format v0
     System Tabular Data v0
 ```
@@ -463,7 +449,7 @@ SCF-11 nessun quoting/escaping v0
 SCF-12 array usa count + indici contigui 1..N
 SCF-13 arbitrary map key/ID restano nei value
 SCF-14 il formato non viene source/eval
-SCF-15 bootstrap Rumi fornisce query puntuali e per namespace
+SCF-15 bootstrap RumiAI fornisce query puntuali e per namespace
 SCF-16 dataset tabellari non vengono flattenati in SCF
-SCF-17 API shell namespaced = RumiAI_*; lowercase rumi_* forbidden
+SCF-17 namespaced RumiAI shell APIs use exact RumiAI_* namespace
 ```
