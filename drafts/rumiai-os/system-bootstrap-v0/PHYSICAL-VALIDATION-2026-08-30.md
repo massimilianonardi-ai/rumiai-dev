@@ -4,6 +4,12 @@ Date: 2026-08-30
 
 Status: **PASSED on both current stable reference installations**
 
+This document records the physical validation gates completed for the `rumi` bootstrap substrate.
+
+---
+
+# Gate 1 — system configuration and tabular data APIs
+
 ## Scope
 
 This validation covers the bootstrap system data API implemented by `rumiai-os/lib/data.lib` and loaded by the `rumiai-os` bootstrap.
@@ -25,13 +31,13 @@ rumi_table_column
 rumi_table_select
 ```
 
-The physical test is:
+Physical test:
 
 ```text
 rumiai-os/bootstrap/system-data-apis.test
 ```
 
-The validation run used:
+Validation options:
 
 ```text
 --validation
@@ -44,8 +50,6 @@ The filesystem snapshot result was `CLEAN` on both hosts.
 
 ## Target revision
 
-Both validations exercised:
-
 ```text
 massimilianonardi-ai/rumiai-os
 ca696b7a0c7027d2b9f4c0989bc0a5ad7b2c75e6
@@ -54,14 +58,14 @@ Fix invalid configuration query status
 
 ## Test revisions
 
-The macOS validation used:
+macOS validation:
 
 ```text
 massimilianonardi-ai/rumiai-tests
 11126d666832e338092e001fcd2af0dc7d475ea8
 ```
 
-The Ubuntu validation used the later forward-only revision:
+Ubuntu validation:
 
 ```text
 massimilianonardi-ai/rumiai-tests
@@ -78,7 +82,6 @@ Observed result:
 ```text
 PASS   rumiai-os/bootstrap/system-data-apis.test
 CLEAN  snapshot test rumiai-os/bootstrap/system-data-apis.test root-001
-
 PASS   1
 FAIL   0
 SKIP   0
@@ -86,11 +89,7 @@ ERROR  0
 TOTAL  1
 ```
 
-Result:
-
-```text
-PASSED
-```
+Result: **PASSED**.
 
 ## Ubuntu 26.04 ARM64
 
@@ -101,7 +100,6 @@ Observed result:
 ```text
 PASS   rumiai-os/bootstrap/system-data-apis.test
 CLEAN  snapshot test rumiai-os/bootstrap/system-data-apis.test root-001
-
 PASS   1
 FAIL   0
 SKIP   0
@@ -109,15 +107,9 @@ ERROR  0
 TOTAL  1
 ```
 
-Result:
-
-```text
-PASSED
-```
+Result: **PASSED**.
 
 ## Validated properties
-
-The single coordinated physical scenario validates the bootstrap data substrate needed by `pkg`, including:
 
 ```text
 SCF validation
@@ -137,25 +129,166 @@ UTF-8/path values
 malformed dataset rejection
 ```
 
-## Gate conclusion
-
-The following bootstrap capabilities are now physically validated on both current stable reference installations:
+Gate conclusion:
 
 ```text
-System Configuration Field API
-System Tabular Data API
+System Configuration Field API     VALIDATED
+System Tabular Data API             VALIDATED
 ```
 
-This closes the physical validation gate for SCF/STD.
+---
 
-It does **not** validate the later platform-adapter primitives still to be implemented separately:
+# Gate 2 — native platform and bootstrap platform primitives
+
+## Scope
+
+This validation covers the platform adapter implemented by `rumiai-os/lib/platform.lib` and its integration into the bootstrap.
+
+Validated public API surface:
 
 ```text
-native platform identity
-filesystem/stat/readlink/walk abstraction
-digest abstraction
-Unicode NFC/default case-fold abstraction
-exclusive lock
-file/directory sync
-atomic rename/replace
+rumi_platform
+rumi_architecture
+rumi_execution_platform
+rumi_path_canonicalize_existing
+rumi_fs_type
+rumi_fs_mode
+rumi_fs_readlink
+rumi_digest_file
+rumi_digest_text
+rumi_atomic_replace
 ```
+
+It also validates the bootstrap PATH precedence:
+
+```text
+RUMIAI_ROOT/bin/@platforms/<platform>-<architecture>
+RUMIAI_ROOT/bin
+<inherited PATH>
+```
+
+Physical test:
+
+```text
+rumiai-os/bootstrap/system-platform-primitives.test
+```
+
+Validation options:
+
+```text
+--validation
+--snapshot=hash
+--snapshot-scope=test
+--snapshot-root .
+```
+
+The filesystem snapshot result was `CLEAN` on both hosts.
+
+## Target revision
+
+Both validations exercised:
+
+```text
+massimilianonardi-ai/rumiai-os
+8cd66322fde40ad019f008fec7bcda2968ab0fcf
+Isolate bootstrap digest commands from RumiAI PATH
+```
+
+## Test revision
+
+Before this gate the two Gate 1 validation sessions were committed into `rumiai-tests`; both hosts were then aligned to the same suite revision:
+
+```text
+massimilianonardi-ai/rumiai-tests
+b4e147cc2f2f0177a6ed2ac9da36ef15e165a63b
+Record Ubuntu 26.04 ARM64 bootstrap data API validation
+```
+
+The package platform primitive test itself was introduced earlier by:
+
+```text
+5a7bbbc36af79eaa3a5b2817de0a18841832d904
+Add physical bootstrap platform primitive test
+```
+
+No test implementation change occurred between that revision and `b4e147cc2f2f0177a6ed2ac9da36ef15e165a63b`; the intervening commits only recorded Gate 1 validation evidence.
+
+## macOS arm64
+
+Observed result:
+
+```text
+PASS   rumiai-os/bootstrap/system-platform-primitives.test
+CLEAN  snapshot test rumiai-os/bootstrap/system-platform-primitives.test root-001
+PASS   1
+FAIL   0
+SKIP   0
+ERROR  0
+TOTAL  1
+```
+
+Result: **PASSED**.
+
+## Ubuntu 26.04 ARM64
+
+Reference host: `vmdev`.
+
+Observed result:
+
+```text
+PASS   rumiai-os/bootstrap/system-platform-primitives.test
+CLEAN  snapshot test rumiai-os/bootstrap/system-platform-primitives.test root-001
+PASS   1
+FAIL   0
+SKIP   0
+ERROR  0
+TOTAL  1
+```
+
+Result: **PASSED**.
+
+## Validated properties
+
+```text
+native OS identity
+native architecture identity
+execution-platform identity
+native @platforms PATH precedence
+existing-path canonicalization API
+filesystem file/directory/link classification
+portable normalized file modes
+symlink target reading
+SHA-256 file digest
+SHA-256 exact-text digest
+host digest utility isolation from RumiAI PATH
+same-directory atomic replace primitive
+```
+
+Gate conclusion:
+
+```text
+native platform identity             VALIDATED
+native PATH specialization           VALIDATED
+basic filesystem abstraction         VALIDATED
+SHA-256 abstraction                  VALIDATED
+atomic replace primitive             VALIDATED
+```
+
+---
+
+# Remaining bootstrap platform gates
+
+The completed gates do **not** yet physically validate:
+
+```text
+filesystem walk abstraction
+Unicode NFC normalization
+Unicode default case-fold
+exclusive process locking
+file durability sync
+directory durability sync
+atomic generation publish semantics
+logical `rumi` command/shebang installation/discovery
+```
+
+These remain follow-up implementation/Physical Platform Validation work and are not implicitly satisfied by Gate 1 or Gate 2.
