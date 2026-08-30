@@ -1,8 +1,0 @@
-# HISTORICAL DRAFT — superseded by shell.lib in this directory.
-#
-# This file is retained only to preserve the evolution of the code proposal.
-# The integrated proposal now models the shell launcher as:
-#
-#   $RumiAI_LIB_DIR/shell.lib
-#
-# and rumiai-os.draft lazily loads that library when invoked with no operands.
