@@ -4,7 +4,7 @@ Data: 2026-08-30
 
 Stato: **design validation — no PoC**
 
-Obiettivo: verificare che il modello formalizzato di Package Interface, dependency resolution, Environment Specification, State Instance e Launch Specification rappresenti casi differenti senza reintrodurre global host mutation o resolution dinamica al launch.
+Obiettivo: verificare che Package Interface, dependency resolution, Environment Specification, State Instance e Launch Specification rappresentino casi differenti senza reintrodurre global host mutation o resolution dinamica al launch.
 
 Prerequisiti:
 
@@ -13,13 +13,16 @@ drafts/rumiai-os/package-manager-package-descriptor/README.md
 drafts/rumiai-os/package-manager-dependency-model/README.md
 drafts/rumiai-os/package-manager-integration-context/README.md
 drafts/rumiai-os/package-manager-resolved-state/README.md
+drafts/rumiai-os/package-manager-platform-vocabulary-v0/README.md
 ```
+
+Regola platform usata da tutti i casi:
+
+> Package `platform`/`architecture` descrivono soltanto i vincoli propri del contenuto. Java/JDK/JRE/Python e altri runtime esterni sono requirements/capability.
 
 ---
 
 # 1. Criteri di successo
-
-Ogni caso deve rispettare:
 
 ```text
 no host package manager dependency
@@ -30,74 +33,74 @@ no provider re-resolution at launch
 private dependency does not become public automatically
 multiple runtime versions can coexist locally
 resolved binding remains exact until explicit new resolution
+portable content can remain any-any while using native runtime providers
 ```
 
 ---
 
-# 2. Caso A — Java pubblico più Java 8 alias
+# 2. Caso A — Java pubblico più Java 8 alias logico
 
-Local Package Instances:
+Local Package Instances native:
 
 ```text
 temurin Java 8
 temurin Java 21
 ```
 
-Entrambe offrono:
-
-```text
-java-runtime
-```
+Entrambe offrono `java-runtime contract 1`.
 
 Desired Integration Profile:
 
 ```text
-public `java`
+public java
     requirement = java-runtime
     selection = newest compatible
 
-public `java8`
+public java8
     requirement = java-runtime = 8
 ```
 
 Resolution:
 
 ```text
-java
-    -> exact Java 21 / command:java
-
-java8
-    -> exact Java 8 / command:java
+java  -> exact Java 21 / command:java
+java8 -> exact Java 8 / command:java
 ```
 
-Expected public view:
+Expected public view su un host native:
 
 ```text
 bin/@platforms/<current>/java
 bin/@platforms/<current>/java8
 ```
 
-oppure altra materializzazione equivalente compatibile con il modello `bin/@platforms` già fissato.
-
-Success criteria:
+Success:
 
 ```text
-`java` e `java8` sono indipendenti
-installare una nuova Java 8 non cambia `java8` finché non si re-resolve
-Java 8 e Java 21 convivono nello store locale
+java e java8 indipendenti
+nuova Java 8 non cambia binding finché non si re-resolve
+Java 8 e Java 21 convivono localmente
 ```
+
+`java8` resta selector/binding logico, non virtual Package Instance.
 
 ---
 
-# 3. Caso B — NetBeans con JDK privata
+# 3. Caso B — NetBeans `any-any` con JDK privata
 
-Questo è un esempio architetturale; il range mostrato non pretende di descrivere il requirement vendor reale di ogni release di NetBeans.
+Esempio architetturale; il range non pretende di descrivere ogni release vendor reale.
 
-NetBeans descriptor:
+Package Instance consumer:
+
+```text
+netbeans@26@r1@any-any
+```
+
+Descriptor:
 
 ```text
 slot jdk:
-    requires java-development-kit >=17 <22
+    requires java-development-kit contract 1 >=17 <22
 
 environment:
     JAVA_HOME set dependency:jdk.directory:home
@@ -114,35 +117,43 @@ java -> Java 17
 JAVA_HOME -> Java 17
 ```
 
-Resolver NetBeans:
+Resolver su Linux ARM64:
 
 ```text
-jdk -> Java 21 exact Package Instance
+jdk -> exact Temurin linux-arm64 / Java 21
 ```
 
-Materialized NetBeans environment:
+Resolver su macOS ARM64 può scegliere:
 
 ```text
-JAVA_HOME = Java21/root
+jdk -> exact Temurin macos-arm64 / Java 21
+```
+
+Materialized environment:
+
+```text
+JAVA_HOME = private JDK/root
 PATH:
-    Java21/root/bin
+    private JDK/root/bin
     RUMIAI_ROOT/bin/@platforms/<current>
     RUMIAI_ROOT/bin
     inherited allowed PATH tail
 ```
 
-Expected result:
+Expected:
 
 ```text
-shell `java`      -> Java 17
-NetBeans process  -> Java 21
+shell java      -> public Java 17
+NetBeans process -> private Java 21
 ```
 
-Success criteria:
+Success:
 
 ```text
+NetBeans identity resta any-any
+runtime native provider varia per host
 NetBeans non muta public JAVA_HOME
-private JDK non diventa comando pubblico automaticamente
+private JDK non diventa public automaticamente
 host JAVA_HOME non sostituisce il binding privato
 ```
 
@@ -150,45 +161,23 @@ host JAVA_HOME non sostituisce il binding privato
 
 # 4. Caso C — nuova release JDK disponibile
 
-Initial resolution:
+Initial:
 
 ```text
-NetBeans.jdk -> temurin release-order 100
+NetBeans.jdk -> Temurin release-order 100
 ```
 
-Successivamente arriva localmente:
+Arriva release-order 101.
+
+Expected launch:
 
 ```text
-temurin same compatibility version
-release-order 101
+continua a usare 100
 ```
 
-Expected:
+Solo explicit update/re-resolve può produrre e attivare una generation con 101.
 
-```text
-launch NetBeans
-    continua a usare release-order 100
-```
-
-Explicit update/re-resolve:
-
-```text
-candidate generation
-    jdk -> release-order 101
-```
-
-solo dopo validation/commit:
-
-```text
-active generation = new binding
-```
-
-Success criteria:
-
-```text
-no silent update
-old generation rimane identificabile per rollback secondo retention
-```
+PASS: no silent update; old generation resta rollback-identifiable secondo retention.
 
 ---
 
@@ -197,145 +186,110 @@ old generation rimane identificabile per rollback secondo retention
 Policy:
 
 ```text
-prefer:
-    temurin
-    microsoft-openjdk
-    any-compatible
+Temurin
+Microsoft OpenJDK
+any-compatible
 ```
 
-Local set iniziale:
+Resolution iniziale:
 
 ```text
-Temurin compatible
-Microsoft compatible
+jdk -> exact Temurin
 ```
 
-Resolution:
-
-```text
-jdk -> Temurin exact
-```
-
-Temurin viene poi rimosso/corrotto in modo anomalo.
-
-Expected launch:
+Se Temurin scompare/corrompe:
 
 ```text
 BROKEN_RESOLUTION
 ```
 
-NON:
+non automatic Microsoft fallback al launch.
 
-```text
-automatic switch -> Microsoft
-```
+Explicit repair/re-resolve può produrre Microsoft exact.
 
-Explicit repair/re-resolve può produrre:
-
-```text
-jdk -> Microsoft exact
-```
-
-Success criteria:
-
-```text
-fallback only during explicit resolution
-execution remains reproducible
-```
+PASS.
 
 ---
 
 # 6. Caso E — exact pin
 
-Policy:
-
 ```text
 pin jdk -> temurin@21.0.8+9@r1@linux-arm64
 ```
 
-Se disponibile e compatibile:
-
-```text
-resolved = pinned instance
-```
-
-Se assente/corrotta:
+Se assente/corrotto:
 
 ```text
 PIN_UNAVAILABLE
 ```
 
-Anche se esiste un'altra Java 21 compatibile.
+anche se esiste un'altra Java compatibile.
 
-Success criteria:
-
-```text
-pin semantics are strict
-no hidden fallback
-```
+PASS.
 
 ---
 
-# 7. Caso F — Python pubblico 3.13 + app privata 3.12
+# 7. Caso F — Python pubblico 3.13 + app `any-any` privata 3.12
 
 Public profile:
 
 ```text
-python -> Python 3.13
+python -> Python 3.13 native provider
 ```
 
-Python app:
+Python app content, se privo di native extension proprie:
+
+```text
+example-app@...@any-any
+```
+
+Requirement:
 
 ```text
 slot python:
-    requires python-runtime = 3.12
+    requires python-runtime contract 1 =3.12
+```
 
-file:main-script -> root/app.py
+Command:
 
-command:app
-    executable = dependency:python.command:python
-    fixed-args = [ self:file:main-script ]
+```text
+executable = dependency:python.command:python
+arg = self:file:main-script
 ```
 
 Resolved:
 
 ```text
-python slot -> exact Python 3.12
+python slot -> exact Python 3.12 native provider for current host
 ```
 
 Expected:
 
 ```text
-shell `python` -> 3.13
-app command    -> 3.12
+shell python -> 3.13
+app command  -> 3.12
 ```
 
-No `PYTHONHOME` is added unless the package contract explicitly requires it.
+Se l'app contiene native extension obbligatorie, la Package Instance deve invece esporre il relativo platform/architecture nativo.
 
-Success criteria:
-
-```text
-runtime-host command can be dependency resource
-public Python unaffected
-```
+PASS.
 
 ---
 
-# 8. Caso G — JAR-only application
+# 8. Caso G — JAR-only `any-any` application
 
-Package contains:
+Package:
 
 ```text
+java-app@...@any-any
 root/app.jar
 ```
-
-No artificial shell wrapper is required.
 
 Descriptor:
 
 ```text
 slot jvm:
-    requires java-runtime = 21
+    requires java-runtime contract 1 =21
 
 file:app-jar -> root/app.jar
 
@@ -347,106 +301,86 @@ JAVA_HOME
     set dependency:jvm.directory:home
 ```
 
-Expected Launch Specification resolves:
-
-```text
-executable -> exact Java command resource
-arg[0]     -> exact self app.jar resource
-JAVA_HOME  -> exact Java home resource
-```
-
-Absolute paths are generated only at process materialization.
-
-Success criteria:
-
-```text
-command resource is more general than executable pathname
-no wrapper script required merely for dependency injection
-```
-
----
-
-# 9. Caso H — Pulsar Electron/self-contained
-
-Pulsar is intentionally not modeled as Java software.
-
-Descriptor concept:
-
-```text
-requirements:
-    none
-
-command:pulsar
-    executable = self:file:pulsar-executable
-```
-
 Expected:
 
 ```text
-no JVM slot
-no JAVA_HOME
-no Java PATH injection
+executable -> exact native Java provider command
+arg        -> exact self app.jar
+JAVA_HOME  -> exact Java home
 ```
 
-Success criteria:
+Absolute path solo a materialization.
 
-```text
-model does not invent dependencies when none are required
-self-contained command remains simple
-```
+PASS: Java requirement non trasforma `platform` in `jvm`.
 
 ---
 
-# 10. Caso I — environment host in conflitto
+# 9. Caso H — Java + native content
 
-Host environment:
+Package contiene:
+
+```text
+root/app.jar
+root/native/libfoo.so
+```
+
+Se `libfoo.so` è obbligatoria Linux ARM64:
+
+```text
+Package Instance = linux-arm64
+Requirement      = java-runtime
+```
+
+PASS: native content constraint e runtime requirement restano ortogonali.
+
+---
+
+# 10. Caso I — Pulsar Electron/self-contained
+
+Pulsar non è modellato come Java software.
+
+```text
+requirements: none per Java
+command:pulsar -> self executable
+```
+
+La Package Instance platform/architecture deriva esclusivamente dall'artifact Electron concreto.
+
+PASS.
+
+---
+
+# 11. Caso J — environment host in conflitto
+
+Host:
 
 ```text
 JAVA_HOME=/host/java
-PATH begins with /host/java/bin
+PATH starts /host/java/bin
 ```
 
-NetBeans resolved package environment:
+NetBeans:
 
 ```text
-JAVA_HOME = dependency:jdk.directory:home
-PATH prepend dependency:jdk.directory:bin
+JAVA_HOME = private jdk home
+PATH prepend private jdk bin
 ```
 
-Expected:
+Expected: exact RumiAI JDK vince; host Java non è candidate.
 
-```text
-NetBeans JAVA_HOME = exact RumiAI JDK
-NetBeans Java path precedes host path
-```
-
-Host Java is not a dependency candidate.
-
-Success criteria:
-
-```text
-host environment may be inherited as base context
-but cannot override managed runtime binding
-```
+PASS.
 
 ---
 
-# 11. Caso J — ambiguous provider
+# 12. Caso K — ambiguous provider
 
 Requirement:
 
 ```text
-java-runtime = 21
+java-runtime contract 1 =21
 ```
 
-Local candidates:
-
-```text
-provider A, compatibility 21
-provider B, compatibility 21
-```
-
-No provider preference, pin or semantic ranking between families.
+Due provider equivalenti senza policy.
 
 Expected:
 
@@ -454,25 +388,13 @@ Expected:
 RESOLUTION_AMBIGUOUS
 ```
 
-NOT:
+Nessun filesystem/install-order tie breaker.
 
-```text
-first directory wins
-latest install wins
-lexical package-name tie breaker
-```
-
-Success criteria:
-
-```text
-ambiguity is explicit
-```
+PASS.
 
 ---
 
-# 12. Caso K — dependency conflict inside one environment
-
-Graph:
+# 13. Caso L — dependency conflict
 
 ```text
 root
@@ -480,170 +402,107 @@ root
 └── B requires D >=8 <9
 ```
 
-No declared isolation model.
-
-Expected:
+No isolation model:
 
 ```text
 RESOLUTION_CONFLICT
 ```
 
-Even if both D7 and D8 exist locally.
-
-Success criteria:
-
-```text
-store coexistence != same-environment coexistence
-```
+PASS.
 
 ---
 
-# 13. Caso L — dependency cycle
+# 14. Caso M — dependency cycle
 
 ```text
-A -> B
-B -> C
-C -> A
+A -> B -> C -> A
 ```
 
-Expected v0:
+Expected:
 
 ```text
 RESOLUTION_CYCLE
 ```
 
-Success criteria:
-
-```text
-no implicit lazy cycle semantics
-```
+PASS.
 
 ---
 
-# 14. Caso M — State Instance + filesystem routing + env
-
-Package writable islands:
+# 15. Caso N — State Instance + filesystem routing + env
 
 ```text
 root/etc  -> ../run/etc
 root/logs -> ../run/logs
 ```
 
-Descriptor mappings:
+Mappings:
 
 ```text
-etc  -> conf
+etc -> conf
 logs -> log
 ```
 
-State Instance:
+State:
 
 ```text
 foo@s2
 ```
 
-`run/` routing:
+Environment può anche referenziare `state:conf`.
 
-```text
-run/etc  -> RUMIAI_ROOT/conf/foo@s2/etc
-run/logs -> RUMIAI_ROOT/log/foo@s2/logs
-```
-
-Environment Specification may additionally contain:
-
-```text
-FOO_CONFIG_HOME = state:conf
-```
-
-Expected:
-
-```text
-filesystem-hardcoded access and env-configurable access converge on the same State Instance
-```
-
-Success criteria:
-
-```text
-state routing and env references are complementary, not competing models
-```
+PASS: hardcoded filesystem access ed env-configurable access convergono sulla stessa State Instance.
 
 ---
 
-# 15. Caso N — broken public binding
+# 16. Caso O — broken public binding
 
-Active binding:
-
-```text
-java -> exact Package Instance X / command:java
-```
-
-X is missing/corrupt.
-
-Expected:
+Active exact Package Instance X mancante/corrotta:
 
 ```text
 BROKEN_RESOLUTION / INTEGRITY FAILURE
 ```
 
-The `bin/` launcher does not choose another Java.
+Execution View non diventa resolver.
 
-Success criteria:
-
-```text
-Execution View cannot become an implicit resolver
-```
+PASS.
 
 ---
 
-# 16. Caso O — rollback
+# 17. Caso P — rollback
 
-Generation G1:
-
-```text
-NetBeans -> JDK A
-```
-
-Generation G2 after explicit update:
+G1:
 
 ```text
-NetBeans -> JDK B
+NetBeans any-any -> JDK A exact
 ```
 
-If NetBeans/JDK A and required State Instance are still available:
+G2:
 
 ```text
-rollback -> reactivate G1 exact
+NetBeans any-any -> JDK B exact
 ```
 
-If JDK A no longer exists:
+Rollback riattiva G1 solo se exact Package Instance e State Instance richieste sono ancora disponibili.
+
+Altrimenti:
 
 ```text
 ROLLBACK_UNAVAILABLE
 ```
 
-NOT:
-
-```text
-resolve an equivalent JDK and call it rollback
-```
-
-Success criteria:
-
-```text
-rollback restores exact prior resolved state
-```
+PASS.
 
 ---
 
-# 17. Validation result
+# 18. Validation result
 
-Il modello passa concettualmente tutti i casi sopra senza richiedere nuove primitive architetturali fondamentali.
+Il modello passa tutti i casi senza nuova primitiva fondamentale.
 
-Le primitive usate sono soltanto:
+Primitive:
 
 ```text
 Package Interface resources
-Execution Capability
+Execution Capability contract/version
 Requirement + dependency slot
 Selection Policy
 Resolved Binding / Graph
@@ -652,11 +511,13 @@ State Instance / state area reference
 Launch Template / Launch Specification
 Desired/Resolved Integration Profile
 Resolution Snapshot generation
+Package platform/architecture orthogonal to runtime requirements
 ```
 
-Non emerge la necessità di:
+Non serve:
 
 ```text
+jvm/python execution-domain platform
 env/ autorevole fisica
 runtime discovery dal PATH
 shell code nel descriptor
@@ -666,9 +527,9 @@ package-specific global environment mutation
 
 ---
 
-# 18. Questioni non validate da questo documento
+# 19. Boundary
 
-Questi stress test sono architetturali, non Physical Platform Validation.
+Questi sono stress test architetturali, non Physical Platform Validation.
 
 Restano separati:
 
@@ -677,9 +538,6 @@ comportamento reale di specifiche release vendor
 Windows link/process semantics
 macOS app bundle peculiarities
 concrete Java/NetBeans/Python vendor packaging
-serializzazione @package
 launcher implementation
-performance del resolver
+performance del resolver/parser
 ```
-
-Questi non riaprono automaticamente il modello: diventano input per specifica tecnica, Physical Platform Validation o future estensioni se emerge un requisito reale.
