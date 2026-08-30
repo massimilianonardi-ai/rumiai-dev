@@ -16,7 +16,15 @@ library loading tramite `.`
 i18n/log bootstrap
 command-entry resolution
 source del command script dopo shift degli argv
+SCF/TSV system data APIs
+native platform/architecture identity
+native @platforms PATH precedence
+filesystem type/mode/readlink primitives
+SHA-256 primitives
+same-directory atomic replace
 ```
+
+Le API dati e le primitive platform sopra elencate sono fisicamente validate su macOS arm64 e Ubuntu 26.04 ARM64; l'evidenza è registrata in `PHYSICAL-VALIDATION-2026-08-30.md`.
 
 Il v0 estende questo modello senza introdurre un runtime Python/Node/JSON.
 
@@ -194,6 +202,8 @@ RumiAI_EXECUTION_PLATFORM
 
 Platform detection è Physical Platform Validation concern e non viene duplicata in `pkg`.
 
+Implementazione v0 corrente: **fisicamente validata su macOS arm64 e Ubuntu 26.04 ARM64**.
+
 ---
 
 # 9. PATH baseline
@@ -209,6 +219,8 @@ RUMIAI_ROOT/bin
 La native specialization precede la cross-platform view.
 
 Bootstrap commands necessari prima della platform discovery devono restare raggiungibili senza dipendere da questa view.
+
+Implementazione v0 corrente: **fisicamente validata su macOS arm64 e Ubuntu 26.04 ARM64**.
 
 ---
 
@@ -239,14 +251,14 @@ rumi_conf_namespace <file> <prefix>
 rumi_conf_validate <file> [schema]
 ```
 
-Mutation helper possono includere:
+Mutation helper:
 
 ```text
 rumi_conf_set
 rumi_conf_remove
 ```
 
-ma una mutation autorevole deve rispettare il transaction/atomic-write contract; nessuna API implica inplace byte editing del file attivo.
+Una mutation autorevole deve rispettare il transaction/atomic-write contract; nessuna API implica inplace byte editing del file attivo.
 
 Il parser garantisce:
 
@@ -260,25 +272,22 @@ exact field-value preservation
 no source/eval
 ```
 
+Implementazione v0 corrente: **fisicamente validata su macOS arm64 e Ubuntu 26.04 ARM64**.
+
 ---
 
 # 12. System Tabular Data API
 
 Il bootstrap fornisce primitive comuni per dataset TSV con header.
 
-API semantica minima:
+API implementata:
 
 ```text
-rumi_table_validate <file> <schema>
-rumi_table_header <file>
-rumi_table_rows <file>
-```
-
-Primitive opzionali/ottimizzate:
-
-```text
-rumi_table_filter <file> <column> <value>
-rumi_table_each <file> <callback>
+rumi_table_validate
+rumi_table_header
+rumi_table_rows
+rumi_table_column
+rumi_table_select
 ```
 
 Il contratto importante è:
@@ -291,6 +300,8 @@ nessun quoting/escaping implicito
 ```
 
 Gli inventory integrity usano questa API/classe di primitive, non `rumi_conf_get` ripetuto.
+
+Implementazione v0 corrente: **fisicamente validata su macOS arm64 e Ubuntu 26.04 ARM64**.
 
 ---
 
@@ -316,17 +327,22 @@ Il tool accede ai dati tramite API bootstrap.
 
 Il bootstrap espone semantiche uniformi per ciò che non è sufficientemente portabile come command host ad hoc.
 
-Contratto minimo candidato:
+Implementato e validato nel gate corrente:
 
 ```text
 rumi_path_canonicalize_existing
 rumi_fs_type
 rumi_fs_mode
 rumi_fs_readlink
+```
+
+Da implementare/validare separatamente:
+
+```text
 rumi_fs_walk
 ```
 
-Le primitive devono preservare la distinzione:
+Le primitive preservano la distinzione:
 
 ```text
 validate existence
@@ -335,6 +351,8 @@ validate existence
 ```
 
 come già fissato nel bootstrap RumiAI.
+
+Le primitive implementate sopra sono **fisicamente validate su macOS arm64 e Ubuntu 26.04 ARM64**.
 
 ---
 
@@ -350,16 +368,16 @@ certutil
 ...
 ```
 
-Il bootstrap/platform adapter espone una semantica uniforme:
+Il bootstrap/platform adapter espone:
 
 ```text
-rumi_digest_file <algorithm> <file>
-rumi_digest_text <algorithm> <exact-text>
+rumi_digest_file sha256 <file>
+rumi_digest_text sha256 <exact-text>
 ```
 
-ed eventualmente streaming digest quando richiesto dagli inventory.
+L'implementazione corrente isola inoltre gli host digest command dal PATH RumiAI.
 
-Algorithm availability è fisicamente validata.
+Implementazione v0 corrente: **fisicamente validata su macOS arm64 e Ubuntu 26.04 ARM64**.
 
 ---
 
@@ -385,6 +403,8 @@ oppure una primitive equivalente che produca le stesse canonical/collision key.
 
 La semantica è normativa; l'implementazione è platform-specific.
 
+Stato corrente: **non ancora implementato/validato**.
+
 ---
 
 # 17. Transaction primitives
@@ -399,18 +419,25 @@ atomic rename
 atomic replace
 ```
 
-Contratto semantico candidato:
+Implementato e validato:
+
+```text
+rumi_atomic_replace
+```
+
+Il v0 corrente limita questa primitive a source/destination nella stessa directory, rendendo esplicita la precondizione necessaria per affidarsi alla rename atomica del filesystem.
+
+Da implementare/validare separatamente:
 
 ```text
 rumi_lock_acquire
 rumi_lock_release
 rumi_file_sync
 rumi_directory_sync
-rumi_atomic_rename
-rumi_atomic_replace
+atomic generation publish protocol
 ```
 
-I tool non implementano direttamente `flock` vs `fcntl` vs platform-specific alternatives.
+`pkg` non implementa direttamente `flock` vs `fcntl` vs platform-specific alternatives.
 
 ---
 
@@ -433,31 +460,26 @@ Il consumer (`pkg`) vede sempre lo stesso contratto semantico.
 
 # 19. Bootstrap libraries
 
-Il bootstrap può organizzare le API in librerie sourced, coerentemente con il modello già esistente (`i18n.lib`, `log.lib`, `shell.lib`).
-
-Separazione logica candidata:
+Il bootstrap organizza attualmente le nuove API comuni in:
 
 ```text
-config
-    SCF parsing/query
+lib/data.lib
+    SCF + TSV
 
-table
-    STD parsing/streaming
-
-path/fs
-    pathname + filesystem abstraction
-
-digest
-    hashing
-
-unicode
-    NFC/case-fold
-
-transaction
-    lock/sync/atomic operations
+lib/platform.lib
+    platform identity
+    PATH specialization support
+    pathname/filesystem primitives
+    SHA-256
+    atomic replace
 ```
 
-Il layout fisico/nome dei `.lib` non è fissato da questo documento.
+Restano candidati moduli separati quando emergono primitive che lo richiedono:
+
+```text
+unicode
+transaction/durability
+```
 
 ---
 
@@ -469,7 +491,7 @@ Sono core le primitive necessarie a inizializzare/dispatchare qualsiasi system c
 
 Primitive costose/specialistiche possono essere caricate on-demand tramite una futura API `rumi_require` o equivalente.
 
-Non si forza il caricamento Unicode/digest/transaction per un semplice command che non li usa.
+Non si forza il caricamento Unicode/durability per un semplice command che non li usa.
 
 ---
 
@@ -491,31 +513,37 @@ Questo è necessario perché POSIX command substitution e pipeline restino affid
 
 # 22. Current implementation mapping
 
-Il bootstrap attuale `rumiai-os` già implementa il nucleo di:
+Il bootstrap attuale `rumiai-os` implementa e ha fisicamente validato su entrambe le reference installation stabili:
 
 ```text
 POSIX sh bootstrap
 root discovery
 existing-path canonicalization
 semantic directories
-PATH prepend
-bootstrap config read minimale
+SCF API
+TSV API
+native platform/architecture export
+native @platforms PATH precedence
+filesystem type/mode/readlink
+SHA-256 file/text digest
+same-directory atomic replace
 i18n
 logger
 CLI/command source dispatch
 RumiAI_COMMAND_BIN
 ```
 
-Da riallineare/estendere rispetto al contratto v0:
+Restano implementation follow-up:
 
 ```text
 logical command name `rumi`
-SCF bootstrap configuration invece di single-value config ad hoc
-SCF API
-STD API
-native platform/architecture export
-native @platforms PATH precedence
-filesystem/digest/unicode/transaction adapters
+SCF bootstrap preferences instead of legacy single-value preference files
+filesystem walk
+Unicode NFC/default case-fold adapter
+exclusive process lock
+file/directory durability sync
+atomic generation publish protocol
+logical shebang installation/discovery validation
 ```
 
 Questi sono implementation follow-up, non nuove primitive architetturali.
@@ -529,7 +557,7 @@ host validated facilities
         ↓
 rumi bootstrap
         ↓
-SCF / STD / platform primitive API
+SCF / TSV / platform primitive API
         ↓
 pkg (POSIX sh)
         ↓
@@ -551,7 +579,7 @@ RB-05 RumiAI_COMMAND_BIN identifica il command source
 RB-06 system tools non dipendono da bash/Python/Node/jq
 RB-07 non-portable semantics vivono nel bootstrap/platform adapter
 RB-08 bootstrap espone SCF query/validation
-RB-09 bootstrap espone STD validation/streaming
+RB-09 bootstrap espone TSV validation/streaming
 RB-10 data non viene source/eval/materializzata automaticamente in shell variables
 RB-11 bootstrap espone native platform/architecture identity
 RB-12 runtime PATH usa native @platforms before cross-platform bin
