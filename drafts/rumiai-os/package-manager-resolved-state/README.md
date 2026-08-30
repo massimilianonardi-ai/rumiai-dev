@@ -2,7 +2,7 @@
 
 Data: 2026-08-30
 
-Stato: **design decision — resolved state + JSON v0 fissati**
+Stato: **design decision — resolved state + System Field Format v0 fissati**
 
 Il resolved state è la barriera fra:
 
@@ -51,12 +51,18 @@ RESOLVED must be exact
 
 # 2. Resolution Snapshot
 
-Una Resolution Snapshot è immutabile e serializzata in JSON UTF-8.
+Una Resolution Snapshot è immutabile e serializzata in System Field Format v0.
+
+Header:
+
+```text
+kind	profile_resolved
+schema	1
+```
 
 Contiene almeno:
 
 ```text
-schema
 generation
 profile
 resolved selectors
@@ -92,33 +98,28 @@ Una nuova resolution crea una nuova generation; non riscrive la precedente.
 
 # 4. Resolved graph example
 
-```json
-{
-  "schema": 1,
-  "generation": 17,
-  "profile": "default",
-  "graphs": [
-    {
-      "id": "netbeans-graph",
-      "root-package": "netbeans@26@r1@any-any"
-    }
-  ],
-  "dependencies": [
-    {
-      "graph": "netbeans-graph",
-      "consumer": "netbeans@26@r1@any-any",
-      "slot": "jdk",
-      "provider": "temurin@21.0.8+9@r1@linux-arm64",
-      "capability": "java-development-kit",
-      "contract": 1,
-      "constraint": ">=17 <22",
-      "satisfied-version": "21"
-    }
-  ]
-}
+```text
+kind	profile_resolved
+schema	1
+generation	17
+profile	default
+graph_count	1
+graph_1_id	netbeans-graph
+graph_1_root_package	netbeans@26@r1@any-any
+dependency_count	1
+dependency_1_graph	netbeans-graph
+dependency_1_consumer	netbeans@26@r1@any-any
+dependency_1_slot	jdk
+dependency_1_provider	temurin@21.0.8+9@r1@linux-arm64
+dependency_1_capability	java-development-kit
+dependency_1_contract	1
+dependency_1_constraint	>=17 <22
+dependency_1_satisfied_version	21
 ```
 
 Un `any-any` consumer può quindi avere una native provider dependency senza diventare platform-specific.
+
+Collection grandi usano count + indici contigui e streaming/per-prefix bootstrap.
 
 ---
 
@@ -146,13 +147,15 @@ Il launcher materializza l'absolute pathname usando la current RUMIAI_ROOT.
 
 Snapshots immutabili e active pointer sono separati.
 
-`active` contiene il formato minimale:
+`active` usa lo stesso System Field Format:
 
 ```text
-g17\n
+kind	active
+schema	1
+generation	17
 ```
 
-Non è JSON perché non è un documento strutturato e deve restare minimale durante bootstrap/recovery.
+Questo elimina una grammatica di parsing speciale durante bootstrap/recovery.
 
 ---
 
@@ -169,11 +172,11 @@ validate Package Instance health/integrity
         ↓
 validate dependency graph/state/environment/bindings
         ↓
-write immutable candidate generation JSON
+write immutable candidate generation System Field Format
         ↓
 validate candidate Execution View
         ↓
-atomic replace active pointer
+atomic replace active file
 ```
 
 Errore prima dello switch: la previous generation resta autorevole.
@@ -236,7 +239,7 @@ Con retention v0 conservativa, una Package Instance referenziata non è garbage.
 `bin/` e namespace materializzati sono derivati.
 
 ```text
-active Resolution Snapshot JSON
+active Resolution Snapshot
         ↓
 rebuild Execution View
 ```
@@ -253,11 +256,13 @@ Cambio da `sN` a `sN+1` richiede migration esplicita prima dell'attivazione dell
 
 ---
 
-# 14. JSON boundary
+# 14. Serialization boundary
 
-JSON formatting/object member order non fa parte dell'identità della generation.
+L'ordine fisico dei field non è semanticamente significativo salvo gli indici espliciti delle collection.
 
-Generation identity è il numero monotono locale, non un digest del JSON.
+I file generated usano comunque ordine canonico di schema.
+
+Generation identity è il numero monotono locale, non un digest della serializzazione.
 
 Se serviranno firme/checksum dello snapshot sarà definita una canonical representation specifica.
 
@@ -268,7 +273,7 @@ Se serviranno firme/checksum dello snapshot sarà definita una canonical represe
 ```text
 RS-01 desired != resolved
 RS-02 resolved contiene solo binding exact
-RS-03 Resolution Snapshot è immutable JSON
+RS-03 Resolution Snapshot è immutable System Field Format
 RS-04 new resolution => new generation
 RS-05 active switch atomico
 RS-06 no absolute RUMIAI_ROOT path persistiti
@@ -278,6 +283,7 @@ RS-09 missing provider => BROKEN_RESOLUTION
 RS-10 rollback exact o fallisce
 RS-11 retained generations creano package references
 RS-12 State migration separata dalla re-resolution
-RS-13 active pointer è minimale e non-JSON
+RS-13 active usa System Field Format, non una grammatica speciale
 RS-14 Package Instance platform e runtime requirement restano ortogonali
+RS-15 large collection usa streaming bootstrap
 ```
