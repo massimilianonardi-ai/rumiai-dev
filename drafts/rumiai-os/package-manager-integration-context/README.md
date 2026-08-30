@@ -1,427 +1,315 @@
-# RumiAI package manager — Integration model draft
+# RumiAI package manager — Package Interface and execution model
 
-Data: 2026-08-29
+Data: 2026-08-30
 
-Stato: **design draft — ragionamento successivo a Package Admission v0**
+Stato: **design draft — Package Interface / Environment / Launch model v0 formalizzato**
 
-Prerequisito:
+Prerequisiti:
 
 ```text
 drafts/rumiai-os/package-manager-v0/README.md
+drafts/rumiai-os/package-manager-package-instance-layout/README.md
+drafts/rumiai-os/package-manager-dependency-model/README.md
+drafts/rumiai-os/package-manager-state-model/README.md
 ```
 
-Questo documento evolve il primo modello `Integration Context → Binding → Materialized View` dopo averlo stressato contro i casi storici di `m`, in particolare Java multi-versione, dipendenze private, alias espliciti e shell con ambiente differente.
-
-La conclusione principale è che un solo oggetto `Integration Context` mescolava tre responsabilità differenti.
-
-Il modello viene quindi separato in:
+Questo documento separa formalmente:
 
 ```text
-Package Interface
-        ↓
-Integration Profile (desired + resolved)
-        ↓
-Execution Environment
-        ↓
-Execution View / launcher materialization
+ciò che una Package Instance OFFRE
+ciò che una Package Instance RICHIEDE
+come costruire il suo ENVIRONMENT
+come viene RISOLTO
+come viene LANCIATO un comando
+cosa viene reso PUBBLICO da un Integration Profile
 ```
+
+Il modello evita environment globale come fonte di verità, shell code arbitrario e pathname assoluti persistiti.
 
 ---
 
-# 1. Proprietà storica da preservare
-
-Il package manager storico aveva già la proprietà corretta:
+# 1. Pipeline complessiva
 
 ```text
-package presente in pkg
-    !=
-package integrato/attivo
+Package Instance
+│
+├── Package Interface
+│      cosa offre
+│
+├── Execution Requirements
+│      cosa richiede
+│
+└── Environment Specification
+       come usare self/dependency/state
+              │
+              ↓
+       dependency resolution
+              │
+              ↓
+       Resolved Dependency Graph
+              │
+              ↓
+Desired Integration Profile
+              │
+              ↓ resolve
+Resolved Integration Profile
+              │
+              + State Instance attiva
+              + command da eseguire
+              ↓
+       Resolved Environment
+              ↓
+       Launch Specification
+              ↓
+       materializzazione OS
+              ↓
+            process
 ```
 
-`integrate` gestiva almeno:
-
-```text
-PATH
-environment
-command alias
-application
-library
-profile/state defaults
-```
-
-Il problema non era l'esistenza di queste capacità, ma il fatto che venissero materializzate principalmente come mutazioni incrementali di stato globale, che `deintegrate` doveva successivamente cercare di sottrarre.
-
-La nuova architettura deve preservare le capacità evitando di usare il filesystem e l'environment globale come unica fonte di verità.
+La resolution dinamica termina prima del launch.
 
 ---
 
 # 2. Package Interface
 
-## 2.1 Definizione
+La **Package Interface** è la superficie immutabile che una Package Instance rende referenziabile dal resto del package manager.
 
-La **Package Interface** descrive le risorse che una Package Instance rende disponibili al resto di RumiAI.
+Appartiene a `@package`.
 
-La Package Interface appartiene alla Package Instance ed è immutabile con essa.
+Non rende automaticamente nulla pubblico nella shell o nel sistema.
 
-Non significa che tali risorse siano automaticamente visibili in una shell o in un altro package.
-
-La distinzione fondamentale è:
+Distinzione:
 
 ```text
-PACKAGE RESOURCE
-    ciò che il package possiede e può offrire
+Package Resource
+    risorsa posseduta/offerta dalla Package Instance
 
-BINDING
-    come una risorsa viene resa visibile in uno specifico ambiente
+Public Binding
+    decisione di rendere una risorsa visibile in un Integration Profile
 ```
 
-## 2.2 Risorse tipizzate
-
-Il v0 di integrazione dovrebbe partire da poche risorse tipizzate.
-
-Candidate iniziali:
-
-```text
-command
-    entrypoint eseguibile interno alla Package Instance
-
-directory
-    directory semanticamente rilevante che altri binding possono referenziare
-```
-
-Esempio Java:
-
-```text
-Package Interface: java-runtime 21
-
-command:java
-    -> bin/java
-
-command:javac
-    -> bin/javac
-
-directory:home
-    -> .
-```
-
-Il package NON deve necessariamente esportare direttamente:
-
-```text
-JAVA_HOME=<qualcosa>
-```
-
-perché `JAVA_HOME` è un nome dell'environment esterno, non una proprietà intrinseca del package.
-
-Un Integration Profile o un Execution Environment può invece decidere:
-
-```text
-JAVA_HOME = java-runtime.directory:home
-```
-
-Questa separazione evita che una dipendenza imponga mutazioni globali solo perché possiede una risorsa utile.
-
-## 2.3 Export non implica integrazione
-
-Più Package Instance possono esportare contemporaneamente:
-
-```text
-command:java
-```
-
-senza conflitto nello store.
-
-Il conflitto può esistere solo quando due risorse vengono candidate allo stesso binding visibile nello stesso namespace di uno specifico profile/environment.
+Più Package Instance possono offrire una risorsa chiamata `command:java` senza alcun conflitto finché non vengono candidate allo stesso public binding.
 
 ---
 
-# 3. Execution Dependency con slot locale
+# 3. Package Resource v0
 
-Una Package Instance può dichiarare Execution Dependency tramite un **dependency slot locale**.
+Il v0 usa tre tipi fondamentali:
+
+```text
+file
+    file immutabile sotto root/
+
+directory
+    directory immutabile semanticamente rilevante sotto root/
+
+command
+    risorsa lanciabile descritta dichiarativamente
+```
+
+I nomi delle risorse sono locali alla Package Instance.
+
+Esempio:
+
+```text
+file:runtime-config
+directory:home
+directory:bin
+command:java
+command:javac
+```
+
+Un resource name non è un pathname e non implica integrazione pubblica.
+
+---
+
+# 4. `file` e `directory`
+
+Una risorsa `file` o `directory` referenzia un pathname relativo e canonico sotto `root/`.
 
 Esempio concettuale:
 
 ```text
-dependency slot: jvm
-requires: java-runtime >=8 <9
+directory:home -> root/
+directory:bin  -> root/bin
+file:launcher  -> root/bin/tool
 ```
 
-Il nome `jvm` è locale al package richiedente.
-
-Dopo la resolution:
+Non sono ammessi nella Package Interface:
 
 ```text
-jvm
-    -> java-runtime 8.0.x / <platform concreta>
+pathname assoluti
+riferimenti fuori dalla Package Instance tramite ..
+pathname host hardcoded
 ```
 
-Questo permette ai metadata di integrazione/esecuzione del package di referenziare:
-
-```text
-dependency:jvm.command:java
-dependency:jvm.directory:home
-```
-
-senza hardcodare pathname né una Package Instance specifica prima della resolution.
-
-La sintassi concreta non è ancora definita.
+Le risorse Package Interface descrivono il core immutabile; lo stato mutabile viene referenziato separatamente tramite State Area references.
 
 ---
 
-# 4. Dipendenze private per default
+# 5. `command` non è necessariamente un pathname
 
-Una Execution Dependency necessaria a un package NON deve diventare automaticamente visibile nel profilo generale.
+Una risorsa `command` rappresenta una **Launch Template**.
 
-Esempio:
+Caso semplice:
 
 ```text
-legacy-app
-└── jvm -> Java 8
+command:foo
+    executable = self:file:foo-executable
 ```
 
-L'installazione/integration di `legacy-app` non deve automaticamente produrre:
+ma il modello deve rappresentare anche software che viene ospitato da una runtime dependency.
+
+Esempio generico JAR:
 
 ```text
-shell globale: java -> Java 8
-```
-
-Java 8 è una dipendenza dell'Execution Environment di `legacy-app`.
-
-Per renderla visibile anche all'utente serve una decisione di integrazione esplicita, per esempio:
-
-```text
-java8 -> Java 8.command:java
-```
-
-Regola candidata:
-
-> **Le dipendenze transitive/private soddisfano l'esecuzione del package che le richiede; non acquisiscono automaticamente visibilità pubblica.**
-
----
-
-# 5. Integration Profile
-
-## 5.1 Definizione
-
-Un **Integration Profile** descrive ciò che utente o sistema vuole rendere normalmente disponibile in un determinato scope persistente.
-
-Esempi:
-
-```text
-default profile
-legacy-java8 profile
-sviluppo-java17 profile
-```
-
-Un Integration Profile non è l'environment concreto di un singolo processo.
-
-È il desired state persistente da cui possono derivare ambienti di esecuzione.
-
-## 5.2 Desired profile e resolved profile
-
-Occorre distinguere due rappresentazioni.
-
-### Desired Integration Profile
-
-Può contenere selector/constraint dinamici:
-
-```text
-integrate java-runtime latest
-integrate python >=3.12 <3.14
-alias java8 -> java-runtime 8 / command:java
-```
-
-Descrive l'intenzione persistente.
-
-### Resolved Integration Profile
-
-Contiene esclusivamente Package Instance concrete e binding deterministici:
-
-```text
-java
-    -> java-runtime 21.0.8 revision 1 / macos-arm64 / command:java
-
-java8
-    -> java-runtime 8.0.462 revision 1 / macos-arm64 / command:java
+command:app
+    executable = dependency:jvm.command:java
+    fixed-args = [ self:file:app-jar ]
 ```
 
 Quindi:
 
-```text
-Desired Profile
-      ↓ resolve
-Resolved Profile
-```
+> `command` significa “come avviare questa capacità eseguibile”, non semplicemente “path a un executable bit”.
 
-Questa distinzione è importante per update e rollback.
-
-`latest` può vivere nel desired state, ma non nell'environment realmente eseguito.
+La materializzazione fisica può essere un symlink solo quando questa semantica si riduce realmente a un executable diretto.
 
 ---
 
-# 6. Public bindings
+# 6. Launch Template v0
 
-Il Resolved Integration Profile contiene i **public bindings** dello scope.
-
-Categorie iniziali candidate:
+Una risorsa `command` deve poter dichiarare almeno:
 
 ```text
-command binding
-environment binding
+executable reference
+fixed argument list
+optional working-directory reference
+optional command-specific environment overlay
 ```
+
+I valori sono dichiarativi e tipizzati; non vengono interpretati da una shell.
+
+L'executable reference può essere almeno:
+
+```text
+self:file:<resource>
+dependency:<slot>.command:<resource>
+```
+
+Gli argomenti possono contenere:
+
+```text
+literal
+self file/directory reference
+dependency resource reference
+state area/path reference
+```
+
+Il formato serializzato concreto resta da decidere.
+
+---
+
+# 7. Execution Capability e Package Interface
+
+Una Execution Capability dichiara un contratto e collega quel contratto a risorse della Package Interface.
+
+Esempio Java concettuale:
+
+```text
+provides java-runtime = 21
+
+resources:
+    command = command:java
+    home    = directory:home
+    bin     = directory:bin
+```
+
+Una stessa Package Instance JDK può inoltre dichiarare:
+
+```text
+provides java-development-kit = 21
+
+resources:
+    java  = command:java
+    javac = command:javac
+    home  = directory:home
+    bin   = directory:bin
+```
+
+Il capability contract definisce quali resource key sono obbligatorie/opzionali per quel contratto.
+
+Il consumer non deve conoscere i pathname del provider: referenzia le resource key esposte dal dependency slot risolto.
+
+---
+
+# 8. Execution Requirements
+
+Gli Execution Requirements sono i dependency slot formalizzati nel dependency model.
 
 Esempio:
 
 ```text
-command java
-    -> Java 21.command:java
-
-command java8
-    -> Java 8.command:java
-
-environment JAVA_HOME
-    -> Java 21.directory:home
+slot jdk:
+    requires java-development-kit >=17 <22
 ```
 
-L'ordine di installazione non determina precedence.
+La Package Instance non decide qui quale provider soddisferà `jdk`.
 
-Due binding pubblici incompatibili sullo stesso nome sono un errore salvo override/alias esplicito.
+Dopo resolution:
+
+```text
+jdk
+    -> exact Package Instance
+```
+
+Da questo momento le espressioni:
+
+```text
+dependency:jdk.command:java
+dependency:jdk.directory:home
+dependency:jdk.directory:bin
+```
+
+sono risolvibili deterministicamente.
 
 ---
 
-# 7. Profile derivation
+# 9. Environment Specification
 
-Un profile può opzionalmente derivare da un altro profile.
+La **Environment Specification** appartiene a `@package` ed è immutabile con la Package Instance.
 
-Esempio:
+Non viene introdotta una directory fisica `env/` come fonte di verità.
 
-```text
-default
-    java -> Java 21
-    JAVA_HOME -> Java 21.home
-    python -> Python 3.13
-
-legacy-java8 extends default
-    override java -> Java 8
-    override JAVA_HOME -> Java 8.home
-```
-
-Il risultato è deterministico:
+Motivo:
 
 ```text
-legacy-java8:
-    java -> Java 8
-    JAVA_HOME -> Java 8.home
-    python -> Python 3.13
+l'environment dipende da dependency binding concreti
+state attivo
+execution platform
+Integration Profile
+invocazione
 ```
 
-Nel v0 non viene ancora richiesta inheritance multipla.
+quindi non può essere materializzato staticamente dentro la Package Instance senza perdere relocatability o dinamicità controllata.
 
 ---
 
-# 8. Execution Environment
+# 10. Environment Specification è dati, non shell code
 
-## 8.1 Definizione
-
-Un **Execution Environment** è l'ambiente completamente risolto con cui viene avviato uno specifico processo/process tree.
-
-Contiene solo riferimenti a Package Instance concrete.
-
-Può derivare da:
+Sono vietati come meccanismo del descriptor:
 
 ```text
-Resolved Integration Profile
-        +
-Package Instance da eseguire
-        +
-Execution Dependency risolte di quel package
-        +
-override espliciti dell'invocazione
+source
+eval
+shell snippet arbitrari
+export VAR=$(comando)
+command substitution
+espansione shell non controllata
 ```
 
-È normalmente effimero.
+Il modello usa operazioni dichiarative.
 
-## 8.2 Package-specific overlay
-
-Esempio:
-
-```text
-default profile:
-    java -> Java 21
-    JAVA_HOME -> Java 21.home
-
-legacy-app:
-    dependency:jvm -> Java 8
-```
-
-Execution Environment di `legacy-app`:
-
-```text
-public/default resources ereditate dove non in conflitto
-
-private runtime binding:
-    java -> dependency:jvm.command:java
-    JAVA_HOME -> dependency:jvm.directory:home
-```
-
-Il processo legacy vede Java 8 senza cambiare il default profile.
-
-## 8.3 Stesso package, processi differenti
-
-Il sistema può quindi avere simultaneamente:
-
-```text
-normal shell       -> Java 21
-legacy shell       -> Java 8
-legacy-app process -> Java 8
-modern-app process -> Java 17
-```
-
-senza mutare le Package Instance e senza sostituire globalmente una Java con un'altra.
-
----
-
-# 9. Regola stretta sulle versioni dentro un Execution Environment
-
-La coesistenza nello store non implica che versioni incompatibili della stessa dipendenza possano essere caricate nello stesso processo.
-
-Regola v0 proposta:
-
-> **Per una stessa dependency identity/slot risolta dentro un singolo Execution Environment deve esistere una soluzione coerente unica, salvo che un futuro execution backend dichiari esplicitamente isolamento interno.**
-
-Esempio:
-
-```text
-root C
-├── A -> requires D >=7 <8
-└── B -> requires D >=8 <9
-```
-
-Se A e B devono vivere nello stesso Execution Environment/process tree e non esiste una versione D che soddisfa entrambi:
-
-```text
-RESOLUTION CONFLICT
-```
-
-Il fatto che `D7` e `D8` possano convivere fisicamente nello store non risolve automaticamente un conflitto runtime interno allo stesso ambiente.
-
-Processi/environment distinti possono invece usare versioni differenti senza conflitto.
-
----
-
-# 10. Environment binding dichiarativo
-
-Il vecchio `m` usava shell code come:
-
-```text
-export JAVA_HOME=...
-export JAVA_TOOL_OPTIONS=...
-```
-
-Il nuovo modello non dovrebbe richiedere shell code arbitrario.
-
-Gli environment binding devono poter essere descritti come dati.
-
-Operazioni candidate minime:
+Primitive v0:
 
 ```text
 set
@@ -431,389 +319,753 @@ prepend
 append
 ```
 
-Ma queste operazioni non vengono ancora fissate come API definitiva.
+Il launcher interpreta queste primitive direttamente.
 
-Il requisito già fissabile è:
+---
 
-> **Un environment binding deve poter referenziare risorse Package Interface e dependency slot senza `eval`, senza pathname hardcoded e senza eseguire codice arbitrario per ottenere il valore.**
+# 11. Tipi di environment value
+
+Il v0 distingue almeno:
+
+```text
+scalar
+    valore testuale singolo
+
+path
+    singolo pathname logico
+
+path-list
+    lista ordinata di pathname logici
+```
+
+Questo è necessario perché una variabile come `PATH` non è semanticamente una stringa opaca.
+
+Il separatore fisico viene scelto dal materializzatore della piattaforma:
+
+```text
+Unix-like  :
+Windows    ;
+```
+
+Il descriptor non concatena manualmente separator platform-specific.
+
+---
+
+# 12. Value expressions
+
+Un value expression può referenziare almeno:
+
+```text
+literal:<value>
+self:file:<resource>
+self:directory:<resource>
+dependency:<slot>.<resource-type>:<resource>
+state:<area>
+state:<area>/<relative-path>
+```
+
+Per scalar che richiedono composizione, il modello può usare una sequenza dichiarativa di frammenti literal/reference.
 
 Esempio concettuale:
 
 ```text
-set JAVA_HOME = dependency:jvm.directory:home
-set-if-unset CLASSPATH = "."
+JAVA_HOME
+    set dependency:jdk.directory:home
 ```
 
-`PATH` può essere trattato separatamente dal namespace dei command binding; non è necessario modellare ogni comando come semplice concatenazione di directory PATH.
+oppure:
+
+```text
+SOME_OPTION
+    set [literal:"prefix=", state:home]
+```
+
+Non viene eseguita interpolazione shell.
 
 ---
 
-# 11. Command binding come Launch Specification
+# 13. PATH
 
-Un command binding non deve essere ridotto semanticamente a:
+`PATH` è trattato come `path-list`.
+
+Un package può dichiarare, per esempio:
 
 ```text
-nome -> pathname eseguibile
+PATH
+    prepend dependency:jdk.directory:bin
 ```
 
-Per un package con dipendenze private, lanciare il comando può richiedere la costruzione dell'Execution Environment corretto.
+Per un processo package-specific, il path privato della dependency precede i binding pubblici.
 
-Il binding logico è quindi più vicino a una **Launch Specification**:
+Esempio Linux ARM64:
 
 ```text
-command name
-    -> Package Instance
-    -> entrypoint esportato
-    -> Execution Environment da costruire
+1. private dependency paths del command/package
+2. RUMIAI_ROOT/bin/@platforms/linux-arm64
+3. RUMIAI_ROOT/bin
+4. inherited host PATH entries ammessi dalla base environment policy
+```
+
+Questo permette a NetBeans di usare una Java privata senza cambiare il `java` pubblico della shell.
+
+---
+
+# 14. Environment base e indipendenza dall'host
+
+RumiAI non assume che l'intero environment host debba essere cancellato: variabili come locale, display/sessione, terminale o altri dati OS possono essere necessarie.
+
+Il v0 distingue quindi:
+
+```text
+Base Environment
+    environment host ereditato/normalizzato dalla policy RumiAI
+
+Managed Environment
+    variabili/path su cui Package/Integration/Launch applicano binding dichiarativi
+```
+
+Regola:
+
+> quando RumiAI gestisce esplicitamente una variabile per un command, il valore host omonimo non deve sostituire o alterare implicitamente il binding risolto.
+
+Esempio:
+
+```text
+host JAVA_HOME=/usr/lib/random-java
+
+NetBeans Environment Specification:
+    JAVA_HOME = dependency:jdk.directory:home
+
+→ il processo NetBeans usa il JDK RumiAI risolto
+```
+
+Nessun fallback automatico a `JAVA_HOME` o runtime host è permesso per soddisfare un Requirement.
+
+---
+
+# 15. Environment composition
+
+Per una Launch Specification, la composizione logica avviene in layer espliciti:
+
+```text
+1. Base Environment RumiAI
+2. Resolved Integration Profile environment bindings
+3. environment richiesto dalla catena di Launch Template effettivamente invocata
+4. Environment Specification del package root
+5. command-specific environment overlay
+6. explicit launch overrides
+```
+
+Un layer successivo può modificare un valore precedente soltanto tramite una primitiva esplicita (`set`, `unset`, `prepend`, ...).
+
+Non esiste precedence derivata dall'ordine di installazione.
+
+Le dependency che non partecipano alla Launch Template non iniettano automaticamente environment variable nel consumer.
+
+---
+
+# 16. Environment delle dependency
+
+Una dependency privata non esporta automaticamente il proprio environment nel package consumer.
+
+Il consumer usa esplicitamente le risorse necessarie:
+
+```text
+JAVA_HOME = dependency:jdk.directory:home
+PATH prepend dependency:jdk.directory:bin
+```
+
+Se il consumer usa come executable un `dependency:<slot>.command:<name>`, viene composta la Launch Template di quel command provider, perché quel command può avere propri requisiti di launch.
+
+Quindi la composizione segue la relazione di launch reale, non l'intera dependency closure in modo indiscriminato.
+
+Questo evita collisioni fra environment di dependency che esistono nello stesso grafo ma non devono mutare lo stesso processo.
+
+---
+
+# 17. `set`, `set-if-unset`, `unset`, `prepend`, `append`
+
+Semantica v0:
+
+```text
+set
+    sostituisce il valore precedente con l'espressione risolta
+
+set-if-unset
+    assegna soltanto se la variabile non ha già un valore nel layer corrente derivato
+
+unset
+    rimuove la variabile dal Process Environment risultante
+
+prepend
+    valido per path-list; inserisce elementi prima della lista corrente
+
+append
+    valido per path-list; inserisce elementi dopo la lista corrente
+```
+
+`prepend/append` su scalar sono errore di schema.
+
+Una stessa Environment Specification non deve contenere mutazioni contraddittorie non ordinabili della stessa variabile; l'ordine dichiarato delle operazioni all'interno della specifica è parte della semantica quando più operazioni sullo stesso path-list sono intenzionali.
+
+---
+
+# 18. Resolved Environment
+
+La **Resolved Environment** è il risultato logico della composizione dopo che tutti i dependency slot sono stati risolti a Package Instance concrete.
+
+Contiene:
+
+```text
+exact Package Instance/resource references
+exact State Instance/area references
+operazioni environment già validate e ordinate
+```
+
+Non persiste pathname assoluti della RumiAI root.
+
+Esempio relocatable:
+
+```text
+JAVA_HOME
+    = package temurin@21.0.8+9@r1@linux-arm64 / directory:home
+
+PATH prepend
+    = package temurin@21.0.8+9@r1@linux-arm64 / directory:bin
+```
+
+Solo il materializzatore OS traduce queste reference in stringhe assolute al launch.
+
+---
+
+# 19. Materialized Process Environment
+
+Immediatamente prima della creazione del processo:
+
+```text
+Resolved Environment
+        ↓ current RUMIAI_ROOT + platform adapter
+Materialized Process Environment
 ```
 
 Esempio:
 
 ```text
-pulsar
-    -> Pulsar Package Instance
-    -> command:pulsar
-    -> execution env con Java 17 risolta
+JAVA_HOME=/current/root/pkg/temurin@.../root
+PATH=/current/root/pkg/temurin@.../root/bin:/current/root/bin/@platforms/linux-arm64:/current/root/bin:...
 ```
 
-La materializzazione fisica può poi essere:
+Questi absolute pathname sono effimeri.
 
-```text
-symlink diretto       se semanticamente sufficiente
-launcher minimale     se serve costruire environment
-resolver dinamico     in implementazioni future
-```
-
-Il modello logico non dipende da una di queste tecniche.
+Non vengono usati come identity né persistiti nel Package Instance descriptor/resolved lock.
 
 ---
 
-# 12. Execution View / materialization
+# 20. Integration Profile
 
-Il Resolved Integration Profile e l'Execution Environment sono oggetti logici.
+Un **Integration Profile** decide quali risorse diventano pubblicamente disponibili in uno scope persistente.
 
-Una **Execution View** è una loro possibile materializzazione fisica.
+Resta separato dalle private dependency di ciascun command.
 
-Può includere:
+Esempi di public binding:
 
 ```text
-bin namespace
-environment representation
-application namespace
+command java
+    -> exact Java Package Instance / command:java
+
+command java8
+    -> exact Java 8 Package Instance / command:java
+
+environment JAVA_HOME
+    -> exact Java Package Instance / directory:home
 ```
-
-La view NON è la fonte di verità.
-
-Deve poter essere eliminata e rigenerata completamente dal resolved state.
-
-Per un profile persistente può essere utile mantenere una view persistente/cache.
-
-Per un Execution Environment package-specific può essere creata on-demand o non essere materializzata affatto se il launcher può costruire direttamente processo ed environment.
 
 ---
 
-# 13. `integrate`
+# 21. Desired vs Resolved Integration Profile
 
-Nel nuovo modello:
+Il **Desired Integration Profile** può contenere selector/policy dinamici:
 
 ```text
-integrate
+public Java = newest compatible
+java8 = java-runtime 8
 ```
 
-significa concettualmente:
+Il **Resolved Integration Profile** contiene esclusivamente riferimenti concreti:
 
 ```text
-modifica Desired Integration Profile
+java
+    -> temurin@21.0.8+9@r1@linux-arm64 / command:java
+
+java8
+    -> temurin@8u462@r1@linux-arm64 / command:java
+```
+
+`latest`, preference e fallback non sopravvivono come selezione dinamica nel launch state.
+
+Una nuova release locale non cambia automaticamente il Resolved Integration Profile.
+
+---
+
+# 22. Public binding conflict
+
+Due package possono offrire la stessa risorsa senza conflitto.
+
+Il conflitto nasce soltanto quando uno stesso Resolved Integration Profile tenta di creare due public binding incompatibili con lo stesso nome.
+
+Esempio:
+
+```text
+java -> Java 21
+java -> Java 17
+```
+
+è errore salvo override/alias esplicito nel Desired Integration Profile.
+
+L'ordine di installazione non risolve conflitti.
+
+---
+
+# 23. Native specialization vs cross-platform binding
+
+Resta valida la struttura già fissata:
+
+```text
+RUMIAI_ROOT/bin/
+├── <cross-platform bindings>
+└── @platforms/
+    └── <platform>-<architecture>/
+        └── <platform-specific bindings>
+```
+
+PATH:
+
+```text
+bin/@platforms/<current-platform>
+bin
+inherited PATH
+```
+
+Una variante native può specializzare lo stesso public command cross-platform soltanto quando il Resolved Integration Profile dichiara la relazione di specialization.
+
+La precedence del PATH non è un resolver generico dei conflitti fra package non correlati.
+
+---
+
+# 24. Launch Specification
+
+Una **Launch Specification** è la descrizione completamente risolta necessaria ad avviare un command.
+
+Contiene almeno:
+
+```text
+root Package Instance exact identity
+command resource
+Resolved Dependency Graph da usare
+State Instance attiva, se richiesta
+Resolved Environment
+resolved executable reference
+fixed args
+invocation args
+working directory
+```
+
+Non contiene Requirement ancora da risolvere.
+
+Non contiene `latest`.
+
+Non fa provider selection durante il launch.
+
+---
+
+# 25. Command binding pubblico
+
+Un public command binding non deve essere pensato necessariamente come:
+
+```text
+name -> executable pathname
+```
+
+La forma logica è:
+
+```text
+public command name
+    -> exact root Package Instance
+    -> command resource
+    -> exact resolved graph/state required
+    -> Launch Specification
+```
+
+La materializzazione fisica può scegliere:
+
+```text
+symlink diretto
+    solo se nessun environment/launcher logic è necessario
+
+launcher minimale
+    quando deve costruire env/args/state
+```
+
+La tecnica fisica non cambia la semantica del binding.
+
+---
+
+# 26. Execution View
+
+`bin/` e le altre future view materializzate sono derivate.
+
+```text
+Desired state
+    ↓ resolve
+Resolved state
+    ↓ materialize
+Execution View
+```
+
+La Execution View:
+
+```text
+non è fonte di verità
+può essere ricostruita
+non decide quale Package Instance è installata
+non decide autonomamente dependency resolution
+```
+
+Un binding stale verso una Package Instance assente/corrotta è integration corruption / BROKEN_RESOLUTION, non motivo per selezionare automaticamente un'altra versione.
+
+---
+
+# 27. `integrate`
+
+Concettualmente:
+
+```text
+modify Desired Integration Profile
         ↓
-resolve package selectors + dependencies
+resolve selectors + dependency Requirements
         ↓
 produce Resolved Integration Profile
         ↓
+produce/persist exact Resolved Dependency Graph per root binding
+        ↓
 validate public binding conflicts
         ↓
-rebuild/refresh eventuale Execution View
+rebuild Execution View
 ```
 
-Non modifica la Package Instance.
-
-Non dipende da side effect incrementali non registrati.
+Non modifica `root/`, `run-default/` o `@package`.
 
 ---
 
-# 14. `deintegrate`
+# 28. `deintegrate`
 
-`deintegrate` significa:
+Concettualmente:
 
 ```text
-rimuovi selector/binding dal Desired Integration Profile
+remove desired selector/binding
         ↓
-risolvi nuovamente
+new explicit resolution
         ↓
-produce nuovo Resolved Integration Profile
+new Resolved Integration Profile
         ↓
-rigenera eventuale Execution View
+rebuild Execution View
 ```
 
-Non tenta di ricostruire a ritroso le mutazioni precedenti leggendo metadata correnti del package.
+Non tenta di annullare heuristicamente side effect storici.
 
-La rimozione della Package Instance dallo store è un problema separato.
+Non implica uninstall della Package Instance né purge della State Instance.
 
 ---
 
-# 15. Installazione, integrazione e garbage collection restano distinti
+# 29. Re-resolution
 
-Il modello separa tre operazioni:
+Una re-resolution è una transazione esplicita.
+
+Può cambiare:
 
 ```text
-STORE / INSTALL
-    Package Instance presente nel rumiai-store
-
-INTEGRATE
-    Package Instance selezionata come root/public binding di un profile
-
-EXECUTE
-    costruzione di un Execution Environment concreto
+provider
+release
+RumiAI revision
+resolved dependency closure
+public binding target
 ```
 
-La rimozione di un root dal profile non implica necessariamente la rimozione fisica delle Package Instance non più utilizzate.
+ma il nuovo state viene validato prima di sostituire quello precedente.
 
-Quelle Package Instance diventano candidate a una futura garbage collection basata sulle reference reali del sistema.
+Il launch non è una re-resolution.
 
 ---
 
-# 16. Stato applicativo resta separato
+# 30. Caso Java pubblico + NetBeans privato
 
-Package Instance, Integration Profile ed Execution Environment NON sono application state.
-
-Lo stato persistente deve rimanere un concetto distinto.
-
-Un Execution Environment potrà in futuro bindare risorse come:
+Store locale:
 
 ```text
-config directory
-data directory
-home directory
-cache directory
+Temurin Java 17
+Temurin Java 21
+altri provider compatibili
+NetBeans
 ```
 
-verso una State Instance/profile specifica.
+Default Integration Profile:
 
-Ma lo state non deve essere incorporato nella Package Instance né confuso con il desired integration state.
+```text
+java -> Java 21 public
+JAVA_HOME -> Java 21 home
+```
+
+NetBeans, esempio architetturale:
+
+```text
+slot jdk:
+    requires java-development-kit >=17 <22
+
+environment:
+    JAVA_HOME set dependency:jdk.directory:home
+    PATH prepend dependency:jdk.directory:bin
+```
+
+Resolved NetBeans:
+
+```text
+jdk -> exact Java 21 Package Instance
+```
+
+Il processo NetBeans vede il JDK risolto privatamente.
+
+La shell continua a vedere il Java pubblico del profile.
+
+Il range usato qui è un esempio di stress architetturale, non una dichiarazione normativa sui requisiti di una specifica release reale di NetBeans.
 
 ---
 
-# 17. Casi di stress
+# 31. Java 8 alias
 
-## 17.1 Java default + Java 8 esplicita
-
-Store:
+Un Desired Integration Profile può chiedere:
 
 ```text
-Java 8
-Java 21
+java -> newest preferred Java
+java8 -> java-runtime = 8 / command:java
 ```
 
-Desired default profile:
+Resolved:
 
 ```text
-integrate Java latest as default Java
-alias java8 -> Java 8.command:java
+java
+    -> exact Java 21 / command:java
+
+java8
+    -> exact Java 8 / command:java
 ```
 
-Resolved profile:
-
-```text
-java  -> Java 21.command:java
-java8 -> Java 8.command:java
-JAVA_HOME -> Java 21.directory:home
-```
-
-## 17.2 Shell Java 8
-
-```text
-legacy-java8 extends default
-    override java -> Java 8.command:java
-    override JAVA_HOME -> Java 8.directory:home
-```
-
-Una shell lanciata con questo profile vede Java 8.
-
-## 17.3 Package legacy con Java 8 privata
-
-```text
-legacy-app
-    dependency slot jvm -> java-runtime >=8 <9
-```
-
-Resolved dependency:
-
-```text
-jvm -> Java 8
-```
-
-Execution Environment:
-
-```text
-java -> dependency:jvm.command:java
-JAVA_HOME -> dependency:jvm.directory:home
-```
-
-Java 8 NON diventa pubblica nel default profile.
-
-## 17.4 Package modern con Java 17
-
-Parallelamente:
-
-```text
-modern-app
-    dependency slot jvm -> Java 17
-```
-
-Il suo processo vede Java 17 mentre shell normale usa Java 21 e legacy-app Java 8.
-
-## 17.5 Due package esportano `tool`
-
-Store:
-
-```text
-A exports command:tool
-B exports command:tool
-```
-
-Non esiste conflitto finché restano nello store.
-
-Desired profile che integra entrambi implicitamente come `tool`:
-
-```text
-CONFLICT
-```
-
-Soluzioni esplicite:
-
-```text
-tool  -> A.command:tool
-btool -> B.command:tool
-```
-
-oppure derived profile con override esplicito.
-
-## 17.6 Dipendenza incompatibile nello stesso processo
-
-```text
-C
-├── A -> D 7.x
-└── B -> D 8.x
-```
-
-Se C/A/B devono condividere lo stesso Execution Environment e il modello runtime non offre isolamento:
-
-```text
-RESOLUTION CONFLICT
-```
-
-La presenza di D7 e D8 nello store non basta a rendere il grafo eseguibile.
+Entrambe convivono senza cambiare i private dependency binding di altre applicazioni.
 
 ---
 
-# 18. Invarianti candidate aggiornate
+# 32. Python pubblico + Python privato
+
+Default profile:
 
 ```text
-IM-01 Package Instance nello store != package integrato
+python -> Python 3.13
+```
 
-IM-02 Package Interface descrive risorse, non side effect globali
+Una `python-app` può dichiarare:
 
-IM-03 export != binding
+```text
+slot python:
+    requires python-runtime = 3.12
+```
 
-IM-04 Execution Dependency è privata per default
+La sua Launch Template può usare direttamente:
 
-IM-05 Desired Integration Profile può contenere selector/constraint
+```text
+executable = dependency:python.command:python
+fixed-args = [ self:file:main-script ]
+```
 
-IM-06 Resolved Integration Profile contiene solo Package Instance concrete
+senza modificare il `python` pubblico.
 
-IM-07 Execution Environment contiene solo dipendenze concrete e binding risolti
+Il package non è obbligato a impostare `PYTHONHOME`: lo dichiara soltanto se il suo reale contratto di esecuzione lo richiede.
 
-IM-08 version range/latest non esistono nell'Execution Environment
+---
 
-IM-09 install order non determina precedence
+# 33. Pulsar come caso Electron/self-contained
 
-IM-10 namespace conflict richiede decisione esplicita
+Pulsar non viene usato come esempio di applicazione Java.
 
-IM-11 package-specific dependency può override il default solo dentro il proprio Execution Environment
+Nel modello di stress rappresenta un'applicazione Electron/self-contained che può non avere Execution Requirements di runtime esterne.
 
-IM-12 integrate modifica desired state, non la Package Instance
+Forma concettuale:
 
-IM-13 deintegrate ricalcola desired/resolved state, non esegue undo euristico
+```text
+Pulsar Package Instance
 
-IM-14 Execution View è derivata e rigenerabile, non fonte di verità
+command:pulsar
+    executable = self:file:pulsar-executable
 
-IM-15 command binding può richiedere una Launch Specification, non solo un symlink
+Execution Requirements:
+    none
+```
 
-IM-16 state applicativo resta separato da store e integration profile
+Questo verifica che il modello non introduca dependency artificiali solo perché supporta runtime selezionabili.
 
-IM-17 versioni differenti possono convivere nello store; la compatibilità nello stesso Execution Environment richiede invece una resolution coerente
+---
+
+# 34. JAR-only app
+
+Caso utile per verificare che `command != path`.
+
+```text
+slot jvm:
+    requires java-runtime = 21
+
+file:app-jar
+    -> root/app.jar
+
+command:app
+    executable = dependency:jvm.command:java
+    fixed-args = [ self:file:app-jar ]
+
+JAVA_HOME
+    set dependency:jvm.directory:home
+```
+
+Non serve creare uno script shell artificiale dentro `root/` soltanto per trasformare il JAR in comando.
+
+---
+
+# 35. Stato e environment
+
+La State Instance resta separata dalla Package Instance.
+
+L'Environment Specification può referenziare semanticamente:
+
+```text
+state:conf
+state:data
+state:home
+state:cache
+state:log
+state:run
+state:tmp
+```
+
+ma non decide dove queste aree vivono fisicamente.
+
+La `run/` package-local continua a fornire la view filesystem delle writable islands.
+
+Environment variable e runtime routing sono due meccanismi complementari:
+
+```text
+software hardcoded sul proprio tree
+    -> root/ → run/ → State Areas
+
+software configurabile via env
+    -> Environment Specification → State Areas
+```
+
+Entrambi puntano alla stessa State Instance attiva quando rappresentano lo stesso stato.
+
+---
+
+# 36. Persistenza del resolved execution state
+
+Per reproducibility devono essere persistibili almeno:
+
+```text
+Resolved Integration Profile
+Resolved Dependency Graph per root package/command
+exact command resource binding
+State Instance identity selezionata
+selection/policy provenance sufficiente per audit
+```
+
+La Resolved Environment può essere persistita come riferimenti logici/esatti o ricostruita deterministicamente da questi oggetti.
+
+Non vengono persistiti absolute pathname materializzati.
+
+---
+
+# 37. Failure semantics
+
+Al launch:
+
+```text
+exact package missing/corrupt
+    -> BROKEN_RESOLUTION
+
+resource prevista non presente/integra
+    -> BROKEN_RESOLUTION / INTEGRITY FAILURE
+
+State Instance non materializzabile
+    -> STATE_UNAVAILABLE
+
+environment expression invalida
+    -> INVALID_EXECUTION_SPEC
+```
+
+Il launcher non tenta:
+
+```text
+provider fallback
+host JAVA_HOME fallback
+host Python fallback
+PATH discovery di runtime casuali
+newest selection
+```
+
+Queste appartengono alla resolution esplicita, non al launch.
+
+---
+
+# 38. Invarianti fissate
+
+```text
+IM-01 Package Interface descrive risorse; non le integra automaticamente
+IM-02 Package Resource v0 = file, directory, command
+IM-03 file/directory resource sono root-relative e relocatable
+IM-04 command è Launch Template, non necessariamente executable pathname
+IM-05 capability contract mappa resource key a Package Interface resource
+IM-06 Execution Requirements = dependency slot dichiarativi immutabili
+IM-07 Environment Specification appartiene a @package; non esiste env/ autorevole
+IM-08 environment è dati dichiarativi, non shell code/eval
+IM-09 primitive v0 = set, set-if-unset, unset, prepend, append
+IM-10 environment value v0 distingue scalar, path, path-list
+IM-11 PATH è path-list semanticamente tipizzata
+IM-12 package/dependency/state resource vengono referenziate semanticamente, non tramite absolute path
+IM-13 dependency non inietta automaticamente environment nel consumer
+IM-14 provider command env viene composto quando la sua Launch Template è realmente invocata
+IM-15 managed env binding prevale sul valore host omonimo secondo layer espliciti
+IM-16 private dependency paths possono precedere public PATH nel processo specifico
+IM-17 Resolved Environment usa exact relocatable references
+IM-18 absolute pathname esistono solo nella Materialized Process Environment effimera
+IM-19 Desired Integration Profile può essere dinamico; Resolved Integration Profile è concreto
+IM-20 public binding conflict non è risolto dall'install order
+IM-21 command binding logico produce una Launch Specification
+IM-22 Launch Specification non contiene Requirement/latest ancora dinamici
+IM-23 Execution View è derivata e rebuildable
+IM-24 launch non esegue dependency re-resolution
+IM-25 BROKEN_RESOLUTION non autorizza fallback implicito
+IM-26 State routing filesystem ed Environment Specification sono complementari
+IM-27 Pulsar è caso Electron/self-contained, non esempio Java
 ```
 
 ---
 
-# 19. Conseguenze architetturali
+# 39. Questioni tecniche successive
 
-Il modello risultante è:
-
-```text
-                 RUMIAI STORE
-                     │
-             Package Instance
-                     │
-              Package Interface
-                     │
-          ┌──────────┴───────────┐
-          │                      │
-Desired Integration      Execution Dependencies
-     Profile                    │
-          │                      │
-          └────── resolve ───────┘
-                     │
-          Resolved Integration Profile
-                     │
-          + package da eseguire
-          + private dependencies
-                     │
-              Execution Environment
-                     │
-              Launch Specification
-                     │
-           optional Execution View
-                     │
-                   process
-```
-
-Questa separazione preserva le capacità storiche di `integrate/deintegrate` ma evita che il modello dipenda da una singola mutazione globale di PATH/environment/filesystem.
-
----
-
-# 20. Questioni da affrontare prima di un PoC
-
-Il modello non decide ancora:
-
-- identità e layout fisico del `rumiai-store`;
-- struttura concreta della Package Interface;
-- grammatica delle Execution Dependency e dependency slot;
-- regole esatte di version comparison/range;
-- formato Desired/Resolved Integration Profile;
-- semantica completa degli environment binding;
-- modello di State Instance;
-- atomicità e persistenza dei resolved profile;
-- risoluzione di provider alternativi per la stessa capability;
-- applicazioni GUI e servizi;
-- shared library integration fra Package Instance;
-- execution backend isolati/container/VM;
-- garbage collection e reference accounting.
-
-Prima di progettare il PoC conviene ancora ragionare su due problemi centrali:
+Il modello architetturale è ora sufficientemente definito per separare le questioni di serializzazione/implementazione:
 
 ```text
-A. dependency model / version resolution
-B. package state / execution state
+sintassi concreta di @package
+schema/version del descriptor
+grammatica concreta delle value expressions
+formato persistito di Resolved Dependency Graph / Resolved Integration Profile
+identity/versioning del resolved state
+materializzazione fisica dei launcher in bin/
+platform adapter per Process Environment
 ```
 
-perché entrambi influenzano direttamente l'Integration Profile e l'Execution Environment.
+Queste decisioni non devono reintrodurre resolution dinamica al launch, pathname assoluti persistenti o shell code arbitrario.
