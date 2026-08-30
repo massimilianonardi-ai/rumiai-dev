@@ -40,7 +40,7 @@ var/pkg/profiles/<profile-id>/
     └── ...
 ```
 
-`active`, `desired` e `resolved` usano tutti RumiAI System Field Format v0.
+`active`, `desired` e `resolved` sono System Configuration Field files con dot notation.
 
 ---
 
@@ -58,7 +58,7 @@ gN/resolved
     exact resolution result
 ```
 
-Entrambi sono immutabili.
+Entrambi immutabili.
 
 L'unico switch autorevole è `active`.
 
@@ -70,15 +70,13 @@ L'unico switch autorevole è `active`.
 g<positive-monotonic-integer>
 ```
 
-Il `resolved` dichiara:
+Il resolved dichiara:
 
 ```text
 generation	N
 ```
 
-con lo stesso numero del pathname `gN`.
-
-Mismatch:
+Mismatch col pathname `gN`:
 
 ```text
 GENERATION_MISMATCH
@@ -102,7 +100,7 @@ active                0400
 
 # 6. `active`
 
-Formato:
+SCF:
 
 ```text
 kind	active
@@ -112,7 +110,7 @@ generation	17
 
 Non è obbligatoriamente un symlink.
 
-Deve essere sostituibile atomicamente con una primitive fisicamente validata sulla reference platform/filesystem.
+Deve essere sostituibile atomicamente con primitive fisicamente validata sulla reference platform/filesystem.
 
 ---
 
@@ -136,11 +134,11 @@ package GC
 state migration transaction coordinata
 ```
 
-`manager.lock` è un OS lock handle, non un file dati da parsare: il suo contenuto non fa parte del control state.
+`manager.lock` è OS lock handle, non data/config file.
 
 Lock ownership deriva dalla OS locking primitive, non dalla presenza del file.
 
-Launch normale non acquisisce il mutation lock.
+Launch normale non acquisisce mutation lock.
 
 ---
 
@@ -173,13 +171,11 @@ Sotto manager lock:
 next generation = max committed generation + 1
 ```
 
-I numeri non vengono riutilizzati dopo prune.
+Numeri non riutilizzati dopo prune.
 
 ---
 
 # 10. Staging
-
-Candidate generation:
 
 ```text
 generations/@staging-gN-<nonce>/
@@ -195,24 +191,24 @@ generations/@staging-gN-<nonce>/
 
 ```text
 1 acquire manager lock
-2 read/validate current active System Field Format
+2 read/validate current active SCF
 3 derive candidate desired in memory
 4 allocate N
 5 resolve entire closure
 6 validate package integrity/state/bindings/environment/launch
-7 write staging desired + resolved System Field Format
+7 write staging desired + resolved SCF
 8 flush/sync according to platform contract
 9 seal files read-only
 10 atomic rename staging -> gN
 11 ensure candidate command stubs exist
-12 write temporary active System Field Format in same profile directory
-13 flush/sync pointer file
+12 write temporary active SCF in same profile directory
+13 flush/sync active temp
 14 atomic replace active
 15 cleanup obsolete derived stubs opportunistically
 16 release manager lock
 ```
 
-Failure prima del punto 14 lascia la previous active generation autorevole.
+Failure prima del punto 14 lascia previous active generation autorevole.
 
 ---
 
@@ -249,15 +245,15 @@ Structural complete:
 
 ```text
 gN pathname valid
-desired valid System Field Format kind=profile_desired/schema
-resolved valid System Field Format kind=profile_resolved/schema
+desired valid SCF kind=profile_desired/schema
+resolved valid SCF kind=profile_resolved/schema
 resolved generation == N
 profile IDs match
 count/indices valid
 exact references internally consistent
 ```
 
-Execution-valid richiede inoltre exact Package Instance/State Instance/resource availability.
+Execution-valid richiede exact Package Instance/State Instance/resource availability.
 
 Una retained generation può essere:
 
@@ -272,13 +268,13 @@ COMPLETE + BROKEN_RESOLUTION
 
 `bin/` non è authoritative state.
 
-Stable Command Stub legge `active` una sola volta e usa la generation exact.
+Stable Command Stub legge `active` una sola volta e usa generation exact.
 
-Stale/missing stub è un problema della derived Execution View, non un motivo per modificare il resolved graph.
+Stale/missing stub è problema derived Execution View, non motivo per modificare resolved graph.
 
 ---
 
-# 15. Bootstrap/platform primitives ancora da validare
+# 15. Bootstrap/platform primitives da validare
 
 Il persistence protocol richiede primitive uniformi Rumi per:
 
@@ -293,12 +289,20 @@ Queste non vengono implementate tramite comandi platform-specific sparsi dentro 
 
 ---
 
-# 16. Invarianti
+# 16. Data-format boundary
+
+Persistence control state è gerarchico e usa SCF.
+
+Dataset tabellari come integrity inventory restano file separati STD; non vengono incorporati in `desired`, `resolved` o `active`.
+
+---
+
+# 17. Invarianti
 
 ```text
 PL-01 control state vive sotto var/pkg
-PL-02 desired+resolved System Field Format sono immutabili e co-versionati
-PL-03 active usa lo stesso System Field Format ed è separato
+PL-02 desired+resolved SCF sono immutabili e co-versionati
+PL-03 active usa SCF ed è separato
 PL-04 generation ID = gN monotonic
 PL-05 active switch atomic
 PL-06 staging non è committed generation
@@ -309,4 +313,5 @@ PL-10 generations retained by default
 PL-11 active, non highest generation, è authoritative
 PL-12 crash non attiva automaticamente candidate/newest generation
 PL-13 Execution View è derivata
+PL-14 tabular datasets restano separati dal control-state SCF
 ```
