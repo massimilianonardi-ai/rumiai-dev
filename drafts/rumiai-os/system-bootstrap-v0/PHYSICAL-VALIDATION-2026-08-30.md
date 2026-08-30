@@ -2,13 +2,15 @@
 
 Date: 2026-08-30
 
-Status: **Gate 1 and Gate 2 PASSED on both current stable reference installations; current naming-corrected revision pending bundled revalidation**
+Status: **Gate 1 and Gate 2 PASSED on both current stable reference installations; current corrected revision pending bundled revalidation**
 
-This document records the physical validation gates completed for the `rumi` bootstrap substrate.
+This document records the physical validation gates completed for the RumiAI bootstrap substrate.
 
 Important evidence rule:
 
-> Physical validation evidence applies to the exact product/test revisions and API spelling exercised. Later naming-only corrections are not retroactively described as physically validated.
+> Physical validation evidence applies to the exact product/test revisions and API spelling exercised. Later corrections are not retroactively described as physically validated.
+
+Historical commits remain the authoritative evidence for the exact source text exercised at each gate. Current documentation does not reproduce obsolete noncanonical terminology merely to describe that history.
 
 ---
 
@@ -18,24 +20,9 @@ Important evidence rule:
 
 This validation covered the bootstrap system data API implemented by `rumiai-os/lib/data.lib` and loaded by the `rumiai-os` bootstrap.
 
-API spelling exercised at the validated revision:
+The validated revision used a noncanonical abbreviation-based API spelling that was corrected later. The exact historical spelling remains inspectable in the recorded target/test commits; it is not part of the current contract.
 
-```text
-rumi_conf_validate
-rumi_conf_get
-rumi_conf_has
-rumi_conf_namespace
-rumi_conf_set
-rumi_conf_remove
-
-rumi_table_validate
-rumi_table_header
-rumi_table_rows
-rumi_table_column
-rumi_table_select
-```
-
-That lowercase spelling was subsequently identified as inconsistent with the canonical RumiAI shell namespace and has been corrected in the current implementation to:
+Current canonical API:
 
 ```text
 RumiAI_conf_validate
@@ -52,7 +39,7 @@ RumiAI_table_column
 RumiAI_table_select
 ```
 
-The underlying SCF/TSV semantics validated below did not change. The naming-corrected product revision will be re-exercised together with the next substantive bootstrap physical gate.
+The underlying SCF/TSV semantics validated below did not change. The current corrected product revision will be re-exercised together with the next substantive bootstrap physical gate.
 
 Physical test:
 
@@ -168,22 +155,7 @@ current RumiAI_* API spelling             PENDING BUNDLED REVALIDATION
 
 This validation covered the platform adapter implemented by `rumiai-os/lib/platform.lib` and its integration into the bootstrap.
 
-API spelling exercised at the validated revision:
-
-```text
-rumi_platform
-rumi_architecture
-rumi_execution_platform
-rumi_path_canonicalize_existing
-rumi_fs_type
-rumi_fs_mode
-rumi_fs_readlink
-rumi_digest_file
-rumi_digest_text
-rumi_atomic_replace
-```
-
-The current implementation corrects the new API names to the canonical namespace:
+The validated revision likewise used the same previous noncanonical abbreviation-based spelling for newly introduced APIs. The exact historical source is preserved in Git; the current contract is:
 
 ```text
 RumiAI_platform
@@ -237,7 +209,7 @@ Isolate bootstrap digest commands from RumiAI PATH
 
 ## Test revision
 
-Before this gate the two Gate 1 validation sessions were committed into `rumiai-tests`; both hosts were aligned to the same suite revision:
+Both hosts were aligned to:
 
 ```text
 massimilianonardi-ai/rumiai-tests
@@ -318,25 +290,37 @@ current RumiAI_* API spelling                  PENDING BUNDLED REVALIDATION
 
 ---
 
-# Post-gate consistency correction
+# Post-gate consistency corrections
 
-After Gate 2, a consistency audit identified two implementation issues:
+After Gate 2, consistency review identified multiple issues in work added after the validated revisions:
 
-1. newly introduced bootstrap APIs mixed lowercase `rumi_*` with the established `RumiAI_*` function namespace;
-2. required-library loading used consecutive branches that produced the same error for precheck failure and source failure.
+1. newly introduced API naming did not respect the established `RumiAI_*` namespace;
+2. required-library loading duplicated existence/readability prechecks before the same source operation;
+3. conversational shorthand had been incorrectly promoted into a supposed bootstrap command/interpreter and custom shebang concept.
 
-The implementation was corrected forward-only:
+The current tree corrects these issues forward-only:
 
 ```text
-all RumiAI-namespaced functions -> RumiAI_*
+namespaced RumiAI functions -> exact RumiAI_* namespace
 existing RumiAI_path_canonicalize_existing reused directly
-lowercase rumi_* function namespace forbidden
-library precheck + source failure -> one same-error conditional branch
+required library load -> one controlled source operation
+no conversational shorthand promoted into product terminology
+no invented bootstrap command/interpreter
+shell executable rule remains canonical #!/bin/sh
 ```
 
-Permanent regression protection was added for the forbidden lowercase function namespace.
+The source-only load form used by the corrected bootstrap is:
 
-These corrections do not invalidate the semantic evidence from Gate 1/Gate 2, but the corrected current revision is not labelled physically validated until it is exercised in a later gate.
+```sh
+if ! command -- . -- "$LIB"
+then
+  <single diagnostic/error path>
+fi
+```
+
+The `command` wrapper preserves controlled error handling for the POSIX special built-in `.` while avoiding duplicate prechecks.
+
+These corrections do not rewrite or falsify the semantic evidence from Gate 1/Gate 2. The current revision is not labelled physically validated until exercised in a later meaningful gate.
 
 ---
 
@@ -345,7 +329,7 @@ These corrections do not invalidate the semantic evidence from Gate 1/Gate 2, bu
 The completed gates do **not** yet physically validate:
 
 ```text
-current naming-corrected bootstrap revision
+current corrected bootstrap revision
 filesystem walk abstraction
 Unicode NFC normalization
 Unicode default case-fold
@@ -353,7 +337,6 @@ exclusive process locking
 file durability sync
 directory durability sync
 atomic generation publish semantics
-logical `rumi` command/shebang installation/discovery
 ```
 
-These remain follow-up implementation/Physical Platform Validation work and are not implicitly satisfied by Gate 1 or Gate 2.
+No new bootstrap command/interpreter or custom shebang is an outstanding validation target because no such concept is part of the current architecture.
