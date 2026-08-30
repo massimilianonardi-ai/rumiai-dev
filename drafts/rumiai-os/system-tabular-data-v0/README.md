@@ -118,7 +118,7 @@ Se un dataset richiede valori non rappresentabili con queste regole, deve usare 
 
 # 6. Query / streaming
 
-Il bootstrap Rumi espone primitive tabellari:
+Il bootstrap RumiAI espone primitive tabellari:
 
 ```text
 RumiAI_table_validate <file> [expected-column...]
@@ -132,7 +132,7 @@ Per grandi dataset il modello normale è single-pass streaming.
 
 I tool possono usare `awk`/primitive POSIX equivalenti dietro l'API bootstrap, ma non devono inventare parser diversi per ogni tabella.
 
-Le funzioni RumiAI namespaced usano sempre il prefisso esatto `RumiAI_`; `rumi_*` non è un namespace API ammesso.
+Le funzioni RumiAI namespaced usano il namespace canonico `RumiAI_*`; abbreviazioni conversazionali non definiscono namespace API.
 
 ---
 
@@ -199,5 +199,5 @@ STD-09 nessun quoting/escaping v0
 STD-10 canonical dataset può definire row ordering
 STD-11 whole-file digest include header quando previsto
 STD-12 dataset tabellare non viene flattenato nel config format
-STD-13 API shell namespaced = RumiAI_*; lowercase rumi_* forbidden
+STD-13 namespaced RumiAI shell APIs use exact RumiAI_* namespace
 ```
