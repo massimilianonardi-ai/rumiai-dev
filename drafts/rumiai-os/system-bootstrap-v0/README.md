@@ -345,23 +345,20 @@ RumiAI_atomic_publish
 
 Quando una libreria obbligatoria deve essere sourced e tutte le failure di load appartengono alla stessa classe di errore, non si duplicano precheck di esistenza/leggibilità che anticipano la stessa operazione.
 
-Il pattern v0 è una singola source operation controllata:
+Il pattern v0 è una singola source operation:
 
 ```sh
-if ! command -- . -- "$LIB"
-then
-  <single diagnostic/error path>
-fi
+. "$LIB"
 ```
 
-`command` è intenzionale: `.` è un POSIX special built-in e una sua failure diretta per file non trovato/non leggibile può terminare una shell non interattiva prima che il caller possa gestire lo status. Invocandolo tramite `command`, il bootstrap conserva l'effetto di source nello stesso environment ma può gestire la failure nel proprio branch.
+La dot utility POSIX non definisce `--`; non deve quindi essere invocata con delimiter non previsti dal suo contratto.
 
 Quindi:
 
 ```text
 one semantic operation
-one failure branch
 no duplicate existence/readability precheck
+no non-POSIX dot arguments
 ```
 
 ---
@@ -418,7 +415,7 @@ i18n
 logger
 CLI/command source dispatch
 RumiAI_COMMAND_BIN
-single controlled source operation for required libraries
+single source operation for required libraries
 ```
 
 Le evidenze di Physical Platform Validation restano associate alle revisioni precise riportate nel documento di validation. Le correzioni successive non vengono retroattivamente attribuite a revisioni non esercitate.
@@ -495,6 +492,6 @@ RB-15 bootstrap remains minimal
 RB-16 Physical Platform Validation decides concrete adapter implementation
 RB-17 namespaced RumiAI shell functions/variables use exact RumiAI_* namespace
 RB-18 conversational shorthand has no product naming authority
-RB-19 required library load uses one controlled source operation, without duplicate prechecks
+RB-19 required library load uses one source operation, without duplicate prechecks or non-POSIX dot arguments
 RB-20 established invariants are checked through CONSISTENCY-GATE.md before work and before completion
 ```
