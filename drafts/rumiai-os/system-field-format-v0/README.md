@@ -368,15 +368,15 @@ In particolare non si sostituiscono `.` con `_` per creare variabili: ciò intro
 
 # 16. Query bootstrap
 
-Il bootstrap Rumi espone primitive di configurazione, concettualmente:
+Il bootstrap Rumi espone primitive di configurazione:
 
 ```text
-rumi_conf_get <file> <field-name>
-rumi_conf_has <file> <field-name>
-rumi_conf_set <file> <field-name> <field-value>
-rumi_conf_remove <file> <field-name>
-rumi_conf_namespace <file> <prefix>
-rumi_conf_validate <file> [schema]
+RumiAI_conf_get <file> <field-name>
+RumiAI_conf_has <file> <field-name>
+RumiAI_conf_set <file> <field-name> <field-value>
+RumiAI_conf_remove <file> <field-name>
+RumiAI_conf_namespace <file> <prefix>
+RumiAI_conf_validate <file> [schema]
 ```
 
 Semantica `namespace`:
@@ -389,13 +389,15 @@ field begins with prefix + "."
 
 La query per prefix non richiede una regex costruita dal chiamante.
 
+Le funzioni RumiAI namespaced usano sempre il prefisso esatto `RumiAI_`; `rumi_*` non è un namespace API ammesso.
+
 ---
 
 # 17. Performance
 
 Lookup puntuali possono scandire il file.
 
-Per leggere molte proprietà dello stesso namespace si usa una singola scansione `rumi_conf_namespace` o primitive equivalente.
+Per leggere molte proprietà dello stesso namespace si usa una singola scansione `RumiAI_conf_namespace` o primitive equivalente.
 
 È vietato costruire algoritmi O(n²) facendo migliaia di full-file lookup sulla stessa collection.
 
@@ -451,7 +453,7 @@ SCF-01 configuration record = field-name<TAB>field-value
 SCF-02 esattamente due campi / un TAB per record
 SCF-03 field-name usa dot notation gerarchica
 SCF-04 named segment = [A-Za-z_][A-Za-z0-9_]*
-SCF-05 array index segment = positive base-10 integer senza zero iniziali
+SCF-05 array index segment = positive base-10 integer senza zero iniziale
 SCF-06 first segment deve essere nominale
 SCF-07 field-name completo è unico
 SCF-08 scalar/namespace collision è vietata
@@ -463,4 +465,5 @@ SCF-13 arbitrary map key/ID restano nei value
 SCF-14 il formato non viene source/eval
 SCF-15 bootstrap Rumi fornisce query puntuali e per namespace
 SCF-16 dataset tabellari non vengono flattenati in SCF
+SCF-17 API shell namespaced = RumiAI_*; lowercase rumi_* forbidden
 ```
