@@ -2,7 +2,7 @@
 
 Data: 2026-08-30
 
-Stato: **design draft — concetti fissati fino alle runtime mappings**
+Stato: **design draft — State Instance e runtime mappings fissati**
 
 Prerequisiti:
 
@@ -98,7 +98,7 @@ pkg-name
 + state-compatibility-version
 ```
 
-Questo è coerente con la decisione già fissata che una Package Instance possiede una sola `run/` attiva.
+Questo è coerente con la decisione che una Package Instance possiede una sola `run/` attiva.
 
 Se in futuro emergerà un requisito reale per più State Instance parallele dello stesso package/schema, l'identità potrà essere estesa allora.
 
@@ -143,33 +143,36 @@ pulsar@s4
 
 ---
 
-# 5. Qualificazione per piattaforma
+# 5. State scope e qualificazione per piattaforma
 
-Lo stato resta cross-platform quando può essere riutilizzato in sicurezza da Package Instance compatibili su host differenti.
-
-Esempio:
+`@package` dichiara semanticamente lo scope dello stato:
 
 ```text
-pulsar@s3
+shared
+platform
+architecture
+platform-architecture
 ```
 
-può essere condiviso da:
+Questi scope producono rispettivamente:
 
 ```text
-pulsar / jvm-any
+shared
+    pulsar@s3
+
+platform
+    pulsar@linux-any@s3
+
+architecture
+    pulsar@any-arm64@s3
+
+platform-architecture
+    pulsar@linux-arm64@s3
 ```
 
-su Linux e macOS se il suo contenuto è realmente indipendente dalla piattaforma.
+Platform e architecture usate per la State Instance descrivono **l'host/state execution target corrente**, non necessariamente la piattaforma dichiarata dalla Package Instance.
 
-Quando lo stato dipende dall'OS e/o dalla CPU, l'identità viene qualificata:
-
-```text
-foo@linux-any@s2
-foo@any-arm64@s2
-foo@linux-arm64@s2
-```
-
-Token `platform` e `architecture` usano lo stesso vocabolario canonico controllato dal progetto.
+Quindi un package `jvm-any` può avere stato platform-dependent.
 
 Regola conservativa:
 
@@ -193,7 +196,7 @@ tmp
 
 Non tutte devono esistere per ogni package.
 
-Fisicamente, il modello candidato è:
+Fisicamente:
 
 ```text
 conf/<state-id>/
@@ -219,8 +222,6 @@ data
 home
 ```
 
-Queste aree contengono stato che non deve essere eliminato implicitamente.
-
 ### `conf`
 
 Configurazione persistente che determina il comportamento dell'applicazione.
@@ -245,8 +246,6 @@ Se un contenuto resta in `home`, viene trattato come autorevole per evitare perd
 cache
 log
 ```
-
-Persistono tra le esecuzioni ma non sono necessari per ricostruire lo stato funzionale autorevole.
 
 ### `cache`
 
@@ -313,7 +312,13 @@ run-default/
 run/
 ```
 
-Le writable islands sotto `root/` puntano in modo relativo alla `run/` package-local.
+Per ogni writable island viene usato **lo stesso pathname relativo** nelle tre view:
+
+```text
+root/<path>
+run-default/<path>
+run/<path>
+```
 
 Esempio:
 
@@ -337,17 +342,75 @@ La `run/` package-local materializza poi i link relativi verso le aree della Sta
 
 ```text
 pkg/<package-id>/run/etc
-    -> RUMIAI_ROOT/conf/<state-id>/...
+    -> RUMIAI_ROOT/conf/<state-id>/etc
 
 pkg/<package-id>/run/workspace
-    -> RUMIAI_ROOT/data/<state-id>/...
+    -> RUMIAI_ROOT/data/<state-id>/workspace
 ```
 
 Il nome/path atteso dal software e la classificazione RumiAI sono quindi concetti distinti.
 
 ---
 
-# 9. Una writable island appartiene a una sola state area
+# 9. Regole dei runtime mappings
+
+Ogni mapping contiene logicamente almeno:
+
+```text
+writable-island-path
+state-area
+```
+
+Il pathname:
+
+- è relativo;
+- è canonico;
+- non è assoluto;
+- non contiene traversali `..`;
+- non può essere ancestor o descendant del path di un'altra writable island.
+
+Esempio vietato:
+
+```text
+var      -> data
+var/log  -> log
+```
+
+perché le writable islands si sovrappongono gerarchicamente.
+
+Per ogni mapping:
+
+```text
+root/<path>
+```
+
+deve essere già il symlink relativo sicuro verso:
+
+```text
+../run/<path>
+```
+
+ed esiste sempre un corrispondente pathname fisico sotto:
+
+```text
+run-default/<path>
+```
+
+anche quando la directory default è vuota.
+
+Prima dell'admission viene quindi validata la tripletta:
+
+```text
+@package mapping
+        ↕
+root symlink
+        ↕
+run-default physical path
+```
+
+---
+
+# 10. Una writable island appartiene a una sola state area
 
 Regola fissata:
 
@@ -359,11 +422,11 @@ Se neppure questo consente una root fissa e sicura, il package non è ammissibil
 
 ---
 
-# 10. `run-default/`
+# 11. `run-default/`
 
 `run-default/` conserva gli analoghi fisici iniziali delle writable islands distribuiti dal vendor o prodotti durante la normalizzazione.
 
-Non deve necessariamente essere organizzato per state area.
+Non è organizzato per state area: conserva i path attesi dal software.
 
 Esempio:
 
@@ -382,11 +445,9 @@ etc       -> conf
 workspace -> data
 ```
 
-Questo preserva la view attesa dal software senza imporre nomi RumiAI nel tree normalizzato.
-
 ---
 
-# 11. Inizializzazione e factory reset
+# 12. Inizializzazione e factory reset
 
 Una nuova State Instance viene inizializzata materializzando nelle corrette state areas il contenuto pertinente di `run-default/`.
 
@@ -421,7 +482,41 @@ tmp
 
 ---
 
-# 12. Upgrade e migration
+# 13. Ownership e permission delle State Instance
+
+Ogni environment RumiAI ha un unico **Environment Owner**, cioè l'utente OS che possiede, gestisce ed esegue quell'environment.
+
+Le State Instance appartengono logicamente all'Environment Owner.
+
+Su Unix-like, default:
+
+```text
+conf/<state-id>/     0700
+data/<state-id>/     0700
+home/<state-id>/     0700
+cache/<state-id>/    0700
+log/<state-id>/      0700
+run/<state-id>/      0700
+tmp/<state-id>/      0700
+```
+
+UID/GID concreti non fanno parte della State Instance identity e non vengono persistiti come identità RumiAI.
+
+Il v0 non supporta group-sharing come requisito del modello.
+
+Default `umask` per processi lanciati da RumiAI:
+
+```text
+0077
+```
+
+salvo futura estensione dichiarativa e fisicamente validata del modello di execution.
+
+ACL aggiuntive o semantiche filesystem equivalenti non vengono usate per modellare ownership/condivisione nel v0.
+
+---
+
+# 14. Upgrade e migration
 
 Upgrade senza migration:
 
@@ -444,7 +539,7 @@ new Package Instance supports only s4
 → migration required
 ```
 
-La migration deve essere operazione separata e può creare:
+La migration è operazione separata e può creare:
 
 ```text
 package@s4
@@ -454,7 +549,7 @@ preservando `package@s3` fino al commit/cleanup secondo la futura policy transaz
 
 ---
 
-# 13. Rollback
+# 15. Rollback
 
 Rollback semplice è possibile quando entrambe le Package Instance comprendono la stessa State Instance:
 
@@ -470,7 +565,7 @@ Se lo stato è stato migrato a `s4` e A1 non comprende `s4`, serve snapshot/reve
 
 ---
 
-# 14. Backup e cleanup derivati dalla tassonomia
+# 16. Backup e cleanup derivati dalla tassonomia
 
 Default backup:
 
@@ -503,7 +598,7 @@ senza perdere stato autorevole.
 
 ---
 
-# 15. Deintegrate, uninstall, purge-state
+# 17. Deintegrate, uninstall, purge-state
 
 ```text
 deintegrate
@@ -523,7 +618,25 @@ Una State Instance può quindi sopravvivere alla rimozione temporanea del softwa
 
 ---
 
-# 16. Invarianti
+# 18. Physical Platform Validation dello stato
+
+La portabilità logica di una State Instance non implica che qualunque filesystem rappresenti correttamente il modello.
+
+Devono essere fisicamente validati almeno:
+
+```text
+permission semantics
+ownership semantics
+symlink/link semantics
+mount behavior
+filesystem behavior
+```
+
+La compatibilità dipende quindi dalla Reference Installation concreta, non soltanto dal nome dell'OS.
+
+---
+
+# 19. Invarianti fissate
 
 ```text
 SM-01 Package Instance != State Instance
@@ -532,31 +645,42 @@ SM-03 State Instance ID = <pkg-name>[@<platform>-<architecture>]@s<state-compati
 SM-04 il qualifier platform/architecture esiste solo quando necessario
 SM-05 state-compatibility-version != software version
 SM-06 nel v0 esiste una sola State Instance per identity, senza profile nominati
-SM-07 state areas = conf, data, home, cache, log, run, tmp
-SM-08 conf/data/home sono persistent authoritative
-SM-09 cache/log sono persistent non-authoritative
-SM-10 run/tmp sono transient
-SM-11 home è compatibility bucket conservativo, non destinazione preferita
-SM-12 ogni writable island appartiene esattamente a una state area
-SM-13 path software e state area RumiAI sono distinti e collegati dai runtime mappings
-SM-14 run-default/ contiene default immutabili nelle forme/path attese dal software
-SM-15 upgrade compatibile riusa la stessa State Instance
-SM-16 cambio di state-compatibility-version richiede migration esplicita
-SM-17 deintegrate != uninstall != purge-state
-SM-18 State Instance può sopravvivere alla rimozione della Package Instance
+SM-07 state scope = shared | platform | architecture | platform-architecture
+SM-08 state areas = conf, data, home, cache, log, run, tmp
+SM-09 conf/data/home sono persistent authoritative
+SM-10 cache/log sono persistent non-authoritative
+SM-11 run/tmp sono transient
+SM-12 home è compatibility bucket conservativo, non destinazione preferita
+SM-13 ogni writable island appartiene esattamente a una state area
+SM-14 root/run-default/run usano lo stesso writable-island path relativo
+SM-15 writable-island path sono canonici, relativi e non sovrapponibili gerarchicamente
+SM-16 ogni mapping è validato contro il root symlink e il corrispondente run-default path
+SM-17 run-default/ contiene default immutabili nelle forme/path attese dal software
+SM-18 upgrade compatibile riusa la stessa State Instance
+SM-19 cambio di state-compatibility-version richiede migration esplicita
+SM-20 deintegrate != uninstall != purge-state
+SM-21 State Instance può sopravvivere alla rimozione della Package Instance
+SM-22 State Instance areas appartengono all'Environment Owner e sono normalmente 0700
+SM-23 UID/GID concreti non fanno parte della State Instance identity
+SM-24 filesystem/mount semantics fanno parte della Physical Platform Validation
 ```
 
 ---
 
-# 17. Prossimo punto
+# 20. Stato del design
 
-Prima della Package Interface resta da fissare il **runtime mapping descriptor** in `@package`:
+Sono ora fissati:
 
 ```text
-writable island path
-state area target
-default source sotto run-default/
-eventuali regole di inizializzazione
+State Instance identity
+state compatibility version
+state scope
+state areas e lifecycle
+runtime mappings
+writable-island constraints
+run-default initialization/factory reset semantics
+single Environment Owner
+Unix-like state permission model
 ```
 
-Dopo questo possiamo tornare al modello della Package Interface e delle Execution Requirements.
+Il prossimo nodo architetturale è la **Package Interface** e, subito dopo, le **Execution Requirements**.
