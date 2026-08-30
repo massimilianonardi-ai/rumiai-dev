@@ -2,9 +2,9 @@
 
 Data: 2026-08-30
 
-Stato: **design decision — System Field Format persistence schema v0 fissato**
+Stato: **design decision — SCF persistence schema v0 fissato**
 
-Desired e Resolved state usano RumiAI System Field Format v0.
+Desired e Resolved state usano RumiAI System Configuration Field Format v0 con dot notation.
 
 Selector e binding sono nomi logici locali del profilo; non sono virtual package sotto `pkg/`.
 
@@ -23,15 +23,13 @@ Il launch usa soltanto la generation resolved attiva e non rivaluta selector din
 
 # 2. Desired Profile
 
-Header:
-
 ```text
 kind	profile_desired
 schema	1
 profile	default
-selector_count	0
-command_binding_count	0
-environment_count	0
+selectors.count	0
+command_bindings.count	0
+environment.count	0
 ```
 
 `profile` usa logical-id v0.
@@ -41,16 +39,16 @@ environment_count	0
 # 3. Package selector
 
 ```text
-selector_1_id	netbeans
-selector_1_target	package
-selector_1_package	netbeans
-selector_1_selection	newest
+selectors.1.id	netbeans
+selectors.1.target	package
+selectors.1.package	netbeans
+selectors.1.selection	newest
 ```
 
 Optional exact upstream:
 
 ```text
-selector_1_version	26
+selectors.1.version	26
 ```
 
 ---
@@ -58,15 +56,15 @@ selector_1_version	26
 # 4. Capability selector
 
 ```text
-selector_1_id	default-java
-selector_1_target	capability
-selector_1_capability	java-runtime
-selector_1_contract	1
-selector_1_constraint	>=17
-selector_1_selection	newest
-selector_1_provider_count	1
-selector_1_provider_1	temurin
-selector_1_allow_other_providers	true
+selectors.1.id	default-java
+selectors.1.target	capability
+selectors.1.capability	java-runtime
+selectors.1.contract	1
+selectors.1.constraint	>=17
+selectors.1.selection	newest
+selectors.1.providers.count	1
+selectors.1.providers.1	temurin
+selectors.1.allow_other_providers	true
 ```
 
 Capability identity = name + contract.
@@ -76,12 +74,12 @@ Capability identity = name + contract.
 # 5. Pin
 
 ```text
-selector_1_id	jdk
-selector_1_target	capability
-selector_1_capability	java-development-kit
-selector_1_contract	1
-selector_1_constraint	=21
-selector_1_pin	temurin@21.0.8+9@r1@linux-arm64
+selectors.1.id	jdk
+selectors.1.target	capability
+selectors.1.capability	java-development-kit
+selectors.1.contract	1
+selectors.1.constraint	=21
+selectors.1.pin	temurin@21.0.8+9@r1@linux-arm64
 ```
 
 Pin non fa fallback.
@@ -95,21 +93,21 @@ Nel v0 pin è mutuamente esclusivo con provider preference/fallback selection fi
 Package source:
 
 ```text
-command_binding_1_id	netbeans-command
-command_binding_1_name	netbeans
-command_binding_1_selector	netbeans
-command_binding_1_source	package
-command_binding_1_command	netbeans
+command_bindings.1.id	netbeans-command
+command_bindings.1.name	netbeans
+command_bindings.1.selector	netbeans
+command_bindings.1.source	package
+command_bindings.1.command	netbeans
 ```
 
 Capability source:
 
 ```text
-command_binding_1_id	java-command
-command_binding_1_name	java
-command_binding_1_selector	default-java
-command_binding_1_source	capability
-command_binding_1_resource_key	command
+command_bindings.1.id	java-command
+command_bindings.1.name	java
+command_bindings.1.selector	default-java
+command_bindings.1.source	capability
+command_bindings.1.resource_key	command
 ```
 
 `@platforms` resta reserved sotto `bin/`.
@@ -118,33 +116,33 @@ command_binding_1_resource_key	command
 
 # 7. Cross-platform vs native binding
 
-Package Instance `any-any` produce normalmente un binding cross-platform sotto:
+Package Instance `any-any` produce normalmente binding cross-platform:
 
 ```text
 RUMIAI_ROOT/bin/<name>
 ```
 
-Package Instance con platform/architecture concreta produce binding native sotto:
+Package Instance native produce binding:
 
 ```text
 RUMIAI_ROOT/bin/@platforms/<native-platform>-<architecture>/<name>
 ```
 
-La runtime requirement del package non determina questo scope.
+Runtime requirements non determinano questo scope.
 
 ---
 
 # 8. Native specialization
 
-Same-name collision è ammessa soltanto con relazione esplicita `specializes` fra native e cross-platform binding correlati.
+Same-name collision è ammessa soltanto con relazione esplicita `specializes`.
 
-Esempio field opzionale:
+Esempio:
 
 ```text
-command_binding_2_specializes	java-command
+command_bindings.2.specializes	java-command
 ```
 
-Collisioni non dichiarate producono:
+Collisioni non dichiarate:
 
 ```text
 PUBLIC_BINDING_CONFLICT
@@ -155,12 +153,12 @@ PUBLIC_BINDING_CONFLICT
 # 9. Desired public environment
 
 ```text
-environment_1_name	JAVA_HOME
-environment_1_operation	set
-environment_1_type	path
-environment_1_selector	default-java
-environment_1_source	capability
-environment_1_resource_key	home
+environment.1.name	JAVA_HOME
+environment.1.operation	set
+environment.1.type	path
+environment.1.selector	default-java
+environment.1.source	capability
+environment.1.resource_key	home
 ```
 
 Nessun absolute RUMIAI_ROOT path persistito.
@@ -173,32 +171,32 @@ Nessun absolute RUMIAI_ROOT path persistito.
 kind	profile_desired
 schema	1
 profile	default
-selector_count	2
-selector_1_id	default-java
-selector_1_target	capability
-selector_1_capability	java-runtime
-selector_1_contract	1
-selector_1_constraint	>=17
-selector_1_selection	newest
-selector_1_provider_count	1
-selector_1_provider_1	temurin
-selector_1_allow_other_providers	true
-selector_2_id	netbeans
-selector_2_target	package
-selector_2_package	netbeans
-selector_2_selection	newest
-command_binding_count	2
-command_binding_1_id	java-default-command
-command_binding_1_name	java
-command_binding_1_selector	default-java
-command_binding_1_source	capability
-command_binding_1_resource_key	command
-command_binding_2_id	netbeans-command
-command_binding_2_name	netbeans
-command_binding_2_selector	netbeans
-command_binding_2_source	package
-command_binding_2_command	netbeans
-environment_count	0
+selectors.count	2
+selectors.1.id	default-java
+selectors.1.target	capability
+selectors.1.capability	java-runtime
+selectors.1.contract	1
+selectors.1.constraint	>=17
+selectors.1.selection	newest
+selectors.1.providers.count	1
+selectors.1.providers.1	temurin
+selectors.1.allow_other_providers	true
+selectors.2.id	netbeans
+selectors.2.target	package
+selectors.2.package	netbeans
+selectors.2.selection	newest
+command_bindings.count	2
+command_bindings.1.id	java-default-command
+command_bindings.1.name	java
+command_bindings.1.selector	default-java
+command_bindings.1.source	capability
+command_bindings.1.resource_key	command
+command_bindings.2.id	netbeans-command
+command_bindings.2.name	netbeans
+command_bindings.2.selector	netbeans
+command_bindings.2.source	package
+command_bindings.2.command	netbeans
+environment.count	0
 ```
 
 NetBeans continua a usare la propria private `jdk` dependency definita nel suo `@package`.
@@ -207,8 +205,6 @@ NetBeans continua a usare la propria private `jdk` dependency definita nel suo `
 
 # 11. Resolution Snapshot
 
-Header/base:
-
 ```text
 kind	profile_resolved
 schema	1
@@ -216,11 +212,11 @@ generation	17
 profile	default
 reason	explicit-update
 created	2026-08-30T13:00:00+02:00
-selector_count	0
-graph_count	0
-dependency_count	0
-command_binding_count	0
-environment_count	0
+selectors.count	0
+graphs.count	0
+dependencies.count	0
+command_bindings.count	0
+environment.count	0
 ```
 
 `created` è stringa ISO-8601.
@@ -232,20 +228,20 @@ environment_count	0
 Package:
 
 ```text
-selector_1_id	netbeans
-selector_1_target	package
-selector_1_package	netbeans@26@r1@any-any
+selectors.1.id	netbeans
+selectors.1.target	package
+selectors.1.package	netbeans@26@r1@any-any
 ```
 
 Capability:
 
 ```text
-selector_1_id	default-java
-selector_1_target	capability
-selector_1_capability	java-runtime
-selector_1_contract	1
-selector_1_satisfied_version	21
-selector_1_package	temurin@21.0.8+9@r1@linux-arm64
+selectors.1.id	default-java
+selectors.1.target	capability
+selectors.1.capability	java-runtime
+selectors.1.contract	1
+selectors.1.satisfied_version	21
+selectors.1.package	temurin@21.0.8+9@r1@linux-arm64
 ```
 
 ---
@@ -253,37 +249,37 @@ selector_1_package	temurin@21.0.8+9@r1@linux-arm64
 # 13. Resolved dependency graph
 
 ```text
-graph_count	1
-graph_1_id	netbeans-graph
-graph_1_root_package	netbeans@26@r1@any-any
+graphs.count	1
+graphs.1.id	netbeans-graph
+graphs.1.root_package	netbeans@26@r1@any-any
 
-dependency_count	1
-dependency_1_graph	netbeans-graph
-dependency_1_consumer	netbeans@26@r1@any-any
-dependency_1_slot	jdk
-dependency_1_target	capability
-dependency_1_capability	java-development-kit
-dependency_1_contract	1
-dependency_1_constraint	>=17 <22
-dependency_1_provider	temurin@21.0.8+9@r1@linux-arm64
-dependency_1_satisfied_version	21
+dependencies.count	1
+dependencies.1.graph	netbeans-graph
+dependencies.1.consumer	netbeans@26@r1@any-any
+dependencies.1.slot	jdk
+dependencies.1.target	capability
+dependencies.1.capability	java-development-kit
+dependencies.1.contract	1
+dependencies.1.constraint	>=17 <22
+dependencies.1.provider	temurin@21.0.8+9@r1@linux-arm64
+dependencies.1.satisfied_version	21
 ```
 
 Nessun edge resolved contiene `latest`, fallback o provider dinamico.
 
-Collection grandi devono essere lette tramite streaming/per-prefix bootstrap, non repeated `rumi_file_get`.
+Per molte proprietà dello stesso elemento/namespace si usa query namespace in singola scansione, non repeated full-file lookup.
 
 ---
 
 # 14. Resolved command binding
 
 ```text
-command_binding_1_id	netbeans-command
-command_binding_1_name	netbeans
-command_binding_1_package	netbeans@26@r1@any-any
-command_binding_1_command	netbeans
-command_binding_1_graph	netbeans-graph
-command_binding_1_state	netbeans@s1
+command_bindings.1.id	netbeans-command
+command_bindings.1.name	netbeans
+command_bindings.1.package	netbeans@26@r1@any-any
+command_bindings.1.command	netbeans
+command_bindings.1.graph	netbeans-graph
+command_bindings.1.state	netbeans@s1
 ```
 
 Capability public binding viene dereferenziato all'exact package/command.
@@ -293,12 +289,12 @@ Capability public binding viene dereferenziato all'exact package/command.
 # 15. Resolved environment
 
 ```text
-environment_1_name	JAVA_HOME
-environment_1_operation	set
-environment_1_type	path
-environment_1_package	temurin@21.0.8+9@r1@linux-arm64
-environment_1_resource_type	directory
-environment_1_resource	home
+environment.1.name	JAVA_HOME
+environment.1.operation	set
+environment.1.type	path
+environment.1.package	temurin@21.0.8+9@r1@linux-arm64
+environment.1.resource_type	directory
+environment.1.resource	home
 ```
 
 Al launch la reference exact/relocatable viene trasformata nel current absolute RUMIAI_ROOT pathname.
@@ -313,13 +309,13 @@ State Instance exact:
 <pkg-name>[@<platform>-<architecture>]@sN
 ```
 
-Il qualifier usa l'host/state scope quando necessario e resta indipendente dalla Package Instance platform.
+Il qualifier usa host/state scope quando necessario e resta indipendente dalla Package Instance platform.
 
 ---
 
 # 17. Active generation
 
-Fuori dallo snapshot immutabile esiste `active`, anch'esso System Field Format:
+Fuori dallo snapshot immutabile esiste `active`, SCF:
 
 ```text
 kind	active
@@ -327,16 +323,43 @@ schema	1
 generation	17
 ```
 
-Lo switch atomico del file attiva una generation già completamente validata.
+Atomic replace attiva una generation già completamente validata.
 
 ---
 
-# 18. Validation
+# 18. Dot-notation rules
+
+Collection:
+
+```text
+<prefix>.count	N
+<prefix>.1....
+...
+<prefix>.N....
+```
+
+Arbitrary IDs restano values.
+
+Esempio corretto:
+
+```text
+selectors.1.id	default-java
+```
+
+Non:
+
+```text
+selectors.default-java....
+```
+
+---
+
+# 19. Validation
 
 Desired:
 
 ```text
-System Field Format/kind/schema
+SCF framing/dot-notation/kind/schema
 profile/id grammar
 count + contiguous indices
 selectors
@@ -354,7 +377,7 @@ candidate snapshot
 Resolved:
 
 ```text
-System Field Format/kind/schema/generation
+SCF framing/dot-notation/kind/schema/generation
 count + contiguous indices
 exact Package Instance health
 selector consistency
@@ -369,20 +392,21 @@ atomic active switch
 
 ---
 
-# 19. Invarianti
+# 20. Invarianti
 
 ```text
 IS-01 selector != virtual package
 IS-02 Desired dynamic, Resolved exact
-IS-03 Desired/Resolved/active usano System Field Format
+IS-03 Desired/Resolved/active usano SCF dot-notation
 IS-04 collection usa count + contiguous indices
-IS-05 capability identity = name+contract
-IS-06 pin non fa fallback
-IS-07 private dependency non diventa public
-IS-08 resolved graph non contiene dynamic selection
-IS-09 resolved env non contiene absolute paths
-IS-10 Package Instance any-any può risolvere runtime native
-IS-11 active pointer è separato e atomico
-IS-12 provenance non influenza launch
-IS-13 large resolved collection usa streaming bootstrap
+IS-05 arbitrary IDs restano values
+IS-06 capability identity = name+contract
+IS-07 pin non fa fallback
+IS-08 private dependency non diventa public
+IS-09 resolved graph non contiene dynamic selection
+IS-10 resolved env non contiene absolute paths
+IS-11 Package Instance any-any può risolvere runtime native
+IS-12 active pointer è separato e atomico
+IS-13 provenance non influenza launch
+IS-14 bulk/tabular data non viene modellato come SCF
 ```
