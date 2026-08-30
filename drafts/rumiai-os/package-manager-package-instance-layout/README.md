@@ -25,11 +25,11 @@ pkg/<package-instance-id>/
 ├── run-default/
 │   └── factory writable view immutabile
 ├── @package
-│   JSON descriptor immutabile
+│   System Field Format descriptor immutabile
 ├── @integrity-root.tsv
-│   canonical integrity inventory di root/
+│   canonical System Field Format integrity inventory di root/
 ├── @integrity-run-default.tsv
-│   canonical integrity inventory di run-default/
+│   canonical System Field Format integrity inventory di run-default/
 └── run/
     derived active runtime routing view
 ```
@@ -156,12 +156,18 @@ Dopo il commit si ricostruisce il contenuto di `run/`, non la directory `run/` s
 
 # 7. `@package`
 
-`@package` è JSON UTF-8 secondo il restricted JSON profile RumiAI v0.
+`@package` usa System Field Format v0.
+
+Header:
+
+```text
+kind	package
+schema	1
+```
 
 Contiene logicamente:
 
 ```text
-schema
 identity
 release
 integrity metadata
@@ -174,17 +180,17 @@ Environment Specification
 Identity minima:
 
 ```text
-name
-version
-revision
-platform
-architecture
-display-name
+identity_name
+identity_version
+identity_revision
+identity_platform
+identity_architecture
+identity_display_name
 ```
 
 I campi canonici devono concordare con il pathname.
 
-`display-name` è human-readable e non entra nel pathname.
+`identity_display_name` è human-readable e non entra nel pathname.
 
 ---
 
@@ -197,47 +203,64 @@ I campi canonici devono concordare con il pathname.
 @integrity-run-default.tsv
 ```
 
+Nonostante l'estensione storica `.tsv`, entrambi usano il System Field Format v0 a **due campi**:
+
+```text
+field-name<TAB>field-value
+```
+
+Non esiste più il precedente record a cinque colonne.
+
+Schema concettuale:
+
+```text
+kind	integrity
+schema	1
+
+directory_count	N
+directory_1_path	...
+directory_1_mode	0500
+...
+
+file_count	N
+file_1_path	...
+file_1_mode	0400|0500
+file_1_digest	...
+...
+
+link_count	N
+link_1_path	...
+link_1_target	...
+link_1_digest	...
+```
+
 `@package` contiene per ogni inventory:
 
 ```text
-file name
+inventory file name
 files count
 directories count
 links count
 manifest digest
 ```
 
-L'inventory usa record TSV canonici a cinque campi:
+Il manifest digest è il digest dei byte canonici completi del relativo System Field Format inventory.
 
-```text
-type<TAB>mode<TAB>digest<TAB>target<TAB>path
-```
-
-con `path` sempre ultimo.
-
-Semantica:
-
-```text
-D    directory; mode; digest=-; target=-
-F    regular file; mode; digest=file bytes; target=-
-L    symlink; mode=-; digest=canonical target text; target=relative canonical target
-```
-
-Il manifest digest è il digest dei byte canonici completi del TSV.
-
-**Integrity Method 1** è normativo e fissa definitivamente:
+**Integrity Method 1** è normativo e fissa:
 
 ```text
 UTF-8 + Unicode NFC
 TAB/CR/LF/NUL/backslash vietati nei pathname e symlink target
-nessun escaping/quoting nel TSV
+nessun escaping/quoting
 pathname canonico `.` oppure `./...`
 collision check NFC + Unicode case-fold + NFC
 symlink target relativo; `..` ammesso quando semanticamente valido
 nessun symlink inventariato può risolvere fuori dalla Package Instance wrapper
-ordine crescente dei byte UTF-8 del canonical pathname
+ordine canonico per collection + pathname
 LF finale obbligatorio
 ```
+
+La normalizzazione Unicode/full case-fold deve essere esposta dal bootstrap Rumi o da un validator fidato perché non è implementabile portabilmente in puro POSIX `sh`.
 
 ---
 
@@ -295,9 +318,9 @@ build root/ + run-default/
         ↓
 canonicalize/validate pathname + symlink targets secondo Integrity Method 1
         ↓
-write @package JSON
+write @package System Field Format
         ↓
-write canonical integrity TSV files
+write canonical integrity System Field Format files
         ↓
 verify pathname identity + descriptor identity
         ↓
@@ -358,18 +381,18 @@ Uninstall della Package Instance non implica purge dello stato.
 # 14. Invarianti
 
 ```text
-PI-01 immutable Package Instance core = root + run-default + @package + two integrity TSV inventories
+PI-01 immutable Package Instance core = root + run-default + @package + two integrity inventories
 PI-02 run/ è derived runtime routing view
 PI-03 root/ è immutable normalized execution tree
 PI-04 no safe fixed root => package rejected before store promotion
 PI-05 writable islands prefer directory-level relative symlink
 PI-06 run-default conserva immutable factory writable view
-PI-07 @package è JSON dichiarativo e immutabile
-PI-08 root e run-default inventory sono file TSV distinti
-PI-09 TSV record = fixed five fields, path last
-PI-10 manifest digest verifica i byte canonici del TSV
+PI-07 @package usa System Field Format dichiarativo e immutabile
+PI-08 root e run-default inventory usano System Field Format a due campi
+PI-09 collection integrity = count + indici contigui per directory/file/link
+PI-10 manifest digest verifica i byte canonici del relativo inventory
 PI-11 Integrity Method 1 vieta TAB/CR/LF/NUL/backslash e usa Unicode NFC senza ASCII-only
-PI-12 Integrity Method 1 usa portable case-fold collision detection e canonical UTF-8 byte ordering
+PI-12 Integrity Method 1 usa portable case-fold collision detection e canonical ordering
 PI-13 wrapper viene sigillata, run/ precreata e writable nel contenuto
 PI-14 UID/GID concreti non fanno parte di identity/integrity
 PI-15 mutable application state resta fuori dalla Package Instance
