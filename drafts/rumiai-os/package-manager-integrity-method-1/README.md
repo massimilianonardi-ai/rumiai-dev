@@ -2,12 +2,12 @@
 
 Data: 2026-08-30
 
-Stato: **design decision — canonical integrity format v0 fissato**
+Stato: **design decision — canonical integrity TSV v0 fissato**
 
 Prerequisiti:
 
 ```text
-drafts/rumiai-os/system-field-format-v0/README.md
+drafts/rumiai-os/system-tabular-data-v0/README.md
 drafts/rumiai-os/package-manager-package-instance-layout/README.md
 drafts/rumiai-os/package-manager-serialization-v0/README.md
 ```
@@ -19,14 +19,12 @@ root/
 run-default/
 ```
 
-Ogni tree usa un file separato:
+Ogni tree usa un file System Tabular Data separato:
 
 ```text
 @integrity-root.tsv
 @integrity-run-default.tsv
 ```
-
-Entrambi usano RumiAI System Field Format v0 a due campi.
 
 ---
 
@@ -37,6 +35,7 @@ Il formato deve essere:
 ```text
 deterministico
 streamabile
+una riga per filesystem entry
 semplice da verificare
 leggibile da POSIX sh/awk tramite bootstrap Rumi
 indipendente da JSON/Python/Node/jq
@@ -44,97 +43,116 @@ compatibile con Unicode
 senza quoting/escaping del pathname
 ```
 
-I caratteri che interferirebbero con record/field framing vengono vietati nei pathname e nei symlink target invece di introdurre una mini-sintassi di escaping.
+---
+
+# 2. Header canonico
+
+Prima riga obbligatoria:
+
+```text
+type<TAB>mode<TAB>digest<TAB>target<TAB>path<LF>
+```
+
+I nomi e l'ordine delle colonne sono normativi:
+
+```text
+1 type
+2 mode
+3 digest
+4 target
+5 path
+```
+
+`path` è sempre l'ultima colonna.
+
+Header assente/diverso:
+
+```text
+INTEGRITY_MANIFEST_FORMAT_ERROR
+```
 
 ---
 
-# 2. Encoding e framing
+# 3. Encoding e framing
 
-Ogni inventory segue System Field Format:
-
-```text
-field-name<TAB>field-value<LF>
-```
-
-Regole machine-generated:
+Ogni inventory usa:
 
 ```text
 UTF-8
 no BOM
 LF line ending
 LF finale obbligatorio
-nessun commento
+header obbligatorio
 nessuna blank row
-field-name unico
+nessun commento
 ```
 
-Header:
+Ogni data row contiene esattamente:
 
 ```text
-kind	integrity
-schema	1
+5 campi
+4 TAB
 ```
+
+Una filesystem entry corrisponde esattamente a una data row.
 
 ---
 
-# 3. Collection directory
+# 4. Type
+
+Token v0:
 
 ```text
-directory_count	N
+D    directory
+F    regular file
+L    symbolic link
 ```
 
-Ogni entry usa:
+Altri filesystem object type non fanno parte di Method 1.
+
+Producer/admission deve normalizzare o rifiutare oggetti non rappresentabili.
+
+---
+
+# 5. Directory row
+
+Forma:
 
 ```text
-directory_<i>_path	<canonical-path>
-directory_<i>_mode	0500
+D<TAB><mode><TAB>-<TAB>-<TAB><path>
 ```
 
 Esempio:
 
 ```text
-directory_count	2
-directory_1_path	.
-directory_1_mode	0500
-directory_2_path	./bin
-directory_2_mode	0500
+D	0500	-	-	.
+D	0500	-	-	./bin
 ```
 
-Il record `.` rappresenta la root del tree inventariato e partecipa a `directory_count`.
+`.` rappresenta la root del tree inventariato.
+
+Directory immutable v0 usa normalmente `0500`.
 
 ---
 
-# 4. Collection regular file
+# 6. Regular file row
+
+Forma:
 
 ```text
-file_count	N
-```
-
-Ogni entry usa:
-
-```text
-file_<i>_path	<canonical-path>
-file_<i>_mode	0400|0500
-file_<i>_digest	<digest>
+F<TAB><mode><TAB><digest><TAB>-<TAB><path>
 ```
 
 Esempio:
 
 ```text
-file_count	2
-file_1_path	./bin/foo
-file_1_mode	0500
-file_1_digest	<sha256>
-file_2_path	./lib/foo.jar
-file_2_mode	0400
-file_2_digest	<sha256>
+F	0500	<sha256>	-	./bin/foo
+F	0400	<sha256>	-	./lib/foo.jar
 ```
 
-Digest regular file:
+Digest = digest dei byte esatti del contenuto secondo `integrity.algorithm` dichiarato in `@package`.
 
-> digest dei byte esatti del contenuto del file secondo `integrity_algorithm` dichiarato da `@package`.
-
-Mode v0 normalizzati:
+Mode normalizzati v0:
 
 ```text
 0400    regular non-executable
@@ -143,56 +161,31 @@ Mode v0 normalizzati:
 
 ---
 
-# 5. Collection symlink
+# 7. Symlink row
+
+Forma:
 
 ```text
-link_count	N
-```
-
-Ogni entry usa:
-
-```text
-link_<i>_path	<canonical-path>
-link_<i>_target	<canonical-relative-target>
-link_<i>_digest	<digest-target>
+L<TAB>-<TAB><digest-target><TAB><target><TAB><path>
 ```
 
 Esempio:
 
 ```text
-link_count	1
-link_1_path	./log
-link_1_target	../run/log
-link_1_digest	<sha256-target>
+L	-	<sha256-target>	../run/log	./log
 ```
 
 Il symlink non viene dereferenziato per calcolare il proprio digest.
 
-`link_<i>_digest` è il digest dei byte UTF-8 della canonical target string definita da Method 1.
+`digest-target` = digest dei byte UTF-8 della canonical target string.
 
 Mode/UID/GID del symlink non partecipano all'integrity.
 
 ---
 
-# 6. Oggetti filesystem ammessi
+# 8. Caratteri vietati in pathname e symlink target
 
-Method 1 rappresenta soltanto:
-
-```text
-directory
-regular file
-symbolic link
-```
-
-Altri filesystem object type non fanno parte di Integrity Method 1.
-
-Package producer/admission deve normalizzare o rifiutare oggetti non rappresentabili dal metodo.
-
----
-
-# 7. Caratteri vietati in pathname e symlink target
-
-Sono vietati:
+Vietati:
 
 ```text
 NUL        U+0000
@@ -202,22 +195,15 @@ CR         U+000D
 backslash  U+005C  \
 ```
 
-Motivi:
-
-```text
-NUL         incompatibilità fondamentale con filesystem/API comuni
-TAB         delimitatore System Field Format
-CR/LF       delimitatori record / ambiguità line-oriented
-backslash   separator/escape con semantiche incompatibili fra Unix e Windows
-```
-
 Non viene imposto ASCII-only.
 
 Unicode è ammesso.
 
+La proibizione di TAB/CR/LF rende il TSV non ambiguo senza quoting/escaping.
+
 ---
 
-# 8. Unicode canonical form
+# 9. Unicode canonical form
 
 Pathname e symlink target sono rappresentati semanticamente come Unicode e canonicalizzati in:
 
@@ -225,28 +211,26 @@ Pathname e symlink target sono rappresentati semanticamente come Unicode e canon
 Unicode NFC
 ```
 
-La forma persistita è UTF-8 della stringa NFC.
+La forma persistita è UTF-8 NFC.
 
-Per regular file, la normalizzazione del pathname non modifica i byte del contenuto file.
+Per regular file, il content digest resta digest dei byte esatti del file.
 
-Per symlink, `link_<i>_digest` viene calcolato sulla target string canonica NFC.
+Per symlink, il digest target viene calcolato sulla target string NFC.
 
 ### Bootstrap requirement
 
-POSIX `sh`, POSIX `awk` e `sed` non forniscono una primitive completa e portabile per:
+POSIX `sh`/`awk`/`sed` non garantiscono una primitive completa e portabile per:
 
 ```text
 Unicode NFC normalization
 Unicode default case-fold
 ```
 
-Quindi il bootstrap Rumi DEVE esporre primitive normative per queste operazioni, oppure la validazione deve essere delegata a un producer/validator fidato prima dell'ammissione locale.
-
-La scelta raccomandata è esporre le primitive nel bootstrap Rumi e mantenere invariata la semantica Method 1.
+Il bootstrap/platform adapter Rumi deve quindi esporre primitive normative per queste operazioni, oppure la validazione deve essere eseguita da un validator fidato con semantica equivalente.
 
 ---
 
-# 9. Canonical pathname syntax
+# 10. Canonical pathname syntax
 
 Path persistito:
 
@@ -266,200 +250,197 @@ nessun componente ..
 nessun // ripetuto
 nessun trailing /
 Unicode NFC
-caratteri vietati secondo §7
+caratteri vietati secondo §8
 ```
 
-Il pathname `.` è l'unica eccezione alla regola sui componenti `.` ed è ammesso esclusivamente per la root del tree.
+`.` è l'unica eccezione ed è ammesso soltanto come root entry.
 
 ---
 
-# 10. Portable collision rule
+# 11. Portable collision rule
 
-All'interno dello stesso tree non possono esistere due pathname fisicamente distinti che collidono dopo canonicalizzazione portabile.
-
-Collision key:
+Per ogni canonical path viene derivata:
 
 ```text
 NFC
-→ Unicode default case fold
+→ Unicode default case-fold
 → NFC
 ```
 
-Se due path distinti producono la stessa collision key:
+Due pathname fisicamente distinti con stessa collision key sono vietati:
 
 ```text
 INTEGRITY_PATH_COLLISION
 ```
 
-La regola vale per tutte le Package Instance v0, non soltanto `any-any`.
+Esempio:
 
-Il pathname canonico originale conserva il case.
+```text
+./Foo.txt
+./foo.txt
+```
+
+La regola vale per tutte le Package Instance v0.
 
 ---
 
-# 11. Canonical symlink target syntax
+# 12. Canonical symlink target
 
 Il target deve essere:
 
 ```text
 relativo
+non vuoto
 Unicode NFC
 separator = /
-non vuoto
 ```
 
-Sono vietati i caratteri di §7.
-
-Sono vietati:
+Vietati:
 
 ```text
 leading /
 repeated //
 component .
 trailing /
+caratteri di §8
 ```
 
-I componenti `..` sono ammessi perché necessari a link relativi legittimi, per esempio:
+`..` è ammesso quando necessario, per esempio:
 
 ```text
 ../run/log
 ```
 
-La risoluzione lessicale rispetto alla directory parent del link non può uscire dalla wrapper:
+La risoluzione lessicale rispetto alla directory parent del link non può uscire dalla Package Instance wrapper:
 
 ```text
 pkg/<package-instance-id>/
 ```
 
-Le regole più specifiche restano al livello Package Instance/State Mapping.
+Le writable island continuano inoltre a rispettare il contratto specifico `root/... -> ../run/...`.
 
 ---
 
-# 12. Canonical collection ordering
+# 13. Canonical row ordering
 
-Il precedente ordinamento globale dei record per path viene sostituito da un ordine canonico compatibile con System Field Format indicizzato.
-
-Ordine delle sezioni:
-
-```text
-1 kind
-2 schema
-3 directory_count
-4 directory entries 1..N
-5 file_count
-6 file entries 1..N
-7 link_count
-8 link entries 1..N
-```
-
-Dentro ciascuna collection, gli indici vengono assegnati dopo ordinamento:
+Tutte le data row vengono ordinate per `path` canonico:
 
 ```text
 ascending lexicographic order dei byte UTF-8 del canonical NFC pathname
 ```
 
-Dentro ogni entry l'ordine field è fisso:
+L'header resta sempre la prima riga.
+
+Conseguenze:
 
 ```text
-directory: path, mode
-file:      path, mode, digest
-link:      path, target, digest
+ordine indipendente dal locale
+ordine indipendente dalla filesystem enumeration
+`.` precede naturalmente `./...`
 ```
 
-Non si usa un semplice lexical sort dei field-name, perché `file_10_*` verrebbe prima di `file_2_*`.
+Due row con stesso canonical path sono invalide.
+
+Il `type` non è tie-breaker.
 
 ---
 
-# 13. Counts
+# 14. Counts
 
-Ogni inventory contiene obbligatoriamente:
+`@package` mantiene per ciascun inventory:
 
 ```text
-directory_count
-file_count
-link_count
+files
+directories
+links
 ```
 
-`@package` mantiene gli stessi count come summary/cross-check.
+I count devono concordare con le data row.
 
-I due insiemi devono concordare esattamente.
+L'header non partecipa ai count.
 
-Gli indici di ogni collection sono contigui `1..N`.
+Il root row `D ... .` partecipa al directory count.
 
 ---
 
-# 14. Manifest digest
+# 15. Manifest digest
 
-`manifest_digest` dichiarato da `@package` è:
+`manifest_digest` è:
 
-> digest dei byte esatti dell'intero inventory System Field Format canonico, inclusi field-name, TAB, field-value, LF, ordine canonico e LF finale.
+> digest dei byte esatti dell'intero TSV canonico, a partire dall'header e fino al final LF.
 
-Quindi cambia se cambia:
+Include quindi:
 
 ```text
-entry type/collection
-mode file/directory
+header
+column order
+TAB separators
+LF separators
+all rows
+canonical row order
+final LF
+```
+
+Cambia se cambia:
+
+```text
+entry type
+mode
 file content digest
 symlink canonical target/digest
 canonical pathname
-numero/ordine entry
+numero/ordine row
+header/schema columns
 ```
 
 ---
 
-# 15. `@package` reference
+# 16. `@package` reference
 
-Esempio:
+Esempio SCF:
 
 ```text
-integrity_method	1
-integrity_algorithm	sha256
-integrity_root_inventory	@integrity-root.tsv
-integrity_root_files	120
-integrity_root_directories	24
-integrity_root_links	3
-integrity_root_manifest_digest	...
-integrity_run_default_inventory	@integrity-run-default.tsv
-integrity_run_default_files	8
-integrity_run_default_directories	5
-integrity_run_default_links	0
-integrity_run_default_manifest_digest	...
+integrity.method	1
+integrity.algorithm	sha256
+integrity.root.inventory	@integrity-root.tsv
+integrity.root.files	120
+integrity.root.directories	24
+integrity.root.links	3
+integrity.root.manifest_digest	...
+integrity.run_default.inventory	@integrity-run-default.tsv
+integrity.run_default.files	8
+integrity.run_default.directories	5
+integrity.run_default.links	0
+integrity.run_default.manifest_digest	...
 ```
 
-I nomi inventory sono package-wrapper relative e non pathname host assoluti.
+I nomi inventory sono wrapper-relative, non host absolute path.
 
 ---
 
-# 16. Streaming verifier property
+# 17. Streaming verifier
 
-Un verifier non deve usare `rumi_file_get` ripetutamente per ogni entry.
-
-Può processare una collection in singola passata tramite bootstrap/per-prefix streaming:
+Il verifier:
 
 ```text
-rumi_file_fields <inventory> directory_
-rumi_file_fields <inventory> file_
-rumi_file_fields <inventory> link_
+1 valida header
+2 legge una data row alla volta
+3 valida esattamente 5 field
+4 valida grammar type-specific
+5 valida canonical path/target
+6 controlla monotonic path ordering
+7 aggiorna counts
+8 aggiorna manifest digest incrementale includendo i byte letti
+9 verifica la physical entry corrispondente
 ```
 
-oppure una primitive equivalente che attraversa il documento una volta.
+Non è necessario caricare l'intero inventory in memoria.
 
-Durante la scansione può:
-
-```text
-validare field-name/schema/index
-validare canonical Unicode/path syntax
-controllare monotonic pathname ordering dentro la collection
-aggiornare count
-aggiornare manifest digest incrementale sull'intero file
-verificare il physical entry corrispondente
-```
-
-Per il collision check portabile può essere necessario mantenere un set/index delle collision key o usare una strategia bootstrap dedicata.
+Per il collision check può servire un set/index delle collision key o una primitive bootstrap dedicata.
 
 ---
 
-# 17. Error classes
+# 18. Error classes
 
 ```text
 INTEGRITY_MANIFEST_FORMAT_ERROR
@@ -474,25 +455,26 @@ INTEGRITY_CONTENT_MISMATCH
 
 ---
 
-# 18. Invarianti
+# 19. Invarianti
 
 ```text
-IM1-01 inventory usa System Field Format v0 a due campi
-IM1-02 kind=integrity + schema=1
-IM1-03 collection v0 = directory | file | link
-IM1-04 collection usa count + indici contigui 1..N
-IM1-05 TAB/CR/LF/NUL/backslash sono vietati in pathname e symlink target
-IM1-06 Unicode è ammesso e canonicalizzato NFC
-IM1-07 pathname usa solo `/` e forma `.` oppure `./...`
-IM1-08 pathname non contiene empty/. /.. components
-IM1-09 portable collision check = NFC + casefold + NFC
-IM1-10 symlink target è relativo; `..` è ammesso quando semanticamente valido
-IM1-11 symlink target inventariato non può risolvere fuori dalla Package Instance wrapper
-IM1-12 file digest = byte content digest
-IM1-13 symlink digest = digest della canonical UTF-8 target string
-IM1-14 mode partecipa a directory/regular file; symlink mode no
-IM1-15 entry index order = ascending canonical UTF-8 pathname bytes dentro ciascuna collection
-IM1-16 manifest digest = digest dei byte esatti dell'inventory canonico con LF finale
-IM1-17 inventory grandi usano streaming bootstrap, non repeated lookup
-IM1-18 bootstrap/validator deve fornire Unicode NFC + case-fold semantics normative
+IM1-01 inventory = canonical System Tabular Data
+IM1-02 header esatto = type,mode,digest,target,path
+IM1-03 one filesystem entry = one data row
+IM1-04 ogni data row = 5 campi / 4 TAB
+IM1-05 path è sempre ultima colonna
+IM1-06 type v0 = D | F | L
+IM1-07 TAB/CR/LF/NUL/backslash vietati in pathname e target
+IM1-08 Unicode ammesso e canonicalizzato NFC
+IM1-09 pathname = `.` oppure `./...`
+IM1-10 portable collision = NFC + casefold + NFC
+IM1-11 symlink target relativo; `..` ammesso quando semanticamente valido
+IM1-12 symlink target non può risolvere fuori dalla wrapper
+IM1-13 file digest = byte content digest
+IM1-14 symlink digest = digest canonical UTF-8 target
+IM1-15 mode partecipa per directory/file, non per symlink
+IM1-16 data row order = ascending canonical UTF-8 pathname bytes
+IM1-17 manifest digest include header + all rows + final LF
+IM1-18 inventory è streamabile
+IM1-19 bootstrap/validator deve fornire NFC + case-fold semantics normative
 ```
