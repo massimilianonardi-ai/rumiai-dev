@@ -2,20 +2,21 @@
 
 Data: 2026-08-30
 
-Stato: **design draft — passo successivo al local package/command layout**
+Stato: **design draft — struttura fisica Package Instance fissata**
 
 Prerequisiti:
 
 ```text
 drafts/rumiai-os/package-manager-v0/README.md
 drafts/rumiai-os/package-manager-local-layout/README.md
+drafts/rumiai-os/package-manager-state-model/README.md
 ```
 
 Questo documento resta sul lato locale del confine già fissato: il software è già stato prodotto, normalizzato e validato come compatibile con il contratto RumiAI prima della materializzazione locale.
 
 ---
 
-# 1. Wrapper fisico e Package Instance logica
+# 1. Wrapper fisica e Package Instance logica
 
 La wrapper fisica di una Package Instance ha la forma:
 
@@ -39,7 +40,7 @@ run-default/
 @package
 ```
 
-`run/` è invece una view derivata e ricostruibile e non partecipa all'identità della Package Instance.
+`run/` è una view derivata e ricostruibile e non partecipa all'identità/integrità della Package Instance.
 
 Il pathname `<package-instance-id>` segue la convenzione fissata:
 
@@ -95,16 +96,18 @@ Le aree mutabili devono essere separate, per quanto possibile, a livello di **di
 Esempio:
 
 ```text
-root/log -> ../run/log
-root/conf -> ../run/conf
+root/log   -> ../run/log
+root/conf  -> ../run/conf
 root/cache -> ../run/cache
 ```
 
 Questa scelta evita il problema dei software che aggiornano singoli file tramite `unlink`, `rename` o atomic replace e potrebbero quindi rimuovere un symlink file-level.
 
-Il criterio di admission deve privilegiare directory mutabili complete (“writable islands”).
+Il criterio di admission privilegia directory mutabili complete (“writable islands”).
 
 File-level redirection può esistere soltanto se il comportamento reale del software è stato validato come sicuro.
+
+I link presenti in `root/` verso `run/` fanno parte dell'integrità di `root/`: ne vengono verificati pathname e target testuale, senza dereferenziare lo stato mutabile raggiunto.
 
 ---
 
@@ -124,7 +127,7 @@ pkg/foo@1.0@r1@linux-arm64/
 │   └── log/
 ├── @package
 └── run/
-    └── log -> ../../../log/foo
+    └── log -> ../../../log/foo@s1/log
 ```
 
 Flusso visto dal software:
@@ -134,24 +137,14 @@ root/log
     ↓ relative link
 run/log
     ↓ relative link
-RUMIAI_ROOT/log/foo
-```
-
-Quindi esistono due view intenzionali:
-
-```text
-view package/software
-    root/<writable-path>
-
-view RumiAI
-    home/, data/, log/, pid/, ...
+RUMIAI_ROOT/log/<state-id>/log
 ```
 
 `run/` è derivato, non autorevole.
 
-Può essere ricreato, riparato o rimosso senza cambiare la Package Instance.
+La directory `run/` viene creata durante la materializzazione della wrapper, **prima del sealing della directory package**. Dopo il commit non si elimina e ricrea normalmente `run/`: si ricostruisce il suo contenuto.
 
-Poiché esiste una sola view attiva, un eventuale cambio di state/profile per la stessa Package Instance implica la rimaterializzazione di `run/`; il v0 non supporta più runtime view simultanee per la stessa Package Instance.
+Questo è necessario perché la wrapper package viene resa non-writable per proteggere i nomi `root/`, `run-default/`, `@package` e `run/` dalle normali operazioni di rename/unlink.
 
 ---
 
@@ -167,33 +160,19 @@ factory reset esplicito
 recovery controllato dei default
 ```
 
-Esempio:
-
-```text
-run-default/
-├── conf/
-│   └── settings.ini
-├── data/
-│   └── initial.db
-└── home/
-    └── ...
-```
-
 `run-default/` è immutabile e fa parte dell'integrità della Package Instance.
 
-Un “factory reset” NON significa puntare `run/` direttamente a `run-default/`, perché il software lo renderebbe mutabile.
+Un factory reset NON rende `run-default/` writable e non fa puntare direttamente `run/` ai default.
 
-Significa invece, concettualmente:
+Concettualmente:
 
 ```text
 run-default/<area>
-        ↓ copy/materialize
+        ↓ materialize/copy
 RumiAI mutable state target
         ↓
 run/<area> -> target
 ```
-
-La semantica precisa di reset verrà definita nel modello dello stato, ma il principio è fissato: `run-default/` conserva sempre i default originali e non viene modificato dall'esecuzione.
 
 ---
 
@@ -234,14 +213,14 @@ architecture
 
 devono coincidere con l'identità ricostruita dal pathname.
 
-`@package` dovrà inoltre descrivere almeno:
+`@package` descrive inoltre almeno:
 
 ```text
 integrity
-runtime mappings per costruire run/
+runtime mappings
+state compatibility/scope
 Package Interface
 Execution Requirements
-state requirements
 schema/version del descriptor
 ```
 
@@ -251,7 +230,7 @@ Il formato concreto resta da decidere.
 
 # 8. Integrità di `root/` e `run-default/`
 
-Entrambi gli alberi immutabili devono essere verificabili tramite inventory canonici.
+Entrambi gli alberi immutabili sono verificabili tramite inventory canonici.
 
 Il modello contiene almeno:
 
@@ -262,6 +241,7 @@ numero totale regular files
 numero totale directories
 numero totale links
 record canonico per ogni entry
+mode POSIX canonico per regular file e directory
 ```
 
 Forma concettuale:
@@ -269,35 +249,59 @@ Forma concettuale:
 ```text
 format 1
 algorithm sha256
-files 3
+files 2
 directories 2
 links 1
 
-D\t.
-D\t./bin
-<digest>\tF\t./bin/foo
-<digest>\tF\t./app.jar
+D\t0500\t.
+D\t0500\t./bin
+<digest>\tF\t0500\t./bin/foo
+<digest>\tF\t0400\t./app.jar
 <digest-of-link-target>\tL\t./log\t../run/log
 ```
 
-Principi:
+Principi fissati:
 
-- regular file: digest dei bytes;
-- directory: enumerata senza content digest;
-- symlink: digest del target testuale, senza dereferenziare;
+- regular file: digest dei bytes + mode canonico;
+- directory: enumerata senza content digest + mode canonico;
+- symlink: digest del target testuale, senza dereferenziare; mode/UID/GID del symlink non partecipano all'integrity;
 - ordinamento canonico;
 - pathname e target rappresentati senza ambiguità;
-- `run/` e i dati mutabili raggiunti tramite `run/` sono esclusi dall'integrità.
+- `run/` e i dati mutabili raggiunti tramite `run/` sono esclusi dall'integrità;
+- UID/GID concreti NON partecipano all'integrity;
+- ACL aggiuntive NON partecipano al modello: nel core Package Instance v0 non sono ammesse;
+- setuid, setgid e sticky bit non sono ammessi nel core Package Instance v0.
 
 Lo stesso metodo di inventory viene applicato a `run-default/`.
 
-È ancora da decidere quali metadata filesystem execution-relevant, per esempio mode/executable bit, entrino nel record canonico.
+La sintassi canonica definitiva di pathname/escaping e il digest method/version esatto restano specifiche tecniche successive, ma il contenuto semantico dell'inventory è fissato.
 
 ---
 
-# 9. Manifest digest
+# 9. Normalizzazione dei mode immutabili
 
-Il modello può calcolare un digest dell'intero inventory canonico:
+Il core Package Instance non conserva arbitrariamente tutte le permission vendor.
+
+Nel v0 i mode ordinari vengono normalizzati a:
+
+```text
+regular non-executable    0400
+regular executable        0500
+directory immutable       0500
+@package                  0400
+```
+
+Quindi l'executable bit è parte dell'integrity e della semantica della Package Instance.
+
+Qualunque write bit sotto `root/` o `run-default/` è incompatibile con il core immutabile v0.
+
+Quando un file/default viene materializzato in una State Instance mutabile, la copia operativa riceve permission writable appropriate all'Environment Owner; i write bit non vengono conservati nel core immutabile.
+
+---
+
+# 10. Manifest digest
+
+Il modello calcola un digest dell'intero inventory canonico:
 
 ```text
 root-digest
@@ -307,50 +311,142 @@ run-default-digest
     = digest(canonical run-default inventory)
 ```
 
-L'algoritmo e la versione del metodo devono essere espliciti e versionati.
+Il digest cambia se cambia qualunque elemento rappresentato nel manifest, incluso il mode canonico di regular file/directory.
+
+L'algoritmo e la versione del metodo sono espliciti e versionati.
 
 ---
 
-# 10. Immutabilità
+# 11. Environment Owner
 
-Dopo il commit locale:
+RumiAI v0 non richiede `root:root`, un utente di sistema `rumiai` o un gruppo speciale.
+
+Ogni environment RumiAI ha un unico **Environment Owner**:
+
+> l'utente OS che possiede, gestisce ed esegue quell'environment RumiAI.
+
+Su Unix-like:
 
 ```text
-root/          immutable + integrity-checked
-run-default/   immutable + integrity-checked
-@package       immutable
-run/           derived + rebuildable
+owner = Environment Owner
+group = gruppo ordinario assegnato dal sistema/filesystem
 ```
 
-Una modifica a `root/`, `run-default/` o al significato operativo di `@package` produce una nuova Package Instance/revision.
+Il gruppo concreto non ha significato architetturale nel v0 e non viene usato per condivisione multi-user.
 
-Una modifica a `run/` cambia soltanto la runtime view attiva.
-
----
-
-# 11. Stato reale separato
-
-I dati mutabili autorevoli non vivono in `root/`, `run-default/` o `run/`.
-
-Appartengono alle aree RumiAI appropriate, per esempio:
+UID/GID numerici:
 
 ```text
-home
-data
-conf
-cache
-log
-pid
-tmp
+NON fanno parte della Package Instance identity
+NON fanno parte dell'integrity manifest
+NON vengono persistiti come identità RumiAI
 ```
 
-`run/` fornisce soltanto i link attraverso cui il software li raggiunge.
-
-La rimozione di una Package Instance non implica automaticamente la cancellazione dello stato mutabile esterno.
+Questo evita di legare una Package Instance a UID/GID host-specific.
 
 ---
 
-# 12. Relocatability
+# 12. Permission della RumiAI root e delle aree mutabili
+
+Il modello Unix-like v0 è single-user a livello filesystem.
+
+Default:
+
+```text
+RUMIAI_ROOT/   0700
+pkg/           0700
+bin/           0700
+conf/          0700
+data/          0700
+home/          0700
+cache/         0700
+log/           0700
+run/           0700
+tmp/           0700
+```
+
+Le directory delle singole State Instance sono normalmente `0700` e appartengono all'Environment Owner.
+
+Il default `umask` per processi lanciati da RumiAI è `0077`, salvo futura estensione esplicita del modello di execution per software fisicamente validato che richieda semantiche differenti.
+
+---
+
+# 13. Sealing della Package Instance
+
+Su Unix-like il write bit del file non impedisce da solo rename/unlink: tali operazioni dipendono anche dalla directory parent.
+
+Per questo la wrapper package viene sigillata:
+
+```text
+pkg/<package-instance-id>/    0500
+├── root/                     0500
+├── run-default/              0500
+├── @package                  0400
+└── run/                      0700
+```
+
+`run/` viene precreata prima del sealing.
+
+Dopo il sealing:
+
+```text
+root/          namespace + contenuto immutabile
+run-default/   namespace + contenuto immutabile
+@package       immutabile
+run/           nome stabile; contenuto derivato e writable
+```
+
+Il package manager ricostruisce `run/*`, non sostituisce normalmente la directory `run/` stessa.
+
+---
+
+# 14. Immutabilità: protezione accidentale + verifica
+
+Poiché l'Environment Owner possiede gli inode, può deliberatamente cambiare permission e modificare il package.
+
+Il v0 NON pretende quindi di creare una security boundary contro l'Environment Owner.
+
+Il contratto è:
+
+```text
+immutability by contract
++
+filesystem protection contro modifiche accidentali
++
+integrity verification
+```
+
+Non richiede:
+
+```text
+root ownership
+privileged helper
+read-only mount
+filesystem immutable flag
+```
+
+Se il contenuto immutabile viene alterato deliberatamente o accidentalmente, il package manager deve rilevare un integrity failure.
+
+---
+
+# 15. ACL, special bits e symlink metadata
+
+Nel core Package Instance v0:
+
+```text
+POSIX ACL aggiuntive    vietate
+setuid                  vietato
+setgid                  vietato
+sticky bit              vietato
+```
+
+Le ACL ereditate o semantiche equivalenti del filesystem devono essere normalizzate/validate fisicamente.
+
+Per i symlink l'identità portabile comprende il pathname e il target testuale; ownership e mode concreti del link non fanno parte dell'integrity RumiAI.
+
+---
+
+# 16. Relocatability e filesystem portability
 
 Tutti i riferimenti persistiti sono relativi.
 
@@ -358,54 +454,74 @@ Esempi:
 
 ```text
 root/log -> ../run/log
-run/log  -> ../../../log/foo
+run/log  -> ../../../log/<state-id>/log
 ```
 
 Non vengono persistiti pathname assoluti della RumiAI root.
 
+Il contratto logico usa `Environment Owner`, non UID/GID numerici.
+
+La praticabilità fisica deve essere validata per la combinazione:
+
+```text
+OS
++
+filesystem
++
+mount semantics
+```
+
+Un filesystem che non supporta adeguatamente permission, ownership o link richiesti dal contratto può rendere non supportata quella Reference Installation, anche se l'OS nominale è compatibile.
+
 ---
 
-# 13. Materializzazione transazionale
+# 17. Materializzazione transazionale
 
-Una Package Instance non appare sotto `pkg/` finché la parte immutabile non è completa e verificata:
+Una Package Instance non appare sotto `pkg/` finché la struttura non è completa e verificata:
 
 ```text
 candidate software
         ↓
 normalizzazione/adattamento pre-admission
         ↓
-build root/ + run-default/ + @package in staging
+build root/ + run-default/ + @package + empty run/ in staging
+        ↓
+normalize mode / ownership semantics
         ↓
 verify identity + integrity + safe writable mappings
         ↓
 atomic commit pkg/<package-instance-id>
+        ↓
+seal wrapper
 ```
-
-`run/` viene materializzato successivamente in base allo stato attivo.
 
 Lo staging non usa una child directory ordinaria di `pkg/`.
 
 ---
 
-# 14. Recovery e uninstall
+# 18. Recovery e uninstall
 
 Se `@package` manca o è corrotto, il pathname permette comunque di ricostruire l'identità minima.
 
 Se `root/` o `run-default/` non corrispondono ai rispettivi inventory, il package è corrotto.
 
-Se manca soltanto `run/`, la Package Instance può restare integra e la runtime view può essere rigenerata.
+Se il contenuto di `run/` manca o è corrotto, la Package Instance può restare integra e la runtime view viene rigenerata.
 
-L'uninstall fisico, dopo dependency/integration checks, rimuove:
+L'uninstall fisico, dopo dependency/integration checks, è un'operazione amministrativa dell'environment, non dell'OS:
 
 ```text
-pkg/<package-instance-id>/
+verify references
+↓
+unseal con permission dell'Environment Owner
+↓
+remove pkg/<package-instance-id>/
 ```
 
-senza implicare il purge dello stato persistente esterno.
+Non richiede privilegi root e non implica il purge dello stato persistente esterno.
 
 ---
 
-# 15. Invarianti fissate/candidate
+# 19. Invarianti fissate
 
 ```text
 PI-01 core immutabile Package Instance = root/ + run-default/ + @package
@@ -421,27 +537,47 @@ PI-10 factory reset materializza una nuova copia mutabile da run-default/, non r
 PI-11 @package è descriptor dichiarativo e non codice eseguibile
 PI-12 identity canonica del pathname e @package devono concordare
 PI-13 display-name è human-readable e non partecipa al pathname canonico
-PI-14 root/ e run-default/ possiedono inventory canonici verificabili
+PI-14 root/ e run-default/ possiedono inventory canonici verificabili con mode
 PI-15 run/ e i dati mutabili target non partecipano all'integrità della Package Instance
 PI-16 stato mutabile reale non vive nel core della Package Instance
 PI-17 una Package Instance appare sotto pkg/ soltanto dopo commit del core verificato
 PI-18 staging/transazioni non usano child directory ordinarie di pkg/
 PI-19 uninstall della wrapper non implica purge dello stato persistente esterno
+
+PERM-01 nessuna Package Instance richiede root:root
+PERM-02 ogni environment appartiene logicamente a un solo Environment Owner
+PERM-03 UID/GID concreti non fanno parte di identity o integrity
+PERM-04 group sharing non è supportato nel v0
+PERM-05 root/ e run-default/ non contengono write bit
+PERM-06 regular file immutabili sono normalizzati a 0400 o 0500
+PERM-07 directory immutabili sono normalizzate a 0500
+PERM-08 @package è 0400
+PERM-09 run/ e state areas sono owner-writable, normalmente 0700
+PERM-10 la wrapper package è non-writable; run/ viene precreata e se ne ricostruisce il contenuto
+PERM-11 symlink mode/UID/GID non partecipano all'integrity
+PERM-12 setuid/setgid/sticky e ACL aggiuntive non sono ammesse nel core Package Instance v0
+PERM-13 permissions proteggono da modifiche accidentali; integrity verifica il contenuto effettivo
+PERM-14 filesystem/mount ownership semantics fanno parte della Physical Platform Validation
 ```
 
 ---
 
-# 16. Questioni successive
+# 20. Struttura fisica considerata chiusa
 
-Prima di Package Interface restano da fissare:
+Con queste decisioni sono fissati per il v0:
 
-- modello logico dei runtime mappings che costruiscono `run/`;
-- tassonomia minima delle aree target (`home`, `conf`, `data`, `cache`, `log`, `pid`, `tmp`, ...);
-- semantica di inizializzazione e factory reset a partire da `run-default/`;
-- sintassi canonica degli integrity inventory;
-- escaping canonico dei pathname nel manifest;
-- metadata filesystem execution-relevant inclusi negli integrity record;
-- algoritmo iniziale di digest e versioning del metodo;
-- supporto fisico dei link relativi sulle reference platform/filesystem.
+```text
+Package Instance wrapper
+root immutabile
+run-default immutabile
+run derivato
+writable-island routing
+State Instance identity e state areas
+integrity inventory semantico
+ownership/permission model
+filesystem portability boundary
+```
 
-Solo dopo queste decisioni conviene passare alla **Package Interface**.
+Restano da specificare alcuni dettagli tecnici di serializzazione/encoding, ma non cambiano il modello fisico.
+
+Il prossimo nodo architetturale è la **Package Interface**.
