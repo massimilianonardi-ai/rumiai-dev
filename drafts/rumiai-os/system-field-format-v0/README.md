@@ -1,76 +1,248 @@
-# RumiAI system layer — System Field Format v0
+# RumiAI system layer — System Configuration Field Format v0
 
 Data: 2026-08-30
 
-Stato: **design decision — formato system-layer fissato**
+Stato: **design decision — formato configurazione/metadata system-layer fissato**
 
 Il RumiAI system layer è composto da tool POSIX `sh` eseguiti tramite shebang/bootstrap Rumi.
 
-I file dati/configurazione letti direttamente dal system layer usano un formato dichiarativo minimale, progettato per poter essere letto e scritto dal bootstrap con primitive POSIX `sh` e utility POSIX senza dipendere da JSON, Python, Node.js, `jq` o parser proprietari.
+Per configurazioni, metadata e control-state gerarchici letti direttamente dal system layer viene usato un formato dichiarativo minimale a due campi.
+
+Questo formato NON viene usato per dataset tabellari omogenei: tali file usano RumiAI System Tabular Data v0, con header TSV e una riga per record.
 
 ---
 
 # 1. Record fondamentale
 
-Ogni record contiene esattamente due campi:
+Ogni record contiene esattamente:
 
 ```text
-field-name<TAB>field-value
+field-name<TAB>field-value<LF>
 ```
 
 Esempio:
 
 ```text
 schema	1
-pkg_profile	default
-pkg_verify_integrity	true
+identity.name	netbeans
+identity.platform	any
 ```
 
-Il separatore è esattamente un TAB.
+Non esiste header tabellare.
 
 ---
 
-# 2. `field-name`
+# 2. Dot notation
 
-`field-name` segue **le stesse regole POSIX shell dei nomi di variabile**.
+`field-name` è gerarchico e usa `.` come separatore strutturale.
 
-Forma normativa:
+Esempi:
+
+```text
+identity.name
+integrity.root.manifest_digest
+requirements.1.constraint
+interface.commands.2.executable.source
+```
+
+Il punto è sintassi del formato, non parte dei singoli segmenti.
+
+---
+
+# 3. Segmenti nominali
+
+Ogni segmento nominale segue le stesse regole POSIX shell per un nome di variabile:
 
 ```text
 [A-Za-z_][A-Za-z0-9_]*
 ```
 
-Quindi sono validi:
+Validi:
 
 ```text
-schema
-pkg_profile
-requirement_1_id
-RUMI_TEST
+identity
+manifest_digest
+JAVA_HOME
 _name
 ```
 
-Non sono validi:
+Non validi come segmenti nominali:
 
 ```text
-1name
-pkg.profile
-pkg-profile
-pkg name
+foo-bar
+foo bar
 café
 ```
 
-Il nome è case-sensitive e non viene normalizzato automaticamente.
-
-La scelta della forma canonica dei singoli field-name appartiene allo schema del file/tool che li usa.
+Identificatori arbitrari, package ID, capability name e altri dati che possono contenere `-`, `@`, Unicode o altri caratteri restano nei field-value.
 
 ---
 
-# 3. `field-value`
+# 4. Segmenti indice
+
+Per array/list sono ammessi segmenti indice numerici:
+
+```text
+1
+2
+3
+...
+```
+
+Un indice è:
+
+```text
+positive base-10 integer
+senza zero iniziali
+```
+
+Esempio:
+
+```text
+requirements.count	2
+requirements.1.id	jdk
+requirements.1.target	capability
+requirements.2.id	python
+requirements.2.target	capability
+```
+
+`0`, `01`, `002` non sono indici canonici.
+
+---
+
+# 5. Grammar concettuale
+
+```text
+field-name = named-segment *( "." (named-segment | index-segment) )
+
+named-segment = [A-Za-z_][A-Za-z0-9_]*
+index-segment = [1-9][0-9]*
+```
+
+Il primo segmento deve essere nominale.
+
+---
+
+# 6. Array
+
+Ogni array persistito contiene un count esplicito:
+
+```text
+<prefix>.count	N
+```
+
+e indici contigui:
+
+```text
+1..N
+```
+
+Array vuoto:
+
+```text
+requirements.count	0
+```
+
+Array scalare:
+
+```text
+args.count	3
+args.1	-jar
+args.2	app.jar
+args.3	--quiet
+```
+
+Array di object:
+
+```text
+requirements.count	1
+requirements.1.id	jdk
+requirements.1.target	capability
+requirements.1.capability	java-development-kit
+requirements.1.contract	1
+requirements.1.constraint	>=17 <22
+```
+
+---
+
+# 7. Map
+
+Una map con namespace/key fissati dallo schema può usare direttamente dot notation:
+
+```text
+identity.name	netbeans
+state.scope	shared
+integrity.method	1
+```
+
+Una map con chiavi arbitrarie NON incorpora la chiave arbitraria nel field-name.
+
+Usa una collection indicizzata:
+
+```text
+providers.count	2
+providers.1.key	temurin-21
+providers.1.value	10
+providers.2.key	microsoft-openjdk
+providers.2.value	20
+```
+
+Regola:
+
+> struttura nello schema e nel field-name; identificatori arbitrari nei field-value.
+
+---
+
+# 8. Namespace/scalar collision
+
+Un pathname logico non può essere contemporaneamente scalar e namespace.
+
+Vietato:
+
+```text
+foo	value
+foo.bar	other
+```
+
+Vietato anche il contrario:
+
+```text
+foo.bar	other
+foo	value
+```
+
+Sono invece validi:
+
+```text
+foo.count	2
+foo.1.id	one
+foo.2.id	two
+```
+
+`foo` è in questo caso soltanto namespace.
+
+---
+
+# 9. Unicità
+
+Ogni `field-name` completo deve comparire al massimo una volta nello stesso file.
+
+Duplicato:
+
+```text
+identity.name	foo
+identity.name	bar
+```
+
+è errore; non esiste `last value wins`.
+
+---
+
+# 10. Field value
 
 `field-value` è una stringa UTF-8 opaca per il formato base.
 
-Può contenere, fra l'altro:
+Può contenere fra l'altro:
 
 ```text
 spazi
@@ -80,9 +252,12 @@ spazi
 /
 \\
 Unicode
+.
+@
+-
 ```
 
-Sono vietati nei valori:
+Sono vietati:
 
 ```text
 NUL
@@ -91,185 +266,21 @@ CR
 LF
 ```
 
-Non esiste quoting o escaping nel formato v0.
+Non esiste quoting o escaping nel v0.
 
-Un valore vuoto è ammesso quando lo schema del file lo consente:
+Un empty string è distinto da field assente.
 
-```text
-field_name<TAB><LF>
-```
-
-Il formato base non interpreta boolean, integer, pathname o altri tipi: la semantica e la validazione del valore appartengono allo schema specifico.
-
-Per i file del package manager questa limitazione diventa anche una regola di ammissibilità dei valori persistiti: un literal argv, label, constraint o altro valore che richieda TAB/CR/LF non è rappresentabile nel v0 e viene rifiutato invece di introdurre escaping.
+Se un dominio richiede un valore multilinea/binario, il contenuto vive in un file separato e la configurazione mantiene una reference; non si estende il formato con escaping.
 
 ---
 
-# 4. Encoding e line ending
+# 11. Tipi
 
-```text
-encoding       UTF-8
-BOM            forbidden
-line ending    LF
-final LF       required per file generati da RumiAI
-```
+Il formato base non codifica un type tag.
 
-Ogni record dati contiene esattamente:
+Lo schema specifico interpreta il value.
 
-```text
-field-name
-1 TAB
-field-value
-1 LF
-```
-
----
-
-# 5. Unicità
-
-Ogni `field-name` deve comparire al massimo una volta nello stesso file.
-
-Esempio vietato:
-
-```text
-pkg_profile	default
-pkg_profile	test
-```
-
-Un duplicato è errore di formato/schema, non "last value wins".
-
-Questo permette lookup deterministico senza dipendenza dall'ordine del file.
-
----
-
-# 6. Ordine
-
-L'ordine fisico dei field non ha significato semantico salvo esplicita eccezione definita da uno schema.
-
-I file generati automaticamente da RumiAI DEVONO però usare l'ordine canonico definito dal relativo schema. Questo rende diff, digest, streaming e debugging deterministici senza trasformare l'ordine in significato logico.
-
-Quando serve rappresentare una sequenza o una struttura ripetibile, l'indice viene incorporato nel `field-name` usando soltanto caratteri validi per un POSIX variable name.
-
-Esempio:
-
-```text
-requirement_count	2
-
-requirement_1_id	jdk
-requirement_1_target	capability
-requirement_1_capability	java-development-kit
-requirement_1_contract	1
-requirement_1_constraint	>=17 <22
-
-requirement_2_id	python
-requirement_2_target	capability
-requirement_2_capability	python-runtime
-requirement_2_contract	1
-requirement_2_constraint	>=3.12 <3.14
-```
-
-L'indice serve a raggruppare i field appartenenti alla stessa entry.
-
-L'identità reale della entry resta un valore (`requirement_1_id = jdk`), non viene codificata nel nome del campo.
-
-Questo evita di dover trasformare ID arbitrari, Unicode o stringhe con `-` in pseudo-nomi POSIX.
-
----
-
-# 7. Collezioni indicizzate
-
-Ogni collezione indicizzata del system layer DEVE avere un count esplicito:
-
-```text
-<prefix>_count	N
-```
-
-Gli indici validi sono obbligatoriamente:
-
-```text
-1
-2
-3
-...
-N
-```
-
-quindi sono:
-
-```text
-positivi
-base 10
-senza zero iniziali
-contigui
-senza gap
-```
-
-Esempi canonici:
-
-```text
-resource_count	3
-resource_1_id	launcher
-resource_2_id	home
-resource_3_id	config
-```
-
-Non canonici:
-
-```text
-resource_01_id
-resource_1_id
-resource_3_id      # gap con count=3
-```
-
-Una collezione vuota viene rappresentata esplicitamente:
-
-```text
-requirement_count	0
-```
-
-Questo evita discovery costosa degli indici e permette loop POSIX `sh` deterministici.
-
-Le collezioni annidate applicano la stessa regola:
-
-```text
-provide_count	1
-provide_1_resource_count	3
-provide_1_resource_1_key	command
-provide_1_resource_2_key	home
-provide_1_resource_3_key	bin
-```
-
----
-
-# 8. Mappe con chiavi arbitrarie
-
-Una chiave arbitraria NON viene incorporata nel field-name se potrebbe non rispettare la grammar POSIX.
-
-Si usa invece una collezione indicizzata key/value:
-
-```text
-entry_count	2
-entry_1_key	foo-bar
-entry_1_value	one
-entry_2_key	café
-entry_2_value	two
-```
-
-Regola:
-
-> struttura nel field-name; identità/dato arbitrario nel field-value.
-
----
-
-# 9. Valori opzionali, null e tipi canonici
-
-Il formato base non ha `null`.
-
-Uno schema rappresenta normalmente un valore opzionale tramite assenza del relativo field.
-
-Un empty string resta distinto da field assente.
-
-Quando uno schema usa tipi primitivi, le forme canoniche raccomandate sono:
+Forme canoniche comuni:
 
 ```text
 boolean
@@ -283,17 +294,31 @@ integer
     nessuno zero iniziale per valori non-zero
 ```
 
-Gli enum usano stringhe ASCII canoniche definite dallo schema.
+Enum e pathname sono definiti dal relativo schema.
 
 ---
 
-# 10. Commenti e righe vuote
-
-Per file di configurazione human-editable sono ammesse:
+# 12. Encoding / framing
 
 ```text
-righe vuote
-righe di commento con `#` come primo byte della riga
+encoding       UTF-8
+BOM            forbidden
+line ending    LF
+final LF       required per file generati da RumiAI
+separator      esattamente un TAB
+```
+
+Ogni record dati contiene esattamente un TAB.
+
+---
+
+# 13. Commenti e righe vuote
+
+Per configurazioni human-editable sono ammesse:
+
+```text
+blank line
+comment line con `#` come primo byte
 ```
 
 Esempio:
@@ -302,24 +327,32 @@ Esempio:
 # pkg configuration
 
 schema	1
-pkg_profile	default
+profile	default
 ```
 
-`#` dentro `field-value` è testo normale:
+`#` dentro field-value è testo normale.
 
-```text
-label	test #1
-```
-
-I file generati automaticamente da RumiAI DEVONO usare la forma canonica senza commenti e senza righe vuote, salvo che lo schema richieda diversamente.
+File machine-generated/autorevoli usano forma canonica senza commenti e blank line salvo schema esplicito contrario.
 
 ---
 
-# 11. Nessun `source` / `eval`
+# 14. Ordine
 
-Il System Field Format è **dati**, non shell code.
+L'ordine fisico dei field non è semanticamente significativo.
 
-Un file in questo formato non viene eseguito con:
+La sequenza di un array è determinata dall'indice numerico.
+
+I writer RumiAI usano comunque un ordine canonico definito dallo schema per diff e debugging stabili.
+
+Non si usa lexical sort generico dei field-name per sequenze, perché `items.10` precederebbe `items.2` lessicograficamente.
+
+---
+
+# 15. Nessun source/eval
+
+Il formato contiene dati, non codice.
+
+Non viene eseguito tramite:
 
 ```text
 .
@@ -327,113 +360,75 @@ source
 eval
 ```
 
-Il fatto che `field-name` sia compatibile con un POSIX variable name serve a rendere semplice e sicuro il mapping e la costruzione dei nomi nel bootstrap, non a trasformare il file in codice eseguibile.
+La compatibilità dei segmenti nominali con i nomi POSIX serve a semplificare query e schema, non a creare automaticamente variabili shell.
 
-Le librerie POSIX `sh` del system layer possono invece essere sourced normalmente perché sono codice dichiarato come tale.
-
----
-
-# 12. Bootstrap Rumi
-
-Il bootstrap Rumi fornisce funzioni standard per interagire con System Field Format, così i tool system-layer non devono reimplementare il parser.
-
-API concettuale minima:
-
-```text
-rumi_file_get <file> <field-name>
-rumi_file_has <file> <field-name>
-rumi_file_set <file> <field-name> <field-value>
-rumi_file_remove <file> <field-name>
-rumi_file_fields <file> [prefix]
-rumi_file_validate <file> [schema]
-```
-
-Per evitare rescansioni quadratiche di file con collezioni grandi, il bootstrap DEVE inoltre fornire una primitive streaming/per-prefix equivalente a:
-
-```text
-rumi_file_fields <file> <prefix>
-```
-
-che legge il file una sola volta e restituisce soltanto record System Field Format corrispondenti al prefix richiesto.
-
-L'implementazione può usare POSIX `awk`/`sed`/`grep` o primitive equivalenti del bootstrap, ma non richiede parser JSON o runtime esterni gestiti da `pkg`.
-
-Il bootstrap deve almeno garantire:
-
-```text
-validazione field-name POSIX
-split su un solo TAB
-rifiuto record con zero o più di un TAB
-rifiuto duplicate field-name
-preservazione esatta del field-value
-nessun eval/source del contenuto
-validazione count/indici quando richiesta dallo schema
-```
+In particolare non si sostituiscono `.` con `_` per creare variabili: ciò introdurrebbe collisioni fra nomi differenti.
 
 ---
 
-# 13. Performance rule
+# 16. Query bootstrap
 
-`rumi_file_get` è appropriato per pochi lookup puntuali.
-
-Non è ammesso implementare loop su collezioni grandi come:
+Il bootstrap Rumi espone primitive di configurazione, concettualmente:
 
 ```text
-for ogni entry
-    per ogni field
-        rumi_file_get che riscansiona l'intero file
+rumi_conf_get <file> <field-name>
+rumi_conf_has <file> <field-name>
+rumi_conf_set <file> <field-name> <field-value>
+rumi_conf_remove <file> <field-name>
+rumi_conf_namespace <file> <prefix>
+rumi_conf_validate <file> [schema]
 ```
 
-perché produce comportamento O(n²) e process spawning eccessivo.
-
-Per collezioni grandi si usa:
+Semantica `namespace`:
 
 ```text
-count + indici contigui
-streaming per prefix / singolo pass
+field == prefix
+OR
+field begins with prefix + "."
 ```
 
-Questa regola è particolarmente importante per:
-
-```text
-resolved dependency graph
-integrity inventory
-resource lists grandi
-```
+La query per prefix non richiede una regex costruita dal chiamante.
 
 ---
 
-# 14. Esempio `pkg` configuration
+# 17. Performance
 
-```text
-# RumiAI package manager configuration
+Lookup puntuali possono scandire il file.
 
-schema	1
-pkg_profile	default
-pkg_verify_integrity	true
-pkg_retain_generations	true
-pkg_automatic_prune	false
+Per leggere molte proprietà dello stesso namespace si usa una singola scansione `rumi_conf_namespace` o primitive equivalente.
 
-selection_count	2
+È vietato costruire algoritmi O(n²) facendo migliaia di full-file lookup sulla stessa collection.
 
-selection_1_id	java-runtime
-selection_1_capability	java-runtime
-selection_1_contract	1
-selection_1_provider	temurin
-selection_1_order	10
-
-selection_2_id	python-runtime
-selection_2_capability	python-runtime
-selection_2_contract	1
-selection_2_provider	cpython
-selection_2_order	20
-```
-
-Tutti i field-name sono direttamente compatibili con POSIX shell variable names.
+Dataset grandi/record-oriented non devono essere rappresentati come configurazione gerarchica: usano System Tabular Data.
 
 ---
 
-# 15. Relazione con JSON
+# 18. Confine con dati tabellari
+
+Usano questo formato:
+
+```text
+pkg.conf
+@package
+desired
+resolved
+active
+selection/configuration metadata
+altri control-state gerarchici
+```
+
+NON usano questo formato:
+
+```text
+integrity inventories
+altri dataset omogenei a una riga per record
+```
+
+Questi ultimi usano System Tabular Data v0.
+
+---
+
+# 19. Relazione con JSON
 
 ```text
 RumiAI development/application layer
@@ -441,34 +436,31 @@ RumiAI development/application layer
 
 RumiAI system layer
     POSIX sh + Rumi bootstrap
-    System Field Format v0
+    System Configuration Field Format v0
+    System Tabular Data v0
 ```
 
 JSON non è una dipendenza del bootstrap/system layer.
 
-I file dati del package manager appartengono al system layer e quindi usano System Field Format v0.
-
-Formati fisici che non sono file dati parsati, per esempio script POSIX `sh`, directory, symlink o il file-handle usato esclusivamente per un OS lock, non sono System Field Format perché non rappresentano dati strutturati da leggere.
-
 ---
 
-# 16. Invarianti
+# 20. Invarianti
 
 ```text
-SFF-01 record = field-name<TAB>field-value
-SFF-02 esattamente due campi per record
-SFF-03 field-name segue [A-Za-z_][A-Za-z0-9_]*
-SFF-04 field-name è case-sensitive
-SFF-05 field-name è unico nel file
-SFF-06 field-value è UTF-8 opaco al formato base
-SFF-07 NUL/TAB/CR/LF sono vietati nel field-value
-SFF-08 nessun quoting/escaping v0
-SFF-09 strutture ripetibili usano count + indici numerici contigui nel field-name; identity reale resta nel value
-SFF-10 map key arbitrarie restano nei value, non nei field-name
-SFF-11 ordine fisico non è semantico; output Rumi usa ordine canonico di schema
-SFF-12 commento valido solo con # come primo byte della riga
-SFF-13 il formato è dati e non viene source/eval
-SFF-14 il bootstrap Rumi fornisce primitive standard di accesso e streaming
-SFF-15 nessun parser JSON/Python/Node/jq è richiesto per leggere il formato
-SFF-16 i file dati del package manager usano System Field Format v0
+SCF-01 configuration record = field-name<TAB>field-value
+SCF-02 esattamente due campi / un TAB per record
+SCF-03 field-name usa dot notation gerarchica
+SCF-04 named segment = [A-Za-z_][A-Za-z0-9_]*
+SCF-05 array index segment = positive base-10 integer senza zero iniziali
+SCF-06 first segment deve essere nominale
+SCF-07 field-name completo è unico
+SCF-08 scalar/namespace collision è vietata
+SCF-09 field-value è UTF-8 opaco al formato base
+SCF-10 NUL/TAB/CR/LF vietati nel field-value
+SCF-11 nessun quoting/escaping v0
+SCF-12 array usa count + indici contigui 1..N
+SCF-13 arbitrary map key/ID restano nei value
+SCF-14 il formato non viene source/eval
+SCF-15 bootstrap Rumi fornisce query puntuali e per namespace
+SCF-16 dataset tabellari non vengono flattenati in SCF
 ```
