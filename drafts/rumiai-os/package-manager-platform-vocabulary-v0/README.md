@@ -15,7 +15,29 @@ usati dalla Package Instance identity.
 
 ---
 
-# 1. Execution Platform Identifier
+# 1. Principio centrale
+
+`platform` e `architecture` descrivono **soltanto i vincoli propri del contenuto della Package Instance**.
+
+Non descrivono il runtime, interprete, SDK o altro software necessario per eseguirla.
+
+Quindi:
+
+```text
+JVM / JRE / JDK / Python
+    != platform
+
+java-runtime / java-development-kit / python-runtime
+    = Execution Requirements / capability
+```
+
+Regola fissata:
+
+> La platform/architecture della Package Instance descrive i vincoli del contenuto della Package Instance; i vincoli introdotti da software esterno necessario all'esecuzione sono rappresentati esclusivamente tramite Execution Requirements.
+
+---
+
+# 2. Execution Platform Identifier
 
 Forma canonica:
 
@@ -31,50 +53,66 @@ linux-x86_64
 macos-arm64
 macos-x86_64
 windows-x86_64
-jvm-any
-python-any
+any-any
+linux-any
+any-arm64
 ```
 
 I due token restano campi distinti in `@package`.
 
 ---
 
-# 2. `platform` include due categorie
+# 3. Platform vocabulary v0
 
-Il campo `platform` può identificare:
-
-```text
-native host platform
-execution domain
-```
-
-Native platform v0:
+Token v0:
 
 ```text
+any
 linux
 macos
 windows
 ```
 
-Execution domain v0:
+Semantica:
+
+```text
+any
+    il contenuto della Package Instance non dipende da un particolare OS
+
+linux
+    il contenuto richiede Linux
+
+macos
+    il contenuto richiede macOS
+
+windows
+    il contenuto richiede Windows
+```
+
+Non sono platform token:
 
 ```text
 jvm
+jre
+jdk
+java
 python
+node
+wasm runtime
 ```
 
-Un execution domain significa che la Package Instance è realmente indipendente dall'OS/CPU entro il contratto di quel domain e viene eseguita tramite una dependency runtime concreta risolta per l'host corrente.
+Tali tecnologie, quando necessarie, appartengono al dependency/capability model.
 
 ---
 
-# 3. Architecture vocabulary
+# 4. Architecture vocabulary v0
 
 Token v0:
 
 ```text
+any
 arm64
 x86_64
-any
 ```
 
 Alias host/vendor come:
@@ -87,132 +125,199 @@ x64
 
 vengono normalizzati ai token RumiAI canonici e non entrano nel pathname Package Instance.
 
+Semantica:
+
+```text
+any
+    il contenuto non dipende da una particolare CPU architecture
+
+arm64
+    il contenuto richiede ARM64
+
+x86_64
+    il contenuto richiede x86-64
+```
+
 ---
 
-# 4. `any`
+# 5. `any-any`
 
-`architecture = any` significa che la Package Instance non dipende dalla CPU architecture nel proprio execution platform/domain.
+Una Package Instance realmente indipendente sia dall'OS sia dalla CPU usa:
 
-Esempi validi:
+```text
+platform = any
+architecture = any
+```
+
+quindi:
+
+```text
+<name>@<version-token>@r<revision>@any-any
+```
+
+Esempio concettuale:
+
+```text
+netbeans@26@r1@any-any
+```
+
+se il contenuto NetBeans normalizzato non contiene vincoli nativi propri.
+
+La necessità di un JDK viene dichiarata separatamente:
+
+```text
+requires java-development-kit
+```
+
+Il fatto che una Package Instance contenga JAR, bytecode Python o altro formato interpretabile non è di per sé sufficiente per dichiarare `any-any`: il producer deve aver validato l'assenza di vincoli OS/architecture propri del contenuto.
+
+---
+
+# 6. Specializzazioni parziali
+
+Sono ammesse anche:
 
 ```text
 linux-any
-jvm-any
-python-any
-```
-
-`linux-any` può rappresentare per esempio software Linux realmente architecture-independent.
-
-Per execution domain v0:
-
-```text
-jvm
-python
-```
-
-la forma normale è:
-
-```text
-jvm-any
-python-any
-```
-
-Se un artifact JVM/Python contiene JNI/native extension o altra dipendenza obbligatoria da OS/architecture, non viene promosso artificialmente come `jvm-any`/`python-any`: viene classificato per la native execution platform appropriata.
-
----
-
-# 5. Nessun `platform = any` nella Package Instance v0
-
-La Package Instance deve avere un execution platform/domain concreto.
-
-Non viene introdotto nel v0:
-
-```text
-any-any
 any-arm64
 ```
 
-come Package Instance target.
+`linux-any` significa che il contenuto è Linux-specific ma architecture-independent.
 
-Il token `any` può comparire come placeholder platform nella **State Instance qualifier** quando lo state dipende soltanto dall'architecture:
+`any-arm64` significa che il contenuto è OS-independent ma richiede ARM64.
 
-```text
-pkg@any-arm64@sN
-```
-
-Questo non crea una Package Instance platform `any`.
+Queste identità devono corrispondere a un vincolo reale e fisicamente validato, non essere usate come scorciatoia per dipendenze esterne.
 
 ---
 
-# 6. Native vs execution-domain admission
+# 7. Runtime requirement separato dalla Package Instance platform
 
-Una Package Instance native viene ammessa per il proprio exact Execution Platform Identifier tramite Physical Platform Validation.
-
-Una Package Instance execution-domain (`jvm-any`, `python-any`) è ammessa soltanto quando il package producer ha verificato che il software non richiede facilities native fuori dal domain contract e ha completato la Physical Platform Validation richiesta sulle reference installations supportate.
-
-Il suffix `any` non è un'affermazione teorica dedotta dal formato del file; è una proprietà ammessa dopo validation.
-
----
-
-# 7. Runtime dependency di un domain package
-
-Un package:
+Una Package Instance Java pura può essere:
 
 ```text
-netbeans@...@jvm-any
+my-java-app@1.0@r1@any-any
 ```
 
-può risolvere al launch una dependency native:
+con:
 
 ```text
-jdk -> temurin@...@linux-arm64
+requires:
+    java-runtime contract 1 >=17 <22
 ```
 
-su Linux ARM64 e una diversa Package Instance native su macOS ARM64.
-
-La Package Instance cross-domain resta la stessa; il Resolved Dependency Graph è specifico dell'execution environment/platform concreta.
-
----
-
-# 8. State scope usa il native host target
-
-Per una Package Instance `jvm-any` o `python-any`, uno state può comunque essere platform-dependent.
-
-Esempio:
+Su Linux ARM64 il resolver può scegliere:
 
 ```text
-Package Instance:
-    foo@...@jvm-any
-
-state scope:
-    platform
-```
-
-Su Linux ARM64 produce:
-
-```text
-foo@linux-any@sN
+temurin@...@linux-arm64
 ```
 
 Su macOS ARM64:
 
 ```text
-foo@macos-any@sN
+temurin@...@macos-arm64
 ```
 
-Quindi il qualifier State Instance usa il **native execution host**, non necessariamente `platform` della Package Instance.
+La Package Instance consumer resta la stessa `any-any`; cambia il provider concreto del Requirement.
+
+Lo stesso principio vale per Python:
+
+```text
+my-python-app@...@any-any
+    requires python-runtime
+```
+
+`python` non entra nella Package Instance identity.
 
 ---
 
-# 9. `bin/@platforms`
+# 8. Contenuto con dipendenza nativa propria
+
+Se il contenuto della Package Instance include un vincolo nativo proprio, la Package Instance non è `any-any`.
+
+Esempio Java:
+
+```text
+root/
+├── app.jar
+└── native/libfoo.so
+```
+
+Se `libfoo.so` è obbligatoria e Linux ARM64:
+
+```text
+platform = linux
+architecture = arm64
+```
+
+La Package Instance può contemporaneamente dichiarare:
+
+```text
+requires java-runtime
+```
+
+I due fatti restano ortogonali:
+
+```text
+Package content constraint = linux-arm64
+Execution Requirement      = java-runtime
+```
+
+Analogo per Python con native extension obbligatorie.
+
+---
+
+# 9. Physical Platform Validation
+
+`any` non significa compatibilità teorica dedotta dal formato dell'artifact.
+
+Una Package Instance `any-any`, `linux-any` o `any-arm64` è promossa soltanto dopo le Physical Platform Validation richieste sulle Reference Installation previste dal packaging RumiAI.
+
+Il producer è responsabile di verificare che il contenuto non nasconda vincoli ulteriori non rappresentati dall'identity e dai Requirements.
+
+---
+
+# 10. State Instance qualifier
+
+La State Instance continua ad avere identity indipendente dalla Package Instance platform:
+
+```text
+<pkg-name>[@<platform>-<architecture>]@sN
+```
+
+Esempio:
+
+```text
+Package Instance:
+    netbeans@26@r1@any-any
+```
+
+può usare:
+
+```text
+netbeans@s2
+```
+
+se lo state è realmente condivisibile, oppure:
+
+```text
+netbeans@linux-any@s2
+```
+
+se lo state dipende dal sistema operativo.
+
+Il qualifier dello state descrive i vincoli dello state, non copia automaticamente quelli della Package Instance.
+
+---
+
+# 11. `bin/@platforms`
 
 Il namespace:
 
 ```text
-RUMIAI_ROOT/bin/@platforms/<platform>-<architecture>/
+RUMIAI_ROOT/bin/@platforms/<current-native-platform>-<current-architecture>/
 ```
 
-usa esclusivamente il current **native host Execution Platform Identifier**:
+usa il current native host target, per esempio:
 
 ```text
 linux-arm64
@@ -220,49 +325,58 @@ macos-arm64
 windows-x86_64
 ```
 
-Non vengono create directory:
+I command binding di Package Instance `any-any` normalmente vanno nel namespace cross-platform:
+
+```text
+RUMIAI_ROOT/bin/
+```
+
+Una specialization native esplicita può prevalere secondo il modello di integrazione già fissato.
+
+Non esistono namespace:
 
 ```text
 @platforms/jvm-any
 @platforms/python-any
 ```
 
-I command binding di domain package vanno nel namespace cross-platform `bin/`, salvo una specialization native esplicita già definita nel modello di integrazione.
+perché `jvm` e `python` non sono platform.
 
 ---
 
-# 10. Extensibility
+# 12. Extensibility
 
-Nuovi native platform, architecture o execution domain richiedono aggiunta esplicita al vocabulary/versioned contract.
+Nuovi OS platform o architecture richiedono aggiunta esplicita al vocabulary/versioned contract.
 
-Non vengono accettati token arbitrari non conosciuti dallo schema corrente.
-
-Candidate future, non v0:
+Candidate future:
 
 ```text
-node
-wasm
-posix
+freebsd
 windows-arm64
 riscv64
 ```
 
-La loro aggiunta non modifica il significato dei token v0 esistenti.
+L'aggiunta non modifica il principio fondamentale:
+
+```text
+execution technology/runtime != Package Instance platform
+```
 
 ---
 
-# 11. Invarianti
+# 13. Invarianti
 
 ```text
 EP-01 Execution Platform Identifier = <platform>-<architecture>
-EP-02 native platform v0 = linux, macos, windows
-EP-03 execution domain v0 = jvm, python
-EP-04 architecture v0 = arm64, x86_64, any
-EP-05 aarch64/amd64/x64 sono alias input, non identity token
-EP-06 execution-domain package normalmente usa architecture any
-EP-07 artifact con native requirement obbligatorio non viene classificato domain-any
-EP-08 platform=any non è Package Instance target v0
-EP-09 State Instance può usare any-<arch> per architecture-only scope
-EP-10 bin/@platforms usa native host platform-architecture
-EP-11 domain portability deriva da Physical Platform Validation, non da inferenza
+EP-02 platform v0 = any, linux, macos, windows
+EP-03 architecture v0 = any, arm64, x86_64
+EP-04 platform/architecture descrivono soltanto vincoli propri del contenuto Package Instance
+EP-05 JVM/JRE/JDK/Python non sono platform token
+EP-06 runtime/interpreter/SDK necessari sono rappresentati tramite Execution Requirements/capability
+EP-07 any-any è la forma canonica per contenuto realmente OS/CPU independent
+EP-08 linux-any e any-arm64 sono ammessi quando rappresentano vincoli reali del contenuto
+EP-09 artifact con native content obbligatorio deve esporre il relativo native platform/architecture anche se richiede Java/Python
+EP-10 State Instance platform/architecture resta indipendente e descrive i vincoli dello state
+EP-11 bin/@platforms usa esclusivamente il current native host platform-architecture
+EP-12 `any` deriva da Physical Platform Validation, non da inferenza sul formato dell'artifact
 ```
