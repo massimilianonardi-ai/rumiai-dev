@@ -336,7 +336,6 @@ Recovery:
 `RUMIAI_ROOT/bin/` contiene anche veri system command RumiAI, per esempio:
 
 ```text
-rumi
 pkg
 log
 ...
@@ -455,7 +454,7 @@ Un index non diventa source of truth.
 Ordine concettuale:
 
 ```text
-1 bootstrap Rumi environment
+1 initialize RumiAI bootstrap environment
 2 acquire pkg manager lock per mutation recovery
 3 validate/init var/pkg structural roots
 4 validate active profiles/generations
