@@ -2,7 +2,7 @@
 
 Data: 2026-08-30
 
-Stato: **architectural schema stress test — JSON v0**
+Stato: **architectural schema stress test — System Field Format v0**
 
 Gli esempi mostrano soltanto le sezioni rilevanti; identity/release/integrity metadata seguono lo schema v0.
 
@@ -10,54 +10,62 @@ Gli esempi mostrano soltanto le sezioni rilevanti; identity/release/integrity me
 
 # 1. Temurin 21 provider
 
-```json
-{
-  "interface": {
-    "directories": [
-      { "id": "home", "path": "." },
-      { "id": "bin", "path": "bin" }
-    ],
-    "files": [
-      { "id": "java-exe", "path": "bin/java" },
-      { "id": "javac-exe", "path": "bin/javac" }
-    ],
-    "commands": [
-      {
-        "id": "java",
-        "executable": { "source": "self", "resource-type": "file", "resource": "java-exe" },
-        "args": []
-      },
-      {
-        "id": "javac",
-        "executable": { "source": "self", "resource-type": "file", "resource": "javac-exe" },
-        "args": []
-      }
-    ],
-    "provides": [
-      {
-        "capability": "java-runtime",
-        "contract": 1,
-        "version": "21",
-        "resources": [
-          { "key": "command", "resource-type": "command", "resource": "java" },
-          { "key": "home", "resource-type": "directory", "resource": "home" },
-          { "key": "bin", "resource-type": "directory", "resource": "bin" }
-        ]
-      },
-      {
-        "capability": "java-development-kit",
-        "contract": 1,
-        "version": "21",
-        "resources": [
-          { "key": "java", "resource-type": "command", "resource": "java" },
-          { "key": "javac", "resource-type": "command", "resource": "javac" },
-          { "key": "home", "resource-type": "directory", "resource": "home" },
-          { "key": "bin", "resource-type": "directory", "resource": "bin" }
-        ]
-      }
-    ]
-  }
-}
+```text
+interface_directory_count	2
+interface_directory_1_id	home
+interface_directory_1_path	.
+interface_directory_2_id	bin
+interface_directory_2_path	bin
+
+interface_file_count	2
+interface_file_1_id	java-exe
+interface_file_1_path	bin/java
+interface_file_2_id	javac-exe
+interface_file_2_path	bin/javac
+
+interface_command_count	2
+interface_command_1_id	java
+interface_command_1_executable_source	self
+interface_command_1_executable_resource_type	file
+interface_command_1_executable_resource	java-exe
+interface_command_1_arg_count	0
+interface_command_2_id	javac
+interface_command_2_executable_source	self
+interface_command_2_executable_resource_type	file
+interface_command_2_executable_resource	javac-exe
+interface_command_2_arg_count	0
+
+interface_provide_count	2
+interface_provide_1_capability	java-runtime
+interface_provide_1_contract	1
+interface_provide_1_version	21
+interface_provide_1_resource_count	3
+interface_provide_1_resource_1_key	command
+interface_provide_1_resource_1_resource_type	command
+interface_provide_1_resource_1_resource	java
+interface_provide_1_resource_2_key	home
+interface_provide_1_resource_2_resource_type	directory
+interface_provide_1_resource_2_resource	home
+interface_provide_1_resource_3_key	bin
+interface_provide_1_resource_3_resource_type	directory
+interface_provide_1_resource_3_resource	bin
+
+interface_provide_2_capability	java-development-kit
+interface_provide_2_contract	1
+interface_provide_2_version	21
+interface_provide_2_resource_count	4
+interface_provide_2_resource_1_key	java
+interface_provide_2_resource_1_resource_type	command
+interface_provide_2_resource_1_resource	java
+interface_provide_2_resource_2_key	javac
+interface_provide_2_resource_2_resource_type	command
+interface_provide_2_resource_2_resource	javac
+interface_provide_2_resource_3_key	home
+interface_provide_2_resource_3_resource_type	directory
+interface_provide_2_resource_3_resource	home
+interface_provide_2_resource_4_key	bin
+interface_provide_2_resource_4_resource_type	directory
+interface_provide_2_resource_4_resource	bin
 ```
 
 Provider identity resta native, per esempio:
@@ -81,54 +89,54 @@ root/cache    -> ../run/cache
 root/log      -> ../run/log
 ```
 
-```json
-{
-  "state": {
-    "compatibility-version": 1,
-    "scope": "shared",
-    "mappings": [
-      { "path": "etc", "area": "conf" },
-      { "path": "userdir", "area": "home" },
-      { "path": "cache", "area": "cache" },
-      { "path": "log", "area": "log" }
-    ]
-  },
-  "interface": {
-    "files": [
-      { "id": "launcher", "path": "bin/netbeans" }
-    ],
-    "commands": [
-      {
-        "id": "netbeans",
-        "executable": { "source": "self", "resource-type": "file", "resource": "launcher" },
-        "args": []
-      }
-    ]
-  },
-  "requirements": [
-    {
-      "slot": "jdk",
-      "target": "capability",
-      "capability": "java-development-kit",
-      "contract": 1,
-      "constraint": ">=17 <22"
-    }
-  ],
-  "environment": [
-    {
-      "name": "JAVA_HOME",
-      "operation": "set",
-      "type": "path",
-      "value": { "source": "dependency", "slot": "jdk", "resource-type": "directory", "resource": "home" }
-    },
-    {
-      "name": "PATH",
-      "operation": "prepend",
-      "type": "path-list",
-      "value": { "source": "dependency", "slot": "jdk", "resource-type": "directory", "resource": "bin" }
-    }
-  ]
-}
+```text
+state_present	true
+state_compatibility_version	1
+state_scope	shared
+state_mapping_count	4
+state_mapping_1_path	etc
+state_mapping_1_area	conf
+state_mapping_2_path	userdir
+state_mapping_2_area	home
+state_mapping_3_path	cache
+state_mapping_3_area	cache
+state_mapping_4_path	log
+state_mapping_4_area	log
+
+interface_file_count	1
+interface_file_1_id	launcher
+interface_file_1_path	bin/netbeans
+interface_directory_count	0
+interface_command_count	1
+interface_command_1_id	netbeans
+interface_command_1_executable_source	self
+interface_command_1_executable_resource_type	file
+interface_command_1_executable_resource	launcher
+interface_command_1_arg_count	0
+interface_provide_count	0
+
+requirement_count	1
+requirement_1_slot	jdk
+requirement_1_target	capability
+requirement_1_capability	java-development-kit
+requirement_1_contract	1
+requirement_1_constraint	>=17 <22
+
+environment_count	2
+environment_1_name	JAVA_HOME
+environment_1_operation	set
+environment_1_type	path
+environment_1_value_source	dependency
+environment_1_value_slot	jdk
+environment_1_value_resource_type	directory
+environment_1_value_resource	home
+environment_2_name	PATH
+environment_2_operation	prepend
+environment_2_type	path-list
+environment_2_value_source	dependency
+environment_2_value_slot	jdk
+environment_2_value_resource_type	directory
+environment_2_value_resource	bin
 ```
 
 Possible resolution:
@@ -144,37 +152,35 @@ PASS.
 
 # 3. Python runtime provider
 
-```json
-{
-  "interface": {
-    "directories": [
-      { "id": "home", "path": "." },
-      { "id": "bin", "path": "bin" }
-    ],
-    "files": [
-      { "id": "python-exe", "path": "bin/python3" }
-    ],
-    "commands": [
-      {
-        "id": "python",
-        "executable": { "source": "self", "resource-type": "file", "resource": "python-exe" },
-        "args": []
-      }
-    ],
-    "provides": [
-      {
-        "capability": "python-runtime",
-        "contract": 1,
-        "version": "3.12",
-        "resources": [
-          { "key": "command", "resource-type": "command", "resource": "python" },
-          { "key": "home", "resource-type": "directory", "resource": "home" },
-          { "key": "bin", "resource-type": "directory", "resource": "bin" }
-        ]
-      }
-    ]
-  }
-}
+```text
+interface_directory_count	2
+interface_directory_1_id	home
+interface_directory_1_path	.
+interface_directory_2_id	bin
+interface_directory_2_path	bin
+interface_file_count	1
+interface_file_1_id	python-exe
+interface_file_1_path	bin/python3
+interface_command_count	1
+interface_command_1_id	python
+interface_command_1_executable_source	self
+interface_command_1_executable_resource_type	file
+interface_command_1_executable_resource	python-exe
+interface_command_1_arg_count	0
+interface_provide_count	1
+interface_provide_1_capability	python-runtime
+interface_provide_1_contract	1
+interface_provide_1_version	3.12
+interface_provide_1_resource_count	3
+interface_provide_1_resource_1_key	command
+interface_provide_1_resource_1_resource_type	command
+interface_provide_1_resource_1_resource	python
+interface_provide_1_resource_2_key	home
+interface_provide_1_resource_2_resource_type	directory
+interface_provide_1_resource_2_resource	home
+interface_provide_1_resource_3_key	bin
+interface_provide_1_resource_3_resource_type	directory
+interface_provide_1_resource_3_resource	bin
 ```
 
 Provider è native, per esempio `cpython@...@linux-arm64`.
@@ -185,32 +191,29 @@ PASS.
 
 # 4. Python hosted application `any-any`
 
-```json
-{
-  "interface": {
-    "files": [
-      { "id": "main-script", "path": "app/main.py" }
-    ],
-    "commands": [
-      {
-        "id": "example-app",
-        "executable": { "source": "dependency", "slot": "python", "resource-type": "command", "resource": "python" },
-        "args": [
-          { "source": "self", "resource-type": "file", "resource": "main-script" }
-        ]
-      }
-    ]
-  },
-  "requirements": [
-    {
-      "slot": "python",
-      "target": "capability",
-      "capability": "python-runtime",
-      "contract": 1,
-      "constraint": "=3.12"
-    }
-  ]
-}
+```text
+interface_file_count	1
+interface_file_1_id	main-script
+interface_file_1_path	app/main.py
+interface_directory_count	0
+interface_command_count	1
+interface_command_1_id	example-app
+interface_command_1_executable_source	dependency
+interface_command_1_executable_slot	python
+interface_command_1_executable_resource_type	command
+interface_command_1_executable_resource	python
+interface_command_1_arg_count	1
+interface_command_1_arg_1_source	self
+interface_command_1_arg_1_resource_type	file
+interface_command_1_arg_1_resource	main-script
+interface_provide_count	0
+requirement_count	1
+requirement_1_slot	python
+requirement_1_target	capability
+requirement_1_capability	python-runtime
+requirement_1_contract	1
+requirement_1_constraint	=3.12
+environment_count	0
 ```
 
 PASS.
@@ -219,21 +222,20 @@ PASS.
 
 # 5. Pulsar Electron/self-contained
 
-```json
-{
-  "interface": {
-    "files": [
-      { "id": "pulsar-exe", "path": "bin/pulsar" }
-    ],
-    "commands": [
-      {
-        "id": "pulsar",
-        "executable": { "source": "self", "resource-type": "file", "resource": "pulsar-exe" },
-        "args": []
-      }
-    ]
-  }
-}
+```text
+interface_file_count	1
+interface_file_1_id	pulsar-exe
+interface_file_1_path	bin/pulsar
+interface_directory_count	0
+interface_command_count	1
+interface_command_1_id	pulsar
+interface_command_1_executable_source	self
+interface_command_1_executable_resource_type	file
+interface_command_1_executable_resource	pulsar-exe
+interface_command_1_arg_count	0
+interface_provide_count	0
+requirement_count	0
+environment_count	0
 ```
 
 Nessun requirement artificiale Java.
@@ -242,41 +244,46 @@ PASS.
 
 ---
 
-# 6. Integrity metadata + TSV
+# 6. Integrity metadata + inventory
 
 Descriptor:
 
-```json
-{
-  "integrity": {
-    "method": 1,
-    "algorithm": "sha256",
-    "root": {
-      "inventory": "@integrity-root.tsv",
-      "files": 2,
-      "directories": 2,
-      "links": 1,
-      "manifest-digest": "..."
-    },
-    "run-default": {
-      "inventory": "@integrity-run-default.tsv",
-      "files": 0,
-      "directories": 1,
-      "links": 0,
-      "manifest-digest": "..."
-    }
-  }
-}
+```text
+integrity_method	1
+integrity_algorithm	sha256
+integrity_root_inventory	@integrity-root.tsv
+integrity_root_files	2
+integrity_root_directories	2
+integrity_root_links	1
+integrity_root_manifest_digest	...
+integrity_run_default_inventory	@integrity-run-default.tsv
+integrity_run_default_files	0
+integrity_run_default_directories	1
+integrity_run_default_links	0
+integrity_run_default_manifest_digest	...
 ```
 
 `@integrity-root.tsv`:
 
 ```text
-D	0500	-	-	.
-D	0500	-	-	./bin
-F	0500	<digest>	-	./bin/foo
-F	0400	<digest>	-	./app.jar
-L	-	<digest-target>	../run/log	./log
+kind	integrity
+schema	1
+directory_count	2
+directory_1_path	.
+directory_1_mode	0500
+directory_2_path	./bin
+directory_2_mode	0500
+file_count	2
+file_1_path	./app.jar
+file_1_mode	0400
+file_1_digest	<digest>
+file_2_path	./bin/foo
+file_2_mode	0500
+file_2_digest	<digest>
+link_count	1
+link_1_path	./log
+link_1_target	../run/log
+link_1_digest	<digest-target>
 ```
 
 PASS.
@@ -285,7 +292,7 @@ PASS.
 
 # 7. Conclusion
 
-Il modello copre senza nuove primitive:
+Il modello a due campi copre senza nuove primitive:
 
 ```text
 native runtime provider
@@ -296,7 +303,8 @@ environment isolation
 hosted/direct commands
 capability contracts
 self-contained app
-external streaming integrity inventory
+integrity inventory nello stesso System Field Format
+nested collections con count + indici
 ```
 
 Result:
