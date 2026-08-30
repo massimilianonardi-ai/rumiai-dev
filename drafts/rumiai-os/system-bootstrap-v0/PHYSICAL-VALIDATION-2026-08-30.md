@@ -2,9 +2,13 @@
 
 Date: 2026-08-30
 
-Status: **PASSED on both current stable reference installations**
+Status: **Gate 1 and Gate 2 PASSED on both current stable reference installations; current naming-corrected revision pending bundled revalidation**
 
 This document records the physical validation gates completed for the `rumi` bootstrap substrate.
+
+Important evidence rule:
+
+> Physical validation evidence applies to the exact product/test revisions and API spelling exercised. Later naming-only corrections are not retroactively described as physically validated.
 
 ---
 
@@ -12,9 +16,9 @@ This document records the physical validation gates completed for the `rumi` boo
 
 ## Scope
 
-This validation covers the bootstrap system data API implemented by `rumiai-os/lib/data.lib` and loaded by the `rumiai-os` bootstrap.
+This validation covered the bootstrap system data API implemented by `rumiai-os/lib/data.lib` and loaded by the `rumiai-os` bootstrap.
 
-Validated public API surface:
+API spelling exercised at the validated revision:
 
 ```text
 rumi_conf_validate
@@ -30,6 +34,25 @@ rumi_table_rows
 rumi_table_column
 rumi_table_select
 ```
+
+That lowercase spelling was subsequently identified as inconsistent with the canonical RumiAI shell namespace and has been corrected in the current implementation to:
+
+```text
+RumiAI_conf_validate
+RumiAI_conf_get
+RumiAI_conf_has
+RumiAI_conf_namespace
+RumiAI_conf_set
+RumiAI_conf_remove
+
+RumiAI_table_validate
+RumiAI_table_header
+RumiAI_table_rows
+RumiAI_table_column
+RumiAI_table_select
+```
+
+The underlying SCF/TSV semantics validated below did not change. The naming-corrected product revision will be re-exercised together with the next substantive bootstrap physical gate.
 
 Physical test:
 
@@ -132,8 +155,9 @@ malformed dataset rejection
 Gate conclusion:
 
 ```text
-System Configuration Field API     VALIDATED
-System Tabular Data API             VALIDATED
+System Configuration Field semantics     VALIDATED
+System Tabular Data semantics             VALIDATED
+current RumiAI_* API spelling             PENDING BUNDLED REVALIDATION
 ```
 
 ---
@@ -142,9 +166,9 @@ System Tabular Data API             VALIDATED
 
 ## Scope
 
-This validation covers the platform adapter implemented by `rumiai-os/lib/platform.lib` and its integration into the bootstrap.
+This validation covered the platform adapter implemented by `rumiai-os/lib/platform.lib` and its integration into the bootstrap.
 
-Validated public API surface:
+API spelling exercised at the validated revision:
 
 ```text
 rumi_platform
@@ -159,7 +183,24 @@ rumi_digest_text
 rumi_atomic_replace
 ```
 
-It also validates the bootstrap PATH precedence:
+The current implementation corrects the new API names to the canonical namespace:
+
+```text
+RumiAI_platform
+RumiAI_architecture
+RumiAI_execution_platform
+RumiAI_path_canonicalize_existing
+RumiAI_fs_type
+RumiAI_fs_mode
+RumiAI_fs_readlink
+RumiAI_digest_file
+RumiAI_digest_text
+RumiAI_atomic_replace
+```
+
+`RumiAI_path_canonicalize_existing` was already an established bootstrap primitive and is reused directly; no redundant alias is retained.
+
+The validation also covered bootstrap PATH precedence:
 
 ```text
 RUMIAI_ROOT/bin/@platforms/<platform>-<architecture>
@@ -196,7 +237,7 @@ Isolate bootstrap digest commands from RumiAI PATH
 
 ## Test revision
 
-Before this gate the two Gate 1 validation sessions were committed into `rumiai-tests`; both hosts were then aligned to the same suite revision:
+Before this gate the two Gate 1 validation sessions were committed into `rumiai-tests`; both hosts were aligned to the same suite revision:
 
 ```text
 massimilianonardi-ai/rumiai-tests
@@ -204,7 +245,7 @@ b4e147cc2f2f0177a6ed2ac9da36ef15e165a63b
 Record Ubuntu 26.04 ARM64 bootstrap data API validation
 ```
 
-The package platform primitive test itself was introduced earlier by:
+The platform primitive test itself was introduced earlier by:
 
 ```text
 5a7bbbc36af79eaa3a5b2817de0a18841832d904
@@ -254,25 +295,48 @@ native OS identity
 native architecture identity
 execution-platform identity
 native @platforms PATH precedence
-existing-path canonicalization API
+existing-path canonicalization API semantics
 filesystem file/directory/link classification
 portable normalized file modes
 symlink target reading
 SHA-256 file digest
 SHA-256 exact-text digest
 host digest utility isolation from RumiAI PATH
-same-directory atomic replace primitive
+same-directory atomic replace semantics
 ```
 
 Gate conclusion:
 
 ```text
-native platform identity             VALIDATED
-native PATH specialization           VALIDATED
-basic filesystem abstraction         VALIDATED
-SHA-256 abstraction                  VALIDATED
-atomic replace primitive             VALIDATED
+native platform identity semantics             VALIDATED
+native PATH specialization                     VALIDATED
+basic filesystem abstraction semantics         VALIDATED
+SHA-256 abstraction semantics                  VALIDATED
+atomic replace semantics                       VALIDATED
+current RumiAI_* API spelling                  PENDING BUNDLED REVALIDATION
 ```
+
+---
+
+# Post-gate consistency correction
+
+After Gate 2, a consistency audit identified two implementation issues:
+
+1. newly introduced bootstrap APIs mixed lowercase `rumi_*` with the established `RumiAI_*` function namespace;
+2. required-library loading used consecutive branches that produced the same error for precheck failure and source failure.
+
+The implementation was corrected forward-only:
+
+```text
+all RumiAI-namespaced functions -> RumiAI_*
+existing RumiAI_path_canonicalize_existing reused directly
+lowercase rumi_* function namespace forbidden
+library precheck + source failure -> one same-error conditional branch
+```
+
+Permanent regression protection was added for the forbidden lowercase function namespace.
+
+These corrections do not invalidate the semantic evidence from Gate 1/Gate 2, but the corrected current revision is not labelled physically validated until it is exercised in a later gate.
 
 ---
 
@@ -281,6 +345,7 @@ atomic replace primitive             VALIDATED
 The completed gates do **not** yet physically validate:
 
 ```text
+current naming-corrected bootstrap revision
 filesystem walk abstraction
 Unicode NFC normalization
 Unicode default case-fold
