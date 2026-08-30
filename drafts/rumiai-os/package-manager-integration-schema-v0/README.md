@@ -13,6 +13,7 @@ drafts/rumiai-os/package-manager-resolved-state/README.md
 drafts/rumiai-os/package-manager-serialization-v0/README.md
 drafts/rumiai-os/package-manager-schema-v0/README.md
 drafts/rumiai-os/package-manager-capability-contracts-v0/README.md
+drafts/rumiai-os/package-manager-platform-vocabulary-v0/README.md
 ```
 
 Questo schema non introduce virtual package. Selector e binding sono nomi locali del profilo desiderato/risolto e non oggetti sotto `pkg/`.
@@ -222,19 +223,21 @@ Non ammessi `/`, `\`, NUL/control.
 
 # 10. Platform namespace
 
-Cross-platform execution domain:
+Package binding con contenuto `platform = any`:
 
 ```text
 RUMIAI_ROOT/bin/<name>
 ```
 
-Native package:
+Package binding platform-specific:
 
 ```text
 RUMIAI_ROOT/bin/@platforms/<native-platform>-<architecture>/<name>
 ```
 
 Il current native platform namespace precede `bin/` nel PATH.
+
+La decisione non dipende dal runtime requirement del package: una Package Instance `any-any` che richiede Java/Python resta un binding cross-platform; il provider runtime concreto viene risolto separatamente.
 
 ---
 
@@ -263,8 +266,8 @@ Regole:
 
 ```text
 same public name
-base cross-platform
-specialization native
+base package content platform = any
+specialization native/platform-specific
 specializes punta a binding ID esistente
 ```
 
@@ -403,7 +406,7 @@ environment
 [[selectors]]
 id = "netbeans"
 target = "package"
-package = "netbeans@26@r1@jvm-any"
+package = "netbeans@26@r1@any-any"
 ```
 
 ---
@@ -429,11 +432,11 @@ Resolved state mantiene exact contract version e exact Package Instance.
 ```toml
 [[graphs]]
 id = "netbeans-graph"
-root-package = "netbeans@26@r1@jvm-any"
+root-package = "netbeans@26@r1@any-any"
 
 [[dependencies]]
 graph = "netbeans-graph"
-consumer = "netbeans@26@r1@jvm-any"
+consumer = "netbeans@26@r1@any-any"
 slot = "jdk"
 target = "capability"
 capability = "java-development-kit"
@@ -453,7 +456,7 @@ Nessun edge contiene latest/fallback dinamico.
 [[command-bindings]]
 id = "netbeans-command"
 name = "netbeans"
-package = "netbeans@26@r1@jvm-any"
+package = "netbeans@26@r1@any-any"
 command = "netbeans"
 graph = "netbeans-graph"
 state = "netbeans@s1"
@@ -604,20 +607,15 @@ IS-03 selector target = package|capability
 IS-04 capability selector identity = name+contract
 IS-05 preference separate dal consumer Requirement
 IS-06 pin non fa fallback
-IS-07 same-name collision richiede specialization
-IS-08 capability public binding usa contract resource key
-IS-09 resolved binding = exact package+resource
-IS-10 private closure non diventa public
-IS-11 resolved graph non contiene dynamic selection
-IS-12 resolved env non contiene absolute paths
-IS-13 State Instance exact derivata/persistita
-IS-14 generation immutable monotonic
-IS-15 active pointer è switch atomico
-IS-16 provenance non influenza launch
+IS-07 platform/architecture del package descrivono il contenuto, non il runtime requirement
+IS-08 same-name collision richiede specialization
+IS-09 capability public binding usa contract resource key
+IS-10 resolved binding = exact package+resource
+IS-11 private closure non diventa public
+IS-12 resolved graph non contiene dynamic selection
+IS-13 resolved env non contiene absolute paths
+IS-14 State Instance exact derivata/persistita
+IS-15 generation immutable monotonic
+IS-16 active pointer è switch atomico
+IS-17 provenance non influenza launch
 ```
-
----
-
-# 27. Next
-
-Resta da fissare il physical persistence/transaction layout di Desired Profile, immutable Resolution Snapshot, active pointer e lock.
