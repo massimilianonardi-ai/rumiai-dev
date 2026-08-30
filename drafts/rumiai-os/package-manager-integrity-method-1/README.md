@@ -7,9 +7,9 @@ Stato: **design decision — canonical integrity format v0 fissato**
 Prerequisiti:
 
 ```text
+drafts/rumiai-os/system-field-format-v0/README.md
 drafts/rumiai-os/package-manager-package-instance-layout/README.md
 drafts/rumiai-os/package-manager-serialization-v0/README.md
-drafts/rumiai-os/json-standard-v0/README.md
 ```
 
 Integrity Method 1 definisce la rappresentazione canonica degli inventory di:
@@ -19,14 +19,14 @@ root/
 run-default/
 ```
 
-Ogni tree usa un file TSV separato:
+Ogni tree usa un file separato:
 
 ```text
 @integrity-root.tsv
 @integrity-run-default.tsv
 ```
 
-Il descriptor `@package` JSON contiene metodo, algoritmo, conteggi, pathname dell'inventory e digest dell'intero manifest TSV.
+Entrambi usano RumiAI System Field Format v0 a due campi.
 
 ---
 
@@ -38,113 +38,101 @@ Il formato deve essere:
 deterministico
 streamabile
 semplice da verificare
-facilmente leggibile da shell/awk
-indipendente da Python
+leggibile da POSIX sh/awk tramite bootstrap Rumi
+indipendente da JSON/Python/Node/jq
 compatibile con Unicode
 senza quoting/escaping del pathname
 ```
 
-Per ottenere questo risultato, i caratteri che interferirebbero con record/field framing vengono vietati nei pathname e nei symlink target invece di introdurre una mini-sintassi di escaping.
+I caratteri che interferirebbero con record/field framing vengono vietati nei pathname e nei symlink target invece di introdurre una mini-sintassi di escaping.
 
 ---
 
 # 2. Encoding e framing
 
-Ogni inventory è:
+Ogni inventory segue System Field Format:
+
+```text
+field-name<TAB>field-value<LF>
+```
+
+Regole machine-generated:
 
 ```text
 UTF-8
 no BOM
 LF line ending
 LF finale obbligatorio
-nessuna header row
+nessun commento
 nessuna blank row
+field-name unico
 ```
 
-Ogni record contiene esattamente:
+Header:
 
 ```text
-5 campi
-4 TAB ASCII U+0009
+kind	integrity
+schema	1
 ```
-
-Schema:
-
-```text
-type<TAB>mode<TAB>digest<TAB>target<TAB>path<LF>
-```
-
-`path` è sempre l'ultimo campo.
-
-Poiché TAB, CR e LF non sono ammessi nei campi pathname/target, il parser non necessita quoting o escaping.
 
 ---
 
-# 3. Type
-
-Token v0:
+# 3. Collection directory
 
 ```text
-D    directory
-F    regular file
-L    symbolic link
+directory_count	N
 ```
 
-Altri filesystem object type non fanno parte di Integrity Method 1.
-
-Package producer/admission deve normalizzare o rifiutare oggetti non rappresentabili dal metodo.
-
----
-
-# 4. Record directory
-
-Forma:
+Ogni entry usa:
 
 ```text
-D<TAB><mode><TAB>-<TAB>-<TAB><path>
+directory_<i>_path	<canonical-path>
+directory_<i>_mode	0500
 ```
 
 Esempio:
 
 ```text
-D	0500	-	-	.
-D	0500	-	-	./bin
+directory_count	2
+directory_1_path	.
+directory_1_mode	0500
+directory_2_path	./bin
+directory_2_mode	0500
 ```
 
-Il record:
-
-```text
-.
-```
-
-rappresenta la root del tree inventariato.
-
-Directory immutable v0 usa normalmente:
-
-```text
-0500
-```
+Il record `.` rappresenta la root del tree inventariato e partecipa a `directory_count`.
 
 ---
 
-# 5. Record regular file
-
-Forma:
+# 4. Collection regular file
 
 ```text
-F<TAB><mode><TAB><digest><TAB>-<TAB><path>
+file_count	N
 ```
 
-Esempi:
+Ogni entry usa:
 
 ```text
-F	0500	<sha256>	-	./bin/foo
-F	0400	<sha256>	-	./lib/foo.jar
+file_<i>_path	<canonical-path>
+file_<i>_mode	0400|0500
+file_<i>_digest	<digest>
+```
+
+Esempio:
+
+```text
+file_count	2
+file_1_path	./bin/foo
+file_1_mode	0500
+file_1_digest	<sha256>
+file_2_path	./lib/foo.jar
+file_2_mode	0400
+file_2_digest	<sha256>
 ```
 
 Digest regular file:
 
-> digest dei byte esatti del contenuto del file secondo `integrity.algorithm`.
+> digest dei byte esatti del contenuto del file secondo `integrity_algorithm` dichiarato da `@package`.
 
 Mode v0 normalizzati:
 
@@ -153,31 +141,52 @@ Mode v0 normalizzati:
 0500    regular executable
 ```
 
-L'executable semantic è quindi protetta dall'integrity.
-
 ---
 
-# 6. Record symlink
-
-Forma:
+# 5. Collection symlink
 
 ```text
-L<TAB>-<TAB><digest-target><TAB><target><TAB><path>
+link_count	N
+```
+
+Ogni entry usa:
+
+```text
+link_<i>_path	<canonical-path>
+link_<i>_target	<canonical-relative-target>
+link_<i>_digest	<digest-target>
 ```
 
 Esempio:
 
 ```text
-L	-	<sha256-target>	../run/log	./log
+link_count	1
+link_1_path	./log
+link_1_target	../run/log
+link_1_digest	<sha256-target>
 ```
 
 Il symlink non viene dereferenziato per calcolare il proprio digest.
 
-`digest-target` è il digest dei byte UTF-8 della **canonical target string** definita da Method 1.
+`link_<i>_digest` è il digest dei byte UTF-8 della canonical target string definita da Method 1.
 
 Mode/UID/GID del symlink non partecipano all'integrity.
 
-Per un record `L`, il valore `-` nel campo `target` è un target letterale valido se un symlink reale punta precisamente al nome `-`; l'interpretazione dei campi è determinata da `type`, quindi non esiste ambiguità.
+---
+
+# 6. Oggetti filesystem ammessi
+
+Method 1 rappresenta soltanto:
+
+```text
+directory
+regular file
+symbolic link
+```
+
+Altri filesystem object type non fanno parte di Integrity Method 1.
+
+Package producer/admission deve normalizzare o rifiutare oggetti non rappresentabili dal metodo.
 
 ---
 
@@ -197,7 +206,7 @@ Motivi:
 
 ```text
 NUL         incompatibilità fondamentale con filesystem/API comuni
-TAB         delimitatore TSV
+TAB         delimitatore System Field Format
 CR/LF       delimitatori record / ambiguità line-oriented
 backslash   separator/escape con semantiche incompatibili fra Unix e Windows
 ```
@@ -216,19 +225,30 @@ Pathname e symlink target sono rappresentati semanticamente come Unicode e canon
 Unicode NFC
 ```
 
-La forma registrata nel TSV è UTF-8 della stringa NFC.
+La forma persistita è UTF-8 della stringa NFC.
 
-Questa regola permette di non vietare Unicode e riduce differenze fra filesystem che possono rappresentare sequenze Unicode equivalenti in forme differenti.
+Per regular file, la normalizzazione del pathname non modifica i byte del contenuto file.
 
-Per regular file, la normalizzazione del pathname non modifica i byte del contenuto file: il file digest resta sempre digest dei byte esatti del file.
+Per symlink, `link_<i>_digest` viene calcolato sulla target string canonica NFC.
 
-Per symlink, `digest-target` viene calcolato sulla target string canonica NFC, non su una eventuale rappresentazione filesystem Unicode non canonica equivalente.
+### Bootstrap requirement
+
+POSIX `sh`, POSIX `awk` e `sed` non forniscono una primitive completa e portabile per:
+
+```text
+Unicode NFC normalization
+Unicode default case-fold
+```
+
+Quindi il bootstrap Rumi DEVE esporre primitive normative per queste operazioni, oppure la validazione deve essere delegata a un producer/validator fidato prima dell'ammissione locale.
+
+La scelta raccomandata è esporre le primitive nel bootstrap Rumi e mantenere invariata la semantica Method 1.
 
 ---
 
 # 9. Canonical pathname syntax
 
-Path record:
+Path persistito:
 
 ```text
 root entry      .
@@ -244,14 +264,12 @@ nessun componente vuoto
 nessun componente .
 nessun componente ..
 nessun // ripetuto
-nessun trailing /, salvo che / non compare come root syntax
+nessun trailing /
 Unicode NFC
 caratteri vietati secondo §7
 ```
 
-Il pathname `.` è l'unica eccezione alla regola sui componenti `.` ed è ammesso esclusivamente per il root record del tree.
-
-La rappresentazione fisica letta dal filesystem viene convertita alla canonical RumiAI pathname prima di produrre/confrontare l'inventory.
+Il pathname `.` è l'unica eccezione alla regola sui componenti `.` ed è ammesso esclusivamente per la root del tree.
 
 ---
 
@@ -259,7 +277,7 @@ La rappresentazione fisica letta dal filesystem viene convertita alla canonical 
 
 All'interno dello stesso tree non possono esistere due pathname fisicamente distinti che collidono dopo canonicalizzazione portabile.
 
-Per ogni canonical path viene derivata una collision key:
+Collision key:
 
 ```text
 NFC
@@ -273,18 +291,9 @@ Se due path distinti producono la stessa collision key:
 INTEGRITY_PATH_COLLISION
 ```
 
-Esempi incompatibili nello stesso tree:
+La regola vale per tutte le Package Instance v0, non soltanto `any-any`.
 
-```text
-./Foo.txt
-./foo.txt
-```
-
-oppure due rappresentazioni Unicode canonically equivalent dello stesso nome.
-
-La regola vale per tutte le Package Instance v0, non soltanto `any-any`, così l'inventory mantiene una grammatica/filesystem safety unica e prevedibile.
-
-Il pathname canonico originale conserva comunque il case; non viene convertito in lowercase.
+Il pathname canonico originale conserva il case.
 
 ---
 
@@ -310,145 +319,143 @@ component .
 trailing /
 ```
 
-I componenti:
-
-```text
-..
-```
-
-sono ammessi perché necessari a link relativi legittimi, per esempio:
+I componenti `..` sono ammessi perché necessari a link relativi legittimi, per esempio:
 
 ```text
 ../run/log
 ```
 
-Un target con drive-prefix/forma assoluta riconoscibile da una reference platform è rifiutato come absolute target.
-
-La semantica del link viene inoltre validata lessicalmente rispetto alla directory parent del link: la risoluzione non può uscire dalla wrapper:
+La risoluzione lessicale rispetto alla directory parent del link non può uscire dalla wrapper:
 
 ```text
 pkg/<package-instance-id>/
 ```
 
-Method 1 garantisce quindi che un symlink inventariato non possa essere usato come escape verso pathname host arbitrari.
-
-Le regole più specifiche restano al livello Package Instance/State Mapping. Per esempio una writable island sotto `root/` deve continuare ad avere il target relativo atteso verso `../run/<path>` secondo il relativo contratto.
+Le regole più specifiche restano al livello Package Instance/State Mapping.
 
 ---
 
-# 12. Canonical ordering
+# 12. Canonical collection ordering
 
-I record vengono ordinati per il valore `path` canonico.
+Il precedente ordinamento globale dei record per path viene sostituito da un ordine canonico compatibile con System Field Format indicizzato.
 
-Ordine Method 1:
+Ordine delle sezioni:
+
+```text
+1 kind
+2 schema
+3 directory_count
+4 directory entries 1..N
+5 file_count
+6 file entries 1..N
+7 link_count
+8 link entries 1..N
+```
+
+Dentro ciascuna collection, gli indici vengono assegnati dopo ordinamento:
 
 ```text
 ascending lexicographic order dei byte UTF-8 del canonical NFC pathname
 ```
 
-Conseguenze:
+Dentro ogni entry l'ordine field è fisso:
 
 ```text
-ordine indipendente da locale
-ordine indipendente da filesystem enumeration
-root `.` naturalmente precede i descendant `./...`
+directory: path, mode
+file:      path, mode, digest
+link:      path, target, digest
 ```
 
-Il type non è un tie-breaker: due record con lo stesso canonical path sono invalidi.
+Non si usa un semplice lexical sort dei field-name, perché `file_10_*` verrebbe prima di `file_2_*`.
 
 ---
 
 # 13. Counts
 
-`@package` mantiene per ciascun inventory:
+Ogni inventory contiene obbligatoriamente:
 
 ```text
-files
-directories
-links
+directory_count
+file_count
+link_count
 ```
 
-I count devono concordare esattamente con i record TSV.
+`@package` mantiene gli stessi count come summary/cross-check.
 
-Il root record `D ... .` partecipa al directory count.
+I due insiemi devono concordare esattamente.
+
+Gli indici di ogni collection sono contigui `1..N`.
 
 ---
 
 # 14. Manifest digest
 
-`manifest-digest` è:
+`manifest_digest` dichiarato da `@package` è:
 
-> digest dei byte esatti dell'intero file TSV canonico, inclusi TAB, LF, ordine dei record e LF finale.
+> digest dei byte esatti dell'intero inventory System Field Format canonico, inclusi field-name, TAB, field-value, LF, ordine canonico e LF finale.
 
 Quindi cambia se cambia:
 
 ```text
-entry type
+entry type/collection
 mode file/directory
 file content digest
 symlink canonical target/digest
 canonical pathname
-numero/ordine record
+numero/ordine entry
 ```
-
-Il digest non dipende da JSON pretty-printing o object member order del descriptor `@package`.
 
 ---
 
 # 15. `@package` reference
 
-Esempio concettuale JSON:
+Esempio:
 
-```json
-{
-    "integrity":
-    {
-        "method": 1,
-        "algorithm": "sha256",
-        "root":
-        {
-            "inventory": "@integrity-root.tsv",
-            "files": 120,
-            "directories": 24,
-            "links": 3,
-            "manifest-digest": "..."
-        },
-        "run-default":
-        {
-            "inventory": "@integrity-run-default.tsv",
-            "files": 8,
-            "directories": 5,
-            "links": 0,
-            "manifest-digest": "..."
-        }
-    }
-}
+```text
+integrity_method	1
+integrity_algorithm	sha256
+integrity_root_inventory	@integrity-root.tsv
+integrity_root_files	120
+integrity_root_directories	24
+integrity_root_links	3
+integrity_root_manifest_digest	...
+integrity_run_default_inventory	@integrity-run-default.tsv
+integrity_run_default_files	8
+integrity_run_default_directories	5
+integrity_run_default_links	0
+integrity_run_default_manifest_digest	...
 ```
 
 I nomi inventory sono package-wrapper relative e non pathname host assoluti.
 
 ---
 
-# 16. Streaming parser property
+# 16. Streaming verifier property
 
-Un verifier può processare il TSV una riga alla volta.
+Un verifier non deve usare `rumi_file_get` ripetutamente per ogni entry.
 
-Per ogni record può:
+Può processare una collection in singola passata tramite bootstrap/per-prefix streaming:
 
 ```text
-split su esattamente quattro TAB
-validare 5 field
-validare type-specific field grammar
+rumi_file_fields <inventory> directory_
+rumi_file_fields <inventory> file_
+rumi_file_fields <inventory> link_
+```
+
+oppure una primitive equivalente che attraversa il documento una volta.
+
+Durante la scansione può:
+
+```text
+validare field-name/schema/index
 validare canonical Unicode/path syntax
-controllare monotonic path ordering
+controllare monotonic pathname ordering dentro la collection
 aggiornare count
-aggiornare manifest digest incrementale
+aggiornare manifest digest incrementale sull'intero file
 verificare il physical entry corrispondente
 ```
 
-Non è necessario caricare l'intero inventory in memoria.
-
-Per il collision check portabile può essere necessario mantenere un set/index delle collision key oppure usare una seconda strategia di validation deterministica; questo non cambia il formato persistito.
+Per il collision check portabile può essere necessario mantenere un set/index delle collision key o usare una strategia bootstrap dedicata.
 
 ---
 
@@ -470,10 +477,10 @@ INTEGRITY_CONTENT_MISMATCH
 # 18. Invarianti
 
 ```text
-IM1-01 inventory = UTF-8 canonical TSV senza header
-IM1-02 ogni record ha esattamente 5 campi / 4 TAB
-IM1-03 path è sempre l'ultimo campo
-IM1-04 record type v0 = D | F | L
+IM1-01 inventory usa System Field Format v0 a due campi
+IM1-02 kind=integrity + schema=1
+IM1-03 collection v0 = directory | file | link
+IM1-04 collection usa count + indici contigui 1..N
 IM1-05 TAB/CR/LF/NUL/backslash sono vietati in pathname e symlink target
 IM1-06 Unicode è ammesso e canonicalizzato NFC
 IM1-07 pathname usa solo `/` e forma `.` oppure `./...`
@@ -483,8 +490,9 @@ IM1-10 symlink target è relativo; `..` è ammesso quando semanticamente valido
 IM1-11 symlink target inventariato non può risolvere fuori dalla Package Instance wrapper
 IM1-12 file digest = byte content digest
 IM1-13 symlink digest = digest della canonical UTF-8 target string
-IM1-14 mode partecipa a directory/regular file record; symlink mode no
-IM1-15 record order = ascending canonical UTF-8 pathname bytes
-IM1-16 manifest digest = digest dei byte esatti del TSV canonico con LF finale
-IM1-17 inventory è streamabile e non richiede parser JSON/Python
+IM1-14 mode partecipa a directory/regular file; symlink mode no
+IM1-15 entry index order = ascending canonical UTF-8 pathname bytes dentro ciascuna collection
+IM1-16 manifest digest = digest dei byte esatti dell'inventory canonico con LF finale
+IM1-17 inventory grandi usano streaming bootstrap, non repeated lookup
+IM1-18 bootstrap/validator deve fornire Unicode NFC + case-fold semantics normative
 ```
