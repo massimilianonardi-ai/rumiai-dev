@@ -4,6 +4,13 @@ Data: 2026-08-30
 
 Stato: **design decision — JSON + TSV v0 fissati**
 
+Prerequisiti:
+
+```text
+drafts/rumiai-os/json-standard-v0/README.md
+drafts/rumiai-os/package-manager-integrity-method-1/README.md
+```
+
 Questa specifica sostituisce la precedente scelta TOML.
 
 ---
@@ -86,6 +93,19 @@ environment operation sequence
 
 Non è richiesta una canonical byte serialization JSON generale.
 
+I JSON generati da RumiAI seguono inoltre la formatting policy normativa del JSON standard v0:
+
+```text
+4 spazi di indentation
+LF
+newline finale
+opening/closing `{` e `[`/`]` su righe proprie
+opening object/array delimiter mai appeso alla riga che introduce il valore
+Unicode emesso normalmente come UTF-8
+```
+
+Il parser non richiede questa formattazione per accettare JSON esterni validi.
+
 ---
 
 # 3. `@package`
@@ -111,22 +131,24 @@ requirements
 environment
 ```
 
-Esempio:
+Esempio di stile generato:
 
 ```json
 {
-  "schema": 1,
-  "identity": {
-    "name": "netbeans",
-    "version": "26",
-    "revision": 1,
-    "platform": "any",
-    "architecture": "any",
-    "display-name": "NetBeans 26"
-  },
-  "release": {
-    "release-order": 26
-  }
+    "schema": 1,
+    "identity":
+    {
+        "name": "netbeans",
+        "version": "26",
+        "revision": 1,
+        "platform": "any",
+        "architecture": "any",
+        "display-name": "NetBeans 26"
+    },
+    "release":
+    {
+        "release-order": 26
+    }
 }
 ```
 
@@ -148,10 +170,10 @@ Le reference sono object JSON espliciti, per esempio:
 
 ```json
 {
-  "source": "dependency",
-  "slot": "jdk",
-  "resource-type": "directory",
-  "resource": "home"
+    "source": "dependency",
+    "slot": "jdk",
+    "resource-type": "directory",
+    "resource": "home"
 }
 ```
 
@@ -196,24 +218,27 @@ Esempio:
 
 ```json
 {
-  "integrity": {
-    "method": 1,
-    "algorithm": "sha256",
-    "root": {
-      "inventory": "@integrity-root.tsv",
-      "files": 120,
-      "directories": 24,
-      "links": 3,
-      "manifest-digest": "..."
-    },
-    "run-default": {
-      "inventory": "@integrity-run-default.tsv",
-      "files": 8,
-      "directories": 4,
-      "links": 0,
-      "manifest-digest": "..."
+    "integrity":
+    {
+        "method": 1,
+        "algorithm": "sha256",
+        "root":
+        {
+            "inventory": "@integrity-root.tsv",
+            "files": 120,
+            "directories": 24,
+            "links": 3,
+            "manifest-digest": "..."
+        },
+        "run-default":
+        {
+            "inventory": "@integrity-run-default.tsv",
+            "files": 8,
+            "directories": 4,
+            "links": 0,
+            "manifest-digest": "..."
+        }
     }
-  }
 }
 ```
 
@@ -246,11 +271,11 @@ mode
 digest
     - per D
     digest dei file bytes per F
-    digest del symlink target text per L
+    digest della canonical symlink target string per L
 
 target
     - per D/F
-    relative symlink target text per L
+    relative canonical symlink target per L
 
 path
     canonical relative pathname dell'entry
@@ -266,7 +291,7 @@ F	0400	<digest>	-	./lib/foo.jar
 L	-	<digest-target>	../run/log	./log
 ```
 
-Il file:
+Il file usa:
 
 ```text
 UTF-8
@@ -280,7 +305,18 @@ canonical order
 
 I conteggi e l'algoritmo non vengono duplicati nel TSV: sono nel `@package` JSON.
 
-La specifica Integrity Method 1 definisce in modo normativo canonical pathname, caratteri ammessi/escaping, sort order e digest input.
+**Integrity Method 1** è normativo e stabilisce:
+
+```text
+nessun escaping/quoting TSV
+TAB/CR/LF/NUL/backslash vietati in pathname e symlink target
+Unicode ammesso e canonicalizzato NFC
+portable case-fold collision detection
+path `.` oppure `./...`
+symlink target relativo, con `..` ammesso quando semanticamente valido
+nessun escape fuori dalla Package Instance wrapper
+sort per canonical pathname UTF-8 bytes
+```
 
 ---
 
@@ -329,7 +365,7 @@ Unix-like default:
 
 # 9. Desired / resolved state
 
-Desired state e Resolution Snapshot sono JSON conformi allo stesso restricted JSON profile.
+Desired state e Resolution Snapshot sono JSON conformi allo stesso restricted JSON profile e vengono generati con la stessa formatting policy RumiAI.
 
 I pathname possono restare semanticamente:
 
@@ -344,19 +380,20 @@ Esempio resolved:
 
 ```json
 {
-  "schema": 1,
-  "generation": 17,
-  "profile": "default",
-  "dependencies": [
-    {
-      "consumer": "netbeans@26@r1@any-any",
-      "slot": "jdk",
-      "provider": "temurin@21.0.8+9@r1@linux-arm64",
-      "capability": "java-development-kit",
-      "contract": 1,
-      "satisfied-version": "21"
-    }
-  ]
+    "schema": 1,
+    "generation": 17,
+    "profile": "default",
+    "dependencies":
+    [
+        {
+            "consumer": "netbeans@26@r1@any-any",
+            "slot": "jdk",
+            "provider": "temurin@21.0.8+9@r1@linux-arm64",
+            "capability": "java-development-kit",
+            "contract": 1,
+            "satisfied-version": "21"
+        }
+    ]
 }
 ```
 
@@ -400,12 +437,14 @@ SER-01 JSON UTF-8 è il formato strutturato di riferimento RumiAI v0
 SER-02 @package, desired e resolved usano restricted JSON
 SER-03 duplicate object member name è errore
 SER-04 metadata JSON non è codice
-SER-05 reference sono object strutturati, non mini-language
-SER-06 bulk integrity inventory è esterno a JSON
-SER-07 inventory v0 = canonical five-field TSV con path ultimo
-SER-08 root e run-default hanno inventory distinti
-SER-09 manifest-digest = digest dei byte canonici del relativo TSV
-SER-10 JSON formatting/order non partecipa all'integrity tree digest
-SER-11 active pointer resta formato minimale non-JSON
-SER-12 nessuna dipendenza architetturale da Python
+SER-05 JSON generato da RumiAI usa la formatting policy JSON standard v0
+SER-06 reference sono object strutturati, non mini-language
+SER-07 bulk integrity inventory è esterno a JSON
+SER-08 inventory v0 = canonical five-field TSV con path ultimo
+SER-09 Integrity Method 1 vieta escaping TSV e definisce Unicode NFC/path collision/sort/target semantics
+SER-10 root e run-default hanno inventory distinti
+SER-11 manifest-digest = digest dei byte canonici del relativo TSV
+SER-12 JSON formatting/order non partecipa all'integrity tree digest
+SER-13 active pointer resta formato minimale non-JSON
+SER-14 nessuna dipendenza architetturale da Python
 ```
