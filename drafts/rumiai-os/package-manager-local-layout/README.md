@@ -2,7 +2,7 @@
 
 Data: 2026-08-30
 
-Stato: **design draft — proposta successiva a Package Admission v0 e Integration Profile / Execution Environment**
+Stato: **design draft — decisioni di layout locale fissate, dettagli successivi ancora da definire**
 
 Questo documento riguarda esclusivamente il lato locale del confine già fissato:
 
@@ -45,7 +45,7 @@ La coesistenza nello stesso `pkg/` è intenzionale e permette allo stesso enviro
 
 ---
 
-# 2. Decisione: `bin/` fisica con namespace riservato `platforms`
+# 2. Decisione: `bin/` fisica con namespace riservato `@platforms`
 
 `RUMIAI_ROOT/bin/` rimane una directory fisica.
 
@@ -61,14 +61,14 @@ bin/
 I command binding platform-dependent vivono invece sotto un unico namespace riservato:
 
 ```text
-bin/platforms/<platform>-<architecture>/
+bin/@platforms/<platform>-<architecture>/
 ```
 
 Esempio:
 
 ```text
 bin/
-├── platforms/
+├── @platforms/
 │   ├── linux-arm64/
 │   │   ├── pulsar
 │   │   └── ffmpeg
@@ -81,17 +81,17 @@ bin/
 
 La directory relativa a una piattaforma viene creata **on demand**, alla prima integrazione di un command binding platform-dependent per quella piattaforma.
 
-`platforms` è una parola riservata del layout `bin/`.
+`@platforms` è una parola riservata del layout `bin/`.
 
 Conseguenza:
 
 ```text
-RUMIAI_ROOT/bin/platforms
+RUMIAI_ROOT/bin/@platforms
 ```
 
 NON può essere contemporaneamente un command binding cross-platform.
 
-Questa è una collisione strutturale deliberatamente ridotta a un solo nome noto a priori.
+Questa è una collisione strutturale deliberatamente ridotta a un solo nome noto a priori. Il prefisso `@` rende inoltre il namespace chiaramente infrastrutturale e riduce la possibilità di collisione con un comando legittimo senza renderlo nascosto come accadrebbe con `.platforms`.
 
 Non vengono riservati direttamente sotto `bin/` tutti i nomi delle piattaforme possibili.
 
@@ -104,7 +104,7 @@ Il bootstrap determina il `current-platform` dell'host corrente, inclusa l'archi
 Poi espone nel `PATH` RumiAI, in questo ordine:
 
 ```text
-RUMIAI_ROOT/bin/platforms/<current-platform>
+RUMIAI_ROOT/bin/@platforms/<current-platform>
 RUMIAI_ROOT/bin
 <inherited PATH>
 ```
@@ -125,7 +125,7 @@ Esempio:
 bin/pulsar
     variante JVM/cross-platform
 
-bin/platforms/linux-arm64/pulsar
+bin/@platforms/linux-arm64/pulsar
     variante Linux ARM64 specifica
 ```
 
@@ -133,7 +133,7 @@ Su `linux-arm64`:
 
 ```text
 pulsar
-→ bin/platforms/linux-arm64/pulsar
+→ bin/@platforms/linux-arm64/pulsar
 ```
 
 mentre su una piattaforma priva di specializzazione nativa può restare disponibile:
@@ -144,7 +144,7 @@ bin/pulsar
 
 La precedence del `PATH` non sostituisce comunque il modello esplicito di integrazione. Un binding platform-specific e uno cross-platform con lo stesso nome possono convivere soltanto quando questa relazione di specializzazione è ammessa dal profilo di integrazione; collisioni non dichiarate tra package differenti restano errori.
 
-Il bootstrap può aggiungere `bin/platforms/<current-platform>` al `PATH` anche quando la directory non esiste ancora: la prima integrazione nativa potrà crearla senza modificare nuovamente il `PATH`.
+Il bootstrap può aggiungere `bin/@platforms/<current-platform>` al `PATH` anche quando la directory non esiste ancora: la prima integrazione nativa potrà crearla senza modificare nuovamente il `PATH`.
 
 ---
 
@@ -153,7 +153,7 @@ Il bootstrap può aggiungere `bin/platforms/<current-platform>` al `PATH` anche 
 Il pattern:
 
 ```text
-<directory>/platforms/<platform>-<architecture>/
+<directory>/@platforms/<platform>-<architecture>/
 ```
 
 può essere applicato in futuro ad altre aree soltanto quando un caso reale dimostra che lo stato condiviso tra piattaforme è incompatibile.
@@ -162,7 +162,7 @@ Esempio possibile:
 
 ```text
 home/
-├── platforms/
+├── @platforms/
 │   ├── linux-arm64/
 │   └── macos-arm64/
 └── <shared content se realmente condivisibile>
@@ -176,7 +176,7 @@ Principio:
 
 Questo evita sia la duplicazione preventiva dell'intero albero RumiAI sia l'assunzione opposta che ogni stato sia realmente cross-platform.
 
-Il nome `platforms` viene preferito a `arc` perché descrive direttamente il concetto e non è ambiguo con architecture/archive. La prevenzione dei conflitti deriva dalla riserva esplicita del namespace, non dalla scelta di un nome statisticamente improbabile.
+`@platforms` viene preferito a `.platforms` perché resta visibile nelle normali operazioni filesystem e non introduce il comportamento speciale dei dotfile; viene preferito a `arc` perché descrive direttamente il concetto e non è ambiguo con architecture/archive. La prevenzione dei conflitti deriva dalla riserva esplicita del namespace.
 
 ---
 
@@ -192,9 +192,9 @@ Il pathname non deve essere l'unica fonte di metadata operativi, ma deve impedir
 
 ---
 
-# 6. Naming convention candidata
+# 6. Naming convention fissata
 
-La forma candidata è:
+La forma è:
 
 ```text
 <name>@<version-token>@r<revision>@<platform>-<architecture>
@@ -231,13 +231,13 @@ La forma intuitiva:
 <name>@<version>!<revision>^<platform>-<architecture>
 ```
 
-ha il vantaggio di separare chiaramente campi controllati dalla versione upstream, ma `!` e `^` sono problematici come caratteri strutturali cross-platform:
+separa chiaramente i campi, ma `!` e `^` sono problematici come caratteri strutturali cross-platform:
 
 - `!` possiede semantica di history expansion in shell interattive come Bash e può avere semantica particolare anche in ambienti Windows;
-- `^` è il carattere di escape di `cmd.exe` ed è quindi particolarmente scomodo per pathname destinati a essere utilizzati anche su Windows;
+- `^` è il carattere di escape di `cmd.exe`;
 - entrambi aumentano la necessità di quoting/escaping proprio nel nome canonico della Package Instance.
 
-La proposta usa invece `@` come unico separatore strutturale principale:
+La convenzione fissata usa invece `@` come unico separatore strutturale principale:
 
 ```text
 <name>@<version-token>@r<revision>@<platform>-<architecture>
@@ -354,7 +354,7 @@ La scelta Base32 resta candidata finché non viene confrontata con casi reali di
 
 # 9. Parsing deterministico
 
-Con la grammatica candidata:
+Con la grammatica fissata:
 
 ```text
 <name>@<version-token>@r<revision>@<platform>-<architecture>
@@ -448,7 +448,7 @@ Una directory `UNKNOWN` sotto `pkg/` deve essere segnalata esplicitamente; non d
 
 # 12. Principio anti-ghost
 
-Invariante candidata:
+Invariante:
 
 > Ogni directory immediatamente contenuta in `pkg/` deve essere classificabile dal package manager come Package Instance valida, recuperabile, inconsistente oppure sconosciuta. Nessun contenuto sotto `pkg/` può essere semplicemente ignorato perché manca un indice o un descrittore.
 
@@ -464,7 +464,7 @@ Gli entrypoint in:
 
 ```text
 bin/
-bin/platforms/<platform>-<architecture>/
+bin/@platforms/<platform>-<architecture>/
 ```
 
 sono integrazione derivata e non fanno parte dell'identità fisica della Package Instance.
@@ -492,7 +492,7 @@ Una Package Instance cross-platform può produrre un command binding direttament
 Una Package Instance nativa/specializzata può produrre lo stesso command name sotto:
 
 ```text
-bin/platforms/<platform>-<architecture>/
+bin/@platforms/<platform>-<architecture>/
 ```
 
 Esempio:
@@ -501,7 +501,7 @@ Esempio:
 bin/pulsar
     launcher JVM/cross-platform
 
-bin/platforms/linux-arm64/pulsar
+bin/@platforms/linux-arm64/pulsar
     variante nativa Linux ARM64
 ```
 
@@ -531,7 +531,7 @@ Se la dependency non è disponibile per il current-platform, l'esecuzione deve f
 
 ---
 
-# 16. Invarianti candidate
+# 16. Invarianti fissate/candidate
 
 ```text
 LL-01 tutte le Package Instance locali vivono nello stesso `pkg/`
@@ -540,11 +540,11 @@ LL-02 la piattaforma appartiene all'identità della Package Instance, non alla d
 
 LL-03 `bin/` è fisica e contiene i command binding cross-platform
 
-LL-04 `bin/platforms/<platform>-<architecture>/` contiene i command binding platform-dependent ed è creata on demand
+LL-04 `bin/@platforms/<platform>-<architecture>/` contiene i command binding platform-dependent ed è creata on demand
 
-LL-05 `platforms` è namespace riservato sotto `bin/`
+LL-05 `@platforms` è namespace riservato sotto `bin/`
 
-LL-06 bootstrap espone prima `bin/platforms/<current-platform>` e poi `bin`
+LL-06 bootstrap espone prima `bin/@platforms/<current-platform>` e poi `bin`
 
 LL-07 una specializzazione platform-specific può prevalere sulla variante cross-platform dello stesso command name quando il profilo di integrazione lo prevede
 
@@ -564,7 +564,7 @@ LL-14 eventuali indici di package sono cache rigenerabili, non fonte fisica escl
 
 LL-15 `bin/` è una view ricostruibile e non la fonte di verità sull'installazione
 
-LL-16 lo stesso pattern `platforms/<platform>-<architecture>` può essere esteso ad altre directory solo quando un requisito reale lo richiede
+LL-16 lo stesso pattern `@platforms/<platform>-<architecture>` può essere esteso ad altre directory solo quando un requisito reale lo richiede
 ```
 
 ---
