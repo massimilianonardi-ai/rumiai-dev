@@ -40,7 +40,7 @@ var/pkg/profiles/<profile-id>/
     └── ...
 ```
 
-`desired` e `resolved` sono documenti JSON UTF-8 secondo RumiAI JSON standard v0 anche senza estensione `.json`.
+`active`, `desired` e `resolved` usano tutti RumiAI System Field Format v0.
 
 ---
 
@@ -70,7 +70,13 @@ L'unico switch autorevole è `active`.
 g<positive-monotonic-integer>
 ```
 
-Il `resolved` JSON dichiara la stessa generation numerica del pathname.
+Il `resolved` dichiara:
+
+```text
+generation	N
+```
+
+con lo stesso numero del pathname `gN`.
 
 Mismatch:
 
@@ -96,13 +102,15 @@ active                0400
 
 # 6. `active`
 
-Formato minimale:
+Formato:
 
 ```text
-g17\n
+kind	active
+schema	1
+generation	17
 ```
 
-Non è JSON e non è obbligatoriamente un symlink.
+Non è obbligatoriamente un symlink.
 
 Deve essere sostituibile atomicamente con una primitive fisicamente validata sulla reference platform/filesystem.
 
@@ -127,6 +135,8 @@ generation prune
 package GC
 state migration transaction coordinata
 ```
+
+`manager.lock` è un OS lock handle, non un file dati da parsare: il suo contenuto non fa parte del control state.
 
 Lock ownership deriva dalla OS locking primitive, non dalla presenza del file.
 
@@ -185,19 +195,19 @@ generations/@staging-gN-<nonce>/
 
 ```text
 1 acquire manager lock
-2 read/validate current active
+2 read/validate current active System Field Format
 3 derive candidate desired in memory
 4 allocate N
 5 resolve entire closure
 6 validate package integrity/state/bindings/environment/launch
-7 write staging desired JSON + resolved JSON
+7 write staging desired + resolved System Field Format
 8 flush/sync according to platform contract
 9 seal files read-only
 10 atomic rename staging -> gN
 11 ensure candidate command stubs exist
-12 write temporary active pointer in same profile directory
-13 flush/sync pointer
-14 atomic replace active -> gN
+12 write temporary active System Field Format in same profile directory
+13 flush/sync pointer file
+14 atomic replace active
 15 cleanup obsolete derived stubs opportunistically
 16 release manager lock
 ```
@@ -214,13 +224,13 @@ Possibili residui:
 @staging-*
 committed inactive gN
 @active-*
-valid active -> gM
+valid active
 ```
 
 Regola:
 
 ```text
-valid active pointer wins
+valid active file wins
 ```
 
 Non si seleziona automaticamente highest generation/mtime.
@@ -239,10 +249,11 @@ Structural complete:
 
 ```text
 gN pathname valid
-desired valid JSON/schema
-resolved valid JSON/schema
-resolved.generation == N
+desired valid System Field Format kind=profile_desired/schema
+resolved valid System Field Format kind=profile_resolved/schema
+resolved generation == N
 profile IDs match
+count/indices valid
 exact references internally consistent
 ```
 
@@ -267,19 +278,35 @@ Stale/missing stub è un problema della derived Execution View, non un motivo pe
 
 ---
 
-# 15. Invarianti
+# 15. Bootstrap/platform primitives ancora da validare
+
+Il persistence protocol richiede primitive uniformi Rumi per:
+
+```text
+exclusive lock
+flush/durability
+atomic rename
+atomic replace
+```
+
+Queste non vengono implementate tramite comandi platform-specific sparsi dentro `pkg`.
+
+---
+
+# 16. Invarianti
 
 ```text
 PL-01 control state vive sotto var/pkg
-PL-02 desired+resolved JSON sono immutabili e co-versionati
-PL-03 active è pointer minimale separato
+PL-02 desired+resolved System Field Format sono immutabili e co-versionati
+PL-03 active usa lo stesso System Field Format ed è separato
 PL-04 generation ID = gN monotonic
 PL-05 active switch atomic
 PL-06 staging non è committed generation
 PL-07 one global mutation lock v0
-PL-08 launch lock-free rispetto alle mutation
-PL-09 generations retained by default
-PL-10 active, non highest generation, è authoritative
-PL-11 crash non attiva automaticamente candidate/newest generation
-PL-12 Execution View è derivata
+PL-08 manager.lock non è un data file
+PL-09 launch lock-free rispetto alle mutation
+PL-10 generations retained by default
+PL-11 active, non highest generation, è authoritative
+PL-12 crash non attiva automaticamente candidate/newest generation
+PL-13 Execution View è derivata
 ```
