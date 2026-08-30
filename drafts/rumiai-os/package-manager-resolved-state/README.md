@@ -11,6 +11,7 @@ drafts/rumiai-os/package-manager-dependency-model/README.md
 drafts/rumiai-os/package-manager-integration-context/README.md
 drafts/rumiai-os/package-manager-package-descriptor/README.md
 drafts/rumiai-os/package-manager-serialization-v0/README.md
+drafts/rumiai-os/package-manager-platform-vocabulary-v0/README.md
 ```
 
 Il resolved state è la barriera fra:
@@ -151,18 +152,20 @@ consumer exact Package Instance
 slot
 Requirement snapshot
 provider exact Package Instance
-capability/version soddisfatta
+capability contract/version soddisfatta
 ```
 
 Esempio:
 
 ```text
-netbeans@26@r1@jvm-any
+netbeans@26@r1@any-any
 └── jdk
-    requirement = java-development-kit >=17 <22
+    requirement = java-development-kit contract 1 >=17 <22
     provider    = temurin@21.0.8+9@r1@linux-arm64
-    satisfied   = java-development-kit 21
+    satisfied   = java-development-kit contract 1 version 21
 ```
+
+La Package Instance `netbeans@...@any-any` resta OS/CPU-independent nel proprio contenuto; il provider JDK è native e viene risolto per la piattaforma corrente.
 
 Non esistono edge resolved verso:
 
@@ -198,6 +201,8 @@ Quando un command/package usa stato, il resolved state associa l'identity concre
 ```
 
 Il binding non contiene i contenuti dello stato.
+
+La qualificazione platform/architecture dello state è indipendente dalla Package Instance identity e viene derivata dal relativo state scope.
 
 `run/` package-local viene materializzata coerentemente con la State Instance attiva.
 
@@ -240,19 +245,22 @@ schema = 1
 generation = 17
 
 [[roots]]
-package = "netbeans@26@r1@jvm-any"
+package = "netbeans@26@r1@any-any"
 command = "netbeans"
 state = "netbeans@s2"
 
 [[dependencies]]
-consumer = "netbeans@26@r1@jvm-any"
+consumer = "netbeans@26@r1@any-any"
 slot = "jdk"
 provider = "temurin@21.0.8+9@r1@linux-arm64"
 capability = "java-development-kit"
+contract = 1
 satisfied-version = "21"
 ```
 
-La struttura schema definitiva viene fissata separatamente; il formato di serializzazione è già deciso.
+Tutti i binding resolved puntano a exact Package Instance identity.
+
+Non vengono persistiti pathname assoluti RUMIAI_ROOT.
 
 ---
 
@@ -468,21 +476,5 @@ RS-15 provenance serve ad audit, non a dynamic launch selection
 RS-16 serializzazione v0 = restricted TOML 1.0
 RS-17 active-generation pointer è separato dallo snapshot
 RS-18 generation ID v0 = positive local monotonic integer
+RS-19 package platform/architecture del consumer resta distinta dai provider runtime del grafo
 ```
-
----
-
-# 23. Dettagli fisici successivi
-
-Restano da definire nello schema/persistence layer concreto:
-
-```text
-pathname dei generation snapshot
-pathname active pointer
-retention policy
-atomic replace primitive per reference platform
-locking/concorrenza
-schema field-by-field
-```
-
-Questi dettagli non cambiano la semantica del lock v0.
