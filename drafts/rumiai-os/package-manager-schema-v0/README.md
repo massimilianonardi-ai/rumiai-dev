@@ -40,8 +40,6 @@ Unknown structural key nello schema v0 è errore.
 
 # 2. Logical identifiers
 
-Namespace interni:
-
 ```text
 logical-id = [a-z][a-z0-9-]*
 ```
@@ -66,7 +64,7 @@ Lowercase canonico; ID unico nel proprio namespace.
 name = "netbeans"
 version = "26"
 revision = 1
-platform = "jvm"
+platform = "any"
 architecture = "any"
 display-name = "NetBeans 26"
 ```
@@ -77,8 +75,8 @@ Required:
 name
 version                  non-empty upstream opaque string
 revision                 positive integer
-platform                 vocabulary v0 token
-architecture             vocabulary v0 token
+platform                 any | linux | macos | windows
+architecture             any | arm64 | x86_64
 display-name             non-empty UTF-8 human-readable string
 ```
 
@@ -87,6 +85,12 @@ I campi canonici devono concordare con:
 ```text
 <name>@<version-token>@r<revision>@<platform>-<architecture>
 ```
+
+`platform`/`architecture` descrivono esclusivamente vincoli propri del contenuto della Package Instance.
+
+Runtime/interpreti/SDK necessari, inclusi Java/JDK/JRE/Python, sono requirements/capability e non platform token.
+
+`any-any` è la forma canonica per contenuto realmente OS/CPU-independent dopo Physical Platform Validation.
 
 ---
 
@@ -116,14 +120,14 @@ integrity.root
 integrity.run-default
 ```
 
-Ogni tree:
+Ogni tree contiene:
 
 ```text
 files            non-negative integer
 directories      positive integer including root
 links            non-negative integer
 manifest-digest  digest string
-records          ordered canonical line records
+records          canonical multiline literal string
 ```
 
 Record v0:
@@ -134,7 +138,36 @@ D<TAB><mode><TAB><relative-path>
 <digest-target><TAB>L<TAB><relative-path><TAB><relative-target>
 ```
 
-Manifest digest = digest dei record TOML decodificati concatenati con LF finale per ogni record.
+Esempio TOML illustrativo:
+
+```toml
+[integrity.root]
+files = 1
+directories = 2
+links = 0
+manifest-digest = "..."
+records = '''
+D\t0500\t.
+D\t0500\t./bin
+abc...\tF\t0500\t./bin/tool
+'''
+```
+
+Nel file reale i separator fra campi sono TAB reali; `\t` sopra è solo visualizzazione documentale.
+
+Canonical rules:
+
+```text
+records contiene una riga per entry
+LF canonico fra record
+LF finale obbligatorio
+nessuna riga vuota extra
+record in canonical order
+counts concordano con record e tree fisico
+manifest-digest = digest del blocco records canonico decodificato
+```
+
+La grammatica pathname/escaping canonica appartiene a `integrity.method`.
 
 ---
 
@@ -192,6 +225,8 @@ no ancestor/descendant overlap
 root/<path> = validated relative symlink to ../run/<path>
 run-default/<path> exists
 ```
+
+State platform/architecture qualification è indipendente dalla Package Instance identity e descrive i vincoli dello state.
 
 ---
 
@@ -275,7 +310,7 @@ Command-specific `environment` può usare le stesse operation package-level.
 
 # 10. Capability provides
 
-Ogni provide include **capability contract version** e compatibility version:
+Ogni provide include capability contract version e compatibility version:
 
 ```toml
 [[interface.provides]]
@@ -530,19 +565,22 @@ PLATFORM_VALIDATION_ERROR
 PS-01 schema v0 strict + typed
 PS-02 logical internal ID lowercase ASCII
 PS-03 software version opaque string
-PS-04 release-order family-local positive integer
-PS-05 state absent => no own State Instance
-PS-06 resource references by namespace+id
-PS-07 command creates argv, never shell string
-PS-08 requirements v0 mandatory
-PS-09 capability identity = name + contract
-PS-10 compatibility version != capability contract version
-PS-11 capability constraint is simple comparator intersection
-PS-12 package requirement has no generic upstream version range
-PS-13 environment ordered operation list
-PS-14 PATH semantic path-list, platform separator materialized later
-PS-15 absolute host path absent from @package
-PS-16 parser/validation/resolution separate
+PS-04 platform/architecture descrivono il contenuto, non runtime requirements
+PS-05 any-any rappresenta contenuto realmente OS/CPU-independent
+PS-06 release-order family-local positive integer
+PS-07 state absent => no own State Instance
+PS-08 resource references by namespace+id
+PS-09 command creates argv, never shell string
+PS-10 requirements v0 mandatory
+PS-11 capability identity = name + contract
+PS-12 compatibility version != capability contract version
+PS-13 capability constraint is simple comparator intersection
+PS-14 package requirement has no generic upstream version range
+PS-15 environment ordered operation list
+PS-16 PATH semantic path-list, platform separator materialized later
+PS-17 absolute host path absent from @package
+PS-18 integrity records = canonical multiline line block
+PS-19 parser/validation/resolution separate
 ```
 
 ---
@@ -554,11 +592,3 @@ Gli esempi architetturali sono in:
 ```text
 drafts/rumiai-os/package-manager-schema-v0/reference-descriptors.md
 ```
-
-La versione normativa corretta richiede `contract = 1` negli esempi capability secondo il capability registry v0.
-
----
-
-# 20. Next
-
-Dopo l'allineamento dei reference descriptor, il prossimo punto è il physical persistence/transaction layout di Desired/Resolved state.
