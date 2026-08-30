@@ -2,346 +2,274 @@
 
 Data: 2026-08-30
 
-Stato: **design decision — JSON + TSV v0 fissati**
+Stato: **design decision — System Field Format v0 fissato per tutti i file dati `pkg`**
 
 Prerequisiti:
 
 ```text
-drafts/rumiai-os/json-standard-v0/README.md
+drafts/rumiai-os/system-field-format-v0/README.md
 drafts/rumiai-os/package-manager-integrity-method-1/README.md
 ```
 
-Questa specifica sostituisce la precedente scelta TOML.
+Questa specifica sostituisce le precedenti rappresentazioni TOML/JSON del package manager.
+
+JSON resta lo standard strutturato del development/application layer RumiAI, ma non è una dipendenza del system layer né di `pkg`.
 
 ---
 
-# 1. Formato strutturato standard: JSON
+# 1. Principio
 
-RumiAI usa **JSON UTF-8** come formato strutturato di riferimento per lo sviluppo e, nel package manager v0, per:
+`pkg` è un tool del RumiAI system layer, implementato in POSIX `sh` e avviato tramite shebang/bootstrap Rumi.
+
+Tutti i **file dati/configurazione/control state parsati da `pkg`** usano System Field Format v0:
 
 ```text
+field-name<TAB>field-value
+```
+
+Questo include:
+
+```text
+pkg configuration
 @package
+@integrity-root.tsv
+@integrity-run-default.tsv
 Desired Integration Profile
 Resolution Snapshot / resolved state
-Selection Policy persistita
-altri metadata strutturati del package manager
+active generation pointer
+selection policy persistita
+altri metadata persistiti letti da pkg
 ```
 
-Motivazioni principali:
+Non sono file dati e quindi non usano System Field Format:
 
 ```text
-standard estremamente diffuso e stabile
-ecosistema parser maturo su praticamente ogni piattaforma
-leggibile e trasformabile con jq
-nativamente supportato da Node.js
-nessuna dipendenza da Python
-buona interoperabilità con shell/tooling multipiattaforma
-parsing normalmente molto veloce
+script POSIX sh
+Command Stub
+filesystem directory/symlink
+manager.lock usato esclusivamente come OS lock handle
 ```
-
-La scelta JSON è una decisione architetturale di riferimento RumiAI, non soltanto un dettaglio del package manager.
 
 ---
 
-# 2. Restricted JSON profile RumiAI v0
+# 2. Header comune
 
-Encoding:
-
-```text
-UTF-8
-no BOM
-```
-
-Tipi ammessi quando previsti dallo schema:
+Ogni file machine-readable di `pkg` dichiara almeno:
 
 ```text
-object
-array
-string
-integer
-boolean
-null soltanto dove esplicitamente previsto
+kind	<canonical-kind>
+schema	<positive-integer>
 ```
 
-Non vengono usati come valori normativi:
+Esempi kind v0:
 
 ```text
-floating point
-NaN / Infinity
-commenti
-estensioni JSON non standard
+pkg_config
+package
+integrity
+profile_desired
+profile_resolved
+active
 ```
 
-Regole parser:
-
-```text
-duplicate object member name -> errore
-schema non supportato -> errore
-unknown structural field nello stesso schema -> errore salvo esplicita estensione
-integer overflow/range error -> errore
-```
-
-L'ordine delle proprietà di un object non ha significato semantico.
-
-L'ordine degli elementi di un array ha significato quando il modello lo dichiara, per esempio:
-
-```text
-provider preference
-fixed argv
-environment operation sequence
-```
-
-Non è richiesta una canonical byte serialization JSON generale.
-
-I JSON generati da RumiAI seguono inoltre la formatting policy normativa del JSON standard v0:
-
-```text
-2 spazi di indentation
-LF
-newline finale
-opening/closing `{` e `[`/`]` su righe proprie
-opening object/array delimiter mai appeso alla riga che introduce il valore
-Unicode emesso normalmente come UTF-8
-```
-
-Il parser non richiede questa formattazione per accettare JSON esterni validi.
+`kind` permette di rilevare un file valido nel formato base ma aperto con lo schema sbagliato.
 
 ---
 
-# 3. `@package`
+# 3. Collezioni
 
-Il pathname fisico resta:
+Ogni struttura ripetibile usa:
+
+```text
+<prefix>_count	N
+<prefix>_1_...
+<prefix>_2_...
+...
+<prefix>_N_...
+```
+
+Gli indici sono contigui `1..N`, base 10, senza zero iniziali.
+
+Empty collection:
+
+```text
+requirement_count	0
+```
+
+Nested collection:
+
+```text
+interface_provide_count	1
+interface_provide_1_resource_count	3
+interface_provide_1_resource_1_key	command
+```
+
+L'ordine semantico di una sequenza è dato dagli indici, non dalla posizione fisica delle righe.
+
+---
+
+# 4. Arbitrary identifiers
+
+Package ID, logical ID, provider name, capability name e altri valori arbitrari restano sempre `field-value`.
+
+Non vengono incorporati dinamicamente nei field-name.
+
+Corretto:
+
+```text
+selector_1_id	default-java
+selector_1_provider_1	microsoft-openjdk
+```
+
+Da non fare:
+
+```text
+selector_default-java_provider_...
+```
+
+Questo mantiene tutti i field-name conformi alla grammar POSIX:
+
+```text
+[A-Za-z_][A-Za-z0-9_]*
+```
+
+---
+
+# 5. `@package`
+
+Pathname fisico:
 
 ```text
 pkg/<package-instance-id>/@package
 ```
 
-`@package` è un documento JSON anche se non usa estensione `.json`.
-
-Struttura logica v0:
+Esempio parziale:
 
 ```text
-schema
-identity
-release
-integrity
-state
-interface
-requirements
-environment
+kind	package
+schema	1
+identity_name	netbeans
+identity_version	26
+identity_revision	1
+identity_platform	any
+identity_architecture	any
+identity_display_name	NetBeans 26
+release_order	26
+integrity_method	1
+integrity_algorithm	sha256
+integrity_root_inventory	@integrity-root.tsv
+integrity_root_files	120
+integrity_root_directories	24
+integrity_root_links	3
+integrity_root_manifest_digest	...
 ```
 
-Esempio di stile generato:
+Il descriptor resta dichiarativo e immutabile.
 
-```json
-{
-  "schema": 1,
-  "identity":
-  {
-    "name": "netbeans",
-    "version": "26",
-    "revision": 1,
-    "platform": "any",
-    "architecture": "any",
-    "display-name": "NetBeans 26"
-  },
-  "release":
-  {
-    "release-order": 26
-  }
-}
+---
+
+# 6. Structured reference
+
+Le reference non usano mini-language nel value.
+
+Esempio dependency reference:
+
+```text
+environment_1_value_source	dependency
+environment_1_value_slot	jdk
+environment_1_value_resource_type	directory
+environment_1_value_resource	home
+```
+
+Esempio literal:
+
+```text
+interface_command_1_arg_1_source	literal
+interface_command_1_arg_1_literal	-jar
 ```
 
 ---
 
-# 4. Reference strutturate
+# 7. Integrity inventory
 
-Notazioni descrittive come:
-
-```text
-dependency:jdk.directory:home
-self:file:launcher
-state:home
-```
-
-non sono una mini-language persistita.
-
-Le reference sono object JSON espliciti, per esempio:
-
-```json
-{
-  "source": "dependency",
-  "slot": "jdk",
-  "resource-type": "directory",
-  "resource": "home"
-}
-```
-
-Questo mantiene parsing e validazione deterministici.
-
----
-
-# 5. Integrity inventory separati
-
-Il bulk inventory NON vive dentro `@package`.
-
-La wrapper contiene due file di testo canonici TSV:
+I due file:
 
 ```text
 @integrity-root.tsv
 @integrity-run-default.tsv
 ```
 
-La Package Instance fisica diventa:
+restano separati per i due tree ma usano anch'essi System Field Format v0 a due campi.
 
-```text
-pkg/<id>/
-├── root/
-├── run-default/
-├── @package
-├── @integrity-root.tsv
-├── @integrity-run-default.tsv
-└── run/
-```
-
-`@package` contiene per ciascun tree:
-
-```text
-inventory file name
-files count
-directories count
-links count
-manifest digest
-```
+Non esiste più il precedente record a cinque colonne.
 
 Esempio:
 
-```json
-{
-  "integrity":
-  {
-    "method": 1,
-    "algorithm": "sha256",
-    "root":
-    {
-      "inventory": "@integrity-root.tsv",
-      "files": 120,
-      "directories": 24,
-      "links": 3,
-      "manifest-digest": "..."
-    },
-    "run-default":
-    {
-      "inventory": "@integrity-run-default.tsv",
-      "files": 8,
-      "directories": 4,
-      "links": 0,
-      "manifest-digest": "..."
-    }
-  }
-}
+```text
+kind	integrity
+schema	1
+directory_count	2
+directory_1_path	.
+directory_1_mode	0500
+directory_2_path	./bin
+directory_2_mode	0500
+file_count	1
+file_1_path	./bin/foo
+file_1_mode	0500
+file_1_digest	<digest>
+link_count	1
+link_1_path	./log
+link_1_target	../run/log
+link_1_digest	<digest-target>
 ```
+
+Ogni collection è indicizzata secondo l'ordine canonico dei pathname definito da Integrity Method 1.
+
+Il manifest digest è il digest dei byte canonici completi del relativo inventory System Field Format.
 
 ---
 
-# 6. TSV inventory record v0
+# 8. Integrity Method 1
 
-Ogni record usa esattamente **cinque campi** separati da un singolo TAB:
-
-```text
-type<TAB>mode<TAB>digest<TAB>target<TAB>path
-```
-
-`path` è sempre l'ultimo campo.
-
-Questo permette parsing shell semplice senza rompere pathname contenenti spazi.
-
-Semantica:
+Restano valide le regole pathname/target già fissate:
 
 ```text
-type
-    D = directory
-    F = regular file
-    L = symbolic link
-
-mode
-    4-digit canonical POSIX mode per D/F
-    - per L
-
-digest
-    - per D
-    digest dei file bytes per F
-    digest della canonical symlink target string per L
-
-target
-    - per D/F
-    relative canonical symlink target per L
-
-path
-    canonical relative pathname dell'entry
-```
-
-Esempio:
-
-```text
-D\t0500\t-\t-\t.
-D\t0500\t-\t-\t./bin
-F\t0500\t<digest>\t-\t./bin/foo
-F\t0400\t<digest>\t-\t./lib/foo.jar
-L\t-\t<digest-target>\t../run/log\t./log
-```
-
-Il file usa:
-
-```text
-UTF-8
-LF line ending
-no BOM
-no header
-one record per line
-final LF required
-canonical order
-```
-
-I conteggi e l'algoritmo non vengono duplicati nel TSV: sono nel `@package` JSON.
-
-**Integrity Method 1** è normativo e stabilisce:
-
-```text
-nessun escaping/quoting TSV
-TAB/CR/LF/NUL/backslash vietati in pathname e symlink target
-Unicode ammesso e canonicalizzato NFC
+Unicode ammesso
+NFC canonical form
 portable case-fold collision detection
+TAB/CR/LF/NUL/backslash vietati nei pathname e symlink target
+/ unico separator
 path `.` oppure `./...`
-symlink target relativo, con `..` ammesso quando semanticamente valido
+symlink target relativo
 nessun escape fuori dalla Package Instance wrapper
-sort per canonical pathname UTF-8 bytes
 ```
+
+La normalizzazione Unicode/full case-fold non è implementabile portabilmente in puro POSIX `sh`; il bootstrap Rumi deve quindi esporre la primitive normativa necessaria oppure delegarla a un validator/producer fidato. La scelta bootstrap è separata dalla serializzazione.
 
 ---
 
-# 7. Manifest digest
+# 9. Manifest digest
 
-`manifest-digest` è il digest dei **byte canonici completi del TSV inventory**.
+`manifest-digest` verifica i byte canonici dell'intero inventory file.
 
-Quindi dipende da:
+Dipende quindi da:
 
 ```text
-record order
-TAB separators
-LF separators
-mode
-digest/target/path fields
+canonical field order definito dallo schema integrity
+field-name
+TAB
+field-value
+LF
 final LF
 ```
 
-Non dipende dalla formattazione JSON di `@package`.
+Per collection indicizzate il canonical writer usa ordine numerico `1..N`, non ordinamento lessicografico dei field-name.
 
 ---
 
-# 8. Immutabilità
+# 10. Immutabilità
 
-Sono parte del core immutabile della Package Instance:
+Core immutabile Package Instance:
 
 ```text
 root/
@@ -351,7 +279,7 @@ run-default/
 @integrity-run-default.tsv
 ```
 
-`run/` resta derivata e mutabile nel contenuto.
+`run/` resta derivata.
 
 Unix-like default:
 
@@ -363,88 +291,114 @@ Unix-like default:
 
 ---
 
-# 9. Desired / resolved state
+# 11. Desired / resolved state
 
-Desired state e Resolution Snapshot sono JSON conformi allo stesso restricted JSON profile e vengono generati con la stessa formatting policy RumiAI.
-
-I pathname possono restare semanticamente:
+Pathname:
 
 ```text
 var/pkg/profiles/<profile>/generations/gN/desired
 var/pkg/profiles/<profile>/generations/gN/resolved
 ```
 
-L'estensione `.json` non è obbligatoria perché il ruolo del file ne determina già il content type.
+Entrambi usano System Field Format v0.
 
-Esempio resolved:
+Esempio resolved parziale:
 
-```json
-{
-  "schema": 1,
-  "generation": 17,
-  "profile": "default",
-  "dependencies":
-  [
-    {
-      "consumer": "netbeans@26@r1@any-any",
-      "slot": "jdk",
-      "provider": "temurin@21.0.8+9@r1@linux-arm64",
-      "capability": "java-development-kit",
-      "contract": 1,
-      "satisfied-version": "21"
-    }
-  ]
-}
+```text
+kind	profile_resolved
+schema	1
+generation	17
+profile	default
+dependency_count	1
+dependency_1_consumer	netbeans@26@r1@any-any
+dependency_1_slot	jdk
+dependency_1_provider	temurin@21.0.8+9@r1@linux-arm64
+dependency_1_capability	java-development-kit
+dependency_1_contract	1
+dependency_1_satisfied_version	21
 ```
 
 ---
 
-# 10. Active pointer
+# 12. Active pointer
 
-`active` NON è JSON.
-
-Resta volutamente il formato bootstrap/recovery minimale:
+Anche `active` usa lo stesso formato:
 
 ```text
-g17\n
+kind	active
+schema	1
+generation	17
 ```
 
-Non ogni file RumiAI deve essere JSON quando una rappresentazione più semplice ha semantica migliore.
+L'atomic replace del file resta la sola operazione che attiva una generation completamente validata.
+
+Non esiste più una seconda grammatica `g17\n` specifica per questo file.
 
 ---
 
-# 11. Tooling principle
+# 13. Performance rule
 
-JSON è scelto anche per permettere operazioni portabili come:
+`rumi_file_get` può essere usato per pochi lookup puntuali.
+
+Collection grandi NON vengono elaborate tramite repeated full-file lookup.
+
+Si usa:
 
 ```text
+<count>
++
+rumi_file_fields <file> <prefix>
+```
+
+con singola passata streaming.
+
+Questo vale in particolare per:
+
+```text
+resolved dependency graph
+integrity inventories
+resource collection grandi
+```
+
+Il bootstrap può usare POSIX `awk` o una primitive equivalente senza introdurre un parser diverso.
+
+---
+
+# 14. Tooling principle
+
+Il package manager non richiede:
+
+```text
+JSON parser
+Python
+Node.js
 jq
-Node.js JSON.parse / JSON.stringify
-browser/runtime JavaScript
-parser JSON di Go/Rust/C/C++/Java/etc.
 ```
 
-Nessuna funzione fondamentale del package manager deve dipendere dall'esistenza di Python sull'host.
+per leggere il proprio stato autorevole.
 
-Python può essere una Package Instance/runtime gestita come qualunque altro requirement, non una baseline implicita RumiAI.
+Tutti i tool system-layer usano le primitive file esposte dal bootstrap Rumi.
+
+JSON continua ad essere disponibile nel development/application layer e per tool che non appartengono al bootstrap/system layer.
 
 ---
 
-# 12. Invarianti
+# 15. Invarianti
 
 ```text
-SER-01 JSON UTF-8 è il formato strutturato di riferimento RumiAI v0
-SER-02 @package, desired e resolved usano restricted JSON
-SER-03 duplicate object member name è errore
-SER-04 metadata JSON non è codice
-SER-05 JSON generato da RumiAI usa la formatting policy JSON standard v0 con indentation di 2 spazi
-SER-06 reference sono object strutturati, non mini-language
-SER-07 bulk integrity inventory è esterno a JSON
-SER-08 inventory v0 = canonical five-field TSV con path ultimo
-SER-09 Integrity Method 1 vieta escaping TSV e definisce Unicode NFC/path collision/sort/target semantics
-SER-10 root e run-default hanno inventory distinti
-SER-11 manifest-digest = digest dei byte canonici del relativo TSV
-SER-12 JSON formatting/order non partecipa all'integrity tree digest
-SER-13 active pointer resta formato minimale non-JSON
-SER-14 nessuna dipendenza architetturale da Python
+SER-01 tutti i file dati parsati da pkg usano System Field Format v0
+SER-02 record base = field-name<TAB>field-value
+SER-03 ogni file machine-readable dichiara kind + schema
+SER-04 field-name segue grammar POSIX variable name
+SER-05 arbitrary IDs/keys restano nei value
+SER-06 collection = count + indici contigui 1..N
+SER-07 structured reference viene flattenata in field strutturali, non mini-language
+SER-08 @package usa System Field Format
+SER-09 desired/resolved usano System Field Format
+SER-10 active usa System Field Format
+SER-11 integrity inventory usa System Field Format a due campi
+SER-12 root e run-default hanno inventory distinti
+SER-13 manifest digest = digest dei byte canonici del relativo inventory
+SER-14 large collection usa streaming/per-prefix, non repeated get
+SER-15 nessuna dipendenza JSON/Python/Node/jq nel package-manager system layer
 ```
