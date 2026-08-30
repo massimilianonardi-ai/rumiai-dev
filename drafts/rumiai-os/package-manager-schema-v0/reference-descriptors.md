@@ -2,113 +2,75 @@
 
 Data: 2026-08-30
 
-Stato: **architectural schema stress test — capability references aligned to contract v1 and platform/content separation**
+Stato: **architectural schema stress test — JSON v0**
 
-Questi frammenti verificano le sezioni semantiche che differiscono fra i casi. Identity/release/integrity seguono lo schema v0 già fissato; gli integrity inventory completi non vengono ripetuti qui.
-
-Non sono manifest upstream normativi: rappresentano packaging RumiAI normalizzati di riferimento.
-
-Principio platform fissato:
-
-> `platform`/`architecture` descrivono soltanto i vincoli propri del contenuto della Package Instance. Runtime/interpreti/SDK richiesti sono Execution Requirements.
+Gli esempi mostrano soltanto le sezioni rilevanti; identity/release/integrity metadata seguono lo schema v0.
 
 ---
 
 # 1. Temurin 21 provider
 
-Temurin è un provider native per la piattaforma/architettura concreta, per esempio `linux-arm64`.
-
-```toml
-[[interface.directories]]
-id = "home"
-path = "."
-
-[[interface.directories]]
-id = "bin"
-path = "bin"
-
-[[interface.files]]
-id = "java-exe"
-path = "bin/java"
-
-[[interface.files]]
-id = "javac-exe"
-path = "bin/javac"
-
-[[interface.commands]]
-id = "java"
-executable = { source = "self", resource-type = "file", resource = "java-exe" }
-args = []
-
-[[interface.commands]]
-id = "javac"
-executable = { source = "self", resource-type = "file", resource = "javac-exe" }
-args = []
-
-[[interface.provides]]
-capability = "java-runtime"
-contract = 1
-version = "21"
-
-[[interface.provides.resources]]
-key = "command"
-resource-type = "command"
-resource = "java"
-
-[[interface.provides.resources]]
-key = "home"
-resource-type = "directory"
-resource = "home"
-
-[[interface.provides.resources]]
-key = "bin"
-resource-type = "directory"
-resource = "bin"
-
-[[interface.provides]]
-capability = "java-development-kit"
-contract = 1
-version = "21"
-
-[[interface.provides.resources]]
-key = "java"
-resource-type = "command"
-resource = "java"
-
-[[interface.provides.resources]]
-key = "javac"
-resource-type = "command"
-resource = "javac"
-
-[[interface.provides.resources]]
-key = "home"
-resource-type = "directory"
-resource = "home"
-
-[[interface.provides.resources]]
-key = "bin"
-resource-type = "directory"
-resource = "bin"
+```json
+{
+  "interface": {
+    "directories": [
+      { "id": "home", "path": "." },
+      { "id": "bin", "path": "bin" }
+    ],
+    "files": [
+      { "id": "java-exe", "path": "bin/java" },
+      { "id": "javac-exe", "path": "bin/javac" }
+    ],
+    "commands": [
+      {
+        "id": "java",
+        "executable": { "source": "self", "resource-type": "file", "resource": "java-exe" },
+        "args": []
+      },
+      {
+        "id": "javac",
+        "executable": { "source": "self", "resource-type": "file", "resource": "javac-exe" },
+        "args": []
+      }
+    ],
+    "provides": [
+      {
+        "capability": "java-runtime",
+        "contract": 1,
+        "version": "21",
+        "resources": [
+          { "key": "command", "resource-type": "command", "resource": "java" },
+          { "key": "home", "resource-type": "directory", "resource": "home" },
+          { "key": "bin", "resource-type": "directory", "resource": "bin" }
+        ]
+      },
+      {
+        "capability": "java-development-kit",
+        "contract": 1,
+        "version": "21",
+        "resources": [
+          { "key": "java", "resource-type": "command", "resource": "java" },
+          { "key": "javac", "resource-type": "command", "resource": "javac" },
+          { "key": "home", "resource-type": "directory", "resource": "home" },
+          { "key": "bin", "resource-type": "directory", "resource": "bin" }
+        ]
+      }
+    ]
+  }
+}
 ```
 
-Stress result:
+Provider identity resta native, per esempio:
 
 ```text
-native provider
-multiple commands
-multiple capability contracts
-PASS
+temurin@21.0.8+9@r1@linux-arm64
 ```
+
+PASS.
 
 ---
 
-# 2. NetBeans consumer
-
-Identity di riferimento quando il contenuto normalizzato non ha vincoli nativi propri:
-
-```text
-netbeans@26@r1@any-any
-```
+# 2. NetBeans consumer `any-any`
 
 Normalized writable islands:
 
@@ -119,275 +81,222 @@ root/cache    -> ../run/cache
 root/log      -> ../run/log
 ```
 
-```toml
-[state]
-compatibility-version = 1
-scope = "shared"
-
-[[state.mappings]]
-path = "etc"
-area = "conf"
-
-[[state.mappings]]
-path = "userdir"
-area = "home"
-
-[[state.mappings]]
-path = "cache"
-area = "cache"
-
-[[state.mappings]]
-path = "log"
-area = "log"
-
-[[interface.files]]
-id = "launcher"
-path = "bin/netbeans"
-
-[[interface.commands]]
-id = "netbeans"
-executable = { source = "self", resource-type = "file", resource = "launcher" }
-args = []
-
-[[requirements]]
-slot = "jdk"
-target = "capability"
-capability = "java-development-kit"
-contract = 1
-constraint = ">=17 <22"
-
-[[environment]]
-name = "JAVA_HOME"
-operation = "set"
-type = "path"
-value = { source = "dependency", slot = "jdk", resource-type = "directory", resource = "home" }
-
-[[environment]]
-name = "PATH"
-operation = "prepend"
-type = "path-list"
-value = { source = "dependency", slot = "jdk", resource-type = "directory", resource = "bin" }
+```json
+{
+  "state": {
+    "compatibility-version": 1,
+    "scope": "shared",
+    "mappings": [
+      { "path": "etc", "area": "conf" },
+      { "path": "userdir", "area": "home" },
+      { "path": "cache", "area": "cache" },
+      { "path": "log", "area": "log" }
+    ]
+  },
+  "interface": {
+    "files": [
+      { "id": "launcher", "path": "bin/netbeans" }
+    ],
+    "commands": [
+      {
+        "id": "netbeans",
+        "executable": { "source": "self", "resource-type": "file", "resource": "launcher" },
+        "args": []
+      }
+    ]
+  },
+  "requirements": [
+    {
+      "slot": "jdk",
+      "target": "capability",
+      "capability": "java-development-kit",
+      "contract": 1,
+      "constraint": ">=17 <22"
+    }
+  ],
+  "environment": [
+    {
+      "name": "JAVA_HOME",
+      "operation": "set",
+      "type": "path",
+      "value": { "source": "dependency", "slot": "jdk", "resource-type": "directory", "resource": "home" }
+    },
+    {
+      "name": "PATH",
+      "operation": "prepend",
+      "type": "path-list",
+      "value": { "source": "dependency", "slot": "jdk", "resource-type": "directory", "resource": "bin" }
+    }
+  ]
+}
 ```
 
-Possible resolution on Linux ARM64:
+Possible resolution:
 
 ```text
 netbeans@26@r1@any-any
-└── jdk
-    └── temurin@21.0.8+9@r1@linux-arm64
-        satisfies java-development-kit contract 1 version 21
+└── jdk -> temurin@21.0.8+9@r1@linux-arm64
 ```
 
-Possible resolution on macOS ARM64:
-
-```text
-netbeans@26@r1@any-any
-└── jdk
-    └── temurin@21.0.8+9@r1@macos-arm64
-```
-
-Stress result:
-
-```text
-portable-content consumer
-private native runtime provider
-state routing
-JAVA_HOME/PATH isolation
-PASS
-```
+PASS.
 
 ---
 
-# 3. Python 3.12 provider
+# 3. Python runtime provider
 
-Il runtime Python concreto è normalmente una Package Instance native, per esempio `linux-arm64`.
-
-```toml
-[[interface.directories]]
-id = "home"
-path = "."
-
-[[interface.directories]]
-id = "bin"
-path = "bin"
-
-[[interface.files]]
-id = "python-exe"
-path = "bin/python3"
-
-[[interface.commands]]
-id = "python"
-executable = { source = "self", resource-type = "file", resource = "python-exe" }
-args = []
-
-[[interface.provides]]
-capability = "python-runtime"
-contract = 1
-version = "3.12"
-
-[[interface.provides.resources]]
-key = "command"
-resource-type = "command"
-resource = "python"
-
-[[interface.provides.resources]]
-key = "home"
-resource-type = "directory"
-resource = "home"
-
-[[interface.provides.resources]]
-key = "bin"
-resource-type = "directory"
-resource = "bin"
+```json
+{
+  "interface": {
+    "directories": [
+      { "id": "home", "path": "." },
+      { "id": "bin", "path": "bin" }
+    ],
+    "files": [
+      { "id": "python-exe", "path": "bin/python3" }
+    ],
+    "commands": [
+      {
+        "id": "python",
+        "executable": { "source": "self", "resource-type": "file", "resource": "python-exe" },
+        "args": []
+      }
+    ],
+    "provides": [
+      {
+        "capability": "python-runtime",
+        "contract": 1,
+        "version": "3.12",
+        "resources": [
+          { "key": "command", "resource-type": "command", "resource": "python" },
+          { "key": "home", "resource-type": "directory", "resource": "home" },
+          { "key": "bin", "resource-type": "directory", "resource": "bin" }
+        ]
+      }
+    ]
+  }
+}
 ```
 
-Stress result:
+Provider è native, per esempio `cpython@...@linux-arm64`.
 
-```text
-major.minor capability version scheme
-native provider of a runtime capability
-PASS
-```
+PASS.
 
 ---
 
-# 4. Python hosted application
+# 4. Python hosted application `any-any`
 
-Identity di riferimento se script/resource propri sono OS/CPU-independent:
-
-```text
-example-app@...@any-any
+```json
+{
+  "interface": {
+    "files": [
+      { "id": "main-script", "path": "app/main.py" }
+    ],
+    "commands": [
+      {
+        "id": "example-app",
+        "executable": { "source": "dependency", "slot": "python", "resource-type": "command", "resource": "python" },
+        "args": [
+          { "source": "self", "resource-type": "file", "resource": "main-script" }
+        ]
+      }
+    ]
+  },
+  "requirements": [
+    {
+      "slot": "python",
+      "target": "capability",
+      "capability": "python-runtime",
+      "contract": 1,
+      "constraint": "=3.12"
+    }
+  ]
+}
 ```
 
-```toml
-[state]
-compatibility-version = 1
-scope = "shared"
-
-[[state.mappings]]
-path = "config"
-area = "conf"
-
-[[state.mappings]]
-path = "data"
-area = "data"
-
-[[interface.files]]
-id = "main-script"
-path = "app/main.py"
-
-[[interface.commands]]
-id = "example-app"
-executable = { source = "dependency", slot = "python", resource-type = "command", resource = "python" }
-args = [
-  { source = "self", resource-type = "file", resource = "main-script" },
-]
-
-[[requirements]]
-slot = "python"
-target = "capability"
-capability = "python-runtime"
-contract = 1
-constraint = "=3.12"
-
-[[environment]]
-name = "PATH"
-operation = "prepend"
-type = "path-list"
-value = { source = "dependency", slot = "python", resource-type = "directory", resource = "bin" }
-```
-
-Stress result:
-
-```text
-any-any package content
-hosted command
-fixed argv
-private native interpreter provider
-PASS
-```
-
-Se la Package Instance contiene una native extension obbligatoria, l'identity deve invece riflettere il relativo native platform/architecture.
+PASS.
 
 ---
 
 # 5. Pulsar Electron/self-contained
 
-Pulsar non viene considerato Java-dependent. La sua identity platform/architecture dipende dal contenuto concreto dell'artifact normalizzato.
-
-```toml
-[state]
-compatibility-version = 1
-scope = "shared"
-
-[[state.mappings]]
-path = "config"
-area = "conf"
-
-[[state.mappings]]
-path = "cache"
-area = "cache"
-
-[[state.mappings]]
-path = "log"
-area = "log"
-
-[[interface.files]]
-id = "pulsar-exe"
-path = "bin/pulsar"
-
-[[interface.commands]]
-id = "pulsar"
-executable = { source = "self", resource-type = "file", resource = "pulsar-exe" }
-args = []
+```json
+{
+  "interface": {
+    "files": [
+      { "id": "pulsar-exe", "path": "bin/pulsar" }
+    ],
+    "commands": [
+      {
+        "id": "pulsar",
+        "executable": { "source": "self", "resource-type": "file", "resource": "pulsar-exe" },
+        "args": []
+      }
+    ]
+  }
+}
 ```
 
-No `requirements` section per Java.
+Nessun requirement artificiale Java.
 
-Stress result:
-
-```text
-self-contained Electron app
-no artificial Java dependency
-platform determined by own artifact content
-PASS
-```
+PASS.
 
 ---
 
-# 6. Cross-case conclusion
+# 6. Integrity metadata + TSV
 
-Covered:
+Descriptor:
+
+```json
+{
+  "integrity": {
+    "method": 1,
+    "algorithm": "sha256",
+    "root": {
+      "inventory": "@integrity-root.tsv",
+      "files": 2,
+      "directories": 2,
+      "links": 1,
+      "manifest-digest": "..."
+    },
+    "run-default": {
+      "inventory": "@integrity-run-default.tsv",
+      "files": 0,
+      "directories": 1,
+      "links": 0,
+      "manifest-digest": "..."
+    }
+  }
+}
+```
+
+`@integrity-root.tsv`:
+
+```text
+D	0500	-	-	.
+D	0500	-	-	./bin
+F	0500	<digest>	-	./bin/foo
+F	0400	<digest>	-	./app.jar
+L	-	<digest-target>	../run/log	./log
+```
+
+PASS.
+
+---
+
+# 7. Conclusion
+
+Il modello copre senza nuove primitive:
 
 ```text
 native runtime provider
-any-any consumer content
-capability contract identity
-capability compatibility constraint
+any-any Java/Python consumer
 private runtime resolution
-direct command
-hosted command
-argv composition
-state/no-state
-writable islands
-environment set/prepend
-multiple capabilities
+state routing
+environment isolation
+hosted/direct commands
+capability contracts
 self-contained app
-orthogonality of platform identity and Execution Requirements
-```
-
-Not required:
-
-```text
-jvm/python execution-domain platform
-shell metadata
-env/ physical directory
-absolute path
-virtual package
-optional dependency
-OR constraint
-runtime re-resolution
-provider fallback at launch
+external streaming integrity inventory
 ```
 
 Result:
@@ -395,5 +304,3 @@ Result:
 ```text
 PASS
 ```
-
-No new primitive is required by these reference cases.
