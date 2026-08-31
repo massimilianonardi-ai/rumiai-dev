@@ -14,12 +14,12 @@ Obiettivo:
 
 # 1. Perché sono bootstrap primitives
 
-POSIX `sh` non standardizza in modo sufficiente:
+POSIX `sh` non espone direttamente tutte le system interface necessarie per:
 
 ```text
 advisory/exclusive process lock
-fsync file
-fsync directory
+per-file fsync
+per-directory fsync
 atomic replace con semantics uniformi
 crash durability
 ```
@@ -28,15 +28,15 @@ crash durability
 
 ```text
 flock
-fcntl
 lockf
-MoveFileEx
-ReplaceFile
+fcntl
 sync utility variants
 platform-specific helper
 ```
 
 Queste differenze appartengono al bootstrap/platform adapter RumiAI.
+
+La v0 privilegia facility già presenti sulle reference installation e meccanismi filesystem/kernel-backed, evitando di introdurre un nuovo runtime o helper compilato quando non necessario.
 
 ---
 
@@ -54,33 +54,76 @@ Semantica richiesta:
 exclusive
 process-scoped ownership
 no two successful holders contemporaneamente
-release automatico alla terminazione/crash del holder
-blocking o explicit busy result secondo API
+release alla chiusura del descriptor e alla terminazione/crash del holder
+explicit busy result quando il lock non è immediatamente disponibile
 lock file contents non autorevoli
+mera esistenza del pathname != ownership
 ```
 
-La mera esistenza del pathname non indica ownership.
+Il lock file può quindi rimanere fisicamente presente dopo il rilascio. È il kernel lock associato al descriptor aperto, non l'esistenza del file, a rappresentare ownership.
 
 ---
 
-# 3. Lock API semantica
+# 3. Lock API e implementazione v0
 
-Forma astratta ammessa:
+API:
 
 ```text
 RumiAI_lock_acquire <path>
 RumiAI_lock_release <handle>
 ```
 
-oppure una forma scoped:
+La v0 ha un solo mutation lock e riserva il file descriptor:
 
 ```text
-RumiAI_lock_with <path> <callback> [args...]
+9
 ```
 
-La physical API finale può scegliere la forma più affidabile per POSIX sh, purché conservi le stesse invarianti.
+per tutta la durata del lock.
 
-Per `pkg` v0 esiste un solo mutation lock, quindi non serve progettare lock ordering multiplo.
+Dopo `RumiAI_lock_acquire` riuscita:
+
+```text
+RumiAI_LOCK_HANDLE=9
+RumiAI_LOCK_PATH=<canonical-lock-path>
+```
+
+Il caller usa quindi:
+
+```sh
+RumiAI_lock_acquire "$path"
+handle=$RumiAI_LOCK_HANDLE
+...
+RumiAI_lock_release "$handle"
+```
+
+L'acquire deve essere invocata direttamente nella shell corrente, non tramite command substitution o un subshell che terminerebbe immediatamente dopo la chiamata.
+
+Physical implementation corrente:
+
+```text
+Linux
+    open lock file on fd 9
+    flock non-blocking on fd 9
+
+macOS
+    open lock file on fd 9
+    lockf non-blocking on fd 9
+```
+
+Entrambe le implementazioni usano un descriptor già aperto dalla shell. Il lock pathname resta non autorevole e non viene usato come stale-lock marker.
+
+Busy viene normalizzato nello status RumiAI:
+
+```text
+1 = lock busy
+```
+
+Errori di uso/API restano `2`; errori host/I/O `3`.
+
+`RumiAI_lock_release` chiude il descriptor riservato e rimuove lo stato shell `RumiAI_LOCK_HANDLE` / `RumiAI_LOCK_PATH`.
+
+Poiché la v0 ha un solo mutation lock, non viene introdotto lock ordering multiplo.
 
 ---
 
@@ -124,7 +167,9 @@ RumiAI_atomic_publish <staging-path> <final-path>
 Semantica:
 
 ```text
-staging e final parent nello stesso filesystem
+mutation lock RumiAI già acquisito
+staging e final hanno lo stesso parent canonicale
+staging è una directory reale, non symlink
 final diventa visibile come unità
 non esiste partial generation tree visibile come gN
 final target preesistente = errore
@@ -136,7 +181,9 @@ final target preesistente = errore
 @staging... -> gN
 ```
 
-Single manager lock rende sufficiente una precondition check contro collisioni non malevole; Environment Owner non è security boundary.
+La v0 usa il rename filesystem eseguito tramite `mv` nello stesso parent. Il precheck `final absent` è sufficiente nel modello cooperativo RumiAI perché l'operazione avviene sotto il singolo manager lock; l'Environment Owner non è un security boundary.
+
+La primitive è implementata ma resta da Physical Platform Validation sulle reference installation correnti.
 
 ---
 
@@ -148,9 +195,19 @@ Primitive:
 RumiAI_file_sync <file>
 ```
 
-Dopo successo, il bootstrap/platform adapter RumiAI garantisce il livello di durability definito e fisicamente validato per la reference platform/filesystem.
+La v0 valida che l'argomento sia un regular file reale e usa la facility host:
 
-La write API non confonde `close` con durable flush.
+```text
+sync
+```
+
+senza pathname operands.
+
+Questa scelta produce intenzionalmente una barriera globale più ampia del singolo file. Il maggiore scope è accettato nella v0 per evitare una nuova dipendenza runtime o un helper compilato soltanto per esporre `fsync()` alla shell.
+
+L'API resta distinta semanticamente: un'implementazione futura potrà sostituire la barriera globale con una primitive per-path più efficiente, senza modificare `pkg`, purché preservi o rafforzi il contratto e venga fisicamente validata.
+
+La primitive è implementata ma resta da Physical Platform Validation sulle reference installation/filesystem correnti.
 
 ---
 
@@ -162,16 +219,17 @@ Primitive:
 RumiAI_directory_sync <directory>
 ```
 
-Serve dove filesystem/OS richiede sync del parent directory per rendere durable:
+La v0 valida che l'argomento sia una directory reale e usa la stessa barriera host globale:
 
 ```text
-new entry
-rename
-replace
-unlink
+sync
 ```
 
-Se una reference platform implementa durability con primitive diversa, l'adapter mantiene la stessa semantica esterna.
+Quindi `RumiAI_file_sync` e `RumiAI_directory_sync` hanno responsabilità semantiche distinte per il caller ma condividono deliberatamente la stessa physical implementation v0.
+
+La scelta evita di introdurre un helper nativo esclusivamente per ottenere un directory `fsync()` da POSIX shell. Se in futuro servirà una garanzia o efficienza più specifica, l'adapter potrà cambiare senza contaminare il package manager.
+
+La primitive è implementata ma resta da Physical Platform Validation sulle reference installation/filesystem correnti.
 
 ---
 
@@ -189,6 +247,8 @@ Per un piccolo control-state file:
 ```
 
 Il target non viene modificato inplace.
+
+Nella physical implementation v0 i punti 4 e 6 usano entrambi una barriera globale `sync`; restano due step semantici distinti nel protocollo.
 
 ---
 
@@ -223,7 +283,7 @@ Dopo generation publish e stub preparation:
 
 Il semantic commit point è l'atomic replace di `active`.
 
-Durability complete quando anche la necessaria parent durability primitive ha avuto successo.
+Durability complete quando anche la necessaria parent durability primitive ha avuto successo secondo il livello garantito e fisicamente validato dalla physical implementation corrente.
 
 ---
 
@@ -260,6 +320,15 @@ TRANSACTION_PRECONDITION_ERROR
 
 Il caller non deve inferire la causa leggendo output specifico del comando host sottostante.
 
+Il platform API v0 normalizza inoltre gli status tecnici come segue:
+
+```text
+0 success
+1 negative/not-found/busy
+2 invalid/precondition/unsupported input
+3 host/I/O failure
+```
+
 ---
 
 # 13. Crash recovery implications
@@ -272,6 +341,7 @@ committed inactive gN
 temporary active file
 old active
 new active
+persistent non-authoritative manager.lock pathname
 ```
 
 Regole:
@@ -280,6 +350,7 @@ Regole:
 valid active è authoritative
 committed inactive generation non diventa active automaticamente
 staging/temp sono recovery artifacts
+manager.lock pathname non prova ownership
 highest gN/mtime non viene scelto automaticamente
 ```
 
@@ -291,14 +362,16 @@ Ogni Reference Installation/filesystem valida almeno:
 
 ```text
 exclusive lock correctness
-automatic lock release after process termination
+busy result while another holder owns the lock
+reacquire after explicit release
+automatic kernel lock release after holder termination
+host sync facility callable independently dal RumiAI PATH
 atomic replace visibility
-atomic generation publish visibility
-file durability primitive
-directory durability primitive
-behavior after forced process termination in defined test points
-same-filesystem preconditions
+atomic generation publish/rejection behavior
+same-parent/same-filesystem preconditions
 ```
+
+Per la v0, `file_sync` e `directory_sync` usano la barriera globale dell'host; la validation registra quindi esattamente quella physical implementation e non attribuisce retroattivamente semantiche per-file non esercitate.
 
 Validation target è:
 
@@ -334,15 +407,18 @@ Abbreviazioni conversazionali non definiscono command, namespace o API.
 
 ```text
 TX-01 pkg usa bootstrap transaction API, non OS-specific locking code
-TX-02 manager lock è exclusive e process-scoped
+TX-02 manager lock è exclusive e kernel-backed
 TX-03 lock ownership non deriva dalla mera esistenza del file
-TX-04 lock viene rilasciato alla terminazione/crash del holder
+TX-04 lock viene rilasciato chiudendo fd 9 e alla terminazione/crash del holder
 TX-05 active viene sostituito atomicamente, non modificato inplace
-TX-06 generation staging viene pubblicata atomicamente come gN
+TX-06 generation staging viene pubblicata atomicamente come gN sotto manager lock
 TX-07 committed gN e active switch sono due eventi distinti
-TX-08 file/directory durability sono esplicite
-TX-09 reader vede old oppure new complete active state
-TX-10 valid active resta authoritative dopo recovery
-TX-11 Physical Platform Validation copre OS+filesystem+mount semantics
-TX-12 namespaced RumiAI shell APIs use exact RumiAI_* namespace
+TX-08 file/directory durability restano API semanticamente esplicite
+TX-09 physical sync v0 usa una barriera host globale, senza nuovo runtime/helper
+TX-10 reader vede old oppure new complete active state
+TX-11 valid active resta authoritative dopo recovery
+TX-12 Physical Platform Validation copre OS+filesystem+mount semantics
+TX-13 namespaced RumiAI shell APIs use exact RumiAI_* namespace
+TX-14 lock file contents/path existence are non-authoritative
+TX-15 v0 reserves fd 9 only while the manager lock is held
 ```
