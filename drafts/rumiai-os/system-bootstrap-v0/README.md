@@ -22,6 +22,9 @@ native @platforms PATH precedence
 filesystem type/mode/readlink primitives
 SHA-256 primitives
 same-directory atomic replace
+kernel-backed manager lock
+file/directory sync semantic APIs
+same-parent atomic directory publish
 ```
 
 Non esiste nel contratto v0 un nuovo command/interpreter dedicato al bootstrap. Nessun nome di command viene inferito da abbreviazioni usate in conversazione.
@@ -32,7 +35,7 @@ Gli script shell direttamente eseguibili seguono la regola canonica di `RULES.md
 #!/bin/sh
 ```
 
-Le semantiche delle API dati e delle primitive platform sono state fisicamente validate sulle reference installation registrate in `PHYSICAL-VALIDATION-2026-08-30.md`. Le successive correzioni nominali e di coerenza restano distinte dall'evidenza storica delle revisioni effettivamente esercitate.
+Le semantiche delle API dati e delle primitive platform già registrate sono state fisicamente validate sulle reference installation riportate in `PHYSICAL-VALIDATION-2026-08-30.md`. Le successive correzioni e le nuove transaction primitives restano distinte dall'evidenza storica delle revisioni effettivamente esercitate.
 
 ---
 
@@ -308,26 +311,28 @@ RumiAI_digest_file sha256 <file>
 RumiAI_digest_text sha256 <exact-text>
 ```
 
-Unicode richiesto da Integrity Method 1 ma non ancora implementato/validato:
+La specifica corrente di Integrity Method 1 contiene ancora requisiti di NFC/case-fold e aveva derivato da essi le primitive:
 
 ```text
 RumiAI_unicode_nfc
 RumiAI_unicode_casefold
 ```
 
-La semantica Unicode è normativa; l'implementazione può essere platform-specific dietro l'adapter.
+Queste primitive **non sono implementate** e la loro necessità è ora oggetto di rivalutazione esplicita prima di aggiungere complessità al bootstrap. Non costituiscono un prerequisito del transaction gate corrente.
+
+Finché la rivalutazione non è conclusa, la specifica Integrity Method 1 non viene silenziosamente reinterpretata: l'eventuale semplificazione del relativo modello sarà una decisione separata.
 
 ---
 
 # 15. Transaction primitives
 
-Implementato:
+Implementato e già fisicamente validato nelle revisioni storiche registrate:
 
 ```text
 RumiAI_atomic_replace
 ```
 
-Da implementare/validare separatamente:
+Implementato nella revisione corrente, in attesa di Physical Platform Validation:
 
 ```text
 RumiAI_lock_acquire
@@ -337,7 +342,26 @@ RumiAI_directory_sync
 RumiAI_atomic_publish
 ```
 
-`pkg` non implementa direttamente alternative host-specific come `flock`/`fcntl`.
+Physical implementation v0:
+
+```text
+lock
+    kernel-backed file lock su fd 9
+    Linux: flock
+    macOS: lockf
+
+file_sync / directory_sync
+    host-wide sync barrier
+
+atomic_publish
+    same-parent directory rename sotto manager lock
+```
+
+Il lock pathname è non autorevole: la sua esistenza non rappresenta ownership.
+
+Il dettaglio completo è definito in `system-transaction-primitives-v0/README.md`.
+
+`pkg` non implementa direttamente alternative host-specific per queste responsabilità.
 
 ---
 
@@ -393,6 +417,9 @@ lib/platform.lib
     pathname/filesystem primitives
     SHA-256
     atomic replace
+    manager lock acquire/release
+    file/directory sync
+    atomic directory publish
 ```
 
 Moduli ulteriori vengono introdotti solo quando emerge una necessità concreta.
@@ -427,6 +454,9 @@ native @platforms PATH precedence
 filesystem type/mode/readlink
 SHA-256 file/text digest
 same-directory atomic replace
+kernel-backed mutation lock
+host-wide sync semantic APIs
+same-parent atomic directory publish
 i18n
 logger
 CLI/command source dispatch
@@ -434,17 +464,15 @@ RumiAI_COMMAND_BIN
 single controlled source operation for required libraries
 ```
 
-Le evidenze di Physical Platform Validation restano associate alle revisioni precise riportate nel documento di validation. Le correzioni successive non vengono retroattivamente attribuite a revisioni non esercitate.
+Le evidenze di Physical Platform Validation restano associate alle revisioni precise riportate nel documento di validation. Le nuove transaction primitives non sono considerate fisicamente validate finché il gate corrente non viene eseguito sulle reference installation.
 
 Follow-up già identificati:
 
 ```text
 SCF bootstrap preferences instead of legacy single-value preference files
 filesystem walk
-Unicode NFC/default case-fold adapter
-exclusive process lock
-file/directory durability sync
-atomic generation publish protocol
+rivalutazione della reale necessità di Unicode NFC/default case-fold nel modello Integrity Method 1
+Physical Platform Validation delle transaction primitives correnti
 ```
 
 Non esiste un follow-up implicito relativo a un nuovo command/interpreter o a un nuovo shebang: un simile concetto richiederebbe una decisione architetturale esplicita.
@@ -502,12 +530,16 @@ RB-09 bootstrap exposes TSV validation/streaming
 RB-10 data is never source/eval/materialized automatically into shell variables
 RB-11 bootstrap exposes native platform/architecture identity
 RB-12 runtime PATH uses native @platforms before cross-platform bin
-RB-13 digest/Unicode/transaction semantics have uniform RumiAI APIs
+RB-13 digest/transaction semantics have uniform RumiAI APIs
 RB-14 stdout of data-returning queries contains result data only
 RB-15 bootstrap remains minimal
-RB-16 Physical Platform Validation decides concrete adapter implementation
+RB-16 Physical Platform Validation decides concrete adapter implementation support
 RB-17 namespaced RumiAI shell functions/variables use exact RumiAI_* namespace
 RB-18 conversational shorthand has no product naming authority
 RB-19 required library load uses `command -- . "$LIB"`, with one controlled source operation and no duplicate prechecks
 RB-20 established invariants are checked through CONSISTENCY-GATE.md before work and before completion
+RB-21 manager lock ownership is kernel-backed; lock pathname existence is non-authoritative
+RB-22 transaction sync v0 uses host-wide sync without introducing a new helper/runtime
+RB-23 atomic publish is same-parent and requires the manager lock
+RB-24 Unicode normalization/case-fold complexity is not added before explicit necessity reassessment
 ```
