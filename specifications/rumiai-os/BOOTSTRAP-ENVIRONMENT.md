@@ -1,7 +1,8 @@
 # RumiAI OS — Minimal Bootstrap Environment
 
 Status: **Normative specification**  
-Date: 2026-08-28
+Date: 2026-08-28  
+Updated: 2026-08-31
 
 ## 1. Scope
 
@@ -131,19 +132,21 @@ The bootstrap MUST NOT require the advanced RumiAI configuration subsystem merel
 The accepted bootstrap interaction-preference files are:
 
 ```text
-$RumiAI_CONF_DIR/bootstrap/language
-$RumiAI_CONF_DIR/bootstrap/text-encoding
+$RumiAI_CONF_DIR/bootstrap/i18n/language
+$RumiAI_CONF_DIR/bootstrap/i18n/text-encoding
 ```
 
-They are bootstrap data, not shell code, and MUST NOT be sourced as executable shell configuration.
+They are bootstrap data, not shell code, and MUST NOT be sourced or evaluated as executable configuration.
+
+Each file contains a single semantic value. Bootstrap does not introduce a second configuration grammar for these two values: when the regular file exists, its contents are read with the POSIX `cat` utility and passed as the requested value to the i18n selector. Shell command substitution removes trailing <newline> characters; other bytes remain part of the value and are subject to semantic validation.
 
 `language` supplies the explicit user-interaction language preference when present.
 
 `text-encoding` supplies the explicit user-interaction text encoding preference when present.
 
-The initial implementation SHOULD keep both formats deliberately minimal: one value per file after the bootstrap reader's defined line-handling rules are established.
+Arbitrary file contents are not trusted merely because the file is under `conf/`. Validity belongs to the selector that owns the semantic domain.
 
-The full configuration subsystem may later supersede these primitives after it becomes available.
+The full configuration subsystem may later supersede these bootstrap primitives after it becomes available, but there is no requirement to migrate these bootstrap-only scalar preferences to SCF merely for uniformity.
 
 ---
 
@@ -203,7 +206,7 @@ The RumiAI control plane uses English identifiers/messages and UTF-8 as its cano
 The bootstrap/i18n initialization SHOULD resolve the requested language in this order:
 
 ```text
-1. $RumiAI_CONF_DIR/bootstrap/language
+1. $RumiAI_CONF_DIR/bootstrap/i18n/language
 2. host LC_ALL
 3. host LC_MESSAGES
 4. host LANG
@@ -214,6 +217,14 @@ The host locale variables are fallback input; they are not themselves the RumiAI
 
 RumiAI MUST NOT needlessly overwrite the host's `LANG`, `LC_ALL`, or `LC_MESSAGES` merely to record its own selected language.
 
+A normalized requested language is available only when the corresponding catalog directory exists:
+
+```text
+$RumiAI_LANG_DIR/<normalized-language>/
+```
+
+The current `lang/` directory is therefore the authoritative availability whitelist for bootstrap language selection. No duplicate hardcoded list is maintained in the bootstrap.
+
 The final guaranteed language fallback is:
 
 ```text
@@ -223,7 +234,7 @@ en_US
 For text encoding, an explicit value from:
 
 ```text
-$RumiAI_CONF_DIR/bootstrap/text-encoding
+$RumiAI_CONF_DIR/bootstrap/i18n/text-encoding
 ```
 
 is the bootstrap preference. If it is absent, invalid or unsupported by the current implementation, the guaranteed fallback is:
