@@ -1,7 +1,8 @@
 # Decisione — Text encoding interno e transcoding al boundary
 
-Date: 2026-08-28
-Status: **Accepted**
+Date: 2026-08-28  
+Status: **Accepted**  
+Updated: 2026-08-31
 
 ## Decisione
 
@@ -48,7 +49,7 @@ RumiAI_TEXT_ENCODING
 La bootstrap primitive esplicita è:
 
 ```text
-$RumiAI_CONF_DIR/bootstrap/text-encoding
+$RumiAI_CONF_DIR/bootstrap/i18n/text-encoding
 ```
 
 Prima implementazione e fallback garantito:
@@ -58,6 +59,8 @@ RumiAI_TEXT_ENCODING=UTF-8
 ```
 
 La variabile è configurabile e rappresenta l'encoding testuale del boundary di interazione. Future implementazioni possono supportare ulteriori encoding senza cambiare il modello interno.
+
+Il file bootstrap contiene un valore semplice letto come dato; la validazione dell'encoding richiesto appartiene alla selector i18n. Non viene introdotto un formato di configurazione separato per questo valore bootstrap.
 
 ## Rappresentazione interna
 
