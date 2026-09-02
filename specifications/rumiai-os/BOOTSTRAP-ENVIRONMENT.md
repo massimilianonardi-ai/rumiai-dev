@@ -48,7 +48,10 @@ m_BIN_EXT_OSARCH_DIR=$m_BIN_DIR/ext-osarch
 m_LIB_DIR=$m_ROOT/lib
 m_CONF_DIR=$m_ROOT/conf
 m_LANG_DIR=$m_ROOT/lang
+m_SRC_DIR=$m_ROOT/src
 ```
+
+`m_SRC_DIR` identifies the ignored local development workspace. It is not a runtime dependency root and does not participate in `PATH`.
 
 Language/encoding state includes:
 
@@ -155,6 +158,8 @@ It is not a multicall mechanism and carries no command routing semantics.
 
 No RumiAI-managed entry named `rumiai-os` in a higher-precedence directory may accidentally shadow this canonical runtime exposure.
 
+Platform-independent RumiAI commands such as `log` also belong under `bin/sys/`.
+
 ## 7. Language selection
 
 The bootstrap does NOT read a language preference from `conf/` and does NOT select language from host locale variables.
@@ -202,6 +207,16 @@ lang
 
 After the language primitive exists, the normal logger may resolve presentation text through `lang` while retaining canonical event identity and structured fields.
 
+Current reusable catalog domains include:
+
+```text
+filesystem
+execution
+security
+```
+
+Component-specific historical catalog domains such as `bootstrap` are not part of the current product catalog when the condition can be represented by a reusable semantic message.
+
 ## 10. Interactive shell
 
 When `rumiai-os` is invoked with no operands:
@@ -233,7 +248,24 @@ Directly executable RumiAI command files retain:
 #!/usr/bin/env rumiai-os
 ```
 
-## 12. Superseded bootstrap mechanisms
+## 12. Development workspace
+
+The canonical local development workspace under a `rumiai-os` checkout is:
+
+```text
+src/
+```
+
+Its operational contents are ignored by Git and do not belong to the runtime product. When present, independent development repositories are conventionally located as:
+
+```text
+src/rumiai-tests/
+src/rumiai-dev-PoCs/
+```
+
+The previous `.dev/` workspace name is superseded.
+
+## 13. Superseded bootstrap mechanisms
 
 The following are no longer part of the current bootstrap contract:
 
@@ -249,11 +281,12 @@ bootstrap API name i18n
 automatic Bash preference
 conf/shell/default shell selection
 multicall command routing
+.dev/ local development workspace
 ```
 
 Historical documents and validation evidence remain in Git and remain evidence for their exact historical revisions only.
 
-## 13. Open design items
+## 14. Open design items
 
 Not yet fixed:
 
