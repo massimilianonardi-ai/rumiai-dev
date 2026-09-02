@@ -2,7 +2,7 @@
 
 Status: **Normative specification**  
 Date: 2026-08-28  
-Updated: 2026-09-02
+Updated: 2026-09-03
 
 ## 1. Scope
 
@@ -104,14 +104,37 @@ ext-<osarch>    third-party executables/symlinks, platform-specific
 ext-osarch      relative symlink to active ext-<osarch>
 ```
 
-Example platform directory:
+The canonical `<osarch>` identifier is:
+
+```text
+<platform>-<architecture>
+```
+
+Current tokens used by `osarch-update` are:
+
+```text
+platform:     linux | macos | windows
+architecture: arm64 | x86_64
+```
+
+Examples:
 
 ```text
 sys-macos-arm64
 ext-macos-arm64
+sys-linux-x86_64
+ext-linux-x86_64
 ```
 
-The exact `<osarch>` detection/update utility and its invocation policy are not yet specified.
+The explicit platform updater is:
+
+```text
+bin/sys/osarch-update
+```
+
+It detects the current native platform, creates `sys-<osarch>/` and `ext-<osarch>/` when absent, and updates `sys-osarch` and `ext-osarch` as relative symlinks. It does not overwrite a non-symlink object occupying either active-link pathname.
+
+`osarch-update` is not invoked automatically by the bootstrap. Any future automatic lifecycle invocation requires a separate decision.
 
 ## 5. PATH initialization
 
@@ -158,7 +181,7 @@ It is not a multicall mechanism and carries no command routing semantics.
 
 No RumiAI-managed entry named `rumiai-os` in a higher-precedence directory may accidentally shadow this canonical runtime exposure.
 
-Platform-independent RumiAI commands such as `log` also belong under `bin/sys/`.
+Platform-independent RumiAI commands such as `log`, `lang`, `lang-set` and `osarch-update` belong under `bin/sys/`.
 
 ## 7. Language selection
 
@@ -170,7 +193,7 @@ The selected language is represented by a relative symlink:
 lang/current -> <language_TERRITORY>
 ```
 
-Available language catalogs are ordinary directories under `lang/`, for example:
+Available language catalogs are ordinary immediate directories under `lang/`, for example:
 
 ```text
 lang/en_US/
@@ -183,7 +206,17 @@ Fallback is fixed to:
 en_US
 ```
 
-The utility that presents available languages and updates `lang/current` remains to be specified.
+The explicit selector is:
+
+```text
+bin/sys/lang-set
+```
+
+With no arguments it reports the effective current language followed by every available language and the number of regular, non-empty canonical message files in that catalog. With one argument it accepts an exact available-language directory name and updates `lang/current` to a relative symlink to that language. More than one argument or an unavailable language is rejected without changing the existing selection.
+
+If `lang/current` does not identify an available language, the effective current language reported by `lang-set` is `m_LANGUAGE_FALLBACK`, matching the resolver fallback behavior.
+
+The selector never infers a language from the host locale.
 
 ## 8. Text encoding
 
@@ -204,6 +237,14 @@ lang
 ```
 
 `i18n` is superseded terminology and is not retained as an alias by default.
+
+The public command:
+
+```text
+bin/sys/lang
+```
+
+is a thin wrapper around the bootstrap `lang` function and does not implement a second resolver.
 
 After the language primitive exists, the normal logger may resolve presentation text through `lang` while retaining canonical event identity and structured fields.
 
@@ -290,9 +331,6 @@ Historical documents and validation evidence remain in Git and remain evidence f
 
 Not yet fixed:
 
-1. `<osarch>` detection and `sys-osarch` / `ext-osarch` link updater;
-2. when that updater runs;
-3. language-selection utility for `lang/current`;
-4. cross-shell loading of RumiAI functions.
+1. cross-shell loading of RumiAI functions.
 
-These items must be solved without contradicting the fixed behavior above.
+This item must be solved without contradicting the fixed behavior above.
