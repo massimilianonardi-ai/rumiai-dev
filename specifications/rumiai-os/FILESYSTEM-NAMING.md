@@ -1,7 +1,8 @@
 # RumiAI OS — Filesystem Naming Convention
 
 Status: **Normative specification**  
-Date: 2026-08-28
+Date: 2026-08-28  
+Updated: 2026-09-02
 
 ## 1. Scope
 
@@ -9,7 +10,7 @@ This specification defines naming rules for filesystem objects whose names are c
 
 It does **not** restrict names explicitly supplied by a user or names originating from external tools, filesystems or datasets. Such names are external data and must be handled safely as opaque pathnames.
 
-The purpose is to keep RumiAI-controlled names predictable, portable and simple enough that bootstrap and internal tooling do not need defensive handling for arbitrary filename syntax that RumiAI itself would never generate.
+The purpose is to keep RumiAI-controlled names predictable and portable without weakening the separate requirement to preserve externally controlled pathname data exactly within the shell-representable domain required by an API.
 
 Normative baseline:
 
@@ -119,7 +120,7 @@ lang/it_IT.UTF-8/
 lang/it_IT/UTF-8/
 ```
 
-RumiAI language catalogs are always UTF-8; configurable external text encoding is handled at the interaction boundary and does not alter filesystem catalog identity.
+RumiAI language catalogs are always UTF-8. The current runtime text encoding is also fixed to UTF-8; any future external encoding capability belongs at an interaction boundary and does not alter filesystem catalog identity.
 
 Semantic exceptions MUST be documented by the subsystem that owns the identifier and MUST NOT become a general excuse for arbitrary naming variation.
 
@@ -150,7 +151,8 @@ Code handling external pathnames MUST:
 - treat them as data;
 - quote expansions correctly;
 - use supported option delimiters where required by the canonical `--` rule;
-- avoid parsing human-oriented utility output to recover pathname data.
+- avoid parsing human-oriented utility output to recover pathname data;
+- preserve trailing-newline pathname data whenever the API claims to preserve the corresponding shell-representable pathname domain.
 
 If a RumiAI tool automatically generates a new internal name from external/user data rather than preserving the supplied name, the generated name MUST follow this convention and the transformation/collision policy must be explicit for that tool.
 
@@ -162,14 +164,27 @@ The canonical product entrypoint name is fixed as:
 rumiai-os
 ```
 
-and is a RumiAI-controlled name. Therefore its final pathname component cannot contain a trailing newline.
+and is a RumiAI-controlled name. This naming constraint does not eliminate the bootstrap's responsibility to preserve externally controlled invocation pathname data.
 
-Phase 0 may safely capture `command -v` and `realpath` output with ordinary POSIX command substitution without a sentinel protocol for trailing-newline preservation:
+POSIX command substitution removes trailing newline bytes. Therefore a bootstrap helper that captures pathname-producing utility output and claims to preserve the required shell-representable pathname domain MUST use a protocol that prevents trailing-newline loss.
 
-- `command -v` resolves the fixed command name `rumiai-os` when invoked through `PATH`;
-- `realpath` returns a canonical pathname whose final component is the controlled product entrypoint;
-- newline characters in externally controlled parent directory components are embedded within the pathname, not trailing output bytes, and are preserved by command substitution.
+The stabilized Phase-0 bootstrap uses a non-newline sentinel around the relevant command substitution capture. This applies both to `PATH` lookup output when needed and to canonical pathname output.
 
-A user-created external symlink may itself have an arbitrary name; direct `$0` assignment preserves it before `realpath` canonicalizes it to the controlled product entrypoint.
+The sentinel is an exact-data capture mechanism only. It does not change the root-discovery model:
 
-The more general fact that POSIX command substitution removes trailing newline bytes remains relevant for arbitrary external pathname-producing workflows, but it is not a requirement of the phase-0 bootstrap implementation.
+```text
+select invocation pathname
+→ validate existence
+→ canonicalize existing pathname
+→ validate required type
+→ derive physical root
+```
+
+Externally controlled parent directories and invocation symlink names may contain pathname bytes outside the RumiAI-controlled naming convention, including newline. They remain external data and must not be normalized merely because the final physical product entrypoint is named `rumiai-os`.
+
+Current root-resolution authority:
+
+```text
+architecture/rumiai-os/PHASE-0.md
+specifications/rumiai-os/ENTRYPOINT-ROOT-RESOLUTION.md
+```
