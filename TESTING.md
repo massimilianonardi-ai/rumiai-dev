@@ -40,15 +40,15 @@ Un PoC riuscito può diventare origine di uno o più test permanenti, ma PoC e t
 `rumiai-os` deve poter ospitare un workspace locale di sviluppo sotto:
 
 ```text
-$RumiAI_ROOT/.dev/
+$m_ROOT/src/
 ```
 
-Il contenuto operativo di `.dev/` non appartiene al prodotto e deve essere ignorato dal repository `rumiai-os`.
+Il contenuto operativo di `src/` non appartiene al prodotto e deve essere ignorato dal repository `rumiai-os`.
 
 La configurazione locale consigliata è:
 
 ```text
-$RumiAI_ROOT/.dev/rumiai-tests/
+$m_ROOT/src/rumiai-tests/
 ```
 
 come clone del repository `rumiai-tests`.
@@ -56,12 +56,12 @@ come clone del repository `rumiai-tests`.
 Quando serve attività sperimentale può essere presente anche:
 
 ```text
-$RumiAI_ROOT/.dev/rumiai-dev-PoCs/
+$m_ROOT/src/rumiai-dev-PoCs/
 ```
 
-I repository sotto `.dev/` restano repository Git autonomi. Non devono essere incorporati in `rumiai-os` come submodule e non devono diventare dipendenze necessarie all'esecuzione del prodotto.
+I repository sotto `src/` restano repository Git autonomi. Non devono essere incorporati in `rumiai-os` come submodule e non devono diventare dipendenze necessarie all'esecuzione del prodotto.
 
-La collocazione sotto `.dev/` è soltanto una convenienza di sviluppo. I test non devono dipendere da uno specifico pathname del checkout e devono poter effettuare autonomamente il discovery necessario anche quando la suite è collocata altrove.
+La collocazione sotto `src/` è soltanto una convenienza di sviluppo. I test non devono dipendere da uno specifico pathname del checkout e devono poter effettuare autonomamente il discovery necessario anche quando la suite è collocata altrove.
 
 ## 4. Struttura iniziale di `rumiai-tests`
 
@@ -77,7 +77,7 @@ rumiai-tests/
 │   ├── rumiai-os/
 │   │   ├── bootstrap/
 │   │   ├── command/
-│   │   ├── i18n/
+│   │   ├── lang/
 │   │   ├── log/
 │   │   └── shell/
 │   └── external/
@@ -113,7 +113,7 @@ tests/
 │   │   ├── path/
 │   │   └── status/
 │   ├── command/
-│   ├── i18n/
+│   ├── lang/
 │   ├── log/
 │   └── shell/
 └── external/
@@ -254,7 +254,7 @@ Dalla propria posizione canonicalizzata il test può derivare directory e pathna
 ```text
 .fixtures/input
 .support/helper
-bin/log
+bin/sys/log
 rumiai-os
 expected/status
 ```
