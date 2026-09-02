@@ -2,7 +2,7 @@
 
 `setup-dev.sh` creates the canonical local workspace used to develop and validate RumiAI.
 
-The script is intentionally independent from the product runtime. It lives in `rumiai-dev`, clones the product repository first, and then places development-only repositories under the ignored `.dev/` workspace of `rumiai-os`.
+The script is intentionally independent from the product runtime. It lives in `rumiai-dev`, clones the product repository first, and then places development-only repositories under the ignored `src/` workspace of `rumiai-os`.
 
 ## Layout
 
@@ -11,7 +11,7 @@ With the default destination the resulting layout is:
 ```text
 ./rumiai-os/
 ├── ...                         rumiai-os working tree
-└── .dev/
+└── src/
     ├── rumiai-tests/           independent Git repository
     └── rumiai-dev-PoCs/        independent Git repository
 ```
@@ -176,13 +176,15 @@ If no supported secure persistent helper is available, the script does not silen
 
 The bootstrap was physically exercised on the two stable reference hosts on 2026-08-29 using the piped `curl | sh` form and an explicit `RumiAI_ROOT`.
 
+The observations below describe the **then-current** workspace layout. At that revision the workspace directory was named `.dev/`; the current canonical name is `src/`. The historical validation evidence is not rewritten as evidence for the renamed layout.
+
 ### macOS
 
 Observed successfully:
 
 - clone of `rumiai-os`;
-- creation of `.dev/`;
-- clone of `rumiai-tests` and `rumiai-dev-PoCs` in the canonical layout;
+- creation of `.dev/` in the then-current layout;
+- clone of `rumiai-tests` and `rumiai-dev-PoCs` in that then-current layout;
 - dry-run push verification on all three repositories;
 - successful completion when existing Git credentials already provide write access.
 
@@ -192,7 +194,7 @@ Because valid credentials were already present, the interactive PAT configuratio
 
 Observed successfully:
 
-- clone of all three repositories in the canonical layout;
+- clone of all three repositories in the then-current layout;
 - initial detection of unavailable push access;
 - interactive confirmation through `/dev/tty` while the script itself was supplied on standard input;
 - username and PAT input, including non-echoed token entry;
@@ -261,7 +263,9 @@ ERROR  0
 TOTAL  3
 ```
 
-This closes the Git-identity input-safety path: invalid email input is rejected before workspace creation, cancellation persists no identity, and confirmed valid identity is persisted with `user.useConfigOnly=true`, supports Git author/committer construction, a real commit, and isolated cloning of the three development repositories.
+This closes the Git-identity input-safety path for that validated revision: invalid email input is rejected before workspace creation, cancellation persists no identity, and confirmed valid identity is persisted with `user.useConfigOnly=true`, supports Git author/committer construction, a real commit, and isolated cloning of the three development repositories.
+
+The later `.dev/` -> `src/` workspace rename has its permanent setup expectation updated separately and still requires fresh physical validation before the old host evidence can be claimed for the renamed layout.
 
 ## Requirements
 
