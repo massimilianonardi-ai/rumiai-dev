@@ -2,11 +2,11 @@
 
 Status: **Normative specification**  
 Date: 2026-09-02  
-Updated: 2026-09-02
+Updated: 2026-09-03
 
 ## 1. Scope
 
-This specification defines the minimal language-message resolver available during the RumiAI bootstrap/runtime initialization.
+This specification defines the minimal language-message resolver and the public language commands available in the RumiAI bootstrap/runtime environment.
 
 The subsystem/API name is:
 
@@ -109,7 +109,7 @@ Failure to find a localized message is therefore normally non-fatal.
 
 A missing/broken `lang/current` selection naturally falls through to `lang/en_US` when the fallback catalog exists.
 
-## 6. API
+## 6. API and public command
 
 Canonical shell API:
 
@@ -120,6 +120,20 @@ lang "$domain" "$message_id"
 On success it emits exactly the resolved message text followed by the API's normal line terminator.
 
 The domain and message identifier are controlled identifiers; validation may reject malformed names before filesystem lookup.
+
+The public command is:
+
+```text
+bin/sys/lang
+```
+
+It uses the standard RumiAI command entry and delegates directly to the already initialized shell API:
+
+```sh
+lang "$@"
+```
+
+It MUST NOT duplicate catalog resolution logic.
 
 No `i18n` compatibility alias is required.
 
@@ -150,8 +164,72 @@ UTF-8
 
 No bootstrap encoding negotiation is performed.
 
-## 9. Language-selection utility
+## 9. Language-selection command
 
-The command/script that lets the user choose among existing language directories and atomically/safely updates the relative `lang/current` symlink remains to be designed.
+The canonical selector is:
 
-That utility must not reintroduce host-locale inference into the bootstrap selection contract.
+```text
+bin/sys/lang-set
+```
+
+It does not infer language from `LC_ALL`, `LC_MESSAGES`, `LANG` or any other host locale source.
+
+### 9.1 Available languages
+
+An available language is an immediate directory under:
+
+```text
+m_LANG_DIR
+```
+
+`current` is excluded because it represents selection state rather than a catalog.
+
+Selection is by exact directory-name match. `lang-set` does not introduce aliases, fuzzy matching or host-locale normalization.
+
+### 9.2 Query form
+
+With no arguments:
+
+```text
+lang-set
+```
+
+outputs:
+
+```text
+current<TAB><language>
+<language><TAB><non-empty-message-count>
+...
+```
+
+The first row identifies the effective current language. A valid `lang/current` target takes precedence; otherwise the effective current language is `m_LANGUAGE_FALLBACK`, matching resolver behavior.
+
+Each following row represents one available language. Its count includes only regular, non-empty files at canonical message depth:
+
+```text
+m_LANG_DIR/<language>/<domain>/<message-id>
+```
+
+Directories, empty files and objects outside that depth are not counted.
+
+### 9.3 Set form
+
+With one argument:
+
+```text
+lang-set <language>
+```
+
+`<language>` MUST exactly match an available language directory.
+
+On success the command updates:
+
+```text
+lang/current -> <language>
+```
+
+The symlink target MUST be relative.
+
+If `lang/current` exists as a non-symlink object, the command MUST refuse to overwrite it.
+
+An unavailable language or an argument count other than zero or one MUST fail without changing an existing valid selection.
