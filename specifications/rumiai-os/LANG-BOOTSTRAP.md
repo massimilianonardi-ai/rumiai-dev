@@ -1,7 +1,8 @@
 # RumiAI OS — Minimal Bootstrap `lang`
 
 Status: **Normative specification**  
-Date: 2026-09-02
+Date: 2026-09-02  
+Updated: 2026-09-02
 
 ## 1. Scope
 
@@ -54,6 +55,27 @@ The localized text is presentation data, not canonical identity.
 
 Dynamic event values remain structured fields owned by the logger/event layer.
 
+Domains SHOULD describe reusable semantic areas rather than the component that happens to emit a message when the condition can be shared across components.
+
+Initial generic domains include:
+
+```text
+filesystem
+execution
+security
+```
+
+Examples of reusable identities include:
+
+```text
+filesystem.path-non-existent
+filesystem.path-is-readonly
+filesystem.execution-bit-not-set
+filesystem.file-is-not-executable
+execution.command-not-found
+security.command-requires-root-privileges
+```
+
 ## 4. Catalog layout
 
 Canonical shape:
@@ -65,11 +87,13 @@ lang/<language_TERRITORY>/<domain>/<message-id>
 Examples:
 
 ```text
-lang/it_IT/bootstrap/example
-lang/en_US/bootstrap/example
+lang/it_IT/filesystem/path-non-existent
+lang/en_US/security/command-requires-root-privileges
 ```
 
 Catalog objects are UTF-8 data and MUST NOT be sourced or evaluated as shell code.
+
+The historical product catalog domain `bootstrap` is superseded for current reusable messages. Historical revisions and evidence remain historical data and are not rewritten.
 
 ## 5. Resolution order
 
