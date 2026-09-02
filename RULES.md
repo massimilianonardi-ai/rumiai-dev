@@ -184,12 +184,12 @@ L'avvio iniziale da un altro sistema operativo non limita la generalità del pro
 
 ## Workspace locale di sviluppo
 
-RumiAI OS può contenere la directory tracciata `.dev/` esclusivamente come punto di ancoraggio del workspace locale di sviluppo.
+RumiAI OS può contenere la directory tracciata `src/` esclusivamente come punto di ancoraggio del workspace locale di sviluppo.
 
-Il contenuto operativo di `.dev/` non fa parte del prodotto e deve essere ignorato da Git. La configurazione iniziale prevista è:
+Il contenuto operativo di `src/` non fa parte del prodotto e deve essere ignorato da Git. La configurazione iniziale prevista è:
 
 ```text
-rumiai-os/.dev/rumiai-tests/
+rumiai-os/src/rumiai-tests/
 ```
 
 come clone indipendente del repository `rumiai-tests`.
@@ -197,7 +197,7 @@ come clone indipendente del repository `rumiai-tests`.
 Quando necessario per attività sperimentali può essere presente anche:
 
 ```text
-rumiai-os/.dev/rumiai-dev-PoCs/
+rumiai-os/src/rumiai-dev-PoCs/
 ```
 
 Questi repository locali non devono essere submodule né dipendenze runtime del prodotto. Le regole dettagliate sono definite in `TESTING.md`.
