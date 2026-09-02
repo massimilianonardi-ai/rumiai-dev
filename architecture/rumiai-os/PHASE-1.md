@@ -1,286 +1,180 @@
-# RumiAI OS — Phase 1 bootstrap environment
+# RumiAI OS — Phase 1 runtime environment
 
 Status: **Accepted architecture**  
-Date: 2026-08-28
+Date: 2026-08-28  
+Updated: 2026-09-02
 
 ## Purpose
 
-Phase 1 begins immediately after phase 0 has established:
+Phase 1 begins after Phase 0 has established:
 
 ```text
-RumiAI_BOOTSTRAP_BIN
-RumiAI_ROOT
+m_BOOTSTRAP_BIN
+m_ROOT
 ```
 
-Its purpose is to initialize the smallest deterministic environment required to reach an internationalized logger and then execute a RumiAI command file through the active `rumiai-os` interpreter.
+Its purpose is to expose the relocatable RumiAI runtime environment, initialize language and logging primitives, then either interpret a RumiAI command file or enter the interactive RumiAI shell.
 
 ## Flow
 
 ```text
-COMMAND FILE
-    #!/usr/bin/env rumiai-os
-    ↓
-PATH selects active rumiai-os
-    ↓
 PHASE 0
-    RumiAI_BOOTSTRAP_BIN
-    RumiAI_ROOT
+    m_BOOTSTRAP_BIN
+    m_ROOT
     ↓
 PHASE 1A — semantic roots
-    RumiAI_BIN_DIR
-    RumiAI_LIB_DIR
-    RumiAI_CONF_DIR
-    RumiAI_LANG_DIR
+    bin / lib / conf / lang
     ↓
-PHASE 1B — command environment
-    prepend RumiAI_BIN_DIR to PATH
+PHASE 1B — executable PATH
+    bin/sys-osarch
+    bin/sys
+    bin/ext-osarch
+    bin/ext
+    inherited host PATH
     ↓
-PHASE 1C — bootstrap interaction preferences
-    conf/bootstrap/language
-    conf/bootstrap/text-encoding
-    host locale fallback for language
+PHASE 1C — language runtime
+    lang/current
+    fallback lang/en_US
+    UTF-8 fixed
     ↓
-PHASE 1D — i18n
-    normalize language request
-    select available language
-    guarantee en_US fallback
-    normalize/fallback interaction encoding to UTF-8
+PHASE 1D — logger
+    log
     ↓
-PHASE 1E — logger
-    initialize logger
-    report non-fatal bootstrap fallback conditions
-    ↓
-LOGGER ACTIVE
-    ↓
-PHASE 1F — command interpreter
-    canonicalize command-file operand
-    validate RumiAI command shebang
-    expose RumiAI_COMMAND_BIN
-    remove command-file operand from "$@"
-    source command file in-process
-    propagate command status
+PHASE 1E — dispatch
+    no operands → interactive shell
+    operands    → command/source entry
 ```
 
-The labels describe dependency order and do not require separate product files or processes.
+## Environment-variable namespace
+
+RumiAI-owned environment variables use:
+
+```text
+m_*
+```
+
+This convention applies only to environment variables.
 
 ## Semantic roots
 
-Current minimal roots:
+Current roots include:
 
 ```text
-bin/   executable commands intended for PATH
-lib/   sourced/imported implementation libraries
-conf/  configuration
-lang/  language/i18n catalogs
+m_BIN_DIR=$m_ROOT/bin
+m_LIB_DIR=$m_ROOT/lib
+m_CONF_DIR=$m_ROOT/conf
+m_LANG_DIR=$m_ROOT/lang
 ```
 
-Canonical variables:
+`bin/` is a container for executable directories; it is not itself inserted in `PATH`.
+
+## Executable layout
+
+Canonical classes:
 
 ```text
-RumiAI_BIN_DIR  = $RumiAI_ROOT/bin
-RumiAI_LIB_DIR  = $RumiAI_ROOT/lib
-RumiAI_CONF_DIR = $RumiAI_ROOT/conf
-RumiAI_LANG_DIR = $RumiAI_ROOT/lang
+bin/sys/             RumiAI, platform-independent
+bin/sys-<osarch>/    RumiAI, platform-specific
+bin/sys-osarch       symlink to active sys-<osarch>
+
+bin/ext/             third-party, platform-independent
+bin/ext-<osarch>/    third-party, platform-specific
+bin/ext-osarch       symlink to active ext-<osarch>
 ```
 
-`cmd/` and `RumiAI_COMMAND_DIR` are no longer part of the accepted architecture. The command file is its own implementation entrypoint.
-
-No `share/` or generic `resources/` root is created before a real cross-cutting resource category exists.
+The platform-link update mechanism is intentionally not part of the bootstrap contract yet.
 
 ## PATH model
 
-`RumiAI_BIN_DIR` is prepended to the inherited `PATH` after bootstrap:
+Exact precedence:
 
 ```text
-RumiAI bin
-    ↓
-caller/host PATH
+m_BIN_SYS_OSARCH_DIR
+m_BIN_SYS_DIR
+m_BIN_EXT_OSARCH_DIR
+m_BIN_EXT_DIR
+inherited PATH
 ```
 
-Libraries are loaded explicitly from `RumiAI_LIB_DIR`; data is loaded explicitly from its semantic root.
+This allows RumiAI system commands to take precedence over bundled third-party commands and the host environment while retaining host tools as fallback.
 
-The command-interpreter model has one additional pre-bootstrap requirement: the caller environment must already be able to resolve an executable named:
+## Language model
+
+The bootstrap no longer reads language or text-encoding preference files and does not derive the RumiAI language from host locale variables.
+
+Current language selection is the relative symlink:
 
 ```text
-rumiai-os
+lang/current -> <language_TERRITORY>
 ```
 
-through `PATH`, because `/usr/bin/env` must find the interpreter before RumiAI itself starts.
-
-How an installation or activation process exposes `rumiai-os` in the caller's `PATH` is a separate installation/environment concern and is not solved by phase 1 itself.
-
-## Command entrypoint model
-
-Canonical first line:
+Fallback:
 
 ```text
-#!/usr/bin/env rumiai-os
+lang/en_US
 ```
 
-A command file contains its own POSIX shell implementation body.
-
-Example:
-
-```sh
-#!/usr/bin/env rumiai-os
-log "$@"
-```
-
-The host passes the command-file pathname to the active `rumiai-os` runtime. After phase 1 initializes i18n and the logger, the runtime canonicalizes the command file, removes its pathname from the positional arguments, and sources the file in the initialized shell.
-
-This gives the command direct access to bootstrap state and sourced libraries without a second bootstrap or an implementation shadow tree.
-
-Canonical command pathname variable:
-
-```text
-RumiAI_COMMAND_BIN
-```
-
-`RumiAI_COMMAND_BIN` is the absolute physical/canonical pathname of the command file being interpreted.
-
-## Host-profile extension
-
-The command-entry mechanism intentionally relies on behavior outside the abstract POSIX.1-2024 guarantee.
-
-RumiAI therefore requires reference hosts to provide and validate:
-
-```text
-/usr/bin/env
-executable #! scripts
-PATH-based resolution of rumiai-os
-command-file pathname forwarded to rumiai-os
-source-compatible treatment of the initial #! line by the reference /bin/sh
-```
-
-POSIX remains the contract for the shell code and standard utilities used after the runtime has started; the shebang/interpreter bootstrap is an explicit documented host-profile extension.
-
-## Bootstrap configuration model
-
-The bootstrap must be able to initialize advanced infrastructure without already depending on that infrastructure.
-
-Accepted primitives:
-
-```text
-conf/bootstrap/language
-conf/bootstrap/text-encoding
-```
-
-They are minimal bootstrap data, not sourced shell code.
-
-The initial reader treats them as one-value files. Missing configuration is not inherently an error. Invalid/unreadable explicit configuration should normally degrade to the defined fallback path and can be reported after logger activation.
-
-Once the advanced configuration system is initialized, it may become authoritative and supersede bootstrap primitives according to:
-
-```text
-minimal primitive → initialize advanced subsystem → advanced subsystem authoritative
-```
-
-## Interaction language model
-
-Canonical variable:
-
-```text
-RumiAI_LANGUAGE
-```
-
-Language/territory identity:
-
-```text
-language_TERRITORY
-```
-
-Examples:
-
-```text
-en_US
-it_IT
-```
-
-Preference order:
-
-```text
-bootstrap config
-LC_ALL
-LC_MESSAGES
-LANG
-en_US
-```
-
-The i18n layer normalizes host locale syntax, strips host codeset/modifier information needed only for locale parsing, selects an available language catalog, and falls back to `en_US` when required.
-
-## Text encoding model
-
-Canonical user-interaction text-encoding variable:
-
-```text
-RumiAI_TEXT_ENCODING
-```
-
-Explicit preference:
-
-```text
-conf/bootstrap/text-encoding
-```
-
-Initial and guaranteed fallback value:
+Encoding:
 
 ```text
 UTF-8
 ```
 
-The internal RumiAI text model remains UTF-8 regardless of this interaction-boundary setting.
+The bootstrap resolver/API name is `lang`; `i18n` is superseded terminology.
 
-## Catalog model
+## Runtime exposure for command shebangs
 
-Language catalogs are always UTF-8 and are identified only by language/territory:
-
-```text
-lang/en_US/
-lang/it_IT/
-```
-
-The codeset is not part of `RumiAI_LANGUAGE` and is not encoded in catalog directory names.
-
-## Command aliases and duplicate names
-
-Because the command-file pathname is passed to the interpreter, routing does not depend on a global basename registry.
-
-These can coexist:
+Direct RumiAI command files retain:
 
 ```text
-package-a/bin/foo
-package-b/bin/foo
+#!/usr/bin/env rumiai-os
 ```
 
-A renamed symlink may point to a command file:
+The portable/activated runtime exposes itself through:
 
 ```text
-/usr/local/bin/my-log -> /opt/rumiai/bin/log
+bin/sys/rumiai-os -> ../../rumiai-os
 ```
 
-The runtime canonicalizes the command-file pathname, so the external alias name does not determine the implementation.
+Because `bin/sys` participates in the RumiAI `PATH`, `/usr/bin/env rumiai-os` can resolve the active portable runtime without mandatory host integration.
 
-## Active runtime semantics
+This symlink is runtime exposure only and is not multicall routing.
 
-The active interpreter is the `rumiai-os` selected by the inherited `PATH`.
+## Command entry
 
-A command file physically belonging to one installation may therefore be interpreted by another active runtime if the environment's `PATH` selects it.
-
-This is intentional. Runtime/version/capability compatibility checks are deferred until a concrete requirement emerges.
-
-## Failure philosophy
-
-Missing requested language data normally falls back to `en_US`.
-
-Missing, invalid or unsupported text-encoding configuration normally falls back to UTF-8 when the boundary remains usable in UTF-8.
-
-Shared bootstrap failures use exact stable numeric statuses. The accepted pre-stability phase-0 sequence is:
+With one or more operands, the first operand is resolved/canonicalized as an existing readable regular file, exposed as:
 
 ```text
-1  PATH resolution failure
-2  realpath/canonicalization failure
-3  invalid bootstrap binary
-4  invalid/inaccessible RumiAI root
+m_COMMAND_BIN
 ```
 
-The current command-interpreter draft tentatively continues with i18n/logger load and command-entry errors. Final external command status mapping remains to be consolidated before public CLI stabilization.
+removed from `$@`, then sourced in-process. The command body therefore has access to the functions initialized in the bootstrap process and observes only its own arguments in `$@`.
+
+## Interactive shell
+
+With no operands, RumiAI launches:
+
+```text
+$SHELL
+```
+
+when it is set and non-empty, otherwise:
+
+```text
+sh
+```
+
+RumiAI does not automatically prefer Bash and does not read `conf/shell/default` for shell selection.
+
+The interactive RumiAI shell must expose RumiAI environment variables and the required RumiAI functions. Environment variables are inherited naturally; the portable mechanism for making the functions available in the newly executed shell remains an explicit open design item.
+
+## Open items
+
+Still to be designed:
+
+1. detection of `<osarch>` and update of `sys-osarch` / `ext-osarch`;
+2. invocation policy for that update mechanism;
+3. language-selection utility that updates `lang/current`;
+4. function-loading mechanism for the interactive shell.
+
+These open items must not silently reintroduce superseded language configuration, host-locale selection, Bash-preferred behavior or a multicall command model.

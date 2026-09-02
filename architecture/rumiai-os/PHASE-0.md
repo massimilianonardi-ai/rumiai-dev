@@ -1,132 +1,116 @@
 # RumiAI OS — Phase 0 bootstrap architecture
 
-Status: **Accepted**  
-Date: 2026-08-28
+Status: **Accepted architecture**  
+Date: 2026-08-28  
+Updated: 2026-09-02
 
 ## Purpose
 
-Phase 0 is the smallest code path that can run before RumiAI knows where its own runtime is located.
+Phase 0 is the smallest code path that runs before RumiAI knows its own physical runtime root.
 
-It exists only to establish:
+It establishes exactly the fundamental exported environment state:
 
 ```text
-RumiAI_BOOTSTRAP_BIN
-RumiAI_ROOT
+m_BOOTSTRAP_BIN
+m_ROOT
 ```
 
-No logger, i18n subsystem, configuration loader, package manager or application logic belongs in this phase.
+The `m_*` prefix is the canonical namespace for RumiAI-owned environment variables. It does not define a general function namespace.
 
-## Flow
+No language selection, logger implementation, package manager or application logic belongs to root discovery.
+
+## Entrypoint
+
+The physical product bootstrap remains:
+
+```text
+<rumiai-root>/rumiai-os
+```
+
+with:
+
+```sh
+#!/bin/sh
+```
+
+The root repository contract remains relocatable; no installation pathname is hardcoded.
+
+## Resolution flow
+
+Conceptual flow:
 
 ```text
 process starts
     ↓
 interpret $0
     ↓
-PATH lookup only if required
+if $0 has no slash:
+    prefer an existing ./<name> invocation object,
+    otherwise resolve through caller PATH
     ↓
-realpath -e physical canonicalization
+validate that the invocation pathname exists
     ↓
-validate bootstrap regular file
+physical canonicalization with standard realpath
     ↓
-derive + validate RumiAI_ROOT
+validate canonical pathname exists
     ↓
-export + readonly fundamental state
+validate bootstrap is a regular file
     ↓
-remove phase-0 internal state
+derive m_ROOT from m_BOOTSTRAP_BIN
+    ↓
+validate m_ROOT is accessible
+    ↓
+export + readonly m_BOOTSTRAP_BIN and m_ROOT
     ↓
 PHASE 1
-    ↓
-minimal i18n
-    ↓
-logger
 ```
+
+The stable path rule remains:
+
+```text
+VALIDATE EXISTENCE
+→ CANONICALIZE EXISTING PATH
+→ VALIDATE REQUIRED TYPE
+```
+
+`realpath` is used as a canonicalizer of an already-existing pathname, not as the existence classifier.
+
+## Invocation support
+
+The bootstrap supports:
+
+```text
+relative pathname
+absolute pathname
+PATH invocation
+symbolic-link invocation
+symbolic-link chains/intermediate symlinks supported by realpath
+arbitrary caller CWD
+```
+
+The physical canonical target of `rumiai-os` defines `m_ROOT`; the location of an external invocation symlink does not.
+
+## Pathname capture
+
+Where command substitution captures pathname-producing utility output, the implementation must preserve shell-representable pathname data against trailing-newline stripping. The current baseline uses a sentinel technique for the critical path resolution helper.
+
+This is an implementation detail of exact data capture, not a second path-resolution model.
 
 ## Diagnostics boundary
 
-Success is silent.
+Before the normal logger is active, bootstrap failures use the minimal bootstrap diagnostic path and terminate non-zero. The previously drafted multi-code Phase-0 mapping is not retained as a current invariant unless separately re-established.
 
-Before the logger exists, a controlled phase-0 failure emits only a stable symbolic identifier to stderr and exits with its reserved numeric status.
+Success remains silent until normal runtime behavior requires output.
 
-Host utility diagnostics are suppressed where phase 0 controls their invocation.
+## Phase boundary
 
-Failures that occur before the script itself starts are outside this boundary and cannot be normalized by RumiAI.
-
-## POSIX primitives
-
-The implementation intentionally remains small:
+Phase 0 is complete when:
 
 ```text
-shell parameter expansion
-command -v
-command -p
-realpath -e
-[ / test
-cd
-printf
-export
-readonly
-unset
+m_BOOTSTRAP_BIN is absolute, physical/canonical and a regular file
+m_ROOT is the physical/canonical containing directory and is accessible
+both are exported
+both are readonly in the bootstrap shell
 ```
 
-There is no custom symlink resolver, generic path library or output-capture helper in phase 0.
-
-## Controlled naming simplifies phase 0
-
-RumiAI-controlled filesystem names follow:
-
-```text
-specifications/rumiai-os/FILESYSTEM-NAMING.md
-```
-
-The real entrypoint final component is fixed as:
-
-```text
-rumiai-os
-```
-
-and RumiAI-controlled names do not contain whitespace/control characters such as newline.
-
-Therefore phase 0 does not preserve arbitrary trailing-newline filename data with a sentinel protocol. Ordinary command substitution is sufficient for the two utility outputs it captures.
-
-This does **not** mean RumiAI assumes all external filenames are simple. User/external path components remain opaque data and may contain spaces or newlines. Newlines in parent components are embedded inside the complete canonical executable pathname and are preserved; an externally named direct symlink is preserved in `$0` before canonicalization.
-
-## PATH resolution
-
-When `$0` contains no slash, phase 0 uses the caller's current `PATH`:
-
-```sh
-command -v -- "$0"
-```
-
-The result is not required to be absolute. Relative `PATH` components are valid input to the subsequent canonicalization step.
-
-## Canonicalization
-
-Phase 0 uses:
-
-```sh
-command -p -- realpath -e -- "$RumiAI_BOOTSTRAP_BIN"
-```
-
-`realpath -e` is the single physical canonicalization boundary.
-
-## Root derivation
-
-The canonical executable pathname is the source of truth:
-
-```sh
-RumiAI_ROOT=${RumiAI_BOOTSTRAP_BIN%/*}
-[ -n "$RumiAI_ROOT" ] || RumiAI_ROOT=/
-```
-
-`dirname` is not needed after canonicalization.
-
-## Phase-1 dependency
-
-The next architectural task is not additional path logic. It is the smallest robust initialization of:
-
-1. message/i18n resolution sufficient for diagnostics;
-2. logging infrastructure.
-
-The logger must become the single normal diagnostic path as soon as it is available.
+Phase 1 then establishes the runtime directories, `PATH`, `lang`, logger and command/shell execution environment.

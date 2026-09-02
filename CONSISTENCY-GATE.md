@@ -1,7 +1,8 @@
 # RumiAI Development Consistency Gate
 
 Status: **canonical development rule**  
-Date: 2026-08-30
+Date: 2026-08-30  
+Updated: 2026-09-02
 
 This document defines the mandatory consistency gate for work on RumiAI.
 
@@ -110,8 +111,8 @@ A new name must not be invented merely to expose an existing function through an
 Example:
 
 ```text
-existing: RumiAI_path_canonicalize_existing
-wrong:    RumiAI_path_canonicalize_existing_api
+existing: path_canonicalize_existing
+wrong:    path_canonicalize_existing_api
 ```
 
 unless a genuinely different contract has first been specified.
@@ -120,17 +121,26 @@ unless a genuinely different contract has first been specified.
 
 ## 6. Naming consistency
 
-For RumiAI shell code, namespaced RumiAI functions and variables use the exact canonical namespace:
+For RumiAI-owned **environment variables**, the canonical namespace is:
 
 ```text
-RumiAI_*
+m_*
 ```
 
-No alternate product namespace is inferred from conversational abbreviations or local implementation choices.
+This rule applies only to environment variables. It does NOT establish a general `m_*` namespace for functions, local/internal shell variables, commands, files, APIs, components or other product objects.
 
-Separately specified unnamespaced interfaces such as the existing `log` and `i18n` entrypoints remain explicit exceptions. An exception does not establish a second general naming convention.
+Standard host/environment variables such as `PATH` and `SHELL` retain their standard names.
 
-A future change of naming convention requires an explicit project decision.
+Separately specified unnamespaced shell interfaces currently include:
+
+```text
+log
+lang
+```
+
+The previous bootstrap/API name `i18n` is superseded by `lang`.
+
+No project-wide namespace for RumiAI shell functions is currently fixed. A future function namespace or broader naming convention requires an explicit project decision and MUST NOT be inferred from the environment-variable convention.
 
 ---
 
@@ -153,6 +163,8 @@ After propagation, scan the affected active subsystem for the superseded pattern
 A correction is not complete when only the file where the inconsistency was noticed has changed.
 
 Historical Git commits and immutable validation evidence are not rewritten. Current documentation must distinguish historical evidence from current rules without re-promoting obsolete terminology.
+
+When implementation or permanent-test changes require a separate authorized work phase, the current authoritative documentation MUST state that the affected implementation/tests are pending realignment rather than treating their old behavior as current authority.
 
 ---
 
@@ -191,7 +203,7 @@ At minimum verify:
 ```text
 no superseded/forbidden active terminology remains
 new public names match authoritative terminology
-call sites and tests use current interfaces
+call sites and tests use current interfaces, or are explicitly recorded as pending realignment
 file modes are correct, especially executable tests/commands
 serialization/layout still matches active specifications
 no accidental host-specific dependency was introduced
@@ -255,7 +267,7 @@ A change to an established subsystem is ready to be reported as complete only wh
 [ ] no conversational shorthand was promoted into product terminology
 [ ] existing primitives were reused where semantically equivalent
 [ ] code follows established naming/layout/format/platform rules
-[ ] correction propagated to dependent active docs/tests/examples
+[ ] correction propagated to dependent active docs/tests/examples, or pending implementation/test realignment is explicitly recorded
 [ ] stale superseded patterns were scanned for
 [ ] executable/file modes were checked
 [ ] mechanical guard was added where justified
