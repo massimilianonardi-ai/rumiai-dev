@@ -291,12 +291,12 @@ case $RUMIAI_ROOT in
     *) RUMIAI_ROOT=$PWD/$RUMIAI_ROOT ;;
 esac
 
-RUMIAI_DEV_DIR=$RUMIAI_ROOT/.dev
-RUMIAI_TESTS_DIR=$RUMIAI_DEV_DIR/rumiai-tests
-RUMIAI_POCS_DIR=$RUMIAI_DEV_DIR/rumiai-dev-PoCs
+RUMIAI_SRC_DIR=$RUMIAI_ROOT/src
+RUMIAI_TESTS_DIR=$RUMIAI_SRC_DIR/rumiai-tests
+RUMIAI_POCS_DIR=$RUMIAI_SRC_DIR/rumiai-dev-PoCs
 
 clone_or_validate "$RUMIAI_OS_REPO" "$RUMIAI_ROOT"
-mkdir -p "$RUMIAI_DEV_DIR" || die "cannot create $RUMIAI_DEV_DIR"
+mkdir -p "$RUMIAI_SRC_DIR" || die "cannot create $RUMIAI_SRC_DIR"
 clone_or_validate "$RUMIAI_TESTS_REPO" "$RUMIAI_TESTS_DIR"
 clone_or_validate "$RUMIAI_POCS_REPO" "$RUMIAI_POCS_DIR"
 
