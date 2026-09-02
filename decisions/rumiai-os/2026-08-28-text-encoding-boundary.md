@@ -1,119 +1,52 @@
 # Decisione — Text encoding interno e transcoding al boundary
 
 Date: 2026-08-28  
-Status: **Accepted**  
-Updated: 2026-08-31
+Status: **Partially superseded 2026-09-02**
 
-## Decisione
+## Invarianti ancora validi
 
-RumiAI separa in modo esplicito:
+Resta accettato che:
 
-```text
-lingua di interazione
-encoding di interazione
-rappresentazione testuale interna
-```
+- lingua e encoding siano concetti distinti;
+- i cataloghi RumiAI siano UTF-8;
+- il codeset non faccia parte dell'identità `language_TERRITORY` né del pathname del catalogo;
+- il testo controllato internamente da RumiAI usi UTF-8;
+- un eventuale futuro supporto a encoding esterni differenti appartenga al boundary/adattamento e non richieda cataloghi duplicati.
 
-Le tre dimensioni non devono essere fuse in un unico identificatore locale/codeset.
+## Contratto bootstrap superseded
 
-## Lingua di interazione
+Non esiste più una preferenza/configurazione bootstrap dell'encoding.
 
-Variabile canonica:
+Sono superseded:
 
 ```text
 RumiAI_LANGUAGE
-```
-
-Forma:
-
-```text
-language_TERRITORY
-```
-
-Esempio:
-
-```text
-RumiAI_LANGUAGE=it_IT
-```
-
-Il codeset non fa parte della variabile.
-
-## Encoding di interazione
-
-Variabile canonica:
-
-```text
 RumiAI_TEXT_ENCODING
+conf/bootstrap/i18n/text-encoding
+selector i18n dell'encoding
+fallback da un encoding richiesto
 ```
 
-La bootstrap primitive esplicita è:
+Il runtime corrente fissa:
 
 ```text
-$RumiAI_CONF_DIR/bootstrap/i18n/text-encoding
+m_TEXT_ENCODING=UTF-8
 ```
 
-Prima implementazione e fallback garantito:
+La lingua corrente è selezionata indipendentemente mediante:
 
 ```text
-RumiAI_TEXT_ENCODING=UTF-8
+lang/current -> <language_TERRITORY>
 ```
 
-La variabile è configurabile e rappresenta l'encoding testuale del boundary di interazione. Future implementazioni possono supportare ulteriori encoding senza cambiare il modello interno.
+Il bootstrap non negozia né normalizza encoding esterni.
 
-Il file bootstrap contiene un valore semplice letto come dato; la validazione dell'encoding richiesto appartiene alla selector i18n. Non viene introdotto un formato di configurazione separato per questo valore bootstrap.
-
-## Rappresentazione interna
-
-Il testo controllato internamente da RumiAI usa UTF-8 come rappresentazione canonica.
-
-Il control plane interno usa inglese + UTF-8.
-
-Payload utente e dati esterni possono contenere qualunque lingua; quando vengono rappresentati come testo interno vengono convertiti/normalizzati a UTF-8.
-
-Questa regola non implica che contenuto utente o dati esterni debbano essere semanticamente in inglese.
-
-## Cataloghi i18n
-
-I cataloghi sono sempre UTF-8.
-
-Layout:
+## Autorità corrente
 
 ```text
-lang/en_US/
-lang/it_IT/
+specifications/rumiai-os/BOOTSTRAP-ENVIRONMENT.md
+specifications/rumiai-os/LANG-BOOTSTRAP.md
+decisions/rumiai-os/2026-09-02-bootstrap-runtime-standards.md
 ```
 
-Non vengono creati cataloghi duplicati per encoding diversi e il codeset non compare nel pathname del catalogo.
-
-Forme rifiutate:
-
-```text
-lang/it_IT.UTF-8/
-lang/it_IT/UTF-8/
-```
-
-## Boundary
-
-La conversione di encoding avviene soltanto al confine con un'interfaccia o sorgente/destinazione esterna che richieda un encoding diverso:
-
-```text
-external/user encoding
-        ↓ transcoding
-internal UTF-8
-        ↓ processing
-internal UTF-8
-        ↓ transcoding
-external/user encoding
-```
-
-Con UTF-8 su entrambi i lati non viene eseguita alcuna transcodifica.
-
-## Estensibilità
-
-Supportare in futuro Shift-JIS, EUC-KR, Big5, GB18030, ISO-8859-* o altri encoding significa aggiungere capability/adapter di transcoding al boundary, non duplicare cataloghi o modificare il control plane interno.
-
-## Failure policy
-
-L'assenza di supporto per un encoding di interazione richiesto non dovrebbe rendere il bootstrap fatal quando il boundary può continuare a funzionare in UTF-8.
-
-Il fallback preferito è UTF-8 e la condizione viene diagnosticata tramite logger appena il logger è disponibile.
+Il precedente modello di encoding configurabile resta rationale storico per una possibile futura capability di boundary, non contratto bootstrap corrente.
