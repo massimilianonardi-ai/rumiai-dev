@@ -152,12 +152,21 @@ bin/sys/osarch-update
 
 It sources `osarch.lib.sh`, verifies that the detected OS and architecture belong to the updater's supported vocabulary, creates `sys-<osarch>/` and `ext-<osarch>/` when absent, and updates `sys-osarch` and `ext-osarch` as relative symlinks. It does not duplicate native host detection and does not overwrite a non-symlink object occupying either active-link pathname.
 
-`osarch-update` is not invoked automatically by the bootstrap. Any future automatic lifecycle invocation requires a separate decision.
-
-Current implementation reference for this separation:
+Detection and updater failures use the catalog identities:
 
 ```text
-massimilianonardi-ai/rumiai-os@9c85b74bab51478d085b45bf12628b296c5f430c
+system.osarch-detection-failure
+system.osarch-update-failure
+```
+
+These identities exist in every current product language catalog.
+
+`osarch-update` is not invoked automatically by the bootstrap. Any future automatic lifecycle invocation requires a separate decision.
+
+Current implementation reference for this separation and its catalog messages:
+
+```text
+massimilianonardi-ai/rumiai-os@9b5ae94c76b13877d65d8f0dfacf6c7b1d1f7dfa
 ```
 
 ## 5. PATH initialization
@@ -283,15 +292,18 @@ is a thin wrapper around the bootstrap `lang` function and does not implement a 
 
 After the language primitive exists, the normal logger may resolve presentation text through `lang` while retaining canonical event identity and structured fields.
 
-Current reusable catalog domains include:
+Current catalog domains include:
 
 ```text
 filesystem
 execution
 security
+system
 ```
 
-Component-specific historical catalog domains such as `bootstrap` are not part of the current product catalog when the condition can be represented by a reusable semantic message.
+The `system` domain currently includes the OS/architecture messages listed above.
+
+Historical catalog domains such as `bootstrap` are not part of the current product catalog unless reintroduced explicitly by a current decision.
 
 ## 10. Interactive shell
 
