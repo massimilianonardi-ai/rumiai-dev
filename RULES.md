@@ -100,12 +100,39 @@ foo
 
 può essere inizialmente uno script `#!/bin/sh` e in futuro essere reimplementato con un altro runtime senza diventare `foo.sh`, `foo.py` o `foo.js`.
 
-I file sourced/importati devono usare estensioni con significato semantico, non con significato di interprete. Esempi canonici iniziali:
+Le librerie interne sourced/importate sono invece oggetti legati al runtime che le carica. Devono essere organizzate sotto:
 
-- `.lib` per librerie sourced;
-- `.conf` per configurazioni.
+```text
+lib/<runtime>/
+```
 
-Le estensioni di linguaggio restano appropriate quando il file è realmente un sorgente identificato dal linguaggio e non un comando direttamente eseguibile, ad esempio `.c`, `.cpp`, `.java` e `.js` per puro sorgente JavaScript.
+Il runtime di caricamento deve essere espresso sia dal sottalbero sia dall'estensione composta del file. Le forme canoniche iniziali sono:
+
+```text
+lib/sh/<nome-libreria>.lib.sh
+lib/js/<nome-libreria>.lib.js
+```
+
+Esempi:
+
+```text
+lib/sh/osarch.lib.sh
+lib/js/example.lib.js
+```
+
+La componente `.lib` identifica il ruolo di libreria; il suffisso finale (`.sh`, `.js`, ecc.) identifica il runtime/formato con cui il file può essere caricato. Questa qualificazione del runtime è intenzionale per le librerie interne e non modifica la regola dei comandi pubblici senza estensione.
+
+Per le librerie RumiAI viene esportata soltanto la root generale:
+
+```text
+m_LIB_DIR=$m_ROOT/lib
+```
+
+Non devono essere introdotte environment variables derivate come `m_LIB_SH_DIR`, `m_LIB_JS_DIR` o equivalenti soltanto per abbreviare i sottopercorsi. I consumer derivano il proprio sottalbero dal runtime appropriato, ad esempio `$m_LIB_DIR/sh` o `$m_LIB_DIR/js`.
+
+Le librerie shell sotto `lib/sh/` sono file da source, non eseguibili: non devono avere il bit executable e non devono contenere shebang. Un file che deve essere direttamente eseguibile appartiene al modello dei comandi/eseguibili, non a quello delle librerie.
+
+I file sorgente che non sono librerie seguono il formato reale del linguaggio o dell'ecosistema, ad esempio `.c`, `.cpp`, `.java` e `.js` per puro sorgente JavaScript.
 
 Un file JavaScript eseguito direttamente tramite uno shebang Node.js, se previsto e autorizzato dall'architettura, segue invece la regola degli eseguibili e non porta `.js` nel nome pubblico.
 
