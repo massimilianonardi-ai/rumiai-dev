@@ -112,13 +112,21 @@ osarch-update.sh
 
 ## 6. Decomposizione `osarch`
 
-È fissata anche la separazione di responsabilità per il sottosistema OS/architecture:
+La separazione di responsabilità del sottosistema OS/architecture è:
 
 ```text
 lib/sh/osarch.lib.sh
 ```
 
-si occupa della detection e normalizzazione riutilizzabile di sistema operativo, architettura e identificatore `osarch`.
+che esegue detection e normalizzazione riutilizzabile di sistema operativo, architettura e identificatore `osarch`, esponendo:
+
+```text
+m_OSARCH_OS
+m_OSARCH_ARCH
+m_OSARCH
+```
+
+come environment variables readonly dopo il caricamento.
 
 ```text
 bin/sys/osarch-update
@@ -126,32 +134,35 @@ bin/sys/osarch-update
 
 carica `osarch.lib.sh` e mantiene la responsabilità specifica di:
 
+- verificare che il valore rilevato appartenga al vocabolario supportato dall'updater prima di usarlo come pathname RumiAI;
 - creare le directory `sys-<osarch>/` e `ext-<osarch>/` quando mancanti;
 - aggiornare i symlink relativi `sys-osarch` e `ext-osarch`;
 - gestire gli errori propri dell'aggiornamento del layout attivo.
 
-La detection non deve essere duplicata dentro `osarch-update` dopo il riallineamento completo.
+La detection non deve essere duplicata dentro `osarch-update`.
 
 La libreria `osarch.lib.sh` è intenzionalmente riutilizzabile da altri contesti che necessitano dell'identità della piattaforma, incluso un futuro consumer come `pkg`, senza duplicare la detection.
 
 ## 7. Stato di implementazione
 
-Durante questa unità di lavoro l'utente ha pubblicato:
+La separazione è implementata in:
 
 ```text
-massimilianonardi-ai/rumiai-os@7134b47f3ce92391ec1a1be0826a017e919311e1
+massimilianonardi-ai/rumiai-os@9c85b74bab51478d085b45bf12628b296c5f430c
 ```
 
-Questa revisione materializza già:
+A partire da questa revisione:
+
+- `lib/sh/osarch.lib.sh` non contiene shebang, non è executable e contiene soltanto la responsabilità di detection/normalizzazione `osarch`;
+- i residui attivi `RumiAI_OSARCH_*` sono stati rimossi dalla libreria;
+- `bin/sys/osarch-update` non invoca più `uname` e consuma `m_OSARCH_OS`, `m_OSARCH_ARCH` e `m_OSARCH` prodotti dalla libreria;
+- l'updater preserva il preflight dei due active-link pathname prima delle modifiche;
+- il codice modificato segue la disciplina corrente delle doppie virgolette shell.
+
+La copertura permanente è riallineata in:
 
 ```text
-lib/sh/osarch.lib.sh
+massimilianonardi-ai/rumiai-tests@80b92d9ceea8b37aa7cbd21865d76374cfc15184
 ```
 
-e il caricamento della libreria da `bin/sys/osarch-update`.
-
-La revisione non viene modificata in questa unità di lavoro.
-
-Il riallineamento è ancora parziale: `osarch-update` conserva al momento la propria detection duplicata e `osarch.lib.sh` deve ancora essere adeguata integralmente alle regole della libreria shell fissate qui, incluse assenza di shebang e terminologia/namespace correnti.
-
-Il prossimo intervento esplicitamente richiesto dall'utente dovrà quindi completare la separazione già iniziata, preservando le modifiche pubblicate dall'utente e senza reintrodurre una seconda detection dentro `osarch-update`.
+Il gruppo `tests/rumiai-os/osarch/` verifica separatamente la libreria di detection e il comportamento dell'updater, inclusa una fixture deterministica che dimostra che `osarch-update` consuma il risultato della libreria invece di ripetere la detection dell'host.
