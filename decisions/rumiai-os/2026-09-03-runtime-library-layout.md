@@ -145,10 +145,10 @@ La libreria `osarch.lib.sh` è intenzionalmente riutilizzabile da altri contesti
 
 ## 7. Stato di implementazione
 
-La separazione è implementata in:
+La separazione e il quoting corrente del sottosistema sono implementati in:
 
 ```text
-massimilianonardi-ai/rumiai-os@9c85b74bab51478d085b45bf12628b296c5f430c
+massimilianonardi-ai/rumiai-os@2ca7081edee262220953f002d41e9682d4e304c5
 ```
 
 A partire da questa revisione:
@@ -162,7 +162,7 @@ A partire da questa revisione:
 La copertura permanente è riallineata in:
 
 ```text
-massimilianonardi-ai/rumiai-tests@80b92d9ceea8b37aa7cbd21865d76374cfc15184
+massimilianonardi-ai/rumiai-tests@c713d5b7f27c8af20df2ca4d859497005199ba1e
 ```
 
 Il gruppo `tests/rumiai-os/osarch/` verifica separatamente la libreria di detection e il comportamento dell'updater, inclusa una fixture deterministica che dimostra che `osarch-update` consuma il risultato della libreria invece di ripetere la detection dell'host.
