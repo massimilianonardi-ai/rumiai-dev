@@ -112,34 +112,46 @@ osarch-update.sh
 
 ## 6. Decomposizione `osarch`
 
-È fissata anche la prossima separazione di responsabilità per il sottosistema OS/architecture:
+È fissata anche la separazione di responsabilità per il sottosistema OS/architecture:
 
 ```text
 lib/sh/osarch.lib.sh
 ```
 
-si occuperà della detection e normalizzazione riutilizzabile di sistema operativo, architettura e identificatore `osarch`.
+si occupa della detection e normalizzazione riutilizzabile di sistema operativo, architettura e identificatore `osarch`.
 
 ```text
 bin/sys/osarch-update
 ```
 
-caricherà `osarch.lib.sh` e manterrà la responsabilità specifica di:
+carica `osarch.lib.sh` e mantiene la responsabilità specifica di:
 
 - creare le directory `sys-<osarch>/` e `ext-<osarch>/` quando mancanti;
 - aggiornare i symlink relativi `sys-osarch` e `ext-osarch`;
 - gestire gli errori propri dell'aggiornamento del layout attivo.
 
-La detection non deve essere duplicata dentro `osarch-update` dopo il riallineamento.
+La detection non deve essere duplicata dentro `osarch-update` dopo il riallineamento completo.
 
 La libreria `osarch.lib.sh` è intenzionalmente riutilizzabile da altri contesti che necessitano dell'identità della piattaforma, incluso un futuro consumer come `pkg`, senza duplicare la detection.
 
 ## 7. Stato di implementazione
 
-Questa decisione aggiorna l'autorità documentale.
+Durante questa unità di lavoro l'utente ha pubblicato:
 
-Il repository `rumiai-os` è stato aggiornato dall'utente dopo il precedente intervento e tali modifiche non vengono toccate in questa unità di lavoro.
+```text
+massimilianonardi-ai/rumiai-os@7134b47f3ce92391ec1a1be0826a017e919311e1
+```
 
-Il riallineamento fisico di `osarch.lib`/`osarch-update` a questa decisione è rinviato alla successiva fase esplicitamente richiesta dall'utente dopo il proprio prossimo aggiornamento del repository.
+Questa revisione materializza già:
 
-Fino a quel momento, la revisione prodotto corrente resta evidenza dello stato implementato, mentre questo documento è l'autorità per il target già deciso.
+```text
+lib/sh/osarch.lib.sh
+```
+
+e il caricamento della libreria da `bin/sys/osarch-update`.
+
+La revisione non viene modificata in questa unità di lavoro.
+
+Il riallineamento è ancora parziale: `osarch-update` conserva al momento la propria detection duplicata e `osarch.lib.sh` deve ancora essere adeguata integralmente alle regole della libreria shell fissate qui, incluse assenza di shebang e terminologia/namespace correnti.
+
+Il prossimo intervento esplicitamente richiesto dall'utente dovrà quindi completare la separazione già iniziata, preservando le modifiche pubblicate dall'utente e senza reintrodurre una seconda detection dentro `osarch-update`.
