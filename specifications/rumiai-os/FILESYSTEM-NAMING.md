@@ -2,7 +2,7 @@
 
 Status: **Normative specification**  
 Date: 2026-08-28  
-Updated: 2026-09-02
+Updated: 2026-09-03
 
 ## 1. Scope
 
@@ -67,14 +67,37 @@ Canonical example:
 rumiai-os
 ```
 
-## 5. Semantic extensions
+## 5. Semantic extensions and runtime-qualified libraries
 
 Non-executable files MAY use semantic extensions when the extension describes their role or actual source format.
 
-Examples already accepted by the project include:
+RumiAI internal libraries use a runtime-qualified layout and a composed extension:
 
 ```text
-.lib
+lib/<runtime>/<library-name>.lib.<runtime>
+```
+
+Canonical initial forms:
+
+```text
+lib/sh/<library-name>.lib.sh
+lib/js/<library-name>.lib.js
+```
+
+Examples:
+
+```text
+lib/sh/osarch.lib.sh
+lib/js/example.lib.js
+```
+
+The `.lib` component identifies the semantic role of the file as a library. The final runtime suffix identifies the loader/runtime with which the library is compatible. Repeating the runtime in both the directory and the extension is intentional: the directory prevents cross-runtime discovery while the extension makes the file type explicit when viewed or moved independently.
+
+Shell libraries under `lib/sh/` are sourced, non-executable files and do not carry a shebang. A directly executable shell program follows the executable-command rule instead and therefore does not acquire `.sh` merely because it is implemented in shell.
+
+Other accepted semantic/source-format extensions include:
+
+```text
 .conf
 .c
 .cpp
