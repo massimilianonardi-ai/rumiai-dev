@@ -86,6 +86,38 @@ Un comando di RumiAI OS può essere implementato in futuro con un interprete o r
 
 Quando una funzionalità utile non è disponibile direttamente nel profilo POSIX adottato, si preferisce una primitiva portabile e riutilizzabile, purché la sua correttezza, sicurezza e portabilità siano verificabili.
 
+### Quoting difensivo in `sh`
+
+Nel codice `sh` di RumiAI devono essere usate le doppie virgolette `"..."` intorno a variabili, espansioni e valori ogni volta che la sintassi e la semantica lo consentono senza alterare intenzionalmente il comportamento.
+
+La regola vale anche quando il valore è costante, il contenuto di una variabile è già noto o il contenuto è considerato sicuro. La protezione deve dipendere dalla forma del codice e non da assunzioni sul contenuto corrente dei dati.
+
+La regola si applica in particolare a espansioni di parametri e variabili, command substitution usate come valori, assegnazioni, operandi passati a comandi, confronti e test, parole esaminate da `case` e concatenazioni di pathname/stringhe.
+
+Esempi:
+
+```sh
+value="fixed"
+path="$m_ROOT/lib"
+result="$(command -p -- uname -s)"
+[ "$value" = "fixed" ]
+case "$value" in
+  "fixed") : ;;
+esac
+```
+
+Le virgolette non devono essere introdotte quando cambierebbero una semantica shell intenzionale o quando l'elemento è sintassi e non un valore. Rientrano tra le eccezioni i metacaratteri che devono restare attivi nei pattern di `case`, keyword, operatori, redirection e nomi sintattici di variabili passati a `export`, `readonly` o primitive equivalenti.
+
+Quando una parte letterale di un pattern può essere quotata senza disattivare il wildcard necessario, si preferisce quotare la parte letterale, per esempio:
+
+```sh
+case "$value" in
+  "MINGW"*) : ;;
+esac
+```
+
+La regola si applica al nuovo codice e al codice modificato; non impone una riformattazione indiscriminata dei sottosistemi non coinvolti. Il bootstrap root `rumiai-os` è il riferimento stilistico principale per questa disciplina.
+
 ## Naming dei file eseguibili, librerie e sorgenti
 
 Il nome di un comando eseguibile identifica la sua funzione, non il linguaggio o l'interprete con cui è implementato.
