@@ -51,6 +51,8 @@ m_LANG_DIR=$m_ROOT/lang
 m_SRC_DIR=$m_ROOT/src
 ```
 
+`m_LIB_DIR` is the only RumiAI environment variable exported for the library tree. Runtime-specific library directories are derived from it and do not receive additional environment variables merely as aliases. In particular, variables such as `m_LIB_SH_DIR` or `m_LIB_JS_DIR` are not part of the contract.
+
 `m_SRC_DIR` identifies the ignored local development workspace. It is not a runtime dependency root and does not participate in `PATH`.
 
 Language/encoding state includes:
@@ -136,6 +138,10 @@ It detects the current native platform, creates `sys-<osarch>/` and `ext-<osarch
 
 `osarch-update` is not invoked automatically by the bootstrap. Any future automatic lifecycle invocation requires a separate decision.
 
+A subsequent accepted decomposition is pending product realignment: reusable OS/architecture detection and normalization belongs in the shell library `lib/sh/osarch.lib.sh`; `bin/sys/osarch-update` will source that library and retain only the responsibility for creating/updating the platform directories and active symlinks. The same detection library may then be reused by other consumers such as package-management code without duplicating host detection.
+
+Until that implementation is explicitly authorized and committed, the current product revision remains the execution reference for how `osarch-update` obtains the detected platform.
+
 ## 5. PATH initialization
 
 Exact precedence:
@@ -158,6 +164,17 @@ export -- PATH
 This order is part of the runtime contract.
 
 Libraries, configuration and language data are addressed through their semantic roots and MUST NOT be inserted into `PATH` merely for convenience.
+
+The canonical internal library layout is runtime-qualified:
+
+```text
+$m_LIB_DIR/sh/<library-name>.lib.sh
+$m_LIB_DIR/js/<library-name>.lib.js
+```
+
+The runtime is intentionally represented both by the immediate directory and by the composed file extension. A consumer must load libraries only from the subtree appropriate to its runtime; for example, POSIX shell code sources libraries from `$m_LIB_DIR/sh/`, not from the generic library root or another runtime subtree.
+
+Shell libraries are sourced non-executable files and do not contain a shebang.
 
 ## 6. Internal runtime exposure
 
