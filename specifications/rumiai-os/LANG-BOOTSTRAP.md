@@ -57,15 +57,25 @@ Dynamic event values remain structured fields owned by the logger/event layer.
 
 Domains SHOULD describe reusable semantic areas rather than the component that happens to emit a message when the condition can be shared across components.
 
-Initial generic domains include:
+Current domains include:
 
 ```text
 filesystem
 execution
 security
+system
 ```
 
-Examples of reusable identities include:
+The `system` domain currently contains the OS/architecture identities:
+
+```text
+system.osarch-detection-failure
+system.osarch-update-failure
+```
+
+Both identities MUST exist in every current product language catalog.
+
+Examples of other reusable identities include:
 
 ```text
 filesystem.path-non-existent
@@ -89,11 +99,12 @@ Examples:
 ```text
 lang/it_IT/filesystem/path-non-existent
 lang/en_US/security/command-requires-root-privileges
+lang/en_US/system/osarch-detection-failure
 ```
 
 Catalog objects are UTF-8 data and MUST NOT be sourced or evaluated as shell code.
 
-The historical product catalog domain `bootstrap` is superseded for current reusable messages. Historical revisions and evidence remain historical data and are not rewritten.
+The historical product catalog domain `bootstrap` is superseded for current messages. Historical revisions and evidence remain historical data and are not rewritten.
 
 ## 5. Resolution order
 
