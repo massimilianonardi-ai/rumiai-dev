@@ -128,6 +128,8 @@ m_OSARCH
 
 come environment variables readonly dopo il caricamento.
 
+I valori host riconosciuti vengono normalizzati; i valori non riconosciuti restano disponibili come dati rilevati e non vengono rifiutati dalla libreria.
+
 ```text
 bin/sys/osarch-update
 ```
@@ -143,26 +145,50 @@ La detection non deve essere duplicata dentro `osarch-update`.
 
 La libreria `osarch.lib.sh` è intenzionalmente riutilizzabile da altri contesti che necessitano dell'identità della piattaforma, incluso un futuro consumer come `pkg`, senza duplicare la detection.
 
-## 7. Stato di implementazione
-
-La separazione e il quoting corrente del sottosistema sono implementati in:
+Gli errori specifici correnti del sottosistema usano il dominio catalogo:
 
 ```text
-massimilianonardi-ai/rumiai-os@2ca7081edee262220953f002d41e9682d4e304c5
+system
+```
+
+con i message-id:
+
+```text
+osarch-detection-failure
+osarch-update-failure
+```
+
+presenti in tutti i cataloghi lingua correnti.
+
+## 7. Quoting applicabile
+
+Il codice `sh` del sottosistema segue la regola generale di quoting difensivo definita in `RULES.md` con le eccezioni esplicitamente fissate:
+
+- i pattern/match dei rami `case` non sono soggetti al quoting difensivo;
+- gli argomenti delle invocazioni `fatal` e `log` non sono soggetti alla regola stilistica del quoting difensivo;
+- un'espansione variabile resta comunque quotata quando ciò è necessario per preservarla come singolo argomento e non modificarne il valore tramite word splitting o pathname expansion.
+
+## 8. Stato di implementazione
+
+La separazione corrente, la policy del vocabolario dell'updater e i messaggi di catalogo sono implementati in:
+
+```text
+massimilianonardi-ai/rumiai-os@9b5ae94c76b13877d65d8f0dfacf6c7b1d1f7dfa
 ```
 
 A partire da questa revisione:
 
-- `lib/sh/osarch.lib.sh` non contiene shebang, non è executable e contiene soltanto la responsabilità di detection/normalizzazione `osarch`;
-- i residui attivi `RumiAI_OSARCH_*` sono stati rimossi dalla libreria;
-- `bin/sys/osarch-update` non invoca più `uname` e consuma `m_OSARCH_OS`, `m_OSARCH_ARCH` e `m_OSARCH` prodotti dalla libreria;
+- `lib/sh/osarch.lib.sh` non contiene shebang e non è executable;
+- il codice attivo della libreria è responsabile della detection/normalizzazione `osarch` e lascia intatti i valori non riconosciuti;
+- `bin/sys/osarch-update` non invoca `uname` e consuma `m_OSARCH_OS`, `m_OSARCH_ARCH` e `m_OSARCH` prodotti dalla libreria;
+- l'updater valida `linux|macos|windows` e `arm64|x86_64` prima di costruire pathname RumiAI;
 - l'updater preserva il preflight dei due active-link pathname prima delle modifiche;
-- il codice modificato segue la disciplina corrente delle doppie virgolette shell.
+- `system/osarch-detection-failure` e `system/osarch-update-failure` esistono sia in `en_US` sia in `it_IT`.
 
 La copertura permanente è riallineata in:
 
 ```text
-massimilianonardi-ai/rumiai-tests@c713d5b7f27c8af20df2ca4d859497005199ba1e
+massimilianonardi-ai/rumiai-tests@326dc93086af2f5c25716d1d92c08a86317afa7f
 ```
 
-Il gruppo `tests/rumiai-os/osarch/` verifica separatamente la libreria di detection e il comportamento dell'updater, inclusa una fixture deterministica che dimostra che `osarch-update` consuma il risultato della libreria invece di ripetere la detection dell'host.
+Il gruppo `tests/rumiai-os/osarch/` verifica separatamente la libreria di detection e il comportamento dell'updater. `update.test` include fixture deterministiche che verificano sia che `osarch-update` consumi il risultato della libreria senza ripetere la detection dell'host, sia che OS e architetture fuori vocabolario vengano rifiutati prima di creare directory o modificare i symlink attivi.
