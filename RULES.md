@@ -92,7 +92,7 @@ Nel codice `sh` di RumiAI devono essere usate le doppie virgolette `"..."` intor
 
 La regola vale anche quando il valore è costante, il contenuto di una variabile è già noto o il contenuto è considerato sicuro. La protezione deve dipendere dalla forma del codice e non da assunzioni sul contenuto corrente dei dati.
 
-La regola si applica in particolare a espansioni di parametri e variabili, command substitution usate come valori, assegnazioni, operandi passati a comandi, confronti e test, parole esaminate da `case` e concatenazioni di pathname/stringhe.
+La regola si applica in particolare a espansioni di parametri e variabili, command substitution usate come valori, assegnazioni, operandi passati a comandi, confronti e test e concatenazioni di pathname/stringhe.
 
 Esempi:
 
@@ -102,21 +102,17 @@ path="$m_ROOT/lib"
 result="$(command -p -- uname -s)"
 [ "$value" = "fixed" ]
 case "$value" in
-  "fixed") : ;;
+  fixed) : ;;
 esac
 ```
 
-Le virgolette non devono essere introdotte quando cambierebbero una semantica shell intenzionale o quando l'elemento è sintassi e non un valore. Rientrano tra le eccezioni i metacaratteri che devono restare attivi nei pattern di `case`, keyword, operatori, redirection e nomi sintattici di variabili passati a `export`, `readonly` o primitive equivalenti.
+I pattern/match dei rami `case` sono esclusi dalla regola di quoting difensivo: non è richiesto racchiudere tra doppie virgolette né la parte letterale né i pattern wildcard dei match. Il valore esaminato dal `case`, quando è un'espansione, continua invece a seguire la normale disciplina di quoting.
 
-Quando una parte letterale di un pattern può essere quotata senza disattivare il wildcard necessario, si preferisce quotare la parte letterale, per esempio:
+Le invocazioni delle funzioni/comandi RumiAI `fatal` e `log` sono anch'esse escluse dalla regola stilistica del quoting difensivo per i loro argomenti. Questa eccezione non autorizza però a perdere la struttura degli argomenti: un'espansione variabile deve comunque essere quotata quando le virgolette sono necessarie per preservarla come singolo argomento o per evitare word splitting/pathname expansion che ne altererebbero il valore.
 
-```sh
-case "$value" in
-  "MINGW"*) : ;;
-esac
-```
+Le virgolette non devono inoltre essere introdotte quando cambierebbero una semantica shell intenzionale o quando l'elemento è sintassi e non un valore. Rientrano tra le eccezioni keyword, operatori, redirection e nomi sintattici di variabili passati a `export`, `readonly` o primitive equivalenti.
 
-La regola si applica al nuovo codice e al codice modificato; non impone una riformattazione indiscriminata dei sottosistemi non coinvolti. Il bootstrap root `rumiai-os` è il riferimento stilistico principale per questa disciplina.
+La regola si applica al nuovo codice e al codice modificato; non impone una riformattazione indiscriminata dei sottosistemi non coinvolti. Il bootstrap root `rumiai-os` è il riferimento stilistico principale per questa disciplina, tenendo conto delle eccezioni esplicite sopra fissate.
 
 ## Naming dei file eseguibili, librerie e sorgenti
 
