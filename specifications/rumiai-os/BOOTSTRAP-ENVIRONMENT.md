@@ -112,7 +112,7 @@ The canonical `<osarch>` identifier is:
 <platform>-<architecture>
 ```
 
-Current tokens used by `osarch-update` are:
+Current tokens accepted by `osarch-update` are:
 
 ```text
 platform:     linux | macos | windows
@@ -128,19 +128,37 @@ sys-linux-x86_64
 ext-linux-x86_64
 ```
 
-The explicit platform updater is:
+Reusable host detection and normalization is implemented by:
+
+```text
+lib/sh/osarch.lib.sh
+```
+
+Sourcing this library establishes and exports readonly:
+
+```text
+m_OSARCH_OS
+m_OSARCH_ARCH
+m_OSARCH
+```
+
+Known host spellings are normalized to the canonical tokens above; an unrecognized value remains available to the consumer as detected data. A consumer that uses the result to create RumiAI-controlled filesystem names must apply the vocabulary/policy appropriate to that operation before using it as a pathname.
+
+The explicit platform-layout updater is:
 
 ```text
 bin/sys/osarch-update
 ```
 
-It detects the current native platform, creates `sys-<osarch>/` and `ext-<osarch>/` when absent, and updates `sys-osarch` and `ext-osarch` as relative symlinks. It does not overwrite a non-symlink object occupying either active-link pathname.
+It sources `osarch.lib.sh`, verifies that the detected OS and architecture belong to the updater's supported vocabulary, creates `sys-<osarch>/` and `ext-<osarch>/` when absent, and updates `sys-osarch` and `ext-osarch` as relative symlinks. It does not duplicate native host detection and does not overwrite a non-symlink object occupying either active-link pathname.
 
 `osarch-update` is not invoked automatically by the bootstrap. Any future automatic lifecycle invocation requires a separate decision.
 
-A subsequent accepted decomposition is pending product realignment: reusable OS/architecture detection and normalization belongs in the shell library `lib/sh/osarch.lib.sh`; `bin/sys/osarch-update` will source that library and retain only the responsibility for creating/updating the platform directories and active symlinks. The same detection library may then be reused by other consumers such as package-management code without duplicating host detection.
+Current implementation reference for this separation:
 
-Until that implementation is explicitly authorized and committed, the current product revision remains the execution reference for how `osarch-update` obtains the detected platform.
+```text
+massimilianonardi-ai/rumiai-os@9c85b74bab51478d085b45bf12628b296c5f430c
+```
 
 ## 5. PATH initialization
 
@@ -157,7 +175,7 @@ inherited host PATH
 Conceptual form:
 
 ```sh
-PATH=$m_BIN_SYS_OSARCH_DIR:$m_BIN_SYS_DIR:$m_BIN_EXT_OSARCH_DIR:$m_BIN_EXT_DIR${PATH:+:$PATH}
+PATH="$m_BIN_SYS_OSARCH_DIR:$m_BIN_SYS_DIR:$m_BIN_EXT_OSARCH_DIR:$m_BIN_EXT_DIR${PATH:+:$PATH}"
 export -- PATH
 ```
 
