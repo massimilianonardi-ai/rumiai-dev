@@ -9,7 +9,7 @@ Il package manager progettato il 2026-08-30 aveva anticipato un modello molto am
 
 Successivamente il runtime RumiAI OS ha fissato un nuovo layout degli executable root (`bin/sys*` e `bin/ext*`) e il progetto ha scelto di rivalutare il package manager cercando un compromesso piu piccolo, concreto e proporzionato alla complessita reale del software gestito.
 
-Questa decisione fissa la baseline per selezione della versione, esposizione dei comandi third-party ed esecuzione mediata tramite `pkg run`. Le successive decisioni Accepted del 2026-09-05 hanno inoltre fissato `root/`, `cmd/`, `env`, State Instance minima, `var/`, `default/` e la responsabilita di `pkg install` sui pathname mutabili.
+Questa decisione fissa la baseline per selezione della versione, esposizione dei comandi third-party ed esecuzione mediata tramite `pkg run`. Le successive decisioni Accepted del 2026-09-05 hanno inoltre fissato `root/`, `cmd/`, `env`, state di default, State Instance nominate opzionali, `var/`, `default/` e la responsabilita di `pkg install` sui pathname mutabili.
 
 I documenti precedenti sotto:
 
@@ -35,6 +35,8 @@ In particolare:
 
 - un tool eseguibile direttamente non deve pagare il costo di dependency o launcher che non usa;
 - un package con stato usa soltanto le state area necessarie;
+- il caso normale usa state non qualificato sotto `$m_ROOT/<area>/<pkg>/`;
+- State Instance nominate vengono introdotte soltanto quando servono;
 - un'applicazione con pathname mutabili noti puo essere normalizzata durante `pkg install` senza imporre una mediazione runtime quando non serve;
 - software difficilmente controllabile non deve complicare preventivamente il percorso normale di tutti gli altri package.
 
@@ -159,7 +161,7 @@ Il criterio non e semplicemente "non produce file". Il binding diretto e appropr
 La presenza di state non rende automaticamente necessaria la mediazione. Se `pkg install` ha gia normalizzato staticamente i pathname mutabili attraverso:
 
 ```text
-root/<path> -> var/<area>/<path> -> State Instance
+root/<path> -> var/<area>/<path> -> state selezionato
 ```
 
 il command puo ancora usare binding diretto quando non serve altro lavoro al launch.
@@ -210,7 +212,7 @@ Per l'invocazione corrente `pkg run` puo, quando necessario:
 3. applicare un override esplicito di versione per la sola invocazione;
 4. individuare il command richiesto attraverso l'interfaccia package-local `cmd/`;
 5. costruire environment e pathname necessari;
-6. risolvere tramite `var/<area>` le aree di State Instance richieste dal launch;
+6. risolvere tramite `var/<area>` lo state selezionato richiesto dal launch;
 7. selezionare o collegare dependency necessarie al launch;
 8. applicare working directory, argomenti fissi o altri adattamenti dichiarati dal packaging;
 9. eseguire il programma e inoltrare gli argomenti dell'utente.
@@ -279,23 +281,37 @@ run,tmp         transient
 
 `home` resta il compatibility bucket conservativo quando lo state non puo essere classificato meglio.
 
-Non tutte le aree devono esistere per ogni package o State Instance.
+Non tutte le aree devono esistere per ogni package/state.
 
-Lo state fisico vive direttamente nelle root semantiche:
+La forma normale dello state fisico e:
 
 ```text
-$m_ROOT/conf/<pkg>/<state-instance>/
-$m_ROOT/data/<pkg>/<state-instance>/
-$m_ROOT/home/<pkg>/<state-instance>/
-$m_ROOT/cache/<pkg>/<state-instance>/
-$m_ROOT/log/<pkg>/<state-instance>/
-$m_ROOT/run/<pkg>/<state-instance>/
-$m_ROOT/tmp/<pkg>/<state-instance>/
+$m_ROOT/conf/<pkg>/
+$m_ROOT/data/<pkg>/
+$m_ROOT/home/<pkg>/
+$m_ROOT/cache/<pkg>/
+$m_ROOT/log/<pkg>/
+$m_ROOT/run/<pkg>/
+$m_ROOT/tmp/<pkg>/
+```
+
+con la sola subset realmente necessaria.
+
+Quando serve una State Instance nominata, la forma diventa:
+
+```text
+$m_ROOT/conf/<pkg>-<state-instance>/
+$m_ROOT/data/<pkg>-<state-instance>/
+$m_ROOT/home/<pkg>-<state-instance>/
+$m_ROOT/cache/<pkg>-<state-instance>/
+$m_ROOT/log/<pkg>-<state-instance>/
+$m_ROOT/run/<pkg>-<state-instance>/
+$m_ROOT/tmp/<pkg>-<state-instance>/
 ```
 
 `$m_ROOT/var/` e esplicitamente vietato e non appartiene al layout RumiAI.
 
-Una versione concreta raggiunge la propria State Instance tramite package-local:
+Una versione concreta raggiunge lo state selezionato tramite package-local:
 
 ```text
 var/<area>
@@ -303,7 +319,7 @@ var/<area>
 
 che e un symbolic link relativo verso la corrispondente area fisica.
 
-La State Instance e quindi riaffermata come raggruppamento fisico minimo. Restano invece aperti grammatica di `<state-instance>`, selezione, compatibilita, condivisione e lifecycle; la vecchia identity `@sN` e gli state scope del 2026-08-30 non tornano automaticamente.
+State Instance nominate possono essere create su richiesta dell'utente, da regole di `pkg` o dal contratto del particolare package. La vecchia identity `@sN` e gli state scope del 2026-08-30 non tornano automaticamente.
 
 `default/` resta factory/default state opzionale e separato dallo state mutabile.
 
@@ -330,15 +346,27 @@ Per ciascun pathname dichiarato, il packaging associa:
 <package-version>/var/<area>/<root-relative-path>
 ```
 
-La catena completa e:
+Nel caso standard la catena completa e:
 
 ```text
 <package-version>/root/<path>
     -> <package-version>/var/<area>/<path>
-        -> $m_ROOT/<area>/<pkg>/<state-instance>/<path>
+        -> $m_ROOT/<area>/<pkg>/<path>
 ```
 
-Il formato dei metadata che porta questa conoscenza e le regole finali di validazione dei mapping restano aperti.
+Con una State Instance nominata e:
+
+```text
+<package-version>/root/<path>
+    -> <package-version>/var/<area>/<path>
+        -> $m_ROOT/<area>/<pkg>-<state-instance>/<path>
+```
+
+Quando `pkg install` installa una versione aggiornata e trova state di default gia esistente, non deve riutilizzarlo silenziosamente se la compatibilita non e gia determinata dal packaging o da regole fissate di `pkg`: deve permettere all'utente di scegliere se riusare lo state esistente oppure creare/selezionare una State Instance separata.
+
+Un particolare package puo invece richiedere State Instance fin dalla prima installazione e dichiarare/gestire la compatibilita dello state fra versioni.
+
+Il formato dei metadata che porta questa conoscenza, la UX della scelta e le regole finali di validazione dei mapping restano aperti.
 
 ---
 
@@ -361,7 +389,7 @@ Una prima implementazione puo usare riferimenti concreti e semplici quando il ca
 
 ## 13. Software difficilmente controllabile
 
-Software che modifica pathname noti del proprio installation tree non e automaticamente un caso speciale: quando tali pathname sono dichiarabili dal packaging, `pkg install` li normalizza verso le State Instance secondo il modello corrente.
+Software che modifica pathname noti del proprio installation tree non e automaticamente un caso speciale: quando tali pathname sono dichiarabili dal packaging, `pkg install` li normalizza verso lo state selezionato secondo il modello corrente.
 
 Restano difficili i casi in cui il software, per esempio:
 
@@ -376,7 +404,25 @@ Questa decisione **non fissa** directory o classi chiamate `legacy`, `container`
 
 ---
 
-## 14. Costrutti del design 2026-08-30 non piu baseline
+## 14. Configurazione/state RumiAI non ancora gestiti da `pkg`
+
+Le root semantiche sono strutture RumiAI generali.
+
+Il prodotto corrente contiene gia, per esempio:
+
+```text
+$m_ROOT/conf/shell/
+```
+
+che e fisicamente coerente con la forma standard `$m_ROOT/conf/<pkg>/`, ma `shell` e gli altri componenti/eseguibili RumiAI correnti non sono oggi necessariamente package gestiti da `pkg`.
+
+Nella baseline corrente questo e una **eccezione esplicita**: i componenti RumiAI non ancora gestiti da `pkg` possono usare direttamente le root semantiche appropriate.
+
+Non viene introdotto ora un virtual package RumiAI. La necessita di mantenere questa eccezione o sostituirla con package/virtual package o altra ownership esplicita dovra essere rivalutata separatamente.
+
+---
+
+## 15. Costrutti del design 2026-08-30 non piu baseline
 
 I seguenti meccanismi dei draft del 2026-08-30 non devono essere implementati come requisiti del package manager corrente senza una nuova decisione che ne dimostri la necessita:
 
@@ -387,7 +433,7 @@ percent-encoded version-token obbligatorio
 vecchia wrapper root/run-default/run
 root immutabile come admission/rejection rule universale
 inventory SHA-256 obbligatorie per ogni package
-vecchia identity State Instance @sN
+vecchia identity State Instance @sN obbligatoria
 state scope shared/platform/architecture/platform-architecture
 state migration framework universale
 Execution Capability contracts universali
@@ -406,8 +452,8 @@ Sono invece state riaffermate selettivamente, con contratti correnti piu piccoli
 root/ e cmd/
 env
 conf,data,home,cache,log,run,tmp
-State Instance come raggruppamento fisico minimo
-$m_ROOT/<area>/<pkg>/<state-instance>
+state standard sotto $m_ROOT/<area>/<pkg>/
+State Instance nominate opzionali sotto $m_ROOT/<area>/<pkg>-<state-instance>/
 var/ come routing view package-local
 pkg install come responsabile dei pathname mutabili
 root/<path> -> var/<area>/<path>
@@ -420,7 +466,7 @@ Restano definitivamente incompatibili con il runtime corrente i vecchi riferimen
 
 ---
 
-## 15. Questioni intenzionalmente aperte
+## 16. Questioni intenzionalmente aperte
 
 Non vengono fissati in questa decisione:
 
@@ -428,23 +474,25 @@ Non vengono fissati in questa decisione:
 2. pathname esatto e grammatica del selector `current`;
 3. regola finale per selector target-qualified vs condivisi quando il package e realmente target-independent;
 4. formato minimo dei metadata/descriptor del package;
-5. grammatica, selezione, compatibilita, condivisione e lifecycle di `<state-instance>`;
-6. formato e validazione dei mapping `<root-relative-path> -> <state-area>` usati da `pkg install`;
-7. policy di collisione fra `<pkg>` e domini RumiAI gia presenti nelle root semantiche, in particolare `$m_ROOT/conf/`;
-8. nomi delle option di `pkg run`;
-9. nomi delle environment variables di override;
-10. sintassi per scegliere un entrypoint non-default;
-11. formato/interprete fisico dei wrapper in `bin/ext*`;
-12. sintassi completa di `pkg install` e modello di acquisition/download/build;
-13. eventuale resolver dependency piu generale;
-14. eventuale sandbox/isolation model per software difficili;
-15. semantica operativa completa di `default/`, inclusi initialization/reset/recovery.
+5. grammatica di `<state-instance>` e collision policy fra `<pkg>-<state-instance>` e package name reali contenenti `-`;
+6. formato con cui un package dichiara compatibilita/policy dello state e regole di selezione fra state standard e State Instance nominate;
+7. UX/sintassi della scelta di riuso/separazione durante `pkg install`;
+8. formato e validazione dei mapping `<root-relative-path> -> <state-area>` usati da `pkg install`;
+9. nomi delle option di `pkg run`;
+10. nomi delle environment variables di override;
+11. sintassi per scegliere un entrypoint non-default;
+12. formato/interprete fisico dei wrapper in `bin/ext*`;
+13. sintassi completa di `pkg install` e modello di acquisition/download/build;
+14. eventuale resolver dependency piu generale;
+15. eventuale sandbox/isolation model per software difficili;
+16. semantica operativa completa di `default/`, inclusi initialization/reset/recovery;
+17. futura ownership dei componenti RumiAI oggi esclusi da `pkg`, incluso l'eventuale uso di virtual package.
 
 Questi punti aperti non autorizzano a riutilizzare automaticamente i contratti del 2026-08-30.
 
 ---
 
-## 16. Implementazione e test
+## 17. Implementazione e test
 
 Alla data di questa decisione non esiste ancora un comando `pkg` stabile in `rumiai-os` e non esiste un gruppo permanente di test `pkg` in `rumiai-tests`.
 
@@ -454,7 +502,7 @@ L'implementazione in `rumiai-os` richiedera esplicita autorizzazione per la rela
 
 ---
 
-## 17. Invarianti fissati
+## 18. Invarianti fissati
 
 ```text
 PKG-01 $m_ROOT/pkg e il dominio locale dei package gestiti
@@ -469,16 +517,20 @@ PKG-09 un binding puo essere direct symlink o minimal wrapper verso pkg run
 PKG-10 il normale direct binding risolve attraverso current ed e ammesso quando non serve mediazione runtime
 PKG-11 package != command; un package puo offrire piu entrypoint
 PKG-12 software e stato mutabile restano semanticamente distinti quando lo stato esiste
-PKG-13 State Instance esiste come raggruppamento fisico minimo; la vecchia identity @sN, gli state scope, migration/resolver/generation framework non sono baseline
+PKG-13 lo state normale usa $m_ROOT/<area>/<pkg>; State Instance nominate sono opzionali e usano $m_ROOT/<area>/<pkg>-<state-instance>
 PKG-14 la complessita specifica di un'app appartiene principalmente al suo packaging
 PKG-15 software difficile non impone complessita preventiva al percorso normale
 PKG-16 nessun namespace legacy/container e fissato
 PKG-17 il vecchio bin/@platforms non appartiene al runtime corrente
 PKG-18 i dettagli non esplicitamente riaffermati dei draft package-manager del 2026-08-30 sono da rivalutare, non da assumere
-PKG-19 le aree canoniche dello state sono conf,data,home,cache,log,run,tmp ma ogni package/State Instance usa solo quelle necessarie
-PKG-20 lo state fisico vive sotto $m_ROOT/<area>/<pkg>/<state-instance>; $m_ROOT/var e vietato
-PKG-21 var/ e esclusivamente package-local ed espone tramite symlink relativi le aree della State Instance
+PKG-19 le aree canoniche dello state sono conf,data,home,cache,log,run,tmp ma ogni package/state usa solo quelle necessarie
+PKG-20 $m_ROOT/var e vietato
+PKG-21 var/ e esclusivamente package-local ed espone tramite symlink relativi lo state selezionato
 PKG-22 pkg install conosce e normalizza i pathname upstream mutabili/state-bearing tramite root/<path> -> var/<area>/<path>
 PKG-23 il routing statico dello state non obbliga di per se a usare pkg run
 PKG-24 default/ e factory/default state opzionale e separato dallo state mutabile
+PKG-25 State Instance nominate possono essere attivate su richiesta utente, da regole pkg o dal contratto del package
+PKG-26 pkg install non riusa silenziosamente state preesistente quando la compatibilita non e gia determinata
+PKG-27 componenti RumiAI non ancora gestiti da pkg costituiscono un'eccezione esplicita corrente e possono usare direttamente le root semantiche
+PKG-28 nessun virtual package RumiAI e fissato nella baseline corrente; la decisione verra rivalutata
 ```
