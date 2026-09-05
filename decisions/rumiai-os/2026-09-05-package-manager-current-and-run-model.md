@@ -65,7 +65,9 @@ Questi aspetti saranno definiti soltanto quando serviranno al primo layout concr
 
 ## 3. Selezione `current`
 
-Per ogni package che dispone di più versioni installate, `pkg` mantiene una selezione persistente della versione predefinita, chiamata concettualmente **`current`**.
+Per ogni package gestito che dispone di una versione selezionata per l'esecuzione normale, `pkg` mantiene una selezione persistente della versione predefinita, chiamata concettualmente **`current`**.
+
+Il selector `current` esiste anche quando è installata una sola versione: in quel caso punta a quella versione. Quando più versioni convivono, `current` identifica quale di esse è il default persistente.
 
 La selezione è rappresentata da un **symbolic link relativo** sotto il dominio `pkg/` e punta alla versione concreta selezionata.
 
@@ -147,7 +149,7 @@ Il criterio non è semplicemente "non produce file". Il binding diretto è appro
 - argomenti fissi di launch;
 - altra preparazione o adattamento richiesto da RumiAI.
 
-Quando possibile, il binding diretto deve seguire la selezione `current`, così che il normale nome pubblico del comando esegua il default persistente senza pinning accidentale a una vecchia versione concreta.
+Il normale binding diretto del comando deve risolvere attraverso la selezione `current`, così che il nome pubblico esegua il default persistente senza pinning accidentale a una versione concreta.
 
 L'esecuzione attraverso un binding diretto non coinvolge `pkg run` e quindi non applica override per-invocation che richiedono la mediazione del package manager.
 
@@ -367,14 +369,14 @@ L'implementazione in `rumiai-os` richiederà esplicita autorizzazione per la rel
 ```text
 PKG-01 $m_ROOT/pkg è il dominio locale dei package gestiti
 PKG-02 più versioni concrete dello stesso package possono coesistere
-PKG-03 current rappresenta la selezione persistente della versione predefinita
+PKG-03 ogni package con un default di esecuzione mantiene un selector current, anche con una sola versione installata
 PKG-04 il selector current è un symlink relativo
 PKG-05 current seleziona una versione; non costruisce l'esecuzione
 PKG-06 pkg run è il punto di mediazione per launch che richiedono gestione
 PKG-07 un override per-invocation non modifica automaticamente current
 PKG-08 un binding third-party pubblico vive in bin/ext o bin/ext-<osarch>
 PKG-09 un binding può essere direct symlink o minimal wrapper verso pkg run
-PKG-10 un direct binding è ammesso solo quando non serve mediazione di pkg run
+PKG-10 il normale direct binding risolve attraverso current ed è ammesso solo quando non serve mediazione di pkg run
 PKG-11 package != command; un package può offrire più entrypoint
 PKG-12 software e stato mutabile restano semanticamente distinti quando lo stato esiste
 PKG-13 nessun State Instance/resolver/generation framework universale è prerequisito del baseline corrente

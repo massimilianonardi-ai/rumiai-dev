@@ -101,7 +101,7 @@ Esempio di `<osarch>` già ammesso:
 macos-arm64
 ```
 
-Il meccanismo che rileva la piattaforma corrente e aggiorna `sys-osarch` / `ext-osarch` resta da definire. Non è fissato se sarà manuale, richiamato durante installazione/attivazione o automatizzato. Nessun automatismo viene introdotto nel bootstrap finché questa decisione non viene presa.
+Il meccanismo che rileva la piattaforma corrente e aggiorna `sys-osarch` / `ext-osarch` è stato successivamente fissato dal comando esplicito `osarch-update` nella decisione `2026-09-03-lang-and-osarch-utilities.md`. Nessun automatismo viene introdotto nel bootstrap da questa decisione.
 
 ## 3. Ordine del PATH
 
@@ -176,7 +176,7 @@ lang/en_US/<domain>/<message-id>
 <domain>.<message-id>
 ```
 
-Il meccanismo/script che mostra le lingue disponibili e aggiorna `lang/current` resta da definire.
+La utility che mostra le lingue disponibili e aggiorna `lang/current` è stata successivamente fissata come `lang-set` nella decisione `2026-09-03-lang-and-osarch-utilities.md`.
 
 ## 6. Encoding
 
@@ -245,16 +245,16 @@ Questo symlink:
 
 Il nome `rumiai-os` nelle directory RumiAI che precedono `bin/sys` nel `PATH` deve essere considerato riservato, così da non oscurare accidentalmente il runtime canonico.
 
-## 10. Decisioni esplicitamente aperte
+## 10. Stato delle decisioni successive
 
-Restano da definire separatamente:
+I punti originariamente lasciati aperti da questa decisione hanno avuto la seguente evoluzione:
 
-1. utility/script per rilevare `<osarch>` e aggiornare `bin/sys-osarch` e `bin/ext-osarch`;
-2. condizioni di invocazione di tale utility: manuale, installazione/attivazione o automatismo;
-3. utility/script per scegliere una lingua esistente e aggiornare `lang/current`;
-4. meccanismo con cui la shell avviata eredita/carica le funzioni RumiAI oltre alle environment variables.
+1. rilevamento `<osarch>` e aggiornamento di `bin/sys-osarch` / `bin/ext-osarch`: fissati da `2026-09-03-lang-and-osarch-utilities.md` tramite `osarch-update`;
+2. invocazione di `osarch-update`: fissata come comando esplicito; un eventuale richiamo automatico durante installazione, attivazione o altro lifecycle resta aperto;
+3. selezione della lingua esistente e aggiornamento di `lang/current`: fissati da `2026-09-03-lang-and-osarch-utilities.md` tramite `lang-set`;
+4. meccanismo con cui la shell avviata eredita/carica le funzioni RumiAI oltre alle environment variables: resta una decisione separata finché non viene consolidata esplicitamente.
 
-Queste questioni aperte non autorizzano a reintrodurre nel bootstrap logica host-specific, configurazione lingua precedente o Bash-preferred selection.
+Questi punti non autorizzano a reintrodurre nel bootstrap logica host-specific, configurazione lingua precedente o Bash-preferred selection.
 
 ## 11. Propagazione e stato di implementazione/test
 
