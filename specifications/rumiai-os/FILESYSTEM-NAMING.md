@@ -2,7 +2,7 @@
 
 Status: **Normative specification**  
 Date: 2026-08-28  
-Updated: 2026-09-03
+Updated: 2026-09-05
 
 ## 1. Scope
 
@@ -144,6 +144,28 @@ lang/it_IT/UTF-8/
 ```
 
 RumiAI language catalogs are always UTF-8. The current runtime text encoding is also fixed to UTF-8; any future external encoding capability belongs at an interaction boundary and does not alter filesystem catalog identity.
+
+The second accepted case is the package-manager State Instance pathname component:
+
+```text
+<pkg>@!<state-instance>
+```
+
+The two-character sequence `@!` is a fixed structural separator owned by the package-manager state model. Its use is an explicit exception to the generic RumiAI-controlled character set above.
+
+The separator is allowed only for this semantic role. `<pkg>` and `<state-instance>` remain separately governed identifiers and do not acquire a general right to contain `@` or `!` merely because the composed State Instance component uses `@!`.
+
+The normal package state remains represented by the plain `<pkg>` component without any State Instance separator. A named State Instance uses `@!` so that its structure is not confused with hyphens that legitimately belong to package or State Instance names.
+
+Canonical examples:
+
+```text
+example
+example@!work
+my-tool@!test-profile
+```
+
+The package-manager decision `decisions/rumiai-os/2026-09-05-package-state-var-default.md` owns the state semantics of this form.
 
 Semantic exceptions MUST be documented by the subsystem that owns the identifier and MUST NOT become a general excuse for arbitrary naming variation.
 
