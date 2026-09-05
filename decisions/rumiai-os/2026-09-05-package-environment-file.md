@@ -18,7 +18,7 @@ La decisione `2026-09-05-package-manager-current-and-run-model.md` ha inoltre gi
 
 Questa decisione fissa il meccanismo package-local minimo con cui una versione concreta puo dichiarare le modifiche di environment necessarie al proprio launch.
 
-La decisione Accepted `2026-09-05-package-state-var-default.md` fissa separatamente State Instance, aree fisiche sotto `$m_ROOT/<area>/<pkg>/<state-instance>`, `var/` come routing view package-local e `default/` come factory/default state opzionale. Il presente documento resta autoritativo esclusivamente per il ruolo di `env`.
+La decisione Accepted `2026-09-05-package-state-var-default.md` fissa separatamente lo state standard sotto `$m_ROOT/<area>/<pkg>/`, State Instance nominate opzionali sotto `$m_ROOT/<area>/<pkg>-<state-instance>/`, `var/` come routing view package-local e `default/` come factory/default state opzionale. Il presente documento resta autoritativo esclusivamente per il ruolo di `env`.
 
 Non modifica `rumiai-os` e non autorizza modifiche al prodotto in questa unita di lavoro.
 
@@ -128,16 +128,24 @@ La sintassi con cui `env` rappresentera riferimenti runtime, pathname relativi o
 
 Una eventuale variabile XDG che, secondo il proprio contratto esterno, richiede un pathname assoluto ricevera quindi il pathname assoluto soltanto dopo la risoluzione runtime effettuata da `pkg run`; tale pathname non viene hardcodato nel package.
 
-Quando il valore deve raggiungere una delle aree di stato correnti, `pkg run` puo risolverlo attraverso:
+Quando il valore deve raggiungere una delle aree di state correnti, `pkg run` puo risolverlo attraverso:
 
 ```text
 <package-version>/var/<area>
 ```
 
-che e un symbolic link relativo verso:
+che e un symbolic link relativo verso lo state selezionato.
+
+Nel caso standard la destinazione semantica e:
 
 ```text
-$m_ROOT/<area>/<pkg>/<state-instance>/
+$m_ROOT/<area>/<pkg>/
+```
+
+mentre con una State Instance nominata e:
+
+```text
+$m_ROOT/<area>/<pkg>-<state-instance>/
 ```
 
 secondo `2026-09-05-package-state-var-default.md`.
@@ -167,7 +175,7 @@ La sola esistenza fisica di un file `env` privo di operazioni effettive non crea
 La presenza di state gia raggiungibile tramite la catena statica:
 
 ```text
-root/<path> -> var/<area>/<path> -> State Instance
+root/<path> -> var/<area>/<path> -> state selezionato
 ```
 
 non richiede di per se `pkg run` e quindi non esclude un binding diretto.
@@ -180,25 +188,39 @@ L'uso di `HOME`, XDG, `TMPDIR`, PATH e variabili specifiche puo isolare logicame
 
 Questo meccanismo non e sandboxing o containment.
 
-I pathname upstream che sono noti al packaging come mutabili o state-bearing vengono gestiti da `pkg install` tramite normalizzazione sotto `root/` e routing verso la State Instance. Software che scrive in pathname non dichiarabili/prevedibili, usa pathname assoluti non redirigibili o produce altri effetti fuori dal controllo dei mapping e dell'environment puo richiedere una strategia separata.
+I pathname upstream che sono noti al packaging come mutabili o state-bearing vengono gestiti da `pkg install` tramite normalizzazione sotto `root/` e routing verso lo state selezionato. Software che scrive in pathname non dichiarabili/prevedibili, usa pathname assoluti non redirigibili o produce altri effetti fuori dal controllo dei mapping e dell'environment puo richiedere una strategia separata.
 
-Il layout state corrente e definito da `2026-09-05-package-state-var-default.md`:
+Il layout state corrente e definito da `2026-09-05-package-state-var-default.md`.
+
+Caso standard:
 
 ```text
-$m_ROOT/conf/<pkg>/<state-instance>/
-$m_ROOT/data/<pkg>/<state-instance>/
-$m_ROOT/home/<pkg>/<state-instance>/
-$m_ROOT/cache/<pkg>/<state-instance>/
-$m_ROOT/log/<pkg>/<state-instance>/
-$m_ROOT/run/<pkg>/<state-instance>/
-$m_ROOT/tmp/<pkg>/<state-instance>/
+$m_ROOT/conf/<pkg>/
+$m_ROOT/data/<pkg>/
+$m_ROOT/home/<pkg>/
+$m_ROOT/cache/<pkg>/
+$m_ROOT/log/<pkg>/
+$m_ROOT/run/<pkg>/
+$m_ROOT/tmp/<pkg>/
+```
+
+State Instance nominata, quando usata:
+
+```text
+$m_ROOT/conf/<pkg>-<state-instance>/
+$m_ROOT/data/<pkg>-<state-instance>/
+$m_ROOT/home/<pkg>-<state-instance>/
+$m_ROOT/cache/<pkg>-<state-instance>/
+$m_ROOT/log/<pkg>-<state-instance>/
+$m_ROOT/run/<pkg>-<state-instance>/
+$m_ROOT/tmp/<pkg>-<state-instance>/
 ```
 
 con la sola subset necessaria e con package-local `var/<area>` come symbolic link relativo verso la corrispondente area fisica.
 
 `$m_ROOT/var/` non appartiene al layout RumiAI.
 
-Il presente file `env` non definisce la grammatica di `<state-instance>`, state scope, migration framework o altri meccanismi superseded del design 2026-08-30.
+Il presente file `env` non definisce la grammatica di `<state-instance>`, policy di compatibilita, migration framework o altri meccanismi superseded del design 2026-08-30.
 
 ---
 
@@ -236,7 +258,7 @@ Quando il modello `env` verra implementato nel prodotto, i test permanenti dovra
 - uso della mediazione quando l'environment deve essere modificato;
 - risoluzione coerente attraverso `var/<area>` quando il launch usa state package-local;
 - assenza di `$m_ROOT/var/`;
-- compatibilita del routing `env -> var/<area> -> State Instance` con la catena di symlink fissata dal package manager.
+- compatibilita del routing `env -> var/<area> -> state selezionato` con la catena di symlink fissata dal package manager.
 
 ---
 
@@ -253,7 +275,7 @@ PKG-ENV-07  pkg run risolve a runtime i valori dipendenti da root/versione/state
 PKG-ENV-08  env non descrive working directory o argv
 PKG-ENV-09  modifiche environment necessarie al launch richiedono mediazione pkg run
 PKG-ENV-10  env non costituisce sandboxing o containment
-PKG-ENV-11  lo state e raggiungibile tramite var/<area> verso $m_ROOT/<area>/<pkg>/<state-instance>
-PKG-ENV-12  env non definisce grammatica State Instance, state scope o migration framework
+PKG-ENV-11  lo state e raggiungibile tramite var/<area> verso $m_ROOT/<area>/<pkg> oppure una State Instance nominata $m_ROOT/<area>/<pkg>-<state-instance>
+PKG-ENV-12  env non definisce grammatica o policy di compatibilita delle State Instance
 PKG-ENV-13  il formato fisico di env resta aperto e non e implicitamente uno script shell
 ```
