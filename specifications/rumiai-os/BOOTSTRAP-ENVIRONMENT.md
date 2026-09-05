@@ -2,7 +2,7 @@
 
 Status: **Normative specification**  
 Date: 2026-08-28  
-Updated: 2026-09-03
+Updated: 2026-09-05
 
 ## 1. Scope
 
@@ -101,8 +101,8 @@ sys             RumiAI executables/symlinks, platform-independent
 sys-<osarch>    RumiAI executables/symlinks, platform-specific
 sys-osarch      relative symlink to active sys-<osarch>
 
-ext             third-party executables/symlinks, platform-independent
-ext-<osarch>    third-party executables/symlinks, platform-specific
+ext             third-party platform-independent
+ext-<osarch>    third-party specific to the platform
 ext-osarch      relative symlink to active ext-<osarch>
 ```
 
@@ -316,9 +316,49 @@ otherwise               → execute sh
 
 RumiAI does not automatically prefer Bash and does not use `conf/shell/default` to choose the shell.
 
-The launched interactive RumiAI shell must receive the RumiAI environment and must ultimately have access to the RumiAI functions intended for interactive use.
+The function:
 
-Environment variables are inherited normally. The cross-shell function-loading mechanism remains to be specified separately.
+```text
+shell [args...]
+```
+
+invokes the selected shell and forwards the received arguments. Its startup semantics are fixed by:
+
+```text
+decisions/rumiai-os/2026-09-05-interactive-shell-startup.md
+```
+
+The primary RumiAI integration target is the supported interactive non-login shell. In its normal startup path the adapter makes the RumiAI environment, interactive RumiAI functions, RumiAI prompt and `m_SHELL_EXT` available.
+
+Current adapter coverage is:
+
+```text
+bash
+zsh
+sh
+dash
+ash
+```
+
+Other shells are executed directly without a RumiAI startup guarantee; no special adapter is maintained for `ksh` or `mksh`.
+
+Login shells retain their native login startup semantics. RumiAI does not emulate login profiles and does not guarantee or force core/`m_SHELL_EXT` loading through that path. Non-interactive shells do not load `m_SHELL_EXT` through the RumiAI startup path. Native options that bypass normal startup files retain their native meaning and are not counteracted by RumiAI.
+
+`m_SHELL_EXT` is the uniform user hook for initializing the supported RumiAI interactive environment independently of the shell.
+
+For `sh`/`dash`/`ash`, the inherited `ENV` value is saved and treated literally; RumiAI does not reinterpret its shell syntax or expansion semantics. After sourcing a readable saved `ENV`, the adapter intentionally executes `\unalias -a` before loading `core.lib.sh` so aliases cannot alter core parsing.
+
+Bash and Zsh instead preserve user aliases while temporarily disabling alias expansion during core loading. The Bash `shopt` operations and the Zsh `[[ -o aliases ]]` / `unsetopt` / `setopt` operations are approved shell-specific exceptions confined to their respective adapters under the exception mechanism in `RULES.md`; generic shell code remains subject to the POSIX contract.
+
+Zsh startup preserves the exact `ZDOTDIR` state, including the distinction between unset, empty and non-empty values. The RumiAI proxy is retained only as required to reach the interactive non-login `.zshrc`; login startup is handed back through `.zprofile`, and no `.zlogin`/`.zlogout` proxy is maintained.
+
+Current implementation reference:
+
+```text
+massimilianonardi-ai/rumiai-os@7b645edf1b5d84c512488b3b69d9f1cd8483061f
+```
+
+This current shell revision has not yet received a dedicated current physical-validation pass. Historical shell validation remains evidence only for the revisions and contracts actually exercised at the time.
 
 ## 11. Command/source entry
 
@@ -374,10 +414,12 @@ multicall command routing
 
 Historical documents and validation evidence remain in Git and remain evidence for their exact historical revisions only.
 
-## 14. Open design items
+## 14. Current shell validation status
 
-Not yet fixed:
+The former open design item for cross-shell loading of RumiAI functions is resolved by:
 
-1. cross-shell loading of RumiAI functions.
+```text
+decisions/rumiai-os/2026-09-05-interactive-shell-startup.md
+```
 
-This item must be solved without contradicting the fixed behavior above.
+The permanent shell tests under `rumiai-tests/tests/rumiai-os/shell/` predate the current contract and require realignment before they can be treated as protection of this startup model.
