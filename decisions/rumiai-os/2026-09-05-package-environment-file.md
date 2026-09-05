@@ -10,7 +10,7 @@ Le decisioni Accepted correnti hanno gia fissato:
 - `$m_ROOT/pkg/` come dominio locale dei package gestiti;
 - `current` come selector persistente della versione predefinita;
 - `pkg run` come punto di mediazione quando il launch richiede gestione;
-- `root/` come tree del software upstream della versione concreta;
+- `root/` come tree di esecuzione upstream della versione concreta, normalizzabile da `pkg install` per i pathname mutabili;
 - `cmd/` come interfaccia RumiAI package-local dei command esposti;
 - binding diretto sotto `bin/ext*` soltanto quando il launch non richiede mediazione.
 
@@ -18,7 +18,7 @@ La decisione `2026-09-05-package-manager-current-and-run-model.md` ha inoltre gi
 
 Questa decisione fissa il meccanismo package-local minimo con cui una versione concreta puo dichiarare le modifiche di environment necessarie al proprio launch.
 
-La successiva decisione Accepted `2026-09-05-package-state-var-default.md` fissa separatamente le aree di stato, `var/` come package-local state view e `default/` come factory/default state opzionale. Il presente documento resta autoritativo esclusivamente per il ruolo di `env`.
+La decisione Accepted `2026-09-05-package-state-var-default.md` fissa separatamente State Instance, aree fisiche sotto `$m_ROOT/<area>/<pkg>/<state-instance>`, `var/` come routing view package-local e `default/` come factory/default state opzionale. Il presente documento resta autoritativo esclusivamente per il ruolo di `env`.
 
 Non modifica `rumiai-os` e non autorizza modifiche al prodotto in questa unita di lavoro.
 
@@ -38,7 +38,7 @@ Per le responsabilita fissate da questa decisione, una versione concreta puo ave
 Semantica:
 
 ```text
-root/  tree upstream
+root/  tree di esecuzione upstream normalizzato quando necessario
 cmd/   interfaccia RumiAI dei command
 env    dichiarazione RumiAI delle modifiche di environment richieste dal launch
 ```
@@ -47,7 +47,7 @@ env    dichiarazione RumiAI delle modifiche di environment richieste dal launch
 
 Il file e opzionale. Un package che non richiede modifiche package-specific dell'environment non deve essere obbligato ad avere `env`.
 
-La presenza di `env` non modifica la regola che qualunque pathname sotto `root/` appartiene all'upstream e non acquisisce automaticamente semantica package-manager.
+La presenza di `env` non modifica la regola che i pathname sotto `root/` sono definiti dal tree upstream e non acquisiscono automaticamente semantica package-manager dal proprio nome. I pathname mutabili possono pero essere sostituiti da `pkg install` con i symlink di normalizzazione fissati dalla decisione state.
 
 Le eventuali directory `var/` e `default/` sono definite dalla decisione state separata e non cambiano la responsabilita di `env`.
 
@@ -128,7 +128,19 @@ La sintassi con cui `env` rappresentera riferimenti runtime, pathname relativi o
 
 Una eventuale variabile XDG che, secondo il proprio contratto esterno, richiede un pathname assoluto ricevera quindi il pathname assoluto soltanto dopo la risoluzione runtime effettuata da `pkg run`; tale pathname non viene hardcodato nel package.
 
-Quando il valore deve raggiungere una delle aree di stato correnti, `pkg run` puo risolverlo attraverso `<package-version>/var/<area>` secondo la decisione `2026-09-05-package-state-var-default.md`.
+Quando il valore deve raggiungere una delle aree di stato correnti, `pkg run` puo risolverlo attraverso:
+
+```text
+<package-version>/var/<area>
+```
+
+che e un symbolic link relativo verso:
+
+```text
+$m_ROOT/<area>/<pkg>/<state-instance>/
+```
+
+secondo `2026-09-05-package-state-var-default.md`.
 
 ---
 
@@ -152,6 +164,14 @@ Quindi, se per il normale launch di un command devono essere applicate operazion
 
 La sola esistenza fisica di un file `env` privo di operazioni effettive non crea artificialmente una necessita di mediazione; conta il comportamento richiesto dal launch.
 
+La presenza di state gia raggiungibile tramite la catena statica:
+
+```text
+root/<path> -> var/<area>/<path> -> State Instance
+```
+
+non richiede di per se `pkg run` e quindi non esclude un binding diretto.
+
 ---
 
 ## 7. Relazione con state e isolamento
@@ -160,23 +180,25 @@ L'uso di `HOME`, XDG, `TMPDIR`, PATH e variabili specifiche puo isolare logicame
 
 Questo meccanismo non e sandboxing o containment.
 
-Software che ignora le variabili disponibili, usa pathname assoluti non redirigibili, modifica il proprio installation tree o produce altri effetti fuori dal controllo dell'environment puo richiedere una strategia separata.
+I pathname upstream che sono noti al packaging come mutabili o state-bearing vengono gestiti da `pkg install` tramite normalizzazione sotto `root/` e routing verso la State Instance. Software che scrive in pathname non dichiarabili/prevedibili, usa pathname assoluti non redirigibili o produce altri effetti fuori dal controllo dei mapping e dell'environment puo richiedere una strategia separata.
 
-Il layout state corrente e definito separatamente da `2026-09-05-package-state-var-default.md`, che riafferma:
+Il layout state corrente e definito da `2026-09-05-package-state-var-default.md`:
 
 ```text
-conf
-data
-home
-cache
-log
-run
-tmp
+$m_ROOT/conf/<pkg>/<state-instance>/
+$m_ROOT/data/<pkg>/<state-instance>/
+$m_ROOT/home/<pkg>/<state-instance>/
+$m_ROOT/cache/<pkg>/<state-instance>/
+$m_ROOT/log/<pkg>/<state-instance>/
+$m_ROOT/run/<pkg>/<state-instance>/
+$m_ROOT/tmp/<pkg>/<state-instance>/
 ```
 
-come aree canoniche opzionali per-package, `var/` come package-local state view e `default/` come factory/default state opzionale.
+con la sola subset necessaria e con package-local `var/<area>` come symbolic link relativo verso la corrispondente area fisica.
 
-Il presente file `env` non definisce il backing storage di tali aree e non reintroduce State Instance `@sN`, state scope, migration framework o altri meccanismi superseded del design 2026-08-30.
+`$m_ROOT/var/` non appartiene al layout RumiAI.
+
+Il presente file `env` non definisce la grammatica di `<state-instance>`, state scope, migration framework o altri meccanismi superseded del design 2026-08-30.
 
 ---
 
@@ -212,7 +234,9 @@ Quando il modello `env` verra implementato nel prodotto, i test permanenti dovra
 - assenza di hardcoding host-specific;
 - separazione fra `env`, working directory e argv;
 - uso della mediazione quando l'environment deve essere modificato;
-- risoluzione coerente attraverso `var/<area>` quando il launch usa state package-local.
+- risoluzione coerente attraverso `var/<area>` quando il launch usa state package-local;
+- assenza di `$m_ROOT/var/`;
+- compatibilita del routing `env -> var/<area> -> State Instance` con la catena di symlink fissata dal package manager.
 
 ---
 
@@ -229,6 +253,7 @@ PKG-ENV-07  pkg run risolve a runtime i valori dipendenti da root/versione/state
 PKG-ENV-08  env non descrive working directory o argv
 PKG-ENV-09  modifiche environment necessarie al launch richiedono mediazione pkg run
 PKG-ENV-10  env non costituisce sandboxing o containment
-PKG-ENV-11  il layout state e definito separatamente; env non reintroduce State Instance @sN, state scope o migration framework
-PKG-ENV-12  il formato fisico di env resta aperto e non e implicitamente uno script shell
+PKG-ENV-11  lo state e raggiungibile tramite var/<area> verso $m_ROOT/<area>/<pkg>/<state-instance>
+PKG-ENV-12  env non definisce grammatica State Instance, state scope o migration framework
+PKG-ENV-13  il formato fisico di env resta aperto e non e implicitamente uno script shell
 ```
