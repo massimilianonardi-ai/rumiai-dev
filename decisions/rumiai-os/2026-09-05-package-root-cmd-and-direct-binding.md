@@ -55,7 +55,9 @@ appartiene all'upstream e non ha relazione con:
 
 che è invece controllato da RumiAI.
 
-Questa scelta non riafferma le precedenti regole superseded che imponevano root immutabile universale, `run-default/`, State Instance o altri meccanismi del design 2026-08-30.
+Questa scelta non riafferma di per se le precedenti regole superseded che imponevano root immutabile universale, `run-default/`, State Instance o altri meccanismi del design 2026-08-30.
+
+La successiva decisione Accepted `2026-09-05-package-state-var-default.md` riafferma selettivamente le aree di stato, introduce `default/` al posto di `run-default/` e `var/` al posto del vecchio package-local routing `run/`, senza modificare la separazione `root/`/`cmd/` fissata qui.
 
 ---
 
@@ -269,8 +271,8 @@ Questa decisione non fissa:
 1. pathname esatto delle versioni concrete sotto `$m_ROOT/pkg/`;
 2. pathname esatto e grammatica del selector `current`;
 3. regola finale per selector target-qualified vs condivisi quando il package è realmente target-independent;
-4. formato di eventuali metadata/descriptor oltre a `root/` e `cmd/`;
-5. layout fisico dello state package-specific;
+4. formato di eventuali metadata/descriptor oltre alle strutture package-local gia fissate (`root/`, `cmd/`, `env`, `var/`, `default/`);
+5. pathname finale del backing state, condivisione fra versioni e lifecycle dello state;
 6. sintassi completa di `pkg run`, option names e override environment variables;
 7. formato/interprete dei wrapper usati quando è necessaria mediazione;
 8. policy per eventuali collisioni tra command pubblici con lo stesso nome provenienti da package differenti;
