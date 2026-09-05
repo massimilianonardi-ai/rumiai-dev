@@ -1,4 +1,4 @@
-# Decisione — Package manager: file `en` per environment package-local
+# Decisione — Package manager: file `env` per environment package-local
 
 Date: 2026-09-05  
 Status: **Accepted**
@@ -30,7 +30,7 @@ Per le responsabilita oggi fissate, una versione concreta puo avere:
 <package-version>/
 ├── root/
 ├── cmd/
-└── en
+└── env
 ```
 
 Semantica:
@@ -38,20 +38,20 @@ Semantica:
 ```text
 root/  tree upstream
 cmd/   interfaccia RumiAI dei command
- en    dichiarazione RumiAI delle modifiche di environment richieste dal launch
+env    dichiarazione RumiAI delle modifiche di environment richieste dal launch
 ```
 
-`en` appartiene al packaging RumiAI e non al contenuto upstream.
+`env` appartiene al packaging RumiAI e non al contenuto upstream.
 
-Il file e opzionale. Un package che non richiede modifiche package-specific dell'environment non deve essere obbligato ad avere `en`.
+Il file e opzionale. Un package che non richiede modifiche package-specific dell'environment non deve essere obbligato ad avere `env`.
 
-La presenza di `en` non modifica la regola che qualunque pathname sotto `root/` appartiene all'upstream e non acquisisce automaticamente semantica package-manager.
+La presenza di `env` non modifica la regola che qualunque pathname sotto `root/` appartiene all'upstream e non acquisisce automaticamente semantica package-manager.
 
 ---
 
-## 2. Responsabilita di `en`
+## 2. Responsabilita di `env`
 
-`en` descrive esclusivamente differenze necessarie rispetto all'environment di base usato da `pkg run`.
+`env` descrive esclusivamente differenze necessarie rispetto all'environment di base usato da `pkg run`.
 
 Il modello minimo deve poter rappresentare almeno:
 
@@ -62,7 +62,7 @@ unset <environment-variable>
 
 La sintassi fisica concreta non e fissata da questa decisione.
 
-`en` non introduce un elenco universale di environment variables obbligatorie. Ogni package dichiara soltanto le modifiche che richiede realmente.
+`env` non introduce un elenco universale di environment variables obbligatorie. Ogni package dichiara soltanto le modifiche che richiede realmente.
 
 Esempi di variabili che un package puo aver bisogno di impostare o rimuovere includono, secondo il software interessato:
 
@@ -90,7 +90,7 @@ Questa lista e esemplificativa e non costituisce uno schema universale obbligato
 Il baseline resta proporzionato:
 
 1. `pkg run` parte dall'environment che il relativo launch contract decide di ereditare/sanitizzare;
-2. applica le operazioni dichiarate da `en`;
+2. applica le operazioni dichiarate da `env`;
 3. applica eventuali override espliciti per-invocation secondo la futura sintassi di `pkg run`;
 4. esegue il command selezionato.
 
@@ -102,14 +102,14 @@ Il supporto a `unset` e necessario per evitare contaminazioni host quando una va
 
 ## 4. Risoluzione dei valori a runtime
 
-I pathname gestiti da RumiAI dichiarati tramite `en` devono essere relocatable.
+I pathname gestiti da RumiAI dichiarati tramite `env` devono essere relocatable.
 
-Il package non deve persistere in `en` pathname assoluti host-specific derivati dall'installazione corrente, dalla posizione corrente di `$m_ROOT`, dalla versione selezionata, dallo state selezionato o da dependency risolte.
+Il package non deve persistere in `env` pathname assoluti host-specific derivati dall'installazione corrente, dalla posizione corrente di `$m_ROOT`, dalla versione selezionata, dallo state selezionato o da dependency risolte.
 
 La semantica richiesta e:
 
 ```text
-intenzione package-local in en
+intenzione package-local in env
         ↓
 pkg run determina package/versione/target/state/dependency correnti
         ↓
@@ -120,21 +120,21 @@ materializza l'environment finale
 exec del command
 ```
 
-La sintassi con cui `en` rappresentera riferimenti runtime, pathname relativi o riferimenti semantici resta aperta e dovra essere fissata separatamente.
+La sintassi con cui `env` rappresentera riferimenti runtime, pathname relativi o riferimenti semantici resta aperta e dovra essere fissata separatamente.
 
 Una eventuale variabile XDG che, secondo il proprio contratto esterno, richiede un pathname assoluto ricevera quindi il pathname assoluto soltanto dopo la risoluzione runtime effettuata da `pkg run`; tale pathname non viene hardcodato nel package.
 
 ---
 
-## 5. `en` non descrive working directory o argv
+## 5. `env` non descrive working directory o argv
 
-`en` descrive environment variables.
+`env` descrive environment variables.
 
 Una working directory richiesta dal package resta una responsabilita distinta di `pkg run`; non viene simulata assegnando `PWD`.
 
-Argomenti fissi di launch e user argv restano anch'essi responsabilita distinte dal file `en`.
+Argomenti fissi di launch e user argv restano anch'essi responsabilita distinte dal file `env`.
 
-Questa separazione evita di trasformare `en` in un generico launch descriptor prima che emergano requisiti concreti.
+Questa separazione evita di trasformare `env` in un generico launch descriptor prima che emergano requisiti concreti.
 
 ---
 
@@ -142,9 +142,9 @@ Questa separazione evita di trasformare `en` in un generico launch descriptor pr
 
 Il binding pubblico diretto resta ammesso soltanto quando il launch effettivo non richiede mediazione di `pkg run`.
 
-Quindi, se per il normale launch di un command devono essere applicate operazioni `set`/`unset` dichiarate da `en`, quel command non puo usare il normale binding diretto come unico percorso di esecuzione: deve passare attraverso la mediazione di `pkg run`.
+Quindi, se per il normale launch di un command devono essere applicate operazioni `set`/`unset` dichiarate da `env`, quel command non puo usare il normale binding diretto come unico percorso di esecuzione: deve passare attraverso la mediazione di `pkg run`.
 
-La sola esistenza fisica di un file `en` privo di operazioni effettive non crea artificialmente una necessita di mediazione; conta il comportamento richiesto dal launch.
+La sola esistenza fisica di un file `env` privo di operazioni effettive non crea artificialmente una necessita di mediazione; conta il comportamento richiesto dal launch.
 
 ---
 
@@ -176,7 +176,7 @@ Tali idee possono essere riesaminate separatamente e riaffermate soltanto dove r
 
 ## 8. Formato del file
 
-Questa decisione fissa il ruolo e il pathname `en`, non il suo formato di serializzazione.
+Questa decisione fissa il ruolo e il pathname `env`, non il suo formato di serializzazione.
 
 Restano aperti:
 
@@ -188,7 +188,7 @@ Restano aperti:
 - validazione e failure semantics;
 - eventuali overlay command-specific se emergera un requisito concreto.
 
-`en` non viene definito da questa decisione come script shell, file eseguibile o file da source.
+`env` non viene definito da questa decisione come script shell, file eseguibile o file da source.
 
 ---
 
@@ -198,13 +198,13 @@ Alla data di questa decisione non esiste ancora un comando `pkg` stabile in `rum
 
 Questa unita di lavoro consolida esclusivamente il design in `rumiai-dev`.
 
-Quando il modello `en` verra implementato nel prodotto, i test permanenti dovranno proteggere almeno:
+Quando il modello `env` verra implementato nel prodotto, i test permanenti dovranno proteggere almeno:
 
 - applicazione corretta di `set`;
 - applicazione corretta di `unset`;
 - risoluzione runtime relocatable dei pathname gestiti;
 - assenza di hardcoding host-specific;
-- separazione fra `en`, working directory e argv;
+- separazione fra `env`, working directory e argv;
 - uso della mediazione quando l'environment deve essere modificato.
 
 ---
@@ -212,16 +212,16 @@ Quando il modello `en` verra implementato nel prodotto, i test permanenti dovran
 ## 10. Invarianti fissati
 
 ```text
-PKG-EN-01  en e un file opzionale package-local controllato da RumiAI
-PKG-EN-02  en vive accanto a root/ e cmd/, non dentro root/
-PKG-EN-03  en descrive soltanto differenze di environment necessarie al launch
-PKG-EN-04  il modello en supporta almeno set e unset di environment variables
-PKG-EN-05  non esiste un elenco universale obbligatorio di variabili per ogni package
-PKG-EN-06  i pathname RumiAI-managed dipendenti dal runtime non sono hardcodati in en
-PKG-EN-07  pkg run risolve a runtime i valori dipendenti da root/versione/state/dependency/target
-PKG-EN-08  en non descrive working directory o argv
-PKG-EN-09  modifiche environment necessarie al launch richiedono mediazione pkg run
-PKG-EN-10  en non costituisce sandboxing o containment
-PKG-EN-11  questa decisione non reintroduce State Instance, sette State Areas o run-default come baseline obbligatoria
-PKG-EN-12  il formato fisico di en resta aperto e non e implicitamente uno script shell
+PKG-ENV-01  env e un file opzionale package-local controllato da RumiAI
+PKG-ENV-02  env vive accanto a root/ e cmd/, non dentro root/
+PKG-ENV-03  env descrive soltanto differenze di environment necessarie al launch
+PKG-ENV-04  il modello env supporta almeno set e unset di environment variables
+PKG-ENV-05  non esiste un elenco universale obbligatorio di variabili per ogni package
+PKG-ENV-06  i pathname RumiAI-managed dipendenti dal runtime non sono hardcodati in env
+PKG-ENV-07  pkg run risolve a runtime i valori dipendenti da root/versione/state/dependency/target
+PKG-ENV-08  env non descrive working directory o argv
+PKG-ENV-09  modifiche environment necessarie al launch richiedono mediazione pkg run
+PKG-ENV-10  env non costituisce sandboxing o containment
+PKG-ENV-11  questa decisione non reintroduce State Instance, sette State Areas o run-default come baseline obbligatoria
+PKG-ENV-12  il formato fisico di env resta aperto e non e implicitamente uno script shell
 ```
