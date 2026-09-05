@@ -16,7 +16,9 @@ Le decisioni Accepted correnti hanno gia fissato:
 
 La decisione `2026-09-05-package-manager-current-and-run-model.md` ha inoltre gia assegnato a `pkg run` la responsabilita di costruire l'environment e, quando necessario, indirizzare HOME, data, cache o altre aree mutabili verso location controllate.
 
-Questa decisione fissa il meccanismo package-local minimo con cui una versione concreta puo dichiarare le modifiche di environment necessarie al proprio launch, senza fissare ancora il layout dello state package-specific.
+Questa decisione fissa il meccanismo package-local minimo con cui una versione concreta puo dichiarare le modifiche di environment necessarie al proprio launch.
+
+La successiva decisione Accepted `2026-09-05-package-state-var-default.md` fissa separatamente le aree di stato, `var/` come package-local state view e `default/` come factory/default state opzionale. Il presente documento resta autoritativo esclusivamente per il ruolo di `env`.
 
 Non modifica `rumiai-os` e non autorizza modifiche al prodotto in questa unita di lavoro.
 
@@ -24,7 +26,7 @@ Non modifica `rumiai-os` e non autorizza modifiche al prodotto in questa unita d
 
 ## 1. Struttura package-local
 
-Per le responsabilita oggi fissate, una versione concreta puo avere:
+Per le responsabilita fissate da questa decisione, una versione concreta puo avere:
 
 ```text
 <package-version>/
@@ -46,6 +48,8 @@ env    dichiarazione RumiAI delle modifiche di environment richieste dal launch
 Il file e opzionale. Un package che non richiede modifiche package-specific dell'environment non deve essere obbligato ad avere `env`.
 
 La presenza di `env` non modifica la regola che qualunque pathname sotto `root/` appartiene all'upstream e non acquisisce automaticamente semantica package-manager.
+
+Le eventuali directory `var/` e `default/` sono definite dalla decisione state separata e non cambiano la responsabilita di `env`.
 
 ---
 
@@ -124,6 +128,8 @@ La sintassi con cui `env` rappresentera riferimenti runtime, pathname relativi o
 
 Una eventuale variabile XDG che, secondo il proprio contratto esterno, richiede un pathname assoluto ricevera quindi il pathname assoluto soltanto dopo la risoluzione runtime effettuata da `pkg run`; tale pathname non viene hardcodato nel package.
 
+Quando il valore deve raggiungere una delle aree di stato correnti, `pkg run` puo risolverlo attraverso `<package-version>/var/<area>` secondo la decisione `2026-09-05-package-state-var-default.md`.
+
 ---
 
 ## 5. `env` non descrive working directory o argv
@@ -156,7 +162,7 @@ Questo meccanismo non e sandboxing o containment.
 
 Software che ignora le variabili disponibili, usa pathname assoluti non redirigibili, modifica il proprio installation tree o produce altri effetti fuori dal controllo dell'environment puo richiedere una strategia separata.
 
-La struttura fisica dello state package-specific resta intenzionalmente aperta. In particolare questa decisione non reintroduce automaticamente come baseline obbligatoria il precedente insieme:
+Il layout state corrente e definito separatamente da `2026-09-05-package-state-var-default.md`, che riafferma:
 
 ```text
 conf
@@ -168,9 +174,9 @@ run
 tmp
 ```
 
-ne `run-default/`, State Instance `@sN`, migration framework o altri meccanismi del design 2026-08-30.
+come aree canoniche opzionali per-package, `var/` come package-local state view e `default/` come factory/default state opzionale.
 
-Tali idee possono essere riesaminate separatamente e riaffermate soltanto dove risultino utili al modello corrente.
+Il presente file `env` non definisce il backing storage di tali aree e non reintroduce State Instance `@sN`, state scope, migration framework o altri meccanismi superseded del design 2026-08-30.
 
 ---
 
@@ -205,7 +211,8 @@ Quando il modello `env` verra implementato nel prodotto, i test permanenti dovra
 - risoluzione runtime relocatable dei pathname gestiti;
 - assenza di hardcoding host-specific;
 - separazione fra `env`, working directory e argv;
-- uso della mediazione quando l'environment deve essere modificato.
+- uso della mediazione quando l'environment deve essere modificato;
+- risoluzione coerente attraverso `var/<area>` quando il launch usa state package-local.
 
 ---
 
@@ -213,7 +220,7 @@ Quando il modello `env` verra implementato nel prodotto, i test permanenti dovra
 
 ```text
 PKG-ENV-01  env e un file opzionale package-local controllato da RumiAI
-PKG-ENV-02  env vive accanto a root/ e cmd/, non dentro root/
+PKG-ENV-02  env vive accanto alle altre strutture package-local RumiAI, non dentro root/
 PKG-ENV-03  env descrive soltanto differenze di environment necessarie al launch
 PKG-ENV-04  il modello env supporta almeno set e unset di environment variables
 PKG-ENV-05  non esiste un elenco universale obbligatorio di variabili per ogni package
@@ -222,6 +229,6 @@ PKG-ENV-07  pkg run risolve a runtime i valori dipendenti da root/versione/state
 PKG-ENV-08  env non descrive working directory o argv
 PKG-ENV-09  modifiche environment necessarie al launch richiedono mediazione pkg run
 PKG-ENV-10  env non costituisce sandboxing o containment
-PKG-ENV-11  questa decisione non reintroduce State Instance, sette State Areas o run-default come baseline obbligatoria
+PKG-ENV-11  il layout state e definito separatamente; env non reintroduce State Instance @sN, state scope o migration framework
 PKG-ENV-12  il formato fisico di env resta aperto e non e implicitamente uno script shell
 ```
