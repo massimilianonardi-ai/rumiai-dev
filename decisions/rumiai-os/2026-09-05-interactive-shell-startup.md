@@ -1,7 +1,8 @@
 # Decisione — Startup della shell interattiva RumiAI
 
 Date: 2026-09-05  
-Status: **Accepted**
+Status: **Accepted**  
+Updated: 2026-09-06
 
 ## Contesto
 
@@ -12,6 +13,8 @@ massimilianonardi-ai/rumiai-os@7b645edf1b5d84c512488b3b69d9f1cd8483061f
 ```
 
 Questa revisione è considerata la baseline sostanzialmente definitiva del sottosistema. Sono ammesse successive correzioni o semplificazioni che non ne cambino il contratto; una modifica semantica richiede una nuova decisione esplicita.
+
+La successiva decisione Accepted `2026-09-06-system-base-state-namespace.md` ha fissato `$m_ROOT/<area>/sys/<component>/` come namespace state/configurazione dei componenti del sistema base. Di conseguenza i riferimenti canonici alla configurazione del componente `shell` usano ora `$m_ROOT/conf/sys/shell/`. Il prodotto `rumiai-os@7b645edf...` precede questo riallineamento fisico e resta pending realignment per il solo pathname fino alla modifica che l'utente effettuera autonomamente.
 
 Restano invariati POSIX.1-2024 come contratto generale, la selezione `$SHELL` con fallback `sh`, la relocatability e le regole generali definite in `RULES.md`.
 
@@ -161,7 +164,7 @@ Zsh:
 
 Ragione tecnica: Bash e Zsh permettono di sospendere temporaneamente l'espansione degli alias mantenendo intatte le definizioni dell'utente. Usare `unalias -a` in questi adapter distruggerebbe inutilmente stato utente che le shell possono invece preservare nativamente.
 
-Queste eccezioni non autorizzano l'uso di sintassi Bash/Zsh nel codice POSIX generale, in particolare nel file bootstrap root `rumiai-os`, in `lib/sh/`, in `conf/shell/sh/` o in altri componenti del core POSIX.
+Queste eccezioni non autorizzano l'uso di sintassi Bash/Zsh nel codice POSIX generale, in particolare nel file bootstrap root `rumiai-os`, in `lib/sh/`, in `conf/sys/shell/sh/` o in altri componenti del core POSIX.
 
 Non istituiscono una nuova regola generale di portabilità.
 
@@ -173,15 +176,25 @@ RumiAI non tenta di vincere contro una scelta esplicita dello startup utente che
 
 ## 10. Stato di implementazione e test
 
-La baseline implementativa osservata per questa decisione è:
+La baseline implementativa osservata per il comportamento di questa decisione è:
 
 ```text
 massimilianonardi-ai/rumiai-os@7b645edf1b5d84c512488b3b69d9f1cd8483061f
 ```
 
-Questa decisione **non costituisce validazione fisica** di quella revisione. Le evidenze fisiche precedenti restano valide soltanto per le revisioni e i contratti effettivamente esercitati all'epoca.
+Questa revisione usa ancora fisicamente il precedente pathname `conf/shell/`. Il pathname canonico corrente è `conf/sys/shell/` secondo `2026-09-06-system-base-state-namespace.md`; il prodotto è quindi pending realignment esclusivamente per questa collocazione fisica. L'utente ha richiesto esplicitamente che tale modifica non venga effettuata in questa unità di lavoro.
 
-La suite permanente `rumiai-tests` deve essere riallineata in una fase dedicata. Almeno i seguenti comportamenti richiedono copertura permanente:
+Questa decisione **non costituisce validazione fisica** della revisione prodotto sopra indicata. Le evidenze fisiche precedenti restano valide soltanto per le revisioni e i contratti effettivamente esercitati all'epoca.
+
+La suite permanente è stata successivamente riallineata al contratto shell corrente nel repository:
+
+```text
+massimilianonardi-ai/rumiai-tests@475937a39029c228efbcdd9e9d73300b14b4c5af
+```
+
+Questa annotazione documentale non dichiara una nuova sessione di validazione fisica. Dopo il riallineamento del pathname prodotto a `conf/sys/shell/`, i test pertinenti dovranno essere rieseguiti e, se contengono assunzioni fisiche sul precedente pathname, adeguati alla nuova collocazione.
+
+I comportamenti protetti dalla suite shell includono, in modo proporzionato:
 
 ```text
 selezione $SHELL con fallback sh
@@ -198,12 +211,16 @@ modifiche a ZDOTDIR effettuate dagli startup file utente
 fallback diretto per shell senza adapter
 ```
 
-I test permanenti correnti sotto `tests/rumiai-os/shell/` precedono questo contratto e non devono essere considerati prova della presente semantica finché non vengono riallineati.
-
 ## 11. Propagazione
 
 Questa decisione chiude l'open item relativo al caricamento cross-shell delle funzioni RumiAI presente nei documenti bootstrap precedenti.
 
-I documenti attivi devono riferirsi a questa decisione per il contratto di startup della shell. Gli handoff e le evidenze storiche non vengono riscritti e restano riferiti alle revisioni che documentavano.
+Per il layout state/configurazione dei componenti del sistema base, l'autorità corrente è:
+
+```text
+decisions/rumiai-os/2026-09-06-system-base-state-namespace.md
+```
+
+I documenti attivi devono riferirsi a questa decisione per il namespace `sys/`; gli handoff e le evidenze storiche non vengono riscritti e restano riferiti alle revisioni e ai pathname che documentavano.
 
 Questa unità di lavoro documentale non modifica `rumiai-os` né `rumiai-tests`.
