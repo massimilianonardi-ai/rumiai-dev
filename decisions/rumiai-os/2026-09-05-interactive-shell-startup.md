@@ -161,16 +161,9 @@ Zsh:
 
 Ragione tecnica: Bash e Zsh permettono di sospendere temporaneamente l'espansione degli alias mantenendo intatte le definizioni dell'utente. Usare `unalias -a` in questi adapter distruggerebbe inutilmente stato utente che le shell possono invece preservare nativamente.
 
-Queste eccezioni non autorizzano l'uso di sintassi Bash/Zsh in:
+Queste eccezioni non autorizzano l'uso di sintassi Bash/Zsh nel codice POSIX generale, in particolare nel file bootstrap root `rumiai-os`, in `lib/sh/`, in `conf/shell/sh/` o in altri componenti del core POSIX.
 
-```text
-rumiai-os
-lib/sh/
-conf/shell/sh/
-altri componenti del core POSIX
-```
-
-né istituiscono una nuova regola generale di portabilità.
+Non istituiscono una nuova regola generale di portabilità.
 
 ## 9. Relazione con gli startup file utente
 
