@@ -242,9 +242,9 @@ Resta valido il principio generale:
 software != stato mutabile prodotto durante l'uso
 ```
 
-ma la nuova baseline **non impone** il precedente State Instance model a ogni package.
+La baseline corrente non reintroduce il precedente State Instance model universale, ma la successiva decisione Accepted `2026-09-05-package-state-var-default.md` riafferma un vocabolario comune minimo per lo state dei package che ne hanno bisogno.
 
-Non sono parte obbligatoria del baseline corrente:
+Le aree canoniche sono:
 
 ```text
 conf
@@ -256,11 +256,28 @@ run
 tmp
 ```
 
-come sette aree universali del package manager, né identity `@sN`, state scope o migration framework generico.
+con classificazione:
 
-Per software che necessita di stato, il packaging può descrivere come `pkg run` deve indirizzare HOME, configurazione, cache, data, moduli aggiuntivi o altre location verso aree controllate.
+```text
+conf,data,home  persistent authoritative
+cache,log       persistent non-authoritative
+run,tmp         transient
+```
 
-La struttura fisica canonica dello state package-specific resta da definire.
+`home` resta il compatibility bucket conservativo quando lo state non puo essere classificato meglio.
+
+Non tutte le aree devono esistere per ogni package. Un package senza state non deve essere obbligato a materializzarle.
+
+La stessa decisione fissa:
+
+```text
+var/      package-local state view
+default/  factory/default state opzionale
+```
+
+Nella prima realizzazione `var/` puo contenere direttamente lo state fisico; nel modello finale le entry `var/<area>` diventano symbolic link verso un backing state separato. Il pathname fisico finale del backing state resta aperto.
+
+Restano fuori dal baseline corrente identity State Instance `@sN`, state scope, migration framework generico e gli altri meccanismi del 2026-08-30 non esplicitamente riaffermati.
 
 La conoscenza necessaria a controllare un'applicazione specifica appartiene principalmente al relativo packaging; `pkg` fornisce primitive comuni soltanto quando emergono responsabilità realmente condivise.
 
@@ -310,11 +327,11 @@ I seguenti meccanismi dei draft del 2026-08-30 non devono essere implementati co
 bin/@platforms
 pathname Package Instance obbligatorio con @version@rN@platform-architecture
 percent-encoded version-token obbligatorio
-root/run-default/run wrapper obbligatoria
+vecchia wrapper root/run-default/run e writable-island mapping obbligatorio
 root immutabile come requisito universale di admission
 inventory SHA-256 obbligatorie per ogni package
 State Instance @sN
-sette State Area universali
+state scope universale
 state migration framework universale
 Execution Capability contracts universali
 resolver generico con release-order/provider ranking
@@ -326,7 +343,17 @@ schema @package v0 obbligatorio nella forma precedente
 recovery/lifecycle transazionale completo come prerequisito del primo `pkg`
 ```
 
-Questo non significa che ogni singola idea sia vietata definitivamente. Significa che **non appartiene più al contratto minimo corrente** e può essere reintrodotta soltanto quando un requisito reale la giustifica.
+Successive decisioni Accepted hanno invece riaffermato selettivamente responsabilita utili del vecchio design, con contratti nuovi e piu piccoli:
+
+```text
+root/ e cmd/
+env
+conf,data,home,cache,log,run,tmp
+var/ come package-local state view
+default/ al posto di run-default/
+```
+
+Per queste responsabilita valgono esclusivamente le decisioni Accepted correnti, non i contratti fisici storici del 2026-08-30.
 
 Restano inoltre definitivamente incompatibili con il runtime corrente i vecchi riferimenti a `bin/` direttamente nel `PATH` e a `bin/@platforms`; valgono i current executable roots `bin/sys*` e `bin/ext*`.
 
@@ -340,7 +367,7 @@ Non vengono fissati in questa decisione:
 2. pathname esatto e grammatica del selector `current`;
 3. regola finale per selector target-qualified vs condivisi quando il package è realmente target-independent;
 4. formato minimo dei metadata/descriptor del package;
-5. layout fisico dello state package-specific;
+5. pathname finale del backing state, condivisione fra versioni, lifecycle, backup/retention e migration dello state;
 6. nomi delle option di `pkg run`;
 7. nomi delle environment variables di override;
 8. sintassi per scegliere un entrypoint non-default;
@@ -385,4 +412,6 @@ PKG-15 software difficile non impone complessità preventiva al percorso normale
 PKG-16 nessun namespace legacy/container è fissato
 PKG-17 il vecchio bin/@platforms non appartiene al runtime corrente
 PKG-18 i dettagli non esplicitamente riaffermati dei draft package-manager del 2026-08-30 sono da rivalutare, non da assumere
+PKG-19 le aree canoniche dello state sono conf,data,home,cache,log,run,tmp ma ogni package usa solo quelle necessarie
+PKG-20 var/ è la vista package-local dello state; default/ è factory/default state opzionale
 ```
