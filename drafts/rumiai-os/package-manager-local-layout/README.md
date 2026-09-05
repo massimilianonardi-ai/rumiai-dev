@@ -2,9 +2,12 @@
 
 Data: 2026-08-30
 
-Stato: **design decision — layout locale v0 fissato**
+Stato corrente: **Superseded as current design by `decisions/rumiai-os/2026-09-05-package-manager-current-and-run-model.md`**  
+Stato storico al 2026-08-30: **design decision — layout locale v0 fissato**
 
-Questo documento riguarda esclusivamente il lato locale del confine già fissato:
+> **Nota di supersession:** il contenuto seguente è conservato come lineage/input storico. In particolare `bin/@platforms`, `bin/` direttamente nel `PATH`, la precedente grammatica obbligatoria delle Package Instance, il version-token e lo stato di integrazione a generations non appartengono più al runtime/package-manager corrente. Il layout executable autorevole è `bin/sys*` / `bin/ext*`; per `pkg` valgono le decisioni Accepted successive.
+
+Questo documento riguardava esclusivamente il lato locale del confine progettato al 2026-08-30:
 
 ```text
 software già prodotto/normalizzato
@@ -14,7 +17,7 @@ Package Instance locale
 integrazione / utilizzo / rimozione
 ```
 
-Discovery remota, `rumiai-store`, download e build restano fuori scope.
+Discovery remota, `rumiai-store`, download e build erano fuori scope del design qui conservato.
 
 ---
 
@@ -318,7 +321,7 @@ Requirement:
 
 ---
 
-# 14. Invarianti
+# 14. Invarianti storici
 
 ```text
 LL-01 tutte le Package Instance locali vivono sotto un unico pkg/
@@ -335,3 +338,5 @@ LL-11 pathname identity e descriptor identity devono concordare
 LL-12 ogni immediate child di pkg/ è classificabile
 LL-13 pkg/ è physical truth; bin/ è derived view
 ```
+
+Questi identificatori sono conservati esclusivamente come riferimento al design storico del 2026-08-30; non costituiscono l'elenco degli invarianti correnti di `pkg`.

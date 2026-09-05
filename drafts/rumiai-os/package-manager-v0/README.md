@@ -2,11 +2,14 @@
 
 Data: 2026-08-30
 
-Stato: **design decision — admission model v0 fissato**
+Stato corrente: **Superseded as current design by `decisions/rumiai-os/2026-09-05-package-manager-current-and-run-model.md`**  
+Stato storico al 2026-08-30: **design decision — admission model v0 fissato**
 
-Questo documento formalizza il confine del nuovo package manager RumiAI OS.
+> **Nota di supersession:** il contenuto seguente è conservato come lineage/input storico. Non deve essere usato come autorità sul design corrente di `pkg` salvo per i principi esplicitamente riaffermati da una decisione Accepted successiva. In particolare root immutabile obbligatoria, State Instance universali, capability resolver, Desired/Resolved Integration State, pathname Package Instance e criterio `REJECTED` qui descritti non appartengono più automaticamente alla baseline corrente.
 
-Acquisizione, download, toolchain e build restano fuori scope. Il package manager locale comincia quando esiste già un candidate software tree prodotto/normalizzato.
+Questo documento formalizzava il confine del package manager RumiAI OS al 2026-08-30.
+
+Acquisizione, download, toolchain e build erano fuori scope nel design qui conservato. Il package manager locale cominciava quando esisteva già un candidate software tree prodotto/normalizzato.
 
 ---
 
@@ -496,7 +499,7 @@ platform/architecture determinate dall'artifact concreto
 
 ---
 
-# 22. Invarianti
+# 22. Invarianti storici
 
 ```text
 AD-01 acquisition/build restano fuori dal local package manager boundary
@@ -514,3 +517,5 @@ AD-12 no first-run mandatory acquisition
 AD-13 Package Instance presence != integration
 AD-14 uninstall != purge-state
 ```
+
+Questi identificatori sono conservati esclusivamente come riferimento al design storico del 2026-08-30; non costituiscono l'elenco degli invarianti correnti di `pkg`.

@@ -2,6 +2,7 @@
 
 Date: 2026-09-02  
 Status: **Accepted**
+Updated: 2026-09-05
 
 ## Contesto
 
@@ -54,7 +55,7 @@ Le precedenti environment variables `RumiAI_*` sono superseded.
 
 ## 2. Layout degli eseguibili
 
-`bin/` è il contenitore delle directory di eseguibili o symlink che possono partecipare al `PATH`; `bin/` non viene aggiunta direttamente al `PATH`.
+`bin/` è il contenitore delle directory di eseguibili o binding che possono partecipare al `PATH`; `bin/` non viene aggiunta direttamente al `PATH`.
 
 Layout canonico:
 
@@ -81,14 +82,18 @@ bin/sys-osarch
     symlink relativo alla directory sys-<osarch> della piattaforma attiva
 
 bin/ext/
-    eseguibili/symlink third-party platform-independent
+    binding pubblici di comandi third-party validi platform-independently
 
 bin/ext-<osarch>/
-    eseguibili/symlink third-party specifici della piattaforma
+    binding pubblici di comandi third-party specifici della piattaforma
 
 bin/ext-osarch
     symlink relativo alla directory ext-<osarch> della piattaforma attiva
 ```
+
+Un binding sotto `bin/ext/` o `bin/ext-<osarch>/` può essere un executable/symlink diretto quando il software è direttamente lanciabile, oppure un wrapper/launcher RumiAI minimale quando l'esecuzione third-party richiede mediazione. Il carattere `ext` descrive il comando/software esposto, non necessariamente la proprietà del file fisico che realizza il binding.
+
+Il modello concreto di binding diretto vs wrapper per i package è fissato dalla decisione `2026-09-05-package-manager-current-and-run-model.md`; questa precisazione non cambia né il layout né l'ordine del `PATH`.
 
 Esempio di `<osarch>` già ammesso:
 
