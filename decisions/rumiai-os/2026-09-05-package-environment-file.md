@@ -18,7 +18,7 @@ La decisione `2026-09-05-package-manager-current-and-run-model.md` ha inoltre gi
 
 Questa decisione fissa il meccanismo package-local minimo con cui una versione concreta puo dichiarare le modifiche di environment necessarie al proprio launch.
 
-La decisione Accepted `2026-09-05-package-state-var-default.md` fissa separatamente lo state standard sotto `$m_ROOT/<area>/<pkg>/`, State Instance nominate opzionali sotto `$m_ROOT/<area>/<pkg>-<state-instance>/`, `var/` come routing view package-local e `default/` come factory/default state opzionale. Il presente documento resta autoritativo esclusivamente per il ruolo di `env`.
+La decisione Accepted `2026-09-05-package-state-var-default.md` fissa separatamente lo state standard sotto `$m_ROOT/<area>/<pkg>/`, State Instance nominate opzionali sotto `$m_ROOT/<area>/<pkg>@!<state-instance>/`, `var/` come routing view package-local e `default/` come factory/default state opzionale. Il presente documento resta autoritativo esclusivamente per il ruolo di `env`.
 
 Non modifica `rumiai-os` e non autorizza modifiche al prodotto in questa unita di lavoro.
 
@@ -145,7 +145,7 @@ $m_ROOT/<area>/<pkg>/
 mentre con una State Instance nominata e:
 
 ```text
-$m_ROOT/<area>/<pkg>-<state-instance>/
+$m_ROOT/<area>/<pkg>@!<state-instance>/
 ```
 
 secondo `2026-09-05-package-state-var-default.md`.
@@ -207,20 +207,20 @@ $m_ROOT/tmp/<pkg>/
 State Instance nominata, quando usata:
 
 ```text
-$m_ROOT/conf/<pkg>-<state-instance>/
-$m_ROOT/data/<pkg>-<state-instance>/
-$m_ROOT/home/<pkg>-<state-instance>/
-$m_ROOT/cache/<pkg>-<state-instance>/
-$m_ROOT/log/<pkg>-<state-instance>/
-$m_ROOT/run/<pkg>-<state-instance>/
-$m_ROOT/tmp/<pkg>-<state-instance>/
+$m_ROOT/conf/<pkg>@!<state-instance>/
+$m_ROOT/data/<pkg>@!<state-instance>/
+$m_ROOT/home/<pkg>@!<state-instance>/
+$m_ROOT/cache/<pkg>@!<state-instance>/
+$m_ROOT/log/<pkg>@!<state-instance>/
+$m_ROOT/run/<pkg>@!<state-instance>/
+$m_ROOT/tmp/<pkg>@!<state-instance>/
 ```
 
 con la sola subset necessaria e con package-local `var/<area>` come symbolic link relativo verso la corrispondente area fisica.
 
 `$m_ROOT/var/` non appartiene al layout RumiAI.
 
-Il presente file `env` non definisce la grammatica di `<state-instance>`, policy di compatibilita, migration framework o altri meccanismi superseded del design 2026-08-30.
+Il presente file `env` non definisce la grammatica di `<state-instance>` oltre al separatore strutturale `@!`, policy di compatibilita, migration framework o altri meccanismi superseded del design 2026-08-30.
 
 ---
 
@@ -275,7 +275,7 @@ PKG-ENV-07  pkg run risolve a runtime i valori dipendenti da root/versione/state
 PKG-ENV-08  env non descrive working directory o argv
 PKG-ENV-09  modifiche environment necessarie al launch richiedono mediazione pkg run
 PKG-ENV-10  env non costituisce sandboxing o containment
-PKG-ENV-11  lo state e raggiungibile tramite var/<area> verso $m_ROOT/<area>/<pkg> oppure una State Instance nominata $m_ROOT/<area>/<pkg>-<state-instance>
-PKG-ENV-12  env non definisce grammatica o policy di compatibilita delle State Instance
+PKG-ENV-11  lo state e raggiungibile tramite var/<area> verso $m_ROOT/<area>/<pkg> oppure una State Instance nominata $m_ROOT/<area>/<pkg>@!<state-instance>
+PKG-ENV-12  env non definisce grammatica o policy di compatibilita delle State Instance oltre al separatore strutturale @!
 PKG-ENV-13  il formato fisico di env resta aperto e non e implicitamente uno script shell
 ```
