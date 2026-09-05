@@ -120,6 +120,8 @@ per la responsabilita di installare/normalizzare una versione concreta, inclusa 
 
 La sintassi completa di `pkg install`, le sorgenti da cui acquisisce il payload, download/build e relativi exit status restano aperti. Il fatto che esista `pkg install` non fissa ancora un modello remoto o di store.
 
+`pkg` non e il gestore dei componenti che costituiscono il sistema base RumiAI. Il sistema base e non rimovibile tramite `pkg`; `pkg` e il meccanismo con cui quel sistema viene espanso mediante package aggiuntivi installabili e gestibili separatamente.
+
 ---
 
 ## 5. Binding pubblici dei comandi third-party
@@ -300,14 +302,16 @@ con la sola subset realmente necessaria.
 Quando serve una State Instance nominata, la forma diventa:
 
 ```text
-$m_ROOT/conf/<pkg>-<state-instance>/
-$m_ROOT/data/<pkg>-<state-instance>/
-$m_ROOT/home/<pkg>-<state-instance>/
-$m_ROOT/cache/<pkg>-<state-instance>/
-$m_ROOT/log/<pkg>-<state-instance>/
-$m_ROOT/run/<pkg>-<state-instance>/
-$m_ROOT/tmp/<pkg>-<state-instance>/
+$m_ROOT/conf/<pkg>@!<state-instance>/
+$m_ROOT/data/<pkg>@!<state-instance>/
+$m_ROOT/home/<pkg>@!<state-instance>/
+$m_ROOT/cache/<pkg>@!<state-instance>/
+$m_ROOT/log/<pkg>@!<state-instance>/
+$m_ROOT/run/<pkg>@!<state-instance>/
+$m_ROOT/tmp/<pkg>@!<state-instance>/
 ```
+
+`@!` e il separatore strutturale fisso e riservato fra `<pkg>` e `<state-instance>`, secondo la decisione state e l'eccezione semantica documentata in `FILESYSTEM-NAMING.md`.
 
 `$m_ROOT/var/` e esplicitamente vietato e non appartiene al layout RumiAI.
 
@@ -359,7 +363,7 @@ Con una State Instance nominata e:
 ```text
 <package-version>/root/<path>
     -> <package-version>/var/<area>/<path>
-        -> $m_ROOT/<area>/<pkg>-<state-instance>/<path>
+        -> $m_ROOT/<area>/<pkg>@!<state-instance>/<path>
 ```
 
 Quando `pkg install` installa una versione aggiornata e trova state di default gia esistente, non deve riutilizzarlo silenziosamente se la compatibilita non e gia determinata dal packaging o da regole fissate di `pkg`: deve permettere all'utente di scegliere se riusare lo state esistente oppure creare/selezionare una State Instance separata.
@@ -404,21 +408,25 @@ Questa decisione **non fissa** directory o classi chiamate `legacy`, `container`
 
 ---
 
-## 14. Configurazione/state RumiAI non ancora gestiti da `pkg`
+## 14. Sistema base RumiAI e dominio di `pkg`
 
-Le root semantiche sono strutture RumiAI generali.
+Le root semantiche sono strutture RumiAI generali e non appartengono esclusivamente ai package.
 
-Il prodotto corrente contiene gia, per esempio:
+I componenti e gli eseguibili che costituiscono il **sistema base RumiAI** non sono package gestiti da `pkg` e non sono rimovibili tramite `pkg`.
+
+`pkg` e il meccanismo di **espansione del sistema base**: installa e gestisce package aggiuntivi separati dai componenti necessari al sistema base.
+
+Il prodotto corrente puo quindi usare direttamente le root semantiche per i componenti base. Per esempio:
 
 ```text
 $m_ROOT/conf/shell/
 ```
 
-che e fisicamente coerente con la forma standard `$m_ROOT/conf/<pkg>/`, ma `shell` e gli altri componenti/eseguibili RumiAI correnti non sono oggi necessariamente package gestiti da `pkg`.
+rappresenta configurazione del componente base `shell`; non e una eccezione, non richiede un package e non rappresenta implicitamente un virtual package.
 
-Nella baseline corrente questo e una **eccezione esplicita**: i componenti RumiAI non ancora gestiti da `pkg` possono usare direttamente le root semantiche appropriate.
+Non viene introdotto un virtual package per rappresentare componenti del sistema base.
 
-Non viene introdotto ora un virtual package RumiAI. La necessita di mantenere questa eccezione o sostituirla con package/virtual package o altra ownership esplicita dovra essere rivalutata separatamente.
+Resta da definire soltanto la policy per una eventuale collisione fra il nome di un package di espansione e il nome di un componente base gia presente nella stessa root semantica, quando tale requisito emergera.
 
 ---
 
@@ -444,6 +452,7 @@ Resolved Dependency Graph persistito obbligatorio
 anti-ghost classification HEALTHY/RECOVERABLE/IDENTITY_MISMATCH/UNKNOWN
 schema @package v0 obbligatorio nella forma precedente
 recovery/lifecycle transazionale completo come prerequisito del primo `pkg`
+virtual package per rappresentare componenti del sistema base
 ```
 
 Sono invece state riaffermate selettivamente, con contratti correnti piu piccoli:
@@ -453,11 +462,13 @@ root/ e cmd/
 env
 conf,data,home,cache,log,run,tmp
 state standard sotto $m_ROOT/<area>/<pkg>/
-State Instance nominate opzionali sotto $m_ROOT/<area>/<pkg>-<state-instance>/
+State Instance nominate opzionali sotto $m_ROOT/<area>/<pkg>@!<state-instance>/
 var/ come routing view package-local
 pkg install come responsabile dei pathname mutabili
 root/<path> -> var/<area>/<path>
 default/ al posto di run-default/
+sistema base RumiAI fuori dal dominio dei package rimovibili
+pkg come meccanismo di espansione del sistema base
 ```
 
 Per queste responsabilita valgono esclusivamente le decisioni Accepted correnti, non i contratti fisici storici del 2026-08-30.
@@ -474,7 +485,7 @@ Non vengono fissati in questa decisione:
 2. pathname esatto e grammatica del selector `current`;
 3. regola finale per selector target-qualified vs condivisi quando il package e realmente target-independent;
 4. formato minimo dei metadata/descriptor del package;
-5. grammatica di `<state-instance>` e collision policy fra `<pkg>-<state-instance>` e package name reali contenenti `-`;
+5. grammatica di `<state-instance>` oltre al separatore strutturale `@!`;
 6. formato con cui un package dichiara compatibilita/policy dello state e regole di selezione fra state standard e State Instance nominate;
 7. UX/sintassi della scelta di riuso/separazione durante `pkg install`;
 8. formato e validazione dei mapping `<root-relative-path> -> <state-area>` usati da `pkg install`;
@@ -486,7 +497,7 @@ Non vengono fissati in questa decisione:
 14. eventuale resolver dependency piu generale;
 15. eventuale sandbox/isolation model per software difficili;
 16. semantica operativa completa di `default/`, inclusi initialization/reset/recovery;
-17. futura ownership dei componenti RumiAI oggi esclusi da `pkg`, incluso l'eventuale uso di virtual package.
+17. policy di collisione fra nomi package di espansione e nomi di componenti base nelle root semantiche.
 
 Questi punti aperti non autorizzano a riutilizzare automaticamente i contratti del 2026-08-30.
 
@@ -517,7 +528,7 @@ PKG-09 un binding puo essere direct symlink o minimal wrapper verso pkg run
 PKG-10 il normale direct binding risolve attraverso current ed e ammesso quando non serve mediazione runtime
 PKG-11 package != command; un package puo offrire piu entrypoint
 PKG-12 software e stato mutabile restano semanticamente distinti quando lo stato esiste
-PKG-13 lo state normale usa $m_ROOT/<area>/<pkg>; State Instance nominate sono opzionali e usano $m_ROOT/<area>/<pkg>-<state-instance>
+PKG-13 lo state normale usa $m_ROOT/<area>/<pkg>; State Instance nominate sono opzionali e usano $m_ROOT/<area>/<pkg>@!<state-instance>
 PKG-14 la complessita specifica di un'app appartiene principalmente al suo packaging
 PKG-15 software difficile non impone complessita preventiva al percorso normale
 PKG-16 nessun namespace legacy/container e fissato
@@ -531,6 +542,8 @@ PKG-23 il routing statico dello state non obbliga di per se a usare pkg run
 PKG-24 default/ e factory/default state opzionale e separato dallo state mutabile
 PKG-25 State Instance nominate possono essere attivate su richiesta utente, da regole pkg o dal contratto del package
 PKG-26 pkg install non riusa silenziosamente state preesistente quando la compatibilita non e gia determinata
-PKG-27 componenti RumiAI non ancora gestiti da pkg costituiscono un'eccezione esplicita corrente e possono usare direttamente le root semantiche
-PKG-28 nessun virtual package RumiAI e fissato nella baseline corrente; la decisione verra rivalutata
+PKG-27 @! e il separatore strutturale fisso e riservato fra pkg e state-instance
+PKG-28 i componenti del sistema base RumiAI non sono package gestiti da pkg e non sono rimovibili tramite pkg
+PKG-29 pkg e il meccanismo di espansione del sistema base mediante package aggiuntivi
+PKG-30 i componenti base possono usare direttamente le root semantiche appropriate senza package o virtual package
 ```
