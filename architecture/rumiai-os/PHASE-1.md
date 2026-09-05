@@ -2,7 +2,7 @@
 
 Status: **Accepted architecture**  
 Date: 2026-08-28  
-Updated: 2026-09-02
+Updated: 2026-09-05
 
 ## Purpose
 
@@ -82,7 +82,7 @@ bin/ext-<osarch>/    third-party, platform-specific
 bin/ext-osarch       symlink to active ext-<osarch>
 ```
 
-The platform-link update mechanism is intentionally not part of the bootstrap contract yet.
+The explicit platform-link updater is `osarch-update`. It is not invoked automatically by the bootstrap; any future lifecycle automation requires a separate decision.
 
 ## PATH model
 
@@ -120,7 +120,7 @@ Encoding:
 UTF-8
 ```
 
-The bootstrap resolver/API name is `lang`; `i18n` is superseded terminology.
+The bootstrap resolver/API name is `lang`; `i18n` is superseded terminology. The explicit selector that updates `lang/current` is `lang-set`.
 
 ## Runtime exposure for command shebangs
 
@@ -166,15 +166,34 @@ sh
 
 RumiAI does not automatically prefer Bash and does not read `conf/shell/default` for shell selection.
 
-The interactive RumiAI shell must expose RumiAI environment variables and the required RumiAI functions. Environment variables are inherited naturally; the portable mechanism for making the functions available in the newly executed shell remains an explicit open design item.
+The function `shell [args...]` invokes the selected shell forwarding the received arguments. The startup contract is fixed by:
+
+```text
+decisions/rumiai-os/2026-09-05-interactive-shell-startup.md
+```
+
+The primary RumiAI integration target is the supported interactive non-login shell. In that path the adapter makes the RumiAI environment, interactive functions, prompt and `m_SHELL_EXT` available while preserving the native startup files appropriate to the shell.
+
+Login shells are not normalized or emulated by RumiAI: their native login startup takes precedence and RumiAI does not guarantee or force core/`m_SHELL_EXT` loading through that path. Non-interactive shells do not load `m_SHELL_EXT` through the RumiAI startup path.
+
+Current adapter coverage is:
+
+```text
+bash
+zsh
+sh / dash / ash
+```
+
+Other shells are executed directly without a RumiAI startup guarantee. Bash- and Zsh-specific alias-control operations are approved only inside their dedicated adapters; the generic shell/core contract remains POSIX.
 
 ## Open items
 
-Still to be designed:
+The former Phase-1 open items for language selection, explicit platform-link updating and interactive-shell function loading have been resolved by later decisions.
 
-1. detection of `<osarch>` and update of `sys-osarch` / `ext-osarch`;
-2. invocation policy for that update mechanism;
-3. language-selection utility that updates `lang/current`;
-4. function-loading mechanism for the interactive shell.
+The following related lifecycle question remains separate from the bootstrap contract:
 
-These open items must not silently reintroduce superseded language configuration, host-locale selection, Bash-preferred behavior or a multicall command model.
+1. whether `osarch-update` should ever be invoked automatically during installation, activation or another lifecycle operation.
+
+This open point must not silently reintroduce superseded language configuration, host-locale selection, Bash-preferred behavior or a multicall command model.
+
+The current interactive-shell implementation at `rumiai-os@7b645edf1b5d84c512488b3b69d9f1cd8483061f` has not yet received a dedicated current physical-validation pass; permanent shell tests also require realignment to the accepted startup contract.
