@@ -101,8 +101,8 @@ sys             RumiAI executables/symlinks, platform-independent
 sys-<osarch>    RumiAI executables/symlinks, platform-specific
 sys-osarch      relative symlink to active sys-<osarch>
 
-ext             third-party platform-independent
-ext-<osarch>    third-party specific to the platform
+ext             third-party, platform-independent
+ext-<osarch>    third-party, platform-specific
 ext-osarch      relative symlink to active ext-<osarch>
 ```
 
