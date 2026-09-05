@@ -203,14 +203,20 @@ RumiAI non sceglie automaticamente Bash e non mantiene una configurazione bootst
 
 Principio: se l'utente preferisce una shell, l'ambiente host avrà normalmente già valorizzato `SHELL`; l'utente può comunque invocare esplicitamente un'altra shell quando desiderato.
 
-La RumiAI shell deve avere disponibili:
+La RumiAI shell deve avere disponibili, nel percorso interattivo supportato:
 
 ```text
 environment variables RumiAI
 funzioni RumiAI necessarie all'ambiente interattivo
 ```
 
-Le environment variables vengono naturalmente ereditate dai processi figli. Il meccanismo portabile e shell-appropriate con cui rendere disponibili anche le funzioni RumiAI nella nuova shell resta una domanda aperta e deve essere definito separatamente senza introdurre una dipendenza accidentale da Bash.
+Le environment variables vengono naturalmente ereditate dai processi figli. Il meccanismo shell-appropriate per caricare le funzioni RumiAI e `m_SHELL_EXT`, preservare gli startup file nativi e proteggere il core dagli alias è stato successivamente fissato da:
+
+```text
+decisions/rumiai-os/2026-09-05-interactive-shell-startup.md
+```
+
+La decisione successiva stabilisce inoltre che l'integrazione RumiAI ha come caso principale la shell interattiva non-login; le login shell non vengono emulate o forzate attraverso startup RumiAI, e le eccezioni Bash/Zsh necessarie restano confinate ai rispettivi adapter.
 
 ## 8. Command entrypoint
 
@@ -252,9 +258,9 @@ I punti originariamente lasciati aperti da questa decisione hanno avuto la segue
 1. rilevamento `<osarch>` e aggiornamento di `bin/sys-osarch` / `bin/ext-osarch`: fissati da `2026-09-03-lang-and-osarch-utilities.md` tramite `osarch-update`;
 2. invocazione di `osarch-update`: fissata come comando esplicito; un eventuale richiamo automatico durante installazione, attivazione o altro lifecycle resta aperto;
 3. selezione della lingua esistente e aggiornamento di `lang/current`: fissati da `2026-09-03-lang-and-osarch-utilities.md` tramite `lang-set`;
-4. meccanismo con cui la shell avviata eredita/carica le funzioni RumiAI oltre alle environment variables: resta una decisione separata finché non viene consolidata esplicitamente.
+4. caricamento delle funzioni RumiAI nella shell avviata, `m_SHELL_EXT`, semantica login/non-login, adapter e protezione alias: fissati da `2026-09-05-interactive-shell-startup.md`.
 
-Questi punti non autorizzano a reintrodurre nel bootstrap logica host-specific, configurazione lingua precedente o Bash-preferred selection.
+Questi punti non autorizzano a reintrodurre nel bootstrap logica host-specific non approvata, configurazione lingua precedente o Bash-preferred selection.
 
 ## 11. Propagazione e stato di implementazione/test
 
@@ -262,6 +268,6 @@ Questa decisione aggiorna l'autorità documentale in `rumiai-dev`.
 
 Non costituisce autorizzazione a modificare `rumiai-os` oltre alle modifiche prodotto già effettuate dall'utente, e non modifica in questa unità di lavoro `rumiai-tests`.
 
-La suite permanente corrente contiene ancora test legati ai contratti superseded (`RumiAI_*`, configurazione lingua/encoding, `bin/` direttamente nel PATH, Bash-preferred shell). Tali test devono essere riallineati quando verranno affrontate le relative implementazioni; non devono essere usati per riaprire le decisioni fissate qui.
+La suite permanente corrente contiene ancora test legati ai contratti superseded (`RumiAI_*`, configurazione lingua/encoding, `bin/` direttamente nel PATH, Bash-preferred shell) e i test sotto `tests/rumiai-os/shell/` non proteggono ancora il contratto di startup consolidato il 2026-09-05. Tali test devono essere riallineati in una fase dedicata e non devono essere usati per riaprire le decisioni fissate qui.
 
-La precedente evidenza fisica rimane valida esclusivamente per le revisioni e i contratti che furono effettivamente validati.
+La precedente evidenza fisica rimane valida esclusivamente per le revisioni e i contratti che furono effettivamente validati. La baseline shell corrente `rumiai-os@7b645edf1b5d84c512488b3b69d9f1cd8483061f` non è dichiarata fisicamente validata da questa unità documentale.
