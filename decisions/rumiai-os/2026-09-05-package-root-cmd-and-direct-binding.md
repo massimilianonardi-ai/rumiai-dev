@@ -215,10 +215,12 @@ Esempi di condizioni che rendono necessaria la mediazione e quindi escludono il 
 La presenza di state non esclude da sola il binding diretto. Se i pathname mutabili sono stati completamente normalizzati da `pkg install` tramite la catena statica:
 
 ```text
-root/<path> -> var/<area>/<path> -> State Instance
+root/<path> -> var/<area>/<path> -> state selezionato
 ```
 
 e il processo non richiede altre modifiche runtime, il command puo ancora essere eseguito tramite binding diretto.
+
+Lo state selezionato puo essere il normale `$m_ROOT/<area>/<pkg>/` oppure, quando attivata, una State Instance nominata `$m_ROOT/<area>/<pkg>-<state-instance>/`.
 
 Questa distinzione non introduce classi o nomi di prodotto per package "semplici" o "complessi": descrive esclusivamente due forme di binding già previste dal modello corrente.
 
@@ -282,7 +284,7 @@ Questa decisione non fissa:
 2. pathname esatto e grammatica del selector `current`;
 3. regola finale per selector target-qualified vs condivisi quando il package è realmente target-independent;
 4. formato di eventuali metadata/descriptor oltre alle strutture package-local gia fissate (`root/`, `cmd/`, `env`, `var/`, `default/`);
-5. grammatica, selezione, compatibilita e lifecycle delle State Instance;
+5. grammatica delle State Instance nominate, selezione/compatibilita dello state e relativa collision policy;
 6. formato dei metadata con cui `pkg install` conosce i pathname mutabili e la loro state area;
 7. sintassi completa di `pkg run`, option names e override environment variables;
 8. formato/interprete dei wrapper usati quando è necessaria mediazione;
@@ -320,6 +322,6 @@ PKG-DIRECT-03  il binding pubblico diretto termina su cmd/<pkg-command>, non dir
 PKG-DIRECT-04  il binding pubblico diretto non pinna una versione concreta
 PKG-DIRECT-05  bin/ext vs bin/ext-<osarch> segue la validità del binding rispetto al target
 PKG-DIRECT-06  il binding diretto non applica override per-invocation che richiedono pkg run
-PKG-DIRECT-07  il solo routing statico root -> var -> State Instance non obbliga a usare pkg run
+PKG-DIRECT-07  il solo routing statico root -> var -> state selezionato non obbliga a usare pkg run
 PKG-CMD-06     il package-local cmd/ non riapre il vecchio command-entry cmd/ shadow model
 ```
