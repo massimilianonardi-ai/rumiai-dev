@@ -12,9 +12,17 @@ Questa decisione consolida il comportamento della funzione `shell` e degli adapt
 massimilianonardi-ai/rumiai-os@7b645edf1b5d84c512488b3b69d9f1cd8483061f
 ```
 
-Questa revisione è considerata la baseline sostanzialmente definitiva del sottosistema. Sono ammesse successive correzioni o semplificazioni che non ne cambino il contratto; una modifica semantica richiede una nuova decisione esplicita.
+Questa revisione resta la baseline comportamentale sostanzialmente definitiva del sottosistema. Sono ammesse successive correzioni o semplificazioni che non ne cambino il contratto; una modifica semantica richiede una nuova decisione esplicita.
 
-La successiva decisione Accepted `2026-09-06-system-base-state-namespace.md` ha fissato `$m_ROOT/<area>/sys/<component>/` come namespace state/configurazione dei componenti del sistema base. Di conseguenza i riferimenti canonici alla configurazione del componente `shell` usano ora `$m_ROOT/conf/sys/shell/`. Il prodotto `rumiai-os@7b645edf...` precede questo riallineamento fisico e resta pending realignment per il solo pathname fino alla modifica che l'utente effettuera autonomamente.
+La successiva decisione Accepted `2026-09-06-system-base-state-namespace.md` ha fissato `$m_ROOT/<area>/sys/<component>/` come namespace state/configurazione dei componenti del sistema base. Di conseguenza i riferimenti canonici alla configurazione del componente `shell` usano `$m_ROOT/conf/sys/shell/`.
+
+Il riallineamento fisico del pathname è stato applicato dal prodotto in:
+
+```text
+massimilianonardi-ai/rumiai-os@90a68a7c5e8c80e36bad12035c39b6d3e8d75b56
+```
+
+Il commit sposta gli adapter da `conf/shell/` a `conf/sys/shell/` e aggiorna i relativi riferimenti in `core.lib.sh` senza cambiare il comportamento di startup fissato da questa decisione.
 
 Restano invariati POSIX.1-2024 come contratto generale, la selezione `$SHELL` con fallback `sh`, la relocatability e le regole generali definite in `RULES.md`.
 
@@ -176,23 +184,31 @@ RumiAI non tenta di vincere contro una scelta esplicita dello startup utente che
 
 ## 10. Stato di implementazione e test
 
-La baseline implementativa osservata per il comportamento di questa decisione è:
+La baseline comportamentale originaria di questa decisione resta:
 
 ```text
 massimilianonardi-ai/rumiai-os@7b645edf1b5d84c512488b3b69d9f1cd8483061f
 ```
 
-Questa revisione usa ancora fisicamente il precedente pathname `conf/shell/`. Il pathname canonico corrente è `conf/sys/shell/` secondo `2026-09-06-system-base-state-namespace.md`; il prodotto è quindi pending realignment esclusivamente per questa collocazione fisica. L'utente ha richiesto esplicitamente che tale modifica non venga effettuata in questa unità di lavoro.
-
-Questa decisione **non costituisce validazione fisica** della revisione prodotto sopra indicata. Le evidenze fisiche precedenti restano valide soltanto per le revisioni e i contratti effettivamente esercitati all'epoca.
-
-La suite permanente è stata successivamente riallineata al contratto shell corrente nel repository:
+L'implementazione corrente dello stesso contratto, riallineata al pathname canonico `conf/sys/shell/`, è:
 
 ```text
-massimilianonardi-ai/rumiai-tests@475937a39029c228efbcdd9e9d73300b14b4c5af
+massimilianonardi-ai/rumiai-os@90a68a7c5e8c80e36bad12035c39b6d3e8d75b56
 ```
 
-Questa annotazione documentale non dichiara una nuova sessione di validazione fisica. Dopo il riallineamento del pathname prodotto a `conf/sys/shell/`, i test pertinenti dovranno essere rieseguiti e, se contengono assunzioni fisiche sul precedente pathname, adeguati alla nuova collocazione.
+Il commit `90a68a7c...` cambia esclusivamente la collocazione fisica degli adapter e i tre riferimenti corrispondenti in `core.lib.sh`; non modifica la semantica shell descritta nelle sezioni precedenti.
+
+Questa decisione **non costituisce validazione fisica** della revisione prodotto corrente. Le evidenze fisiche precedenti restano valide soltanto per le revisioni e i contratti effettivamente esercitati all'epoca.
+
+La suite permanente corrente che protegge il contratto shell è:
+
+```text
+massimilianonardi-ai/rumiai-tests@c39b1a2c0b6e96e8e43809a6e66d16918cf90a7d
+```
+
+La revisione `c39b1a2c...` riallinea anche l'aspettativa fisica dell'adapter POSIX al pathname `conf/sys/shell/sh/env`.
+
+Questo stato della suite non dichiara una nuova sessione di validazione fisica. I test pertinenti devono essere eseguiti contro `rumiai-os@90a68a7c...` nella prossima validation run appropriata.
 
 I comportamenti protetti dalla suite shell includono, in modo proporzionato:
 
@@ -209,6 +225,7 @@ preservazione dello stato alias durante il caricamento core in Bash e Zsh
 preservazione esatta di ZDOTDIR unset / empty / value
 modifiche a ZDOTDIR effettuate dagli startup file utente
 fallback diretto per shell senza adapter
+pathname canonico dell'adapter POSIX sotto conf/sys/shell/sh/env
 ```
 
 ## 11. Propagazione
@@ -223,4 +240,4 @@ decisions/rumiai-os/2026-09-06-system-base-state-namespace.md
 
 I documenti attivi devono riferirsi a questa decisione per il namespace `sys/`; gli handoff e le evidenze storiche non vengono riscritti e restano riferiti alle revisioni e ai pathname che documentavano.
 
-Questa unità di lavoro documentale non modifica `rumiai-os` né `rumiai-tests`.
+Il prodotto e la suite permanente sono ora allineati al pathname canonico `conf/sys/shell/`; resta separata la validazione fisica della revisione corrente.
