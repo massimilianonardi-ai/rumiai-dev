@@ -2,7 +2,7 @@
 
 Status: **Normative specification**  
 Date: 2026-08-28  
-Updated: 2026-09-05
+Updated: 2026-09-06
 
 ## 1. Scope
 
@@ -352,13 +352,19 @@ Bash and Zsh instead preserve user aliases while temporarily disabling alias exp
 
 Zsh startup preserves the exact `ZDOTDIR` state, including the distinction between unset, empty and non-empty values. The RumiAI proxy is retained only as required to reach the interactive non-login `.zshrc`; login startup is handed back through `.zprofile`, and no `.zlogin`/`.zlogout` proxy is maintained.
 
+The canonical configuration subtree for the base `shell` component is:
+
+```text
+$m_CONF_DIR/sys/shell/
+```
+
 Current implementation reference:
 
 ```text
-massimilianonardi-ai/rumiai-os@7b645edf1b5d84c512488b3b69d9f1cd8483061f
+massimilianonardi-ai/rumiai-os@90a68a7c5e8c80e36bad12035c39b6d3e8d75b56
 ```
 
-This current shell revision has not yet received a dedicated current physical-validation pass. Historical shell validation remains evidence only for the revisions and contracts actually exercised at the time.
+This shell revision is aligned to the current startup and state-namespace contracts but has not yet received a dedicated current physical-validation pass. Historical shell validation remains evidence only for the revisions and contracts actually exercised at the time.
 
 ## 11. Command/source entry
 
@@ -422,4 +428,10 @@ The former open design item for cross-shell loading of RumiAI functions is resol
 decisions/rumiai-os/2026-09-05-interactive-shell-startup.md
 ```
 
-The permanent shell tests under `rumiai-tests/tests/rumiai-os/shell/` predate the current contract and require realignment before they can be treated as protection of this startup model.
+The permanent shell tests are aligned to the current startup contract and canonical `conf/sys/shell/` layout at:
+
+```text
+massimilianonardi-ai/rumiai-tests@c39b1a2c0b6e96e8e43809a6e66d16918cf90a7d
+```
+
+This test alignment does not constitute a validation run. `rumiai-os@90a68a7c...` remains physically unvalidated for the current shell contract until the relevant permanent tests are executed in an appropriate validation session.
