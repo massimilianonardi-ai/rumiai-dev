@@ -2,7 +2,7 @@
 
 Status: **Accepted architecture**  
 Date: 2026-08-28  
-Updated: 2026-09-05
+Updated: 2026-09-06
 
 ## Purpose
 
@@ -186,6 +186,26 @@ sh / dash / ash
 
 Other shells are executed directly without a RumiAI startup guarantee. Bash- and Zsh-specific alias-control operations are approved only inside their dedicated adapters; the generic shell/core contract remains POSIX.
 
+The canonical configuration subtree for the base `shell` component is:
+
+```text
+$m_ROOT/conf/sys/shell/
+```
+
+The current implementation is:
+
+```text
+massimilianonardi-ai/rumiai-os@90a68a7c5e8c80e36bad12035c39b6d3e8d75b56
+```
+
+and the corresponding permanent shell test baseline is:
+
+```text
+massimilianonardi-ai/rumiai-tests@c39b1a2c0b6e96e8e43809a6e66d16918cf90a7d
+```
+
+These revisions are aligned to the accepted startup and state-namespace contracts but have not yet received a dedicated current physical-validation pass.
+
 ## Open items
 
 The former Phase-1 open items for language selection, explicit platform-link updating and interactive-shell function loading have been resolved by later decisions.
@@ -195,5 +215,3 @@ The following related lifecycle question remains separate from the bootstrap con
 1. whether `osarch-update` should ever be invoked automatically during installation, activation or another lifecycle operation.
 
 This open point must not silently reintroduce superseded language configuration, host-locale selection, Bash-preferred behavior or a multicall command model.
-
-The current interactive-shell implementation at `rumiai-os@7b645edf1b5d84c512488b3b69d9f1cd8483061f` has not yet received a dedicated current physical-validation pass; permanent shell tests also require realignment to the accepted startup contract.
