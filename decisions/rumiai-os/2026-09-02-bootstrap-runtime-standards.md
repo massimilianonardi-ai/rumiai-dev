@@ -2,7 +2,7 @@
 
 Date: 2026-09-02  
 Status: **Accepted**
-Updated: 2026-09-05
+Updated: 2026-09-06
 
 ## Contesto
 
@@ -218,6 +218,14 @@ decisions/rumiai-os/2026-09-05-interactive-shell-startup.md
 
 La decisione successiva stabilisce inoltre che l'integrazione RumiAI ha come caso principale la shell interattiva non-login; le login shell non vengono emulate o forzate attraverso startup RumiAI, e le eccezioni Bash/Zsh necessarie restano confinate ai rispettivi adapter.
 
+Il namespace state/configurazione corrente per il componente base `shell` è:
+
+```text
+$m_ROOT/conf/sys/shell/
+```
+
+ed è implementato dal prodotto a partire da `rumiai-os@90a68a7c5e8c80e36bad12035c39b6d3e8d75b56`.
+
 ## 8. Command entrypoint
 
 Resta confermato il command entrypoint canonico:
@@ -258,16 +266,27 @@ I punti originariamente lasciati aperti da questa decisione hanno avuto la segue
 1. rilevamento `<osarch>` e aggiornamento di `bin/sys-osarch` / `bin/ext-osarch`: fissati da `2026-09-03-lang-and-osarch-utilities.md` tramite `osarch-update`;
 2. invocazione di `osarch-update`: fissata come comando esplicito; un eventuale richiamo automatico durante installazione, attivazione o altro lifecycle resta aperto;
 3. selezione della lingua esistente e aggiornamento di `lang/current`: fissati da `2026-09-03-lang-and-osarch-utilities.md` tramite `lang-set`;
-4. caricamento delle funzioni RumiAI nella shell avviata, `m_SHELL_EXT`, semantica login/non-login, adapter e protezione alias: fissati da `2026-09-05-interactive-shell-startup.md`.
+4. caricamento delle funzioni RumiAI nella shell avviata, `m_SHELL_EXT`, semantica login/non-login, adapter e protezione alias: fissati da `2026-09-05-interactive-shell-startup.md`;
+5. namespace state/configurazione dei componenti base sotto `$m_ROOT/<area>/sys/<component>/`: fissato da `2026-09-06-system-base-state-namespace.md` e implementato per `shell` in `rumiai-os@90a68a7c...`.
 
 Questi punti non autorizzano a reintrodurre nel bootstrap logica host-specific non approvata, configurazione lingua precedente o Bash-preferred selection.
 
 ## 11. Propagazione e stato di implementazione/test
 
-Questa decisione aggiorna l'autorità documentale in `rumiai-dev`.
+Questa decisione resta autorità comportamentale per i punti che ha fissato; le decisioni Accepted successive ne specificano gli aspetti evoluti senza riaprirne i contratti non modificati.
 
-Non costituisce autorizzazione a modificare `rumiai-os` oltre alle modifiche prodotto già effettuate dall'utente, e non modifica in questa unità di lavoro `rumiai-tests`.
+Per il sottosistema shell, il prodotto corrente allineato al namespace state canonico è:
 
-La suite permanente corrente contiene ancora test legati ai contratti superseded (`RumiAI_*`, configurazione lingua/encoding, `bin/` direttamente nel PATH, Bash-preferred shell) e i test sotto `tests/rumiai-os/shell/` non proteggono ancora il contratto di startup consolidato il 2026-09-05. Tali test devono essere riallineati in una fase dedicata e non devono essere usati per riaprire le decisioni fissate qui.
+```text
+massimilianonardi-ai/rumiai-os@90a68a7c5e8c80e36bad12035c39b6d3e8d75b56
+```
 
-La precedente evidenza fisica rimane valida esclusivamente per le revisioni e i contratti che furono effettivamente validati. La baseline shell corrente `rumiai-os@7b645edf1b5d84c512488b3b69d9f1cd8483061f` non è dichiarata fisicamente validata da questa unità documentale.
+La suite permanente corrente che protegge il contratto shell e il pathname fisico dell'adapter POSIX è:
+
+```text
+massimilianonardi-ai/rumiai-tests@c39b1a2c0b6e96e8e43809a6e66d16918cf90a7d
+```
+
+I precedenti test shell legati a Bash-preferred selection, `conf/shell/default` e altri contratti superseded sono stati rimossi durante il riallineamento della suite e non costituiscono più autorità sul comportamento corrente.
+
+Questo stato documentale e della suite **non dichiara validazione fisica** di `rumiai-os@90a68a7c...`. La precedente evidenza fisica rimane valida esclusivamente per le revisioni e i contratti che furono effettivamente validati; la revisione shell corrente dovrà essere esercitata in una validation run appropriata.
