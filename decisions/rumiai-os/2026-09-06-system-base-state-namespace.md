@@ -1,7 +1,8 @@
 # Decisione — Namespace state dei componenti del sistema base RumiAI
 
 Date: 2026-09-06  
-Status: **Accepted**
+Status: **Accepted**  
+Updated: 2026-09-06
 
 ## Contesto
 
@@ -19,7 +20,13 @@ Finora i componenti base potevano usare direttamente una root semantica, per ese
 
 Questa decisione introduce un namespace esplicito e uniforme per lo state/configurazione dei componenti del sistema base.
 
-Questa unita di lavoro modifica soltanto `rumiai-dev`. Il prodotto corrente `rumiai-os@7b645edf1b5d84c512488b3b69d9f1cd8483061f` usa ancora `conf/shell/`; il riallineamento fisico a `conf/sys/shell/` e esplicitamente lasciato all'utente e non viene effettuato qui.
+Il primo riallineamento prodotto di questo namespace è stato effettuato per il componente `shell` in:
+
+```text
+massimilianonardi-ai/rumiai-os@90a68a7c5e8c80e36bad12035c39b6d3e8d75b56
+```
+
+Il commit sposta la configurazione shell da `conf/shell/` a `conf/sys/shell/` senza modificare la semantica degli adapter.
 
 ---
 
@@ -158,7 +165,7 @@ Questa decisione non introduce un meccanismo di installazione/upgrade dei compon
 
 ## 6. Esempio `shell`
 
-Il pathname canonico della configurazione RumiAI del componente base `shell` diventa:
+Il pathname canonico della configurazione RumiAI del componente base `shell` e:
 
 ```text
 $m_ROOT/conf/sys/shell/
@@ -170,13 +177,13 @@ Quindi, per esempio, gli adapter POSIX del componente `shell` appartengono seman
 $m_ROOT/conf/sys/shell/sh/
 ```
 
-Il prodotto corrente contiene ancora:
+Il prodotto corrente implementa questa collocazione fisica a partire da:
 
 ```text
-$m_ROOT/conf/shell/
+massimilianonardi-ai/rumiai-os@90a68a7c5e8c80e36bad12035c39b6d3e8d75b56
 ```
 
-Questo e un **pending product realignment**, non il layout canonico dopo questa decisione. L'utente ha esplicitamente richiesto di non modificare `rumiai-os` in questa unita di lavoro e provvedera autonomamente al riallineamento.
+Il precedente pathname `$m_ROOT/conf/shell/` resta esclusivamente riferimento storico alle revisioni precedenti.
 
 ---
 
@@ -196,19 +203,21 @@ Le parti comportamentali di tali decisioni restano valide salvo quanto esplicita
 
 ## 8. Implementazione e test
 
-Questa decisione e documentale.
-
-`rumiai-os` non viene modificato in questa unita di lavoro. La baseline prodotto osservata resta:
+Il primo riallineamento prodotto osservabile di questa decisione e:
 
 ```text
-7b645edf1b5d84c512488b3b69d9f1cd8483061f
+massimilianonardi-ai/rumiai-os@90a68a7c5e8c80e36bad12035c39b6d3e8d75b56
 ```
 
-ed e fisicamente non allineata al nuovo pathname `conf/sys/shell/` finche l'utente non effettuera la migrazione.
+Per il componente `shell`, `conf/` contiene ora il namespace `sys/` e gli adapter vivono sotto `conf/sys/shell/`; i riferimenti corrispondenti in `lib/sh/core.lib.sh` usano lo stesso pathname canonico.
 
-La suite permanente corrente contiene test shell che esercitano il comportamento del target; non viene introdotto qui un test che modifichi o anticipi il prodotto non ancora riallineato. Quando il nuovo layout diventera comportamento osservabile del prodotto, i test permanenti pertinenti dovranno usare/proteggere il pathname canonico e non reintrodurre `conf/shell/` come autorita.
+La suite permanente corrente che protegge il contratto shell, inclusa l'aspettativa fisica dell'adapter POSIX, e:
 
-Le evidenze fisiche precedenti restano riferite alle revisioni e ai pathname effettivamente validati all'epoca.
+```text
+massimilianonardi-ai/rumiai-tests@c39b1a2c0b6e96e8e43809a6e66d16918cf90a7d
+```
+
+Questo riallineamento di prodotto e test **non costituisce validazione fisica** di `rumiai-os@90a68a7c...`. Le evidenze fisiche precedenti restano riferite alle revisioni e ai pathname effettivamente validati all'epoca.
 
 ---
 
@@ -222,5 +231,5 @@ SYS-STATE-04  i package continuano a usare $m_ROOT/<area>/<pkg>/ e $m_ROOT/<area
 SYS-STATE-05  @! resta riservato esclusivamente al separatore package/State Instance e non viene usato per il namespace system
 SYS-STATE-06  i componenti sotto sys/ non sono package, non sono rimovibili tramite pkg e non richiedono package virtuali
 SYS-STATE-07  la configurazione canonica del componente base shell vive sotto $m_ROOT/conf/sys/shell/
-SYS-STATE-08  il prodotto rumiai-os@7b645edf... resta pending realignment e non viene modificato da questa decisione
+SYS-STATE-08  SYS-STATE-07 e implementato nel prodotto a partire da rumiai-os@90a68a7c5e8c80e36bad12035c39b6d3e8d75b56
 ```
