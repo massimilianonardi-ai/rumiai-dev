@@ -1,13 +1,14 @@
 # Decisione — Repository concreto del package-definition catalog
 
 Date: 2026-09-07  
+Updated: 2026-09-07  
 Status: **Accepted**
 
 ## Contesto
 
-La decisione `2026-09-07-package-definition-catalog-and-version-ranges.md` ha fissato che le package definition di RumiAI appartengono a un repository GitHub RumiAI dedicato, lasciando ancora aperti il nome e il repository concreto.
+La decisione `2026-09-07-package-definition-catalog-and-version-ranges.md` ha fissato che le package definition di RumiAI appartengono a un repository GitHub RumiAI dedicato.
 
-Il repository è stato ora creato esplicitamente dall'utente con nome:
+Il repository è stato creato esplicitamente dall'utente con nome:
 
 ```text
 pkg-catalog
@@ -19,7 +20,7 @@ Il repository GitHub concreto è:
 massimilianonardi-ai/pkg-catalog
 ```
 
-Alla data di questa decisione il repository è vuoto e non possiede ancora un commit/HEAD. Il suo stato iniziale non autorizza la creazione di placeholder, README, directory o altri file prima che i relativi contratti siano fissati.
+Alla data di questa decisione il repository è vuoto e non possiede ancora un commit/HEAD.
 
 Questa unità modifica soltanto `rumiai-dev`. Non modifica `pkg-catalog`, `rumiai-os` o `rumiai-tests`.
 
@@ -37,7 +38,14 @@ Contiene il catalogo conforme ai contratti definiti in `rumiai-dev`, inclusi qua
     catalog-<osarch>/
 ```
 
-con i rispettivi descriptor `repository` e range `nNNNN=<version-minimum>` secondo le decisioni correnti.
+con, per ogni stream disponibile:
+
+```text
+repository/
+nNNNN=<version-minimum>/
+```
+
+`repository/` è il descriptor dichiarativo del repository upstream corrente ed è serializzato secondo `2026-09-07-package-repository-descriptor-and-adapter-types.md`.
 
 `pkg-catalog` non è un repository di artifact o payload software upstream.
 
@@ -60,6 +68,8 @@ workflow e decisioni di sviluppo
 
 Di conseguenza una package definition presente in `pkg-catalog` non può modificare implicitamente il contratto del catalogo. Se emerge la necessità di un nuovo campo, primitive, layout o semantica, il relativo contratto deve essere prima fissato in `rumiai-dev` secondo il workflow RumiAI.
 
+Il catalogo può selezionare tramite `repository/type` un adapter già previsto dal prodotto e fornire dati dichiarativi, ma non può introdurre codice arbitrario da source/eval/eseguire.
+
 ---
 
 ## 3. Identità del repository
@@ -70,17 +80,7 @@ L'identità canonica del repository catalogo è:
 massimilianonardi-ai/pkg-catalog
 ```
 
-Il punto precedentemente aperto:
-
-```text
-nome/URL concreto del repository
-```
-
-in `2026-09-07-package-definition-catalog-and-version-ranges.md` è quindi chiuso da questa decisione.
-
-La scelta del protocollo operativo di clone/fetch e la relativa configurazione runtime non vengono dedotte dal clone URL GitHub e restano contratti separati.
-
-Restano quindi ancora aperti:
+Restano ancora aperti:
 
 ```text
 chiave/file di configurazione locale, se necessario
@@ -88,6 +88,8 @@ meccanismo di clone/fetch/cache/snapshot
 policy di aggiornamento
 pinning/snapshot usato da una singola operazione pkg
 ```
+
+La scelta del protocollo operativo di clone/fetch e la relativa configurazione runtime non vengono dedotte dal clone URL GitHub.
 
 ---
 
@@ -97,18 +99,49 @@ Il repository è stato verificato come Git repository vuoto: il default branch c
 
 Non viene creato un commit artificiale soltanto per inizializzare il repository.
 
-Il primo commit di `pkg-catalog` deve essere prodotto quando esiste contenuto reale conforme ai contratti correnti, a partire dalla serializzazione concreta di:
+La serializzazione di:
 
 ```text
-<stream>/repository
+<stream>/repository/
+```
+
+è ora fissata come directory di file scalari dichiarativi con `repository/type` obbligatorio.
+
+Resta ancora da chiudere la serializzazione completa di:
+
+```text
 <stream>/nNNNN=<version-minimum>/
 ```
 
-Non vengono anticipati ora nomi di file, formati o descriptor non ancora fissati.
+oltre ai campi concreti e alle firme del primo repository adapter da usare.
+
+Il primo commit di `pkg-catalog` deve essere prodotto quando esiste una prima package definition reale conforme ai contratti correnti; non vengono creati placeholder o file anticipatori.
 
 ---
 
-## 5. Relazione con Git e provenance
+## 5. Repository type nel catalogo concreto
+
+I repository type comuni iniziali includono:
+
+```text
+github
+sourceforge
+maven
+```
+
+Non viene introdotto nel catalogo corrente un type:
+
+```text
+custom
+```
+
+Per un prodotto con upstream non standard può essere aggiunto, dopo la relativa decisione/adapter nel prodotto, un type product-specific dedicato.
+
+Una package definition concreta non può incorporare funzioni repository-specific per aggirare l'assenza di un adapter RumiAI.
+
+---
+
+## 6. Relazione con Git e provenance
 
 Quando `pkg-catalog` possiederà commit, il commit Git continuerà a identificare lo snapshot esatto delle package definition usato da `pkg`.
 
@@ -118,16 +151,16 @@ Il repository segue il principio Git forward-only generale di RumiAI: la storia 
 
 ---
 
-## 6. Implementazione e test
+## 7. Implementazione e test
 
-Questa decisione assegna soltanto il repository concreto e il confine di autorità.
+Questa decisione assegna il repository concreto e il confine di autorità.
 
 Non introduce ancora:
 
 ```text
 file nel repository pkg-catalog
-serializzazione del descriptor repository
-serializzazione della range definition
+serializzazione completa della range definition
+campi concreti dei singoli repository type oltre a type
 backend di sync/cache
 modifiche a rumiai-os
 nuovi test permanenti
@@ -137,7 +170,7 @@ Non richiede physical validation separata.
 
 ---
 
-## 7. Invarianti fissati
+## 8. Invarianti fissati
 
 ```text
 PKG-CATALOG-REPO-01  il repository concreto delle package definition è massimilianonardi-ai/pkg-catalog
@@ -145,9 +178,11 @@ PKG-CATALOG-REPO-02  pkg-catalog contiene package definition concrete e non arti
 PKG-CATALOG-REPO-03  rumiai-dev resta autorità per schema, semantica e regole del catalogo
 PKG-CATALOG-REPO-04  pkg-catalog è autorità per le istanze concrete delle package definition conformi ai contratti rumiai-dev
 PKG-CATALOG-REPO-05  una definition concreta non può introdurre implicitamente nuove primitive o semantiche del catalogo
-PKG-CATALOG-REPO-06  il precedente punto aperto sul nome/repository concreto del catalogo è chiuso
-PKG-CATALOG-REPO-07  protocollo clone/fetch, cache, snapshot e policy di aggiornamento restano separati e non sono dedotti dal repository GitHub
-PKG-CATALOG-REPO-08  il repository resta vuoto finché non esiste contenuto reale conforme alla serializzazione fissata
-PKG-CATALOG-REPO-09  il primo commit non deve inventare placeholder o formati non ancora approvati
-PKG-CATALOG-REPO-10  quando esisteranno commit, il commit Git identifica lo snapshot naturale del catalogo
+PKG-CATALOG-REPO-06  repository/ è directory dichiarativa e repository/type seleziona soltanto adapter RumiAI già previsti
+PKG-CATALOG-REPO-07  pkg-catalog non può introdurre codice repository-specific da source/eval/eseguire
+PKG-CATALOG-REPO-08  protocollo clone/fetch, cache, snapshot e policy di aggiornamento restano separati
+PKG-CATALOG-REPO-09  il repository resta vuoto finché non esiste una prima package definition reale conforme ai contratti correnti
+PKG-CATALOG-REPO-10  non vengono creati placeholder per inizializzare artificialmente il repository
+PKG-CATALOG-REPO-11  custom non è un repository type baseline; upstream non standard usa un type product-specific solo dopo relativo contratto/adapter
+PKG-CATALOG-REPO-12  quando esisteranno commit, il commit Git identifica lo snapshot naturale del catalogo
 ```

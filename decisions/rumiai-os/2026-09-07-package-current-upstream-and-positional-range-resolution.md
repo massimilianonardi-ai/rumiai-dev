@@ -1,6 +1,7 @@
 # Decisione — Repository upstream corrente e resolution posizionale dei range
 
 Date: 2026-09-07  
+Updated: 2026-09-07  
 Status: **Accepted**
 
 ## Contesto
@@ -22,9 +23,17 @@ Le versioni upstream restano stringhe opache e il core `pkg` non possiede un com
 
 La precedente decisione `2026-09-07-package-explicit-version-range-resolution.md` aveva ammesso la consultazione di repository adapter differenti dichiarati dalle package definition candidate per determinare il range di una versione esplicita.
 
-La correzione esplicita del 2026-09-07 sostituisce quel modello con un contratto più semplice:
+La correzione corrente sostituisce quel modello con un contratto più semplice:
 
 > ogni stream possiede un solo repository upstream corrente; `pkg_repository_list_versions` interroga quel repository corrente e restituisce la successione autorevole delle versioni attualmente installabili; i range vengono determinati dalla posizione delle versioni e degli anchor in tale successione.
+
+La serializzazione fisica del repository descriptor è ora fissata da `2026-09-07-package-repository-descriptor-and-adapter-types.md` come directory dichiarativa:
+
+```text
+<stream>/repository/
+```
+
+con `repository/type` obbligatorio e file scalari repository-specific.
 
 Se il produttore migra da un sistema di distribuzione a un altro, il sistema precedente non resta una sorgente RumiAI parallela. Le release storiche sono ancora installabili soltanto se il repository upstream corrente continua a esporle.
 
@@ -34,17 +43,18 @@ Questa unità modifica soltanto `rumiai-dev`. Non autorizza modifiche a `rumiai-
 
 ## 1. Repository descriptor a livello di stream
 
-Ogni stream disponibile contiene un unico descriptor:
+Ogni stream disponibile contiene un'unica directory:
 
 ```text
-repository
+repository/
 ```
 
 quindi, concettualmente:
 
 ```text
 <pkg>/catalog/
-├── repository
+├── repository/
+│   └── type
 ├── n0001=...
 └── n0002=...
 ```
@@ -53,22 +63,17 @@ oppure:
 
 ```text
 <pkg>/catalog-<osarch>/
-├── repository
+├── repository/
+│   └── type
 ├── n0001=...
 └── n0002=...
 ```
 
-`repository` descrive il repository upstream **corrente** dello stream e contiene semanticamente almeno le informazioni necessarie a determinare:
+`repository/` descrive il repository upstream **corrente** dello stream.
 
-```text
-repository type
-repository-specific project/product coordinates
-context necessario alle API repository correnti
-```
+`repository/type` seleziona l'adapter RumiAI e gli altri file scalari contengono i campi repository-specific previsti da quell'adapter.
 
-La serializzazione interna esatta del descriptor `repository` resta da fissare insieme alla serializzazione del catalogo e alle firme concrete del primo adapter.
-
-Il repository descriptor appartiene allo stream, non al singolo range.
+Il repository descriptor appartiene allo stream, non al singolo range, ed è dato dichiarativo: non viene source, eval o interpretato come shell/env.
 
 ---
 
@@ -77,7 +82,7 @@ Il repository descriptor appartiene allo stream, non al singolo range.
 Tutti i range di uno stesso stream vengono risolti attraverso il medesimo repository upstream corrente descritto da:
 
 ```text
-<stream>/repository
+<stream>/repository/
 ```
 
 Non esiste nel baseline:
@@ -89,25 +94,38 @@ catena di repository superseded
 consultazione di adapter candidate differenti per determinare il range
 ```
 
-Se l'upstream cambia sistema, il descriptor dello stream viene aggiornato al nuovo sistema.
+Se l'upstream cambia sistema, `repository/` viene aggiornato al nuovo repository type/context.
 
-Esempio concettuale:
-
-```text
-prima:
-    repository -> SourceForge
-
-poi:
-    repository -> GitHub
-```
-
-Dopo la migrazione RumiAI interroga GitHub. SourceForge non resta automaticamente una sorgente valida.
+Dopo la migrazione RumiAI interroga soltanto il repository corrente. Il precedente non resta automaticamente una sorgente valida.
 
 Una vecchia release è ancora installabile solo se il repository corrente la espone e le API repository correnti riescono a risolverla.
 
 ---
 
-## 3. Ruolo di `pkg_repository_list_versions`
+## 3. Repository type e adapter
+
+`repository/type` identifica l'adapter:
+
+```text
+<type>
+    -> lib/sh/pkg-repository-<type>.lib.sh
+```
+
+I type comuni iniziali includono:
+
+```text
+github
+sourceforge
+maven
+```
+
+`custom` non appartiene al baseline corrente.
+
+Quando un prodotto usa un upstream non aderente a un type comune già supportato, può essere introdotto un type/adapter product-specific dedicato. Non viene forzata una generalizzazione prima che esista un contratto realmente comune.
+
+---
+
+## 4. Ruolo di `pkg_repository_list_versions`
 
 L'API già fissata:
 
@@ -115,7 +133,7 @@ L'API già fissata:
 pkg_repository_list_versions
 ```
 
-interroga direttamente, tramite l'adapter selezionato dal descriptor dello stream, il repository upstream corrente.
+interroga direttamente, tramite l'adapter selezionato da `repository/type`, il repository upstream corrente.
 
 La sua sorgente autorevole è l'upstream corrente; non è una lista statica mantenuta nel package-definition catalog e non consulta repository storici.
 
@@ -152,7 +170,7 @@ La serializzazione esatta dell'output resta da fissare con la firma concreta del
 
 ---
 
-## 4. Nessun comparatore universale
+## 5. Nessun comparatore universale
 
 Il core `pkg` non ordina le versioni usando genericamente:
 
@@ -182,7 +200,7 @@ L'unico ordine usato dal resolver dei range è la **posizione** nella succession
 
 ---
 
-## 5. Anchor dei range
+## 6. Anchor dei range
 
 Ogni directory:
 
@@ -227,7 +245,7 @@ Un anchor assente o fuori ordine rende il catalogo incoerente rispetto all'upstr
 
 ---
 
-## 6. Resolution di una versione esplicita
+## 7. Resolution di una versione esplicita
 
 Per:
 
@@ -239,12 +257,14 @@ pkg install <pkg>@<version>!<osarch>
 `pkg`:
 
 1. seleziona lo stream `catalog-<osarch>` oppure il fallback `catalog` secondo le regole già fissate;
-2. carica il repository adapter indicato da `<stream>/repository` in contesto isolato;
-3. esegue `pkg_repository_list_versions` sul repository upstream corrente;
-4. verifica che la versione richiesta compaia nella successione;
-5. localizza nella stessa successione gli anchor `nNNNN=<version-minimum>`;
-6. seleziona il range il cui anchor è l'ultimo anchor che non viene dopo la versione richiesta nella successione;
-7. usa la package definition di quel range per la successiva risoluzione/materializzazione.
+2. legge `<stream>/repository/type`;
+3. carica in un contesto isolato l'adapter RumiAI `pkg-repository-<type>.lib.sh`;
+4. l'adapter valida/legge i propri file scalari repository-specific;
+5. esegue `pkg_repository_list_versions` sul repository upstream corrente;
+6. verifica che la versione richiesta compaia nella successione;
+7. localizza nella stessa successione gli anchor `nNNNN=<version-minimum>`;
+8. seleziona il range il cui anchor è l'ultimo anchor che non viene dopo la versione richiesta nella successione;
+9. usa la package definition di quel range per la successiva risoluzione/materializzazione.
 
 Esempio:
 
@@ -271,7 +291,7 @@ Se la versione richiesta non compare nella lista corrente, non è installabile a
 
 ---
 
-## 7. Versione omessa e `latest`
+## 8. Versione omessa e `latest`
 
 Per:
 
@@ -290,13 +310,13 @@ latest upstream disponibile
 
 Nel contratto corrente, la versione risolta come `latest` deve coincidere con l'ultima versione della successione che `pkg_repository_list_versions` restituirebbe per lo stesso repository/context.
 
-Operativamente `pkg` non è obbligato a enumerare tutte le versioni soltanto per installare `latest`: può selezionare l'ultimo range `nNNNN` e usare `pkg_repository_resolve_version`.
+Operativamente `pkg` non è obbligato a enumerare tutte le versioni soltanto per installare `latest`: può selezionare l'ultimo range `nNNNN`, leggere `repository/type`, caricare l'adapter e usare `pkg_repository_resolve_version`.
 
 La coerenza fra ultimo range, anchor e successione upstream resta una proprietà validabile del catalogo.
 
 ---
 
-## 8. Nuove versioni e ultimo range
+## 9. Nuove versioni e ultimo range
 
 Una nuova versione pubblicata upstream non richiede un aggiornamento del catalogo finché continua a usare la stessa package definition dell'ultimo range.
 
@@ -323,7 +343,7 @@ Da quel momento `n0005` termina alla release immediatamente precedente nella suc
 
 ---
 
-## 9. Manutenzione quando un anchor scompare upstream
+## 10. Manutenzione quando un anchor scompare upstream
 
 Il catalogo descrive le versioni **attualmente installabili**, non conserva artificialmente versioni che l'upstream corrente non rende più disponibili.
 
@@ -355,7 +375,7 @@ Git conserva la storia degli anchor e dei range precedenti; non serve mantenere 
 
 ---
 
-## 10. Nessuna lista statica per range
+## 11. Nessuna lista statica per range
 
 Il baseline non mantiene dentro ciascun range una lista esaustiva delle versioni appartenenti al range.
 
@@ -372,7 +392,7 @@ L'upstream corrente resta la fonte delle versioni disponibili; il catalogo conti
 
 ---
 
-## 11. Nessuna funzione `match` nel baseline
+## 12. Nessuna funzione `match` nel baseline
 
 Non viene introdotta nel baseline una funzione, file eseguibile o API `match` package-specific per decidere se una versione appartiene a un range.
 
@@ -384,7 +404,7 @@ Il termine `match` usato nella discussione non diventa quindi un nome di prodott
 
 ---
 
-## 12. Lineage non lineari
+## 13. Lineage non lineari
 
 La successione restituita da `pkg_repository_list_versions` deve rappresentare una lineage totale sufficiente a determinare senza ambiguità i range.
 
@@ -396,7 +416,7 @@ Quando emergerà un caso concreto sarà introdotta una rappresentazione esplicit
 
 ---
 
-## 13. Relazione con `pkg_repository_resolve_version`
+## 14. Relazione con `pkg_repository_resolve_version`
 
 Le responsabilità restano distinte:
 
@@ -417,9 +437,9 @@ Le tre API operano tutte contro il repository corrente dello stream.
 
 ---
 
-## 14. Relazione con package definition e artifact
+## 15. Relazione con package definition e artifact
 
-Il descriptor `<stream>/repository` possiede la conoscenza del repository upstream corrente.
+`<stream>/repository/` possiede la conoscenza del repository upstream corrente.
 
 Le directory `nNNNN=<version-minimum>/` possiedono invece la package definition specifica del range, inclusi quando necessari:
 
@@ -437,21 +457,32 @@ state/path normalization information
 altre regole di integrazione già previste dal package model
 ```
 
-La package definition di range può quindi cambiare il modo in cui una release viene materializzata senza cambiare la sorgente upstream corrente dello stream.
+In particolare:
+
+```text
+archive_regex
+digest_regex
+digest_type
+```
+
+sono semanticamente range-level e non repository-level.
+
+La package definition di range può quindi cambiare il modo in cui una release viene materializzata/verificata senza cambiare la sorgente upstream corrente dello stream.
 
 `pkg_repository_resolve_artifact` usa il repository corrente insieme alle informazioni range-specific necessarie alla selezione dell'artifact.
 
 ---
 
-## 15. Pipeline risultante
+## 16. Pipeline risultante
 
 Per una versione esplicita:
 
 ```text
 parse operand
     -> select stream
-    -> load <stream>/repository
-    -> source repository adapter in isolation
+    -> read <stream>/repository/type
+    -> source selected RumiAI repository adapter in isolation
+    -> adapter validates/reads repository-specific scalar fields
     -> pkg_repository_list_versions
     -> locate requested version and range anchors by position
     -> select exactly one range definition
@@ -468,8 +499,9 @@ Per `latest`:
 parse operand
     -> select stream
     -> select last range
-    -> load <stream>/repository
-    -> source repository adapter in isolation
+    -> read <stream>/repository/type
+    -> source selected RumiAI repository adapter in isolation
+    -> adapter validates/reads repository-specific scalar fields
     -> pkg_repository_resolve_version latest
     -> pkg_repository_resolve_artifact
     -> pkg_download
@@ -481,7 +513,7 @@ La separazione repository discovery/resolution -> download -> extract -> integra
 
 ---
 
-## 16. Supersession
+## 17. Supersession
 
 Questa decisione supersede integralmente `2026-09-07-package-explicit-version-range-resolution.md` per la resolution corrente dei range.
 
@@ -491,6 +523,8 @@ Sono inoltre superseded, ovunque compaiano nelle decisioni precedenti, le assunz
 range differenti dello stesso stream possono selezionare repository upstream differenti per la normale resolution
 pkg deve consultare adapter candidate diversi per determinare il range
 repository type e coordinate upstream correnti appartengono al singolo range
+repository descriptor può essere un file shell/env sourced
+custom è un repository type baseline
 ```
 
 Restano invariati:
@@ -509,14 +543,19 @@ separazione download/extract/integration
 
 ---
 
-## 17. Implementazione e test
+## 18. Implementazione e test
 
 Alla data di questa decisione il nuovo package pipeline non è implementato in `rumiai-os` e non esistono test permanenti `pkg` in `rumiai-tests`.
 
 Quando implementato, i test dovranno proteggere almeno:
 
 ```text
-un solo repository descriptor corrente per stream
+un solo repository/ corrente per stream
+repository/type obbligatorio
+repository descriptor dichiarativo/non sourced
+adapter selezionato da type
+assenza di custom baseline
+supporto a type product-specific quando introdotti
 pkg_repository_list_versions interroga il repository corrente
 nessun repository storico consultato automaticamente
 lista versioni ordinata oldest -> latest
@@ -531,6 +570,7 @@ anchor scomparso -> catalogo da riallineare
 range senza versioni disponibili -> rimozione e rinumerazione
 nessuna lista statica per range
 nessuna primitive match nel baseline
+archive/digest selection range-level
 nessun fallback SemVer/lessicografico/numerico/data
 ```
 
@@ -538,27 +578,31 @@ Questa decisione è documentale e non richiede physical validation separata.
 
 ---
 
-## 18. Invarianti fissati
+## 19. Invarianti fissati
 
 ```text
-PKG-UPSTREAM-01  ogni catalog stream possiede un solo descriptor repository del repository upstream corrente
-PKG-UPSTREAM-02  repository type e coordinate correnti appartengono allo stream e non al singolo range
-PKG-UPSTREAM-03  una migrazione upstream sostituisce il repository corrente; i repository precedenti non restano fallback automatici
-PKG-UPSTREAM-04  una release storica è installabile solo se il repository corrente continua a esporla e risolverla
-PKG-UPSTREAM-05  pkg_repository_list_versions interroga il repository upstream corrente dello stream
-PKG-UPSTREAM-06  pkg_repository_list_versions restituisce tutte le versioni attualmente installabili in successione dalla più vecchia alla più recente
-PKG-UPSTREAM-07  il core pkg usa la posizione nella successione e non interpreta semanticamente le stringhe upstream
-PKG-UPSTREAM-08  ogni version-minimum anchor deve comparire esattamente una volta nella successione corrente
-PKG-UPSTREAM-09  le posizioni degli anchor devono essere strettamente crescenti nello stesso ordine degli nNNNN
-PKG-UPSTREAM-10  una versione esplicita deve comparire nella successione corrente o la resolution fallisce
-PKG-UPSTREAM-11  il range di una versione esplicita è quello dell'ultimo anchor che non viene dopo la versione nella successione
-PKG-UPSTREAM-12  latest risolta da pkg_repository_resolve_version deve essere coerente con l'ultima versione della successione corrente
-PKG-UPSTREAM-13  nuove release successive all'ultimo anchor appartengono automaticamente all'ultimo range finché non viene aggiunta una nuova definition
-PKG-UPSTREAM-14  se un anchor scompare ma restano versioni del range, l'anchor viene spostato alla prima versione ancora disponibile dello stesso range
-PKG-UPSTREAM-15  se un range non contiene più versioni installabili viene rimosso e gli ordinali successivi vengono rinumerati
-PKG-UPSTREAM-16  il catalogo non mantiene liste statiche esaustive delle versioni per range
-PKG-UPSTREAM-17  non esiste nel baseline una primitive package-specific match per la range membership
-PKG-UPSTREAM-18  lineage non rappresentabili come successione totale restano fuori dal baseline e non ricevono un ordine artificiale
-PKG-UPSTREAM-19  le tre API repository operano tutte contro il repository corrente dello stream
-PKG-UPSTREAM-20  artifact selection e integrazione restano range-specific anche quando il repository upstream è stream-level
+PKG-UPSTREAM-01  ogni catalog stream possiede una sola directory repository/ del repository upstream corrente
+PKG-UPSTREAM-02  repository/type seleziona l'adapter RumiAI; gli altri campi repository-specific sono scalari dichiarativi
+PKG-UPSTREAM-03  repository/ non viene source/eval; il codice eseguibile appartiene all'adapter RumiAI
+PKG-UPSTREAM-04  repository type e coordinate correnti appartengono allo stream e non al singolo range
+PKG-UPSTREAM-05  una migrazione upstream sostituisce il repository corrente; i repository precedenti non restano fallback automatici
+PKG-UPSTREAM-06  una release storica è installabile solo se il repository corrente continua a esporla e risolverla
+PKG-UPSTREAM-07  pkg_repository_list_versions interroga il repository upstream corrente dello stream
+PKG-UPSTREAM-08  pkg_repository_list_versions restituisce tutte le versioni attualmente installabili in successione dalla più vecchia alla più recente
+PKG-UPSTREAM-09  il core pkg usa la posizione nella successione e non interpreta semanticamente le stringhe upstream
+PKG-UPSTREAM-10  ogni version-minimum anchor deve comparire esattamente una volta nella successione corrente
+PKG-UPSTREAM-11  le posizioni degli anchor devono essere strettamente crescenti nello stesso ordine degli nNNNN
+PKG-UPSTREAM-12  una versione esplicita deve comparire nella successione corrente o la resolution fallisce
+PKG-UPSTREAM-13  il range di una versione esplicita è quello dell'ultimo anchor che non viene dopo la versione nella successione
+PKG-UPSTREAM-14  latest risolta da pkg_repository_resolve_version deve essere coerente con l'ultima versione della successione corrente
+PKG-UPSTREAM-15  nuove release successive all'ultimo anchor appartengono automaticamente all'ultimo range finché non viene aggiunta una nuova definition
+PKG-UPSTREAM-16  se un anchor scompare ma restano versioni del range, l'anchor viene spostato alla prima versione ancora disponibile dello stesso range
+PKG-UPSTREAM-17  se un range non contiene più versioni installabili viene rimosso e gli ordinali successivi vengono rinumerati
+PKG-UPSTREAM-18  il catalogo non mantiene liste statiche esaustive delle versioni per range
+PKG-UPSTREAM-19  non esiste nel baseline una primitive package-specific match per la range membership
+PKG-UPSTREAM-20  lineage non rappresentabili come successione totale restano fuori dal baseline e non ricevono un ordine artificiale
+PKG-UPSTREAM-21  le tre API repository operano tutte contro il repository corrente dello stream
+PKG-UPSTREAM-22  github/sourceforge/maven sono type comuni iniziali; custom non è baseline; upstream non standard può avere un type product-specific
+PKG-UPSTREAM-23  artifact selection e integrazione restano range-specific anche quando il repository upstream è stream-level
+PKG-UPSTREAM-24  archive_regex, digest_regex e digest_type sono range-level
 ```
