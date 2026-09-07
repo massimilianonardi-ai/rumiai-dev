@@ -167,15 +167,15 @@ my-tool@!test-profile
 
 The package-manager decision `decisions/rumiai-os/2026-09-05-package-state-var-default.md` owns the state semantics of this form.
 
-The third accepted case is the package-store identity grammar fixed by `decisions/rumiai-os/2026-09-07-package-concrete-path-and-current-selector.md`.
+The third accepted case is the package concrete-identity/current-selector grammar fixed by `decisions/rumiai-os/2026-09-07-package-concrete-path-and-current-selector.md`.
 
-Concrete package versions use:
+Concrete package identities use:
 
 ```text
 <pkg>@<version>!<osarch>
 ```
 
-and the corresponding current selector uses:
+and the corresponding current selector in the package store uses:
 
 ```text
 <pkg>!<osarch>
@@ -207,10 +207,28 @@ java!macos-arm64
 example@v1.2.3-rc.1!linux-x86_64
 ```
 
-The package-store use of `@` and `!` does not alter the separate State Instance separator `@!`. The three current forms remain distinct:
+The same concrete package identity component:
 
 ```text
-<pkg>@<version>!<osarch>   concrete package version
+<pkg>@<version>!<osarch>
+```
+
+MAY be reused outside `$m_ROOT/pkg/` when a package-manager-owned pathname intentionally represents that exact concrete provider identity rather than inventing a second encoding.
+
+The currently accepted additional use is the zero-length provider marker filename under:
+
+```text
+$m_ROOT/data/sys/pkg/providers/<facility>/<compatibility>/<pkg>@<version>!<osarch>
+```
+
+as fixed by `decisions/rumiai-os/2026-09-07-package-facility-dependency-and-provider-index.md`.
+
+This reuse carries exactly the same semantic identity and character grammar; it does not create a general right to use `@`, `!`, uppercase ASCII, `+` or `~` in unrelated RumiAI-controlled names.
+
+The package-manager use of `@` and `!` does not alter the separate State Instance separator `@!`. The three structural forms remain distinct:
+
+```text
+<pkg>@<version>!<osarch>   concrete package identity
 <pkg>!<osarch>             current package selector
 <pkg>@!<state-instance>    package State Instance
 ```
