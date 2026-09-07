@@ -111,7 +111,9 @@ An executable does not gain `.sh`, `.py`, `.js` or a similar suffix merely becau
 
 A pathname component that intentionally encodes an identifier governed by a separate semantic convention MAY depart from the default lowercase naming form when preserving that identifier is valuable.
 
-The first accepted case is the RumiAI language identifier:
+### 6.1 RumiAI language identifier
+
+The first accepted case is:
 
 ```text
 language_TERRITORY
@@ -124,7 +126,7 @@ en_US
 it_IT
 ```
 
-Therefore language directories under `lang/` MAY use this form and the uppercase territory component is intentional rather than an accidental violation of the generic naming convention.
+Language directories under `lang/` MAY use this form and the uppercase territory component is intentional.
 
 The codeset/encoding is NOT part of the RumiAI language identifier and MUST NOT be appended to the language directory name.
 
@@ -143,19 +145,19 @@ lang/it_IT.UTF-8/
 lang/it_IT/UTF-8/
 ```
 
-RumiAI language catalogs are always UTF-8. The current runtime text encoding is also fixed to UTF-8; any future external encoding capability belongs at an interaction boundary and does not alter filesystem catalog identity.
+RumiAI language catalogs and the current runtime text encoding are UTF-8.
 
-The second accepted case is the package-manager State Instance pathname component:
+### 6.2 Package-manager State Instance
+
+The second accepted case is:
 
 ```text
 <pkg>@!<state-instance>
 ```
 
-The two-character sequence `@!` is a fixed structural separator owned by the package-manager state model. Its use is an explicit exception to the generic RumiAI-controlled character set above.
+The two-character sequence `@!` is a fixed structural separator owned by the package-manager state model and is an explicit exception to the generic character set.
 
-The separator is allowed only for this semantic role. `<pkg>` and `<state-instance>` remain separately governed identifiers and do not acquire a general right to contain `@` or `!` merely because the composed State Instance component uses `@!`.
-
-The normal package state remains represented by the plain `<pkg>` component without any State Instance separator. A named State Instance uses `@!` so that its structure is not confused with hyphens that legitimately belong to package or State Instance names.
+The separator is allowed only for this role. `<pkg>` and `<state-instance>` remain separately governed identifiers.
 
 Canonical examples:
 
@@ -165,21 +167,27 @@ example@!work
 my-tool@!test-profile
 ```
 
-The package-manager decision `decisions/rumiai-os/2026-09-05-package-state-var-default.md` owns the state semantics of this form.
+The normal package state uses the plain `<pkg>` component. The decision `decisions/rumiai-os/2026-09-05-package-state-var-default.md` owns the state semantics.
 
-The third accepted case is the package concrete-identity/current-selector grammar fixed by `decisions/rumiai-os/2026-09-07-package-concrete-path-and-current-selector.md`.
+### 6.3 Package concrete identity and current selector
 
-Concrete package identities use:
+The third accepted case is the grammar fixed by `decisions/rumiai-os/2026-09-07-package-concrete-path-and-current-selector.md`.
+
+Concrete package identities use either:
 
 ```text
+<pkg>@<version>
 <pkg>@<version>!<osarch>
 ```
 
-and the corresponding current selector in the package store uses:
+The corresponding current selectors use either:
 
 ```text
+<pkg>
 <pkg>!<osarch>
 ```
+
+The unqualified forms represent a genuinely platform-independent materialized package. The qualified forms represent a package specific to `<osarch>`.
 
 Within this grammar:
 
@@ -188,36 +196,33 @@ Within this grammar:
     separates <pkg> from <version> for a concrete package version
 
 !
-    separates the package/version portion from <osarch>
+    introduces <osarch> only for target-specific concrete identities/selectors
 ```
 
-`<version>` is the upstream version string and has the package-manager-specific grammar:
+`<version>` is the upstream version string and uses:
 
 ```text
 [A-Za-z0-9][A-Za-z0-9._+~-]*
 ```
 
-This is an explicit semantic exception to the generic lowercase RumiAI-controlled naming form. It permits preservation of common upstream version spellings, including uppercase ASCII and `+` or `~`, while excluding the structural package-store separators `@` and `!`, pathname separator `/`, whitespace and control characters.
+This semantic exception permits preservation of common upstream version spellings, including uppercase ASCII and `+` or `~`, while excluding `@`, `!`, `=`, pathname separator `/`, whitespace and control characters.
 
 Examples:
 
 ```text
+my-tool@1.2
+my-tool
 java@21.0.2+13!macos-arm64
 java!macos-arm64
 example@v1.2.3-rc.1!linux-x86_64
 ```
 
-The same concrete package identity component:
+The same concrete package identity component MAY be reused outside `$m_ROOT/pkg/` when a package-manager-owned pathname intentionally represents that exact provider identity rather than inventing another encoding.
+
+The accepted additional use is the zero-length provider marker filename under:
 
 ```text
-<pkg>@<version>!<osarch>
-```
-
-MAY be reused outside `$m_ROOT/pkg/` when a package-manager-owned pathname intentionally represents that exact concrete provider identity rather than inventing a second encoding.
-
-The currently accepted additional use is the zero-length provider marker filename under:
-
-```text
+$m_ROOT/data/sys/pkg/providers/<facility>/<compatibility>/<pkg>@<version>
 $m_ROOT/data/sys/pkg/providers/<facility>/<compatibility>/<pkg>@<version>!<osarch>
 ```
 
@@ -225,13 +230,49 @@ as fixed by `decisions/rumiai-os/2026-09-07-package-facility-dependency-and-prov
 
 This reuse carries exactly the same semantic identity and character grammar; it does not create a general right to use `@`, `!`, uppercase ASCII, `+` or `~` in unrelated RumiAI-controlled names.
 
-The package-manager use of `@` and `!` does not alter the separate State Instance separator `@!`. The three structural forms remain distinct:
+The package-manager use of `@` and `!` does not alter the separate State Instance separator `@!`.
+
+Structural forms remain distinct:
 
 ```text
-<pkg>@<version>!<osarch>   concrete package identity
-<pkg>!<osarch>             current package selector
-<pkg>@!<state-instance>    package State Instance
+<pkg>@<version>              concrete platform-independent package
+<pkg>                        current platform-independent selector
+<pkg>@<version>!<osarch>     concrete target-specific package
+<pkg>!<osarch>               current target-specific selector
+<pkg>@!<state-instance>      package State Instance
 ```
+
+No `any`, `any-any` or equivalent fake target is introduced.
+
+### 6.4 Package-definition catalog range
+
+The fourth accepted case is the range-directory grammar fixed by `decisions/rumiai-os/2026-09-07-package-definition-catalog-and-version-ranges.md`:
+
+```text
+nNNNN=<version-minimum>
+```
+
+where `NNNN` is a four-digit RumiAI-owned ordinal beginning at `0001`, and `<version-minimum>` is an exact upstream version using:
+
+```text
+[A-Za-z0-9][A-Za-z0-9._+~-]*
+```
+
+Examples:
+
+```text
+n0001=1.0
+n0002=2.0
+n0003=v35
+n0004=2026-Q1
+n0005=v01-Kidding-Penguin
+```
+
+The `=` character is a structural separator allowed **only** in this package-definition catalog range role. It separates the RumiAI-owned ordering prefix from the opaque upstream version anchor.
+
+Because `=` is excluded from the upstream `<version>` grammar, the split is unambiguous.
+
+The ordinal is catalog-local ordering data and is not a package identity, version, compatibility, provider ranking or State Instance identifier. This exception does not permit `=` in unrelated RumiAI-controlled pathname components.
 
 Semantic exceptions MUST be documented by the subsystem that owns the identifier and MUST NOT become a general excuse for arbitrary naming variation.
 

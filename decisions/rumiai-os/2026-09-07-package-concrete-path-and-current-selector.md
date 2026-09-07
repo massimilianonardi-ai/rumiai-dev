@@ -1,6 +1,7 @@
 # Decisione — Pathname delle versioni concrete e selector `current`
 
 Date: 2026-09-07  
+Updated: 2026-09-07  
 Status: **Accepted**
 
 ## Contesto
@@ -12,27 +13,35 @@ Le decisioni correnti hanno già fissato:
 - `current` come concetto di selezione persistente della versione predefinita;
 - selector rappresentato da symbolic link relativo;
 - `<osarch>` canonico nella forma `<platform>-<architecture>`;
+- `bin/ext/` per binding third-party platform-independent e `bin/ext-<osarch>/` per binding specifici del target;
 - `current` seleziona una versione ma non costruisce l'esecuzione.
 
-Era rimasta aperta la grammatica fisica del pathname della versione concreta e del selector.
+La prima versione di questa decisione aveva imposto `<osarch>` a ogni versione concreta e selector, anche quando il package materializzato era realmente platform-independent.
 
-Questa decisione chiude entrambi i punti.
+La correzione esplicita del 2026-09-07 riallinea il package store alla stessa distinzione semantica già presente nel runtime `bin/ext*`: i package realmente platform-independent usano identità non qualificate, mentre quelli target-specific usano `!<osarch>`.
 
 Questa unità modifica soltanto `rumiai-dev`. Non autorizza modifiche a `rumiai-os` o `rumiai-tests`.
 
 ---
 
-## 1. Pathname della versione concreta
+## 1. Due forme di concrete package identity
 
-Una versione concreta installata usa esattamente la forma:
+Una versione concreta platform-independent usa:
+
+```text
+$m_ROOT/pkg/<pkg>@<version>/
+```
+
+Una versione concreta specifica di un target usa:
 
 ```text
 $m_ROOT/pkg/<pkg>@<version>!<osarch>/
 ```
 
-Esempio:
+Esempi:
 
 ```text
+$m_ROOT/pkg/my-tool@1.2/
 $m_ROOT/pkg/java@21.0.2+13!macos-arm64/
 ```
 
@@ -41,22 +50,24 @@ Componenti semantiche:
 ```text
 <pkg>      identità canonica del package
 <version>  versione upstream della release installata
-<osarch>   target RumiAI canonico
+<osarch>   target RumiAI canonico, presente solo per package target-specific
 ```
 
-La forma non introduce revisioni RumiAI, token platform separati aggiuntivi, percent encoding o altri campi del design storico del 2026-08-30.
+Non viene introdotto un token `any`, `any-any` o equivalente per rappresentare l'indipendenza dal target.
+
+La target-independence appartiene strutturalmente all'assenza di `!<osarch>`.
 
 ---
 
 ## 2. Versione upstream
 
-`<version>` preserva direttamente la versione upstream entro il seguente dominio ammesso:
+`<version>` preserva direttamente la versione upstream entro il dominio:
 
 ```text
 [A-Za-z0-9][A-Za-z0-9._+~-]*
 ```
 
-Quindi sono ammessi, per esempio:
+Sono quindi ammessi, per esempio:
 
 ```text
 1
@@ -65,6 +76,8 @@ v1.2.3
 1.2.3-rc.1
 21.0.2+13
 2.0~beta1
+2026-Q1
+v01-Kidding-Penguin
 current
 ```
 
@@ -73,30 +86,51 @@ Non sono ammessi nella singola componente `<version>`:
 ```text
 @
 !
+=
 /
 whitespace
 control characters
 ```
 
-La versione upstream non viene interpretata come versione di compatibilità dependency e non implica un comparatore universale delle release software.
+`=` non apparteneva già alla grammatica della versione upstream ed è ora usato separatamente soltanto come delimitatore nelle directory range del package-definition catalog secondo `2026-09-07-package-definition-catalog-and-version-ranges.md`.
+
+La versione upstream non viene interpretata come compatibility version dependency e non implica un comparatore universale delle release software.
 
 La stringa `current` non è riservata come versione upstream perché il selector corrente non usa una pseudo-versione testuale `current`.
 
 ---
 
-## 3. Selector della versione corrente
+## 3. Due forme di selector `current`
 
-Il selector persistente della versione predefinita usa esattamente la forma:
+Per un package platform-independent il selector persistente è:
+
+```text
+$m_ROOT/pkg/<pkg>
+```
+
+ed è un symlink relativo verso:
+
+```text
+<pkg>@<version>
+```
+
+Esempio:
+
+```text
+$m_ROOT/pkg/my-tool
+    -> my-tool@1.2
+```
+
+Per un package target-specific il selector persistente è:
 
 ```text
 $m_ROOT/pkg/<pkg>!<osarch>
 ```
 
-ed è un symbolic link relativo verso la versione concreta selezionata:
+ed è un symlink relativo verso:
 
 ```text
-$m_ROOT/pkg/<pkg>!<osarch>
-    -> <pkg>@<version>!<osarch>
+<pkg>@<version>!<osarch>
 ```
 
 Esempio:
@@ -110,35 +144,33 @@ $m_ROOT/pkg/java!macos-arm64
 
 ---
 
-## 4. Assenza del campo versione come discriminante strutturale
+## 4. Discriminante strutturale
 
-La distinzione è interamente strutturale:
+Le quattro forme sono:
 
 ```text
+<pkg>@<version>
+    versione concreta platform-independent
+
+<pkg>
+    selector current platform-independent
+
 <pkg>@<version>!<osarch>
-    versione concreta
+    versione concreta target-specific
 
 <pkg>!<osarch>
-    selector current
+    selector current target-specific
 ```
 
-Il selector è quindi riconoscibile per l'assenza del campo:
+L'assenza di `@<version>` distingue un selector dalla corrispondente versione concreta.
 
-```text
-@<version>
-```
+L'assenza di `!<osarch>` distingue una identity realmente platform-independent da una target-specific.
 
-Non viene introdotto un sentinel artificiale né una pseudo-versione riservata.
-
-Questo evita collisioni fra il selector e qualsiasi `<version>` upstream valida, inclusa la stringa letterale:
-
-```text
-current
-```
+Non viene introdotto alcun sentinel artificiale.
 
 ---
 
-## 5. Ruolo di `<osarch>`
+## 5. Ruolo di `<osarch>` e rapporto con il catalogo
 
 `<osarch>` usa il vocabulary RumiAI già fissato:
 
@@ -146,17 +178,27 @@ current
 <platform>-<architecture>
 ```
 
-con i token correnti definiti dalla decisione `2026-09-03-lang-and-osarch-utilities.md`.
+con i token correnti definiti da `2026-09-03-lang-and-osarch-utilities.md`.
 
-Il pathname concreto e il selector sono entrambi qualificati da `<osarch>`.
+La decisione `2026-09-07-package-definition-catalog-and-version-ranges.md` determina la qualificazione della concrete identity:
 
-La decisione precedente che lasciava aperta una eventuale selezione non qualificata per package target-independent è chiusa dal modello corrente: il package store usa sempre l'identità `<osarch>` del package/selector materializzato.
+```text
+package definition selezionata da <pkg>/catalog
+    -> concrete identity non qualificata
+    -> selector non qualificato
 
-Questa decisione non introduce il vecchio token storico `any-any` né un'altra identità target-independent speciale.
+package definition selezionata da <pkg>/catalog-<osarch>
+    -> concrete identity qualificata da !<osarch>
+    -> selector qualificato da !<osarch>
+```
+
+Un operand CLI può specificare un target per scegliere lo stream da usare senza obbligare il package risultante a essere target-specific: se manca `catalog-<osarch>` e viene selezionato il `catalog` realmente platform-independent, l'identity resta non qualificata.
+
+La target-independence riguarda l'intero package materializzato, non soltanto i byte upstream. Se la materializzazione incorpora dependency binding o altri elementi specifici del target, deve usare una identity qualificata.
 
 ---
 
-## 6. Separatori e assenza di collisione con State Instance
+## 6. Separatori e State Instance
 
 Nel package store:
 
@@ -165,7 +207,7 @@ Nel package store:
     separa <pkg> da <version> nelle versioni concrete
 
 !
-    separa la parte package/versione da <osarch>
+    introduce <osarch> solo nelle forme target-specific
 ```
 
 Lo state package usa invece il separatore già riservato:
@@ -174,66 +216,109 @@ Lo state package usa invece il separatore già riservato:
 <pkg>@!<state-instance>
 ```
 
-Le due grammatiche sono semanticamente distinte:
+Le grammatiche restano semanticamente distinte:
 
 ```text
-pkg store concrete     <pkg>@<version>!<osarch>
-pkg store current      <pkg>!<osarch>
-state instance          <pkg>@!<state-instance>
+pkg concrete generic    <pkg>@<version>
+pkg current generic     <pkg>
+pkg concrete target     <pkg>@<version>!<osarch>
+pkg current target      <pkg>!<osarch>
+state instance           <pkg>@!<state-instance>
 ```
 
-Nel package store una versione concreta non può contenere `@` o `!`, quindi la sequenza `@!` non può essere prodotta accidentalmente come confine package/versione.
+La versione concreta non può contenere `@` o `!`, quindi `@!` non può essere prodotto accidentalmente come confine package/versione.
 
-L'uso di `@` e `!` nei pathname del package store è un'eccezione semantica esplicita alla naming convention generica RumiAI, limitata alle forme fissate qui.
+L'uso di `@` e `!` nei pathname package-manager resta una eccezione semantica limitata alle forme qui fissate.
 
 ---
 
 ## 7. Relocability
 
-Il selector:
+Entrambe le forme di selector sono sempre symbolic link relativi.
+
+Target normali:
 
 ```text
+<pkg>
+    -> <pkg>@<version>
+
 <pkg>!<osarch>
+    -> <pkg>@<version>!<osarch>
 ```
 
-è sempre un symbolic link relativo.
-
-Il target testuale normale è il basename della versione concreta nello stesso dominio `$m_ROOT/pkg/`:
-
-```text
-<pkg>@<version>!<osarch>
-```
-
-Nessun pathname assoluto della root RumiAI viene persistito nel selector.
+Nessun pathname assoluto della root RumiAI viene persistito nei selector.
 
 ---
 
-## 8. Relazione con il launch path
+## 8. Relazione con i binding pubblici
 
-Il normale binding pubblico continua a risolvere attraverso il selector current verso il command entry della versione concreta:
+Per un package platform-independent, il normale binding pubblico appartiene a:
 
 ```text
-bin/ext*/<pkg-command>
-    -> $m_ROOT/pkg/<pkg>!<osarch>/cmd/<pkg-command>
-        -> $m_ROOT/pkg/<pkg>@<version>!<osarch>/cmd/<pkg-command>
+bin/ext/<pkg-command>
+```
+
+e risolve semanticamente attraverso:
+
+```text
+$m_ROOT/pkg/<pkg>/cmd/<pkg-command>
+    -> $m_ROOT/pkg/<pkg>@<version>/cmd/<pkg-command>
+```
+
+Per un package target-specific, il binding appartiene a:
+
+```text
+bin/ext-<osarch>/<pkg-command>
+```
+
+e risolve semanticamente attraverso:
+
+```text
+$m_ROOT/pkg/<pkg>!<osarch>/cmd/<pkg-command>
+    -> $m_ROOT/pkg/<pkg>@<version>!<osarch>/cmd/<pkg-command>
 ```
 
 Le frecce descrivono la risoluzione semantica; i target testuali dei symlink devono restare relativi secondo il layout concreto.
+
+L'ordine runtime già fissato fra `bin/ext-<osarch>` e `bin/ext` continua a governare eventuali nomi pubblici coincidenti.
 
 `current` continua esclusivamente a selezionare la versione. Non costruisce environment, dependency o launch line.
 
 ---
 
-## 9. Supersession mirata
+## 9. Coesistenza
 
-Da `2026-09-05-package-manager-current-and-run-model.md` sono chiusi/superseded i punti che lasciavano aperti:
+La stessa root può contenere contemporaneamente:
 
 ```text
-pathname esatto della versione concreta
-pathname esatto del selector current
-grammatica con cui package name e osarch compaiono nel selector
-possibile selector condiviso non qualificato per package target-independent
+foo@1.2
+foo -> foo@1.2
+
+foo@2.0!linux-arm64
+foo!linux-arm64 -> foo@2.0!linux-arm64
+
+foo@2.1!macos-arm64
+foo!macos-arm64 -> foo@2.1!macos-arm64
 ```
+
+solo quando tali concrete package identity derivano da package definition realmente distinte e coerenti con i rispettivi stream.
+
+La presenza di una forma generica non elimina la possibilità di forme target-specific per target che dispongono di `catalog-<osarch>`.
+
+---
+
+## 10. Supersession mirata
+
+La prima versione di questa decisione del 2026-09-07 è superseded nei punti che imponevano:
+
+```text
+<pkg>@<version>!<osarch> come unica concrete identity
+<pkg>!<osarch> come unico selector
+qualificazione <osarch> obbligatoria anche per package target-independent
+esclusione della selezione condivisa non qualificata per package target-independent
+```
+
+Tale correzione riapre e chiude in senso affermativo il punto che `2026-09-05-package-manager-current-and-run-model.md` aveva lasciato aperto: un package realmente target-independent può condividere una selezione non qualificata.
 
 Restano validi:
 
@@ -244,45 +329,52 @@ current presente anche con una sola versione selezionata
 current come symlink relativo
 current seleziona una versione e non costruisce l'esecuzione
 override per-invocation non modifica automaticamente current
+versione upstream separata dalla compatibility dependency
 ```
 
 I pathname storici del design 2026-08-30 restano superseded.
 
 ---
 
-## 10. Implementazione e test
+## 11. Implementazione e test
 
 Alla data di questa decisione il layout non è ancora implementato da un comando `pkg` stabile in `rumiai-os` e non esistono test permanenti `pkg` in `rumiai-tests`.
 
 Quando verrà implementato, i test dovranno proteggere almeno:
 
 ```text
-creazione <pkg>@<version>!<osarch>
+creazione <pkg>@<version> per catalog platform-independent
+creazione <pkg>@<version>!<osarch> per catalog target-specific
 validazione del regex di <version>
 versione upstream letterale current ammessa
-selector <pkg>!<osarch> relativo
-selector che punta alla versione concreta corretta
-assenza di pseudo-versione current nel selector
-assenza di @ e ! dentro <version>
-coesistenza di più versioni concrete
-relocatability del selector
+selector <pkg> relativo verso <pkg>@<version>
+selector <pkg>!<osarch> relativo verso <pkg>@<version>!<osarch>
+assenza di any/any-any
+coesistenza di versioni generic e target-specific quando prevista dal catalogo
+relocatability di entrambe le forme di selector
+binding generic sotto bin/ext e target-specific sotto bin/ext-<osarch>
 ```
+
+Questa correzione è documentale e non dichiara physical validation del futuro `pkg`.
 
 ---
 
-## 11. Invarianti fissati
+## 12. Invarianti fissati
 
 ```text
-PKG-PATH-01  una versione concreta usa $m_ROOT/pkg/<pkg>@<version>!<osarch>/
+PKG-PATH-01  concrete identity = <pkg>@<version> per package platform-independent oppure <pkg>@<version>!<osarch> per package target-specific
 PKG-PATH-02  <version> usa esattamente [A-Za-z0-9][A-Za-z0-9._+~-]*
-PKG-PATH-03  <version> è la versione upstream e non una versione di compatibilità dependency
+PKG-PATH-03  <version> è la versione upstream e non una compatibility dependency
 PKG-PATH-04  la stringa upstream current è una <version> valida e non è riservata
-PKG-PATH-05  il selector current usa $m_ROOT/pkg/<pkg>!<osarch>
-PKG-PATH-06  <pkg>!<osarch> è un symlink relativo verso <pkg>@<version>!<osarch>
-PKG-PATH-07  l'assenza di @<version> distingue strutturalmente il selector dalla versione concreta
-PKG-PATH-08  package concreto e selector sono sempre qualificati da <osarch>
-PKG-PATH-09  non viene introdotto alcun token target-independent speciale come any-any
-PKG-PATH-10  @ separa pkg/version e ! separa package-version/osarch esclusivamente nel package store secondo questa grammatica
-PKG-PATH-11  la grammatica del package store non modifica il separatore state @!
+PKG-PATH-05  selector current = <pkg> per package platform-independent oppure <pkg>!<osarch> per package target-specific
+PKG-PATH-06  ogni selector è un symlink relativo verso la concrete identity della stessa classe generic/target-specific
+PKG-PATH-07  l'assenza di @<version> distingue strutturalmente selector e versione concreta
+PKG-PATH-08  l'assenza di !<osarch> identifica una concrete identity/selector platform-independent; la presenza identifica un target-specific
+PKG-PATH-09  non viene introdotto alcun token target-independent speciale come any o any-any
+PKG-PATH-10  @ separa pkg/version e ! introduce osarch esclusivamente nelle forme package target-specific fissate qui
+PKG-PATH-11  la grammatica package-store non modifica il separatore state @!
 PKG-PATH-12  current resta il nome concettuale della selezione, non una pseudo-versione nel filesystem
+PKG-PATH-13  catalog produce forme non qualificate; catalog-<osarch> produce forme qualificate
+PKG-PATH-14  target-independence riguarda l'intero package materializzato, inclusi i resolved binding
+PKG-PATH-15  binding pubblico generic appartiene a bin/ext; binding target-specific appartiene a bin/ext-<osarch>
 ```

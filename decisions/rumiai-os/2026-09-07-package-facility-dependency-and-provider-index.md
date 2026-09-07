@@ -6,10 +6,10 @@ Status: **Accepted**
 
 ## Contesto
 
-Il modello package corrente ha già fissato:
+Il modello package corrente ha fissato:
 
-- `$m_ROOT/pkg/<pkg>@<version>!<osarch>/` come pathname di una versione concreta;
-- `$m_ROOT/pkg/<pkg>!<osarch>` come selector persistente della versione corrente;
+- concrete package identity platform-independent `<pkg>@<version>` e target-specific `<pkg>@<version>!<osarch>`;
+- selector `current` platform-independent `<pkg>` e target-specific `<pkg>!<osarch>`;
 - package installati il più autosufficienti possibile e normale launch senza dipendenza dal comando `pkg`;
 - `<package-version>/env` come frammento shell POSIX version-specific gestito/materializzato da `pkg install`;
 - `cmd/<pkg-command>` come sede della logica di launch specifica del command;
@@ -17,13 +17,11 @@ Il modello package corrente ha già fissato:
 - `data/sys/<component>/` come namespace di state/data dei componenti del sistema base RumiAI;
 - il precedente resolver universale basato su Execution Capability contracts, release-order, provider ranking e Resolved Dependency Graph come design storico non appartenente alla baseline corrente.
 
-Resta però necessario permettere a un package di dipendere da una funzione/runtime/interfaccia compatibile senza legarsi semanticamente:
-
-- a una specifica versione upstream;
-- al selector `current` di un altro package;
-- a uno specifico provider quando il requisito reale è una compatibilità astratta.
+Resta necessario permettere a un package di dipendere da una funzione/runtime/interfaccia compatibile senza legarsi semanticamente a una specifica versione upstream, al selector `current` di un altro package o a uno specifico provider quando il requisito reale è una compatibilità astratta.
 
 La presente decisione fissa il modello corrente basato su `facility`, `provider`, `dependency`, compatibility numerica, provider index derivato, resolution esplicita da parte di `pkg` e resolved binding package-local consumato senza resolution durante il launch.
+
+La correzione del 2026-09-07 sulle concrete identity target-independent viene propagata qui al provider index e ai resolved binding: un provider concreto può essere qualificato o non qualificato secondo il package da cui deriva.
 
 Questa unità di lavoro modifica soltanto `rumiai-dev`. Non autorizza modifiche a `rumiai-os` o `rumiai-tests`.
 
@@ -63,7 +61,7 @@ resolved binding
 
 è la scelta concreta di un provider che soddisfa una dependency.
 
-Il termine `Capability` non viene usato per questo modello package-manager. Le precedenti `Execution Capability` dei draft del 2026-08-30 restano storiche e non vengono riattivate. Questa decisione non modifica né rinomina altri concetti RumiAI già denominati `Capability` in sottosistemi differenti.
+Il termine `Capability` non viene usato per questo modello package-manager. Le precedenti `Execution Capability` dei draft del 2026-08-30 restano storiche e non vengono riattivate.
 
 ---
 
@@ -101,20 +99,35 @@ Un consumer non dipende semanticamente dal pathname di una specifica versione up
 
 ---
 
-## 3. Versione upstream e compatibility version sono distinte
+## 3. Versione upstream, target qualification e compatibility
 
-La versione upstream del package resta quella codificata nell'identità concreta:
+La versione upstream del package è codificata nella concrete identity:
 
 ```text
-<pkg>@<version>!<osarch>
+platform-independent:
+    <pkg>@<version>
+
+target-specific:
+    <pkg>@<version>!<osarch>
 ```
 
 La compatibility version di una facility è invece un valore separato dichiarato dal provider.
 
-Esempio concettuale:
+Esempi concettuali:
 
 ```text
-package concreto:
+package concreto platform-independent:
+    generic-tool@1.4
+
+facility offerta:
+    example-api
+
+compatibility:
+    3
+```
+
+```text
+package concreto target-specific:
     temurin@21.0.8+9!macos-arm64
 
 facility offerta:
@@ -124,15 +137,7 @@ compatibility:
     21
 ```
 
-Quindi:
-
-```text
-21.0.8+9
-    versione upstream del software
-
-21
-    compatibility della facility
-```
+Quindi la versione upstream, l'eventuale qualificazione target e la compatibility sono dimensioni distinte.
 
 Non viene introdotto un comparatore universale delle versioni upstream.
 
@@ -148,14 +153,14 @@ Una versione concreta che offre una o più facility può contenere il file opzio
 
 Il file appartiene al packaging RumiAI ed è gestito/materializzato da `pkg install`.
 
-Semanticamente dichiara, per ogni facility offerta almeno:
+Semanticamente dichiara per ogni facility almeno:
 
 ```text
 facility
 compatibility
 ```
 
-Esempio concettuale non ancora normativo per la serializzazione:
+Esempio concettuale non normativo per la serializzazione:
 
 ```text
 java 21
@@ -163,9 +168,9 @@ java 21
 
 Una singola versione concreta può offrire più facility quando ciò corrisponde realmente alle sue interfacce utilizzabili.
 
-Il file `facility` è la dichiarazione package-local autorevole delle facility offerte dalla versione concreta. Il provider index descritto sotto è un indice derivato da queste dichiarazioni e non le sostituisce.
+Il file `facility` è la dichiarazione package-local autorevole. Il provider index è un indice derivato e non la sostituisce.
 
-La sintassi testuale esatta del file resta da fissare separatamente; questa decisione ne fissa nome e semantica, non introduce ancora un formato di serializzazione definitivo.
+La sintassi testuale esatta del file resta da fissare separatamente.
 
 ---
 
@@ -177,27 +182,25 @@ Una versione concreta che richiede una o più facility può contenere il file op
 <package-version>/dependency
 ```
 
-Il file appartiene al packaging RumiAI ed è gestito/materializzato da `pkg install`.
-
-Semanticamente dichiara, per ogni dependency almeno:
+Semanticamente dichiara, per ogni dependency, almeno:
 
 ```text
 facility
 compatibility constraint
 ```
 
-Esempi concettuali non ancora normativi per la serializzazione:
+Esempi concettuali non normativi per la serializzazione:
 
 ```text
 java >=17 <22
 python >=3.11 <3.14
 ```
 
-Il file dichiara requisiti astratti. Non contiene semanticamente il provider concreto risolto come sostituto della dependency.
+Il file dichiara requisiti astratti e non sostituisce tali requisiti con il provider concreto risolto.
 
-Nel baseline corrente una versione concreta può dichiarare **al massimo una dependency per ciascuna facility**.
+Nel baseline una versione concreta può dichiarare al massimo una dependency per ciascuna facility.
 
-Quindi non è ammessa nel modello generico una forma equivalente a:
+Non è quindi ammessa nel resolver generico una forma equivalente a:
 
 ```text
 java >=17 <22
@@ -206,7 +209,7 @@ java =8
 
 nello stesso consumer per ottenere due provider distinti della stessa facility.
 
-Se un particolare package necessita realmente di più istanze/provider della stessa facility, tale requisito resta fuori dal resolver generico corrente e deve essere gestito esplicitamente dal package stesso e/o dalla relativa configurazione `env`/command-specific, senza introdurre implicitamente slot o multi-binding nel modello comune.
+Casi che richiedono più provider della stessa facility restano responsabilità esplicita del particolare package/configurazione e non introducono slot o multi-binding nel modello comune.
 
 La sintassi testuale esatta del file resta da fissare separatamente.
 
@@ -226,17 +229,15 @@ I comparator ammessi dal modello corrente sono esclusivamente:
 <=
 ```
 
-Più comparator riferiti alla stessa dependency rappresentano l'intersezione dei vincoli richiesta dal consumer.
+Più comparator riferiti alla stessa dependency rappresentano l'intersezione dei vincoli.
 
-Esempio concettuale:
+Esempio:
 
 ```text
 java >=17 <22
 ```
 
-significa una compatibility almeno 17 e inferiore a 22.
-
-Non vengono fissati nel baseline corrente:
+Non vengono fissati nel baseline:
 
 ```text
 OR
@@ -247,25 +248,36 @@ tilde
 constraint sulla versione upstream
 ```
 
-La grammatica lessicale e le regole esatte di confronto delle compatibility numeriche multi-componente saranno fissate insieme alla serializzazione dei file `facility` e `dependency`; non devono essere inferite dalle versioni upstream.
+La grammatica lessicale e le regole esatte di confronto delle compatibility numeriche multi-componente saranno fissate insieme alla serializzazione di `facility` e `dependency`.
 
 ---
 
 ## 7. Provider index del componente base `pkg`
 
-Le facility offerte dalle versioni concrete installate vengono indicizzate dal componente base `pkg` sotto:
+Le facility offerte dalle versioni concrete installate vengono indicizzate sotto:
 
 ```text
 $m_ROOT/data/sys/pkg/providers/<facility>/<compatibility>/
 ```
 
-Per ogni facility dichiarata da una versione concreta, `pkg` materializza nella corrispondente directory un **file regolare vuoto** il cui nome è esattamente l'identità concreta del provider:
+Per ogni facility dichiarata da una concrete version, `pkg` crea un file regolare vuoto il cui nome è esattamente la concrete package identity del provider.
+
+Forme ammesse:
 
 ```text
-$m_ROOT/data/sys/pkg/providers/<facility>/<compatibility>/<pkg>@<version>!<osarch>
+platform-independent:
+    $m_ROOT/data/sys/pkg/providers/<facility>/<compatibility>/<pkg>@<version>
+
+target-specific:
+    $m_ROOT/data/sys/pkg/providers/<facility>/<compatibility>/<pkg>@<version>!<osarch>
 ```
 
-Esempio:
+Esempi:
+
+```text
+$m_ROOT/data/sys/pkg/providers/example-api/3/
+└── generic-tool@1.4
+```
 
 ```text
 $m_ROOT/data/sys/pkg/providers/java/21/
@@ -280,29 +292,15 @@ L'entry provider:
 - non contiene metadata duplicati;
 - identifica il provider esclusivamente tramite il proprio basename concreto.
 
-Il pathname concreto del package corrispondente si ricostruisce direttamente come:
+Il pathname del package corrispondente si ricostruisce direttamente come:
 
 ```text
 $m_ROOT/pkg/<provider-basename>
 ```
 
-Non è quindi necessario eseguire `readlink`, `realpath`, `readpathce` o altra risoluzione di pathname per ricavare l'identità del provider dall'indice.
+senza `readlink`, `realpath` o altra risoluzione necessaria a recuperare l'identità.
 
-La struttura appartiene a:
-
-```text
-$m_ROOT/data/sys/pkg/
-```
-
-perché è data del componente base `pkg`, coerentemente con il namespace system state già fissato:
-
-```text
-$m_ROOT/<area>/sys/<component>/
-```
-
-Il provider index non introduce state di package sotto `data/<pkg>` e non è una Package State Instance.
-
-Il provider index è **derivato** dalle dichiarazioni `<package-version>/facility`: i marker vuoti sono un indice di discovery/resolution, non una seconda sorgente autorevole della facility dichiarata.
+Il provider index appartiene a `data/sys/pkg/`, non allo state del package consumer, ed è derivato dalle dichiarazioni package-local `facility`.
 
 ---
 
@@ -328,29 +326,43 @@ $m_ROOT/data/sys/pkg/providers/<facility>/<compatibility>/
 
 la directory `<compatibility>/` viene rimossa.
 
-Il provider index non è un meccanismo di launch e non viene consultato dal launcher per effettuare resolution ad ogni esecuzione.
+Il provider index non è un meccanismo di launch e non viene consultato dal launcher per effettuare resolution a ogni esecuzione.
 
 ---
 
-## 9. Resolution
+## 9. Resolution e target eligibility
 
-La resolution appartiene al comando `pkg` e avviene durante operazioni esplicite che richiedono la scelta o il riallineamento delle dependency.
+La resolution appartiene a `pkg` e avviene durante operazioni esplicite che richiedono la scelta o il riallineamento delle dependency.
 
 Per una dependency, `pkg` considera provider che:
 
 ```text
 offrono la stessa facility
 hanno compatibility che soddisfa tutti i comparator del requirement
-sono utilizzabili per il target pertinente secondo il modello package/osarch corrente
+sono utilizzabili per il target/materialization class del consumer
 ```
 
-L'insieme dei provider candidati è enumerabile direttamente attraverso i marker sotto:
+Le regole di target eligibility sono:
 
 ```text
-$m_ROOT/data/sys/pkg/providers/<facility>/<compatibility>/
+provider non qualificato <pkg>@<version>
+    -> provider target-independent
+    -> può soddisfare un consumer target-specific o target-independent, se facility/compatibility coincidono
+
+provider qualificato <pkg>@<version>!<osarch>
+    -> può soddisfare soltanto resolution per lo stesso <osarch>
 ```
 
-senza dereferenziare symlink per recuperare l'identità concreta.
+Inoltre:
+
+```text
+consumer concreto non qualificato
+    -> può materializzare soltanto binding verso provider non qualificati
+```
+
+perché un binding verso un provider specifico di un singolo target renderebbe target-specific l'intero consumer. Se una dependency richiede un provider qualificato, il consumer deve essere materializzato attraverso il relativo `catalog-<osarch>` e usare concrete identity qualificata.
+
+Un consumer target-specific può invece essere legato sia a un provider non qualificato sia a un provider qualificato per lo stesso target.
 
 La policy esatta per scegliere fra più provider compatibili equivalenti resta aperta. Non vengono reintrodotti implicitamente:
 
@@ -363,8 +375,6 @@ Desired/Resolved Integration Profile
 generations
 Resolved Dependency Graph obbligatorio
 ```
-
-Una nuova policy di scelta richiederà una decisione esplicita.
 
 ---
 
@@ -382,30 +392,31 @@ Per ogni dependency risolta esiste esattamente:
 <package-version>/binding/<facility>
 ```
 
-Il nome del file è quindi la stessa facility dichiarata nel file `dependency`.
+`binding/<facility>` è un file regolare di dati, non un symbolic link e non shell code.
 
-Esempio:
-
-```text
-<consumer-package-version>/dependency
-    java >=17 <22
-
-<consumer-package-version>/binding/java
-    temurin@21.0.8+9!macos-arm64
-```
-
-`binding/<facility>` è un **file regolare di dati**, non un symbolic link e non shell code.
-
-Il suo unico contenuto logico è il basename della versione concreta del provider risolto:
+Il suo unico contenuto logico è il basename della concrete package identity del provider risolto, quindi una delle forme:
 
 ```text
+<pkg>@<version>
 <pkg>@<version>!<osarch>
 ```
 
-La serializzazione canonica del file è una singola riga terminata da newline:
+La serializzazione canonica resta una singola riga terminata da newline:
 
 ```text
 <provider-basename>\n
+```
+
+Esempi:
+
+```text
+binding/example-api:
+    generic-tool@1.4
+```
+
+```text
+binding/java:
+    temurin@21.0.8+9!macos-arm64
 ```
 
 Non contiene:
@@ -420,9 +431,9 @@ shell assignment
 selector current
 ```
 
-La facility è già identificata dal nome del file e il provider concreto è già identificato dal contenuto.
+La facility è già identificata dal nome del file e il provider concreto dal contenuto.
 
-La regola baseline di una sola dependency per facility rende univoco il mapping:
+La regola di una sola dependency per facility rende univoco:
 
 ```text
 dependency <facility>
@@ -430,29 +441,21 @@ dependency <facility>
     -> un provider concreto
 ```
 
-La directory storicamente proposta `dep/` e i relativi symlink dependency restano esclusi.
+La directory storica `dep/` e i relativi symlink dependency restano esclusi.
 
 ---
 
 ## 11. Consumo del binding da `env`
 
-`<package-version>/env` resta la sede naturale per trasformare il provider risolto nelle variabili/path richieste dal particolare consumer.
+`<package-version>/env` resta la sede naturale per trasformare il provider risolto nelle variabili/path richieste dal consumer.
 
-L'`env` non deve dipendere dalla current working directory per trovare `binding/`.
-
-Quando necessita del package directory corrente, lo deriva dal pathname canonico già disponibile:
-
-```text
-m_COMMAND_BIN
-```
-
-secondo la struttura:
+L'`env` non dipende dalla current working directory per trovare `binding/` e può derivare il package directory dal pathname canonico `m_COMMAND_BIN` secondo la struttura:
 
 ```text
 <package-version>/cmd/<pkg-command>
 ```
 
-Esempio concettuale POSIX per una dependency `java`:
+Esempio concettuale POSIX:
 
 ```sh
 package_dir=${m_COMMAND_BIN%/*}
@@ -468,42 +471,27 @@ export JAVA_HOME PATH
 unset package_dir java_binding java_provider
 ```
 
-Il command substitution rimuove il newline terminale canonico del file `binding/java`; il basename concreto non può contenere newline secondo la grammatica package-store già fissata.
+Lo stesso codice funziona con basename qualificati e non qualificati perché `binding/<facility>` conserva direttamente la concrete identity e `$m_ROOT/pkg/$java_binding` ne ricostruisce il pathname.
 
-L'esempio non introduce una nuova primitive runtime: usa direttamente il file dati materializzato da `pkg`, `m_COMMAND_BIN`, `$m_ROOT` e normali primitive shell POSIX già ammesse nel file `env`.
-
-Un binding richiesto che non può essere letto/applicato correttamente deve impedire il normale launch secondo il contratto già fissato per un package `env` fallito. I codici di errore finali restano parte della futura implementazione del launcher/pkg.
+Un binding richiesto che non può essere letto/applicato correttamente deve impedire il normale launch secondo il contratto dell'`env` fallito.
 
 ---
 
 ## 12. Re-resolution
 
-La dependency resta astratta e invariata durante una normale re-resolution:
+La dependency resta astratta e invariata durante una normale re-resolution.
 
-```text
-dependency/java requirement
-    invariato
-```
-
-Se `pkg` seleziona un provider concreto differente, modifica il solo resolved binding pertinente:
+Se `pkg` seleziona un provider concreto differente, modifica soltanto:
 
 ```text
 binding/<facility>
 ```
 
-Esempio:
+La re-resolution deve continuare a rispettare le regole di target eligibility della sezione 9; non può trasformare silenziosamente un consumer non qualificato in un oggetto target-specific attraverso un binding qualificato.
 
-```text
-prima:
-    binding/java = temurin@21.0.8+9!macos-arm64
+Il normale riallineamento del provider non richiede di riscrivere il requirement `dependency`, la logica `env` o il command entry `cmd/` soltanto per cambiare l'identità concreta selezionata.
 
-dopo explicit re-resolution:
-    binding/java = altro-jdk@21.0.9+10!macos-arm64
-```
-
-Il normale riallineamento del provider non richiede di riscrivere il requirement `dependency`, la logica shell di `env` o il command entry `cmd/` soltanto per cambiare l'identità concreta selezionata.
-
-Questa decisione non fissa ancora transaction/atomic-replacement semantics generali per le operazioni `pkg`; tali proprietà verranno definite quando il lifecycle operativo le richiederà.
+Transaction/atomic-replacement semantics generali restano da definire quando il lifecycle operativo le richiederà.
 
 ---
 
@@ -526,9 +514,9 @@ normal launch
     -> no pkg invocation
 ```
 
-Il provider index sotto `data/sys/pkg/providers/` non deve quindi diventare un resolver implicito consultato ad ogni esecuzione.
+Il provider index sotto `data/sys/pkg/providers/` non diventa quindi un resolver implicito consultato a ogni esecuzione.
 
-Questo preserva il principio corrente secondo cui un package installato è il più autosufficiente possibile e il normale runtime non dipende dal comando `pkg`.
+Questo preserva il principio secondo cui un package installato è il più autosufficiente possibile.
 
 ---
 
@@ -536,7 +524,7 @@ Questo preserva il principio corrente secondo cui un package installato è il pi
 
 Le dependency possono servire a costruire l'environment o una launch line specifica del consumer.
 
-`<package-version>/env` resta la sede della preparazione environment version-specific del consumer e può leggere `binding/<facility>` quando deve configurare un provider risolto.
+`<package-version>/env` resta la sede della preparazione environment version-specific e può leggere `binding/<facility>`.
 
 `cmd/<pkg-command>` resta la sede della launch line command-specific.
 
@@ -550,7 +538,7 @@ Il resolved binding non modifica quindi la semantica di `link/` e non introduce 
 
 I draft storici avevano introdotto `Execution Capability`, contract version, compatibility version, resource contract, provider ranking, `release-order`, exact binding e Resolved Dependency Graph.
 
-Questa decisione recupera soltanto i principi che risultano necessari nel modello corrente:
+Questa decisione recupera soltanto:
 
 ```text
 versione upstream != compatibility
@@ -563,36 +551,31 @@ Non riattiva automaticamente gli altri meccanismi storici.
 
 Il termine package-manager `Execution Capability` è sostituito nel modello corrente da `facility` e non deve essere riproposto come alias.
 
+L'ordinale `nNNNN` del package-definition catalog non è una reintroduzione delle `generations`: ordina esclusivamente i range delle definition e non interviene nella scelta fra provider facility.
+
 ---
 
 ## 16. Supersession e precisazioni
 
-Questa decisione supersede/precisa la sezione dependency di `2026-09-05-package-manager-current-and-run-model.md` nella misura in cui lasciava come unica baseline iniziale riferimenti concreti semplici e trattava un resolver più generale come interamente futuro.
+Questa decisione supersede/precisa la sezione dependency di `2026-09-05-package-manager-current-and-run-model.md` nella misura già fissata dal modello facility corrente.
 
-Rispetto alla prima versione di questa stessa decisione del 2026-09-07, sono inoltre superseded:
+Rispetto alla prima versione di questa decisione del 2026-09-07, sono inoltre superseded le sole assunzioni secondo cui:
+
+```text
+ogni provider marker deve chiamarsi <pkg>@<version>!<osarch>
+ogni binding/<facility> deve contenere <pkg>@<version>!<osarch>
+una concrete package identity è sempre qualificata da osarch
+```
+
+Restano superseded:
 
 ```text
 provider index basato su symbolic link
-forma/nome provider entry lasciati aperti
-rappresentazione fisica del resolved binding lasciata aperta
-possibilità implicita di più dependency della stessa facility nel baseline
+forma provider entry diversa dalla concrete identity
+resolved binding lasciato implicitamente aperto
+più dependency della stessa facility nel baseline
+Execution Capability model storico
 ```
-
-È ora fissato il modello minimo:
-
-```text
-facility
-provider
-compatibility
-dependency constraint
-provider index a marker file vuoti
-resolution esplicita
-binding/<facility> con provider concreto
-una dependency per facility
-nessuna resolution nel launch
-```
-
-Restano superseded e non vengono riaffermati i meccanismi storici più ampi elencati sopra.
 
 ---
 
@@ -605,55 +588,62 @@ L'implementazione prodotto richiede una fase successiva esplicitamente autorizza
 Quando implementato, il contratto dovrà essere protetto almeno per:
 
 ```text
-indicizzazione provider installati per facility/compatibility
-provider marker regolare di lunghezza zero con basename concreto
-assenza di provider-index symlink
-rimozione dell'entry provider durante uninstall/rimozione
-rimozione della directory compatibility quando perde l'ultimo provider marker
+provider marker non qualificato per provider target-independent
+provider marker qualificato per provider target-specific
+marker regolare di lunghezza zero e non symlink
+rimozione marker e cleanup directory compatibility
 matching facility exact
-matching dei comparator supportati
+matching comparator supportati
 separazione versione upstream / compatibility
-rifiuto di dependency duplicate per la stessa facility nel baseline
-materializzazione di binding/<facility>
-contenuto binding limitato al basename concreto risolto
-consumo del binding senza dipendenza dalla cwd
-re-resolution che cambia il binding senza cambiare il requirement
-nessuna resolution durante il normale launch
+rifiuto dependency duplicate per la stessa facility
+materializzazione binding/<facility> con provider basename qualificato o non qualificato
+consumer non qualificato -> solo provider non qualificato
+consumer qualificato -> provider non qualificato oppure qualificato per lo stesso target
+rifiuto provider qualificato per target diverso
+contenuto binding limitato alla concrete identity risolta
+consumo binding senza dipendenza dalla cwd
+re-resolution senza cambiare requirement
+nessuna resolution durante normale launch
 nessun uso cross-package di link/
-relocatability del modello
+relocatability
 ```
+
+Questa correzione documentale non dichiara physical validation del futuro resolver.
 
 ---
 
 ## 18. Invarianti fissati
 
 ```text
-PKG-FAC-01  il package manager usa il termine facility, non capability, per la funzionalità astratta fornita/richiesta fra package
-PKG-FAC-02  provider = versione concreta di package che offre una facility con una compatibility
+PKG-FAC-01  il package manager usa facility, non capability, per la funzionalità astratta fornita/richiesta fra package
+PKG-FAC-02  provider = concrete version di package che offre una facility con una compatibility
 PKG-FAC-03  <package-version>/facility è il file package-local opzionale e autorevole che dichiara le facility offerte
 PKG-FAC-04  <package-version>/dependency è il file package-local opzionale che dichiara dependency astratte
 PKG-FAC-05  dependency = facility + compatibility constraint
-PKG-FAC-06  versione upstream e compatibility sono identità distinte
-PKG-FAC-07  i comparator compatibility ammessi sono =, >, >=, <, <=
+PKG-FAC-06  versione upstream, eventuale target qualification e compatibility sono identità distinte
+PKG-FAC-07  comparator compatibility ammessi =, >, >=, <, <=
 PKG-FAC-08  più comparator della stessa dependency sono congiunti per intersezione
 PKG-FAC-09  nel baseline una versione concreta dichiara al massimo una dependency per facility
-PKG-FAC-10  il provider index vive sotto $m_ROOT/data/sys/pkg/providers/<facility>/<compatibility>/
-PKG-FAC-11  ogni provider indicizzato è rappresentato da un file regolare vuoto chiamato <pkg>@<version>!<osarch>
+PKG-FAC-10  provider index = $m_ROOT/data/sys/pkg/providers/<facility>/<compatibility>/
+PKG-FAC-11  ogni provider è un marker regolare vuoto chiamato con la concrete identity: <pkg>@<version> oppure <pkg>@<version>!<osarch>
 PKG-FAC-12  il provider marker non è un symlink e l'identità concreta si ricava direttamente dal basename
-PKG-FAC-13  il provider index è derivato dai file package-local facility e non li sostituisce come dichiarazione autorevole
+PKG-FAC-13  provider index è derivato dai file package-local facility
 PKG-FAC-14  la directory compatibility viene rimossa quando perde l'ultimo provider marker
 PKG-FAC-15  resolution = scelta esplicita da parte di pkg di un provider compatibile
 PKG-FAC-16  resolved binding è concreto ma semanticamente distinto dalla dependency
-PKG-FAC-17  il resolved binding vive in <package-version>/binding/<facility>
-PKG-FAC-18  binding/<facility> è un file regolare dati con unica riga <pkg>@<version>!<osarch> del provider risolto
+PKG-FAC-17  resolved binding vive in <package-version>/binding/<facility>
+PKG-FAC-18  binding/<facility> è un file regolare dati con unica riga <pkg>@<version> oppure <pkg>@<version>!<osarch> del provider risolto
 PKG-FAC-19  binding non contiene path assoluti, $m_ROOT, constraint, compatibility o selector current
-PKG-FAC-20  env deriva il package directory da m_COMMAND_BIN e può leggere binding/<facility> con normali primitive POSIX
-PKG-FAC-21  il normale launch non effettua provider discovery, compatibility matching o resolution
-PKG-FAC-22  il launcher non invoca pkg per risolvere dependency
-PKG-FAC-23  link/<pkg-command> non viene usato come binding cross-package verso provider dependency
-PKG-FAC-24  directory package-local dep/ e relativi symlink dependency non appartengono al modello corrente
-PKG-FAC-25  re-resolution cambia il binding concreto senza cambiare automaticamente dependency/env/cmd
-PKG-FAC-26  casi che richiedono più provider della stessa facility sono fuori dal resolver generico baseline e vanno gestiti esplicitamente dal package/utente
-PKG-FAC-27  il vecchio package-manager Execution Capability model non viene riattivato; il termine corrente è facility
-PKG-FAC-28  restano aperte la sintassi esatta di facility/dependency, la grammatica numerica multi-componente della compatibility e la policy fra provider equivalenti
+PKG-FAC-20  env deriva il package directory da m_COMMAND_BIN e può leggere binding/<facility> con primitive POSIX
+PKG-FAC-21  provider non qualificato è target-independent; provider qualificato è eleggibile solo per lo stesso osarch
+PKG-FAC-22  consumer concreto non qualificato può avere soltanto binding verso provider non qualificati
+PKG-FAC-23  consumer target-specific può usare provider non qualificati o provider qualificati per lo stesso target
+PKG-FAC-24  normale launch non effettua provider discovery, compatibility matching o resolution
+PKG-FAC-25  launcher non invoca pkg per risolvere dependency
+PKG-FAC-26  link/<pkg-command> non viene usato come binding cross-package verso provider dependency
+PKG-FAC-27  directory package-local dep/ e relativi symlink dependency non appartengono al modello corrente
+PKG-FAC-28  re-resolution cambia il binding concreto senza cambiare automaticamente dependency/env/cmd e senza violare target eligibility
+PKG-FAC-29  casi che richiedono più provider della stessa facility sono fuori dal resolver generico baseline
+PKG-FAC-30  il vecchio Execution Capability model non viene riattivato; nNNNN del catalogo non è una generation del resolver
+PKG-FAC-31  restano aperte sintassi esatta di facility/dependency, grammatica compatibility multi-componente e policy fra provider equivalenti
 ```
