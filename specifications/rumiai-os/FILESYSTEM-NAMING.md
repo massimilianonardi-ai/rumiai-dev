@@ -2,7 +2,7 @@
 
 Status: **Normative specification**  
 Date: 2026-08-28  
-Updated: 2026-09-05
+Updated: 2026-09-07
 
 ## 1. Scope
 
@@ -166,6 +166,54 @@ my-tool@!test-profile
 ```
 
 The package-manager decision `decisions/rumiai-os/2026-09-05-package-state-var-default.md` owns the state semantics of this form.
+
+The third accepted case is the package-store identity grammar fixed by `decisions/rumiai-os/2026-09-07-package-concrete-path-and-current-selector.md`.
+
+Concrete package versions use:
+
+```text
+<pkg>@<version>!<osarch>
+```
+
+and the corresponding current selector uses:
+
+```text
+<pkg>!<osarch>
+```
+
+Within this grammar:
+
+```text
+@
+    separates <pkg> from <version> for a concrete package version
+
+!
+    separates the package/version portion from <osarch>
+```
+
+`<version>` is the upstream version string and has the package-manager-specific grammar:
+
+```text
+[A-Za-z0-9][A-Za-z0-9._+~-]*
+```
+
+This is an explicit semantic exception to the generic lowercase RumiAI-controlled naming form. It permits preservation of common upstream version spellings, including uppercase ASCII and `+` or `~`, while excluding the structural package-store separators `@` and `!`, pathname separator `/`, whitespace and control characters.
+
+Examples:
+
+```text
+java@21.0.2+13!macos-arm64
+java!macos-arm64
+example@v1.2.3-rc.1!linux-x86_64
+```
+
+The package-store use of `@` and `!` does not alter the separate State Instance separator `@!`. The three current forms remain distinct:
+
+```text
+<pkg>@<version>!<osarch>   concrete package version
+<pkg>!<osarch>             current package selector
+<pkg>@!<state-instance>    package State Instance
+```
 
 Semantic exceptions MUST be documented by the subsystem that owns the identifier and MUST NOT become a general excuse for arbitrary naming variation.
 
