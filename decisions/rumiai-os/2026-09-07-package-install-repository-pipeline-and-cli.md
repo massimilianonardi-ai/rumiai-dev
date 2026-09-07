@@ -6,17 +6,7 @@ Status: **Accepted**
 
 ## Contesto
 
-Il package manager corrente ha già fissato il modello `cmd/` / `link/` / `env`, lo state package-local, facility/dependency/provider index e il principio che `pkg install` renda il package il più autosufficiente possibile.
-
-La precedente decisione `2026-09-07-package-install-local-candidate-baseline.md` aveva trasformato il primo incremento prodotto in una CLI locale:
-
-```text
-pkg install <pkg> <version> <candidate-directory>
-```
-
-con acquisizione e integrazione concentrate nel comando `pkg`.
-
-La correzione esplicita del 2026-09-07 sostituisce tale modello. Il package manager deve mantenere distinti:
+Il package manager corrente mantiene distinti:
 
 ```text
 package-definition catalog lookup
@@ -28,22 +18,22 @@ RumiAI package materialization/integration
 
 La CLI pubblica opera su package RumiAI e non espone repository coordinates o directory candidate.
 
-Il catalogo e i range delle package definition sono fissati da `2026-09-07-package-definition-catalog-and-version-ranges.md`.
+Il catalogo e i range sono fissati da `2026-09-07-package-definition-catalog-and-version-ranges.md`. Il repository upstream corrente e la resolution posizionale dei range sono fissati da `2026-09-07-package-current-upstream-and-positional-range-resolution.md`.
+
+Questa unità modifica soltanto `rumiai-dev`. Non autorizza modifiche a `rumiai-os` o `rumiai-tests`.
 
 ---
 
 ## 1. CLI pubblica
 
-Le forme canoniche dei sottocomandi restano:
+Le forme canoniche sono:
 
 ```text
 pkg install <package> [<package> ...]
 pkg uninstall <package> [<package> ...]
 ```
 
-Entrambi richiedono almeno un package operand.
-
-Ogni operand ammette esattamente una delle forme strutturali:
+Ogni operand ammette esattamente:
 
 ```text
 <pkg>
@@ -52,15 +42,7 @@ Ogni operand ammette esattamente una delle forme strutturali:
 <pkg>@<version>!<osarch>
 ```
 
-Dove:
-
-```text
-<pkg>      identità canonica RumiAI del package
-<version>  versione upstream esatta richiesta
-<osarch>   target RumiAI esplicito
-```
-
-Per `pkg install` la semantica è:
+Per `pkg install`:
 
 ```text
 <pkg>
@@ -76,65 +58,51 @@ Per `pkg install` la semantica è:
     versione upstream esatta, target esplicito
 ```
 
-L'assenza di `@<version>` durante install significa quindi sempre `latest available` e deve essere risolta a una versione upstream concreta prima del download.
+L'assenza di `@<version>` significa sempre `latest available` e deve diventare una versione upstream concreta prima del download.
 
 `latest` non è una pseudo-versione installata.
 
-L'assenza di `!<osarch>` usa il target corrente esclusivamente per selezionare lo stream di catalogo appropriato. Se viene selezionato lo stream platform-independent `catalog`, la concrete identity risultante resta non qualificata anche quando il target era esplicito o derivato dall'host.
-
-`pkg uninstall` usa la stessa grammatica lessicale degli operand ma resta un'operazione esclusivamente locale. L'assenza di versione in `uninstall` non autorizza una query upstream per `latest`; la policy locale esatta di rimozione senza versione e/o target espliciti resta da fissare con il lifecycle uninstall.
+`pkg uninstall` usa la stessa grammatica lessicale ma resta local-only: versione omessa non significa query upstream per latest.
 
 ---
 
-## 2. Package definition come ingresso dell'orchestrazione
+## 2. Due livelli del catalogo
 
-Per trasformare un operand come:
+Dopo la selezione dello stream, il catalogo separa:
 
 ```text
-foo
-foo@2.7
-foo!linux-arm64
-foo@2.7!linux-arm64
+<stream>/repository
+    repository upstream corrente dello stream
+
+<stream>/nNNNN=<version-minimum>/
+    package definition specifica del range
 ```
 
-in una installazione concreta, `pkg` deve selezionare una package definition dal catalogo autorevole.
+Il descriptor `repository` contiene semanticamente il repository type e le coordinate/context necessarie alle API repository correnti.
 
-La package definition descrive almeno, quando applicabile:
+La package definition di range contiene invece le informazioni che possono cambiare fra intervalli di release, incluse quando applicabili:
 
 ```text
-repository type
-repository-specific project/artifact coordinates
-version resolution context
 artifact selection/materialization information
 artifact format
-integrity/provenance information
+integrity/provenance requirements
 facility/dependency
 cmd/link/env/default
 state/path normalization
 altre informazioni di integrazione previste dal modello package corrente
 ```
 
-La package definition resta distinta dall'artifact upstream.
+Repository type e coordinate upstream correnti non vengono duplicati nei range come sorgenti storiche alternative.
 
-La struttura esterna del catalogo è fissata dalla decisione catalogo; la serializzazione interna completa della singola package definition resta il prossimo contratto da chiudere.
-
-Non devono essere usate come scorciatoie:
-
-```text
-composite repository strings nella CLI
-candidate-directory come input pubblico
-manifest package generici arbitrariamente sourced come shell code
-```
+La serializzazione interna esatta di `repository` e delle package definition resta da fissare separatamente.
 
 ---
 
 ## 3. Repository adapter
 
-GitHub, SourceForge, Maven, repository custom e altri ecosistemi upstream sono **repository type**, non `provider` nel significato del modello facility/dependency.
+GitHub, SourceForge, Maven, repository custom e altri ecosistemi upstream sono **repository type**, non facility `provider`.
 
-Il termine `provider` resta riservato alla versione concreta di package che offre una `facility`.
-
-Ogni repository type è implementato da una libreria shell distinta sotto il layout runtime canonico:
+Ogni repository type usa una libreria distinta:
 
 ```text
 lib/sh/pkg-repository-github.lib.sh
@@ -143,26 +111,25 @@ lib/sh/pkg-repository-maven.lib.sh
 lib/sh/pkg-repository-custom.lib.sh
 ```
 
-Nuovi repository type possono essere aggiunti senza modificare le responsabilità degli altri layer.
-
 Ogni repository library:
 
 ```text
-conosce soltanto API/convenzioni dello specifico ecosistema upstream
+conosce API/convenzioni dello specifico ecosistema upstream
+interroga il repository upstream corrente dichiarato dallo stream
 esegue discovery/resolution repository-specific
 non trasferisce i byte dell'artifact
 non estrae artifact
 non modifica $m_ROOT/pkg
 non crea selector current
 non crea binding pubblici
-non modifica provider index o resolved binding dependency
+non modifica provider index o resolved binding
 ```
 
 ---
 
 ## 4. API comune dei repository adapter
 
-Tutte le repository library espongono la stessa API semantica:
+Tutte le repository library espongono esattamente:
 
 ```text
 pkg_repository_list_versions
@@ -172,15 +139,23 @@ pkg_repository_resolve_artifact
 
 ### `pkg_repository_list_versions`
 
-Enumera le versioni upstream disponibili nel repository/context corrente.
+Interroga direttamente il repository upstream corrente dello stream e restituisce semanticamente tutte le versioni attualmente installabili nel context corrente.
 
-Serve anche, quando necessario, a fornire al resolver catalogo le informazioni repository-specific utili a collocare una versione rispetto agli anchor dei range senza introdurre nel core un comparatore universale delle versioni upstream.
+La successione è ordinata:
 
-L'ordine e la serializzazione esatta dell'output vengono fissati con la firma del primo adapter concreto e devono essere sufficienti al modello di lineage lineare accettato dal catalogo.
+```text
+oldest -> latest
+```
+
+ed è la sorgente autorevole usata da `pkg` per collocare una versione esplicita rispetto agli anchor dei range.
+
+Non usa una lista statica di versioni mantenuta nel catalogo e non consulta repository upstream storici per completare la successione.
+
+La serializzazione esatta dell'output viene fissata con la firma concreta del primo adapter; l'ordine semantico è già fissato.
 
 ### `pkg_repository_resolve_version`
 
-Risolve una richiesta di versione in una versione upstream concreta.
+Risolve una richiesta in una versione upstream concreta contro il repository corrente.
 
 Per install:
 
@@ -189,16 +164,25 @@ versione omessa
     -> latest upstream disponibile
 
 versione esplicita
-    -> la stessa versione upstream concreta, se disponibile/valida nel contesto richiesto
+    -> la stessa versione upstream concreta, se disponibile/valida
 ```
 
-Una versione esplicita non deve essere sostituita silenziosamente con una release differente.
+Una versione esplicita non viene sostituita silenziosamente con una release differente.
+
+La `latest` risolta deve essere coerente con l'ultima versione della successione di `pkg_repository_list_versions` per lo stesso repository/context.
 
 ### `pkg_repository_resolve_artifact`
 
-Risolve l'artifact concreto per una versione già determinata e per il target/context pertinente.
+Risolve l'artifact concreto per una versione già determinata, usando:
 
-Il risultato semantico è un descriptor/identity repository-neutral consumabile dal layer download, non soltanto un URL testuale. Può comprendere, quando disponibili o richiesti:
+```text
+repository upstream corrente dello stream
+package definition del range selezionato
+versione concreta
+target/context pertinente
+```
+
+Il risultato è un descriptor repository-neutral consumabile dal layer download e può includere, quando disponibili o richiesti:
 
 ```text
 artifact locator/URL
@@ -207,14 +191,12 @@ size
 digest
 signature/checksum identity
 repository provenance
-altri dati necessari al trasferimento/verifica senza incorporare logica di download
+altri dati necessari al trasferimento/verifica
 ```
-
-La serializzazione esatta del descriptor viene fissata insieme alle firme concrete.
 
 Nessuna delle tre API trasferisce i byte dell'artifact.
 
-Queste API supersedono i precedenti nomi:
+Restano superseded i nomi storici:
 
 ```text
 pkg_repository_versions
@@ -222,30 +204,108 @@ pkg_repository_latest_version
 pkg_repository_download_url
 ```
 
-che non appartengono più all'interfaccia corrente.
-
 ---
 
-## 5. Isolamento degli adapter con API omonime
+## 5. Migrazione del repository upstream
 
-Poiché repository library differenti espongono volutamente gli stessi nomi di funzione, non devono essere sourced simultaneamente nello stesso contesto shell persistente.
+Ogni stream possiede un solo repository upstream corrente.
 
-L'orchestrazione di un singolo package usa un contesto shell isolato, normalmente un subshell POSIX, nel quale viene caricata esclusivamente la repository library selezionata per quel package.
-
-Concettualmente:
+Se il produttore cambia sistema di distribuzione, il descriptor:
 
 ```text
-pkg install a b c
-    -> package a subshell -> source repository adapter A -> pipeline a
-    -> package b subshell -> source repository adapter B -> pipeline b
-    -> package c subshell -> source repository adapter C -> pipeline c
+<stream>/repository
 ```
 
-Il subshell isola definizioni e stato shell dell'adapter; gli effetti filesystem deliberatamente pubblicati dalla pipeline restano visibili alla root RumiAI.
+viene aggiornato al nuovo sistema.
+
+Il sistema precedente non resta un fallback automatico.
+
+Una release storica resta installabile soltanto se il repository corrente:
+
+```text
+la include in pkg_repository_list_versions
+la accetta in pkg_repository_resolve_version
+permette di risolverne l'artifact
+```
+
+Questo evita una catena permanente di repository superseded dentro il catalogo.
 
 ---
 
-## 6. Layer download
+## 6. Isolamento degli adapter
+
+Poiché repository library differenti espongono gli stessi nomi di funzione, non devono essere sourced simultaneamente nello stesso contesto shell persistente.
+
+L'orchestrazione di un package usa un contesto shell isolato, normalmente un subshell POSIX, nel quale viene caricata soltanto la repository library indicata dal `repository` dello stream selezionato.
+
+Package differenti nella stessa invocazione possono usare adapter differenti e quindi contesti isolati distinti.
+
+---
+
+## 7. Resolution del range per versione esplicita
+
+Per una versione esplicita, dopo aver selezionato lo stream `pkg`:
+
+```text
+load <stream>/repository
+-> source repository adapter in isolation
+-> pkg_repository_list_versions
+-> verify requested version exists
+-> locate all nNNNN=<version-minimum> anchors in the same succession
+-> select the range of the last anchor not after the requested version
+```
+
+Il core usa soltanto le posizioni nella successione.
+
+Non usa:
+
+```text
+SemVer
+confronto lessicografico
+confronto numerico
+data derivata dalla stringa
+pattern package-specific
+ordine filesystem
+```
+
+Ogni anchor deve comparire esattamente una volta nella successione e le sue posizioni devono essere strettamente crescenti nello stesso ordine degli `nNNNN`.
+
+Versione richiesta assente o catalogo incoerente -> errore.
+
+Non vengono consultati adapter candidate differenti per range.
+
+---
+
+## 8. Resolution di `latest`
+
+Per versione omessa, `pkg` può:
+
+```text
+select last range of the chosen stream
+-> load <stream>/repository
+-> source adapter in isolation
+-> pkg_repository_resolve_version latest
+```
+
+Non è obbligatorio enumerare tutte le versioni soltanto per installare latest.
+
+Una nuova release pubblicata dopo l'ultimo anchor appartiene automaticamente all'ultimo range finché non viene introdotta una nuova package definition.
+
+---
+
+## 9. Nessuna lista statica e nessun `match`
+
+Il catalogo non contiene una lista esaustiva delle versioni per ciascun range.
+
+Non viene introdotta una funzione/API/file eseguibile package-specific `match` per la membership del range.
+
+La successione fornita dall'upstream corrente e gli anchor `nNNNN=<version-minimum>` sono il meccanismo baseline completo per la range resolution.
+
+Una futura primitive di matching richiede un caso concreto e una nuova decisione.
+
+---
+
+## 10. Layer download
 
 Il download è repository-neutral.
 
@@ -261,19 +321,17 @@ ed espone:
 pkg_download
 ```
 
-Il repository adapter produce il descriptor dell'artifact; `pkg_download` trasferisce i byte verso uno staging file locale.
+Input: descriptor artifact già risolto. Output: staging file locale.
 
-`pkg_download` non conosce le convenzioni specifiche di GitHub, SourceForge, Maven o altri repository e non conosce current/facility/dependency/package integration.
+`pkg_download` non conosce GitHub/SourceForge/Maven, current, facility, dependency o package integration.
 
-Il transport backend concreto (`curl`, altra utility o futura primitive) e le regole complete di digest/signature verification devono essere fissati e fisicamente validati separatamente prima della prima implementazione network completa. Questa decisione non introduce implicitamente una dipendenza host non approvata.
+Il transport backend e le regole finali di digest/signature verification restano da fissare e validare separatamente.
 
 ---
 
-## 7. Layer extract
+## 11. Layer extract
 
-L'estrazione è distinta sia dal repository sia dal download.
-
-La libreria canonica è:
+L'estrazione appartiene a:
 
 ```text
 lib/sh/pkg-extract.lib.sh
@@ -288,37 +346,33 @@ pkg_extract
 Input semantici:
 
 ```text
-artifact locale già acquisito
-formato/materialization mode determinato dalla package definition/resolution
-directory staging di destinazione
+artifact locale
+formato/materialization mode
+directory staging
 ```
 
-`pkg_extract` non interroga repository e non crea integrazione RumiAI.
+Il formato deriva dalla package definition/resolution, non dal repository type.
 
-Il formato non deriva semanticamente dal repository type. Repository dello stesso tipo possono distribuire formati differenti.
-
-Le utility concrete per `zip`, `tar.*`, `jar` o altri formati vengono aggiunte solo quando richieste e validate secondo portability/testing RumiAI.
+Le utility concrete per i diversi formati vengono introdotte soltanto quando richieste e validate.
 
 ---
 
-## 8. Layer integrazione RumiAI
+## 12. Layer integrazione RumiAI
 
-La materializzazione e integrazione RumiAI sono repository-neutral e appartengono a:
+La materializzazione e integrazione appartengono a:
 
 ```text
 lib/sh/pkg-integration.lib.sh
 ```
 
-Le operazioni semantiche iniziali sono:
+con operazioni semantiche iniziali:
 
 ```text
 pkg_integrate
 pkg_deintegrate
 ```
 
-Le firme concrete vengono chiuse insieme alla serializzazione/materialization contract della package definition.
-
-Questo layer è l'unico della pipeline qui descritta autorizzato a conoscere e modificare, quando applicabile:
+Solo questo layer conosce e modifica, quando applicabile:
 
 ```text
 $m_ROOT/pkg/<pkg>@<version>
@@ -338,113 +392,96 @@ $m_ROOT/data/sys/pkg/providers/
 binding/<facility>
 ```
 
-La scelta fra forme qualificate e non qualificate deriva dallo stream di catalogo selezionato secondo `2026-09-07-package-definition-catalog-and-version-ranges.md` e dal modello concrete identity corrente.
-
-Le regole e i punti ancora aperti dei rispettivi sottosistemi restano vincolanti; in particolare questa decisione non inventa la serializzazione ancora aperta di `facility`/`dependency` né la policy di scelta fra provider equivalenti.
+Repository adapter, download ed extract non pubblicano stato package RumiAI.
 
 ---
 
-## 9. Pipeline `pkg install`
+## 13. Pipeline `pkg install`
 
-Il front command `bin/sys/pkg` è orchestratore CLI, non repository client, downloader, extractor o integrator monolitico.
-
-Per ogni package richiesto la pipeline concettuale è:
+Per versione esplicita:
 
 ```text
 parse package operand
-    -> determine requested/current target
-    -> select <pkg>/catalog-<osarch> oppure fallback <pkg>/catalog
-    -> select package-definition range
-    -> source in isolation the repository adapter declared by that definition
-        -> resolve concrete upstream version
-        -> resolve concrete artifact descriptor
-    -> generic download
-    -> generic extract
-    -> RumiAI materialization/integration
-        -> dependency/facility resolution quando applicabile e completamente definita
-        -> concrete package publication
-        -> current/public bindings/provider index/resolved bindings secondo i contratti correnti
+-> determine requested/current target
+-> select catalog-<osarch> or fallback catalog
+-> load stream repository
+-> source repository adapter in isolation
+-> pkg_repository_list_versions
+-> locate requested version and range anchors by position
+-> select package-definition range
+-> pkg_repository_resolve_version exact
+-> pkg_repository_resolve_artifact
+-> pkg_download
+-> pkg_extract
+-> pkg_integrate
 ```
 
-Per versione omessa, il catalogo usa l'ultimo range dello stream selezionato e `pkg_repository_resolve_version` risolve `latest` a una release concreta.
+Per versione omessa:
 
-Per versione esplicita, il catalogo seleziona il range applicabile senza confrontare lessicograficamente la stringa upstream.
+```text
+parse package operand
+-> determine requested/current target
+-> select catalog-<osarch> or fallback catalog
+-> select last range
+-> load stream repository
+-> source repository adapter in isolation
+-> pkg_repository_resolve_version latest
+-> pkg_repository_resolve_artifact
+-> pkg_download
+-> pkg_extract
+-> pkg_integrate
+```
 
-Repository discovery termina prima del trasferimento dell'artifact.
+Repository discovery/resolution termina prima del trasferimento dell'artifact.
 
-Download ed extract non incorporano logica di integrazione.
+Download ed extract non incorporano integrazione.
 
-Integration non interroga GitHub/SourceForge/Maven o altri repository.
+Integration non interroga repository upstream.
 
 ---
 
-## 10. Pipeline `pkg uninstall`
+## 14. Pipeline `pkg uninstall`
 
-La forma pubblica resta:
-
-```text
-pkg uninstall <package> [<package> ...]
-```
-
-con gli operand nelle quattro forme strutturali fissate nella sezione 1.
-
-Uninstall opera esclusivamente sullo stato package locale già materializzato/registrato.
+`uninstall` opera esclusivamente sullo stato locale già materializzato.
 
 Non deve:
 
 ```text
-interrogare package-definition catalog remoto per scegliere latest
+interrogare catalogo remoto per latest
 interrogare repository upstream
 risolvere upstream latest
 scaricare artifact
 estrarre artifact
 ```
 
-Il flusso concettuale resta:
+Flusso concettuale:
 
 ```text
 package operand
-    -> inspect local installed package state
-    -> pkg_deintegrate
-    -> remove materialized package objects secondo il lifecycle fissato
+-> inspect local installed package state
+-> pkg_deintegrate
+-> remove materialized package objects secondo il lifecycle fissato
 ```
 
-Restano da fissare:
-
-```text
-semantica di rimozione senza versione esplicita
-semantica quando coesistono più versioni
-selector current dopo la rimozione
-dependency reverse references
-policy sullo state utente
-```
+Restano da fissare policy di rimozione senza versione, coesistenza di versioni, current dopo rimozione, reverse dependency e state utente.
 
 ---
 
-## 11. Multi-package invocation
+## 15. Multi-package invocation
 
-`install` e `uninstall` accettano uno o più package operand nella stessa invocazione.
+`install` e `uninstall` accettano uno o più package operand.
 
-Package differenti possono usare repository type, target e stream catalogo differenti.
+Package differenti possono usare target, stream e repository type differenti.
 
-La policy finale su:
+La policy finale su stop/continue, aggregazione status, atomicità fra package e ordine dependency resta da fissare.
 
-```text
-stop al primo errore vs continuazione
-aggregazione status
-atomicità fra package distinti
-ordine derivato da dependency
-```
-
-resta da fissare con il transaction/execution model.
-
-Quando una singola operazione usa più package definition, esse dovrebbero essere risolte rispetto allo stesso snapshot Git del catalogo; il meccanismo operativo viene definito con il backend catalogo.
+Le package definition di una singola operazione dovrebbero essere risolte rispetto allo stesso snapshot Git del catalogo.
 
 ---
 
-## 12. Relazione con concrete identity e target independence
+## 16. Concrete identity e target independence
 
-Le identità installate sono:
+Identità installate:
 
 ```text
 platform-independent:
@@ -454,7 +491,7 @@ osarch-specific:
     <pkg>@<version>!<osarch>
 ```
 
-I selector corrispondenti sono:
+Selector:
 
 ```text
 platform-independent:
@@ -464,36 +501,41 @@ osarch-specific:
     <pkg>!<osarch>
 ```
 
-Non viene usato `any` come osarch artificiale.
+Non viene usato `any`.
 
-La concrete identity descrive il package materializzato, non semplicemente il formato dell'artifact upstream. Un package che incorpora un resolved binding target-specific non può essere pubblicato come concrete identity non qualificata.
+La concrete identity descrive l'intero package materializzato, non soltanto l'artifact upstream.
 
 ---
 
-## 13. Supersession della baseline locale candidate
+## 17. Supersession
 
-`2026-09-07-package-install-local-candidate-baseline.md` resta superseded per:
+Resta superseded la baseline local-candidate:
 
 ```text
-CLI pkg install <pkg> <version> <candidate-directory>
+pkg install <pkg> <version> <candidate-directory>
 candidate-directory come input pubblico
-acquisition locale come unico ingresso install
-monolite bin/sys/pkg che incorpora validation/materialization/integration
+monolite bin/sys/pkg
 ```
 
-L'implementazione storica `rumiai-os@b0d1e1244709e1766c679898ac46785711aca1ca` appartiene alla baseline superseded ed è già stata rimossa forward-only dal prodotto corrente.
+Sono inoltre superseded le assunzioni precedenti secondo cui:
 
-Non esistono test permanenti pubblicati per quella implementazione.
+```text
+repository type/coordinates correnti appartengono alla package definition di range
+range differenti dello stesso stream possono usare repository upstream differenti per la normale resolution
+pkg consulta adapter candidate differenti per determinare il range
+```
+
+La decisione `2026-09-07-package-explicit-version-range-resolution.md` è superseded da `2026-09-07-package-current-upstream-and-positional-range-resolution.md`.
 
 ---
 
-## 14. Sequenza di sviluppo
+## 18. Sequenza di sviluppo
 
 La sequenza minima corrente è:
 
 ```text
-1 catalog layout/range contract                         [fissato]
-2 package-definition internal serialization contract   [prossimo]
+1 catalog layout/range/current-upstream contract        [fissato]
+2 repository + range-definition serialization contract [prossimo]
 3 repository adapter signatures + primo adapter
 4 generic download contract/backend
 5 generic extract contract + primi formati
@@ -504,42 +546,63 @@ La sequenza minima corrente è:
 10 physical validation dei backend host/network/archive effettivamente usati
 ```
 
-Ogni step deve poter essere testato separatamente; i repository adapter devono essere verificabili con fixture senza download reale quando la proprietà testata è soltanto parsing/discovery.
+Ogni step deve poter essere testato separatamente.
 
 ---
 
-## 15. Implementazione e test
+## 19. Implementazione e test
 
-Alla data di questa decisione la pipeline riallineata non è implementata in `rumiai-os` e non esistono test permanenti `pkg` in `rumiai-tests`.
+Alla data di questa decisione la pipeline non è implementata in `rumiai-os` e non esistono test permanenti `pkg` in `rumiai-tests`.
 
-Le modifiche qui consolidate sono documentali e non dichiarano physical validation di backend network/archive.
-
----
-
-## 16. Invarianti fissati
+Quando implementati, i test dovranno coprire almeno:
 
 ```text
-PKG-PIPE-01  CLI install = pkg install <package> [<package> ...]
-PKG-PIPE-02  CLI uninstall = pkg uninstall <package> [<package> ...]
-PKG-PIPE-03  gli operand ammessi sono <pkg>, <pkg>@<version>, <pkg>!<osarch>, <pkg>@<version>!<osarch>
-PKG-PIPE-04  per install, versione omessa significa latest upstream; versione esplicita significa quella release esatta
-PKG-PIPE-05  target omesso usa il target corrente per scegliere lo stream; target esplicito permette cross-target install
-PKG-PIPE-06  package definition != upstream artifact
+CLI a quattro forme
+repository unico per stream
+pkg_repository_list_versions contro upstream corrente
+ordine oldest -> latest
+range esplicito per posizione
+anchor validation
+latest coerente con lista versioni
+nessun repository storico fallback
+nessuna lista statica per range
+nessuna primitive match
+adapter isolation
+download repository-neutral
+extract repository-neutral
+integration unica responsabile dello stato RumiAI
+uninstall local-only
+```
+
+Questa decisione è documentale e non richiede physical validation separata.
+
+---
+
+## 20. Invarianti fissati
+
+```text
+PKG-PIPE-01  install = pkg install <package> [<package> ...]
+PKG-PIPE-02  uninstall = pkg uninstall <package> [<package> ...]
+PKG-PIPE-03  operand = <pkg>, <pkg>@<version>, <pkg>!<osarch>, <pkg>@<version>!<osarch>
+PKG-PIPE-04  install senza versione = latest upstream; versione esplicita = release esatta
+PKG-PIPE-05  target omesso usa target corrente per selezionare lo stream; target esplicito consente cross-target
+PKG-PIPE-06  stream repository descriptor e range package definition sono responsabilità distinte
 PKG-PIPE-07  repository type e facility provider sono concetti distinti
-PKG-PIPE-08  ogni repository type usa una propria lib/sh/pkg-repository-<type>.lib.sh
-PKG-PIPE-09  tutte le repository library espongono la stessa API semantica
-PKG-PIPE-10  API repository = pkg_repository_list_versions, pkg_repository_resolve_version, pkg_repository_resolve_artifact
-PKG-PIPE-11  pkg_repository_resolve_artifact produce un descriptor repository-neutral e non trasferisce byte
-PKG-PIPE-12  repository adapter fa discovery/resolution e non download/extract/integration
-PKG-PIPE-13  adapter omonimi vengono caricati uno alla volta in contesto shell isolato per package
-PKG-PIPE-14  download repository-neutral appartiene a lib/sh/pkg-download.lib.sh / pkg_download
-PKG-PIPE-15  extract repository-neutral appartiene a lib/sh/pkg-extract.lib.sh / pkg_extract
-PKG-PIPE-16  extract format non deriva semanticamente dal repository type
-PKG-PIPE-17  materializzazione/integrazione RumiAI appartiene a lib/sh/pkg-integration.lib.sh
-PKG-PIPE-18  solo integration conosce store/current/public binding/provider index/resolved binding e routing package RumiAI
-PKG-PIPE-19  catalog produce identità non qualificate; catalog-<osarch> produce identità qualificate; non esiste any
-PKG-PIPE-20  uninstall usa la stessa grammatica degli operand ma non usa repository/download/extract e non interpreta versione omessa come upstream latest
-PKG-PIPE-21  latest/discovery viene sempre risolto a una upstream version concreta prima della concrete package identity
-PKG-PIPE-22  backend catalog sync/cache, firme concrete adapter, backend download, formati extract e policy uninstall/multi-package restano contratti separati
-PKG-PIPE-23  la precedente CLI local-candidate e la relativa implementazione monolitica restano superseded
+PKG-PIPE-08  repository adapter = lib/sh/pkg-repository-<type>.lib.sh
+PKG-PIPE-09  API repository = pkg_repository_list_versions, pkg_repository_resolve_version, pkg_repository_resolve_artifact
+PKG-PIPE-10  pkg_repository_list_versions interroga il repository corrente e produce successione oldest -> latest
+PKG-PIPE-11  repository storico superseded non è fallback automatico
+PKG-PIPE-12  range esplicito viene selezionato per posizione nella successione e non con comparatore universale
+PKG-PIPE-13  catalog non contiene lista statica delle versioni per range e non introduce match
+PKG-PIPE-14  pkg_repository_resolve_version non sostituisce una versione esplicita
+PKG-PIPE-15  pkg_repository_resolve_artifact usa repository corrente + definition range-specific e non trasferisce byte
+PKG-PIPE-16  adapter omonimi vengono caricati isolatamente
+PKG-PIPE-17  download repository-neutral = lib/sh/pkg-download.lib.sh / pkg_download
+PKG-PIPE-18  extract repository-neutral = lib/sh/pkg-extract.lib.sh / pkg_extract
+PKG-PIPE-19  integration = lib/sh/pkg-integration.lib.sh ed è l'unico layer che modifica lo stato package RumiAI
+PKG-PIPE-20  catalog produce identity non qualificate; catalog-<osarch> identity qualificate; nessun any
+PKG-PIPE-21  uninstall è local-only e non interpreta versione omessa come upstream latest
+PKG-PIPE-22  latest/discovery viene sempre risolta a una versione concreta prima dell'identità installata
+PKG-PIPE-23  serializzazione repository/range, firme adapter, download backend, extract e lifecycle restano contratti separati
+PKG-PIPE-24  la baseline local-candidate e la resolution multi-repository-per-range restano superseded
 ```

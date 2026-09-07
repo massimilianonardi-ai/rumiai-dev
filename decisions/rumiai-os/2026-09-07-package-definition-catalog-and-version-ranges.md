@@ -1,13 +1,14 @@
 # Decisione — Catalogo delle package definition, stream per target e range ordinati
 
 Date: 2026-09-07  
+Updated: 2026-09-07  
 Status: **Accepted**
 
 ## Contesto
 
-La pipeline corrente di `pkg` separa repository-specific discovery/resolution, download, extract e integrazione RumiAI. Per trasformare un operand pubblico come `foo`, `foo@1.2`, `foo!linux-arm64` o `foo@1.2!linux-arm64` in una installazione concreta serve una package definition autorevole che descriva repository upstream, artifact e regole di integrazione.
+La pipeline corrente di `pkg` separa catalog lookup, repository-specific discovery/resolution, download, extract e integrazione RumiAI.
 
-Le versioni upstream non possiedono nel modello RumiAI un comparatore universale. Uno stesso prodotto può cambiare convenzione di naming nel tempo oppure usare convenzioni differenti per target diversi, per esempio:
+Le versioni upstream non possiedono nel modello RumiAI un comparatore universale e possono cambiare convenzione di naming nel tempo:
 
 ```text
 1.0
@@ -17,9 +18,9 @@ v35
 v01-Kidding-Penguin
 ```
 
-Il catalogo deve quindi poter ordinare le regioni di applicabilità delle package definition senza interpretare genericamente tali stringhe.
+Il catalogo ordina le regioni di applicabilità delle package definition senza interpretare genericamente tali stringhe.
 
-Questa decisione fissa il primo contratto di catalogo. Non fissa ancora la serializzazione interna completa di una singola package definition né il meccanismo locale di cache/sync del catalogo.
+La correzione del 2026-09-07 fissa inoltre un solo repository upstream corrente per ciascuno stream e la resolution posizionale dei range secondo `2026-09-07-package-current-upstream-and-positional-range-resolution.md`.
 
 Questa unità modifica soltanto `rumiai-dev`. Non autorizza modifiche a `rumiai-os` o `rumiai-tests`.
 
@@ -38,8 +39,6 @@ meccanismo di clone/fetch/cache/snapshot
 policy di aggiornamento
 ```
 
-Tali aspetti devono preservare relocatability e configurazione esplicita secondo le regole generali RumiAI.
-
 La package definition resta distinta dall'artifact upstream e il catalogo non diventa un repository di payload software.
 
 ---
@@ -52,15 +51,13 @@ La prima chiave fisica del catalogo è il nome canonico del package:
 <pkg>/
 ```
 
-Esempio concettuale:
+Esempio:
 
 ```text
 foo/
 bar/
 java/
 ```
-
-Questo rende il lookup di `pkg install foo` diretto e non richiede una ricerca globale per target prima di identificare il package.
 
 ---
 
@@ -90,15 +87,13 @@ bin/ext/
 bin/ext-<osarch>/
 ```
 
-Non viene introdotto in questa baseline un livello intermedio `catalog-<platform>`.
-
-`<osarch>` continua a usare il vocabulary canonico RumiAI `<platform>-<architecture>`.
+Non viene introdotto un livello intermedio `catalog-<platform>`.
 
 ---
 
 ## 4. Selezione dello stream
 
-Per un target `T`, determinato dall'operand esplicito oppure dal target corrente quando l'operand non lo specifica, la selezione è:
+Per un target `T`:
 
 ```text
 se <pkg>/catalog-T/ esiste
@@ -111,35 +106,11 @@ altrimenti
 
 Quando `catalog-T` esiste, non esiste fallback per-versione o merge con `catalog`.
 
-Quindi:
-
-```text
-catalog-T presente
-    -> catalog-T è lo stream completo per T
-
-catalog-T assente
-    -> catalog è il solo fallback completo
-```
-
-Questa regola evita inheritance, override parziali e merge impliciti fra package definition.
-
-Stream differenti dello stesso package possono avere storie di versioning upstream completamente differenti. Per esempio:
-
-```text
-foo/catalog-linux-x86_64/
-    ... 2.3 ...
-
-foo/catalog-windows-x86_64/
-    ... v35 ...
-```
-
-non richiede che `2.3` e `v35` appartengano a una numerazione comune.
+Stream differenti dello stesso package sono indipendenti e possono usare repository upstream correnti e storie di versioning differenti.
 
 ---
 
 ## 5. Relazione fra stream e identità installata
-
-L'uso dello stream selezionato determina se la versione concreta è platform-independent oppure target-specific.
 
 Se viene usato:
 
@@ -147,7 +118,7 @@ Se viene usato:
 catalog
 ```
 
-la concrete package identity è non qualificata:
+la concrete package identity è:
 
 ```text
 <pkg>@<version>
@@ -179,32 +150,25 @@ e il selector current è:
 
 Non viene introdotto alcun target fittizio `any`, `any-any` o equivalente.
 
-Un target esplicitamente richiesto sulla CLI serve a selezionare lo stream corretto; se per quel target non esiste `catalog-<osarch>` e viene quindi usato `catalog`, l'identità installata resta platform-independent e non acquisisce artificialmente il target richiesto.
-
-La sola indipendenza dell'artifact upstream non è sufficiente a rendere platform-independent l'intero package RumiAI. Se la materializzazione, le dependency risolte, i command entry, l'env o altri elementi del package devono differire per target, il package deve usare lo stream `catalog-<osarch>` pertinente.
-
-In particolare una versione concreta non qualificata non deve contenere resolved binding verso provider qualificati per un singolo `<osarch>`: ciò renderebbe target-specific un oggetto dichiarato platform-independent.
+La target-independence riguarda l'intero package materializzato, inclusi dependency binding e altri elementi install-time.
 
 ---
 
-## 6. Directory dei range
+## 6. Layout interno dello stream
 
-Dentro ciascuno stream, ogni nuova package definition è introdotta da una directory con forma esatta:
-
-```text
-nNNNN=<version-minimum>
-```
-
-La parte `nNNNN` usa quattro cifre decimali e parte da:
+Ogni stream disponibile contiene:
 
 ```text
-n0001
+repository
+nNNNN=<version-minimum>/
+...
 ```
 
 Esempio:
 
 ```text
 foo/catalog/
+├── repository
 ├── n0001=1.0/
 ├── n0002=2.0/
 ├── n0003=v35/
@@ -212,21 +176,43 @@ foo/catalog/
 └── n0005=v01-Kidding-Penguin/
 ```
 
-`<version-minimum>` è la versione upstream esatta che introduce quella package definition e usa lo stesso dominio lessicale delle versioni upstream ammesse dal package manager:
+Il file/descriptor:
+
+```text
+repository
+```
+
+appartiene allo stream e descrive il repository upstream corrente, incluso semanticamente il repository type e le coordinate necessarie alle API repository.
+
+La serializzazione interna esatta di `repository` resta da fissare.
+
+I singoli range non selezionano repository upstream storici differenti.
+
+---
+
+## 7. Directory dei range
+
+Ogni package definition di range è introdotta da una directory con forma esatta:
+
+```text
+nNNNN=<version-minimum>
+```
+
+`nNNNN` usa quattro cifre decimali, parte da `n0001` ed è contiguo nello stream.
+
+`<version-minimum>` usa la grammatica upstream già fissata:
 
 ```text
 [A-Za-z0-9][A-Za-z0-9._+~-]*
 ```
 
-Il carattere `=` è il separatore strutturale fra l'ordinale RumiAI e la versione upstream. Poiché `=` non appartiene al dominio di `<version>`, la separazione è non ambigua.
-
-L'uso di `=` in questo pathname è una eccezione semantica limitata alle directory range del package-definition catalog e non modifica la naming convention generale di RumiAI.
+Il carattere `=` è il separatore strutturale fra l'ordinale RumiAI e la versione upstream ed è ammesso esclusivamente in questo ruolo.
 
 ---
 
-## 7. Significato dell'ordinale `nNNNN`
+## 8. Significato di `nNNNN`
 
-`nNNNN` ordina le **package definition range** all'interno di un singolo stream.
+`nNNNN` ordina le package definition all'interno dello stream.
 
 Non è:
 
@@ -236,58 +222,68 @@ compatibility version
 package revision
 provider ranking
 release-order universale
-generation del resolver storico
+generation
 parte della concrete package identity
 ```
 
-L'ordine normativo è quello numerico dell'ordinale, che coincide con l'ordine lessicografico del prefisso grazie alla larghezza fissa di quattro cifre.
-
 La stringa upstream dopo `=` resta opaca e non viene usata per ordinare le directory.
 
-Quindi un cambio arbitrario di naming upstream non altera l'ordine del catalogo:
-
-```text
-n0003=v35
-n0004=2026-Q1
-n0005=v01-Kidding-Penguin
-```
-
-resta ordinato esattamente come dichiarato dal maintainer del catalogo.
+Il limite corrente è `n9999`; un'eventuale estensione richiede una decisione esplicita.
 
 ---
 
-## 8. Continuità degli ordinali
+## 9. Successione upstream autorevole
 
-Nella baseline gli ordinali presenti in uno stream sono contigui:
+La successione delle versioni attualmente installabili non è memorizzata nel catalogo.
+
+Viene ottenuta dal repository upstream corrente dello stream tramite:
 
 ```text
-n0001
-n0002
-n0003
-...
+pkg_repository_list_versions
 ```
 
-senza duplicati o gap intenzionali.
+che restituisce semanticamente tutte le versioni installabili correnti in ordine:
 
-Il limite della forma corrente è quindi `n9999`. Se un package reale dovesse richiedere più di 9999 cambi di package definition nello stesso stream, il formato verrà esteso con una decisione esplicita invece di cambiare silenziosamente la grammatica.
+```text
+oldest -> latest
+```
 
-Non vengono adottati ora ordinali sparsi come `n0100`, `n0200`: la semplicità di validazione e lettura prevale sul risparmio di rename in un caso retroattivo raro.
+Il core `pkg` usa soltanto la posizione nella successione e non confronta semanticamente le stringhe upstream.
 
 ---
 
-## 9. Semantica del range
+## 10. Validità degli anchor
 
-Una directory:
+Ogni `<version-minimum>` deve comparire esattamente una volta nella successione corrente restituita da `pkg_repository_list_versions`.
+
+Le posizioni degli anchor devono essere strettamente crescenti nello stesso ordine degli `nNNNN`.
+
+Esempio:
 
 ```text
-nNNNN=<version-minimum>
+catalog:
+    n0001=1.0
+    n0002=2.0
+    n0003=v35
+
+upstream:
+    1.0
+    1.1
+    2.0
+    2.7
+    v35
+    v36
 ```
 
-introduce la package definition valida a partire da quella release nella lineage upstream dello stream.
+Un anchor assente o fuori ordine rende il catalogo incoerente rispetto all'upstream corrente.
 
-La package definition resta applicabile fino alla release immediatamente precedente il `<version-minimum>` della directory successiva.
+---
 
-Quindi, concettualmente:
+## 11. Semantica del range
+
+Per una versione concreta presente nella successione upstream, il range applicabile è quello dell'ultimo anchor che non viene dopo la versione nella successione.
+
+Quindi:
 
 ```text
 n0001=1.0
@@ -295,7 +291,7 @@ n0002=3.0
 n0003=5.0
 ```
 
-rappresenta:
+continua a rappresentare concettualmente:
 
 ```text
 n0001   da 1.0 fino a prima di 3.0
@@ -303,52 +299,76 @@ n0002   da 3.0 fino a prima di 5.0
 n0003   da 5.0 in avanti
 ```
 
-L'ultimo range è sempre aperto verso le release successive finché non viene aggiunta una nuova directory.
-
-L'espressione "prima di" descrive la posizione nella lineage upstream dello specifico stream; non introduce un confronto lessicografico, SemVer o numerico universale fra stringhe `<version>`.
-
-Le API repository devono fornire le informazioni repository-specific necessarie a risolvere versioni concrete e, quando serve, a collocarle rispetto agli anchor di range senza promuovere un comparatore universale nel core `pkg`.
-
-La firma/serializzazione esatta con cui `pkg_repository_list_versions` rappresenterà la sequenza di versioni viene chiusa insieme al primo adapter concreto.
+ma "prima di" indica la posizione nella successione fornita dall'adapter, non un confronto lessicografico, numerico o SemVer.
 
 ---
 
-## 10. Aggiunta di un nuovo range in coda
+## 12. Versione esplicita
 
-Quando una nuova release introduce una package definition differente, viene aggiunta la directory con l'ordinale successivo.
+Per una versione esplicita, `pkg`:
+
+```text
+seleziona stream
+-> carica repository
+-> pkg_repository_list_versions
+-> localizza versione richiesta e anchor per posizione
+-> seleziona un solo range
+```
+
+Se la versione richiesta non compare nella successione corrente, non è installabile attraverso il repository corrente.
+
+Non vengono consultati repository storici o adapter diversi per range.
+
+---
+
+## 13. Versione omessa e `latest`
+
+Per `pkg install`, l'assenza di `@<version>` significa sempre:
+
+```text
+latest upstream disponibile
+```
+
+`pkg_repository_resolve_version` risolve `latest` attraverso il repository corrente.
+
+La versione risolta deve essere coerente con l'ultima versione della successione di `pkg_repository_list_versions` per lo stesso repository/context.
+
+Per installare `latest`, `pkg` può selezionare direttamente l'ultimo range e non è obbligato a enumerare tutte le versioni soltanto per questa operazione.
+
+---
+
+## 14. Nuove versioni e chiusura dei range
+
+Una nuova release pubblicata dopo l'ultimo anchor appartiene automaticamente all'ultimo range finché non richiede una package definition differente.
 
 Esempio:
 
 ```text
-prima:
-    n0004=2026-Q1
-
-poi arriva una nuova famiglia:
-    n0005=v01-Kidding-Penguin
+n0005=v01-Kidding-Penguin
 ```
 
-L'aggiunta di `n0005` chiude strutturalmente il range di `n0004` alla release immediatamente precedente nella lineage upstream.
-
-La precedente package definition può e, quando necessario, deve essere aggiornata nello stesso cambiamento per rendere esatti i requisiti ormai conosciuti del range chiuso.
-
-Esempio concettuale:
+copre automaticamente successive release come:
 
 ```text
-prima, ultimo range:
-    java >=21
-
-quando nasce il range successivo:
-    range precedente -> java >=21 <=25
-    nuovo range      -> nuovo constraint appropriato
+v02-Happy-Otter
+v03-Serious-Wombat
 ```
 
-Il catalogo rappresenta la conoscenza packaging corrente; non è immutabile. Git conserva la storia delle modifiche e permette di ricostruire la precedente conoscenza del catalogo.
+finché non viene aggiunto, per esempio:
+
+```text
+n0006=v03-Serious-Wombat
+```
+
+L'aggiunta del nuovo range chiude quello precedente alla release immediatamente precedente nella successione upstream.
+
+La package definition del range precedente può e, quando necessario, deve essere aggiornata nello stesso cambiamento per rendere esatti i requisiti del range ormai chiuso.
 
 ---
 
-## 11. Inserimento retroattivo
+## 15. Inserimento retroattivo
 
-Può emergere in seguito che una differente package definition era necessaria in un punto storico intermedio.
+Può emergere che una package definition differente fosse necessaria in un punto storico intermedio.
 
 Esempio:
 
@@ -363,67 +383,50 @@ correzione:
     n0003=5.0
 ```
 
-In questo caso gli ordinali successivi possono essere rinumerati.
-
-Questo è sicuro perché `nNNNN` è esclusivamente ordine interno del catalogo e **non deve essere persistito** in:
-
-```text
-concrete package identity
-selector current
-facility/provider marker
-binding/<facility>
-package state identity
-public command binding
-```
-
-Il costo della rinumerazione è limitato al diff Git del catalogo e a eventuali conflitti di manutenzione nello stesso stream.
-
-Se l'inserimento retroattivo diventasse frequente nella pratica, una futura decisione potrà valutare ordinali sparsi o un diverso indice senza cambiare le identità installate.
+Gli ordinali successivi possono essere rinumerati perché `nNNNN` è esclusivamente ordine interno del catalogo e non viene persistito in package identity, selector, provider index, binding, state o command binding.
 
 ---
 
-## 12. Lineage non lineari
+## 16. Anchor rimossi upstream
 
-La baseline dei range ordinati assume che ciascun singolo stream `catalog*` descriva una lineage upstream linearmente ordinabile per le release che deve supportare.
+Il catalogo corrente descrive le versioni attualmente installabili.
 
-Branch paralleli, backport pubblicati fuori sequenza, linee LTS contemporanee o altri casi nei quali una singola successione di anchor non identifica univocamente l'applicabilità non vengono forzati dentro questo modello.
+Se un anchor non è più esposto dal repository corrente ma restano versioni dello stesso range, l'anchor viene spostato alla prima versione ancora disponibile di quel range.
 
-Quando emergerà un package concreto con tale necessità, dovrà essere introdotta una rappresentazione esplicita proporzionata del membership/routing di versione. Non vengono anticipati ora pattern, OR, branch labels o un comparatore universale.
+Se nessuna versione installabile appartiene più al range, il range viene rimosso e gli ordinali successivi vengono rinumerati.
 
----
-
-## 13. Versione omessa e `latest`
-
-Per `pkg install`, l'assenza di `@<version>` nell'operand significa sempre:
-
-```text
-ultima versione upstream disponibile
-```
-
-La versione viene risolta tramite:
-
-```text
-pkg_repository_resolve_version
-```
-
-usando la package definition dell'ultimo range dello stream selezionato.
-
-`latest` è una richiesta di resolution e non diventa una pseudo-versione installata. Prima di download e integrazione deve esistere una versione upstream concreta.
-
-Questa regola riguarda `install`. `uninstall` resta local-only e non deve trasformare l'assenza di versione in una query upstream per `latest`; la policy locale di rimozione senza versione esplicita resta parte del lifecycle uninstall da fissare separatamente.
+Git conserva la storia precedente.
 
 ---
 
-## 14. Contenuto semantico di una package definition
+## 17. Nessuna lista statica e nessun `match`
 
-La serializzazione fisica interna della directory range resta il prossimo contratto da chiudere, ma una package definition deve poter esprimere, quando applicabile, almeno:
+Il baseline non mantiene liste esaustive delle versioni dentro i range.
+
+Non viene inoltre introdotta una funzione, API o file eseguibile `match` package-specific per la membership del range.
+
+La successione upstream più gli anchor coprono il caso corrente senza duplicare il repository e senza eseguire codice arbitrario dalla package definition.
+
+Una futura primitive di matching richiede un caso concreto e una nuova decisione esplicita.
+
+---
+
+## 18. Lineage non lineari
+
+Il baseline richiede che `pkg_repository_list_versions` possa rappresentare una successione totale semanticamente valida per lo stream.
+
+Branch paralleli, LTS concorrenti, backport o altre strutture non linearizzabili correttamente restano fuori dal baseline e richiederanno un'estensione esplicita quando emergerà un caso reale.
+
+---
+
+## 19. Contenuto semantico di una package definition di range
+
+La directory `nNNNN=<version-minimum>/` contiene la package definition specifica del range e deve poter esprimere, quando applicabile:
 
 ```text
-repository type
-repository-specific project/artifact coordinates
 artifact selection/materialization information
 artifact format
-integrity/provenance information quando disponibile o richiesta
+integrity/provenance requirements
 facility
 dependency
 cmd/
@@ -434,76 +437,87 @@ state/path normalization information
 altre informazioni di integrazione già previste dal modello package corrente
 ```
 
-La package definition non deve essere sostituita da una composite string ad hoc nella CLI né da un manifest shell arbitrariamente sourced.
+Repository type e coordinate upstream correnti non appartengono al singolo range: appartengono a `<stream>/repository`.
 
-I file che il modello package ha già definito come shell code, come `env` e i command entry, mantengono il proprio contratto specifico; ciò non trasforma il catalog descriptor generale in shell code.
+La serializzazione interna completa della package definition resta da fissare separatamente.
+
+Il catalog descriptor generale non diventa shell code arbitrariamente sourced.
 
 ---
 
-## 15. Revisionabilità e provenance
+## 20. Revisionabilità e provenance
 
 Il Git commit del repository catalogo identifica uno snapshot esatto delle package definition.
 
-Non viene introdotta ora una seconda numerazione RumiAI di revisione delle package definition soltanto per duplicare la funzione già svolta da Git.
+Non viene introdotta una seconda numerazione RumiAI di revisione delle package definition.
 
-Una singola operazione multi-package dovrebbe risolvere le package definition rispetto a uno stesso snapshot del catalogo, così che il catalogo non cambi semanticamente a metà della stessa operazione. Il meccanismo operativo con cui lo snapshot viene acquisito/cacheato verrà fissato insieme al backend catalogo.
+Una singola operazione multi-package dovrebbe usare uno stesso snapshot Git del catalogo; il backend di sync/cache resta da fissare.
 
 ---
 
-## 16. Testing futuro
+## 21. Implementazione e testing futuro
 
-Alla data di questa decisione il catalogo non è ancora implementato in `rumiai-os` e non esistono test permanenti `pkg`/catalogo in `rumiai-tests`.
+Alla data di questa decisione il catalogo non è implementato in `rumiai-os` e non esistono test permanenti `pkg`/catalogo in `rumiai-tests`.
 
 Quando implementato, i test dovranno proteggere almeno:
 
 ```text
 lookup package-first
 precedenza completa catalog-<osarch> su catalog
-fallback a catalog solo quando catalog-<osarch> è assente
-assenza di merge per-versione fra i due stream
-identità non qualificata quando viene usato catalog
-identità qualificata quando viene usato catalog-<osarch>
-assenza di any/any-any
+assenza di merge per-versione
+repository unico a livello stream
+assenza di repository storici per-range
+identità generic/target-specific corrette
 validazione nNNNN=<version-minimum>
 ordinali contigui da n0001
-ordinamento indipendente dalla sintassi upstream
-ultimo range aperto
-chiusura del precedente quando viene aggiunto un nuovo range
-rinumerazione retroattiva non propagata alle identità installate
-rifiuto/gestione esplicita di lineage non lineari non rappresentabili
-versione install omessa -> latest concreta
+pkg_repository_list_versions oldest -> latest
+anchor presenti e ordinati nella successione
+resolution esplicita per posizione
+versione assente -> errore
+nuove release -> ultimo range automaticamente
+latest coerente con la successione
+riallineamento anchor scomparsi
+rimozione range senza versioni disponibili
+nessuna lista statica per range
+nessuna primitive match
+nessun comparatore universale
 ```
 
 Questa decisione è documentale e non richiede physical validation separata.
 
 ---
 
-## 17. Invarianti fissati
+## 22. Invarianti fissati
 
 ```text
-PKG-CATALOG-01  la sorgente iniziale delle package definition è un repository GitHub RumiAI configurato e dedicato alle package definition
-PKG-CATALOG-02  il lookup fisico parte da <pkg>/
-PKG-CATALOG-03  <pkg>/catalog è lo stream completo platform-independent
-PKG-CATALOG-04  <pkg>/catalog-<osarch> è lo stream completo specifico dell'esatto target <osarch>
-PKG-CATALOG-05  se catalog-<osarch> esiste prevale interamente; non esiste merge/fallback per-versione con catalog
-PKG-CATALOG-06  catalog è usato come fallback completo soltanto quando catalog-<osarch> è assente
-PKG-CATALOG-07  non esiste nella baseline un catalog-<platform> intermedio
-PKG-CATALOG-08  catalog produce concrete identity <pkg>@<version> e selector <pkg>
-PKG-CATALOG-09  catalog-<osarch> produce concrete identity <pkg>@<version>!<osarch> e selector <pkg>!<osarch>
-PKG-CATALOG-10  non viene introdotto alcun target fittizio any/any-any
-PKG-CATALOG-11  una versione concreta non qualificata deve essere interamente target-independent, inclusi i resolved binding materializzati
-PKG-CATALOG-12  ogni range directory usa esattamente nNNNN=<version-minimum>
-PKG-CATALOG-13  nNNNN parte da n0001, usa quattro cifre ed è contiguo nello stream
-PKG-CATALOG-14  <version-minimum> è una versione upstream esatta con grammatica [A-Za-z0-9][A-Za-z0-9._+~-]*
-PKG-CATALOG-15  = è separatore semantico ammesso esclusivamente nel pathname range del catalogo
-PKG-CATALOG-16  nNNNN ordina package-definition range e non è versione upstream, compatibility, revision, ranking, generation o concrete identity
-PKG-CATALOG-17  la sintassi della versione upstream non determina l'ordine dei range
-PKG-CATALOG-18  ogni range parte dal proprio version-minimum e termina prima del version-minimum del range successivo nella lineage dello stream
-PKG-CATALOG-19  l'ultimo range è aperto fino all'introduzione di un range successivo
-PKG-CATALOG-20  aggiungere un nuovo range può richiedere di correggere la package definition del range precedente ormai chiuso
-PKG-CATALOG-21  un inserimento storico può rinumerare i range successivi perché nNNNN non è persistito fuori dal catalogo
-PKG-CATALOG-22  la baseline non forza lineage upstream non lineari dentro una successione ambigua di range
-PKG-CATALOG-23  per pkg install, versione omessa significa latest upstream e deve essere risolta a una versione concreta
-PKG-CATALOG-24  lo snapshot Git del catalogo è la provenance naturale della revisione delle package definition; non viene introdotta una revision RumiAI duplicata
-PKG-CATALOG-25  la serializzazione interna completa della singola package definition e il backend locale di catalog sync/cache restano il prossimo contratto separato
+PKG-CATALOG-01  la sorgente iniziale delle package definition è un repository GitHub RumiAI configurato e dedicato
+PKG-CATALOG-02  il lookup parte da <pkg>/
+PKG-CATALOG-03  catalog è lo stream completo platform-independent
+PKG-CATALOG-04  catalog-<osarch> è lo stream completo target-specific
+PKG-CATALOG-05  catalog-<osarch> prevale interamente; nessun merge/fallback per-versione
+PKG-CATALOG-06  catalog è fallback completo solo se catalog-<osarch> è assente
+PKG-CATALOG-07  non esiste catalog-<platform> nel baseline
+PKG-CATALOG-08  catalog produce <pkg>@<version> e selector <pkg>
+PKG-CATALOG-09  catalog-<osarch> produce <pkg>@<version>!<osarch> e selector <pkg>!<osarch>
+PKG-CATALOG-10  non esiste target fittizio any/any-any
+PKG-CATALOG-11  ogni stream disponibile contiene un solo repository descriptor corrente
+PKG-CATALOG-12  repository type e coordinate correnti appartengono allo stream, non al range
+PKG-CATALOG-13  ogni range usa nNNNN=<version-minimum>
+PKG-CATALOG-14  nNNNN parte da n0001, usa quattro cifre ed è contiguo
+PKG-CATALOG-15  version-minimum usa [A-Za-z0-9][A-Za-z0-9._+~-]*
+PKG-CATALOG-16  = è separatore semantico esclusivo dei range del catalogo
+PKG-CATALOG-17  nNNNN ordina package definition e non è release-order universale
+PKG-CATALOG-18  la successione installabile viene dall'upstream corrente tramite pkg_repository_list_versions
+PKG-CATALOG-19  ogni anchor deve comparire una volta e in ordine crescente nella successione
+PKG-CATALOG-20  il range è determinato dalla posizione della versione rispetto agli anchor
+PKG-CATALOG-21  nuove release successive all'ultimo anchor appartengono automaticamente all'ultimo range
+PKG-CATALOG-22  un nuovo range chiude il precedente nella successione upstream
+PKG-CATALOG-23  un inserimento storico può rinumerare range perché nNNNN non è persistito fuori dal catalogo
+PKG-CATALOG-24  anchor scomparsi vengono riallineati alle versioni ancora installabili; range vuoti vengono rimossi
+PKG-CATALOG-25  il catalogo non mantiene liste statiche esaustive per range
+PKG-CATALOG-26  non esiste una primitive match nel baseline
+PKG-CATALOG-27  lineage non linearizzabili correttamente restano fuori dal baseline
+PKG-CATALOG-28  latest omessa è risolta a una versione upstream concreta tramite repository corrente
+PKG-CATALOG-29  Git identifica la revisione naturale del catalogo
+PKG-CATALOG-30  serializzazione interna di repository e range definition resta il prossimo contratto separato
 ```
