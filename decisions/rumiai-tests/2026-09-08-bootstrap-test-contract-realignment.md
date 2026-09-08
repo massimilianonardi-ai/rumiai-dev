@@ -1,11 +1,12 @@
 # Decisione — Riallineamento dei test permanenti bootstrap al contratto corrente
 
 Date: 2026-09-08  
-Status: **Accepted**
+Status: **Accepted**  
+Updated: 2026-09-09
 
 ## Contesto
 
-La validation macOS del target:
+La validation macOS iniziale del target:
 
 ```text
 rumiai-os@7d17bd8b3c5158f3c367c708669c81ddc5a1839c
@@ -13,7 +14,7 @@ rumiai-tests@7aae99daadaa6534af79b343f07f42e6ef85d7e5
 selection=rumiai-os/bootstrap
 ```
 
-ha prodotto la sessione locale:
+ha prodotto la sessione:
 
 ```text
 20260908T231406+0200-17700
@@ -29,11 +30,17 @@ ERROR  0
 TOTAL  27
 ```
 
-La sessione non e ancora integrata nel repository e non costituisce una validation riuscita del target.
+La sessione e successivamente stata pubblicata senza alterarne il contenuto sotto:
 
-L'analisi dei FAIL contro le fonti autorevoli correnti mostra che la maggioranza dei test bootstrap rimasti dalla Phase 0/1 protegge contratti successivamente superseded dalla baseline bootstrap/runtime consolidata il 2026-09-02. Il prodotto corrente non deve essere modificato per ripristinare tali contratti storici.
+```text
+validation/20260908T231406+0200-17700
+```
 
-Questa decisione riallinea la suite permanente alla semantica corrente senza modificare `rumiai-os`.
+Non costituisce una validation riuscita del target.
+
+L'analisi dei FAIL contro le fonti autorevoli correnti mostra che la maggioranza dei test bootstrap rimasti dalla Phase 0/1 proteggeva contratti successivamente superseded dalla baseline bootstrap/runtime consolidata il 2026-09-02. Il prodotto corrente non deve essere modificato per ripristinare tali contratti storici.
+
+Questa decisione riallinea la suite permanente alla semantica corrente senza modificare `rumiai-os` come parte di quel work unit. Successive modifiche indipendenti alla policy `.gitignore` hanno poi avanzato il target prodotto usato per la validation finale senza modificare il comportamento bootstrap.
 
 ## 1. Autorita corrente
 
@@ -206,9 +213,9 @@ tests/rumiai-os/log/field-values.test
 
 I codici interni specifici del logger non vengono promossi a nuova API normativa se non gia fissati da una fonte autorevole.
 
-## 6. Implementazione corrente della suite
+## 6. Implementazione della suite
 
-Il riallineamento e implementato in:
+Il riallineamento sostanziale dei test e stato implementato inizialmente in:
 
 ```text
 massimilianonardi-ai/rumiai-tests@aa64b512ada671de7cf31aff54b401ec8f51e02e
@@ -222,49 +229,98 @@ rumiai-os/bootstrap
 
 contiene 13 test permanenti correnti, tutti con mode `100755`.
 
-Le verifiche meccaniche eseguite prima della pubblicazione comprendono:
+Le verifiche meccaniche eseguite prima della pubblicazione comprendevano:
 
 - parsing `/bin/sh -n` dei nove test riscritti;
 - esecuzione funzionale dei nove test riscritti contro una ricostruzione minimale del comportamento corrente di `rumiai-os@7d17bd8...`;
 - prova funzionale del resolver `lang`, del fallback identifier, del catalogo come data e della selezione `lang-set` con fixture comprendente `lib/`.
 
-Queste prove sono development/mechanical checks e non sostituiscono la physical validation sugli host di riferimento.
+Queste prove erano development/mechanical checks e non sostituivano la physical validation sugli host di riferimento.
 
-## 7. Nessuna modifica prodotto
+La revisione esatta della suite successivamente usata per la physical validation finale e:
 
-Questa unita di lavoro non modifica `rumiai-os`.
+```text
+massimilianonardi-ai/rumiai-tests@7a28fe32ed30f0ea1108b4eab5572216e5551167
+```
 
-Il target della physical validation resta:
+Tra `aa64b512...` e `7a28fe32...` sono state aggiunte la pubblicazione sicura delle sessioni di validation e una correzione stilistica Git del relativo test; la selection `rumiai-os/bootstrap` riallineata resta composta dagli stessi 13 test correnti.
+
+## 7. Evoluzione del target dopo il riallineamento
+
+Il work unit di riallineamento dei test non modificava `rumiai-os` e inizialmente manteneva come target:
 
 ```text
 rumiai-os@7d17bd8b3c5158f3c367c708669c81ddc5a1839c
 ```
 
-La selection corrente resta:
+Successivamente la policy Git delle root locali/runtime e stata uniformata alla modalita per-directory gia usata da `src/`, producendo:
+
+```text
+rumiai-os@c6b3027cfef278b69681ba414337e4b357aca537
+```
+
+Questa modifica non cambia il comportamento bootstrap, ma appartiene alla stessa selection `rumiai-os/bootstrap` tramite `runtime-state-ignore.test`. Di conseguenza il target finale della physical validation e stato riallineato a `c6b3027...`.
+
+La selection resta:
 
 ```text
 rumiai-os/bootstrap
 ```
 
-perche il prodotto non cambia e il gate fisico da ripetere e quello che ha esposto il drift dei test bootstrap.
+Le correzioni ai gruppi `lang` e `log` sono maintenance della suite corrente e non ampliano da sole questo gate fisico.
 
-Le correzioni ai gruppi `lang` e `log` sono maintenance della suite corrente e non ampliano da sole il gate fisico corrente.
+## 8. Evidenza storica fallita
 
-## 8. Stato della validation macOS fallita
-
-La sessione locale:
+La sessione:
 
 ```text
-20260908T231406+0200-17700
+validation/20260908T231406+0200-17700
 ```
 
-resta un'evidenza di validation fallita contro la suite `7aae99d...`.
+resta evidenza di validation fallita contro:
 
-Non deve essere reinterpretata come fallimento del contratto bootstrap corrente ne come validation riuscita del target. Non viene riscritta o cancellata da questa decisione.
+```text
+rumiai-os@7d17bd8b3c5158f3c367c708669c81ddc5a1839c
+rumiai-tests@7aae99daadaa6534af79b343f07f42e6ef85d7e5
+```
 
-Una nuova physical validation e necessaria con la suite riallineata.
+Non deve essere reinterpretata come fallimento del contratto bootstrap corrente ne come validation riuscita del target. Non viene riscritta o cancellata.
 
-## 9. Invarianti
+## 9. Physical validation finale
+
+La nuova physical validation e stata eseguita con:
+
+```text
+rumiai-os@c6b3027cfef278b69681ba414337e4b357aca537
+rumiai-tests@7a28fe32ed30f0ea1108b4eab5572216e5551167
+selection=rumiai-os/bootstrap
+```
+
+macOS ARM64:
+
+```text
+validation/20260909T000836+0200-18820
+PASS 13
+FAIL 0
+SKIP 0
+ERROR 0
+runner-exit-status=0
+```
+
+Ubuntu 26.04 ARM64:
+
+```text
+validation/20260909T001235+0200-7713
+PASS 13
+FAIL 0
+SKIP 0
+ERROR 0
+runner-exit-status=0
+```
+
+I due host stabili di riferimento hanno quindi esercitato con successo la stessa revisione della suite, lo stesso target e la stessa selection. Il riallineamento dei 13 test bootstrap e il target `c6b3027...` risultano fisicamente validati per queste revisioni esatte.
+
+## 10. Invarianti
 
 ```text
 TEST-REALIGN-01  i test permanenti proteggono soltanto contratti correnti, non meccanismi superseded
@@ -275,7 +331,8 @@ TEST-REALIGN-05  language fallback resta fisso a en_US e indipendente dal locale
 TEST-REALIGN-06  text encoding resta fisso a UTF-8 e non configurabile dal bootstrap
 TEST-REALIGN-07  le fixture lang includono lib/ per eseguire il bootstrap corrente
 TEST-REALIGN-08  i test log usano il runtime corrente e non promuovono codici interni non normativi a nuova API
-TEST-REALIGN-09  la validation corrente resta rumiai-os@7d17bd8... con selection rumiai-os/bootstrap
-TEST-REALIGN-10  la sessione 20260908T231406+0200-17700 resta evidenza storica fallita e non viene riscritta
-TEST-REALIGN-11  la suite riallineata e rumiai-tests@aa64b512ada671de7cf31aff54b401ec8f51e02e
+TEST-REALIGN-09  la validation finale usa rumiai-os@c6b3027cfef278b69681ba414337e4b357aca537 con selection rumiai-os/bootstrap
+TEST-REALIGN-10  la sessione validation/20260908T231406+0200-17700 resta evidenza storica fallita e non viene riscritta
+TEST-REALIGN-11  il riallineamento sostanziale nasce in rumiai-tests@aa64b512ada671de7cf31aff54b401ec8f51e02e e la revisione fisicamente validata e rumiai-tests@7a28fe32ed30f0ea1108b4eab5572216e5551167
+TEST-REALIGN-12  macOS ARM64 e Ubuntu 26.04 ARM64 hanno entrambi PASS 13/13 sulle revisioni finali esatte
 ```
