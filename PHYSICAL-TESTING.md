@@ -25,7 +25,7 @@ git pull --ff-only
 
 Questo sincronizza prima di tutto il target che verrà sottoposto a test.
 
-Successivamente la sessione deve entrare nel clone locale di `rumiai-tests`, normalmente sotto `.dev/rumiai-tests/`, ed eseguire nuovamente:
+Successivamente la sessione deve entrare nel clone locale di `rumiai-tests`, normalmente sotto `src/rumiai-tests/`, ed eseguire nuovamente:
 
 ```sh
 git pull --ff-only
@@ -82,14 +82,14 @@ macOS:
 
 ```text
 RumiAI_ROOT=/Volumes/RumiAI/rumiai-os
-rumiai-tests=/Volumes/RumiAI/rumiai-os/.dev/rumiai-tests
+rumiai-tests=/Volumes/RumiAI/rumiai-os/src/rumiai-tests
 ```
 
 Ubuntu 26.04 ARM64:
 
 ```text
 RumiAI_ROOT=/m/src/git/rumiai-os
-rumiai-tests=/m/src/git/rumiai-os/.dev/rumiai-tests
+rumiai-tests=/m/src/git/rumiai-os/src/rumiai-tests
 ```
 
 Questi pathname descrivono gli host correnti di test e non fanno parte del contratto dei test permanenti.
