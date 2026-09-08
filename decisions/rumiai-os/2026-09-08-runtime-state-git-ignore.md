@@ -158,7 +158,7 @@ Il test deve verificare in una repository Git temporanea isolata che:
 La suite che contiene questo riallineamento e:
 
 ```text
-massimilianonardi-ai/rumiai-tests@d5afe4b92391c9dd1047b92541ad9556e2039311
+massimilianonardi-ai/rumiai-tests@7a28fe32ed30f0ea1108b4eab5572216e5551167
 ```
 
 ## 8. Physical validation corrente
