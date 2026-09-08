@@ -8,7 +8,7 @@ Updated: 2026-09-09
 
 Le validation run permanenti sono eseguite da `rumiai-test --validation`, ma l'operatore non deve ripetere manualmente aggiornamenti dei checkout, cambio directory, verifica della revisione, costruzione della selezione o gestione delle sessioni completate.
 
-Il runner `rumiai-test` resta agnostico rispetto al target e non acquisisce responsabilita di aggiornamento Git, target discovery, configurazione operativa o pubblicazione remota dell'evidenza.
+Il runner `rumiai-test` resta agnostico rispetto al target e non acquisisce responsabilita di aggiornamento Git, target discovery, configurazione operativa, pubblicazione remota dell'evidenza o gestione della finestra terminale dell'operatore.
 
 Il comando operativo normale e soltanto:
 
@@ -16,7 +16,9 @@ Il comando operativo normale e soltanto:
 ./rumiai-validate
 ```
 
-La correzione approvata il 2026-09-08 aggiunge inoltre la pubblicazione automatica e durevole delle validation session completate. Questa correzione sostituisce il precedente divieto assoluto di `commit`/`push` nel launcher con un'eccezione stretta dedicata esclusivamente all'evidenza di validation.
+La correzione approvata il 2026-09-08 aggiunge la pubblicazione automatica e durevole delle validation session completate. Questa correzione sostituisce il precedente divieto assoluto di `commit`/`push` nel launcher con un'eccezione stretta dedicata esclusivamente all'evidenza di validation.
+
+La correzione approvata il 2026-09-09 aggiunge inoltre un hold finale per i terminali Linux effimeri aperti da un'interfaccia grafica, in modo che i risultati non scompaiano alla chiusura automatica della finestra. Il normale uso da shell e le esecuzioni non interattive non devono acquisire un prompt aggiuntivo.
 
 ## 1. Nome e collocazione
 
@@ -34,13 +36,15 @@ rumiai-tests/rumiai-validate.conf
 
 L'eseguibile non porta estensione e, quando implementato in shell, usa `#!/bin/sh`.
 
-`rumiai-validate` non e un alias di `rumiai-test`: prepara l'host, pubblica eventuale evidenza pendente e poi delega l'esecuzione della validation al runner canonico.
+`rumiai-validate` non e un alias di `rumiai-test`: prepara l'host, pubblica eventuale evidenza pendente, gestisce l'eventuale hold della finestra terminale e poi delega l'esecuzione della validation al runner canonico.
 
 Per evitare che un errore nella logica evolutiva impedisca il self-update, `rumiai-validate` resta un bootstrap minimale. La logica successiva al self-update appartiene a:
 
 ```text
 lib/sh/rumiai-validate.lib.sh
 ```
+
+Il finalizer necessario a preservare una finestra terminale effimera appartiene invece al bootstrap root, perche deve poter intervenire anche dopo un errore precedente al caricamento della libreria evolutiva.
 
 ## 2. Self-update della suite
 
@@ -54,6 +58,8 @@ Il bootstrap `rumiai-validate` deve:
 6. soltanto dopo il self-update caricare `lib/sh/rumiai-validate.lib.sh`.
 
 File untracked non impediscono il self-update. Questo e necessario anche per poter ricevere una correzione quando esiste una sessione completata ma non ancora pubblicata.
+
+Un `exec` riuscito durante il self-update sostituisce il processo corrente con il launcher aggiornato e non deve attivare un hold intermedio: il finalizer appartiene soltanto alla terminazione effettiva del launcher che resta in esecuzione.
 
 ## 3. Sessioni completate pendenti
 
@@ -171,6 +177,8 @@ Un runner error `3` che lascia una sessione nascosta/incompleta non viene promos
 
 Se il runner termina ma la pubblicazione della nuova sessione fallisce, il launcher conserva e mostra il risultato runner ma termina con errore operativo di launcher, lasciando la sessione locale disponibile per il retry.
 
+L'eventuale hold della finestra avviene soltanto dopo che il flusso normale o di errore ha prodotto il proprio output e non modifica la semantica della sessione o della pubblicazione.
+
 ## 10. Git
 
 Gli aggiornamenti automatici dei checkout di codice sono esclusivamente:
@@ -221,11 +229,15 @@ selection
 
 Quando test nuovi o modificati richiedono physical validation, lo stesso work unit deve aggiornare, quando necessario, il commit target e la selection.
 
+Il meccanismo di hold non introduce una nuova chiave di configurazione, un nuovo argomento CLI o una nuova environment variable RumiAI.
+
 ## 12. Piattaforma
 
 Il launcher mostra almeno sistema operativo e architettura dell'host.
 
 La piattaforma non viene usata per scegliere test differenti e mascherare incompatibilita: la stessa configurazione vale sui diversi host applicabili.
+
+Il comportamento di hold e intenzionalmente specifico del problema osservato su Linux e non cambia il contratto dei test o del target sugli altri host.
 
 ## 13. Relazione con `rumiai-test`
 
@@ -236,6 +248,7 @@ Flusso corrente:
 ```text
 operator
   -> rumiai-validate
+       -> detect eventuale terminale Linux effimero
        -> git pull --ff-only rumiai-tests
        -> eventuale restart
        -> publish pending completed sessions
@@ -248,11 +261,12 @@ operator
             -> sessions/<run-id>/ quando completata
        -> publish validation/<run-id>
        -> verified local cleanup
+       -> eventuale hold finale della finestra
 ```
 
-Il runner non conosce il ref remoto e non esegue add/commit/push.
+Il runner non conosce il ref remoto, non esegue add/commit/push e non gestisce il terminale dell'operatore.
 
-## 14. Test permanenti
+## 14. Test permanenti e verifiche meccaniche
 
 Il self-update e protetto da:
 
@@ -278,23 +292,26 @@ Il test di pubblicazione deve verificare almeno:
 
 Il runner resta inoltre protetto separatamente da `tests/runner/validation-publication.test`, che continua a verificare che `rumiai-test` da solo non modifichi Git.
 
+Il comportamento di hold richiede un terminale reale o pseudo-terminale. Prima della pubblicazione sono richieste almeno verifiche meccaniche che dimostrino:
+
+- assenza di hold con stdin/stdout non terminali;
+- preservazione dell'exit status originale;
+- hold con un comando one-shot in pseudo-terminale;
+- assenza di hold quando lo stesso comando e invocato da una normale shell interattiva.
+
+La prova specifica tramite file manager Linux resta una verifica fisica dell'integrazione desktop e non viene sostituita da una fixture che finga un particolare file manager.
+
 ## 15. Configurazione e physical validation corrente
 
-La modifica della policy `.gitignore` per-root di `rumiai-os` e implementata in:
+L'ultima coppia completamente validata prima della correzione corrente e:
 
 ```text
-massimilianonardi-ai/rumiai-os@c6b3027cfef278b69681ba414337e4b357aca537
-```
-
-La configurazione validata e:
-
-```text
-rumiai-os-commit<TAB>c6b3027cfef278b69681ba414337e4b357aca537
-selection<TAB>rumiai-os/bootstrap
+rumiai-os<TAB>c6b3027cfef278b69681ba414337e4b357aca537
 rumiai-tests<TAB>7a28fe32ed30f0ea1108b4eab5572216e5551167
+selection<TAB>rumiai-os/bootstrap
 ```
 
-Host stabili di riferimento ed evidenza:
+Evidenza:
 
 ```text
 macOS ARM64
@@ -306,14 +323,59 @@ validation/20260909T001235+0200-7713
 PASS 13 / FAIL 0 / SKIP 0 / ERROR 0
 ```
 
-Entrambe le sessioni registrano `runner-exit-status=0`, la stessa revisione della suite e la stessa selection. La physical validation e completata per questa coppia esatta di revisioni; non valida automaticamente revisioni successive.
-
-Il flusso di pubblicazione automatica e stato inoltre esercitato fisicamente: sul Mac il launcher ha pubblicato prima la sessione fallita pendente `20260908T231406+0200-17700`, poi la nuova sessione riuscita; su Ubuntu ha pubblicato direttamente la sessione riuscita.
-
-## 16. Invarianti
+Il 2026-09-09 l'utente ha successivamente ottimizzato il bootstrap `rumiai-os` rendendo alcune directory derivate dalle rispettive semantic root gia definite, senza cambiare i valori osservabili. La nuova revisione prodotto e:
 
 ```text
-VALIDATE-01  rumiai-test resta il runner canonico e non acquisisce responsabilita Git/config/target/publication
+massimilianonardi-ai/rumiai-os@5d8f6f252e4167c3f49870fb2392ffde1516742c
+```
+
+La configurazione corrente viene quindi riallineata a:
+
+```text
+rumiai-os-commit<TAB>5d8f6f252e4167c3f49870fb2392ffde1516742c
+selection<TAB>rumiai-os/bootstrap
+```
+
+La revisione candidata della suite che introduce il terminal hold e riallinea il target e:
+
+```text
+massimilianonardi-ai/rumiai-tests@53aa110f94016c23f7c0a54df74a76f5a188c05f
+```
+
+Questa nuova coppia **non e ancora fisicamente validata**. La precedente evidenza resta valida soltanto per le revisioni esatte registrate nelle sessioni e non viene reinterpretata.
+
+Il nuovo gate richiede:
+
+- macOS ARM64: normale `./rumiai-validate`, senza prompt di hold;
+- Ubuntu 26.04 ARM64: validation della stessa coppia esatta; la verifica del nuovo comportamento deve includere anche un avvio tramite l'applicazione grafica Files o un percorso equivalente che apra un terminale effimero, confermando che `Press Enter to close...` mantenga visibili i risultati e che la sessione sia gia pubblicata prima del prompt.
+
+## 16. Chiusura del terminale grafico Linux
+
+Il launcher deve impedire la perdita immediata dell'output quando, su Linux, viene avviato in una finestra terminale destinata a chiudersi insieme al processo.
+
+Il comportamento richiesto e:
+
+1. nessun hold se stdin o stdout non sono terminali;
+2. nessun hold nel normale caso in cui l'operatore esegue `./rumiai-validate` da una shell interattiva;
+3. su Linux, quando il launcher rileva un'esecuzione terminale one-shot/effimera, prima della terminazione mostra:
+
+```text
+Press Enter to close...
+```
+
+4. attende una singola riga di input; EOF non viene trasformato in un nuovo errore;
+5. dopo l'input termina con l'exit status che il launcher avrebbe restituito senza hold;
+6. il comportamento vale sia per successo sia per errori del launcher o del runner;
+7. un self-update riuscito tramite `exec` non genera un prompt intermedio.
+
+Il rilevamento puo usare informazioni POSIX/Linux sul parent process e sul process group per distinguere una normale shell interattiva da un comando terminale one-shot. Se il contesto terminale e presente ma la distinzione non puo essere determinata in modo affidabile, il comportamento corrente privilegia la conservazione della visibilita dell'output e puo applicare l'hold.
+
+Questa logica e interna al launcher e non introduce una nuova primitive di prodotto RumiAI OS.
+
+## 17. Invarianti
+
+```text
+VALIDATE-01  rumiai-test resta il runner canonico e non acquisisce responsabilita Git/config/target/publication/terminal
 VALIDATE-02  rumiai-validate e l'unico entrypoint operativo richiesto all'operatore
 VALIDATE-03  rumiai-validate.conf e versionato e definisce commit target e singola selection
 VALIDATE-04  gli aggiornamenti automatici di codice sono esclusivamente pull --ff-only
@@ -329,4 +391,8 @@ VALIDATE-13  il launcher riusa la target discovery esistente
 VALIDATE-14  configurazione e selection restano comuni agli host; piattaforma/architettura sono osservate
 VALIDATE-15  il risultato runner viene riportato; un successivo errore di pubblicazione e un errore operativo del launcher e lascia la sessione locale intatta
 VALIDATE-16  la logica evolutiva viene caricata da lib/sh/rumiai-validate.lib.sh soltanto dopo il self-update
+VALIDATE-17  il terminal hold e responsabilita esclusiva di rumiai-validate e non di rumiai-test o rumiai-os
+VALIDATE-18  esecuzioni non-TTY e normali invocazioni da shell interattiva non devono richiedere Enter
+VALIDATE-19  il terminal hold Linux preserva l'exit status originale e vale anche per errori preliminari
+VALIDATE-20  un exec riuscito durante il self-update non produce un hold intermedio
 ```
