@@ -2,7 +2,7 @@
 
 Status: **Normative specification**  
 Date: 2026-08-28  
-Updated: 2026-09-06
+Updated: 2026-09-08
 
 ## 1. Scope
 
@@ -15,6 +15,18 @@ massimilianonardi-ai/rumiai-os@77051580f489b9243b45145e9791f2cf4ace90ed
 ```
 
 The product may receive light implementation optimizations without reopening these semantics. A behavior change requires a new explicit decision.
+
+The later extension of the canonical top-level semantic roots is fixed by:
+
+```text
+decisions/rumiai-os/2026-09-08-top-level-semantic-roots-and-lang-placement.md
+```
+
+and is implemented in:
+
+```text
+massimilianonardi-ai/rumiai-os@262316902997319b56f1d5097d636b38de9dd2c4
+```
 
 ## 2. Environment-variable namespace
 
@@ -37,21 +49,59 @@ m_BOOTSTRAP_BIN
 m_ROOT
 ```
 
-Current Phase-1 semantic roots include:
+Current Phase-1 top-level semantic roots are:
 
 ```text
 m_BIN_DIR=$m_ROOT/bin
+m_LIB_DIR=$m_ROOT/lib
+m_PKG_DIR=$m_ROOT/pkg
+m_LANG_DIR=$m_ROOT/lang
+m_SRC_DIR=$m_ROOT/src
+m_CONF_DIR=$m_ROOT/conf
+m_DATA_DIR=$m_ROOT/data
+m_HOME_DIR=$m_ROOT/home
+m_CACHE_DIR=$m_ROOT/cache
+m_LOG_DIR=$m_ROOT/log
+m_RUN_DIR=$m_ROOT/run
+m_TMP_DIR=$m_ROOT/tmp
+```
+
+The executable model additionally exposes the already-fixed semantic sub-roots:
+
+```text
 m_BIN_SYS_DIR=$m_BIN_DIR/sys
 m_BIN_SYS_OSARCH_DIR=$m_BIN_DIR/sys-osarch
 m_BIN_EXT_DIR=$m_BIN_DIR/ext
 m_BIN_EXT_OSARCH_DIR=$m_BIN_DIR/ext-osarch
-m_LIB_DIR=$m_ROOT/lib
-m_CONF_DIR=$m_ROOT/conf
-m_LANG_DIR=$m_ROOT/lang
-m_SRC_DIR=$m_ROOT/src
 ```
 
+Every canonical top-level semantic root has its own RumiAI environment variable. This rule does not authorize environment aliases for every ordinary subdirectory: consumers derive normal subpaths from the corresponding semantic root unless a separate runtime role has been explicitly fixed.
+
 `m_LIB_DIR` is the only RumiAI environment variable exported for the library tree. Runtime-specific library directories are derived from it and do not receive additional environment variables merely as aliases. In particular, variables such as `m_LIB_SH_DIR` or `m_LIB_JS_DIR` are not part of the contract.
+
+The state-area roots are:
+
+```text
+m_CONF_DIR
+m_DATA_DIR
+m_HOME_DIR
+m_CACHE_DIR
+m_LOG_DIR
+m_RUN_DIR
+m_TMP_DIR
+```
+
+Their semantic classification remains fixed by `decisions/rumiai-os/2026-09-05-package-state-var-default.md`; introducing the variables does not change those state semantics and does not require the bootstrap to materialize directories that are not yet needed.
+
+There is no global semantic root `$m_ROOT/var/` and therefore no bootstrap environment variable `m_VAR_DIR`. Package-local `var/` retains only the routing meaning fixed by the package-manager decisions.
+
+`m_LANG_DIR` deliberately remains:
+
+```text
+$m_ROOT/lang
+```
+
+The `data/` root is authoritative persistent state, not a generic product-resource container. Current language catalogs therefore remain under the top-level `lang/` tree and are not moved under `data/` or `data/sys/lang/`. `lang/current` remains the current relative selection symlink co-located with the catalogs; any future separation requires a distinct decision.
 
 `m_SRC_DIR` identifies the ignored local development workspace. It is not a runtime dependency root and does not participate in `PATH`.
 
@@ -435,3 +485,15 @@ massimilianonardi-ai/rumiai-tests@c39b1a2c0b6e96e8e43809a6e66d16918cf90a7d
 ```
 
 This test alignment does not constitute a validation run. `rumiai-os@90a68a7c...` remains physically unvalidated for the current shell contract until the relevant permanent tests are executed in an appropriate validation session.
+
+## 15. Current semantic-root validation status
+
+The expanded top-level semantic-root contract is implemented in:
+
+```text
+massimilianonardi-ai/rumiai-os@262316902997319b56f1d5097d636b38de9dd2c4
+```
+
+The permanent bootstrap semantic-root tests must protect the values of all current top-level root variables, `m_LANG_DIR=$m_ROOT/lang`, the absence of a bootstrap-established `m_VAR_DIR`, and propagation of the root environment to child processes.
+
+Updating the permanent tests to this contract does not itself constitute physical validation. The product revision above remains physically unvalidated for this semantic-root extension until the relevant tests are executed in an appropriate validation session.
