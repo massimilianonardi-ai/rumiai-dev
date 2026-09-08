@@ -2,7 +2,7 @@
 
 Status: **Accepted architecture**  
 Date: 2026-08-28  
-Updated: 2026-09-06
+Updated: 2026-09-08
 
 ## Purpose
 
@@ -23,7 +23,8 @@ PHASE 0
     m_ROOT
     ↓
 PHASE 1A — semantic roots
-    bin / lib / conf / lang
+    bin / lib / pkg / lang / src
+    conf / data / home / cache / log / run / tmp
     ↓
 PHASE 1B — executable PATH
     bin/sys-osarch
@@ -57,14 +58,54 @@ This convention applies only to environment variables.
 
 ## Semantic roots
 
-Current roots include:
+Current top-level semantic roots are:
 
 ```text
 m_BIN_DIR=$m_ROOT/bin
 m_LIB_DIR=$m_ROOT/lib
-m_CONF_DIR=$m_ROOT/conf
+m_PKG_DIR=$m_ROOT/pkg
 m_LANG_DIR=$m_ROOT/lang
+m_SRC_DIR=$m_ROOT/src
+m_CONF_DIR=$m_ROOT/conf
+m_DATA_DIR=$m_ROOT/data
+m_HOME_DIR=$m_ROOT/home
+m_CACHE_DIR=$m_ROOT/cache
+m_LOG_DIR=$m_ROOT/log
+m_RUN_DIR=$m_ROOT/run
+m_TMP_DIR=$m_ROOT/tmp
 ```
+
+Each canonical top-level semantic root has a corresponding RumiAI environment variable. Ordinary subdirectories are derived from the appropriate semantic root and do not receive environment aliases merely for convenience. The executable subtree is the existing exception where separately named sub-roots have independent runtime and `PATH` roles.
+
+The state-area roots remain semantically classified by the package/state decisions:
+
+```text
+persistent authoritative      conf / data / home
+persistent non-authoritative  cache / log
+transient                     run / tmp
+```
+
+There is no global `$m_ROOT/var/` semantic root and no bootstrap `m_VAR_DIR`; `var/` remains package-local only.
+
+`m_LANG_DIR` remains `$m_ROOT/lang`. `data/` is authoritative persistent state rather than a generic resource container, so current language catalogs are not placed under `data/` or `data/sys/lang/`. `lang/current` remains the relative language-selection symlink under the top-level `lang/` tree.
+
+A semantic-root variable identifies the canonical pathname but does not require the bootstrap itself to materialize the corresponding directory. A subsystem creates a root when its lifecycle actually requires it.
+
+`m_SRC_DIR` remains the local development workspace root and is not a runtime dependency.
+
+The expanded root contract is fixed by:
+
+```text
+decisions/rumiai-os/2026-09-08-top-level-semantic-roots-and-lang-placement.md
+```
+
+and is implemented in:
+
+```text
+massimilianonardi-ai/rumiai-os@262316902997319b56f1d5097d636b38de9dd2c4
+```
+
+This semantic-root extension has not yet received a dedicated physical-validation run.
 
 `bin/` is a container for executable directories; it is not itself inserted in `PATH`.
 
@@ -189,7 +230,7 @@ Other shells are executed directly without a RumiAI startup guarantee. Bash- and
 The canonical configuration subtree for the base `shell` component is:
 
 ```text
-$m_ROOT/conf/sys/shell/
+$m_CONF_DIR/sys/shell/
 ```
 
 The current implementation is:
