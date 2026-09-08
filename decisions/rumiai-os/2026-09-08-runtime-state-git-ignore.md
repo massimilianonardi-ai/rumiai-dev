@@ -155,13 +155,13 @@ Il test deve verificare in una repository Git temporanea isolata che:
 - `.DS_Store` sia ignorato anche fuori dalla root;
 - exclude globali o `.git/info/exclude` dell'host non possano produrre falsi positivi.
 
-La suite corrente che contiene questo test e:
+La revisione della suite usata per la physical validation di questa policy e:
 
 ```text
 massimilianonardi-ai/rumiai-tests@7a28fe32ed30f0ea1108b4eab5572216e5551167
 ```
 
-Il riallineamento sostanziale del test bootstrap era gia presente in `aa64b512...`; `7a28fe32...` e la revisione esatta della suite usata per la physical validation finale.
+Il riallineamento sostanziale del test bootstrap era gia presente in `aa64b512...`; `7a28fe32...` e la revisione esatta della suite usata per la physical validation finale della coppia descritta sotto. Revisioni successive della suite non modificano retroattivamente questa evidenza.
 
 ## 8. Physical validation
 
