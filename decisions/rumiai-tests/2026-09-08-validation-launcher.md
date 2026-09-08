@@ -1,27 +1,32 @@
 # Decisione — Launcher operativo per le validation run
 
 Date: 2026-09-08  
-Status: **Accepted**
+Status: **Accepted**  
+Updated: 2026-09-08
 
 ## Contesto
 
-Le validation run permanenti sono eseguite da `rumiai-test --validation`, ma l'operatore non deve ripetere manualmente operazioni di aggiornamento dei checkout, cambio directory, verifica della revisione da testare e costruzione della selezione da eseguire su ciascun host di riferimento.
+Le validation run permanenti sono eseguite da `rumiai-test --validation`, ma l'operatore non deve ripetere manualmente aggiornamenti dei checkout, cambio directory, verifica della revisione, costruzione della selezione o gestione delle sessioni completate.
 
-Il runner `rumiai-test` deve restare agnostico rispetto al target e non deve acquisire responsabilità di aggiornamento Git, target discovery, configurazione operativa o orchestrazione host-specifica.
+Il runner `rumiai-test` resta agnostico rispetto al target e non acquisisce responsabilita di aggiornamento Git, target discovery, configurazione operativa o pubblicazione remota dell'evidenza.
 
-Per ridurre il lavoro manuale senza modificare il contratto del runner viene introdotto un launcher operativo separato.
+Il comando operativo normale e soltanto:
 
-Correzione esplicita del 2026-09-08: il comando normale dell'operatore deve essere soltanto `rumiai-validate`. Non deve essere necessario eseguire preventivamente `git pull`, `cd` o ricostruire manualmente la CLI. Di conseguenza l'auto-update della suite deve appartenere al bootstrap minimale del launcher e deve avvenire prima del caricamento della logica evolutiva e della configurazione.
+```text
+./rumiai-validate
+```
+
+La correzione approvata il 2026-09-08 aggiunge inoltre la pubblicazione automatica e durevole delle validation session completate. Questa correzione sostituisce il precedente divieto assoluto di `commit`/`push` nel launcher con un'eccezione stretta dedicata esclusivamente all'evidenza di validation.
 
 ## 1. Nome e collocazione
 
-L'eseguibile canonico è:
+L'eseguibile canonico e:
 
 ```text
 rumiai-tests/rumiai-validate
 ```
 
-Il file di configurazione associato è:
+Il file di configurazione associato e:
 
 ```text
 rumiai-tests/rumiai-validate.conf
@@ -29,201 +34,291 @@ rumiai-tests/rumiai-validate.conf
 
 L'eseguibile non porta estensione e, quando implementato in shell, usa `#!/bin/sh`.
 
-`rumiai-validate` non è un alias di `rumiai-test`: svolge la preparazione operativa dell'host e poi delega l'esecuzione della validation al runner canonico.
+`rumiai-validate` non e un alias di `rumiai-test`: prepara l'host, pubblica eventuale evidenza pendente e poi delega l'esecuzione della validation al runner canonico.
 
-Per evitare che un errore nella logica evolutiva impedisca persino l'auto-update, `rumiai-validate` deve restare un bootstrap minimale e stabile. La logica successiva al self-update è collocata nella libreria shell:
+Per evitare che un errore nella logica evolutiva impedisca il self-update, `rumiai-validate` resta un bootstrap minimale. La logica successiva al self-update appartiene a:
 
 ```text
 lib/sh/rumiai-validate.lib.sh
 ```
 
-La libreria viene caricata soltanto dopo che il checkout `rumiai-tests` è stato aggiornato ed è stato eventualmente riavviato il bootstrap aggiornato.
+## 2. Self-update della suite
 
-## 2. Responsabilità del bootstrap `rumiai-validate`
+Il bootstrap `rumiai-validate` deve:
 
-Il bootstrap deve:
+1. risolvere la propria posizione e individuare la root di `rumiai-tests`;
+2. portarsi nella root senza dipendere dalla current working directory;
+3. verificare che non esistano modifiche tracked locali;
+4. eseguire `git pull --ff-only` sulla suite;
+5. se l'HEAD cambia, riavviare il bootstrap aggiornato;
+6. soltanto dopo il self-update caricare `lib/sh/rumiai-validate.lib.sh`.
 
-1. risolvere la propria posizione e individuare la root del checkout `rumiai-tests`;
-2. portarsi nella root di `rumiai-tests` senza dipendere dalla current working directory dell'operatore;
-3. verificare che non esistano modifiche **tracked** locali nel checkout `rumiai-tests` che potrebbero essere alterate o confuse con l'auto-update;
-4. eseguire `git pull --ff-only` sul checkout `rumiai-tests`;
-5. se il pull aggiorna la suite, riavviare `rumiai-validate` dalla revisione appena aggiornata;
-6. soltanto dopo il self-update caricare `lib/sh/rumiai-validate.lib.sh`;
-7. delegare alla libreria il resto della preparazione e della validation.
+File untracked non impediscono il self-update. Questo e necessario anche per poter ricevere una correzione quando esiste una sessione completata ma non ancora pubblicata.
 
-La presenza di file **untracked** non impedisce il self-update della suite. Questo non costituisce un'eccezione alla cleanliness richiesta per la validation: dopo il self-update e prima di avviare il runner viene comunque applicato il controllo completo della working tree.
+## 3. Sessioni completate pendenti
 
-## 3. Responsabilità della logica di validation
+Dopo il self-update e prima del gate completo di cleanliness, il launcher puo trovare directory visibili:
 
-Dopo il self-update, la logica caricata da `lib/sh/rumiai-validate.lib.sh` deve:
+```text
+sessions/<run-id>/
+```
 
-1. verificare che la working tree `rumiai-tests` sia completamente pulita, inclusi gli untracked;
-2. leggere `rumiai-validate.conf` dalla root della suite;
-3. individuare il checkout `rumiai-os` riusando la primitive di target discovery già presente in `lib/rumiai-os-target.lib`;
-4. verificare che non esistano modifiche tracked locali in `rumiai-os` prima dell'aggiornamento automatico;
-5. eseguire `git pull --ff-only` su `rumiai-os`;
-6. verificare dopo il pull che la working tree `rumiai-os` sia completamente pulita, inclusi gli untracked;
-7. verificare che l'HEAD risultante di `rumiai-os` corrisponda al commit atteso configurato;
-8. rilevare e mostrare almeno sistema operativo e architettura dell'host;
-9. invocare `rumiai-test --validation -- <selection>` con la selezione configurata;
-10. propagare l'exit status del runner e mostrare, quando disponibile, l'identificatore della nuova validation session completata.
+non ancora tracked.
 
-Il launcher non modifica il comportamento interno dei test e non introduce un nuovo contratto runner -> test.
+Questa e l'unica eccezione documentata al requisito di working tree clean nella fase preparatoria del launcher. Non rende validi file untracked arbitrari.
 
-## 4. Git
+Una directory e pubblicabile automaticamente soltanto se il launcher verifica almeno:
 
-Gli aggiornamenti automatici dei checkout sono esclusivamente:
+- `session` regolare e leggibile;
+- `results` regolare e leggibile;
+- assenza di `.work`;
+- `type=validation` esattamente una volta;
+- `rumiai-tests-commit` esattamente una volta e risolvibile come commit Git canonico;
+- presenza univoca di `end`;
+- `runner-exit-status` univoco e appartenente a `0`, `1`, `2`.
+
+Le directory nascoste `sessions/.<run-id>/` sono incomplete per contratto runner e non sono pubblicate automaticamente.
+
+Una directory visibile non tracked che non soddisfa il contratto di sessione completata e un errore: non viene cancellata, spostata o reinterpretata.
+
+## 4. Pubblicazione durevole dell'evidenza
+
+Ogni sessione completata viene conservata sul remote Git configurato del checkout `rumiai-tests` sotto il ref:
+
+```text
+validation/<run-id>
+```
+
+Il commit di evidenza deve essere costruito in modo che:
+
+1. il parent sia **esattamente** il `rumiai-tests-commit` registrato nella sessione;
+2. il tree sia quello di quel commit esatto piu `sessions/<run-id>/`;
+3. il contenuto successivo eventualmente presente nell'HEAD corrente della suite non venga trascinato nel commit di evidenza;
+4. HEAD e index reali del checkout dell'operatore non vengano modificati.
+
+L'implementazione puo usare un index Git temporaneo e `commit-tree`. L'uso di `git add` e ammesso soltanto contro tale index temporaneo e soltanto per la directory della sessione da pubblicare.
+
+Il launcher non crea automaticamente commit di codice, test, configurazione o altro contenuto della working tree.
+
+## 5. Perche l'evidenza non avanza `main`
+
+Una validation su piu host deve riferirsi allo stesso commit della suite.
+
+Se la sessione prodotta dal primo host avanzasse automaticamente `main`, il secondo host riceverebbe una nuova revisione della suite e validerebbe un commit differente anche quando i test sono identici.
+
+Per questo:
+
+```text
+publication ref != suite main
+```
+
+Il ref `validation/<run-id>` e un ref durevole di evidenza e non cambia la baseline operativa della suite.
+
+L'eventuale consolidamento successivo delle evidenze in `main` e una fase distinta e non appartiene a `rumiai-validate`.
+
+## 6. Idempotenza e collisioni
+
+Prima di creare un nuovo ref, il launcher verifica se `validation/<run-id>` esiste gia.
+
+Se esiste, il launcher puo considerare la sessione gia pubblicata soltanto quando:
+
+- il commit remoto ha come unico parent l'esatto `rumiai-tests-commit` registrato;
+- il tree remoto coincide con il tree di evidenza ricostruito dalla copia locale.
+
+In questo caso il retry e idempotente.
+
+Se parent o tree differiscono, esiste una collisione: il launcher termina con errore e non sovrascrive il ref remoto.
+
+Il launcher non usa force push.
+
+## 7. Rimozione della copia locale
+
+La copia locale untracked di `sessions/<run-id>/` puo essere rimossa soltanto dopo che il launcher ha verificato che il ref remoto punti al commit di evidenza atteso, oppure dopo aver verificato un ref remoto gia esistente e identico.
+
+Se creazione, push o verifica falliscono:
+
+- la sessione locale resta intatta;
+- il launcher termina con errore operativo;
+- la successiva invocazione di `./rumiai-validate` ritenta la pubblicazione prima di avviare una nuova validation.
+
+Questo evita che un risultato importante rimanga silenziosamente confinato a un singolo host e, allo stesso tempo, evita perdita di evidenza in caso di errore di rete o autenticazione.
+
+## 8. Cleanliness prima del runner
+
+Dopo aver gestito tutte le sessioni completate pendenti, `rumiai-tests` deve risultare completamente clean, inclusi gli untracked, prima di invocare il runner.
+
+Il target `rumiai-os` segue il gate ordinario:
+
+1. modifiche tracked locali bloccano il pull automatico;
+2. `git pull --ff-only`;
+3. working tree completamente clean, inclusi gli untracked;
+4. HEAD uguale al commit configurato.
+
+Quindi l'eccezione riguarda soltanto la fase preparatoria del launcher; `rumiai-test --validation` continua a partire da una suite clean e il suo contratto non cambia.
+
+## 9. Nuova sessione prodotta dalla validation
+
+Al termine del runner, quando esiste una nuova sessione completata visibile, il launcher:
+
+1. mostra l'exit status del runner e il run-id;
+2. pubblica immediatamente la sessione secondo il contratto precedente;
+3. verifica il ref remoto;
+4. rimuove la copia locale soltanto dopo la verifica.
+
+Le sessioni completate con status runner `0`, `1` o `2` vengono conservate: un FAIL o un TEST ERROR e evidenza utile e non deve dipendere da un successivo intervento manuale.
+
+Un runner error `3` che lascia una sessione nascosta/incompleta non viene promosso automaticamente a evidenza completata.
+
+Se il runner termina ma la pubblicazione della nuova sessione fallisce, il launcher conserva e mostra il risultato runner ma termina con errore operativo di launcher, lasciando la sessione locale disponibile per il retry.
+
+## 10. Git
+
+Gli aggiornamenti automatici dei checkout di codice sono esclusivamente:
 
 ```text
 git pull --ff-only
 ```
 
-Il launcher non deve eseguire automaticamente:
+Per la sola evidenza completata sono ammessi:
 
 ```text
-git add
-git commit
-git push
-git merge
-git rebase
+index Git temporaneo
+commit di sola sessione basato sul commit registrato
+push non-forzato verso validation/<run-id>
+fetch/ls-remote necessari alla verifica
 ```
 
-La versionatura delle sessioni resta una fase distinta, in modo particolare quando più host producono evidenza contemporaneamente.
+Restano vietati nel launcher:
 
-Prima di un pull automatico, modifiche tracked locali interrompono il launcher. File untracked possono invece coesistere con il self-update o con il pull del target, purché Git possa effettuare il fast-forward senza conflitti.
+```text
+git merge
+git rebase
+force push
+riscrittura della storia
+commit automatici di codice/test/configurazione
+```
 
-Prima dell'effettiva validation, sia `rumiai-tests` sia il target devono essere completamente clean secondo il contratto di `TESTING.md`. L'auto-update anticipato non indebolisce questo requisito.
+Git resta forward-only.
 
-Git resta forward-only; il launcher non riscrive la storia.
+## 11. Configurazione
 
-## 5. Configurazione
+`rumiai-validate.conf` e un file di dati versionato insieme alla suite.
 
-`rumiai-validate.conf` è un file di dati versionato insieme alla suite.
-
-Il formato iniziale usa record:
+Formato:
 
 ```text
 key<TAB>value
 ```
 
-Le chiavi iniziali sono esattamente:
+Chiavi correnti esatte:
 
 ```text
 rumiai-os-commit
 selection
 ```
 
-Esempio:
+`selection` identifica un singolo test o un gruppo relativo a `tests/`. La configurazione e comune agli host di riferimento.
 
-```text
-rumiai-os-commit<TAB>262316902997319b56f1d5097d636b38de9dd2c4
-selection<TAB>rumiai-os/bootstrap
-```
+Quando test nuovi o modificati richiedono physical validation, lo stesso work unit deve aggiornare, quando necessario, il commit target e la selection.
 
-`selection` identifica un singolo test oppure un gruppo relativo a `tests/`, coerentemente con la CLI già fissata di `rumiai-test`.
+## 12. Piattaforma
 
-Il launcher non introduce una lista arbitraria di selettori: quando più test devono essere validati insieme si usa il gruppo gerarchico minimo appropriato. Un'estensione futura a più selettori richiede una necessità concreta e una decisione distinta.
+Il launcher mostra almeno sistema operativo e architettura dell'host.
 
-Le righe vuote e le righe che iniziano con `#` possono essere usate come commenti. Chiavi sconosciute, duplicate o prive di valore sono errori di configurazione.
+La piattaforma non viene usata per scegliere test differenti e mascherare incompatibilita: la stessa configurazione vale sui diversi host applicabili.
 
-## 6. Aggiornamento della configurazione
+## 13. Relazione con `rumiai-test`
 
-Quando vengono aggiunti o modificati test permanenti e la modifica richiede physical validation sugli host di riferimento, lo stesso work unit deve valutare e, quando necessario, aggiornare `rumiai-validate.conf` con:
+`rumiai-test` resta il solo runner canonico e conserva il contratto di `TESTING.md` e `RUNNER.md`.
 
-- il commit `rumiai-os` esatto da validare;
-- la selezione minima proporzionata che copre il contratto modificato.
-
-In questo modo l'operatore su ciascun host esegue sempre lo stesso comando:
-
-```text
-./rumiai-validate
-```
-
-senza eseguire prima `git pull` e senza ricostruire manualmente la CLI della validation.
-
-La configurazione corrente vale per tutti gli host di riferimento. Non vengono introdotte configurazioni differenti per macOS e Linux soltanto per trasformare divergenze reali in esiti differenti.
-
-## 7. Piattaforma
-
-Il launcher rileva piattaforma e architettura per rendere immediatamente leggibile l'output operativo.
-
-La piattaforma non viene usata, nel contratto iniziale, per scegliere test differenti. La regola di universalità dei test resta invariata: la stessa proprietà viene eseguita sui diversi host applicabili e la sessione registra dove è stata osservata.
-
-## 8. Relazione con `rumiai-test`
-
-`rumiai-test` resta il solo runner canonico della suite e conserva integralmente il contratto definito in `TESTING.md` e `RUNNER.md`.
-
-`rumiai-validate` è un entrypoint dell'operatore posto prima del runner:
+Flusso corrente:
 
 ```text
 operator
   -> rumiai-validate
-       -> autodiscovery + cd nella root rumiai-tests
-       -> git pull --ff-only di rumiai-tests
-       -> eventuale restart del bootstrap aggiornato
-       -> lib/sh/rumiai-validate.lib.sh
-            -> gate completo di cleanliness della suite
-            -> config + target discovery
-            -> git pull --ff-only del target
-            -> gate completo di cleanliness del target
-            -> rumiai-test --validation -- <selection>
-                 -> test permanenti
-                 -> sessions/<run-id>/
+       -> git pull --ff-only rumiai-tests
+       -> eventuale restart
+       -> publish pending completed sessions
+       -> clean gate rumiai-tests
+       -> config + target discovery
+       -> git pull --ff-only rumiai-os
+       -> clean gate + exact target commit
+       -> rumiai-test --validation -- <selection>
+            -> sessions/.<run-id>/ durante il run
+            -> sessions/<run-id>/ quando completata
+       -> publish validation/<run-id>
+       -> verified local cleanup
 ```
 
-Il launcher non aggiunge opzioni alla CLI di `rumiai-test` e non modifica la semantica della validation run.
+Il runner non conosce il ref remoto e non esegue add/commit/push.
 
-## 9. Test permanenti
+## 14. Test permanenti
 
-Il launcher deve essere protetto da almeno un test permanente che verifichi in sandbox il flusso operativo essenziale senza dipendere dalla rete pubblica:
-
-- invocazione da una current working directory estranea;
-- autodiscovery e ingresso nella root corretta di `rumiai-tests`;
-- aggiornamento fast-forward del checkout `rumiai-tests` senza `git pull` esterno;
-- self-update prima del caricamento della logica evolutiva e della configurazione;
-- capacità di effettuare il self-update anche quando sono presenti file untracked, fermandosi comunque al successivo gate completo prima della validation;
-- uso della configurazione aggiornata dopo il pull;
-- aggiornamento fast-forward del target `rumiai-os`;
-- verifica del commit target configurato;
-- invocazione del runner con `--validation -- <selection>`.
-
-Il test deve usare repository Git temporanei locali e non modificare i checkout reali.
-
-## 10. Configurazione della validation corrente
-
-Per la physical validation della semantic-root extension implementata in:
+Il self-update e protetto da:
 
 ```text
-massimilianonardi-ai/rumiai-os@262316902997319b56f1d5097d636b38de9dd2c4
+tests/rumiai-tests/validate/pull-config-and-run.test
 ```
 
-la configurazione iniziale è:
+La pubblicazione durevole e protetta da:
 
 ```text
-rumiai-os-commit<TAB>262316902997319b56f1d5097d636b38de9dd2c4
+tests/rumiai-tests/validate/session-publication.test
+```
+
+Il test di pubblicazione deve verificare almeno:
+
+- pubblicazione anche di una sessione completata con status FAIL;
+- conservazione locale se il remote non e raggiungibile;
+- parent del commit di evidenza uguale all'esatto commit registrato nella sessione;
+- esclusione dal tree di contenuto suite piu recente;
+- HEAD locale invariato;
+- working tree nuovamente clean dopo pubblicazione riuscita;
+- retry idempotente quando il ref remoto identico esiste gia.
+
+Il runner resta inoltre protetto separatamente da `tests/runner/validation-publication.test`, che continua a verificare che `rumiai-test` da solo non modifichi Git.
+
+## 15. Configurazione della validation corrente
+
+La modifica della policy `.gitignore` per-root di `rumiai-os` e implementata in:
+
+```text
+massimilianonardi-ai/rumiai-os@c6b3027cfef278b69681ba414337e4b357aca537
+```
+
+La configurazione corrente e:
+
+```text
+rumiai-os-commit<TAB>c6b3027cfef278b69681ba414337e4b357aca537
 selection<TAB>rumiai-os/bootstrap
 ```
 
-La stessa configurazione deve essere eseguita almeno sugli host stabili di riferimento correnti:
+Host stabili di riferimento:
 
 ```text
 macOS
 Ubuntu 26.04 ARM64
 ```
 
-## 11. Invarianti
+L'allineamento di codice, test e configurazione non costituisce da solo physical validation.
+
+## 16. Invarianti
 
 ```text
-VALIDATE-01  rumiai-test resta il runner canonico e non acquisisce responsabilità di aggiornamento Git/configurazione target
-VALIDATE-02  rumiai-validate è l'unico entrypoint operativo richiesto all'operatore per una validation configurata
-VALIDATE-03  rumiai-validate.conf è versionato nella stessa root e definisce commit target e singola selection
-VALIDATE-04  gli aggiornamenti Git eseguiti dal launcher sono esclusivamente pull --ff-only
-VALIDATE-05  il launcher non esegue add/commit/push/merge/rebase
-VALIDATE-06  l'auto-update della suite avviene prima del caricamento della logica evolutiva e non richiede un git pull manuale
-VALIDATE-07  modifiche tracked locali bloccano il pull automatico; file untracked non bloccano il self-update ma la validation richiede poi working tree completamente clean
-VALIDATE-08  il launcher riusa la target discovery esistente invece di introdurre una seconda primitive equivalente
-VALIDATE-09  la configurazione è comune agli host; piattaforma/architettura sono osservate, non usate per mascherare incompatibilità
-VALIDATE-10  il launcher propaga l'exit status del runner
-VALIDATE-11  quando test nuovi o modificati richiedono physical validation, rumiai-validate.conf viene riallineato nello stesso work unit
-VALIDATE-12  la logica evolutiva del launcher è caricata da lib/sh/rumiai-validate.lib.sh soltanto dopo il self-update
+VALIDATE-01  rumiai-test resta il runner canonico e non acquisisce responsabilita Git/config/target/publication
+VALIDATE-02  rumiai-validate e l'unico entrypoint operativo richiesto all'operatore
+VALIDATE-03  rumiai-validate.conf e versionato e definisce commit target e singola selection
+VALIDATE-04  gli aggiornamenti automatici di codice sono esclusivamente pull --ff-only
+VALIDATE-05  scritture Git automatiche sono ammesse solo per un commit di sola evidenza costruito con index temporaneo e pushato su validation/<run-id>
+VALIDATE-06  main e HEAD/index reali della suite non vengono modificati dalla pubblicazione di una sessione
+VALIDATE-07  sessioni completate untracked sono ammesse solo come stato preparatorio pendente; prima del runner la suite torna completamente clean
+VALIDATE-08  file untracked arbitrari e sessioni incomplete/anomale continuano a bloccare la validation
+VALIDATE-09  ogni commit di evidenza ha come parent l'esatto rumiai-tests-commit registrato nella sessione
+VALIDATE-10  la copia locale viene rimossa solo dopo verifica durevole del ref remoto; un errore preserva l'evidenza
+VALIDATE-11  le sessioni completate con status 0, 1 o 2 vengono pubblicate; runner error incompleti non vengono promossi
+VALIDATE-12  il launcher non esegue merge, rebase, force push o commit automatici di codice/test/configurazione
+VALIDATE-13  il launcher riusa la target discovery esistente
+VALIDATE-14  configurazione e selection restano comuni agli host; piattaforma/architettura sono osservate
+VALIDATE-15  il risultato runner viene riportato; un successivo errore di pubblicazione e un errore operativo del launcher e lascia la sessione locale intatta
+VALIDATE-16  la logica evolutiva viene caricata da lib/sh/rumiai-validate.lib.sh soltanto dopo il self-update
 ```
