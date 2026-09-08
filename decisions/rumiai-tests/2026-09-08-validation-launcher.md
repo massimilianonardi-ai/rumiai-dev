@@ -2,7 +2,7 @@
 
 Date: 2026-09-08  
 Status: **Accepted**  
-Updated: 2026-09-08
+Updated: 2026-09-09
 
 ## Contesto
 
@@ -278,7 +278,7 @@ Il test di pubblicazione deve verificare almeno:
 
 Il runner resta inoltre protetto separatamente da `tests/runner/validation-publication.test`, che continua a verificare che `rumiai-test` da solo non modifichi Git.
 
-## 15. Configurazione della validation corrente
+## 15. Configurazione e physical validation corrente
 
 La modifica della policy `.gitignore` per-root di `rumiai-os` e implementata in:
 
@@ -286,21 +286,29 @@ La modifica della policy `.gitignore` per-root di `rumiai-os` e implementata in:
 massimilianonardi-ai/rumiai-os@c6b3027cfef278b69681ba414337e4b357aca537
 ```
 
-La configurazione corrente e:
+La configurazione validata e:
 
 ```text
 rumiai-os-commit<TAB>c6b3027cfef278b69681ba414337e4b357aca537
 selection<TAB>rumiai-os/bootstrap
+rumiai-tests<TAB>7a28fe32ed30f0ea1108b4eab5572216e5551167
 ```
 
-Host stabili di riferimento:
+Host stabili di riferimento ed evidenza:
 
 ```text
-macOS
+macOS ARM64
+validation/20260909T000836+0200-18820
+PASS 13 / FAIL 0 / SKIP 0 / ERROR 0
+
 Ubuntu 26.04 ARM64
+validation/20260909T001235+0200-7713
+PASS 13 / FAIL 0 / SKIP 0 / ERROR 0
 ```
 
-L'allineamento di codice, test e configurazione non costituisce da solo physical validation.
+Entrambe le sessioni registrano `runner-exit-status=0`, la stessa revisione della suite e la stessa selection. La physical validation e completata per questa coppia esatta di revisioni; non valida automaticamente revisioni successive.
+
+Il flusso di pubblicazione automatica e stato inoltre esercitato fisicamente: sul Mac il launcher ha pubblicato prima la sessione fallita pendente `20260908T231406+0200-17700`, poi la nuova sessione riuscita; su Ubuntu ha pubblicato direttamente la sessione riuscita.
 
 ## 16. Invarianti
 
