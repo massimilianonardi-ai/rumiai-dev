@@ -2,7 +2,7 @@
 
 Date: 2026-09-08  
 Status: **Accepted**  
-Updated: 2026-09-08
+Updated: 2026-09-09
 
 ## Contesto
 
@@ -155,29 +155,49 @@ Il test deve verificare in una repository Git temporanea isolata che:
 - `.DS_Store` sia ignorato anche fuori dalla root;
 - exclude globali o `.git/info/exclude` dell'host non possano produrre falsi positivi.
 
-La suite che contiene questo riallineamento e:
+La suite corrente che contiene questo test e:
 
 ```text
 massimilianonardi-ai/rumiai-tests@7a28fe32ed30f0ea1108b4eab5572216e5551167
 ```
 
-## 8. Physical validation corrente
+Il riallineamento sostanziale del test bootstrap era gia presente in `aa64b512...`; `7a28fe32...` e la revisione esatta della suite usata per la physical validation finale.
 
-La physical validation viene riallineata a:
+## 8. Physical validation
+
+La physical validation e stata eseguita con configurazione identica sui due host stabili di riferimento:
 
 ```text
 rumiai-os-commit<TAB>c6b3027cfef278b69681ba414337e4b357aca537
 selection<TAB>rumiai-os/bootstrap
+rumiai-tests<TAB>7a28fe32ed30f0ea1108b4eab5572216e5551167
 ```
 
-Host stabili di riferimento:
+Evidenza macOS ARM64:
 
 ```text
-macOS
-Ubuntu 26.04 ARM64
+validation/20260909T000836+0200-18820
+Darwin/arm64
+PASS 13
+FAIL 0
+SKIP 0
+ERROR 0
 ```
 
-L'allineamento di prodotto, test e configurazione non costituisce da solo evidenza fisica.
+Evidenza Ubuntu 26.04 ARM64:
+
+```text
+validation/20260909T001235+0200-7713
+Ubuntu 26.04.1 LTS / aarch64
+PASS 13
+FAIL 0
+SKIP 0
+ERROR 0
+```
+
+Entrambe le sessioni registrano `runner-exit-status=0` e la stessa selection `rumiai-os/bootstrap`.
+
+La physical validation della policy per-root e delle proprieta bootstrap incluse nella selection e quindi completata per questa coppia esatta di revisioni. L'evidenza non si trasferisce automaticamente a revisioni successive del prodotto o della suite.
 
 ## 9. Invarianti
 
@@ -191,5 +211,5 @@ GITIGNORE-06  la policy ignore non modifica la classificazione semantica dello s
 GITIGNORE-07  le root locali sono fisicamente presenti tramite il proprio .gitignore ma il bootstrap non acquisisce per questo responsabilita di creazione
 GITIGNORE-08  il comportamento e protetto da un test permanente isolato dagli exclude dell'host
 GITIGNORE-09  l'implementazione corrente e rumiai-os@c6b3027cfef278b69681ba414337e4b357aca537
-GITIGNORE-10  la validation corrente usa target c6b3027cfef278b69681ba414337e4b357aca537 e selection rumiai-os/bootstrap
+GITIGNORE-10  la validation di questa implementazione usa rumiai-tests@7a28fe32ed30f0ea1108b4eab5572216e5551167, target c6b3027cfef278b69681ba414337e4b357aca537 e selection rumiai-os/bootstrap sui due host stabili di riferimento
 ```
