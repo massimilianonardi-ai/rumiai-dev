@@ -3,6 +3,8 @@
 Date: 2026-08-29
 Status: **BOOTSTRAP PHASE 0/1 CLOSED — PACKAGE MANAGER IS THE ACTIVE PRIORITY**
 
+> Current scope note (2026-09-08): the physical-validation evidence recorded below applies to the exact historical product revision identified by this handoff. The later top-level semantic-root extension implemented in `massimilianonardi-ai/rumiai-os@262316902997319b56f1d5097d636b38de9dd2c4` is governed by `decisions/rumiai-os/2026-09-08-top-level-semantic-roots-and-lang-placement.md` and `specifications/rumiai-os/BOOTSTRAP-ENVIRONMENT.md`; it is not retroactively covered by the validation described here.
+
 ## Stable product baseline
 
 Repository:
