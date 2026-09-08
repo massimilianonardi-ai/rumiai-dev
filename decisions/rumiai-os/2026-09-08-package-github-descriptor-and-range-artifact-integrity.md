@@ -1,6 +1,7 @@
 # Decisione — GitHub repository descriptor e artifact/integrity range-level
 
 Date: 2026-09-08  
+Updated: 2026-09-08  
 Status: **Accepted**
 
 ## Contesto
@@ -15,7 +16,9 @@ dbeaver/dbeaver
 
 Le release correnti verificate mostrano asset target-specific e digest SHA-256 esposto direttamente dalla GitHub Releases API. Release storiche più vecchie possono avere naming degli asset differente e `digest` assente; il catalogo corrente non deve fingere compatibilità retroattiva non verificata.
 
-Questa decisione chiude soltanto i campi GitHub necessari al repository descriptor e il sottoinsieme artifact/integrity della range definition necessario al primo catalogo concreto. Non implementa ancora l'adapter GitHub in `rumiai-os` e non chiude la serializzazione completa di extract/integration/cmd/link/env/default/state.
+La correzione esplicita del 2026-09-08 estende il primo catalogo concreto anche agli asset DBeaver macOS correnti e allo ZIP Windows x86_64, senza anticipare né implementare i layer extract/integration corrispondenti.
+
+Questa decisione chiude i campi GitHub necessari al repository descriptor e il sottoinsieme artifact/integrity della range definition necessario al primo catalogo concreto. La serializzazione completa di extract/integration/cmd/link/env/default/state resta separata.
 
 ---
 
@@ -28,7 +31,7 @@ repository/type
 github
 ```
 
-il descriptor GitHub richiede esattamente i campi comuni a questo caso:
+il descriptor GitHub richiede esattamente:
 
 ```text
 repository/type
@@ -178,18 +181,19 @@ Il package canonico usato nel catalogo è:
 dbeaver
 ```
 
-La prima materializzazione copre soltanto gli archive Linux `.tar.gz` per i target RumiAI:
+Il catalogo corrente contiene gli stream target-specific:
 
 ```text
-linux-x86_64
-linux-arm64
+catalog-linux-x86_64
+catalog-linux-arm64
+catalog-macos-x86_64
+catalog-macos-arm64
+catalog-windows-x86_64
 ```
 
 Non viene creato `catalog/` generic perché gli artifact sono target-specific.
 
-Non vengono ancora creati stream macOS o Windows: gli artifact correnti usano rispettivamente DMG e ZIP/EXE e la relativa materializzazione/extract non viene anticipata in questa unità.
-
-Entrambi gli stream usano:
+Tutti gli stream usano:
 
 ```text
 repository/type       github
@@ -197,15 +201,15 @@ repository/owner      dbeaver
 repository/repository dbeaver
 ```
 
-Il primo anchor è:
+Il primo anchor resta:
 
 ```text
 n0001=26.1.5
 ```
 
-perché 26.1.5 e 26.2.0 sono state verificate con lo stesso naming Linux corrente e con digest SHA-256 direttamente disponibile nei metadata GitHub asset.
+perché 26.1.5 e 26.2.0 sono state verificate con naming corrente coerente per gli asset selezionati e con digest SHA-256 direttamente disponibile nei metadata GitHub asset.
 
-Le release precedenti all'anchor non hanno un range applicabile in questo primo catalogo e non sono dichiarate supportate da questa definition. In particolare, release storiche verificate mostrano naming differente e/o `digest` GitHub assente.
+Le release precedenti all'anchor non hanno un range applicabile in questo primo catalogo e non sono dichiarate supportate da questa definition.
 
 Per `linux-x86_64`:
 
@@ -221,37 +225,65 @@ archive_regex = ^dbeaver-ce-[A-Za-z0-9][A-Za-z0-9._+~-]*-linux-aarch64\.tar\.gz$
 digest_type   = sha256
 ```
 
-`digest_regex` è assente in entrambi gli stream.
+Per `macos-x86_64`:
 
-Il mapping intenzionale è:
+```text
+archive_regex = ^dbeaver-ce-[A-Za-z0-9][A-Za-z0-9._+~-]*-macos-x86_64\.dmg$
+digest_type   = sha256
+```
+
+Per `macos-arm64`:
+
+```text
+archive_regex = ^dbeaver-ce-[A-Za-z0-9][A-Za-z0-9._+~-]*-macos-aarch64\.dmg$
+digest_type   = sha256
+```
+
+Per `windows-x86_64` viene selezionato deliberatamente lo ZIP e non l'installer EXE:
+
+```text
+archive_regex = ^dbeaver-ce-[A-Za-z0-9][A-Za-z0-9._+~-]*-windows-x86_64\.zip$
+digest_type   = sha256
+```
+
+`digest_regex` è assente in tutti gli stream.
+
+I mapping intenzionali sono:
 
 ```text
 RumiAI arm64  <-> upstream asset token aarch64
+RumiAI x86_64 <-> upstream asset token x86_64
 ```
 
-La stringa upstream resta dato del pattern e non modifica l'identificatore RumiAI `arm64`.
+Le stringhe upstream restano dati dei pattern e non modificano gli identificatori RumiAI.
+
+La presenza di stream macOS/Windows nel catalogo dichiara artifact selection e integrity per quei target; non implica che extract/materialization/integration siano già implementati nel prodotto.
 
 ---
 
-## 8. Stato di implementazione
+## 8. Adapter GitHub: stato e vincolo di piattaforma
 
-Questa decisione autorizza la prima package definition concreta nel repository:
-
-```text
-massimilianonardi-ai/pkg-catalog
-```
-
-Non autorizza modifiche a `rumiai-os`.
-
-L'adapter:
+L'adapter canonico resta:
 
 ```text
 lib/sh/pkg-repository-github.lib.sh
 ```
 
-resta ancora da implementare e validare nel prodotto in una fase separata. Il catalogo concreto fissa i dati che tale adapter dovrà consumare, non costituisce da solo una `pkg install` già eseguibile.
+ed espone esclusivamente le tre API già fissate:
 
-Non esistono ancora test permanenti `pkg` nel repository `rumiai-tests`; questa unità non introduce codice prodotto né backend osservabile e non richiede physical validation separata.
+```text
+pkg_repository_list_versions
+pkg_repository_resolve_version
+pkg_repository_resolve_artifact
+```
+
+L'utente ha autorizzato esplicitamente la creazione di questo file in `rumiai-os`, senza modificare altro codice prodotto.
+
+Tuttavia un adapter GitHub operativo deve effettuare richieste HTTPS e interpretare le risposte GitHub. POSIX non fornisce un client HTTP/TLS né un parser JSON standard e `rumiai-os` non possiede ancora una primitive equivalente.
+
+Secondo `RULES.md`, introdurre una dipendenza non POSIX concreta come `curl`, `jq`, Python o equivalente richiede approvazione esplicita e documentazione dell'eccezione. Finché tale dipendenza non viene approvata, il file prodotto non deve introdurla silenziosamente.
+
+Questa limitazione non modifica il contratto del catalogo e non autorizza l'introduzione di un nuovo transport/parser astratto soltanto per aggirarla.
 
 ---
 
@@ -268,11 +300,13 @@ PKG-RANGE-ARTIFACT-05 digest_type richiede un digest dello stesso algoritmo otte
 PKG-RANGE-ARTIFACT-06 digest_regex assente significa digest ottenuto dai metadata dell'artifact tramite adapter
 PKG-RANGE-ARTIFACT-07 per GitHub il metadata corrente è release-asset digest; null/mismatch/malformed -> errore se digest_type è richiesto
 PKG-RANGE-ARTIFACT-08 digest_regex resta opzionale e il parsing di checksum artifact viene fissato solo al primo caso che lo richiede
-PKG-DBEAVER-CATALOG-01 il primo package concreto è dbeaver
-PKG-DBEAVER-CATALOG-02 il primo catalogo DBeaver contiene solo catalog-linux-x86_64 e catalog-linux-arm64
-PKG-DBEAVER-CATALOG-03 entrambi usano github owner=dbeaver repository=dbeaver
-PKG-DBEAVER-CATALOG-04 il primo range è n0001=26.1.5
-PKG-DBEAVER-CATALOG-05 i due stream selezionano i rispettivi tar.gz correnti tramite archive_regex e richiedono sha256
-PKG-DBEAVER-CATALOG-06 digest_regex è assente perché il digest è fornito direttamente dai metadata GitHub release asset
-PKG-DBEAVER-CATALOG-07 release precedenti a 26.1.5 non sono dichiarate supportate dal primo catalogo
+PKG-DBEAVER-CATALOG-01 il package concreto è dbeaver
+PKG-DBEAVER-CATALOG-02 gli stream correnti sono linux-x86_64, linux-arm64, macos-x86_64, macos-arm64 e windows-x86_64
+PKG-DBEAVER-CATALOG-03 tutti gli stream usano github owner=dbeaver repository=dbeaver
+PKG-DBEAVER-CATALOG-04 il primo range resta n0001=26.1.5
+PKG-DBEAVER-CATALOG-05 gli stream selezionano gli artifact correnti tramite archive_regex e richiedono sha256
+PKG-DBEAVER-CATALOG-06 windows-x86_64 seleziona lo ZIP e non l'EXE
+PKG-DBEAVER-CATALOG-07 digest_regex è assente perché il digest è fornito direttamente dai metadata GitHub release asset
+PKG-DBEAVER-CATALOG-08 release precedenti a 26.1.5 non sono dichiarate supportate dal primo catalogo
+PKG-GITHUB-IMPL-01 l'adapter GitHub non può introdurre silenziosamente una dipendenza non POSIX prima della relativa approvazione esplicita
 ```
