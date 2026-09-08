@@ -1,7 +1,17 @@
 # Handoff — RumiAI OS phase 1 bootstrap environment
 
 Date: 2026-08-28
-Status: **active design handoff**
+Status: **superseded historical handoff**
+
+> Superseded for current bootstrap/runtime authority by:
+>
+> ```text
+> decisions/rumiai-os/2026-09-08-top-level-semantic-roots-and-lang-placement.md
+> specifications/rumiai-os/BOOTSTRAP-ENVIRONMENT.md
+> architecture/rumiai-os/PHASE-1.md
+> ```
+>
+> The remainder is retained as historical 2026-08-28 design context and MUST NOT be used as authority for current semantic roots, environment variables, language selection or `PATH` behavior.
 
 ## Handoff rule
 
