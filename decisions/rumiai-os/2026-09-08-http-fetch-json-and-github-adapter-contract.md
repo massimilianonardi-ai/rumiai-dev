@@ -177,25 +177,14 @@ n:<number>
 b:true
 b:false
 z:
- m:   # semanticamente missing; nella serializzazione reale il token è `m:` senza spazio
-```
-
-Quindi i token reali sono:
-
-```text
-s:<string>
-n:<number>
-b:true
-b:false
-z:
 m:
 ```
 
 I campi di uno stesso record sono separati da TAB; i record da LF.
 
-Per preservare questa serializzazione, una stringa selezionata contenente TAB, CR o LF viene rifiutata. Stringhe non selezionate possono essere saltate dal parser senza diventare output.
+Per preservare questa serializzazione, una stringa selezionata contenente TAB, CR o LF viene rifiutata. Le stringhe selezionate che richiedono escape Unicode `\uXXXX` vengono inoltre rifiutate in questa prima implementazione invece di essere decodificate parzialmente. Stringhe non selezionate possono essere saltate dal parser senza diventare output.
 
-`json_object_read` esegue una singola estrazione del root object e assegna i token typed alle variabili shell richieste nel processo corrente. I nomi variabile vengono validati prima dell'assegnazione; la funzione non esegue dati JSON come shell code.
+`json_object_read` esegue una singola estrazione del root object e assegna i token typed alle variabili shell richieste nel processo corrente. I nomi variabile vengono validati prima dell'assegnazione; la funzione non esegue dati JSON come shell code. Per conservare gli assegnamenti il caller deve invocare la funzione nel processo shell corrente, non nel lato subshell di una pipeline.
 
 La libreria può essere estesa in futuro con altre primitive mirate soltanto quando un consumer concreto le richiede.
 
@@ -375,14 +364,14 @@ repository
 
 L'adapter rifiuta campi sconosciuti, symlink, sottodirectory o scalar file non conformi.
 
-I valori correnti sono validati conservativamente per costruire endpoint GitHub senza encoding ambiguo:
+I valori correnti vengono limitati soltanto al sottoinsieme ASCII non ambiguo necessario a costruire gli endpoint senza URL encoding aggiuntivo:
 
 ```text
-owner       ASCII alfanumerico e hyphen
-repository  ASCII alfanumerico, dot, underscore e hyphen
+owner       uno o più caratteri ASCII alfanumerici o hyphen
+repository  uno o più caratteri ASCII alfanumerici, dot, underscore o hyphen
 ```
 
-Entrambi devono iniziare e terminare con carattere alfanumerico.
+Non viene replicata nel client una policy più restrittiva sui nomi GitHub. In particolare un repository come `.github` non deve essere rifiutato soltanto perché inizia con dot. La validità semantica finale delle coordinate resta responsabilità dell'API GitHub.
 
 La scalar validation preserva il contratto già fissato: una sola riga non vuota con LF finale, nessun contenuto aggiuntivo, regular non executable file. Il confronto byte-count impedisce che dati non rappresentabili correttamente in una variabile shell vengano accettati silenziosamente.
 
