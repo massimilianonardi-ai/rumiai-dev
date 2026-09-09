@@ -35,10 +35,12 @@ pkg_extract
     deve scoprire strutturalmente i wrapper da eliminare
     non deve ricevere pathname/version-specific di normalizzazione dal catalogo
 
-pkg_analyze <format> <artifact>
+pkg-analyze <format> <artifact>
     deve continuare a usare pkg_extract
     deve quindi analizzare esattamente il tree normalizzato che arriverebbe a pkg_integrate
 ```
+
+Il nome pubblico del comando diagnostico è `pkg-analyze`; la precedente spelling `pkg_analyze` è superseded e non viene mantenuta come alias.
 
 Questo evita che wrapper interni come `<product>-<version>/` trasformino ogni release in un nuovo range e preserva la semantica di `latest` dell'ultimo range.
 
@@ -146,20 +148,20 @@ digest
 extract
 pkg_download
 pkg_extract
-pkg_analyze
+pkg-analyze
 ```
 
 I test di `digest`, `extract`, download e repository adapter restano validi per i rispettivi contratti.
 
 I test correnti di `pkg_extract` proteggono ancora il precedente comportamento raw-staging.
 
-I test correnti di `pkg_analyze` proteggono ancora una seconda discovery/interazione sulla useful root dopo `pkg_extract`.
+I test correnti di `pkg-analyze` proteggono ancora una seconda discovery/interazione sulla useful root dopo `pkg_extract`.
 
 Entrambi i gruppi sono quindi **pending realignment** rispetto al confine corretto:
 
 ```text
 pkg_extract -> root normalizzata
-pkg_analyze -> consuma quella root senza ridiscovery
+pkg-analyze -> consuma quella root senza ridiscovery
 ```
 
 Il riallineamento non deve duplicare i test della utility generale `extract`.
@@ -176,7 +178,7 @@ La sequenza corrente diventa:
 3  contratto + implementazione + test di pkg_download                       [completato]
 4  utility di sistema digest/extract e relativi test                        [completato]
 5  riallineamento pkg_extract: structural useful-root normalization         [successivo]
-6  riallineamento pkg_analyze: consumo diretto del pkg_extract normalizzato [successivo]
+6  riallineamento pkg-analyze: consumo diretto del pkg_extract normalizzato [successivo]
 7  analisi DBeaver + completamento package definition per integration       [successivo]
 8  contratto + implementazione pkg_integrate/pkg_deintegrate                [successivo]
 9  orchestrazione reale pkg install                                         [successivo]
@@ -184,7 +186,7 @@ La sequenza corrente diventa:
 11 dependency/facility/state avanzato quando richiesto                      [successivo]
 ```
 
-La normalizzazione della useful root deve essere chiusa prima dell'analisi DBeaver tramite la forma artifact di `pkg_analyze`, perché quella analisi deve usare lo stesso output normalizzato che verrà poi passato a `pkg_integrate`.
+La normalizzazione della useful root deve essere chiusa prima dell'analisi DBeaver tramite la forma artifact di `pkg-analyze`, perché quella analisi deve usare lo stesso output normalizzato che verrà poi passato a `pkg_integrate`.
 
 La package definition DBeaver non deve contenere un pathname del wrapper interno dell'artifact soltanto per compensare variazioni di release.
 
@@ -198,7 +200,7 @@ La presenza di test permanenti e development checks non sostituisce la physical 
 
 La physical validation dei nuovi layer verrà pianificata in modo proporzionato dopo la loro implementazione, senza confonderla con il gate bootstrap attualmente ancora in attesa sui reference host ARM64.
 
-Le correzioni documentali della useful-root normalization non costituiscono physical validation dell'implementazione corrente di `pkg_extract` o `pkg_analyze`.
+Le correzioni documentali della useful-root normalization non costituiscono physical validation dell'implementazione corrente di `pkg_extract` o `pkg-analyze`.
 
 ---
 
@@ -213,7 +215,7 @@ PKG-PLAN-05  clone/fetch/offline/failure/locking/pinning restano contratti separ
 PKG-PLAN-06  i test permanenti dei layer indipendenti non vengono duplicati nei layer successivi
 PKG-PLAN-07  digest, extract e pkg_download sono completati secondo i rispettivi contratti correnti
 PKG-PLAN-08  pkg_extract non è completato finché non consegna automaticamente la structural useful root normalizzata
-PKG-PLAN-09  pkg_analyze forma artifact DEVE usare pkg_extract e non ripetere useful-root discovery
+PKG-PLAN-09  pkg-analyze forma artifact DEVE usare pkg_extract e non ripetere useful-root discovery
 PKG-PLAN-10  wrapper pathname/version-specific non appartiene alla package definition e non costituisce da solo un nuovo range
 PKG-PLAN-11  latest deve continuare a funzionare attraverso variazioni puramente strutturali dei wrapper dell'artifact
 PKG-PLAN-12  pkg_integrate viene implementato soltanto dopo che pkg_extract consegna direttamente il payload normalizzato
