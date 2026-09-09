@@ -118,9 +118,7 @@ Per questo:
 publication ref != suite main
 ```
 
-Il ref `validation/<run-id>` e un ref durevole di evidenza e non cambia la baseline operativa della suite.
-
-L'eventuale consolidamento successivo delle evidenze in `main` e una fase distinta e non appartiene a `rumiai-validate`.
+Il ref `validation/<run-id>` e quindi un ref di conservazione dell'evidenza, non una nuova baseline della suite. Un'eventuale successiva consolidazione delle evidenze in `main` e una fase distinta e non appartiene al launcher.
 
 ## 6. Idempotenza e collisioni
 
@@ -303,7 +301,7 @@ La prova specifica tramite file manager Linux resta una verifica fisica dell'int
 
 ## 15. Configurazione e physical validation corrente
 
-L'ultima coppia completamente validata prima della correzione corrente e:
+L'ultima coppia completamente validata su entrambi i reference host ARM64 resta:
 
 ```text
 rumiai-os<TAB>c6b3027cfef278b69681ba414337e4b357aca537
@@ -323,31 +321,62 @@ validation/20260909T001235+0200-7713
 PASS 13 / FAIL 0 / SKIP 0 / ERROR 0
 ```
 
-Il 2026-09-09 l'utente ha successivamente ottimizzato il bootstrap `rumiai-os` rendendo alcune directory derivate dalle rispettive semantic root gia definite, senza cambiare i valori osservabili. La nuova revisione prodotto e:
+Le revisioni successive non vengono retroattivamente coperte da tale evidenza.
+
+La configurazione corrente viene ora fissata a:
 
 ```text
-massimilianonardi-ai/rumiai-os@5d8f6f252e4167c3f49870fb2392ffde1516742c
+rumiai-os-commit<TAB>b02965a91efdeb8f9609b432d635430ac9dba209
+selection<TAB>rumiai-os
 ```
 
-La configurazione corrente viene quindi riallineata a:
+La revisione esatta della suite che porta questa configurazione e:
 
 ```text
-rumiai-os-commit<TAB>5d8f6f252e4167c3f49870fb2392ffde1516742c
-selection<TAB>rumiai-os/bootstrap
+massimilianonardi-ai/rumiai-tests@17a02fe6638c6cd0407410f487094200456e3596
 ```
 
-La revisione candidata della suite che introduce il terminal hold e riallinea il target e:
+Dal precedente target configurato `5d8f6f252e4167c3f49870fb2392ffde1516742c` al target corrente `b02965a91efdeb8f9609b432d635430ac9dba209` il prodotto incorpora nuovi layer e modifiche che coinvolgono almeno:
 
 ```text
-massimilianonardi-ai/rumiai-tests@53aa110f94016c23f7c0a54df74a76f5a188c05f
+digest
+extract
+http-fetch
+lang-set
+pkg-analyze
+read-key
+pkg-download
+pkg-extract
 ```
 
-Questa nuova coppia **non e ancora fisicamente validata**. La precedente evidenza resta valida soltanto per le revisioni esatte registrate nelle sessioni e non viene reinterpretata.
+Per questo il gate corrente usa il gruppo:
 
-Il nuovo gate richiede:
+```text
+rumiai-os
+```
 
-- macOS ARM64: normale `./rumiai-validate`, senza prompt di hold;
-- Ubuntu 26.04 ARM64: validation della stessa coppia esatta; la verifica del nuovo comportamento deve includere anche un avvio tramite l'applicazione grafica Files o un percorso equivalente che apra un terminale effimero, confermando che `Press Enter to close...` mantenga visibili i risultati e che la sessione sia gia pubblicata prima del prompt.
+anziche mantenere artificialmente la precedente selection `rumiai-os/bootstrap`.
+
+La stessa coppia esatta deve essere eseguita sui due reference host disponibili nell'ordine operativo scelto dall'utente:
+
+```text
+1. Ubuntu 26.04 ARM64
+2. macOS ARM64
+```
+
+Su entrambi il comando normale dell'operatore resta esclusivamente:
+
+```text
+./rumiai-validate
+```
+
+Non si modifica `rumiai-validate.conf` fra i due run e non si avanza `rumiai-tests/main` fino a quando entrambi i reference host non hanno prodotto l'evidenza desiderata, salvo una correzione realmente necessaria emersa dal primo run.
+
+Se Ubuntu individua un problema reale che richiede una modifica di prodotto o test, la coppia viene aggiornata forward-only e il successivo run macOS deve usare la nuova coppia; l'evidenza Ubuntu precedente resta valida soltanto per la revisione che ha effettivamente esercitato.
+
+Questa validation riguarda il prodotto `rumiai-os` corrente e i relativi test permanenti. Non costituisce ancora physical validation di DBeaver come package installato, perche `pkg_integrate` e il `launcher` necessari al percorso reale non sono ancora implementati.
+
+La verifica fisica specifica del terminal hold tramite file manager Linux resta una verifica distinta dell'integrazione desktop del launcher. Un normale run da shell valida il percorso operativo corrente ma non deve essere reinterpretato come prova del caso terminale grafico effimero se quest'ultimo non viene eseguito.
 
 ## 16. Chiusura del terminale grafico Linux
 
@@ -395,4 +424,6 @@ VALIDATE-17  il terminal hold e responsabilita esclusiva di rumiai-validate e no
 VALIDATE-18  esecuzioni non-TTY e normali invocazioni da shell interattiva non devono richiedere Enter
 VALIDATE-19  il terminal hold Linux preserva l'exit status originale e vale anche per errori preliminari
 VALIDATE-20  un exec riuscito durante il self-update non produce un hold intermedio
+VALIDATE-21  il gate corrente usa rumiai-os@b02965a91efdeb8f9609b432d635430ac9dba209 con rumiai-tests@17a02fe6638c6cd0407410f487094200456e3596 e selection rumiai-os
+VALIDATE-22  la stessa coppia/configurazione viene usata su Ubuntu 26.04 ARM64 e macOS ARM64 senza reinterpretare evidence di revisioni precedenti
 ```
