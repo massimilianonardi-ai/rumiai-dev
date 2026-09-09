@@ -23,9 +23,15 @@ size=<decimal-bytes>
 digest=sha256:<hex-digest>   # quando richiesto
 ```
 
-`http-fetch` è già la primitive RumiAI per il trasferimento HTTP/HTTPS e non deve essere bypassata introducendo chiamate dirette a curl/wget dentro il package manager.
+`http-fetch` è la primitive RumiAI per il trasferimento HTTP/HTTPS.
 
-Questa decisione chiude la prima firma operativa e la semantica di verifica necessarie al layer download.
+La decisione `2026-09-09-digest-and-extract-system-utilities.md` ha inoltre promosso il calcolo SHA-256 alla utility di sistema general-purpose:
+
+```text
+digest
+```
+
+Questa revisione supersede la precedente capability detection SHA-256 interna a `pkg_download`: il package manager conserva la policy di verifica, mentre la scelta del backend host appartiene esclusivamente a `digest`.
 
 ---
 
@@ -146,30 +152,23 @@ La size viene verificata prima del digest.
 
 ## 6. Verifica SHA-256
 
-Il solo algoritmo digest ammesso dal contratto corrente è:
+Il solo algoritmo digest ammesso dal descriptor corrente è:
 
 ```text
 sha256
 ```
 
-Il valore è composto da esattamente 64 cifre esadecimali e viene confrontato case-insensitively dopo normalizzazione lowercase.
+Il valore atteso è composto da esattamente 64 cifre esadecimali e viene normalizzato lowercase.
 
-Poiché gli host correnti non espongono ancora una singola primitive SHA-256 RumiAI fissata, `pkg_download` usa capability detection locale senza promuovere un nuovo comando pubblico.
-
-Ordine iniziale dei backend:
+Quando il descriptor contiene `digest=sha256:<hex>`, `pkg_download` calcola il valore reale esclusivamente tramite:
 
 ```text
-1  cksum -a sha256, se la capability è realmente supportata
-2  sha256sum
-3  shasum -a 256
-4  openssl dgst -sha256
+digest -a sha256 -- <target>
 ```
 
-I backend leggono l'artifact da stdin quando possibile, evitando dipendenze dalla grammatica pathname dei singoli tool.
+`pkg_download` non esegue più capability detection di `cksum`, `sha256sum`, `shasum` o `openssl` e non conosce i backend usati dalla utility.
 
-Se il descriptor richiede SHA-256 ma nessun backend disponibile può calcolarlo, il download fallisce con diagnostica esplicita `command-not-found` per la capability SHA-256.
-
-Digest mismatch o errore del backend:
+Failure di `digest`:
 
 ```text
 rimozione del target prodotto
@@ -177,7 +176,15 @@ errore operativo
 nessun pathname emesso su stdout
 ```
 
-Questa capability detection interna non introduce una API digest generale. Una primitive RumiAI dedicata verrà valutata solo se emergeranno consumer ulteriori con lo stesso contratto.
+Digest mismatch:
+
+```text
+rimozione del target prodotto
+diagnostica con expected-digest e actual-digest
+nessun pathname emesso su stdout
+```
+
+Il confronto avviene dopo la verifica size.
 
 ---
 
@@ -185,7 +192,7 @@ Questa capability detection interna non introduce una API digest generale. Una p
 
 ```text
 0  download e verifiche riusciti
-1  descriptor invalido, staging invalido, transfer/size/digest failure, capability necessaria assente
+1  descriptor invalido, staging invalido, transfer/size/digest failure
 2  numero di argomenti invalido
 ```
 
@@ -203,6 +210,8 @@ seleziona stream/range
 interroga repository upstream per discovery
 estrae artifact
 interpreta format
+sceglie backend HTTP
+sceglie backend digest
 modifica $m_ROOT/pkg
 crea selector current
 crea binding pubblici
@@ -223,14 +232,15 @@ rifiuto duplicate/unknown field
 confinamento di name a un basename
 uso di http-fetch e preservazione del name
 nessun overwrite del target
-verifica size
-verifica SHA-256
+verifica size prima del digest
+delega SHA-256 a digest -a sha256 -- <target>
 cleanup del target dopo transfer/size/digest failure
-fallback fra backend SHA-256 disponibili
-failure esplicita quando una capability digest richiesta è assente
+digest mismatch
 ```
 
-I test unitari possono usare backend fake deterministici; la physical validation del transport/digest reale resta revision-specific e separata.
+La selezione/fallback dei backend SHA-256 appartiene ai test permanenti di `digest`, non viene duplicata nei test di `pkg_download`.
+
+La physical validation del transport/digest reale resta revision-specific e separata.
 
 ---
 
@@ -244,9 +254,9 @@ PKG-DOWNLOAD-04  descriptor obbligatorio name/url/size, digest opzionale; unknow
 PKG-DOWNLOAD-05  name è confinato a un basename e non può uscire dallo staging
 PKG-DOWNLOAD-06  target preesistente non viene sovrascritto
 PKG-DOWNLOAD-07  trasferimento esclusivamente tramite http-fetch
-PKG-DOWNLOAD-08  size viene sempre verificata
-PKG-DOWNLOAD-09  digest corrente supportato = sha256 e, quando richiesto, viene sempre verificato
-PKG-DOWNLOAD-10  backend SHA-256 = capability detection cksum/sha256sum/shasum/openssl senza nuova API pubblica
+PKG-DOWNLOAD-08  size viene sempre verificata prima del digest
+PKG-DOWNLOAD-09  digest descriptor corrente supportato = sha256 e, quando richiesto, viene sempre verificato
+PKG-DOWNLOAD-10  SHA-256 viene calcolato esclusivamente tramite la utility di sistema digest; pkg_download non seleziona backend digest host
 PKG-DOWNLOAD-11  transfer/size/digest failure rimuove il target prodotto dalla stessa invocazione
 PKG-DOWNLOAD-12  pkg_download resta repository-neutral e non modifica package state RumiAI
 ```
