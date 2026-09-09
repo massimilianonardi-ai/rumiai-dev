@@ -36,6 +36,8 @@ La scelta esplicita dell'utente del 2026-09-09 fissa per DBeaver:
 
 Il pathname component `.workspace` è una scelta esplicita fornita dall'utente per questo package. Non introduce una convenzione generale per i nomi RumiAI-controlled e non modifica `FILESYSTEM-NAMING.md`.
 
+Per Windows la decisione `2026-09-09-windows-posix-environment-baseline.md` fissa inoltre MSYS2 come ambiente POSIX-compatible di riferimento corrente, senza introdurre pathname Win32 o conversioni package-specific nel modello RumiAI. La scelta non dichiara ancora MSYS2 requisito esclusivo definitivo prima della futura physical validation Windows.
+
 Questa unità fissa inoltre la serializzazione minima della range definition necessaria a rappresentare il primo caso reale senza introdurre un nuovo mini-linguaggio di launch.
 
 Questa decisione modifica soltanto `rumiai-dev`. La successiva applicazione al repository `pkg-catalog` è una modifica separata della stessa fase. Non autorizza modifiche a `rumiai-os` o `rumiai-tests`.
@@ -267,7 +269,7 @@ Questa decisione chiude soltanto il caso **direct-link** necessario a DBeaver. L
 
 ## 9. Target DBeaver correnti
 
-Per i target POSIX-native correnti la definizione è:
+La definizione corrente è:
 
 ```text
 linux-x86_64
@@ -285,9 +287,13 @@ macos-x86_64
 macos-arm64
     format         dmg
     link/dbeaver   DBeaver.app/Contents/MacOS/dbeaver
+
+windows-x86_64
+    format         zip
+    link/dbeaver   dbeaver.exe
 ```
 
-Tutti e quattro usano lo stesso `cmd/dbeaver` definito sopra.
+Tutti e cinque usano lo stesso `cmd/dbeaver` definito sopra.
 
 Il pathname macOS dell'executable è coerente con la documentazione upstream corrente, che espone l'avvio diretto tramite:
 
@@ -295,15 +301,18 @@ Il pathname macOS dell'executable è coerente con la documentazione upstream cor
 DBeaver.app/Contents/MacOS/dbeaver
 ```
 
-Il target Windows x86_64 conserva per ora la sola parte artifact/materialization già verificata:
+Per Windows lo ZIP upstream contiene il normale launcher GUI `dbeaver.exe`; il package command `dbeaver` punta quindi direttamente a tale executable. L'eventuale `dbeaverc.exe` destinato all'uso console non sostituisce il command GUI iniziale scelto per il package.
+
+Nel baseline Windows corrente l'ambiente di riferimento è MSYS2. Il command source continua a passare direttamente:
 
 ```text
-format = zip
+$m_CONF_DIR/dbeaver/configuration
+$m_HOME_DIR/dbeaver/.workspace
 ```
 
-La materializzazione `cmd/link` Windows non viene ancora dichiarata perché RumiAI esegue in ambiente POSIX-compatible mentre DBeaver è un executable Windows nativo; la conversione/compatibilità dei pathname passati a `-configuration` e `-data` deve essere verificata prima di promuovere una launch definition Windows. Non viene introdotto preventivamente un adapter o `cygpath` package-specific senza evidence.
+usando il normale pathname POSIX con `/`. Non viene introdotta conversione a pathname Win32 nel catalogo, in `cmd/dbeaver` o nel futuro `pkg_integrate`.
 
-L'assenza temporanea di `cmd/link` nel solo stream Windows non modifica il contratto degli stream Linux/macOS e non dichiara supporto end-to-end Windows prima della relativa verifica.
+Questa definizione completa il contratto del catalogo Windows, ma non costituisce physical validation Windows e non rende ancora MSYS2 un requisito esclusivo definitivo.
 
 ---
 
@@ -333,11 +342,15 @@ materializzazione cmd/ come executable command entry
 materializzazione link/ come symlink relativo confinato in root/
 assenza di template/eval del cmd source
 DBeaver Linux fixture con link target dbeaver
+DBeaver macOS fixture con link target DBeaver.app/Contents/MacOS/dbeaver
+DBeaver Windows fixture con link target dbeaver.exe
 preservazione degli argomenti fissi prima degli argomenti utente
 assenza di var/env/default quando non dichiarati
 ```
 
 La physical validation DBeaver sui reference host resta successiva all'implementazione dei layer necessari e deve essere revision-specific.
+
+La physical validation Windows dovrà inoltre verificare separatamente l'assunzione MSYS2 prima di decidere se promuoverla a requisito esclusivo o ammettere altri ambienti POSIX-compatible.
 
 ---
 
@@ -357,7 +370,9 @@ PKG-DBEAVER-10  il direct-link command può chiamare launcher <pkg> con argoment
 PKG-DBEAVER-11  Linux usa link target dbeaver
 PKG-DBEAVER-12  macOS usa link target DBeaver.app/Contents/MacOS/dbeaver
 PKG-DBEAVER-13  Linux usa format tar.gz e macOS usa format dmg
-PKG-DBEAVER-14  Windows x86_64 usa format zip ma cmd/link restano non dichiarati finché il pathname bridge POSIX/native non è verificato
+PKG-DBEAVER-14  Windows x86_64 usa format zip, link target dbeaver.exe e lo stesso cmd/dbeaver degli altri target
 PKG-DBEAVER-15  l'anchor resta n0001=26.1.5 e 26.2.0 non richiede un nuovo range per il contratto corrente
 PKG-DBEAVER-16  .workspace è una scelta pathname esplicita dell'utente per DBeaver e non stabilisce una convenzione generale RumiAI
+PKG-DBEAVER-17  il command DBeaver Windows usa direttamente le semantic root POSIX sotto la baseline MSYS2 corrente senza conversione pathname package-specific
+PKG-DBEAVER-18  la definizione Windows completa il catalogo ma resta da validare fisicamente prima di fissare il requisito Windows definitivo
 ```
