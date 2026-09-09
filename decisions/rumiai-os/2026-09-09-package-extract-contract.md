@@ -61,8 +61,10 @@ Input:
 ```text
 artifact      regular file locale già scaricato e verificato
 format        token esplicito determinato dal packaging/resolution
-staging-dir   directory reale già esistente e vuota
+staging-dir   destination reale già esistente e vuota scelta dal caller
 ```
+
+Il terzo argomento è sempre il pathname di output scelto dal caller. `pkg_extract` non decide autonomamente dove collocare il payload e, in particolare, non sceglie né deriva `$m_ROOT/pkg`.
 
 Non viene aggiunto un argomento o context di useful-root pathname proveniente dalla package definition.
 
@@ -80,8 +82,10 @@ artifact upstream
     -> structural useful-root discovery
     -> eliminazione dei wrapper/prefix strutturali
     -> staging root normalizzata
-    -> pkg_integrate
+    -> caller
 ```
+
+Il caller può usare tale destination come staging diagnostico/temporaneo oppure passarla successivamente a `pkg_integrate`. `pkg_extract` non effettua da solo la pubblicazione nel package store.
 
 Di conseguenza `pkg_integrate` non deve conoscere né ricostruire pathname come:
 
@@ -198,6 +202,7 @@ Format selection e useful-root normalization restano responsabilità distinte: i
 Lo staging directory deve essere:
 
 ```text
+scelto dal caller
 esistente
 reale, non symlink
 vuoto all'ingresso
@@ -306,12 +311,13 @@ Potranno essere introdotti quando un package concreto li richiederà e sarà chi
 
 ---
 
-## 12. Testing e stato di riallineamento
+## 12. Testing e stato corrente
 
-I test permanenti dovranno proteggere almeno:
+I test permanenti proteggono:
 
 ```text
 API a tre argomenti e requisito staging vuoto
+output nella destination scelta dal caller e nessuna pubblicazione implicita in $m_ROOT/pkg
 assenza di autodetection implicita del format
 delega dei format archive/compression a extract
 propagazione backend failure come extraction failure package-level
@@ -328,18 +334,9 @@ assenza di useful-root discovery demandata a pkg_integrate
 
 Mapping format→backend, alias, single-stream naming, missing utility e casi reali dei backend restano nei test della utility `extract` e non vengono duplicati nel package layer.
 
-Alla data di questa correzione:
+L'implementazione corrente di `rumiai-os/lib/sh/pkg-extract.lib.sh` e il test permanente `rumiai-tests/tests/rumiai-os/pkg-extract/contract.test` sono riallineati a questo contratto. La firma a tre argomenti è rimasta invariata.
 
-```text
-rumiai-os/lib/sh/pkg-extract.lib.sh
-rumiai-tests/tests/rumiai-os/pkg-extract/contract.test
-```
-
-implementano/proteggono ancora il precedente comportamento di staging grezzo.
-
-Sono quindi **pending realignment** per la structural useful-root normalization. La firma a tre argomenti resta invece quella canonica.
-
-La modifica dell'implementazione `rumiai-os` richiede una fase esplicitamente autorizzata dall'utente secondo `RULES.md`.
+I development checks sul fixture isolato sono distinti dalla physical validation revision-specific sui reference host.
 
 ---
 
@@ -350,7 +347,7 @@ PKG-EXTRACT-01  file canonico lib/sh/pkg-extract.lib.sh; libreria non eseguibile
 PKG-EXTRACT-02  API = pkg_extract <artifact> <format> <staging-dir>
 PKG-EXTRACT-03  pkg_extract è il layer repository-neutral di package materialization fra download e integration
 PKG-EXTRACT-04  format è esplicito e non viene dedotto dal repository type
-PKG-EXTRACT-05  staging di output deve esistere, essere reale e vuoto all'ingresso
+PKG-EXTRACT-05  staging di output è scelto dal caller e deve esistere, essere reale e vuoto all'ingresso
 PKG-EXTRACT-06  archive/compression/deb/dmg usano extract soltanto per raw extraction/materialization
 PKG-EXTRACT-07  pkg_extract non seleziona direttamente tar/gzip/bzip2/xz/zstd/unzip/7zip/dpkg-deb
 PKG-EXTRACT-08  AppImage non viene eseguito, non usa --appimage-extract e viene materializzato opacamente preservando basename e mode
@@ -366,4 +363,5 @@ PKG-EXTRACT-17  pkg_integrate non effettua discovery o correzione dei wrapper up
 PKG-EXTRACT-18  il cambio del solo wrapper pathname non crea un nuovo range e non altera la semantica di latest
 PKG-EXTRACT-19  extract resta generic raw extraction e non conosce useful root o package definition
 PKG-EXTRACT-20  non viene introdotto nel baseline un override di pathname/depth nella package definition
+PKG-EXTRACT-21  pkg_extract non sceglie né deriva $m_ROOT/pkg: materializza esclusivamente nella destination ricevuta come terzo argomento
 ```
