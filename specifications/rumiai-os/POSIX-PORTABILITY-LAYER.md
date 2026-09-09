@@ -1,7 +1,8 @@
 # RumiAI OS — POSIX Portability Layer
 
 Status: **Draft normative specification**  
-Date: 2026-08-27
+Date: 2026-08-27  
+Updated: 2026-09-09
 
 ## 1. Purpose
 
@@ -39,15 +40,17 @@ If POSIX already provides a clear and sufficient mechanism, application code SHO
 
 A construct MUST NOT be considered portable solely because it works on one or more common Unix-like systems.
 
-### POSIX-PLAT-002 — `/bin/sh`
+### POSIX-PLAT-002 — POSIX shell and entrypoint selection
 
-All shell scripts in the portable core MUST use exactly:
+Portable shell code and RumiAI command bodies implemented in shell MUST remain POSIX `sh` code unless an explicitly approved exception establishes another runtime or language contract.
 
-```sh
-#!/bin/sh
-```
+The executable shebang is selected according to `RULES.md` and `COMMAND-ENTRYPOINTS.md`:
 
-Any exception requires the approval and documentation defined by `RULES.md`.
+- the root bootstrap `rumiai-os` uses exactly `#!/bin/sh`;
+- an explicitly approved standalone shell utility uses exactly `#!/bin/sh`;
+- a bootstrap-integrated RumiAI command uses exactly `#!/usr/bin/env rumiai-os`, while its shell body remains subject to the POSIX-shell rules.
+
+Use of `#!/bin/sh` for a standalone RumiAI utility requires the prior authorization and authoritative documentation defined by `RULES.md`; it is not inferred merely from the implementation language.
 
 ### POSIX-PLAT-003 — no accidental extensions
 
