@@ -134,6 +134,8 @@ selection=rumiai-os
 
 La nuova coppia deve essere validata prima su Ubuntu ARM64 e poi, senza cambiare target/selection, su macOS ARM64.
 
+Questa sezione supersede, per la coppia candidata corrente, la precedente indicazione `rumiai-tests@17a02fe...` ancora presente nella decisione generale `2026-09-08-validation-launcher.md`. Il contratto del launcher non cambia; cambia soltanto la revisione della suite da validare dopo il riallineamento dei tre test command.
+
 ## 5. Invarianti
 
 ```text
