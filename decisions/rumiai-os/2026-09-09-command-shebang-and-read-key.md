@@ -1,6 +1,7 @@
 # Decisione — Shebang dei command entrypoint e utility `read-key`
 
 Date: 2026-09-09  
+Updated: 2026-09-09  
 Status: **Accepted**
 
 ## Contesto
@@ -15,6 +16,8 @@ Il nuovo caso concreto `read-key` ha reso necessario distinguere il linguaggio d
 `read-key` è una utility shell intenzionalmente autonoma dal bootstrap: legge un singolo tasto dal controlling terminal, usa esclusivamente primitive shell/POSIX più una capability `tput`/terminfo dichiarata, non usa `m_*`, `log`, `lang`, librerie sourced dal bootstrap, `m_COMMAND_BIN` o altre facility inizializzate da `rumiai-os`.
 
 L'utente ha autorizzato esplicitamente sia l'introduzione di `read-key` in `rumiai-os` sia l'uso di `#!/bin/sh` per questa utility, oltre alla revisione generale della regola di scelta dello shebang.
+
+L'utente ha successivamente fissato che `read-key` deve restare standalone e minimale anche nella gestione degli errori: i failure gestiti non producono messaggi diagnostici propri e vengono comunicati al consumer tramite exit status. La responsabilità di eventuali messaggi utente resta al consumer, che conosce il contesto della lettura e può usare `fatal`/`log` quando opera nel runtime RumiAI.
 
 ---
 
@@ -257,9 +260,11 @@ Le variabili POSIX shell non possono rappresentare NUL; il byte NUL viene quindi
 
 ## 12. Output ed exit status
 
-stdout contiene esclusivamente il risultato seguito da newline.
+Su successo stdout contiene esclusivamente il risultato seguito da newline.
 
-stderr contiene esclusivamente le diagnostiche.
+`read-key` non emette messaggi diagnostici applicativi propri. Nei failure gestiti, stdout e stderr restano vuoti e il fallimento è comunicato esclusivamente dall'exit status. Le diagnostiche attese delle utility interne sono soppresse.
+
+Questa scelta preserva l'indipendenza dal bootstrap e mantiene `read-key` come primitive bassa e circoscritta. La responsabilità della presentazione dell'errore appartiene al consumer che conosce il contesto della lettura; un consumer bootstrap-integrated può usare `fatal`/`log` senza trasformare `read-key` in una dipendenza dal runtime RumiAI.
 
 Exit status:
 
@@ -322,7 +327,7 @@ SHEBANG-03  #!/bin/sh standalone richiede assenza di dipendenza bootstrap attual
 SHEBANG-04  una standalone utility non usa facility bootstrap come m_*, log, lang o m_COMMAND_BIN
 SHEBANG-05  nuova dipendenza bootstrap -> riesame obbligatorio dello shebang
 READ-KEY-01 comando canonico bin/sys/read-key, executable, #!/bin/sh
-READ-KEY-02 zero argomenti; stdout solo dato, stderr solo diagnostica
+READ-KEY-02 zero argomenti; stdout solo risultato su successo; failure gestiti silenziosi su stdout/stderr
 READ-KEY-03 printable UTF-8 invariato; tasti speciali normalizzati in nomi logici
 READ-KEY-04 sequenze speciali derivate da terminfo/tput, non hardcodate per terminale
 READ-KEY-05 tput/X/Open Curses/terminfo è capability esplicita
@@ -341,15 +346,16 @@ Devono essere mantenuti test permanenti almeno per:
 ```text
 pathname/mode/shebang standalone
 assenza di dipendenze bootstrap nel comando
-zero-argument CLI
+assenza di diagnostiche applicative proprie nel comando
+zero-argument CLI e failure invalido silenzioso
 ASCII e spazio invariati
 UTF-8 valido 2/3/4 byte
 Escape/Enter/Tab
 almeno una capability terminfo reale per freccia
 ripristino dello stato TTY
 assenza di smkx/rmkx su stdout
-missing tput
-UTF-8 invalido e sequenza terminale sconosciuta
+missing tput con status corretto e output di failure vuoto
+UTF-8 invalido e sequenza terminale sconosciuta con status corretto e output di failure vuoto
 ```
 
-La validazione locale PTY effettuata durante la progettazione ha verificato questi comportamenti sulla revisione candidata, ma non costituisce una validation run certificata sui reference host per le revisioni committed. La physical validation revision-specific resta da registrare secondo `TESTING.md` quando appropriato.
+La validazione locale PTY effettuata durante la progettazione e il riallineamento ha verificato questi comportamenti sulla revisione candidata, ma non costituisce una validation run certificata sui reference host per le revisioni committed. La physical validation revision-specific resta da registrare secondo `TESTING.md` quando appropriato.
