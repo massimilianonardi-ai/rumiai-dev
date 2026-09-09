@@ -2,11 +2,23 @@
 
 Status: **Normative specification**  
 Date: 2026-08-28  
-Updated: 2026-09-02
+Updated: 2026-09-09
 
 ## 1. Scope
 
-RumiAI supports two top-level forms:
+RumiAI distingue due forme di entrypoint direttamente eseguibili:
+
+```text
+bootstrap-integrated command
+    usa il runtime RumiAI e le facility inizializzate dal bootstrap
+
+standalone shell utility
+    è intenzionalmente autonoma dal bootstrap RumiAI
+```
+
+La classificazione dipende dal contratto runtime del comando, non dalla directory fisica, dal fatto che il file sia di proprietà RumiAI o dal linguaggio usato per implementarlo.
+
+RumiAI continua inoltre a supportare le due forme top-level del runtime:
 
 ```text
 rumiai-os
@@ -16,119 +28,157 @@ rumiai-os file [args...]
     interpret/source the explicitly supplied file
 ```
 
-A RumiAI command file that is directly executable by the host uses:
+Il vecchio multicall + `cmd/` shadow model resta superseded.
+
+## 2. Bootstrap-integrated command
+
+Un comando direttamente eseguibile MUST usare:
 
 ```text
 #!/usr/bin/env rumiai-os
 ```
 
-The command file is its own implementation body. The old multicall + `cmd/` shadow model remains superseded.
+quando:
 
-## 2. Directly executable command
+- usa attualmente environment variables, funzioni, librerie, logger, resolver lingua, root/path semantici, configurazione o altre facility inizializzate dal bootstrap RumiAI; oppure
+- il suo ruolo rende ragionevolmente prevedibile che una dipendenza di questo tipo diventi parte del contratto del comando durante la sua evoluzione normale.
 
-A directly executed RumiAI command MUST use:
+Non si deve scegliere `#!/bin/sh` soltanto perché la prima implementazione non usa ancora una facility bootstrap se l'integrazione con il runtime RumiAI è già una conseguenza ragionevolmente prevedibile del ruolo del comando.
+
+Il profilo host deve supportare `/usr/bin/env`, executable shebang scripts, PATH-based interpreter resolution e forwarding del command pathname a `rumiai-os`.
+
+La convenzione `#!` resta un'estensione esplicita del profilo host rispetto al contratto POSIX astratto.
+
+## 3. Standalone shell utility
+
+Una utility shell direttamente eseguibile MAY usare esattamente:
+
+```text
+#!/bin/sh
+```
+
+soltanto quando tutte le condizioni seguenti sono soddisfatte:
+
+1. l'implementazione è POSIX `sh`;
+2. il comando non dipende attualmente dal bootstrap RumiAI;
+3. una dipendenza dal bootstrap non è ragionevolmente prevedibile nel normale ruolo del comando;
+4. l'uso standalone costituisce una scelta intenzionale del contratto, non una scorciatoia implementativa;
+5. l'utente ha autorizzato preventivamente questa scelta;
+6. una decisione o specifica autorevole documenta la motivazione, le dipendenze esterne e il contratto osservabile.
+
+Una standalone shell utility non può richiedere, come parte del proprio funzionamento, `m_*`, `log`, `lang`, librerie sourced dal bootstrap, `m_COMMAND_BIN` o altre facility fornite dal runtime RumiAI.
+
+Le dipendenze esterne non garantite dalla baseline POSIX devono essere dichiarate esplicitamente come capability/dependency del comando.
+
+Se in seguito emerge una dipendenza dal bootstrap, la classificazione e lo shebang MUST essere riesaminati. La migrazione normale è verso:
 
 ```text
 #!/usr/bin/env rumiai-os
 ```
 
-and satisfy the host's executable-file requirements.
+salvo una nuova decisione esplicita che stabilisca diversamente.
 
-The host profile must support `/usr/bin/env`, executable shebang scripts, PATH-based interpreter resolution and forwarding of the command pathname to `rumiai-os`.
+`bin/sys/read-key` è la prima utility autorizzata secondo questo modello standalone e usa `#!/bin/sh` per decisione del 2026-09-09.
 
-The `#!` convention remains an explicit host-profile extension rather than an abstract POSIX guarantee.
+## 4. Explicit source operand
 
-## 3. Explicit source operand
-
-A file invoked through:
+Un file invocato tramite:
 
 ```text
 rumiai-os file [args...]
 ```
 
-already names the interpreter and therefore:
+nomina già l'interprete e quindi:
 
-- need not contain a shebang;
-- need not have the executable bit;
-- must resolve to a readable regular file.
+- non deve necessariamente contenere uno shebang;
+- non deve necessariamente avere executable bit;
+- deve risolvere a un regular file leggibile.
 
-The runtime does not require a shebang merely because the same file could also be directly executable.
+Questa forma riguarda i file interpretati dal runtime RumiAI. Una standalone shell utility non acquisisce implicitamente semantica bootstrap soltanto perché può essere letta come testo o invocata da un altro script.
 
-## 4. Active runtime and portable exposure
+## 5. Active runtime and portable exposure
 
-For direct execution, `/usr/bin/env` selects `rumiai-os` from the current `PATH`.
+Per l'esecuzione diretta dei bootstrap-integrated command, `/usr/bin/env` seleziona `rumiai-os` dal `PATH` corrente.
 
-Inside an activated/portable RumiAI environment, the canonical runtime is exposed as:
+Dentro un ambiente RumiAI attivato/portable, il runtime canonico è esposto come:
 
 ```text
 bin/sys/rumiai-os -> ../../rumiai-os
 ```
 
-and `bin/sys` participates in the RumiAI `PATH` before the inherited host path.
+`bin/sys` partecipa al RumiAI `PATH` prima del path host ereditato. I command con shebang `#!/usr/bin/env rumiai-os` possono quindi risolvere il runtime attivo senza installazione host-global obbligatoria e senza preferire accidentalmente un'altra installazione host.
 
-Therefore direct shebang commands can resolve the active portable runtime without mandatory host-global installation and without accidentally preferring another host runtime.
+Questo symlink non è multicall routing.
 
-This symlink is not multicall routing.
+Le standalone shell utility non dipendono da questo meccanismo per scegliere il proprio interprete, perché usano il pathname assoluto `/bin/sh` approvato dal relativo contratto.
 
-## 5. Command/source identity
+## 6. Command/source identity
 
-The runtime canonicalizes the supplied source pathname and exposes the successful result as the RumiAI-owned environment variable:
+Per i file interpretati dal runtime RumiAI, il runtime canonicalizza il source pathname fornito e lo espone come environment variable:
 
 ```text
 m_COMMAND_BIN
 ```
 
-`m_COMMAND_BIN` is the absolute physical/canonical pathname of the source file being interpreted.
+`m_COMMAND_BIN` è il pathname assoluto fisico/canonico del file sorgente interpretato.
 
-The command identity is the pathname, not only its basename. Renamed symbolic-link aliases therefore do not require a basename registry.
+L'identità operativa resta il pathname, non il solo basename. Alias/symlink esterni possono quindi rinominare un command file senza introdurre un registry globale dei basename.
 
-## 6. Positional arguments
+Una standalone shell utility non riceve né richiede `m_COMMAND_BIN` dal bootstrap.
 
-Before sourcing the command body, `rumiai-os` removes the source-file operand from its positional parameters.
+## 7. Positional arguments
 
-The body observes `$@` as the arguments originally supplied after the source pathname.
+Prima di eseguire il source di un bootstrap-integrated command body, `rumiai-os` rimuove il source-file operand dai propri positional parameters.
 
-## 7. Execution model
+Il body osserva `$@` come gli argomenti originariamente forniti dopo il source pathname.
 
-The current command body contract is POSIX shell sourced in-process after the bootstrap has initialized the RumiAI environment, `lang` and logger.
+Una standalone shell utility riceve invece direttamente dal normale exec del sistema i propri positional parameters secondo il contratto del relativo interprete.
 
-Example:
+## 8. Execution model
+
+Il bootstrap-integrated command body corrente è POSIX shell sourced in-process dopo che il bootstrap ha inizializzato l'ambiente RumiAI, `lang` e logger.
+
+Esempio:
 
 ```sh
 #!/usr/bin/env rumiai-os
 log "$@"
 ```
 
-Because the file is sourced in the initialized runtime process, it can directly call RumiAI shell functions already present in that process.
+Poiché il file è sourced nel runtime inizializzato, può chiamare direttamente le funzioni RumiAI già presenti nel processo.
 
-A command body may delegate to another approved runtime when the future capability/profile contract permits it.
+Una standalone shell utility usa invece un processo `/bin/sh` indipendente e non deve assumere ambient state prodotto dal bootstrap RumiAI.
 
-## 8. Root semantics
+Un command body può delegare a un altro runtime approvato quando il relativo capability/profile contract lo consente.
 
-The RumiAI root is derived from the physical active `rumiai-os` interpreter, not from the command-file pathname.
+## 9. Root semantics
 
-A command file physically located elsewhere is interpreted inside the active runtime selected by the invocation environment.
+Per i bootstrap-integrated command la root RumiAI deriva dal runtime fisico attivo, non dalla posizione del command file.
 
-## 9. Symbolic links and aliases
+Una standalone shell utility non deve dipendere dalla root RumiAI salvo che una futura modifica ne cambi esplicitamente la classificazione.
 
-A command file may be reached through a symbolic link with a different basename. The runtime canonicalizes the source operand before execution, so the external alias name does not define implementation identity.
+## 10. Symbolic links and aliases
 
-## 10. No-argument shell behavior
+Un bootstrap-integrated command file può essere raggiunto tramite symbolic link con basename differente. Il runtime canonicalizza il source operand prima dell'esecuzione, quindi il nome esterno dell'alias non definisce l'identità dell'implementazione.
 
-When `rumiai-os` receives no operands, it launches:
+Le standalone shell utility seguono la normale semantica dell'exec host e non acquisiscono per implicazione il command-identity model del bootstrap.
+
+## 11. No-argument shell behavior
+
+Quando `rumiai-os` non riceve operandi, avvia:
 
 ```text
 $SHELL if set and non-empty
 sh otherwise
 ```
 
-The previous Bash-preferred / `conf/shell/default` selection policy is superseded.
+La precedente Bash-preferred / `conf/shell/default` selection policy è superseded.
 
-The RumiAI shell must inherit the RumiAI environment and ultimately expose the intended RumiAI functions. The portable cross-shell function-loading mechanism remains a separate open design item.
+La RumiAI shell deve ereditare l'ambiente RumiAI ed esporre le funzioni previste dal contratto interattivo corrente.
 
-## 11. Superseded environment names
+## 12. Superseded environment names
 
-References in older command-entry documents to:
+I riferimenti storici a:
 
 ```text
 RumiAI_ROOT
@@ -136,7 +186,7 @@ RumiAI_BOOTSTRAP_BIN
 RumiAI_COMMAND_BIN
 ```
 
-are superseded by the current environment-variable namespace, including:
+sono superseded dal namespace corrente, incluso:
 
 ```text
 m_ROOT
@@ -144,12 +194,18 @@ m_BOOTSTRAP_BIN
 m_COMMAND_BIN
 ```
 
-## 12. Failure handling
+## 13. Failure handling
 
-Failure to resolve or validate a source file MUST prevent sourcing.
+Il fallimento della risoluzione o validazione di un source file MUST impedirne il sourcing da parte del runtime RumiAI.
 
-After logger activation, command-entry failures SHOULD use the normal logger. Numeric external status consolidation remains a separate contract unless explicitly fixed by a current specification.
+Dopo l'attivazione del logger, i failure dei bootstrap-integrated command SHOULD usare il normale logger quando il contratto del sottosistema lo prevede.
 
-## 13. Security boundary
+Una standalone shell utility non può dipendere dal logger bootstrap; se produce dati su stdout, le diagnostiche devono restare separate su stderr secondo il proprio contratto.
 
-Sourcing a RumiAI command executes trusted code with the privileges and environment of the current RumiAI process. This mechanism is not a sandbox.
+La consolidazione generale degli external numeric status resta un contratto separato salvo quando una specifica di comando fissa stati precisi.
+
+## 14. Security boundary
+
+Sourcing un RumiAI command esegue trusted code con privilegi e ambiente del processo runtime corrente. Questo meccanismo non è una sandbox.
+
+L'uso di `/bin/sh` per una standalone shell utility non crea una sandbox né una boundary di sicurezza aggiuntiva; definisce soltanto indipendenza dal bootstrap e scelta dell'interprete.
