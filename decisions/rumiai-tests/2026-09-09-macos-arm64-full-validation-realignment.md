@@ -1,7 +1,8 @@
 # Decisione — Riallineamento dopo la full validation macOS ARM64
 
 Date: 2026-09-09  
-Status: **Accepted**
+Status: **Accepted**  
+Updated: 2026-09-09
 
 ## Contesto
 
@@ -106,39 +107,43 @@ rumiai-tests@0779c4c15f1e9922c525f6acbdf6f9644cb7975c
 
 Il contratto `pkg_download` richiede che la dimensione effettiva in byte coincida con il valore decimale canonico `size` del descriptor.
 
-L'implementazione corrente acquisisce la size tramite:
+L'implementazione precedente acquisiva la size tramite:
 
 ```sh
 pkg_download_actual_size="$(LC_ALL=C command -p -- wc -c < "$pkg_download_target")"
 ```
 
-e confronta direttamente la rappresentazione testuale con `pkg_download_size`.
+e confrontava direttamente la rappresentazione testuale con `pkg_download_size`.
 
-Questo assume accidentalmente che `wc -c` renda il numero senza whitespace di padding. La full validation macOS dimostra che tale assunzione non è portabile fra gli host di riferimento: il valid-download path fallisce pur avendo payload della size prevista.
+Questo assumeva accidentalmente che `wc -c` rendesse il numero senza whitespace di padding. La full validation macOS ha dimostrato che tale assunzione non è portabile fra gli host di riferimento: il valid-download path falliva pur avendo payload della size prevista.
 
 La semantica corretta non cambia: deve essere confrontato il valore numerico dei byte, non la formattazione host-specific dell'output di `wc`.
 
-La correzione prodotto deve quindi normalizzare l'output `wc -c` a una rappresentazione decimale canonica prima del confronto, riusando primitive POSIX già presenti e senza introdurre un backend o una nuova API.
+L'utente ha autorizzato esplicitamente la correzione prodotto. È stata applicata in:
 
-Questa decisione **non autorizza** la modifica di `rumiai-os`: secondo `RULES.md` la correzione prodotto resta pending fino al consenso esplicito dell'utente.
+```text
+rumiai-os@52454b4d679bd6b49596ecdf5c8f4535e20bb5c7
+```
+
+La correzione preserva separatamente il failure di `wc -c`, poi normalizza il suo output a rappresentazione decimale tramite la primitive POSIX `awk` già utilizzata nello stesso layer, prima del confronto con `pkg_download_size`.
+
+Non vengono introdotti backend, API, branch Darwin o nuove primitive RumiAI.
 
 Il test `pkg-download/contract.test` non viene indebolito: un download valido deve continuare a produrre PASS su entrambi i reference host.
 
 ## 4. Stato del gate corrente
 
-Dopo i due riallineamenti della suite:
+La coppia candidata post-correzione è:
 
 ```text
-rumiai-tests@0779c4c15f1e9922c525f6acbdf6f9644cb7975c
+rumiai-os@52454b4d679bd6b49596ecdf5c8f4535e20bb5c7
+rumiai-tests@17f307165810e328ef2e44b2ca447a09575623f2
+selection=rumiai-os
 ```
 
-il prodotto resta:
+La configurazione `rumiai-validate.conf` punta esattamente a questa revisione prodotto.
 
-```text
-rumiai-os@b02965a91efdeb8f9609b432d635430ac9dba209
-```
-
-ma il gate cross-platform non è chiudibile finché `pkg_download` non viene corretto e la nuova revisione prodotto non viene rieseguita con la stessa `selection=rumiai-os` su Ubuntu ARM64 e macOS ARM64.
+Il gate cross-platform non è ancora chiuso: la coppia candidata deve essere validata prima su Ubuntu ARM64 e poi su macOS ARM64, senza cambiare revisione o selection fra i due host.
 
 Le evidence precedenti restano valide esclusivamente per le revisioni effettivamente esercitate.
 
@@ -149,7 +154,7 @@ MACOS-REALIGN-01  la sessione validation/20260909T195202+0200-20156 resta eviden
 MACOS-REALIGN-02  pkg_extract continua a delegare pathname canonicalizzati; il test deve aspettare pathname canonicalizzati
 MACOS-REALIGN-03  il fallback shell viene testato con SHELL vuota esportata, non tentando di preservare SHELL unset attraverso un interprete che può inizializzarla
 MACOS-REALIGN-04  nessuna nuova policy host-specific di selezione shell viene introdotta
-MACOS-REALIGN-05  pkg_download deve confrontare la size numerica, non la formattazione testuale host-specific di wc -c
-MACOS-REALIGN-06  il FAIL pkg-download richiede una correzione prodotto separatamente autorizzata
+MACOS-REALIGN-05  pkg_download confronta la size numerica, non la formattazione testuale host-specific di wc -c
+MACOS-REALIGN-06  la correzione prodotto autorizzata è rumiai-os@52454b4d679bd6b49596ecdf5c8f4535e20bb5c7 e non cambia API o contratto
 MACOS-REALIGN-07  prima di chiudere il gate la coppia post-correzione deve essere validata su Ubuntu ARM64 e macOS ARM64 con selection=rumiai-os
 ```
