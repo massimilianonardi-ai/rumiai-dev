@@ -136,14 +136,63 @@ La nuova coppia deve essere validata prima su Ubuntu ARM64 e poi, senza cambiare
 
 Questa sezione supersede, per la coppia candidata corrente, la precedente indicazione `rumiai-tests@17a02fe...` ancora presente nella decisione generale `2026-09-08-validation-launcher.md`. Il contratto del launcher non cambia; cambia soltanto la revisione della suite da validare dopo il riallineamento dei tre test command.
 
-## 5. Invarianti
+## 5. Physical validation Ubuntu della suite riallineata
+
+La nuova validation Ubuntu ARM64 è stata eseguita sulla coppia esatta:
 
 ```text
-COMMAND-TEST-REALIGN-01  i tre FAIL Ubuntu derivano da aspettative test storiche, non dal ripristino di un requisito prodotto corrente
+rumiai-os@b02965a91efdeb8f9609b432d635430ac9dba209
+rumiai-tests@7d6c1459343fb5a9c99267d6e2e33ca9b34dbe40
+selection=rumiai-os
+```
+
+Sessione pubblicata:
+
+```text
+validation/20260909T194807+0200-13517
+```
+
+Host osservato:
+
+```text
+Ubuntu 26.04.1 LTS
+Linux/aarch64
+```
+
+Risultato:
+
+```text
+PASS   60
+FAIL   0
+SKIP   2
+ERROR  0
+TOTAL  62
+runner-exit-status 0
+```
+
+I due SKIP sono esclusivamente:
+
+```text
+rumiai-os/shell/zsh-alias-preservation.test
+rumiai-os/shell/zsh-zdotdir-preservation.test
+```
+
+perché non applicabili sull'host Ubuntu corrente. Tutti gli altri test della selection `rumiai-os`, inclusi i tre test command riallineati e tutti i layer package correnti, hanno prodotto PASS.
+
+Questa sessione costituisce physical evidence revision-specific riuscita per Ubuntu ARM64 della coppia candidata.
+
+Il gate cross-platform non è ancora chiuso: resta necessaria la validation macOS ARM64 della stessa identica coppia e della stessa `selection=rumiai-os`.
+
+## 6. Invarianti
+
+```text
+COMMAND-TEST-REALIGN-01  i tre FAIL Ubuntu iniziali derivano da aspettative test storiche, non dal ripristino di un requisito prodotto corrente
 COMMAND-TEST-REALIGN-02  rumiai-os non viene modificato per reintrodurre status 8/9 o eventi bootstrap.* superseded
 COMMAND-TEST-REALIGN-03  resolution/validation failure continua a impedire il sourcing del command body
 COMMAND-TEST-REALIGN-04  i tre test correnti verificano status 1 e filesystem.path-invalid con structured fields command-original/command-resolved
 COMMAND-TEST-REALIGN-05  la sessione validation/20260909T193426+0200-4095 resta evidence immutabile della suite 17a02fe...
-COMMAND-TEST-REALIGN-06  i PASS della sessione restano evidence per le proprietà effettivamente esercitate, ma il gate complessivo della coppia resta fallito
+COMMAND-TEST-REALIGN-06  i PASS della sessione iniziale restano evidence per le proprietà effettivamente esercitate, ma il gate complessivo di quella coppia resta fallito
 COMMAND-TEST-REALIGN-07  il gate successivo usa rumiai-os@b02965a..., rumiai-tests@7d6c145... e selection=rumiai-os su Ubuntu ARM64 e macOS ARM64
+COMMAND-TEST-REALIGN-08  validation/20260909T194807+0200-13517 chiude con successo il lato Ubuntu ARM64 della coppia riallineata
+COMMAND-TEST-REALIGN-09  il gate cross-platform resta aperto fino alla validation macOS ARM64 della stessa identica coppia
 ```
