@@ -143,7 +143,50 @@ selection=rumiai-os
 
 La configurazione `rumiai-validate.conf` punta esattamente a questa revisione prodotto.
 
-Il gate cross-platform non è ancora chiuso: la coppia candidata deve essere validata prima su Ubuntu ARM64 e poi su macOS ARM64, senza cambiare revisione o selection fra i due host.
+### Ubuntu ARM64 — PASS
+
+La coppia candidata è stata fisicamente validata su:
+
+```text
+Ubuntu 26.04.1 LTS
+aarch64
+```
+
+con sessione pubblicata:
+
+```text
+validation/20260909T201747+0200-21089
+```
+
+e commit evidence:
+
+```text
+74f4712bd560987fb84e742eaf4f0a119302b631
+```
+
+Risultato:
+
+```text
+PASS   60
+FAIL   0
+SKIP   2
+ERROR  0
+TOTAL  62
+runner-exit-status 0
+```
+
+I due SKIP sono esclusivamente:
+
+```text
+rumiai-os/shell/zsh-alias-preservation.test
+rumiai-os/shell/zsh-zdotdir-preservation.test
+```
+
+Tutti gli altri test applicabili, incluso `rumiai-os/pkg-download/contract.test`, sono PASS.
+
+### macOS ARM64 — pending
+
+Il gate cross-platform non è ancora chiuso: la stessa identica coppia candidata deve ora essere validata su macOS ARM64 senza modificare `rumiai-os`, `rumiai-tests` o `selection` nel mezzo.
 
 Le evidence precedenti restano valide esclusivamente per le revisioni effettivamente esercitate.
 
@@ -156,5 +199,6 @@ MACOS-REALIGN-03  il fallback shell viene testato con SHELL vuota esportata, non
 MACOS-REALIGN-04  nessuna nuova policy host-specific di selezione shell viene introdotta
 MACOS-REALIGN-05  pkg_download confronta la size numerica, non la formattazione testuale host-specific di wc -c
 MACOS-REALIGN-06  la correzione prodotto autorizzata è rumiai-os@52454b4d679bd6b49596ecdf5c8f4535e20bb5c7 e non cambia API o contratto
-MACOS-REALIGN-07  prima di chiudere il gate la coppia post-correzione deve essere validata su Ubuntu ARM64 e macOS ARM64 con selection=rumiai-os
+MACOS-REALIGN-07  la coppia post-correzione ha PASS fisico Ubuntu ARM64 in validation/20260909T201747+0200-21089
+MACOS-REALIGN-08  il gate cross-platform si chiude solo dopo PASS macOS ARM64 della stessa coppia rumiai-os@52454b4d... + rumiai-tests@17f3071... con selection=rumiai-os
 ```
