@@ -35,6 +35,8 @@ La forma precedente `pkg_analyze` è superseded come nome del comando e non vien
 
 La correzione esplicita del 2026-09-09 fissa inoltre che `pkg_extract` deve consegnare direttamente la useful root normalizzata tramite structural discovery generica. Una successiva correzione chiarisce che `pkg-analyze` **deve continuare a usare `pkg_extract`** proprio per non esporre alla fase di analisi i wrapper/path interni variabili fra release.
 
+Il terzo argomento di `pkg_extract` è la destination scelta dal caller. `pkg-analyze` usa quindi una propria directory temporanea come destination; `pkg_extract` non sceglie né deriva `$m_ROOT/pkg`.
+
 ---
 
 ## 1. Ruolo
@@ -66,11 +68,13 @@ La forma:
 pkg-analyze <format> <artifact>
 ```
 
-crea uno staging temporaneo e **deve riusare**:
+crea sotto il proprio work tree temporaneo una destination vuota e **deve riusare**:
 
 ```text
 pkg_extract <artifact> <format> <staging-dir>
 ```
+
+passando quella destination come terzo argomento.
 
 `pkg-analyze` riceve quindi il tree già normalizzato da `pkg_extract` e non replica né:
 
@@ -101,9 +105,9 @@ analizza direttamente il tree fornito dall'utente e lo considera già come root 
 
 Nella forma artifact la useful root **non viene scelta dall'utente** e non viene scoperta da `pkg-analyze`.
 
-La root del tree restituito da `pkg_extract` è già la useful root normalizzata.
+La root del tree restituito da `pkg_extract` nella destination temporanea scelta da `pkg-analyze` è già la useful root normalizzata.
 
-Di conseguenza non appartengono più al contratto futuro di `pkg-analyze`:
+Di conseguenza non appartengono al contratto corrente di `pkg-analyze`:
 
 ```text
 suggested useful root
@@ -133,11 +137,12 @@ Il confine corretto è:
 
 ```text
 artifact
+    -> pkg-analyze sceglie una destination temporanea
     -> pkg_extract
-        -> raw materialization
+        -> raw materialization nella destination ricevuta
         -> structural useful-root discovery
         -> wrapper removal
-        -> normalized useful root
+        -> normalized useful root nella stessa destination
     -> pkg-analyze
         -> candidate discovery
         -> dynamic probe
@@ -286,6 +291,8 @@ Dopo il ritorno del candidate il tool permette all'operatore di attendere la con
 
 Il solo state posseduto da `pkg-analyze` è temporaneo e vive sotto `m_TMP_DIR`.
 
+Nella forma artifact, anche la destination passata a `pkg_extract` appartiene a questo work tree temporaneo.
+
 Il tool non modifica intenzionalmente:
 
 ```text
@@ -302,9 +309,9 @@ Un tree passato direttamente dall'utente può naturalmente essere modificato dal
 
 ---
 
-## 11. Testing e stato di riallineamento
+## 11. Testing e stato corrente
 
-La copertura permanente deve proteggere almeno:
+La copertura permanente protegge almeno:
 
 ```text
 exit status per uso invalido
@@ -326,9 +333,9 @@ cleanup dello staging/work temporaneo
 
 I test di `pkg-analyze` non duplicano i test permanenti dei backend `extract` o della structural useful-root discovery interna a `pkg_extract`.
 
-Alla data di questa correzione, l'implementazione corrente del comando riusa già `pkg_extract` nella forma artifact, ma esegue ancora una seconda discovery interattiva della useful root tramite gli helper interni `pkg_analyze_find_deepest_dir`/prompt.
+L'implementazione corrente riusa `pkg_extract` nella forma artifact e usa direttamente la root normalizzata restituita nella destination temporanea scelta dal comando. Gli helper/prompt della seconda useful-root discovery sono stati rimossi.
 
-Quella parte dell'implementazione e i relativi test sono **pending realignment**: dopo il nuovo `pkg_extract`, la forma artifact deve usare direttamente la root normalizzata ricevuta e non ripetere la discovery.
+I development checks sul fixture isolato sono distinti dalla physical validation revision-specific sui reference host.
 
 ---
 
@@ -351,5 +358,6 @@ PKG-ANALYZE-13  pkg-analyze non modifica direttamente package store, selector, b
 PKG-ANALYZE-14  variazioni del solo wrapper pathname non diventano evidence di un nuovo range
 PKG-ANALYZE-15  il nome pubblico canonico del comando è pkg-analyze; pkg_analyze è superseded e non viene mantenuto come alias
 PKG-ANALYZE-16  pkg_analyze_* resta la forma degli helper/variabili shell interni e non costituisce un alias del comando
-PKG-ANALYZE-17  pkg_analyze_find_deepest_dir/prompt useful-root dell'implementazione corrente sono pending realignment come responsabilità superseded del tool
+PKG-ANALYZE-17  pkg-analyze non contiene più una seconda useful-root discovery o relativo prompt
+PKG-ANALYZE-18  nella forma artifact pkg-analyze sceglie una destination temporanea e la passa come terzo argomento a pkg_extract
 ```
