@@ -20,6 +20,7 @@ Sono inoltre già fissati:
 - il repository concreto `massimilianonardi-ai/pkg-catalog`;
 - la cache locale rigenerabile `$m_ROOT/cache/sys/pkg/pkg-catalog/`;
 - il primo repository adapter GitHub e il relativo transport `http-fetch`;
+- le utility di sistema general-purpose `digest` ed `extract`, che confinano i backend host non uniformi usati rispettivamente per digest ed estrazione;
 - la CLI pubblica `pkg install <package> [<package> ...]` e `pkg uninstall <package> [<package> ...]`;
 - `pkg uninstall` come operazione local-only;
 - il principio local-first di RumiAI.
@@ -93,17 +94,21 @@ Il requisito fissato qui è semantico: le operazioni catalog-dependent entrano a
 
 ## 4. Stato dei test già esistenti
 
-Alla data corrente `rumiai-tests` possiede già test permanenti dedicati a:
+Alla data corrente `rumiai-tests` possiede test permanenti dedicati a:
 
 ```text
 http-fetch
 json.lib.sh
 pkg-repository-github.lib.sh
+digest
+extract
+pkg_download
+pkg_extract
 ```
 
 Questi test restano la copertura canonica dei componenti esistenti e non devono essere duplicati soltanto perché prosegue l'implementazione di `pkg`.
 
-I nuovi layer introdotti dalla sequenza seguente ricevono invece propri test permanenti indipendenti.
+I nuovi layer introdotti dalle fasi successive ricevono propri test permanenti indipendenti quando vengono implementati.
 
 ---
 
@@ -113,9 +118,10 @@ La sequenza corrente è:
 
 ```text
 1  confine refresh/snapshot pkg-catalog                         [fissato qui]
-2  test permanenti HTTP/JSON/GitHub adapter                    [già presenti]
-3  contratto + implementazione + test di pkg_download          [corrente]
-4  contratto + implementazione + test di pkg_extract           [corrente]
+2  test permanenti HTTP/JSON/GitHub adapter                    [completato]
+3  contratto + implementazione + test di pkg_download          [completato]
+4  contratto + implementazione + test di pkg_extract           [completato]
+   + utility di sistema digest/extract e relativi test          [completato]
 5  completamento package definition DBeaver per integration    [successivo]
 6  contratto + implementazione pkg_integrate/pkg_deintegrate   [successivo]
 7  orchestrazione reale pkg install                            [successivo]
@@ -143,7 +149,7 @@ PKG-PLAN-02  uninstall e pkg_deintegrate restano local-only e non richiedono ref
 PKG-PLAN-03  il launch di software già installato non acquisisce una dipendenza di rete solo per aggiornare pkg-catalog
 PKG-PLAN-04  una singola operazione catalog-dependent usa un unico commit/snapshot Git del catalogo
 PKG-PLAN-05  clone/fetch/offline/failure/locking/pinning restano contratti separati da chiudere prima dell'orchestrazione completa
-PKG-PLAN-06  i test permanenti già esistenti per http-fetch, JSON e GitHub adapter non vengono duplicati
-PKG-PLAN-07  i prossimi layer implementativi sono pkg_download e pkg_extract con test permanenti propri
-PKG-PLAN-08  integration, orchestration e lifecycle successivo restano fuori da questa unità
+PKG-PLAN-06  i test permanenti già esistenti per i layer completati non vengono duplicati nei layer successivi
+PKG-PLAN-07  pkg_download, pkg_extract e le utility di sistema digest/extract sono completati e protetti da test permanenti propri
+PKG-PLAN-08  il prossimo step è il completamento della package definition DBeaver per preparare integration; orchestration e lifecycle restano successivi
 ```
