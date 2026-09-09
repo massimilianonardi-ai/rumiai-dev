@@ -66,11 +66,34 @@ Windows non influenza l'architettura di RumiAI OS. RumiAI OS richiede un ambient
 
 ## Shell e interpreti
 
-Gli script implementati in shell devono essere POSIX-compliant e, quando direttamente eseguibili, devono usare esattamente lo shebang:
+Il codice e i command body implementati in shell devono essere POSIX-compliant.
+
+Per i file direttamente eseguibili lo shebang dipende dal contratto runtime.
+
+Un comando che usa attualmente environment variables, funzioni, librerie, logger, resolver lingua, root/path semantici, configurazione o altre facility inizializzate dal bootstrap RumiAI, oppure per il quale una dipendenza di questo tipo sia ragionevolmente prevedibile nella normale evoluzione del comando, deve usare:
+
+```sh
+#!/usr/bin/env rumiai-os
+```
+
+Una utility shell intenzionalmente autonoma dal bootstrap può usare esattamente:
 
 ```sh
 #!/bin/sh
 ```
+
+soltanto quando:
+
+1. non dipende attualmente dal bootstrap RumiAI;
+2. una dipendenza dal bootstrap non è ragionevolmente prevedibile nel normale ruolo della utility;
+3. l'uso standalone è stato preventivamente autorizzato esplicitamente dall'utente;
+4. una decisione o specifica autorevole documenta la scelta, la motivazione, le dipendenze e il contratto osservabile.
+
+Una utility standalone non deve dipendere per il proprio funzionamento da `m_*`, `log`, `lang`, librerie o funzioni sourced dal bootstrap, `m_COMMAND_BIN` o altre facility fornite dal runtime RumiAI. Le dipendenze esterne non garantite dal profilo POSIX adottato devono essere dichiarate esplicitamente.
+
+Se una utility standalone acquisisce in seguito una dipendenza dal bootstrap, la classificazione e lo shebang devono essere riesaminati; la migrazione normale è verso `#!/usr/bin/env rumiai-os`, salvo una nuova decisione esplicita.
+
+Il bootstrap root `rumiai-os` resta implementato in POSIX shell con `#!/bin/sh` secondo il proprio contratto specifico.
 
 Non devono essere usate accidentalmente funzionalità specifiche di Bash o di altre shell, né opzioni GNU non previste dal contratto POSIX/profilo adottato. Esempi tipici da non assumere includono array Bash, `[[ ... ]]`, `BASH_SOURCE`, process substitution e `$RANDOM`.
 
