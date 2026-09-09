@@ -1,7 +1,8 @@
 # RumiAI OS — `read-key`
 
 Status: **Normative specification**  
-Date: 2026-09-09
+Date: 2026-09-09  
+Updated: 2026-09-09
 
 ## 1. Purpose
 
@@ -131,9 +132,11 @@ On successful key recognition, stdout contains exactly:
 
 No diagnostic, terminfo control sequence or presentation message may be mixed into stdout.
 
-Diagnostics are written to stderr.
+`read-key` emits no application-level diagnostic messages. For managed failures described by this specification, stdout and stderr remain empty and the failure is communicated only through the exit status. Expected diagnostics from internal utilities used to implement the operation are suppressed.
 
-`printf` with constant formats is used for data output; `echo` is not used as a serializer.
+This silence is intentional: `read-key` is a low-level standalone input primitive. The consumer that requested the key owns user-facing diagnostics and, when it runs inside the RumiAI bootstrap runtime, may use the established `fatal`/`log` facilities without making `read-key` depend on them.
+
+`printf` with constant formats is used for successful data output; `echo` is not used as a serializer.
 
 ---
 
@@ -288,6 +291,8 @@ A newline key itself is not returned as a literal newline; it is normalized to `
 
 Supplying any argument or operand is invalid invocation and returns `2` without waiting for terminal input.
 
+Managed failures produce no command output; consumers use the exit status to detect failure and decide whether and how to report it.
+
 ---
 
 ## 14. Signals
@@ -316,7 +321,7 @@ READ-KEY-01  canonical executable is bin/sys/read-key with #!/bin/sh
 READ-KEY-02  command accepts zero arguments only
 READ-KEY-03  no RumiAI bootstrap dependency is part of the runtime contract
 READ-KEY-04  keyboard input and terminal control use /dev/tty
-READ-KEY-05  stdout contains only the result; diagnostics use stderr
+READ-KEY-05  stdout contains only the success result; managed failures emit no stdout/stderr diagnostics and use exit status only
 READ-KEY-06  terminal state is saved and restored
 READ-KEY-07  special-key sequences are sourced from terminfo/tput rather than hardcoded terminal tables
 READ-KEY-08  prefix parsing uses bounded inter-byte timeout and no fixed-length over-read
@@ -336,8 +341,9 @@ Permanent tests SHOULD protect at least:
 ```text
 file existence, executable mode and exact #!/bin/sh shebang
 absence of bootstrap facility dependencies
+absence of application-level stderr diagnostics in the implementation
 POSIX shell syntax
-invalid non-zero-argument invocation
+invalid non-zero-argument invocation and silent failure output
 ASCII and space output
 valid UTF-8 2/3/4-byte output
 Escape, Enter and Tab mapping
@@ -345,9 +351,9 @@ actual terminfo-derived arrow-key mapping
 optional terminfo key mapping where capabilities exist
 terminal state restoration
 no smkx/rmkx leakage into stdout
-missing tput behavior
-invalid UTF-8
-unknown escape sequence
+missing tput status and silent failure output
+invalid UTF-8 status and silent failure output
+unknown escape sequence status and silent failure output
 ```
 
 A PTY may be used by the test implementation to supply deterministic terminal input. A test-only PTY helper runtime is not a runtime dependency of `read-key`.
