@@ -47,11 +47,17 @@ Il nome pubblico del comando diagnostico è `pkg-analyze`; la precedente spellin
 
 Questo evita che wrapper interni come `<product>-<version>/` trasformino ogni release in un nuovo range e preserva la semantica di `latest` dell'ultimo range.
 
-L'analisi DBeaver e la prima package definition utilizzabile dal futuro layer di integrazione sono ora consolidate da:
+L'analisi DBeaver e la prima package definition utilizzabile dal layer di integrazione sono consolidate da:
 
 ```text
 decisions/rumiai-os/2026-09-09-dbeaver-package-integration-definition.md
 decisions/rumiai-os/2026-09-09-windows-posix-environment-baseline.md
+```
+
+Il contratto operativo corrente del layer di integrazione, inclusa la distinzione fra disponibilità e default e la funzione `pkg_default`, è consolidato da:
+
+```text
+decisions/rumiai-os/2026-09-09-package-integration-and-default-contract.md
 ```
 
 Per DBeaver sono fissati in particolare:
@@ -86,6 +92,7 @@ Restano quindi local-only e non richiedono refresh del catalogo, salvo futura de
 ```text
 pkg uninstall
 pkg_deintegrate
+pkg_default
 launch di un package già installato tramite pkg run, quando non richiede discovery remota
 future operazioni di selezione locale di una versione già installata
 ```
@@ -170,6 +177,7 @@ extract
 pkg_download
 pkg_extract
 pkg-analyze
+pkg-integration
 ```
 
 I test di `digest`, `extract`, download e repository adapter restano validi per i rispettivi contratti.
@@ -180,7 +188,7 @@ I test correnti di `pkg-analyze` proteggono il consumo diretto della root normal
 
 Il riallineamento non duplica i test della utility generale `extract`.
 
-La definizione DBeaver corrente non introduce da sola un nuovo executable/runtime layer da testare in `rumiai-tests`: i test permanenti relativi a `format`, materializzazione `cmd/`, `link/`, state routing e argomenti fissi appartengono al successivo contratto/implementazione di `pkg_integrate`.
+I test correnti di `pkg-integration` proteggono il baseline direct-link di DBeaver, la separazione fra disponibilità e default, `pkg_default`, la rimozione del default senza perdita della concrete version, il rifiuto di `pkg_deintegrate` sulla current, i binding fisici sotto `bin/ext`/`bin/ext-<osarch>`, il cambio default con command-set differente, le collisioni estranee, il confinamento di `link/` in `root/` e il vocabulary `<osarch>` corrente.
 
 ---
 
@@ -196,15 +204,17 @@ La sequenza corrente diventa:
 5  riallineamento pkg_extract: structural useful-root normalization         [completato]
 6  riallineamento pkg-analyze: consumo diretto del pkg_extract normalizzato [completato]
 7  analisi DBeaver + package definition Linux/macOS/Windows per integration [completato]
-8  contratto + implementazione pkg_integrate/pkg_deintegrate                [successivo]
+8  contratto + implementazione pkg_integrate/pkg_deintegrate/pkg_default    [completato; physical validation pending]
 9  orchestrazione reale pkg install                                         [successivo]
 10 lifecycle uninstall/version/current                                      [successivo]
 11 dependency/facility/state avanzato quando richiesto                      [successivo]
 ```
 
-La normalizzazione della useful root è chiusa prima dell'integrazione: la forma artifact di `pkg-analyze` usa lo stesso output normalizzato che verrà passato a `pkg_integrate`.
+La normalizzazione della useful root è chiusa prima dell'integrazione: la forma artifact di `pkg-analyze` usa lo stesso output normalizzato che viene passato a `pkg_integrate`.
 
-La package definition DBeaver non contiene pathname di wrapper interni dell'artifact. Per Linux, macOS e Windows x86_64 contiene soltanto le informazioni semantiche necessarie al layer successivo: formato, command source, target direct-link e state routing espresso nella launch line.
+`pkg_integrate` materializza la disponibilità della concrete version senza selezionarla automaticamente come default. `pkg_default` gestisce separatamente il selector `current` e i binding pubblici, mentre `pkg_deintegrate` opera soltanto su concrete version non-current.
+
+La package definition DBeaver non contiene pathname di wrapper interni dell'artifact. Per Linux, macOS e Windows x86_64 contiene soltanto le informazioni semantiche necessarie al layer di integrazione: formato, command source, target direct-link e state routing espresso nella launch line.
 
 La definizione Windows usa `format=zip`, `link/dbeaver=dbeaver.exe` e lo stesso `cmd/dbeaver` degli altri target. Non viene introdotto un bridge pathname POSIX/native dentro RumiAI: il baseline Windows corrente assume MSYS2 come ambiente POSIX-compatible di riferimento. La validazione fisica Windows resta separata e potrà determinare se MSYS2 diventa requisito esclusivo oppure se altri ambienti soddisfano lo stesso contratto.
 
@@ -216,13 +226,18 @@ La sequenza non riattiva i meccanismi storici già esclusi dal baseline, inclusi
 
 La presenza di test permanenti e development checks non sostituisce la physical validation revision-specific quando i nuovi backend o i nuovi confini semantici vengono promossi nel flusso operativo.
 
-L'implementazione corrente di `pkg_extract` e `pkg-analyze` ha superato development checks su fixture isolato, ma non viene considerata per questo fisicamente validata sui reference host.
+Il precedente gate ARM64 completo resta evidence immutabile esclusivamente per la coppia revision-specific allora validata:
 
-La revisione prodotto corrente comprende inoltre, rispetto al precedente target di validation bootstrap, nuovi layer e modifiche a `digest`, `extract`, `http-fetch`, `lang-set`, `pkg-download`, `pkg-extract`, `pkg-analyze` e `read-key`. La physical validation corrente deve quindi usare una selection proporzionata all'intera revisione candidata e non soltanto il vecchio gruppo bootstrap.
+```text
+rumiai-os@130944920b5dab5f9d25bd3515667f5cdff36a48
+rumiai-tests@68e12c37dae9789bc44d966578e76e9530d7db95
+```
 
-La package definition DBeaver e il relativo launch model non sono ancora fisicamente validati come package installato: `pkg_integrate` e il `launcher` necessari al percorso reale non sono ancora implementati nel prodotto corrente.
+L'implementazione di `pkg_integrate`, `pkg_deintegrate` e `pkg_default` è successiva a quella coppia e non è coperta da tale evidence. La revisione corrente richiede quindi una nuova physical validation proporzionata prima di dichiarare fisicamente validato questo layer sui reference host.
 
-La physical validation Windows resta successiva e distinta dalla validation corrente sui reference host ARM64 Ubuntu/macOS.
+La package definition DBeaver e il relativo launch model non sono ancora fisicamente validati come package installato end-to-end: il layer di integrazione è ora implementato, ma il `launcher` necessario al percorso reale non è ancora implementato nel prodotto corrente.
+
+La physical validation Windows resta successiva e distinta dalla validation sui reference host ARM64 Ubuntu/macOS.
 
 ---
 
@@ -230,7 +245,7 @@ La physical validation Windows resta successiva e distinta dalla validation corr
 
 ```text
 PKG-PLAN-01  ogni operazione che consuma package definition/upstream passa prima dal refresh boundary di pkg-catalog
-PKG-PLAN-02  uninstall e pkg_deintegrate restano local-only e non richiedono refresh del catalogo
+PKG-PLAN-02  uninstall, pkg_deintegrate e pkg_default restano local-only e non richiedono refresh del catalogo
 PKG-PLAN-03  il launch di software già installato non acquisisce una dipendenza di rete solo per aggiornare pkg-catalog
 PKG-PLAN-04  una singola operazione catalog-dependent usa un unico commit/snapshot Git del catalogo
 PKG-PLAN-05  clone/fetch/offline/failure/locking/pinning restano contratti separati da chiudere prima dell'orchestrazione completa
@@ -244,6 +259,6 @@ PKG-PLAN-12  pkg_integrate riceve il payload già normalizzato e non effettua di
 PKG-PLAN-13  pkg_extract non sceglie né deriva $m_ROOT/pkg; la pubblicazione nel package store appartiene a un layer successivo
 PKG-PLAN-14  la package definition DBeaver necessaria al primo pkg_integrate è completata per Linux, macOS e Windows x86_64
 PKG-PLAN-15  la baseline Windows corrente assume MSYS2 e non introduce conversioni pathname Win32 package-specific
-PKG-PLAN-16  il passo successivo della sequenza corrente è il contratto e l'implementazione di pkg_integrate/pkg_deintegrate
-PKG-PLAN-17  la physical validation ARM64 corrente deve coprire la revisione rumiai-os candidata complessiva, non soltanto il precedente bootstrap gate
+PKG-PLAN-16  il contratto e l'implementazione di pkg_integrate/pkg_deintegrate/pkg_default sono completati; il passo di sviluppo successivo è l'orchestrazione reale di pkg install
+PKG-PLAN-17  la physical validation è revision-specific; il precedente gate ARM64 non copre il nuovo layer pkg-integration
 ```
