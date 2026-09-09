@@ -47,6 +47,22 @@ Il nome pubblico del comando diagnostico è `pkg-analyze`; la precedente spellin
 
 Questo evita che wrapper interni come `<product>-<version>/` trasformino ogni release in un nuovo range e preserva la semantica di `latest` dell'ultimo range.
 
+L'analisi DBeaver e la prima package definition utilizzabile dal futuro layer di integrazione sono ora consolidate da:
+
+```text
+decisions/rumiai-os/2026-09-09-dbeaver-package-integration-definition.md
+massimilianonardi-ai/pkg-catalog@8727740aca09e98afa02e1b81859886c3061bc1e
+```
+
+Per DBeaver sono fissati in particolare:
+
+```text
+-configuration -> $m_CONF_DIR/dbeaver/configuration
+-data          -> $m_HOME_DIR/dbeaver/.workspace
+```
+
+La range definition usa inoltre `format`, `cmd/<pkg-command>` e, per i command direct-link, `link/<pkg-command>` secondo la serializzazione minima fissata dalla decisione DBeaver. Gli stream Linux e macOS possiedono ora la definizione di launch necessaria all'integrazione; lo stream Windows x86_64 conserva `format=zip` ma non dichiara ancora `cmd/link`, in attesa della verifica del bridge pathname fra ambiente POSIX-compatible e processo Windows nativo.
+
 ---
 
 ## 1. Confine di refresh
@@ -162,6 +178,8 @@ I test correnti di `pkg-analyze` proteggono il consumo diretto della root normal
 
 Il riallineamento non duplica i test della utility generale `extract`.
 
+La definizione DBeaver corrente non introduce da sola un nuovo executable/runtime layer da testare in `rumiai-tests`: i test permanenti relativi a `format`, materializzazione `cmd/`, `link/`, state routing e argomenti fissi appartengono al successivo contratto/implementazione di `pkg_integrate`.
+
 ---
 
 ## 6. Sequenza di sviluppo fissata
@@ -175,16 +193,18 @@ La sequenza corrente diventa:
 4  utility di sistema digest/extract e relativi test                        [completato]
 5  riallineamento pkg_extract: structural useful-root normalization         [completato]
 6  riallineamento pkg-analyze: consumo diretto del pkg_extract normalizzato [completato]
-7  analisi DBeaver + completamento package definition per integration       [successivo]
+7  analisi DBeaver + package definition Linux/macOS per integration         [completato]
 8  contratto + implementazione pkg_integrate/pkg_deintegrate                [successivo]
 9  orchestrazione reale pkg install                                         [successivo]
 10 lifecycle uninstall/version/current                                      [successivo]
 11 dependency/facility/state avanzato quando richiesto                      [successivo]
 ```
 
-La normalizzazione della useful root è ora chiusa prima dell'analisi DBeaver tramite la forma artifact di `pkg-analyze`: quella analisi usa lo stesso output normalizzato che verrà poi passato a `pkg_integrate`.
+La normalizzazione della useful root è chiusa prima dell'integrazione: la forma artifact di `pkg-analyze` usa lo stesso output normalizzato che verrà passato a `pkg_integrate`.
 
-La package definition DBeaver non deve contenere un pathname del wrapper interno dell'artifact soltanto per compensare variazioni di release.
+La package definition DBeaver non contiene pathname di wrapper interni dell'artifact. Per Linux e macOS contiene invece soltanto le informazioni semantiche necessarie al layer successivo: formato, command source, target direct-link e state routing espresso nella launch line.
+
+Lo stream Windows x86_64 resta intenzionalmente incompleto per il launch end-to-end: la selezione dell'artifact e `format=zip` sono definite, mentre `cmd/link` attendono la verifica del bridge pathname POSIX/native. Questa apertura non riporta il passo 7 allo stato successivo per i target Linux/macOS usati come primo caso di `pkg_integrate`.
 
 La sequenza non riattiva i meccanismi storici già esclusi dal baseline, inclusi resolver universale, generations, inventory obbligatorie o migration framework generale.
 
@@ -197,6 +217,8 @@ La presenza di test permanenti e development checks non sostituisce la physical 
 La physical validation dei nuovi layer verrà pianificata in modo proporzionato dopo la loro implementazione, senza confonderla con il gate bootstrap attualmente ancora in attesa sui reference host ARM64.
 
 L'implementazione corrente di `pkg_extract` e `pkg-analyze` ha superato development checks su fixture isolato, ma non viene considerata per questo fisicamente validata sui reference host.
+
+La package definition DBeaver e il relativo launch model non sono ancora fisicamente validati come package installato: `pkg_integrate` e il `launcher` necessari al percorso reale non sono ancora implementati nel prodotto corrente.
 
 ---
 
@@ -216,4 +238,6 @@ PKG-PLAN-10  wrapper pathname/version-specific non appartiene alla package defin
 PKG-PLAN-11  latest deve continuare a funzionare attraverso variazioni puramente strutturali dei wrapper dell'artifact
 PKG-PLAN-12  pkg_integrate riceve il payload già normalizzato e non effettua discovery/correzione dei wrapper upstream
 PKG-PLAN-13  pkg_extract non sceglie né deriva $m_ROOT/pkg; la pubblicazione nel package store appartiene a un layer successivo
+PKG-PLAN-14  la package definition DBeaver Linux/macOS necessaria al primo pkg_integrate è completata nel catalogo; lo stream Windows conserva cmd/link aperti fino alla verifica del bridge pathname POSIX/native
+PKG-PLAN-15  il passo successivo della sequenza corrente è il contratto e l'implementazione di pkg_integrate/pkg_deintegrate
 ```
