@@ -27,9 +27,20 @@ Sono inoltre già fissati:
 - `pkg uninstall` come operazione local-only;
 - il principio local-first di RumiAI.
 
-La correzione esplicita dell'utente del 2026-09-09 fissa inoltre che `pkg_extract` deve consegnare direttamente la useful root normalizzata, eliminando i wrapper upstream variabili prima di `pkg_integrate`.
+Le correzioni esplicite dell'utente del 2026-09-09 fissano inoltre che:
 
-Di conseguenza il precedente stato del piano che marcava `pkg_extract` come completamente concluso è superseded: l'attuale implementazione raw-staging esiste, ma il contratto, l'implementazione e i test devono essere riallineati dopo aver ricavato dai package reali la normalization information necessaria.
+```text
+pkg_extract
+    deve consegnare direttamente la useful root normalizzata
+    deve scoprire strutturalmente i wrapper da eliminare
+    non deve ricevere pathname/version-specific di normalizzazione dal catalogo
+
+pkg_analyze <format> <artifact>
+    deve continuare a usare pkg_extract
+    deve quindi analizzare esattamente il tree normalizzato che arriverebbe a pkg_integrate
+```
+
+Questo evita che wrapper interni come `<product>-<version>/` trasformino ogni release in un nuovo range e preserva la semantica di `latest` dell'ultimo range.
 
 ---
 
@@ -94,7 +105,36 @@ Il requisito fissato qui è semantico: le operazioni catalog-dependent entrano a
 
 ---
 
-## 4. Stato dei test già esistenti
+## 4. Range: cosa NON li deve creare
+
+Un nuovo range serve quando cambia realmente il contratto della package definition.
+
+Non deve essere creato un nuovo range soltanto perché cambia il pathname di un wrapper interno che `pkg_extract` elimina strutturalmente.
+
+Esempi che non costituiscono da soli un nuovo range:
+
+```text
+foo-1.0/  -> foo-1.1/
+foo/1.0/  -> foo/1.1/
+release-2026-08/ -> release-2026-09/
+```
+
+se il payload utile risultante mantiene lo stesso contratto di artifact/materialization/integration.
+
+Questo requisito è necessario affinché:
+
+```text
+nuova release
+    -> ultimo range esistente
+    -> pkg_extract normalizza il nuovo wrapper
+    -> latest continua a funzionare
+```
+
+senza richiedere un aggiornamento del catalogo per ogni versione upstream.
+
+---
+
+## 5. Stato dei test già esistenti
 
 Alla data corrente `rumiai-tests` possiede test permanenti dedicati a:
 
@@ -111,47 +151,58 @@ pkg_analyze
 
 I test di `digest`, `extract`, download e repository adapter restano validi per i rispettivi contratti.
 
-I test correnti di `pkg_extract` e la parte artifact dei test di `pkg_analyze` proteggono ancora il precedente comportamento raw-staging e sono **pending realignment** rispetto alla useful-root normalization appena fissata.
+I test correnti di `pkg_extract` proteggono ancora il precedente comportamento raw-staging.
+
+I test correnti di `pkg_analyze` proteggono ancora una seconda discovery/interazione sulla useful root dopo `pkg_extract`.
+
+Entrambi i gruppi sono quindi **pending realignment** rispetto al confine corretto:
+
+```text
+pkg_extract -> root normalizzata
+pkg_analyze -> consuma quella root senza ridiscovery
+```
 
 Il riallineamento non deve duplicare i test della utility generale `extract`.
 
 ---
 
-## 5. Sequenza di sviluppo fissata
+## 6. Sequenza di sviluppo fissata
 
 La sequenza corrente diventa:
 
 ```text
-1  confine refresh/snapshot pkg-catalog                                  [fissato]
-2  test permanenti HTTP/JSON/GitHub adapter                             [completato]
-3  contratto + implementazione + test di pkg_download                   [completato]
-4  utility di sistema digest/extract e relativi test                    [completato]
-5  pkg_analyze + analisi package reale per useful-root/materialization  [in corso]
-6  completamento package definition DBeaver, inclusa normalization info [successivo]
-7  riallineamento contratto fisico + implementazione + test pkg_extract [successivo]
-8  contratto + implementazione pkg_integrate/pkg_deintegrate            [successivo]
-9  orchestrazione reale pkg install                                     [successivo]
-10 lifecycle uninstall/version/current                                  [successivo]
-11 dependency/facility/state avanzato quando richiesto                  [successivo]
+1  confine refresh/snapshot pkg-catalog                                      [fissato]
+2  test permanenti HTTP/JSON/GitHub adapter                                 [completato]
+3  contratto + implementazione + test di pkg_download                       [completato]
+4  utility di sistema digest/extract e relativi test                        [completato]
+5  riallineamento pkg_extract: structural useful-root normalization         [successivo]
+6  riallineamento pkg_analyze: consumo diretto del pkg_extract normalizzato [successivo]
+7  analisi DBeaver + completamento package definition per integration       [successivo]
+8  contratto + implementazione pkg_integrate/pkg_deintegrate                [successivo]
+9  orchestrazione reale pkg install                                         [successivo]
+10 lifecycle uninstall/version/current                                      [successivo]
+11 dependency/facility/state avanzato quando richiesto                      [successivo]
 ```
 
-La normalizzazione della useful root deve essere chiusa prima di `pkg_integrate`, perché integration deve ricevere un payload già normalizzato e non deve conoscere wrapper upstream release/platform-specific.
+La normalizzazione della useful root deve essere chiusa prima dell'analisi DBeaver tramite la forma artifact di `pkg_analyze`, perché quella analisi deve usare lo stesso output normalizzato che verrà poi passato a `pkg_integrate`.
+
+La package definition DBeaver non deve contenere un pathname del wrapper interno dell'artifact soltanto per compensare variazioni di release.
 
 La sequenza non riattiva i meccanismi storici già esclusi dal baseline, inclusi resolver universale, generations, inventory obbligatorie o migration framework generale.
 
 ---
 
-## 6. Physical validation
+## 7. Physical validation
 
 La presenza di test permanenti e development checks non sostituisce la physical validation revision-specific quando i nuovi backend o i nuovi confini semantici vengono promossi nel flusso operativo.
 
 La physical validation dei nuovi layer verrà pianificata in modo proporzionato dopo la loro implementazione, senza confonderla con il gate bootstrap attualmente ancora in attesa sui reference host ARM64.
 
-La correzione documentale della useful-root normalization non costituisce physical validation dell'implementazione corrente di `pkg_extract`.
+Le correzioni documentali della useful-root normalization non costituiscono physical validation dell'implementazione corrente di `pkg_extract` o `pkg_analyze`.
 
 ---
 
-## 7. Invarianti fissati
+## 8. Invarianti fissati
 
 ```text
 PKG-PLAN-01  ogni operazione che consuma package definition/upstream passa prima dal refresh boundary di pkg-catalog
@@ -161,7 +212,9 @@ PKG-PLAN-04  una singola operazione catalog-dependent usa un unico commit/snapsh
 PKG-PLAN-05  clone/fetch/offline/failure/locking/pinning restano contratti separati da chiudere prima dell'orchestrazione completa
 PKG-PLAN-06  i test permanenti dei layer indipendenti non vengono duplicati nei layer successivi
 PKG-PLAN-07  digest, extract e pkg_download sono completati secondo i rispettivi contratti correnti
-PKG-PLAN-08  pkg_extract non è più considerato completato finché non implementa e testa la useful-root normalization
-PKG-PLAN-09  pkg_analyze/package reali forniscono evidence per fissare la normalization information della package definition
-PKG-PLAN-10  pkg_integrate viene implementato soltanto dopo che pkg_extract consegna direttamente il payload normalizzato
+PKG-PLAN-08  pkg_extract non è completato finché non consegna automaticamente la structural useful root normalizzata
+PKG-PLAN-09  pkg_analyze forma artifact DEVE usare pkg_extract e non ripetere useful-root discovery
+PKG-PLAN-10  wrapper pathname/version-specific non appartiene alla package definition e non costituisce da solo un nuovo range
+PKG-PLAN-11  latest deve continuare a funzionare attraverso variazioni puramente strutturali dei wrapper dell'artifact
+PKG-PLAN-12  pkg_integrate viene implementato soltanto dopo che pkg_extract consegna direttamente il payload normalizzato
 ```
