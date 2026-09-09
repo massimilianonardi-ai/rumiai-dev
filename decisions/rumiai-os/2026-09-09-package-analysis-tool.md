@@ -1,6 +1,7 @@
 # Decisione — `pkg_analyze` come strumento diagnostico per package definition
 
 Date: 2026-09-09  
+Updated: 2026-09-09  
 Status: **Accepted**
 
 ## Contesto
@@ -28,7 +29,7 @@ pkg_analyze
 
 L'underscore è quindi una spelling deliberatamente stabilita per questo comando diagnostico. Non introduce una nuova convenzione generale per i command RumiAI.
 
-Questa unità autorizza e definisce l'implementazione di `pkg_analyze` in `rumiai-os` e la relativa copertura permanente in `rumiai-tests`.
+La correzione esplicita del 2026-09-09 fissa inoltre che `pkg_extract` dovrà consegnare direttamente la useful root normalizzata. Di conseguenza `pkg_analyze` resta il tool che **scopre e documenta** la root utile sui payload grezzi, mentre `pkg_extract` diventa il consumer della normalization information consolidata nella package definition.
 
 ---
 
@@ -44,9 +45,9 @@ Il tool non contiene conoscenza di DBeaver o di altri prodotti specifici.
 
 ---
 
-## 2. Input iniziali
+## 2. Input iniziali e raw materialization
 
-Le forme iniziali sono:
+Le forme implementate inizialmente sono:
 
 ```text
 pkg_analyze <extracted-directory>
@@ -55,21 +56,31 @@ pkg_analyze <format> <artifact>
 
 La prima forma analizza un tree già materializzato e non ne assume la proprietà.
 
-La seconda forma crea uno staging temporaneo e riusa esattamente il layer corrente:
+La seconda forma, nell'implementazione iniziale, crea uno staging temporaneo e riusa:
 
 ```text
 pkg_extract <artifact> <format> <staging-dir>
 ```
 
-Non duplica la selezione dei backend di `extract` e non introduce autodetection del format.
+Questa dipendenza è ora **pending realignment**.
 
-Lo staging temporaneo appartiene a `pkg_analyze` e viene rimosso al termine.
+Il nuovo contratto semantico di `pkg_extract` richiede infatti che esso consumi l'informazione di useful-root normalization già determinata dalla package definition e restituisca un tree normalizzato. `pkg_analyze`, al contrario, deve poter osservare il payload **prima** che tale informazione esista, proprio per scoprirla.
+
+Non deve quindi essere introdotta una dipendenza circolare del tipo:
+
+```text
+pkg_analyze
+    -> pkg_extract richiede useful-root normalization
+        -> useful-root normalization dovrebbe essere scoperta da pkg_analyze
+```
+
+La modalità fisica con cui la forma `<format> <artifact>` otterrà in futuro la raw materialization deve essere fissata nel successivo riallineamento senza duplicare arbitrariamente backend o introdurre una nuova primitive non necessaria. La forma `<extracted-directory>` resta semanticamente valida e indipendente da questo punto aperto.
 
 ---
 
 ## 3. Discovery della useful root
 
-Dopo la materializzazione, il tool costruisce una catena partendo dalla root dello staging/tree analizzato.
+Dopo la raw materialization, il tool costruisce una catena partendo dalla root del tree analizzato.
 
 Finché il livello corrente contiene esattamente una entry e tale entry è una real directory, non symlink, la catena può proseguire dentro quella directory.
 
@@ -98,13 +109,29 @@ senza assumere che la stessa profondità o lo stesso nome valgano per tutte le r
 
 ## 4. Rapporto con `pkg_extract`
 
-Il contratto Accepted corrente di `pkg_extract` produce ancora lo staging grezzo dell'estrazione e non elimina i prefix directory individuati sopra.
+Il confine corretto è:
 
-L'utente ha fissato come direzione successiva che, prima di `pkg_integrate`, la pipeline di extraction/package materialization debba consegnare direttamente la useful root normalizzata, così che l'integrazione non dipenda da wrapper upstream variabili fra versioni.
+```text
+pkg_analyze
+    -> osserva payload/raw extraction
+    -> identifica useful root e variazioni fra release/target
+    -> evidence per la package definition
 
-Questa responsabilità è destinata a essere consolidata nel contratto di `pkg_extract`, ma **questa unità non modifica silenziosamente l'API o il comportamento Accepted corrente di `pkg_extract`**.
+package definition
+    -> conserva la normalization information applicabile
 
-`pkg_analyze` fornisce precisamente l'evidence concreta necessaria per decidere la serializzazione della useful-root selection e revisionare poi il contratto `pkg_extract` in modo esplicito e testabile.
+pkg_extract
+    -> raw materialization
+    -> applica la normalization information
+    -> consegna direttamente la useful root normalizzata
+
+pkg_integrate
+    -> integra il payload già normalizzato
+```
+
+`pkg_integrate` non deve ripetere la discovery dei wrapper upstream.
+
+`pkg_analyze` non decide la serializzazione finale della normalization information e non genera automaticamente un campo normativo del catalogo. Tale serializzazione viene fissata dai casi reali.
 
 ---
 
@@ -247,7 +274,7 @@ Un tree passato direttamente dall'utente può naturalmente essere modificato dal
 
 ---
 
-## 11. Testing
+## 11. Testing e stato di riallineamento
 
 La copertura permanente deve proteggere almeno:
 
@@ -265,9 +292,12 @@ report dello state rediretto
 assenza di path delta nella HOME originale quando il fixture rispetta la redirezione
 preservazione dell'exit status del candidate nel report senza trasformarlo automaticamente in failure di pkg_analyze
 cleanup dello staging/work temporaneo
+assenza di dipendenza circolare dalla future useful-root normalization di pkg_extract
 ```
 
-I test di `pkg_analyze` non duplicano i test permanenti già esistenti dei backend `extract` o del contratto interno di `pkg_extract`.
+I test di `pkg_analyze` non duplicano i test permanenti dei backend `extract` o del contratto interno di `pkg_extract`.
+
+L'implementazione e i test correnti della forma `<format> <artifact>` riusano ancora il precedente `pkg_extract` a staging grezzo. Tale parte è **pending realignment** prima dell'implementazione del nuovo contratto `pkg_extract`.
 
 ---
 
@@ -275,8 +305,8 @@ I test di `pkg_analyze` non duplicano i test permanenti già esistenti dei backe
 
 ```text
 PKG-ANALYZE-01  pkg_analyze è uno strumento diagnostico esplicito per costruire/verificare package definition, non una fase automatica di pkg install
-PKG-ANALYZE-02  le forme iniziali sono pkg_analyze <extracted-directory> e pkg_analyze <format> <artifact>
-PKG-ANALYZE-03  la forma artifact riusa pkg_extract e non duplica format/backend discovery
+PKG-ANALYZE-02  le forme iniziali implementate sono pkg_analyze <extracted-directory> e pkg_analyze <format> <artifact>
+PKG-ANALYZE-03  pkg_analyze deve osservare la raw materialization per scoprire la useful root e non può dipendere circolarmente dal futuro pkg_extract già normalizzato
 PKG-ANALYZE-04  la useful root suggerita è la directory più profonda della catena di livelli con una sola real-directory entry
 PKG-ANALYZE-05  la useful root suggerita richiede accettazione/override dell'utente e deve restare confinata nel tree analizzato
 PKG-ANALYZE-06  executable/launch-like sono euristiche diagnostiche e non command discovery automatica di pkg install
@@ -286,6 +316,7 @@ PKG-ANALYZE-09  ogni probe usa directory environment temporanee fresche e rediri
 PKG-ANALYZE-10  il dynamic probe non introduce né sostituisce il launcher canonico
 PKG-ANALYZE-11  il baseline confronta inventari di pathname/type e non promette rilevamento delle modifiche in-place
 PKG-ANALYZE-12  pkg_analyze non modifica direttamente package store, selector, binding, state persistente o pkg-catalog
-PKG-ANALYZE-13  il contratto corrente di pkg_extract resta invariato in questa unità; la normalizzazione della useful root viene revisionata esplicitamente in una fase successiva usando l'evidence prodotta dal tool
+PKG-ANALYZE-13  pkg_analyze produce evidence per la normalization information; pkg_extract la consuma e consegna la useful root normalizzata a pkg_integrate
 PKG-ANALYZE-14  la spelling pkg_analyze è fissata esplicitamente per questo command e non crea una convenzione generale sui nomi dei command RumiAI
+PKG-ANALYZE-15  il riuso corrente di pkg_extract nella forma artifact è pending realignment e non deve sopravvivere come dipendenza circolare al nuovo contratto
 ```
