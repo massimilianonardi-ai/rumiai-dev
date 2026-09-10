@@ -1,7 +1,7 @@
 # Decisione — Correzione locale-independent dopo il FAIL macOS di `pkg uninstall`
 
 Date: 2026-09-10  
-Status: **Accepted**
+Status: **Validated**
 
 ## Contesto
 
@@ -103,7 +103,7 @@ _pkg_integration_osarch_valid
 
 La modifica non altera snapshot, resolver, download, extract o integration flow. `install` e `uninstall` condividono ora la stessa semantica lessicale autorevole.
 
-La revisione prodotto candidata corrente è quindi:
+La revisione prodotto corretta è quindi:
 
 ```text
 164fe1b058710a6871266aab7ca9dc4495cbe4bc
@@ -133,14 +133,61 @@ rumiai-os-commit  164fe1b058710a6871266aab7ca9dc4495cbe4bc
 selection         rumiai-os/pkg
 ```
 
+## Physical validation della revisione corretta
+
+La coppia:
+
+```text
+rumiai-os@164fe1b058710a6871266aab7ca9dc4495cbe4bc
+rumiai-tests@71963b08476ff5c4d5557ed593cd6c4c8414b63c
+selection: rumiai-os/pkg
+```
+
+è stata fisicamente validata sui due reference host ARM64.
+
+Ubuntu ARM64:
+
+```text
+validation/20260910T220254+0200-111026
+PASS rumiai-os/pkg/catalog-snapshot.test
+PASS rumiai-os/pkg/install.test
+PASS rumiai-os/pkg/uninstall.test
+runner exit status: 0
+```
+
+macOS ARM64:
+
+```text
+validation/20260910T220311+0200-16234
+PASS rumiai-os/pkg/catalog-snapshot.test
+PASS rumiai-os/pkg/install.test
+PASS rumiai-os/pkg/uninstall.test
+runner exit status: 0
+```
+
+I rispettivi evidence commit sono:
+
+```text
+Ubuntu  6e51e091d4287c6f2f15a772e19ba8eb69aaf1b7
+macOS   d12fd743b8c7254028bed8cbd6dcf1887f2ffcef
+```
+
+Entrambi hanno come parent esatto `rumiai-tests@71963b08476ff5c4d5557ed593cd6c4c8414b63c`.
+
+La documentazione revision-specific completa della validation è:
+
+```text
+decisions/rumiai-os/2026-09-10-package-uninstall-arm64-physical-validation.md
+```
+
 ## Stato
 
 ```text
-4aa3dbe...   physical validation: Linux PASS, macOS FAIL
-164fe1b...   corrected candidate: pending physical validation
-71963b0...   current validation configuration/tests revision
+4aa3dbe...   physical validation: Linux PASS, macOS FAIL; revisione superseded
+164fe1b...   physical validation: Ubuntu ARM64 PASS, macOS ARM64 PASS
+71963b0...   suite/configuration usata per la validation riuscita
 ```
 
-Il gate J2 resta aperto finché `164fe1b...` non produce evidence PASS revision-specific sia su Ubuntu ARM64 sia su macOS ARM64.
+Il gate J2 è **chiuso**.
 
-Solo dopo tale doppio PASS si può chiudere la physical validation di `pkg uninstall` e riprendere il passo lifecycle successivo senza inventare una nuova superficie pubblica per `version/current`.
+Il passo successivo resta J3: progettare il confine lifecycle indicato dal label `version/current`, fissandone prima naming e contratto pubblico. Il label non autorizza per inferenza sottocomandi quali `pkg version`, `pkg versions`, `pkg current` o `pkg default`.
