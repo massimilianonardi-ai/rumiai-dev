@@ -61,6 +61,21 @@ Il command entry continua a possedere la minima logica command-specific, inclusi
 
 La libreria package launch non viene inserita nel bootstrap soltanto per evitare una riga di dot command nei command entry che la richiedono.
 
+Per DBeaver la command source corrente diventa esattamente:
+
+```sh
+#!/usr/bin/env rumiai-os
+
+. "$m_LIB_DIR/sh/pkg-launch.lib.sh"
+
+launcher "dbeaver" \
+  -configuration "$m_CONF_DIR/dbeaver/configuration" \
+  -data "$m_HOME_DIR/dbeaver/.workspace" \
+  "$@"
+```
+
+Questa forma supersede l'omonima source del documento `2026-09-09-dbeaver-package-integration-definition.md` che invocava `launcher` senza caricare esplicitamente la nuova libreria. Argomenti fissi, ordine e state routing DBeaver restano invariati.
+
 ---
 
 ## 3. API direct-link corrente
@@ -154,14 +169,14 @@ exec <resolved-link-target> [command-arguments...]
 
 L'upstream sostituisce il processo shell e riceve direttamente exit status e segnali secondo la normale semantica `exec`.
 
-Exit status della funzione prima dell'exec:
+Prima del tentativo finale di `exec`:
 
 ```text
 2  invocazione API invalida: argomenti mancanti o <pkg> invalido
-1  runtime/layout/env/target/exec failure
+1  runtime/layout/env/target failure rilevato dal launcher
 ```
 
-Il successo non ritorna dalla funzione perché l'`exec` sostituisce il processo.
+Dopo l'invocazione dello special builtin POSIX `exec` non viene introdotta una normalizzazione artificiale: se il kernel/shell rifiuta l'esecuzione nonostante i controlli preliminari, vale il relativo comportamento shell/system, normalmente espresso da status come 126/127. Il successo non ritorna dalla funzione perché l'`exec` sostituisce il processo.
 
 ---
 
@@ -200,6 +215,7 @@ Sono superseded esclusivamente le precedenti affermazioni che fissavano:
 launcher in lib/sh/core.lib.sh
 launcher caricato implicitamente dal bootstrap per ogni command
 core.lib.sh come sede necessaria del runtime package launch
+command source DBeaver che invoca launcher senza dot esplicito di pkg-launch.lib.sh
 ```
 
 Restano validi:
@@ -218,9 +234,24 @@ pkg run separato dal normale runtime path
 
 ---
 
-## 9. Testing e physical validation
+## 9. Implementazione e testing
 
-I test permanenti devono proteggere almeno:
+Il baseline è implementato in:
+
+```text
+rumiai-os/lib/sh/pkg-launch.lib.sh
+```
+
+Il catalogo DBeaver carica esplicitamente la libreria per tutti gli stream correnti Linux, macOS e Windows x86_64.
+
+I test permanenti appartengono a:
+
+```text
+rumiai-tests/tests/rumiai-os/pkg-launch/contract.test
+rumiai-tests/tests/rumiai-os/pkg-integration/contract.test
+```
+
+e proteggono almeno:
 
 ```text
 pkg-launch.lib.sh non executable e senza shebang
@@ -235,11 +266,13 @@ ordine package env -> user env
 assenza di set -a implicito
 env invalido impedisce upstream execution
 preservazione esatta degli argomenti
-final exec
-status 2 per API invalida e 1 per failure operative
+final exec e propagazione dello status upstream
+status 2 per API invalida e 1 per failure operative pre-exec
 ```
 
-L'implementazione e i test permanenti non costituiscono physical validation revision-specific sui reference host. DBeaver installato e avviato end-to-end resta da validare fisicamente dopo l'allineamento di prodotto e catalogo.
+Un development check isolato POSIX `sh` ha validato il direct-link baseline, HOME, env layering, non-export implicito, argv, final `exec`, env syntax failure e root confinement. Tale check non sostituisce la physical validation revision-specific.
+
+La frase del piano 2026-09-09 che indicava il `launcher` come non ancora implementato è quindi superseded. DBeaver installato e avviato end-to-end resta comunque da validare fisicamente sui reference host dopo l'allineamento di prodotto, test e catalogo.
 
 ---
 
@@ -257,6 +290,7 @@ PKG-LAUNCH-08  il direct-link deve risolvere a regular executable confinato nel 
 PKG-LAUNCH-09  il baseline standard isolation implementato ora fissa soltanto HOME=$m_HOME_DIR/<pkg>
 PKG-LAUNCH-10  env layering = standard isolation -> package env -> user env -> exec, senza set -a
 PKG-LAUNCH-11  normal launch non invoca pkg e non consulta pkg-catalog
-PKG-LAUNCH-12  successo termina con exec; status pre-exec = 2 API invalida, 1 failure operativa
+PKG-LAUNCH-12  failure pre-exec = 2 API invalida oppure 1 failure operativa; dopo exec valgono direttamente semantica shell/kernel e status upstream
 PKG-LAUNCH-13  command composti senza link restano fuori dal primo implementation slice finché richiesti da un package concreto
+PKG-LAUNCH-14  la source DBeaver corrente carica esplicitamente pkg-launch.lib.sh e conserva invariati gli argomenti fissi già fissati
 ```
