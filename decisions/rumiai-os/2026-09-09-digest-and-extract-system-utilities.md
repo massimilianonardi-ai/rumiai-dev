@@ -1,6 +1,7 @@
 # Decisione — Utility di sistema `digest` ed `extract`
 
 Date: 2026-09-09  
+Updated: 2026-09-10  
 Status: **Accepted**
 
 ## Contesto
@@ -17,6 +18,8 @@ L'utente ha approvato di promuovere tali responsabilità a utility di sistema Ru
 L'obiettivo è confinare in un solo punto le dipendenze da utility host non uniformi, senza rendere `pkg` proprietario dei dettagli dei backend e senza creare un framework più generale di quanto richiesto dai consumer correnti.
 
 Questa decisione corregge inoltre la precedente scelta di mantenere la capability SHA-256 privata dentro `pkg_download`: da questa revisione la capability pubblica canonica è `digest`.
+
+L'aggiornamento del 2026-09-10 modifica esclusivamente la selezione del backend per il formato `dmg`, sulla base del PoC fisico riuscito sul reference macOS ARM64 con il DMG reale DBeaver 26.2.0. Il resto del contratto `digest`/`extract` rimane invariato.
 
 ---
 
@@ -163,10 +166,44 @@ ZIP family:
 zip jar war -> unzip
 ```
 
-7-Zip family e DMG:
+7-Zip family:
 
 ```text
-7z 7zip dmg -> primo disponibile fra 7zz, 7z, 7za
+7z 7zip -> primo disponibile fra 7zz, 7z, 7za
+```
+
+DMG usa una selezione per capability distinta:
+
+```text
+1  hdiutil + ditto, soltanto quando entrambe le capability sono disponibili
+2  7zz
+3  7z
+4  7za
+```
+
+La coppia `hdiutil` + `ditto` costituisce un singolo backend composto. La sola presenza di uno dei due comandi non rende disponibile il backend nativo e provoca quindi la normale selezione del backend successivo.
+
+La selezione non dipende da `uname` o da un nome di piattaforma: il backend nativo viene scelto quando le due capability necessarie sono disponibili. In pratica costituisce il percorso predefinito sul reference macOS corrente; 7-Zip resta il fallback cross-platform scelto da RumiAI quando tale backend non è disponibile.
+
+Il fallback riguarda esclusivamente la disponibilità iniziale della capability. Dopo che un backend è stato selezionato, un errore operativo di attach, copia, detach o estrazione termina l'operazione con failure e **non** provoca retry con un backend successivo.
+
+Il backend DMG nativo esegue semanticamente:
+
+```text
+hdiutil attach -readonly -nobrowse -mountpoint <temporary-mount> <artifact>
+ditto <temporary-mount> <destination>
+hdiutil detach <temporary-mount>
+```
+
+Il mountpoint temporaneo appartiene a `$m_TMP_DIR`. L'artifact viene montato read-only e non-browsable, il contenuto del volume viene copiato nella destination già esistente e il backend gestisce detach e cleanup sia nel percorso normale sia nei percorsi di errore/segnale. Un detach che non riesce resta un errore operativo; non autorizza il fallback a 7-Zip.
+
+Poiché `hdiutil` e `ditto` non appartengono al contratto POSIX di RumiAI e la loro grammatica non viene assunta globalmente, tale dipendenza resta confinata esclusivamente nel backend `dmg` di `extract`.
+
+Evidence sperimentale che ha giustificato questa modifica:
+
+```text
+rumiai-dev-PoCs/pocs/006-macos-dmg-extraction/
+rumiai-dev-PoCs@a48039e8e7f2b7333439f22eb6cd0ee5e7a1658d
 ```
 
 Debian package:
@@ -217,6 +254,8 @@ comportamenti specifici o vulnerabilità dei backend esterni
 
 Un eventuale hardening universale o isolamento dell'estrazione richiede un contratto esplicito separato e testabile. Non deve essere inferito dalla sola centralizzazione dei backend.
 
+Il mount read-only del backend DMG nativo riduce esclusivamente la possibilità di modifica del volume montato durante questa operazione; non promuove `extract` a sandbox e non modifica questo confine di sicurezza.
+
 ---
 
 ## 7. Confini di responsabilità
@@ -257,13 +296,19 @@ digest: rifiuto algoritmo/invocazione non supportati
 extract: mapping format -> backend e alias
 extract: decompressor separato da tar
 extract: single-stream naming e cleanup
-extract: ZIP/JAR/WAR, 7z/7zip/dmg e deb
+extract: ZIP/JAR/WAR, 7z/7zip e deb
+extract dmg: hdiutil+ditto preferiti quando entrambi disponibili
+extract dmg: fallback 7zz -> 7z -> 7za quando il backend nativo è indisponibile
+extract dmg: nessun fallback dopo un errore operativo del backend selezionato
+extract dmg: detach/cleanup del mountpoint anche sul failure path successivo ad attach
 extract: appimage non supportato dalla utility generale
 extract: almeno un tar.gz reale quando tar+gzip sono disponibili
 pkg_extract: AppImage opaco non viene eseguito
 ```
 
-I backend fake deterministici sono appropriati per dispatch e fallback. Le capability host reali restano soggette a physical validation revision-specific quando promosse nel flusso operativo.
+I backend fake deterministici sono appropriati per dispatch, selezione, fallback e failure semantics. Le capability host reali restano soggette a physical validation revision-specific quando promosse nel flusso operativo.
+
+Per il backend DMG nativo, il PoC macOS con artifact DBeaver reale costituisce evidence sperimentale preliminare; dopo il riallineamento prodotto il gate live DBeaver deve validare revision-specific l'uso effettivo del backend nel percorso `pkg install`.
 
 ---
 
@@ -284,4 +329,8 @@ EXTRACT-05  backend archive/compression sono confinati in extract e non nei cons
 EXTRACT-06  tar compressi verificano il decompressor prima dell'estrazione tar
 EXTRACT-07  appimage non appartiene alla utility extract e non viene eseguito durante pkg_extract
 EXTRACT-08  extract non è una sandbox; hardening archive è un contratto separato
+EXTRACT-09  dmg seleziona hdiutil+ditto come backend composto preferito quando entrambi disponibili, poi 7zz, 7z, 7za
+EXTRACT-10  fallback dmg avviene soltanto per indisponibilità iniziale della capability; errore del backend selezionato non provoca retry
+EXTRACT-11  backend dmg nativo usa mount read-only/non-browsable, copia nella destination e detach/cleanup del mountpoint temporaneo sotto m_TMP_DIR
+EXTRACT-12  7z e 7zip restano separati dal ramo dmg e continuano a usare esclusivamente 7zz, 7z, 7za
 ```
