@@ -101,7 +101,38 @@ rumiai-os@79cb5964428ca68c06c2f4eac98ac7350ae9561f
 lib/sh/json.lib.sh blob 6b028e01bba06bd24f7af8fe26bff0d1a9bb29fe
 ```
 
-Sono stati aggiunti test permanenti sui boundary della finestra in `rumiai-os/json/structure.test`, senza soglie temporali. La nuova revisione prodotto è **pending physical validation** e non eredita automaticamente i PASS di `a253162`.
+Sono stati aggiunti test permanenti sui boundary della finestra in `rumiai-os/json/structure.test`, senza soglie temporali.
+
+La coppia:
+
+```text
+rumiai-os@79cb5964428ca68c06c2f4eac98ac7350ae9561f
+rumiai-tests@886bd7bee855e613bbaa20af4006c3e8f9477a4d
+selection: rumiai-os
+```
+
+è ora fisicamente validata sul gruppo completo `rumiai-os` sui due reference host ARM64:
+
+```text
+Ubuntu ARM64  PASS 65 / FAIL 0 / SKIP 2 / ERROR 0
+macOS ARM64   PASS 67 / FAIL 0 / SKIP 0 / ERROR 0
+```
+
+Evidence:
+
+```text
+decisions/rumiai-os/2026-09-10-json-windowed-arm64-physical-validation.md
+```
+
+I timing permanenti osservati per i test JSON sono:
+
+```text
+                         Ubuntu ARM64   macOS ARM64
+json/object-read.test       0.01 s        0.03 s
+json/structure.test         0.03 s        0.42 s
+```
+
+Questi tempi appartengono alla suite permanente e non sostituiscono la misura del payload GitHub reale del PoC. La prova end-to-end del parser windowed sul vero percorso package richiede ancora il live DBeaver della stessa revisione.
 
 ## Runner timing
 
@@ -128,14 +159,29 @@ Il runner ora mostra la durata per-test e persiste `timings`; `results`, log ed 
 
 ## Gate corrente
 
-La configurazione corrente di validation è:
+Il gate completo della revisione windowed è chiuso. Il gate corrente è ora:
 
 ```text
 rumiai-os-commit  79cb5964428ca68c06c2f4eac98ac7350ae9561f
-selection         rumiai-os
+selection         external/dbeaver
 ```
 
-La suite corrente include i boundary test JSON introdotti dopo il PoC. Il gate completo deve essere eseguito sui due reference host ARM64 prima di promuovere la nuova revisione a baseline fisicamente validata.
+La riesecuzione live deve usare la stessa revisione prodotto e verificare nuovamente il percorso reale:
+
+```text
+pkg install dbeaver
+  -> clone/fetch reale pkg-catalog da GitHub
+  -> GitHub release discovery reale
+  -> artifact descriptor reale
+  -> download reale DBeaver
+  -> digest reale
+  -> extract reale host-specific
+  -> pkg_integrate reale del payload DBeaver
+```
+
+Grazie al timing per-test del runner, la nuova evidence deve anche rendere direttamente osservabile la durata end-to-end di `external/dbeaver/install-live.test` sui due host.
+
+Il gate continua a usare una root RumiAI isolata, non modifica il checkout operativo, non seleziona implicitamente il default e non effettua launch GUI.
 
 ## Sequenza operativa corrente
 
@@ -146,8 +192,8 @@ C  gate live pkg install dbeaver macOS ARM64                          [completat
 D  localizzazione performance macOS JSON                              [completato]
 E  PoC correzione algoritmica JSON su macOS                           [completato]
 F  promozione minima JSON + boundary test permanenti                  [completato]
-G  validation revision-specific rumiai-os@79cb596                     [corrente]
-H  riesecuzione live DBeaver sulla nuova revisione JSON               [successivo]
+G  validation revision-specific rumiai-os@79cb596                     [completato]
+H  riesecuzione live DBeaver sulla nuova revisione JSON               [corrente]
 I  validazione separata default + launch dove GUI disponibile         [successivo]
 J  ripresa lifecycle uninstall/version/current                        [successivo]
 K  dependency/facility/state avanzato soltanto quando richiesto       [successivo]
@@ -168,8 +214,9 @@ PKG-NOW-07  rumiai-os@a253162 resta la precedente revisione fisicamente validata
 PKG-NOW-08  pkg install dbeaver su a253162 resta live PASS sui due reference host ARM64
 PKG-NOW-09  il PASS live precedente non comprende default né launch GUI
 PKG-NOW-10  la performance patologica macOS è stata localizzata nel parser JSON e il candidato windowed ha ridotto 100.02 s a 5.23 s nel PoC
-PKG-NOW-11  rumiai-os@79cb596 contiene il candidato esatto del PoC ed è pending physical validation
-PKG-NOW-12  la nuova revisione non eredita i PASS di a253162; richiede gate completo e successivo live DBeaver propri
+PKG-NOW-11  rumiai-os@79cb596 è fisicamente validata sul gruppo completo rumiai-os dei due reference host ARM64 con rumiai-tests@886bd7b
+PKG-NOW-12  i PASS live DBeaver di a253162 non vengono estesi a 79cb596; il live gate deve essere rieseguito sulla nuova revisione
 PKG-NOW-13  il timing per-test del runner è fisicamente validato sui due reference host ARM64
-PKG-NOW-14  lifecycle uninstall/version/current riprende dopo chiusura dell'ottimizzazione JSON e dei gate package correnti
+PKG-NOW-14  la suite permanente non usa soglie prestazionali; la misura del payload GitHub reale resta evidence separata
+PKG-NOW-15  lifecycle uninstall/version/current riprende dopo chiusura del live gate, del default e del launch previsti dalla sequenza corrente
 ```
