@@ -104,7 +104,7 @@ La sessione conserva comunque evidence utile e più limitata: il percorso ha rag
 
 La sessione storica non viene riscritta né eliminata; viene reinterpretata correttamente da questo checkpoint secondo l'osservazione fisica successiva.
 
-## Correzione del test permanente
+## Prima correzione del test permanente
 
 Il falso positivo è stato corretto esclusivamente nella suite, senza modificare `rumiai-os` o `pkg-catalog`:
 
@@ -134,12 +134,50 @@ Semantica:
 ```text
 Enter / y / yes  -> GUI osservata, il test può completare PASS
 n / no           -> GUI non osservata, FAIL
-TTY non disponibile -> SKIP prima del setup costoso
+controlling TTY non disponibile -> SKIP prima del setup costoso
 ```
 
 Dopo la conferma positiva il test verifica ancora che il processo sia vivo e termina soltanto il PID avviato dal test.
 
-Il test resta `100755`, indipendente, in root RumiAI isolata e continua a esercitare il normal command path reale.
+## Correzione della precondizione TTY
+
+La prima correzione conteneva una precondizione ulteriore non compatibile con il contratto reale del runner:
+
+```sh
+[ -t 0 ]
+```
+
+La validation macOS:
+
+```text
+validation/20260910T193122+0200-12657
+validation commit d2e08c2a7e994f5dac5385d69d67e3f7fb2f08bb
+rumiai-tests parent 61769281ef40a5efc1c37ccf7334ced4d49dc391
+result SKIP
+timing 0.36 s
+reason: interactive graphical confirmation requires a terminal
+```
+
+ha dimostrato che tale controllo non è valido nel percorso del runner. `rumiai-test` esegue ciascun test mentre il loop di esecuzione legge la lista dei test da un file; il processo test eredita quindi fd 0 da quella redirezione e non può assumere che stdin sia il terminale dell'operatore.
+
+Questo non impedisce l'interazione richiesta: il test usa intenzionalmente il controlling terminal `/dev/tty`, indipendente da stdin del runner.
+
+La correzione minima è stata applicata in:
+
+```text
+rumiai-tests@cd2980b076abe0ad6889862c3f4483ff8cac08a6
+commit: Use controlling TTY for DBeaver launch confirmation
+```
+
+La precondizione corrente verifica direttamente che `/dev/tty` sia apribile in lettura e scrittura:
+
+```sh
+( : < /dev/tty > /dev/tty ) 2>/dev/null
+```
+
+Non viene modificato il runner e non viene introdotta alcuna nuova primitive. Il test resta `100755`, indipendente, in root RumiAI isolata e continua a esercitare il normal command path reale.
+
+La sessione `d2e08c2` è evidence valida esclusivamente del comportamento SKIP della revisione test `6176928`; non fornisce alcuna nuova evidence sul normal launch DBeaver.
 
 ## Gate corrente
 
@@ -156,7 +194,7 @@ La prossima validazione proporzionata riguarda quindi soltanto il reference macO
 
 ```text
 rumiai-os@79cb5964428ca68c06c2f4eac98ac7350ae9561f
-rumiai-tests@61769281ef40a5efc1c37ccf7334ced4d49dc391
+rumiai-tests@cd2980b076abe0ad6889862c3f4483ff8cac08a6
 selection: external/dbeaver/launch-live.test
 ```
 
@@ -198,9 +236,11 @@ PKG-NOW-20  il primo launch test f0a9b0c aveva un criterio insufficiente: proces
 PKG-NOW-21  la sessione Linux ea7d783, insieme all'osservazione fisica dell'utente, valida il normal launch Ubuntu ARM64
 PKG-NOW-22  il PASS macOS 87b08f1 è un falso positivo e non valida il normal launch GUI macOS
 PKG-NOW-23  la sessione macOS 87b08f1 conserva soltanto evidence di inizializzazione e state creation
-PKG-NOW-24  il test corretto 6176928 richiede conferma esplicita della GUI; una risposta negativa produce FAIL
-PKG-NOW-25  un'esecuzione senza TTY non può produrre PASS per questo gate GUI e viene classificata SKIP
+PKG-NOW-24  il test launch richiede conferma esplicita della GUI; una risposta negativa produce FAIL
+PKG-NOW-25  il test non può assumere che fd 0 sia il terminale: nel runner stdin è occupato dalla lista di esecuzione
 PKG-NOW-26  il solo sottogate rimanente del punto I è il normal launch DBeaver sul reference macOS ARM64
-PKG-NOW-27  nessuna modifica a rumiai-os o pkg-catalog è giustificata dal falso positivo del test
+PKG-NOW-27  nessuna modifica a rumiai-os o pkg-catalog è giustificata dai difetti osservati nel criterio del test
 PKG-NOW-28  lifecycle uninstall/version/current riprende soltanto dopo la chiusura del normal launch macOS
+PKG-NOW-29  la sessione d2e08c2 è SKIP della revisione test 6176928 e non costituisce evidence sul launch DBeaver
+PKG-NOW-30  la revisione test corrente cd2980b usa direttamente /dev/tty e non dipende dalla natura di stdin
 ```
