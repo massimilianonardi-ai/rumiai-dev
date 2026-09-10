@@ -92,7 +92,7 @@ Le evidence precedenti restano immutabili e non vengono retroattivamente attribu
 
 ---
 
-## DMG native-first: PoC e implementazione corrente
+## DMG native-first: PoC, implementazione e physical validation
 
 Il confine macOS emerso nel gate live DBeaver è stato investigato con:
 
@@ -120,9 +120,33 @@ Il prodotto è stato riallineato in:
 rumiai-os@a2531626b68e81c9df4e76a007e7f963b3f26343
 ```
 
-ed il test permanente `rumiai-os/extract/dispatch.test` è stato riallineato per proteggere selezione native-first, fallback 7-Zip e assenza di retry dopo failure del backend nativo.
+Il test permanente `rumiai-os/extract/dispatch.test` protegge selezione native-first, fallback 7-Zip e assenza di retry dopo failure del backend nativo. Una prima versione del test aveva ristretto correttamente `PATH` ma lasciava i fake backend dipendenti da `cat`; le due validation risultanti hanno quindi fallito nel fake `tar` prima di raggiungere i casi DMG. Il test è stato corretto senza modificare il prodotto in:
 
-Questa revisione prodotto **non è ancora fisicamente validata** sui reference host. La precedente physical validation `4671899/8c5d182` non viene estesa a questa modifica.
+```text
+rumiai-tests@9198a69f62a5f77c390cc015f193bbfb117fdc47
+```
+
+La coppia corrente:
+
+```text
+rumiai-os@a2531626b68e81c9df4e76a007e7f963b3f26343
+rumiai-tests@9198a69f62a5f77c390cc015f193bbfb117fdc47
+```
+
+è ora fisicamente validata sul gruppo completo `rumiai-os` sui due reference host ARM64:
+
+```text
+Ubuntu ARM64  PASS 65 / FAIL 0 / SKIP 2 / ERROR 0
+macOS ARM64   PASS 67 / FAIL 0 / SKIP 0 / ERROR 0
+```
+
+Evidence:
+
+```text
+decisions/rumiai-os/2026-09-10-rumiai-os-dmg-revision-arm64-physical-validation.md
+```
+
+Questa validation protegge deterministicamente il dispatch DMG ma non viene promossa a evidence dell'esecuzione reale `hdiutil` + `ditto` nel percorso `pkg install` live. Tale confine appartiene al gate DBeaver successivo.
 
 ---
 
@@ -149,7 +173,7 @@ rumiai-tests/tests/external/dbeaver/install-live.test
 
 Una precedente esecuzione Linux ARM64 sulla coppia `rumiai-os@b724bd1` / `rumiai-tests@3f83153` ha prodotto `PASS`, installando realmente `dbeaver@26.2.0!linux-arm64` dal catalogo `514cb620075188ec9ad9090f6bd008fcec85913f`. Tale evidence resta valida per quella coppia ma non viene promossa a validation della revisione prodotto corrente.
 
-Sul reference macOS ARM64 la precedente esecuzione live non è arrivata a un risultato pubblicabile: l'indagine successiva ha isolato prima il costo patologico del parser JSON e poi l'assenza del precedente backend 7-Zip per `dmg`. Entrambi i confini sono stati ora affrontati a livello di implementazione; la nuova revisione deve essere validata prima di ripetere il gate live.
+Sul reference macOS ARM64 la precedente esecuzione live non è arrivata a un risultato pubblicabile: l'indagine successiva ha isolato prima il costo patologico del parser JSON e poi l'assenza del precedente backend 7-Zip per `dmg`. Entrambi i confini sono stati affrontati e la revisione prodotto risultante è ora validata sul gruppo `rumiai-os`; il prossimo gate è quindi la riesecuzione live DBeaver sulla coppia corrente.
 
 Il gate live continua a dover usare una root RumiAI isolata, non modificare il checkout operativo, non selezionare implicitamente il default e ripulire il payload temporaneo al termine.
 
@@ -165,7 +189,7 @@ B  correzione + physical validation ARM64 del parser JSON                     [c
 C  PoC mirato del backend DMG nativo sul reference macOS                      [completato]
 D  consolidamento esplicito del nuovo contratto DMG native-first              [completato]
 E  riallineamento extract e test permanenti                                   [completato]
-F  physical validation ARM64 della nuova revisione rumiai-os                  [successivo]
+F  physical validation ARM64 della nuova revisione rumiai-os                  [completato]
 G  riesecuzione gate live DBeaver su Ubuntu ARM64 e macOS ARM64               [successivo]
 H  se entrambi PASS, chiusura del physical gate di pkg install DBeaver        [successivo]
 I  validazione separata default + launch dove la precondizione GUI esiste     [successivo]
@@ -202,5 +226,6 @@ PKG-CURRENT-09  lifecycle uninstall/version/current resta il prossimo sviluppo d
 PKG-CURRENT-10  la coppia 4671899/8c5d182 è fisicamente validata sul gruppo rumiai-os dei due reference host ARM64
 PKG-CURRENT-11  dmg preferisce hdiutil+ditto quando entrambe disponibili e usa 7zz/7z/7za soltanto come fallback di capability
 PKG-CURRENT-12  un errore operativo del backend dmg selezionato non provoca retry con un backend successivo
-PKG-CURRENT-13  rumiai-os@a253162 è la revisione prodotto corrente del backend dmg ed è pending physical validation ARM64
+PKG-CURRENT-13  la coppia a253162/9198a69 è fisicamente validata sul gruppo rumiai-os dei due reference host ARM64
+PKG-CURRENT-14  il prossimo gate è external/dbeaver/install-live.test sulla stessa revisione prodotto; solo quel gate può provare il percorso GitHub/upstream e l'estrazione DMG reale nel prodotto
 ```
