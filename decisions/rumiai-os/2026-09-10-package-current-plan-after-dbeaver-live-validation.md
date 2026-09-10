@@ -207,29 +207,73 @@ La durata Linux resta sostanzialmente invariata rispetto alla precedente evidenc
 
 Il gate live `pkg install dbeaver` è quindi chiuso anche per `rumiai-os@79cb596`.
 
-## Gate corrente
+## Default DBeaver sulla revisione JSON windowed
 
-Il gate corrente è ora la validazione separata di:
+La validazione separata del livello default è completata sulla stessa revisione prodotto con:
 
 ```text
-pkg_default dbeaver
-binding pubblico del default
-normal launch del DBeaver installato
+rumiai-os@79cb5964428ca68c06c2f4eac98ac7350ae9561f
+rumiai-tests@bf770b1de4a1fad4fddd65e551bae696b8ef9748
+selection: external/dbeaver/default-live.test
+pkg-catalog@514cb620075188ec9ad9090f6bd008fcec85913f
 ```
+
+Risultati:
+
+```text
+Ubuntu ARM64
+  PASS  external/dbeaver/default-live.test
+  timing 16.23 s
+  default dbeaver@26.2.0!linux-arm64
+
+macOS ARM64
+  PASS  external/dbeaver/default-live.test
+  timing 25.63 s
+  default dbeaver@26.2.0!macos-arm64
+```
+
+Evidence:
+
+```text
+decisions/rumiai-os/2026-09-10-dbeaver-default-arm64-physical-validation.md
+```
+
+Il gate verifica fisicamente che `pkg install` lasci DBeaver soltanto available, che `pkg_default` selezioni la concrete version target-specific già installata, che il selector `current` e il binding pubblico target-specific abbiano la forma prevista e che non vengano creati selector o binding generic impropri.
+
+Il normal launch resta una proprietà distinta e non è incluso in questa evidence.
+
+## Gate corrente
+
+Il sottogate rimanente del punto I è ora esclusivamente il normal launch del DBeaver installato e selezionato come default.
 
 La distinzione semantica resta obbligatoria:
 
 ```text
-pkg install  -> availability
-pkg_default  -> current + binding pubblico
+pkg install   -> availability
+pkg_default   -> current + binding pubblico
 normal launch -> bin/ext* -> current -> cmd -> launcher -> link -> root
 ```
 
 Il normal launch non deve passare da `pkg` e non deve consultare `pkg-catalog`.
 
-La validazione del default deve essere automatizzabile e indipendente. La validazione del launch reale deve essere eseguita soltanto dove le precondizioni richieste dall'upstream sono disponibili; una GUI non disponibile è una precondizione di applicabilità del relativo test, non una ragione per reinterpretare il launch GUI come già validato.
+Il test permanente preparato è:
 
-Prima di introdurre un nuovo test DBeaver per questo gate va riusata la struttura già esistente sotto `tests/external/dbeaver/` e vanno mantenute l'indipendenza assoluta dei test e la root RumiAI isolata.
+```text
+rumiai-tests/tests/external/dbeaver/launch-live.test
+```
+
+La validation config corrente punta a:
+
+```text
+rumiai-os@79cb5964428ca68c06c2f4eac98ac7350ae9561f
+selection: external/dbeaver/launch-live.test
+```
+
+Il test resta indipendente e usa una root RumiAI isolata. Prima del download/install verifica l'applicabilità della sessione grafica. Dove tale precondizione non è disponibile il risultato corretto è `SKIP`; dove è disponibile, un'incapacità reale del percorso normal launch di avviare DBeaver resta `FAIL`.
+
+Il percorso esercitato passa dalla view runtime `bin/ext-osarch`, materializzata attraverso l'esistente `osarch-update`, quindi dal binding persistente `bin/ext-<osarch>`, dal selector current e dal command entry/launcher già fissati. La prova osserva la creazione delle aree DBeaver `configuration` e workspace nelle semantic roots fissate e termina soltanto il processo DBeaver avviato dal test.
+
+Nessun risultato fisico di questo launch test è ancora acquisito.
 
 ## Sequenza operativa corrente
 
@@ -242,7 +286,7 @@ E  PoC correzione algoritmica JSON su macOS                           [completat
 F  promozione minima JSON + boundary test permanenti                  [completato]
 G  validation revision-specific rumiai-os@79cb596                     [completato]
 H  riesecuzione live DBeaver sulla nuova revisione JSON               [completato]
-I  validazione separata default + launch dove applicabile             [corrente]
+I  validazione separata default + launch dove applicabile             [corrente: default completato, launch da validare]
 J  ripresa lifecycle uninstall/version/current                        [successivo]
 K  dependency/facility/state avanzato soltanto quando richiesto       [successivo]
 ```
@@ -267,4 +311,6 @@ PKG-NOW-14  il timing per-test del runner è fisicamente validato sui due refere
 PKG-NOW-15  la suite permanente non usa soglie prestazionali; PoC e timing live restano evidence osservazionali separate
 PKG-NOW-16  il gate corrente riguarda default e normal launch senza riaprire la semantica availability/default
 PKG-NOW-17  lifecycle uninstall/version/current riprende dopo la chiusura del gate default+launch previsto dalla sequenza corrente
+PKG-NOW-18  pkg_default dbeaver su rumiai-os@79cb596 è live PASS sui due reference host ARM64 con rumiai-tests@bf770b1
+PKG-NOW-19  il sottogate corrente rimanente è il normal launch DBeaver dove la sessione grafica è applicabile
 ```
