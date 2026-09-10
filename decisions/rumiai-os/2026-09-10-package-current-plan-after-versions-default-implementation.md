@@ -68,7 +68,7 @@ Entrambi i sottocomandi sono local-only.
 
 ## Implementazione candidata
 
-La revisione prodotto candidata è:
+La revisione semantica J3 è stata introdotta in:
 
 ```text
 rumiai-os@a47e34c4ce735697b197d4ed6c3e357fbfd95067
@@ -86,7 +86,41 @@ lib/sh/pkg-default.lib.sh
 lib/sh/pkg-uninstall.lib.sh
 ```
 
-`pkg-integration.lib.sh` resta byte-per-byte invariato; il suo blob continua a essere:
+Successivamente la regola canonica sull'option delimiter è stata riallineata in:
+
+```text
+rumiai-os@59fc8d5945dd4ec8acc99e4c41628e5cfed37a13
+commit: Use required option delimiter in local package scan
+parent: a47e34c4ce735697b197d4ed6c3e357fbfd95067
+```
+
+La modifica successiva è limitata a una sola invocazione in:
+
+```text
+lib/sh/pkg-local.lib.sh
+```
+
+con passaggio da:
+
+```text
+command -p -- readlink "$pkg_local_selector"
+```
+
+a:
+
+```text
+command -p -- readlink -- "$pkg_local_selector"
+```
+
+Non modifica il contratto lifecycle J3; riallinea l'implementazione alla regola generale che rende obbligatorio `--` quando il tool lo supporta come terminatore delle option e riceve operandi dati.
+
+La revisione prodotto candidata corrente per J3c è quindi:
+
+```text
+rumiai-os@59fc8d5945dd4ec8acc99e4c41628e5cfed37a13
+```
+
+`pkg-integration.lib.sh` resta byte-per-byte invariato rispetto alla baseline J3; il suo blob continua a essere:
 
 ```text
 96a456ffc943641b429014c1f31a0bcb809122ad
@@ -126,7 +160,7 @@ Le librerie non hanno shebang.
 
 ## Permanent test
 
-La suite è stata estesa in:
+La suite J3 è stata inizialmente estesa in:
 
 ```text
 rumiai-tests@5c0c6bf7448a9aa1c4d92aa78717deb4817f6210
@@ -159,11 +193,30 @@ nessun accesso catalog/cache
 
 La regressione `pkg uninstall` resta nel medesimo gruppo e protegge il refactoring della scansione comune.
 
+### Allineamento dei test alla regola `--`
+
+Prima della physical validation J3c è stata completata la propagazione della regola canonica sull'option delimiter nei due nuovi test J3:
+
+```text
+rumiai-tests@3db5040885a5471a6ba340a1dc5ebf6e1fd7162d
+commit: Apply required option delimiters to versions test
+
+rumiai-tests@a3c90a2e09fa91727ae16cd0b1fdc931c9b86f5f
+commit: Complete option delimiter alignment in versions test
+
+rumiai-tests@a48d8d31bc0ebc629bbf8e2bf8914e1021afe689
+commit: Align default test option delimiters
+```
+
+Le modifiche sono meccaniche e limitate all'inserimento di `--` nelle invocazioni dei tool già verificati come appartenenti alla regola applicabile; non cambiano gli scenari, gli expected result o il contratto dei test.
+
+Il riallineamento è intenzionalmente limitato ai nuovi test J3 coinvolti in questa fase. Non costituisce una riformattazione opportunistica dei test storici del package subsystem.
+
 ---
 
 ## Development checks
 
-Prima della physical validation sono stati eseguiti controlli proporzionati sul candidato:
+Prima della prima configurazione di physical validation erano stati eseguiti sul candidato semantico J3 i seguenti controlli:
 
 ```text
 POSIX /bin/sh syntax check delle librerie, command entry e nuovi test   PASS
@@ -172,7 +225,7 @@ versions.test contro fixture Git isolato                               PASS
 default.test contro fixture Git isolato                                PASS
 ```
 
-Il consistency scan ha inoltre verificato:
+Il consistency scan aveva inoltre verificato:
 
 ```text
 assenza della vecchia _pkg_uninstall_class_scan
@@ -183,7 +236,9 @@ mode corretti
 Git forward-only
 ```
 
-Questi controlli non costituiscono physical validation dei reference host.
+Dopo tali check sono intervenute esclusivamente le correzioni meccaniche di option delimiter sopra registrate e il nuovo pin di validation. I diff di tali correzioni sono stati riletti e non introducono modifiche alla semantica J3.
+
+I development check precedenti non vengono reinterpretati come physical validation della revisione corrente. La revisione corrente resta soggetta al gate J3c revision-specific sui reference host.
 
 ---
 
@@ -192,12 +247,14 @@ Questi controlli non costituiscono physical validation dei reference host.
 La configurazione corrente è:
 
 ```text
-rumiai-tests@e0b897eae00a1bc5005a5017f111d13c13570da3
-rumiai-os-commit  a47e34c4ce735697b197d4ed6c3e357fbfd95067
+rumiai-tests@e2dd1ac08b9e1167a7a20db12a01a4869b797376
+rumiai-os-commit  59fc8d5945dd4ec8acc99e4c41628e5cfed37a13
 selection         rumiai-os/pkg
 ```
 
-La selezione contiene ora:
+Il commit `e2dd1ac...` pinna esplicitamente la revisione prodotto corrente dopo il riallineamento dei due test J3.
+
+La selezione contiene:
 
 ```text
 catalog-snapshot.test
@@ -209,7 +266,20 @@ default.test
 
 È il gate proporzionato perché la modifica riguarda il command/lifecycle package locale e `pkg-integration.lib.sh` non è cambiato.
 
-La revisione `a47e34c...` resta **pending physical validation** finché Ubuntu ARM64 e macOS ARM64 non producono evidence revision-specific positiva con `rumiai-tests@e0b897e...`.
+La revisione:
+
+```text
+rumiai-os@59fc8d5945dd4ec8acc99e4c41628e5cfed37a13
+```
+
+resta **pending physical validation** finché Ubuntu ARM64 e macOS ARM64 non producono evidence revision-specific positiva con:
+
+```text
+rumiai-tests@e2dd1ac08b9e1167a7a20db12a01a4869b797376
+selection: rumiai-os/pkg
+```
+
+Le evidence J2 precedenti restano storiche e immutabili e non vengono attribuite alla revisione J3 corrente.
 
 ---
 
@@ -239,8 +309,10 @@ PKG-NOW-76  versions/default sono local-only e non consultano catalog/upstream
 PKG-NOW-77  target esplicito non fa fallback; target omesso usa current-$m_OSARCH -> generic
 PKG-NOW-78  corruption della classe prioritaria produce failure senza fallback
 PKG-NOW-79  nessun SemVer/latest viene introdotto nelle operazioni locali
-PKG-NOW-80  candidate product = rumiai-os@a47e34c
-PKG-NOW-81  validation target = rumiai-tests@e0b897e + selection rumiai-os/pkg
-PKG-NOW-82  a47e34c non è ancora fisicamente validata
+PKG-NOW-80  candidate product = rumiai-os@59fc8d5
+PKG-NOW-81  validation target = rumiai-tests@e2dd1ac + selection rumiai-os/pkg
+PKG-NOW-82  rumiai-os@59fc8d5 non è ancora fisicamente validata per J3
 PKG-NOW-83  Git resta forward-only
+PKG-NOW-84  rumiai-os@a47e34c resta la revisione semantica J3; 59fc8d5 aggiunge soltanto il delimiter richiesto a readlink
+PKG-NOW-85  i due nuovi test J3 sono riallineati alla regola -- prima della physical validation
 ```
