@@ -30,7 +30,7 @@ Sono completati e consolidati:
 9a  package launcher direct-link in lib/sh/pkg-launch.lib.sh
 ```
 
-La revisione prodotto corrente:
+La revisione prodotto precedente:
 
 ```text
 rumiai-os@a2531626b68e81c9df4e76a007e7f963b3f26343
@@ -60,14 +60,14 @@ Quindi il physical gate di `pkg install dbeaver` per `rumiai-os@a253162` è chiu
 
 ## Performance JSON macOS
 
-Il gate live ha anche reso evidente una differenza prestazionale non funzionale:
+Il gate live ha reso evidente una differenza prestazionale non funzionale:
 
 ```text
 Linux/aarch64 live DBeaver   circa 17 s
 Darwin/arm64 live DBeaver    circa 242 s
 ```
 
-Il PoC 007 ha isolato sul reference macOS il costo nel parser JSON corrente:
+Il PoC 007 ha isolato sul reference macOS il costo nel parser JSON della revisione `a253162`:
 
 ```text
 payload GitHub reale         2,355,841 byte
@@ -76,21 +76,66 @@ awk lineare                  0.06 s real
 json parser corrente         100.02 s real / 99.67 s user
 ```
 
-Il problema è quindi trattato come ottimizzazione distinta del parser, non come riapertura del PASS funzionale live DBeaver.
+La seconda fase del PoC ha verificato fisicamente sullo stesso reference host il candidato windowed:
 
-La correzione candidata resta nel PoC finché non acquisisce evidence fisica. Una futura modifica a `lib/sh/json.lib.sh` genera una nuova revisione prodotto e richiede nuova validation revision-specific proporzionata.
+```text
+semantic-smoke               PASS
+payload GitHub reale         2,355,841 byte
+HTTP fetch                   1.386539 s
+awk lineare                  0.05 s real
+json parser windowed         5.23 s real / 5.19 s user
+record emessi                100
+miglioramento                circa 19.1x
+```
+
+Decisione di promozione:
+
+```text
+decisions/rumiai-os/2026-09-10-json-windowed-source-cursor.md
+```
+
+Il candidato fisicamente provato è stato promosso senza modifiche ulteriori in:
+
+```text
+rumiai-os@79cb5964428ca68c06c2f4eac98ac7350ae9561f
+lib/sh/json.lib.sh blob 6b028e01bba06bd24f7af8fe26bff0d1a9bb29fe
+```
+
+Sono stati aggiunti test permanenti sui boundary della finestra in `rumiai-os/json/structure.test`, senza soglie temporali. La nuova revisione prodotto è **pending physical validation** e non eredita automaticamente i PASS di `a253162`.
 
 ## Runner timing
 
-L'assenza di durata per singolo test ha reso meno immediata la diagnosi del gate live. L'utente ha approvato l'aggiunta della durata per-test al runner.
-
-Contratto:
+La durata per-test è stata aggiunta al runner secondo:
 
 ```text
 decisions/rumiai-tests/2026-09-10-runner-per-test-timing.md
 ```
 
-Il lavoro sul runner è separato dalla semantica package e dal parser JSON. Non modifica `results`, non modifica i log prodotti dai test e non modifica il contratto runner -> test.
+La revisione:
+
+```text
+rumiai-tests@be92befb9342a164231c012df4e5245ec189a206
+selection: runner
+```
+
+è fisicamente PASS sui due reference host ARM64. Evidence:
+
+```text
+decisions/rumiai-tests/2026-09-10-runner-per-test-timing-arm64-physical-validation.md
+```
+
+Il runner ora mostra la durata per-test e persiste `timings`; `results`, log ed exit semantics restano invariati.
+
+## Gate corrente
+
+La configurazione corrente di validation è:
+
+```text
+rumiai-os-commit  79cb5964428ca68c06c2f4eac98ac7350ae9561f
+selection         rumiai-os
+```
+
+La suite corrente include i boundary test JSON introdotti dopo il PoC. Il gate completo deve essere eseguito sui due reference host ARM64 prima di promuovere la nuova revisione a baseline fisicamente validata.
 
 ## Sequenza operativa corrente
 
@@ -99,9 +144,9 @@ A  gate completo rumiai-os per revisione DMG a253162                  [completat
 B  gate live pkg install dbeaver Ubuntu ARM64                         [completato]
 C  gate live pkg install dbeaver macOS ARM64                          [completato]
 D  localizzazione performance macOS JSON                              [completato]
-E  PoC correzione algoritmica JSON su macOS                           [in corso]
-F  se PoC positivo, promozione minima JSON + test permanenti          [successivo]
-G  validation revision-specific della nuova revisione JSON            [successivo]
+E  PoC correzione algoritmica JSON su macOS                           [completato]
+F  promozione minima JSON + boundary test permanenti                  [completato]
+G  validation revision-specific rumiai-os@79cb596                     [corrente]
 H  riesecuzione live DBeaver sulla nuova revisione JSON               [successivo]
 I  validazione separata default + launch dove GUI disponibile         [successivo]
 J  ripresa lifecycle uninstall/version/current                        [successivo]
@@ -119,10 +164,12 @@ PKG-NOW-03  launcher vive in lib/sh/pkg-launch.lib.sh ed è caricato esplicitame
 PKG-NOW-04  normal launch non passa da pkg e non consulta pkg-catalog
 PKG-NOW-05  dmg preferisce hdiutil+ditto quando entrambe disponibili; 7zz/7z/7za sono fallback di capability
 PKG-NOW-06  un errore operativo del backend dmg selezionato non provoca retry
-PKG-NOW-07  rumiai-os@a253162 è fisicamente validata sui due reference host ARM64
-PKG-NOW-08  pkg install dbeaver su a253162 è live PASS sui due reference host ARM64
-PKG-NOW-09  il PASS live non comprende default né launch GUI
-PKG-NOW-10  la performance patologica macOS è localizzata nel parser JSON ed è separata dalla correttezza funzionale
-PKG-NOW-11  una nuova revisione JSON richiederà evidence propria e non eredita i PASS di a253162
-PKG-NOW-12  lifecycle uninstall/version/current riprende dopo chiusura dell'ottimizzazione JSON e dei gate package correnti
+PKG-NOW-07  rumiai-os@a253162 resta la precedente revisione fisicamente validata sui due reference host ARM64
+PKG-NOW-08  pkg install dbeaver su a253162 resta live PASS sui due reference host ARM64
+PKG-NOW-09  il PASS live precedente non comprende default né launch GUI
+PKG-NOW-10  la performance patologica macOS è stata localizzata nel parser JSON e il candidato windowed ha ridotto 100.02 s a 5.23 s nel PoC
+PKG-NOW-11  rumiai-os@79cb596 contiene il candidato esatto del PoC ed è pending physical validation
+PKG-NOW-12  la nuova revisione non eredita i PASS di a253162; richiede gate completo e successivo live DBeaver propri
+PKG-NOW-13  il timing per-test del runner è fisicamente validato sui due reference host ARM64
+PKG-NOW-14  lifecycle uninstall/version/current riprende dopo chiusura dell'ottimizzazione JSON e dei gate package correnti
 ```
