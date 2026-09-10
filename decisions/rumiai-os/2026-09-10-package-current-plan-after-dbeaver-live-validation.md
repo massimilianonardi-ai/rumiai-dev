@@ -60,7 +60,7 @@ Quindi il physical gate di `pkg install dbeaver` per `rumiai-os@a253162` è chiu
 
 ## Performance JSON macOS
 
-Il gate live ha reso evidente una differenza prestazionale non funzionale:
+Il gate live precedente aveva reso evidente una differenza prestazionale non funzionale:
 
 ```text
 Linux/aarch64 live DBeaver   circa 17 s
@@ -111,7 +111,7 @@ rumiai-tests@886bd7bee855e613bbaa20af4006c3e8f9477a4d
 selection: rumiai-os
 ```
 
-è ora fisicamente validata sul gruppo completo `rumiai-os` sui due reference host ARM64:
+è fisicamente validata sul gruppo completo `rumiai-os` sui due reference host ARM64:
 
 ```text
 Ubuntu ARM64  PASS 65 / FAIL 0 / SKIP 2 / ERROR 0
@@ -132,7 +132,7 @@ json/object-read.test       0.01 s        0.03 s
 json/structure.test         0.03 s        0.42 s
 ```
 
-Questi tempi appartengono alla suite permanente e non sostituiscono la misura del payload GitHub reale del PoC. La prova end-to-end del parser windowed sul vero percorso package richiede ancora il live DBeaver della stessa revisione.
+Questi tempi appartengono alla suite permanente e non sostituiscono la misura del payload GitHub reale del PoC.
 
 ## Runner timing
 
@@ -155,18 +155,40 @@ selection: runner
 decisions/rumiai-tests/2026-09-10-runner-per-test-timing-arm64-physical-validation.md
 ```
 
-Il runner ora mostra la durata per-test e persiste `timings`; `results`, log ed exit semantics restano invariati.
+Il runner mostra la durata per-test e persiste `timings`; `results`, log ed exit semantics restano invariati.
 
-## Gate corrente
+## Live DBeaver sulla revisione JSON windowed
 
-Il gate completo della revisione windowed è chiuso. Il gate corrente è ora:
+La riesecuzione live end-to-end è stata completata sulla stessa revisione prodotto:
 
 ```text
-rumiai-os-commit  79cb5964428ca68c06c2f4eac98ac7350ae9561f
-selection         external/dbeaver
+rumiai-os@79cb5964428ca68c06c2f4eac98ac7350ae9561f
+rumiai-tests@15e0f0c1470fdc89e6aa82a8e5d1577de69b698e
+selection: external/dbeaver
+pkg-catalog@514cb620075188ec9ad9090f6bd008fcec85913f
 ```
 
-La riesecuzione live deve usare la stessa revisione prodotto e verificare nuovamente il percorso reale:
+Risultati:
+
+```text
+Ubuntu ARM64
+  PASS  external/dbeaver/install-live.test
+  timing 17.03 s
+  installed dbeaver@26.2.0!linux-arm64
+
+macOS ARM64
+  PASS  external/dbeaver/install-live.test
+  timing 26.69 s
+  installed dbeaver@26.2.0!macos-arm64
+```
+
+Evidence:
+
+```text
+decisions/rumiai-os/2026-09-10-dbeaver-live-install-json-windowed-arm64-physical-validation.md
+```
+
+Il gate esercita realmente il percorso:
 
 ```text
 pkg install dbeaver
@@ -179,9 +201,35 @@ pkg install dbeaver
   -> pkg_integrate reale del payload DBeaver
 ```
 
-Grazie al timing per-test del runner, la nuova evidence deve anche rendere direttamente osservabile la durata end-to-end di `external/dbeaver/install-live.test` sui due host.
+Sul reference macOS il percorso usa realmente sia il parser JSON windowed sul payload GitHub sia il backend DMG native-first `hdiutil` + `ditto`.
 
-Il gate continua a usare una root RumiAI isolata, non modifica il checkout operativo, non seleziona implicitamente il default e non effettua launch GUI.
+La durata Linux resta sostanzialmente invariata rispetto alla precedente evidence live. La durata macOS scende da circa 242 s a 26.69 s: il comportamento patologico che aveva motivato il PoC 007 non permane nel nuovo percorso end-to-end.
+
+Il gate live `pkg install dbeaver` è quindi chiuso anche per `rumiai-os@79cb596`.
+
+## Gate corrente
+
+Il gate corrente è ora la validazione separata di:
+
+```text
+pkg_default dbeaver
+binding pubblico del default
+normal launch del DBeaver installato
+```
+
+La distinzione semantica resta obbligatoria:
+
+```text
+pkg install  -> availability
+pkg_default  -> current + binding pubblico
+normal launch -> bin/ext* -> current -> cmd -> launcher -> link -> root
+```
+
+Il normal launch non deve passare da `pkg` e non deve consultare `pkg-catalog`.
+
+La validazione del default deve essere automatizzabile e indipendente. La validazione del launch reale deve essere eseguita soltanto dove le precondizioni richieste dall'upstream sono disponibili; una GUI non disponibile è una precondizione di applicabilità del relativo test, non una ragione per reinterpretare il launch GUI come già validato.
+
+Prima di introdurre un nuovo test DBeaver per questo gate va riusata la struttura già esistente sotto `tests/external/dbeaver/` e vanno mantenute l'indipendenza assoluta dei test e la root RumiAI isolata.
 
 ## Sequenza operativa corrente
 
@@ -193,13 +241,11 @@ D  localizzazione performance macOS JSON                              [completat
 E  PoC correzione algoritmica JSON su macOS                           [completato]
 F  promozione minima JSON + boundary test permanenti                  [completato]
 G  validation revision-specific rumiai-os@79cb596                     [completato]
-H  riesecuzione live DBeaver sulla nuova revisione JSON               [corrente]
-I  validazione separata default + launch dove GUI disponibile         [successivo]
+H  riesecuzione live DBeaver sulla nuova revisione JSON               [completato]
+I  validazione separata default + launch dove applicabile             [corrente]
 J  ripresa lifecycle uninstall/version/current                        [successivo]
 K  dependency/facility/state avanzato soltanto quando richiesto       [successivo]
 ```
-
-L'ottimizzazione JSON viene completata prima di proseguire con default/launch e lifecycle, così il percorso live non conserva un costo noto patologico sul reference macOS.
 
 ## Invarianti correnti
 
@@ -210,13 +256,15 @@ PKG-NOW-03  launcher vive in lib/sh/pkg-launch.lib.sh ed è caricato esplicitame
 PKG-NOW-04  normal launch non passa da pkg e non consulta pkg-catalog
 PKG-NOW-05  dmg preferisce hdiutil+ditto quando entrambe disponibili; 7zz/7z/7za sono fallback di capability
 PKG-NOW-06  un errore operativo del backend dmg selezionato non provoca retry
-PKG-NOW-07  rumiai-os@a253162 resta la precedente revisione fisicamente validata sui due reference host ARM64
-PKG-NOW-08  pkg install dbeaver su a253162 resta live PASS sui due reference host ARM64
-PKG-NOW-09  il PASS live precedente non comprende default né launch GUI
+PKG-NOW-07  rumiai-os@a253162 resta una precedente revisione fisicamente validata sui due reference host ARM64
+PKG-NOW-08  pkg install dbeaver su a253162 resta live PASS sui due reference host ARM64 come evidence storica revision-specific
+PKG-NOW-09  nessun live install gate comprende implicitamente default o launch
 PKG-NOW-10  la performance patologica macOS è stata localizzata nel parser JSON e il candidato windowed ha ridotto 100.02 s a 5.23 s nel PoC
 PKG-NOW-11  rumiai-os@79cb596 è fisicamente validata sul gruppo completo rumiai-os dei due reference host ARM64 con rumiai-tests@886bd7b
-PKG-NOW-12  i PASS live DBeaver di a253162 non vengono estesi a 79cb596; il live gate deve essere rieseguito sulla nuova revisione
-PKG-NOW-13  il timing per-test del runner è fisicamente validato sui due reference host ARM64
-PKG-NOW-14  la suite permanente non usa soglie prestazionali; la misura del payload GitHub reale resta evidence separata
-PKG-NOW-15  lifecycle uninstall/version/current riprende dopo chiusura del live gate, del default e del launch previsti dalla sequenza corrente
+PKG-NOW-12  pkg install dbeaver su rumiai-os@79cb596 è live PASS sui due reference host ARM64 con rumiai-tests@15e0f0c
+PKG-NOW-13  timing live della revisione windowed = 17.03 s Ubuntu ARM64 e 26.69 s macOS ARM64
+PKG-NOW-14  il timing per-test del runner è fisicamente validato sui due reference host ARM64
+PKG-NOW-15  la suite permanente non usa soglie prestazionali; PoC e timing live restano evidence osservazionali separate
+PKG-NOW-16  il gate corrente riguarda default e normal launch senza riaprire la semantica availability/default
+PKG-NOW-17  lifecycle uninstall/version/current riprende dopo la chiusura del gate default+launch previsto dalla sequenza corrente
 ```
