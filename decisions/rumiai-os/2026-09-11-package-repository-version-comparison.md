@@ -146,23 +146,29 @@ La validazione considera l'intera sequenza degli anchor anche quando il range ap
 
 ---
 
-## 6. `pkg versions` invariato
+## 6. Enumerazione upstream e `pkg versions` invariati
 
-La primitive:
+La primitive repository adapter:
 
 ```text
 pkg_repository_list_versions <repository-dir>
 ```
 
-mantiene il proprio contratto corrente e continua a produrre l'intera successione installabile:
+mantiene il proprio contratto corrente e continua a produrre l'intera successione installabile upstream:
 
 ```text
 oldest -> latest
 ```
 
-`pkg versions`, quando richiesto esplicitamente, continua quindi a enumerare la successione completa.
+Questa ottimizzazione non modifica tale API: `pkg install` semplicemente non la usa più per risolvere un singolo operand.
 
-Questa ottimizzazione riguarda il path di installazione e non trasforma `pkg versions` in una vista parziale.
+Il comando pubblico:
+
+```text
+pkg versions <pkg>[!<osarch>]
+```
+
+resta invece il comando local-only già fissato per osservare le concrete version disponibili nel package store locale. Non consulta catalogo o repository upstream, non rappresenta la successione restituita da `pkg_repository_list_versions` e non viene modificato da questa unità.
 
 ---
 
@@ -201,7 +207,7 @@ versione inesistente -> failure
 release draft/prerelease -> failure
 tie created_at+published_at fra tag distinti -> failure
 nessun ordinamento per nome tag
-pkg_repository_list_versions mantiene l'enumerazione completa
+pkg_repository_list_versions mantiene l'enumerazione upstream completa
 pkg install non chiama pkg_repository_list_versions per la resolution dell'operand
 anchor consecutivi strettamente crescenti
 anchor inesistente -> failure
@@ -209,6 +215,7 @@ anchor fuori ordine -> failure
 versione richiesta precedente al primo anchor -> failure
 selezione corretta del range per exact e latest
 nessun SemVer/confronto lessicografico introdotto nel core
+pkg versions resta local-only e invariato
 ```
 
 La physical validation Electron deve essere ripetuta su una revisione committed che includa questa modifica; l'evidenza precedente non viene riutilizzata come prova della nuova revisione.
@@ -226,8 +233,9 @@ PKG-REPOSITORY-COMPARE-05  il core non introduce SemVer o altri ordinamenti prop
 PKG-REPOSITORY-COMPARE-06  GitHub confronta created_at e quindi published_at; tie residuo fra tag distinti -> failure
 PKG-REPOSITORY-COMPARE-07  pkg install usa il confronto repository-native per validare anchor e scegliere il range
 PKG-REPOSITORY-COMPARE-08  pkg install non richiede più l'enumerazione completa delle versioni per un operand
-PKG-REPOSITORY-COMPARE-09  pkg_repository_list_versions e pkg versions mantengono la successione completa oldest -> latest
+PKG-REPOSITORY-COMPARE-09  pkg_repository_list_versions mantiene la successione upstream completa oldest -> latest
 PKG-REPOSITORY-COMPARE-10  tutti gli anchor vengono comunque validati e devono essere strettamente crescenti
 PKG-REPOSITORY-COMPARE-11  versione precedente al primo anchor -> failure
 PKG-REPOSITORY-COMPARE-12  nessun comportamento di download, extract, integrate o default viene modificato da questa unità
+PKG-REPOSITORY-COMPARE-13  pkg versions resta local-only sulle concrete version installate ed è invariato
 ```
