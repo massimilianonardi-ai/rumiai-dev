@@ -31,7 +31,7 @@ La decisione autorevole specifica è:
 decisions/rumiai-os/2026-09-12-electron-macos-runtime-command.md
 ```
 
-La precedente decisione `2026-09-12-package-macos-application-launch.md` è superseded.
+Le precedenti decisioni che avevano introdotto `/usr/bin/open` e la firma concreta `launcher -c` sono superseded/deferite.
 
 ## 2. Stato prodotto/catalogo/test
 
@@ -39,8 +39,9 @@ Stato corrente:
 
 ```text
 pkg_extract application-bundle boundary       implementata
-launcher direct-link                          già esistente e usato da Electron macOS
-launcher explicit-command (-c)                resta disponibile, ma Electron non ne è consumer
+launcher direct-link                          baseline corrente
+launcher explicit-command (-c)                non implementato; firma nuovamente deferita
+cmd senza link                                non implementato; comportamento futuro deferito
 Electron Linux definitions                    invariate
 Electron macOS definition                     riallineata al direct runtime
 Electron macOS live test                      riallineato al direct runtime
@@ -49,7 +50,7 @@ Electron Linux normal-launch live test         esistente
 physical validation revisione corrente         pending
 ```
 
-La capability `launcher -c` non viene rimossa: resta la realizzazione del modello `cmd/` senza `link/` per launch line realmente composte, già previsto dalle decisioni precedenti.
+Il prodotto non conserva una capacità senza consumer reale. Una futura launch line composta verrà specificata e implementata quando un package concreto la richiederà, come già stabilito dalle decisioni del 7 e 10 settembre.
 
 ## 3. Proprietà da validare su macOS ARM64
 
@@ -132,7 +133,7 @@ Questi criteri guidano la scelta dei casi reali ma non diventano metadata di `pk
 Prima di dichiarare Electron qualificato sui reference host ARM64 disponibili:
 
 ```text
-1. permanent validation della revisione prodotto corrente su Linux ARM64 e macOS ARM64;
+1. permanent validation della revisione prodotto corrente sui reference host Linux ARM64 e macOS ARM64;
 2. external/electron/macos-launch-live.test su macOS ARM64;
 3. external/electron/install-live.test su Linux ARM64;
 4. external/electron/linux-launch-live.test su Linux ARM64;
@@ -149,7 +150,7 @@ ELECTRON-PLAN-01  Electron resta da qualificare realmente sia su macOS ARM64 sia
 ELECTRON-PLAN-02  Electron macOS runtime usa il direct executable interno preservando il bundle
 ELECTRON-PLAN-03  Electron Linux resta direct-link e mantiene il Chromium sandbox
 ELECTRON-PLAN-04  install/setuid e runtime launch Linux restano gate distinti
-ELECTRON-PLAN-05  launcher -c resta capability generica ma non viene giustificata da Electron macOS
+ELECTRON-PLAN-05  la firma per launch line composta resta deferita finché un package reale non la richiede
 ELECTRON-PLAN-06  una futura app finale .app valuta separatamente il native application launch
 ELECTRON-PLAN-07  evidence e dichiarazioni di validazione restano revision-specific
 ELECTRON-PLAN-08  Git resta forward-only
