@@ -11,18 +11,16 @@ Il contratto corrente di `pkg_extract` è definito da:
 decisions/rumiai-os/2026-09-09-package-extract-contract.md
 ```
 
-La structural useful-root discovery corrente scende ricorsivamente finché il livello osservato contiene esattamente una sola entry e tale entry è una real directory non-symlink.
+La structural useful-root discovery scende ricorsivamente finché il livello osservato contiene esattamente una sola entry e tale entry è una real directory non-symlink.
 
-Questa regola ha correttamente assorbito finora wrapper upstream variabili come:
+Questa regola assorbe wrapper upstream come:
 
 ```text
 <release-name>/
 <product>/<version>/
 ```
 
-senza introdurre pathname/version-specific metadata nel catalogo.
-
-Electron macOS ARM64 `v44.3.0` introduce il primo caso reale in cui una singola directory top-level non è un wrapper ma il payload software semanticamente indivisibile:
+Electron macOS ARM64 `v44.3.0` introduce il primo caso reale in cui una singola directory top-level non è un wrapper ma il payload semanticamente indivisibile:
 
 ```text
 Electron.app/
@@ -35,46 +33,15 @@ Electron.app/
     └── ...
 ```
 
-Il manifest upstream esatto della release `v44.3.0` è interamente radicato sotto `Electron.app/` e dichiara l'eseguibile:
+Applicando senza eccezioni la regola single-directory, `pkg_extract` entrerebbe in `Electron.app/` e poi in `Contents/`, distruggendo la gerarchia del macOS application bundle.
 
-```text
-Electron.app/Contents/MacOS/Electron
-```
-
-Applicando senza eccezioni la regola corrente, `pkg_extract` scenderebbe prima dentro `Electron.app/` e poi dentro `Contents/`, consegnando una useful root con `MacOS/`, `Frameworks/`, `Resources/` e `Info.plist` direttamente alla root. Questo distruggerebbe la gerarchia del macOS application bundle invece di limitarsi a eliminare wrapper upstream.
-
-Il documento originario aveva esplicitamente previsto che un package reale non rappresentabile correttamente dalla sola regola single-directory dovesse essere valutato quando fosse emerso. Electron macOS è quel primo caso concreto.
+Il contratto originario aveva previsto che un package reale non rappresentabile correttamente dalla sola regola single-directory dovesse essere valutato quando fosse emerso. Electron macOS è quel primo caso concreto.
 
 ---
 
-## 2. Autorità esterna verificata
+## 2. Boundary strutturale
 
 La struttura non viene dedotta dal solo suffisso `.app`.
-
-La documentazione Apple definisce il macOS application bundle con una directory bundle che contiene `Contents/`; dentro `Contents/` si trovano almeno la property list `Info.plist` e la directory `MacOS/` contenente il main executable.
-
-Per il requisito concreto corrente sono quindi osservabili contemporaneamente:
-
-```text
-<name>.app/
-<name>.app/Contents/
-<name>.app/Contents/Info.plist
-<name>.app/Contents/MacOS/
-```
-
-Electron `v44.3.0` rispetta questa shape e il proprio tooling upstream usa come executable Darwin:
-
-```text
-Electron.app/Contents/MacOS/Electron
-```
-
----
-
-## 3. Confine semantico durante la useful-root discovery
-
-La useful-root discovery resta strutturale e repository-neutral.
-
-Quando il livello corrente contiene esattamente una sola real directory non-symlink, prima di scendere in quella directory `pkg_extract` deve verificare se essa è un macOS application bundle riconoscibile dal contratto minimo seguente.
 
 La candidate directory è un application-bundle boundary soltanto se tutte queste condizioni sono vere:
 
@@ -86,6 +53,8 @@ candidate/Contents/Info.plist è un regular file non-symlink
 candidate/Contents/MacOS è una real directory non-symlink
 ```
 
+Quando il livello corrente contiene esattamente una sola real directory non-symlink, `pkg_extract` verifica prima questo contratto.
+
 Se tutte le condizioni sono vere:
 
 ```text
@@ -93,7 +62,7 @@ non scendere nella candidate .app
 il livello corrente è la useful root
 ```
 
-Altrimenti continua la normale regola single-real-directory già fissata.
+Altrimenti continua la normale regola single-real-directory.
 
 Quindi:
 
@@ -106,7 +75,7 @@ archive/
 -> staging finale conserva Electron.app/Contents/...
 ```
 
-E anche:
+E:
 
 ```text
 archive/
@@ -118,11 +87,11 @@ archive/
 -> staging finale conserva Electron.app/Contents/...
 ```
 
-La semantic boundary riguarda soltanto la decisione di discesa. Non introduce una seconda materialization mode e non cambia la normale operazione con cui eventuali wrapper esterni vengono sollevati nella destination finale.
+La semantic boundary riguarda soltanto la decisione di discesa. Non introduce una seconda materialization mode.
 
 ---
 
-## 4. Perché non viene introdotto metadata nel catalogo
+## 3. Nessun metadata package-specific
 
 Non vengono introdotti:
 
@@ -135,19 +104,17 @@ bundle_path
 package-specific extraction hooks
 ```
 
-La ragione è la stessa già fissata dal contratto originario: i wrapper upstream possono variare fra versioni e piattaforme e non devono diventare pathname version-specific nel catalogo.
+Il macOS application bundle è riconoscibile dalla propria struttura semantica e deve essere preservato come payload.
 
-Il macOS application bundle, invece, è riconoscibile dalla propria struttura semantica stabile e deve essere preservato come payload.
-
-Electron non controlla quindi il comportamento di `pkg_extract` tramite metadata package-specific.
+Electron non controlla quindi `pkg_extract` tramite metadata package-specific.
 
 ---
 
-## 5. Nessuna generalizzazione ad altri bundle o package format
+## 4. Nessuna generalizzazione preventiva
 
 Questa decisione non introduce un framework generale di semantic-root recognizer.
 
-In particolare non vengono anticipati comportamenti speciali per:
+Non vengono anticipati comportamenti speciali per:
 
 ```text
 .framework
@@ -158,13 +125,11 @@ In particolare non vengono anticipati comportamenti speciali per:
 altri suffix o container
 ```
 
-Se uno di questi diventerà il primo payload reale con lo stesso problema, verrà valutato sul requisito concreto.
-
-Il solo caso aggiunto al baseline è il macOS application bundle `.app` con la shape minima verificata sopra.
+Se uno di questi diventerà un payload reale con lo stesso problema, verrà valutato sul requisito concreto.
 
 ---
 
-## 6. Relazione con il contratto `pkg_extract` precedente
+## 5. Relazione con il contratto precedente
 
 Questa decisione supersede esclusivamente l'interpretazione incondizionata di:
 
@@ -197,31 +162,24 @@ single real directory
     -> altrimenti: scendi
 ```
 
-I wrapper strutturali continuano a essere eliminati; il payload `.app` riconosciuto non è classificato come wrapper.
-
 ---
 
-## 7. Conseguenza corrente per Electron macOS ARM64
+## 6. Conseguenza per Electron macOS ARM64
 
-Dopo il riallineamento di `pkg_extract`, la package definition Electron macOS ARM64 usa il modello target-specific già esistente:
+La package definition Electron macOS ARM64 usa il modello target-specific già esistente:
 
 ```text
 electron/catalog-macos-arm64/
-```
-
-con primo anchor:
-
-```text
 n0001=v44.3.0
 ```
 
-artifact:
+con artifact:
 
 ```text
 electron-v44.3.0-darwin-arm64.zip
 ```
 
-format:
+e format:
 
 ```text
 zip
@@ -229,42 +187,34 @@ zip
 
 La variante macOS non dichiara `setuid_root`.
 
-Il main executable osservato nel bundle resta:
+Il bundle preservato è:
 
 ```text
-Electron.app/Contents/MacOS/Electron
+root/Electron.app/
 ```
 
-ma non è più il target del normale command pubblico RumiAI.
-
-Il contratto di launch corrente è fissato da:
+Il package `electron` espone il runtime Electron, quindi il normale command macOS segue il contratto diretto fissato da:
 
 ```text
-decisions/rumiai-os/2026-09-12-package-macos-application-launch.md
-decisions/rumiai-os/2026-09-12-package-launch-explicit-command-line.md
+decisions/rumiai-os/2026-09-12-electron-macos-runtime-command.md
 ```
 
-Quindi la variante macOS materializza:
+ossia:
 
 ```text
-cmd/electron
+link/electron -> ../root/Electron.app/Contents/MacOS/Electron
+cmd/electron -> launcher "electron" "$@"
 ```
 
-senza:
+Il normale command runtime non usa `/usr/bin/open` o LaunchServices.
 
-```text
-link/electron
-```
-
-e il command usa il bundle package-local tramite il meccanismo applicativo nativo macOS (`/usr/bin/open -n -W`, con `--args` quando necessario) delegando il runtime comune a `launcher -c`.
-
-La precedente descrizione di un direct-link verso `Electron.app/Contents/MacOS/Electron` è superseded esclusivamente per il normale launch macOS; l'eseguibile interno resta parte della shape del bundle da preservare e verificare.
+Una futura app finale RumiAI confezionata come `.app` valuterà separatamente il proprio native application launch.
 
 ---
 
-## 8. Testing permanente richiesto
+## 7. Testing permanente
 
-Il permanent test di `pkg_extract` deve continuare a proteggere tutti i casi correnti e aggiungere almeno:
+Il permanent test di `pkg_extract` protegge almeno:
 
 ```text
 .app valido direttamente sotto raw root -> bundle preservato
@@ -276,36 +226,84 @@ wrapper esterno + .app valido -> wrapper esterno eliminato e bundle preservato
 normale deep-wrapper non-.app -> comportamento invariato
 ```
 
-Il test deve essere puramente filesystem/strutturale e deve poter girare sugli host POSIX di riferimento senza richiedere macOS: verifica il contratto di `pkg_extract`, non il comportamento del sistema operativo Apple.
+Il test resta puramente filesystem/strutturale e gira sugli host POSIX di riferimento senza richiedere macOS.
 
-I test reali Electron macOS restano separati e devono verificare l'artifact upstream effettivo.
+I test reali Electron macOS restano separati.
 
 ---
 
-## 9. Physical validation Electron macOS
+## 8. Physical validation dell'archive macOS
 
-La physical validation macOS ARM64 della revisione corrente deve verificare almeno:
+La physical validation dell'archive ufficiale `v44.3.0` è registrata in:
+
+```text
+decisions/rumiai-os/2026-09-12-electron-macos-prebuilt-signature-and-archive-validation.md
+```
+
+Evidence:
+
+```text
+validation/20260912T222918+0200-77771
+rumiai-tests 9271e8b9c1dfbf4e33234d9d94c282649a39bcb6
+rumiai-os    96d399d0fe0454ed22adf22dc9739af0c8e1ec9a
+Darwin/arm64
+PASS
+```
+
+Il gate ha verificato sullo stesso ZIP ufficiale:
+
+```text
+SHA-256 osservato
+RumiAI extract vs /usr/bin/ditto -x -k
+path tree equivalente
+14 symlink in entrambi
+framework symlink targets equivalenti
+Contents/Resources presente
+main executable presente/executable
+runtime --version = v44.3.0
+```
+
+L'archive upstream osservato non contiene `Electron.app/Contents/_CodeSignature/CodeResources`; di conseguenza la strict `codesign` verification fallisce allo stesso modo sia dopo RumiAI extract sia dopo `ditto`.
+
+Questo non è un failure di `pkg_extract`.
+
+Il contratto corrente sulla firma è:
+
+```text
+materiale firma presente upstream
+    -> RumiAI deve preservarlo e la verifica applicabile deve riuscire
+
+materiale firma assente upstream
+    -> registrare il limite upstream
+    -> non risignare/riparare in pkg install
+```
+
+Digest e integrità dell'artifact restano obbligatori.
+
+---
+
+## 9. Physical validation runtime Electron macOS
+
+Dopo il gate archive/extraction, il normal launch macOS deve verificare almeno:
 
 ```text
 install reale di Electron dal catalogo
-artifact v44.3.0 Darwin ARM64 corretto
-digest SHA-256 corretto
 Electron.app preservato nella concrete package root
-Electron.app/Contents/Info.plist presente e valido
-Electron.app/Contents/MacOS/Electron executable presente
-framework/helper e symlink interni essenziali preservati
-firma del bundle verificabile con gli strumenti macOS appropriati
-assenza di link/electron artificiale
-normal launch del bundle package-local tramite command RumiAI
-nuova istanza per invocazione (-n)
-attesa sincrona del launch (-W)
-propagazione argv tramite --args
-HOME RumiAI ereditato dall'applicazione
-workload Electron minimo con BrowserWindow fino a ready/page-load osservabile
-cleanup deterministico dell'istanza creata
+Info.plist valido
+main executable Electron.app/Contents/MacOS/Electron presente/executable
+link/electron relativo al main executable interno
+cmd/electron direct-link
+public command RumiAI
+process.execPath package-local
+HOME RumiAI del package
+argv diretto preservato
+BrowserWindow nascosta
+loadFile HTML locale
+marker deterministico
+exit/cleanup
 ```
 
-La verifica fisica può usare gli strumenti di sistema macOS per verificare che il bundle estratto rimanga una struttura valida e firmata, senza introdurre tali strumenti come dipendenza runtime di `pkg`.
+Se `Contents/_CodeSignature/CodeResources` è presente nel bundle installato, il launch gate richiede anche `codesign --verify --deep --strict` PASS; se è assente, registra lo stato senza attribuirlo a RumiAI, coerentemente con la evidence archive corrente.
 
 La validazione Linux resta distinta:
 
@@ -313,10 +311,9 @@ La validazione Linux resta distinta:
 install reale
 setuid_root chrome-sandbox
 normal launch/workload Electron
-direct-link executable invariato
+direct-link executable
+sandbox Chromium non disabilitato
 ```
-
-La precedente evidence Linux `setuid_root` resta valida per ciò che ha già esercitato; il normal launch/workload è una proprietà ulteriore da validare.
 
 ---
 
@@ -326,15 +323,15 @@ Alla revisione corrente del progetto:
 
 ```text
 application-bundle extraction contract       fissato e implementato
-launcher explicit-command contract           fissato e implementato
-cmd/ senza link/ integration contract        fissato e implementato
-permanent contract tests                     riallineati; physical validation della nuova revisione pending
-pkg-catalog macos-arm64                      pubblicato con cmd/electron nativo e senza link/electron
-Electron physical validation macOS           pending sulla nuova revisione
-Electron normal-launch regression Linux      pending sulla nuova revisione
+launcher direct-link                          baseline corrente
+launcher explicit-command (-c)                non implementato; deferito
+cmd senza link                                non implementato; deferito
+Electron macOS direct runtime definition      pubblicata
+pkg_extract permanent validation ARM64        PASS Linux + macOS sulla revisione 96d399d0...
+Electron macOS archive extraction gate        PASS sulla revisione 96d399d0...
+Electron macOS normal launch                   da riconfermare dopo la correzione del criterio firma
+Electron Linux install/setuid + launch         PASS sulla revisione 96d399d0... con suite external/electron Linux
 ```
-
-La pubblicazione macOS è quindi avvenuta soltanto dopo che il prodotto è stato reso capace di materializzare correttamente un command senza direct-link e di delegare una launch line esplicita al runtime package comune.
 
 ---
 
@@ -347,10 +344,11 @@ PKG-EXTRACT-22   il boundary .app richiede suffix .app + real Contents + regular
 PKG-EXTRACT-23   nessun pathname/depth override package-specific viene introdotto per Electron o per i macOS application bundle
 PKG-EXTRACT-24   il riconoscimento .app è repository-neutral e non richiede osarch o repository type
 PKG-EXTRACT-25   nessun altro tipo di bundle/container viene generalizzato senza un caso reale
-PKG-ELECTRON-MAC-01  Electron macOS ARM64 deve preservare Electron.app/Contents come hierarchy upstream
-PKG-ELECTRON-MAC-02  il main executable osservato resta Electron.app/Contents/MacOS/Electron
+PKG-ELECTRON-MAC-01  Electron macOS ARM64 preserva Electron.app/Contents come hierarchy upstream
+PKG-ELECTRON-MAC-02  il main executable è Electron.app/Contents/MacOS/Electron
 PKG-ELECTRON-MAC-03  catalog-macos-arm64 usa il modello target-specific esistente e non dichiara setuid_root
-PKG-ELECTRON-MAC-04  il normale command macOS usa il bundle package-local tramite il contratto native application launch corrente e non materializza link/electron
-PKG-ELECTRON-MAC-05  la physical validation macOS include install reale e normal launch/workload controllato
-PKG-ELECTRON-LINUX-10  la qualificazione Linux va completata con normal launch/workload oltre alla evidence install/setuid_root già acquisita
-```
+PKG-ELECTRON-MAC-04  il runtime command macOS usa direct-link al main executable interno e non LaunchServices
+PKG-ELECTRON-MAC-05  la physical validation macOS separa archive/extraction state e normal runtime launch
+PKG-ELECTRON-MAC-06  pkg install non inventa né ripara una firma mancante upstream
+PKG-ELECTRON-LINUX-10  la qualificazione Linux comprende install/setuid_root e normal launch/workload
+``` 
