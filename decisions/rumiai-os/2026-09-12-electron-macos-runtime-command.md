@@ -21,7 +21,7 @@ Electron.app/Contents/MacOS/Electron
 
 e la CLI ufficiale avvia direttamente tale executable preservando argv, exit status e segnali.
 
-Di conseguenza il command RumiAI `electron` su macOS deve seguire la stessa semantica processuale diretta.
+Di conseguenza il command RumiAI `electron` su macOS segue la stessa semantica processuale diretta.
 
 ## 2. Package definition macOS
 
@@ -43,7 +43,7 @@ Il descriptor catalogo resta root-relative:
 Electron.app/Contents/MacOS/Electron
 ```
 
-Il command entry è lo stesso modello direct-link usato su Linux:
+Il command entry usa lo stesso modello direct-link di Linux:
 
 ```sh
 #!/usr/bin/env rumiai-os
@@ -89,26 +89,30 @@ Non viene assunto che `open` costituisca un controllo di integrità sostitutivo 
 
 Se in futuro RumiAI distribuisce una propria applicazione GUI macOS confezionata come `.app`, la modalità nativa di apertura di **quella applicazione finale** dovrà essere valutata nel relativo package/command e non dedotta dal runtime Electron.
 
-## 5. Relazione con `launcher -c`
+## 5. Launch line composta nuovamente deferita
 
-La modalità:
+Prima della correzione Electron era stato considerato il primo consumer concreto di una modalità `launcher -c` e di `cmd/` senza `link/`.
 
-```text
-launcher -c <pkg> <absolute-command> [arguments...]
-```
+Venuto meno quel requisito reale, la loro implementazione non deve restare nel prodotto soltanto per un possibile uso futuro.
 
-resta valida come capacità generica per launch line realmente composte, già prevista dal modello `cmd/` senza `link/`.
-
-Electron macOS non è più il primo consumer concreto di tale modalità.
-
-La correzione non riapre né rimuove:
+Torna quindi corrente il contratto già fissato da:
 
 ```text
-PKG-LAUNCH-15..22
-PKG-CMD-LINK-01..05
+decisions/rumiai-os/2026-09-07-package-command-specific-launch.md
+decisions/rumiai-os/2026-09-10-package-launch-library.md
 ```
 
-ma supersede soltanto le affermazioni che identificavano Electron macOS come consumer di `/usr/bin/open` o come caso senza `link/electron`.
+ossia:
+
+```text
+- una launch line composta può essere necessaria in futuro;
+- il command entry resta il luogo della logica command-specific;
+- link/ non deve essere artificiosamente usato per rappresentare una launch line composta;
+- la firma concreta del launcher per quel caso resta da fissare quando un package reale la richiederà;
+- il prodotto corrente implementa soltanto il direct-link già richiesto dai package reali correnti.
+```
+
+I commit che avevano anticipato `launcher -c` e `cmd` senza `link` vengono corretti forward-only riportando il prodotto al baseline direct-link, senza riscrivere la storia Git.
 
 ## 6. Testing corrente
 
@@ -132,6 +136,8 @@ exit/cleanup deterministico
 
 Non deve verificare `/usr/bin/open`, `-n`, `-W` o `--args`.
 
+I permanent test non devono più proteggere `launcher -c` o `cmd/` senza `link/` come comportamento implementato corrente.
+
 ## 7. Supersession
 
 Questa decisione supersede integralmente, per Electron macOS, la decisione:
@@ -140,15 +146,13 @@ Questa decisione supersede integralmente, per Electron macOS, la decisione:
 decisions/rumiai-os/2026-09-12-package-macos-application-launch.md
 ```
 
-Supersede inoltre in:
+La decisione:
 
 ```text
 decisions/rumiai-os/2026-09-12-package-launch-explicit-command-line.md
 ```
 
-solo le affermazioni che indicano Electron macOS come primo consumer concreto della modalità explicit-command e l'invariante `PKG-CMD-LINK-06` nella sua formulazione Electron-specifica.
-
-Restano valide tutte le altre regole della modalità explicit-command.
+è superseded come contratto implementato corrente: non essendoci più un consumer reale, la firma concreta e la materializzazione `cmd` senza `link` tornano deferite al primo requisito concreto secondo le decisioni del 7 e 10 settembre.
 
 ## 8. Invarianti
 
@@ -160,7 +164,7 @@ ELECTRON-MACOS-RUNTIME-04  cmd/electron usa il launcher direct-link e preserva a
 ELECTRON-MACOS-RUNTIME-05  il normal command electron macOS non usa /usr/bin/open o LaunchServices
 ELECTRON-MACOS-RUNTIME-06  process/exit/signal semantics restano quelle dell'exec diretto dell'upstream
 ELECTRON-MACOS-RUNTIME-07  firma/layout/Info.plist del bundle restano proprietà da validare
-ELECTRON-MACOS-RUNTIME-08  launcher -c resta disponibile per launch line composte reali, ma Electron macOS non ne è consumer
+ELECTRON-MACOS-RUNTIME-08  la modalità composta del launcher resta concettualmente prevista ma la sua firma/implementazione è deferita finché un package reale non la richiede
 ELECTRON-MACOS-RUNTIME-09  una futura app GUI RumiAI .app deve valutare separatamente il proprio native application launch
 ELECTRON-MACOS-RUNTIME-10  physical validation macOS ARM64 deve esercitare il runtime tramite il public command RumiAI
 ```
