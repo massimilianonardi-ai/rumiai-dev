@@ -3,94 +3,100 @@
 Date: 2026-09-12  
 Status: **EXPLORATORY / NON-NORMATIVE**
 
-## 1. Scopo e chiarimento fondamentale
+## 1. Scopo e premessa fondamentale
 
-Questa nota esplora una possibile futura **scissione dell'attuale `rumiai-os` in due livelli distinti**.
+Questa nota esplora una possibile futura separazione fra:
 
-L'ipotesi non consiste nel riprendere, modernizzare o riutilizzare il vecchio progetto/repository `massimilianonardi/m`.
+```text
+substrato general purpose
+(nome di lavoro possibile: m, nome non ancora deciso)
 
-Il punto di partenza è invece il **RumiAI OS corrente**:
+        ↑ pochi contratti pubblici stabili
+
+RumiAI
+prodotto/sistema AI di livello superiore
+```
+
+La proposta **non** consiste nel riprendere, modernizzare o riutilizzare il vecchio progetto/repository `massimilianonardi/m`.
+
+Il nuovo substrato deriverebbe invece direttamente dall'attuale `rumiai-os`.
+
+La premessa esplicita di questa fase esplorativa è che `rumiai-os` è nato dall'esigenza di disporre di un runtime più evoluto, robusto e stabile rispetto a quello usato inizialmente per PoC, test e sviluppo orientato all'AI, ma **finora non contiene responsabilità funzionali AI-specifiche**.
+
+Di conseguenza, ai fini di questa esplorazione, la baseline non è più:
 
 ```text
 attuale rumiai-os
-  bootstrap/runtime
-  environment e semantic roots
-  primitive e utility di sistema
-  package manager e relativo runtime
-  infrastruttura general purpose
-  futura semantica/prodotto AI
+  -> parte general purpose
+  -> parte AI già presente da separare
 ```
 
-L'ipotesi è separare progressivamente queste responsabilità in:
+ma:
 
 ```text
-nuovo substrato general purpose
-(nome di lavoro possibile: m, ma nome non ancora deciso)
-  <- estratto dall'attuale rumiai-os
-  <- contiene il livello basso general purpose
-  <- possiede il bootstrap/runtime generale
-  <- non conosce RumiAI né l'AI
+attuale rumiai-os
+  -> sostanzialmente tutto candidato al nuovo substrato
 
-                    ↑
-          contratti pubblici
-                    ↑
-
-RumiAI OS
-  <- livello superiore costruito sul substrato
-  <- prodotto/sistema/applicazione AI
-  <- semantica, policy e capacità RumiAI
-  <- possibile ruolo futuro di AI desktop/application environment
+futuro RumiAI
+  -> nuovo livello superiore costruito sopra il substrato
 ```
 
-Quindi, se questa direzione venisse adottata:
+Questo rende la separazione soprattutto una decisione di **ownership, identità e boundary futuro**, non un esercizio immediato di smistamento di codice già mescolato.
+
+## 2. Origine dell'ipotesi
+
+L'attuale `rumiai-os` è stato sviluppato per fornire un ambiente di base più affidabile allo sviluppo del sistema AI:
 
 ```text
-l'attuale bootstrap `rumiai-os`
-  non resterebbe il bootstrap di RumiAI OS
-  ma diventerebbe il bootstrap/runtime del nuovo substrato
-  e verrebbe rinominato
-
-l'attuale shebang
-  #!/usr/bin/env rumiai-os
-  verrebbe migrato verso l'identità del nuovo runtime
-
-il nome `rumiai-os`
-  non sarebbe più necessariamente il nome dell'interprete/runtime di basso livello
-  e potrebbe identificare il prodotto AI di livello superiore
+runtime/bootstrap stabile
+POSIX portability
+root e path semantici
+shell integration
+logging
+lingua
+command runtime
+primitive general purpose
+package infrastructure
 ```
 
-Il nome `m` è soltanto una possibilità di naming per il nuovo substrato. Il vecchio repository `massimilianonardi/m` resta materiale storico/di riferimento e **non è il codice da riprendere né il prodotto da continuare**.
+Queste responsabilità sono utili a RumiAI, ma non sono intrinsecamente AI.
 
-## 2. Limite di autorità
+L'ipotesi è quindi rendere esplicito ciò che il prodotto corrente è già diventato di fatto: un substrato general purpose sul quale RumiAI possa essere costruito senza trascinare nel livello basso semantica, lifecycle e velocità di evoluzione propri dell'AI.
 
-Questa analisi è deliberatamente esplorativa.
+Il momento è potenzialmente favorevole proprio perché la separazione può essere definita **prima** che responsabilità AI-specifiche entrino nello stesso runtime e ne rendano più difficile l'estrazione successiva.
+
+## 3. Limite di autorità
+
+Questa analisi è deliberatamente esplorativa e non normativa.
 
 Non:
 
 - rinomina oggi `rumiai-os`;
-- rinomina oggi il bootstrap;
-- modifica oggi alcuno shebang;
-- crea un nuovo repository;
 - assegna definitivamente il nome `m` al substrato;
-- modifica il namespace delle environment variables;
+- riprende il vecchio repository `massimilianonardi/m`;
+- modifica oggi il bootstrap;
+- modifica oggi gli shebang;
+- modifica namespace o environment variables;
 - sposta codice;
+- crea un nuovo repository;
 - modifica il package manager;
-- introduce `bin/sys/ai` o altra nuova gerarchia;
-- stabilisce come RumiAI OS debba essere installato o distribuito sopra il substrato;
-- stabilisce che RumiAI OS debba essere un package;
-- modifica test o physical evidence;
-- modifica le specifiche o decisioni normative correnti.
+- modifica il ruolo normativo di `pkg-catalog`;
+- introduce un service manager o un protocollo daemon;
+- stabilisce nuovi command, API, socket, bus o namespace;
+- stabilisce che componenti first-party RumiAI debbano diventare package;
+- modifica specifiche, decisioni Accepted, permanent test o physical evidence correnti.
 
-Ogni eventuale adozione richiederebbe decisioni esplicite e un piano di migrazione forward-only delle specifiche, dell'implementazione e dei test interessati.
+Ogni eventuale adozione richiederebbe decisioni esplicite e una migrazione forward-only di documentazione, implementazione, test ed evidence interessati.
 
-## 3. Preflight e stato corrente considerato
+## 4. Preflight e fonti considerate
 
-La chiarificazione è stata riesaminata contro gli HEAD remoti correnti:
+La presente revisione è stata riesaminata contro gli HEAD remoti correnti:
 
 ```text
-rumiai-dev    9d22f0abfcdda4d789cd79b08fdf27cfa37ed6dd
+rumiai-dev    c871b076f442bf3003942bcf560d5f6a7c498852
 rumiai-os     bd31613f6e2de2ef8096d730916634ee40c4b967
 rumiai-tests  4d04b9d6b27f5d99887ea2b18818ab2e00c3267a
+pkg-catalog   69dcdab2b8cd5dd0c0b0f9d8e0fe9651939fbcaa
 ```
 
 Sono state considerate in particolare:
@@ -100,20 +106,20 @@ RULES.md
 CONSISTENCY-GATE.md
 specifications/rumiai-os/BOOTSTRAP-ENVIRONMENT.md
 specifications/rumiai-os/COMMAND-ENTRYPOINTS.md
-handoff/2026-08-29-rumiai-os-bootstrap-permanent-tests-handoff.md
-decisions/rumiai-os/2026-09-03-runtime-library-layout.md
+decisions/rumiai-os/2026-09-05-interactive-shell-startup.md
 decisions/rumiai-os/2026-09-05-package-manager-current-and-run-model.md
-decisions/rumiai-os/2026-09-12-package-launch-explicit-command-line.md
-decisions/rumiai-os/2026-09-12-package-selection-and-electron-cross-platform-validation.md
+decisions/rumiai-os/2026-09-07-package-definition-catalog-and-version-ranges.md
+decisions/rumiai-os/2026-09-07-package-catalog-repository.md
+decisions/rumiai-os/2026-09-08-package-stream-repository-independence.md
 ```
 
-Sono stati inoltre riesaminati i permanent test correnti dei sottosistemi `bootstrap/` e `command/`, incluso il test della direct shebang execution, perché una eventuale estrazione/rinomina del runtime inciderebbe direttamente su tali contratti.
+Sono stati inoltre riesaminati i permanent test correnti relativi a bootstrap e command runtime, incluso il test della direct shebang execution.
 
-## 4. Invarianti correnti: descrivono l'oggi, non la futura scissione
+La scansione della documentazione autorevole corrente non ha individuato un contratto già consolidato per un sottosistema generale di servizi/daemon. La relativa boundary deve quindi essere considerata futura e non dedotta da primitive inesistenti.
 
-La proposta non deve essere confusa con lo stato normativo corrente.
+## 5. Invarianti correnti: stato presente contro ipotesi futura
 
-Oggi sono fissati, fra gli altri, i seguenti contratti:
+Oggi restano normativi, fra gli altri:
 
 ```text
 root bootstrap                    rumiai-os
@@ -126,594 +132,490 @@ system commands                   bin/sys/, bin/sys-<osarch>/
 third-party bindings              bin/ext/, bin/ext-<osarch>/
 ```
 
-Il permanent test `tests/rumiai-os/command/direct-shebang-execution.test` protegge concretamente la risoluzione di `#!/usr/bin/env rumiai-os` attraverso l'ambiente attivo.
+L'attuale shell startup, il package manager, il catalog model e i relativi test continuano a proteggere questi contratti finché una decisione esplicita non li modifica.
 
-Questi contratti restano normativi **finché non viene adottata una nuova architettura**.
+La presente ipotesi non tenta di aggirarli. Afferma invece che, se la separazione venisse adottata, una parte di quei contratti dovrebbe essere deliberatamente **trasferita e rinominata** perché la responsabilità passerebbe dal prodotto RumiAI al substrato.
 
-La presente ipotesi non cerca di reinterpretarli mantenendoli nominalmente invariati. Al contrario, afferma che una futura scissione completa richiederebbe deliberatamente di migrare i contratti la cui identità appartiene oggi a RumiAI ma la cui responsabilità verrebbe trasferita al substrato.
+## 6. Modello concettuale aggiornato
 
-## 5. Nuovo modello concettuale
-
-La lettura più chiara dell'ipotesi è:
+La forma più aderente alla chiarificazione corrente è:
 
 ```text
 HOST / POSIX ENVIRONMENT
           │
           ▼
 GENERAL-PURPOSE SUBSTRATE
+  sostanzialmente l'attuale rumiai-os
           │
-          │ public contracts
+          │ pochi contratti pubblici stabili
           ▼
-RUMIAI OS
-          │
-          ▼
-AI EXPERIENCE / APPLICATIONS / INTERFACES
+RUMIAI
+  ├─ shell personalizzata
+  ├─ servizi/daemon AI
+  ├─ core e capability AI
+  └─ desktop / GUI
 ```
 
-Il nuovo substrato non sarebbe un'aggiunta sotto l'attuale RumiAI OS: sarebbe **l'estrazione del suo attuale livello basso**.
+Il nuovo substrato non è un livello aggiunto sotto il RumiAI OS corrente.
 
-RumiAI OS cambierebbe conseguentemente ruolo.
+È l'attuale runtime general purpose che riceve una propria identità autonoma; il nome e il ruolo `rumiai-os` possono quindi essere riutilizzati per il prodotto AI superiore.
 
-### Substrato
+## 7. Conseguenza sul bootstrap e sugli shebang
 
-Il substrato avrebbe come obiettivo fornire primitive e contratti general purpose per costruire sistemi superiori.
-
-Possibili responsabilità candidate, da verificare una per una:
+Se l'ipotesi venisse adottata, l'attuale bootstrap:
 
 ```text
-root discovery e canonicalizzazione
-bootstrap/runtime environment
-semantic roots
-PATH composition
-POSIX portability profile
-command execution/runtime contract
-shell integration generale
-logging e language infrastructure generale
-OS/architecture detection
-primitive terminali general purpose
-HTTP fetch
-digest
-archive extraction
-package resolution/materialization/integration/launch
-state/runtime infrastructure generalizzabile
-```
-
-### RumiAI OS
-
-RumiAI OS diventerebbe un consumer del substrato e conterrebbe ciò che esprime specificamente il prodotto AI.
-
-Possibili responsabilità:
-
-```text
-AI runtime selection e integrazione
-modelli AI
-core/orchestrazione/capability AI
-computer use e device integration specifica
-interfacce conversazionali
-GUI e desktop experience
-policy e default RumiAI
-configurazioni di prodotto
-command semanticamente RumiAI/AI
-composizione del software richiesto dal prodotto
-```
-
-Questa classificazione è indicativa e non assegna ancora ownership definitiva ai singoli file correnti.
-
-## 6. Conseguenza importante: il bootstrap attuale cambia proprietario concettuale
-
-Nel precedente framing della nota il bootstrap `rumiai-os` era ancora trattato come runtime RumiAI sul quale costruire la specializzazione.
-
-La chiarificazione dell'utente cambia questo punto.
-
-Se il bootstrap attuale è effettivamente general purpose, allora il modello desiderato è più vicino a:
-
-```text
-oggi
-
 rumiai-os
-  -> bootstrap
-  -> runtime
-  -> interpreta command
-  -> inizializza environment
-
-futuro ipotetico
-
-<runtime-del-substrato>
-  -> bootstrap
-  -> runtime
-  -> interpreta command
-  -> inizializza environment general purpose
-
-rumiai-os
-  -> applicazione/prodotto AI
-  -> usa il substrato
 ```
 
-Questo implica che la futura migrazione non riguarderebbe soltanto il pathname del file root.
+sarebbe candidato a diventare il bootstrap/runtime del substrato e verrebbe rinominato coerentemente con la nuova identità.
 
-Andrebbero riesaminati insieme:
+Di conseguenza anche:
 
 ```text
-nome del bootstrap/runtime
-symlink di esposizione in bin/sys/
-shebang dei command integrati
-root identity
-command identity
-environment-variable ownership
-nomi dei semantic roots
-linguaggio della documentazione
-nome dei test e target discovery
-fixture di test
+#!/usr/bin/env rumiai-os
+bin/sys/rumiai-os -> ../../rumiai-os
+```
+
+sarebbero contratti da migrare, non da conservare nominalmente a tutti i costi.
+
+Il comportamento consolidato del runtime potrebbe restare in larga parte invariato mentre cambia la sua ownership di prodotto.
+
+La migrazione reale dovrebbe riesaminare insieme almeno:
+
+```text
+bootstrap/runtime identity
+runtime exposure
+integrated-command shebang
+root e command identity
+environment ownership
+semantic-root naming
+test target discovery
+fixture
 repository ownership
-physical evidence future
+physical validation
 ```
 
-Il comportamento del runtime potrebbe rimanere in larga parte quello già consolidato anche se la sua identità di prodotto cambia.
+Questa nota non sceglie il nuovo nome concreto del runtime né il nuovo shebang.
 
-## 7. `rumiai-os` come possibile desktop/application AI
+## 8. Principio chiave: piccolo budget di API pubblica
 
-Una conseguenza interessante della scissione è che il nome `rumiai-os` non deve più svolgere due ruoli contemporaneamente:
+Il punto più importante della nuova formulazione non è soltanto separare due repository.
 
-```text
-runtime/interprete infrastrutturale
-prodotto AI visibile all'utente
-```
+È fare in modo che RumiAI dipenda da **pochi contratti stabili** del substrato.
 
-Una volta rinominato il runtime basso, `rumiai-os` potrebbe diventare il nome di un vero entrypoint applicativo del livello superiore.
+Idealmente il livello superiore non dovrebbe conoscere ogni dettaglio interno del runtime, ogni directory o ogni environment variable soltanto perché oggi esistono nello stesso prodotto.
 
-Una possibile evoluzione concettuale, puramente esplorativa, è:
+L'obiettivo architetturale esplorativo diventa:
 
 ```text
-rumiai-os
-  AI desktop / application shell
-  interfaccia principale del sistema RumiAI
-  avvia o coordina servizi/capability AI
-  espone UI, sessione, workspace o esperienza utente
-  usa il substrato per filesystem/runtime/package/infrastruttura
-```
-
-Questo non implica che debba necessariamente essere una singola GUI monolitica.
-
-"Desktop AI" può indicare il ruolo di prodotto e user experience, mentre l'implementazione concreta potrebbe restare modulare e composta da più processi, package, servizi o interfacce.
-
-## 8. Dipendenza unidirezionale
-
-Il valore della separazione dipende fortemente da questa proprietà:
-
-```text
-RumiAI OS -> substrato
-substrato -/-> RumiAI OS
-```
-
-Il substrato non dovrebbe conoscere:
-
-```text
+molte primitive interne al substrato
+        ↓
+pochi contratti pubblici stabili
+        ↓
 RumiAI
-AI models
-orchestrator RumiAI
-RumiAI package set
-RumiAI UI
-RumiAI default
-RumiAI product policy
 ```
 
-RumiAI OS può invece dipendere esplicitamente dai contratti pubblici del substrato.
+Questo riduce la superficie di compatibilità da mantenere e permette al substrato di essere rifattorizzato, ottimizzato e irrobustito senza richiedere modifiche coordinate al sistema AI.
 
-Questa asimmetria è il punto che permette sviluppo, hardening e testing indipendenti del livello basso.
-
-## 9. Perché la separazione può essere utile
-
-Il vantaggio atteso appare concreto:
-
-- il bootstrap/runtime può essere migliorato senza dipendere dall'evoluzione AI;
-- portability, path, shell, terminal, logging e package infrastructure possono essere testati come prodotto autonomo;
-- i bug del substrato possono essere isolati dai bug del prodotto AI;
-- i contratti pubblici diventano più evidenti perché sono attraversati da un vero boundary di prodotto;
-- RumiAI OS può evolvere molto più rapidamente sul piano AI senza destabilizzare continuamente il livello basso;
-- il substrato potrebbe in futuro essere usato da sistemi diversi da RumiAI;
-- RumiAI OS potrebbe essere sviluppato come vera applicazione di livello superiore invece di coincidere con il proprio bootstrap infrastrutturale.
-
-Il beneficio esiste però solo se i due livelli non richiedono modifiche coordinate per quasi ogni cambiamento.
-
-## 10. Criterio pratico per decidere cosa estrarre
-
-Per ogni responsabilità dell'attuale `rumiai-os` si possono applicare almeno quattro domande.
-
-### 10.1 Esistenza autonoma
-
-> Questa responsabilità ha senso completo anche se RumiAI e l'AI non esistono?
-
-Se no, tende al livello RumiAI.
-
-### 10.2 Consumer indipendente
-
-> Un altro sistema potrebbe usarla senza conoscere terminologia, configurazioni o policy RumiAI?
-
-Se sì, è candidata al substrato.
-
-### 10.3 Meccanismo contro policy
+Le tre superfici oggi più evidenti da esplorare sono:
 
 ```text
-meccanismo
-  come si risolve una root
-  come si inizializza PATH
-  come si individua osarch
-  come si esegue un command integrato
-  come si scarica/verifica/estrae un artifact
-  come si materializza o lancia un package
-
-policy/prodotto
-  quali componenti compongono RumiAI
-  quali modelli usare
-  quali AI capability sono disponibili
-  quali default adottare
-  quale esperienza utente offrire
+shell contract
+service/daemon contract
+command contract
 ```
 
-### 10.4 Stabilità del boundary
+Il package/catalog model attraversa principalmente la command/package surface e resta general purpose.
 
-> Una modifica interna a questa responsabilità può avvenire senza costringere normalmente il consumer RumiAI a cambiare?
+## 9. Shell: infrastruttura generale sotto, personalizzazione RumiAI sopra
 
-Se no, il contratto potrebbe non essere ancora sufficientemente maturo per l'estrazione.
-
-## 11. Il namespace `m_*`: coincidenza interessante, non decisione
-
-L'ambiente corrente usa già:
+La shell corrente è già soprattutto un'infrastruttura di integrazione con le shell dell'host:
 
 ```text
-m_ROOT
-m_BOOTSTRAP_BIN
-m_COMMAND_BIN
-m_BIN_DIR
-m_LIB_DIR
-...
+$SHELL con fallback sh
+adapter bash/zsh/sh/dash/ash
+rispetto dello startup nativo
+caricamento del core
+prompt/environment integration
+hook uniforme di estensione
 ```
 
-Se il futuro substrato si chiamasse davvero `m`, questa situazione potrebbe apparire sorprendentemente naturale.
+Questa responsabilità è candidata naturale al substrato.
 
-Ma il significato normativo corrente è diverso: `m_*` è oggi definito come namespace delle environment variables RumiAI-owned.
+Il futuro RumiAI avrebbe invece una **propria shell experience/personalizzazione** costruita sopra tale infrastruttura.
 
-Quindi non si deve inferire automaticamente:
+Concettualmente:
 
 ```text
-nuovo substrato = m
-        quindi
-m_* è già il suo namespace definitivo
+substrato
+  -> seleziona e integra la shell host
+  -> fornisce il minimo ambiente/hook stabile necessario
+
+RumiAI shell
+  -> aggiunge prompt e comportamento RumiAI
+  -> espone command e funzioni AI
+  -> integra sessione/context/capability RumiAI quando previsto
 ```
 
-L'eventuale adozione dovrebbe decidere esplicitamente se:
+L'attuale `m_SHELL_EXT` dimostra che esiste già un punto uniforme di estensione della shell, ma questa analisi **non** lo promuove automaticamente a futuro contratto RumiAI-substrato né ne fissa il nome o la semantica futura.
+
+La domanda da risolvere è quale sia il più piccolo contratto shell necessario a RumiAI, non quanta parte dell'implementazione shell corrente rendere pubblica.
+
+## 10. Servizi/daemon: futuro boundary, non sottosistema già fissato
+
+RumiAI è destinato ad avere componenti persistenti o di background: servizi/daemon che realizzano capacità AI, coordinamento o integrazioni necessarie al prodotto.
+
+Questi servizi appartengono al livello RumiAI, non al substrato soltanto perché sono processi di background.
+
+Il substrato potrebbe in futuro dover offrire pochi contratti general purpose utili a tali processi, ma la documentazione corrente non fissa ancora un modello canonico di service management o daemon infrastructure.
+
+Perciò questa nota registra soltanto il requisito architetturale:
+
+> RumiAI dovrebbe dipendere da una piccola superficie stabile per le esigenze general purpose dei propri servizi/daemon, senza costringere il substrato a conoscere la semantica dei servizi AI.
+
+Restano aperti, e non vengono nominati né progettati qui, gli eventuali contratti necessari per lifecycle, discovery, communication, readiness, state o altre responsabilità che emergeranno da casi concreti.
+
+Non viene introdotta alcuna nuova primitive anticipatoria.
+
+## 11. Command: pochi contratti pubblici anziché l'intero runtime
+
+Per il livello RumiAI potrebbe essere sufficiente consumare direttamente un numero piccolo di command general purpose stabili.
+
+Esempi già esistenti e concettualmente plausibili sono:
 
 ```text
-A. il substrato si chiama m e acquisisce semanticamente m_*
-B. il substrato ha altro nome ma conserva m_* per compatibilità
-C. il substrato usa un nuovo namespace e viene effettuata una migrazione
-D. una parte delle variabili resta RumiAI-specifica e una parte viene separata
+lang
+log
+pkg
 ```
 
-La scelta del nome del substrato e quella del namespace sono correlate ma non devono essere confuse.
+oltre agli eventuali pochi altri command che un requisito reale dimostrerà necessari.
 
-## 12. Package manager: candidato forte al substrato, ma con un conflitto corrente da non ignorare
+Il principio esplorativo è importante:
 
-Dal punto di vista delle responsabilità, gran parte di `pkg` appare candidata naturale al substrato:
+> un command del substrato non diventa automaticamente API pubblica di RumiAI soltanto perché è disponibile nel `PATH`.
+
+Conviene distinguere fra:
 
 ```text
-repository/provider handling
-resolution
+command interni/operativi del substrato
+command pubblici su cui RumiAI costruisce un contratto di dipendenza
+```
+
+Più piccolo resta il secondo insieme, più indipendenti possono evolvere i due livelli.
+
+## 12. `pkg` e `pkg-catalog`: dominio software, non dominio AI
+
+Il package manager è un candidato forte al substrato perché le sue responsabilità sono general purpose:
+
+```text
+repository discovery
+version resolution
 artifact acquisition
-verification
-extraction
-materialization
+integrity/provenance data
+extraction/materialization
 integration
 launch
 environment preparation
 state mechanism
 ```
 
-Queste responsabilità non sono intrinsecamente AI.
+Analogamente, il catalogo delle package definition non ha bisogno di essere separato per dominio applicativo.
 
-Esiste però un vincolo normativo corrente importante.
-
-La decisione Accepted `2026-09-05-package-manager-current-and-run-model.md` stabilisce oggi che:
+Il modello corrente è package-first:
 
 ```text
-pkg non è il gestore dei componenti che costituiscono il sistema base RumiAI
-il sistema base è non rimovibile tramite pkg
-pkg espande il sistema tramite package aggiuntivi
+<pkg>/catalog/
+<pkg>/catalog-<osarch>/
 ```
 
-La scissione proposta rende questa regola degna di futura rivalutazione, perché il concetto di "sistema base" potrebbe diventare il **substrato** anziché l'intero prodotto RumiAI.
+La package definition descrive come standardizzare software esterno rispetto al package model; non richiede una categoria distinta per software AI.
 
-Ma questa nota non cambia la decisione corrente.
-
-Restano quindi aperti almeno tre modelli futuri:
+Nell'ipotesi esplorativa, lo stesso `pkg-catalog` può quindi contenere indifferentemente definition per:
 
 ```text
-MODELLO A
-substrato = base non rimovibile
-pkg appartiene al substrato
-RumiAI OS è software superiore gestibile/componibile sopra di esso
-
-MODELLO B
-substrato = base non rimovibile
-RumiAI OS è parte della distribuzione ma non è gestito da pkg
-pkg gestisce soltanto software aggiuntivo
-
-MODELLO C
-substrato + profilo/distribuzione RumiAI definiscono una composizione obbligatoria
-pkg partecipa alla materializzazione ma non implica libera removibilità dei componenti di prodotto
+software general purpose
+runtime grafici
+runtime di linguaggio
+strumenti di sviluppo
+runtime/modelli/tool AI esterni
+altro software esterno
 ```
 
-Questi modelli richiedono una decisione successiva. Nessuno viene scelto qui.
+purché ogni definition rispetti gli stessi contratti del package manager.
 
-## 13. `bin/sys/ai` non sembra risolvere il problema principale
-
-Con la nuova chiarificazione, l'ipotesi:
+Questo evita di introdurre:
 
 ```text
-bin/sys/ai/
+un secondo catalogo AI
+un secondo meccanismo di sync/versionamento
+una seconda superficie di provenance
+una seconda policy di update
+una seconda implementazione di adapter/repository handling
 ```
 
-sembra ancora meno centrale.
+La centralizzazione non significa che tutte le policy di sicurezza siano già risolte. I contratti correnti già separano definition dichiarative da codice arbitrario e identificano lo snapshot tramite Git; ulteriori trust, firma o provenance policy restano decisioni specifiche quando necessarie.
 
-Se `bin/sys/` appartiene al substrato, collocare sotto di esso una gerarchia AI rischierebbe di reintrodurre proprio il coupling che la separazione vuole eliminare.
+Il repository concreto corrente contiene già package general purpose come `dbeaver` ed `electron`, coerentemente con questa natura non legata all'AI.
 
-Se invece il path appartiene a RumiAI OS, resta da capire perché la directory debba essere la primitive di composizione anziché una conseguenza del modello applicativo/package scelto.
+## 13. Nessun conflitto necessario con il current `pkg` base-system contract
 
-La domanda corretta sembra quindi essere prima:
+La decisione Accepted corrente stabilisce che `pkg` non gestisce i componenti che costituiscono il sistema base RumiAI e che il sistema base non è rimovibile tramite `pkg`.
 
-> come viene composto e installato un consumer di livello superiore sopra il substrato?
+La presenza nel catalogo di definition per **software AI esterno** non contraddice questa regola.
 
-Solo dopo ha senso decidere dove materializzare i suoi command pubblici.
+Per esempio, un runtime AI, un motore esterno o un tool usato da RumiAI può essere software aggiuntivo gestito da `pkg` esattamente come altro software esterno.
 
-## 14. Possibili forme fisiche della scissione
-
-La separazione concettuale non determina automaticamente il modello Git/repository.
-
-### 14.1 Nuovo repository del substrato derivato dall'attuale RumiAI OS
-
-Una possibilità è creare un nuovo repository per il substrato partendo dalla linea di sviluppo corrente di `rumiai-os`, quindi far divergere i due prodotti al momento del cutover:
+Resta invece aperta una domanda diversa:
 
 ```text
-current rumiai-os history
-          │
-          ├──> substrate repository
-          │      mantiene/evolve il livello basso
-          │
-          └──> rumiai-os repository
-                 rimuove progressivamente il livello estratto
-                 sviluppa il prodotto AI sopra il substrato
+componenti first-party costitutivi del futuro RumiAI
+  -> sono parte non-package del prodotto?
+  -> oppure in futuro alcuni di essi saranno materializzati tramite pkg?
 ```
 
-Questo rappresenterebbe bene il fatto che il nuovo substrato **proviene dall'attuale RumiAI OS** e non dal vecchio `m`.
+Questa nota non risponde e non modifica il contratto Accepted corrente.
 
-La strategia Git concreta andrebbe valutata rispettando la regola forward-only e senza riscrivere la storia esistente.
+La distinzione permette di accettare l'idea del catalogo universale senza inferire automaticamente un nuovo modello di packaging del core RumiAI.
 
-### 14.2 Mantenere temporaneamente entrambi i livelli nello stesso repository
+## 14. Il catalogo come interfaccia universale verso software esterno
 
-Un'altra possibilità è costruire prima il boundary logico nel repository corrente e dividere fisicamente solo dopo aver verificato le dipendenze.
+Una formulazione utile dell'idea è:
 
-Vantaggio:
+> `pkg-catalog` standardizza l'integrazione di software esterno rispetto al substrato, indipendentemente dal motivo per cui un consumer lo utilizza.
+
+Il package non deve sapere se verrà usato:
 
 ```text
-minor costo di coordinamento durante la scoperta del boundary
+da RumiAI
+per AI
+per sviluppo
+per desktop
+per database
+per un altro consumer futuro del substrato
 ```
 
-Svantaggio:
+Questa separazione è coerente con l'obiettivo di mantenere `m`/substrato general purpose e di impedire che il package manager accumuli categorie product-specific.
+
+RumiAI esprime la propria policy scegliendo **quali** package richiede o supporta; `pkg` e `pkg-catalog` esprimono **come** quel software esterno viene risolto, verificato, materializzato e integrato secondo contratti generali.
+
+## 15. RumiAI come layer superiore composto da tre forme operative
+
+La chiarificazione corrente suggerisce una struttura di alto livello particolarmente semplice:
 
 ```text
-l'indipendenza di lifecycle rimane incompleta finché la separazione è soltanto interna
+RumiAI
+│
+├── shell RumiAI
+│     consumer della shell infrastructure del substrato
+│
+├── servizi/daemon RumiAI
+│     processi persistenti/background del sistema AI
+│     consumer di pochi futuri contratti general purpose
+│
+└── desktop RumiAI
+      interazioni GUI
+      consumer dei servizi AI e dei contratti necessari del substrato
 ```
 
-### 14.3 Copia manuale senza lineage comune
+Il core cognitivo, le capability e le integrazioni AI possono essere distribuiti fra questi elementi secondo l'architettura RumiAI già o successivamente fissata; questa nota non ridefinisce tali sottosistemi.
 
-Sarebbe la soluzione meno desiderabile perché aumenterebbe il rischio di duplicazione, drift e due fonti di verità.
+Il valore di questa forma è che nessuno dei tre richiede che il substrato conosca l'AI.
 
-### 14.4 Submodule/subtree/vendor
+## 16. `rumiai-os` come possibile desktop/application product
 
-Sono meccanismi di collegamento, non una risposta alla domanda architetturale. Dovrebbero essere valutati solo dopo aver deciso ownership, release e compatibility model.
+Una volta che il runtime generale non usa più necessariamente il nome `rumiai-os`, tale nome può identificare il livello di prodotto visibile all'utente.
 
-## 15. Il runtime del substrato come API fondamentale
+Una possibilità esplorativa è che `rumiai-os` diventi il principale desktop/application environment RumiAI, eventualmente coordinato con shell e servizi/daemon.
 
-La futura identità del bootstrap non è un dettaglio di naming.
+Ciò non implica una GUI monolitica né una singola process architecture.
 
-Oggi:
+Il punto è separare le identità:
 
 ```text
-#!/usr/bin/env rumiai-os
+runtime general purpose
+  !=
+prodotto AI visibile all'utente
 ```
 
-significa contemporaneamente:
+Questa libertà permette al prodotto AI di evolvere senza essere vincolato all'identità del proprio interprete POSIX di basso livello.
+
+## 17. Boundary desiderato
+
+La dipendenza dovrebbe restare unidirezionale:
 
 ```text
-seleziona il runtime attivo
-inizializza l'ambiente RumiAI
-source del command body
-espone m_ROOT/m_COMMAND_BIN e altre facility
+RumiAI -> substrato
+substrato -/-> RumiAI
 ```
 
-Dopo la scissione il significato desiderato diventerebbe più simile a:
+Inoltre il numero di dipendenze attraversanti il boundary dovrebbe essere piccolo.
+
+Un segnale di buona separazione sarebbe:
 
 ```text
-#!/usr/bin/env <runtime-substrato>
+refactor interno del substrato
+  -> nessuna modifica RumiAI finché shell/service/command contracts restano compatibili
 
-seleziona il runtime del substrato attivo
-inizializza l'ambiente general purpose
-source/interpreta il command body
-espone i contratti pubblici del substrato
+nuova capability AI
+  -> normalmente nessuna modifica del substrato
+
+nuovo software AI esterno
+  -> nuova/aggiornata package definition nel catalogo
+     senza nuova categoria AI nel package manager
 ```
 
-I command RumiAI di livello superiore potrebbero a loro volta usare quel runtime quando appropriato, esattamente come qualsiasi altro consumer.
+Se quasi ogni evoluzione AI richiedesse una nuova primitive nel substrato, il boundary sarebbe troppo permeabile.
 
-Questo è uno dei segnali più forti che il substrato sarebbe un prodotto reale e non soltanto una directory interna di RumiAI OS.
+## 18. Implicazione importante: non serve più una classificazione simmetrica del codice corrente
 
-## 16. `rumiai-os` non deve necessariamente restare uno shell runtime
-
-Nell'architettura ipotizzata, `rumiai-os` potrebbe smettere completamente di avere semantica di interprete.
-
-Potrebbe essere, per esempio:
+La precedente sequenza esplorativa assumeva di dover dividere l'attuale codebase fra:
 
 ```text
-un executable applicativo
-un launcher del desktop AI
-un processo principale
-un frontend grafico
-un application shell
-un coordinatore di servizi RumiAI
+substrate candidate
+RumiAI/product candidate
+boundary/uncertain
 ```
 
-oppure una composizione di più elementi con `rumiai-os` come entrypoint principale.
+La nuova premessa la semplifica.
 
-Questa libertà architetturale è un vantaggio della separazione: il prodotto AI non è più costretto a condividere identità e lifecycle con il runtime POSIX che lo supporta.
-
-## 17. Compatibilità e versionamento fra substrato e RumiAI OS
-
-Per ottenere vera indipendenza di sviluppo serve un contratto di compatibilità osservabile:
+La baseline di lavoro diventa:
 
 ```text
-substrato cambia internamente
-  -> RumiAI OS non cambia se i contratti pubblici restano compatibili
-
-substrato cambia API/contratto pubblico
-  -> RumiAI OS deve essere verificato contro la nuova revisione
-
-RumiAI OS cambia comportamento AI/UI
-  -> il substrato non cambia salvo nuovo requisito general purpose reale
+tutto l'attuale rumiai-os
+  -> candidato substrato
 ```
 
-Una futura distribuzione dovrebbe poter identificare almeno:
+La verifica necessaria è quindi inversa:
+
+> esiste oggi qualcosa nel prodotto corrente che, nonostante l'apparenza general purpose, contiene già semantica o policy AI/RumiAI tale da non dover appartenere al substrato?
+
+Se la risposta resta no, la migrazione iniziale può concentrarsi su identity/ownership/contracts anziché sulla separazione fisica di due insiemi di codice già intrecciati.
+
+## 19. Conseguenza sulla strategia di migrazione futura
+
+Se questa lettura viene confermata, una futura adozione potrebbe risultare concettualmente più semplice:
 
 ```text
-revisione/versione del substrato
-revisione/versione di RumiAI OS
-compatibilità verificata fra le due
+1. stabilire il nome e l'identità del substrato
+2. trasferire all'identità del substrato l'attuale runtime/codebase general purpose
+3. riallineare bootstrap, shebang, env ownership, documentazione e permanent test
+4. fissare soltanto i piccoli contratti pubblici necessari al consumer RumiAI
+5. costruire il nuovo RumiAI sopra tali contratti
+6. mantenere pkg-catalog come catalogo general purpose del software esterno
 ```
 
-Questa nota non fissa il formato di tale relazione.
+Questo non è ancora un piano operativo approvato e non autorizza alcuna modifica di prodotto.
 
-## 18. Rischi principali
+## 20. Rischi da controllare
 
-### 18.1 Generalizzazione prematura
+### 20.1 API surface creep
 
-Non tutto ciò che oggi appare generico deve essere automaticamente estratto. Un contratto instabile può diventare più difficile da evolvere una volta pubblicato fra repository/prodotti indipendenti.
+La separazione perde valore se RumiAI viene autorizzato a dipendere da ogni dettaglio interno del substrato.
 
-### 18.2 Boundary troppo permeabile
+### 20.2 RumiAI leakage
 
-Se quasi ogni feature RumiAI richiede una modifica contemporanea al substrato, la separazione non sta funzionando.
+Policy, nomi o eccezioni AI non devono risalire nel substrato per comodità.
 
-### 18.3 Duplicazione
+### 20.3 Generalizzazione prematura dei servizi
 
-Il nuovo substrato deve **ricevere ownership** delle primitive estratte, non crearne copie parallele lasciando quelle originali attive in RumiAI OS.
+Poiché il service/daemon boundary non è ancora definito, non bisogna inventare anticipatamente bus, protocollo, supervisor, registry o namespace senza un caso concreto.
 
-### 18.4 RumiAI leakage
+### 20.4 Duplicazione dei cataloghi
 
-Nomi, policy o casi speciali RumiAI non devono risalire nel substrato per comodità.
+Un catalogo AI separato rischierebbe di duplicare meccanismi e policy senza che esista oggi una differenza semantica nel package model che lo richieda.
 
-### 18.5 Substrate creep
+### 20.5 Confusione fra software esterno e core RumiAI
 
-Il substrato non deve diventare un contenitore di qualunque funzione riusabile. Deve restare il minimo livello general purpose necessario a costruire consumer superiori.
+L'uso del catalogo per software AI esterno non deve essere trasformato implicitamente in una decisione di packaging dei componenti first-party del sistema RumiAI.
 
-### 18.6 Migrazione dei test/evidence
+### 20.6 Evidence e lineage
 
-Le physical evidence correnti descrivono revisioni di RumiAI OS e non possono essere reinterpretate retroattivamente come validazione del futuro substrato.
+I test e le physical evidence correnti restano evidence delle revisioni RumiAI OS realmente esercitate. Una futura rinomina/scissione richiede riallineamento e nuova evidence revision-specific; non è lecito reinterpretare retroattivamente i risultati correnti.
 
-Una scissione reale richiederà nuova ownership dei test e nuove validation revision-specific.
+## 21. Sequenza esplorativa aggiornata
 
-## 19. Sequenza esplorativa proposta
-
-Prima di qualsiasi migrazione fisica appare prudente procedere così:
+Alla luce della nuova premessa, la sequenza più utile sembra essere:
 
 ```text
-E0  inventario completo dell'attuale rumiai-os
+E0  verificare l'assunto:
+    nessuna responsabilità AI-specifica è oggi dentro rumiai-os
 
-E1  classificazione di ogni responsabilità/file:
-    substrate candidate
-    RumiAI/product candidate
-    boundary/uncertain
+E1  inventariare le dipendenze che un futuro RumiAI avrebbe realmente dal substrato
 
-E2  dependency graph reale
-    soprattutto dipendenze dal livello basso verso semantica RumiAI
+E2  ridurre tali dipendenze a pochi candidate contracts:
+    shell
+    servizi/daemon
+    command
 
-E3  candidate public contract del substrato
+E3  per i command, distinguere:
+    public contract consumato da RumiAI
+    implementation/operational command del substrato
+
+E4  verificare il package boundary:
+    software esterno AI e non-AI usa lo stesso pkg/pkg-catalog
+    nessuna categoria AI nel package model senza requisito concreto
+
+E5  progettare il service/daemon boundary solo dai primi casi reali
+    senza primitive anticipate
+
+E6  definire candidate identity/naming migration:
+    repository
     bootstrap/runtime
-    environment
-    command model
-    filesystem/layout
-    package interface
-
-E4  identificazione delle identità da rinominare
-    rumiai-os bootstrap
     shebang
-    runtime symlink
-    eventuali environment names
-    test target names
+    env ownership
+    test ownership
 
-E5  analisi package/base-system model
-    senza assumere che RumiAI OS sia o non sia un package
+E7  verificare che RumiAI possa essere descritto come consumer
+    senza conoscere implementation detail del substrato
 
-E6  prova logica del boundary
-    il substrato deve poter essere descritto, testato e usato senza RumiAI
-
-E7  confronto dei modelli repository/release/composition
-
-E8  soltanto dopo, eventuale decisione normativa e piano di migrazione forward-only
+E8  soltanto dopo, eventuale decisione normativa
+    e piano di migrazione forward-only
 ```
 
-## 20. Direzione che appare più coerente dopo la chiarificazione
+## 22. Domanda architetturale centrale
 
-La forma concettuale più interessante da esplorare è ora:
+La domanda guida non è più principalmente:
+
+> quale parte dell'attuale RumiAI OS dobbiamo estrarre?
+
+Diventa:
+
+> **qual è il più piccolo insieme di contratti stabili che il futuro RumiAI deve ricevere dall'attuale runtime general purpose affinché tutto il resto possa evolvere indipendentemente?**
+
+Una risposta buona dovrebbe lasciare il substrato libero di cambiare internamente e RumiAI libero di evolvere sul piano AI, GUI e servizi senza commit coordinati salvo veri cambi di contratto.
+
+## 23. Direzione esplorativa risultante
+
+La forma che appare ora più coerente con le premesse è:
 
 ```text
 NUOVO SUBSTRATO
-  derivato dall'attuale livello basso di rumiai-os
-  general purpose
-  POSIX-oriented
-  relocatable
-  runtime/bootstrap proprio
-  contratti pubblici stabili
-  infrastruttura package generale candidata
-  nessuna semantica AI/RumiAI
+  = sostanzialmente l'attuale rumiai-os
+  = runtime general purpose
+  = shell infrastructure general purpose
+  = primitive e command general purpose
+  = pkg infrastructure
+  = nessuna conoscenza AI/RumiAI
 
-RUMIAI OS
-  nuovo livello superiore
-  consumer del substrato
-  prodotto AI
-  capability e policy RumiAI
-  possibile desktop/application environment
-  evoluzione indipendente dal runtime generale
+PKG-CATALOG
+  = catalogo unico general purpose
+  = package definition di software esterno
+  = AI e non-AI trattati con lo stesso modello
+
+RUMIAI
+  = nuovo consumer superiore
+  = shell personalizzata
+  = servizi/daemon AI
+  = core/capability AI
+  = desktop/GUI
+  = dipendenza da pochi contratti stabili del substrato
 ```
 
-Questo è significativamente diverso da considerare l'attuale `rumiai-os` come substrato sul quale aggiungere semplicemente componenti AI.
+Il vantaggio principale non sarebbe soltanto il riuso del substrato, ma la possibilità di **stabilizzare molto poco e lasciare evolvere liberamente molto**.
 
-L'operazione concettuale è:
-
-```text
-non:
-  aggiungere un livello sotto rumiai-os
-
-ma:
-  dividere rumiai-os corrente
-  assegnare il livello basso a un nuovo prodotto
-  ridefinire rumiai-os come livello alto
-```
-
-## 21. Domande guida per la prossima fase
-
-Le domande più utili da affrontare sembrano essere:
-
-```text
-1. quale parte esatta dell'attuale rumiai-os può esistere senza RumiAI?
-2. qual è il minimo contratto pubblico che quella parte deve offrire?
-3. quali elementi attuali sono davvero substrate e quali sono già policy RumiAI?
-4. pkg appartiene integralmente al substrato o contiene responsabilità da separare?
-5. qual è il nuovo significato di "base system" dopo la scissione?
-6. come deve essere composto/installato RumiAI OS sopra il substrato?
-7. quale identità deve avere il nuovo bootstrap/runtime?
-8. il namespace m_* viene acquisito dal substrato, migrato o separato?
-9. come preservare la storia e la provenance del codice estratto senza duplicazione?
-10. quale deve essere il contratto di compatibilità fra release del substrato e RumiAI OS?
-```
-
-## 22. Non-decisioni registrate
+## 24. Non-decisioni registrate
 
 Restano deliberatamente aperti:
 
@@ -725,12 +627,13 @@ strategia Git della scissione
 nome del bootstrap/runtime del substrato
 nuovo shebang concreto
 namespace environment futuro
-layout fisico finale del substrato
-layout fisico del nuovo RumiAI OS
-ownership finale di pkg
-nuovo significato del sistema base
-modalità di composizione/installazione di RumiAI OS
-uso di pkg per componenti first-party RumiAI
+quali environment variables siano davvero public contract
+forma esatta del shell contract RumiAI-substrato
+forma esatta del service/daemon contract
+eventuale service manager/supervisor e relativo ownership
+insieme finale dei command pubblici consumati da RumiAI
+ownership finale e naming di pkg dopo la scissione
+packaging dei componenti first-party RumiAI
 ruolo esatto dell'eseguibile rumiai-os
 forma concreta del desktop/application AI
 versionamento e compatibility contract
