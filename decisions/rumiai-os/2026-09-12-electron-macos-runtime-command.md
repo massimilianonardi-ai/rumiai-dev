@@ -71,23 +71,48 @@ lifecycle
 
 Il package `electron` deve invece comportarsi come runtime CLI cross-platform e ricevere direttamente il progetto/app da eseguire.
 
-La preservazione di `Electron.app` resta necessaria perché framework, helper, resources, `Info.plist`, firma e layout macOS fanno parte del runtime upstream. L'esecuzione diretta del main executable non autorizza a smontare o modificare il bundle.
+La preservazione di `Electron.app` resta necessaria perché framework, helper, resources, `Info.plist` e layout macOS fanno parte del runtime upstream. L'esecuzione diretta del main executable non autorizza a smontare o modificare il bundle.
 
-## 4. Sicurezza e macOS
+## 4. Sicurezza, integrità e code-signature
 
-Questa decisione non elimina i controlli specifici macOS sul payload:
+Il payload macOS deve conservare:
 
 ```text
 Electron.app preservato
 Info.plist valido
 main executable presente/executable
-bundle signature verificabile
-artifact SHA-256 verificato dal normale pipeline pkg
+framework/helper e symlink upstream
+artifact SHA-256 verificato dalla normale pipeline pkg
 ```
 
-Non viene assunto che `open` costituisca un controllo di integrità sostitutivo del package manager.
+La physical validation dell'archive ufficiale `v44.3.0` ha inoltre stabilito che:
 
-Se in futuro RumiAI distribuisce una propria applicazione GUI macOS confezionata come `.app`, la modalità nativa di apertura di **quella applicazione finale** dovrà essere valutata nel relativo package/command e non dedotta dal runtime Electron.
+```text
+Electron.app/Contents/_CodeSignature/CodeResources
+```
+
+è assente già dallo ZIP upstream osservato. La strict bundle verification con `codesign` fallisce allo stesso modo dopo l'estrazione RumiAI e dopo `/usr/bin/ditto -x -k`.
+
+La decisione/evidence specifica è:
+
+```text
+decisions/rumiai-os/2026-09-12-electron-macos-prebuilt-signature-and-archive-validation.md
+```
+
+Il requisito corrente è quindi verificare e preservare **lo stato di firma realmente fornito dall'artefatto upstream**, non pretendere una firma strict che l'archive corrente non contiene.
+
+Regola:
+
+```text
+materiale firma presente upstream
+    -> RumiAI deve preservarlo e la verifica applicabile deve riuscire
+
+materiale firma assente upstream
+    -> registrare il limite upstream
+    -> pkg install non risigna e non ripara il runtime
+```
+
+Se in futuro RumiAI distribuisce una propria applicazione GUI macOS confezionata come `.app`, signing e notarization verranno valutati nel relativo package/distribution contract e non dedotti dal prebuilt runtime Electron.
 
 ## 5. Launch line composta nuovamente deferita
 
@@ -109,10 +134,8 @@ ossia:
 - il command entry resta il luogo della logica command-specific;
 - link/ non deve essere artificiosamente usato per rappresentare una launch line composta;
 - la firma concreta del launcher per quel caso resta da fissare quando un package reale la richiederà;
-- il prodotto corrente implementa soltanto il direct-link già richiesto dai package reali correnti.
+- il prodotto corrente implementa soltanto il direct-link richiesto dai package reali correnti.
 ```
-
-I commit che avevano anticipato `launcher -c` e `cmd` senza `link` vengono corretti forward-only riportando il prodotto al baseline direct-link, senza riscrivere la storia Git.
 
 ## 6. Testing corrente
 
@@ -122,7 +145,6 @@ Il live test macOS deve verificare almeno:
 installazione reale Electron macOS ARM64
 Electron.app preservato
 Info.plist valido
-bundle signature verificabile
 main executable = Electron.app/Contents/MacOS/Electron
 link/electron materializzato e confinato nel package root
 cmd/electron direct-link
@@ -134,9 +156,19 @@ BrowserWindow/workload minimo fino a ready/page-load
 exit/cleanup deterministico
 ```
 
-Non deve verificare `/usr/bin/open`, `-n`, `-W` o `--args`.
+Per la code-signature:
 
-I permanent test non devono più proteggere `launcher -c` o `cmd/` senza `link/` come comportamento implementato corrente.
+```text
+CodeResources presente
+    -> codesign strict deve PASS
+
+CodeResources assente
+    -> registrare lo stato upstream e proseguire
+```
+
+Il test non usa né verifica `/usr/bin/open`, `-n`, `-W` o `--args`.
+
+I permanent test non proteggono `launcher -c` o `cmd/` senza `link/` come comportamento implementato corrente.
 
 ## 7. Supersession
 
@@ -152,7 +184,7 @@ La decisione:
 decisions/rumiai-os/2026-09-12-package-launch-explicit-command-line.md
 ```
 
-è superseded come contratto implementato corrente: non essendoci più un consumer reale, la firma concreta e la materializzazione `cmd` senza `link` tornano deferite al primo requisito concreto secondo le decisioni del 7 e 10 settembre.
+è superseded come contratto implementato corrente: non essendoci più un consumer reale, firma e materializzazione tornano deferite al primo requisito concreto secondo le decisioni del 7 e 10 settembre.
 
 ## 8. Invarianti
 
@@ -163,8 +195,8 @@ ELECTRON-MACOS-RUNTIME-03  link/electron punta al main executable Electron.app/C
 ELECTRON-MACOS-RUNTIME-04  cmd/electron usa il launcher direct-link e preserva argv
 ELECTRON-MACOS-RUNTIME-05  il normal command electron macOS non usa /usr/bin/open o LaunchServices
 ELECTRON-MACOS-RUNTIME-06  process/exit/signal semantics restano quelle dell'exec diretto dell'upstream
-ELECTRON-MACOS-RUNTIME-07  firma/layout/Info.plist del bundle restano proprietà da validare
-ELECTRON-MACOS-RUNTIME-08  la modalità composta del launcher resta concettualmente prevista ma la sua firma/implementazione è deferita finché un package reale non la richiede
-ELECTRON-MACOS-RUNTIME-09  una futura app GUI RumiAI .app deve valutare separatamente il proprio native application launch
+ELECTRON-MACOS-RUNTIME-07  shape/Info.plist/symlink e stato di firma upstream restano proprietà da validare senza inventare una firma mancante
+ELECTRON-MACOS-RUNTIME-08  la modalità composta del launcher resta concettualmente prevista ma firma/implementazione sono deferite finché un package reale non la richiede
+ELECTRON-MACOS-RUNTIME-09  una futura app GUI RumiAI .app valuta separatamente native application launch e signing/notarization
 ELECTRON-MACOS-RUNTIME-10  physical validation macOS ARM64 deve esercitare il runtime tramite il public command RumiAI
 ```
