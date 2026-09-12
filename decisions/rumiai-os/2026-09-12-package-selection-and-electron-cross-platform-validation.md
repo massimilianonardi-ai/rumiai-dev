@@ -53,8 +53,8 @@ Electron Linux ARM64 live install        completato sulle revisioni già registr
 Electron macOS archive/layout            verificato
 Electron macOS package definition        pubblicata
 Electron macOS native-launch contract    fissato e implementato
-Electron macOS live install/launch       pending sulla nuova revisione
-Electron Linux normal-launch regression  pending sulla nuova revisione
+Electron macOS live install/launch       test pronto; physical validation pending sulla revisione corrente
+Electron Linux normal-launch regression  test pronto; physical validation pending sulla revisione corrente
 Electron cross-platform qualification    ancora aperta
 ```
 
@@ -177,15 +177,15 @@ L'eventuale verifica visiva umana di una finestra può integrare la physical val
 
 ---
 
-## 6. Separazione dal live test Linux corrente
+## 6. Separazione dei live test Electron
 
-Il test corrente:
+Il test:
 
 ```text
 tests/external/electron/install-live.test
 ```
 
-è specifico del caso Linux perché verifica anche:
+resta specifico del caso Linux installazione/privilegi perché verifica anche:
 
 ```text
 chrome-sandbox
@@ -196,7 +196,7 @@ sudo authorization path
 setuid_root metadata
 ```
 
-Non viene indebolito con branch macOS.
+Non viene trasformato in un test generico di runtime e non viene indebolito con branch macOS.
 
 La copertura macOS è separata in:
 
@@ -205,6 +205,30 @@ tests/external/electron/macos-launch-live.test
 ```
 
 e verifica le proprietà specifiche del bundle/LaunchServices e il workload Electron macOS.
+
+La copertura del normale runtime Electron Linux è separata in:
+
+```text
+tests/external/electron/linux-launch-live.test
+```
+
+Il test Linux normal-launch:
+
+```text
+installa realmente Electron in un fixture indipendente
+mantiene il direct-link Linux verso root/electron
+seleziona la versione installata come default
+esegue il public command RumiAI
+non usa --no-sandbox
+crea realmente una BrowserWindow nascosta
+carica una pagina HTML locale
+verifica process.execPath, HOME package e argv utente
+produce un marker deterministico e chiude l'applicazione
+```
+
+Quando il reference host Linux non espone già `DISPLAY`, il test può usare `xvfb-run` come display driver del solo ambiente di test. Xvfb non è una dependency di RumiAI OS, non viene integrato nel package Electron e non sostituisce né disabilita il Chromium sandbox.
+
+I tre live test restano separati perché proteggono proprietà differenti e devono poter fallire indipendentemente.
 
 Il riuso di helper comuni resta ammesso solo se emerge una responsabilità realmente comune e senza violare l'indipendenza dei test.
 
@@ -247,9 +271,9 @@ La copertura corrente non autorizza a dichiarare validato ciò che non è stato 
 Restano quindi distinti:
 
 ```text
-Electron linux-arm64   install/setuid_root già validati; normal launch/workload della revisione corrente pending
+Electron linux-arm64   install/setuid_root già validati su revisioni precedenti; full regression e normal launch della revisione corrente pending
 Electron linux-x86_64  definito e coperto deterministicamente; physical validation ancora mancante
-Electron macos-arm64   definition e test pronti; physical install/native launch/workload pending
+Electron macos-arm64   definition/native-launch/test pronti; physical install/native launch/workload pending
 altri target           da affrontare quando diventano concretamente rilevanti e verificabili
 ```
 
@@ -272,23 +296,27 @@ PKG-REAL-09  la physical validation Electron macOS include installazione reale e
 PKG-REAL-10  Java e Node.js sono candidati di elevata rilevanza futura; DBeaver non richiede per questo solo motivo ulteriore lavoro immediato
 PKG-REAL-11  le evidence restano revision-specific e non vengono estese a target non esercitati
 PKG-REAL-12  Git resta forward-only
+PKG-REAL-13  la physical validation Linux distingue install/setuid_root e normal launch/runtime in test indipendenti
+PKG-REAL-14  il normal launch Linux mantiene il Chromium sandbox; Xvfb, quando necessario, è soltanto infrastruttura del test
 ```
 
 ---
 
 ## 10. Sequenza immediata corrente
 
-La preparazione software/documentale è arrivata al gate fisico.
+La preparazione software/documentale è arrivata ai gate fisici.
 
-La sequenza immediata prima di dichiarare Electron qualificato sulla revisione corrente è:
+La sequenza immediata prima di dichiarare Electron qualificato sui due reference host ARM64 correntemente disponibili è:
 
 ```text
-1. eseguire la validation permanente del subtree rumiai-os sulla revisione prodotto pin-nata, includendo i nuovi contratti pkg-launch/pkg-integration e la regressione pkg;
+1. eseguire la stessa validation permanente del subtree rumiai-os sulla revisione prodotto pin-nata e sulla stessa revisione rumiai-tests sia su Linux ARM64 sia su macOS ARM64;
 2. eseguire tests/external/electron/macos-launch-live.test su macOS ARM64;
-3. registrare la physical evidence revision-specific macOS;
-4. rieseguire il live install/normal launch Electron Linux ARM64 sulla stessa revisione per proteggere il direct-link e setuid_root dopo il cambiamento del launcher/integration;
-5. registrare la physical evidence revision-specific Linux aggiornata;
+3. eseguire tests/external/electron/install-live.test su Linux ARM64 per riconfermare installazione e setuid_root sulla revisione corrente;
+4. eseguire tests/external/electron/linux-launch-live.test su Linux ARM64 per il normal launch reale con BrowserWindow/workload;
+5. registrare separatamente le physical evidence revision-specific macOS e Linux;
 6. soltanto dopo considerare chiusa la qualificazione Electron sui due reference host ARM64 correntemente disponibili.
 ```
+
+La validation permanente deve essere rieseguita dopo la correzione del fixture `pkg-integration/contract.test`: una precedente esecuzione Linux aveva mascherato il missing `m_LIB_DIR` come `SKIP`, mentre macOS lo aveva esposto come `FAIL`. La correzione appartiene esclusivamente al test setup e non modifica il contratto o l'implementazione `pkg_integrate`.
 
 Eventuali requisiti mancanti emersi soltanto durante la physical validation vengono trattati come requisiti concreti separati e non anticipati per generalizzazione.
