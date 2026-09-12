@@ -5,7 +5,7 @@ Status: **Accepted**
 
 ## Contesto
 
-Il runtime package corrente ha già fissato:
+Il runtime package corrente distingue:
 
 ```text
 cmd/<pkg-command>    command entry RumiAI package-local
@@ -14,51 +14,43 @@ link/<pkg-command>   quando presente, binding relativo verso root/ dello stesso 
 root/                 payload upstream
 ```
 
-Il baseline `launcher` corrente termina il direct-link con:
+Il baseline direct-link di `launcher` termina con `exec` di un regular executable confinato in `root/`.
 
-```text
-exec <resolved-link-target> [command-arguments...]
-```
+Electron macOS rende concreto un caso diverso: l'artefatto upstream è `Electron.app`, il cui main executable vive sotto `Contents/MacOS/`, ma il bundle è l'unità applicativa nativa riconosciuta da macOS. L'utente ha chiesto di preferire, quando corretto, il meccanismo applicativo nativo di macOS invece dell'esecuzione diretta del Mach-O interno.
 
-Questa semantica è appropriata per executable normali perché conserva direttamente processo, argv, segnali ed exit status dell'upstream.
+La documentazione Apple su Launch Services stabilisce che l'apertura di un'application bundle lancia l'app se non è già attiva oppure la attiva/riapre se è già in esecuzione. Il comando macOS `open` espone inoltre le opzioni `-n` per una nuova istanza, `-W` per attendere la chiusura e `--args` per passare i restanti argomenti direttamente all'`argv` dell'applicazione.
 
-La validazione Electron su macOS ha però reso concreto un caso diverso: l'artefatto upstream è un application bundle macOS (`Electron.app`), il cui executable reale vive sotto `Contents/MacOS/`, ma il bundle costituisce l'unità applicativa nativa riconosciuta da macOS.
-
-L'utente ha richiesto di valutare se, per questo caso, il command RumiAI debba avviare il bundle attraverso i meccanismi nativi macOS invece di eseguire direttamente `Electron.app/Contents/MacOS/Electron`, così da riutilizzare il comportamento e le garanzie già fornite dal sistema operativo.
-
-Questa decisione fissa il risultato della valutazione senza modificare il contratto generale dei command non-bundle.
+Electron è anche un runtime invocabile da CLI; quindi il solo `open Electron.app` sarebbe semanticamente troppo debole. La forma RumiAI deve sfruttare Launch Services senza perdere la semantica per-invocation necessaria al runtime.
 
 ---
 
-## 1. Distinzione semantica fra executable interno e application bundle
+## 1. Bundle e Mach-O interno non sono equivalenti
 
 Su macOS:
-
-```text
-Electron.app/Contents/MacOS/Electron
-```
-
-è l'executable Mach-O interno del bundle, mentre:
 
 ```text
 Electron.app
 ```
 
-è l'unità applicativa nativa gestita da LaunchServices/macOS.
+è l'application bundle nativo, mentre:
 
-L'esecuzione diretta dell'executable interno mantiene la normale semantica Unix di `exec`: il processo chiamante viene sostituito, argv viene consegnato direttamente all'executable, segnali ed exit status seguono il processo avviato.
+```text
+Electron.app/Contents/MacOS/Electron
+```
 
-Il launch del bundle tramite i meccanismi nativi macOS ha invece semantica applicativa: macOS risolve e apre il bundle come applicazione, gestisce l'attivazione e può riusare un'istanza già esistente secondo la semantica dell'applicazione. Il processo che effettua la richiesta di launch non coincide necessariamente con il processo applicativo risultante e non costituisce quindi un sostituto trasparente di `exec`.
+è il main executable Mach-O interno.
 
-Questa differenza è intenzionale e non deve essere nascosta.
+L'esecuzione diretta del Mach-O ha semantica Unix processuale: `exec`, segnali ed exit status appartengono direttamente al processo Electron.
+
+Il launch del bundle passa invece attraverso il modello applicativo macOS/Launch Services e consente al sistema operativo di trattare l'intera `.app` come unità applicativa.
+
+Per una GUI macOS distribuita realmente come `.app`, il command pubblico normale deve preferire il bundle nativo salvo un requisito concreto che richieda invece il Mach-O interno.
 
 ---
 
-## 2. Regola per i package che espongono una GUI macOS come `.app`
+## 2. Target Electron macOS
 
-Quando un package RumiAI espone come command una vera applicazione GUI macOS distribuita come application bundle, il launch normale su macOS deve preferire il bundle come unità applicativa invece dell'esecuzione diretta del Mach-O sotto `Contents/MacOS/`.
-
-Quindi, per Electron su macOS, il target concettuale del command `electron` è:
+Per Electron macOS il target concettuale del command pubblico `electron` è:
 
 ```text
 <concrete>/root/Electron.app
@@ -70,153 +62,258 @@ non:
 <concrete>/root/Electron.app/Contents/MacOS/Electron
 ```
 
-quando l'intento dell'invocazione è avviare Electron come applicazione GUI macOS.
-
-La scelta sfrutta il modello applicativo nativo del sistema operativo e mantiene intatto il bundle come boundary semantico.
+Il Mach-O interno resta un oggetto tecnico verificabile e può essere usato da test specifici quando serve osservare proprietà processuali dirette, ma non costituisce il normale entrypoint GUI del package RumiAI su macOS.
 
 ---
 
-## 3. Il generic `launcher` non cambia semantica
+## 3. Forma di launch scelta
 
-Il generic direct-link baseline di `launcher` resta invariato:
+Il command entry macOS usa il comando di sistema:
 
 ```text
-final exec del regular executable risolto da link/<pkg-command>
+/usr/bin/open
 ```
 
-Non viene trasformato in un launcher GUI host-specific e non acquisisce implicitamente una dipendenza da `open`, LaunchServices o altre primitive macOS.
+sul pathname package-local del bundle.
 
-Motivazioni:
+Per preservare la semantica per-invocation di Electron, la forma normale è:
 
 ```text
-- `exec` conserva una semantica forte e portabile per i command normali;
-- il launch di un `.app` ha semantica diversa da `exec`;
-- il comportamento host-specific deve restare confinato dietro logica command-specific quando realmente necessario;
-- introdurre automaticamente `open` nel generic launcher cambierebbe processo, status, segnali e lifecycle anche per command che non lo richiedono.
+/usr/bin/open -n -W <concrete>/root/Electron.app
 ```
 
-Resta quindi valido che il command entry possiede la minima logica di launch specifica necessaria al proprio command.
+Quando l'utente passa uno o più argomenti al command `electron`, la forma diventa:
+
+```text
+/usr/bin/open -n -W <concrete>/root/Electron.app --args <argomenti-utente...>
+```
+
+Proprietà intenzionali:
+
+```text
+-n       ogni invocazione RumiAI richiede una nuova istanza Electron
+-W       il command resta sincrono fino alla chiusura dell'istanza aperta
+--args   gli argomenti successivi vengono passati all'argv dell'applicazione
+```
+
+`--args` non viene emesso quando non esistono argomenti utente.
+
+Non viene usato:
+
+```text
+open -a Electron
+open -b <bundle-id>
+```
+
+perché la risoluzione per nome o bundle identifier dipenderebbe dal database globale delle applicazioni e potrebbe selezionare una copia di Electron diversa da quella del concrete package RumiAI.
+
+L'autorità resta sempre il pathname di `Electron.app` derivato dal concrete package corrente.
 
 ---
 
-## 4. Collocazione della logica macOS-specifica
+## 4. Relazione con `launcher`
 
-La conoscenza che Electron su macOS deve essere aperto come application bundle appartiene alla definizione del command Electron per lo stream macOS.
+Il generic direct-link launcher non acquisisce automaticamente semantica macOS e non viene trasformato in un launcher GUI.
 
-La logica deve quindi essere espressa nel `cmd/electron` materializzato per il package macOS, riusando per quanto possibile la preparazione runtime comune già fornita da `pkg-launch.lib.sh` e senza duplicare indiscriminatamente environment isolation o altre responsabilità del launcher.
+Electron usa invece la modalità explicit-command fissata da:
 
-Se il generic `launcher` corrente non espone ancora una forma adatta a finalizzare una launch line composta senza `link/<pkg-command>`, questa necessità costituisce il primo caso concreto già previsto da `PKG-CMD-LAUNCH-06` e `PKG-LAUNCH-13` e deve essere risolta con la minima estensione coerente del contratto esistente, non tramite un wrapper artificiale dentro `root/`.
+```text
+decisions/rumiai-os/2026-09-12-package-launch-explicit-command-line.md
+```
 
-Non viene introdotto un `link/electron` verso il directory bundle: il contratto corrente di `link/` richiede un executable regular confinato in `root/`, mentre `Electron.app` è una directory bundle.
+quindi il command entry macOS delega la preparazione runtime comune a una forma equivalente a:
+
+```text
+launcher -c "electron" "/usr/bin/open" -n -W "$electron_bundle"
+```
+
+oppure, con argomenti utente:
+
+```text
+launcher -c "electron" "/usr/bin/open" -n -W "$electron_bundle" --args "$@"
+```
+
+Il `launcher` continua a possedere:
+
+```text
+validazione del command entry/concrete/root
+HOME=$m_HOME_DIR/electron
+package env
+user env
+final exec
+```
+
+La conoscenza di `Electron.app`, `/usr/bin/open`, `-n`, `-W` e `--args` appartiene esclusivamente al command-specific packaging macOS.
 
 ---
 
-## 5. Uso del comando macOS `open`
+## 5. Nessun `link/electron` su macOS
 
-Per il command entry macOS, la primitive di sistema iniziale da usare per richiedere il launch del bundle è il comando macOS `open`, che inoltra la richiesta al sistema applicativo nativo.
+La variante macOS non deve materializzare:
 
-La forma deve puntare esplicitamente al pathname package-local del bundle e deve preservare gli argomenti applicativi solo attraverso l'interfaccia documentata da `open` per passarli all'applicazione.
+```text
+link/electron
+```
 
-Non deve essere usata la ricerca per nome applicazione (`open -a Electron`) perché introdurrebbe dipendenza dal database globale delle applicazioni installate e potrebbe selezionare un'altra copia di Electron fuori dal concrete package RumiAI.
+verso il Mach-O interno.
 
-L'autorità resta quindi il bundle sotto il `root/` del concrete package corrente.
+Motivi:
+
+```text
+- il normale target applicativo è una directory bundle, non un regular executable;
+- link/ resta un puro binding verso executable nel root/ quando il direct-link è realmente usato;
+- un link al Mach-O rappresenterebbe una semantica diversa da quella scelta per il command pubblico;
+- non viene creato alcun wrapper artificiale dentro root/.
+```
+
+La variante Linux continua invece a usare il proprio direct-link executable come già fissato.
 
 ---
 
-## 6. Conseguenze osservabili del launch nativo
+## 6. Semantica processuale osservabile
 
-Il command Electron macOS non deve promettere proprietà che il launch applicativo nativo non possiede.
+Con `-n -W`, il command macOS conserva due proprietà importanti rispetto al launch diretto:
+
+```text
+nuova istanza per invocazione
+attesa sincrona fino alla chiusura dell'app aperta
+```
+
+Non deve però essere promesso che il modello sia identico a `exec` del Mach-O.
 
 In particolare:
 
 ```text
-- il processo `open` può terminare dopo aver consegnato con successo la richiesta di launch;
-- il suo exit status descrive il successo/fallimento della richiesta di apertura, non il futuro exit status dell'applicazione Electron;
-- il lifecycle dell'app GUI non coincide necessariamente con quello del command shell che l'ha avviata;
-- segnali inviati successivamente al processo chiamante non sono automaticamente equivalenti a segnali diretti al processo Electron;
-- macOS può attivare o riutilizzare un'istanza applicativa esistente secondo la semantica del bundle.
+- il processo finale eseguito dal package launcher è /usr/bin/open;
+- Launch Services crea/gestisce il processo applicativo Electron;
+- l'exit status di open descrive il proprio risultato e non viene assunto come exit status nativo del processo Electron;
+- segnali diretti al processo open non sono assunti equivalenti a segnali diretti all'istanza Electron;
+- eventuali proprietà processuali che RumiAI richiederà in futuro devono essere validate esplicitamente e non inferite.
 ```
 
-Queste proprietà non sono considerate regressioni: sono parte della semantica nativa scelta per una GUI application bundle.
-
-Quando serve invece la semantica processuale diretta dell'executable Electron, per esempio per specifici test tecnici o usi CLI/upstream che dipendono da exit status e segnali, il test o il consumer può indirizzare esplicitamente l'executable interno come oggetto tecnico; ciò non cambia il normale command pubblico `electron` su macOS.
+Questa differenza è accettata perché il normale command macOS rappresenta un'application bundle nativo.
 
 ---
 
 ## 7. Sicurezza e garanzie macOS
 
-Il launch del bundle tramite il sistema applicativo macOS è preferibile per una GUI perché mantiene il bundle come unità riconosciuta dal sistema e lascia a macOS le normali verifiche e policy applicabili al launch di applicazioni.
+Il launch del bundle tramite `open` usa il percorso applicativo nativo del sistema e lascia a macOS le normali policy applicabili al launch di application bundle.
 
-Questa decisione non assume però che `open` aggiunga magicamente garanzie di integrità che RumiAI non abbia già verificato durante download/installazione, né sostituisce i controlli package RumiAI.
-
-Rimangono separati:
+Questo non sostituisce le responsabilità RumiAI:
 
 ```text
-integrità/provenienza dell'artefatto       responsabilità package/install
-struttura e confinement del bundle         responsabilità integration/validation
-policy e launch applicativo macOS           responsabilità del sistema operativo
-runtime isolation RumiAI                    responsabilità package launcher/environment
+integrità/provenienza artefatto        package download/integrity
+preservazione della bundle hierarchy   pkg_extract/pkg_integrate
+confinement del concrete payload       package integration
+runtime HOME/env                       launcher
+policy di launch dell'application      macOS/Launch Services
 ```
+
+`open` non viene trattato come sostituto dei controlli RumiAI sull'artefatto.
 
 ---
 
 ## 8. Portabilità
 
-Questa è una specializzazione host-specific motivata da una struttura upstream host-specific reale.
+La specializzazione è host-specific perché risponde a una struttura upstream e a un modello applicativo host-specific reali.
 
-Non modifica il contratto generale POSIX di RumiAI OS e non introduce `open` come dipendenza dei package Linux o degli executable portabili.
+Non modifica il contratto generale POSIX di RumiAI OS e non introduce `open` nei package Linux.
 
-Il modello cross-platform Electron diventa quindi semanticamente:
+Il modello Electron diventa:
 
 ```text
 Linux
   cmd/electron
-    -> runtime package comune
-    -> executable upstream Linux
+    -> launcher direct-link
+    -> root/electron
 
 macOS
   cmd/electron
-    -> runtime package comune
-    -> launch nativo di root/Electron.app
+    -> launcher explicit-command
+    -> /usr/bin/open -n -W root/Electron.app [--args ...]
 ```
 
-La differenza è giustificata dalla diversa forma upstream e dal modello applicativo del sistema host, non da una divergenza arbitraria della CLI RumiAI.
+La differenza è intenzionale e deriva dal formato upstream e dal sistema host.
 
 ---
 
-## 9. Testing richiesto
+## 9. Testing permanente richiesto
 
-La decisione deve essere protetta da test permanenti proporzionati.
-
-Su macOS Electron devono essere verificati almeno:
+La variante macOS deve proteggere almeno:
 
 ```text
-- il package installato conserva Electron.app come bundle integro sotto root/;
-- il command pubblico non dipende da una copia globale di Electron;
-- il launch usa il pathname del bundle del concrete package corrente;
-- il normale launch GUI apre correttamente Electron tramite il meccanismo nativo macOS;
-- gli argomenti destinati all'applicazione sono preservati attraverso la forma documentata del launch;
-- un bundle mancante/non valido produce failure del command;
-- il test non interpreta il ritorno del launch request come exit status finale dell'applicazione.
+Electron.app preservato sotto root/
+cmd/electron presente e executable
+assenza di link/electron
+bundle pathname derivato dal concrete package corrente
+nessuna ricerca globale per nome/bundle id
+uso di /usr/bin/open
+uso di -n
+uso di -W
+assenza di --args con zero argomenti
+presenza di --args con uno o più argomenti
+preservazione esatta di argv dopo --args
+HOME/env layering ancora gestito da launcher
+failure se /usr/bin/open o il bundle non sono utilizzabili
 ```
 
-Linux continua a proteggere la normale semantica executable/process del proprio artefatto.
+Il live test macOS deve verificare il launch reale di un workload Electron minimo e il cleanup dell'istanza creata.
 
-La physical validation cross-platform Electron resta necessaria sui reference host Linux/aarch64 e Darwin/arm64 per la revisione esatta che implementerà questa decisione.
+Il test non deve equiparare arbitrariamente lo status di `open` allo status interno dell'app Electron.
 
 ---
 
-## 10. Invarianti fissati
+## 10. Physical validation
+
+Per la revisione che implementa questo contratto resta necessaria physical validation su:
+
+```text
+Darwin/arm64
+  install reale Electron
+  bundle integrity/shape
+  normal launch tramite command RumiAI
+  workload Electron minimo
+  argv rilevante
+  chiusura/cleanup
+
+Linux/aarch64
+  regressione install/setuid_root
+  normal launch/workload Linux
+  nessuna regressione direct-link
+```
+
+Le evidence precedenti restano valide soltanto per le revisioni e proprietà che hanno realmente esercitato.
+
+---
+
+## 11. Supersession mirata
+
+Questa decisione supersede le sole affermazioni incompatibili presenti in `2026-09-12-package-extract-macos-application-bundle-boundary.md` che, prima della valutazione del launch nativo, indicavano come comportamento corrente:
+
+```text
+link target Electron macOS = Electron.app/Contents/MacOS/Electron
+link/electron obbligatorio nella variante macOS
+normal launch macOS tramite direct-link al main executable
+```
+
+Restano integralmente valide la preservazione di `Electron.app` come semantic boundary di extraction, la shape del bundle osservata e tutti gli altri invarianti di quel documento.
+
+---
+
+## 12. Invarianti fissati
 
 ```text
 PKG-MACOS-APP-LAUNCH-01  un vero macOS .app usato come GUI è trattato come application bundle, non come semplice pathname del Mach-O interno
-PKG-MACOS-APP-LAUNCH-02  Electron macOS normale deve lanciare il bundle package-local Electron.app
-PKG-MACOS-APP-LAUNCH-03  il generic direct-link launcher conserva final exec e non acquisisce implicitamente semantica LaunchServices
-PKG-MACOS-APP-LAUNCH-04  la specializzazione bundle appartiene al command-specific packaging macOS
-PKG-MACOS-APP-LAUNCH-05  non si usa open -a o altra risoluzione globale per nome; l'autorità è il pathname del bundle nel concrete root corrente
-PKG-MACOS-APP-LAUNCH-06  link/ non viene piegato a rappresentare directory .app e non viene creato un wrapper artificiale in root/
-PKG-MACOS-APP-LAUNCH-07  il successo del launch request macOS non equivale all'exit status futuro dell'applicazione GUI
-PKG-MACOS-APP-LAUNCH-08  il launch nativo non sostituisce controlli di integrità, confinement e installazione RumiAI
-PKG-MACOS-APP-LAUNCH-09  la specializzazione macOS non modifica la semantica Linux né il contratto POSIX generale
-PKG-MACOS-APP-LAUNCH-10  Electron deve essere validato fisicamente sia su Darwin/arm64 sia su Linux/aarch64 per la revisione che implementa il nuovo command macOS
+PKG-MACOS-APP-LAUNCH-02  Electron macOS normale lancia il bundle package-local Electron.app
+PKG-MACOS-APP-LAUNCH-03  la forma Electron usa /usr/bin/open -n -W sul pathname package-local
+PKG-MACOS-APP-LAUNCH-04  --args viene aggiunto soltanto quando esistono argomenti utente e preserva il loro argv
+PKG-MACOS-APP-LAUNCH-05  non si usa risoluzione globale open -a/open -b per Electron
+PKG-MACOS-APP-LAUNCH-06  il generic direct-link launcher non acquisisce implicitamente semantica Launch Services
+PKG-MACOS-APP-LAUNCH-07  Electron macOS usa launcher -c per preservare il runtime package comune
+PKG-MACOS-APP-LAUNCH-08  la variante macOS non materializza link/electron e non crea wrapper artificiali
+PKG-MACOS-APP-LAUNCH-09  -n preserva una nuova istanza per invocazione e -W preserva l'attesa sincrona
+PKG-MACOS-APP-LAUNCH-10  status e segnali non vengono assunti equivalenti al direct exec del processo Electron
+PKG-MACOS-APP-LAUNCH-11  il launch nativo non sostituisce controlli di integrità/confinement RumiAI
+PKG-MACOS-APP-LAUNCH-12  la specializzazione macOS non modifica la semantica Linux
+PKG-MACOS-APP-LAUNCH-13  Electron deve essere validato fisicamente su Darwin/arm64 e Linux/aarch64 per la revisione implementata
 ```
