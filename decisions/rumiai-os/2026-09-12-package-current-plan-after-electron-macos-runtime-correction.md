@@ -3,6 +3,14 @@
 Date: 2026-09-12  
 Status: **Accepted**
 
+Questo documento supersede, dove incompatibili, le sezioni di stato, launch macOS, testing e sequenza immediata di:
+
+```text
+decisions/rumiai-os/2026-09-12-package-selection-and-electron-cross-platform-validation.md
+```
+
+Restano valide di quel documento le motivazioni strategiche, i criteri di scelta dei package reali e ogni regola non incompatibile con la correzione del runtime macOS fissata qui.
+
 ## 1. Correzione applicata
 
 La qualificazione Electron cross-platform resta aperta, ma il normal command macOS è stato corretto.
