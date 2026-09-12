@@ -35,7 +35,7 @@ senza estendere le evidence a target non esercitati.
 
 ## 3. Electron macOS ARM64
 
-La release baseline corrente:
+La baseline corrente:
 
 ```text
 v44.3.0
@@ -47,15 +47,15 @@ pubblica:
 electron-v44.3.0-darwin-arm64.zip
 ```
 
-La shape verificata è un vero application bundle:
+La shape verificata è un application bundle:
 
 ```text
 Electron.app/Contents/...
 ```
 
-Il boundary `.app` deve essere preservato integralmente durante extraction.
+Il boundary `.app` viene preservato integralmente durante extraction.
 
-Il package RumiAI `electron` espone però il **runtime Electron**, non una app finale. La semantica corrente è quindi:
+Il package RumiAI `electron` espone il **runtime Electron**, non una app finale. La semantica corrente è:
 
 ```text
 root/Electron.app
@@ -75,7 +75,7 @@ Una futura applicazione GUI RumiAI confezionata come `.app` valuterà separatame
 
 ## 4. Electron Linux
 
-Linux mantiene il direct-link upstream esistente e il requisito specifico:
+Linux mantiene il direct-link upstream esistente e il requisito:
 
 ```text
 chrome-sandbox uid=0 gid=0 mode=4755
@@ -103,8 +103,8 @@ repository/version/artifact resolution
 download reale e SHA-256
 Electron.app preservato
 Info.plist valido
-bundle signature verificabile
 main executable presente/executable
+stato della code-signature confrontato con il payload upstream
 link/electron al main executable interno
 public command RumiAI
 process.execPath package-local
@@ -114,6 +114,26 @@ BrowserWindow nascosta
 loadFile HTML locale
 marker deterministico
 exit/cleanup
+```
+
+Per la baseline `v44.3.0`, il gate archive/extraction ha verificato che l'archive ufficiale non contiene l'outer `Contents/_CodeSignature/CodeResources`; `codesign --verify --deep --strict` fallisce allo stesso modo dopo RumiAI extract e `/usr/bin/ditto -x -k`.
+
+Quindi la code-signature viene trattata secondo:
+
+```text
+materiale firma presente upstream
+    -> deve essere preservato e la verifica applicabile deve riuscire
+
+materiale firma assente upstream
+    -> registrare il limite upstream
+    -> non attribuire il failure a pkg_extract
+    -> non risignare in pkg install
+```
+
+La decisione/evidence autorevole è:
+
+```text
+decisions/rumiai-os/2026-09-12-electron-macos-prebuilt-signature-and-archive-validation.md
 ```
 
 ### Linux ARM64
@@ -136,13 +156,13 @@ I live test restano separati quando verificano proprietà indipendenti.
 
 La correzione del runtime Electron elimina il requisito concreto che aveva temporaneamente motivato una firma `launcher -c` e `cmd/` senza `link/`.
 
-Resta valido il principio già fissato nel 2026-09-07 che una futura launch line composta può richiedere una forma senza direct-link artificiale, ma la firma e l'implementazione concrete sono nuovamente deferite fino al primo package reale che le richiederà.
+Resta valido il principio già fissato nel 2026-09-07 che una futura launch line composta può richiedere una forma senza direct-link artificiale, ma firma e implementazione concrete sono deferite fino al primo package reale che le richiederà.
 
 Non viene mantenuta una capability prodotto soltanto per un possibile uso futuro.
 
 ## 7. Priorità dei prossimi package
 
-Indicazioni già fissate dall'utente:
+Indicazioni fissate dall'utente:
 
 ```text
 Electron  rilevanza elevata per future GUI cross-platform e riuso dello stack web
@@ -172,16 +192,17 @@ Lo stato operativo corrente è definito più precisamente da:
 decisions/rumiai-os/2026-09-12-package-current-plan-after-electron-macos-runtime-correction.md
 ```
 
-La sequenza resta:
+Alla revisione `rumiai-os@96d399d0fe0454ed22adf22dc9739af0c8e1ec9a` risultano già acquisiti:
 
 ```text
-1. validare revision-specific il boundary pkg_extract sui reference host ARM64;
-2. validare Electron macOS ARM64 con installazione e runtime workload reale;
-3. riconfermare Electron Linux ARM64 install/setuid_root sulla revisione corrente;
-4. validare Electron Linux ARM64 normal runtime workload;
-5. registrare evidence separate e revision-specific;
-6. chiudere la qualificazione ARM64 solo dopo tutti i gate applicabili PASS.
+pkg_extract permanent gate Linux ARM64   PASS
+pkg_extract permanent gate macOS ARM64   PASS
+Electron Linux install/setuid_root       PASS
+Electron Linux runtime workload          PASS
+Electron macOS archive/extraction        PASS
 ```
+
+Resta da riconfermare il normal runtime launch macOS dopo la correzione del criterio code-signature, quindi registrare le evidence finali e fare il consistency check conclusivo.
 
 L'utente esegue operativamente soltanto `rumiai-validate`; la selection viene predisposta nel repository test.
 
@@ -192,12 +213,13 @@ PKG-REAL-01  i package reali possono servire sia come casi concreti di sviluppo 
 PKG-REAL-02  la chiusura della feature pkg che ha motivato un package non chiude automaticamente la validazione del software se RumiAI prevede di dipenderne
 PKG-REAL-03  la validazione di software rilevante copre le piattaforme e le proprietà concrete su cui RumiAI prevede di fare affidamento
 PKG-REAL-04  questo criterio non introduce classi, metadata o primitive nel package manager
-PKG-REAL-05  Electron resta chiuso come primo caso setuid_root Linux ma aperto come runtime cross-platform da qualificare
+PKG-REAL-05  Electron resta chiuso come primo caso setuid_root Linux ma aperto come runtime cross-platform fino alla chiusura dei gate runtime
 PKG-REAL-06  macos-arm64 è un target Electron corrente di physical validation
 PKG-REAL-07  Electron.app viene preservato, mentre il runtime command usa il main executable interno tramite direct-link
 PKG-REAL-08  Electron Linux mantiene il Chromium sandbox e separa install/setuid dal normal launch
 PKG-REAL-09  Java e Node.js sono candidati di elevata rilevanza futura; DBeaver ha priorità immediata inferiore
 PKG-REAL-10  le evidence restano revision-specific e non vengono estese a target non esercitati
 PKG-REAL-11  una launch line composta resta deferita finché un package reale non la richiede
-PKG-REAL-12  Git resta forward-only
+PKG-REAL-12  la firma del prebuilt macOS viene validata rispetto alle proprietà realmente presenti nell'artifact upstream; pkg non inventa una firma mancante
+PKG-REAL-13  Git resta forward-only
 ```
