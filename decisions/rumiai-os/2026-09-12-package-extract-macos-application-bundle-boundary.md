@@ -201,9 +201,9 @@ I wrapper strutturali continuano a essere eliminati; il payload `.app` riconosci
 
 ---
 
-## 7. Conseguenza per Electron macOS ARM64
+## 7. Conseguenza corrente per Electron macOS ARM64
 
-Dopo il riallineamento di `pkg_extract`, la package definition Electron macOS ARM64 può usare il modello già esistente:
+Dopo il riallineamento di `pkg_extract`, la package definition Electron macOS ARM64 usa il modello target-specific già esistente:
 
 ```text
 electron/catalog-macos-arm64/
@@ -227,17 +227,38 @@ format:
 zip
 ```
 
-link target:
+La variante macOS non dichiara `setuid_root`.
+
+Il main executable osservato nel bundle resta:
 
 ```text
 Electron.app/Contents/MacOS/Electron
 ```
 
-La variante macOS non dichiara `setuid_root`.
+ma non è più il target del normale command pubblico RumiAI.
 
-Il command source può riusare il launcher canonico già usato dalla variante Linux, purché la successiva integration validation confermi la shape materiale prevista.
+Il contratto di launch corrente è fissato da:
 
-Nessuna modifica a `pkg_integrate` o al launcher è motivata dalla sola differenza di bundle shape osservata finora.
+```text
+decisions/rumiai-os/2026-09-12-package-macos-application-launch.md
+decisions/rumiai-os/2026-09-12-package-launch-explicit-command-line.md
+```
+
+Quindi la variante macOS materializza:
+
+```text
+cmd/electron
+```
+
+senza:
+
+```text
+link/electron
+```
+
+e il command usa il bundle package-local tramite il meccanismo applicativo nativo macOS (`/usr/bin/open -n -W`, con `--args` quando necessario) delegando il runtime comune a `launcher -c`.
+
+La precedente descrizione di un direct-link verso `Electron.app/Contents/MacOS/Electron` è superseded esclusivamente per il normale launch macOS; l'eseguibile interno resta parte della shape del bundle da preservare e verificare.
 
 ---
 
@@ -263,23 +284,28 @@ I test reali Electron macOS restano separati e devono verificare l'artifact upst
 
 ## 9. Physical validation Electron macOS
 
-Dopo implementation/catalog/test realignment, la physical validation macOS ARM64 deve verificare almeno:
+La physical validation macOS ARM64 della revisione corrente deve verificare almeno:
 
 ```text
 install reale di Electron dal catalogo
 artifact v44.3.0 Darwin ARM64 corretto
 digest SHA-256 corretto
 Electron.app preservato nella concrete package root
-Electron.app/Contents/Info.plist presente
+Electron.app/Contents/Info.plist presente e valido
 Electron.app/Contents/MacOS/Electron executable presente
 framework/helper e symlink interni essenziali preservati
-link/electron risolto al main executable del bundle
-normal launch tramite launcher RumiAI
-workload Electron minimo controllato fino a ready/page-load osservabile
-cleanup deterministico di workload/processo
+firma del bundle verificabile con gli strumenti macOS appropriati
+assenza di link/electron artificiale
+normal launch del bundle package-local tramite command RumiAI
+nuova istanza per invocazione (-n)
+attesa sincrona del launch (-W)
+propagazione argv tramite --args
+HOME RumiAI ereditato dall'applicazione
+workload Electron minimo con BrowserWindow fino a ready/page-load osservabile
+cleanup deterministico dell'istanza creata
 ```
 
-Su macOS la verifica fisica può inoltre usare gli strumenti di sistema per verificare che il bundle estratto rimanga una struttura valida e firmata, senza introdurre tali strumenti come dipendenza runtime di `pkg`.
+La verifica fisica può usare gli strumenti di sistema macOS per verificare che il bundle estratto rimanga una struttura valida e firmata, senza introdurre tali strumenti come dipendenza runtime di `pkg`.
 
 La validazione Linux resta distinta:
 
@@ -287,26 +313,28 @@ La validazione Linux resta distinta:
 install reale
 setuid_root chrome-sandbox
 normal launch/workload Electron
+direct-link executable invariato
 ```
 
 La precedente evidence Linux `setuid_root` resta valida per ciò che ha già esercitato; il normal launch/workload è una proprietà ulteriore da validare.
 
 ---
 
-## 10. Stato di implementazione
+## 10. Stato corrente
 
-Alla data di questa decisione:
+Alla revisione corrente del progetto:
 
 ```text
-contract/design                 fissato
-rumiai-os implementation        pending explicit product implementation authorization
-rumiai-tests realignment        pending insieme all'implementation
-pkg-catalog macos-arm64         pending implementation readiness
-physical validation macOS       pending
-Electron launch validation Linux pending
+application-bundle extraction contract       fissato e implementato
+launcher explicit-command contract           fissato e implementato
+cmd/ senza link/ integration contract        fissato e implementato
+permanent contract tests                     riallineati; physical validation della nuova revisione pending
+pkg-catalog macos-arm64                      pubblicato con cmd/electron nativo e senza link/electron
+Electron physical validation macOS           pending sulla nuova revisione
+Electron normal-launch regression Linux      pending sulla nuova revisione
 ```
 
-Non viene pubblicata una definition `catalog-macos-arm64` che il prodotto corrente materializzerebbe in modo semanticamente errato.
+La pubblicazione macOS è quindi avvenuta soltanto dopo che il prodotto è stato reso capace di materializzare correttamente un command senza direct-link e di delegare una launch line esplicita al runtime package comune.
 
 ---
 
@@ -320,9 +348,9 @@ PKG-EXTRACT-23   nessun pathname/depth override package-specific viene introdott
 PKG-EXTRACT-24   il riconoscimento .app è repository-neutral e non richiede osarch o repository type
 PKG-EXTRACT-25   nessun altro tipo di bundle/container viene generalizzato senza un caso reale
 PKG-ELECTRON-MAC-01  Electron macOS ARM64 deve preservare Electron.app/Contents come hierarchy upstream
-PKG-ELECTRON-MAC-02  il main executable osservato è Electron.app/Contents/MacOS/Electron
+PKG-ELECTRON-MAC-02  il main executable osservato resta Electron.app/Contents/MacOS/Electron
 PKG-ELECTRON-MAC-03  catalog-macos-arm64 usa il modello target-specific esistente e non dichiara setuid_root
-PKG-ELECTRON-MAC-04  il catalogo macOS non viene pubblicato prima del riallineamento di pkg_extract
+PKG-ELECTRON-MAC-04  il normale command macOS usa il bundle package-local tramite il contratto native application launch corrente e non materializza link/electron
 PKG-ELECTRON-MAC-05  la physical validation macOS include install reale e normal launch/workload controllato
 PKG-ELECTRON-LINUX-10  la qualificazione Linux va completata con normal launch/workload oltre alla evidence install/setuid_root già acquisita
 ```
