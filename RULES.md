@@ -22,6 +22,8 @@ In caso di conflitto tra memoria/conversazione e repository, prevale il reposito
 
 Le regole specifiche per test permanenti, runner, development run, validation run e workspace locale sono definite in `TESTING.md`.
 
+Per il modello operativo corrente, `specifications/rumiai-os/MODEL-2.0-MIGRATION.md` e la relativa decisione di attivazione definiscono la stratificazione `m`/RumiAI, gli entrypoint, il layout eseguibile e delle librerie, il modello di state e il contratto package. Le specifiche 1.x esplicitamente marcate come baseline storica o superseded non sono autorità corrente sul modello 2.0.
+
 ## Autorizzazione alle modifiche di `rumiai-os`
 
 Almeno nella fase iniziale del progetto, nessun file deve essere creato, copiato, modificato o eliminato nel repository `rumiai-os` senza consenso esplicito dell'utente per quella fase di implementazione.
@@ -70,10 +72,10 @@ Il codice e i command body implementati in shell devono essere POSIX-compliant.
 
 Per i file direttamente eseguibili lo shebang dipende dal contratto runtime.
 
-Un comando che usa attualmente environment variables, funzioni, librerie, logger, resolver lingua, root/path semantici, configurazione o altre facility inizializzate dal bootstrap RumiAI, oppure per il quale una dipendenza di questo tipo sia ragionevolmente prevedibile nella normale evoluzione del comando, deve usare:
+Un comando integrato nel substrate `m`, oppure un comando del layer RumiAI che usa environment variables, funzioni, librerie, logger, resolver lingua, root/path semantici, configurazione o altre facility inizializzate dal runtime `m`, deve usare:
 
 ```sh
-#!/usr/bin/env rumiai-os
+#!/usr/bin/env m
 ```
 
 Una utility shell intenzionalmente autonoma dal bootstrap può usare esattamente:
@@ -84,16 +86,16 @@ Una utility shell intenzionalmente autonoma dal bootstrap può usare esattamente
 
 soltanto quando:
 
-1. non dipende attualmente dal bootstrap RumiAI;
+1. non dipende attualmente dal bootstrap `m` o dall'attivazione RumiAI;
 2. una dipendenza dal bootstrap non è ragionevolmente prevedibile nel normale ruolo della utility;
 3. l'uso standalone è stato preventivamente autorizzato esplicitamente dall'utente;
 4. una decisione o specifica autorevole documenta la scelta, la motivazione, le dipendenze e il contratto osservabile.
 
-Una utility standalone non deve dipendere per il proprio funzionamento da `m_*`, `log`, `lang`, librerie o funzioni sourced dal bootstrap, `m_COMMAND_BIN` o altre facility fornite dal runtime RumiAI. Le dipendenze esterne non garantite dal profilo POSIX adottato devono essere dichiarate esplicitamente.
+Una utility standalone non deve dipendere per il proprio funzionamento da `m_*`, `log`, `lang`, librerie o funzioni sourced dal bootstrap, `m_COMMAND_BIN` o altre facility fornite dal runtime `m`. Le dipendenze esterne non garantite dal profilo POSIX adottato devono essere dichiarate esplicitamente.
 
-Se una utility standalone acquisisce in seguito una dipendenza dal bootstrap, la classificazione e lo shebang devono essere riesaminati; la migrazione normale è verso `#!/usr/bin/env rumiai-os`, salvo una nuova decisione esplicita.
+Se una utility standalone acquisisce in seguito una dipendenza dal bootstrap, la classificazione e lo shebang devono essere riesaminati; la migrazione normale è verso `#!/usr/bin/env m`, salvo una nuova decisione esplicita.
 
-Il bootstrap root `rumiai-os` resta implementato in POSIX shell con `#!/bin/sh` secondo il proprio contratto specifico.
+Il bootstrap root tecnico `$m_ROOT/m` resta implementato in POSIX shell con `#!/bin/sh` secondo il proprio contratto specifico. Gli entrypoint root branded `$m_ROOT/rumiai-os` e `$m_ROOT/rumiai-os-sh` appartengono invece al layer RumiAI e delegano al runtime tecnico secondo `MODEL-2.0-MIGRATION.md`.
 
 Non devono essere usate accidentalmente funzionalità specifiche di Bash o di altre shell, né opzioni GNU non previste dal contratto POSIX/profilo adottato. Esempi tipici da non assumere includono array Bash, `[[ ... ]]`, `BASH_SOURCE`, process substitution e `$RANDOM`.
 
@@ -135,7 +137,7 @@ Le invocazioni delle funzioni/comandi RumiAI `fatal` e `log` sono anch'esse escl
 
 Le virgolette non devono inoltre essere introdotte quando cambierebbero una semantica shell intenzionale o quando l'elemento è sintassi e non un valore. Rientrano tra le eccezioni keyword, operatori, redirection e nomi sintattici di variabili passati a `export`, `readonly` o primitive equivalenti.
 
-La regola si applica al nuovo codice e al codice modificato; non impone una riformattazione indiscriminata dei sottosistemi non coinvolti. Il bootstrap root `rumiai-os` è il riferimento stilistico principale per questa disciplina, tenendo conto delle eccezioni esplicite sopra fissate.
+La regola si applica al nuovo codice e al codice modificato; non impone una riformattazione indiscriminata dei sottosistemi non coinvolti. Il bootstrap root `m` è il riferimento stilistico principale per questa disciplina, tenendo conto delle eccezioni esplicite sopra fissate.
 
 ## Naming dei file eseguibili, librerie e sorgenti
 
@@ -151,37 +153,38 @@ foo
 
 può essere inizialmente uno script `#!/bin/sh` e in futuro essere reimplementato con un altro runtime senza diventare `foo.sh`, `foo.py` o `foo.js`.
 
-Le librerie interne sourced/importate sono invece oggetti legati al runtime che le carica. Devono essere organizzate sotto:
+Le librerie interne sourced/importate sono oggetti legati sia al layer che le possiede sia al runtime che le carica. Nel modello 2.0 devono essere organizzate sotto:
 
 ```text
-lib/<runtime>/
+lib/sys/<runtime>/
+lib/ai/<runtime>/
 ```
 
 Il runtime di caricamento deve essere espresso sia dal sottalbero sia dall'estensione composta del file. Le forme canoniche iniziali sono:
 
 ```text
-lib/sh/<nome-libreria>.lib.sh
-lib/js/<nome-libreria>.lib.js
+lib/sys/sh/<nome-libreria>.lib.sh
+lib/ai/sh/<nome-libreria>.lib.sh
 ```
 
 Esempi:
 
 ```text
-lib/sh/osarch.lib.sh
-lib/js/example.lib.js
+lib/sys/sh/osarch.lib.sh
+lib/sys/sh/pkg-launch.lib.sh
 ```
 
 La componente `.lib` identifica il ruolo di libreria; il suffisso finale (`.sh`, `.js`, ecc.) identifica il runtime/formato con cui il file può essere caricato. Questa qualificazione del runtime è intenzionale per le librerie interne e non modifica la regola dei comandi pubblici senza estensione.
 
-Per le librerie RumiAI viene esportata soltanto la root generale:
+Per le librerie viene esportata soltanto la root generale:
 
 ```text
 m_LIB_DIR=$m_ROOT/lib
 ```
 
-Non devono essere introdotte environment variables derivate come `m_LIB_SH_DIR`, `m_LIB_JS_DIR` o equivalenti soltanto per abbreviare i sottopercorsi. I consumer derivano il proprio sottalbero dal runtime appropriato, ad esempio `$m_LIB_DIR/sh` o `$m_LIB_DIR/js`.
+Non devono essere introdotte environment variables derivate come `m_LIB_SYS_SH_DIR`, `m_LIB_AI_SH_DIR` o equivalenti soltanto per abbreviare i sottopercorsi. I consumer derivano il proprio sottalbero dal layer e runtime appropriati, ad esempio `$m_LIB_DIR/sys/sh` o `$m_LIB_DIR/ai/sh`.
 
-Le librerie shell sotto `lib/sh/` sono file da source, non eseguibili: non devono avere il bit executable e non devono contenere shebang. Un file che deve essere direttamente eseguibile appartiene al modello dei comandi/eseguibili, non a quello delle librerie.
+Le librerie shell sotto `lib/sys/sh/` e `lib/ai/sh/` sono file da source, non eseguibili: non devono avere il bit executable e non devono contenere shebang. Un file che deve essere direttamente eseguibile appartiene al modello dei comandi/eseguibili, non a quello delle librerie.
 
 I file sorgente che non sono librerie seguono il formato reale del linguaggio o dell'ecosistema, ad esempio `.c`, `.cpp`, `.java` e `.js` per puro sorgente JavaScript.
 
@@ -247,16 +250,28 @@ L'invocazione di un comando tramite symbolic link non deve essere rifiutata per 
 
 ## Root del repository `rumiai-os`
 
-La radice del repository `rumiai-os` deve contenere soltanto due file, oltre alle directory necessarie:
+La radice del repository `rumiai-os` contiene nello stesso albero il substrate tecnico `m` e il layer branded RumiAI.
 
-- `rumiai-os`;
-- `README.md`.
+Gli entrypoint root correnti sono:
 
-`rumiai-os` è l'entrypoint principale ed è un front controller: inizializza il minimo indispensabile e delega la logica a componenti interni. Non deve diventare uno script monolitico.
+```text
+m
+rumiai-os
+rumiai-os-sh
+```
 
-La sua implementazione iniziale prevista è POSIX shell con `#!/bin/sh`, ma il nome `rumiai-os` non incorpora il linguaggio utilizzato.
+`m` è il runtime tecnico generale e non deve avere dipendenze semantiche da RumiAI. La sua implementazione bootstrap è POSIX shell con `#!/bin/sh`; inizializza il minimo indispensabile e delega la logica a componenti interni.
 
-Tra le responsabilità minime dell'entrypoint rientra la risoluzione delle informazioni fondamentali necessarie per inizializzare il sistema, incluse almeno la root reale di RumiAI OS e le informazioni essenziali sull'host necessarie al dispatch iniziale. Il set esatto di variabili fondamentali deve essere definito e mantenuto piccolo; dopo questa inizializzazione l'entrypoint deve delegare a comandi interni o librerie sourced appropriate.
+`rumiai-os` e `rumiai-os-sh` sono gli entrypoint branded del prodotto. La loro relazione e la delega iniziale sono definite da `MODEL-2.0-MIGRATION.md`; il fatto che l'implementazione iniziale di `rumiai-os` possa delegare immediatamente a `rumiai-os-sh` non crea un contratto permanente di architettura GUI.
+
+La root contiene inoltre il metadata universale di prodotto fissato dal modello 2.0:
+
+```text
+product-name
+product-version
+```
+
+Le directory di eseguibili, librerie, risorse statiche correnti, package, state e sviluppo restano quelle definite dalle specifiche correnti. Non deve essere reintrodotta la precedente assunzione 1.x secondo cui `rumiai-os` fosse l'unico runtime tecnico/root front controller.
 
 L'avvio iniziale da un altro sistema operativo non limita la generalità del progetto: lo stesso ambiente avviato può in seguito esporre comandi per deployment hosted, container, immagini/device e, in futuro, installazioni complete o bare-metal.
 
