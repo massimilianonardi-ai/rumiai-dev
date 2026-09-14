@@ -1,6 +1,6 @@
 # RumiAI OS — `mk` source materialization specification
 
-Status: **Normative specification — pending activation**  
+Status: **Normative specification — Active**  
 Date: 2026-09-14
 
 ## 1. Scope
