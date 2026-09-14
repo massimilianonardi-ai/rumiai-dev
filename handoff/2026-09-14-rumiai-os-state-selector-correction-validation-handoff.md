@@ -13,9 +13,9 @@ decisions/rumiai-os/2026-09-14-semantic-state-selectors-and-global-user-binding.
 
 The frozen `2.0.0` checkpoint and its historical validation evidence remain unchanged.
 
-## Current revisions
+## Work-unit revision inputs
 
-At handoff creation:
+Immediately before this handoff was added, the authoritative decision, product, and test/config revisions for this work unit were:
 
 ```text
 rumiai-dev   63716aa7634c2248426dac99c58eb028a0afbc20
