@@ -1,7 +1,7 @@
 # Decisione — Riconciliazione della coppia di validation per resource model e `srv`
 
 Date: 2026-09-15  
-Status: **Accepted / Active — physical validation failed; remediation required**
+Status: **Accepted / Superseded as current pair — failure evidence retained**
 
 ## 1. Scopo
 
