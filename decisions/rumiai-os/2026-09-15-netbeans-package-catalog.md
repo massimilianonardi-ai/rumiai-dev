@@ -1,7 +1,7 @@
 # Decisione — Catalogo package Apache NetBeans
 
 Date: 2026-09-15  
-Status: **Accepted — catalog definition authorized; runtime support pending explicit authorization**
+Status: **Accepted — catalog and runtime support authorized**
 
 ## 1. Scopo e correzione esplicita
 
@@ -23,13 +23,13 @@ La URL dell'artifact è stata fissata esplicitamente dall'utente nella forma:
 https://dlcdn.apache.org/netbeans/netbeans/${VERSION}/netbeans-${VERSION}-bin.zip
 ```
 
-`${VERSION}` è soltanto notazione usata nel dialogo. Non viene introdotta come sintassi, template language, campo o primitive del catalogo. Il futuro adapter costruirà la URL dalla concrete version già risolta.
+`${VERSION}` è soltanto notazione usata nel dialogo. Non viene introdotta come sintassi, template language, campo o primitive del catalogo. L'adapter costruisce la URL dalla concrete version già risolta.
 
-Questa unità autorizza la decisione e la package definition concreta in `pkg-catalog`. Non autorizza modifiche a `rumiai-os`; il supporto runtime necessario resta una fase separata.
+Questa unità autorizza la decisione e la package definition concreta in `pkg-catalog`. L'utente ha successivamente autorizzato esplicitamente anche la fase runtime necessaria in `rumiai-os`; il relativo stato è consolidato nella sezione 15.
 
 ## 2. Preflight corrente
 
-HEAD remoti verificati prima della scrittura:
+HEAD remoti verificati prima della scrittura iniziale:
 
 ```text
 rumiai-dev    9e27fa326e14da815c36cbb486847da59e090035
@@ -86,7 +86,7 @@ Il repository type product-specific è:
 netbeans
 ```
 
-che, quando il relativo supporto runtime verrà esplicitamente autorizzato, selezionerà:
+che seleziona:
 
 ```text
 lib/sys/sh/pkg-repository-netbeans.lib.sh
@@ -168,7 +168,7 @@ Gli `assets[]` GitHub non sono la sorgente del binary artifact NetBeans.
 
 ## 6. Autorità dell'artifact: Apache download CDN
 
-Dopo aver verificato che la concrete version corrisponda a una full release GitHub installabile, il futuro adapter risolve il binary ufficiale ASF.
+Dopo aver verificato che la concrete version corrisponda a una full release GitHub installabile, l'adapter risolve il binary ufficiale ASF.
 
 Per una concrete version `<version>`:
 
@@ -192,13 +192,13 @@ La distribuzione ASF pubblica per il binary release il checksum SHA-512 ufficial
 digest_type = sha512
 ```
 
-Il checksum concreto non viene hardcodato nel catalogo. Il futuro adapter deve ottenere il SHA-512 autorevole del medesimo artifact durante la resolution, usando il sidecar ASF corrispondente:
+Il checksum concreto non viene hardcodato nel catalogo. L'adapter ottiene il SHA-512 autorevole del medesimo artifact durante la resolution, usando il sidecar ASF corrispondente:
 
 ```text
 netbeans-<version>-bin.zip.sha512
 ```
 
-Il descriptor verso `pkg_download` deve mantenere il contratto corrente:
+Il descriptor verso `pkg_download` mantiene il contratto corrente:
 
 ```text
 name=netbeans-<version>-bin.zip
@@ -207,18 +207,22 @@ size=<decimal-bytes>
 digest=sha512:<128-hex>
 ```
 
-La size deve essere il numero di byte esatto ottenuto da una fonte upstream autorevole per lo stesso artifact.
-
-La fase runtime dovrà chiudere il meccanismo esatto di acquisizione della size senza:
+La size è il numero di byte esatto ottenuto per lo stesso artifact tramite la primitive esistente:
 
 ```text
-scaricare direttamente l'artifact finale nell'adapter
-bypassare pkg_download/http-fetch
-rilassare il requisito size obbligatorio
-hardcodare size o digest nel catalogo
+http-fetch -l -- <artifact-url>
 ```
 
-Il `sha512` qui riusa il digest type già richiesto dalla corrente integrazione Apache Maven; non viene introdotta una seconda primitive SHA-512 NetBeans-specific.
+L'implementazione runtime non:
+
+```text
+scarica direttamente l'artifact finale nell'adapter
+bypassa pkg_download/http-fetch
+rilassa il requisito size obbligatorio
+hardcode size o digest nel catalogo
+```
+
+Il `sha512` riusa la primitive general-purpose `digest`; non viene introdotta una seconda primitive SHA-512 NetBeans-specific.
 
 ## 8. Artifact selection e format
 
@@ -361,35 +365,29 @@ Release precedenti non vengono dichiarate compatibili retroattivamente senza ver
 
 Le future full release GitHub appartengono all'ultimo range finché artifact naming, runtime requirement e integration contract restano compatibili; quando uno di tali contratti cambia viene aggiunto un nuovo range secondo il package model corrente.
 
-## 15. Runtime support pending
+## 15. Runtime support
 
-Alla revisione `rumiai-os` osservata nel preflight non esiste:
+L'utente ha successivamente autorizzato esplicitamente la fase runtime prevista da questa decisione.
+
+La fase ha implementato:
 
 ```text
 lib/sys/sh/pkg-repository-netbeans.lib.sh
+supporto sha512 general-purpose in bin/sys/digest
+supporto digest=sha512:<128-hex> in pkg_download
+acquisizione della exact artifact size tramite http-fetch -l
+permanent test proporzionati in rumiai-tests
 ```
 
-Inoltre il runtime corrente supporta `sha256` e `md5` nella primitive `digest`/`pkg_download`, non ancora `sha512`.
+L'adapter resta monoproduct, usa GitHub per le release e `dlcdn.apache.org` per artifact, sidecar SHA-512 e size. Non scarica direttamente il binary finale.
 
-Per rendere installabile il catalogo saranno quindi necessari, in una fase separata esplicitamente autorizzata dall'utente:
+Resta necessario che un provider `java =25` eleggibile sia già installato: K2 non effettua auto-install delle dependency.
 
-```text
-repository adapter netbeans
-riuso del supporto sha512 general-purpose in digest/pkg_download quando disponibile, oppure sua implementazione una sola volta
-acquisizione autorevole della exact artifact size
-permanent test proporzionati
-live validation revision-specific di download/install/launch
-```
-
-La presente decisione non autorizza da sola scritture in `rumiai-os`.
-
-Resta inoltre necessario che un provider `java =25` eleggibile sia già installato: K2 non effettua auto-install delle dependency.
+La live validation di download/install/launch resta revision-specific e separata dai test deterministici permanenti.
 
 ## 16. Testing di questa unità
 
-Questa unità modifica soltanto decisione e catalog definition e non modifica il prodotto o la suite permanente.
-
-Il consistency check deve verificare almeno:
+Il catalog consistency check resta applicabile e verifica almeno:
 
 ```text
 cinque stream target-specific e nessun catalog generic
@@ -409,7 +407,7 @@ assenza di URL template o ${VERSION} nei file del catalogo
 pkg install non seleziona automaticamente default
 ```
 
-I test runtime e la physical validation appartengono alla successiva fase autorizzata e revision-specific.
+La fase runtime aggiunge test permanenti mirati per SHA-512 in `digest`, SHA-512 in `pkg_download` e il contratto repository NetBeans. La physical validation live resta revision-specific.
 
 ## 17. Invarianti
 
@@ -426,7 +424,7 @@ NETBEANS-PKG-09  artifact URL = https://dlcdn.apache.org/netbeans/netbeans/<vers
 NETBEANS-PKG-10  ${VERSION} del dialogo non diventa template/catalog syntax
 NETBEANS-PKG-11  artifact = netbeans-<version>-bin.zip; format = zip
 NETBEANS-PKG-12  digest_type = sha512 e il digest concreto proviene dinamicamente dall'upstream autorevole
-NETBEANS-PKG-13  exact size resta obbligatoria e deve provenire dall'upstream dello stesso artifact
+NETBEANS-PKG-13  exact size resta obbligatoria e proviene dallo stesso artifact tramite http-fetch -l
 NETBEANS-PKG-14  nessun bypass di http-fetch/pkg_download/pkg_extract/pkg_integrate
 NETBEANS-PKG-15  initial anchor = 31
 NETBEANS-PKG-16  dependency iniziale = java =25 usando la facility esistente
@@ -435,7 +433,7 @@ NETBEANS-PKG-18  stream iniziali = linux/macos arm64+x86_64 e windows-x86_64
 NETBEANS-PKG-19  windows-arm64 non viene dichiarato finché upstream non è pienamente supportato/validato
 NETBEANS-PKG-20  POSIX link = bin/netbeans; Windows x86_64 link = bin/netbeans.exe
 NETBEANS-PKG-21  nessun custom type, URL template generico, nuova dependency primitive o nuovo launcher
-NETBEANS-PKG-22  runtime adapter/SHA-512/size support resta pending autorizzazione esplicita
+NETBEANS-PKG-22  runtime adapter/SHA-512/size support è autorizzato e implementato
 NETBEANS-PKG-23  pkg install non seleziona automaticamente default
 NETBEANS-PKG-24  Git resta forward-only
 ```
