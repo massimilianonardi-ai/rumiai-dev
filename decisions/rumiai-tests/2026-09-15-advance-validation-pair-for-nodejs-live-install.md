@@ -1,7 +1,7 @@
 # Decisione — Avanzamento della coppia di validation per Node.js live install
 
 Date: 2026-09-15  
-Status: **Accepted / Active — physical validation pending**
+Status: **Accepted / Superseded as current gate — failed evidence retained**
 
 ## 1. Scopo
 
@@ -21,7 +21,7 @@ GitHub release resolution
 
 Non modifica il contratto package Node.js e non introduce nuove primitive.
 
-## 2. Coppia corrente
+## 2. Coppia di questo gate
 
 La coppia da validare è:
 
@@ -158,9 +158,9 @@ macos-arm64
 
 La package definition Windows resta fuori da questo gate. La physical validation Windows richiede un host POSIX-compatible di riferimento e resta separata, in particolare per la verifica del requisito executable dei wrapper `npm` / `npx` estratti dallo ZIP.
 
-## 8. Criterio di chiusura
+## 8. Criterio di chiusura originario
 
-Il gate è chiuso positivamente soltanto quando esistono sessioni pubblicate per la coppia esatta:
+Il gate sarebbe stato chiuso positivamente soltanto con sessioni pubblicate per la coppia esatta:
 
 ```text
 rumiai-os@a5442e527f6bc7a70022f09330ba27770c0b5fb7
@@ -178,19 +178,69 @@ runner-exit-status 0
 
 su entrambi i reference host ARM64 sopra indicati.
 
-Gli output `installed`, `catalog-head`, `node`, `npm`, `npx` devono essere conservati nelle sessioni e riportati nella decisione di chiusura.
+Gli output `installed`, `catalog-head`, `node`, `npm`, `npx` sarebbero stati conservati nelle sessioni positive e riportati nella decisione di chiusura.
 
-## 9. Invarianti
+## 9. Esito fisico e supersessione
+
+Il gate ha prodotto failure reale su entrambi i reference host ARM64.
+
+Ubuntu 26.04 ARM64:
 
 ```text
-NODEJS-LIVE-01  coppia corrente = rumiai-os@a5442e527f6bc7a70022f09330ba27770c0b5fb7 + rumiai-tests@a80de1c56b9073804e7b3ed994c208be5f40c43b
-NODEJS-LIVE-02  selection corrente = external/nodejs
+session      20260915T160755+0200-405802
+rumiai-os    a5442e527f6bc7a70022f09330ba27770c0b5fb7
+rumiai-tests a80de1c56b9073804e7b3ed994c208be5f40c43b
+selection    external/nodejs
+PASS         0
+FAIL         1
+SKIP         0
+ERROR        0
+status       1
+```
+
+macOS ARM64:
+
+```text
+session      20260915T160821+0200-75434
+rumiai-os    a5442e527f6bc7a70022f09330ba27770c0b5fb7
+rumiai-tests a80de1c56b9073804e7b3ed994c208be5f40c43b
+selection    external/nodejs
+PASS         0
+FAIL         1
+SKIP         0
+ERROR        0
+status       1
+```
+
+Entrambi i log raggiungono il live install e terminano con:
+
+```text
+operation=pkg-install
+reason=package-failed
+```
+
+L'analisi successiva ha stabilito che il directory index `nodejs.org/dist/<version>/` espone size human-readable arrotondate e non può soddisfare il contratto exact-byte del descriptor `pkg_download`.
+
+La remediation corrente è definita in:
+
+```text
+decisions/rumiai-os/2026-09-15-http-fetch-content-length-and-nodejs-size-remediation.md
+```
+
+Questa decisione resta evidence immutabile del gate fallito ma non è più il gate corrente.
+
+## 10. Invarianti
+
+```text
+NODEJS-LIVE-01  coppia storica di questo gate = rumiai-os@a5442e527f6bc7a70022f09330ba27770c0b5fb7 + rumiai-tests@a80de1c56b9073804e7b3ed994c208be5f40c43b
+NODEJS-LIVE-02  selection esercitata = external/nodejs
 NODEJS-LIVE-03  il prodotto non cambia per aprire il gate
 NODEJS-LIVE-04  external/nodejs/install-live.test usa il resource model corrente res e non il top-level lang superseded
 NODEJS-LIVE-05  il test esercita download/install/integration/launch reale di node, npm e npx
 NODEJS-LIVE-06  il catalog-head effettivo deve essere registrato dall'evidence live; non viene inventato un nuovo catalog pin
-NODEJS-LIVE-07  Ubuntu ARM64 e macOS ARM64 devono entrambi produrre evidence positiva per chiudere il gate ARM64
+NODEJS-LIVE-07  Ubuntu ARM64 e macOS ARM64 erano entrambi host richiesti dal gate
 NODEJS-LIVE-08  Windows resta un gate fisico separato
 NODEJS-LIVE-09  nessun LTS selector, SemVer nel core, URL template generico o workaround chmod viene introdotto
 NODEJS-LIVE-10  Git resta forward-only
+NODEJS-LIVE-11  le sessioni 20260915T160755+0200-405802 e 20260915T160821+0200-75434 sono failure evidence revision-specific e il gate è superseded
 ```
