@@ -80,12 +80,14 @@ rumiai-validate
 
 Non vengono creati molti eseguibili `rumiai-validate-<task>`.
 
-La forma operativa diventa:
+La forma operativa corrente è:
 
 ```text
-./rumiai-validate                 # default health configuration
-./rumiai-validate <scope-name>    # named validation scope
+./rumiai-validate                 # self-update + selettore interattivo degli scope correnti
+./rumiai-validate <scope-name>    # esecuzione diretta di uno scope nominato
 ```
+
+Il comportamento no-arg è definito dalla decisione attiva `2026-09-15-interactive-validation-scope-selector.md`: il launcher determina la propria root, entra nella root di `rumiai-tests`, si autoaggiorna e soltanto dopo mostra l'elenco numerato degli scope materializzati.
 
 Gli scope nominati sono configurazioni versionate sotto:
 
