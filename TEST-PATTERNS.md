@@ -1,248 +1,139 @@
 # RumiAI Test Authoring Patterns
 
-Questo documento raccoglie pattern, primitive e reference implementation emersi durante la costruzione e la validazione della suite permanente `rumiai-tests`.
+Questo documento raccoglie pattern e primitive riutilizzabili per `rumiai-tests`. `TESTING.md` resta il contratto normativo.
 
-Deve essere consultato insieme a `TESTING.md` quando si scrivono nuovi test. `TESTING.md` definisce il contratto normativo della suite; questo documento conserva invece know-how implementativo già validato affinché non venga reinventato o degradato nei test successivi.
+## 1. Principio
 
-## 1. Principio di estrapolazione
+Quando più test hanno la stessa responsabilità infrastrutturale, la conoscenza non deve essere duplicata per ottenere una falsa indipendenza.
 
-Quando durante la progettazione, il debug o la validazione fisica di un test emerge una funzionalità riutilizzabile e materialmente importante, non deve rimanere nascosta dentro quel singolo test per semplice inerzia.
-
-La funzionalità deve essere valutata per estrapolazione a uno dei tre livelli seguenti:
+La priorità è:
 
 ```text
-1. pattern documentale
-2. reference implementation / libreria di authoring dei test
-3. tool generale di rumiai-os
+1. comportamento osservabile del target
+2. indipendenza di stato/ordine tra test
+3. riuso di infrastruttura comune stabile
+4. minima quantità di codice di test necessaria
 ```
 
-I livelli non sono mutuamente esclusivi. Una stessa capability può essere documentata al livello 1, avere una reference implementation al livello 2 e successivamente essere promossa anche al livello 3.
+## 2. Livelli di riuso
 
-L'obiettivo non è ridurre a ogni costo la duplicazione del codice. L'obiettivo è conservare conoscenza verificata, rendere esplicite le scelte host-specifiche e permettere di risalire con precisione alla versione di una primitive riutilizzata.
+Una tecnica riutilizzabile può vivere come:
 
-## 2. Livello 1 — pattern documentale
-
-Una tecnica utile deve essere documentata quando:
-
-- contiene una scelta non ovvia;
-- ha richiesto debug o validazione fisica significativa;
-- risolve una classe di problemi che può ricomparire;
-- contiene snippet o sequenze di shell che è preferibile riusare anziché riscrivere da zero;
-- documenta differenze di comportamento tra host, tool o implementazioni.
-
-Il pattern documentale deve descrivere almeno:
-
-- il problema risolto;
-- le precondizioni;
-- la strategia scelta;
-- le varianti host-specifiche rilevanti;
-- i failure mode già osservati;
-- il pathname dell'eventuale reference implementation canonica.
-
-Gli snippet documentali sono materiale di authoring. Non diventano automaticamente una dipendenza runtime dei test.
-
-## 3. Livello 2 — reference implementation dei test
-
-Quando una funzionalità è sufficientemente concreta e riutilizzabile, deve essere estratta in una reference implementation sotto `rumiai-tests/lib/` o in un'altra posizione esplicitamente dedicata all'authoring.
-
-Una reference implementation può assumersi la responsabilità di:
-
-- scegliere il tool più appropriato in base all'host;
-- normalizzare differenze tra implementazioni di utility esterne;
-- applicare fallback dichiarati;
-- offrire funzioni e convenzioni già validate;
-- centralizzare correzioni a bug scoperti durante lo sviluppo della primitive.
-
-### 3.1 Reference implementation non significa dipendenza runtime
-
-L'indipendenza dei test resta prioritaria.
-
-Per primitive fondamentali o complesse, il modello preferito è:
-
-1. mantenere una versione canonica in `rumiai-tests/lib/`;
-2. copiare inline nel `.test` le sole funzioni necessarie;
-3. rendere il test eseguibile senza `source` o dipendenze da altri file della suite;
-4. registrare nel codice del test la provenienza esatta della copia.
-
-Formato raccomandato:
-
-```sh
-# Reference implementation copied from:
-# massimilianonardi-ai/rumiai-tests@<commit>:lib/<name>.lib
-# Copied inline intentionally to preserve test independence.
+```text
+pattern documentale
+libreria condivisa di rumiai-tests
+tool generale di rumiai-os, solo se utile anche al prodotto
 ```
 
-Il commit deve essere un commit Git immutabile, non `main`, `HEAD` o un branch.
+La promozione verso `rumiai-os` non è automatica.
 
-Questo crea una relazione di provenienza, non una dipendenza runtime.
+## 3. Librerie condivise
 
-### 3.2 Perché registrare il commit
+Una libreria sotto `rumiai-tests/lib/` è appropriata per responsabilità comuni come:
 
-Il riferimento al commit rende possibile un audit retrospettivo.
+- target discovery;
+- creazione di fixture standard;
+- path normalization;
+- primitive temporanee;
+- driver di programmi interattivi;
+- altra infrastruttura non specifica della proprietà verificata.
 
-Se in futuro viene scoperto un bug grave in una primitive canonica, è possibile cercare tutti i test che dichiarano di avere copiato quella specifica versione e stabilire quali risultati storici potrebbero essere stati influenzati.
+I test possono source direttamente tali librerie. La revisione esatta di `rumiai-tests` registrata nella validation rende riproducibile la versione usata.
 
-Un aggiornamento della reference implementation non modifica automaticamente i test che ne hanno incorporato una copia precedente. La modifica dei test storici deve essere deliberata e deve preservare la tracciabilità dell'evidenza già prodotta.
+Una libreria condivisa deve essere piccola, con responsabilità chiara e test proporzionati.
 
-Quando una versione viene dichiarata difettosa, il processo normale è:
+### Copia inline
 
-1. correggere prima la reference implementation;
-2. identificare le copie derivate tramite il commit di provenance;
-3. aggiornare deliberatamente soltanto i test interessati;
-4. aggiornare nei test il commit sorgente;
-5. rieseguire la validazione applicabile sugli host di riferimento.
+La copia inline non è più il default.
 
-### 3.3 Uso diretto di librerie condivise
+È ammessa solo quando:
 
-Fare `source` di una libreria comune da un test permanente introduce una dipendenza runtime dalla versione corrente di quella libreria.
+1. la primitive copiata fa parte intenzionalmente della semantica specifica del test; oppure
+2. congelare quella versione dentro il test è materialmente necessario e la motivazione è documentata nel file.
 
-Questo può essere accettabile per primitive molto piccole, stabili e deliberatamente parte del contratto della piattaforma di test, ma non deve essere il default per logica materialmente necessaria a stabilire l'esito del test.
+Non è una motivazione sufficiente il solo desiderio di evitare una dipendenza dalla stessa revisione della suite.
 
-Quando l'indipendenza e la riproducibilità storica sono più importanti della deduplicazione, la primitive deve essere copiata inline con riferimento al commit di origine.
+Le copie inline storiche esistenti devono essere migrate quando causano manutenzione duplicata o drift; non è necessario riscriverle tutte in una sola modifica se il rischio supera il beneficio, ma nessuna nuova copia deve essere introdotta senza giustificazione.
 
-### 3.4 Gate di validazione della reference implementation
+## 4. Testare il contratto, non lo spelling del codice
 
-L'estrazione di codice già funzionante da un test non dimostra automaticamente che la nuova astrazione generalizzata sia corretta.
+Quando possibile usare fixture e fake controllati per osservare:
 
-Una reference implementation deve quindi avere un proprio test permanente che la eserciti come oggetto di validazione. Quando contiene rami host-specifici materialmente diversi, tali rami devono essere esercitati fisicamente sugli host stabili applicabili prima che quella versione venga considerata una sorgente canonica affidabile per nuove copie inline.
+- argomenti realmente passati;
+- ordine realmente osservabile delle operazioni;
+- output;
+- exit status;
+- file prodotti;
+- mode/ownership;
+- transizioni di stato.
 
-In particolare non deve essere assunto che una trasformazione da codice specializzato a primitive generica sia semanticamente neutra. Parametrizzazione, escaping, quoting, parsing dei dati e selezione host-specifica possono introdurre nuovi failure mode anche quando il codice originario era già validato.
+Evitare grep del sorgente, nomi di funzioni private, numeri di riga e confronti di pathname non canonicalizzati quando tali dettagli non sono il contratto.
 
-Una versione nuova o sostanzialmente modificata della reference implementation resta quindi **non validata** fino al passaggio del proprio test sugli host applicabili. I test già esistenti non devono essere migrati in massa alla nuova versione prima di tale validazione, salvo quando la migrazione stessa è necessaria per diagnosticare o correggere un bug noto e viene seguita immediatamente dalla validazione fisica.
-
-## 4. Livello 3 — promozione a tool di RumiAI OS
-
-Una capability emersa nei test deve essere valutata per promozione a `rumiai-os` quando smette di essere principalmente una tecnica di testing e diventa una funzionalità generale del sistema.
-
-Segnali favorevoli alla promozione:
-
-- utilità anche fuori dalla suite;
-- più componenti del prodotto necessitano della stessa capability;
-- gestione host-specifica significativa che è utile centralizzare nel sistema;
-- semantica sufficientemente stabile da meritare un'interfaccia pubblica o interna del prodotto;
-- beneficio concreto nel rendere la capability disponibile a script, moduli o utenti di RumiAI OS.
-
-La promozione non deve essere automatica. Un helper nato nei test non deve entrare nel prodotto soltanto perché è tecnicamente riutilizzabile.
-
-Prima della promozione devono essere valutati almeno:
-
-- responsabilità architetturale;
-- naming;
-- interfaccia;
-- dipendenze esterne;
-- comportamento cross-platform;
-- error model;
-- sicurezza;
-- compatibilità con i principi POSIX e RumiAI OS applicabili.
-
-## 5. Pattern: pilotaggio non interattivo di programmi interattivi
-
-### Problema
-
-Un test può dover esercitare un programma che legge intenzionalmente da `/dev/tty`, non da standard input. Una semplice pipe o redirezione di `stdin` non è quindi sufficiente.
-
-Il problema è particolarmente importante per bootstrap e installer che devono poter essere forniti tramite `curl | sh` mantenendo comunque prompt interattivi sicuri sul terminale reale.
-
-### Strategia canonica corrente
+## 5. Pattern: target `rumiai-os`
 
 La reference implementation corrente è:
 
 ```text
-rumiai-tests/lib/interactive.lib
+lib/rumiai-os-target.lib
 ```
 
-Essa presenta al test una primitive di authoring che pilota un eseguibile wrapper dentro uno pseudo-terminale e cattura l'output.
+I test `rumiai-os` che condividono il normale contratto di discovery devono source questa libreria invece di copiarne le funzioni.
 
-La strategia host-specifica corrente è:
+Un test può usare una strategia diversa solo quando la discovery stessa è la proprietà verificata o quando esiste un requisito differente documentato.
+
+## 6. Pattern: fixture runnable `rumiai-os`
+
+La reference implementation corrente è:
 
 ```text
-macOS / Darwin
-    expect(1)
-    attesa esplicita del prompt prima di inviare ogni risposta
-
-Linux
-    script(1) util-linux
-    input preparato e fornito allo pseudo-terminale
+lib/rumiai-os-fixture.lib
 ```
 
-Il driver deve mantenere tutta la complessità dentro il test. L'operatore fisico deve continuare a vedere soltanto la normale forma:
+I test che necessitano della normale copia isolata del runtime devono source questa libreria.
+
+Una modifica al layout standard del prodotto deve quindi essere riallineata una volta nella fixture condivisa e nei test che verificano esplicitamente quel layout, non in numerose copie infrastrutturali.
+
+## 7. Pattern: programmi interattivi via TTY
+
+La reference implementation corrente è:
 
 ```text
-cd <rumiai-os>
-git pull --ff-only
-cd <rumiai-tests>
-git pull --ff-only
-./rumiai-test <selection>
+lib/interactive.lib
 ```
 
-### Formato del dialogo
+Serve a pilotare in modo non interattivo programmi che leggono da TTY reale/pseudo-terminale.
 
-La reference implementation usa record testuali:
+Strategia host corrente validata:
+
+```text
+macOS / Darwin: expect(1), attesa esplicita del prompt
+Linux:          script(1) util-linux con input preparato
+```
+
+Formato dialogo:
 
 ```text
 <prompt esatto><TAB><risposta>
 ```
 
-Ogni record rappresenta una coppia prompt/risposta. Il prompt deve essere una stringa esatta osservabile sul terminale. Prompt e risposta non devono contenere TAB o newline.
+Failure mode già osservati e da non reintrodurre:
 
-Il dialogo è parte della fixture interna del test e non è input dell'operatore umano.
+- BSD/macOS `script(1)` non è intercambiabile con util-linux per questo scenario;
+- in Tcl/Expect `[y/N]` dentro doppi apici è sintassi, non testo letterale;
+- prompt dinamici devono essere trattati come dati e confrontati esattamente;
+- timeout ed EOF devono produrre diagnostica utile;
+- il transcript deve restare osservabile quando la prova fallisce.
 
-### Failure mode già osservati
+La versione storicamente validata `7eed87d7...` resta evidence del comportamento osservato; nuove versioni della libreria richiedono test proporzionati prima di essere considerate affidabili.
 
-Durante la prima implementazione sono emersi almeno questi problemi:
+## 8. Regola per nuovi test
 
-1. La variante BSD/macOS di `script(1)` non è intercambiabile con la variante util-linux usata su Linux per questo scenario.
-2. In Tcl/Expect, stringhe tra doppi apici contenenti `[y/N]` interpretano le parentesi quadre come command substitution. I prompt letterali devono essere trattati come dati e non come codice Tcl.
-3. Una strategia di logging Expect che disabilita `log_user` può rendere la cattura dell'output meno trasparente e complicare la diagnosi. Il driver deve preservare un transcript osservabile quando fallisce.
-4. Inserire manualmente molti comandi dopo un programma che legge da `/dev/tty` può far consumare al prompt righe già incollate nel terminale. Questo è uno dei motivi per cui l'interazione deve essere automatizzata dentro il `.test`.
-5. Generalizzare un prompt letterale a un pattern dinamico dentro un blocco Tcl braced può cambiare le regole di sostituzione: una variabile come `$prompt` non deve essere assunta equivalente al precedente pattern letterale. Per i prompt generati dinamicamente la strategia corrente usa il matching esatto `expect -ex "$prompt"`; il valore ottenuto dalla variabile viene trattato come dato e timeout/EOF sono gestiti esplicitamente.
+Prima di aggiungere codice infrastrutturale a un `.test`, verificare nell'ordine:
 
-### Validazione fisica corrente
+1. esiste già una libreria sotto `lib/` con la stessa responsabilità?
+2. esiste un pattern documentato?
+3. la logica è davvero specifica della proprietà testata?
+4. il nuovo test protegge una proprietà distinta da quelle già coperte?
+5. il costo futuro di manutenzione è proporzionato al rischio?
 
-La versione corretta della reference implementation è stata congelata in:
-
-```text
-massimilianonardi-ai/rumiai-tests@7eed87d7cba441d248ae68de82762b73b2320f77:lib/interactive.lib
-```
-
-Le tre copie inline usate dai test `rumiai-dev/setup-dev` sono state aggiornate dichiarando la stessa provenance e la suite completa al commit:
-
-```text
-c9d0c1757f64d66d1f460a00b3cd33574540b6f1
-```
-
-è stata eseguita fisicamente con esito:
-
-```text
-PASS   8
-FAIL   0
-SKIP   0
-ERROR  0
-TOTAL  8
-```
-
-su entrambi gli host stabili correnti:
-
-- macOS;
-- Ubuntu 26.04 ARM64.
-
-Questo chiude il gate di validazione della versione `7eed87d7...` come reference implementation canonica corrente per nuove copie inline.
-
-### Stato di promozione
-
-Questa capability è attualmente classificata come **livello 2**.
-
-È abbastanza generale e importante da avere una reference implementation canonica per i test, ma non è ancora promossa a tool di `rumiai-os` perché l'uso dimostrato finora appartiene all'infrastruttura di test e non al runtime del prodotto.
-
-La promozione a livello 3 deve essere rivalutata se RumiAI OS avrà un'esigenza generale di pilotare processi TTY interattivi in modo programmabile e cross-platform.
-
-## 6. Regola per la creazione di nuovi test
-
-Prima di implementare una nuova primitive tecnica dentro un `.test`, l'autore deve verificare se:
-
-1. il problema è già descritto in questo documento;
-2. esiste una reference implementation sotto `rumiai-tests/lib/`;
-3. esiste già un tool di `rumiai-os` che fornisce la capability richiesta;
-4. la nuova soluzione migliora realmente quella esistente o la sta semplicemente duplicando.
-
-Se durante il nuovo test emerge una primitive migliore, la conoscenza deve ritornare verso i livelli superiori: aggiornamento del pattern documentale, aggiornamento della reference implementation e, quando giustificato, valutazione della promozione a tool del prodotto.
+Se la risposta indica riuso o fusione, non creare una nuova copia o un nuovo test soltanto per isolamento formale.
