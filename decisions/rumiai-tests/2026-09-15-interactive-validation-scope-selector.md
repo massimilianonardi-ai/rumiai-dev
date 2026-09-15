@@ -69,12 +69,13 @@ mostra dopo il self-update un elenco numerato degli scope disponibili, per esemp
 
 ```text
 Available validation scopes:
-  1) nodejs-live
-  2) resource-model
-  3) rumiai-os-health
-  4) srv
+  1) resource-model
+  2) rumiai-os-health
+  3) srv
 Select validation scope: 
 ```
+
+L'esempio non è una lista canonica: il contenuto effettivo dipende esclusivamente dai file `validation/*.conf` presenti nella revisione aggiornata.
 
 L'utente inserisce il numero corrispondente.
 
@@ -94,17 +95,21 @@ per automazione, test, CI e invocazioni non interattive.
 
 Questa forma salta il menu ma **non** salta self-location, `cd`, self-update, cleanliness gate, preparazione della revisione target o pubblicazione delle evidence.
 
-## 7. Relazione con il gate Node.js
+## 7. Relazione con scope concorrenti e futuri
 
-Il gate live Node.js già fissato usa:
+Il launcher non crea implicitamente scope a partire da un vecchio `rumiai-validate.conf`, da una selection storica o dal nome di un sottosistema.
+
+Uno scope compare nel menu soltanto quando una work unit lo ha materializzato correttamente come:
 
 ```text
-selection external/nodejs
+validation/<scope-name>.conf
 ```
 
-La sua configurazione deve essere resa disponibile come scope nominato, senza cambiare la selection né il contratto del test. Le istruzioni operative che in precedenza indicavano genericamente `./rumiai-validate` devono essere lette, dopo questa decisione, come scelta dello scope Node.js dal menu oppure come invocazione diretta dello scope nominato.
+con revisioni e selection coerenti con l'autorità corrente del sottosistema.
 
-L'eventuale avanzamento della revisione `rumiai-tests` necessaria a rendere eseguibile il gate resta revision-specific e deve essere registrato separatamente; le evidence vecchie non vengono reinterpretate.
+In particolare, eventuali gate Node.js devono seguire la più recente decisione Node.js applicabile. La decisione corrente `2026-09-15-http-fetch-content-length-and-nodejs-size-remediation.md` richiede uno scope task più ampio del solo `external/nodejs`; il selettore non deve quindi reintrodurre come scope corrente il precedente gate live isolato.
+
+Le evidence e le coppie precedenti restano storiche e non vengono reinterpretate.
 
 ## 8. Invarianti
 
@@ -119,8 +124,9 @@ VAL-UI-07  ./rumiai-validate <scope-name> resta disponibile per uso non interatt
 VAL-UI-08  rumiai-test resta invariato e a singola selection
 VAL-UI-09  rumiai-validate.conf non viene implicitamente usato dal percorso no-arg e non viene modificato/cancellato da questa work unit
 VAL-UI-10  evidence e sessioni restano revision-specific e immutabili
-VAL-UI-11  nessuna modifica a rumiai-os è richiesta
+VAL-UI-11  nessuna modifica a rumiai-os è richiesta dalla modifica del selettore
 VAL-UI-12  Git resta forward-only
+VAL-UI-13  il menu non sintetizza scope da decisioni o configurazioni superseded
 ```
 
 ## 9. Testing richiesto
