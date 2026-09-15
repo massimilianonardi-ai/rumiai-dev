@@ -1,7 +1,7 @@
 # Decisione — Riconciliazione della coppia di validation per resource model e `srv`
 
 Date: 2026-09-15  
-Status: **Accepted / Active — physical validation pending**
+Status: **Accepted / Active — physical validation failed; remediation required**
 
 ## 1. Scopo
 
@@ -111,30 +111,99 @@ rumiai-tests 16f3926a224dd32d7d226a39234c779fa4ce1353
 selection    rumiai-os
 ```
 
-deve essere esercitata sui reference host applicabili, almeno:
-
-```text
-Ubuntu 26.04 ARM64
-macOS ARM64
-```
-
-tramite:
+è stata esercitata sui due reference host richiesti tramite:
 
 ```text
 ./rumiai-validate
 ```
 
-Finché entrambi i run non sono completati e pubblicati secondo il contratto ordinario, lo stato resta **physical validation pending**.
+Entrambi i run sono stati completati e pubblicati, ma hanno terminato con status non-zero e quindi non chiudono il gate con evidence positiva.
 
-## 7. Invarianti
+## 7. Evidence di validation fallita
+
+### Ubuntu 26.04 ARM64
+
+Sessione:
 
 ```text
-VAL-RECON-01  la coppia corrente è rumiai-os@a5442e527f6bc7a70022f09330ba27770c0b5fb7 con rumiai-tests@16f3926a224dd32d7d226a39234c779fa4ce1353
-VAL-RECON-02  la selection corrente è rumiai-os
+20260915T145047+0200-376171
+validation/20260915T145047+0200-376171
+```
+
+Risultato:
+
+```text
+PASS   57
+FAIL   13
+SKIP   0
+ERROR  15
+TOTAL  85
+runner-exit-status 2
+```
+
+### macOS ARM64
+
+Sessione:
+
+```text
+20260915T145126+0200-42022
+validation/20260915T145126+0200-42022
+```
+
+Risultato:
+
+```text
+PASS   56
+FAIL   14
+SKIP   0
+ERROR  15
+TOTAL  85
+runner-exit-status 2
+```
+
+Le due sessioni mostrano un insieme quasi identico di fallimenti. L'analisi iniziale dei log pubblicati ha già identificato almeno questi casi test-side certi:
+
+```text
+fixture/test ancora dipendenti dal superseded top-level $m_ROOT/lang
+pkg/setuid.test ancora dipendente dal superseded top-level $m_ROOT/lang
+pkg-repository-nodejs/artifact.test con digest SHA-256 atteso iniziale di lunghezza errata
+```
+
+Il solo fallimento aggiuntivo macOS rispetto a Linux è:
+
+```text
+rumiai-os/srv/lifecycle.test
+```
+
+che richiede indagine separata perché il contratto corrente `srv` richiede davvero la canonicalizzazione del service target prima del launch.
+
+Nessuno di questi run viene reinterpretato come PASS. Le branch di validation restano evidence immutabile della coppia esatta esercitata.
+
+## 8. Stato di remediation
+
+La coppia corrente non deve essere rieseguita invariata come tentativo di ottenere un PASS: prima va corretta la suite permanente nei punti test-side superseded/errati già identificati e va isolata la causa del fallimento macOS di `srv`.
+
+Le correzioni test-side produrranno una nuova revisione `rumiai-tests`; la successiva physical validation dovrà quindi essere registrata come nuova coppia revision-specific con lo stesso prodotto solo se `rumiai-os` resta invariato.
+
+Il gate separato:
+
+```text
+external/nodejs/install-live.test
+```
+
+resta successivo alla chiusura positiva della full-suite e non viene anticipato.
+
+## 9. Invarianti
+
+```text
+VAL-RECON-01  la coppia esercitata è rumiai-os@a5442e527f6bc7a70022f09330ba27770c0b5fb7 con rumiai-tests@16f3926a224dd32d7d226a39234c779fa4ce1353
+VAL-RECON-02  la selection esercitata è rumiai-os
 VAL-RECON-03  la coppia riconcilia esplicitamente resource model e successivo hardening srv già presenti sui branch correnti
 VAL-RECON-04  i tentativi terminati per mismatch prima del runner non sono evidence
 VAL-RECON-05  evidence precedente resta revision-specific e non viene reinterpretata
 VAL-RECON-06  external/nodejs/install-live.test richiede un gate separato e non è coperto dalla selection rumiai-os
-VAL-RECON-07  nessun contratto di prodotto o testing viene modificato da questa decisione
-VAL-RECON-08  Git resta forward-only
+VAL-RECON-07  le sessioni 20260915T145047+0200-376171 e 20260915T145126+0200-42022 sono evidence di validation fallita, non PASS
+VAL-RECON-08  la remediation test-side richiede una nuova revisione rumiai-tests e quindi una nuova coppia revision-specific
+VAL-RECON-09  il contratto srv non viene allentato per far passare il test macOS
+VAL-RECON-10  Git resta forward-only
 ```
