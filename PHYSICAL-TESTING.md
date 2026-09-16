@@ -76,6 +76,27 @@ La regola operativa è quindi:
 
 Questa è un'eccezione per attività manuali diagnostiche, non il modello desiderato per i test permanenti.
 
+### Validazione GUI
+
+La visibilità di una finestra deve essere richiesta all'operatore soltanto quando costituisce realmente la proprietà da validare. Non è un controllo predefinito per ogni package o per ogni esecuzione live.
+
+Una singola unità di validazione GUI deve richiedere al massimo una conferma visuale umana per applicazione. Tale conferma deve esercitare il normale command path integrato di RumiAI che l'utente utilizzerà realmente.
+
+Strumenti diagnostici intermedi non devono duplicare lo stesso smoke test grafico. In particolare, quando `pkg-analyze` viene usato durante una package release validation GUI:
+
+```text
+- la candidate discovery può restare automatica;
+- il dynamic probe del candidato GUI non è un secondo requisito di launch;
+- la conferma visuale appartiene al successivo launch tramite il command RumiAI integrato;
+- il dynamic probe GUI di pkg-analyze resta disponibile come attività diagnostica quando si sta indagando specificamente pkg-analyze o un fallimento concreto.
+```
+
+I controlli deterministici disponibili — installazione, catalogo, layout, binding, package-root immutability, state e altri invarianti applicabili — devono restare automatici e precedere l'eventuale conferma visuale.
+
+Un fallimento del meccanismo di test GUI non deve essere trasformato automaticamente in un bug del prodotto. Prima di aprire o riaprire un problema di prodotto deve esistere una riproduzione della stessa proprietà attraverso il normale command path RumiAI sullo stesso target; in assenza di tale riproduzione il problema appartiene alla test infrastructure e va classificato secondo `TESTING.md`.
+
+Le live validation GUI restano revision-specific e separate dai test deterministici permanenti. Non sono un prerequisito universale della full suite né vanno aggiunte al validation scope di un task che non modifica la proprietà grafica interessata.
+
 ## Path correnti degli host di riferimento
 
 macOS:
