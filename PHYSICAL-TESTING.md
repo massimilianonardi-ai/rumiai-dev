@@ -4,6 +4,18 @@ Questo documento definisce la procedura operativa per i test fisici che richiedo
 
 Le regole generali dei test restano in `TESTING.md`; il contratto del runner resta in `RUNNER.md`.
 
+## Ruolo della physical validation
+
+La physical validation è una fase finale di conferma, non il luogo normale in cui scoprire per la prima volta se il prodotto funziona.
+
+Prima di arrivare alla physical validation, il lavoro dovrebbe avere già attraversato, quando materialmente pertinenti, sviluppo ed esecuzione reale su host locali o ausiliari, messa a punto dei test permanenti e prove automatiche su ambienti puliti o differenti. Il prodotto sottoposto a physical validation deve quindi essere presumibilmente completo e funzionante per lo scope che si intende chiudere.
+
+L'aspettativa operativa è che la maggior parte delle physical validation passi al primo tentativo. Un singolo fallimento può naturalmente rivelare una divergenza reale dell'host, dell'hardware o dell'ambiente fisico che le fasi precedenti non potevano osservare. Se però una quota non occasionale di difetti funzionali viene scoperta per la prima volta soltanto durante la physical validation, il modello di sviluppo/test precedente è insufficiente e deve essere corretto; non si deve normalizzare la physical validation come fase ordinaria di debugging.
+
+Quando una physical validation fallisce, la correzione deve quindi includere la verifica del perché le fasi precedenti non abbiano intercettato il problema e, quando possibile, il rafforzamento del test permanente o dell'ambiente di esecuzione precedente appropriato.
+
+Un runner GitHub-hosted, un ambiente Linux fornito da ChatGPT, un'esecuzione headless o altro ambiente ausiliario possono produrre evidenza utile e possono esercitare gli stessi test reali, ma non vengono chiamati physical validation dell'host stabile di riferimento che non hanno fisicamente esercitato.
+
 ## Sessione fisica
 
 Ogni sessione di comandi si considera iniziata da un terminale appena aperto.

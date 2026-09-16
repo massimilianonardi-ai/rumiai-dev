@@ -194,6 +194,8 @@ Many project rules are semantic and cannot be reduced to a grep pattern. The exi
 
 For behavioral tests, mechanical enforcement must preserve the authenticity of the target required by `TESTING.md`: the test may isolate or replicate the real system, but must not replace components of the system under test and then count the result as validation of the real composed behavior. A test based on an explicitly permitted simulation protects only the property actually exercised through that simulation.
 
+Automation environments, including GitHub Actions or an AI-provided execution VM, must invoke the real permanent tests or the real target path appropriate to the task. They are execution infrastructure, not alternative implementations of the test contract.
+
 ---
 
 ## 10. Post-change consistency scan
@@ -208,6 +210,10 @@ new public names match authoritative terminology
 call sites and tests use current interfaces, or are explicitly recorded as pending realignment
 behavioral tests exercise the real target or a complete isolated replica through real entrypoints/components
 permitted simulations do not substitute the target behavior being claimed as validated
+auxiliary/hosted execution environments are not mislabeled as required physical-host validation
+GitHub Actions, when touched, orchestrates real tests rather than duplicating their semantics
+no GitHub required status check or automatic merge gate is introduced without a new explicit decision
+physical validation is used as final confirmation rather than routine first-line debugging
 file modes are correct, especially executable tests/commands
 serialization/layout still matches active specifications
 no accidental host-specific dependency was introduced
@@ -225,6 +231,12 @@ If a mismatch is found, the work is not complete.
 A semantic implementation change that requires physical validation must be validated on the current stable reference installations according to the testing contract.
 
 When the validation claim concerns observable behavior of a command, subsystem or composed pipeline, the physical test must exercise the real target or a complete isolated replica of the exact target revision through its real execution path. Fixture-only, mocked or partially reconstructed executions do not validate a real path that they replaced.
+
+Physical validation is the final confirmation stage for a work unit that is already presumibilmente complete and functioning based on the preceding real executions and permanent tests that are materially applicable. Development hosts, auxiliary environments and GitHub-hosted runners should be used earlier when they can discover defects or portability problems without consuming the final physical gate.
+
+The normal expectation is that most physical validations pass on the first attempt. An occasional failure may reveal a property that only the physical host can expose; a recurring pattern in which functional defects are discovered first during physical validation is evidence that the earlier testing model is insufficient and must be strengthened rather than accepted as normal workflow.
+
+A GitHub-hosted runner, an AI-provided Linux VM or a headless GUI environment is not physical validation of a stable reference installation that it did not actually exercise.
 
 Pure naming/documentation corrections should normally be bundled into the next meaningful physical gate rather than imposing repeated operator work, unless the correction itself changes observable execution behavior or prevents existing tests from exercising the code.
 
@@ -275,6 +287,10 @@ A change to an established subsystem is ready to be reported as complete only wh
 [ ] code follows established naming/layout/format/platform rules
 [ ] behavioral tests use the real target or a complete isolated replica and real execution path for the behavior claimed
 [ ] simulations/fixtures, when permitted, are confined to the input boundary they actually represent and are not credited as real-path validation
+[ ] auxiliary/hosted environments are classified correctly and do not replace required physical-host evidence
+[ ] GitHub Actions, when applicable, invokes the real suite/target and is not a required merge gate
+[ ] physical validation is reached only after preceding evidence makes success the expected outcome
+[ ] repeated physical-only failures trigger review of the preceding test model
 [ ] correction propagated to dependent active docs/tests/examples, or pending implementation/test realignment is explicitly recorded
 [ ] stale superseded patterns were scanned for
 [ ] executable/file modes were checked

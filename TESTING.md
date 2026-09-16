@@ -167,6 +167,12 @@ Ubuntu 26.04 ARM64
 
 Host periodici possono includere Ubuntu x64 e ambienti Windows POSIX-compatible quando pertinenti.
 
+Ambienti ausiliari aggiuntivi sono deliberatamente utili durante sviluppo e messa a punto dei test. In particolare, un ambiente Linux diverso dagli host stabili può far emergere dipendenze accidentali da una distribuzione, da una versione di tool o da una divergenza host-specifica che le astrazioni RumiAI devono invece nascondere dietro un'interfaccia comune.
+
+L'ambiente Linux di esecuzione messo a disposizione da ChatGPT, quando disponibile, può essere usato come host ausiliario reale per sviluppo, test esplorativi, riproduzione di bug e messa a punto dei test permanenti. La sua identità effettiva deve essere rilevata nella sessione prima di attribuire significato host-specifico ai risultati; non si assume che distribuzione, versione o kernel restino invariati tra sessioni. Quando tale ambiente è Debian x86_64, la sua differenza rispetto a Ubuntu costituisce un ulteriore punto di osservazione utile per la portabilità POSIX di RumiAI.
+
+Un PASS su un host ausiliario aggiunge evidenza sulla proprietà effettivamente esercitata, ma non sostituisce l'evidenza richiesta su un host stabile di riferimento applicabile.
+
 Un PASS su un host non sostituisce l'evidenza richiesta su un altro host applicabile.
 
 ## 11. Esito del singolo test
@@ -217,7 +223,7 @@ Un tool esterno viene testato soltanto per le proprietà da cui RumiAI dipende c
 
 Non si valida genericamente un'intera utility, runtime o servizio esterno.
 
-## 15. Development run
+## 15. Development run e ambienti di esecuzione
 
 Una development run supporta il ciclo rapido:
 
@@ -226,6 +232,49 @@ sviluppo -> test mirati -> correzione -> test mirati
 ```
 
 Target e suite possono essere dirty e la run non costituisce evidenza formale di un commit.
+
+### Ambiente ausiliario ChatGPT/Linux
+
+Quando ChatGPT dispone di un ambiente Linux eseguibile, esso deve essere usato come laboratorio rapido reale quando è materialmente utile: esecuzione del target reale o di una replica completa, riproduzione di errori, test esplorativi, verifica di assunzioni host-specifiche e sviluppo dei test permanenti.
+
+L'ambiente ausiliario non è una scorciatoia rispetto alle regole di autenticità del target. Deve eseguire gli stessi entrypoint e componenti reali che si intendono verificare. Un risultato utile scoperto in modo esplorativo deve essere trasferito, quando la proprietà merita protezione permanente, nella suite `rumiai-tests` invece di restare conoscenza effimera della sessione.
+
+### GitHub Actions
+
+GitHub Actions è un ambiente di orchestrazione automatica per eseguire i test reali su runner GitHub-hosted puliti e, quando utile, su più sistemi operativi o architetture. Il workflow non deve reimplementare la semantica dei test né sostituire componenti del target: deve preparare le revisioni esatte richieste e invocare `rumiai-test` o `rumiai-validate` sulle selection appropriate.
+
+L'uso normale corrente è successivo alla messa a punto locale/ausiliaria del test o del work unit, quando ha senso verificare che lo stesso comportamento continui a funzionare partendo da ambienti puliti o differenti. Non è necessario eseguire Actions dopo ogni singola modifica locale se ciò non aggiunge informazione materialmente utile.
+
+RumiAI non usa GitHub required status checks come autorità di merge o come sostituto del giudizio sul work unit. I risultati di Actions sono evidenza tecnica e diagnostica; non autorizzano da soli una promozione e non bloccano automaticamente la storia Git. L'introduzione futura di un required status check o di un merge gate automatico richiede una nuova decisione esplicita.
+
+I self-hosted runner non fanno parte del workflow corrente. Possono essere rivalutati in futuro, ma non devono essere introdotti implicitamente come requisito della suite o della validation.
+
+### GUI headless
+
+L'esecuzione headless di una GUI è una tecnica di esecuzione, non un livello separato di validazione. Quando la proprietà lo consente, una applicazione grafica reale può essere esercitata con il suo vero toolkit e i suoi veri servizi necessari, usando infrastruttura come display virtuale, session bus e accessibility stack, per esempio Xvfb, D-Bus e AT-SPI.
+
+Il test headless deve avviare e pilotare l'applicazione reale; non deve sostituire GTK, il codice applicativo o altri componenti appartenenti alla proprietà verificata con fake. Può validare proprietà come avvio dell'applicazione, creazione di finestre/widget, input, azioni, dialoghi, transizioni osservabili e struttura accessibility quando tali proprietà non dipendono dal desktop fisico completo.
+
+Un test headless non dimostra proprietà che dipendono realmente da GNOME Shell, Mutter/Wayland, portal, keyring, accelerazione grafica, multi-monitor o altra integrazione del desktop non presente nell'ambiente esercitato. Tali proprietà richiedono un ambiente reale appropriato prima di poter essere dichiarate validate.
+
+### GitHub Codespaces
+
+GitHub Codespaces è un ambiente di sviluppo interattivo remoto, non un sostituto di GitHub Actions e non una componente necessaria del workflow di testing corrente. Può essere rivalutato in futuro per onboarding o come workstation di sviluppo remota, ma la sua disponibilità non aggiunge di per sé evidenza di validation e non deve essere introdotta come dipendenza del progetto.
+
+### Progressione normale
+
+Quando applicabile, la progressione desiderata è:
+
+```text
+sviluppo/modifica
+    -> esecuzione reale e test esplorativi su host locale o ausiliario
+    -> test permanente reale messo a punto in rumiai-tests
+    -> GitHub Actions su ambienti puliti/multi-host quando aggiunge valore
+    -> prodotto presumibilmente completo e funzionante
+    -> physical validation sugli host reali richiesti
+```
+
+Non tutti i work unit richiedono ogni passaggio intermedio, ma ogni passaggio usato deve esercitare la proprietà reale che dichiara di verificare. Lo scopo della progressione è spostare la scoperta dei difetti il più possibile verso le fasi precedenti, non accumulare gate formali.
 
 ## 16. Validation run, session result e task validation
 
@@ -288,13 +337,17 @@ Sessioni precedenti restano valide per le proprietà che hanno effettivamente es
 
 Una validation non può attribuire a un PASS una proprietà che il test non ha realmente esercitato. In particolare, un test che sostituisce parti del target non può chiudere uno scope che richiede il comportamento reale composto di quelle parti.
 
+La physical validation sugli host stabili di riferimento resta la fase finale quando richiesta dal work unit ed è disciplinata da `PHYSICAL-TESTING.md`. Le esecuzioni su host ausiliari o GitHub-hosted runner devono precederla quando materialmente utili, ma non vengono rinominate retroattivamente come physical validation del relativo host stabile.
+
 ## 19. `rumiai-test` e `rumiai-validate`
 
 `rumiai-test` resta il runner semplice e semantically-agnostic. Discovery, esecuzione, logging, persistenza ed exit status del runner sono definiti in `RUNNER.md`.
 
-`rumiai-validate` è il launcher operativo. Può applicare uno scope versionato composto da più selection e aggregare la loro evidenza senza spostare logica semantica del target nel runner.
+`rumiai-validate` è il launcher operativo. Può applicare uno scope versionato composto da più selection e aggregarne l'evidenza senza spostare logica semantica del target nel runner.
 
 Il launcher può usare un checkout/worktree Git temporaneo dell'esatta revisione target quando necessario per validare scope differenti senza modificare il checkout principale dell'operatore. Tale checkout/worktree è una replica reale del target: i test devono continuare a usare gli entrypoint e i componenti reali della revisione, non copie ad hoc o sostituzioni della pipeline verificata.
+
+Un workflow esterno, incluso GitHub Actions, deve restare un orchestratore: può preparare checkout, selezionare host e invocare questi strumenti, ma non deve duplicare nel workflow la semantica del target o degli assert che appartengono ai `.test`.
 
 ## 20. Promozione e rimozione dei test
 
