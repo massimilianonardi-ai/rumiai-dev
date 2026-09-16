@@ -2,7 +2,7 @@
 
 Status: **canonical development rule**  
 Date: 2026-08-30  
-Updated: 2026-09-02
+Updated: 2026-09-16
 
 This document defines the mandatory consistency gate for work on RumiAI.
 
@@ -192,6 +192,8 @@ Mechanical tests are supplements to the authority preflight, not substitutes for
 
 Many project rules are semantic and cannot be reduced to a grep pattern. The existence of passing tests never authorizes ignoring the canonical documents.
 
+For behavioral tests, mechanical enforcement must preserve the authenticity of the target required by `TESTING.md`: the test may isolate or replicate the real system, but must not replace components of the system under test and then count the result as validation of the real composed behavior. A test based on an explicitly permitted simulation protects only the property actually exercised through that simulation.
+
 ---
 
 ## 10. Post-change consistency scan
@@ -204,6 +206,8 @@ At minimum verify:
 no superseded/forbidden active terminology remains
 new public names match authoritative terminology
 call sites and tests use current interfaces, or are explicitly recorded as pending realignment
+behavioral tests exercise the real target or a complete isolated replica through real entrypoints/components
+permitted simulations do not substitute the target behavior being claimed as validated
 file modes are correct, especially executable tests/commands
 serialization/layout still matches active specifications
 no accidental host-specific dependency was introduced
@@ -220,9 +224,11 @@ If a mismatch is found, the work is not complete.
 
 A semantic implementation change that requires physical validation must be validated on the current stable reference installations according to the testing contract.
 
+When the validation claim concerns observable behavior of a command, subsystem or composed pipeline, the physical test must exercise the real target or a complete isolated replica of the exact target revision through its real execution path. Fixture-only, mocked or partially reconstructed executions do not validate a real path that they replaced.
+
 Pure naming/documentation corrections should normally be bundled into the next meaningful physical gate rather than imposing repeated operator work, unless the correction itself changes observable execution behavior or prevents existing tests from exercising the code.
 
-Previously recorded evidence remains evidence for the exact revisions that were exercised. Documentation must not silently relabel old evidence as validation of a later untested revision.
+Previously recorded evidence remains evidence for the exact revisions that were exercised. Documentation must not silently relabel old evidence as validation of a later untested revision or as evidence for a stronger property than the test actually exercised.
 
 ---
 
@@ -267,11 +273,13 @@ A change to an established subsystem is ready to be reported as complete only wh
 [ ] no conversational shorthand was promoted into product terminology
 [ ] existing primitives were reused where semantically equivalent
 [ ] code follows established naming/layout/format/platform rules
+[ ] behavioral tests use the real target or a complete isolated replica and real execution path for the behavior claimed
+[ ] simulations/fixtures, when permitted, are confined to the input boundary they actually represent and are not credited as real-path validation
 [ ] correction propagated to dependent active docs/tests/examples, or pending implementation/test realignment is explicitly recorded
 [ ] stale superseded patterns were scanned for
 [ ] executable/file modes were checked
 [ ] mechanical guard was added where justified
-[ ] physical-validation status is stated accurately
+[ ] physical-validation status is stated accurately and does not exceed what the executed tests prove
 [ ] Git changes are forward-only
 ```
 

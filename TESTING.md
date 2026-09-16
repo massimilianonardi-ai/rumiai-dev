@@ -54,7 +54,7 @@ Un test non può dipendere da:
 
 Un gruppo è un contenitore e un'unità di selezione, non un orchestratore. Non introduce `before`, `after`, setup condiviso necessario o ordine funzionale.
 
-Questa indipendenza **non vieta** librerie comuni della stessa revisione di `rumiai-tests`. Helper di infrastruttura come target discovery, fixture creation, path normalization, temporary-resource plumbing e driver interattivi devono essere condivisi quando la responsabilità è realmente comune.
+Questa indipendenza **non vieta** librerie comuni della stessa revisione di `rumiai-tests`. Helper di infrastruttura come target discovery, creazione di repliche isolate complete del target, path normalization, temporary-resource plumbing e driver interattivi devono essere condivisi quando la responsabilità è realmente comune.
 
 La revisione Git esatta di `rumiai-tests` fa già parte dell'evidenza di validation e rende riproducibile la versione degli helper condivisi usata dalla sessione.
 
@@ -68,7 +68,7 @@ Il test possiede:
 
 - precondizioni specifiche della prova;
 - preparazione specifica dello scenario;
-- input e fixture semanticamente specifici;
+- input esterni e, soltanto quando espressamente ammesso, simulazioni o fixture semanticamente specifiche;
 - esecuzione del target;
 - risultato atteso;
 - confronto tra atteso e osservato;
@@ -94,7 +94,26 @@ Non devono essere usati come proxy del comportamento, salvo requisito esplicito:
 - spelling accidentale di pathname equivalenti;
 - dettagli di implementazione che possono cambiare senza cambiare il contratto.
 
-Quando il comportamento può essere verificato osservando invocazioni, argomenti, effetti o output mediante fixture controllate, tale verifica è preferita all'ispezione testuale del sorgente.
+### Autenticità del sistema sotto test
+
+Un test di comportamento deve esercitare il sistema reale che dichiara di verificare. L'isolamento serve a rendere la prova ripetibile e scartabile; non autorizza a sostituire il sistema sotto test con una ricostruzione artificiale.
+
+Quando il target deve essere protetto dagli effetti della prova, il test deve usare una replica isolata completa e semanticamente indistinguibile del sistema reale per la proprietà verificata. La replica deve usare la revisione reale del target, i suoi eseguibili reali, le sue librerie reali, i suoi adapter reali, i suoi file reali e il normale percorso di esecuzione. Stato, `HOME`, directory temporanee e altre risorse mutabili possono e devono essere isolati quando necessario, purché l'isolamento non sostituisca la logica del target.
+
+Per un comportamento esposto da un comando, la forma normale della prova consiste in pochi comandi reali che invocano l'eseguibile reale tramite la sua normale interfaccia e usano argomenti scelti per coprire le casistiche del contratto. Se si verifica `pkg install`, la prova deve eseguire realmente `pkg install` e attraversare la pipeline reale che quel comando utilizza.
+
+Non costituiscono prova del comportamento reale del target:
+
+- copiare singoli file o frammenti del target in una struttura costruita ad hoc;
+- source-are una libreria interna al posto di invocare l'entrypoint reale quando il contratto da verificare è quello dell'entrypoint o del sistema composto;
+- ridefinire, intercettare o sostituire funzioni del target;
+- sostituire adapter, cataloghi, downloader, extractor, integrator o altri componenti appartenenti al percorso reale verificato con implementazioni finte;
+- costruire un PATH artificiale contenente copie modificate degli eseguibili del target;
+- dichiarare validato un comportamento composto quando una parte della composizione non è stata realmente eseguita.
+
+Simulazioni, fixture, stub, pseudo-terminali o input sintetici sono eccezioni, non il modello predefinito. Sono ammessi quando servono a rappresentare un input esterno alla logica sotto test che non è ragionevolmente producibile in modo diretto, in particolare input utente o interattivo, oppure quando una specifica regola o decisione li autorizza esplicitamente. Non devono sostituire componenti del target che il test dichiara di validare.
+
+Un test che usa una simulazione valida soltanto la proprietà effettivamente esercitata attraverso quella simulazione. Non può essere usato come evidenza della stessa proprietà attraverso il percorso reale che è stato sostituito o escluso.
 
 ## 7. Granularità e costo
 
@@ -172,7 +191,9 @@ Gli esiti storici non vengono mai reinterpretati retroattivamente.
 
 ## 12. Isolamento e cleanup
 
-Un test non deve modificare il target reale quando la stessa proprietà può essere verificata con una fixture o copia isolata.
+Un test che può modificare stato o produrre effetti persistenti non deve per questo essere trasformato in una simulazione del target. Quando è necessario proteggere il checkout o l'installazione reale dell'operatore, il test deve creare o usare una replica completa e scartabile del sistema reale, oppure isolare esclusivamente lo stato mutabile mantenendo invariato il percorso di esecuzione reale.
+
+Una replica del target usata per il test deve provenire dalla revisione reale sottoposta a prova e non da una raccolta di file selezionati, riscritti o ricostruiti ad hoc. Il principio "non modificare il target reale" significa non alterare l'istanza originale dell'operatore; non significa sostituire il target con fixture che ne imitano singole parti.
 
 Ogni test possiede e ripulisce le risorse specifiche create dalla prova. Il cleanup deve essere tentato anche dopo `FAIL` o `ERROR`.
 
@@ -265,13 +286,15 @@ Una task validation cross-host è chiusa solo quando tutti i test richiesti dall
 
 Sessioni precedenti restano valide per le proprietà che hanno effettivamente esercitato; una sessione complessivamente FAIL non trasforma i suoi test PASS in FAIL.
 
+Una validation non può attribuire a un PASS una proprietà che il test non ha realmente esercitato. In particolare, un test che sostituisce parti del target non può chiudere uno scope che richiede il comportamento reale composto di quelle parti.
+
 ## 19. `rumiai-test` e `rumiai-validate`
 
 `rumiai-test` resta il runner semplice e semantically-agnostic. Discovery, esecuzione, logging, persistenza ed exit status del runner sono definiti in `RUNNER.md`.
 
 `rumiai-validate` è il launcher operativo. Può applicare uno scope versionato composto da più selection e aggregare la loro evidenza senza spostare logica semantica del target nel runner.
 
-Il launcher può usare un checkout/worktree Git temporaneo dell'esatta revisione target quando necessario per validare scope differenti senza modificare il checkout principale dell'operatore.
+Il launcher può usare un checkout/worktree Git temporaneo dell'esatta revisione target quando necessario per validare scope differenti senza modificare il checkout principale dell'operatore. Tale checkout/worktree è una replica reale del target: i test devono continuare a usare gli entrypoint e i componenti reali della revisione, non copie ad hoc o sostituzioni della pipeline verificata.
 
 ## 20. Promozione e rimozione dei test
 
@@ -292,3 +315,11 @@ Un test permanente può e deve essere rimosso quando la proprietà è superseded
 `rumiai-os` contiene il prodotto e non diventa fonte normativa delle regole di testing.
 
 In caso di conflitto tra una suite di test e i contratti correnti di `rumiai-dev`, prevalgono i contratti correnti e il test deve essere riallineato o rimosso.
+
+### Riallineamento corrente della suite
+
+La chiarificazione del 2026-09-16 sull'autenticità del sistema sotto test rende esplicitamente non conforme, come prova del comportamento reale composto, qualunque test che sostituisca parti del target e poi attribuisca il PASS al sistema reale.
+
+Alla revisione `298931c1dca03d44755893d64b9b3a7c0058b7ea` di `rumiai-tests`, `tests/rumiai-os/pkg/install.test` è **pending realignment**: il test corrente crea copie e componenti artificiali e sostituisce parti della pipeline di installazione. Fino al riallineamento, i suoi PASS storici o correnti non costituiscono validazione del comportamento reale di `pkg install`; valgono soltanto per le proprietà limitate effettivamente esercitate dalla prova costruita.
+
+La suite deve essere auditata con lo stesso criterio e ogni altro test che sostituisce il proprio target comportamentale deve essere riallineato, riclassificato rispetto alla proprietà realmente verificata oppure rimosso.

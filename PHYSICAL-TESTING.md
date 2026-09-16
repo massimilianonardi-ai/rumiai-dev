@@ -55,7 +55,9 @@ git pull --ff-only
 ./rumiai-test <selection>
 ```
 
-Setup specifico, fixture, directory temporanee, isolamento di `HOME`, pseudo-terminali, input simulato, assert e cleanup appartengono ai file `.test` e non devono essere trasferiti all'operatore come sequenze manuali di shell. Se una proprietà può essere automatizzata in modo affidabile dentro la suite, deve essere automatizzata lì.
+Setup specifico, repliche isolate complete del target, directory temporanee, isolamento di `HOME`, pseudo-terminali, input simulato, assert e cleanup appartengono ai file `.test` e non devono essere trasferiti all'operatore come sequenze manuali di shell. Se una proprietà può essere automatizzata in modo affidabile dentro la suite, deve essere automatizzata lì.
+
+Il fatto che setup e isolamento appartengano al `.test` non autorizza a sostituire il sistema sotto test. Per una prova comportamentale, il `.test` deve esercitare il target reale o una sua replica completa e semanticamente indistinguibile per la proprietà verificata, usando gli entrypoint e i componenti reali secondo `TESTING.md`. Simulazioni e fixture restano eccezioni limitate agli input che rappresentano e non possono essere accreditate come esecuzione del percorso reale che escludono o sostituiscono.
 
 I comandi manuali aggiuntivi sono ammessi soltanto quando la proprietà stessa non è ancora rappresentabile dalla suite o quando si sta diagnosticando un fallimento concreto. Non costituiscono la forma normale di validazione fisica.
 
