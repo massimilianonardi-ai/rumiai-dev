@@ -232,7 +232,7 @@ A semantic implementation change that requires physical validation must be valid
 
 When the validation claim concerns observable behavior of a command, subsystem or composed pipeline, the physical test must exercise the real target or a complete isolated replica of the exact target revision through its real execution path. Fixture-only, mocked or partially reconstructed executions do not validate a real path that they replaced.
 
-Physical validation is the final confirmation stage for a work unit that is already presumibilmente complete and functioning based on the preceding real executions and permanent tests that are materially applicable. Development hosts, auxiliary environments and GitHub-hosted runners should be used earlier when they can discover defects or portability problems without consuming the final physical gate.
+Physical validation is the final confirmation stage for a work unit that is already expected to be complete and functioning based on the preceding real executions and permanent tests that are materially applicable. Development hosts, auxiliary environments and GitHub-hosted runners should be used earlier when they can discover defects or portability problems without consuming the final physical gate.
 
 The normal expectation is that most physical validations pass on the first attempt. An occasional failure may reveal a property that only the physical host can expose; a recurring pattern in which functional defects are discovered first during physical validation is evidence that the earlier testing model is insufficient and must be strengthened rather than accepted as normal workflow.
 
