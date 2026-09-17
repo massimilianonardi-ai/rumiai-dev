@@ -1,7 +1,7 @@
 # rumiai-tests-suite-realignment
 
 Status: Active
-Updated: 2026-09-17 21:29 +02:00
+Updated: 2026-09-17 21:31 +02:00
 
 ## Goal
 
@@ -10,14 +10,14 @@ Audit the current permanent test suite and realign only evidence-confirmed legac
 ## Current repository revisions
 
 ```text
-rumiai-dev   7ff3e2742de6d3a4d8963af8fe572a89c1269fb8
+rumiai-dev   d1ca9216d454f91c65d76af04b6df4ecf137757d
 rumiai-tests d59a05417e91a97a10424f6dbc25047f9bfee383
-rumiai-os    8b0c7991e8242dac73b0a350530a5100385294f3
+rumiai-os    8c69d50bf675f6fab7ab447b71542c7808c988a8
 ```
 
 These revisions are task state immediately before this checkpoint update; fresh HEAD retrieval remains required before later writes.
 
-Concurrent forward movement was reconciled during this work unit. `rumiai-dev` changes after activation were confined to the parallel manual-documentation handoff. `rumiai-tests` gained `tests/rumiai-os/manual/interface.test` and `tests/rumiai-os/manual/paging.test` from that parallel workstream before this task's test commits; those files were preserved unchanged.
+Concurrent forward movement was reconciled during this work unit. `rumiai-dev` changes after activation were confined to the parallel manual-documentation handoff. `rumiai-tests` gained `tests/rumiai-os/manual/interface.test` and `tests/rumiai-os/manual/paging.test` from that parallel workstream before this task's test commits; those files were preserved unchanged. The later `rumiai-os` advance from `8b0c7991e8242dac73b0a350530a5100385294f3` to `8c69d50bf675f6fab7ab447b71542c7808c988a8` added only `res/sys/manual/pkg`, `res/sys/manual/srv` and `res/sys/manual/state-path`; no runtime implementation used by these rewrites changed.
 
 ## Applicable canonical sources
 
@@ -78,7 +78,7 @@ Two coherent tranches are committed in `rumiai-tests` after the concurrent manua
   - removed local target-discovery functions and the duplicated complete-runtime copy loop;
   - now uses the shared target and fixture helpers while preserving semantic-path, validation, user-binding and no-side-effect checks from `STATE-MODEL.md`.
 
-No `rumiai-os` product file has been modified.
+No `rumiai-os` product implementation file has been modified by this task.
 
 ## Audit evidence beyond the implemented tranches
 
@@ -105,8 +105,10 @@ The remaining tests are not classified solely from family membership; each file 
 - `sh -n` passed locally for the exact four tranche-1 rewritten shell tests before commit.
 - `sh -n` passed locally for the exact two tranche-2 rewritten shell tests before commit.
 - Each committed file was re-read from its resulting commit after the write.
-- The aggregate comparison from `0428a21be8f9be05193e2533672aa8f7864dbd30` to `c028b9b9e1d432bcd83a2a8e4220fc10338b98d7` contained exactly the intended four tranche-1 files; tranche-2 writes were likewise re-read individually at `435fa001d73b560a0e3bf56fd4e333e2e7b59302` and `d59a05417e91a97a10424f6dbc25047f9bfee383`.
+- The aggregate comparison from `0428a21be8f9be05193e2533672aa8f7864dbd30` to `c028b9b9e1d432bcd83a2a8e4220fc10338b98d7` contained exactly the intended four tranche-1 files.
+- The aggregate comparison from `c028b9b9e1d432bcd83a2a8e4220fc10338b98d7` to `d59a05417e91a97a10424f6dbc25047f9bfee383` contains exactly the intended tranche-2 files `shell/selection.test` and `state-path/contract.test`.
 - Relevant current specifications and test-authoring/shared-helper contracts were rechecked before each rewrite.
+- The final observed `rumiai-os` concurrent delta adds only manual-resource files and does not change runtime code exercised by the rewritten tests.
 - The available auxiliary Linux container cannot resolve `github.com`, so repository cloning and real execution of the target tests are unavailable in this session. No runtime PASS/FAIL claim is made for the rewritten tests.
 
 ## Current state
