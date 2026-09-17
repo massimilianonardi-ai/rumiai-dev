@@ -1,322 +1,220 @@
 # RumiAI Development Rules
 
-Questo documento contiene regole canoniche per lo sviluppo di RumiAI.
+Status: **Current / canonical**  
+Updated: 2026-09-17
 
-## Autorità e ruolo dei repository
+This document contains project-wide rules that apply across RumiAI subsystems. Subsystem details belong in current specifications; historical rationale belongs in Git history.
 
-`rumiai-dev` è la fonte autorevole per regole, workflow, decisioni, specifiche, terminologia, architettura, chat e memoria dello sviluppo.
+## 1. Authority and retrieval
 
-`rumiai-os` è il repository del sistema/prodotto stabile. Il codice vi entra solo dopo che principi, specifiche e decisioni rilevanti sono stati consolidati e, quando necessario, validati sperimentalmente.
+`rumiai-dev` is authoritative for current development rules, workflow and semantic specifications.
 
-`rumiai-dev-PoCs` è il laboratorio sperimentale: contiene proof-of-concept, prototipi, fixture, sessioni sperimentali, input, output, log significativi e risultati usati per rispondere a domande ancora aperte. Il suo contenuto può essere temporaneo, evolutivo o specifico di una particolare indagine.
+Before every RumiAI task, follow the read order in `README.md`. Current repository sources and explicit current user corrections prevail over model memory, conversation summaries, inference, old proposals, superseded documents and implementation convenience.
 
-`rumiai-tests` è il repository della suite permanente di test e validazione: contiene test ripetibili, runner, supporto ai test e sessioni di validazione associate a revisioni precise. Protegge nel tempo proprietà consolidate di RumiAI e delle dipendenze esterne effettivamente utilizzate.
+A historical commit is not current authority merely because it contains a formerly accepted decision.
 
-PoC e test permanenti hanno ruoli distinti: un PoC può essere modificato, sostituito o eliminato quando ha esaurito il proprio scopo; un test permanente deve restare finché la proprietà che protegge rimane parte del contratto o del comportamento atteso.
+## 2. Documentation model
 
-I repository storici o di riferimento, incluso `massimilianonardi/m`, sono materiale da analizzare: non sono fonti normative e il loro codice non deve essere copiato o migrato automaticamente.
+The current branch must describe the current project directly.
 
-La memoria conversazionale di ChatGPT è solo un supporto operativo e non prevale mai sul contenuto canonico di `rumiai-dev`.
+Therefore:
 
-In caso di conflitto tra memoria/conversazione e repository, prevale il repository.
+- one current contract has one canonical location;
+- current specifications must state the rule that applies now;
+- a new decision must not become a permanent patch that readers have to apply mentally to an older specification;
+- when a contract changes, update the canonical current specification in the same work unit whenever possible;
+- superseded documents, completed plans, closed handoffs, chats and exploratory analysis are removed from the current tree once their durable content has been propagated;
+- Git history preserves those documents and their rationale forward-only;
+- historical evidence is never rewritten or relabelled as evidence for another revision.
 
-Le regole specifiche per test permanenti, runner, development run, validation run e workspace locale sono definite in `TESTING.md`.
+`specifications/README.md` is the canonical topic-to-specification router.
 
-Per il modello operativo corrente, `specifications/rumiai-os/MODEL-2.0-MIGRATION.md` e la relativa decisione di attivazione definiscono la stratificazione `m`/RumiAI, gli entrypoint, il layout eseguibile e delle librerie, il modello di state e il contratto package. Le specifiche 1.x esplicitamente marcate come baseline storica o superseded non sono autorità corrente sul modello 2.0.
+`handoff/` contains only active task state. A handoff never overrides `RULES.md`, `CONSISTENCY-GATE.md` or current specifications.
 
-## Autorizzazione alle modifiche di `rumiai-os`
+## 3. Repository roles
 
-Almeno nella fase iniziale del progetto, nessun file deve essere creato, copiato, modificato o eliminato nel repository `rumiai-os` senza consenso esplicito dell'utente per quella fase di implementazione.
+```text
+rumiai-dev
+    rules, workflow and current semantic specifications
 
-Una decisione consolidata, un PoC riuscito, un test riuscito o una raccomandazione tecnica non costituiscono da soli autorizzazione a scrivere nel repository `rumiai-os`.
+rumiai-os
+    product/runtime implementation
 
-`rumiai-dev`, `rumiai-dev-PoCs` e `rumiai-tests` possono essere usati rispettivamente per consolidamento, sperimentazione e validazione secondo il workflow concordato; la promozione nel prodotto richiede invece il consenso esplicito.
+rumiai-tests
+    permanent tests, runner and revision-specific validation evidence
 
-## Contratto di piattaforma
+rumiai-dev-PoCs
+    experiments for questions that are not yet settled
 
-RumiAI OS sviluppa contro **POSIX**, non contro Linux, macOS, Windows o una specifica distribuzione.
+pkg-catalog
+    package definitions/catalog data used by the m package subsystem
+```
 
-POSIX è il contratto di piattaforma. Il fatto che una soluzione funzioni su GNU/Linux o su un particolare Unix-like non è sufficiente a considerarla portabile.
+Historical/reference repositories are design input only unless a current RumiAI source explicitly adopts a contract from them.
 
-La baseline POSIX iniziale di RumiAI OS è fissata a:
+## 4. Git
+
+Git history is forward-only.
+
+Do not rewrite history or force-push unless the user explicitly requests it for a concrete reason. Normal corrections are new commits.
+
+Before writing any involved repository, verify its current remote HEAD. If the user or another actor has advanced a repository during the task, do not overwrite or discard those changes; re-read the new state and reconcile forward.
+
+## 5. Authorization to modify product repositories
+
+Product/runtime modifications require explicit user authorization for the applicable phase or task. Authorization may cover an entire clearly defined task; it need not be repeated file by file.
+
+Documentation, PoCs and permanent tests follow their normal repository roles, but no successful PoC, test or assistant recommendation silently authorizes an unrelated product change.
+
+## 6. Current architecture boundary
+
+The current architecture is defined by `specifications/rumiai-os/CURRENT-MODEL.md`.
+
+The repository `rumiai-os` contains two semantic layers:
+
+```text
+m
+    low-level general-purpose technical substrate
+
+RumiAI
+    branded upper product layer built on m
+```
+
+`m` must not semantically depend on RumiAI.
+
+`pkg` and `pkg-catalog` belong to `m`.
+
+The current technical runtime entrypoint is `$m_ROOT/m`. The branded entrypoints are `$m_ROOT/rumiai-os` and `$m_ROOT/rumiai-os-sh`.
+
+Do not infer new layers, namespaces or components from conversational shorthand.
+
+## 7. Platform contract
+
+RumiAI OS develops against **POSIX**, not Linux, macOS, Windows or one distribution.
+
+The current baseline is:
 
 **POSIX.1-2024 / The Open Group Base Specifications Issue 8**.
 
-La scelta iniziale della baseline è una decisione esplicita di progetto e non deriva da una regola che imponga di adottare automaticamente la revisione POSIX più recente o quella maggiormente implementata dagli host correnti.
+Host-specific behavior is allowed only behind an explicit abstraction/adapter when POSIX is insufficient or a real host divergence requires it. Host-specific details must not contaminate the general contract.
 
-Dopo la scelta iniziale, la baseline viene modificata solo quando emerge una necessità concreta di RumiAI relativa a una feature, utility, interfaccia o garanzia semantica appartenente a una revisione POSIX successiva.
+A baseline change requires a concrete RumiAI requirement, verification of the relevant normative specification, and material host validation where the behavior is host-dependent.
 
-In quel caso il processo obbligatorio è:
+Windows does not redefine RumiAI architecture; RumiAI requires a POSIX-compatible environment.
 
-1. identificare il requisito reale emerso in RumiAI;
-2. verificare che la feature o il comportamento della revisione successiva sia effettivamente necessario;
-3. verificare la specifica normativa pertinente;
-4. verificare il comportamento reale sugli OS di riferimento quando tale comportamento è materialmente rilevante, usando PoC quando opportuno;
-5. se il requisito è validato e la revisione successiva è il contratto corretto, adottare esplicitamente la nuova baseline;
-6. se il comportamento osservato su uno o più OS di riferimento non corrisponde al contratto POSIX atteso, valutare soluzione, compatibilità, fallback, astrazione e/o modifica della baseline prima di consolidare l'implementazione.
+## 8. Shell and interpreter contract
 
-Non è necessario verificare preventivamente tutte le feature introdotte dalle revisioni POSIX successive. Se RumiAI non dipende da una feature, la sua disponibilità o mancata disponibilità pratica sugli host di riferimento non richiede investigazione.
+Shell code and shell command bodies must remain POSIX `sh` unless an explicitly approved contract establishes another runtime.
 
-Di conseguenza:
-
-- non si devono introdurre dipendenze accidentali da estensioni GNU, Bash o da peculiarità di uno specifico host;
-- comportamento specifico dell'host è ammesso soltanto dietro un'astrazione o adapter esplicito quando POSIX non fornisce la funzionalità necessaria o quando una divergenza reale dagli host di riferimento è stata verificata e accettata;
-- gli adapter specifici non devono contaminare il modello generale del sistema;
-- la portabilità delle funzionalità realmente usate da RumiAI deve essere verificata automaticamente su implementazioni POSIX o POSIX-compatible differenti e non affidata soltanto alla disciplina dello sviluppatore.
-
-Windows non influenza l'architettura di RumiAI OS. RumiAI OS richiede un ambiente POSIX-compatible; su Windows la documentazione può raccomandare Cygwin o indicare altri ambienti compatibili. L'eventuale preparazione dell'ambiente host non cambia il contratto interno di RumiAI OS.
-
-## Shell e interpreti
-
-Il codice e i command body implementati in shell devono essere POSIX-compliant.
-
-Per i file direttamente eseguibili lo shebang dipende dal contratto runtime.
-
-Un comando integrato nel substrate `m`, oppure un comando del layer RumiAI che usa environment variables, funzioni, librerie, logger, resolver lingua, root/path semantici, configurazione o altre facility inizializzate dal runtime `m`, deve usare:
-
-```sh
-#!/usr/bin/env m
-```
-
-Una utility shell intenzionalmente autonoma dal bootstrap può usare esattamente:
+The technical root bootstrap `$m_ROOT/m` uses exactly:
 
 ```sh
 #!/bin/sh
 ```
 
-soltanto quando:
-
-1. non dipende attualmente dal bootstrap `m` o dall'attivazione RumiAI;
-2. una dipendenza dal bootstrap non è ragionevolmente prevedibile nel normale ruolo della utility;
-3. l'uso standalone è stato preventivamente autorizzato esplicitamente dall'utente;
-4. una decisione o specifica autorevole documenta la scelta, la motivazione, le dipendenze e il contratto osservabile.
-
-Una utility standalone non deve dipendere per il proprio funzionamento da `m_*`, `log`, `lang`, librerie o funzioni sourced dal bootstrap, `m_COMMAND_BIN` o altre facility fornite dal runtime `m`. Le dipendenze esterne non garantite dal profilo POSIX adottato devono essere dichiarate esplicitamente.
-
-Se una utility standalone acquisisce in seguito una dipendenza dal bootstrap, la classificazione e lo shebang devono essere riesaminati; la migrazione normale è verso `#!/usr/bin/env m`, salvo una nuova decisione esplicita.
-
-Il bootstrap root tecnico `$m_ROOT/m` resta implementato in POSIX shell con `#!/bin/sh` secondo il proprio contratto specifico. Gli entrypoint root branded `$m_ROOT/rumiai-os` e `$m_ROOT/rumiai-os-sh` appartengono invece al layer RumiAI e delegano al runtime tecnico secondo `MODEL-2.0-MIGRATION.md`.
-
-Non devono essere usate accidentalmente funzionalità specifiche di Bash o di altre shell, né opzioni GNU non previste dal contratto POSIX/profilo adottato. Esempi tipici da non assumere includono array Bash, `[[ ... ]]`, `BASH_SOURCE`, process substitution e `$RANDOM`.
-
-L'uso di una shell diversa, di una funzionalità non POSIX o di una dipendenza implementation-specific è un'eccezione e richiede:
-
-1. una ragione tecnica concreta;
-2. approvazione esplicita;
-3. documentazione dell'eccezione e della sua motivazione.
-
-In assenza di questi tre requisiti, l'eccezione non è ammessa.
-
-Un comando di RumiAI OS può essere implementato in futuro con un interprete o runtime diverso da `sh`, purché tale dipendenza sia prevista dal relativo profilo/capability e rispetti le regole del progetto. Il nome pubblico del comando non deve dipendere dal linguaggio usato per implementarlo.
-
-Quando una funzionalità utile non è disponibile direttamente nel profilo POSIX adottato, si preferisce una primitiva portabile e riutilizzabile, purché la sua correttezza, sicurezza e portabilità siano verificabili.
-
-### Quoting difensivo in `sh`
-
-Nel codice `sh` di RumiAI devono essere usate le doppie virgolette `"..."` intorno a variabili, espansioni e valori ogni volta che la sintassi e la semantica lo consentono senza alterare intenzionalmente il comportamento.
-
-La regola vale anche quando il valore è costante, il contenuto di una variabile è già noto o il contenuto è considerato sicuro. La protezione deve dipendere dalla forma del codice e non da assunzioni sul contenuto corrente dei dati.
-
-La regola si applica in particolare a espansioni di parametri e variabili, command substitution usate come valori, assegnazioni, operandi passati a comandi, confronti e test e concatenazioni di pathname/stringhe.
-
-Esempi:
+A command integrated with `m` or using `m`/RumiAI runtime facilities uses:
 
 ```sh
-value="fixed"
-path="$m_ROOT/lib"
-result="$(command -p -- uname -s)"
-[ "$value" = "fixed" ]
-case "$value" in
-  fixed) : ;;
-esac
+#!/usr/bin/env m
 ```
 
-I pattern/match dei rami `case` sono esclusi dalla regola di quoting difensivo: non è richiesto racchiudere tra doppie virgolette né la parte letterale né i pattern wildcard dei match. Il valore esaminato dal `case`, quando è un'espansione, continua invece a seguire la normale disciplina di quoting.
+A shell utility may use `#!/bin/sh` as a directly executable standalone utility only when its independence from `m` is intentional, durable and explicitly documented by a current specification.
 
-Le invocazioni delle funzioni/comandi RumiAI `fatal` e `log` sono anch'esse escluse dalla regola stilistica del quoting difensivo per i loro argomenti. Questa eccezione non autorizza però a perdere la struttura degli argomenti: un'espansione variabile deve comunque essere quotata quando le virgolette sono necessarie per preservarla come singolo argomento o per evitare word splitting/pathname expansion che ne altererebbero il valore.
+A standalone utility must not depend on `m_*`, `log`, `lang`, `m_COMMAND_BIN`, `m`-sourced libraries or other bootstrap facilities.
 
-Le virgolette non devono inoltre essere introdotte quando cambierebbero una semantica shell intenzionale o quando l'elemento è sintassi e non un valore. Rientrano tra le eccezioni keyword, operatori, redirection e nomi sintattici di variabili passati a `export`, `readonly` o primitive equivalenti.
+Do not accidentally depend on Bash syntax or unapproved GNU/vendor extensions.
 
-La regola si applica al nuovo codice e al codice modificato; non impone una riformattazione indiscriminata dei sottosistemi non coinvolti. Il bootstrap root `m` è il riferimento stilistico principale per questa disciplina, tenendo conto delle eccezioni esplicite sopra fissate.
+## 9. Defensive shell quoting
 
-## Naming dei file eseguibili, librerie e sorgenti
+In RumiAI `sh` code, quote variable expansions, substitutions and value operands with double quotes whenever doing so preserves the intended shell semantics.
 
-Il nome di un comando eseguibile identifica la sua funzione, non il linguaggio o l'interprete con cui è implementato.
+Protection must derive from code shape, not assumptions about current data.
 
-Di conseguenza gli eseguibili interpretati non devono avere estensioni come `.sh`, `.py`, `.js` o analoghe soltanto per indicare l'interprete. L'implementazione può cambiare senza cambiare il nome pubblico del comando.
+The pattern positions of `case` branches are syntax and need not be quoted. `fatal`/`log` call style may omit cosmetic quotes only where argument structure remains unambiguous; expansions still require quoting whenever needed to prevent word splitting or pathname expansion.
 
-Esempio concettuale:
+## 10. Naming and libraries
+
+Public executable names describe function, not implementation language; do not add `.sh`, `.py`, `.js` and similar suffixes merely to reveal the interpreter.
+
+RumiAI-owned environment variables use the `m_*` namespace. This does **not** establish an `m_*` namespace for functions, commands, files, APIs or components.
+
+Current unnamespaced shell interfaces include `log` and `lang`. The previous name `i18n` is superseded.
+
+Internal libraries are ownership- and runtime-qualified:
 
 ```text
-foo
+lib/sys/<runtime>/<name>.lib.<runtime>
+lib/ai/<runtime>/<name>.lib.<runtime>
 ```
 
-può essere inizialmente uno script `#!/bin/sh` e in futuro essere reimplementato con un altro runtime senza diventare `foo.sh`, `foo.py` o `foo.js`.
+Shell libraries such as `lib/sys/sh/*.lib.sh` are sourced files: no executable bit and no shebang.
 
-Le librerie interne sourced/importate sono oggetti legati sia al layer che le possiede sia al runtime che le carica. Nel modello 2.0 devono essere organizzate sotto:
+Before introducing a helper, alias, namespace, primitive or abstraction, search the current subsystem for an existing responsibility with the same semantic contract.
 
-```text
-lib/sys/<runtime>/
-lib/ai/<runtime>/
-```
+## 11. Command syntax and `--`
 
-Il runtime di caricamento deve essere espresso sia dal sottalbero sia dall'estensione composta del file. Le forme canoniche iniziali sono:
+Commands that accept options should follow the POSIX Utility Syntax Guidelines unless an explicit contract requires otherwise.
 
-```text
-lib/sys/sh/<nome-libreria>.lib.sh
-lib/ai/sh/<nome-libreria>.lib.sh
-```
+For every tool that actually supports `--` as an option terminator, use `--` when passing one or more data operands. Do not invent `--` for tools that do not support it, and do not add a trailing `--` when no operand follows.
 
-Esempi:
+The rule follows the real contract of the invoked tool, POSIX or otherwise.
 
-```text
-lib/sys/sh/osarch.lib.sh
-lib/sys/sh/pkg-launch.lib.sh
-```
+## 12. Paths and relocatability
 
-La componente `.lib` identifica il ruolo di libreria; il suffisso finale (`.sh`, `.js`, ecc.) identifica il runtime/formato con cui il file può essere caricato. Questa qualificazione del runtime è intenzionale per le librerie interne e non modifica la regola dei comandi pubblici senza estensione.
+RumiAI OS must be relocatable.
 
-Per le librerie viene esportata soltanto la root generale:
+Do not hardcode personal paths, Homebrew paths, mount points, checkout locations or other host-local spellings into product code or permanent tests.
 
-```text
-m_LIB_DIR=$m_ROOT/lib
-```
+Derive managed paths from the appropriate semantic roots. Consumers must not duplicate a deeper physical layout when a current resolver owns that knowledge.
 
-Non devono essere introdotte environment variables derivate come `m_LIB_SYS_SH_DIR`, `m_LIB_AI_SH_DIR` o equivalenti soltanto per abbreviare i sottopercorsi. I consumer derivano il proprio sottalbero dal layer e runtime appropriati, ad esempio `$m_LIB_DIR/sys/sh` o `$m_LIB_DIR/ai/sh`.
+Default behavior is portable; host/local override is explicit.
 
-Le librerie shell sotto `lib/sys/sh/` e `lib/ai/sh/` sono file da source, non eseguibili: non devono avere il bit executable e non devono contenere shebang. Un file che deve essere direttamente eseguibile appartiene al modello dei comandi/eseguibili, non a quello delle librerie.
+## 13. Development workspace
 
-I file sorgente che non sono librerie seguono il formato reale del linguaggio o dell'ecosistema, ad esempio `.c`, `.cpp`, `.java` e `.js` per puro sorgente JavaScript.
+`rumiai-os/src/` is the local development anchor. Its operational contents are not product content and are Git-ignored.
 
-Un file JavaScript eseguito direttamente tramite uno shebang Node.js, se previsto e autorizzato dall'architettura, segue invece la regola degli eseguibili e non porta `.js` nel nome pubblico.
-
-## Sintassi dei comandi e delimitatore `--`
-
-I comandi di RumiAI OS che accettano opzioni devono seguire, salvo eccezioni motivate, le POSIX Utility Syntax Guidelines.
-
-Per ogni tool, POSIX o non-POSIX, che supporta `--` con la specifica funzione semantica di terminare il parsing delle opzioni e delimitare gli operandi/argomenti dati successivi, l'uso di `--` è **obbligatorio** quando vengono passati uno o più operandi/argomenti dati.
-
-La regola è determinata dal contratto reale del singolo tool, non dal fatto che il tool sia POSIX.
-
-Quindi:
-
-- se il tool supporta `--` come delimitatore e riceve almeno un operando/argomento dato, `--` deve essere presente;
-- se il numero di operandi/argomenti dati è zero, `--` non deve essere presente;
-- se il tool non supporta `--` con questa funzione, il delimitatore non deve essere inventato né forzato;
-- la stessa regola vale per tool POSIX e non-POSIX;
-- non si deve assumere che tutti i tool POSIX supportino Guideline 10: le eccezioni definite dal relativo contratto devono essere rispettate.
-
-Forma generale quando supportata:
-
-```text
-command [options] -- [operands]
-```
-
-Esempi concettuali:
-
-```text
-# tool con supporto a -- e almeno un operando
-command [options] -- operand
-
-# tool con supporto a -- e zero operandi
-command [options]
-
-# tool senza supporto a --
-command [tool-specific syntax]
-```
-
-Il supporto di `--` deve essere stabilito dalla specifica/documentazione effettiva del tool e, quando necessario, verificato empiricamente.
-
-## Portabilità, root e path
-
-RumiAI OS deve poter operare come ambiente relocatable e non deve dipendere da installazioni particolari, layout locali o path specifici della macchina.
-
-Di conseguenza:
-
-- path assoluti host-specific hardcoded in test, script o codice sorgente non sono ammessi;
-- la root di RumiAI OS deve essere determinata dinamicamente dal punto di ingresso appropriato;
-- i path delle risorse gestite dal sistema devono essere derivati dalla root o da root/path semantici definiti centralmente;
-- i componenti devono ricevere o consumare path semantici e non duplicare la conoscenza del layout fisico;
-- risorse esterne devono essere fornite tramite configurazione esplicita e non tramite autodetection basata su path locali convenzionali;
-- il codice non deve dipendere dalla directory corrente da cui viene eseguito, salvo che ciò faccia parte esplicitamente del contratto del comando;
-- installazioni locali particolari, directory utente, mount point, path Homebrew, path di interpreti o tool e simili non devono essere incorporati nel codice;
-- ogni eccezione deve essere esplicitamente approvata, tecnicamente motivata e documentata.
-
-La regola generale è: **default portabile, override esplicito**.
-
-Spostare l'albero di RumiAI OS su un altro path non deve richiedere modifiche al codice o agli script.
-
-L'invocazione di un comando tramite symbolic link non deve essere rifiutata per principio. Quando il path reale del comando è necessario per determinare la root o altre risorse, la risoluzione del symlink deve avere una semantica esplicita, essere compatibile con il profilo POSIX adottato e venire validata con test specifici, incluse catene di symlink, target relativi, symlink in componenti intermedi e invocazione tramite `PATH`.
-
-## Root del repository `rumiai-os`
-
-La radice del repository `rumiai-os` contiene nello stesso albero il substrate tecnico `m` e il layer branded RumiAI.
-
-Gli entrypoint root correnti sono:
-
-```text
-m
-rumiai-os
-rumiai-os-sh
-```
-
-`m` è il runtime tecnico generale e non deve avere dipendenze semantiche da RumiAI. La sua implementazione bootstrap è POSIX shell con `#!/bin/sh`; inizializza il minimo indispensabile e delega la logica a componenti interni.
-
-`rumiai-os` e `rumiai-os-sh` sono gli entrypoint branded del prodotto. La loro relazione e la delega iniziale sono definite da `MODEL-2.0-MIGRATION.md`; il fatto che l'implementazione iniziale di `rumiai-os` possa delegare immediatamente a `rumiai-os-sh` non crea un contratto permanente di architettura GUI.
-
-La root contiene inoltre il metadata universale di prodotto fissato dal modello 2.0:
-
-```text
-product-name
-product-version
-```
-
-Le directory di eseguibili, librerie, risorse statiche correnti, package, state e sviluppo restano quelle definite dalle specifiche correnti. Non deve essere reintrodotta la precedente assunzione 1.x secondo cui `rumiai-os` fosse l'unico runtime tecnico/root front controller.
-
-L'avvio iniziale da un altro sistema operativo non limita la generalità del progetto: lo stesso ambiente avviato può in seguito esporre comandi per deployment hosted, container, immagini/device e, in futuro, installazioni complete o bare-metal.
-
-## Workspace locale di sviluppo
-
-RumiAI OS può contenere la directory tracciata `src/` esclusivamente come punto di ancoraggio del workspace locale di sviluppo.
-
-Il contenuto operativo di `src/` non fa parte del prodotto e deve essere ignorato da Git. La configurazione iniziale prevista è:
+Typical independent nested repositories include:
 
 ```text
 rumiai-os/src/rumiai-tests/
-```
-
-come clone indipendente del repository `rumiai-tests`.
-
-Quando necessario per attività sperimentali può essere presente anche:
-
-```text
 rumiai-os/src/rumiai-dev-PoCs/
 ```
 
-Questi repository locali non devono essere submodule né dipendenze runtime del prodotto. Le regole dettagliate sono definite in `TESTING.md`.
+They are not submodules and not runtime dependencies.
 
-## Scelta di software e mezzo di esecuzione
+`DEVELOPMENT.md` and `setup-dev.sh` define the workspace bootstrap.
 
-RumiAI distingue tra **obiettivo** e **mezzo richiesto dall'utente**.
+## 14. Testing
 
-Se l'utente specifica soltanto il risultato, RumiAI può scegliere autonomamente lo strumento e l'interfaccia più appropriati, privilegiando quando opportuno soluzioni deterministiche, efficienti, verificabili e a minor overhead, come API, CLI o scripting.
+`TESTING.md` is canonical for permanent tests, development runs, GitHub Actions usage, validation scopes and evidence.
 
-Se l'utente specifica un software, un'interfaccia o una modalità di esecuzione, tale scelta diventa parte dell'intento e deve essere rispettata.
+`RUNNER.md` defines the runner. `PHYSICAL-TESTING.md` defines physical validation. `TEST-PATTERNS.md` contains current authoring patterns.
 
-Esempio: per una richiesta generica di conversione CAD → Shapefile RumiAI può scegliere GDAL; per una richiesta del tipo "apri QGIS e converti il file" deve utilizzare QGIS.
+Behavioral tests must exercise the real target or a complete isolated replica through the real execution path for the property claimed. A mock, fixture or replaced component proves only the boundary it actually exercises.
 
-La GUI e il computer-use sono quindi modalità operative tra le altre, non il modello generale di interazione con il computer.
+## 15. Software/tool selection
 
-## Workflow di sviluppo
+If the user specifies only an outcome, choose the most appropriate deterministic and verifiable tool/interface.
 
-Il flusso di riferimento è:
+If the user explicitly specifies a software product, interface or execution mode, that choice becomes part of the task intent and must be respected unless impossible or unsafe.
 
-1. regola, specifica o decisione in `rumiai-dev`;
-2. quando serve esplorare una domanda aperta, PoC e relativa evidenza in `rumiai-dev-PoCs`;
-3. consolidamento dei risultati rilevanti in `rumiai-dev`;
-4. implementazione stabile in `rumiai-os` solo dopo consenso esplicito dell'utente nella fase iniziale del progetto;
-5. trasformazione delle proprietà consolidate e dei bug riproducibili in test permanenti dentro `rumiai-tests` quando il costo è ragionevole;
-6. development run durante l'iterazione e validation run su revisioni committed e pulite secondo `TESTING.md`;
-7. consolidamento in `rumiai-dev` delle conclusioni di validazione rilevanti.
+GUI/computer-use is one execution modality, not the universal interaction model.
 
-Un repository storico o sperimentale può fornire idee e codice di riferimento, ma ogni elemento deve essere valutato rispetto alle regole correnti prima del riuso.
+## 16. Development workflow
+
+The normal sequence is:
+
+```text
+retrieve current authority
+→ extract applicable invariants
+→ experiment only if a question is genuinely open
+→ update the current specification when the contract changes
+→ implement in the proper repository
+→ add/realign proportional permanent tests
+→ execute real development tests
+→ use broader/hosted testing when it adds evidence
+→ perform physical validation last when required
+→ reread the diff and scan for stale mechanisms/terminology
+```
+
+Do not consider a RumiAI task complete until the preflight and final consistency check required by `CONSISTENCY-GATE.md` have both been performed.
