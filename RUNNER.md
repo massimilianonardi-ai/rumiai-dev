@@ -1,26 +1,26 @@
 # RumiAI Test Runner Contract
 
-Questo documento definisce il contratto canonico di `rumiai-test`.
+This document defines the canonical contract of `rumiai-test`.
 
-Le regole generali della suite, dei validation scope e della task validation sono in `TESTING.md`.
+General suite rules, validation scopes and task validation are defined in `TESTING.md`.
 
-## 1. Principio fondamentale
+## 1. Fundamental principle
 
-`rumiai-test` resta intenzionalmente semplice e agnostico rispetto alla semantica del target.
+`rumiai-test` remains intentionally simple and agnostic about target semantics.
 
-> `rumiai-test` osserva l'esecuzione; non prepara il target e non decide quali proprietà servano a chiudere un task.
+> `rumiai-test` observes execution; it does not prepare the target and does not decide which properties are required to close a task.
 
-La scelta dello scope di validation appartiene al launcher/configurazione di validation, non al runner.
+Validation-scope selection belongs to the validation launcher/configuration, not to the runner.
 
 ## 2. CLI
 
-La CLI canonica resta:
+The canonical CLI remains:
 
 ```text
 rumiai-test [options] [--] [selection]
 ```
 
-Opzioni correnti:
+Current options:
 
 ```text
 --validation
@@ -29,49 +29,49 @@ Opzioni correnti:
 --snapshot-root <pathname>
 ```
 
-`--snapshot-root` è ripetibile.
+`--snapshot-root` is repeatable.
 
-`selection` assente seleziona la root `tests/`; un pathname di directory seleziona ricorsivamente il gruppo; un pathname `*.test` seleziona il singolo test.
+An omitted `selection` selects the `tests/` root; a directory pathname recursively selects the group; a `*.test` pathname selects the individual test.
 
-Il runner continua intenzionalmente ad accettare una sola selection per run. La necessità di validare più selection di uno stesso work unit è gestita da `rumiai-validate`, che può eseguire più validation run elementari e aggregarne l'esito di scope.
+The runner intentionally continues to accept exactly one selection per run. The need to validate multiple selections for one work unit is handled by `rumiai-validate`, which may execute multiple elementary validation runs and aggregate their scope result.
 
-La forma `rumiai-test .` non è ammessa. `--snapshot-root .` resta valida.
+The form `rumiai-test .` is not allowed. `--snapshot-root .` remains valid.
 
-## 3. Development e validation run
+## 3. Development and validation runs
 
-Development e validation eseguono lo stesso `.test` nello stesso modo.
+Development and validation runs execute the same `.test` in the same way.
 
-`--validation` aggiunge controlli di riproducibilità e persistenza dell'evidenza; non cambia la logica interna del test.
+`--validation` adds reproducibility and evidence-persistence controls; it does not change the test's internal logic.
 
-Il runner non esegue `git add`, `commit`, `push`, checkout o aggiornamenti del target.
+The runner does not perform `git add`, `commit`, `push`, checkout or target updates.
 
-## 4. Discovery e ordine
+## 4. Discovery and order
 
-Il runner applica le regole di `TESTING.md`:
+The runner applies the rules in `TESTING.md`:
 
-1. `*.test` identifica un test;
-2. directory normali sono gruppi;
-3. pathname nascosti sono esclusi;
-4. altri file sono ignorati.
+1. `*.test` identifies a test;
+2. normal directories are groups;
+3. hidden pathnames are excluded;
+4. other files are ignored.
 
-Una selection di gruppo è ricorsiva. In esecuzione seriale l'ordine è lessicografico deterministico e semanticamente irrilevante.
+A group selection is recursive. During serial execution, order is deterministic lexicographic order and is semantically irrelevant.
 
-Un gruppo selezionato senza test è `RUNNER ERROR`.
+A selected group containing no tests is a `RUNNER ERROR`.
 
-## 5. Contratto runner -> test
+## 5. Runner -> test contract
 
-Il contratto resta vuoto.
+The contract remains empty.
 
-Il runner non comunica target, test-id, temp directory o metadata RumiAI-specifici; non prepara setup/cleanup; non cambia CWD; non modifica `HOME`/`TMPDIR`; non fornisce assertion o sandbox implicite.
+The runner does not communicate target, test-id, temporary directory or RumiAI-specific metadata; it does not prepare setup/cleanup; it does not change CWD; it does not modify `HOME`/`TMPDIR`; it does not provide implicit assertions or sandboxing.
 
-Un test può usare librerie condivise di `rumiai-tests` localizzandole autonomamente dalla propria posizione. Tali librerie non sono servizi del runner.
+A test may use shared `rumiai-tests` libraries by locating them independently from its own position. Those libraries are not runner services.
 
-## 6. Contratto test -> runner
+## 6. Test -> runner contract
 
-Il contratto è:
+The contract is:
 
 ```text
-stdout/stderr combinati
+combined stdout/stderr
 exit status 0..3
 ```
 
@@ -82,38 +82,38 @@ exit status 0..3
 3 ERROR
 ```
 
-Qualunque altro exit status o terminazione anomala viene registrato come `ERROR` con la terminazione realmente osservata quando possibile.
+Any other exit status or abnormal termination is recorded as `ERROR`, including the actually observed termination when possible.
 
 ## 7. Logging
 
-Il runner cattura stdout e stderr in un unico stream equivalente a:
+The runner captures stdout and stderr into one stream equivalent to:
 
 ```sh
 1>logfile 2>&1
 ```
 
-Il log del test contiene soltanto output del test. Metadata globali, risultato e timing restano separati.
+The test log contains only test output. Global metadata, result and timing remain separate.
 
-## 8. Responsabilità del runner
+## 8. Runner responsibilities
 
-Il runner:
+The runner:
 
-- individua la suite;
-- valida la CLI;
-- risolve la selection;
-- esegue discovery;
-- raccoglie contesto host/sessione;
-- esegue ciascun `.test` rispettandone lo shebang;
-- cattura il log combinato;
-- classifica l'exit status;
-- continua dopo FAIL/ERROR del singolo test salvo errore infrastrutturale;
-- produce riepilogo;
-- persiste run/sessione;
-- esegue snapshot quando richiesto.
+- locates the suite;
+- validates the CLI;
+- resolves the selection;
+- performs discovery;
+- collects host/session context;
+- executes each `.test` according to its shebang;
+- captures the combined log;
+- classifies the exit status;
+- continues after an individual test FAIL/ERROR unless an infrastructure error prevents it;
+- produces a summary;
+- persists the run/session;
+- performs snapshots when requested.
 
-Non interpreta semanticamente output o fallimenti per decidere la correttezza del target.
+It does not semantically interpret output or failures to decide whether the target is correct.
 
-## 9. Exit status del runner
+## 9. Runner exit status
 
 ```text
 0 SUCCESS
@@ -122,28 +122,28 @@ Non interpreta semanticamente output o fallimenti per decidere la correttezza de
 3 RUNNER ERROR
 ```
 
-- `0`: nessun FAIL/ERROR; possono essere presenti PASS e SKIP;
-- `1`: almeno un FAIL e nessun ERROR;
-- `2`: almeno un ERROR;
-- `3`: il runner non ha potuto completare correttamente la run.
+- `0`: no FAIL/ERROR; PASS and SKIP may be present;
+- `1`: at least one FAIL and no ERROR;
+- `2`: at least one ERROR;
+- `3`: the runner could not complete the run correctly.
 
-Precedenza:
+Precedence:
 
 ```text
 RUNNER ERROR > TEST ERROR > FAIL > SUCCESS
 ```
 
-Il runner status descrive **la sessione**, non la task validation. Un launcher di task scope può considerare non validato uno scope contenente SKIP richiesti pur quando il runner restituisce `0`.
+Runner status describes **the session**, not task validation. A task-scope launcher may consider a scope containing required SKIPs not validated even when the runner returns `0`.
 
-Un'interruzione esterna preserva per quanto possibile la normale semantica di segnale (es. 130/143) e non viene mascherata come status semantico 0..3.
+An external interruption preserves normal signal semantics as far as possible (for example 130/143) and is not masked as semantic status 0..3.
 
-## 10. Output terminale
+## 10. Terminal output
 
-Durante una run seriale il runner mostra almeno test-id ed esito. Al termine mostra i conteggi PASS/FAIL/SKIP/ERROR/TOTAL.
+During a serial run, the runner displays at least test-id and result. At the end it displays PASS/FAIL/SKIP/ERROR/TOTAL counts.
 
-Per FAIL/ERROR può mostrare anche il log pertinente.
+For FAIL/ERROR it may also display the relevant log.
 
-## 11. Persistenza
+## 11. Persistence
 
 Development run:
 
@@ -151,43 +151,43 @@ Development run:
 .runs/<run-id>/
 ```
 
-Validation run completata:
+Completed validation run:
 
 ```text
 sessions/<run-id>/
 ```
 
-Formato run-id:
+Run-id format:
 
 ```text
 YYYYMMDDThhmmss+zzzz-PID
 ```
 
-Struttura base:
+Base structure:
 
 ```text
 <run-id>/
 ├── session
 ├── results
 ├── logs/
-└── snapshots/   # solo se richiesto
+└── snapshots/   # only when requested
 ```
 
-Durante una validation la directory è inizialmente `sessions/.<run-id>/` e viene resa visibile soltanto al completamento della run.
+During validation, the directory initially exists as `sessions/.<run-id>/` and becomes visible only when the run completes.
 
-FAIL/SKIP/ERROR dei test non rendono incompleta una sessione; un runner error può lasciarla nascosta/incompleta.
+Test FAIL/SKIP/ERROR does not make a session incomplete; a runner error may leave it hidden/incomplete.
 
-Una sessione completata è immutabile.
+A completed session is immutable.
 
-## 12. File `session`
+## 12. `session` file
 
-Formato:
+Format:
 
 ```text
 key<TAB>value
 ```
 
-Registra almeno quando applicabile:
+It records at least, when applicable:
 
 ```text
 type
@@ -203,25 +203,25 @@ rumiai-tests-commit
 runner-exit-status
 ```
 
-Il runner non effettua target discovery e non inventa metadata generici del target.
+The runner does not perform target discovery and does not invent generic target metadata.
 
-## 13. File `results`
+## 13. `results` file
 
-Un record per test:
+One record per test:
 
 ```text
 result<TAB>test-id<TAB>observed-termination
 ```
 
-I totali sono derivati, non memorizzati come record duplicati.
+Totals are derived, not stored as duplicated records.
 
-`logs/` replica la gerarchia dei test-id; un log vuoto è valido.
+`logs/` mirrors the test-id hierarchy; an empty log is valid.
 
 ## 14. Filesystem snapshot
 
-La capability snapshot resta osservativa, esplicita e opzionale. Non è una sandbox.
+The snapshot capability remains observational, explicit and optional. It is not a sandbox.
 
-Esiti snapshot:
+Snapshot outcomes:
 
 ```text
 CLEAN
@@ -229,18 +229,18 @@ CHANGED
 ERROR
 ```
 
-`CHANGED` non cambia automaticamente l'esito del test. `ERROR` di un audit richiesto produce `RUNNER ERROR`.
+`CHANGED` does not automatically change the test result. `ERROR` from a requested audit produces `RUNNER ERROR`.
 
-Modalità:
+Modes:
 
 ```text
 metadata
 hash
 ```
 
-`hash` include metadata più SHA-256 dei file regolari.
+`hash` includes metadata plus SHA-256 of regular files.
 
-Scope:
+Scopes:
 
 ```text
 selection
@@ -248,29 +248,29 @@ test
 both
 ```
 
-Le root sono fornite con `--snapshot-root`, possono essere multiple e vengono canonicalizzate/registrate.
+Roots are provided through `--snapshot-root`, may be multiple and are canonicalized/recorded.
 
-Il runner esclude soltanto la directory della run corrente quando ricade nella root osservata; non esclude implicitamente `.git`, `sessions`, `rumiai-tests` o altre aree.
+The runner excludes only the current run directory when it falls inside an observed root; it does not implicitly exclude `.git`, `sessions`, `rumiai-tests` or other areas.
 
-Gli snapshot sono persistiti separatamente dai log e dai risultati.
+Snapshots are persisted separately from logs and results.
 
-## 15. Relazione con `rumiai-validate`
+## 15. Relationship with `rumiai-validate`
 
-`rumiai-test` resta l'unico runner canonico.
+`rumiai-test` remains the only canonical runner.
 
-`rumiai-validate` può:
+`rumiai-validate` may:
 
-- self-update della suite;
-- usare una configurazione di validation scope;
-- preparare l'esatta revisione target senza modificare il checkout principale;
-- invocare il runner una o più volte, una selection per run;
-- pubblicare le sessioni;
-- aggregare gli esiti per stabilire se lo scope task è validato.
+- self-update the suite;
+- use validation-scope configuration;
+- prepare the exact target revision without modifying the operator's main checkout;
+- invoke the runner one or more times, one selection per run;
+- publish sessions;
+- aggregate outcomes to determine whether the task scope is validated.
 
-Queste responsabilità non vengono spostate nel runner.
+These responsibilities do not move into the runner.
 
-## 16. Semplicità e portabilità
+## 16. Simplicity and portability
 
-Il runner deve privilegiare rappresentazioni lineari, primitive semplici e comportamento uniforme tra host.
+The runner must prefer linear representations, simple primitives and uniform behavior across hosts.
 
-Una piccola normalizzazione host-specifica è ammessa soltanto per implementare capability del runner come metadata filesystem o SHA-256, senza contaminare il contratto dei test.
+Small host-specific normalization is allowed only to implement runner capabilities such as filesystem metadata or SHA-256, without contaminating the test contract.

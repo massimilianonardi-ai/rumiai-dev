@@ -1,183 +1,189 @@
 # RumiAI Testing Rules
 
-Questo documento definisce le regole canoniche per la scrittura, l'esecuzione e la conservazione dei test di RumiAI.
+Status: **Current / canonical**  
+Updated: 2026-09-17
 
-Le regole sono normative per i test permanenti e per le validation run. I proof-of-concept restano attività sperimentali distinte.
+This document defines the canonical rules for authoring, executing and preserving RumiAI tests.
 
-## 1. Scopo dei test
+The rules are normative for permanent tests and validation runs. Proofs of concept remain separate experimental work.
 
-I test proteggono proprietà consolidate e materialmente rilevanti di RumiAI e delle dipendenze esterne realmente usate.
+## 1. Purpose of tests
 
-Un test permanente deve esistere perché protegge un contratto, un invariante, un comportamento osservabile o una regressione concreta. La quantità di test non è un obiettivo.
+Tests protect consolidated, materially relevant properties of RumiAI and of the external dependencies RumiAI actually uses.
 
-Un test che non protegge più una proprietà corrente, duplica senza beneficio una proprietà già coperta, oppure costa più manutenzione del rischio che mitiga deve essere semplificato, fuso o eliminato.
+A permanent test should exist because it protects a contract, invariant, observable behavior or concrete regression. Test quantity is not a goal.
 
-## 2. Repository e ruoli
+A test that no longer protects a current property, duplicates an already protected property without benefit, or costs more to maintain than the risk it mitigates should be simplified, merged or removed.
+
+## 2. Repositories and roles
+
+Canonical repository roles are defined by the root `README.md`.
+
+For testing purposes:
+
+- `rumiai-dev` defines current testing rules and expected behavior;
+- `rumiai-tests` contains permanent executable tests, the runner/validation tooling and revision-specific validation evidence;
+- `rumiai-os` contains the product/runtime being tested when that repository is the target;
+- `rumiai-dev-PoCs` contains experiments and proofs of concept;
+- `pkg-catalog` is package catalog data and may be part of a real composed target path when the tested behavior depends on it.
+
+Permanent tests are not product content. A PoC may lead to a permanent test, but the two remain conceptually distinct.
+
+## 3. Organization and discovery
+
+Tests are organized primarily by the object or capability being verified.
+
+Under `tests/`:
+
+1. a regular `*.test` file is a permanent test;
+2. a normal directory is a recursively selectable group;
+3. hidden pathnames whose name begins with `.` are internal material and are not discovered;
+4. every other file is ignored by the runner.
+
+The pathname relative to `tests/` is the natural identifier of a test or group.
+
+The `tests/` root represents the complete applicable suite.
+
+## 4. Test independence
+
+Independence means **execution and state independence**, not duplication of infrastructure code.
+
+Each test must be executable individually and must produce the same result, given the same target, declared configuration and relevant host conditions, regardless of tests executed before or after it.
+
+A test must not depend on:
+
+- state left by another test;
+- setup or cleanup performed by another test;
+- intermediate results from another test;
+- execution order;
+- communication between tests.
+
+A group is a container and selection unit, not an orchestrator. It does not introduce `before`, `after`, required shared setup or functional ordering.
+
+This independence **does not prohibit** shared libraries from the same `rumiai-tests` revision. Infrastructure helpers such as target discovery, creation of complete isolated target replicas, path normalization, temporary-resource plumbing and interactive drivers should be shared when the responsibility is genuinely common.
+
+The exact `rumiai-tests` Git revision is already part of validation evidence and makes the shared-helper version used by a session reproducible.
+
+Inline copying of common helpers is not the default. It is allowed only when the copied content is intentionally part of the specific test semantics or when there is a documented reason to freeze it inside that test.
+
+## 5. Responsibility of an individual test
+
+Each test must verify a clearly identifiable property.
+
+The test owns:
+
+- test-specific preconditions;
+- scenario-specific preparation;
+- external inputs and, only when explicitly allowed, semantically specific simulations or fixtures;
+- execution of the target;
+- expected result;
+- comparison between expected and observed behavior;
+- specific diagnostics;
+- cleanup of resources created by the test.
+
+The runner must not know target semantics.
+
+Common infrastructure logic must not be replicated in every test when a shared library already owns the same responsibility.
+
+## 6. Observable contract before implementation
+
+A test should prefer observable behavior and public or architectural invariants over incidental implementation details.
+
+A white-box check is appropriate only when the internal representation is itself part of the contract, for example file mode, absence of a shebang, a fixed physical layout or another normative structural property.
+
+Unless explicitly required, do not use the following as proxies for behavior:
+
+- grep of internal source strings;
+- private function names;
+- textual call order in source code;
+- line numbers;
+- accidental spelling of equivalent pathnames;
+- implementation details that may change without changing the contract.
+
+### Authenticity of the system under test
+
+A behavioral test must exercise the real system it claims to verify. Isolation exists to make the test repeatable and disposable; it does not authorize replacement of the system under test with an artificial reconstruction.
+
+When the target must be protected from test effects, use a complete isolated replica that is semantically indistinguishable from the real system for the property being verified. The replica must use the real target revision, real executables, real libraries, real adapters, real files and normal execution path. State, `HOME`, temporary directories and other mutable resources may and should be isolated when necessary, provided that isolation does not replace target logic.
+
+For behavior exposed by a command, the normal test form is a small number of real commands invoking the real executable through its normal interface with arguments chosen to cover the contract cases. A test of `pkg install` must actually execute `pkg install` and traverse the real pipeline used by that command.
+
+The following do not prove real target behavior:
+
+- copying individual target files or fragments into an ad-hoc structure;
+- sourcing an internal library instead of invoking the real entrypoint when the claimed contract is the entrypoint or composed system;
+- redefining, intercepting or replacing target functions;
+- replacing adapters, catalogs, downloaders, extractors, integrators or other components of the verified real path with fake implementations;
+- constructing an artificial PATH containing modified copies of target executables;
+- claiming composed behavior is validated when part of that composition was not actually executed.
+
+Simulations, fixtures, stubs, pseudo-terminals or synthetic input are exceptions, not the default model. They are allowed when they represent input external to the logic under test that cannot reasonably be produced directly, especially user/interactive input, or when a current explicit contract authorizes them. They must not replace target components that the test claims to validate.
+
+A test using a valid simulation proves only the property actually exercised through that simulation. It cannot be used as evidence for the same property through a real path that was replaced or excluded.
+
+## 7. Granularity and cost
+
+A test should be small enough to make a violation diagnosable, but fragmentation is not a goal.
+
+Variants of the same contract may be cases in one test when they share setup, expected behavior and failure model and separation would not materially improve diagnosis.
+
+Before creating a new permanent test, verify that the same property is not already protected.
+
+During suite audits, each test should be classifiable as:
 
 ```text
-rumiai-dev       regole, specifiche, decisioni, architettura e memoria dello sviluppo
-rumiai-os        prodotto/runtime stabile
-rumiai-dev-PoCs  esperimenti e proof-of-concept
-rumiai-tests     test permanenti, runner, launcher ed evidenze di validation
+keep        protects a distinct property at proportional cost
+simplify    useful property, but the test is over-specified or infrastructure is excessive
+merge       useful property, but fragmentation is unnecessary
+remove      no distinct current property or insufficient value
 ```
 
-I test permanenti non appartengono al prodotto. Un PoC può originare un test permanente, ma resta concettualmente distinto.
+## 8. Direct execution and shared libraries
 
-## 3. Organizzazione e discovery
+A `.test` remains a directly executable program and must be able to locate the suite root from its own position when it needs common libraries.
 
-I test sono organizzati principalmente per oggetto o capability verificata.
+Direct execution and execution through `rumiai-test` must exercise the same verification logic.
 
-Sotto `tests/`:
+Libraries under `rumiai-tests/lib/` may be deliberate runtime dependencies of permanent tests. They should be small, stable, testable and limited to common infrastructure responsibilities.
 
-1. un file regolare `*.test` è un test permanente;
-2. una directory normale è un gruppo selezionabile ricorsivamente;
-3. pathname nascosti il cui nome inizia con `.` sono materiale interno e non vengono scoperti;
-4. ogni altro file viene ignorato dal runner.
+A change to a shared library requires proportional testing of the library and materially affected consumers, not duplication of the change into inline copies.
 
-Il pathname relativo a `tests/` è l'identificatore naturale del test o gruppo.
+## 9. Self-discovery and pathnames
 
-La root `tests/` rappresenta l'intera suite applicabile.
+Tests must not depend on the absolute pathname of a personal checkout.
 
-## 4. Indipendenza dei test
+It is correct to hardcode stable logical names and relationships that belong to the verified property; it is not correct to hardcode personal home directories, Homebrew paths, developer-local directories or equivalent host-specific spellings.
 
-L'indipendenza è **indipendenza di esecuzione e di stato**, non duplicazione del codice di infrastruttura.
+When the property concerns physical/canonicalized pathnames, the test expectation must also be canonicalized according to the applicable contract.
 
-Ogni test deve poter essere eseguito singolarmente e deve produrre lo stesso risultato, a parità di target, configurazione dichiarata e condizioni rilevanti dell'host, indipendentemente dai test eseguiti prima o dopo.
+The runner does not discover the target on behalf of the test. A shared `rumiai-tests` library may do so for tests that share the same target-discovery contract.
 
-Un test non può dipendere da:
+## 10. Determinism, portability and hosts
 
-- stato lasciato da un altro test;
-- setup o cleanup di un altro test;
-- risultati intermedi di un altro test;
-- ordine di esecuzione;
-- comunicazione tra test.
+Given the same test, target, declared configuration and relevant host conditions, the result must be reproducible.
 
-Un gruppo è un contenitore e un'unità di selezione, non un orchestratore. Non introduce `before`, `after`, setup condiviso necessario o ordine funzionale.
+A common property should normally use the same test across hosts. Do not create macOS/Linux/Windows copies merely to adapt expectations.
 
-Questa indipendenza **non vieta** librerie comuni della stessa revisione di `rumiai-tests`. Helper di infrastruttura come target discovery, creazione di repliche isolate complete del target, path normalization, temporary-resource plumbing e driver interattivi devono essere condivisi quando la responsabilità è realmente comune.
-
-La revisione Git esatta di `rumiai-tests` fa già parte dell'evidenza di validation e rende riproducibile la versione degli helper condivisi usata dalla sessione.
-
-La copia inline di helper comuni non è il default. È ammessa soltanto quando il contenuto copiato è intenzionalmente parte della semantica specifica della prova o quando esiste una ragione documentata per congelarlo dentro quel test.
-
-## 5. Responsabilità del singolo test
-
-Ogni test deve verificare una proprietà chiaramente identificabile.
-
-Il test possiede:
-
-- precondizioni specifiche della prova;
-- preparazione specifica dello scenario;
-- input esterni e, soltanto quando espressamente ammesso, simulazioni o fixture semanticamente specifiche;
-- esecuzione del target;
-- risultato atteso;
-- confronto tra atteso e osservato;
-- diagnostica specifica;
-- cleanup delle risorse create dalla prova.
-
-Il runner non deve conoscere la semantica del target.
-
-La logica infrastrutturale comune non deve essere replicata in ogni test se una libreria condivisa già copre la stessa responsabilità.
-
-## 6. Contratto osservabile prima dell'implementazione
-
-Un test deve preferire il comportamento osservabile e gli invarianti pubblici o architetturali ai dettagli incidentali dell'implementazione.
-
-Un controllo white-box è appropriato soltanto quando la rappresentazione interna è essa stessa parte del contratto, per esempio file mode, assenza di shebang, layout fisico fissato o altra proprietà strutturale normativa.
-
-Non devono essere usati come proxy del comportamento, salvo requisito esplicito:
-
-- grep di stringhe interne;
-- nomi di funzioni private;
-- ordine testuale di chiamate nel sorgente;
-- numeri di riga;
-- spelling accidentale di pathname equivalenti;
-- dettagli di implementazione che possono cambiare senza cambiare il contratto.
-
-### Autenticità del sistema sotto test
-
-Un test di comportamento deve esercitare il sistema reale che dichiara di verificare. L'isolamento serve a rendere la prova ripetibile e scartabile; non autorizza a sostituire il sistema sotto test con una ricostruzione artificiale.
-
-Quando il target deve essere protetto dagli effetti della prova, il test deve usare una replica isolata completa e semanticamente indistinguibile del sistema reale per la proprietà verificata. La replica deve usare la revisione reale del target, i suoi eseguibili reali, le sue librerie reali, i suoi adapter reali, i suoi file reali e il normale percorso di esecuzione. Stato, `HOME`, directory temporanee e altre risorse mutabili possono e devono essere isolati quando necessario, purché l'isolamento non sostituisca la logica del target.
-
-Per un comportamento esposto da un comando, la forma normale della prova consiste in pochi comandi reali che invocano l'eseguibile reale tramite la sua normale interfaccia e usano argomenti scelti per coprire le casistiche del contratto. Se si verifica `pkg install`, la prova deve eseguire realmente `pkg install` e attraversare la pipeline reale che quel comando utilizza.
-
-Non costituiscono prova del comportamento reale del target:
-
-- copiare singoli file o frammenti del target in una struttura costruita ad hoc;
-- source-are una libreria interna al posto di invocare l'entrypoint reale quando il contratto da verificare è quello dell'entrypoint o del sistema composto;
-- ridefinire, intercettare o sostituire funzioni del target;
-- sostituire adapter, cataloghi, downloader, extractor, integrator o altri componenti appartenenti al percorso reale verificato con implementazioni finte;
-- costruire un PATH artificiale contenente copie modificate degli eseguibili del target;
-- dichiarare validato un comportamento composto quando una parte della composizione non è stata realmente eseguita.
-
-Simulazioni, fixture, stub, pseudo-terminali o input sintetici sono eccezioni, non il modello predefinito. Sono ammessi quando servono a rappresentare un input esterno alla logica sotto test che non è ragionevolmente producibile in modo diretto, in particolare input utente o interattivo, oppure quando una specifica regola o decisione li autorizza esplicitamente. Non devono sostituire componenti del target che il test dichiara di validare.
-
-Un test che usa una simulazione valida soltanto la proprietà effettivamente esercitata attraverso quella simulazione. Non può essere usato come evidenza della stessa proprietà attraverso il percorso reale che è stato sostituito o escluso.
-
-## 7. Granularità e costo
-
-Un test deve essere abbastanza piccolo da rendere diagnosticabile una violazione, ma la frammentazione non è un obiettivo.
-
-Varianti dello stesso contratto possono essere casi di un unico test quando condividono setup, comportamento atteso e failure model e la separazione non migliora materialmente la diagnosi.
-
-Prima di creare un nuovo test permanente deve essere verificato che la stessa proprietà non sia già protetta.
-
-Durante l'audit della suite ogni test deve poter essere classificato come:
-
-```text
-keep        protegge una proprietà distinta con costo proporzionato
-simplify    proprietà utile ma test sovra-specificato o infrastruttura eccessiva
-merge       proprietà utile ma frammentazione non necessaria
-remove      nessuna proprietà corrente distinta o valore insufficiente
-```
-
-## 8. Esecuzione diretta e librerie condivise
-
-Un `.test` resta un programma direttamente eseguibile e deve poter localizzare la root della suite dalla propria posizione quando necessita di librerie comuni.
-
-L'esecuzione diretta e quella tramite `rumiai-test` devono esercitare la stessa logica di verifica.
-
-Le librerie sotto `rumiai-tests/lib/` possono essere dipendenze runtime deliberate dei test permanenti. Devono essere piccole, stabili, testabili e limitate a responsabilità infrastrutturali comuni.
-
-Una modifica a una libreria condivisa richiede test proporzionati della libreria e dei consumer materialmente interessati, non la duplicazione della modifica in copie inline.
-
-## 9. Self-discovery e pathname
-
-I test non devono dipendere dal pathname assoluto di un checkout personale.
-
-È corretto hardcodare nomi e relazioni logiche stabili appartenenti alla proprietà verificata; non è corretto hardcodare home personali, path Homebrew, directory locali dello sviluppatore o spelling host-specifici equivalenti.
-
-Quando la proprietà riguarda pathname fisici/canonicalizzati, anche l'aspettativa del test deve essere canonicalizzata secondo il contratto pertinente.
-
-Il runner non individua il target per conto del test. Una libreria comune di `rumiai-tests` può farlo per i test che condividono lo stesso target-discovery contract.
-
-## 10. Determinismo, portabilità e host
-
-A parità di test, target, configurazione dichiarata e condizioni host rilevanti, il risultato deve essere riproducibile.
-
-La stessa proprietà comune deve normalmente usare lo stesso test sui diversi host. Non si creano copie macOS/Linux/Windows soltanto per adattare le aspettative.
-
-Gli host stabili di riferimento correnti sono:
+Current stable reference hosts are:
 
 ```text
 macOS
 Ubuntu 26.04 ARM64
 ```
 
-Host periodici possono includere Ubuntu x64 e ambienti Windows POSIX-compatible quando pertinenti.
+Periodic hosts may include Ubuntu x64 and POSIX-compatible Windows environments when relevant.
 
-Ambienti ausiliari aggiuntivi sono deliberatamente utili durante sviluppo e messa a punto dei test. In particolare, un ambiente Linux diverso dagli host stabili può far emergere dipendenze accidentali da una distribuzione, da una versione di tool o da una divergenza host-specifica che le astrazioni RumiAI devono invece nascondere dietro un'interfaccia comune.
+Additional auxiliary environments are deliberately useful during development and test refinement. In particular, a Linux environment different from the stable hosts may expose accidental dependencies on a distribution, tool version or host-specific divergence that RumiAI abstractions should hide behind a common interface.
 
-L'ambiente Linux di esecuzione messo a disposizione da ChatGPT, quando disponibile, può essere usato come host ausiliario reale per sviluppo, test esplorativi, riproduzione di bug e messa a punto dei test permanenti. La sua identità effettiva deve essere rilevata nella sessione prima di attribuire significato host-specifico ai risultati; non si assume che distribuzione, versione o kernel restino invariati tra sessioni. Quando tale ambiente è Debian x86_64, la sua differenza rispetto a Ubuntu costituisce un ulteriore punto di osservazione utile per la portabilità POSIX di RumiAI.
+The executable Linux environment provided by ChatGPT, when available, may be used as a real auxiliary host for development, exploratory testing, bug reproduction and permanent-test refinement. Its actual identity must be detected in the session before assigning host-specific meaning to results; distribution, version and kernel must not be assumed stable between sessions. When the environment is Debian x86_64, its difference from Ubuntu provides an additional useful observation point for RumiAI POSIX portability.
 
-Un PASS su un host ausiliario aggiunge evidenza sulla proprietà effettivamente esercitata, ma non sostituisce l'evidenza richiesta su un host stabile di riferimento applicabile.
+A PASS on an auxiliary host adds evidence for the property actually exercised, but it does not replace required evidence on an applicable stable reference host.
 
-Un PASS su un host non sostituisce l'evidenza richiesta su un altro host applicabile.
+A PASS on one host does not replace required evidence on another applicable host.
 
-## 11. Esito del singolo test
+## 11. Individual test result
 
-Gli exit status del test restano:
+Test exit statuses remain:
 
 ```text
 0 = PASS
@@ -186,193 +192,185 @@ Gli exit status del test restano:
 3 = ERROR
 ```
 
-- `PASS`: comportamento osservato conforme all'atteso;
-- `FAIL`: prova eseguita correttamente, comportamento non conforme;
-- `SKIP`: prova non applicabile o precondizione dichiarata assente;
-- `ERROR`: il test non ha potuto stabilire l'esito per errore della prova, dell'ambiente o dell'infrastruttura.
+- `PASS`: observed behavior matches the expectation;
+- `FAIL`: the test executed correctly, but behavior did not match;
+- `SKIP`: the test is not applicable or a declared precondition is absent;
+- `ERROR`: the test could not determine a result because of a test, environment or infrastructure error.
 
-Un'incompatibilità reale dell'host con una proprietà richiesta è `FAIL`, non `SKIP`.
+A real host incompatibility with a required property is `FAIL`, not `SKIP`.
 
-Gli esiti storici non vengono mai reinterpretati retroattivamente.
+Historical outcomes are never reinterpreted retroactively.
 
-## 12. Isolamento e cleanup
+## 12. Isolation and cleanup
 
-Un test che può modificare stato o produrre effetti persistenti non deve per questo essere trasformato in una simulazione del target. Quando è necessario proteggere il checkout o l'installazione reale dell'operatore, il test deve creare o usare una replica completa e scartabile del sistema reale, oppure isolare esclusivamente lo stato mutabile mantenendo invariato il percorso di esecuzione reale.
+A test that may modify state or produce persistent effects must not therefore be transformed into a target simulation. When protecting the operator's original checkout or installation is necessary, the test should create or use a complete disposable replica of the real system, or isolate only mutable state while preserving the real execution path.
 
-Una replica del target usata per il test deve provenire dalla revisione reale sottoposta a prova e non da una raccolta di file selezionati, riscritti o ricostruiti ad hoc. Il principio "non modificare il target reale" significa non alterare l'istanza originale dell'operatore; non significa sostituire il target con fixture che ne imitano singole parti.
+A target replica used for testing must come from the real revision under test, not from a selected collection of files rewritten or reconstructed ad hoc. The principle "do not modify the real target" means do not alter the operator's original instance; it does not mean replace the target with fixtures that imitate individual parts.
 
-Ogni test possiede e ripulisce le risorse specifiche create dalla prova. Il cleanup deve essere tentato anche dopo `FAIL` o `ERROR`.
+Each test owns and cleans up resources created specifically for that test. Cleanup should be attempted after `FAIL` or `ERROR` as well.
 
-Il runner non implementa implicitamente sandbox, setup, teardown o workspace specifici del target.
+The runner does not implicitly implement target-specific sandboxing, setup, teardown or workspaces.
 
-## 13. Logging e diagnostica
+## 13. Logging and diagnostics
 
-Il runner cattura stdout e stderr del test in un unico stream ordinato equivalente a:
+The runner captures test stdout and stderr into a single ordered stream equivalent to:
 
 ```sh
 1>logfile 2>&1
 ```
 
-Un `FAIL` o `ERROR` deve rendere comprensibili almeno proprietà fallita, atteso e osservato quando applicabili.
+A `FAIL` or `ERROR` must make at least the failed property, expected value and observed value understandable when applicable.
 
-La diagnostica deve essere concisa e orientata alla causa, non a grandi dump non necessari.
+Diagnostics should be concise and cause-oriented rather than large unnecessary dumps.
 
-## 14. Tool esterni
+## 14. External tools
 
-Un tool esterno viene testato soltanto per le proprietà da cui RumiAI dipende concretamente.
+An external tool is tested only for properties on which RumiAI concretely depends.
 
-Non si valida genericamente un'intera utility, runtime o servizio esterno.
+Do not generically validate an entire external utility, runtime or service.
 
-## 15. Development run e ambienti di esecuzione
+## 15. Development runs and execution environments
 
-Una development run supporta il ciclo rapido:
+A development run supports the fast loop:
 
 ```text
-sviluppo -> test mirati -> correzione -> test mirati
+development -> targeted tests -> correction -> targeted tests
 ```
 
-Target e suite possono essere dirty e la run non costituisce evidenza formale di un commit.
+Target and suite may be dirty and the run does not constitute formal evidence for a commit.
 
-### Ambiente ausiliario ChatGPT/Linux
+### ChatGPT/Linux auxiliary environment
 
-Quando ChatGPT dispone di un ambiente Linux eseguibile, esso deve essere usato come laboratorio rapido reale quando è materialmente utile: esecuzione del target reale o di una replica completa, riproduzione di errori, test esplorativi, verifica di assunzioni host-specifiche e sviluppo dei test permanenti.
+When ChatGPT provides an executable Linux environment, use it as a fast real laboratory when materially useful: execute the real target or a complete replica, reproduce failures, perform exploratory tests, verify host-specific assumptions and develop permanent tests.
 
-L'ambiente ausiliario non è una scorciatoia rispetto alle regole di autenticità del target. Deve eseguire gli stessi entrypoint e componenti reali che si intendono verificare. Un risultato utile scoperto in modo esplorativo deve essere trasferito, quando la proprietà merita protezione permanente, nella suite `rumiai-tests` invece di restare conoscenza effimera della sessione.
+The auxiliary environment is not a shortcut around target-authenticity rules. It must execute the same real entrypoints and components intended to be verified. When an exploratory result protects a property worth keeping, move that property into the `rumiai-tests` suite rather than leaving it as ephemeral session knowledge.
 
 ### GitHub Actions
 
-GitHub Actions è un ambiente di orchestrazione automatica per eseguire i test reali su runner GitHub-hosted puliti e, quando utile, su più sistemi operativi o architetture. Il workflow non deve reimplementare la semantica dei test né sostituire componenti del target: deve preparare le revisioni esatte richieste e invocare `rumiai-test` o `rumiai-validate` sulle selection appropriate.
+GitHub Actions is an automated orchestration environment for executing real tests on clean GitHub-hosted runners and, when useful, across multiple operating systems or architectures. The workflow must not reimplement test semantics or replace target components: it should prepare the exact required revisions and invoke `rumiai-test` or `rumiai-validate` for the appropriate selections.
 
-L'uso normale corrente è successivo alla messa a punto locale/ausiliaria del test o del work unit, quando ha senso verificare che lo stesso comportamento continui a funzionare partendo da ambienti puliti o differenti. Non è necessario eseguire Actions dopo ogni singola modifica locale se ciò non aggiunge informazione materialmente utile.
+The current normal use is after local/auxiliary refinement of the test or work unit, when checking the same behavior from clean or different environments adds material information. Running Actions after every local modification is unnecessary when it adds no meaningful evidence.
 
-RumiAI non usa GitHub required status checks come autorità di merge o come sostituto del giudizio sul work unit. I risultati di Actions sono evidenza tecnica e diagnostica; non autorizzano da soli una promozione e non bloccano automaticamente la storia Git. L'introduzione futura di un required status check o di un merge gate automatico richiede una nuova decisione esplicita.
+RumiAI does not use GitHub required status checks as merge authority or as a substitute for work-unit judgment. Actions results are technical evidence and diagnostics; they do not independently authorize promotion and do not automatically block Git history. Introducing a required status check or automatic merge gate in the future requires a new explicit decision.
 
-I self-hosted runner non fanno parte del workflow corrente. Possono essere rivalutati in futuro, ma non devono essere introdotti implicitamente come requisito della suite o della validation.
+Self-hosted runners are not part of the current workflow. They may be reconsidered in the future but must not be introduced implicitly as a suite or validation requirement.
 
-### GUI headless
+### Headless GUI
 
-L'esecuzione headless di una GUI è una tecnica di esecuzione, non un livello separato di validazione. Quando la proprietà lo consente, una applicazione grafica reale può essere esercitata con il suo vero toolkit e i suoi veri servizi necessari, usando infrastruttura come display virtuale, session bus e accessibility stack, per esempio Xvfb, D-Bus e AT-SPI.
+Headless GUI execution is an execution technique, not a separate validation level. When the property allows it, a real graphical application may be exercised with its real toolkit and required real services using infrastructure such as a virtual display, session bus and accessibility stack, for example Xvfb, D-Bus and AT-SPI.
 
-Il test headless deve avviare e pilotare l'applicazione reale; non deve sostituire GTK, il codice applicativo o altri componenti appartenenti alla proprietà verificata con fake. Può validare proprietà come avvio dell'applicazione, creazione di finestre/widget, input, azioni, dialoghi, transizioni osservabili e struttura accessibility quando tali proprietà non dipendono dal desktop fisico completo.
+A headless test must launch and drive the real application; it must not replace GTK, application code or another component belonging to the verified property with a fake. It may validate properties such as application start, window/widget creation, input, actions, dialogs, observable transitions and accessibility structure when those properties do not depend on the complete physical desktop.
 
-Un test headless non dimostra proprietà che dipendono realmente da GNOME Shell, Mutter/Wayland, portal, keyring, accelerazione grafica, multi-monitor o altra integrazione del desktop non presente nell'ambiente esercitato. Tali proprietà richiedono un ambiente reale appropriato prima di poter essere dichiarate validate.
+A headless test does not prove properties that genuinely depend on GNOME Shell, Mutter/Wayland, portals, keyring, graphics acceleration, multi-monitor behavior or another desktop integration absent from the exercised environment. Those properties require an appropriate real environment before they can be declared validated.
 
 ### GitHub Codespaces
 
-GitHub Codespaces è un ambiente di sviluppo interattivo remoto, non un sostituto di GitHub Actions e non una componente necessaria del workflow di testing corrente. Può essere rivalutato in futuro per onboarding o come workstation di sviluppo remota, ma la sua disponibilità non aggiunge di per sé evidenza di validation e non deve essere introdotta come dipendenza del progetto.
+GitHub Codespaces is an interactive remote development environment, not a replacement for GitHub Actions and not a required component of the current testing workflow. It may be reconsidered for onboarding or remote development, but its availability does not itself add validation evidence and must not become a project dependency implicitly.
 
-### Progressione normale
+### Normal progression
 
-Quando applicabile, la progressione desiderata è:
-
-```text
-sviluppo/modifica
-    -> esecuzione reale e test esplorativi su host locale o ausiliario
-    -> test permanente reale messo a punto in rumiai-tests
-    -> GitHub Actions su ambienti puliti/multi-host quando aggiunge valore
-    -> prodotto presumibilmente completo e funzionante
-    -> physical validation sugli host reali richiesti
-```
-
-Non tutti i work unit richiedono ogni passaggio intermedio, ma ogni passaggio usato deve esercitare la proprietà reale che dichiara di verificare. Lo scopo della progressione è spostare la scoperta dei difetti il più possibile verso le fasi precedenti, non accumulare gate formali.
-
-## 16. Validation run, session result e task validation
-
-Una validation run produce evidenza associata a revisioni precise.
-
-Devono essere distinti tre livelli:
+When applicable, the desired progression is:
 
 ```text
-test result       esito della singola proprietà
-session result    aggregazione dei test eseguiti nella sessione
-task validation   valutazione dei soli test richiesti dal work unit
+development/change
+    -> real execution and exploratory testing on a local or auxiliary host
+    -> real permanent test refined in rumiai-tests
+    -> GitHub Actions on clean/multi-host environments when it adds value
+    -> product expected to be complete and working
+    -> physical validation on the required real hosts
 ```
 
-Il risultato globale di una sessione non invalida automaticamente un work unit.
+Not every work unit requires every intermediate step, but each used step must exercise the real property it claims to verify. The purpose of progression is to move defect discovery as early as possible, not to accumulate formal gates.
 
-Se una sessione contiene test appartenenti a più contesti, un work unit è validato quando **tutti i test dichiarati necessari al suo validation scope hanno PASS** sugli host applicabili. FAIL, ERROR o SKIP di test estranei allo scope restano evidenza reale, ma non invalidano quel work unit.
+## 16. Validation run, session result and task validation
 
-Un test richiesto dallo scope che produce `SKIP` non è un PASS: il work unit resta non validato su quell'host finché la proprietà richiesta non è stata effettivamente esercitata o finché lo scope/host applicabile non viene corretto da una decisione autorevole.
+A validation run produces evidence associated with precise revisions.
 
-La selezione dei test richiesti deve essere fissata **prima della validation**, in base a:
+Distinguish three levels:
 
-- contratto modificato;
-- consumer diretti materialmente interessati;
-- regressioni note pertinenti;
-- proprietà cross-platform realmente coinvolte.
+```text
+test result       result of an individual property
+session result    aggregation of tests executed in the session
+task validation   evaluation of only the tests required by the work unit
+```
 
-Lo scope non può essere ristretto dopo un fallimento per escludere un test che ha dimostrato di essere materialmente dipendente dal cambiamento.
+The overall session result does not automatically invalidate a work unit.
 
-Se durante una sessione un test inizialmente considerato estraneo fallisce e l'analisi dimostra che il fallimento deriva dal work unit, quel test entra nello scope necessario prima della chiusura.
+If a session contains tests from multiple contexts, a work unit is validated when **all tests declared necessary by its validation scope PASS** on the applicable hosts. FAIL, ERROR or SKIP from tests outside the scope remain real evidence but do not invalidate that work unit.
+
+A required test that returns `SKIP` is not a PASS: the work unit remains unvalidated on that host until the required property is actually exercised or the applicable scope/host is corrected by authoritative current input.
+
+Required test selection must be fixed **before validation** based on:
+
+- the changed contract;
+- directly and materially affected consumers;
+- relevant known regressions;
+- cross-platform properties actually involved.
+
+The scope must not be narrowed after a failure merely to exclude a test that demonstrated material dependence on the change.
+
+If a test initially considered unrelated fails during a session and analysis shows that the work unit caused the failure, that test enters the required scope before closure.
 
 ## 17. Validation scope
 
-Un **validation scope** è l'insieme versionato delle selection necessarie a validare un work unit o un health gate.
+A **validation scope** is the versioned set of selections required to validate a work unit or health gate.
 
-Uno scope può contenere uno o più test o gruppi già esistenti. Non richiede duplicare i test in una nuova gerarchia.
+A scope may contain one or more existing tests or groups. It does not require duplicating tests into a new hierarchy.
 
-Sono distinti almeno due usi:
+At least two uses are distinguished:
 
 ```text
-task    scope minimo e sufficiente per chiudere un work unit
-health  controllo ampio della salute/integrità del sistema
+task    minimum sufficient scope to close a work unit
+health  broad system health/integrity check
 ```
 
-La full suite è normalmente un `health` gate. È appropriata per release, milestone, modifiche trasversali o controlli periodici, ma **non è il prerequisito universale per chiudere ogni task**.
+The full suite is normally a `health` gate. It is appropriate for releases, milestones, cross-cutting changes or deliberate broad checks, but **it is not the universal prerequisite for closing every task**.
 
-Scope task differenti devono poter coesistere e venire eseguiti indipendentemente, così sviluppi non correlati non si bloccano a vicenda per fallimenti estranei.
+Different task scopes must be able to coexist and run independently so unrelated development is not blocked by unrelated failures.
 
-## 18. Requisiti di una validation formale
+## 18. Formal validation requirements
 
-Salvo eccezioni documentate:
+Unless a documented exception applies:
 
-- target e `rumiai-tests` devono essere committed;
-- le working tree usate per la prova devono essere clean;
-- devono essere registrati commit/revisioni, host, architettura, data/ora, selection eseguite, risultati e log;
-- l'evidenza deve restare immutabile e revision-specific.
+- the target and `rumiai-tests` must be committed;
+- working trees used for the test must be clean;
+- commits/revisions, host, architecture, date/time, executed selections, results and logs must be recorded;
+- evidence must remain immutable and revision-specific.
 
-Una task validation cross-host è chiusa solo quando tutti i test richiesti dallo scope hanno PASS su tutti gli host applicabili richiesti.
+Cross-host task validation is closed only when all required scope tests PASS on all required applicable hosts.
 
-Sessioni precedenti restano valide per le proprietà che hanno effettivamente esercitato; una sessione complessivamente FAIL non trasforma i suoi test PASS in FAIL.
+Previous sessions remain valid for properties they actually exercised; an overall FAIL session does not turn its individual PASS results into FAIL.
 
-Una validation non può attribuire a un PASS una proprietà che il test non ha realmente esercitato. In particolare, un test che sostituisce parti del target non può chiudere uno scope che richiede il comportamento reale composto di quelle parti.
+A validation cannot attribute to a PASS a property that the test did not actually exercise. In particular, a test that replaces parts of the target cannot close a scope requiring the real composed behavior of those parts.
 
-La physical validation sugli host stabili di riferimento resta la fase finale quando richiesta dal work unit ed è disciplinata da `PHYSICAL-TESTING.md`. Le esecuzioni su host ausiliari o GitHub-hosted runner devono precederla quando materialmente utili, ma non vengono rinominate retroattivamente come physical validation del relativo host stabile.
+Physical validation on stable reference hosts remains the final stage when required by the work unit and is governed by `PHYSICAL-TESTING.md`. Executions on auxiliary hosts or GitHub-hosted runners should precede it when materially useful, but are not retrospectively renamed as physical validation of a stable host they did not exercise.
 
-## 19. `rumiai-test` e `rumiai-validate`
+## 19. `rumiai-test` and `rumiai-validate`
 
-`rumiai-test` resta il runner semplice e semantically-agnostic. Discovery, esecuzione, logging, persistenza ed exit status del runner sono definiti in `RUNNER.md`.
+`rumiai-test` remains the simple semantically agnostic runner. Runner discovery, execution, logging, persistence and exit statuses are defined in `RUNNER.md`.
 
-`rumiai-validate` è il launcher operativo. Può applicare uno scope versionato composto da più selection e aggregarne l'evidenza senza spostare logica semantica del target nel runner.
+`rumiai-validate` is the operational launcher. It may apply a versioned validation scope composed of multiple selections and aggregate evidence without moving target semantics into the runner.
 
-Il launcher può usare un checkout/worktree Git temporaneo dell'esatta revisione target quando necessario per validare scope differenti senza modificare il checkout principale dell'operatore. Tale checkout/worktree è una replica reale del target: i test devono continuare a usare gli entrypoint e i componenti reali della revisione, non copie ad hoc o sostituzioni della pipeline verificata.
+The launcher may use a temporary Git checkout/worktree of the exact target revision when needed to validate different scopes without modifying the operator's main checkout. Such a checkout/worktree is a real target replica: tests must continue to use the real entrypoints and components of that revision, not ad-hoc copies or substitutions of the verified pipeline.
 
-Un workflow esterno, incluso GitHub Actions, deve restare un orchestratore: può preparare checkout, selezionare host e invocare questi strumenti, ma non deve duplicare nel workflow la semantica del target o degli assert che appartengono ai `.test`.
+An external workflow, including GitHub Actions, must remain an orchestrator: it may prepare checkouts, select hosts and invoke these tools, but must not duplicate target semantics or assertions that belong in `.test` files.
 
-## 20. Promozione e rimozione dei test
+## 20. Promotion and removal of tests
 
-Un bug corretto dovrebbe produrre un test di regressione quando la riproduzione è deterministica, sostenibile e protegge una proprietà che deve restare vera.
+A corrected bug should produce a regression test when reproduction is deterministic, maintainable and protects a property that must remain true.
 
-Non ogni bug del test deve generare un altro test del test. Correzioni infrastrutturali comuni devono preferibilmente essere concentrate nella libreria condivisa appropriata e protette al livello più basso utile.
+Not every test bug requires another test of the test. Common infrastructure corrections should preferably be concentrated in the appropriate shared library and protected at the lowest useful level.
 
-Un test permanente può e deve essere rimosso quando la proprietà è superseded, duplicata o non più materialmente utile. L'evidenza storica resta immutabile nei commit/sessioni precedenti.
+A permanent test may and should be removed when its property is superseded, duplicated or no longer materially useful. Historical evidence remains immutable in previous commits/sessions.
 
-## 21. Fonte di verità
+## 21. Source of truth
 
-`rumiai-dev` definisce regole e comportamento atteso.
+`rumiai-dev` defines current testing rules and expected behavior.
 
-`rumiai-tests` contiene l'implementazione eseguibile dei test e le evidence di validation.
+`rumiai-tests` contains executable test implementation and revision-specific validation evidence.
 
-`rumiai-dev-PoCs` contiene esperimenti e PoC.
+`rumiai-dev-PoCs` contains experiments and PoCs.
 
-`rumiai-os` contiene il prodotto e non diventa fonte normativa delle regole di testing.
+`rumiai-os` contains product/runtime implementation and does not become the normative source of testing rules.
 
-In caso di conflitto tra una suite di test e i contratti correnti di `rumiai-dev`, prevalgono i contratti correnti e il test deve essere riallineato o rimosso.
-
-### Riallineamento corrente della suite
-
-La chiarificazione del 2026-09-16 sull'autenticità del sistema sotto test rende esplicitamente non conforme, come prova del comportamento reale composto, qualunque test che sostituisca parti del target e poi attribuisca il PASS al sistema reale.
-
-Alla revisione `298931c1dca03d44755893d64b9b3a7c0058b7ea` di `rumiai-tests`, `tests/rumiai-os/pkg/install.test` è **pending realignment**: il test corrente crea copie e componenti artificiali e sostituisce parti della pipeline di installazione. Fino al riallineamento, i suoi PASS storici o correnti non costituiscono validazione del comportamento reale di `pkg install`; valgono soltanto per le proprietà limitate effettivamente esercitate dalla prova costruita.
-
-La suite deve essere auditata con lo stesso criterio e ogni altro test che sostituisce il proprio target comportamentale deve essere riallineato, riclassificato rispetto alla proprietà realmente verificata oppure rimosso.
+When a test suite conflicts with current `rumiai-dev` contracts, the current contracts prevail and the test must be realigned or removed.

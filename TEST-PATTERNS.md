@@ -1,172 +1,172 @@
 # RumiAI Test Authoring Patterns
 
-Questo documento raccoglie pattern e primitive riutilizzabili per `rumiai-tests`. `TESTING.md` resta il contratto normativo.
+This document collects reusable patterns and primitives for `rumiai-tests`. `TESTING.md` remains the normative contract.
 
-## 1. Principio
+## 1. Principle
 
-Quando più test hanno la stessa responsabilità infrastrutturale, la conoscenza non deve essere duplicata per ottenere una falsa indipendenza.
+When multiple tests share the same infrastructure responsibility, knowledge must not be duplicated merely to obtain false independence.
 
-La priorità è:
-
-```text
-1. comportamento osservabile del target reale
-2. autenticità del percorso di esecuzione verificato
-3. indipendenza di stato/ordine tra test
-4. riuso di infrastruttura comune stabile
-5. minima quantità di codice di test necessaria
-```
-
-## 2. Livelli di riuso
-
-Una tecnica riutilizzabile può vivere come:
+Priority order:
 
 ```text
-pattern documentale
-libreria condivisa di rumiai-tests
-tool generale di rumiai-os, solo se utile anche al prodotto
+1. observable behavior of the real target
+2. authenticity of the verified execution path
+3. state/order independence between tests
+4. reuse of stable common infrastructure
+5. minimum amount of test code required
 ```
 
-La promozione verso `rumiai-os` non è automatica.
+## 2. Reuse levels
 
-## 3. Librerie condivise
+A reusable technique may live as:
 
-Una libreria sotto `rumiai-tests/lib/` è appropriata per responsabilità comuni come:
+```text
+documented pattern
+shared rumiai-tests library
+general rumiai-os tool, only when also useful to the product
+```
+
+Promotion into `rumiai-os` is not automatic.
+
+## 3. Shared libraries
+
+A library under `rumiai-tests/lib/` is appropriate for common responsibilities such as:
 
 - target discovery;
-- creazione di repliche isolate complete e scartabili del target;
-- preparazione di input esterni o fixture alle sole frontiere ammesse da `TESTING.md`;
+- creation of complete, disposable isolated replicas of the target;
+- preparation of external input or fixtures only at boundaries allowed by `TESTING.md`;
 - path normalization;
-- primitive temporanee;
-- driver di programmi interattivi;
-- altra infrastruttura non specifica della proprietà verificata.
+- temporary-resource primitives;
+- drivers for interactive programs;
+- other infrastructure that is not specific to the property being verified.
 
-I test possono source direttamente tali librerie. La revisione esatta di `rumiai-tests` registrata nella validation rende riproducibile la versione usata.
+Tests may source those libraries directly. The exact `rumiai-tests` revision recorded by validation makes the used library version reproducible.
 
-Una libreria condivisa deve essere piccola, con responsabilità chiara e test proporzionati. Una libreria di test non deve diventare un'implementazione alternativa del comportamento del target.
+A shared library must be small, have a clear responsibility and receive proportional tests. A test library must not become an alternative implementation of target behavior.
 
-### Copia inline
+### Inline copying
 
-La copia inline non è più il default.
+Inline copying is no longer the default.
 
-È ammessa solo quando:
+It is allowed only when:
 
-1. la primitive copiata fa parte intenzionalmente della semantica specifica del test; oppure
-2. congelare quella versione dentro il test è materialmente necessario e la motivazione è documentata nel file.
+1. the copied primitive is intentionally part of the test-specific semantics; or
+2. freezing that version inside the test is materially necessary and the reason is documented in the file.
 
-Non è una motivazione sufficiente il solo desiderio di evitare una dipendenza dalla stessa revisione della suite.
+The desire to avoid a dependency on the same suite revision is not sufficient justification by itself.
 
-Le copie inline storiche esistenti devono essere migrate quando causano manutenzione duplicata o drift; non è necessario riscriverle tutte in una sola modifica se il rischio supera il beneficio, ma nessuna nuova copia deve essere introdotta senza giustificazione.
+Existing historical inline copies should be migrated when they create duplicated maintenance or drift; they do not need to be rewritten all at once when the risk exceeds the benefit, but no new copy should be introduced without justification.
 
-La copia di file o frammenti appartenenti al sistema sotto test non deve essere usata per ricostruirne artificialmente il comportamento. Quando serve isolamento, si usa la replica completa prevista da `TESTING.md`.
+Copying files or fragments from the system under test must not be used to reconstruct its behavior artificially. When isolation is required, use the complete replica defined by `TESTING.md`.
 
-## 4. Testare il contratto attraverso il target reale
+## 4. Test the contract through the real target
 
-Per verificare un comportamento usare, quando il contratto lo consente, l'entrypoint pubblico reale e osservare direttamente:
+To verify behavior, use the real public entrypoint when the contract allows it and observe directly:
 
-- argomenti e input effettivamente accettati;
+- arguments and inputs actually accepted;
 - output;
 - exit status;
-- file prodotti;
+- produced files;
 - mode/ownership;
-- transizioni di stato;
-- altri effetti osservabili appartenenti al contratto.
+- state transitions;
+- other observable effects that belong to the contract.
 
-Fixture, fake, stub o input sintetici possono essere usati soltanto per rappresentare una frontiera esterna espressamente ammessa da `TESTING.md`. Non devono sostituire funzioni, eseguibili, adapter, cataloghi, downloader, extractor, integrator o altri componenti del target quando il test dichiara di verificare il comportamento reale composto che li attraversa.
+Fixtures, fakes, stubs or synthetic input may be used only to represent an external boundary explicitly allowed by `TESTING.md`. They must not replace functions, executables, adapters, catalogs, downloaders, extractors, integrators or other target components when the test claims to verify the real composed behavior that traverses them.
 
-Evitare grep del sorgente, nomi di funzioni private, numeri di riga e confronti di pathname non canonicalizzati quando tali dettagli non sono il contratto.
+Avoid source grep, private function names, line numbers and comparisons of non-canonicalized pathnames when those details are not the contract.
 
-## 5. Pattern: target `rumiai-os`
+## 5. Pattern: `rumiai-os` target
 
-La reference implementation corrente è:
+The current reference implementation is:
 
 ```text
 lib/rumiai-os-target.lib
 ```
 
-I test `rumiai-os` che condividono il normale contratto di discovery devono source questa libreria invece di copiarne le funzioni.
+`rumiai-os` tests that share the normal discovery contract should source this library instead of copying its functions.
 
-Un test può usare una strategia diversa solo quando la discovery stessa è la proprietà verificata o quando esiste un requisito differente documentato.
+A test may use a different strategy only when discovery itself is the property under test or when a different documented requirement exists.
 
-## 6. Pattern: replica runnable isolata `rumiai-os`
+## 6. Pattern: isolated runnable `rumiai-os` replica
 
-La reference implementation corrente mantiene il nome storico:
+The current reference implementation retains the historical name:
 
 ```text
 lib/rumiai-os-fixture.lib
 ```
 
-Il suo contratto corretto non è costruire un fake di `rumiai-os`, ma creare una replica isolata del runtime/prodotto reale e separare soltanto lo stato mutabile necessario alla prova.
+Its correct contract is not to construct a fake `rumiai-os`, but to create an isolated replica of the real runtime/product and separate only the mutable state required by the test.
 
-I test che necessitano della normale replica isolata del runtime devono source questa libreria quando il suo contratto corrisponde alla proprietà da verificare. La replica deve provenire dalla revisione reale sottoposta a test e deve contenere gli entrypoint e i componenti reali necessari al normale percorso di esecuzione; se il layout del prodotto evolve, la libreria condivisa deve essere riallineata in modo che la replica resti semanticamente completa per le proprietà che la usano.
+Tests that need the normal isolated runtime replica should source this library when its contract matches the property being verified. The replica must come from the real revision under test and must contain the real entrypoints and components required by the normal execution path. If the product layout evolves, the shared library must be realigned so the replica remains semantically complete for the properties that use it.
 
-Il nome storico `fixture` della libreria non autorizza test a sostituire parti del target con implementazioni artificiali. Se una prova richiede il comportamento reale di una parte non presente nella replica, la replica è insufficiente e deve essere corretta oppure la prova deve usare direttamente il target reale appropriato.
+The historical `fixture` name of the library does not authorize tests to replace target parts with artificial implementations. If a test requires the real behavior of a part not present in the replica, the replica is insufficient and must be corrected, or the test must use the appropriate real target directly.
 
-Una modifica al layout standard del prodotto deve quindi essere riallineata una volta nella libreria condivisa e nei test che verificano esplicitamente quel layout, non in numerose copie infrastrutturali.
+A change to the standard product layout should therefore be realigned once in the shared library and in tests that explicitly verify that layout, rather than in many infrastructure copies.
 
-## 7. Pattern: programmi interattivi via TTY
+## 7. Pattern: interactive programs through a TTY
 
-La reference implementation corrente è:
+The current reference implementation is:
 
 ```text
 lib/interactive.lib
 ```
 
-Serve a pilotare in modo non interattivo programmi che leggono da TTY reale/pseudo-terminale.
+It drives programs that read from a real TTY/pseudo-terminal without requiring manual interaction.
 
-Strategia host corrente validata:
+Current host strategy:
 
 ```text
-macOS / Darwin: expect(1), attesa esplicita del prompt
-Linux:          script(1) util-linux con input preparato
+macOS / Darwin: expect(1), explicit wait for the prompt
+Linux:          util-linux script(1) with prepared input
 ```
 
-Formato dialogo:
+Dialog format:
 
 ```text
-<prompt esatto><TAB><risposta>
+<exact prompt><TAB><response>
 ```
 
-Failure mode già osservati e da non reintrodurre:
+Observed failure modes that must not be reintroduced:
 
-- BSD/macOS `script(1)` non è intercambiabile con util-linux per questo scenario;
-- in Tcl/Expect `[y/N]` dentro doppi apici è sintassi, non testo letterale;
-- prompt dinamici devono essere trattati come dati e confrontati esattamente;
-- timeout ed EOF devono produrre diagnostica utile;
-- il transcript deve restare osservabile quando la prova fallisce.
+- BSD/macOS `script(1)` is not interchangeable with util-linux for this scenario;
+- in Tcl/Expect, `[y/N]` inside double quotes is syntax, not literal text;
+- dynamic prompts must be treated as data and matched exactly;
+- timeout and EOF must produce useful diagnostics;
+- the transcript must remain observable when the test fails.
 
-La versione storicamente validata `7eed87d7...` resta evidence del comportamento osservato; nuove versioni della libreria richiedono test proporzionati prima di essere considerate affidabili.
+Changes to this library require proportional tests before relying on the changed behavior.
 
-## 8. Pattern: GUI headless
+## 8. Pattern: headless GUI
 
-Una GUI può essere esercitata headless quando la proprietà verificata non dipende dal desktop fisico completo.
+A GUI may be exercised headlessly when the verified property does not depend on the complete physical desktop.
 
-Il pattern corretto è avviare l'applicazione reale con il suo vero toolkit e i servizi reali necessari e fornire soltanto l'infrastruttura di esecuzione non fisica, per esempio:
+The correct pattern is to launch the real application with its real toolkit and required real services while providing only non-physical execution infrastructure, for example:
 
 ```text
-display virtuale
+virtual display
 session bus
 accessibility stack
-applicazione reale
-input/driver del test
+real application
+test input/driver
 ```
 
-Tecnologie come Xvfb, D-Bus e AT-SPI possono essere usate quando appropriate all'applicazione e all'host. Non costituiscono di per sé simulazione del target: sono infrastruttura di esecuzione finché il codice applicativo, GTK e gli altri componenti appartenenti alla proprietà restano reali.
+Technologies such as Xvfb, D-Bus and AT-SPI may be used when appropriate for the application and host. They are not themselves target simulation: they are execution infrastructure as long as the application code, GTK and other components that belong to the property remain real.
 
-Il test deve limitare la propria conclusione alle proprietà realmente esercitate. Un ambiente headless privo di GNOME Shell, Mutter/Wayland, portal, keyring, accelerazione grafica o altra integrazione desktop non può validare il comportamento dipendente da quei componenti.
+The test must limit its conclusion to properties actually exercised. A headless environment without GNOME Shell, Mutter/Wayland, portals, keyring, graphics acceleration or another desktop integration cannot validate behavior that depends on those components.
 
-## 9. Regola per nuovi test
+## 9. Rule for new tests
 
-Prima di aggiungere codice infrastrutturale a un `.test`, verificare nell'ordine:
+Before adding infrastructure code to a `.test`, check in this order:
 
-1. il comportamento può essere esercitato attraverso l'entrypoint reale previsto dal contratto?
-2. se serve isolamento, la replica usata è completa e proviene dalla revisione reale del target?
-3. eventuali fixture/fake rappresentano soltanto input o frontiere esterne ammesse e non sostituiscono il comportamento dichiarato come verificato?
-4. esiste già una libreria sotto `lib/` con la stessa responsabilità?
-5. esiste un pattern documentato?
-6. la logica aggiuntiva è davvero specifica della proprietà testata?
-7. il nuovo test protegge una proprietà distinta da quelle già coperte?
-8. il costo futuro di manutenzione è proporzionato al rischio?
+1. can the behavior be exercised through the real entrypoint required by the contract?
+2. if isolation is needed, is the replica complete and derived from the real target revision?
+3. do any fixtures/fakes represent only allowed external inputs or boundaries rather than replacing behavior claimed as verified?
+4. does a library under `lib/` already provide the same responsibility?
+5. is there an existing documented pattern?
+6. is the additional logic genuinely specific to the property under test?
+7. does the new test protect a property distinct from those already covered?
+8. is future maintenance cost proportional to the risk?
 
-Se la risposta indica riuso o fusione, non creare una nuova copia o un nuovo test soltanto per isolamento formale.
+If the answers point to reuse or merging, do not create a new copy or a new test merely for formal isolation.
 
-Quando una proprietà è comune a più host, preferire lo stesso `.test` reale sui diversi ambienti anziché creare versioni separate specifiche per host. Le differenze necessarie devono restare nell'infrastruttura o nelle astrazioni già previste dal contratto, non duplicare la semantica della prova.
+When a property is common across multiple hosts, prefer the same real `.test` on those environments rather than host-specific copies. Necessary differences should remain in infrastructure or abstractions already provided by the contract, not duplicate test semantics.

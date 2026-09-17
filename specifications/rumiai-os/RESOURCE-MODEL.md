@@ -1,50 +1,50 @@
-# Specifica — Resource model
+# RumiAI OS — Resource model
 
 Date: 2026-09-14  
 Status: **Current**
 
-## 1. Scopo
+## 1. Scope
 
-Questa specifica definisce il modello corrente delle risorse distribuite di RumiAI OS dopo il freeze `2.0.0`.
+This specification defines the current distributed-resource model of RumiAI OS after the `2.0.0` freeze.
 
-Il modello distingue:
+The model distinguishes:
 
-- risorse globali appartenenti al layer tecnico `sys`;
-- risorse globali appartenenti al layer branded `ai`;
-- risorse appartenenti a package gestiti;
-- state mutabile.
+- global resources owned by the technical `sys` layer;
+- global resources owned by the branded `ai` layer;
+- resources owned by managed packages;
+- mutable state.
 
-La specifica non introduce un resolver universale delle risorse, URI di risorsa, registry, daemon o resource manager.
-
----
-
-## 2. Definizione di risorsa
-
-Una resource payload è contenuto distribuito con un owner, necessario o utilizzabile a runtime, che non costituisce state applicativo mutabile e non è un entrypoint.
-
-Esempi possibili includono cataloghi di lingua, immagini, icone, template, schema o altri asset statici quando un caso concreto li richiede.
-
-La classificazione come resource è semantica. Non autorizza automaticamente nuove classi di risorsa o nuove API.
-
-I selector co-locati alle risorse, come `lang/current`, sono metadata di selezione mutabili. La loro mutabilità non riclassifica i payload selezionati come state.
+This specification does not introduce a universal resource resolver, resource URI, registry, daemon or resource manager.
 
 ---
 
-## 3. Root globale `res`
+## 2. Resource definition
 
-La semantic root globale delle risorse di sistema è:
+A resource payload is distributed content with an owner that is required or usable at runtime, is not mutable application state and is not an entrypoint.
+
+Possible examples include language catalogs, images, icons, templates, schemas or other static assets when a concrete use case requires them.
+
+Classification as a resource is semantic. It does not automatically authorize new resource classes or new APIs.
+
+Selectors co-located with resources, such as `lang/current`, are mutable selection metadata. Their mutability does not reclassify the selected payloads as state.
+
+---
+
+## 3. Global `res` root
+
+The global semantic root for system resources is:
 
 ```text
 $m_ROOT/res/
 ```
 
-Il bootstrap espone:
+The bootstrap exposes:
 
 ```text
 m_RES_DIR=$m_ROOT/res
 ```
 
-Le risorse globali sono ownership-qualified:
+Global resources are ownership-qualified:
 
 ```text
 res/
@@ -52,39 +52,39 @@ res/
 └── ai/
 ```
 
-`sys` identifica risorse del substrate tecnico `m`.
+`sys` identifies resources of the technical `m` substrate.
 
-`ai` identifica risorse del layer branded RumiAI.
+`ai` identifies resources of the branded RumiAI layer.
 
-L'esistenza di `res/ai` non crea una dipendenza semantica di `m` da RumiAI. Il substrate può conoscere la forma generale del resource model senza conoscere o richiedere contenuti branded specifici.
+The existence of `res/ai` does not create a semantic dependency of `m` on RumiAI. The substrate may know the general resource-model shape without knowing or requiring specific branded content.
 
-Nuovi owner globali non sono definiti da questa specifica.
+No additional global owners are defined by this specification.
 
 ---
 
-## 4. Classi di risorsa
+## 4. Resource classes
 
-Una classe di risorsa è collocata sotto il relativo owner:
+A resource class is located under its owner:
 
 ```text
 res/<owner>/<resource-class>/
 ```
 
-Questa specifica fissa inizialmente una sola classe concreta:
+This specification initially fixes exactly one concrete class:
 
 ```text
 lang
 ```
 
-Non vengono introdotti namespace generici ulteriori per anticipare classi future.
+No additional generic namespaces are introduced in anticipation of future classes.
 
-La presenza di `res` non autorizza automaticamente directory quali `icons`, `themes`, `templates`, `models` o equivalenti: ciascuna classe viene materializzata quando esiste un requisito concreto.
+The presence of `res` does not automatically authorize directories such as `icons`, `themes`, `templates`, `models` or equivalents: each class is materialized only when a concrete requirement exists.
 
 ---
 
-## 5. Language resources globali
+## 5. Global language resources
 
-Il layout corrente è:
+The current layout is:
 
 ```text
 res/
@@ -100,21 +100,21 @@ res/
         └── current -> <locale>
 ```
 
-Ogni directory `res/<owner>/lang/<locale>/` dichiara che quell'owner supporta il locale nella propria classe `lang`.
+Each `res/<owner>/lang/<locale>/` directory declares that the owner supports that locale in its `lang` class.
 
-Un catalogo di lingua supportato può essere vuoto. Non è necessario inventare messaggi soltanto per materializzare una lingua supportata.
+A supported language catalog may be empty. Messages do not need to be invented merely to materialize a supported language.
 
-`current` deve essere un symbolic link relativo il cui target è il nome leaf del locale selezionato nello stesso `lang/`.
+`current` must be a relative symbolic link whose target is the leaf locale name selected within the same `lang/` tree.
 
-Tutti i language tree globali materializzati sotto:
+All materialized global language trees under:
 
 ```text
 res/*/lang/
 ```
 
-partecipano alla selezione globale e devono avere lo stesso locale selezionato.
+participate in global selection and must have the same selected locale.
 
-La selezione iniziale distribuita è:
+The distributed initial selection is:
 
 ```text
 en_US
@@ -122,11 +122,11 @@ en_US
 
 ---
 
-## 6. Interfaccia tecnica `lang`
+## 6. Technical `lang` interface
 
-L'interfaccia shell esistente `lang` resta una facility tecnica di `m`.
+The existing `lang` shell interface remains a technical `m` facility.
 
-Il bootstrap mantiene:
+The bootstrap keeps:
 
 ```text
 m_LANG_DIR=$m_RES_DIR/sys/lang
@@ -135,152 +135,152 @@ m_LANGUAGE_FALLBACK=en_US
 m_LANG_FALLBACK_DIR=$m_LANG_DIR/$m_LANGUAGE_FALLBACK
 ```
 
-`m_LANG_DIR` viene mantenuta come interfaccia semantica già esistente per la facility tecnica `lang`; il suo nuovo valore non introduce una regola generale di environment alias per ogni sottodirectory di `res`.
+`m_LANG_DIR` is retained as the existing semantic interface for the technical `lang` facility; its new value does not establish a general environment-alias rule for every `res` subdirectory.
 
-La funzione tecnica:
+The technical function:
 
 ```text
 lang <domain> <message-id>
 ```
 
-risolve esclusivamente il catalogo `sys`.
+resolves only the `sys` catalog.
 
-Non cerca in `res/ai/lang`, non effettua merge tra owner e non introduce fallback cross-owner.
+It does not search `res/ai/lang`, merge owners or introduce cross-owner fallback.
 
-Un futuro consumer branded potrà leggere risorse `ai` soltanto quando esisterà un requisito concreto e un contratto appropriato. Questa specifica non anticipa tale API.
+A future branded consumer may read `ai` resources only when a concrete requirement and appropriate contract exist. This specification does not anticipate that API.
 
 ---
 
-## 7. Selezione globale con `lang-set`
+## 7. Global selection with `lang-set`
 
-Il comando pubblico resta:
+The public command remains:
 
 ```text
 bin/sys/lang-set
 ```
 
-ed è implementato dal layer tecnico `m`.
+and is implemented by the technical `m` layer.
 
 ### 7.1 Query
 
-Con zero argomenti:
+With zero arguments:
 
 ```text
 lang-set
 ```
 
-restituisce esclusivamente il nome del locale selezionato dal selector tecnico:
+it returns only the locale name selected by the technical selector:
 
 ```text
 res/sys/lang/current
 ```
 
-seguito da newline.
+followed by a newline.
 
-Esempio:
+Example:
 
 ```text
 it_IT
 ```
 
-La query non elenca i cataloghi e non restituisce conteggi.
+The query does not list catalogs or return counts.
 
-Se il selector `sys` non è un symbolic link relativo valido verso un locale disponibile nel proprio tree, la query fallisce. Non presenta il fallback come se fosse la selezione corrente.
+If the `sys` selector is not a valid relative symbolic link to an available locale in its own tree, the query fails. It does not present the fallback as if it were the current selection.
 
-### 7.2 Selezione
+### 7.2 Selection
 
-Con un argomento:
+With one argument:
 
 ```text
 lang-set <locale>
 ```
 
-il comando:
+the command:
 
-1. individua i language tree globali materializzati nella forma `res/*/lang/`;
-2. verifica prima di ogni mutazione che `<locale>` esista in tutti i tree partecipanti;
-3. verifica che ogni `current` partecipante sia un selector valido;
-4. prepara i nuovi selector relativi;
-5. aggiorna tutti i selector partecipanti;
-6. aggiorna il selector `sys` per ultimo, come commit logico della selezione osservabile da `lang-set` senza argomenti;
-7. in caso di errore ordinario durante l'aggiornamento tenta il ripristino dei selector precedenti.
+1. discovers materialized global language trees of the form `res/*/lang/`;
+2. verifies before any mutation that `<locale>` exists in every participating tree;
+3. verifies that every participating `current` selector is valid;
+4. prepares the new relative selectors;
+5. updates all participating selectors;
+6. updates the `sys` selector last as the logical commit of the selection observed by zero-argument `lang-set`;
+7. on an ordinary update error, attempts to restore the previous selectors.
 
-Se la lingua richiesta manca anche in un solo owner globale partecipante, l'operazione fallisce senza modificare alcun selector.
+If the requested language is missing from even one participating global owner, the operation fails without modifying any selector.
 
-`lang-set` non deve contenere una dipendenza semantica esplicita dal nome `ai`: opera sulla forma generale dei language tree globali sotto `m_RES_DIR`.
+`lang-set` must not contain an explicit semantic dependency on the name `ai`: it operates on the general shape of global language trees under `m_RES_DIR`.
 
-L'aggiornamento di più symlink non è una transazione filesystem crash-atomica. Il contratto richiede coerenza dopo successo e rollback per gli errori ordinari gestiti; non introduce journal, generation directory, lock framework o transaction manager.
+Updating multiple symlinks is not a crash-atomic filesystem transaction. The contract requires consistency after success and rollback for handled ordinary errors; it does not introduce a journal, generation directory, lock framework or transaction manager.
 
 ---
 
 ## 8. Package resources
 
-Le risorse di un package appartengono al package e restano nel relativo tree/versione gestita.
+Package resources belong to the package and remain in its managed tree/version.
 
-Non vengono copiate o proiettate automaticamente sotto:
+They are not copied or projected automatically under:
 
 ```text
 $m_RES_DIR
 ```
 
-Questo vale anche per i cataloghi di lingua del package.
+This also applies to package language catalogs.
 
-`lang-set` non visita, modifica o sincronizza selector o configurazioni interne dei package.
+`lang-set` does not visit, modify or synchronize package-internal selectors or configuration.
 
-L'integrazione di un package può configurare il software upstream affinché segua la lingua globale di sistema oppure usi un override proprio, se il software lo supporta. La traduzione tra il locale RumiAI e l'eventuale schema locale dell'upstream appartiene alla specifica integrazione del package.
+Package integration may configure upstream software to follow the global system language or use its own override when supported. Translation between the RumiAI locale and an upstream locale scheme belongs to the package-specific integration.
 
-Questa regola non introduce una sintassi generica `lang=` né una nuova primitive di package configuration.
-
----
-
-## 9. Separazione da state
-
-`res/` non è una state area.
-
-Le state area e il resolver `state-path` conservano le semantiche correnti.
-
-I payload sotto `res/` sono distribuiti come parte del prodotto; i selector `current` sono metadata di selezione co-locati alle risorse per il contratto specifico che li definisce.
-
-Il resource model non riapre il modello di state e non introduce un secondo resolver di state.
+This rule does not introduce a generic `lang=` syntax or a new package-configuration primitive.
 
 ---
 
-## 10. Nessun resolver universale
+## 9. Separation from state
 
-Non vengono introdotti:
+`res/` is not a state area.
+
+State areas and the `state-path` resolver retain their current semantics.
+
+Payloads under `res/` are distributed as part of the product; `current` selectors are selection metadata co-located with resources under the specific contract that defines them.
+
+The resource model does not reopen the state model and does not introduce a second state resolver.
+
+---
+
+## 10. No universal resolver
+
+The following are not introduced:
 
 ```text
 resource-path
 res-path
 resource://
-registry di risorse
+resource registry
 resource daemon
 resource manager
 ```
 
-Un consumer usa la semantic root o il contratto specifico già pertinente alla propria responsabilità.
+A consumer uses the semantic root or specific contract already relevant to its responsibility.
 
-Una nuova primitive di risoluzione richiederà un requisito concreto che non sia già coperto dalle interfacce esistenti.
+A new resolution primitive requires a concrete requirement not already covered by existing interfaces.
 
 ---
 
-## 11. Invarianti
+## 11. Invariants
 
 ```text
-RES-01  la semantic root globale delle risorse è $m_ROOT/res ed è esposta come m_RES_DIR
-RES-02  le risorse globali sono ownership-qualified; gli owner correnti sono sys e ai
-RES-03  sys appartiene al substrate tecnico m; ai appartiene al layer branded RumiAI
-RES-04  resource payload e state mutabile restano concetti distinti
-RES-05  un selector current co-locato non trasforma il resource tree in state
-RES-06  la prima classe di risorsa globale fissata è lang
-RES-07  m_LANG_DIR resta l'interfaccia tecnica lang e vale $m_RES_DIR/sys/lang
-RES-08  la facility tecnica lang risolve soltanto risorse sys e non dipende da ai
-RES-09  res/*/lang/current seleziona lo stesso locale in tutti i language tree globali materializzati
-RES-10  lang-set senza argomenti restituisce soltanto il locale selezionato da res/sys/lang/current
-RES-11  lang-set valida tutti i language tree globali prima di mutare e aggiorna sys per ultimo
-RES-12  lang-set non visita né modifica le risorse o configurazioni dei package
-RES-13  le risorse dei package restano package-local e sono private al package salvo contratti futuri espliciti
-RES-14  nessun resolver universale, URI, registry, daemon o resource manager è introdotto
-RES-15  la selezione multi-owner è semanticamente unica ma non è promessa come transazione filesystem crash-atomica
-RES-16  en_US è la selezione globale distribuita iniziale e resta il fallback tecnico
+RES-01  the global resource semantic root is $m_ROOT/res and is exposed as m_RES_DIR
+RES-02  global resources are ownership-qualified; current owners are sys and ai
+RES-03  sys belongs to the technical m substrate; ai belongs to the branded RumiAI layer
+RES-04  resource payloads and mutable state remain distinct concepts
+RES-05  a co-located current selector does not turn the resource tree into state
+RES-06  the first fixed global resource class is lang
+RES-07  m_LANG_DIR remains the technical lang interface and equals $m_RES_DIR/sys/lang
+RES-08  the technical lang facility resolves only sys resources and does not depend on ai
+RES-09  res/*/lang/current selects the same locale in every materialized global language tree
+RES-10  lang-set with no arguments returns only the locale selected by res/sys/lang/current
+RES-11  lang-set validates all global language trees before mutation and updates sys last
+RES-12  lang-set does not visit or modify package resources or package configuration
+RES-13  package resources remain package-local and private to the package unless a future explicit contract says otherwise
+RES-14  no universal resolver, URI, registry, daemon or resource manager is introduced
+RES-15  multi-owner selection is semantically single but is not promised as a crash-atomic filesystem transaction
+RES-16  en_US is the distributed initial global selection and remains the technical fallback
 ```

@@ -1,31 +1,31 @@
-# Specifica — Bootstrap lingua (`lang`)
+# RumiAI OS — Language bootstrap (`lang`)
 
 Date: 2026-09-14  
 Status: **Current**
 
-## 1. Scopo
+## 1. Scope
 
-Questa specifica definisce il contratto bootstrap/runtime della localizzazione testuale tecnica di `m` e della selezione globale della lingua.
+This specification defines the bootstrap/runtime contract for `m` technical text localization and global language selection.
 
-Il resource layout generale è definito da:
+The general resource layout is defined by:
 
 ```text
 specifications/rumiai-os/RESOURCE-MODEL.md
 ```
 
-La facility tecnica resta denominata:
+The technical facility remains named:
 
 ```text
 lang
 ```
 
-Il precedente nome `i18n` è superseded.
+The previous `i18n` name is superseded.
 
 ---
 
 ## 2. Environment
 
-Il bootstrap espone:
+The bootstrap exposes:
 
 ```text
 m_RES_DIR=$m_ROOT/res
@@ -36,17 +36,17 @@ m_LANG_CURRENT_DIR=$m_LANG_DIR/current
 m_LANG_FALLBACK_DIR=$m_LANG_DIR/$m_LANGUAGE_FALLBACK
 ```
 
-`m_RES_DIR` è la semantic root top-level delle risorse globali.
+`m_RES_DIR` is the top-level semantic root of global resources.
 
-`m_LANG_DIR` resta l'interfaccia semantica esistente della facility tecnica `lang` e identifica esclusivamente il catalogo owner `sys`.
+`m_LANG_DIR` remains the existing semantic interface of the technical `lang` facility and identifies only the `sys` owner catalog.
 
-Queste variabili sono derivate da `m_ROOT` e restano relocatable.
+These variables are derived from `m_ROOT` and remain relocatable.
 
 ---
 
-## 3. Cataloghi tecnici
+## 3. Technical catalogs
 
-Il layout canonico dei cataloghi tecnici è:
+The canonical technical-catalog layout is:
 
 ```text
 $res = $m_RES_DIR
@@ -54,217 +54,217 @@ $res = $m_RES_DIR
 $res/sys/lang/<locale>/<domain>/<message-id>
 ```
 
-Esempio:
+Example:
 
 ```text
 res/sys/lang/en_US/filesystem/path-invalid
 res/sys/lang/it_IT/filesystem/path-invalid
 ```
 
-Ogni message file contiene testo UTF-8 trattato esclusivamente come dati.
+Each message file contains UTF-8 text treated exclusively as data.
 
-Il contenuto dei cataloghi non viene valutato come shell code.
+Catalog content is not evaluated as shell code.
 
-Il nome `<domain>` e `<message-id>` deve rispettare il contratto corrente della funzione `lang`: componenti non vuoti, con caratteri ammessi `a-z`, `0-9`, `.`, `_`, `-`, senza iniziare con separatori e senza terminare con `.`, `_` o `-`.
+`<domain>` and `<message-id>` must satisfy the current `lang` function contract: non-empty components using only `a-z`, `0-9`, `.`, `_`, `-`, not starting with separators and not ending in `.`, `_` or `-`.
 
 ---
 
-## 4. Cataloghi branded
+## 4. Branded catalogs
 
-Le risorse linguistiche del layer branded sono separate:
+Language resources for the branded layer are separate:
 
 ```text
 $res/ai/lang/<locale>/...
 ```
 
-Il fatto che `res/ai/lang` partecipi alla selezione globale non trasferisce tali cataloghi alla facility tecnica `lang`.
+Participation of `res/ai/lang` in global selection does not transfer those catalogs into the technical `lang` facility.
 
-La funzione shell `lang` di `m` non risolve `ai` e non effettua merge o fallback tra owner.
+The `m` shell function `lang` does not resolve `ai` and does not merge or fall back across owners.
 
-Un locale supportato da un owner può avere un catalogo vuoto.
+A locale supported by an owner may have an empty catalog.
 
 ---
 
-## 5. Selector `current`
+## 5. `current` selector
 
-Ogni language tree globale materializzato sotto:
+Every materialized global language tree under:
 
 ```text
 $res/*/lang/
 ```
 
-contiene:
+contains:
 
 ```text
 current -> <locale>
 ```
 
-`current` deve essere un symbolic link relativo verso una directory locale disponibile nello stesso language tree.
+`current` must be a relative symbolic link to an available local directory in the same language tree.
 
-La baseline distribuita usa:
+The distributed baseline uses:
 
 ```text
 res/sys/lang/current -> en_US
 res/ai/lang/current  -> en_US
 ```
 
-Tutti i selector globali materializzati devono rappresentare lo stesso locale.
+All materialized global selectors must represent the same locale.
 
-La co-locazione del selector mutabile con i cataloghi non riclassifica i cataloghi come state.
+Co-locating the mutable selector with catalogs does not reclassify the catalogs as state.
 
 ---
 
-## 6. Resolver tecnico `lang`
+## 6. Technical `lang` resolver
 
-La funzione:
+The function:
 
 ```text
 lang <domain> <message-id>
 ```
 
-usa esclusivamente il tree tecnico identificato da `m_LANG_DIR`.
+uses only the technical tree identified by `m_LANG_DIR`.
 
-L'ordine di lookup resta:
+Lookup order remains:
 
-1. catalogo della lingua selezionata:
+1. selected-language catalog:
 
    ```text
    $m_LANG_CURRENT_DIR/<domain>/<message-id>
    ```
 
-2. catalogo fallback tecnico:
+2. technical fallback catalog:
 
    ```text
    $m_LANG_FALLBACK_DIR/<domain>/<message-id>
    ```
 
-3. fallback identificativo:
+3. identifier fallback:
 
    ```text
    <domain>.<message-id>
    ```
 
-La selezione globale e il fallback sono concetti distinti: `current` esprime la lingua impostata, mentre `en_US` resta il fallback di lookup quando un messaggio manca nel catalogo selezionato.
+Global selection and fallback are distinct concepts: `current` expresses the configured language, while `en_US` remains the lookup fallback when a message is absent from the selected catalog.
 
-Il comando pubblico:
+The public command:
 
 ```text
 bin/sys/lang <domain> <message-id>
 ```
 
-delega alla facility shell `lang` secondo il normale integrated command model di `m`.
+delegates to the shell `lang` facility through the normal `m` integrated-command model.
 
 ---
 
 ## 7. `lang-set` — query
 
-Il comando pubblico è:
+The public command is:
 
 ```text
 bin/sys/lang-set
 ```
 
-Con zero argomenti:
+With zero arguments:
 
 ```text
 lang-set
 ```
 
-restituisce esclusivamente il locale selezionato da:
+it returns only the locale selected by:
 
 ```text
 $m_RES_DIR/sys/lang/current
 ```
 
-seguito da newline.
+followed by a newline.
 
-Esempio:
+Example:
 
 ```text
 it_IT
 ```
 
-Non restituisce elenco dei locale, conteggi di messaggi o prefissi tabellari.
+It does not return a locale list, message counts or table prefixes.
 
-La query richiede che il selector `sys` sia un symbolic link relativo valido verso un locale disponibile nello stesso tree. Un selector assente, non-symlink, broken o esterno al tree è errore e non viene sostituito implicitamente dal fallback.
+The query requires the `sys` selector to be a valid relative symbolic link to an available locale in the same tree. A missing, non-symlink, broken or out-of-tree selector is an error and is not implicitly replaced by the fallback.
 
 ---
 
-## 8. `lang-set` — selezione
+## 8. `lang-set` — selection
 
-Con esattamente un argomento:
+With exactly one argument:
 
 ```text
 lang-set <locale>
 ```
 
-il comando opera sui language tree globali materializzati nella forma:
+the command operates on materialized global language trees of the form:
 
 ```text
 $m_RES_DIR/*/lang
 ```
 
-Il contratto è:
+The contract is:
 
-1. deve esistere almeno il tree tecnico `$m_LANG_DIR`;
-2. `<locale>` deve corrispondere a una directory locale disponibile in ogni language tree partecipante;
-3. ogni selector `current` esistente deve essere un symbolic link relativo valido verso un locale disponibile nello stesso tree;
-4. tutte le verifiche avvengono prima di cambiare un selector;
-5. i nuovi selector sono symbolic link relativi con target esattamente `<locale>`;
-6. i tree non-`sys` vengono aggiornati prima del tree `sys`;
-7. il tree `sys` viene aggiornato per ultimo come commit logico della selezione osservata dalla query;
-8. se un errore ordinario interrompe l'aggiornamento, il comando tenta di ripristinare tutti i selector alla selezione precedente;
-9. al successo il comando non produce output.
+1. at least the technical `$m_LANG_DIR` tree must exist;
+2. `<locale>` must correspond to an available local directory in every participating language tree;
+3. every existing `current` selector must be a valid relative symbolic link to an available locale in the same tree;
+4. all validation occurs before any selector is changed;
+5. new selectors are relative symbolic links whose target is exactly `<locale>`;
+6. non-`sys` trees are updated before the `sys` tree;
+7. the `sys` tree is updated last as the logical commit of the selection observed by the query;
+8. if an ordinary error interrupts the update, the command attempts to restore all selectors to the previous selection;
+9. on success the command produces no output.
 
-Se `<locale>` manca anche in un solo language tree partecipante, il comando fallisce senza mutazioni.
+If `<locale>` is missing from even one participating language tree, the command fails without mutation.
 
-Il comando non codifica il nome `ai`: la sincronizzazione usa la forma generale dei language tree sotto `m_RES_DIR` e quindi non crea una dipendenza semantica `m -> RumiAI`.
+The command does not encode the name `ai`: synchronization uses the general language-tree shape under `m_RES_DIR` and therefore does not create a semantic `m -> RumiAI` dependency.
 
-L'operazione multi-owner non promette crash-atomicity filesystem. Non vengono introdotti journal, generation directory, lock framework o transaction manager.
+The multi-owner operation does not promise filesystem crash atomicity. It introduces no journal, generation directory, lock framework or transaction manager.
 
 ---
 
-## 9. Package
+## 9. Packages
 
-`lang-set` non visita `$m_PKG_DIR` e non modifica resource tree, selector o configurazioni dei package.
+`lang-set` does not visit `$m_PKG_DIR` and does not modify package resource trees, selectors or configuration.
 
-Ogni package mantiene le proprie risorse, inclusi eventuali cataloghi di lingua, nel proprio tree/versione gestita.
+Each package keeps its resources, including any language catalogs, inside its managed tree/version.
 
-La specifica integrazione di un package può configurare l'upstream affinché segua la lingua globale oppure un proprio override. L'eventuale mapping tra locale RumiAI e locale upstream è responsabilità dell'integrazione specifica.
+A package-specific integration may configure upstream software to follow the global language or use its own override. Any mapping between RumiAI locale and upstream locale belongs to that specific integration.
 
-Non viene introdotta una API universale package-language.
+No universal package-language API is introduced.
 
 ---
 
 ## 10. Error handling
 
-Il comportamento resta coerente con il logging/fatal model corrente:
+Behavior remains consistent with the current logging/fatal model:
 
-- numero argomenti non valido: fatal `execution.invalid-arguments`;
-- locale richiesto non disponibile in tutti i tree partecipanti: fatal `execution.invalid-arguments` con il locale richiesto come field quando applicabile;
-- selector o path strutturalmente non valido: fatal `filesystem.path-invalid`;
-- errore operativo durante preparazione, aggiornamento o rollback: fatal `execution.execution-failed` quando il normale path di logging è disponibile.
+- invalid argument count: fatal `execution.invalid-arguments`;
+- requested locale unavailable in all participating trees: fatal `execution.invalid-arguments`, with the requested locale as a field when applicable;
+- structurally invalid selector or path: fatal `filesystem.path-invalid`;
+- operational error during preparation, update or rollback: fatal `execution.execution-failed` when the normal logging path is available.
 
-Il comando non deve sovrascrivere oggetti non-symlink collocati nel pathname `current`.
+The command must not overwrite non-symlink objects located at the `current` pathname.
 
 ---
 
-## 11. Invarianti
+## 11. Invariants
 
 ```text
-LANG-01  m_LANGUAGE_FALLBACK resta en_US
-LANG-02  m_TEXT_ENCODING resta UTF-8
-LANG-03  m_LANG_DIR vale $m_RES_DIR/sys/lang
-LANG-04  m_LANG_CURRENT_DIR vale $m_LANG_DIR/current
-LANG-05  m_LANG_FALLBACK_DIR vale $m_LANG_DIR/en_US
-LANG-06  lang risolve selected -> fallback -> domain.message-id nel solo owner sys
-LANG-07  il contenuto dei cataloghi è dati e non viene eseguito come shell code
-LANG-08  res/*/lang/current è un symlink relativo verso un locale disponibile nello stesso tree
-LANG-09  tutti i selector lang globali materializzati rappresentano lo stesso locale
-LANG-10  lang-set senza argomenti restituisce soltanto il locale selezionato da sys/current
-LANG-11  lang-set con un locale prevalida tutti i tree partecipanti prima di mutare
-LANG-12  lang-set aggiorna sys per ultimo e tenta rollback sugli errori ordinari gestiti
-LANG-13  lang-set non modifica package resources o package configuration
-LANG-14  m non dipende semanticamente dal catalogo ai
-LANG-15  la selezione iniziale distribuita è en_US
+LANG-01  m_LANGUAGE_FALLBACK remains en_US
+LANG-02  m_TEXT_ENCODING remains UTF-8
+LANG-03  m_LANG_DIR equals $m_RES_DIR/sys/lang
+LANG-04  m_LANG_CURRENT_DIR equals $m_LANG_DIR/current
+LANG-05  m_LANG_FALLBACK_DIR equals $m_LANG_DIR/en_US
+LANG-06  lang resolves selected -> fallback -> domain.message-id within the sys owner only
+LANG-07  catalog content is data and is not executed as shell code
+LANG-08  res/*/lang/current is a relative symlink to an available locale in the same tree
+LANG-09  all materialized global lang selectors represent the same locale
+LANG-10  lang-set with no arguments returns only the locale selected by sys/current
+LANG-11  lang-set with a locale pre-validates all participating trees before mutation
+LANG-12  lang-set updates sys last and attempts rollback for handled ordinary errors
+LANG-13  lang-set does not modify package resources or package configuration
+LANG-14  m has no semantic dependency on the ai catalog
+LANG-15  the distributed initial selection is en_US
 ```
