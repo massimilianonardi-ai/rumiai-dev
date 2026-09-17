@@ -12,7 +12,7 @@ The task should identify normal evolution opportunities, mechanisms that do not 
 ## Current repository revisions
 
 ```text
-rumiai-dev  2f045fa61eddd08ea2ce8eea536fbfecfa587c19  (pre-handoff HEAD for this task)
+rumiai-dev  7dd8881a0aca6bd30e9a63cfeb29df8633883068  (last retrieved before this checkpoint)
 ```
 
 Only `rumiai-dev` is currently involved. Any future work that materially involves other repositories must freshly retrieve their remote HEADs before analysis or writes.
@@ -143,6 +143,10 @@ This protocol was self-tested operationally during its own implementation: the t
 
 During the large documentation reset, some temporary no-op / `__tmp*__` commits were accidentally created through tool selection. They were cleaned from the current tree without rewriting history. This is relevant workflow evidence: operational tooling mistakes should be corrected forward and can themselves motivate workflow improvements.
 
+### workflow-optimization task creation
+
+This persistent task was created after a full `rumiai-dev` preflight. Its handoff intentionally summarizes the substantive content and resulting mechanisms from the entire originating chat so a clean future chat does not need the original conversation to understand why the current workflow exists.
+
 ## Current state
 
 `workflow-optimization` is now the persistent meta-task for monitoring and evolving the RumiAI development workflow.
@@ -153,24 +157,41 @@ The user specifically asked whether documentation-maintenance evolution should b
 
 ## Proposed direction under discussion
 
-Recommended model (not yet user-confirmed as a fixed task choice):
+Recommended hybrid model (not yet user-confirmed as a fixed task choice):
 
-- keep **continuous documentation-health policy, observations, drift detection, retrieval efficiency, lifecycle rules and small corrections** inside `workflow-optimization`, because these are part of the workflow itself;
-- create a **dedicated task/handoff only for a substantial documentation work unit** when the change becomes independently resumable, large/risky, touches many canonical surfaces, requires migration/restructuring, or would otherwise make the workflow-optimization handoff carry implementation detail unrelated to its long-lived meta-state;
-- after the dedicated documentation task completes, propagate its durable workflow conclusions back into canonical docs and record only the resulting lesson/state in `workflow-optimization` if still relevant.
+- keep **continuous documentation-health governance** inside `workflow-optimization`: lifecycle policy, observations, drift detection, retrieval efficiency, small process corrections and decisions about whether the documentation model itself still works;
+- perform **small/local documentation corrections** directly in the work unit that discovers them, updating the canonical current source rather than accumulating cleanup debt;
+- create a **dedicated task/handoff for a substantial documentation work unit** when the change is independently resumable, broad/risky, spans many canonical surfaces, requires migration/restructuring, or would otherwise pollute this long-lived meta-handoff with implementation detail;
+- after a dedicated documentation task completes, durable rules live in canonical docs and only the resulting workflow lesson/state is retained here when still useful.
 
-This gives `workflow-optimization` the role of continuous governance/observation without making it a catch-all implementation task.
+The preferred maintenance style is **event-driven, not calendar-driven**. Documentation should be reviewed/corrected when real work exposes evidence of degradation rather than through frequent generic read-all audits.
+
+Candidate documentation-health signals to track in this task include:
+
+```text
+a current question requires Git history to discover the current contract
+the same current rule must be reconstructed from multiple documents
+an accepted change is being stored as a patch/decision instead of updating the canonical source
+frequent cross-reference failures or routing ambiguity
+a task repeatedly retrieves substantially more documentation than it needs
+a canonical document grows until unrelated topics are routinely loaded together
+the same normative rule appears in multiple independently editable places
+an active handoff starts accumulating durable project knowledge instead of task state
+implementation/tests repeatedly expose a spec mismatch not captured by the current docs
+a new subsystem/responsibility has no direct entry in the current router
+a clean chat cannot resume/answer correctly without conversation memory
+repeated user corrections reveal that the documented workflow does not match actual desired behavior
+```
+
+A lightweight broader documentation review may be appropriate at **natural structural milestones** (for example, after a major architecture migration or a significant documentation reorganization), but no recurring time-based full audit is currently recommended by default because it adds context/work without evidence that something drifted.
+
+This model gives `workflow-optimization` continuous governance/observation responsibility without turning it into a catch-all implementation task.
 
 ## Next action
 
-Discuss and fix the documentation-maintenance strategy, including:
-
-1. what ongoing signals/checks should indicate documentation drift or retrieval degradation;
-2. what maintenance belongs directly in `workflow-optimization`;
-3. the threshold for spawning a dedicated documentation task;
-4. whether any periodic or event-driven review mechanism should be introduced beyond the existing consistency gate.
+Discuss and decide whether to adopt the proposed hybrid documentation-maintenance model. If accepted, determine whether its threshold/signals are sufficiently stable to propagate into canonical workflow documentation or should initially remain an operating choice observed through `workflow-optimization` before canonization.
 
 ## Blockers / open questions
 
-- Decide whether to adopt the proposed hybrid model: documentation-health governance in `workflow-optimization`, substantial documentation refactors as dedicated tasks.
-- Define the most efficient long-term mechanism for keeping current documentation concise, complete, internally consistent and aligned with actual development without creating unnecessary recurring maintenance work.
+- User decision on the proposed hybrid model: documentation-health governance in `workflow-optimization`, substantial documentation refactors as dedicated tasks.
+- Decide whether event-driven documentation-health signals should immediately become canonical workflow rules or first be validated through actual usage.
