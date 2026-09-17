@@ -136,7 +136,8 @@ After every modification:
 4. verify no unrelated user/repository changes were overwritten;
 5. run only tests proportional to the change under `TESTING.md`;
 6. state physical-validation status accurately and revision-specifically;
-7. verify Git history remains forward-only.
+7. verify Git history remains forward-only;
+8. when the task has an active handoff, determine whether the resulting state is a meaningful checkpoint and synchronize it before the final response when required.
 
 ## 11. Documentation consistency checks
 
@@ -150,9 +151,9 @@ When documentation is touched, additionally verify:
 - cross-references point to paths that exist in the current tree;
 - repeated normative text is minimized; where duplication is useful for orientation it must not create an independently editable second contract.
 
-## 12. Active handoffs
+## 12. Active handoffs and checkpoint synchronization
 
-An active handoff exists only to preserve task continuity across chats/sessions.
+An active handoff exists only to preserve task continuity across chats/sessions. `handoff/README.md` defines its lifecycle and structure.
 
 It may record:
 
@@ -168,7 +169,20 @@ known blockers
 
 It must not duplicate project-wide rules or subsystem specifications.
 
-When the task closes, first propagate durable content to current canonical sources, then remove the handoff in a forward commit. Git preserves the closed handoff historically.
+For a substantial, parallel or multi-chat task, create the handoff after preflight and before the first material task change when the need is already known. If the task becomes substantial later, create it as soon as that becomes clear.
+
+A handoff checkpoint is required when resumable task state changes materially, including fixed decisions, completed modifications, executed tests/validation, discovered/resolved blockers, material scope/next-action changes or relevant revision movement.
+
+When a response materially advances an active handoff task, required synchronization must complete **before** the user-visible final response. If it cannot be completed, the response must say that the persistent task state is not synchronized.
+
+When the task closes:
+
+1. propagate durable content to canonical current sources;
+2. complete the normal final consistency gate;
+3. write and commit a final handoff snapshot with `Status: Complete` and final revisions/validation state;
+4. remove the handoff from the current tree in a later forward commit.
+
+Git history is the archive. Do not create a completed-handoff/archive directory in the current tree.
 
 ## 13. Completion checklist
 
@@ -183,6 +197,7 @@ A RumiAI task is ready to report as complete only when every applicable item is 
 [ ] active handoff was read when applicable
 [ ] relevant implementation/tests were inspected
 [ ] applicable invariants were identified before writing
+[ ] substantial/parallel/multi-chat task has an active handoff when required
 [ ] no existing responsibility was duplicated under a new name
 [ ] no contract was changed silently
 [ ] current specification was updated for intentional contract changes
@@ -192,6 +207,8 @@ A RumiAI task is ready to report as complete only when every applicable item is 
 [ ] cross-references/current routing remain valid
 [ ] user/concurrent repository changes were preserved
 [ ] proportional tests were run or correctly classified as unnecessary
+[ ] active handoff was synchronized for every material checkpoint before the final response
+[ ] completed task has a committed final handoff snapshot and no active handoff remaining in the current tree
 [ ] physical-validation status is stated accurately
 [ ] Git changes are forward-only
 ```
