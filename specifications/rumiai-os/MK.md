@@ -84,15 +84,7 @@ That specification defines the exact behavior of the currently implemented `mk m
 
 The current shell implementation of that capability does not establish the implementation runtime of the broader `mk` subsystem.
 
-## 8. Specification boundary
-
-Only the promoted constraints stated in this document are part of the current `mk` lifecycle contract.
-
-Choices that remain under active evaluation — including implementation-runtime selection, concrete configuration serialization, candidate file formats, detailed CLI shape and other unresolved design decisions — are active task state and MUST NOT be inferred from this specification.
-
-Their persistent working state belongs in the active `mk` handoff until an individual choice passes the specification promotion gate defined by `CONSISTENCY-GATE.md`.
-
-## 9. Invariants
+## 8. Invariants
 
 ```text
 MK-01  mk belongs to the m technical layer
