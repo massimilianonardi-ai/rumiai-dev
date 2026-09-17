@@ -14,13 +14,13 @@ Read only the smallest complete set relevant to the task.
 | overall `m` / RumiAI architecture, layer ownership, top-level layout | `rumiai-os/CURRENT-MODEL.md` |
 | root bootstrap, environment, PATH, branded activation | `rumiai-os/BOOTSTRAP-ENVIRONMENT.md` |
 | physical bootstrap/command root resolution | `rumiai-os/ENTRYPOINT-ROOT-RESOLUTION.md` |
-| command/runtime classification and shebangs | `rumiai-os/COMMAND-ENTRYPOINTS.md` |
+| command/runtime classification, shebangs and command identity | `rumiai-os/COMMAND-ENTRYPOINTS.md` |
 | controlled filesystem naming and internal library naming | `rumiai-os/FILESYSTEM-NAMING.md` |
 | POSIX portability and host-specific abstraction boundary | `rumiai-os/POSIX-PORTABILITY-LAYER.md` |
 | state scopes, selectors, owners, areas, `state-path`, package HOME/state | `rumiai-os/STATE-MODEL.md` |
 | package subsystem ownership, public surface and launch/integration invariants | `rumiai-os/PACKAGE-MODEL.md` |
 | static/global resources | `rumiai-os/RESOURCE-MODEL.md` |
-| documentation ownership, initial terminal-first operational model, long-term multi-channel target | `rumiai-os/DOCUMENTATION-MODEL.md` |
+| documentation ownership, mandatory command manual coverage, initial terminal-first operational model, long-term multi-channel target | `rumiai-os/DOCUMENTATION-MODEL.md` |
 | technical localization facility `lang` | `rumiai-os/LANG-BOOTSTRAP.md` |
 | promoted current `mk` development-lifecycle contract | `rumiai-os/MK.md` |
 | current source-materialization capability of `mk` | `rumiai-os/MK-SOURCE-MATERIALIZATION.md` |
@@ -49,6 +49,7 @@ setup-dev.sh
 
 - A file not listed here is not automatically a current normative source.
 - Files under `specifications/` contain promoted current contract only; active candidates, provisional assumptions, unresolved comparisons and postponed design choices belong in the applicable active handoff until they pass the specification promotion gate.
+- Any task that creates, renames, removes or modifies a RumiAI-owned directly executable command must retrieve both `COMMAND-ENTRYPOINTS.md` and `DOCUMENTATION-MODEL.md`.
 - Do not search Git history unless historical rationale/evidence is specifically needed.
 - If a current specification conflicts with the current implementation, surface the mismatch; do not silently treat the old implementation as a new contract.
 - If a current contract changes, update the canonical file listed here rather than adding a parallel decision document that readers must merge mentally.
