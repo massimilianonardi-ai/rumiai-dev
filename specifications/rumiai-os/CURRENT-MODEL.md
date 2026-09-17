@@ -264,18 +264,9 @@ $m_ROOT/res
 
 Resource ownership is separated between technical `sys` and branded `ai` where applicable. Package-owned resources remain in the managed package tree/version rather than being projected into the global resource root.
 
-The current concrete global resource classes are:
-
-```text
-lang
-man
-```
-
-`man` contains revision-coupled operational reference under `res/<owner>/man/<topic>` and is exposed through the technical `man` command. It does not replace the normative development specifications in `rumiai-dev`.
-
 Mutable state is not reclassified as a resource.
 
-Full resource semantics are in `RESOURCE-MODEL.md`; operational manual semantics are in `MAN-DOCUMENTATION.md`.
+Full resource semantics are in `RESOURCE-MODEL.md`.
 
 ## 10. Localization
 
@@ -294,8 +285,6 @@ res/sys/lang
 ```
 
 See `LANG-BOOTSTRAP.md`.
-
-Operational manual pages currently use an English-only baseline independent of `lang-set`; see `MAN-DOCUMENTATION.md`.
 
 ## 11. Source materialization
 
@@ -365,5 +354,4 @@ CURRENT-19   lang is the current localization facility name
 CURRENT-20   srv host supervision integrations are separate from the portable baseline
 CURRENT-21   POSIX.1-2024 Issue 8 is the platform baseline
 CURRENT-22   Git history and historical evidence remain forward-only and revision-specific
-CURRENT-23   global operational manual resources use the man resource class and are exposed by the technical man command
 ```
