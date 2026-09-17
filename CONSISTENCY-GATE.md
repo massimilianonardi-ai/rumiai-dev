@@ -3,7 +3,7 @@
 Status: **Current / canonical**  
 Updated: 2026-09-17
 
-This document defines the mandatory consistency process for RumiAI work. Its purpose is to prevent drift between current rules, current specifications, implementation, tests, deferred work and active task state.
+This document defines the mandatory consistency process for RumiAI work. Its purpose is to prevent drift between current rules, current specifications, implementation, tests, operational documentation, deferred work and active task state.
 
 ## 1. Mandatory preflight
 
@@ -21,6 +21,8 @@ This is an execution precondition, not a recommendation.
 
 Conversation memory, summaries and historical commits do not satisfy the preflight when current repository sources can answer the question.
 
+For any task that creates, renames, removes or modifies a RumiAI-owned directly executable command, `specifications/rumiai-os/COMMAND-ENTRYPOINTS.md` and `specifications/rumiai-os/DOCUMENTATION-MODEL.md` are part of the smallest complete source set, and the affected operational manual topic must be inspected together with the command.
+
 `todo/` is not part of the mandatory preflight for unrelated tasks. Read `todo/README.md` and the relevant TODO item when choosing deferred work, checking whether a newly discovered deferred issue is already known, activating a TODO or maintaining the pending-work inventory.
 
 ## 2. Extract the applicable invariants
@@ -32,6 +34,7 @@ architecture/layer boundaries
 canonical terminology
 existing primitives
 public interfaces
+command/manual consistency
 filesystem layout
 state/resource/package ownership
 POSIX/platform contract
@@ -115,6 +118,7 @@ When a fixed invariant changes, inspect all materially dependent current surface
 ```text
 canonical specification
 implementation
+operational manual/reference
 permanent tests
 reference descriptors/examples
 active handoff
@@ -131,7 +135,33 @@ If a design choice remains unresolved inside the active task, keep it in the han
 
 Do not rewrite historical commits or historical validation evidence.
 
-## 8. Testing authenticity
+## 8. Command/manual consistency gate
+
+Every RumiAI-owned directly executable command identity is coupled to an owner-local operational manual topic under the contract in `DOCUMENTATION-MODEL.md`.
+
+For any command change, apply this gate:
+
+```text
+command created
+    required manual topic is created in the same work unit
+
+command renamed
+    manual identity/content is realigned in the same work unit
+
+command removed
+    obsolete command manual identity is removed or otherwise realigned in the same work unit
+
+command modified
+    manual-consistency check is mandatory
+```
+
+When a modification changes documented observable behavior — including purpose, invocation syntax, operands, options, output, exit statuses, relevant environment/files, side effects or equivalent operational behavior — update the manual in the same work unit.
+
+When a modification is purely internal and the existing manual remains fully accurate, no textual manual change is required, but the consistency check still must be performed and the final result must state or imply no more than was verified.
+
+The command-to-manual completeness invariant should be protected mechanically by permanent tests where the current test contract permits a structural check. Such tests prove page presence/identity, not prose correctness.
+
+## 9. Testing authenticity
 
 Mechanical checks must preserve the authenticity rules in `TESTING.md`.
 
@@ -141,7 +171,7 @@ Mocks, fixtures, stubs and synthetic input are permitted only at boundaries wher
 
 Automation environments, including GitHub Actions and AI-provided Linux VMs, are execution infrastructure; they are not alternative implementations of the target or test contract.
 
-## 9. Proportional validation
+## 10. Proportional validation
 
 During development, use the fastest real environment that can materially exercise the property. Broaden to clean/multi-host automation when useful. Reach physical validation only when preceding evidence makes success the expected outcome.
 
@@ -151,22 +181,23 @@ A GitHub-hosted runner, headless GUI session or AI-provided VM is not physical v
 
 GitHub required status checks are not part of the current RumiAI workflow and must not be introduced without a new explicit decision.
 
-## 10. Post-change diff review
+## 11. Post-change diff review
 
 After every modification:
 
 1. reread the resulting diff;
 2. re-evaluate it against `RULES.md` and the applicable current specifications;
 3. when a specification was changed, reclassify every added design statement through the specification promotion gate;
-4. scan the touched subsystem for superseded terminology/mechanisms;
-5. verify no unrelated user/repository changes were overwritten;
-6. run only tests proportional to the change under `TESTING.md`;
-7. state physical-validation status accurately and revision-specifically;
-8. verify Git history remains forward-only;
-9. if concrete unfinished work was discovered but intentionally deferred, ensure it is either already represented by an active task or captured once under `todo/`;
-10. when the task has an active handoff, determine whether the resulting state is a meaningful checkpoint and synchronize it before the final response when required.
+4. when a RumiAI-owned command was created, renamed, removed or modified, perform the command/manual consistency gate and verify the required manual topic/content state;
+5. scan the touched subsystem for superseded terminology/mechanisms;
+6. verify no unrelated user/repository changes were overwritten;
+7. run only tests proportional to the change under `TESTING.md`;
+8. state physical-validation status accurately and revision-specifically;
+9. verify Git history remains forward-only;
+10. if concrete unfinished work was discovered but intentionally deferred, ensure it is either already represented by an active task or captured once under `todo/`;
+11. when the task has an active handoff, determine whether the resulting state is a meaningful checkpoint and synchronize it before the final response when required.
 
-## 11. Documentation consistency checks
+## 12. Documentation consistency checks
 
 When documentation is touched, additionally verify:
 
@@ -180,10 +211,12 @@ When documentation is touched, additionally verify:
 - current specifications contain only promoted contract and do not accumulate candidate choices, comparison criteria, provisional assumptions, open questions or decision backlogs;
 - when a specification intentionally leaves a dimension unconstrained, it states only the stable boundary needed by the current contract rather than documenting the unresolved design process;
 - active working-design state needed for resumption is persisted in the active handoff rather than in `specifications/`;
+- operational manual content remains revision-coupled to the command behavior it describes;
+- mandatory command manual topics are not silently omitted because a command is considered internal/technical rather than user-facing;
 - TODO files contain only deferred-work planning state and do not become substitute specifications or task handoffs;
 - the same work is not represented simultaneously by a current TODO and an active handoff.
 
-## 12. Deferred work and active handoffs
+## 13. Deferred work and active handoffs
 
 `todo/README.md` defines the lifecycle for concrete known work that is intentionally deferred and not yet active. `handoff/README.md` defines the lifecycle for active resumable tasks.
 
@@ -234,7 +267,7 @@ When the task closes:
 
 Git history is the archive. Do not create a completed-handoff/archive directory in the current tree.
 
-## 13. Completion checklist
+## 14. Completion checklist
 
 A RumiAI task is ready to report as complete only when every applicable item is true:
 
@@ -253,6 +286,10 @@ A RumiAI task is ready to report as complete only when every applicable item is 
 [ ] every statement added to a current specification passed the specification promotion gate
 [ ] unresolved/provisional active design is kept in handoff working design rather than specifications
 [ ] current specification was updated for intentional promoted contract changes
+[ ] every affected RumiAI-owned command has its required manual topic
+[ ] every command change received an explicit manual-consistency check
+[ ] command/manual behavior is aligned at completion
+[ ] command/manual structural completeness has proportional permanent coverage when applicable
 [ ] tests/evidence claim no more than what was actually exercised
 [ ] resulting diff was reread
 [ ] stale/superseded mechanisms and terminology were scanned
