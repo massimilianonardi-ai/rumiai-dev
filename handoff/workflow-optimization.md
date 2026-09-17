@@ -5,14 +5,15 @@ Updated: 2026-09-17
 
 ## Goal
 
-Maintain a long-lived meta-workstream for continuously evaluating and improving the RumiAI development workflow: retrieval, documentation organization, Project Instructions, handoffs, parallel work, repository coordination, testing/validation workflow and other mechanisms that affect how work is performed and resumed.
+Maintain a long-lived meta-workstream for continuously evaluating and improving the RumiAI development workflow: retrieval, documentation organization, Project Instructions, handoffs, deferred-work visibility, parallel work, repository coordination, testing/validation workflow and other mechanisms that affect how work is performed and resumed.
 
 ## Current repository revisions
 
 ```text
-rumiai-dev    77660f3971e25f07ef67636acf7c085969325b53  (pre-checkpoint HEAD)
-rumiai-os     36c29d8412a523f722fd90004b78a07fdf0b06c8  (last inspected)
-rumiai-tests  298931c1dca03d44755893d64b9b3a7c0058b7ea  (current remote HEAD inspected for pending-work evidence)
+rumiai-dev    5d47c4121eddf600aca723b7470eceed43483da0  (pre-checkpoint HEAD)
+rumiai-os     36c29d8412a523f722fd90004b78a07fdf0b06c8  (last inspected for pending-work verification)
+rumiai-tests  298931c1dca03d44755893d64b9b3a7c0058b7ea  (current state inspected for pending-work verification)
+pkg-catalog   94f58995cbd487b17f3b82bc2724c70540927b88  (current state recorded for package-related recovery)
 ```
 
 Fresh remote HEAD retrieval remains mandatory before future analysis or writes.
@@ -24,6 +25,7 @@ README.md
 RULES.md
 CONSISTENCY-GATE.md
 specifications/README.md
+todo/README.md
 handoff/README.md
 ```
 
@@ -38,6 +40,10 @@ Subsystem specifications are added only when a concrete workflow question reache
 - Durable workflow rules are propagated to canonical current documentation.
 - Documentation maintenance uses the accepted hybrid/event-driven model now canonical in `README.md`.
 - Current canonical development documentation in `rumiai-dev` is maintained in English; product/user-facing localization is separate.
+- Known work that is concrete but intentionally deferred is represented under `todo/`; active resumable work is represented under `handoff/`; completed/past state is preserved by Git history.
+- A TODO is minimal planning state, not a specification or active task state.
+- Activation transfers ownership from `todo/<topic>.md` to `handoff/<task>.md` in the same work unit, ideally the same commit, without keeping duplicate current representations.
+- `todo/` is not part of the mandatory read order for unrelated tasks.
 
 ## Completed
 
@@ -68,59 +74,80 @@ The hybrid/event-driven documentation-maintenance model was made canonical. A de
 
 A dedicated `handoff/rumiai-os-man-documentation.md` task is active to design the boundary between normative development specifications and runtime/user operational reference.
 
-### Pending-work visibility gap discovered
+### Deferred-work TODO lifecycle
 
-A workflow audit triggered by the user's question found that the current model has no explicit current surface for **known work that remains pending but has not yet been activated as a task**.
+The previously missing lifecycle layer for **known but not-yet-active work** has been implemented.
 
-Current handoffs cover active tasks only. Current specifications describe contracts, not a project backlog. Git history preserves completed/superseded task state, but ordinary retrieval intentionally does not consult history.
-
-This creates a real visibility gap between:
+Current separation is now:
 
 ```text
-known pending work
-    ↓
-not yet an active task/handoff
-    ↓
-not a normative specification
-    ↓
-therefore not directly represented in the current retrieval surface
+specifications/     current normative contracts
+todo/               concrete known work intentionally deferred
+handoff/            active/resumable task state
+Git history         past/completed state
+implementation/tests current mechanical state and evidence
 ```
 
-Concrete evidence:
+The canonical TODO contract is `todo/README.md`. Root routing, `CONSISTENCY-GATE.md` and `handoff/README.md` were updated so the lifecycle is integrated rather than being a standalone convention.
 
-- `rumiai-dev` currently has no backlog/open-work document and searches for generic `pending`, `TODO`, `restructure` and the known `pkg install` realignment did not reveal a current pending-work index;
-- `handoff/` currently contains only active workstreams;
-- `rumiai-tests@298931c1dca03d44755893d64b9b3a7c0058b7ea` still contains `tests/rumiai-os/pkg/install.test`, which constructs fixture roots, a fake `state-path`, a fixture repository adapter/catalog and substituted package-pipeline functions instead of exercising the complete real `pkg install` path required by the current testing contract;
-- the previously known need to realign that test and to audit/restructure the broader suite is therefore mechanically observable but no longer represented by a dedicated current planning surface after revision-specific evidence was correctly removed from `TESTING.md`.
+Important properties now fixed:
 
-This is not a reason to put pending implementation work back into normative specifications. It indicates a missing lifecycle layer between "known/open" and "active task".
+- one small TODO file per independently activatable topic;
+- minimal shape: intent, why pending, scope, evidence;
+- no detailed execution state, progress narrative or project-management ranking by default;
+- no duplicate current TODO + handoff for the same work;
+- activation removes the TODO and creates the handoff in the same work unit;
+- removed TODOs are archived by Git history only;
+- TODO inventory is retrieved only when relevant, not during every task preflight.
+
+### One-time historical pending recovery
+
+A dedicated `handoff/historical-pending-recovery.md` task was activated with explicit authorization to inspect Git history for work that became invisible during the current-only documentation reset.
+
+The recovery deliberately treated historical material only as candidate discovery and verified candidates against current specifications, implementation, tests and active handoffs.
+
+Two current TODOs were recovered:
+
+```text
+todo/pkg-install-real-validation.md
+todo/rumiai-tests-suite-realignment.md
+```
+
+The first captures the current gap between the real-composed `pkg install` testing contract and the present permanent test that substitutes parts of the package pipeline. It is phrased as validate/debug so a future task does not pre-judge whether the actual defect is in product behavior or in the legacy test construction.
+
+The second captures a broader audit/realignment of the permanent suite. Current shared test infrastructure and authoring rules exist, while representative tests still preserve historical inline copies/reconstructed fixtures. The TODO explicitly requires evidence-based auditing rather than assuming every test needs rewriting.
+
+Historical candidates deliberately not restored include:
+
+- runner persistence/snapshot work, because current runner contracts/implementation/tests now contain it;
+- resource/srv remediation, because historical test-side remediation is reflected in current tests and the remaining old physical gate was revision-specific;
+- `mk`, because it is already represented by an active handoff;
+- older bootstrap/shell/naming/CLI/language/log/physical-pass items that are now completed, consolidated, superseded or represented by current contracts;
+- overlapping historical test-structure work, consolidated into the single suite-realignment TODO.
+
+This is the intended transitional use of Git history. Future concrete deferred work should enter `todo/` when discovered, so routine workflow should not need historical mining to recover forgotten pending work.
+
+### Concurrency evidence
+
+During this work, other chats advanced `rumiai-dev` multiple times and introduced/modified independent documentation and handoffs, including `service-model`. Each movement was detected before writes and reconciled forward; unrelated concurrent work was preserved. This provides real evidence that the HEAD/reconciliation protocol is functioning under parallel work.
 
 ## Current state
 
-`workflow-optimization` remains active. The newly discovered workflow question is whether RumiAI needs a small current **pending-work inventory** distinct from:
+`workflow-optimization` remains active.
 
-- specifications (current contracts),
-- handoffs (active/resumable task state),
-- Git history (past),
-- implementation/tests (mechanical state).
+The pending-work visibility gap is no longer an open design question: `todo/` is now the canonical current surface for concrete deferred work. The one-time historical recovery has classified the main pre-reset pending candidates and is ready for final closure after its consistency gate.
 
-No name, file path, schema or lifecycle for that inventory has been fixed yet.
+Active tasks and deferred TODOs are now distinct current sets. Future workflow observation should focus on whether TODO files remain minimal, whether activation/removal remains frictionless under parallel work, and whether users/assistants consistently capture concrete deferred work at discovery time rather than allowing it to fall back into conversation memory.
 
 ## Next action
 
-Design the smallest pending-work mechanism that makes known unfinished work discoverable without turning `rumiai-dev` into a project-management archive or duplicating active handoffs.
+Observe the new TODO lifecycle in normal use. In particular:
 
-The design should answer at least:
-
-1. what qualifies for the inventory;
-2. how an item moves from pending to an active handoff;
-3. how completion/removal works;
-4. whether the inventory should contain only concise pointers/intent rather than task details;
-5. how to reconstruct and backfill currently known pending work such as real `pkg install` validation/debugging and the broader `rumiai-tests` realignment without treating historical memory as current authority.
+1. verify that new deferred work is captured only when concrete and intentionally postponed;
+2. verify that TODO activation cleanly transfers state into one active handoff;
+3. watch for TODO accumulation, duplication, stale evidence or project-management bloat;
+4. continue observing specification taxonomy and retrieval efficiency as other dedicated tasks progress.
 
 ## Blockers / open questions
 
-- Decide whether to introduce a canonical pending-work inventory.
-- Decide its minimal shape and relationship to active handoffs.
-- If adopted, perform a deliberate one-time recovery/audit of known pending work from current repositories plus only the historical sources specifically needed to reconstruct items that were lost from the current surface.
-- Continue observing whether `specifications/` needs stronger taxonomy as the operational-documentation task progresses.
+None for the TODO lifecycle itself. Future corrections should be driven by observed workflow evidence rather than speculative expansion.
