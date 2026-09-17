@@ -10,10 +10,10 @@ Maintain a long-lived meta-workstream for continuously evaluating and improving 
 ## Current repository revisions
 
 ```text
-rumiai-dev    c97be83db453c17abd431935c66e72ef41dd4d5a  (pre-checkpoint HEAD)
-rumiai-os     36c29d8412a523f722fd90004b78a07fdf0b06c8  (last inspected for pending-work verification)
-rumiai-tests  298931c1dca03d44755893d64b9b3a7c0058b7ea  (current state inspected for pending-work verification)
-pkg-catalog   94f58995cbd487b17f3b82bc2724c70540927b88  (current state recorded for package-related recovery)
+rumiai-dev    1e76b934a5637a35ea249a34c1793901a7cadba1  (pre-checkpoint HEAD after final mk handoff synchronization)
+rumiai-os     36c29d8412a523f722fd90004b78a07fdf0b06c8  (last inspected; unchanged by this workflow/documentation correction)
+rumiai-tests  298931c1dca03d44755893d64b9b3a7c0058b7ea  (last inspected; unchanged by this workflow/documentation correction)
+pkg-catalog   94f58995cbd487b17f3b82bc2724c70540927b88  (last recorded; unchanged by this workflow/documentation correction)
 ```
 
 Fresh remote HEAD retrieval remains mandatory before future analysis or writes.
@@ -157,7 +157,7 @@ The concrete `mk` misuse was remediated in the same work unit:
 - `CURRENT-MODEL.md` no longer presents undecided runtime/serialization state as architecture content;
 - `MK-SOURCE-MATERIALIZATION.md` was cleaned of future-planning sections and now limits itself to the current implemented capability and stable scope boundaries.
 
-No `rumiai-os` implementation or permanent test was changed by this workflow/documentation correction.
+The final consistency review reread the resulting specification state and confirmed that candidate language/runtime and JSON/TOML comparison material is absent from current `MK.md` while remaining persisted in the active handoff. The work-unit diff is restricted to workflow documentation, `mk` specifications and the two active handoffs. No product/runtime or permanent-test change occurred, so runtime tests were not applicable.
 
 ### Concurrency evidence
 
@@ -169,7 +169,7 @@ During earlier workflow work, other chats advanced `rumiai-dev` multiple times a
 
 The pending-work visibility gap is resolved through `todo/`, and the active-design/specification boundary is now explicit through the specification promotion gate and handoff `Working design` state.
 
-The first observed misuse (`mk`) has been corrected, providing a concrete reference case for future tasks. Future workflow observation should verify that assistants keep provisional design in active task state and promote only sufficiently settled rules into current specifications.
+The first observed misuse (`mk`) has been corrected and validated, providing a concrete reference case for future tasks. Future workflow observation should verify that assistants keep provisional design in active task state and promote only sufficiently settled rules into current specifications.
 
 ## Next action
 
