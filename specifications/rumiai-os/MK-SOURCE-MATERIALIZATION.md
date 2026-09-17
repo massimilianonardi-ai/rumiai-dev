@@ -21,19 +21,9 @@ mk materialize
 useful root
 ```
 
-It does not define the complete development lifecycle, project build graph, build-environment resolver, test lifecycle, local package installation, or source-only `pkg install` integration.
+It does not define the complete development lifecycle, project build graph, build-environment resolver, test lifecycle, local package installation or package integration.
 
-The purpose of this capability is to establish a reusable source-to-useful-root boundary that can be consumed by later lifecycle/package flows without making materialization the architectural center of `mk`.
-
-Potential consumers include:
-
-```text
-pkg
-    when an upstream artifact contains source rather than an already materialized useful root
-
-mk project lifecycle
-    when a project operation must produce a useful root for a later consumer
-```
+The purpose of this capability is to establish a reusable source-to-useful-root boundary without making materialization the architectural center of `mk`.
 
 ## 2. Ownership and layer
 
@@ -61,7 +51,7 @@ lib/sys/sh/
 
 and follow the normal `.lib.sh` library contract.
 
-This shell implementation does not settle the implementation runtime of the future broader `mk` core; that choice is governed by `MK.md` and remains open.
+This shell implementation constrains only this current capability and does not establish an implementation-runtime contract for the broader `mk` subsystem.
 
 No new environment variable is introduced by this specification.
 
@@ -263,9 +253,7 @@ Any other definition-root nesting inside the source tree is invalid.
 
 The current `copy` type rejects a source tree containing symbolic links.
 
-This is intentionally conservative. It guarantees that the copied useful root does not preserve an accidental persistent dependency on the development/source tree through symlink targets.
-
-A future symlink policy may be introduced only with an explicit confinement contract and corresponding tests.
+This guarantees that the copied useful root does not preserve an accidental persistent dependency on the development/source tree through symlink targets.
 
 ### 9.3 Source immutability
 
@@ -297,7 +285,7 @@ Local development source may reside under:
 $m_SRC_DIR
 ```
 
-but `mk materialize` is not restricted to `$m_SRC_DIR` because a future package-install consumer must also be able to materialize an extracted source tree in package staging.
+but `mk materialize` accepts an explicit source root and is not restricted to `$m_SRC_DIR`.
 
 No successful materialized package/runtime may rely on a persistent link back into `$m_SRC_DIR` merely because its source originated there.
 
@@ -316,58 +304,25 @@ resolve
 
 and `pkg_integrate` receives an already prepared useful root.
 
-A future source-only extension may include a source-to-useful-root `mk` step before `pkg_integrate`, but the exact orchestration must be defined under the broader `mk` lifecycle and package contracts rather than inferred from this capability alone.
+This specification does not authorize a `pkg` modification or define package orchestration involving source materialization.
 
-This specification does not authorize a `pkg` modification.
+Any such integration requires its own promoted current contract in the appropriate `mk` and package specifications.
 
-## 13. Local package installation remains separate
+## 13. Local package installation is out of scope
 
-This capability does not define local package installation.
+This capability does not define local package installation and does not establish local-path install syntax, catalog emulation or a public `pkg_integrate` API.
 
-In particular it does not introduce:
+Those concerns are outside this specification.
 
-```text
-pkg install ./path
-pkg install <pkg> <version> <candidate-directory>
-a fake local repository
-a fake catalog range
-a public pkg_integrate API
-```
+## 14. Build/dependency modeling is out of scope
 
-The current `pkg_integrate` coupling to an already selected catalog range remains a design point that must be resolved before first-class local package installation is implemented.
+This capability does not serialize or resolve build-environment requirements, build-scoped material or project dependency models.
 
-## 14. Build environment and build material
-
-The following distinction remains applicable to future lifecycle design:
-
-```text
-build environment
-    persistent/shareable software such as Make, CMake, Ninja, compiler, JDK
-    normally a good candidate for management by pkg
-
-build material
-    build-scoped inputs such as vendored source, JARs incorporated into output,
-    static libraries or generated inputs
-    not automatically installed as packages
-
-runtime dependency
-    requirement of the materialized package
-    remains the existing pkg facility/dependency domain
-```
-
-This capability does not serialize or resolve build-environment requirements or build material.
-
-The current package `dependency` format MUST NOT be reused as build-requirement syntax without a later explicit decision.
+It does not change the current `pkg` runtime dependency contract.
 
 ## 15. State
 
 The `materialize` operation takes an explicit caller-owned output pathname and therefore introduces no persistent `mk` state contract.
-
-Future development/build/test operations that need state MUST use the canonical `state-path` resolver and the current semantic user binding contract.
-
-They MUST NOT reconstruct user state from UID, host-id, or physical selector targets.
-
-No state layout for those future operations is fixed here.
 
 ## 16. Logging
 
@@ -381,7 +336,7 @@ The current shell implementation and materialization adapters are POSIX.1-2024 /
 
 No Bash-specific feature, GNU-only option, or host-specific pathname is part of this capability contract.
 
-This does not establish POSIX shell as the future implementation runtime of the broader `mk` lifecycle subsystem.
+POSIX shell is a contract of this current capability implementation and does not define an implementation runtime for the broader `mk` subsystem.
 
 ## 18. Current implementation files
 
@@ -393,7 +348,7 @@ lib/sys/sh/mk-materialize.lib.sh
 lib/sys/sh/mk-materialize-copy.lib.sh
 ```
 
-Additional `mk` implementation files require a concrete additional responsibility under the broader `MK.md` contract.
+Additional `mk` implementation files require a concrete responsibility covered by a promoted current contract.
 
 ## 19. Invariants
 
@@ -409,11 +364,7 @@ MK-MAT-08  current type `copy` accepts no fields other than `type`
 MK-MAT-09  embedded copy definition is allowed only as `<source-root>/mk` and is excluded from output
 MK-MAT-10  current copy materialization rejects symbolic links in the source tree
 MK-MAT-11  mk materialization never writes package availability/default/public bindings
-MK-MAT-12  pkg_extract remains semantically distinct from source materialization
-MK-MAT-13  local source and remote source can converge on the same useful-root contract
-MK-MAT-14  current pkg runtime dependency semantics are not reused for build requirements
-MK-MAT-15  no persistent mk state contract is introduced by the materialize operation
-MK-MAT-16  future mk state must use state-path and current semantic state selectors
-MK-MAT-17  no candidate-directory or local-path pkg install syntax is reintroduced
-MK-MAT-18  this specification is subordinate to MK.md and does not constrain the future mk core runtime to shell
+MK-MAT-12  package integration and local package installation are outside this capability contract
+MK-MAT-13  no persistent mk state contract is introduced by the materialize operation
+MK-MAT-14  this specification does not establish an implementation runtime for the broader mk subsystem
 ```
