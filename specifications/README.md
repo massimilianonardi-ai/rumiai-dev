@@ -22,7 +22,8 @@ Read only the smallest complete set relevant to the task.
 | static/global resources | `rumiai-os/RESOURCE-MODEL.md` |
 | documentation ownership, initial terminal-first operational model, long-term multi-channel target | `rumiai-os/DOCUMENTATION-MODEL.md` |
 | technical localization facility `lang` | `rumiai-os/LANG-BOOTSTRAP.md` |
-| source materialization through `mk` | `rumiai-os/MK-SOURCE-MATERIALIZATION.md` |
+| `mk` project-development lifecycle responsibility, configuration boundary and open design choices | `rumiai-os/MK.md` |
+| current source-materialization capability of `mk` | `rumiai-os/MK-SOURCE-MATERIALIZATION.md` |
 | portable local service lifecycle through `srv` | `rumiai-os/SERVICE-LIFECYCLE.md` |
 | standalone terminal key input | `rumiai-os/READ-KEY.md` |
 
