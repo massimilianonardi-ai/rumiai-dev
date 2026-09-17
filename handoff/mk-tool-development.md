@@ -10,9 +10,9 @@ Define and develop `mk` as the `m` subsystem responsible for project development
 ## Current repository revisions
 
 ```text
-rumiai-dev   83e5d5b04bcbf99463d3391fd5f894c4cc616981  (pre-checkpoint HEAD)
-rumiai-os    36c29d8412a523f722fd90004b78a07fdf0b06c8  (last inspected)
-rumiai-tests 298931c1dca03d44755893d64b9b3a7c0058b7ea  (last inspected)
+rumiai-dev   e15a940d4baae58b6ece050138bc05897870538d  (pre-checkpoint HEAD after specification consistency review)
+rumiai-os    36c29d8412a523f722fd90004b78a07fdf0b06c8  (last inspected; unchanged by this documentation correction)
+rumiai-tests 298931c1dca03d44755893d64b9b3a7c0058b7ea  (last inspected; unchanged by this documentation correction)
 pkg-catalog  94f58995cbd487b17f3b82bc2724c70540927b88  (refresh before pkg-catalog work)
 ```
 
@@ -132,10 +132,14 @@ Sphinx, Asciidoctor and Pandoc are examples previously considered as possible ex
 - A workflow correction on 2026-09-17 introduced the specification promotion gate and `Working design` handoff state.
 - Provisional runtime/language choices, JSON/TOML comparison material, deferred lifecycle choices and documentation-tool candidates were removed from `specifications/rumiai-os/MK.md` and preserved here as non-authoritative active design state.
 - `specifications/README.md` no longer describes `MK.md` as a source of open design choices.
+- `CURRENT-MODEL.md` was realigned so it states only promoted `mk` architecture and no longer carries undecided runtime/serialization planning.
+- `MK-SOURCE-MATERIALIZATION.md` was reduced to current capability contract and stable scope boundaries; future package/runtime/dependency design was removed from the specification.
+- Final documentation consistency review confirmed that the current `MK.md` contains no Python/JavaScript or JSON/TOML candidate material and that the removed design state remains recoverable here.
+- No `rumiai-os`, `rumiai-tests` or `pkg-catalog` change was made by this documentation/workflow correction; runtime tests were therefore not applicable.
 
 ## Current state
 
-The current `MK.md` is now limited to promoted contract. The unresolved design space needed to continue the task is preserved in `Working design` instead of being mixed into specifications.
+The current `MK.md` and `MK-SOURCE-MATERIALIZATION.md` are limited to promoted current contract. The unresolved design space needed to continue the task is preserved in `Working design` instead of being mixed into specifications.
 
 The product still implements only the current materialization capability. No product or permanent-test change was made by this documentation/workflow correction.
 
