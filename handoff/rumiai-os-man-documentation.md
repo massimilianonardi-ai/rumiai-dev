@@ -14,9 +14,9 @@ The current first-delivery completion scope also includes mandatory operational-
 ## Current repository revisions
 
 ```text
-rumiai-dev   0de42957604a4751c70f0956ba54a510c19bb8c3  (current remote HEAD before this handoff checkpoint; includes concurrent unrelated handoff work after pager-contract promotion)
-rumiai-os    26c14f1c6bec06932fbf37819a1203c31f2ae82a  (manual -> pager separation plus host-normalizing pager implementation)
-rumiai-tests fbb6a95d1c90a723366f8b78a9cd08ae57dfc45d  (current remote HEAD from parallel test-suite work; not modified by this pager work unit)
+rumiai-dev   aead154e378144bf5a250d6428107c7d36808724  (current remote HEAD before this handoff checkpoint; includes concurrent test-suite checkpoint after strict pager contract)
+rumiai-os    e9cad50042e1b74613630af33bb239d34a855c99  (manual -> pager separation plus strict host-normalizing pager implementation)
+rumiai-tests fbb6a95d1c90a723366f8b78a9cd08ae57dfc45d  (last inspected remote HEAD from parallel test-suite work; not modified by this pager work unit)
 ```
 
 Fresh remote HEAD retrieval remains mandatory before future writes.
@@ -54,7 +54,7 @@ The promoted first-delivery documentation contract lives in `DOCUMENTATION-MODEL
 - Normal `manual` presentation delegates to the technical `pager` command; `manual` no longer selects `more`/`less` or owns TTY backend policy.
 - `pager` belongs to `m`, is `bin/sys/pager`, and is bootstrap-integrated through `#!/usr/bin/env m`.
 - `pager <file>` owns terminal detection: non-terminal output is copied directly; terminal output selects the host backend.
-- Current Linux policy prefers `less`; if `less` is unavailable it falls back to `more` rather than making documentation unusable. Other current hosts use `more` until concrete host evidence requires another adapter.
+- Current Linux policy is strict: Linux uses `less`. If the required `less` capability is unavailable, `pager` fails explicitly rather than falling back to the anomalous Linux `more` behavior. Other current hosts use `more` until concrete host evidence requires another adapter.
 - Caller `LESS`, `LESSOPEN` and `LESSCLOSE` values are neutralized when the Linux `less` backend is selected.
 - This pager work unit does not modify `rumiai-tests`; test-suite reimplementation is an active parallel task.
 
@@ -65,13 +65,15 @@ The promoted first-delivery documentation contract lives in `DOCUMENTATION-MODEL
 - Public `manual` statuses are fixed as `0` success, `1` invalid request, `2` not found, `3` ambiguous and `4` execution/presentation failure.
 - `rumiai-os` implements `bin/sys/manual`.
 - Earlier Debian 13 x86_64 development execution exposed util-linux `more` behavior that is unsuitable as a uniform cross-host interactive contract. User physical/manual observation additionally confirmed that `POSIXLY_CORRECT=1` produces undesirable interaction on the real host and is not an acceptable normalization mechanism.
-- The canonical contract now introduces `pager` as the explicit host-normalizing paging boundary. `specifications/rumiai-os/PAGER.md` defines ownership, interface, terminal/non-terminal behavior and current host backend policy; `DOCUMENTATION-MODEL.md` now delegates normal manual presentation to that facility.
-- Separation checkpoint: `rumiai-os@f93259aedf0f2aca1da1afe0a558edaeb093f19e` introduced `bin/sys/pager`, changed `manual` to delegate to it, and kept the interactive backend as `more` only. A Debian 13 x86_64 targeted development run passed direct non-TTY output, `--no-pager`, direct `pager`, invalid invocation status and real pseudo-terminal `manual -> pager -> util-linux more` presentation (`--More--`).
-- Host-normalization checkpoint: `rumiai-os@26c14f1c6bec06932fbf37819a1203c31f2ae82a` changed only `pager` backend selection and its operational page. On the native Debian environment, where no `less` executable is installed, `pager` correctly fell back to util-linux `more` and remained functional.
-- The Linux `less` branch was also exercised on the same Debian VM by exposing the VM's real BusyBox `less` applet under the normal command name `less` as an external host capability. With caller `LESS=-E`, `pager` neutralized the setting; input `G`, `b`, `q` reached `(END)`, remained in the viewer, paged backward from line 200 to earlier lines, and then quit. This is development evidence for the backend-selection/interaction path, not stable-host or physical validation.
-- The exact committed `bin/sys/pager` blob (`27e29d5b827ceb55c6a9fffcec101a35805c7706`) and `bin/sys/manual` blob (`274a97168d10277fca6df164343928b192941898`) were the command bodies exercised in the final Debian targeted run.
-- `res/sys/manual/pager` was added in the same command work unit and documents the current host policy. `res/sys/manual/manual` was realigned to describe delegation to `pager`.
-- The first operational topic set therefore now includes `manual`, `pager`, `pkg`, `state-path` and `srv` under owner `sys`.
+- The canonical contract introduces `pager` as the explicit host-normalizing paging boundary. `specifications/rumiai-os/PAGER.md` defines ownership, interface, terminal/non-terminal behavior and current host backend policy; `DOCUMENTATION-MODEL.md` delegates normal manual presentation to that facility.
+- Separation checkpoint: `rumiai-os@f93259aedf0f2aca1da1afe0a558edaeb093f19e` introduced `bin/sys/pager`, changed `manual` to delegate to it, and kept the interactive backend as `more` only. A Debian 13 x86_64 targeted development run passed direct non-TTY output, `--no-pager`, direct `pager`, invalid invocation status and real pseudo-terminal `manual -> pager -> util-linux more` presentation (`--More--`). This confirmed separation before host-specific behavior was added.
+- An intermediate host-normalization checkpoint preferred Linux `less` but fell back to `more` when it was unavailable. The final consistency gate identified that fallback as inconsistent with the user's explicit normalization rule because it could reintroduce the behavior the abstraction exists to isolate. That intermediate policy was corrected forward rather than retained as current contract.
+- Final host-normalization checkpoint: `rumiai-os@e9cad50042e1b74613630af33bb239d34a855c99` requires `less` for interactive Linux paging and fails explicitly if it is unavailable. Other current hosts continue to use `more` until concrete host evidence establishes another adapter need.
+- Final Debian targeted development execution used the exact committed `bin/sys/pager` blob `dde5bfead555400636d3b113115a8db373496beb` and `bin/sys/manual` blob `274a97168d10277fca6df164343928b192941898`. Non-terminal `pager`, normal non-terminal `manual` and `manual --no-pager` all copied the expected content successfully.
+- On the native Debian 13 VM no `less` executable is installed. Under a real pseudo-terminal, direct `pager` therefore returned status `1` with `backend-unavailable`, and `manual` correctly mapped that pager failure to its public status `4`.
+- The Linux `less` branch was exercised on the same Debian VM by exposing the VM's real BusyBox 1.37.0 `less` applet under the normal command name `less` as an external host capability. With caller `LESS=-E`, input `G`, `b`, `q` reached `(END)`, remained in the viewer, paged backward from line 200 to line 157, and then quit with status `0`; no `--More--` prompt appeared. This is targeted auxiliary development evidence, not stable-host or physical validation.
+- `res/sys/manual/pager` was added in the same command work unit and documents the strict current host policy. `res/sys/manual/manual` describes delegation to `pager` rather than a host backend.
+- The first operational topic set therefore includes `manual`, `pager`, `pkg`, `state-path` and `srv` under owner `sys`.
 - A later workflow correction promoted mandatory manual coverage for every RumiAI-owned directly executable command identity. `RULES.md`, `CONSISTENCY-GATE.md`, `COMMAND-ENTRYPOINTS.md`, `DOCUMENTATION-MODEL.md` and `specifications/README.md` encode that command/manual lifecycle.
 - The same correction requires permanent structural coverage that detects a command identity lacking its owner-local manual topic.
 - No physical validation has been performed by this assistant for the pager change.
@@ -88,12 +90,11 @@ manual lookup
     -> --no-pager: direct output
     -> normal: pager
         -> stdout non-TTY: direct output
-        -> Linux TTY + less available: less
-        -> Linux TTY + less unavailable: more
+        -> Linux TTY: less (required; absence is an explicit failure)
         -> other TTY: more
 ```
 
-The current product command identity set now includes `pager` in addition to the previously observed command identities. Because its required `sys pager` manual topic was added in the same work unit, the count of command identities still missing mandatory manual topics remains 18 rather than increasing.
+The current product command identity set includes `pager` in addition to the previously observed command identities. Because its required `sys pager` manual topic was added in the same work unit, the count of command identities still missing mandatory manual topics remains 18 rather than increasing.
 
 The prior permanent `manual` tests must not currently be treated as reliable validation evidence: the user reports that real manual execution works while those tests fail substantially, and a separate active task owns test-suite reimplementation/realignment. This pager work unit deliberately did not alter `rumiai-tests` or claim a permanent-test PASS.
 
