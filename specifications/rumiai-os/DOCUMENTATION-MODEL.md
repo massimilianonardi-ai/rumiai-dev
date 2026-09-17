@@ -68,7 +68,7 @@ For this initial model:
 - the document uses logical textual sections rather than terminal escape sequences or renderer-specific markup;
 - no roff, host `man` database, HTML generator, PDF generator or external documentation framework is required by the content baseline;
 - the content remains directly readable even when no pager is available;
-- topic structure should be regular enough to support later migration to a richer semantic representation without rewriting the underlying information from scratch.
+- topic structure is regular enough to support later migration to a richer semantic representation without rewriting the underlying information from scratch.
 
 Typical command-reference sections may include:
 
@@ -121,18 +121,53 @@ manual
 
 The command name identifies the operational manual as a semantic surface; it does not imply Unix `man`, roff input, a host man database, or one presentation renderer.
 
-## 5. First-delivery lookup and invocation
+## 5. First-delivery `manual` interface
 
-The first-delivery lookup forms are:
+The first-delivery invocation forms are:
 
 ```text
+manual
 manual [--no-pager] <topic>
 manual [--no-pager] <owner> <topic>
 ```
 
-`--no-pager` is an option and precedes the operands in these forms.
+`--no-pager` is an option and precedes the operands in the topic-presentation forms.
 
-### 5.1 Unqualified lookup
+### 5.1 Qualified discovery
+
+With zero arguments:
+
+```text
+manual
+```
+
+`manual` discovers every materialized global manual topic of the form:
+
+```text
+res/<owner>/manual/<topic>
+```
+
+and writes one owner-qualified entry per topic to standard output:
+
+```text
+<owner> <topic>
+```
+
+Every discovery result is qualified, even when the topic name is unique across all owners. Discovery therefore never collapses a result to `<topic>` merely because that result would be unambiguous for lookup.
+
+For example, a discovery result may contain:
+
+```text
+sys pkg
+sys srv
+ai pkg
+```
+
+Zero-argument discovery lists topic identities; it does not select or present a topic, and it does not invoke the topic pager.
+
+Discovery follows the general `res/*/manual/` shape and must not contain an explicit semantic dependency on the owner name `ai`.
+
+### 5.2 Unqualified lookup
 
 For:
 
@@ -166,11 +201,7 @@ manual sys pkg
 manual ai pkg
 ```
 
-The exact prose/layout of the diagnostic and the numeric exit status remain implementation-contract details to be fixed with the general exit-status design.
-
-The unqualified discovery mechanism operates on the general `res/*/manual/` shape and must not contain an explicit semantic dependency on the owner name `ai`.
-
-### 5.2 Owner-qualified lookup
+### 5.3 Owner-qualified lookup
 
 For:
 
@@ -188,7 +219,7 @@ If that owner-local topic exists, it is selected and presented. If it does not e
 
 The current global owners remain those defined by `RESOURCE-MODEL.md`; this syntax does not create new owners or a universal resource resolver.
 
-### 5.3 Paging option
+### 5.4 Paging option
 
 The same lookup semantics apply with `--no-pager`:
 
@@ -199,20 +230,11 @@ manual --no-pager <owner> <topic>
 
 The option changes only presentation of a successfully selected topic; it does not change discovery, ambiguity or owner qualification.
 
-### 5.4 Details still unresolved
-
-The following first-delivery details are not fixed yet:
-
-```text
-zero-argument behavior
-command executable ownership/location
-search/index behavior
-numeric exit-status mapping and exact diagnostics
-```
+This specification does not define the executable location of `manual`, exact diagnostic prose/layout beyond the semantic requirements above, or numeric exit-status mapping.
 
 ## 6. Long-term multi-channel design target
 
-A second, more general documentation architecture is an explicit long-term design target.
+A second, more general documentation architecture is a current long-term design target.
 
 Its defining requirement is separation between:
 
@@ -228,9 +250,9 @@ channel-specific artifacts
 terminal / HTML / PDF / other consumers
 ```
 
-The future system should make one canonical informational source capable of producing multiple presentation channels without maintaining separate hand-authored copies for each format.
+The future system keeps one canonical informational source capable of producing multiple presentation channels without maintaining separate hand-authored copies for each format.
 
-The long-term design should preserve at least these properties:
+The long-term contract preserves at least these properties:
 
 - one canonical content source for the same informational topic;
 - deterministic rendering;
@@ -249,27 +271,17 @@ The documentation build mechanism for this long-term model belongs to:
 mk
 ```
 
-This fixes architectural ownership, not an `mk` CLI, project-configuration key, source language, AST, renderer backend or external toolchain.
+The broader `mk` lifecycle contract is defined by `MK.md`. Documentation generation that requires transformation is part of that lifecycle rather than an independent documentation-specific build subsystem.
 
-Documentation generators such as Sphinx, Asciidoctor, Pandoc or another future choice are therefore candidates for **build-time** tooling coordinated by `mk`, not mandatory runtime dependencies of `manual` or of the generated operational pages.
+Documentation generators/renderers are build-time tooling coordinated by `mk`, not mandatory runtime dependencies of `manual` or of generated operational pages.
 
-The current implemented `mk materialize` operation remains unchanged. The broader `mk` lifecycle contract is being defined separately; the documentation build capability must be incorporated there rather than being invented as an independent build subsystem.
+This contract does not fix a documentation source language, semantic schema, AST representation, renderer backend or external documentation toolchain.
 
-## 7. Fast bridge versus final architecture
+## 7. Migration discipline for the initial model
 
-A structured Markdown source with metadata and separate renderers is a plausible fast bridge because it could feed terminal, HTML and PDF generation with comparatively little initial infrastructure.
+The initial terminal-first content avoids choices that make long-term migration unnecessarily expensive.
 
-However, that approach does not by itself fully separate informational semantics from presentation markup. It is therefore **not adopted as the final architecture by this specification**.
-
-The long-term design task must compare such a bridge with genuinely semantic/structured representations and decide whether the extra architecture is justified by concrete RumiAI requirements.
-
-Sphinx, Asciidoctor and Pandoc remain evaluation candidates. Their implementation-language/runtime dependencies matter primarily at build time; generated operational artifacts should remain usable without requiring those documentation toolchains at runtime.
-
-## 8. Migration discipline for the initial model
-
-The initial terminal-first content should avoid choices that make the long-term migration unnecessarily expensive.
-
-Therefore initial operational pages should:
+Therefore initial operational pages:
 
 - keep information organized in explicit logical sections;
 - avoid ANSI/control formatting as part of canonical content;
@@ -279,43 +291,33 @@ Therefore initial operational pages should:
 - keep technical identifiers, command names, literal paths and protocol tokens exact;
 - keep product revision behavior factual and observable.
 
-This discipline does not make the initial pages a hidden semantic schema. It only keeps them clean enough to migrate later.
+This discipline does not make the initial pages a hidden semantic schema. It keeps them clean enough to migrate later.
 
-## 9. Relationship with command-level help
+## 8. Relationship with command-level help
 
 The first delivery does **not** introduce `--help`, `-h` or another per-command help interface.
 
 Operational reference is accessed through the dedicated manual surface instead of requiring every public command to maintain a second independently authored help path.
 
-A future requirement may introduce short command help only through an explicit contract. If that happens, overlapping short help and long operational reference should derive from the same canonical informational source whenever practical rather than drifting independently.
+Any later command-level help contract must be introduced explicitly. Overlapping short help and long operational reference should derive from the same canonical informational source whenever practical rather than drifting independently.
 
-## 10. Paging contract
+## 9. Paging contract
 
 Paging is a property of the access/viewing layer, not of the canonical operational page content.
 
-For the first delivery, normal `manual` presentation delegates the selected topic to the POSIX `more` utility. This deliberately reuses the platform baseline rather than introducing a RumiAI-specific pager abstraction.
+For the first delivery, normal topic presentation by `manual` delegates the selected topic to the POSIX `more` utility. This deliberately reuses the platform baseline rather than introducing a RumiAI-specific pager abstraction.
 
-The POSIX `more` contract already distinguishes terminal and non-terminal standard output: it pages interactively when standard output is a terminal and otherwise copies the input to standard output. `manual` therefore does not require a separate TTY-detection policy merely to preserve pipeline/redirection behavior.
+The POSIX `more` contract distinguishes terminal and non-terminal standard output: it pages interactively when standard output is a terminal and otherwise copies the input to standard output. `manual` therefore does not require a separate TTY-detection policy merely to preserve pipeline/redirection behavior.
 
 When `--no-pager` is specified, `manual` bypasses `more` and writes the selected topic directly to standard output.
 
-The first delivery does not introduce:
+The first delivery does not introduce a generic `pager` command, a `less` dependency, a `PAGER` environment contract, pager-selection configuration or a host-specific pager adapter.
 
-```text
-pager command
-less dependency
-PAGER environment variable
-pager-selection configuration
-host-specific pager adapter
-```
+A later pager abstraction or non-POSIX pager requires a concrete reusable requirement that the POSIX baseline does not satisfy and must not silently change the canonical topic-content contract.
 
-A generic `pager` facility or a non-POSIX pager may be introduced later only if a concrete reusable requirement cannot be satisfied adequately by the POSIX baseline. That future choice must not silently change the canonical topic-content contract.
+## 10. Testing and maintenance
 
-Exact diagnostic/exit-status mapping for a failure while invoking or running `more` remains part of the unresolved `manual` exit-status design.
-
-## 11. Testing and maintenance
-
-Permanent tests should protect mechanical properties only after the concrete delivery mechanism is defined, for example discovery, lookup, output, paging selection, exit status, file layout or deterministic rendering.
+Permanent tests protect mechanical properties of the delivered interface, including resource layout, discovery, lookup, ambiguity handling, owner qualification, output/paging behavior and exit-status behavior once implemented.
 
 Tests do not make prose normative.
 
@@ -323,25 +325,7 @@ A product-interface change that makes existing operational documentation inaccur
 
 Documentation completeness is not measured by page count. Add an operational topic when it provides real user/developer value for a public or materially observable interface.
 
-## 12. Current sequencing
-
-The task sequence is:
-
-```text
-fix documentation ownership/model
-→ fix first-delivery storage and public access identity
-→ fix paging baseline
-→ fix topic lookup and owner qualification
-→ design zero-argument behavior, executable placement and exit statuses
-→ implement and test that first delivery
-→ populate useful operational topics incrementally
-→ continue the multi-channel architecture through mk as a separate long-term design track
-→ migrate only when that second model is sufficiently specified and justified
-```
-
-The simple delivery must not be presented as the final documentation architecture merely because it is implemented first.
-
-## 13. Invariants
+## 11. Invariants
 
 ```text
 DOC-01  rumiai-dev remains the normative development-contract source
@@ -350,18 +334,17 @@ DOC-03  the first operational model is terminal-first plain UTF-8 text with no r
 DOC-04  the first global operational-documentation resource class is manual under res/<owner>/manual/
 DOC-05  each initial operational topic is an extensionless UTF-8 text file whose leaf name is its owner-local topic identity
 DOC-06  the public operational-documentation access utility is named manual
-DOC-07  --no-pager bypasses paging and writes the selected topic directly to standard output
-DOC-08  normal first-delivery presentation delegates to POSIX more; no generic pager abstraction is introduced
-DOC-09  unqualified manual lookup selects a topic only when exactly one owner-local match exists; it never applies implicit owner precedence
-DOC-10  ambiguous unqualified lookup fails and identifies each owner-qualified invocation that resolves the ambiguity
-DOC-11  manual <owner> <topic> resolves exactly that owner-local topic with no cross-owner fallback
-DOC-12  unqualified manual discovery follows the general res/*/manual shape and does not semantically depend on the owner name ai
-DOC-13  zero-argument behavior, executable placement and numeric exit-status mapping remain unresolved until their next design step
-DOC-14  the first model must avoid presentation-specific choices that unnecessarily obstruct later migration
+DOC-07  bare manual discovers all materialized manual topics and always emits each result as <owner> <topic>
+DOC-08  discovery follows the general res/*/manual shape and does not semantically depend on the owner name ai
+DOC-09  --no-pager bypasses paging and writes the selected topic directly to standard output
+DOC-10  normal first-delivery topic presentation delegates to POSIX more; no generic pager abstraction is introduced
+DOC-11  unqualified manual lookup selects a topic only when exactly one owner-local match exists; it never applies implicit owner precedence
+DOC-12  ambiguous unqualified lookup fails and identifies each owner-qualified invocation that resolves the ambiguity
+DOC-13  manual <owner> <topic> resolves exactly that owner-local topic with no cross-owner fallback
+DOC-14  the first model avoids presentation-specific choices that unnecessarily obstruct later migration
 DOC-15  the long-term target separates informational content from channel-specific rendering
-DOC-16  the long-term documentation build mechanism belongs to mk while source schema and renderer/toolchain remain undecided
-DOC-17  a Markdown-plus-metadata bridge is an exploration candidate, not the adopted final architecture
-DOC-18  the first delivery does not introduce per-command --help or -h
-DOC-19  paging never changes the canonical page content contract
-DOC-20  interface changes realign affected operational documentation in the same work unit whenever practical
+DOC-16  long-term documentation build orchestration belongs to mk; runtime manual pages do not require the build toolchain
+DOC-17  the first delivery does not introduce per-command --help or -h
+DOC-18  paging never changes the canonical page content contract
+DOC-19  interface changes realign affected operational documentation in the same work unit whenever practical
 ```
