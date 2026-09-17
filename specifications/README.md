@@ -22,7 +22,7 @@ Read only the smallest complete set relevant to the task.
 | static/global resources | `rumiai-os/RESOURCE-MODEL.md` |
 | documentation ownership, initial terminal-first operational model, long-term multi-channel target | `rumiai-os/DOCUMENTATION-MODEL.md` |
 | technical localization facility `lang` | `rumiai-os/LANG-BOOTSTRAP.md` |
-| `mk` project-development lifecycle responsibility, configuration boundary and open design choices | `rumiai-os/MK.md` |
+| promoted current `mk` development-lifecycle contract | `rumiai-os/MK.md` |
 | current source-materialization capability of `mk` | `rumiai-os/MK-SOURCE-MATERIALIZATION.md` |
 | portable local service lifecycle through `srv` | `rumiai-os/SERVICE-LIFECYCLE.md` |
 | standalone terminal key input | `rumiai-os/READ-KEY.md` |
@@ -48,6 +48,7 @@ setup-dev.sh
 ## Reading rules
 
 - A file not listed here is not automatically a current normative source.
+- Files under `specifications/` contain promoted current contract only; active candidates, provisional assumptions, unresolved comparisons and postponed design choices belong in the applicable active handoff until they pass the specification promotion gate.
 - Do not search Git history unless historical rationale/evidence is specifically needed.
 - If a current specification conflicts with the current implementation, surface the mismatch; do not silently treat the old implementation as a new contract.
 - If a current contract changes, update the canonical file listed here rather than adding a parallel decision document that readers must merge mentally.
