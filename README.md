@@ -21,6 +21,28 @@ For every RumiAI task, use this order before analysis or modification:
 
 Do not use conversation memory, old commit content or remembered decisions as a substitute for this retrieval.
 
+## External assistant / Project Instructions bootstrap
+
+External assistant instructions, including ChatGPT Project Instructions, must act only as a **bootstrap into this repository**.
+
+They should contain only the minimum stable rules needed to force fresh retrieval, preserve Git history and prevent memory from becoming authority. They should not duplicate POSIX rules, architecture, naming, testing policy, package semantics, state semantics or other subsystem contracts already maintained here.
+
+The intended external bootstrap is therefore conceptually:
+
+```text
+recognize a RumiAI task
+→ verify current remote HEADs
+→ read this README
+→ follow its mandatory read order
+→ use the smallest complete current source set
+→ perform the task autonomously within those constraints
+→ run the final consistency gate
+```
+
+If a repository source and an external assistant instruction ever duplicate the same RumiAI contract, the repository is the canonical maintenance location and the external instruction should be simplified rather than creating a second independently editable rule set.
+
+External instructions may additionally require forward-only Git and preservation of concurrent/user changes because those constraints are necessary before repository retrieval itself can safely proceed.
+
 ## Authority model
 
 Current authority is intentionally shallow:
