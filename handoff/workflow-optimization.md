@@ -5,17 +5,18 @@ Updated: 2026-09-17
 
 ## Goal
 
-Maintain an ongoing meta-workstream for continuously evaluating and improving the RumiAI development workflow itself: retrieval, documentation organization, Project Instructions, task handoffs, parallel work, repository coordination, testing/validation workflow, and any other mechanism that affects how development work is performed and resumed.
+Maintain a long-lived meta-workstream for continuously evaluating and improving the RumiAI development workflow: retrieval, documentation organization, Project Instructions, handoffs, parallel work, repository coordination, testing/validation workflow and other mechanisms that affect how work is performed and resumed.
 
-The task should identify normal evolution opportunities, mechanisms that do not behave as expected, avoidable friction, stale process assumptions, retrieval inefficiencies, concurrency problems, and corrections needed to keep the workflow simple, reliable and efficient over time.
+The task should identify normal evolution opportunities, mechanisms that do not behave as expected, avoidable friction, stale process assumptions, retrieval inefficiencies, concurrency problems and corrections needed to keep the workflow simple, reliable and efficient over time.
 
 ## Current repository revisions
 
 ```text
-rumiai-dev  7dd8881a0aca6bd30e9a63cfeb29df8633883068  (last retrieved before this checkpoint)
+rumiai-dev  af8410618a5734859db8f7a2dd52bacefce4364e  (last retrieved before this checkpoint)
+rumiai-os   36c29d8412a523f722fd90004b78a07fdf0b06c8  (last inspected while activating the man-documentation task)
 ```
 
-Only `rumiai-dev` is currently involved. Any future work that materially involves other repositories must freshly retrieve their remote HEADs before analysis or writes.
+Fresh remote HEAD retrieval remains mandatory before future analysis or writes.
 
 ## Applicable canonical sources
 
@@ -27,31 +28,36 @@ specifications/README.md
 handoff/README.md
 ```
 
-No RumiAI OS subsystem specification is currently needed for this meta-workflow discussion.
+Subsystem specifications are added only when a concrete workflow question reaches their responsibility.
 
 ## Fixed task-local choices
 
-- Task name and stable handoff identity: `workflow-optimization` / `handoff/workflow-optimization.md`.
-- This task is intentionally long-lived and remains active across chats while the workflow is still being continuously evaluated.
-- The handoff must be synchronized automatically at meaningful checkpoints according to `handoff/README.md`.
-- This task is about workflow/process evolution and must not become a second copy of canonical project rules or subsystem specifications; durable changes are propagated to their canonical current documents.
+- Stable task identity: `workflow-optimization` / `handoff/workflow-optimization.md`.
+- This task is intentionally long-lived across chats while the workflow continues to be evaluated.
+- Its handoff is synchronized automatically at meaningful checkpoints according to `handoff/README.md`.
+- It governs workflow health and lessons; it must not become a second copy of canonical rules/specifications or a catch-all implementation task.
+- Durable workflow rules are propagated to canonical current documentation.
+- Documentation maintenance uses the accepted hybrid model now canonical in `README.md`:
+  - continuous documentation-health governance and drift observation remain in workflow governance;
+  - small/local corrections are made in the work unit that discovers them;
+  - substantial, independently resumable, broad/risky or restructuring documentation work gets a dedicated handoff/task;
+  - maintenance is event-driven by default, with broader review at natural structural milestones rather than recurring calendar audits.
+- Current canonical development documentation in `rumiai-dev` is maintained in English; product/user-facing localization is a separate concern.
 
 ## Completed
 
-### Documentation reset and current-only knowledge model
+### Current-only documentation model
 
-The project documentation was audited and reorganized with a "tabula rasa" principle while preserving Git history forward-only.
+The documentation was reorganized around the principle:
 
-The resulting model is:
+```text
+current branch = present
+Git history = past
+```
 
-- the current `rumiai-dev` branch describes the current project directly;
-- historical/superseded analyses, decisions, drafts, chats, architecture snapshots, completed handoffs and stale specifications are absent from the current tree and remain recoverable through Git history;
-- current rules/specifications must not require mental composition of old specification + later decision + later correction + handoff;
-- one current contract has one canonical location;
-- accepted durable changes are propagated into the canonical current document;
-- Git history, not a parallel history directory, preserves the past.
+Current rules/specifications describe the current project directly. Superseded analyses, decisions, drafts, chats, historical handoffs and stale specifications are absent from the normal retrieval surface and remain recoverable through Git history.
 
-A root `README.md` was introduced as the deterministic retrieval router. The mandatory project retrieval order became:
+The root `README.md` became the deterministic router with mandatory order:
 
 ```text
 verify current remote HEADs
@@ -63,135 +69,104 @@ verify current remote HEADs
 → implementation/tests when factual/mechanical state matters
 ```
 
-The documentation reset also introduced/realigned current RumiAI OS specifications including the current model, bootstrap, entrypoints, root resolution, naming, portability, state model, package model and service lifecycle, while preserving current resource/lang/mk/read-key documents that remained valid.
-
-Development and physical-testing documentation were also reduced toward current operational contracts rather than historical chronicles.
+The model enforces one current contract per canonical location and rejects historical patch composition as a way to discover current meaning.
 
 ### Project Instructions optimization
 
-ChatGPT Project Instructions were redesigned as a bootstrap into `rumiai-dev`, not as a second RumiAI knowledge base.
+ChatGPT Project Instructions were reduced to a bootstrap into the repository rather than a second RumiAI knowledge base. Evolving architecture, platform, naming, testing, package/state and similar rules remain in `rumiai-dev`; external instructions force fresh retrieval and safe Git behavior only.
 
-The governing principle is:
+The user installed the optimized Project Instructions produced during this workflow.
 
-- Project Instructions contain only stable bootstrap rules needed before repository retrieval;
-- architecture, POSIX rules, naming, testing semantics, package/state contracts and similar evolving details live only in `rumiai-dev`;
-- if external instructions duplicate or diverge from repository authority, the repository remains the canonical maintenance location and the external instructions should be simplified.
+### Parallel task handoff protocol
 
-`README.md` now explicitly documents this bootstrap-only model.
+Substantial, parallel and multi-chat tasks use one stable handoff per active task. A handoff is the persistent boundary between volatile conversation context and durable resumable task state.
 
-The user replaced the ChatGPT Project Instructions with the optimized version produced in this chat.
+Meaningful checkpoints include fixed task-local decisions, completed modifications, material tests/validation, discovered/resolved blockers, material scope/next-action changes and relevant revision movement.
 
-### Parallel task / handoff protocol
-
-A persistent handoff model for parallel and multi-chat tasks was designed and implemented.
-
-Current contract:
-
-- substantial, parallel or multi-chat tasks use exactly one stable active handoff under `handoff/<task-name>.md` unless deliberately split into independent workstreams;
-- the handoff is the persistent boundary between volatile chat context and durable resumable task state;
-- a new clean chat resumes through the normal project preflight and then reads the relevant active handoff;
-- stored SHAs in an handoff are resumption state, never substitutes for fresh remote HEAD retrieval;
-- separate parallel tasks have separate handoffs, but repository write concurrency is still governed by fresh HEAD checks, forward reconciliation and no force-push/history rewrite;
-- the same handoff may be continued from another chat after fresh preflight/reconciliation.
-
-Meaningful checkpoints requiring automatic handoff synchronization include:
-
-```text
-a task-local decision becomes fixed
-a modification is completed
-a material test/validation is executed
-a problem/mismatch/regression/blocker is discovered
-a blocker is resolved
-task scope changes materially
-next action changes materially
-relevant repository revisions change in a way resumption must know
-```
-
-A response itself is not a checkpoint.
-
-Before a final user-visible response that materially advances an active handoff task, required persistence must happen in the same response cycle:
+When a response materially advances an active task, required persistence occurs before the final user-visible response:
 
 ```text
 perform work
-→ perform applicable consistency/validation checks
+→ consistency/validation checks
 → synchronize handoff
-→ verify persistence succeeded
-→ send final response
+→ verify persistence
+→ final response
 ```
 
-If persistence is required but fails, the assistant must explicitly report the unsynchronized state rather than rely silently on chat memory.
-
-Completed task archival uses Git history only:
+Completed handoffs are archived only through Git history:
 
 ```text
-propagate durable state to canonical sources
+propagate durable state
 → final consistency gate
-→ commit final handoff snapshot with Status: Complete
-→ remove handoff in a later forward commit
+→ commit Status: Complete snapshot
+→ delete handoff in a later forward commit
 ```
 
-No `completed/`, `archive/` or equivalent handoff history directory is kept in the current tree.
+The protocol was exercised successfully during its own implementation.
 
-This protocol was self-tested operationally during its own implementation: the temporary `parallel-task-handoff-protocol` handoff was created, advanced, committed with `Status: Complete`, then removed in a later forward commit. The current branch retained only `handoff/README.md` afterwards.
-
-### Git/history discipline established during the reorganization
+### Git/history discipline
 
 - Git is forward-only.
-- Historical documentation/content is preserved by Git history rather than retained in the current retrieval surface.
-- No force push/history rewrite is used for cleanup.
-- Concurrent/user changes must be preserved; moved HEADs require fresh retrieval and forward reconciliation.
+- No force push/history rewrite is used for ordinary cleanup.
+- Concurrent/user changes are preserved; moved HEADs require fresh retrieval and forward reconciliation.
+- Historical evidence is revision-specific and is never upgraded retroactively.
 
-During the large documentation reset, some temporary no-op / `__tmp*__` commits were accidentally created through tool selection. They were cleaned from the current tree without rewriting history. This is relevant workflow evidence: operational tooling mistakes should be corrected forward and can themselves motivate workflow improvements.
+During the large documentation reset, temporary no-op / `__tmp*__` commits were accidentally created through tool selection. They were removed from the current tree through forward commits without rewriting history. This remains useful workflow evidence: tooling mistakes should be corrected forward and may motivate process improvement.
 
-### workflow-optimization task creation
+### Documentation maintenance model fixed
 
-This persistent task was created after a full `rumiai-dev` preflight. Its handoff intentionally summarizes the substantive content and resulting mechanisms from the entire originating chat so a clean future chat does not need the original conversation to understand why the current workflow exists.
+The user accepted the hybrid/event-driven documentation-maintenance model. It was promoted into the root `README.md` on 2026-09-17, including concrete drift signals such as historical composition being required for current meaning, duplicated rules, ambiguous routing, over-retrieval, mixed responsibilities, handoff knowledge leakage, uncaptured spec/implementation drift and inability of a clean chat to resume without conversation memory.
+
+### Documentation language normalization
+
+The first substantial documentation-health issue was split into a dedicated `documentation-language-normalization` task, validating the hybrid model in practice.
+
+The audit found five current Italian/mixed-language documents:
+
+```text
+TESTING.md
+RUNNER.md
+TEST-PATTERNS.md
+specifications/rumiai-os/RESOURCE-MODEL.md
+specifications/rumiai-os/LANG-BOOTSTRAP.md
+```
+
+They were normalized to English in one atomic commit. The pass also exposed and removed stale current-tree material: old repository-role wording and revision-specific historical validation evidence embedded in current testing/pattern documents.
+
+The dedicated task reached `Status: Complete`; its final snapshot is committed and it is ready for normal active-tree removal.
+
+### `rumiai-os` man-style documentation task activated
+
+A separate active handoff now exists at:
+
+```text
+handoff/rumiai-os-man-documentation.md
+```
+
+The task investigates a runtime/user operational reference distributed with `rumiai-os` while preserving a strict boundary from normative development specifications in `rumiai-dev`.
+
+Activation findings:
+
+- current `rumiai-os` exposes many public commands but no discovered `man` or `help` documentation mechanism;
+- placement cannot be inferred from filesystem symmetry;
+- `res/` cannot simply be assumed as the destination because the current resource contract fixes only `lang` as a concrete global resource class;
+- the key design problem is single-source-of-truth ownership between normative development contracts and operational software reference.
+
+No directory, command, source format, man section scheme, generator or localization mechanism has been fixed yet.
 
 ## Current state
 
-`workflow-optimization` is now the persistent meta-task for monitoring and evolving the RumiAI development workflow.
+`workflow-optimization` remains active as the continuous governance/observation task.
 
-The first open topic is how to keep the newly reorganized documentation efficient, current, responsive and low-noise over time without recreating the historical problems that the documentation reset removed.
+The documentation-maintenance and language policies are now canonical rather than merely proposed. The language-normalization implementation task is complete and pending handoff removal. `rumiai-os-man-documentation` is active at design stage.
 
-The user specifically asked whether documentation-maintenance evolution should be discussed and governed inside this `workflow-optimization` task or whether a separate persistent task should be created for it.
-
-## Proposed direction under discussion
-
-Recommended hybrid model (not yet user-confirmed as a fixed task choice):
-
-- keep **continuous documentation-health governance** inside `workflow-optimization`: lifecycle policy, observations, drift detection, retrieval efficiency, small process corrections and decisions about whether the documentation model itself still works;
-- perform **small/local documentation corrections** directly in the work unit that discovers them, updating the canonical current source rather than accumulating cleanup debt;
-- create a **dedicated task/handoff for a substantial documentation work unit** when the change is independently resumable, broad/risky, spans many canonical surfaces, requires migration/restructuring, or would otherwise pollute this long-lived meta-handoff with implementation detail;
-- after a dedicated documentation task completes, durable rules live in canonical docs and only the resulting workflow lesson/state is retained here when still useful.
-
-The preferred maintenance style is **event-driven, not calendar-driven**. Documentation should be reviewed/corrected when real work exposes evidence of degradation rather than through frequent generic read-all audits.
-
-Candidate documentation-health signals to track in this task include:
-
-```text
-a current question requires Git history to discover the current contract
-the same current rule must be reconstructed from multiple documents
-an accepted change is being stored as a patch/decision instead of updating the canonical source
-frequent cross-reference failures or routing ambiguity
-a task repeatedly retrieves substantially more documentation than it needs
-a canonical document grows until unrelated topics are routinely loaded together
-the same normative rule appears in multiple independently editable places
-an active handoff starts accumulating durable project knowledge instead of task state
-implementation/tests repeatedly expose a spec mismatch not captured by the current docs
-a new subsystem/responsibility has no direct entry in the current router
-a clean chat cannot resume/answer correctly without conversation memory
-repeated user corrections reveal that the documented workflow does not match actual desired behavior
-```
-
-A lightweight broader documentation review may be appropriate at **natural structural milestones** (for example, after a major architecture migration or a significant documentation reorganization), but no recurring time-based full audit is currently recommended by default because it adds context/work without evidence that something drifted.
-
-This model gives `workflow-optimization` continuous governance/observation responsibility without turning it into a catch-all implementation task.
+A major workflow concern to continue observing is the long-term shape of `specifications/`: the current router makes omissions visible, which is beneficial, but the directory must not evolve into a monolithic catch-all. The man-style documentation task may reduce pressure by moving operational reference out of normative specifications, provided no duplicated authority is created.
 
 ## Next action
 
-Discuss and decide whether to adopt the proposed hybrid documentation-maintenance model. If accepted, determine whether its threshold/signals are sufficiently stable to propagate into canonical workflow documentation or should initially remain an operating choice observed through `workflow-optimization` before canonization.
+Continue workflow observation while the dedicated `rumiai-os-man-documentation` task designs the boundary between normative specifications and runtime/user reference. Use its findings to decide whether the specification taxonomy/routing model needs further structural refinement.
 
 ## Blockers / open questions
 
-- User decision on the proposed hybrid model: documentation-health governance in `workflow-optimization`, substantial documentation refactors as dedicated tasks.
-- Decide whether event-driven documentation-health signals should immediately become canonical workflow rules or first be validated through actual usage.
+- Whether `specifications/` eventually needs a stronger taxonomy beyond the current flat `rumiai-os/` topic index; do not restructure pre-emptively without evidence from real retrieval.
+- Which facts currently present or missing in `specifications/` are genuinely normative design contracts versus operational reference better owned by the future man-style documentation surface.
