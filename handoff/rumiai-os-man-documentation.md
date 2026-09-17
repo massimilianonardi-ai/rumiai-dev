@@ -14,7 +14,7 @@ The current first-delivery completion scope includes mandatory operational-manua
 ## Current repository revisions
 
 ```text
-rumiai-dev   4ad5b2bd2152df8e912ccfe3e7d7abf3a32255eb  (handoff checkpoint before publication of prepared product commit)
+rumiai-dev   2afb22118467d999f74298a8a954fd90e0fe0bb1  (handoff checkpoint before publication of prepared product commit)
 rumiai-os    db0b25c20b08247cd68818ef9caea61a1cf02451  (current remote HEAD; descendant fce90adde7ee5901a6c71560a7cf72b8df9492b2 prepared for publication)
 rumiai-tests 122011d7aeb64d7d6a15a44a133b497c962fa89d  (parallel suite work; not modified by this documentation work unit)
 ```
