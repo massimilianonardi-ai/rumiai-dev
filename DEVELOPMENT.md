@@ -1,12 +1,13 @@
 # RumiAI development environment bootstrap
 
-`setup-dev.sh` creates the canonical local workspace used to develop and validate RumiAI.
+Status: **Current**  
+Updated: 2026-09-17
 
-The script is intentionally independent from the product runtime. It lives in `rumiai-dev`, clones the product repository first, and then places development-only repositories under the ignored `src/` workspace of `rumiai-os`.
+`setup-dev.sh` prepares the canonical local workspace used to develop and validate RumiAI. It is development infrastructure, not part of the `rumiai-os` runtime.
 
-## Layout
+## Workspace layout
 
-With the default destination the resulting layout is:
+With the default destination:
 
 ```text
 ./rumiai-os/
@@ -16,141 +17,123 @@ With the default destination the resulting layout is:
     └── rumiai-dev-PoCs/        independent Git repository
 ```
 
-The nested repositories are normal independent Git repositories. They are not submodules and are not runtime dependencies of `rumiai-os`.
+Nested repositories are normal independent repositories, not submodules and not runtime dependencies.
+
+`src/` is the product checkout's development anchor; its operational contents are Git-ignored by `rumiai-os`.
 
 ## Direct execution
 
-From a checkout of `rumiai-dev`:
+From a `rumiai-dev` checkout:
 
 ```sh
 ./setup-dev.sh
 ```
 
-The default `RumiAI_ROOT` is:
+Default product destination:
 
 ```text
 $PWD/rumiai-os
 ```
 
-A different destination can be supplied as the only positional argument:
+Custom destination:
 
 ```sh
 ./setup-dev.sh /path/to/rumiai-os
 ```
 
-## `curl | sh`
+## Piped execution
 
-The bootstrap is designed to be usable without first cloning `rumiai-dev`:
+The bootstrap is designed to work without cloning `rumiai-dev` first:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/massimilianonardi-ai/rumiai-dev/main/setup-dev.sh | sh
 ```
 
-A custom destination can be passed to the shell:
+Custom destination:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/massimilianonardi-ai/rumiai-dev/main/setup-dev.sh \
     | sh -s -- /path/to/rumiai-os
 ```
 
-Interactive input is read from `/dev/tty`, not standard input. This is necessary because in the piped form standard input contains the script itself.
+Interactive input is read from `/dev/tty`; standard input may contain the script itself.
 
-On Windows this form assumes a POSIX-compatible shell environment such as Git Bash. WSL is detected as Linux and uses the Linux credential policy.
+## Repository handling
+
+New clones use the canonical GitHub repositories required by this development workspace:
+
+```text
+massimilianonardi-ai/rumiai-os
+massimilianonardi-ai/rumiai-tests
+massimilianonardi-ai/rumiai-dev-PoCs
+```
+
+An existing destination is accepted only when it is a Git working tree whose `origin` identifies the expected repository using an accepted HTTPS/SSH form.
+
+The bootstrap does not automatically:
+
+```text
+git pull
+merge
+reset/discard local work
+commit
+push real changes
+```
+
+Repeated execution must therefore preserve existing development state rather than silently synchronizing or destroying it.
 
 ## Git identity
 
-The bootstrap assumes that Git may have been freshly installed and therefore does not assume any pre-existing global author identity.
+The environment is not considered ready for development unless Git has an explicit usable author/committer identity.
 
-Before cloning repositories, `setup-dev.sh` checks the explicit global values:
+The bootstrap validates global:
 
 ```text
 user.name
 user.email
 ```
 
-A usable name must contain at least one non-whitespace character and must not contain angle brackets. A usable email must have a minimal `local@domain` form and must not contain whitespace, angle brackets or multiple `@` characters. This is deliberately a conservative operational validation rather than a complete RFC email parser.
+and requires an explicit identity when they are missing/unusable.
 
-If either value is missing or unusable, the script requests the replacement through `/dev/tty`. It then displays the complete proposed identity:
-
-```text
-name <email>
-```
-
-and requires explicit confirmation before writing any newly requested identity value to global Git configuration. This prevents an accidental pasted shell command from silently becoming `user.name` or `user.email`.
-
-The bootstrap also configures:
+It also configures:
 
 ```text
 user.useConfigOnly=true
 ```
 
-This prevents Git from silently synthesizing an author or committer identity from the local operating-system username and hostname. A development environment is not considered correctly configured if Git cannot construct both `GIT_AUTHOR_IDENT` and `GIT_COMMITTER_IDENT` from the explicit configuration.
+so Git does not silently synthesize identity from host/account data.
 
-A usable `$HOME` is therefore required because the bootstrap intentionally verifies and, when necessary, writes global Git configuration.
+When new identity values are entered interactively, the complete proposed identity is shown and requires explicit confirmation before persistence.
 
-The script does not impose unrelated global preferences such as `init.defaultBranch`, editor choice, pull strategy or line-ending policy. Those settings are not prerequisites of the RumiAI development workspace.
+A usable `$HOME` is therefore required for the global Git configuration intentionally managed by the bootstrap.
 
-## Repository handling
+## Push capability
 
-The bootstrap uses HTTPS clone URLs for new clones:
+After repositories are available, the bootstrap checks current push authorization using a dry-run against a temporary non-created branch ref.
 
-```text
-https://github.com/massimilianonardi-ai/rumiai-os.git
-https://github.com/massimilianonardi-ai/rumiai-tests.git
-https://github.com/massimilianonardi-ai/rumiai-dev-PoCs.git
-```
+The probe must not create a real branch or mutate repository history.
 
-If a destination already exists, the script requires it to be a Git working tree whose `origin` identifies the expected repository. Existing HTTPS or SSH origins are accepted.
+Interactive credential prompts from child Git/SSH credential mechanisms are suppressed during the initial probe so the bootstrap can first determine whether existing credentials already work.
 
-New `git clone` processes receive standard input from `/dev/null`. This is intentional: in the `curl | sh` form standard input contains the bootstrap itself and must never be consumed by a child Git process.
+## Token setup
 
-The script does not automatically run `git pull`, merge branches, reset working trees, discard local changes, create commits or push changes.
+If push access is unavailable, the bootstrap may offer explicit configuration of a GitHub personal access token.
 
-This makes repeated execution safe with respect to existing development state.
+A fine-grained token should be limited to the repositories and write permissions actually required.
 
-## Push capability check
+The token:
 
-After the repositories are available, the script checks whether the current Git authentication can perform a push.
+- is entered with terminal echo disabled;
+- is not embedded in remote URLs;
+- is not passed as a command-line argument;
+- is supplied through the Git credential protocol;
+- is cleared from the shell variable after credential approval.
 
-The check uses:
+## Credential storage
 
-```text
-git push --dry-run
-```
+The preferred persistent credential helper depends on the host and installed facilities.
 
-toward a temporary, non-created branch ref. The check therefore exercises push authorization without creating a branch or changing remote repository state.
-
-Interactive credential prompts from Git, SSH and Git Credential Manager are disabled during this probe so that the script can first determine whether credentials are already usable.
-
-A successful generic dry-run confirms that the current credentials can perform that push operation. Repository rules or branch protection can still impose additional restrictions on particular refs or operations.
-
-## Access token setup
-
-If push access is unavailable for one or more repositories, the script asks whether the developer wants to configure a GitHub personal access token.
-
-A fine-grained personal access token is recommended. It should grant access only to the repositories the developer needs and should include:
-
-```text
-Repository permissions -> Contents: Read and write
-```
-
-The token is entered with terminal echo disabled. It is never added to a Git remote URL and is never passed as a command-line argument.
-
-The token is handed to Git through the standard credential protocol using:
-
-```text
-git credential approve
-```
-
-After storage, the shell variable containing the token is cleared and push capability is checked again.
-
-Secure token entry requires `stty`. The script checks for it only when token entry is actually required.
-
-## Credential storage policy
-
-The bootstrap chooses a persistent credential helper according to the host and installed helpers.
-
-Preferred order:
+Current preference order:
 
 ```text
 macOS
@@ -166,124 +149,62 @@ Linux / WSL
     libsecret
 ```
 
-The selected helper is configured locally in the affected repository rather than changing the user's global Git credential policy.
+Credential-helper configuration is local to the affected repository rather than an unsolicited global preference change.
 
-`credential.useHttpPath=true` is also configured locally so the stored credential is keyed by the repository path and does not unnecessarily replace credentials for unrelated GitHub repositories.
+`credential.useHttpPath=true` is used so credentials can remain repository-path-specific.
 
-If no supported secure persistent helper is available, the script does not silently downgrade security. It explains the situation and asks explicitly whether `git credential-store` may be used. That helper stores credentials in plaintext and should only be selected knowingly.
+If no supported secure persistent helper exists, plaintext `credential-store` must not be selected silently; it requires explicit operator authorization.
 
-## Physical validation
+## Security and input rules
 
-The bootstrap was physically exercised on the two stable reference hosts on 2026-08-29 using the piped `curl | sh` form and an explicit `RumiAI_ROOT`.
+Secrets are read from `/dev/tty` with terminal echo disabled when required.
 
-The observations below describe the **then-current** workspace layout. At that revision the workspace directory was named `.dev/`; the current canonical name is `src/`. The historical validation evidence is not rewritten as evidence for the renamed layout.
+The bootstrap must validate interactive identity input before persisting it and must not allow pasted shell text or malformed identity values to become configuration merely because they are non-empty.
 
-### macOS
-
-Observed successfully:
-
-- clone of `rumiai-os`;
-- creation of `.dev/` in the then-current layout;
-- clone of `rumiai-tests` and `rumiai-dev-PoCs` in that then-current layout;
-- dry-run push verification on all three repositories;
-- successful completion when existing Git credentials already provide write access.
-
-Because valid credentials were already present, the interactive PAT configuration path and the `osxkeychain` storage path were not exercised in this run.
-
-### Ubuntu 26.04 ARM64
-
-Observed successfully:
-
-- clone of all three repositories in the then-current layout;
-- initial detection of unavailable push access;
-- interactive confirmation through `/dev/tty` while the script itself was supplied on standard input;
-- username and PAT input, including non-echoed token entry;
-- detection that no supported secure helper was installed;
-- explicit user authorization before falling back to `git credential-store`;
-- storage through `git credential approve`;
-- successful dry-run push verification for all three repositories after credential configuration;
-- successful completion of the bootstrap.
-
-The Ubuntu run validates the explicit insecure-fallback path, not the preferred Git Credential Manager or `libsecret` paths.
-
-### Git identity hardening discovered during validation workflow
-
-A later physical workflow exposed that the original bootstrap had not verified global Git author identity:
-
-- on macOS Git automatically synthesized a committer identity from the local username and hostname and emitted a warning;
-- on Ubuntu 26.04 ARM64 a commit failed because neither global `user.name` nor `user.email` was configured.
-
-This showed that clone and push capability alone were insufficient to declare a development environment ready. The bootstrap was therefore hardened to require explicit global identity and `user.useConfigOnly=true` before repository setup.
-
-### Isolated clean-Git-home exercise
-
-The identity bootstrap was then exercised physically on both stable hosts with a temporary empty `$HOME` and a temporary workspace, leaving the real user configuration and canonical repositories untouched.
-
-On both macOS and Ubuntu 26.04 ARM64 the successful run demonstrated:
-
-- an initially empty global Git configuration;
-- detection of missing `user.name` and `user.email`;
-- interactive collection through `/dev/tty` while the script arrived through standard input;
-- persistence of the supplied identity in the temporary global `.gitconfig`;
-- `user.useConfigOnly=true`;
-- successful `GIT_AUTHOR_IDENT` and `GIT_COMMITTER_IDENT` construction;
-- a real temporary Git commit with the expected author and committer;
-- successful clone of `rumiai-os`, `rumiai-tests` and `rumiai-dev-PoCs` into the temporary workspace;
-- complete cleanup of the isolated test environment.
-
-Because the isolated `$HOME` intentionally hid normal user authentication and the operator declined PAT setup in these runs, the isolated exercise ended in the supported read-only state. The PAT/storage path had already been physically exercised on Ubuntu in the earlier bootstrap validation.
-
-During the first Ubuntu isolated attempt, an operator paste error supplied the shell command `cd /m/src/git/rumiai-os` at the `Git user.email` prompt. The then-current bootstrap accepted any non-empty string, exposing an input-validation gap. A subsequent clean rerun with the intended identity succeeded. The implementation was therefore hardened again to validate the minimal shape of both identity fields and require explicit confirmation of the full proposed identity before persisting newly requested values.
-
-The resulting regression coverage was moved into the permanent `rumiai-tests` group:
-
-```text
-tests/rumiai-dev/setup-dev/
-```
-
-and physically exercised on both stable hosts against `rumiai-tests` commit:
-
-```text
-a68a7a69ac45bc397dec3d78f39f4275aef56d57
-```
-
-with:
-
-```text
-./rumiai-test rumiai-dev/setup-dev
-```
-
-Both macOS and Ubuntu 26.04 ARM64 produced:
-
-```text
-PASS   3
-FAIL   0
-SKIP   0
-ERROR  0
-TOTAL  3
-```
-
-This closes the Git-identity input-safety path for that validated revision: invalid email input is rejected before workspace creation, cancellation persists no identity, and confirmed valid identity is persisted with `user.useConfigOnly=true`, supports Git author/committer construction, a real commit, and isolated cloning of the three development repositories.
-
-The later `.dev/` -> `src/` workspace rename has its permanent setup expectation updated separately and still requires fresh physical validation before the old host evidence can be claimed for the renamed layout.
+The script must not invoke a package manager or install credential helpers automatically.
 
 ## Requirements
 
-The bootstrap requires:
+Baseline:
 
 ```text
 POSIX sh
 git
 uname
-HOME suitable for Git global configuration
+usable HOME
 ```
 
-For interactive secret token input it also requires:
+Interactive secret entry additionally requires:
 
 ```text
 stty
 ```
 
-For persistent secure token storage it additionally requires one of the supported credential helpers appropriate for the host.
+Persistent secure credential storage requires one of the supported helpers for the host.
 
-No package manager is invoked automatically and the script does not install system software or credential helpers on behalf of the developer.
+## Testing and evidence
+
+Permanent behavioral coverage for this bootstrap belongs in:
+
+```text
+rumiai-tests/tests/rumiai-dev/setup-dev/
+```
+
+Current validation claims must be derived from the exact `rumiai-tests` revision/evidence that exercised the relevant `setup-dev.sh` revision. Historical validation narratives are intentionally not embedded here; Git history preserves them and `rumiai-tests` owns executable/revision-specific evidence.
+
+A documentation statement never upgrades old evidence to a later bootstrap revision.
+
+## Invariants
+
+```text
+DEV-01  setup-dev.sh is development infrastructure, not product runtime
+DEV-02  local nested repositories live under rumiai-os/src/
+DEV-03  nested repositories are independent Git repositories, not submodules
+DEV-04  setup does not automatically pull/reset/merge/commit/push real changes
+DEV-05  explicit Git author/committer identity is required
+DEV-06  user.useConfigOnly=true prevents synthesized identity
+DEV-07  push probing is dry-run and non-mutating
+DEV-08  secrets are not stored in remote URLs or command arguments
+DEV-09  insecure credential-store fallback requires explicit authorization
+DEV-10  setup does not install host software/package-manager dependencies automatically
+```
