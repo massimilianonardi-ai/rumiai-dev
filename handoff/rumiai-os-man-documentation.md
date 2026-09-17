@@ -12,7 +12,7 @@ A central design objective is to reduce pressure on `rumiai-dev/specifications/`
 ## Current repository revisions
 
 ```text
-rumiai-dev  69d9098449c8af9acfe3434b0f3e2556d75ac755  (last retrieved before task creation)
+rumiai-dev  e5210d04c38ba2fb8ca76108b8c3cabd40510e7f  (last retrieved before this checkpoint)
 rumiai-os   36c29d8412a523f722fd90004b78a07fdf0b06c8  (current remote HEAD inspected during activation)
 ```
 
@@ -39,6 +39,7 @@ Additional subsystem specifications must be retrieved only when the concrete des
 - The new surface must not become a second copy of the normative RumiAI development specifications.
 - `rumiai-dev` remains authoritative for development rules and semantic specifications unless a future explicit contract changes ownership of a specific class of facts.
 - Runtime/user documentation should describe the software interface that actually exists for the relevant revision and should be useful independently of the development repository.
+- Current canonical development documentation in `rumiai-dev` is English; runtime/user documentation localization remains an open design question for this task.
 - No directory name, resource class, command, file format, section numbering scheme, generator or localization mechanism is fixed yet.
 - Do not assume that man pages belong under `res/`: the current resource contract defines only `lang` as a concrete global resource class, so a new resource class requires an explicit requirement and contract.
 - No existing `man` or `help` mechanism was found in the current `rumiai-os` code search during task activation.
@@ -48,10 +49,14 @@ Additional subsystem specifications must be retrieved only when the concrete des
 - `rumiai-os` current remote HEAD was retrieved and its current tree/README inspected.
 - The current product exposes many public technical commands under `bin/sys/` but does not currently expose a discovered man/help documentation mechanism.
 - The current architecture/resource/naming contracts were consulted sufficiently to establish that documentation placement must be designed rather than inferred from filesystem symmetry.
+- The documentation-language normalization task completed; relevant current development contracts, including `RESOURCE-MODEL.md`, are now maintained in English.
+- The root workflow documentation now canonically defines event-driven documentation maintenance and dedicated tasks for substantial documentation refactors.
 
 ## Current state
 
 The task is active at design stage. The main open problem is ownership and single-source-of-truth design: determine which facts belong in normative `rumiai-dev` specifications, which belong in runtime operational reference, and whether any content can be generated or mechanically checked so the two surfaces cannot silently drift.
+
+The task should also use the design to test whether the current flat `specifications/rumiai-os/` topic organization remains appropriate or whether operational reference can remove enough interface detail that a larger taxonomy change is unnecessary.
 
 ## Next action
 
