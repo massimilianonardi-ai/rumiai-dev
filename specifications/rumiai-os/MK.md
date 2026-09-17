@@ -62,7 +62,11 @@ project configuration
 
 Build, test, run, clean and production of development outputs are established `mk` lifecycle responsibilities.
 
-Their exact public CLI, ordering semantics, graph model, incremental behavior, parallelism and extension points remain to be specified.
+Documentation generation is one concrete build/output responsibility when a project defines source documentation that must be transformed into distributable or publishable artifacts. For RumiAI's long-term documentation model, `mk` owns orchestration of the documentation build that produces channel-specific artifacts such as terminal reference content, HTML, PDF or other selected outputs.
+
+This ownership does not make a documentation generator part of the `mk` core. Sphinx, Asciidoctor, Pandoc or another future toolchain, if selected, remains external build tooling coordinated through the same general lifecycle boundary as other compilers/build engines.
+
+The exact public CLI, ordering semantics, graph model, incremental behavior, parallelism and extension points remain to be specified.
 
 ## 6. Workspace, state and outputs
 
@@ -73,6 +77,8 @@ Any managed RumiAI state introduced by `mk` MUST use the current `state-path` co
 The exact `mk` state identity/layout, build directory model, cache model, run/test workspace and output layout are not fixed yet.
 
 Development output is distinct from package installation. Building or testing a project does not by itself publish that project as an installed package.
+
+Generated documentation artifacts are development outputs under this same principle. Their later distribution location and runtime ownership are defined by the subsystem that consumes them; for RumiAI operational documentation, that relationship is defined by `DOCUMENTATION-MODEL.md` and `RESOURCE-MODEL.md`.
 
 ## 7. Implementation runtime is intentionally undecided
 
@@ -143,6 +149,9 @@ incremental-build and cache model
 parallel execution model
 local package-install bridge
 source-only pkg orchestration
+documentation source format
+documentation renderer/toolchain
+documentation-build CLI/configuration shape
 ```
 
 These choices must be developed incrementally from concrete project lifecycle requirements rather than inferred from the historical implementation or from the current materialization baseline.
@@ -160,4 +169,5 @@ MK-07  mk-managed RumiAI state must resolve through state-path
 MK-08  implementation runtime is currently undecided
 MK-09  JSON versus TOML is currently undecided and requires explicit comparison
 MK-10  MK-SOURCE-MATERIALIZATION.md defines a subordinate implemented capability, not the complete mk subsystem
+MK-11  long-term RumiAI documentation build orchestration belongs to mk while the documentation source format and external rendering toolchain remain separately selectable
 ```

@@ -3,9 +3,9 @@
 Status: **Current / normative**  
 Updated: 2026-09-17
 
-This specification defines the documentation ownership model for RumiAI OS before any concrete documentation-access command, pathname layout or rendering tool is selected.
+This specification defines documentation ownership, the first terminal-first operational-reference storage/access model, and the long-term multi-channel documentation target for RumiAI OS.
 
-Its purpose is to keep current development contracts separate from revision-coupled operational documentation while allowing the first operational reference to be implemented simply and leaving a deliberate migration path toward a future multi-channel documentation system.
+Its purpose is to keep current development contracts separate from revision-coupled operational documentation, make the first operational reference deliberately simple, and preserve a migration path toward a future documentation system whose informational content is independent from presentation channel.
 
 ## 1. Documentation roles
 
@@ -66,8 +66,8 @@ For this initial model:
 
 - source content and terminal representation are intentionally the same artifact;
 - the document uses logical textual sections rather than terminal escape sequences or renderer-specific markup;
-- no roff, host `man` database, pager, HTML generator, PDF generator or external documentation framework is required by the baseline;
-- the content should remain understandable as plain text when opened directly;
+- no roff, host `man` database, HTML generator, PDF generator or external documentation framework is required by the content baseline;
+- the content remains directly readable even when no pager is available;
 - topic structure should be regular enough to support later migration to a richer semantic representation without rewriting the underlying information from scratch.
 
 Typical command-reference sections may include:
@@ -87,28 +87,60 @@ SEE ALSO
 
 Only sections useful to the specific topic are required. These headings are an authoring convention, not a parser grammar.
 
-## 4. Deliberately unresolved first-delivery details
+## 4. First-delivery storage and identity
 
-This documentation model does **not** yet fix:
+Operational pages are distributed global resources in the resource class:
 
 ```text
-public utility name
-utility invocation syntax
-discovery / lookup behavior
-filesystem location
-resource-class classification
-owner-qualified lookup rules
-page filename convention
-paging behavior
-search/index behavior
-integration with command-level --help or -h
+manual
 ```
 
-Those decisions belong to the next design step and must be made against this model before product implementation.
+The first-delivery layout is:
 
-No implementation or pathname symmetry may silently decide them first.
+```text
+res/
+├── sys/
+│   └── manual/
+│       └── <topic>
+└── ai/
+    └── manual/
+        └── <topic>
+```
 
-## 5. Long-term multi-channel design target
+`sys` and `ai` keep the ownership semantics defined by `RESOURCE-MODEL.md`.
+
+Each `<topic>` leaf is the operational topic identifier for that owner and is a human-readable UTF-8 text file. The file has **no filename extension**. Controlled topic names follow the current filesystem-naming contract; this specification does not create a second topic-name grammar.
+
+The absence of an extension is intentional: topic identity is not coupled to the current plain-text representation or to a future renderer format.
+
+The public documentation-access utility is named:
+
+```text
+manual
+```
+
+The command name identifies the operational manual as a semantic surface; it does not imply Unix `man`, roff input, a host man database, or one presentation renderer.
+
+## 5. First-delivery details still unresolved
+
+The following details are not fixed yet:
+
+```text
+manual invocation syntax
+topic discovery and lookup behavior
+owner-qualified lookup syntax
+command executable ownership/location
+interactive paging behavior and fallback policy
+exact spelling of an option that disables paging
+search/index behavior
+exit-status contract
+```
+
+These decisions must be fixed before product implementation of the access utility.
+
+The storage layout and command name fixed above do not by themselves decide lookup precedence, ambiguity handling or paging.
+
+## 6. Long-term multi-channel design target
 
 A second, more general documentation architecture is an explicit long-term design target.
 
@@ -119,7 +151,9 @@ informational content
     ↓
 semantic/document structure
     ↓
-channel-specific rendering
+build/rendering orchestration
+    ↓
+channel-specific artifacts
     ↓
 terminal / HTML / PDF / other consumers
 ```
@@ -137,9 +171,21 @@ The long-term design should preserve at least these properties:
 - ability to validate mechanically that generated/rendered surfaces derive from the intended source revision;
 - migration from the initial terminal-first pages without discarding their informational content.
 
-No source language, schema, AST, generator, renderer, build tool or output format is selected by this specification yet.
+### Build ownership
 
-## 6. Fast bridge versus final architecture
+The documentation build mechanism for this long-term model belongs to:
+
+```text
+mk
+```
+
+This fixes architectural ownership, not an `mk` CLI, project-configuration key, source language, AST, renderer backend or external toolchain.
+
+Documentation generators such as Sphinx, Asciidoctor, Pandoc or another future choice are therefore candidates for **build-time** tooling coordinated by `mk`, not mandatory runtime dependencies of `manual` or of the generated operational pages.
+
+The current implemented `mk materialize` operation remains unchanged. The broader `mk` lifecycle contract is being defined separately; the documentation build capability must be incorporated there rather than being invented as an independent build subsystem.
+
+## 7. Fast bridge versus final architecture
 
 A structured Markdown source with metadata and separate renderers is a plausible fast bridge because it could feed terminal, HTML and PDF generation with comparatively little initial infrastructure.
 
@@ -147,7 +193,9 @@ However, that approach does not by itself fully separate informational semantics
 
 The long-term design task must compare such a bridge with genuinely semantic/structured representations and decide whether the extra architecture is justified by concrete RumiAI requirements.
 
-## 7. Migration discipline for the initial model
+Sphinx, Asciidoctor and Pandoc remain evaluation candidates. Their implementation-language/runtime dependencies matter primarily at build time; generated operational artifacts should remain usable without requiring those documentation toolchains at runtime.
+
+## 8. Migration discipline for the initial model
 
 The initial terminal-first content should avoid choices that make the long-term migration unnecessarily expensive.
 
@@ -163,17 +211,25 @@ Therefore initial operational pages should:
 
 This discipline does not make the initial pages a hidden semantic schema. It only keeps them clean enough to migrate later.
 
-## 8. Relationship with command-level help
+## 9. Relationship with command-level help
 
-The current documentation model does not introduce `--help`, `-h` or another command-help interface.
+The first delivery does **not** introduce `--help`, `-h` or another per-command help interface.
 
-When the first access utility is designed, command-level help must be considered explicitly so short help and long operational reference do not become two unrelated sources that drift independently.
+Operational reference is accessed through the dedicated manual surface instead of requiring every public command to maintain a second independently authored help path.
 
-A future multi-channel model should ideally allow both surfaces to derive from the same informational source when their content overlaps materially.
+A future requirement may introduce short command help only through an explicit contract. If that happens, overlapping short help and long operational reference should derive from the same canonical informational source whenever practical rather than drifting independently.
 
-## 9. Testing and maintenance
+## 10. Paging principle
 
-Permanent tests should protect mechanical properties only after the concrete delivery mechanism is defined, for example discovery, lookup, output, exit status, file layout or deterministic rendering.
+Paging is a property of the access/viewing layer, not of the canonical operational page content.
+
+The canonical page remains directly consumable as text regardless of whether `manual` chooses an interactive pager for terminal output.
+
+The exact first-delivery paging policy remains unresolved. In particular, this specification does not yet make `less`, `more`, another external pager, a bundled pager, or a pager-selection environment variable part of the runtime contract.
+
+## 11. Testing and maintenance
+
+Permanent tests should protect mechanical properties only after the concrete delivery mechanism is defined, for example discovery, lookup, output, paging selection, exit status, file layout or deterministic rendering.
 
 Tests do not make prose normative.
 
@@ -181,32 +237,37 @@ A product-interface change that makes existing operational documentation inaccur
 
 Documentation completeness is not measured by page count. Add an operational topic when it provides real user/developer value for a public or materially observable interface.
 
-## 10. Current sequencing
+## 12. Current sequencing
 
 The task sequence is:
 
 ```text
 fix documentation ownership/model
-→ design the simple first-delivery storage and access interface
+→ fix first-delivery storage and public access identity
+→ design lookup, paging and exit-status behavior
 → implement and test that first delivery
 → populate useful operational topics incrementally
-→ continue the multi-channel architecture as a separate long-term design track
+→ continue the multi-channel architecture through mk as a separate long-term design track
 → migrate only when that second model is sufficiently specified and justified
 ```
 
 The simple delivery must not be presented as the final documentation architecture merely because it is implemented first.
 
-## 11. Invariants
+## 13. Invariants
 
 ```text
 DOC-01  rumiai-dev remains the normative development-contract source
 DOC-02  operational documentation is revision-coupled product reference, not a second development authority
 DOC-03  the first operational model is terminal-first plain UTF-8 text with no required transformation pipeline
-DOC-04  utility name, access semantics and filesystem/resource placement remain unresolved until the next design step
-DOC-05  the first model must avoid presentation-specific choices that unnecessarily obstruct later migration
-DOC-06  the long-term target separates informational content from channel-specific rendering
-DOC-07  no long-term source schema, renderer or generator is selected yet
-DOC-08  a Markdown-plus-metadata bridge is an exploration candidate, not the adopted final architecture
-DOC-09  operational documentation and command-level help must not evolve into unrelated drifting authorities
-DOC-10  interface changes realign affected operational documentation in the same work unit whenever practical
+DOC-04  the first global operational-documentation resource class is manual under res/<owner>/manual/
+DOC-05  each initial operational topic is an extensionless UTF-8 text file whose leaf name is its owner-local topic identity
+DOC-06  the public operational-documentation access utility is named manual
+DOC-07  manual invocation, lookup, paging and exit-status behavior remain unresolved until their next design step
+DOC-08  the first model must avoid presentation-specific choices that unnecessarily obstruct later migration
+DOC-09  the long-term target separates informational content from channel-specific rendering
+DOC-10  the long-term documentation build mechanism belongs to mk while source schema and renderer/toolchain remain undecided
+DOC-11  a Markdown-plus-metadata bridge is an exploration candidate, not the adopted final architecture
+DOC-12  the first delivery does not introduce per-command --help or -h
+DOC-13  paging never changes the canonical page content contract
+DOC-14  interface changes realign affected operational documentation in the same work unit whenever practical
 ```

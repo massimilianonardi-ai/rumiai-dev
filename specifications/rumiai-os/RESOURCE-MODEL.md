@@ -1,11 +1,11 @@
 # RumiAI OS — Resource model
 
-Date: 2026-09-14  
-Status: **Current**
+Date: 2026-09-17  
+Status: **Current / normative**
 
 ## 1. Scope
 
-This specification defines the current distributed-resource model of RumiAI OS after the `2.0.0` freeze.
+This specification defines the current distributed-resource model of RumiAI OS.
 
 The model distinguishes:
 
@@ -16,19 +16,15 @@ The model distinguishes:
 
 This specification does not introduce a universal resource resolver, resource URI, registry, daemon or resource manager.
 
----
-
 ## 2. Resource definition
 
 A resource payload is distributed content with an owner that is required or usable at runtime, is not mutable application state and is not an entrypoint.
 
-Possible examples include language catalogs, images, icons, templates, schemas or other static assets when a concrete use case requires them.
+Examples include language catalogs and operational manual pages. Additional static assets such as images, icons, templates or schemas become resource classes only when a concrete current requirement establishes them.
 
-Classification as a resource is semantic. It does not automatically authorize new resource classes or new APIs.
+Classification as a resource is semantic. The existence of `res/` does not automatically authorize arbitrary future classes or APIs.
 
 Selectors co-located with resources, such as `lang/current`, are mutable selection metadata. Their mutability does not reclassify the selected payloads as state.
-
----
 
 ## 3. Global `res` root
 
@@ -60,8 +56,6 @@ The existence of `res/ai` does not create a semantic dependency of `m` on RumiAI
 
 No additional global owners are defined by this specification.
 
----
-
 ## 4. Resource classes
 
 A resource class is located under its owner:
@@ -70,21 +64,30 @@ A resource class is located under its owner:
 res/<owner>/<resource-class>/
 ```
 
-This specification initially fixes exactly one concrete class:
+The currently fixed global resource classes are:
 
 ```text
 lang
+manual
 ```
 
-No additional generic namespaces are introduced in anticipation of future classes.
+They have independent semantics:
 
-The presence of `res` does not automatically authorize directories such as `icons`, `themes`, `templates`, `models` or equivalents: each class is materialized only when a concrete requirement exists.
+```text
+lang
+    localized message catalogs and global language selection under its own contract
 
----
+manual
+    revision-coupled operational documentation pages under DOCUMENTATION-MODEL.md
+```
+
+No additional generic namespace is introduced in anticipation of future content. Directories such as `icons`, `themes`, `templates`, `models` or equivalents require a concrete future contract before materialization.
+
+A fixed resource class does not require every owner to materialize a directory when that owner has no payload of that class.
 
 ## 5. Global language resources
 
-The current layout is:
+The current language layout is:
 
 ```text
 res/
@@ -120,8 +123,6 @@ The distributed initial selection is:
 en_US
 ```
 
----
-
 ## 6. Technical `lang` interface
 
 The existing `lang` shell interface remains a technical `m` facility.
@@ -135,7 +136,7 @@ m_LANGUAGE_FALLBACK=en_US
 m_LANG_FALLBACK_DIR=$m_LANG_DIR/$m_LANGUAGE_FALLBACK
 ```
 
-`m_LANG_DIR` is retained as the existing semantic interface for the technical `lang` facility; its new value does not establish a general environment-alias rule for every `res` subdirectory.
+`m_LANG_DIR` is retained as the existing semantic interface for the technical `lang` facility; its value does not establish a general environment-alias rule for every `res` subdirectory.
 
 The technical function:
 
@@ -147,9 +148,7 @@ resolves only the `sys` catalog.
 
 It does not search `res/ai/lang`, merge owners or introduce cross-owner fallback.
 
-A future branded consumer may read `ai` resources only when a concrete requirement and appropriate contract exist. This specification does not anticipate that API.
-
----
+A branded consumer may read `ai` resources only through an applicable concrete contract. This resource model alone does not create that API.
 
 ## 7. Global selection with `lang-set`
 
@@ -177,14 +176,6 @@ res/sys/lang/current
 
 followed by a newline.
 
-Example:
-
-```text
-it_IT
-```
-
-The query does not list catalogs or return counts.
-
 If the `sys` selector is not a valid relative symbolic link to an available locale in its own tree, the query fails. It does not present the fallback as if it were the current selection.
 
 ### 7.2 Selection
@@ -211,9 +202,33 @@ If the requested language is missing from even one participating global owner, t
 
 Updating multiple symlinks is not a crash-atomic filesystem transaction. The contract requires consistency after success and rollback for handled ordinary errors; it does not introduce a journal, generation directory, lock framework or transaction manager.
 
----
+## 8. Global manual resources
 
-## 8. Package resources
+Operational documentation uses the global resource class:
+
+```text
+manual
+```
+
+Its first-delivery layout is:
+
+```text
+res/
+├── sys/
+│   └── manual/
+│       └── <topic>
+└── ai/
+    └── manual/
+        └── <topic>
+```
+
+Each `<topic>` leaf is an extensionless owner-local operational topic whose content contract is defined by `DOCUMENTATION-MODEL.md`.
+
+The `manual` resource class has no selector, locale directory, implicit fallback or synchronization rule merely because `lang` has those mechanisms. Resource-class behavior is specific to the owning contract.
+
+The public access utility name is `manual`, but this resource specification does not independently define its lookup, paging or executable-location behavior.
+
+## 9. Package resources
 
 Package resources belong to the package and remain in its managed tree/version.
 
@@ -223,29 +238,25 @@ They are not copied or projected automatically under:
 $m_RES_DIR
 ```
 
-This also applies to package language catalogs.
+This applies to package language catalogs and other package-owned static resources.
+
+The existence of the global `manual` class does not automatically project upstream package documentation into `res/*/manual`. A global operational topic such as the `pkg` command reference describes the RumiAI/`m` interface itself; package-owned documentation remains package-owned unless a future explicit contract says otherwise.
 
 `lang-set` does not visit, modify or synchronize package-internal selectors or configuration.
 
-Package integration may configure upstream software to follow the global system language or use its own override when supported. Translation between the RumiAI locale and an upstream locale scheme belongs to the package-specific integration.
+Package integration may configure upstream software to follow the global system language or use its own override when supported. Translation between the RumiAI locale and an upstream locale scheme belongs to package-specific integration.
 
-This rule does not introduce a generic `lang=` syntax or a new package-configuration primitive.
-
----
-
-## 9. Separation from state
+## 10. Separation from state
 
 `res/` is not a state area.
 
 State areas and the `state-path` resolver retain their current semantics.
 
-Payloads under `res/` are distributed as part of the product; `current` selectors are selection metadata co-located with resources under the specific contract that defines them.
+Payloads under `res/` are distributed as part of the product; `lang/current` selectors are selection metadata co-located with language resources under the specific contract that defines them.
 
 The resource model does not reopen the state model and does not introduce a second state resolver.
 
----
-
-## 10. No universal resolver
+## 11. No universal resolver
 
 The following are not introduced:
 
@@ -262,17 +273,15 @@ A consumer uses the semantic root or specific contract already relevant to its r
 
 A new resolution primitive requires a concrete requirement not already covered by existing interfaces.
 
----
-
-## 11. Invariants
+## 12. Invariants
 
 ```text
 RES-01  the global resource semantic root is $m_ROOT/res and is exposed as m_RES_DIR
 RES-02  global resources are ownership-qualified; current owners are sys and ai
 RES-03  sys belongs to the technical m substrate; ai belongs to the branded RumiAI layer
 RES-04  resource payloads and mutable state remain distinct concepts
-RES-05  a co-located current selector does not turn the resource tree into state
-RES-06  the first fixed global resource class is lang
+RES-05  a co-located selector does not turn a resource tree into state
+RES-06  the currently fixed global resource classes are lang and manual
 RES-07  m_LANG_DIR remains the technical lang interface and equals $m_RES_DIR/sys/lang
 RES-08  the technical lang facility resolves only sys resources and does not depend on ai
 RES-09  res/*/lang/current selects the same locale in every materialized global language tree
@@ -281,6 +290,9 @@ RES-11  lang-set validates all global language trees before mutation and updates
 RES-12  lang-set does not visit or modify package resources or package configuration
 RES-13  package resources remain package-local and private to the package unless a future explicit contract says otherwise
 RES-14  no universal resolver, URI, registry, daemon or resource manager is introduced
-RES-15  multi-owner selection is semantically single but is not promised as a crash-atomic filesystem transaction
-RES-16  en_US is the distributed initial global selection and remains the technical fallback
+RES-15  multi-owner language selection is semantically single but is not promised as a crash-atomic filesystem transaction
+RES-16  en_US is the distributed initial global language selection and remains the technical fallback
+RES-17  global operational documentation uses res/<owner>/manual/<topic>
+RES-18  manual topics are extensionless and their content/access semantics belong to DOCUMENTATION-MODEL.md
+RES-19  the manual resource class has no lang-style selector or fallback unless a later explicit contract introduces one
 ```
