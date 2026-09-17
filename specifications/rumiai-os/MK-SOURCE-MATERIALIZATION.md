@@ -1,34 +1,38 @@
 # RumiAI OS — `mk` source materialization specification
 
 Status: **Normative specification — Active**  
-Date: 2026-09-14
+Updated: 2026-09-17
 
 ## 1. Scope
 
-This specification defines the first exact contract of `mk`.
+This specification defines the exact contract of the currently implemented `mk` source-materialization capability.
 
-The initial responsibility is deliberately limited to:
+The broader responsibility of the `mk` subsystem is defined by `MK.md`. This specification is subordinate to that lifecycle contract and MUST NOT be read as the complete definition of `mk`.
+
+The capability defined here is deliberately limited to:
 
 ```text
 source tree
 +
 materialization definition
     ↓
-mk
+mk materialize
     ↓
 useful root
 ```
 
-It does not yet define the complete development lifecycle, project build graph, build-environment resolver, test lifecycle, local package installation, or source-only `pkg install` integration.
+It does not define the complete development lifecycle, project build graph, build-environment resolver, test lifecycle, local package installation, or source-only `pkg install` integration.
 
-The purpose of this baseline is to establish the reusable boundary required by both future consumers:
+The purpose of this capability is to establish a reusable source-to-useful-root boundary that can be consumed by later lifecycle/package flows without making materialization the architectural center of `mk`.
+
+Potential consumers include:
 
 ```text
 pkg
     when an upstream artifact contains source rather than an already materialized useful root
 
-local development/project tooling
-    when a local source tree must be transformed into a useful root
+mk project lifecycle
+    when a project operation must produce a useful root for a later consumer
 ```
 
 ## 2. Ownership and layer
@@ -37,19 +41,19 @@ local development/project tooling
 
 It MUST NOT semantically depend on the branded RumiAI layer.
 
-The command is:
+The current command implementing this capability is:
 
 ```text
 bin/sys/mk
 ```
 
-and, while implemented in shell and integrated with `m`, uses:
+and, while this capability is implemented in shell and integrated with `m`, uses:
 
 ```sh
 #!/usr/bin/env m
 ```
 
-Direct shell libraries of this baseline are under:
+Direct shell libraries of this capability are under:
 
 ```text
 lib/sys/sh/
@@ -57,11 +61,13 @@ lib/sys/sh/
 
 and follow the normal `.lib.sh` library contract.
 
+This shell implementation does not settle the implementation runtime of the future broader `mk` core; that choice is governed by `MK.md` and remains open.
+
 No new environment variable is introduced by this specification.
 
 ## 3. Public CLI baseline
 
-The only public operation in the initial baseline is:
+The public operation defined by this capability is:
 
 ```text
 mk materialize <source-root> <definition-root> <useful-root>
@@ -80,11 +86,11 @@ The operands mean:
     destination pathname that does not yet exist
 ```
 
-No implicit current-directory discovery is part of this baseline.
+No implicit current-directory discovery is part of this capability.
 
 No option syntax is introduced.
 
-No other subcommand is valid in the initial baseline.
+This specification defines no other lifecycle subcommands.
 
 ## 4. Public exit status
 
@@ -106,7 +112,7 @@ An invalid definition also fails with status `1`; it is data supplied to a valid
 
 It MUST NOT be shell-sourced, evaled, or interpreted as executable configuration.
 
-The baseline requires exactly one common entry:
+The capability requires exactly one common entry:
 
 ```text
 <definition-root>/type
@@ -120,7 +126,7 @@ The materialization type grammar is:
 [a-z][a-z0-9-]*
 ```
 
-The initial supported value is:
+The current supported value is:
 
 ```text
 copy
@@ -215,11 +221,11 @@ Before final publication, `<useful-root>` MUST still be absent.
 
 On ordinary failure after staging creation, `mk` performs best-effort cleanup of the staging directory.
 
-The baseline does not claim crash atomicity, journaled recovery, or concurrency locking beyond refusing pre-existing final/staging path collisions.
+The capability does not claim crash atomicity, journaled recovery, or concurrency locking beyond refusing pre-existing final/staging path collisions.
 
 ## 9. `copy` materialization type
 
-The first concrete type is:
+The current concrete type is:
 
 ```text
 copy
@@ -255,7 +261,7 @@ Any other definition-root nesting inside the source tree is invalid.
 
 ### 9.2 Symlink baseline
 
-The initial `copy` type rejects a source tree containing symbolic links.
+The current `copy` type rejects a source tree containing symbolic links.
 
 This is intentionally conservative. It guarantees that the copied useful root does not preserve an accidental persistent dependency on the development/source tree through symlink targets.
 
@@ -269,7 +275,7 @@ The adapter does not delete, rename, chmod, rewrite, or otherwise mutate source 
 
 A successful materialization produces a directory that is independent of the source pathname for its ordinary file contents.
 
-`mk` itself does not perform package integration.
+`mk materialize` itself does not perform package integration.
 
 In particular, successful `mk materialize` MUST NOT:
 
@@ -291,7 +297,7 @@ Local development source may reside under:
 $m_SRC_DIR
 ```
 
-but `mk materialize` is not restricted to `$m_SRC_DIR` because the future package-install consumer must also be able to materialize an extracted source tree in package staging.
+but `mk materialize` is not restricted to `$m_SRC_DIR` because a future package-install consumer must also be able to materialize an extracted source tree in package staging.
 
 No successful materialized package/runtime may rely on a persistent link back into `$m_SRC_DIR` merely because its source originated there.
 
@@ -310,22 +316,13 @@ resolve
 
 and `pkg_integrate` receives an already prepared useful root.
 
-A future source-only extension may insert:
+A future source-only extension may include a source-to-useful-root `mk` step before `pkg_integrate`, but the exact orchestration must be defined under the broader `mk` lifecycle and package contracts rather than inferred from this capability alone.
 
-```text
-extract
-→ mk materialize
-→ useful root
-→ pkg_integrate
-```
-
-without changing the semantic responsibility of `pkg_extract`.
-
-This specification does not authorize that `pkg` modification yet.
+This specification does not authorize a `pkg` modification.
 
 ## 13. Local package installation remains separate
 
-This baseline does not define local package installation.
+This capability does not define local package installation.
 
 In particular it does not introduce:
 
@@ -341,7 +338,7 @@ The current `pkg_integrate` coupling to an already selected catalog range remain
 
 ## 14. Build environment and build material
 
-The previously consolidated distinction remains applicable:
+The following distinction remains applicable to future lifecycle design:
 
 ```text
 build environment
@@ -358,13 +355,13 @@ runtime dependency
     remains the existing pkg facility/dependency domain
 ```
 
-This baseline does not yet serialize or resolve build-environment requirements or build material.
+This capability does not serialize or resolve build-environment requirements or build material.
 
 The current package `dependency` format MUST NOT be reused as build-requirement syntax without a later explicit decision.
 
 ## 15. State
 
-The initial `materialize` operation takes an explicit caller-owned output pathname and therefore introduces no persistent `mk` state contract.
+The `materialize` operation takes an explicit caller-owned output pathname and therefore introduces no persistent `mk` state contract.
 
 Future development/build/test operations that need state MUST use the canonical `state-path` resolver and the current semantic user binding contract.
 
@@ -376,17 +373,19 @@ No state layout for those future operations is fixed here.
 
 Public diagnostics use the existing `log` facility and existing generic domains/message IDs where they fit.
 
-This baseline does not create a new language domain or new localized message IDs merely for `mk`.
+This capability does not create a new language domain or new localized message IDs merely for `mk`.
 
 ## 17. POSIX contract
 
-The shell implementation and adapters are POSIX.1-2024 / Issue 8 compliant under the current RumiAI development rules.
+The current shell implementation and materialization adapters are POSIX.1-2024 / Issue 8 compliant under the current RumiAI development rules.
 
-No Bash-specific feature, GNU-only option, or host-specific pathname is part of the contract.
+No Bash-specific feature, GNU-only option, or host-specific pathname is part of this capability contract.
 
-## 18. Initial files
+This does not establish POSIX shell as the future implementation runtime of the broader `mk` lifecycle subsystem.
 
-The activated baseline is expected to consist of exactly these product files:
+## 18. Current implementation files
+
+The current materialization capability consists of these product files:
 
 ```text
 bin/sys/mk
@@ -394,26 +393,27 @@ lib/sys/sh/mk-materialize.lib.sh
 lib/sys/sh/mk-materialize-copy.lib.sh
 ```
 
-Additional `mk` libraries require a concrete additional responsibility.
+Additional `mk` implementation files require a concrete additional responsibility under the broader `MK.md` contract.
 
 ## 19. Invariants
 
 ```text
 MK-MAT-01  mk belongs to the m technical layer
-MK-MAT-02  the initial public operation is exactly `mk materialize <source-root> <definition-root> <useful-root>`
+MK-MAT-02  this specification governs `mk materialize <source-root> <definition-root> <useful-root>`, not the complete mk subsystem
 MK-MAT-03  materialization definitions are declarative data and are never sourced/evaled
 MK-MAT-04  `type` is the mandatory common scalar and selects an isolated type adapter
 MK-MAT-05  adapters write only to a caller-independent staging useful root and never mutate source/definition
 MK-MAT-06  final useful-root must not pre-exist and is published only after adapter success
 MK-MAT-07  useful-root cannot be located inside source-root or definition-root
-MK-MAT-08  initial type `copy` accepts no fields other than `type`
+MK-MAT-08  current type `copy` accepts no fields other than `type`
 MK-MAT-09  embedded copy definition is allowed only as `<source-root>/mk` and is excluded from output
-MK-MAT-10  initial copy materialization rejects symbolic links in the source tree
+MK-MAT-10  current copy materialization rejects symbolic links in the source tree
 MK-MAT-11  mk materialization never writes package availability/default/public bindings
 MK-MAT-12  pkg_extract remains semantically distinct from source materialization
 MK-MAT-13  local source and remote source can converge on the same useful-root contract
 MK-MAT-14  current pkg runtime dependency semantics are not reused for build requirements
-MK-MAT-15  no persistent mk state contract is introduced by the initial materialize operation
+MK-MAT-15  no persistent mk state contract is introduced by the materialize operation
 MK-MAT-16  future mk state must use state-path and current semantic state selectors
 MK-MAT-17  no candidate-directory or local-path pkg install syntax is reintroduced
+MK-MAT-18  this specification is subordinate to MK.md and does not constrain the future mk core runtime to shell
 ```
