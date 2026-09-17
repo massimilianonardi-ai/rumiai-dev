@@ -1,24 +1,20 @@
 # historical-pending-recovery
 
-Status: Active
+Status: Complete
 Updated: 2026-09-17
 
 ## Goal
 
 Perform a one-time deliberate recovery of RumiAI work that was historically recognized as unfinished before the current `todo/` lifecycle existed, and repopulate only the items that are still genuinely open in the current project.
 
-Historical material is used only to discover candidates. Every candidate must be verified against current authoritative documentation, implementation and tests before a current TODO is created.
-
 ## Current repository revisions
 
 ```text
-rumiai-dev    45234f56e0d140f4614bcaea5109d92f9b05a4c0  (latest reconciled HEAD before this checkpoint)
+rumiai-dev    a3fd2447f56048e78ccec61ce53480f866aa0b88  (pre-final-snapshot HEAD)
 rumiai-os     36c29d8412a523f722fd90004b78a07fdf0b06c8
 rumiai-tests  298931c1dca03d44755893d64b9b3a7c0058b7ea
 pkg-catalog   94f58995cbd487b17f3b82bc2724c70540927b88
 ```
-
-Fresh remote HEAD retrieval remains mandatory before writes or current-state conclusions.
 
 ## Applicable canonical sources
 
@@ -34,58 +30,63 @@ TEST-PATTERNS.md
 specifications/rumiai-os/PACKAGE-MODEL.md
 ```
 
-Additional subsystem specifications were consulted only when required to classify a historical candidate.
-
 ## Fixed task-local choices
 
-- This task is explicitly authorized to inspect Git history because its purpose is historical recovery.
-- Historical commits, removed handoffs and superseded documents are candidate-discovery sources only; they do not become current authority.
-- A candidate becomes a current TODO only after current repository state confirms that the work remains materially open.
-- Resolved, superseded, duplicated, vague or no-longer-relevant historical items are not restored.
-- Recovery itself does not implement or debug the recovered work; it creates minimal `todo/<topic>.md` entries for later activation.
-- One TODO represents one coherent future workstream. Broad historical topics are split only when current evidence shows independently activatable responsibilities.
-- Topics already represented by an active handoff are not duplicated in `todo/`.
-- No historical archive directory is recreated. Git history remains the archive.
+- Git history was used only for deliberate candidate discovery.
+- Every restored item required current verification.
+- Recovery did not implement or debug recovered work.
+- Resolved, superseded, already-active and insufficiently supported historical items were not restored.
+- Git history remains the archive; no historical TODO/handoff directory was recreated.
 
 ## Completed
 
-- The missing known-but-not-active lifecycle layer was identified through `workflow-optimization`.
-- The user approved `todo/` as the canonical deferred-work surface and explicitly approved a one-time historical inspection.
-- `README.md`, `CONSISTENCY-GATE.md`, `todo/README.md` and `handoff/README.md` now define the deferred-work lifecycle and activation boundary.
-- The pre-reset documentation/handoff tree at `11103af65669b8d4fbf4bc8ded2f2515a347b9ef` was deliberately inspected for unfinished/pending historical work.
-- Historical candidates were compared against current specifications, current `rumiai-tests` implementation and current active handoffs rather than restored from old wording alone.
+- Added and integrated the canonical deferred-work lifecycle through:
 
-### Recovered current TODOs
+  ```text
+  README.md
+  CONSISTENCY-GATE.md
+  todo/README.md
+  handoff/README.md
+  ```
 
-Two independently activatable current gaps were confirmed and written as minimal TODOs:
+- Inspected the pre-reset documentation/handoff tree at `11103af65669b8d4fbf4bc8ded2f2515a347b9ef` specifically for unfinished historical work.
+- Verified candidates against current specifications, active handoffs and current implementation/tests.
+- Recovered two current deferred-work items:
 
-```text
-todo/pkg-install-real-validation.md
-todo/rumiai-tests-suite-realignment.md
-```
+  ```text
+  todo/pkg-install-real-validation.md
+  todo/rumiai-tests-suite-realignment.md
+  ```
 
-`pkg-install-real-validation` is current-confirmed because `PACKAGE-MODEL.md` and `TESTING.md` require real composed public-path coverage, while current `tests/rumiai-os/pkg/install.test` still replaces target pipeline responsibilities with test-built components. The future task must exercise and debug the real path rather than assuming in advance whether the defect is product-side or test-side.
-
-`rumiai-tests-suite-realignment` is current-confirmed because current shared target/fixture libraries and `TEST-PATTERNS.md` define reuse/complete-replica expectations, while representative current tests still contain historical inline copies or reconstructed target infrastructure. The TODO is deliberately an audit/realignment task and does not assume every existing test requires modification.
-
-### Historical candidates deliberately not restored
-
-- **runner persistence/snapshot**: the historical `2026-08-29-rumiai-test-persistence-snapshot-contract-handoff.md` described work that is now present in current `RUNNER.md`, the current `rumiai-test` implementation and permanent runner tests. It is resolved, not deferred work.
-- **resource/srv remediation**: historical failure/remediation handoffs show that the test-side corrections were subsequently made; representative current tests retain those corrections. The remaining historical physical-validation gate referred to old revision pairs and is not restored as a current TODO without a current requirement for that exact validation.
-- **`mk` development**: current work is already represented by the active `handoff/mk-tool-development.md`, so creating a TODO would duplicate active task state.
-- **older bootstrap, shell, naming, CLI, language/log and physical-pass handoffs**: the historical set is largely followed by pass/complete/consolidated work and/or represented by current canonical specifications and implementation. No independent current gap was established strongly enough to justify restoring them merely from historical intent.
-- **historical testing-structure topics**: current evidence of remaining legacy patterns is consolidated into `todo/rumiai-tests-suite-realignment.md` rather than recreating multiple overlapping historical test TODOs.
+- Confirmed that the first item is still open because current `pkg install` permanent coverage substitutes parts of the composed pipeline despite the current real-path testing contract.
+- Confirmed that the second item is still open because representative current tests retain historical inline/reconstructed infrastructure despite current shared-library and complete-replica guidance.
+- Deliberately did **not** restore:
+  - runner persistence/snapshot work, now implemented and permanently covered;
+  - historical resource/srv remediation, whose test-side corrections are present and whose remaining physical gate was revision-specific;
+  - `mk` work, already represented by an active handoff;
+  - older completed/consolidated/superseded bootstrap, shell, naming, CLI, language/log and physical-pass work;
+  - overlapping historical testing-structure topics, consolidated into the suite-realignment TODO.
+- Preserved concurrent repository changes throughout the work, including independently created/updated active handoffs.
+- Synchronized `handoff/workflow-optimization.md` with the durable workflow lesson and resulting TODO lifecycle.
 
 ## Current state
 
-The historical candidate classification and current verification are complete. The recovery produced two current TODO items and intentionally rejected historical items that are resolved, superseded, already active or insufficiently supported by current evidence.
+The one-time historical recovery is complete. Future concrete deferred work has a current lifecycle and should be captured when discovered rather than recovered later from conversation or Git history.
 
-Concurrent work added `handoff/service-model.md` during the recovery; it was preserved through forward reconciliation and is unrelated to the recovered TODOs.
+`todo/` currently contains exactly the lifecycle contract plus the two recovered deferred-work items. None duplicates an active handoff.
 
 ## Next action
 
-Run the final documentation/consistency checks for the new TODO lifecycle and recovered items, synchronize `workflow-optimization` with the reusable workflow result, then close this handoff through the final-snapshot/delete lifecycle.
+None. Future work begins by activating an appropriate TODO into its own task/handoff when intentionally selected.
 
 ## Blockers / open questions
 
 None.
+
+## Validation
+
+- Documentation diff and routing reviewed against current `README.md`, `RULES.md` and `CONSISTENCY-GATE.md`.
+- `todo/` and `handoff/` current sets inspected for duplicate ownership; none found.
+- Current testing implementation was inspected where needed to validate recovered candidates.
+- No runtime tests were required because this work changed workflow/documentation state only and did not modify product or test implementation.
+- Git changes remained forward-only and concurrent changes were preserved.
