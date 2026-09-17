@@ -94,6 +94,8 @@ Updated: <date/time when useful>
 
 ## Fixed task-local choices
 
+## Working design              # optional; use only when active design is not yet promotable
+
 ## Completed
 
 ## Current state
@@ -121,6 +123,27 @@ List paths, not copied rule text.
 
 Record only choices that are fixed for this workstream but have not become a general canonical contract. If a choice becomes durable project/subsystem policy, propagate it to the canonical current source and remove the duplicated rule from the handoff.
 
+### Working design
+
+Use this optional section for **persistent but non-authoritative design state** that a clean chat needs in order to continue the active task without reconstructing the conversation.
+
+It may contain, when material:
+
+```text
+candidate choices still under evaluation
+provisional working assumptions
+alternatives and the criteria by which they will be compared
+questions intentionally postponed within the active task
+partial design structures that are not yet accepted contract
+evidence still required before promotion
+```
+
+Working design is not a specification. Its presence means the corresponding choice has **not** passed the specification promotion gate in `CONSISTENCY-GATE.md`.
+
+Do not copy a promoted subsystem contract into this section. Once a working-design item becomes sufficiently settled to bind current implementation and future work, promote the resulting rule to the canonical specification and remove the duplicated provisional material from the handoff.
+
+If an unresolved design item is intentionally moved outside the active task, create a minimal TODO and remove that item from active working design. If an experiment is needed, place the experiment in `rumiai-dev-PoCs` and reference it here rather than embedding experimental artifacts in the handoff.
+
 ### Completed
 
 Record meaningful completed work, not every command executed.
@@ -135,7 +158,7 @@ There should normally be one concrete next action or a very small ordered set.
 
 ### Blockers / open questions
 
-Include only blockers or genuinely unresolved choices that affect continuation.
+Include only blockers or genuinely unresolved choices that affect continuation. When an unresolved choice needs more persistent context than a short question, keep the detail in `Working design` and leave this section as the concise blocker/question index.
 
 ## 6. Resume protocol
 
@@ -165,6 +188,7 @@ A **meaningful checkpoint** exists when at least one of these occurs:
 
 ```text
 a task-local decision becomes fixed
+working design changes materially
 a modification is completed
 a test or validation is executed and its result matters to continuation
 a problem, mismatch, regression or blocker is discovered
@@ -237,6 +261,8 @@ Do not copy into a handoff:
 
 Reference canonical paths instead.
 
+Working design is the exception only for **task-local, not-yet-promoted state** needed for resumption. It must not become a shadow specification.
+
 If a task-local decision becomes a durable subsystem contract, propagate it to the applicable current specification in the same work unit whenever possible. The handoff should then record only the task consequence/progress.
 
 ## 11. Completion protocol
@@ -246,18 +272,21 @@ A completed task must disappear from the active handoff set, but its final resum
 Use this sequence:
 
 1. propagate every durable rule/contract to its canonical current source;
-2. ensure implementation, tests and revision-specific evidence are stored in their proper repositories;
-3. capture any concrete out-of-scope work that is intentionally deferred as minimal TODO items when applicable;
-4. run the final consistency gate for the task;
-5. update the handoff one last time with:
+2. resolve all remaining working design by promoting accepted contract, converting still-relevant outside-scope work into minimal TODO items, or discarding candidates/assumptions that are no longer required;
+3. ensure implementation, tests and revision-specific evidence are stored in their proper repositories;
+4. capture any other concrete out-of-scope work that is intentionally deferred as minimal TODO items when applicable;
+5. run the final consistency gate for the task;
+6. update the handoff one last time with:
 
    ```text
    Status: Complete
    ```
 
    plus final repository revisions, completed outcome, final validation status and no remaining next action/blocker;
-6. commit that final snapshot;
-7. remove the handoff from the current tree in a **later forward commit**.
+7. commit that final snapshot;
+8. remove the handoff from the current tree in a **later forward commit**.
+
+A completed handoff must not leave unresolved working design behind merely to preserve memory. If it is still relevant, it must have a current owner before the handoff is removed: promoted specification or deferred TODO.
 
 Git history therefore preserves both the active evolution and final state of the handoff without leaving completed task files in normal retrieval.
 
@@ -279,6 +308,7 @@ Prefer:
 
 ```text
 what is fixed
+what remains provisional
 what changed
 what is true now
 what happens next
