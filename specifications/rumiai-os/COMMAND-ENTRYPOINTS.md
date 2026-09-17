@@ -76,6 +76,26 @@ Public executable names describe semantic function and do not expose implementat
 
 Multiword public command names normally use lowercase hyphen-separated names.
 
+## Operational manual coverage
+
+Every RumiAI-owned directly executable command identity covered by this command-entrypoint model MUST have a corresponding operational manual topic under the owner-specific `manual` resource tree defined by `DOCUMENTATION-MODEL.md`.
+
+This includes:
+
+```text
+the technical root command m
+bootstrap-integrated m commands
+bootstrap-integrated RumiAI commands
+standalone RumiAI-owned command utilities
+branded root entrypoints
+```
+
+The requirement follows semantic command identity, not the number of physical executable paths. An exposure/symlink of the same command identity does not require a duplicate manual topic. For example, `$m_ROOT/m` and its `bin/sys/m` exposure are one command identity and therefore one manual topic.
+
+RumiAI-owned command coverage does not extend to package-owned external executables merely because they become reachable through package integration.
+
+Creating, renaming, removing or changing a command must obey the manual-consistency lifecycle defined by `DOCUMENTATION-MODEL.md` and the project consistency gate.
+
 ## Internal libraries are not entrypoints
 
 Files under:
@@ -97,4 +117,5 @@ ENTRY-04  standalone #!/bin/sh utilities require a deliberate current contract
 ENTRY-05  rumiai-os and rumiai-os-sh are branded entrypoints, not the m runtime
 ENTRY-06  public command names do not expose implementation-language suffixes
 ENTRY-07  internal libraries are not executable entrypoints
+ENTRY-08  every RumiAI-owned directly executable command identity has an operational manual topic
 ```
