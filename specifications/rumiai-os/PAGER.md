@@ -65,7 +65,7 @@ The current backend policy is deliberately small and explicit.
 
 ### Linux
 
-On Linux, `pager` prefers:
+On Linux, `pager` uses:
 
 ```text
 less
@@ -73,15 +73,7 @@ less
 
 The reason is observed divergence of the common util-linux `more` implementation from the preferred interactive behavior, including automatic exit at end-of-file in its normal host configuration.
 
-`less` is not a POSIX baseline utility. On Linux it is therefore a host capability used behind the `pager` abstraction rather than a dependency exposed to consumers.
-
-When `less` is unavailable, `pager` falls back to the POSIX-baseline:
-
-```text
-more
-```
-
-rather than failing to present the file. The fallback preserves functionality but does not claim the richer preferred interaction when the host capability is absent.
+`less` is not a POSIX baseline utility. On Linux it is therefore a required host capability of `pager`, hidden behind the abstraction rather than exposed to consumers. If `less` is unavailable, interactive paging fails explicitly; `pager` does not fall back to the anomalous `more` behavior it exists to normalize.
 
 When `less` is selected, `pager` does not inherit `LESS`, `LESSOPEN` or `LESSCLOSE` behavior from the caller; those variables are neutralized for the viewer invocation so caller configuration does not silently change the paging contract.
 
@@ -114,7 +106,7 @@ Backend selection is an implementation responsibility of `pager`, not a shell-ev
 
 ```text
 0  success
-1  file resolution/access or presentation/backend failure
+1  file resolution/access, required-backend availability or presentation failure
 2  invalid invocation
 ```
 
@@ -135,9 +127,9 @@ PAGER-01  pager belongs to m and is exposed as bin/sys/pager
 PAGER-02  pager accepts exactly one file operand
 PAGER-03  non-terminal output is copied directly and remains non-interactive
 PAGER-04  pager owns host backend selection; consumers do not select more/less directly
-PAGER-05  Linux prefers less and falls back to more when less is unavailable
+PAGER-05  Linux uses less and fails explicitly if the required less capability is unavailable
 PAGER-06  other current hosts use more until a concrete host divergence requires an adapter
-PAGER-07  less remains a host-specific capability hidden behind pager, not a POSIX baseline dependency
+PAGER-07  less remains a host-specific capability hidden behind pager, not a POSIX baseline primitive
 PAGER-08  pager backend selection is fixed policy, not caller-supplied shell configuration
 PAGER-09  manual normal presentation delegates to pager
 ```
