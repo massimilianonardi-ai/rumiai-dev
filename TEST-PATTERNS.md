@@ -154,7 +154,80 @@ Technologies such as Xvfb, D-Bus and AT-SPI may be used when appropriate for the
 
 The test must limit its conclusion to properties actually exercised. A headless environment without GNOME Shell, Mutter/Wayland, portals, keyring, graphics acceleration or another desktop integration cannot validate behavior that depends on those components.
 
-## 9. Rule for new tests
+## 9. Pattern: outbound-network bridge for an isolated auxiliary host
+
+Use this pattern when the real test target can run on an auxiliary host, such as the ChatGPT-provided Linux VM, but that host has no usable outbound Internet access and the property requires real external repository/API/artifact data.
+
+The goal is to preserve the real target execution path while replacing only the unavailable **external network transport boundary**.
+
+### Capture and transfer
+
+Use an Internet-enabled GitHub Actions runner as the capture/transport side of the bridge:
+
+1. checkout every required repository at an exact revision;
+2. fetch the required external API responses and artifacts from their real upstream endpoints;
+3. verify available upstream integrity metadata such as size and digest before packaging;
+4. record a small manifest containing the exact target revision(s), upstream identity, URL, size and digest relevant to the replay;
+5. upload the repository snapshots, captured responses, artifacts and manifest as a workflow artifact;
+6. download that workflow artifact into the isolated auxiliary host through the connected GitHub artifact interface.
+
+The transferred target must be the exact real revision under test, not a reconstructed subset of files. Repository archives should preserve execution-relevant file modes and symlinks, and their hashes should be checked again on the receiving host when integrity matters.
+
+### Repository/cache boundary
+
+When the product already supports a validated local cache or offline fallback for an external Git repository, prefer that real product path rather than intercepting Git internals.
+
+For example, a package-catalog cache may be populated with a real checkout whose branch, origin URL and working-tree state satisfy the product's normal cache validation. The product must still execute its normal refresh/fallback logic. A failed refresh followed by an explicitly supported cached-snapshot fallback remains a real product path.
+
+Do not redefine the product function that owns the repository snapshot merely to make the test pass.
+
+### HTTPS replay boundary
+
+For upstream HTTPS calls that the product itself must perform:
+
+1. start a temporary local HTTPS server on the isolated host;
+2. serve the captured upstream response bytes and artifact bytes at the paths expected by the real target;
+3. map only the required upstream hostname(s) to the local server with a temporary `/etc/hosts` entry;
+4. create a temporary local CA and server certificate valid for those exact hostname(s);
+5. add that CA to the host trust store for the duration of the test;
+6. keep normal TLS verification enabled;
+7. execute the real public target command unchanged.
+
+The target should therefore still call its normal canonical HTTPS URL and traverse its real HTTP client, repository adapter, downloader, digest verifier, extractor/materializer, integrator and other components belonging to the claimed behavior. The replay server represents only the unavailable external service boundary.
+
+Do **not** use this pattern to replace target functions, executables, adapters, catalogs, downloaders, extractors, integrators or other product logic with test doubles when the test claims to validate their composed behavior.
+
+### Cleanup
+
+The bridge is temporary host infrastructure. After the run:
+
+- stop the local HTTPS server;
+- restore `/etc/hosts` exactly to its prior state;
+- remove the temporary CA/server certificates and any trust-store installation made for the test;
+- remove temporary captured material that is not intentionally retained as revision-specific evidence;
+- leave product repositories and normal host networking semantics unchanged.
+
+A failed test must attempt the same cleanup.
+
+### Evidence classification
+
+A successful replay run proves that the real target path handled the exact captured external inputs on the exercised host. It is useful for bug reproduction, POSIX/host validation and development of permanent tests.
+
+It does **not** by itself prove that the live upstream still returns the same data later. When live-upstream behavior is material, complement replay evidence with a real Internet-enabled run, typically the same permanent test on GitHub Actions using the exact committed target and suite revisions.
+
+The two forms of evidence are complementary:
+
+```text
+isolated-host HTTPS replay
+    real target + exact captured external inputs + otherwise unavailable host
+
+Internet-enabled GitHub Actions
+    real target + live external services + clean hosted environment
+```
+
+The replay mechanism should be promoted into a shared `rumiai-tests` helper only when multiple permanent tests actually need the same infrastructure responsibility. Until then, this documented pattern is sufficient and avoids creating an abstraction without demonstrated reuse.
+
+## 10. Rule for new tests
 
 Before adding infrastructure code to a `.test`, check in this order:
 
