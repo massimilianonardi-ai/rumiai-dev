@@ -135,7 +135,7 @@ the implemented public interface and manual disagree
 
 ## 5. Mechanical coverage
 
-Permanent structural coverage SHOULD detect every RumiAI-owned library identity that lacks its required owner-local manual topic.
+Permanent structural coverage MUST detect every RumiAI-owned library identity that lacks its required owner-local manual topic.
 
 The current plain-text manual model does not by itself make prose a machine-readable API declaration. Mechanical page-presence coverage therefore does not prove that every public function is documented or that an internal helper is absent from prose; those semantic checks remain part of library development and the final consistency gate.
 
@@ -152,5 +152,5 @@ LIB-05  every RumiAI-owned library identity has exactly one owner-local manual t
 LIB-06  a library manual topic uses the exact <library-name>.lib.<runtime> library leaf as topic identity
 LIB-07  a library manual exposes all public functions and does not expose internal functions as callable API
 LIB-08  library/API/manual realignment occurs in the same work unit for interface-affecting changes
-LIB-09  structural permanent coverage detects missing mandatory library manual topics where applicable
+LIB-09  structural permanent coverage detects missing mandatory library manual topics
 ```
