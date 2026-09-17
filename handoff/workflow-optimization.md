@@ -10,7 +10,7 @@ Maintain a long-lived meta-workstream for continuously evaluating and improving 
 ## Current repository revisions
 
 ```text
-rumiai-dev    5d47c4121eddf600aca723b7470eceed43483da0  (pre-checkpoint HEAD)
+rumiai-dev    b75c86ada27f8ccb48091147c6782eaf9ce13139  (pre-checkpoint HEAD)
 rumiai-os     36c29d8412a523f722fd90004b78a07fdf0b06c8  (last inspected for pending-work verification)
 rumiai-tests  298931c1dca03d44755893d64b9b3a7c0058b7ea  (current state inspected for pending-work verification)
 pkg-catalog   94f58995cbd487b17f3b82bc2724c70540927b88  (current state recorded for package-related recovery)
@@ -102,7 +102,7 @@ Important properties now fixed:
 
 ### One-time historical pending recovery
 
-A dedicated `handoff/historical-pending-recovery.md` task was activated with explicit authorization to inspect Git history for work that became invisible during the current-only documentation reset.
+A dedicated historical-recovery task was executed with explicit authorization to inspect Git history for work that became invisible during the current-only documentation reset.
 
 The recovery deliberately treated historical material only as candidate discovery and verified candidates against current specifications, implementation, tests and active handoffs.
 
@@ -125,7 +125,9 @@ Historical candidates deliberately not restored include:
 - older bootstrap/shell/naming/CLI/language/log/physical-pass items that are now completed, consolidated, superseded or represented by current contracts;
 - overlapping historical test-structure work, consolidated into the single suite-realignment TODO.
 
-This is the intended transitional use of Git history. Future concrete deferred work should enter `todo/` when discovered, so routine workflow should not need historical mining to recover forgotten pending work.
+The recovery completed its full handoff lifecycle: a final `Status: Complete` snapshot was committed and `handoff/historical-pending-recovery.md` was removed in a later forward commit. Git history is its archive.
+
+This was the intended transitional use of Git history. Future concrete deferred work should enter `todo/` when discovered, so routine workflow should not need historical mining to recover forgotten pending work.
 
 ### Concurrency evidence
 
@@ -135,9 +137,9 @@ During this work, other chats advanced `rumiai-dev` multiple times and introduce
 
 `workflow-optimization` remains active.
 
-The pending-work visibility gap is no longer an open design question: `todo/` is now the canonical current surface for concrete deferred work. The one-time historical recovery has classified the main pre-reset pending candidates and is ready for final closure after its consistency gate.
+The pending-work visibility gap is resolved: `todo/` is now the canonical current surface for concrete deferred work, and the transitional historical recovery is complete and no longer active.
 
-Active tasks and deferred TODOs are now distinct current sets. Future workflow observation should focus on whether TODO files remain minimal, whether activation/removal remains frictionless under parallel work, and whether users/assistants consistently capture concrete deferred work at discovery time rather than allowing it to fall back into conversation memory.
+Active tasks and deferred TODOs are distinct current sets. Future workflow observation should focus on whether TODO files remain minimal, whether activation/removal remains frictionless under parallel work, and whether users/assistants consistently capture concrete deferred work at discovery time rather than allowing it to fall back into conversation memory.
 
 ## Next action
 
