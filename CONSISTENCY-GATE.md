@@ -3,7 +3,7 @@
 Status: **Current / canonical**  
 Updated: 2026-09-17
 
-This document defines the mandatory consistency process for RumiAI work. Its purpose is to prevent drift between current rules, current specifications, implementation, tests and task state.
+This document defines the mandatory consistency process for RumiAI work. Its purpose is to prevent drift between current rules, current specifications, implementation, tests, deferred work and active task state.
 
 ## 1. Mandatory preflight
 
@@ -20,6 +20,8 @@ Before analysing, proposing or modifying an established RumiAI subsystem:
 This is an execution precondition, not a recommendation.
 
 Conversation memory, summaries and historical commits do not satisfy the preflight when current repository sources can answer the question.
+
+`todo/` is not part of the mandatory preflight for unrelated tasks. Read `todo/README.md` and the relevant TODO item when choosing deferred work, checking whether a newly discovered deferred issue is already known, activating a TODO or maintaining the pending-work inventory.
 
 ## 2. Extract the applicable invariants
 
@@ -98,11 +100,14 @@ implementation
 permanent tests
 reference descriptors/examples
 active handoff
+relevant deferred-work TODO
 validation scope/configuration
 user-facing current documentation
 ```
 
-Update every surface that belongs to the same authorized work unit. When another repository or validation phase cannot be changed yet, record the pending realignment explicitly in a current source.
+Update every surface that belongs to the same authorized work unit. When another repository or validation phase cannot be changed yet, record the pending realignment explicitly in the appropriate current surface.
+
+If the remaining work is concrete but intentionally deferred and is not already active, represent it through the minimal `todo/` lifecycle rather than burying it in a specification, historical note or conversation memory.
 
 Do not rewrite historical commits or historical validation evidence.
 
@@ -137,7 +142,8 @@ After every modification:
 5. run only tests proportional to the change under `TESTING.md`;
 6. state physical-validation status accurately and revision-specifically;
 7. verify Git history remains forward-only;
-8. when the task has an active handoff, determine whether the resulting state is a meaningful checkpoint and synchronize it before the final response when required.
+8. if concrete unfinished work was discovered but intentionally deferred, ensure it is either already represented by an active task or captured once under `todo/`;
+9. when the task has an active handoff, determine whether the resulting state is a meaningful checkpoint and synchronize it before the final response when required.
 
 ## 11. Documentation consistency checks
 
@@ -149,9 +155,24 @@ When documentation is touched, additionally verify:
 - no completed handoff remains in the current tree as competing authority;
 - no historical evidence is presented as current behavior;
 - cross-references point to paths that exist in the current tree;
-- repeated normative text is minimized; where duplication is useful for orientation it must not create an independently editable second contract.
+- repeated normative text is minimized; where duplication is useful for orientation it must not create an independently editable second contract;
+- TODO files contain only deferred-work planning state and do not become substitute specifications or task handoffs;
+- the same work is not represented simultaneously by a current TODO and an active handoff.
 
-## 12. Active handoffs and checkpoint synchronization
+## 12. Deferred work and active handoffs
+
+`todo/README.md` defines the lifecycle for concrete known work that is intentionally deferred and not yet active. `handoff/README.md` defines the lifecycle for active resumable tasks.
+
+A TODO may record only the minimal future intent, why the work remains pending, its scope and pointers to evidence. It must not accumulate active task progress, detailed design decisions or execution state.
+
+When a TODO is intentionally activated, ownership of current task state moves from `todo/` to `handoff/`:
+
+```text
+delete todo/<topic>.md
+create handoff/<task>.md
+```
+
+Perform both changes in the same authorized work unit and, when practical, the same commit. Do not retain duplicate current TODO and handoff representations for the same work.
 
 An active handoff exists only to preserve task continuity across chats/sessions. `handoff/README.md` defines its lifecycle and structure.
 
@@ -178,9 +199,10 @@ When a response materially advances an active handoff task, required synchroniza
 When the task closes:
 
 1. propagate durable content to canonical current sources;
-2. complete the normal final consistency gate;
-3. write and commit a final handoff snapshot with `Status: Complete` and final revisions/validation state;
-4. remove the handoff from the current tree in a later forward commit.
+2. capture any concrete out-of-scope work that is intentionally deferred as minimal TODO items when applicable;
+3. complete the normal final consistency gate;
+4. write and commit a final handoff snapshot with `Status: Complete` and final revisions/validation state;
+5. remove the handoff from the current tree in a later forward commit.
 
 Git history is the archive. Do not create a completed-handoff/archive directory in the current tree.
 
@@ -207,6 +229,8 @@ A RumiAI task is ready to report as complete only when every applicable item is 
 [ ] cross-references/current routing remain valid
 [ ] user/concurrent repository changes were preserved
 [ ] proportional tests were run or correctly classified as unnecessary
+[ ] concrete intentionally deferred work is represented once under todo/ when applicable
+[ ] no current TODO duplicates an active handoff for the same work
 [ ] active handoff was synchronized for every material checkpoint before the final response
 [ ] completed task has a committed final handoff snapshot and no active handoff remaining in the current tree
 [ ] physical-validation status is stated accurately
