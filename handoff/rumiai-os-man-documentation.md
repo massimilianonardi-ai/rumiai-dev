@@ -9,14 +9,14 @@ Deliver a useful operational documentation surface with `rumiai-os` while keepin
 
 The first delivery is intentionally simple and terminal-first. The future multi-channel design remains a separate architecture problem whose build orchestration belongs to `mk`.
 
-The current first-delivery completion scope also includes mandatory operational-manual coverage for every RumiAI-owned directly executable command identity and permanent structural coverage that detects missing command manual topics.
+The current first-delivery completion scope includes mandatory operational-manual coverage for every RumiAI-owned directly executable command identity **and every RumiAI-owned library identity**, plus permanent structural coverage that detects missing mandatory topics.
 
 ## Current repository revisions
 
 ```text
-rumiai-dev   45defc6f76743cf204790048ff2b0e2157c797df  (current remote HEAD before this handoff checkpoint; includes concurrent unrelated documentation/test-workflow changes)
-rumiai-os    14e413342261b23df840f40b355166c4d55f1b41  (manual -> pager separation plus Linux less preference with more fallback)
-rumiai-tests fbb6a95d1c90a723366f8b78a9cd08ae57dfc45d  (last inspected remote HEAD from parallel test-suite work; not modified by this pager work unit)
+rumiai-dev   33a29bc39d58feecf8b033ccbaa189131df916d2  (pre-checkpoint HEAD after concurrent pager reconciliation; library contract changes are being layered forward)
+rumiai-os    e9cad50042e1b74613630af33bb239d34a855c99  (library inventory inspected; refresh before product/documentation writes)
+rumiai-tests bec37b4368f474dcb6ea8ef418af090384478df3  (current remote HEAD observed for parallel suite work)
 ```
 
 Fresh remote HEAD retrieval remains mandatory before future writes.
@@ -33,6 +33,7 @@ TEST-PATTERNS.md
 specifications/README.md
 specifications/rumiai-os/CURRENT-MODEL.md
 specifications/rumiai-os/DOCUMENTATION-MODEL.md
+specifications/rumiai-os/LIBRARY-INTERFACES.md
 specifications/rumiai-os/PAGER.md
 specifications/rumiai-os/RESOURCE-MODEL.md
 specifications/rumiai-os/FILESYSTEM-NAMING.md
@@ -46,41 +47,38 @@ specifications/rumiai-os/MK-SOURCE-MATERIALIZATION.md
 handoff/README.md
 ```
 
-The promoted first-delivery documentation contract lives in `DOCUMENTATION-MODEL.md`, `COMMAND-ENTRYPOINTS.md` and `RESOURCE-MODEL.md`. The host-normalizing terminal paging contract lives in `PAGER.md`; it is not duplicated here.
+The promoted first-delivery documentation contract lives in `DOCUMENTATION-MODEL.md`. Command identity is owned by `COMMAND-ENTRYPOINTS.md`; library identity/API visibility is owned by `LIBRARY-INTERFACES.md` plus `FILESYSTEM-NAMING.md`; paging is owned by `PAGER.md`.
 
 ## Fixed task-local choices
 
-- No task-local exception exists for technical/internal commands. Every RumiAI-owned directly executable command identity is part of the manual-coverage completion scope. Package-owned external executables and sourced libraries are outside that command-identity set.
-- Normal `manual` presentation delegates to the technical `pager` command; `manual` no longer selects `more`/`less` or owns TTY backend policy.
-- `pager` belongs to `m`, is `bin/sys/pager`, and is bootstrap-integrated through `#!/usr/bin/env m`.
-- `pager <file>` owns terminal detection: non-terminal output is copied directly; terminal output selects the host backend.
-- Current Linux policy prefers `less` for the richer bidirectional stay-at-end interaction. If `less` is unavailable, `pager` deliberately degrades to `more` rather than fail solely because the preferred viewer is absent. Other current hosts use `more` until concrete host evidence requires another adapter.
-- Caller `LESS`, `LESSOPEN` and `LESSCLOSE` values are neutralized when the Linux `less` backend is selected.
-- This pager work unit does not modify `rumiai-tests`; test-suite reimplementation is an active parallel task.
+- No task-local exception exists for technical/internal commands. Every RumiAI-owned directly executable command identity is part of manual-coverage completion scope.
+- No task-local exception exists for RumiAI-owned libraries. Every library identity requires exactly one manual topic.
+- Library topic identity is exactly the runtime-qualified library leaf `<library-name>.lib.<runtime>` under the semantic owner's manual tree, e.g. `res/sys/manual/array.lib.sh`.
+- A library manual exposes every public function and does not expose internal functions as callable API.
+- Stable library-manual backfill must not guess legacy API visibility. Legacy public/internal function naming realignment is tracked separately by `todo/library-api-visibility-realignment.md`.
+- Normal `manual` presentation delegates to the technical `pager` command; `manual` does not own host backend policy.
+- Current Linux pager policy prefers `less`; when unavailable it degrades to `more`. Other current hosts use `more` until concrete evidence requires another adapter.
+- Caller `LESS`, `LESSOPEN` and `LESSCLOSE` values are neutralized when Linux `less` is selected.
+- Trustworthy permanent coverage is coordinated with the active test-suite realignment task rather than treating known-broken legacy manual tests as closure evidence.
 
 ## Completed
 
-- Documentation ownership, first-delivery resource storage, extensionless topic identity, public command name, lookup, qualification, discovery and deterministic owner/topic ordering are promoted current contract.
-- The first-delivery executable is fixed at `bin/sys/manual`, belongs to technical `m`, and is bootstrap-integrated through `#!/usr/bin/env m`.
-- Public `manual` statuses are fixed as `0` success, `1` invalid request, `2` not found, `3` ambiguous and `4` execution/presentation failure.
-- `rumiai-os` implements `bin/sys/manual`.
-- Earlier Debian 13 x86_64 development execution exposed util-linux `more` behavior that is unsuitable as a uniform cross-host interactive contract. User physical/manual observation additionally confirmed that `POSIXLY_CORRECT=1` produces undesirable interaction on the real host and is not an acceptable normalization mechanism.
-- The canonical contract introduces `pager` as the explicit host-normalizing paging boundary. `specifications/rumiai-os/PAGER.md` defines ownership, interface, terminal/non-terminal behavior and current host backend policy; `DOCUMENTATION-MODEL.md` delegates normal manual presentation to that facility.
-- Separation checkpoint: `rumiai-os@f93259aedf0f2aca1da1afe0a558edaeb093f19e` introduced `bin/sys/pager`, changed `manual` to delegate to it, and kept the interactive backend as `more` only. A Debian 13 x86_64 targeted development run passed direct non-TTY output, `--no-pager`, direct `pager`, invalid invocation status and real pseudo-terminal `manual -> pager -> util-linux more` presentation (`--More--`). This confirmed separation before host-specific behavior was added.
-- A later intermediate revision made Linux `less` mandatory and failed when it was unavailable. The user corrected that interpretation: no project-wide rule required failure, and degraded `more` behavior is explicitly preferable to losing paging availability when `less` is absent. The correction was applied forward-only to specification, implementation and operational manual.
-- Current host-normalization checkpoint: `rumiai-os@14e413342261b23df840f40b355166c4d55f1b41` prefers `less` on Linux and falls back to `more` when `less` is unavailable. Other current hosts continue to use `more` until concrete host evidence establishes another adapter need.
-- Current Debian 13 x86_64 targeted execution confirms the degradation path on the actual auxiliary host, where `less` is absent and util-linux `more` 2.41 is present: direct non-TTY output succeeds, interactive execution enters `more`, presents `--More--`, accepts `q` and exits with status `0`.
-- The richer Linux `less` branch was previously exercised on the same Debian VM by exposing the VM's real BusyBox 1.37.0 `less` applet under the normal command name `less` as an external host capability. With caller `LESS=-E`, input `G`, `b`, `q` reached `(END)`, remained in the viewer, paged backward and then quit with status `0`; no `--More--` prompt appeared. This remains targeted auxiliary development evidence, not stable-host or physical validation.
-- `res/sys/manual/pager` documents the current preferred-`less`/fallback-`more` policy. `res/sys/manual/manual` describes delegation to `pager` rather than a host backend.
-- The first operational topic set therefore includes `manual`, `pager`, `pkg`, `state-path` and `srv` under owner `sys`.
-- A later workflow correction promoted mandatory manual coverage for every RumiAI-owned directly executable command identity. `RULES.md`, `CONSISTENCY-GATE.md`, `COMMAND-ENTRYPOINTS.md`, `DOCUMENTATION-MODEL.md` and `specifications/README.md` encode that command/manual lifecycle.
-- The same correction requires permanent structural coverage that detects a command identity lacking its owner-local manual topic.
-- No physical validation has been performed by this assistant for the pager change.
-- Concurrent unrelated changes in `rumiai-dev`, `rumiai-os` and `rumiai-tests` were preserved; Git history remained forward-only.
+- Documentation ownership, terminal-first resource storage, topic identity, lookup/discovery and deterministic ordering are promoted current contract.
+- `bin/sys/manual` is implemented and delegates normal presentation to `pager`.
+- Current `manual` public statuses remain `0` success, `1` invalid request, `2` not found, `3` ambiguous and `4` execution/presentation failure.
+- `pager` is the host-normalizing presentation boundary. Current Linux behavior prefers `less` and falls back to `more`; Debian auxiliary execution has exercised the degraded `more` path, and the richer `less` path was exercised using the VM's BusyBox `less` capability. This is development evidence, not physical/stable-host validation.
+- Current command topics under owner `sys` include `manual`, `pager`, `pkg`, `state-path` and `srv`.
+- Mandatory command manual coverage is promoted into project rules/specifications and requires structural permanent coverage.
+- Mandatory library manual coverage is now also promoted. `LIBRARY-INTERFACES.md` defines library identity and public/internal visibility; `DOCUMENTATION-MODEL.md` defines deterministic library-topic mapping and public-function-only content.
+- Current `rumiai-os` inspection confirms many `lib/sys/sh/*.lib.sh` libraries and no materialized `<library-name>.lib.<runtime>` topics under `res/sys/manual/`.
+- `array.lib.sh` and `mk-materialize.lib.sh` visibly follow the desired underscore-private/unprefixed-public pattern. Legacy code such as `core.lib.sh` requires explicit API-visibility classification rather than mechanical renaming from memory.
+- The legacy naming/API migration is therefore represented separately by `todo/library-api-visibility-realignment.md`; this documentation task does not silently redefine product API.
+- No physical validation has been performed by this assistant for the manual/pager surface.
+- Concurrent repository changes were preserved forward-only.
 
 ## Current state
 
-The first-delivery `manual` framework and the `pager` abstraction are implemented.
+The first-delivery `manual` framework and `pager` abstraction are implemented, but mandatory documentation completeness is not yet satisfied.
 
 Current normal presentation is:
 
@@ -94,35 +92,39 @@ manual lookup
         -> other TTY: more
 ```
 
-The current product command identity set includes `pager` in addition to the previously observed command identities. Because its required `sys pager` manual topic was added in the same work unit, the count of command identities still missing mandatory manual topics remains 18 rather than increasing.
+The current product command identity set includes `pager`; the previously established count of command identities still missing mandatory manual topics remains 18.
 
-The prior permanent `manual` tests must not currently be treated as reliable validation evidence: the user reports that real manual execution works while those tests fail substantially, and a separate active task owns test-suite reimplementation/realignment. This pager work unit deliberately did not alter `rumiai-tests` or claim a permanent-test PASS.
+At `rumiai-os@e9cad50042e1b74613630af33bb239d34a855c99`, `res/sys/manual/` contains only `manual`, `pager`, `pkg`, `srv` and `state-path`; no mandatory library-identity topic of the form `<library-name>.lib.<runtime>` is materialized.
 
-Formal cross-host/stable-host validation has not been claimed. The Debian VM supplied targeted auxiliary development evidence only.
+Library manuals cannot be completed safely by assuming every legacy unprefixed function is intentionally public. Libraries with already-unambiguous public API can be documented immediately; ambiguous legacy libraries depend on the dedicated visibility-realignment work.
+
+The prior permanent `manual` tests must not currently be treated as reliable closure evidence; the separate active test-suite task owns trustworthy test reconstruction.
+
+Formal cross-host/stable-host validation has not been claimed.
 
 ## Working design state
 
 The long-term source representation and documentation build toolchain remain intentionally unresolved active design. Sphinx, Asciidoctor and Pandoc have been considered as existing build-time candidates; this comparison is task working state, not current specification content.
 
-The generated operational artifacts should remain usable without requiring the documentation-generation framework at runtime; that runtime/build separation is already promoted in `DOCUMENTATION-MODEL.md`.
-
 ## Next action
 
-For the documentation task itself, remaining first-delivery work is still dominated by command/manual completeness:
+Before this handoff can close:
 
-1. refresh current `rumiai-os` and derive the current RumiAI-owned directly executable command-identity inventory from the actual tree and command-entrypoint contract;
-2. create the remaining missing owner-local manual topics from current specifications plus current implementation behavior, including `sys m` and the branded `ai` command topics;
-3. let the separate active test-suite task establish trustworthy permanent coverage, including the command-to-manual completeness property, before using automated tests as closure evidence;
-4. run proportional real validation of the complete manual surface under the corrected testing contract;
-5. only then perform the normal final consistency gate and handoff completion lifecycle.
+1. refresh current command and library inventories from `rumiai-os`;
+2. create all missing command manual topics;
+3. create one manual topic for each library whose public API is already unambiguous;
+4. coordinate/sequence legacy API visibility realignment through `todo/library-api-visibility-realignment.md`, then finish manuals for affected libraries from the aligned public API;
+5. have permanent tests enforce both command-to-manual and library-to-manual structural completeness under the active test-suite task;
+6. run proportional real validation of the complete manual surface;
+7. only then perform the final consistency gate and handoff completion lifecycle.
 
-The pager abstraction itself has no remaining design blocker in this work unit. Host-specific policy can be extended later only from concrete host evidence.
-
-Long-term multi-channel source/toolchain design may continue independently as working design and does not block first-delivery command coverage.
+Long-term multi-channel source/toolchain design remains independent working design and does not block first-delivery coverage.
 
 ## Blockers / open questions
 
-- The current product tree still has 18 command identities without their mandatory operational manual topics.
-- Trustworthy permanent-test coverage is pending the active separate test-suite reimplementation task; existing failing manual tests are not closure evidence.
-- Formal multi-host/stable-host validation of the implemented first-delivery `manual`/`pager` surface has not yet been executed.
-- Long-term documentation source representation and external build toolchain remain unresolved working design, not a first-delivery command-coverage blocker.
+- 18 previously identified command identities still lack mandatory operational topics.
+- Mandatory library manual topics are currently absent.
+- Some legacy libraries require explicit public/internal API classification and naming realignment before a stable public-only manual can be authored; that work is deferred in `todo/library-api-visibility-realignment.md`.
+- Trustworthy permanent manual-completeness coverage is pending the active test-suite reimplementation/realignment task.
+- Formal multi-host/stable-host validation has not yet been executed.
+- Long-term documentation source representation and external build toolchain remain unresolved working design.
