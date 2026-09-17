@@ -121,6 +121,18 @@ manual
 
 The command name identifies the operational manual as a semantic surface; it does not imply Unix `man`, roff input, a host man database, or one presentation renderer.
 
+The first-delivery executable belongs to the technical `m` layer and is located at:
+
+```text
+bin/sys/manual
+```
+
+Because it consumes bootstrap facilities such as `m_RES_DIR`, it is a bootstrap-integrated command and uses:
+
+```sh
+#!/usr/bin/env m
+```
+
 ## 5. First-delivery `manual` interface
 
 The first-delivery invocation forms are:
@@ -167,6 +179,8 @@ sys srv
 
 Zero-argument discovery lists topic identities; it does not select or present a topic, and it does not invoke the topic pager.
 
+If no manual topics are materialized, discovery succeeds with exit status `0` and writes no topic entries.
+
 Discovery follows the general `res/*/manual/` shape and must not contain an explicit semantic dependency on the owner name `ai`.
 
 ### 5.2 Unqualified lookup
@@ -196,11 +210,11 @@ more than one match
     fail as ambiguous and present the owner-qualified alternatives
 ```
 
-An ambiguous lookup must not silently prefer `sys`, `ai` or any other owner. Its diagnostic is written to standard error, identifies the ambiguous topic and includes each matching owner-qualified invocation needed to select a specific result, for example:
+An ambiguous lookup must not silently prefer `sys`, `ai` or any other owner. Its diagnostic is written to standard error, identifies the ambiguous topic and includes each matching owner-qualified invocation needed to select a specific result. Alternatives are emitted one per line in ascending lexical owner order, for example:
 
 ```text
-manual sys pkg
 manual ai pkg
+manual sys pkg
 ```
 
 ### 5.3 Owner-qualified lookup
@@ -232,7 +246,25 @@ manual --no-pager <owner> <topic>
 
 The option changes only presentation of a successfully selected topic; it does not change discovery, ambiguity or owner qualification.
 
-This specification does not define the executable location of `manual`, exact diagnostic prose/layout beyond the semantic requirements above, or numeric exit-status mapping.
+`manual --no-pager` without a topic operand is an invalid invocation.
+
+### 5.5 Exit status and diagnostics
+
+The first-delivery exit-status contract is:
+
+```text
+0  success
+1  invalid invocation or invalid owner/topic identifier
+2  requested topic not found
+3  unqualified topic is ambiguous
+4  execution/presentation failure
+```
+
+Status `2` applies both to an unqualified lookup with no matches and to an owner-qualified lookup whose exact owner-local topic does not exist.
+
+Status `4` covers failures after a valid request has been resolved or while discovery/presentation is being executed, including inability to emit/read the selected resource and failure of the POSIX `more` invocation. A `more` failure is mapped to `4`; `manual` does not expose the pager's implementation-specific exit status as its own public contract.
+
+All failure diagnostics are written to standard error. Invalid invocation and ordinary execution failures use the existing structured `m` logging/fatal facilities. An ambiguity diagnostic additionally emits the owner-qualified `manual <owner> <topic>` alternatives required to resolve that ambiguity. Failure diagnostics do not write topic content to standard output.
 
 ## 6. Long-term multi-channel design target
 
@@ -349,4 +381,6 @@ DOC-16  long-term documentation build orchestration belongs to mk; runtime manua
 DOC-17  the first delivery does not introduce per-command --help or -h
 DOC-18  paging never changes the canonical page content contract
 DOC-19  interface changes realign affected operational documentation in the same work unit whenever practical
+DOC-20  the first-delivery executable is bin/sys/manual, belongs to m, and is bootstrap-integrated through #!/usr/bin/env m
+DOC-21  manual uses public exit statuses 0 success, 1 invalid request, 2 not found, 3 ambiguous, and 4 execution/presentation failure
 ```
