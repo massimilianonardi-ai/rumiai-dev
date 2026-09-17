@@ -1,6 +1,6 @@
 # RumiAI OS — Resource model
 
-Date: 2026-09-14  
+Date: 2026-09-17  
 Status: **Current**
 
 ## 1. Scope
@@ -22,7 +22,7 @@ This specification does not introduce a universal resource resolver, resource UR
 
 A resource payload is distributed content with an owner that is required or usable at runtime, is not mutable application state and is not an entrypoint.
 
-Possible examples include language catalogs, images, icons, templates, schemas or other static assets when a concrete use case requires them.
+Possible examples include language catalogs, operational documentation, images, icons, templates, schemas or other static assets when a concrete use case requires them.
 
 Classification as a resource is semantic. It does not automatically authorize new resource classes or new APIs.
 
@@ -70,15 +70,20 @@ A resource class is located under its owner:
 res/<owner>/<resource-class>/
 ```
 
-This specification initially fixes exactly one concrete class:
+The current concrete global resource classes are:
 
 ```text
 lang
+man
 ```
+
+`lang` contains global localization catalogs and selectors under the contract in `LANG-BOOTSTRAP.md`.
+
+`man` contains revision-coupled operational manual pages under the contract in `MAN-DOCUMENTATION.md`.
 
 No additional generic namespaces are introduced in anticipation of future classes.
 
-The presence of `res` does not automatically authorize directories such as `icons`, `themes`, `templates`, `models` or equivalents: each class is materialized only when a concrete requirement exists.
+The presence of `res` does not automatically authorize directories such as `icons`, `themes`, `templates`, `models` or equivalents: each additional class is materialized only when a concrete requirement exists.
 
 ---
 
@@ -213,7 +218,23 @@ Updating multiple symlinks is not a crash-atomic filesystem transaction. The con
 
 ---
 
-## 8. Package resources
+## 8. Operational manual resources
+
+Global operational manual pages use:
+
+```text
+res/<owner>/man/<topic>
+```
+
+They are static revision-coupled product resources. They do not use `lang/current`, are not synchronized by `lang-set`, and do not create a new environment alias merely because the class exists.
+
+The technical `man` command discovers materialized global manual trees through the general resource shape rather than hardcoding the branded owner name.
+
+Full manual layout, access, language and maintenance semantics are defined by `MAN-DOCUMENTATION.md`.
+
+---
+
+## 9. Package resources
 
 Package resources belong to the package and remain in its managed tree/version.
 
@@ -223,7 +244,7 @@ They are not copied or projected automatically under:
 $m_RES_DIR
 ```
 
-This also applies to package language catalogs.
+This applies to package language catalogs, operational documentation and other package-owned assets.
 
 `lang-set` does not visit, modify or synchronize package-internal selectors or configuration.
 
@@ -233,7 +254,7 @@ This rule does not introduce a generic `lang=` syntax or a new package-configura
 
 ---
 
-## 9. Separation from state
+## 10. Separation from state
 
 `res/` is not a state area.
 
@@ -245,7 +266,7 @@ The resource model does not reopen the state model and does not introduce a seco
 
 ---
 
-## 10. No universal resolver
+## 11. No universal resolver
 
 The following are not introduced:
 
@@ -264,7 +285,7 @@ A new resolution primitive requires a concrete requirement not already covered b
 
 ---
 
-## 11. Invariants
+## 12. Invariants
 
 ```text
 RES-01  the global resource semantic root is $m_ROOT/res and is exposed as m_RES_DIR
@@ -272,7 +293,7 @@ RES-02  global resources are ownership-qualified; current owners are sys and ai
 RES-03  sys belongs to the technical m substrate; ai belongs to the branded RumiAI layer
 RES-04  resource payloads and mutable state remain distinct concepts
 RES-05  a co-located current selector does not turn the resource tree into state
-RES-06  the first fixed global resource class is lang
+RES-06  the current concrete global resource classes are lang and man
 RES-07  m_LANG_DIR remains the technical lang interface and equals $m_RES_DIR/sys/lang
 RES-08  the technical lang facility resolves only sys resources and does not depend on ai
 RES-09  res/*/lang/current selects the same locale in every materialized global language tree
@@ -281,6 +302,7 @@ RES-11  lang-set validates all global language trees before mutation and updates
 RES-12  lang-set does not visit or modify package resources or package configuration
 RES-13  package resources remain package-local and private to the package unless a future explicit contract says otherwise
 RES-14  no universal resolver, URI, registry, daemon or resource manager is introduced
-RES-15  multi-owner selection is semantically single but is not promised as a crash-atomic filesystem transaction
-RES-16  en_US is the distributed initial global selection and remains the technical fallback
+RES-15  multi-owner language selection is semantically single but is not promised as a crash-atomic filesystem transaction
+RES-16  en_US is the distributed initial global language selection and remains the technical fallback
+RES-17  man resources use res/<owner>/man/<topic> and are independent of lang-set selection
 ```
