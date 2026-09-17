@@ -5,15 +5,15 @@ Updated: 2026-09-17
 
 ## Goal
 
-Design and, once the contract is fixed, implement a man-style operational reference distributed directly with `rumiai-os` so users and developers can inspect the behavior and usage of the installed/current software without relying on development specifications or conversation history.
+Deliver a useful operational documentation surface with `rumiai-os` while keeping development contracts in `rumiai-dev`, and use the same task to establish a deliberate long-term path toward documentation whose informational content is independent from presentation channel.
 
-A central design objective is to reduce pressure on `rumiai-dev/specifications/` by separating **normative development contracts** from **runtime/user operational reference** without duplicating the same fact into two independently maintained authorities.
+The first delivery is intentionally simple and terminal-first. The future multi-channel design is a separate architecture problem and must not be accidentally fixed by the first utility implementation.
 
 ## Current repository revisions
 
 ```text
-rumiai-dev  e5210d04c38ba2fb8ca76108b8c3cabd40510e7f  (last retrieved before this checkpoint)
-rumiai-os   36c29d8412a523f722fd90004b78a07fdf0b06c8  (current remote HEAD inspected during activation)
+rumiai-dev  5d6e462721a9262ab8ddda6de9c879a1ed47cc40  (documentation model fixed before this checkpoint)
+rumiai-os   36c29d8412a523f722fd90004b78a07fdf0b06c8  (last current remote HEAD inspected; no product change made by this task)
 ```
 
 Fresh remote HEAD retrieval remains mandatory before future analysis or writes.
@@ -25,57 +25,64 @@ README.md
 RULES.md
 CONSISTENCY-GATE.md
 specifications/README.md
+specifications/rumiai-os/DOCUMENTATION-MODEL.md
 specifications/rumiai-os/CURRENT-MODEL.md
 specifications/rumiai-os/FILESYSTEM-NAMING.md
 specifications/rumiai-os/RESOURCE-MODEL.md
 handoff/README.md
 ```
 
-Additional subsystem specifications must be retrieved only when the concrete design reaches those responsibilities.
+Additional subsystem specifications must be retrieved only when the concrete access/storage design reaches those responsibilities.
 
 ## Fixed task-local choices
 
-- The task concerns an operational/man-style documentation surface inside or distributed with `rumiai-os`.
-- The new surface must not become a second copy of the normative RumiAI development specifications.
-- `rumiai-dev` remains authoritative for development rules and semantic specifications unless a future explicit contract changes ownership of a specific class of facts.
-- Runtime/user documentation should describe the software interface that actually exists for the relevant revision and should be useful independently of the development repository.
-- Current canonical development documentation in `rumiai-dev` is English; runtime/user documentation localization remains an open design question for this task.
-- No directory name, resource class, command, file format, section numbering scheme, generator or localization mechanism is fixed yet.
-- Do not assume that man pages belong under `res/`: the current resource contract defines only `lang` as a concrete global resource class, so a new resource class requires an explicit requirement and contract.
-- No existing `man` or `help` mechanism was found in the current `rumiai-os` code search during task activation.
+- `rumiai-dev` remains authoritative for normative development rules and semantic specifications.
+- Operational documentation is revision-coupled product reference and must not become a second development-specification authority.
+- The first implementation uses a simple terminal-first model: one human-readable UTF-8 text source per operational topic, directly consumable without a rendering pipeline.
+- Initial content avoids ANSI/control formatting, fixed-width-dependent layout and other choices that would unnecessarily obstruct later migration.
+- The public utility name, invocation syntax, discovery behavior, filesystem location, resource-class classification, page filename convention and paging/search behavior are **not fixed yet**.
+- Command-level `--help`/`-h` is not introduced implicitly and must be considered explicitly when the access utility is designed.
+- A long-term documentation architecture must separate informational content from channel-specific rendering so the same canonical information can feed terminal, HTML, PDF and other consumers.
+- Structured Markdown plus metadata is a possible fast bridge, but it is not accepted as the final architecture because it does not fully separate informational semantics from presentation markup.
+- No long-term source schema, AST, renderer, generator or localization design is fixed yet.
 
 ## Completed
 
-- `rumiai-os` current remote HEAD was retrieved and its current tree/README inspected.
-- The current product exposes many public technical commands under `bin/sys/` but does not currently expose a discovered man/help documentation mechanism.
-- The current architecture/resource/naming contracts were consulted sufficiently to establish that documentation placement must be designed rather than inferred from filesystem symmetry.
-- The documentation-language normalization task completed; relevant current development contracts, including `RESOURCE-MODEL.md`, are now maintained in English.
-- The root workflow documentation now canonically defines event-driven documentation maintenance and dedicated tasks for substantial documentation refactors.
+- Current `rumiai-os` architecture, resource, naming and command-entrypoint context was inspected.
+- No existing RumiAI `man`/help mechanism was found in the inspected current product revision.
+- A premature contract that fixed the utility name `man`, a `man` resource class and concrete lookup behavior was corrected forward after the user clarified that the documentation model must be decided first.
+- `specifications/rumiai-os/DOCUMENTATION-MODEL.md` now defines the current ownership split, simple terminal-first initial model, unresolved first-delivery details, migration discipline and long-term multi-channel target.
+- `specifications/README.md` now routes documentation-model questions directly to that canonical source.
+- No `rumiai-os` product modification has been committed by this task.
 
 ## Current state
 
-The task is active at design stage. The main open problem is ownership and single-source-of-truth design: determine which facts belong in normative `rumiai-dev` specifications, which belong in runtime operational reference, and whether any content can be generated or mechanically checked so the two surfaces cannot silently drift.
+The documentation model is fixed sufficiently to proceed to the **next design layer** without implementing product code yet.
 
-The task should also use the design to test whether the current flat `specifications/rumiai-os/` topic organization remains appropriate or whether operational reference can remove enough interface detail that a larger taxonomy change is unnecessary.
+The immediate design problem is now narrow: choose the first terminal access surface and storage/discovery contract for simple plain-text operational topics. That design must remain compatible with later migration to a content/rendering architecture but must not pretend to solve that larger problem now.
+
+In parallel, the long-term track should evaluate whether a bridge such as structured Markdown + metadata is enough for RumiAI or whether a genuinely semantic representation is warranted before adopting any durable generator architecture.
 
 ## Next action
 
-Define the documentation model before product modification, including at least:
+Design the first-delivery operational-reference interface, in this order:
 
-1. audience and scope of the man-style reference;
-2. source-of-truth boundaries versus `rumiai-dev/specifications/`;
-3. repository/runtime location and packaging/install behavior;
-4. source format and rendering/access mechanism;
-5. relationship with command-level `--help` if introduced or already relevant;
-6. localization policy, if any;
-7. consistency/testing mechanism that prevents documentation drift;
-8. migration plan for facts currently better suited to operational reference than normative specifications.
+1. utility name and semantic responsibility;
+2. topic identity and lookup/discovery behavior;
+3. physical storage and ownership/resource classification;
+4. output/paging behavior and exit statuses;
+5. relationship with short command help;
+6. proportional permanent-test contract.
 
-Once these are fixed, update the canonical specification(s) before implementing the product surface.
+Only after these choices are fixed should `rumiai-os` implementation begin.
+
+Then keep a separate long-term design thread inside this task for content/semantic representation and multi-channel rendering, without blocking the simple first delivery.
 
 ## Blockers / open questions
 
-- Whether the operational reference should use traditional roff/man sources, another canonical source compiled/rendered to man, or a different internal representation with a man-compatible presentation.
-- Whether command usage text and man-style reference should share one source.
-- Which current `specifications/` content is normative architecture/design and which content could be reduced after a runtime reference exists.
-- Whether localization is required for runtime documentation and how that interacts with the existing `lang` resource model.
+- Name and exact semantic scope of the first terminal documentation utility.
+- Whether operational pages should be a new global resource class, another distributed product-content location, or a different existing ownership mechanism.
+- Whether the first utility should only display exact topics or also list/search topics.
+- Whether paging belongs to the utility baseline or should be delegated/omitted initially.
+- Whether structured Markdown + metadata is an adequate migration bridge or merely a temporary convenience before a more semantic model.
+- Which concrete future channels beyond terminal, HTML and PDF create requirements that should shape the long-term content model.
