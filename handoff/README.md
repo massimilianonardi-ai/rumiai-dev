@@ -33,7 +33,28 @@ If a task starts small and later crosses this threshold, create the handoff as s
 
 Short, self-contained tasks do not need a handoff merely for bookkeeping.
 
-## 3. One stable identity per task
+Known work that is intentionally deferred and not yet active belongs under `todo/`, not `handoff/`. See `todo/README.md`.
+
+## 3. Activation from deferred TODO work
+
+When a current `todo/<topic>.md` item is intentionally activated as a task, task-state ownership moves from `todo/` to `handoff/`.
+
+Use the normal fresh preflight first; the TODO is a concise deferred-work pointer and is not sufficient execution context by itself.
+
+Then perform the transition:
+
+```text
+delete todo/<topic>.md
+create handoff/<task-name>.md
+```
+
+Both changes belong to the same authorized work unit and should be committed together when practical. The same work must not remain represented simultaneously by a current TODO and an active handoff.
+
+The new handoff may use the TODO's intent/evidence as input, but it must be written from current authoritative sources and current repository state. Do not copy historical assumptions or stale revision facts into the handoff without verification.
+
+If activation reveals that one TODO actually contains multiple independently resumable workstreams, split ownership explicitly: create the required active handoff(s) and retain only genuinely deferred residual work as separate minimal TODO item(s).
+
+## 4. One stable identity per task
 
 Use a stable semantic task name rather than a timestamp:
 
@@ -55,7 +76,7 @@ for successive moments of one task.
 
 A task should have exactly one active handoff unless the task itself has been deliberately split into independently resumable workstreams.
 
-## 4. Required shape
+## 5. Required shape
 
 Keep the file concise and directly resumable:
 
@@ -116,7 +137,7 @@ There should normally be one concrete next action or a very small ordered set.
 
 Include only blockers or genuinely unresolved choices that affect continuation.
 
-## 5. Resume protocol
+## 6. Resume protocol
 
 A new chat that resumes an active task must not read the handoff in isolation.
 
@@ -136,7 +157,7 @@ Then compare the revisions/state recorded by the handoff with current repository
 
 If repositories advanced after the handoff checkpoint, reconcile forward before continuing. Do not assume the handoff's stored SHA is still HEAD.
 
-## 6. Automatic checkpoint synchronization
+## 7. Automatic checkpoint synchronization
 
 During active work, synchronize the handoff automatically whenever the task state changes materially.
 
@@ -157,7 +178,9 @@ A response by itself is not a checkpoint.
 
 Routine explanation, unchanged analysis, repeated status reporting or incidental command execution does not require an update when it does not change resumable task state.
 
-## 7. Synchronize before the final response
+If active work discovers concrete additional work that is intentionally deferred outside the current task, create or update the appropriate minimal TODO under `todo/` rather than accumulating that future work inside the active handoff.
+
+## 8. Synchronize before the final response
 
 When the current response materially advances an active handoff task, the handoff synchronization is part of completing that response.
 
@@ -177,7 +200,7 @@ Do not tell the user that the handoff is synchronized before the write actually 
 
 If synchronization is required but cannot be completed, report that explicitly in the final response and describe the unsynchronized state. Do not silently rely on chat memory.
 
-## 8. Parallel work and concurrency
+## 9. Parallel work and concurrency
 
 Separate parallel tasks use separate handoff files.
 
@@ -200,7 +223,7 @@ Two tasks may still touch the same repository. Therefore every task must obey th
 
 An active handoff may be updated by a different chat than the one that created it, provided the normal preflight and reconciliation are performed first.
 
-## 9. What must not be duplicated
+## 10. What must not be duplicated
 
 Do not copy into a handoff:
 
@@ -209,13 +232,14 @@ Do not copy into a handoff:
 - testing policy;
 - large source excerpts;
 - permanent evidence that belongs in `rumiai-tests`;
-- historical narrative already preserved by Git.
+- historical narrative already preserved by Git;
+- deferred-work inventory that belongs under `todo/`.
 
 Reference canonical paths instead.
 
 If a task-local decision becomes a durable subsystem contract, propagate it to the applicable current specification in the same work unit whenever possible. The handoff should then record only the task consequence/progress.
 
-## 10. Completion protocol
+## 11. Completion protocol
 
 A completed task must disappear from the active handoff set, but its final resumable snapshot should remain historically reconstructable.
 
@@ -223,22 +247,23 @@ Use this sequence:
 
 1. propagate every durable rule/contract to its canonical current source;
 2. ensure implementation, tests and revision-specific evidence are stored in their proper repositories;
-3. run the final consistency gate for the task;
-4. update the handoff one last time with:
+3. capture any concrete out-of-scope work that is intentionally deferred as minimal TODO items when applicable;
+4. run the final consistency gate for the task;
+5. update the handoff one last time with:
 
    ```text
    Status: Complete
    ```
 
    plus final repository revisions, completed outcome, final validation status and no remaining next action/blocker;
-5. commit that final snapshot;
-6. remove the handoff from the current tree in a **later forward commit**.
+6. commit that final snapshot;
+7. remove the handoff from the current tree in a **later forward commit**.
 
 Git history therefore preserves both the active evolution and final state of the handoff without leaving completed task files in normal retrieval.
 
 Do **not** create `handoff/completed/`, `handoff/archive/` or another historical handoff tree. Git history is the archive.
 
-## 11. Background limitation
+## 12. Background limitation
 
 A chat cannot continue editing a handoff after the response/task has stopped unless an explicit scheduled or externally triggered mechanism is configured.
 
@@ -246,7 +271,7 @@ A chat cannot continue editing a handoff after the response/task has stopped unl
 
 This is sufficient to make chat replacement safe at response boundaries, provided the required synchronization succeeded before the final response.
 
-## 12. Minimality rule
+## 13. Minimality rule
 
 The handoff must optimize resumption, not completeness of narrative.
 
