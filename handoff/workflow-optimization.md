@@ -10,8 +10,8 @@ Maintain a long-lived meta-workstream for continuously evaluating and improving 
 ## Current repository revisions
 
 ```text
-rumiai-dev    e82ce555d051916f96d65f14cef795db2e0bbbbd  (pre-checkpoint HEAD after library-manual synchronization)
-rumiai-os     14e413342261b23df840f40b355166c4d55f1b41  (current remote HEAD; library inventory previously inspected at e9cad500)
+rumiai-dev    cda528e87346e9adb8a5d73bbe91d777d11710f5  (pre-checkpoint HEAD after final manual-handoff reconciliation)
+rumiai-os     14e413342261b23df840f40b355166c4d55f1b41  (current remote HEAD; manual inventory rechecked)
 rumiai-tests  ae0f41b23ae477bf2f1b13332b4c52bf2df16f2f  (current remote HEAD; active parallel suite work)
 pkg-catalog   94f58995cbd487b17f3b82bc2724c70540927b88  (last recorded; not involved in this correction)
 ```
@@ -113,9 +113,11 @@ todo/library-api-visibility-realignment.md
 
 This avoids both silent breaking renames and documentation that accidentally promotes legacy implementation helpers to public API.
 
+The current `rumiai-os@14e413342261b23df840f40b355166c4d55f1b41` manual tree was rechecked after concurrent pager movement and still contains no mandatory library-identity topics. The `e9cad... → 14e413...` product delta touched only `bin/sys/pager` and `res/sys/manual/pager`, so it did not invalidate the inspected library inventory or library-manual gap.
+
 ### Concurrency evidence
 
-Concurrent `rumiai-dev` movement occurred again during this correction. A write to the active manual handoff was rejected because another chat had changed the same file; the new state was fetched and the library/manual delta was reapplied forward. No concurrent change was overwritten.
+Concurrent `rumiai-dev` movement occurred again during this correction. A write to the active manual handoff was rejected because another chat had changed the same file; the new state was fetched and the library/manual delta was reapplied forward. No concurrent change was overwritten. A later product revision movement was also reconciled into the manual handoff before this checkpoint.
 
 ## Current state
 
