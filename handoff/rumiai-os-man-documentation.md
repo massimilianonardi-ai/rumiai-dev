@@ -9,12 +9,14 @@ Deliver a useful operational documentation surface with `rumiai-os` while keepin
 
 The first delivery is intentionally simple and terminal-first. The future multi-channel design remains a separate architecture problem whose build orchestration belongs to `mk`.
 
+The current first-delivery completion scope now also includes mandatory operational-manual coverage for every RumiAI-owned directly executable command identity and permanent structural coverage that detects missing command manual topics.
+
 ## Current repository revisions
 
 ```text
-rumiai-dev   63328008d9e885fdaefd43311fd79b500345fb0f  (current remote HEAD before this handoff checkpoint)
-rumiai-os    8c69d50bf675f6fab7ab447b71542c7808c988a8  (manual implementation plus initial operational topic set)
-rumiai-tests 0428a21be8f9be05193e2533672aa8f7864dbd30  (manual permanent coverage)
+rumiai-dev   1fbdf402eda0093d9e45303a3619e242bcaa2fb8  (pre-checkpoint HEAD after command/manual rule promotion)
+rumiai-os    b18ae4439519bfe4081035a7d6d0a29423a81709  (current command/manual inventory inspected)
+rumiai-tests d59a05417e91a97a10424f6dbc25047f9bfee383  (current remote HEAD; refresh before test writes)
 ```
 
 Fresh remote HEAD retrieval remains mandatory before future writes.
@@ -42,7 +44,11 @@ specifications/rumiai-os/MK-SOURCE-MATERIALIZATION.md
 handoff/README.md
 ```
 
-The promoted first-delivery contract lives in `DOCUMENTATION-MODEL.md` and `RESOURCE-MODEL.md`; it is not duplicated here.
+The promoted first-delivery contract lives in `DOCUMENTATION-MODEL.md`, `COMMAND-ENTRYPOINTS.md` and `RESOURCE-MODEL.md`; it is not duplicated here.
+
+## Fixed task-local choices
+
+No task-local exception exists for technical/internal commands. Every RumiAI-owned directly executable command identity is part of the manual-coverage completion scope. Package-owned external executables and sourced libraries are outside that command-identity set.
 
 ## Completed
 
@@ -56,16 +62,18 @@ The promoted first-delivery contract lives in `DOCUMENTATION-MODEL.md` and `RESO
 - A real pseudo-terminal exercise on Debian entered the system `more` pager and accepted `q` before the end of a long topic, confirming that the TTY branch is interactive.
 - Permanent tests were added under `tests/rumiai-os/manual/`: `interface.test` and `paging.test`. They reuse the current target, isolated-replica and interactive helpers rather than duplicating test infrastructure.
 - The permanent test files were syntax-checked and the exact committed blobs passed the auxiliary Debian development execution path. No formal persisted `rumiai-test` validation session was produced because the available auxiliary environment could not materialize a complete repository checkout/runner session from GitHub.
-- The first operational topic set now contains `res/sys/manual/manual`, `res/sys/manual/pkg`, `res/sys/manual/state-path` and `res/sys/manual/srv`. The latter three were written from their current canonical specifications and current command implementations rather than from remembered behavior.
+- The first operational topic set contains `res/sys/manual/manual`, `res/sys/manual/pkg`, `res/sys/manual/state-path` and `res/sys/manual/srv`. The latter three were written from their current canonical specifications and current command implementations rather than from remembered behavior.
 - The Debian auxiliary execution path was also used to confirm that the added topic identities participate in `manual` discovery in deterministic lexical order.
 - No physical validation has been performed.
 - Concurrent unrelated changes in `rumiai-dev` and `rumiai-tests` were preserved; the active parallel suite-realignment work was not modified by this task.
+- A later workflow correction promoted mandatory manual coverage for every RumiAI-owned directly executable command identity. `RULES.md`, `CONSISTENCY-GATE.md`, `COMMAND-ENTRYPOINTS.md`, `DOCUMENTATION-MODEL.md` and `specifications/README.md` now encode that command/manual lifecycle.
+- The same correction requires permanent structural coverage that detects a command identity lacking its owner-local manual topic.
 
 ## Current state
 
-The first-delivery `manual` framework is implemented and has permanent mechanical coverage in the test repository.
+The first-delivery `manual` framework is implemented and has permanent mechanical coverage for its lookup/presentation interface, but the newly promoted command-coverage invariant is **not yet satisfied by the current product tree**.
 
-The current implementation provides:
+Current implementation provides:
 
 ```text
 qualified ordered discovery
@@ -78,16 +86,50 @@ interactive POSIX more presentation on a terminal
 public statuses 0..4
 ```
 
-Current distributed technical operational topics are:
+At `rumiai-os@b18ae4439519bfe4081035a7d6d0a29423a81709`, the RumiAI-owned command identities observed are:
 
 ```text
-manual
-pkg
-srv
-state-path
+sys:
+    m
+    digest
+    extract
+    http-fetch
+    lang
+    lang-set
+    log
+    manual
+    menu-ext
+    menu-ext-adv
+    menu-ext-adv-fs
+    mk
+    osarch-update
+    pkg
+    pkg-analyze
+    read-key
+    readc
+    shell
+    srv
+    state-path
+
+ai:
+    rumiai-os
+    rumiai-os-sh
 ```
 
-Additional operational topics can be added incrementally when they provide concrete value for existing public or materially observable interfaces.
+`bin/sys/m` is an exposure of the root `m` command and is therefore not a second command identity.
+
+Current manual topics are only:
+
+```text
+sys manual
+sys pkg
+sys srv
+sys state-path
+```
+
+No `res/ai/manual/` topics are currently materialized. Therefore 18 of the 22 currently observed command identities still require manual topics before this task can complete under the new contract.
+
+The existing `interface.test` / `paging.test` coverage does not yet prove the new global command-to-manual completeness invariant. A structural permanent test must be added or existing coverage extended so a missing required manual topic fails mechanically.
 
 Formal cross-host validation has not yet been claimed. The available Debian VM supplied auxiliary development evidence only; stable reference-host/validation-run evidence remains a later validation step.
 
@@ -99,13 +141,19 @@ The generated operational artifacts should remain usable without requiring the d
 
 ## Next action
 
-The first-delivery mechanism no longer has an unresolved interface-design blocker. Next work can proceed along independent tracks:
+Before this handoff can close:
 
-1. add further operational pages only where current public interfaces justify them;
-2. when validation infrastructure/hosts are available, run the committed `manual` permanent tests through the normal `rumiai-test` validation path and record only the evidence actually obtained;
-3. continue the long-term documentation design under `mk`, resolving canonical source representation and build toolchain separately from the delivered terminal-first surface.
+1. refresh current `rumiai-os` and derive the current RumiAI-owned directly executable command-identity inventory from the actual tree and command-entrypoint contract;
+2. create the missing owner-local manual topics from current specifications plus current implementation behavior, including `sys m` and the branded `ai` command topics;
+3. add/realign permanent structural coverage so every RumiAI-owned command identity must have its required manual topic while non-command manual topics remain allowed;
+4. run proportional real validation of the complete manual surface under the current testing contract;
+5. only then perform the normal final consistency gate and handoff completion lifecycle.
+
+Long-term multi-channel source/toolchain design may continue independently as working design and does not block first-delivery completion unless the current task deliberately keeps that design in scope.
 
 ## Blockers / open questions
 
-- Long-term documentation source representation and external build toolchain.
+- The current product tree has incomplete mandatory command manual coverage: 18 currently observed command identities lack topics.
+- Permanent tests do not yet enforce the command-to-manual completeness invariant.
 - Formal multi-host/stable-host validation of the implemented first-delivery `manual` surface has not yet been executed.
+- Long-term documentation source representation and external build toolchain remain unresolved working design, not a first-delivery command-coverage blocker.
