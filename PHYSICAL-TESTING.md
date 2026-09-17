@@ -1,250 +1,160 @@
 # RumiAI Physical Testing Rules
 
-Questo documento definisce la procedura operativa per i test fisici che richiedono esecuzione manuale su host reali.
+Status: **Current / canonical**  
+Updated: 2026-09-17
 
-Le regole generali dei test restano in `TESTING.md`; il contratto del runner resta in `RUNNER.md`.
+This document defines physical validation on real reference hosts. General testing rules remain in `TESTING.md`; runner behavior remains in `RUNNER.md`.
 
-## Ruolo della physical validation
+## 1. Role
 
-La physical validation è una fase finale di conferma, non il luogo normale in cui scoprire per la prima volta se il prodotto funziona.
+Physical validation is the **final confirmation stage** for a work unit whose preceding real executions and permanent tests already make success the expected outcome.
 
-Prima di arrivare alla physical validation, il lavoro dovrebbe avere già attraversato, quando materialmente pertinenti, sviluppo ed esecuzione reale su host locali o ausiliari, messa a punto dei test permanenti e prove automatiche su ambienti puliti o differenti. Il prodotto sottoposto a physical validation deve quindi essere presumibilmente completo e funzionante per lo scope che si intende chiudere.
+It is not the normal place to discover whether the product works for the first time.
 
-L'aspettativa operativa è che la maggior parte delle physical validation passi al primo tentativo. Un singolo fallimento può naturalmente rivelare una divergenza reale dell'host, dell'hardware o dell'ambiente fisico che le fasi precedenti non potevano osservare. Se però una quota non occasionale di difetti funzionali viene scoperta per la prima volta soltanto durante la physical validation, il modello di sviluppo/test precedente è insufficiente e deve essere corretto; non si deve normalizzare la physical validation come fase ordinaria di debugging.
+Use development hosts, the ChatGPT Linux environment and GitHub-hosted runners earlier when they can expose correctness/portability defects without consuming the final physical gate.
 
-Quando una physical validation fallisce, la correzione deve quindi includere la verifica del perché le fasi precedenti non abbiano intercettato il problema e, quando possibile, il rafforzamento del test permanente o dell'ambiente di esecuzione precedente appropriato.
+The normal expectation is that most physical validations pass on the first attempt.
 
-Un runner GitHub-hosted, un ambiente Linux fornito da ChatGPT, un'esecuzione headless o altro ambiente ausiliario possono produrre evidenza utile e possono esercitare gli stessi test reali, ma non vengono chiamati physical validation dell'host stabile di riferimento che non hanno fisicamente esercitato.
+If functional defects are repeatedly discovered first during physical validation, treat that pattern as evidence that the earlier development/testing model is insufficient and strengthen it.
 
-## Sessione fisica
+## 2. Reference hosts
 
-Ogni sessione di comandi si considera iniziata da un terminale appena aperto.
+The stable reference-host policy is defined in `TESTING.md`.
 
-Non si assume quindi che siano già disponibili:
-
-- una current working directory appropriata;
-- `RumiAI_ROOT` o altre variabili di ambiente;
-- `rumiai-os` o `rumiai-test` nel `PATH`;
-- symlink locali verso i repository.
-
-Finché `rumiai-os` non è discoverable autonomamente tramite `PATH`, symlink o altro meccanismo canonico, ogni sessione deve iniziare con un `cd` esplicito verso il repository `rumiai-os` usando il pathname reale dell'host sottoposto a test.
-
-Subito dopo deve essere eseguito:
-
-```sh
-git pull --ff-only
-```
-
-Questo sincronizza prima di tutto il target che verrà sottoposto a test.
-
-Successivamente la sessione deve entrare nel clone locale di `rumiai-tests`, normalmente sotto `src/rumiai-tests/`, ed eseguire nuovamente:
-
-```sh
-git pull --ff-only
-```
-
-Questo sincronizza la suite di test dopo avere sincronizzato il prodotto.
-
-L'ordine è normativo:
+Current stable host classes are:
 
 ```text
-1. cd nel repository rumiai-os dell'host
-2. git pull --ff-only di rumiai-os
-3. cd nel repository rumiai-tests dell'host
-4. git pull --ff-only di rumiai-tests
-5. comando del runner
+macOS
+Ubuntu 26.04 ARM64
 ```
 
-In questo modo una sessione non può produrre evidenza contro un checkout stale di `rumiai-os` o contro una suite stale di `rumiai-tests`.
+A GitHub-hosted runner, AI-provided VM, headless display or other auxiliary environment is not physical validation of a stable host it did not physically exercise.
 
-La forma normale di un test fisico deve restare intenzionalmente minima:
+## 3. Exact revisions
+
+Physical evidence is revision-specific.
+
+Before a validation run, the relevant product/test repositories must be committed and the revisions that will be exercised must be known.
+
+Do not relabel an old physical PASS as evidence for a later revision merely because the delta appears small. Reuse of earlier evidence must follow the proportional-validation rules and must preserve the exact property/revision claims actually established.
+
+## 4. Normal physical session
+
+Treat each command block as starting from a newly opened terminal with no assumed RumiAI CWD, PATH or environment.
+
+The normal operator sequence is intentionally small:
 
 ```text
-cd <rumiai-os-path-for-host>
+1. cd to the real rumiai-os checkout on that host
+2. git pull --ff-only
+3. cd to the real rumiai-tests checkout for that workspace
+4. git pull --ff-only
+5. invoke rumiai-test or rumiai-validate with the predeclared selection/scope
+```
+
+Conceptual form:
+
+```sh
+cd <rumiai-os-path-for-this-host>
 git pull --ff-only
-cd <rumiai-tests-path-for-host>
+cd <rumiai-tests-path-for-this-host>
 git pull --ff-only
 ./rumiai-test <selection>
 ```
 
-Setup specifico, repliche isolate complete del target, directory temporanee, isolamento di `HOME`, pseudo-terminali, input simulato, assert e cleanup appartengono ai file `.test` e non devono essere trasferiti all'operatore come sequenze manuali di shell. Se una proprietà può essere automatizzata in modo affidabile dentro la suite, deve essere automatizzata lì.
+or the corresponding `rumiai-validate` invocation when a validation scope is being published.
 
-Il fatto che setup e isolamento appartengano al `.test` non autorizza a sostituire il sistema sotto test. Per una prova comportamentale, il `.test` deve esercitare il target reale o una sua replica completa e semanticamente indistinguibile per la proprietà verificata, usando gli entrypoint e i componenti reali secondo `TESTING.md`. Simulazioni e fixture restano eccezioni limitate agli input che rappresentano e non possono essere accreditate come esecuzione del percorso reale che escludono o sostituiscono.
+Host-local checkout paths are operational facts, not permanent-test contracts and must not be hardcoded into portable test logic.
 
-I comandi manuali aggiuntivi sono ammessi soltanto quando la proprietà stessa non è ancora rappresentabile dalla suite o quando si sta diagnosticando un fallimento concreto. Non costituiscono la forma normale di validazione fisica.
+## 5. Test-owned setup
 
-### Comandi interattivi
+Target-specific setup belongs in the `.test`, not in long manual shell recipes for the operator.
 
-Quando un'attività manuale eccezionale richiede realmente un comando che legge direttamente dal terminale, per esempio tramite `/dev/tty`, tale comando costituisce un confine obbligatorio del blocco da incollare.
-
-Non devono essere presenti comandi successivi nello stesso blocco di paste quando il comando interattivo può attendere input. Le righe già incollate possono infatti trovarsi nel buffer del terminale ed essere consumate dal prompt come risposta, anziché essere eseguite successivamente dalla shell.
-
-La regola operativa è quindi:
+This includes as applicable:
 
 ```text
-- i comandi preparatori possono stare nello stesso blocco;
-- il comando interattivo deve essere l'ultima riga del blocco;
-- eventuali verifiche successive devono stare in un nuovo blocco, eseguito solo dopo che il comando interattivo è terminato;
-- se il comando interattivo può fallire o essere annullato, le verifiche successive devono prima controllarne l'exit status e non assumere che lo stato atteso sia stato creato.
+complete isolated replica creation
+mutable-state isolation
+HOME isolation
+temporary directories
+pseudo-terminal/input preparation
+assertions
+cleanup
 ```
 
-Questa è un'eccezione per attività manuali diagnostiche, non il modello desiderato per i test permanenti.
+The test must still exercise the real target or a complete real replica through the real execution path required by the claimed property.
 
-## Path correnti degli host di riferimento
+A fixture/mock/redefined target component does not become valid merely because the overall run occurs on a physical host.
 
-macOS:
+## 6. Interactive commands
+
+If an exceptional manual diagnostic step reads directly from the terminal, that command must be the last command in the pasted block.
+
+Do not append later shell commands after an interactive program that may consume queued terminal input.
+
+Run later checks in a separate block after the interactive program terminates, and verify its status/state before assuming success.
+
+The desired permanent form is still to automate reliable PTY/input behavior inside `rumiai-tests` whenever practical.
+
+## 7. Validation scope
+
+The required validation scope must be fixed before the physical run according to `TESTING.md`.
+
+A required test that returns `SKIP` is not a PASS for that host/property.
+
+Failures outside the declared task scope remain real evidence but do not automatically invalidate an unrelated work unit unless analysis shows that the work unit caused or depends on them.
+
+The scope must not be narrowed after a failure merely to exclude a newly inconvenient dependency.
+
+## 8. Evidence ownership
+
+Executable/revision-specific validation evidence belongs to `rumiai-tests` and its validation/session mechanisms.
+
+`rumiai-dev` defines the validation rules and expected contracts; it does not maintain a parallel chronological archive of old PASS transcripts in current documentation.
+
+Historical physical-validation narratives remain available through Git history when needed for archaeology, but they are not loaded into normal current-task retrieval.
+
+A formal evidence record should include at least the applicable:
 
 ```text
-RumiAI_ROOT=/Volumes/RumiAI/rumiai-os
-rumiai-tests=/Volumes/RumiAI/rumiai-os/src/rumiai-tests
+target revision(s)
+rumiai-tests revision
+selection/scope
+host and architecture
+date/time
+individual results
+runner/launcher status
+logs or references to persisted logs
 ```
 
-Ubuntu 26.04 ARM64:
+## 9. Failure feedback
+
+When physical validation fails:
+
+1. determine the concrete cause;
+2. determine whether an earlier real development/hosted test could have exposed it;
+3. if yes, strengthen the permanent test or earlier environment so the same class of failure moves earlier in the workflow;
+4. correct the product/test contract forward-only;
+5. rerun the proportional earlier checks before returning to physical validation.
+
+Do not normalize repeated physical-only discovery as unavoidable host noise.
+
+## 10. Documentation-only changes
+
+Pure documentation/naming corrections normally do not require a fresh physical run unless they change observable execution, invalidate an existing test path or modify a validation procedure itself in a way that requires physical proof.
+
+State accurately that no physical validation was run when none was required.
+
+## 11. Invariants
 
 ```text
-RumiAI_ROOT=/m/src/git/rumiai-os
-rumiai-tests=/m/src/git/rumiai-os/src/rumiai-tests
+PHYS-01  physical validation is final confirmation, not first-line debugging
+PHYS-02  stable-host evidence is host- and revision-specific
+PHYS-03  the operator session stays minimal; scenario mechanics belong in tests
+PHYS-04  physical execution does not legitimize mocked/replaced target behavior
+PHYS-05  required SKIP is not PASS
+PHYS-06  validation scope is fixed before execution and cannot be narrowed opportunistically
+PHYS-07  executable evidence is owned by rumiai-tests/session mechanisms
+PHYS-08  repeated physical-only failures require strengthening earlier testing
+PHYS-09  Git/history/evidence remain forward-only and are never relabelled retroactively
 ```
-
-Questi pathname descrivono gli host correnti di test e non fanno parte del contratto dei test permanenti.
-
-## Prima validazione fisica di `rumiai-test`
-
-Il commit di `rumiai-tests`:
-
-```text
-551477f8a7e6a209c70318ded3eed4c14aa0eb4a
-```
-
-è stato esercitato fisicamente il 2026-08-29 con:
-
-```text
-./rumiai-test runner
-```
-
-su entrambi gli host stabili di riferimento.
-
-Risultato macOS:
-
-```text
-PASS   4
-FAIL   0
-SKIP   0
-ERROR  0
-TOTAL  4
-```
-
-Risultato Ubuntu 26.04 ARM64:
-
-```text
-PASS   4
-FAIL   0
-SKIP   0
-ERROR  0
-TOTAL  4
-```
-
-Questa evidenza valida fisicamente discovery, execution/persistence, snapshot self-tests e validation-publication self-test del runner sui due host per il commit indicato.
-
-## Seconda validazione fisica di `rumiai-test`
-
-Il 2026-08-29 lo stesso commit è stato esercitato fisicamente su macOS e Ubuntu 26.04 ARM64 con snapshot reali e validation persistita.
-
-Per entrambi gli host:
-
-```text
-snapshot metadata / scope selection: PASS 4, CLEAN
-snapshot hash / scope both:          PASS 4, tutti gli audit CLEAN
-validation runner:                   PASS 4
-```
-
-La validation ha pubblicato correttamente una sessione non ancora versionata sotto `sessions/`.
-
-macOS:
-
-```text
-sessions/20260829T110426+0200-2339/
-```
-
-Ubuntu 26.04 ARM64:
-
-```text
-sessions/20260829T110518+0200-16081/
-```
-
-`git status --short` ha mostrato in entrambi i casi esclusivamente la nuova directory di validation come untracked, coerentemente con il contratto secondo cui il runner non esegue automaticamente `git add`, `git commit` o `git push`.
-
-Questa seconda sessione ha esercitato realmente i rami host-specifici di metadata/hash snapshot, l'esclusione autoreferenziale della run corrente e la pubblicazione di validation session.
-
-Nota: durante questa seconda sessione `rumiai-os` non era stato sincronizzato esplicitamente all'inizio. Ciò non invalida questi risultati specifici perché i quattro test eseguiti appartengono al gruppo `runner` e non esercitano `rumiai-os`. La procedura è stata successivamente irrigidita imponendo il pull di `rumiai-os` prima del pull di `rumiai-tests` per tutte le sessioni future.
-
-## Bootstrap Git identity: lezione operativa
-
-Nel test isolato del bootstrap con `$HOME` temporanea, una prima esecuzione Ubuntu ha ricevuto accidentalmente una riga del blocco di test al prompt `Git user.email`. Il problema ha mostrato tre aspetti distinti:
-
-- il bootstrap necessitava di validazione e conferma dell'identità prima di scriverla;
-- la procedura fisica non deve accodare comandi dopo un programma che legge interattivamente da `/dev/tty`;
-- una volta disponibile una suite permanente, isolamento, PTY, input simulato e cleanup devono essere spostati dentro un `.test`, lasciando all'operatore soltanto sincronizzazione dei repository e invocazione del runner.
-
-Il bootstrap è stato quindi irrigidito e lo scenario è stato trasferito nella suite permanente sotto:
-
-```text
-tests/rumiai-dev/setup-dev/
-```
-
-## Validazione fisica `setup-dev` / Git identity
-
-Il 2026-08-29 il gruppo permanente:
-
-```text
-./rumiai-test rumiai-dev/setup-dev
-```
-
-è stato esercitato sul commit di `rumiai-tests`:
-
-```text
-a68a7a69ac45bc397dec3d78f39f4275aef56d57
-```
-
-su entrambi gli host stabili di riferimento.
-
-Risultato macOS:
-
-```text
-PASS   rumiai-dev/setup-dev/identity-cancel.test
-PASS   rumiai-dev/setup-dev/identity-positive.test
-PASS   rumiai-dev/setup-dev/invalid-email.test
-
-PASS   3
-FAIL   0
-SKIP   0
-ERROR  0
-TOTAL  3
-```
-
-Risultato Ubuntu 26.04 ARM64:
-
-```text
-PASS   rumiai-dev/setup-dev/identity-cancel.test
-PASS   rumiai-dev/setup-dev/identity-positive.test
-PASS   rumiai-dev/setup-dev/invalid-email.test
-
-PASS   3
-FAIL   0
-SKIP   0
-ERROR  0
-TOTAL  3
-```
-
-La sessione valida fisicamente sui due host:
-
-- rifiuto di una `user.email` non valida prima della creazione del workspace;
-- nessuna persistenza di identità quando la conferma viene annullata;
-- persistenza dell'identità valida dopo conferma esplicita;
-- `user.useConfigOnly=true`;
-- costruzione valida di `GIT_AUTHOR_IDENT` e `GIT_COMMITTER_IDENT`;
-- commit Git reale con autore e committer attesi;
-- clone isolato dei tre repository di sviluppo;
-- cleanup autonomo del test.
-
-Il supporto PTY è host-specifico soltanto internamente alla suite: macOS usa `expect`, Ubuntu usa `script(1)`. Questa differenza non cambia il contratto operativo dell'utente, che resta sincronizzazione dei due repository e singola invocazione del runner.
