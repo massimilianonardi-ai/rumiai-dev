@@ -14,9 +14,9 @@ The current first-delivery completion scope includes mandatory operational-manua
 ## Current repository revisions
 
 ```text
-rumiai-dev   33a29bc39d58feecf8b033ccbaa189131df916d2  (pre-checkpoint HEAD after concurrent pager reconciliation; library contract changes are being layered forward)
-rumiai-os    e9cad50042e1b74613630af33bb239d34a855c99  (library inventory inspected; refresh before product/documentation writes)
-rumiai-tests bec37b4368f474dcb6ea8ef418af090384478df3  (current remote HEAD observed for parallel suite work)
+rumiai-dev   8ea9ce8438edd003b205a77d76eb66cf17292c83  (pre-checkpoint HEAD after workflow synchronization)
+rumiai-os    14e413342261b23df840f40b355166c4d55f1b41  (current remote HEAD; current manual inventory rechecked)
+rumiai-tests ae0f41b23ae477bf2f1b13332b4c52bf2df16f2f  (current remote HEAD from parallel suite work)
 ```
 
 Fresh remote HEAD retrieval remains mandatory before future writes.
@@ -73,6 +73,7 @@ The promoted first-delivery documentation contract lives in `DOCUMENTATION-MODEL
 - Current `rumiai-os` inspection confirms many `lib/sys/sh/*.lib.sh` libraries and no materialized `<library-name>.lib.<runtime>` topics under `res/sys/manual/`.
 - `array.lib.sh` and `mk-materialize.lib.sh` visibly follow the desired underscore-private/unprefixed-public pattern. Legacy code such as `core.lib.sh` requires explicit API-visibility classification rather than mechanical renaming from memory.
 - The legacy naming/API migration is therefore represented separately by `todo/library-api-visibility-realignment.md`; this documentation task does not silently redefine product API.
+- Concurrent `rumiai-os` movement from `e9cad50042e1b74613630af33bb239d34a855c99` to `14e413342261b23df840f40b355166c4d55f1b41` changed only `bin/sys/pager` and `res/sys/manual/pager`; the command/library inventory and absence of library manual topics were unaffected. The current manual directory was rechecked at `14e413342261b23df840f40b355166c4d55f1b41`.
 - No physical validation has been performed by this assistant for the manual/pager surface.
 - Concurrent repository changes were preserved forward-only.
 
@@ -94,7 +95,7 @@ manual lookup
 
 The current product command identity set includes `pager`; the previously established count of command identities still missing mandatory manual topics remains 18.
 
-At `rumiai-os@e9cad50042e1b74613630af33bb239d34a855c99`, `res/sys/manual/` contains only `manual`, `pager`, `pkg`, `srv` and `state-path`; no mandatory library-identity topic of the form `<library-name>.lib.<runtime>` is materialized.
+At `rumiai-os@14e413342261b23df840f40b355166c4d55f1b41`, `res/sys/manual/` contains only `manual`, `pager`, `pkg`, `srv` and `state-path`; no mandatory library-identity topic of the form `<library-name>.lib.<runtime>` is materialized.
 
 Library manuals cannot be completed safely by assuming every legacy unprefixed function is intentionally public. Libraries with already-unambiguous public API can be documented immediately; ambiguous legacy libraries depend on the dedicated visibility-realignment work.
 
