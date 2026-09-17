@@ -12,7 +12,7 @@ The task should identify normal evolution opportunities, mechanisms that do not 
 ## Current repository revisions
 
 ```text
-rumiai-dev  af8410618a5734859db8f7a2dd52bacefce4364e  (last retrieved before this checkpoint)
+rumiai-dev  de593dea958a2059b01b677588f47ba84c0f381a  (last retrieved before this checkpoint)
 rumiai-os   36c29d8412a523f722fd90004b78a07fdf0b06c8  (last inspected while activating the man-documentation task)
 ```
 
@@ -133,7 +133,7 @@ specifications/rumiai-os/LANG-BOOTSTRAP.md
 
 They were normalized to English in one atomic commit. The pass also exposed and removed stale current-tree material: old repository-role wording and revision-specific historical validation evidence embedded in current testing/pattern documents.
 
-The dedicated task reached `Status: Complete`; its final snapshot is committed and it is ready for normal active-tree removal.
+The dedicated task completed its full lifecycle: its `Status: Complete` snapshot was committed and the handoff was removed from the current active tree in a later forward commit. Git history is now its archive.
 
 ### `rumiai-os` man-style documentation task activated
 
@@ -158,7 +158,7 @@ No directory, command, source format, man section scheme, generator or localizat
 
 `workflow-optimization` remains active as the continuous governance/observation task.
 
-The documentation-maintenance and language policies are now canonical rather than merely proposed. The language-normalization implementation task is complete and pending handoff removal. `rumiai-os-man-documentation` is active at design stage.
+The documentation-maintenance and language policies are canonical. The language-normalization implementation task is completed and archived through Git history. `rumiai-os-man-documentation` remains active at design stage.
 
 A major workflow concern to continue observing is the long-term shape of `specifications/`: the current router makes omissions visible, which is beneficial, but the directory must not evolve into a monolithic catch-all. The man-style documentation task may reduce pressure by moving operational reference out of normative specifications, provided no duplicated authority is created.
 
