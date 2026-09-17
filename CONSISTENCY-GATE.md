@@ -23,6 +23,8 @@ Conversation memory, summaries and historical commits do not satisfy the preflig
 
 For any task that creates, renames, removes or modifies a RumiAI-owned directly executable command, `specifications/rumiai-os/COMMAND-ENTRYPOINTS.md` and `specifications/rumiai-os/DOCUMENTATION-MODEL.md` are part of the smallest complete source set, and the affected operational manual topic must be inspected together with the command.
 
+For any task that creates, renames, removes or modifies a RumiAI-owned library or one of its functions, `specifications/rumiai-os/FILESYSTEM-NAMING.md`, `specifications/rumiai-os/LIBRARY-INTERFACES.md` and `specifications/rumiai-os/DOCUMENTATION-MODEL.md` are part of the smallest complete source set, and the affected library manual topic must be inspected together with the library.
+
 `todo/` is not part of the mandatory preflight for unrelated tasks. Read `todo/README.md` and the relevant TODO item when choosing deferred work, checking whether a newly discovered deferred issue is already known, activating a TODO or maintaining the pending-work inventory.
 
 ## 2. Extract the applicable invariants
@@ -35,6 +37,7 @@ canonical terminology
 existing primitives
 public interfaces
 command/manual consistency
+library public/internal visibility and manual consistency
 filesystem layout
 state/resource/package ownership
 POSIX/platform contract
@@ -135,31 +138,41 @@ If a design choice remains unresolved inside the active task, keep it in the han
 
 Do not rewrite historical commits or historical validation evidence.
 
-## 8. Command/manual consistency gate
+## 8. Command/library manual consistency gate
 
-Every RumiAI-owned directly executable command identity is coupled to an owner-local operational manual topic under the contract in `DOCUMENTATION-MODEL.md`.
+Every RumiAI-owned directly executable command identity is coupled to an owner-local operational manual topic under `DOCUMENTATION-MODEL.md`.
 
-For any command change, apply this gate:
+For any command change:
 
 ```text
-command created
-    required manual topic is created in the same work unit
+create / rename / remove
+    realign the command manual in the same work unit
 
-command renamed
-    manual identity/content is realigned in the same work unit
-
-command removed
-    obsolete command manual identity is removed or otherwise realigned in the same work unit
-
-command modified
+modify
     manual-consistency check is mandatory
 ```
 
-When a modification changes documented observable behavior — including purpose, invocation syntax, operands, options, output, exit statuses, relevant environment/files, side effects or equivalent operational behavior — update the manual in the same work unit.
+When documented observable behavior changes, update the manual in the same work unit. A purely internal command implementation change requires no textual manual edit when the existing page remains fully accurate.
 
-When a modification is purely internal and the existing manual remains fully accurate, no textual manual change is required, but the consistency check still must be performed and the final result must state or imply no more than was verified.
+Every RumiAI-owned library identity is likewise coupled to exactly one owner-local manual topic, and every defined library function is classified public or internal under `LIBRARY-INTERFACES.md`.
 
-The command-to-manual completeness invariant should be protected mechanically by permanent tests where the current test contract permits a structural check. Such tests prove page presence/identity, not prose correctness.
+For any library change:
+
+```text
+create / rename / remove
+    realign the library manual in the same work unit
+
+modify
+    verify public/internal function naming
+    perform a library/manual consistency check
+
+add/change/remove public function
+    update the library manual in the same work unit
+```
+
+Public function names must not begin with `_`; internal function names must begin with `_`. Internal functions must not be presented as callable API in the library manual. A purely internal library implementation change requires no manual text edit when the public page remains fully accurate.
+
+Command-to-manual and library-to-manual presence should be protected mechanically by permanent tests where the current test contract permits structural checks. Such tests prove required topic presence/identity, not prose/API semantic correctness.
 
 ## 9. Testing authenticity
 
@@ -188,14 +201,15 @@ After every modification:
 1. reread the resulting diff;
 2. re-evaluate it against `RULES.md` and the applicable current specifications;
 3. when a specification was changed, reclassify every added design statement through the specification promotion gate;
-4. when a RumiAI-owned command was created, renamed, removed or modified, perform the command/manual consistency gate and verify the required manual topic/content state;
-5. scan the touched subsystem for superseded terminology/mechanisms;
-6. verify no unrelated user/repository changes were overwritten;
-7. run only tests proportional to the change under `TESTING.md`;
-8. state physical-validation status accurately and revision-specifically;
-9. verify Git history remains forward-only;
-10. if concrete unfinished work was discovered but intentionally deferred, ensure it is either already represented by an active task or captured once under `todo/`;
-11. when the task has an active handoff, determine whether the resulting state is a meaningful checkpoint and synchronize it before the final response when required.
+4. when a RumiAI-owned command was created, renamed, removed or modified, perform the command/manual consistency gate;
+5. when a RumiAI-owned library or function was created, renamed, removed or modified, verify library visibility naming and perform the library/manual consistency gate;
+6. scan the touched subsystem for superseded terminology/mechanisms;
+7. verify no unrelated user/repository changes were overwritten;
+8. run only tests proportional to the change under `TESTING.md`;
+9. state physical-validation status accurately and revision-specifically;
+10. verify Git history remains forward-only;
+11. if concrete unfinished work was discovered but intentionally deferred, ensure it is either already represented by an active task or captured once under `todo/`;
+12. when the task has an active handoff, determine whether the resulting state is a meaningful checkpoint and synchronize it before the final response when required.
 
 ## 12. Documentation consistency checks
 
@@ -207,12 +221,13 @@ When documentation is touched, additionally verify:
 - no completed handoff remains in the current tree as competing authority;
 - no historical evidence is presented as current behavior;
 - cross-references point to paths that exist in the current tree;
-- repeated normative text is minimized; where duplication is useful for orientation it must not create an independently editable second contract;
-- current specifications contain only promoted contract and do not accumulate candidate choices, comparison criteria, provisional assumptions, open questions or decision backlogs;
-- when a specification intentionally leaves a dimension unconstrained, it states only the stable boundary needed by the current contract rather than documenting the unresolved design process;
-- active working-design state needed for resumption is persisted in the active handoff rather than in `specifications/`;
-- operational manual content remains revision-coupled to the command behavior it describes;
-- mandatory command manual topics are not silently omitted because a command is considered internal/technical rather than user-facing;
+- repeated normative text is minimized;
+- current specifications contain only promoted contract and do not accumulate provisional design;
+- operational manual content remains revision-coupled to the implementation/API it describes;
+- mandatory command manual topics are not omitted because a command is technical/internal;
+- mandatory library manual topics are present for every RumiAI-owned library identity;
+- library manuals expose the complete public function API and do not expose underscore-prefixed internal functions as callable API;
+- public/internal library function naming follows `LIBRARY-INTERFACES.md`;
 - TODO files contain only deferred-work planning state and do not become substitute specifications or task handoffs;
 - the same work is not represented simultaneously by a current TODO and an active handoff.
 
@@ -233,39 +248,22 @@ Perform both changes in the same authorized work unit and, when practical, the s
 
 An active handoff exists only to preserve task continuity across chats/sessions. `handoff/README.md` defines its lifecycle and structure.
 
-It may record:
+Working design in a handoff is persistent task memory, not authority. It must be promoted, deferred or discarded before the task handoff is removed.
 
-```text
-task goal
-current status
-exact repository revisions last observed
-already-fixed task-local choices
-working design that is still provisional or unresolved
-completed work
-next concrete action
-known blockers
-```
+For a substantial, parallel or multi-chat task, create the handoff after preflight and before the first material task change when the need is already known.
 
-Working design in a handoff is persistent task memory, not authority. It may contain candidates, evaluation criteria, provisional assumptions and intentionally postponed in-task decisions when they are material to resumption. It must be promoted, deferred or discarded before the task handoff is removed.
-
-A handoff must not duplicate project-wide rules or promoted subsystem specifications.
-
-For a substantial, parallel or multi-chat task, create the handoff after preflight and before the first material task change when the need is already known. If the task becomes substantial later, create it as soon as that becomes clear.
-
-A handoff checkpoint is required when resumable task state changes materially, including fixed decisions, material working-design changes, completed modifications, executed tests/validation, discovered/resolved blockers, material scope/next-action changes or relevant revision movement.
-
-When a response materially advances an active handoff task, required synchronization must complete **before** the user-visible final response. If it cannot be completed, the response must say that the persistent task state is not synchronized.
+When a response materially advances an active handoff task, required synchronization must complete **before** the user-visible final response.
 
 When the task closes:
 
 1. propagate durable content to canonical current sources;
-2. resolve remaining working design by promoting accepted contract, creating deferred TODO work where still relevant, or discarding superseded/unneeded candidates;
-3. capture any other concrete out-of-scope work that is intentionally deferred as minimal TODO items when applicable;
+2. resolve remaining working design;
+3. capture concrete out-of-scope deferred work as minimal TODO items when applicable;
 4. complete the normal final consistency gate;
-5. write and commit a final handoff snapshot with `Status: Complete` and final revisions/validation state;
+5. write and commit a final handoff snapshot with `Status: Complete`;
 6. remove the handoff from the current tree in a later forward commit.
 
-Git history is the archive. Do not create a completed-handoff/archive directory in the current tree.
+Git history is the archive.
 
 ## 14. Completion checklist
 
@@ -274,32 +272,26 @@ A RumiAI task is ready to report as complete only when every applicable item is 
 ```text
 [ ] current remote HEADs were verified before writes
 [ ] README.md was used to route retrieval
-[ ] current RULES.md was read
-[ ] current CONSISTENCY-GATE.md was read
-[ ] relevant current specifications were read
-[ ] active handoff was read when applicable
+[ ] current RULES.md and CONSISTENCY-GATE.md were read
+[ ] relevant current specifications and active handoff were read
 [ ] relevant implementation/tests were inspected
 [ ] applicable invariants were identified before writing
-[ ] substantial/parallel/multi-chat task has an active handoff when required
 [ ] no existing responsibility was duplicated under a new name
 [ ] no contract was changed silently
 [ ] every statement added to a current specification passed the specification promotion gate
-[ ] unresolved/provisional active design is kept in handoff working design rather than specifications
-[ ] current specification was updated for intentional promoted contract changes
-[ ] every affected RumiAI-owned command has its required manual topic
-[ ] every command change received an explicit manual-consistency check
-[ ] command/manual behavior is aligned at completion
-[ ] command/manual structural completeness has proportional permanent coverage when applicable
+[ ] every affected command has its required manual and passed a manual-consistency check
+[ ] every affected library has its required manual and passed a manual-consistency check
+[ ] every affected library function follows the public/internal leading-underscore contract
+[ ] each library manual exposes all public functions and no internal function as callable API
+[ ] command/library manual structural completeness has proportional permanent coverage when applicable
 [ ] tests/evidence claim no more than what was actually exercised
-[ ] resulting diff was reread
-[ ] stale/superseded mechanisms and terminology were scanned
+[ ] resulting diff was reread and stale terminology/mechanisms were scanned
 [ ] cross-references/current routing remain valid
 [ ] user/concurrent repository changes were preserved
 [ ] proportional tests were run or correctly classified as unnecessary
 [ ] concrete intentionally deferred work is represented once under todo/ when applicable
 [ ] no current TODO duplicates an active handoff for the same work
 [ ] active handoff was synchronized for every material checkpoint before the final response
-[ ] completed task has a committed final handoff snapshot and no active handoff remaining in the current tree
 [ ] physical-validation status is stated accurately
 [ ] Git changes are forward-only
 ```
