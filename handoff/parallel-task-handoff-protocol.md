@@ -1,6 +1,6 @@
 # Parallel task handoff protocol
 
-Status: Active
+Status: Complete
 Updated: 2026-09-17
 
 ## Goal
@@ -10,10 +10,10 @@ Formalize automatic persistent handoffs for substantial, parallel or multi-chat 
 ## Current repository revisions
 
 ```text
-rumiai-dev  0b990060ff907f0786c4f79235db5ccd55fbf1f6  (pre-implementation HEAD)
+rumiai-dev  339f6de62df50990f2773cc345de1baf25e59e5d  (completed protocol implementation before final handoff snapshot)
 ```
 
-Only `rumiai-dev` is involved in this documentation work unit.
+Only `rumiai-dev` was involved in this documentation work unit.
 
 ## Applicable canonical sources
 
@@ -28,25 +28,29 @@ handoff/README.md
 
 ## Fixed task-local choices
 
-- one stable handoff file per active task;
-- handoff synchronization occurs inside the same response cycle, before the final user-visible reply, when task state materially changes;
-- meaningful checkpoints include fixed decisions, completed modifications, executed tests/validation, discovered problems/blockers, changed next action/scope, and materially changed repository revisions;
-- completed handoffs do not remain in the current tree;
-- Git history is the archive for completed handoffs, not a separate completed-handoff directory;
-- completion uses a final `Status: Complete` snapshot followed by forward deletion after durable state has been propagated.
+All durable choices have been propagated to the canonical current documentation. No task-local choice remains authoritative only in this handoff.
 
 ## Completed
 
-- mandatory preflight completed against `rumiai-dev` HEAD `0b990060ff907f0786c4f79235db5ccd55fbf1f6`;
-- current README, RULES, CONSISTENCY-GATE, specification router and handoff contract read.
+- mandatory preflight completed against the then-current remote HEAD;
+- an active handoff was created before the first material protocol change;
+- `README.md` now defines when parallel/substantial/multi-chat tasks acquire handoffs, automatic meaningful checkpoints, pre-response synchronization and Git-history archival;
+- `handoff/README.md` now defines creation, stable identity, required shape, resume protocol, checkpoint triggers, synchronization ordering, parallel concurrency, minimality and completion lifecycle;
+- `CONSISTENCY-GATE.md` now requires checkpoint synchronization and verifies active/final handoff lifecycle in the completion checklist;
+- the resulting documentation diff was reread against current RULES and the specification router;
+- no product/runtime/test repositories were modified;
+- no runtime or physical tests were required because this work unit changes documentation/process only;
+- Git history remained forward-only.
 
 ## Current state
 
-Implementation of the protocol documentation is starting.
+The protocol is fully implemented in canonical current documentation and the task is complete.
+
+Validation status: documentation consistency review completed; no runtime/physical validation applicable.
 
 ## Next action
 
-Update `README.md`, `handoff/README.md` and `CONSISTENCY-GATE.md`, then perform the final consistency scan, synchronize this handoff, mark it complete and remove it from the current tree.
+None. Remove this completed handoff from the current tree in the next forward commit so Git history becomes its archive.
 
 ## Blockers / open questions
 
