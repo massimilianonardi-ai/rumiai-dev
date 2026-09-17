@@ -10,7 +10,7 @@ Maintain a long-lived meta-workstream for continuously evaluating and improving 
 ## Current repository revisions
 
 ```text
-rumiai-dev    b75c86ada27f8ccb48091147c6782eaf9ce13139  (pre-checkpoint HEAD)
+rumiai-dev    c97be83db453c17abd431935c66e72ef41dd4d5a  (pre-checkpoint HEAD)
 rumiai-os     36c29d8412a523f722fd90004b78a07fdf0b06c8  (last inspected for pending-work verification)
 rumiai-tests  298931c1dca03d44755893d64b9b3a7c0058b7ea  (current state inspected for pending-work verification)
 pkg-catalog   94f58995cbd487b17f3b82bc2724c70540927b88  (current state recorded for package-related recovery)
@@ -129,27 +129,58 @@ The recovery completed its full handoff lifecycle: a final `Status: Complete` sn
 
 This was the intended transitional use of Git history. Future concrete deferred work should enter `todo/` when discovered, so routine workflow should not need historical mining to recover forgotten pending work.
 
+### Specification promotion boundary
+
+A real workflow defect was observed during the active `mk` design task: provisional design state — postponed decisions, candidate implementation languages/runtimes, candidate serialization formats, comparison criteria and unresolved questions — had been written into `specifications/rumiai-os/MK.md` and routed by `specifications/README.md` as "open design choices".
+
+That made persistent task memory look like current normative architecture and broke the intended meaning of `specifications/` as current promoted contract.
+
+The workflow was corrected with a specification promotion gate:
+
+```text
+promoted / binding current contract      → specifications/
+active provisional / unresolved design   → handoff/<task>.md / Working design
+experimental evidence needed to decide   → rumiai-dev-PoCs, referenced by handoff
+concrete work deferred outside task       → todo/
+past design state after completion        → Git history
+```
+
+`RULES.md`, `CONSISTENCY-GATE.md` and `handoff/README.md` now encode this lifecycle. An active handoff has an optional `Working design` section specifically for persistent non-authoritative candidates, provisional assumptions, comparison criteria and postponed in-task choices.
+
+The rule includes one narrow exception: a specification may state that it does not constrain a dimension when that absence of constraint is itself a stable current boundary. It must state only the boundary, not the candidate list or decision process.
+
+The concrete `mk` misuse was remediated in the same work unit:
+
+- `specifications/README.md` no longer routes `MK.md` as a source of open design choices;
+- `MK.md` now contains promoted lifecycle contract only;
+- provisional Python/JavaScript runtime directions, JSON/TOML comparison state, unresolved lifecycle/API/workspace choices and documentation-tool candidates were moved into `handoff/mk-tool-development.md` under `Working design`;
+- `CURRENT-MODEL.md` no longer presents undecided runtime/serialization state as architecture content;
+- `MK-SOURCE-MATERIALIZATION.md` was cleaned of future-planning sections and now limits itself to the current implemented capability and stable scope boundaries.
+
+No `rumiai-os` implementation or permanent test was changed by this workflow/documentation correction.
+
 ### Concurrency evidence
 
-During this work, other chats advanced `rumiai-dev` multiple times and introduced/modified independent documentation and handoffs, including `service-model`. Each movement was detected before writes and reconciled forward; unrelated concurrent work was preserved. This provides real evidence that the HEAD/reconciliation protocol is functioning under parallel work.
+During earlier workflow work, other chats advanced `rumiai-dev` multiple times and introduced/modified independent documentation and handoffs, including `service-model`. Each movement was detected before writes and reconciled forward; unrelated concurrent work was preserved. This provides real evidence that the HEAD/reconciliation protocol is functioning under parallel work.
 
 ## Current state
 
 `workflow-optimization` remains active.
 
-The pending-work visibility gap is resolved: `todo/` is now the canonical current surface for concrete deferred work, and the transitional historical recovery is complete and no longer active.
+The pending-work visibility gap is resolved through `todo/`, and the active-design/specification boundary is now explicit through the specification promotion gate and handoff `Working design` state.
 
-Active tasks and deferred TODOs are distinct current sets. Future workflow observation should focus on whether TODO files remain minimal, whether activation/removal remains frictionless under parallel work, and whether users/assistants consistently capture concrete deferred work at discovery time rather than allowing it to fall back into conversation memory.
+The first observed misuse (`mk`) has been corrected, providing a concrete reference case for future tasks. Future workflow observation should verify that assistants keep provisional design in active task state and promote only sufficiently settled rules into current specifications.
 
 ## Next action
 
-Observe the new TODO lifecycle in normal use. In particular:
+Observe both the TODO lifecycle and the specification promotion gate in normal use. In particular:
 
 1. verify that new deferred work is captured only when concrete and intentionally postponed;
 2. verify that TODO activation cleanly transfers state into one active handoff;
-3. watch for TODO accumulation, duplication, stale evidence or project-management bloat;
-4. continue observing specification taxonomy and retrieval efficiency as other dedicated tasks progress.
+3. verify that active design candidates/open questions remain in `Working design` rather than being promoted for memory retention;
+4. verify that promoted specification changes contain only binding current contract;
+5. watch for TODO/handoff/specification accumulation, duplication or taxonomy drift.
 
 ## Blockers / open questions
 
-None for the TODO lifecycle itself. Future corrections should be driven by observed workflow evidence rather than speculative expansion.
+None for the current TODO or specification-promotion lifecycle. Future corrections should be driven by observed workflow evidence rather than speculative expansion.
