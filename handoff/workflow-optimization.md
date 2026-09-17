@@ -5,14 +5,14 @@ Updated: 2026-09-17
 
 ## Goal
 
-Maintain a long-lived meta-workstream for continuously evaluating and improving the RumiAI development workflow: retrieval, documentation organization, Project Instructions, handoffs, deferred-work visibility, specification promotion, command/manual consistency, parallel work, repository coordination, testing/validation workflow and other mechanisms that affect how work is performed and resumed.
+Maintain a long-lived meta-workstream for continuously evaluating and improving the RumiAI development workflow: retrieval, documentation organization, Project Instructions, handoffs, deferred-work visibility, specification promotion, command/library manual consistency, parallel work, repository coordination, testing/validation workflow and other mechanisms that affect how work is performed and resumed.
 
 ## Current repository revisions
 
 ```text
-rumiai-dev    e4f80a4ccf41c75fa971c54c41e8d95f5778ceee  (pre-checkpoint HEAD after manual-task synchronization)
-rumiai-os     b18ae4439519bfe4081035a7d6d0a29423a81709  (current command/manual inventory inspected)
-rumiai-tests  d59a05417e91a97a10424f6dbc25047f9bfee383  (current remote HEAD inspected for manual-task state)
+rumiai-dev    e82ce555d051916f96d65f14cef795db2e0bbbbd  (pre-checkpoint HEAD after library-manual synchronization)
+rumiai-os     14e413342261b23df840f40b355166c4d55f1b41  (current remote HEAD; library inventory previously inspected at e9cad500)
+rumiai-tests  ae0f41b23ae477bf2f1b13332b4c52bf2df16f2f  (current remote HEAD; active parallel suite work)
 pkg-catalog   94f58995cbd487b17f3b82bc2724c70540927b88  (last recorded; not involved in this correction)
 ```
 
@@ -26,6 +26,8 @@ RULES.md
 CONSISTENCY-GATE.md
 specifications/README.md
 specifications/rumiai-os/COMMAND-ENTRYPOINTS.md
+specifications/rumiai-os/FILESYSTEM-NAMING.md
+specifications/rumiai-os/LIBRARY-INTERFACES.md
 specifications/rumiai-os/DOCUMENTATION-MODEL.md
 todo/README.md
 handoff/README.md
@@ -40,15 +42,13 @@ Subsystem specifications are added only when a concrete workflow question reache
 - Its handoff is synchronized automatically at meaningful checkpoints according to `handoff/README.md`.
 - It governs workflow health and reusable lessons; it must not become a second copy of canonical rules/specifications or a catch-all implementation task.
 - Durable workflow rules are propagated to canonical current documentation.
-- Documentation maintenance uses the accepted hybrid/event-driven model now canonical in `README.md`.
-- Current canonical development documentation in `rumiai-dev` is maintained in English; product/user-facing localization is separate.
-- Known work that is concrete but intentionally deferred is represented under `todo/`; active resumable work is represented under `handoff/`; completed/past state is preserved by Git history.
-- A TODO is minimal planning state, not a specification or active task state.
-- Activation transfers ownership from `todo/<topic>.md` to `handoff/<task>.md` in the same work unit, ideally the same commit, without keeping duplicate current representations.
-- `todo/` is not part of the mandatory read order for unrelated tasks.
+- Known concrete but inactive work belongs under `todo/`; active resumable work belongs under `handoff/`; completed/past state belongs in Git history.
 - `specifications/` contains promoted current contract only; unresolved active design belongs in handoff `Working design` until promotion.
-- Every RumiAI-owned directly executable command identity requires operational manual coverage regardless of whether the command is end-user-facing or primarily technical/internal.
-- Command creation/rename/removal and behavior-affecting modification are coupled to manual realignment in the same work unit; every command modification requires an explicit manual-consistency check.
+- Every RumiAI-owned directly executable command identity requires operational manual coverage regardless of audience.
+- Every RumiAI-owned library identity requires exactly one operational manual topic.
+- Library public/internal API visibility is explicit in naming: public functions do not begin with `_`; internal functions begin with `_`.
+- Library manuals expose the complete public function interface and do not expose internal functions as callable API.
+- Command/library lifecycle changes and manual realignment are one development consistency obligation.
 
 ## Completed
 
@@ -63,104 +63,85 @@ Git history = past
 
 The root `README.md` is the deterministic retrieval router. Current contracts live in one canonical location; historical patch composition is not used to reconstruct current meaning.
 
-### Project Instructions optimization
+### Deferred-work and active-design lifecycle
 
-ChatGPT Project Instructions were reduced to a bootstrap into the current repository knowledge base rather than a second RumiAI knowledge base.
-
-### Parallel task handoff protocol
-
-Substantial, parallel and multi-chat tasks use one stable active handoff each. Meaningful checkpoints are synchronized before the final user-visible response. Completed handoffs receive a final `Status: Complete` snapshot and are then removed from the active tree; Git history is the archive.
-
-### Documentation maintenance and language
-
-The hybrid/event-driven documentation-maintenance model was made canonical. A dedicated normalization task translated remaining current Italian/mixed-language documents to English and removed stale current-tree material discovered during that work.
-
-### Deferred-work TODO lifecycle
-
-The missing lifecycle layer for known but not-yet-active work was implemented:
+The current lifecycle separates:
 
 ```text
-specifications/      promoted current contracts
-todo/                concrete known work intentionally deferred
-handoff/             active/resumable task state
-Git history          past/completed state
-implementation/tests current mechanical state and evidence
+promoted contract       → specifications/
+active working design   → handoff/<task>.md / Working design
+deferred future work    → todo/
+past/completed state    → Git history
+implementation/tests    → current mechanical state and evidence
 ```
 
-Two historical pending workstreams were deliberately recovered after current-state verification:
-
-```text
-todo/pkg-install-real-validation.md
-todo/rumiai-tests-suite-realignment.md
-```
-
-### Specification promotion boundary
-
-A workflow defect observed during active `mk` design had placed provisional candidates, postponed decisions and comparison criteria into `specifications/rumiai-os/MK.md`.
-
-The workflow was corrected to:
-
-```text
-promoted / binding current contract      → specifications/
-active provisional / unresolved design   → handoff/<task>.md / Working design
-experimental evidence needed to decide   → rumiai-dev-PoCs, referenced by handoff
-concrete work deferred outside task       → todo/
-past design state after completion        → Git history
-```
-
-`RULES.md`, `CONSISTENCY-GATE.md` and `handoff/README.md` encode the promotion gate, and the concrete `mk` misuse was realigned by moving unresolved language/runtime, serialization and lifecycle design into the active handoff while keeping only promoted contract in current specifications.
+A specification promotion gate prevents candidates, postponed decisions and comparison state from being preserved as normative architecture merely for memory retention.
 
 ### Command/manual completeness
 
-The user identified a lifecycle requirement after the first `manual` mechanism was implemented: operational documentation must not be optional for technical/internal commands.
+Every RumiAI-owned directly executable command identity must have an owner-local operational manual topic. Command creation, rename, removal and behavior-affecting changes are coupled to manual realignment; every command modification requires an explicit manual-consistency check. Structural permanent coverage is required to detect missing command topics.
 
-The workflow now treats command implementation and operational manual consistency as one development obligation.
+The active `rumiai-os-man-documentation` handoff owns the current command-manual backfill rather than duplicating it as deferred work.
 
-Canonical changes made in the same correction:
+### Library interface and manual completeness
 
-- `RULES.md` requires every RumiAI-owned directly executable command identity to have an operational manual topic and couples command create/rename/remove/change to manual consistency;
-- `COMMAND-ENTRYPOINTS.md` defines the covered command-identity classes and clarifies that multiple paths/symlink exposures of one command identity require one topic, while sourced libraries and package-owned external commands are outside the invariant;
-- `DOCUMENTATION-MODEL.md` makes command coverage mandatory regardless of audience and requires permanent mechanical coverage from command identity to owner-local manual topic;
-- `CONSISTENCY-GATE.md` now requires command tasks to retrieve `COMMAND-ENTRYPOINTS.md` + `DOCUMENTATION-MODEL.md`, inspect the manual topic, run the command/manual gate and refuse completion while code/reference disagree;
-- `specifications/README.md` routes command tasks explicitly to both contracts.
+The same completeness model has now been extended to RumiAI-owned libraries.
 
-The current product was inspected rather than assuming the new invariant was already satisfied. At `rumiai-os@b18ae4439519bfe4081035a7d6d0a29423a81709`, 22 RumiAI-owned command identities were observed: 20 technical `sys` identities including root `m`, plus branded `rumiai-os` and `rumiai-os-sh`. Only four current manual topics exist (`sys manual`, `sys pkg`, `sys srv`, `sys state-path`), leaving 18 command identities uncovered.
+Canonical model:
 
-Because manual development is already an active workstream, this remediation was not converted into a TODO. `handoff/rumiai-os-man-documentation.md` was expanded so it cannot complete until the missing command topics are created and permanent structural coverage detects missing required topics.
+```text
+lib/<owner>/<runtime>/<library-name>.lib.<runtime>
+    ↓
+res/<owner>/manual/<library-name>.lib.<runtime>
+```
 
-No product files or permanent tests were changed by this workflow correction itself; the active manual task owns that implementation/test realignment.
+Each library has one manual page. Its public API is defined by functions whose names do not begin with `_`; internal functions must begin with `_` and are implementation-private. The manual exposes every public function and does not present internal functions as callable API.
+
+`specifications/rumiai-os/LIBRARY-INTERFACES.md` is now the canonical library-interface contract. `RULES.md`, `CONSISTENCY-GATE.md`, `DOCUMENTATION-MODEL.md` and `specifications/README.md` route and enforce the same lifecycle without creating a second authority.
+
+Current product inspection established that newer/current examples such as `array.lib.sh` and `mk-materialize.lib.sh` already visibly use underscore-prefixed private helpers and unprefixed public functions. Legacy code such as `core.lib.sh` contains unprefixed helper-shaped functions whose intended API visibility cannot safely be inferred from spelling alone.
+
+Therefore the correction was deliberately split:
+
+```text
+active manual task
+    library manual backfill and structural library→manual completeness
+
+todo/library-api-visibility-realignment.md
+    dedicated legacy API classification/rename/caller/test migration where required
+```
+
+This avoids both silent breaking renames and documentation that accidentally promotes legacy implementation helpers to public API.
 
 ### Concurrency evidence
 
-Earlier workflow work observed concurrent `rumiai-dev` movement from other chats and reconciled it forward without overwriting unrelated work. This remains the required pattern for all subsequent workflow/documentation writes.
+Concurrent `rumiai-dev` movement occurred again during this correction. A write to the active manual handoff was rejected because another chat had changed the same file; the new state was fetched and the library/manual delta was reapplied forward. No concurrent change was overwritten.
 
 ## Current state
 
 `workflow-optimization` remains active.
 
-The current lifecycle now distinguishes:
+The workflow now has explicit consistency gates for both directly executable commands and libraries:
 
 ```text
-promoted contract       → specifications/
-active working design   → handoff/Working design
-deferred future work    → todo/
-command operational ref → revision-coupled manual topic in rumiai-os
-past state              → Git history
+command identity  → mandatory operational manual
+library identity  → mandatory operational manual
+library function  → explicit public/internal visibility by leading underscore
 ```
 
-The command/manual rule is canonical, while current product coverage is explicitly pending inside the already-active manual task rather than hidden as specification drift.
+The legacy library visibility migration is not hidden as current compliance: it is explicit deferred work, while documentation backfill remains owned by the active manual task.
 
 ## Next action
 
-Observe the TODO lifecycle, specification promotion gate and command/manual gate in normal use. In particular:
+Observe the TODO lifecycle, specification promotion gate and command/library manual gates in normal use. In particular:
 
-1. verify that new deferred work is captured only when concrete and intentionally postponed;
-2. verify that active design candidates/open questions remain in `Working design` until promotion;
-3. verify that every command-development task retrieves and checks its operational manual;
-4. verify that technical/internal commands are not incorrectly exempted from manual coverage;
-5. verify that the active manual task closes the current 18-topic coverage gap and adds structural permanent coverage;
+1. verify every new/modified command retrieves and checks its operational manual;
+2. verify every new/modified library retrieves `LIBRARY-INTERFACES.md`, checks function visibility naming and checks its single library manual;
+3. verify internal library helpers are not accidentally documented/promoted as public API;
+4. verify the active manual task closes command/library topic gaps and adds structural permanent coverage;
+5. verify the legacy visibility TODO is activated as a dedicated product/API migration rather than folded silently into unrelated work;
 6. watch for TODO/handoff/specification/manual duplication or taxonomy drift.
 
 ## Blockers / open questions
 
-None for the workflow rule itself. Current command-manual backfill and structural test work belong to the active `rumiai-os-man-documentation` task.
+None for the workflow rule itself. Current command/library manual backfill belongs to `handoff/rumiai-os-man-documentation.md`; legacy library API visibility realignment is represented by `todo/library-api-visibility-realignment.md`.
