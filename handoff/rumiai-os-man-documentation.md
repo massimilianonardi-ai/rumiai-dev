@@ -9,14 +9,14 @@ Deliver a useful operational documentation surface with `rumiai-os` while keepin
 
 The first delivery is intentionally simple and terminal-first. The future multi-channel design remains a separate architecture problem whose build orchestration belongs to `mk`.
 
-The current first-delivery completion scope now also includes mandatory operational-manual coverage for every RumiAI-owned directly executable command identity and permanent structural coverage that detects missing command manual topics.
+The current first-delivery completion scope also includes mandatory operational-manual coverage for every RumiAI-owned directly executable command identity and permanent structural coverage that detects missing command manual topics.
 
 ## Current repository revisions
 
 ```text
-rumiai-dev   1fbdf402eda0093d9e45303a3619e242bcaa2fb8  (pre-checkpoint HEAD after command/manual rule promotion)
-rumiai-os    b18ae4439519bfe4081035a7d6d0a29423a81709  (current command/manual inventory inspected)
-rumiai-tests d59a05417e91a97a10424f6dbc25047f9bfee383  (current remote HEAD; refresh before test writes)
+rumiai-dev   0de42957604a4751c70f0956ba54a510c19bb8c3  (current remote HEAD before this handoff checkpoint; includes concurrent unrelated handoff work after pager-contract promotion)
+rumiai-os    26c14f1c6bec06932fbf37819a1203c31f2ae82a  (manual -> pager separation plus host-normalizing pager implementation)
+rumiai-tests fbb6a95d1c90a723366f8b78a9cd08ae57dfc45d  (current remote HEAD from parallel test-suite work; not modified by this pager work unit)
 ```
 
 Fresh remote HEAD retrieval remains mandatory before future writes.
@@ -31,7 +31,9 @@ TESTING.md
 RUNNER.md
 TEST-PATTERNS.md
 specifications/README.md
+specifications/rumiai-os/CURRENT-MODEL.md
 specifications/rumiai-os/DOCUMENTATION-MODEL.md
+specifications/rumiai-os/PAGER.md
 specifications/rumiai-os/RESOURCE-MODEL.md
 specifications/rumiai-os/FILESYSTEM-NAMING.md
 specifications/rumiai-os/COMMAND-ENTRYPOINTS.md
@@ -44,94 +46,58 @@ specifications/rumiai-os/MK-SOURCE-MATERIALIZATION.md
 handoff/README.md
 ```
 
-The promoted first-delivery contract lives in `DOCUMENTATION-MODEL.md`, `COMMAND-ENTRYPOINTS.md` and `RESOURCE-MODEL.md`; it is not duplicated here.
+The promoted first-delivery documentation contract lives in `DOCUMENTATION-MODEL.md`, `COMMAND-ENTRYPOINTS.md` and `RESOURCE-MODEL.md`. The host-normalizing terminal paging contract lives in `PAGER.md`; it is not duplicated here.
 
 ## Fixed task-local choices
 
-No task-local exception exists for technical/internal commands. Every RumiAI-owned directly executable command identity is part of the manual-coverage completion scope. Package-owned external executables and sourced libraries are outside that command-identity set.
+- No task-local exception exists for technical/internal commands. Every RumiAI-owned directly executable command identity is part of the manual-coverage completion scope. Package-owned external executables and sourced libraries are outside that command-identity set.
+- Normal `manual` presentation delegates to the technical `pager` command; `manual` no longer selects `more`/`less` or owns TTY backend policy.
+- `pager` belongs to `m`, is `bin/sys/pager`, and is bootstrap-integrated through `#!/usr/bin/env m`.
+- `pager <file>` owns terminal detection: non-terminal output is copied directly; terminal output selects the host backend.
+- Current Linux policy prefers `less`; if `less` is unavailable it falls back to `more` rather than making documentation unusable. Other current hosts use `more` until concrete host evidence requires another adapter.
+- Caller `LESS`, `LESSOPEN` and `LESSCLOSE` values are neutralized when the Linux `less` backend is selected.
+- This pager work unit does not modify `rumiai-tests`; test-suite reimplementation is an active parallel task.
 
 ## Completed
 
 - Documentation ownership, first-delivery resource storage, extensionless topic identity, public command name, lookup, qualification, discovery and deterministic owner/topic ordering are promoted current contract.
 - The first-delivery executable is fixed at `bin/sys/manual`, belongs to technical `m`, and is bootstrap-integrated through `#!/usr/bin/env m`.
-- Public statuses are fixed as `0` success, `1` invalid request, `2` not found, `3` ambiguous and `4` execution/presentation failure.
+- Public `manual` statuses are fixed as `0` success, `1` invalid request, `2` not found, `3` ambiguous and `4` execution/presentation failure.
 - `rumiai-os` implements `bin/sys/manual`.
-- Debian 13 x86_64 auxiliary development execution exposed that invoking util-linux `more` with redirected standard output can remain interactive/hang. The contract and implementation were corrected rather than treating that host behavior as portable pager semantics.
-- Current presentation contract is: `--no-pager` always writes directly; without it, terminal stdout uses POSIX `more`, while non-terminal stdout writes directly for deterministic pipelines/redirections.
-- The corrected `manual` implementation was exercised on the Debian auxiliary host across discovery, ordering, unique and qualified lookup, ambiguity, `--no-pager`, non-terminal default output and statuses `1` through `4`.
-- A real pseudo-terminal exercise on Debian entered the system `more` pager and accepted `q` before the end of a long topic, confirming that the TTY branch is interactive.
-- Permanent tests were added under `tests/rumiai-os/manual/`: `interface.test` and `paging.test`. They reuse the current target, isolated-replica and interactive helpers rather than duplicating test infrastructure.
-- The permanent test files were syntax-checked and the exact committed blobs passed the auxiliary Debian development execution path. No formal persisted `rumiai-test` validation session was produced because the available auxiliary environment could not materialize a complete repository checkout/runner session from GitHub.
-- The first operational topic set contains `res/sys/manual/manual`, `res/sys/manual/pkg`, `res/sys/manual/state-path` and `res/sys/manual/srv`. The latter three were written from their current canonical specifications and current command implementations rather than from remembered behavior.
-- The Debian auxiliary execution path was also used to confirm that the added topic identities participate in `manual` discovery in deterministic lexical order.
-- No physical validation has been performed.
-- Concurrent unrelated changes in `rumiai-dev` and `rumiai-tests` were preserved; the active parallel suite-realignment work was not modified by this task.
-- A later workflow correction promoted mandatory manual coverage for every RumiAI-owned directly executable command identity. `RULES.md`, `CONSISTENCY-GATE.md`, `COMMAND-ENTRYPOINTS.md`, `DOCUMENTATION-MODEL.md` and `specifications/README.md` now encode that command/manual lifecycle.
+- Earlier Debian 13 x86_64 development execution exposed util-linux `more` behavior that is unsuitable as a uniform cross-host interactive contract. User physical/manual observation additionally confirmed that `POSIXLY_CORRECT=1` produces undesirable interaction on the real host and is not an acceptable normalization mechanism.
+- The canonical contract now introduces `pager` as the explicit host-normalizing paging boundary. `specifications/rumiai-os/PAGER.md` defines ownership, interface, terminal/non-terminal behavior and current host backend policy; `DOCUMENTATION-MODEL.md` now delegates normal manual presentation to that facility.
+- Separation checkpoint: `rumiai-os@f93259aedf0f2aca1da1afe0a558edaeb093f19e` introduced `bin/sys/pager`, changed `manual` to delegate to it, and kept the interactive backend as `more` only. A Debian 13 x86_64 targeted development run passed direct non-TTY output, `--no-pager`, direct `pager`, invalid invocation status and real pseudo-terminal `manual -> pager -> util-linux more` presentation (`--More--`).
+- Host-normalization checkpoint: `rumiai-os@26c14f1c6bec06932fbf37819a1203c31f2ae82a` changed only `pager` backend selection and its operational page. On the native Debian environment, where no `less` executable is installed, `pager` correctly fell back to util-linux `more` and remained functional.
+- The Linux `less` branch was also exercised on the same Debian VM by exposing the VM's real BusyBox `less` applet under the normal command name `less` as an external host capability. With caller `LESS=-E`, `pager` neutralized the setting; input `G`, `b`, `q` reached `(END)`, remained in the viewer, paged backward from line 200 to earlier lines, and then quit. This is development evidence for the backend-selection/interaction path, not stable-host or physical validation.
+- The exact committed `bin/sys/pager` blob (`27e29d5b827ceb55c6a9fffcec101a35805c7706`) and `bin/sys/manual` blob (`274a97168d10277fca6df164343928b192941898`) were the command bodies exercised in the final Debian targeted run.
+- `res/sys/manual/pager` was added in the same command work unit and documents the current host policy. `res/sys/manual/manual` was realigned to describe delegation to `pager`.
+- The first operational topic set therefore now includes `manual`, `pager`, `pkg`, `state-path` and `srv` under owner `sys`.
+- A later workflow correction promoted mandatory manual coverage for every RumiAI-owned directly executable command identity. `RULES.md`, `CONSISTENCY-GATE.md`, `COMMAND-ENTRYPOINTS.md`, `DOCUMENTATION-MODEL.md` and `specifications/README.md` encode that command/manual lifecycle.
 - The same correction requires permanent structural coverage that detects a command identity lacking its owner-local manual topic.
+- No physical validation has been performed by this assistant for the pager change.
+- Concurrent unrelated changes in `rumiai-dev`, `rumiai-os` and `rumiai-tests` were preserved; Git history remained forward-only.
 
 ## Current state
 
-The first-delivery `manual` framework is implemented and has permanent mechanical coverage for its lookup/presentation interface, but the newly promoted command-coverage invariant is **not yet satisfied by the current product tree**.
+The first-delivery `manual` framework and the `pager` abstraction are implemented.
 
-Current implementation provides:
-
-```text
-qualified ordered discovery
-unique unqualified lookup
-explicit ambiguity resolution
-exact owner-qualified lookup
-direct non-terminal output
-explicit --no-pager output
-interactive POSIX more presentation on a terminal
-public statuses 0..4
-```
-
-At `rumiai-os@b18ae4439519bfe4081035a7d6d0a29423a81709`, the RumiAI-owned command identities observed are:
+Current normal presentation is:
 
 ```text
-sys:
-    m
-    digest
-    extract
-    http-fetch
-    lang
-    lang-set
-    log
-    manual
-    menu-ext
-    menu-ext-adv
-    menu-ext-adv-fs
-    mk
-    osarch-update
-    pkg
-    pkg-analyze
-    read-key
-    readc
-    shell
-    srv
-    state-path
-
-ai:
-    rumiai-os
-    rumiai-os-sh
+manual lookup
+    -> --no-pager: direct output
+    -> normal: pager
+        -> stdout non-TTY: direct output
+        -> Linux TTY + less available: less
+        -> Linux TTY + less unavailable: more
+        -> other TTY: more
 ```
 
-`bin/sys/m` is an exposure of the root `m` command and is therefore not a second command identity.
+The current product command identity set now includes `pager` in addition to the previously observed command identities. Because its required `sys pager` manual topic was added in the same work unit, the count of command identities still missing mandatory manual topics remains 18 rather than increasing.
 
-Current manual topics are only:
+The prior permanent `manual` tests must not currently be treated as reliable validation evidence: the user reports that real manual execution works while those tests fail substantially, and a separate active task owns test-suite reimplementation/realignment. This pager work unit deliberately did not alter `rumiai-tests` or claim a permanent-test PASS.
 
-```text
-sys manual
-sys pkg
-sys srv
-sys state-path
-```
-
-No `res/ai/manual/` topics are currently materialized. Therefore 18 of the 22 currently observed command identities still require manual topics before this task can complete under the new contract.
-
-The existing `interface.test` / `paging.test` coverage does not yet prove the new global command-to-manual completeness invariant. A structural permanent test must be added or existing coverage extended so a missing required manual topic fails mechanically.
-
-Formal cross-host validation has not yet been claimed. The available Debian VM supplied auxiliary development evidence only; stable reference-host/validation-run evidence remains a later validation step.
+Formal cross-host/stable-host validation has not been claimed. The Debian VM supplied targeted auxiliary development evidence only.
 
 ## Working design state
 
@@ -141,19 +107,21 @@ The generated operational artifacts should remain usable without requiring the d
 
 ## Next action
 
-Before this handoff can close:
+For the documentation task itself, remaining first-delivery work is still dominated by command/manual completeness:
 
 1. refresh current `rumiai-os` and derive the current RumiAI-owned directly executable command-identity inventory from the actual tree and command-entrypoint contract;
-2. create the missing owner-local manual topics from current specifications plus current implementation behavior, including `sys m` and the branded `ai` command topics;
-3. add/realign permanent structural coverage so every RumiAI-owned command identity must have its required manual topic while non-command manual topics remain allowed;
-4. run proportional real validation of the complete manual surface under the current testing contract;
+2. create the remaining missing owner-local manual topics from current specifications plus current implementation behavior, including `sys m` and the branded `ai` command topics;
+3. let the separate active test-suite task establish trustworthy permanent coverage, including the command-to-manual completeness property, before using automated tests as closure evidence;
+4. run proportional real validation of the complete manual surface under the corrected testing contract;
 5. only then perform the normal final consistency gate and handoff completion lifecycle.
 
-Long-term multi-channel source/toolchain design may continue independently as working design and does not block first-delivery completion unless the current task deliberately keeps that design in scope.
+The pager abstraction itself has no remaining design blocker in this work unit. Host-specific policy can be extended later only from concrete host evidence.
+
+Long-term multi-channel source/toolchain design may continue independently as working design and does not block first-delivery command coverage.
 
 ## Blockers / open questions
 
-- The current product tree has incomplete mandatory command manual coverage: 18 currently observed command identities lack topics.
-- Permanent tests do not yet enforce the command-to-manual completeness invariant.
-- Formal multi-host/stable-host validation of the implemented first-delivery `manual` surface has not yet been executed.
+- The current product tree still has 18 command identities without their mandatory operational manual topics.
+- Trustworthy permanent-test coverage is pending the active separate test-suite reimplementation task; existing failing manual tests are not closure evidence.
+- Formal multi-host/stable-host validation of the implemented first-delivery `manual`/`pager` surface has not yet been executed.
 - Long-term documentation source representation and external build toolchain remain unresolved working design, not a first-delivery command-coverage blocker.
