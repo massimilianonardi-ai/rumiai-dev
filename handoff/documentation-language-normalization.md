@@ -1,18 +1,16 @@
 # documentation-language-normalization
 
-Status: Active
+Status: Complete
 Updated: 2026-09-17
 
 ## Goal
 
 Normalize the current canonical RumiAI development documentation to English so the active knowledge base has one maintenance language and does not mix languages across documents.
 
-The work must translate current canonical documents in place. It must not create parallel translated copies or a second documentation authority.
-
 ## Current repository revisions
 
 ```text
-rumiai-dev  c075f9e8151c6e1a5640196ba7e4eaf6c2b6ccf1  (pre-task HEAD)
+rumiai-dev  37d9855543b11bfc652cf55c825568c243bf0c82  (normalization implementation commit)
 ```
 
 ## Applicable canonical sources
@@ -27,36 +25,45 @@ handoff/README.md
 
 ## Fixed task-local choices
 
-- English is the target language for current canonical development documentation in `rumiai-dev`.
-- Translation is performed in place; no side-by-side translated documents are created.
-- Technical identifiers, command names, literal paths, code, protocol tokens and externally defined terminology remain unchanged unless a separate current contract requires a change.
-- Translation must preserve normative force and semantics; `MUST`/`SHOULD`-level meaning must not be weakened or strengthened accidentally.
-- If translation exposes stale text that conflicts with current canonical sources, apply the normal authority hierarchy and realign the stale text instead of faithfully translating a superseded claim.
-- Product/user-facing localization is a separate concern and is not established by this task.
+- Current canonical development documentation in `rumiai-dev` is maintained in English; this durable rule is now canonical in `README.md`.
+- Translation is performed in place; no side-by-side translated authority is created.
+- Technical identifiers, command names, literal paths, code, protocol tokens and externally defined terminology retain their exact spelling unless a separate current contract changes them.
+- Translation preserves normative meaning.
+- Stale wording exposed by translation is realigned according to current authority instead of being translated as if it were still current.
+- Product/user-facing localization remains a separate concern.
 
 ## Completed
 
-- The current `rumiai-dev` tree was inspected.
-- Mixed-language current documentation was confirmed.
-- Known Italian current documents include at least:
+The current documentation tree was audited and the Italian/mixed-language current documents were normalized to English in one atomic commit:
 
-  ```text
-  TESTING.md
-  RUNNER.md
-  TEST-PATTERNS.md
-  specifications/rumiai-os/RESOURCE-MODEL.md
-  specifications/rumiai-os/LANG-BOOTSTRAP.md
-  ```
+```text
+TESTING.md
+RUNNER.md
+TEST-PATTERNS.md
+specifications/rumiai-os/RESOURCE-MODEL.md
+specifications/rumiai-os/LANG-BOOTSTRAP.md
+```
 
-- `TESTING.md` also exposed at least one stale repository-role description that still refers to old `decisions` / `architecture` organization; the normalization pass must not preserve such superseded wording.
+The pass also removed current-tree drift exposed by the translation:
+
+- `TESTING.md` no longer describes the pre-reset `rumiai-dev` role in terms of `decisions` / `architecture`; repository ownership now points to the root current router instead of maintaining a stale independent role table.
+- revision-specific suite-realignment evidence was removed from `TESTING.md`; such evidence belongs in revision-specific validation mechanisms/history, not in the current testing contract.
+- the historical revision reference in `TEST-PATTERNS.md` was removed while preserving the current pattern contract.
+
+Validation performed:
+
+- reviewed the resulting five-file diff;
+- re-read representative translated contracts;
+- searched the current repository for primary Italian documentation markers (`Questo documento`, `Questa specifica`, `Scopo`) with no remaining results;
+- no runtime or physical tests were run because the work unit changed documentation only.
 
 ## Current state
 
-The task is active. The complete current tree must be audited so no current canonical Markdown document remains unintentionally Italian or mixed-language after completion.
+The language-normalization work unit is complete. Current canonical development documentation is intended to be English under the policy now recorded in the root `README.md`.
 
 ## Next action
 
-Audit every current canonical documentation file, translate the Italian/mixed-language documents to English in place, realign any stale wording exposed by the translation, then run the documentation consistency gate and close this handoff through the normal final-snapshot/delete lifecycle.
+None.
 
 ## Blockers / open questions
 
