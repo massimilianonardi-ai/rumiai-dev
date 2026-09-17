@@ -13,6 +13,7 @@ Read only the smallest complete set relevant to the task.
 |---|---|
 | overall `m` / RumiAI architecture, layer ownership, top-level layout | `rumiai-os/CURRENT-MODEL.md` |
 | root bootstrap, environment, PATH, branded activation | `rumiai-os/BOOTSTRAP-ENVIRONMENT.md` |
+| physical bootstrap/command root resolution | `rumiai-os/ENTRYPOINT-ROOT-RESOLUTION.md` |
 | command/runtime classification and shebangs | `rumiai-os/COMMAND-ENTRYPOINTS.md` |
 | controlled filesystem naming and internal library naming | `rumiai-os/FILESYSTEM-NAMING.md` |
 | POSIX portability and host-specific abstraction boundary | `rumiai-os/POSIX-PORTABILITY-LAYER.md` |
