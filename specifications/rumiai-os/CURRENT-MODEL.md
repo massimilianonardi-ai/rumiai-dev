@@ -286,11 +286,19 @@ res/sys/lang
 
 See `LANG-BOOTSTRAP.md`.
 
-## 11. Source materialization
+## 11. Project development lifecycle
 
-`mk` belongs to `m` and materializes a useful root from source/materialization input under the contract in `MK-SOURCE-MATERIALIZATION.md`.
+`mk` belongs to `m` and is responsible for the complete management and orchestration of the development lifecycle of a project.
 
-It is not a synonym for `pkg`, a generic build graph or a second package manager.
+It interprets structured declarative configuration, manages projects and profiles, resolves and orchestrates development requirements and dependencies, coordinates external tools, manages development workspace/state/output, and performs lifecycle operations such as build, test, run, clean and production of outputs required by later consumers.
+
+`mk` does not replace compilers, interpreters, external build engines or `pkg`; it orchestrates them through modular boundaries.
+
+Project configuration consumed by `mk` is data and MUST NOT be shell-sourced, `eval`ed or treated as executable configuration merely to describe a project.
+
+The implementation runtime and exact structured configuration format are intentionally undecided. See `MK.md` for the current contract and open design boundaries.
+
+The currently implemented `mk materialize` source-materialization capability remains specified by `MK-SOURCE-MATERIALIZATION.md`; it is one capability of the broader lifecycle subsystem rather than the complete definition of `mk`.
 
 ## 12. Local service lifecycle
 
@@ -354,4 +362,6 @@ CURRENT-19   lang is the current localization facility name
 CURRENT-20   srv host supervision integrations are separate from the portable baseline
 CURRENT-21   POSIX.1-2024 Issue 8 is the platform baseline
 CURRENT-22   Git history and historical evidence remain forward-only and revision-specific
+CURRENT-23   mk owns complete project development-lifecycle management and orchestration
+CURRENT-24   mk project configuration is structured declarative data, not shell-sourced/evaled configuration code
 ```
