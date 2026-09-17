@@ -1,7 +1,7 @@
 # rumiai-tests-suite-realignment
 
 Status: Active
-Updated: 2026-09-17 21:31 +02:00
+Updated: 2026-09-17 22:12 +02:00
 
 ## Goal
 
@@ -10,14 +10,14 @@ Audit the current permanent test suite and realign only evidence-confirmed legac
 ## Current repository revisions
 
 ```text
-rumiai-dev   d1ca9216d454f91c65d76af04b6df4ecf137757d
-rumiai-tests d59a05417e91a97a10424f6dbc25047f9bfee383
-rumiai-os    8c69d50bf675f6fab7ab447b71542c7808c988a8
+rumiai-dev   3f98e108c499d41de8e6264375689b16a6ee0ce0
+rumiai-tests bec37b4368f474dcb6ea8ef418af090384478df3
+rumiai-os    e9cad50042e1b74613630af33bb239d34a855c99
 ```
 
 These revisions are task state immediately before this checkpoint update; fresh HEAD retrieval remains required before later writes.
 
-Concurrent forward movement was reconciled during this work unit. `rumiai-dev` changes after activation were confined to the parallel manual-documentation handoff. `rumiai-tests` gained `tests/rumiai-os/manual/interface.test` and `tests/rumiai-os/manual/paging.test` from that parallel workstream before this task's test commits; those files were preserved unchanged. The later `rumiai-os` advance from `8b0c7991e8242dac73b0a350530a5100385294f3` to `8c69d50bf675f6fab7ab447b71542c7808c988a8` added only `res/sys/manual/pkg`, `res/sys/manual/srv` and `res/sys/manual/state-path`; no runtime implementation used by these rewrites changed.
+Concurrent forward movement has been reconciled throughout the task. `rumiai-tests` manual-test additions from the parallel documentation workstream were preserved unchanged. Later `rumiai-dev` and `rumiai-os` movement was confined to package-validation handoff updates and manual/pager documentation or implementation; no runtime implementation exercised by the command/language/service/shell/state/read-key/log/digest realignments changed after those tests were inspected. A prior `rumiai-os` package-path change remains relevant when the `pkg` cohort is audited and must be read at the then-current revision.
 
 ## Applicable canonical sources
 
@@ -33,11 +33,12 @@ todo/README.md
 specifications/rumiai-os/BOOTSTRAP-ENVIRONMENT.md
 specifications/rumiai-os/COMMAND-ENTRYPOINTS.md
 specifications/rumiai-os/LANG-BOOTSTRAP.md
+specifications/rumiai-os/READ-KEY.md
 specifications/rumiai-os/SERVICE-LIFECYCLE.md
 specifications/rumiai-os/STATE-MODEL.md
 ```
 
-Current `rumiai-tests/AUTHORING.md`, shared test libraries and permanent tests are implementation/evidence sources.
+Current `rumiai-tests/AUTHORING.md`, shared test libraries and permanent tests are implementation/evidence sources. Current target implementation is read when needed to establish whether a fake represents an external boundary or replaces behavior claimed by the test.
 
 ## Fixed task-local choices
 
@@ -46,10 +47,11 @@ Current `rumiai-tests/AUTHORING.md`, shared test libraries and permanent tests a
 - Shared `rumiai-tests` infrastructure is reused when its current contract matches; inline copies require a test-specific justification.
 - Behavioral tests that need isolation exercise the real target or a complete isolated replica through the real execution path; partial target reconstructions are not acceptable evidence for composed behavior.
 - Test assertions protect current specified/public behavior rather than private runtime file layouts when those layouts are explicitly non-contractual.
+- Fake host utilities remain valid test boundaries when the real RumiAI component under test selects or drives those host utilities; they must not replace RumiAI components whose behavior the test claims to verify.
 
 ## Implemented realignment
 
-Two coherent tranches are committed in `rumiai-tests` after the concurrent manual-test commit `0428a21be8f9be05193e2533672aa8f7864dbd30`.
+Seventeen evidence-confirmed legacy tests have now been realigned across five coherent tranches.
 
 ### Tranche 1 — command, language and service lifecycle
 
@@ -78,48 +80,91 @@ Two coherent tranches are committed in `rumiai-tests` after the concurrent manua
   - removed local target-discovery functions and the duplicated complete-runtime copy loop;
   - now uses the shared target and fixture helpers while preserving semantic-path, validation, user-binding and no-side-effect checks from `STATE-MODEL.md`.
 
+### Tranche 3 — read-key
+
+- `tests/rumiai-os/read-key/contract.test`
+- `tests/rumiai-os/read-key/pty.test`
+
+Both tests keep their distinct current properties and now source `lib/rumiai-os-target.lib` instead of embedding historical target-discovery copies. The Python PTY driver remains local to `pty.test`: it is test-specific infrastructure explicitly suitable for deterministic terminal-byte validation, not a duplicated RumiAI implementation and not a prompt/response case served by `lib/interactive.lib`.
+
+### Tranche 4 — log
+
+The five current log tests:
+
+```text
+tests/rumiai-os/log/field-values.test
+tests/rumiai-os/log/invalid-fields.test
+tests/rumiai-os/log/invalid-level.test
+tests/rumiai-os/log/invalid-severity.test
+tests/rumiai-os/log/severity-filter.test
+```
+
+retain their distinct observable logging properties and now source the shared target-discovery helper instead of maintaining five local copies of the same discovery responsibility.
+
+### Tranche 5 — digest
+
+The four current digest tests:
+
+```text
+tests/rumiai-os/digest/backends.test
+tests/rumiai-os/digest/cli.test
+tests/rumiai-os/digest/md5-backends.test
+tests/rumiai-os/digest/sha512.test
+```
+
+now use the shared target-discovery helper. Fake checksum executables remain because they represent host backend capabilities selected by the real `bin/sys/digest`; the RumiAI command itself remains real.
+
+`sha512.test` also contained an independent path bug: it derived `suite_root` as the `tests/` directory and therefore attempted to source `tests/lib/rumiai-os-target.lib`. The test now computes the actual suite repository root consistently with the other permanent tests before sourcing the helper.
+
+During post-commit diff review, the first digest commit was found to have accidentally lengthened the fake SHA-256 `cksum` value in `backends.test`. That transcription regression was corrected immediately in the forward commit `bec37b4368f474dcb6ea8ef418af090384478df3`; the final committed fixture was re-read and contains the intended 64 hexadecimal characters.
+
 No `rumiai-os` product implementation file has been modified by this task.
 
 ## Audit evidence beyond the implemented tranches
 
-Current inspection has confirmed additional local target-discovery duplication in at least these functional families:
+Additional duplicated target-discovery infrastructure remains in current families including:
 
 ```text
 bootstrap
-digest
 extract
 http-fetch
 json
-log
 mk
 pkg
-read-key
 ```
 
-Representative inspected files include `bootstrap/absolute-invocation.test`, `digest/cli.test`, `extract/dispatch.test`, `http-fetch/cli.test`, `json/structure.test`, `log/field-values.test`, `mk/materialize.test`, `pkg/dependency.test` and `read-key/pty.test`.
+`http-fetch/backends.test` and `http-fetch/cli.test` have been fully inspected and are classified `simplify`: their local target-discovery copies should be replaced by `lib/rumiai-os-target.lib`, while their fake `curl`/`wget` programs should remain because they model external host backends selected by the real `bin/sys/http-fetch` command.
 
-The remaining tests are not classified solely from family membership; each file still needs inspection before modification. Already-fixed `shell/selection.test` and `state-path/contract.test` were examples of local whole-runtime copy logic whose responsibility is now centralized in `lib/rumiai-os-fixture.lib`.
+Representative remaining inspected files include `bootstrap/absolute-invocation.test`, `extract/dispatch.test`, `json/structure.test`, `mk/materialize.test` and `pkg/dependency.test`. Remaining files are not classified solely from family membership; each property still requires inspection before modification.
 
 ## Validation evidence obtained
 
 - `sh -n` passed locally for the exact four tranche-1 rewritten shell tests before commit.
 - `sh -n` passed locally for the exact two tranche-2 rewritten shell tests before commit.
-- Each committed file was re-read from its resulting commit after the write.
-- The aggregate comparison from `0428a21be8f9be05193e2533672aa8f7864dbd30` to `c028b9b9e1d432bcd83a2a8e4220fc10338b98d7` contained exactly the intended four tranche-1 files.
-- The aggregate comparison from `c028b9b9e1d432bcd83a2a8e4220fc10338b98d7` to `d59a05417e91a97a10424f6dbc25047f9bfee383` contains exactly the intended tranche-2 files `shell/selection.test` and `state-path/contract.test`.
-- Relevant current specifications and test-authoring/shared-helper contracts were rechecked before each rewrite.
-- The final observed `rumiai-os` concurrent delta adds only manual-resource files and does not change runtime code exercised by the rewritten tests.
-- The available auxiliary Linux container cannot resolve `github.com`, so repository cloning and real execution of the target tests are unavailable in this session. No runtime PASS/FAIL claim is made for the rewritten tests.
+- `sh -n` passed locally for both read-key rewritten shell tests before commit; this is syntax-only evidence for the shell wrapper and does not execute the Python PTY behavior.
+- `sh -n` passed locally for all five rewritten log tests before their batch commit.
+- `sh -n` passed locally for all four rewritten digest tests before their batch commit.
+- The aggregate comparison from `d59a05417e91a97a10424f6dbc25047f9bfee383` to `bec37b4368f474dcb6ea8ef418af090384478df3` contains exactly the eleven files changed in tranches 3-5: two read-key, five log and four digest tests.
+- The digest commit diff was re-read; the accidental SHA-256 fixture-length drift was detected by the consistency gate and corrected forward. The final `backends.test` content was then re-read from `bec37b4368f474dcb6ea8ef418af090384478df3`.
+- Current `bin/sys/read-key`, `bin/sys/digest` and `bin/sys/http-fetch` implementations were inspected when classifying their permanent test boundaries.
+- Relevant current specifications and test-authoring/shared-helper contracts were rechecked before the rewrites.
+- Final concurrent `rumiai-dev` changes are confined to package-validation/manual/pager documentation. Final concurrent `rumiai-os` changes after the digest/http-fetch inspection add or modify only manual/pager files and do not change the runtime code exercised by the completed cohorts.
+- The available auxiliary Linux container cannot resolve `github.com`, so repository cloning and real execution of the target tests are unavailable in this session. `rumiai-tests` has no current GitHub Actions workflow available as an existing execution route. No runtime PASS/FAIL claim is made for the rewritten tests.
 
 ## Current state
 
-Six evidence-confirmed legacy tests have been realigned, including the explicit partial-replica violation called out by the original TODO. The task remains Active because the suite-wide audit found further duplicated test infrastructure and because revision-specific runtime execution has not been obtained.
+Seventeen legacy tests have been realigned. The explicit partial-replica violation from the original TODO is gone, multiple generations of copied target/fixture infrastructure have been reduced, and one independently broken permanent test (`digest/sha512.test`) has been repaired.
+
+The task remains Active because the suite-wide audit still has confirmed and unclassified legacy infrastructure, and revision-specific runtime execution has not been obtained.
 
 ## Next action
 
-Continue the suite-wide classification file by file. Migrate the next evidence-confirmed cohort to `lib/rumiai-os-target.lib` and, where isolation is required, `lib/rumiai-os-fixture.lib`; start with the already confirmed `read-key` candidate, then finish the inspected `bootstrap`, `digest`, `extract`, `http-fetch`, `json`, `log`, `mk` and `pkg` families. Preserve each test's distinct current property, merging/removing only where duplicate or non-contractual claims are established. Re-run syntax checks and the strongest real tests available after each coherent tranche.
+Start with the already classified `http-fetch` pair and replace only their local target-discovery copies. Then continue file-by-file through `json`, `extract`, `mk`, `bootstrap` and `pkg`, reading the current target contract/implementation for each cohort before deciding `keep`, `simplify`, `merge` or `remove`. Re-read the current package path before any `pkg` test change because that implementation moved concurrently during this task.
+
+After each coherent tranche, run syntax checks, re-read the committed diff, reconcile any concurrent HEAD movement and use the strongest real execution environment available.
 
 ## Blockers / open questions
 
 - A network-capable executable environment is not currently available in this chat for real test execution.
+- No current GitHub Actions workflow exists in `rumiai-tests` to provide an already-approved executable fallback from this session.
 - No `rumiai-os` product change is authorized or assumed necessary by this test-suite task; any product defect discovered by real execution must be handled explicitly under the current product-change authorization rules.
