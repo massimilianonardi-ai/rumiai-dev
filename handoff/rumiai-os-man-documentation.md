@@ -12,7 +12,7 @@ The first delivery is intentionally simple and terminal-first. The future multi-
 ## Current repository revisions
 
 ```text
-rumiai-dev   116516e935154ba09401ed0482d6f38a61afff45  (canonical manual discovery contract checkpoint before this handoff update)
+rumiai-dev   4e680859b8f16f37690ff2107674e23f584c1505  (canonical manual discovery-order contract checkpoint before this handoff update)
 rumiai-os    36c29d8412a523f722fd90004b78a07fdf0b06c8  (current remote HEAD inspected; no product change made by this task)
 rumiai-tests 298931c1dca03d44755893d64b9b3a7c0058b7ea  (last inspected while checking current mk coverage; not involved in this documentation-only checkpoint)
 ```
@@ -47,15 +47,16 @@ The active `handoff/mk-tool-development.md` is relevant only to the cross-task s
 - `mk` was established as the owner of long-term documentation build orchestration.
 - The paging design was resolved against the POSIX portability contract: first delivery uses POSIX `more`, with `--no-pager` for direct topic output and no generic first-delivery pager abstraction.
 - Topic lookup and owner qualification were promoted: unique unqualified lookup, explicit ambiguity reporting and exact owner-qualified resolution without fallback.
-- Zero-argument discovery is now promoted: bare `manual` enumerates every materialized topic and always writes each result as `<owner> <topic>`, even when the topic name is globally unique.
+- Zero-argument discovery is promoted: bare `manual` enumerates every materialized topic and always writes each result as `<owner> <topic>`, even when the topic name is globally unique.
+- Discovery output ordering is promoted: ascending lexical order by owner and then topic, using controlled identifier spelling rather than locale-specific collation.
 - Zero-argument discovery does not present a topic and therefore does not invoke the topic pager.
-- While updating the discovery contract, `DOCUMENTATION-MODEL.md` was realigned with the current specification-promotion gate: unresolved toolchain candidates, active decision backlog and task sequencing were removed from the current specification rather than kept as pseudo-contract.
+- `DOCUMENTATION-MODEL.md` was realigned with the current specification-promotion gate: unresolved toolchain candidates, active decision backlog and task sequencing were removed from the current specification rather than kept as pseudo-contract.
 - The stale statement that the broader `mk` lifecycle was still being defined was corrected; current `MK.md` owns that lifecycle contract.
 - No `rumiai-os` or `rumiai-tests` product/test modification has been made by this documentation task.
 
 ## Current state
 
-The first-delivery documentation storage, command identity, qualified discovery, topic lookup/owner qualification and paging semantics are promoted current contract.
+The first-delivery documentation storage, command identity, qualified and deterministically ordered discovery, topic lookup/owner qualification and paging semantics are promoted current contract.
 
 The remaining first-delivery design before implementation is command executable ownership/location plus exact diagnostic and numeric exit-status behavior. Permanent-test scope should then be fixed and product implementation can follow only under the applicable product-modification authorization.
 
@@ -71,7 +72,7 @@ Continue the first-delivery interface design in this order:
 
 1. fix `manual` executable ownership/location;
 2. fix exact diagnostics and numeric exit-status behavior for invalid invocation, topic-not-found, ambiguity and `more` execution failure;
-3. define proportional permanent tests for storage, qualified discovery, unique lookup, ambiguity, owner-qualified lookup, normal `more` presentation and `--no-pager` direct output;
+3. define proportional permanent tests for storage, qualified ordered discovery, unique lookup, ambiguity, owner-qualified lookup, normal `more` presentation and `--no-pager` direct output;
 4. only then implement `manual` and initial pages in `rumiai-os` under explicit product authorization.
 
 ## Blockers / open questions
