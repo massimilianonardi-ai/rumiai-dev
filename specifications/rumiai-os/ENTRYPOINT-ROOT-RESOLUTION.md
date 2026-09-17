@@ -1,139 +1,73 @@
-# RumiAI OS — Entrypoint and Root Resolution
+# RumiAI OS — Entrypoint and root resolution
 
-Status: **Normative specification**  
-Date: 2026-08-29  
-Updated: 2026-09-02
+Status: **Current / normative**  
+Updated: 2026-09-17
 
-## 1. Scope
+This specification defines physical root resolution for the technical bootstrap `m`.
 
-This specification defines root resolution for the physical `rumiai-os` bootstrap.
+## Fundamental values
 
-The resulting RumiAI-owned environment variables are:
+After successful bootstrap resolution:
 
 ```text
 m_BOOTSTRAP_BIN
+    absolute physical/canonical pathname of the actual m bootstrap file
+
 m_ROOT
+    physical/canonical directory containing m_BOOTSTRAP_BIN
 ```
 
-Normative baseline:
+Both are exported and readonly only after validation succeeds.
 
-**POSIX.1-2024 / The Open Group Base Specifications Issue 8**, plus the explicitly validated host profile used by the bootstrap.
-
-## 2. Fundamental state
-
-### `m_BOOTSTRAP_BIN`
-
-After successful resolution, `m_BOOTSTRAP_BIN` MUST be the absolute physical/canonical pathname of the actual `rumiai-os` regular file.
-
-It MUST identify the final physical target even when invocation occurred through one or more symbolic links.
-
-### `m_ROOT`
-
-`m_ROOT` MUST be the physical/canonical directory containing `m_BOOTSTRAP_BIN` and MUST be accessible to the bootstrap execution context.
-
-The root is derived from the canonical bootstrap pathname rather than the caller CWD or an external symlink location.
-
-### Export and immutability
-
-After successful validation:
-
-```sh
-export -- m_BOOTSTRAP_BIN m_ROOT
-readonly -- m_BOOTSTRAP_BIN m_ROOT
-```
-
-The variables MUST NOT be exported before their invariants succeed.
-
-## 3. Invocation pathname
+## Invocation pathname
 
 If `$0` contains `/`, it is treated as the invocation pathname.
 
-If `$0` contains no `/`, the current bootstrap first accepts an existing or symbolic-link pathname in the caller CWD as `./$0`; otherwise it resolves `$0` through the caller's `PATH` with `command -v`.
+If `$0` contains no `/`, the bootstrap may first recognize an existing pathname in the caller CWD and otherwise resolve the command through PATH according to the current bootstrap contract.
 
-This behavior is part of the stabilized bootstrap baseline.
+Invocation through a symbolic link is supported; symlink invocation is not a reason to reject the command.
 
-## 4. Existing-path canonicalization
+## Existing-path canonicalization
 
-The canonical rule is:
+For an object that must already exist, the semantic order is:
 
 ```text
-VALIDATE EXISTENCE
-→ CANONICALIZE EXISTING PATH
-→ VALIDATE REQUIRED TYPE
+validate selectable/existing path
+→ canonicalize the existing object
+→ validate required type/properties
 ```
 
-Before canonicalization, the selected pathname MUST resolve to an existing object.
+The current bootstrap uses the established `readpathce` primitive and optionless standard-utility path to canonicalize an existing selected object. Consumers should reuse the established responsibility instead of creating alternate root-resolution spellings.
 
-Canonicalization uses the standard utility path and optionless `realpath` on that existing pathname:
+Do not make GNU `readlink -f` or another host-only shortcut part of the general contract.
 
-```sh
-command -p -- realpath -- "$pathname"
-```
+## Root derivation
 
-The canonical result MUST itself resolve to an existing object.
+`m_ROOT` is derived from the canonical `m_BOOTSTRAP_BIN`, not from the caller CWD, an external symlink directory or a hardcoded installation prefix.
 
-RumiAI does not depend on `realpath -e`, GNU `readlink -f`, parsing `ls -l`, or optionless `realpath` behavior for a missing final component.
+Moving the complete RumiAI OS tree to another path must not require source modification.
 
-The current implementation may encapsulate this contract in a reusable helper; the helper's spelling is not itself a public API.
+## Command resolution after bootstrap
 
-## 5. Bootstrap type and root validation
-
-After canonicalization:
-
-```sh
-[ -f "$m_BOOTSTRAP_BIN" ]
-```
-
-MUST succeed.
-
-Root derivation is conceptually:
-
-```sh
-m_ROOT=${m_BOOTSTRAP_BIN%/*}
-[ -n "$m_ROOT" ] || m_ROOT=/
-```
-
-and the bootstrap MUST verify that the root can be entered without changing the main process CWD, for example through a subshell.
-
-## 6. Pathname data preservation
-
-POSIX command substitution removes trailing newline bytes. Pathname-producing utility output captured by the bootstrap MUST therefore use a protocol that preserves the shell-representable pathname domain required by the bootstrap.
-
-The current product baseline uses a non-newline sentinel around command-substitution capture. A future simplification is allowed only if it preserves the same accepted pathname behavior.
-
-## 7. Reuse for command entry
-
-The same existing-path canonicalization contract is reused when resolving the first command/source operand.
-
-After canonicalization, command entry separately validates that the result is a readable regular file and is not the bootstrap itself.
-
-The successful canonical command pathname is exposed as:
+For an integrated command, `m` resolves the requested command to a physical readable regular file, rejects resolution back to the bootstrap itself, exports readonly:
 
 ```text
 m_COMMAND_BIN
 ```
 
-## 8. Diagnostics
+and sources the command body in the initialized runtime.
 
-Success of root resolution produces no normal diagnostic output.
+## Branded entrypoints
 
-A controlled failure before the normal logger is active terminates non-zero through the bootstrap-safe diagnostic path. The previous draft's fixed `RumiAI_BOOTSTRAP_FATAL_*` environment-style identifiers/status mapping is not a current naming or status invariant.
+`rumiai-os` and `rumiai-os-sh` resolve their own product root and delegate to the root `m` bootstrap. They do not become the technical root identity themselves.
 
-## 9. Required behavioral coverage
-
-Permanent validation of this contract should cover at least:
+## Invariants
 
 ```text
-relative invocation
-absolute invocation
-PATH invocation
-caller-CWD independence
-relative/absolute symlink invocation
-symlink chains and intermediate symlinks
-canonical regular-file result
-accessible canonical root
-missing/unresolvable invocation failure
-command/source reuse of the same canonicalization contract
+ROOT-01  m_BOOTSTRAP_BIN identifies the physical m bootstrap
+ROOT-02  m_ROOT is derived from the canonical m bootstrap location
+ROOT-03  root resolution is independent of a fixed installation path
+ROOT-04  supported symlink/PATH invocation resolves to the physical bootstrap
+ROOT-05  m_COMMAND_BIN identifies the resolved integrated command
+ROOT-06  branded entrypoints delegate to m and are not the technical runtime identity
 ```
-
-Tests written against superseded `RumiAI_*` variable names must be updated before being considered guards for the current contract.
