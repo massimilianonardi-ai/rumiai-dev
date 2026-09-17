@@ -30,6 +30,7 @@ operands and options
 observable output
 exit status
 relevant environment/files
+library purpose and public callable functions
 examples
 cross-references to related operational topics
 ```
@@ -85,6 +86,17 @@ EXAMPLES
 SEE ALSO
 ```
 
+Typical library-reference sections may include:
+
+```text
+NAME
+DESCRIPTION
+FUNCTIONS
+DEPENDENCIES
+EXAMPLES
+SEE ALSO
+```
+
 Only sections useful to the specific topic are required. These headings are an authoring convention, not a parser grammar.
 
 ## 4. First-delivery storage and identity
@@ -109,9 +121,11 @@ res/
 
 `sys` and `ai` keep the ownership semantics defined by `RESOURCE-MODEL.md`.
 
-Each `<topic>` leaf is the operational topic identifier for that owner and is a human-readable UTF-8 text file. The file has **no filename extension**. Controlled topic names follow the current filesystem-naming contract; this specification does not create a second topic-name grammar.
+Each `<topic>` leaf is the operational topic identifier for that owner and is a human-readable UTF-8 text file. The file has **no documentation-format filename extension**. Controlled topic names follow the current filesystem-naming contract; this specification does not create a second topic-name grammar.
 
-The absence of an extension is intentional: topic identity is not coupled to the current plain-text representation or to a future renderer format.
+The topic identifier may itself contain semantic dot components when those components are part of the documented identity. In particular, a library topic uses the runtime-qualified library leaf `<library-name>.lib.<runtime>`; `.lib.<runtime>` is part of the library identity, not a documentation-format suffix.
+
+The absence of a documentation-format extension is intentional: topic identity is not coupled to the current plain-text representation or to a future renderer format.
 
 ### 4.1 Mandatory command coverage
 
@@ -121,7 +135,7 @@ This requirement is independent of intended audience. It applies to commands use
 
 The requirement follows semantic command identity rather than executable pathname count. Multiple paths or symlink exposures of the same command identity require one manual topic, not duplicate pages. In particular, `$m_ROOT/m` and its `bin/sys/m` exposure are the same command identity.
 
-Internal sourced libraries are not command identities and do not require manual topics. Package-owned external executables are not RumiAI-owned command identities and are outside this coverage requirement.
+RumiAI-owned libraries are not command identities; their separate mandatory coverage is defined in section 4.2. Package-owned external executables are not RumiAI-owned command identities and are outside this coverage requirement.
 
 Command lifecycle and manual lifecycle are coupled:
 
@@ -144,6 +158,54 @@ If a command modification changes purpose, invocation syntax, operands, options,
 A purely internal implementation change does not require a textual manual edit when the existing topic remains fully accurate, but the consistency check is still mandatory.
 
 A command-development work unit is incomplete while the command and its operational manual disagree or while the command lacks its required manual topic.
+
+### 4.2 Mandatory library coverage
+
+Every RumiAI-owned library identity defined by `LIBRARY-INTERFACES.md` MUST have exactly one corresponding operational manual topic in the `manual` resource tree of the library's semantic owner.
+
+The topic identity is exactly the runtime-qualified library leaf:
+
+```text
+<library-name>.lib.<runtime>
+```
+
+Therefore:
+
+```text
+lib/sys/sh/array.lib.sh
+    ↓
+res/sys/manual/array.lib.sh
+```
+
+and an `ai`-owned library would map analogously under `res/ai/manual/`.
+
+This mapping is deterministic and avoids command/library topic collisions without inventing a second library alias.
+
+A library manual documents the library as one unit. It MUST expose every public function defined by the library and MUST NOT expose internal functions as callable API.
+
+For each public function, the page records the operationally relevant function contract, including as applicable invocation shape, arguments, output, return status, side effects, environment/dependencies and caller obligations.
+
+Internal function identifiers MUST NOT be listed or documented as part of the callable interface. The public/internal naming contract itself is owned by `LIBRARY-INTERFACES.md`.
+
+Library lifecycle and manual lifecycle are coupled:
+
+```text
+create library
+    create its manual topic in the same work unit
+
+rename/remove library
+    realign/remove its manual topic in the same work unit
+
+modify library
+    always perform a library/manual consistency check
+
+add/change/remove public function
+    update the library manual in the same work unit
+```
+
+A purely internal implementation change does not require a textual manual edit when the public interface and existing page remain fully accurate, but the consistency check is still mandatory.
+
+A library-development work unit is incomplete while the library and its operational manual disagree, while the required topic is missing, or while public/internal function visibility naming is inconsistent with `LIBRARY-INTERFACES.md`.
 
 The public documentation-access utility is named:
 
@@ -205,6 +267,7 @@ For example, a discovery result may contain:
 
 ```text
 ai pkg
+sys array.lib.sh
 sys pkg
 sys srv
 ```
@@ -366,7 +429,7 @@ Therefore initial operational pages:
 - avoid layout that depends on a fixed terminal width;
 - keep topic references explicit rather than embedding host-specific hyperlinks;
 - avoid duplicating large normative development explanations;
-- keep technical identifiers, command names, literal paths and protocol tokens exact;
+- keep technical identifiers, command names, library/function names, literal paths and protocol tokens exact;
 - keep product revision behavior factual and observable.
 
 This discipline does not make the initial pages a hidden semantic schema. It keeps them clean enough to migrate later.
@@ -397,13 +460,15 @@ A backend change must preserve the canonical topic-content contract and the norm
 
 Permanent tests protect mechanical properties of the delivered interface, including resource layout, discovery, lookup, ambiguity handling, owner qualification, output/paging behavior and exit-status behavior once implemented.
 
-Permanent coverage MUST also mechanically detect a RumiAI-owned directly executable command identity that lacks its required owner-local manual topic. This is a one-way completeness check from command identity to manual topic; non-command operational topics remain allowed and do not need a corresponding executable.
+Permanent coverage MUST mechanically detect a RumiAI-owned directly executable command identity that lacks its required owner-local manual topic and a RumiAI-owned library identity that lacks its required owner-local library manual topic. These are one-way completeness checks from command/library identity to manual topic; additional non-command/non-library operational topics remain allowed.
 
-Tests do not make prose normative and cannot prove that a manual page semantically describes behavior accurately. That semantic consistency remains part of command development and the final consistency gate.
+Tests do not make prose normative and cannot prove that a manual page semantically describes behavior accurately. In the initial plain-text model they also cannot prove that every public library function is documented or that no internal helper is presented as API. Those semantic consistency checks remain part of command/library development and the final consistency gate.
 
 Every command modification requires an explicit manual-consistency check. When documented observable behavior changes, the manual topic MUST be updated in the same work unit. A command must not be considered complete while its implementation and operational reference disagree.
 
-Documentation completeness is not otherwise measured by page count. Non-command operational topics may be added when they provide concrete user/developer value.
+Every library modification requires an explicit visibility-naming check and manual-consistency check. Any public-function interface change MUST realign the library manual in the same work unit. A library must not be considered complete while its public/internal naming, implemented public interface and operational reference disagree.
+
+Documentation completeness is not otherwise measured by page count. Additional operational topics may be added when they provide concrete user/developer value.
 
 ## 11. Invariants
 
@@ -412,7 +477,7 @@ DOC-01  rumiai-dev remains the normative development-contract source
 DOC-02  operational documentation is revision-coupled product reference, not a second development authority
 DOC-03  the first operational model is terminal-first plain UTF-8 text with no required transformation pipeline
 DOC-04  the first global operational-documentation resource class is manual under res/<owner>/manual/
-DOC-05  each initial operational topic is an extensionless UTF-8 text file whose leaf name is its owner-local topic identity
+DOC-05  each initial operational topic is an extensionless content artifact whose leaf is its owner-local topic identity; semantic dot components may belong to that identity
 DOC-06  the public operational-documentation access utility is named manual
 DOC-07  bare manual discovers all materialized manual topics, always emits each result as <owner> <topic>, and sorts results by owner then topic
 DOC-08  discovery follows the general res/*/manual shape and does not semantically depend on the owner name ai
@@ -432,4 +497,8 @@ DOC-21  manual uses public exit statuses 0 success, 1 invalid request, 2 not fou
 DOC-22  every RumiAI-owned directly executable command identity has an owner-local operational manual topic
 DOC-23  command creation, rename and removal realign the corresponding manual topic in the same work unit
 DOC-24  permanent coverage mechanically detects command identities missing their required manual topic
+DOC-25  every RumiAI-owned library identity has exactly one owner-local operational manual topic named <library-name>.lib.<runtime>
+DOC-26  a library manual exposes every public function and does not expose internal functions as callable API
+DOC-27  library creation, rename, removal and public-interface changes realign the corresponding manual topic in the same work unit
+DOC-28  permanent coverage mechanically detects library identities missing their required manual topic
 ```
