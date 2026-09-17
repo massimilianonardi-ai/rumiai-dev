@@ -63,6 +63,46 @@ A handoff does not override project rules or specifications. Implementation does
 
 Historical commits, old decisions, closed handoffs, chat exports, drafts and superseded specifications are evidence of how the project evolved; they are **not current authority**.
 
+## Parallel task handoff protocol
+
+Substantial, parallel or multi-chat tasks use one active handoff under:
+
+```text
+handoff/<stable-task-name>.md
+```
+
+The handoff is the persistent boundary between volatile chat context and durable task state. A clean chat resumes a task by performing the normal mandatory read order and then reading that task's active handoff.
+
+A task should acquire an active handoff before its first material change when it is already expected to span multiple meaningful steps, repositories or chats. If a task starts small but later crosses that threshold, create the handoff at that point.
+
+During active work, the handoff is synchronized automatically at meaningful checkpoints. Before sending a final response that materially advances the task, update the handoff when any of the following changed:
+
+```text
+a task-local decision became fixed
+a modification was completed
+a test or validation was executed
+a problem, mismatch or blocker was discovered or resolved
+the task scope or next action changed materially
+repository revisions relevant to resumption changed materially
+```
+
+Do not write the handoff merely because a response was sent. No material state change means no handoff update.
+
+If handoff synchronization is required but cannot be completed, report that explicitly rather than implying that the task state was persisted.
+
+Completed task handoffs do not remain in the current tree. Completion is:
+
+```text
+propagate durable contract/state to canonical sources
+→ synchronize a final handoff snapshot with Status: Complete
+→ commit that snapshot
+→ remove the handoff in a later forward commit
+```
+
+Git history is the archive for completed handoffs. Do not create a parallel `completed/` or historical handoff directory in the current tree.
+
+The full lifecycle and template are defined in `handoff/README.md`.
+
 ## Current tree
 
 ```text
