@@ -1,468 +1,125 @@
-# RumiAI OS — POSIX Portability Layer
+# RumiAI OS — POSIX portability layer
 
-Status: **Draft normative specification**  
-Date: 2026-08-27  
-Updated: 2026-09-09
+Status: **Current / normative**  
+Updated: 2026-09-17
 
-## 1. Purpose
+This specification refines the platform rules in `RULES.md` for the current `m` + RumiAI runtime.
 
-This document defines the normative requirements for the POSIX portability layer of `rumiai-os`.
+## Platform baseline
 
-It refines the canonical rules in `RULES.md` into requirements that can be implemented and tested. It does not prescribe one specific implementation unless required for correctness or portability.
+RumiAI OS targets:
 
-The historical repository `massimilianonardi/m` and PoC 001 (`rumiai-dev-PoCs/pocs/001-posix-foundations`) are evidence and design input, not normative sources.
+**POSIX.1-2024 / The Open Group Base Specifications Issue 8**.
 
-Normative keywords **MUST**, **MUST NOT**, **SHOULD**, **SHOULD NOT**, and **MAY** express requirement strength.
+A construct is not considered portable merely because it works on Linux, macOS or another common Unix-like host.
 
----
+## Shell baseline
 
-## 2. Scope
+Portable shell code uses POSIX `sh` unless another runtime has an explicit current contract.
 
-The portability layer exists to provide the small set of abstractions that `rumiai-os` genuinely needs when direct POSIX facilities are insufficient or would otherwise cause non-portable duplication.
-
-It is not intended to recreate Bash, GNU coreutils, or a general-purpose standard library in shell.
-
-A primitive belongs in the portability layer only when:
-
-1. the requirement occurs in multiple parts of the system or in a critical bootstrap path;
-2. direct POSIX usage is insufficient, ambiguous, or would be repeatedly reimplemented;
-3. the primitive can have a precise, testable contract.
-
-If POSIX already provides a clear and sufficient mechanism, application code SHOULD use that mechanism directly rather than introducing a wrapper without architectural value.
-
----
-
-# 3. Platform and shell requirements
-
-### POSIX-PLAT-001 — POSIX is the platform contract
-
-`rumiai-os` MUST target the selected POSIX baseline rather than Linux, GNU, Bash, macOS, Windows, or a specific distribution.
-
-A construct MUST NOT be considered portable solely because it works on one or more common Unix-like systems.
-
-### POSIX-PLAT-002 — POSIX shell and entrypoint selection
-
-Portable shell code and RumiAI command bodies implemented in shell MUST remain POSIX `sh` code unless an explicitly approved exception establishes another runtime or language contract.
-
-The executable shebang is selected according to `RULES.md` and `COMMAND-ENTRYPOINTS.md`:
-
-- the root bootstrap `rumiai-os` uses exactly `#!/bin/sh`;
-- an explicitly approved standalone shell utility uses exactly `#!/bin/sh`;
-- a bootstrap-integrated RumiAI command uses exactly `#!/usr/bin/env rumiai-os`, while its shell body remains subject to the POSIX-shell rules.
-
-Use of `#!/bin/sh` for a standalone RumiAI utility requires the prior authorization and authoritative documentation defined by `RULES.md`; it is not inferred merely from the implementation language.
-
-### POSIX-PLAT-003 — no accidental extensions
-
-Portable-core code MUST NOT depend on unapproved shell or utility extensions, including but not limited to:
-
-- Bash arrays;
-- `[[ ... ]]`;
-- `BASH_SOURCE`;
-- process substitution;
-- `$RANDOM`;
-- GNU `readlink -f`;
-- GNU-only options to otherwise POSIX utilities.
-
-### POSIX-PLAT-004 — external tools are capabilities, not POSIX primitives
-
-A primitive that depends on a tool not guaranteed by the selected POSIX baseline MUST declare that dependency explicitly.
-
-Such a primitive MUST NOT be classified as part of the dependency-free POSIX core.
-
-Examples include `openssl`, `curl`, `wget`, `git`, `python`, `perl`, and vendor-specific utilities unless separately guaranteed by the relevant execution profile.
-
----
-
-# 4. Data integrity requirements
-
-### POSIX-DATA-001 — data must remain data
-
-Arbitrary input data MUST NOT be reinterpreted as shell syntax unless code execution is the explicit documented purpose of the API.
-
-This requirement applies to command substitution syntax, parameter expansion syntax, quotes, backticks, glob characters, redirections, separators, and other shell metacharacters.
-
-### POSIX-DATA-002 — constant `printf` format for arbitrary data
-
-When arbitrary data is emitted through `printf`, the format operand MUST be constant.
-
-Required pattern:
+The technical root bootstrap `m` uses:
 
 ```sh
-printf '%s' "$value"
+#!/bin/sh
 ```
 
-or another constant format appropriate to the operation.
+Bootstrap-integrated commands use:
 
-A variable or untrusted value MUST NOT be used as the `printf` format operand unless interpreting it as a format string is the explicit API contract.
+```sh
+#!/usr/bin/env m
+```
 
-### POSIX-DATA-003 — `echo` is not a generic data serializer
+Standalone shell utilities use `#!/bin/sh` only under the independence contract in `COMMAND-ENTRYPOINTS.md`.
 
-Portable primitives MUST use `printf` with constant formats for exact data output.
+Do not depend accidentally on Bash arrays, `[[ ... ]]`, process substitution, `$RANDOM`, GNU-only options or equivalent unapproved extensions.
 
-`echo` MAY be used for human-readable messages where exact byte/string preservation is not part of the contract.
+## Host-specific capability boundary
 
-### POSIX-DATA-004 — declared representable domain
+A facility that POSIX cannot provide portably may use a host-specific implementation/adapter when the requirement is real and the generic interface remains host-neutral.
 
-Every primitive that stores, transports, serializes, or round-trips arbitrary values MUST document its representable domain.
-
-At minimum, the shell-variable limitation concerning NUL bytes MUST be acknowledged where relevant.
-
-### POSIX-DATA-005 — exact round-trip when claimed
-
-If a primitive claims lossless serialization or argument preservation, its contract MUST satisfy:
+The adapter boundary must prevent implementation details such as:
 
 ```text
-decode(encode(value)) == value
+Linux-specific files/APIs
+macOS-specific utilities/frameworks
+GNU/BSD option differences
+host service managers
+host package-manager paths
 ```
 
-or, for argv:
+from becoming the semantic contract seen by ordinary consumers.
+
+Before introducing a new host abstraction, verify that an existing current facility does not already own the responsibility.
+
+## External tools
+
+Tools not guaranteed by the selected POSIX baseline are capabilities/dependencies, not POSIX primitives.
+
+Examples can include:
 
 ```text
-decode(encode(argv)) == argv
+git
+curl
+python
+openssl
+7z
+platform-specific utilities
 ```
 
-for every value in the declared domain.
+A component that requires one must make that dependency part of its real execution profile instead of treating accidental availability on one host as a platform guarantee.
 
-### POSIX-DATA-006 — trailing newline semantics must be explicit
+## Data remains data
 
-Any API using command substitution or text serialization MUST explicitly account for the POSIX shell behavior that strips trailing newlines from command substitution results.
+Arbitrary external input must not be reinterpreted as shell syntax unless code evaluation is the explicit API purpose.
 
-A primitive MUST NOT claim exact round-trip semantics for trailing newlines unless tests demonstrate preservation by its chosen protocol.
+For arbitrary string output through `printf`, use a constant format operand.
 
----
+Do not build shell source from untrusted data merely to achieve quoting/path handling.
 
-# 5. `eval` and dynamic indirection requirements
+## Defensive quoting
 
-### POSIX-EVAL-001 — `eval` is a dangerous primitive
+Follow `RULES.md`: quote expansions/value operands when doing so preserves intended semantics. Internal knowledge that a current value is “safe” is not a reason to leave an expansion structurally unsafe.
 
-`eval` is not globally forbidden, because some POSIX-shell indirection patterns may require it, but its use MUST be exceptional and auditable.
+## Path handling
 
-### POSIX-EVAL-002 — no direct application-level `eval`
+RumiAI is relocatable.
 
-Application code SHOULD NOT use `eval` directly when an approved portability primitive can provide the required operation.
+Do not hardcode personal checkout paths, Homebrew paths, Linux distribution paths or other machine-local spellings when the value can be derived from semantic roots or resolved through the owning facility.
 
-### POSIX-EVAL-003 — code/data boundary
+When an existing object must be canonicalized, validate the applicable existence/type contract and use the established runtime primitive/standard utility contract rather than assuming a GNU-only shortcut such as `readlink -f`.
 
-Data values MUST NOT be concatenated into shell source passed to `eval`.
+Invocation through symlinks/PATH must be handled according to the owning entrypoint contract rather than rejected merely because a symlink is present.
 
-If dynamic variable names require `eval`, the dynamic identifier MUST be validated against a strict grammar before evaluation, and the associated value MUST remain data after the second parse.
+## CLI option boundaries
 
-### POSIX-EVAL-004 — identifier validation
+For a tool that really supports `--` as an option terminator, use it before one or more data operands. Do not invent it for a tool without that contract.
 
-Any API accepting a variable name, collection name, or other identifier later used in generated shell syntax MUST validate the identifier before use.
+## Distribution diversity
 
-The default accepted grammar SHOULD be no broader than a portable shell identifier grammar appropriate to the API.
+Different POSIX/POSIX-compatible hosts are valuable validation points, not nuisances to normalize away in tests.
 
-### POSIX-EVAL-005 — mandatory injection tests
+A Debian development VM can expose accidental Ubuntu assumptions; macOS can expose GNU/BSD differences; other compatible hosts can expose additional portability gaps. Those differences should be absorbed by the correct abstraction where the general RumiAI contract is intended to remain common.
 
-Every primitive using `eval` MUST have tests covering at least:
+A PASS on one host does not prove another host.
 
-- `$(...)`-looking text;
-- backticks;
-- semicolons;
-- quotes;
-- backslashes;
-- `$` expansions;
-- whitespace;
-- glob characters;
-- empty values.
+## Testing
 
-The tests MUST demonstrate that values remain data unless code execution is explicitly intended.
+Permanent tests should normally express a common semantic property once and execute it on multiple applicable hosts rather than cloning host-specific copies of the same expectation.
 
-### POSIX-EVAL-006 — explicit executable-code APIs
+Where the property itself is host-specific, the adapter/host contract should be tested explicitly.
 
-An API whose purpose is to evaluate or execute shell code MUST make code execution explicit in its name, documentation, trust boundary, and tests.
+See `TESTING.md` and `PHYSICAL-TESTING.md`.
 
-A decode, import, configuration, or data-loading API MUST NOT silently imply code execution.
-
----
-
-# 6. Collection abstraction requirements
-
-### POSIX-COLL-001 — collections are requirements, not Bash emulation goals
-
-Arrays, maps, or similar abstractions MUST be introduced only if a concrete `rumiai-os` requirement justifies them.
-
-The goal is not to reproduce Bash syntax or behavior.
-
-### POSIX-COLL-002 — collection values must preserve declared data domain
-
-Any array/map abstraction MUST preserve values exactly within its declared domain and MUST satisfy `POSIX-DATA-*` and `POSIX-EVAL-*` requirements.
-
-### POSIX-COLL-003 — collection metadata isolation
-
-Internal collection representation MUST NOT collide with unrelated shell variables or with another collection created through the same API.
-
-### POSIX-COLL-004 — index/key validation
-
-Array indices and map keys MUST be validated or encoded through a reversible, collision-free mechanism appropriate to the declared key domain.
-
-### POSIX-COLL-005 — generic collections require property tests
-
-A generic collection implementation MUST be validated with round-trip/property tests, not only example-based tests.
-
-At minimum the common data corpus defined in section 11 MUST be exercised.
-
----
-
-# 7. Environment/state-transfer requirements
-
-### POSIX-ENV-001 — shell state transfer must distinguish data from code
-
-Mechanisms used to transfer state between subshells/processes MUST use an explicit protocol whose data representation is distinguishable from executable shell code.
-
-### POSIX-ENV-002 — no parsing unspecified shell presentation formats
-
-Portable core code MUST NOT depend on parsing implementation-specific human/presentation output from shell builtins or utilities when POSIX does not define that output sufficiently for the intended purpose.
-
-In particular, parsing `set` output as a general environment serialization mechanism requires proof of portability and MUST NOT be assumed portable by default.
-
-### POSIX-ENV-003 — explicit state schema
-
-State-transfer protocols SHOULD define an explicit list/schema of transferable fields rather than implicitly enumerating all shell state.
-
----
-
-# 8. Path and root-discovery requirements
-
-### POSIX-PATH-001 — root discovery independent of current working directory
-
-The `rumiai-os` entrypoint MUST determine the repository/runtime root independently of the directory from which it is invoked.
-
-### POSIX-PATH-002 — invocation through a path containing `/`
-
-Root discovery MUST work when the entrypoint is invoked through a relative or absolute pathname containing `/`.
-
-### POSIX-PATH-003 — invocation through `PATH`
-
-If invocation of `rumiai-os` through `PATH` is part of the supported contract, root discovery MUST explicitly resolve the command location using portable mechanisms rather than assuming `$0` contains `/`.
-
-If invocation through `PATH` is intentionally unsupported, this MUST be documented and diagnosed clearly.
-
-### POSIX-PATH-004 — symlink semantics must be specified
-
-Before implementing symlink resolution, the system MUST specify whether the root is based on:
-
-- the invoked link location;
-- the final target location;
-- another explicitly defined rule.
-
-The implementation MUST match that declared semantic.
-
-### POSIX-PATH-005 — relative symlink targets
-
-When a symlink target is relative, it MUST be resolved relative to the directory containing the symlink, not relative to the process current working directory.
-
-### POSIX-PATH-006 — symlink chains and cycles
-
-Any primitive claiming recursive/canonical symlink resolution MUST handle link chains and MUST detect or bound cycles.
-
-### POSIX-PATH-007 — no parsing `ls -l` for symlink targets in the portable core
-
-The portable core SHOULD NOT derive symlink targets by parsing human-readable `ls -l` output.
-
-If no sufficient primitive exists in the chosen POSIX baseline, the exact limitation and selected fallback MUST be specified and tested across certified hosts.
-
-### POSIX-PATH-008 — distinguish path operations
-
-The portability layer SHOULD expose distinct operations with distinct contracts for concepts such as:
-
-- existence;
-- absolute path construction;
-- lexical normalization;
-- physical directory resolution;
-- symlink resolution;
-- relativization.
-
-It SHOULD NOT expose a single ambiguous `realpath` clone unless its semantics are fully specified.
-
-### POSIX-PATH-009 — relocatability
-
-No path primitive may reintroduce host-specific hardcoded roots. All RumiAI-managed paths MUST ultimately derive from the discovered system root or explicitly configured semantic roots.
-
----
-
-# 9. Randomness and security-related requirements
-
-### POSIX-RAND-001 — no `$RANDOM` dependency in the POSIX core
-
-Portable-core randomness MUST NOT depend on the non-POSIX `$RANDOM` shell variable.
-
-### POSIX-RAND-002 — distinguish pseudo-randomness from security randomness
-
-Any randomness API MUST state whether it is intended for:
-
-- non-security pseudo-random behavior;
-- identifiers with collision-resistance requirements;
-- cryptographic/security-sensitive use.
-
-One implementation MUST NOT silently serve all three semantics.
-
-### POSIX-RAND-003 — external entropy providers are explicit dependencies
-
-If secure randomness requires an external provider such as `openssl` or a host-specific facility, that provider MUST be modeled as an explicit capability/dependency rather than disguised as a POSIX guarantee.
-
----
-
-# 10. Error and side-effect requirements
-
-### POSIX-ERR-001 — library primitives return, entrypoints exit
-
-Reusable library functions SHOULD report failure via return status rather than terminating the entire caller with `exit`, unless termination is the explicit documented contract.
-
-Top-level commands/entrypoints MAY translate returned failures into process exit statuses.
-
-### POSIX-ERR-002 — stdout is data
-
-If a primitive returns data on stdout, diagnostic/log output MUST NOT be mixed into stdout.
-
-Diagnostics SHOULD go to stderr or through the logging subsystem.
-
-### POSIX-ERR-003 — side effects must be explicit
-
-A primitive that modifies filesystem state, environment state, shell options, `PATH`, current directory, traps, or global variables MUST document those side effects.
-
-Unexpected ambient state mutation is not allowed as an implementation detail.
-
-### POSIX-ERR-004 — temporary resources require cleanup
-
-Temporary filesystem resources created by portable primitives/tests MUST use collision-resistant locations appropriate to their purpose and MUST have cleanup behavior for normal exit and relevant signals where feasible.
-
----
-
-# 11. Required common test corpus
-
-Any primitive claiming to preserve arbitrary shell-representable data MUST be tested against a common corpus containing at least:
+## Invariants
 
 ```text
-empty string
-simple ASCII
-leading space
-trailing space
-multiple spaces
-tab
-embedded newline
-trailing newline where the API claims to preserve it
-single quote
-double quote
-backslash
-dollar sign
-backtick
-$(...)-looking text
-semicolon
-pipe/redirection-looking text
-glob characters: * ? [ ]
-leading dash
-percent sign
-UTF-8 text
-very long value
+POSIX-01  POSIX.1-2024 Issue 8 is the platform baseline
+POSIX-02  shell code is POSIX sh unless explicitly specified otherwise
+POSIX-03  m is the current integrated runtime identity
+POSIX-04  host-specific behavior stays behind explicit facilities/adapters
+POSIX-05  non-POSIX tools are declared capabilities, not assumed primitives
+POSIX-06  external data is not reinterpreted as shell syntax
+POSIX-07  relocatability forbids accidental local/host path dependencies
+POSIX-08  distribution diversity is useful portability evidence
+POSIX-09  one-host PASS does not substitute for another applicable host
 ```
-
-Additional corpus items MUST be added when a primitive has a broader or more specialized domain.
-
----
-
-# 12. Minimum shell/host test strategy
-
-### POSIX-TEST-001 — multiple independent shell implementations
-
-Portable primitives MUST be tested on multiple independent `/bin/sh` implementations. Testing only Bash, including Bash POSIX mode, is insufficient.
-
-### POSIX-TEST-002 — baseline matrix
-
-During development, the baseline test matrix SHOULD include where available:
-
-- `dash`;
-- BusyBox `ash`/`sh`;
-- a `ksh`-family implementation;
-- the shell/environment used for macOS certification;
-- Cygwin `/bin/sh` for the documented Windows+Cygwin configuration.
-
-The certified-host matrix may evolve independently from this development matrix.
-
-### POSIX-TEST-003 — same API, same corpus
-
-The same test API and input corpus MUST be run across shells. Tests MUST NOT silently weaken assertions for a shell merely because it lacks a non-POSIX extension.
-
-### POSIX-TEST-004 — historical regression cases
-
-The following regressions demonstrated by PoC 001 MUST remain permanent tests for replacement primitives where applicable:
-
-1. absence of `$RANDOM` must not create deterministic behavior in an API claiming randomness;
-2. `%s` passed as data must not become a `printf` format directive;
-3. `$(...)`-looking array data must not execute.
-
----
-
-# 13. Static-check requirements
-
-The `rumiai-os` development checks SHOULD detect at least the following patterns in portable-core shell code:
-
-```text
-#!/bin/bash
-#!/usr/bin/env bash
-[[
-BASH_SOURCE
-process substitution
-$RANDOM
-readlink -f
-host-specific hardcoded paths
-```
-
-They SHOULD also flag for review:
-
-```text
-eval
-variable/non-constant printf format operands
-parsing of ls -l for symlink resolution
-unquoted expansions in data-sensitive code
-```
-
-Static detection is a guardrail and does not replace behavioral tests.
-
----
-
-# 14. Requirement traceability
-
-Every portability primitive introduced into `rumiai-os` SHOULD document which requirement IDs from this specification it implements.
-
-Every corresponding PoC/test SHOULD document which requirement IDs it verifies.
-
-When a requirement is intentionally violated by an approved exception, the exception record MUST reference the affected requirement ID.
-
----
-
-# 15. Current conclusions from historical evidence
-
-The following historical concepts remain useful design inputs:
-
-- a reusable POSIX portability layer;
-- an array-like abstraction if justified by actual system needs;
-- explicit path operations rather than assuming GNU `readlink -f`;
-- shell-state transfer as a real problem that may need an abstraction.
-
-The following historical implementations are **not approved for direct migration**:
-
-- `$RANDOM`-based POSIX randomness;
-- `printf "$value"` data emission;
-- array storage that interpolates arbitrary values into `eval` source;
-- generic environment/state transfer implemented by serializing executable shell code without a strict trust boundary;
-- root/symlink discovery that assumes `$0` contains `/` or parses `ls -l` without a proven contract.
-
-They may be used as fixtures and regression references while replacement implementations are designed.
-
----
-
-# 16. Next validation step
-
-The next PoC SHOULD validate a minimal replacement foundation rather than reimplement the entire historical library.
-
-Recommended initial scope:
-
-1. safe data emission/quoting contract;
-2. root discovery contract;
-3. minimal dynamic-variable/collection strategy only if required by the first `rumiai-os` bootstrap;
-4. automated cross-shell test harness and static checks.
-
-Only primitives that pass the relevant requirements and tests become candidates for stable implementation in `rumiai-os`.
