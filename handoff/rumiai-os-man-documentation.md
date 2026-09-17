@@ -14,8 +14,8 @@ The current first-delivery completion scope includes mandatory operational-manua
 ## Current repository revisions
 
 ```text
-rumiai-dev   118e6a97a739d878fbdbe3e08be53dd26c70d08f  (handoff checkpoint before publication of prepared product commit)
-rumiai-os    db0b25c20b08247cd68818ef9caea61a1cf02451  (current remote HEAD; command/library manual backfill prepared as descendant fce90adde7ee5901a6c71560a7cf72b8df9492b2 but not yet published when this checkpoint was written)
+rumiai-dev   d9499572458b7ad5c96610c390254a1482e90a82  (handoff checkpoint before publication of prepared product commit)
+rumiai-os    db0b25c20b08247cd68818ef9caea61a1cf02451  (current remote HEAD; descendant fce90adde7ee5901a6c71560a7cf72b8df9492b2 prepared for publication)
 rumiai-tests 122011d7aeb64d7d6a15a44a133b497c962fa89d  (parallel suite work; not modified by this documentation work unit)
 ```
 
@@ -110,10 +110,6 @@ Library documentation is not yet complete. Even after publication of the prepare
 The prior permanent `manual` tests must not currently be treated as reliable closure evidence; the separate active test-suite task owns trustworthy test reconstruction and must also add/realign command-to-manual and library-to-manual structural completeness coverage.
 
 Formal cross-host/stable-host validation has not been claimed.
-
-## Working design state
-
-The long-term source representation and documentation build toolchain remain intentionally unresolved active design. Sphinx, Asciidoctor and Pandoc have been considered as existing build-time candidates; this comparison is task working state, not current specification content.
 
 ## Next action
 
