@@ -68,6 +68,24 @@ Historical rationale remains in Git history. It must not compete with current au
 
 If a current specification and current implementation disagree, do not silently choose one. Determine whether implementation is pending realignment or the specification itself is intentionally being changed, then make that state explicit before proceeding.
 
+### Specification promotion gate
+
+Before adding a design statement to `specifications/`, determine whether it is already a **promoted current contract**.
+
+A statement passes the gate only when all applicable conditions are true:
+
+```text
+it is settled enough to constrain current implementation and future work now
+it expresses what must remain true, not what is merely being considered
+it is not a candidate, provisional assumption, comparison, open question or postponed decision
+it is not a backlog of future design work
+its canonical ownership belongs to the specification being changed
+```
+
+If the statement does not pass, do not put it in a specification merely to preserve memory. During an active task, persist it in the task handoff under working design state. If experimental evidence is required, use `rumiai-dev-PoCs` and reference the experiment from the handoff. If the work is intentionally deferred outside the active task, use `todo/`.
+
+A stable statement that a specification deliberately leaves a dimension unconstrained may pass the gate when that **absence of constraint** is itself part of the current contract and materially prevents false inference. Express only that boundary. Do not attach candidate lists, evaluation matrices, preferred directions or the plan for making the later decision.
+
 ## 4. No silent design changes
 
 If a proposed implementation contradicts a fixed invariant, stop treating the difference as an implementation detail.
@@ -109,6 +127,8 @@ Update every surface that belongs to the same authorized work unit. When another
 
 If the remaining work is concrete but intentionally deferred and is not already active, represent it through the minimal `todo/` lifecycle rather than burying it in a specification, historical note or conversation memory.
 
+If a design choice remains unresolved inside the active task, keep it in the handoff working-design state rather than turning the unresolved choice into a pseudo-contract.
+
 Do not rewrite historical commits or historical validation evidence.
 
 ## 8. Testing authenticity
@@ -137,13 +157,14 @@ After every modification:
 
 1. reread the resulting diff;
 2. re-evaluate it against `RULES.md` and the applicable current specifications;
-3. scan the touched subsystem for superseded terminology/mechanisms;
-4. verify no unrelated user/repository changes were overwritten;
-5. run only tests proportional to the change under `TESTING.md`;
-6. state physical-validation status accurately and revision-specifically;
-7. verify Git history remains forward-only;
-8. if concrete unfinished work was discovered but intentionally deferred, ensure it is either already represented by an active task or captured once under `todo/`;
-9. when the task has an active handoff, determine whether the resulting state is a meaningful checkpoint and synchronize it before the final response when required.
+3. when a specification was changed, reclassify every added design statement through the specification promotion gate;
+4. scan the touched subsystem for superseded terminology/mechanisms;
+5. verify no unrelated user/repository changes were overwritten;
+6. run only tests proportional to the change under `TESTING.md`;
+7. state physical-validation status accurately and revision-specifically;
+8. verify Git history remains forward-only;
+9. if concrete unfinished work was discovered but intentionally deferred, ensure it is either already represented by an active task or captured once under `todo/`;
+10. when the task has an active handoff, determine whether the resulting state is a meaningful checkpoint and synchronize it before the final response when required.
 
 ## 11. Documentation consistency checks
 
@@ -156,6 +177,9 @@ When documentation is touched, additionally verify:
 - no historical evidence is presented as current behavior;
 - cross-references point to paths that exist in the current tree;
 - repeated normative text is minimized; where duplication is useful for orientation it must not create an independently editable second contract;
+- current specifications contain only promoted contract and do not accumulate candidate choices, comparison criteria, provisional assumptions, open questions or decision backlogs;
+- when a specification intentionally leaves a dimension unconstrained, it states only the stable boundary needed by the current contract rather than documenting the unresolved design process;
+- active working-design state needed for resumption is persisted in the active handoff rather than in `specifications/`;
 - TODO files contain only deferred-work planning state and do not become substitute specifications or task handoffs;
 - the same work is not represented simultaneously by a current TODO and an active handoff.
 
@@ -183,26 +207,30 @@ task goal
 current status
 exact repository revisions last observed
 already-fixed task-local choices
+working design that is still provisional or unresolved
 completed work
 next concrete action
 known blockers
 ```
 
-It must not duplicate project-wide rules or subsystem specifications.
+Working design in a handoff is persistent task memory, not authority. It may contain candidates, evaluation criteria, provisional assumptions and intentionally postponed in-task decisions when they are material to resumption. It must be promoted, deferred or discarded before the task handoff is removed.
+
+A handoff must not duplicate project-wide rules or promoted subsystem specifications.
 
 For a substantial, parallel or multi-chat task, create the handoff after preflight and before the first material task change when the need is already known. If the task becomes substantial later, create it as soon as that becomes clear.
 
-A handoff checkpoint is required when resumable task state changes materially, including fixed decisions, completed modifications, executed tests/validation, discovered/resolved blockers, material scope/next-action changes or relevant revision movement.
+A handoff checkpoint is required when resumable task state changes materially, including fixed decisions, material working-design changes, completed modifications, executed tests/validation, discovered/resolved blockers, material scope/next-action changes or relevant revision movement.
 
 When a response materially advances an active handoff task, required synchronization must complete **before** the user-visible final response. If it cannot be completed, the response must say that the persistent task state is not synchronized.
 
 When the task closes:
 
 1. propagate durable content to canonical current sources;
-2. capture any concrete out-of-scope work that is intentionally deferred as minimal TODO items when applicable;
-3. complete the normal final consistency gate;
-4. write and commit a final handoff snapshot with `Status: Complete` and final revisions/validation state;
-5. remove the handoff from the current tree in a later forward commit.
+2. resolve remaining working design by promoting accepted contract, creating deferred TODO work where still relevant, or discarding superseded/unneeded candidates;
+3. capture any other concrete out-of-scope work that is intentionally deferred as minimal TODO items when applicable;
+4. complete the normal final consistency gate;
+5. write and commit a final handoff snapshot with `Status: Complete` and final revisions/validation state;
+6. remove the handoff from the current tree in a later forward commit.
 
 Git history is the archive. Do not create a completed-handoff/archive directory in the current tree.
 
@@ -222,7 +250,9 @@ A RumiAI task is ready to report as complete only when every applicable item is 
 [ ] substantial/parallel/multi-chat task has an active handoff when required
 [ ] no existing responsibility was duplicated under a new name
 [ ] no contract was changed silently
-[ ] current specification was updated for intentional contract changes
+[ ] every statement added to a current specification passed the specification promotion gate
+[ ] unresolved/provisional active design is kept in handoff working design rather than specifications
+[ ] current specification was updated for intentional promoted contract changes
 [ ] tests/evidence claim no more than what was actually exercised
 [ ] resulting diff was reread
 [ ] stale/superseded mechanisms and terminology were scanned
