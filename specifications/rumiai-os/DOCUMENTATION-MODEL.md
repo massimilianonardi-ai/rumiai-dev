@@ -235,7 +235,7 @@ If that owner-local topic exists, it is selected and presented. If it does not e
 
 The current global owners remain those defined by `RESOURCE-MODEL.md`; this syntax does not create new owners or a universal resource resolver.
 
-### 5.4 Paging option
+### 5.4 Paging option and output destination
 
 The same lookup semantics apply with `--no-pager`:
 
@@ -247,6 +247,21 @@ manual --no-pager <owner> <topic>
 The option changes only presentation of a successfully selected topic; it does not change discovery, ambiguity or owner qualification.
 
 `manual --no-pager` without a topic operand is an invalid invocation.
+
+For a successfully selected topic, presentation depends on standard output:
+
+```text
+--no-pager specified
+    write the topic directly to standard output
+
+--no-pager absent and standard output is a terminal
+    delegate presentation to POSIX more
+
+--no-pager absent and standard output is not a terminal
+    write the topic directly to standard output
+```
+
+This preserves pipeline and redirection behavior without relying on the interactive `more` utility outside its terminal display contract.
 
 ### 5.5 Exit status and diagnostics
 
@@ -262,7 +277,7 @@ The first-delivery exit-status contract is:
 
 Status `2` applies both to an unqualified lookup with no matches and to an owner-qualified lookup whose exact owner-local topic does not exist.
 
-Status `4` covers failures after a valid request has been resolved or while discovery/presentation is being executed, including inability to emit/read the selected resource and failure of the POSIX `more` invocation. A `more` failure is mapped to `4`; `manual` does not expose the pager's implementation-specific exit status as its own public contract.
+Status `4` covers failures after a valid request has been resolved or while discovery/presentation is being executed, including inability to emit/read the selected resource and failure of the POSIX `more` invocation when paging is selected. A `more` failure is mapped to `4`; `manual` does not expose the pager's implementation-specific exit status as its own public contract.
 
 All failure diagnostics are written to standard error. Invalid invocation and ordinary execution failures use the existing structured `m` logging/fatal facilities. An ambiguity diagnostic additionally emits the owner-qualified `manual <owner> <topic>` alternatives required to resolve that ambiguity. Failure diagnostics do not write topic content to standard output.
 
@@ -339,11 +354,11 @@ Any later command-level help contract must be introduced explicitly. Overlapping
 
 Paging is a property of the access/viewing layer, not of the canonical operational page content.
 
-For the first delivery, normal topic presentation by `manual` delegates the selected topic to the POSIX `more` utility. This deliberately reuses the platform baseline rather than introducing a RumiAI-specific pager abstraction.
+For the first delivery, `manual` delegates a selected topic to the POSIX `more` utility only when standard output is associated with a terminal and `--no-pager` is absent. This deliberately reuses the platform baseline for interactive viewing rather than introducing a RumiAI-specific pager abstraction.
 
-The POSIX `more` contract distinguishes terminal and non-terminal standard output: it pages interactively when standard output is a terminal and otherwise copies the input to standard output. `manual` therefore does not require a separate TTY-detection policy merely to preserve pipeline/redirection behavior.
+When standard output is not associated with a terminal, `manual` writes the selected topic directly to standard output. POSIX defines terminal-oriented display separately from ordinary standard-output behavior and does not provide a portable non-terminal presentation contract for an interactive pager; direct output therefore owns pipeline and redirection semantics.
 
-When `--no-pager` is specified, `manual` bypasses `more` and writes the selected topic directly to standard output.
+When `--no-pager` is specified, `manual` also writes the selected topic directly to standard output regardless of whether standard output is a terminal.
 
 The first delivery does not introduce a generic `pager` command, a `less` dependency, a `PAGER` environment contract, pager-selection configuration or a host-specific pager adapter.
 
@@ -371,7 +386,7 @@ DOC-06  the public operational-documentation access utility is named manual
 DOC-07  bare manual discovers all materialized manual topics, always emits each result as <owner> <topic>, and sorts results by owner then topic
 DOC-08  discovery follows the general res/*/manual shape and does not semantically depend on the owner name ai
 DOC-09  --no-pager bypasses paging and writes the selected topic directly to standard output
-DOC-10  normal first-delivery topic presentation delegates to POSIX more; no generic pager abstraction is introduced
+DOC-10  normal first-delivery presentation uses POSIX more only when standard output is a terminal; non-terminal output is written directly
 DOC-11  unqualified manual lookup selects a topic only when exactly one owner-local match exists; it never applies implicit owner precedence
 DOC-12  ambiguous unqualified lookup fails and identifies each owner-qualified invocation that resolves the ambiguity
 DOC-13  manual <owner> <topic> resolves exactly that owner-local topic with no cross-owner fallback
