@@ -42,7 +42,7 @@ Git history remains the archive for superseded development documentation and rat
 
 Operational documentation is revision-coupled product content, not an authority above current development specifications.
 
-A conflict between a current specification, implementation, permanent test and operational documentation is a consistency defect. Apply the normal authority hierarchy, determine which surface is stale, and realign the affected current surfaces in the same work unit whenever practical.
+A conflict between a current specification, implementation, permanent test and operational documentation is a consistency defect. Apply the normal authority hierarchy, determine which surface is stale, and realign the affected current surfaces in the same work unit.
 
 The same statement should not be maintained as two independently editable normative contracts merely because it is useful in both development and operational contexts.
 
@@ -53,7 +53,7 @@ rumiai-dev
     invariant / semantic contract / forward constraint
 
 operational reference
-    user-facing explanation of the interface implemented by that revision
+    user/developer-facing explanation of the interface implemented by that revision
 ```
 
 ## 3. Initial operational-documentation model
@@ -112,6 +112,38 @@ res/
 Each `<topic>` leaf is the operational topic identifier for that owner and is a human-readable UTF-8 text file. The file has **no filename extension**. Controlled topic names follow the current filesystem-naming contract; this specification does not create a second topic-name grammar.
 
 The absence of an extension is intentional: topic identity is not coupled to the current plain-text representation or to a future renderer format.
+
+### 4.1 Mandatory command coverage
+
+Every RumiAI-owned directly executable command identity defined by `COMMAND-ENTRYPOINTS.md` MUST have a corresponding operational manual topic in the `manual` resource tree of the command's semantic owner.
+
+This requirement is independent of intended audience. It applies to commands used primarily by end users, developers, maintenance flows or internal technical workflows.
+
+The requirement follows semantic command identity rather than executable pathname count. Multiple paths or symlink exposures of the same command identity require one manual topic, not duplicate pages. In particular, `$m_ROOT/m` and its `bin/sys/m` exposure are the same command identity.
+
+Internal sourced libraries are not command identities and do not require manual topics. Package-owned external executables are not RumiAI-owned command identities and are outside this coverage requirement.
+
+Command lifecycle and manual lifecycle are coupled:
+
+```text
+create command
+    create its manual topic in the same work unit
+
+rename command
+    rename/realign its manual topic in the same work unit
+
+remove command
+    remove/realign its manual topic in the same work unit
+
+modify command
+    always perform a manual-consistency check
+```
+
+If a command modification changes purpose, invocation syntax, operands, options, output, exit statuses, relevant environment/files, side effects or any other behavior described by its operational reference, the manual topic MUST be updated in the same work unit.
+
+A purely internal implementation change does not require a textual manual edit when the existing topic remains fully accurate, but the consistency check is still mandatory.
+
+A command-development work unit is incomplete while the command and its operational manual disagree or while the command lacks its required manual topic.
 
 The public documentation-access utility is named:
 
@@ -346,7 +378,7 @@ This discipline does not make the initial pages a hidden semantic schema. It kee
 
 The first delivery does **not** introduce `--help`, `-h` or another per-command help interface.
 
-Operational reference is accessed through the dedicated manual surface instead of requiring every public command to maintain a second independently authored help path.
+Operational reference is accessed through the dedicated manual surface instead of requiring each command to maintain a second independently authored help path.
 
 Any later command-level help contract must be introduced explicitly. Overlapping short help and long operational reference should derive from the same canonical informational source whenever practical rather than drifting independently.
 
@@ -368,11 +400,13 @@ A later pager abstraction or non-POSIX pager requires a concrete reusable requir
 
 Permanent tests protect mechanical properties of the delivered interface, including resource layout, discovery, lookup, ambiguity handling, owner qualification, output/paging behavior and exit-status behavior once implemented.
 
-Tests do not make prose normative.
+Permanent coverage MUST also mechanically detect a RumiAI-owned directly executable command identity that lacks its required owner-local manual topic. This is a one-way completeness check from command identity to manual topic; non-command operational topics remain allowed and do not need a corresponding executable.
 
-A product-interface change that makes existing operational documentation inaccurate requires corresponding documentation realignment in the same work unit whenever practical.
+Tests do not make prose normative and cannot prove that a manual page semantically describes behavior accurately. That semantic consistency remains part of command development and the final consistency gate.
 
-Documentation completeness is not measured by page count. Add an operational topic when it provides real user/developer value for a public or materially observable interface.
+Every command modification requires an explicit manual-consistency check. When documented observable behavior changes, the manual topic MUST be updated in the same work unit. A command must not be considered complete while its implementation and operational reference disagree.
+
+Documentation completeness is not otherwise measured by page count. Non-command operational topics may be added when they provide concrete user/developer value.
 
 ## 11. Invariants
 
@@ -395,7 +429,10 @@ DOC-15  the long-term target separates informational content from channel-specif
 DOC-16  long-term documentation build orchestration belongs to mk; runtime manual pages do not require the build toolchain
 DOC-17  the first delivery does not introduce per-command --help or -h
 DOC-18  paging never changes the canonical page content contract
-DOC-19  interface changes realign affected operational documentation in the same work unit whenever practical
+DOC-19  every command modification includes a manual-consistency check and any resulting documentation realignment occurs in the same work unit
 DOC-20  the first-delivery executable is bin/sys/manual, belongs to m, and is bootstrap-integrated through #!/usr/bin/env m
 DOC-21  manual uses public exit statuses 0 success, 1 invalid request, 2 not found, 3 ambiguous, and 4 execution/presentation failure
+DOC-22  every RumiAI-owned directly executable command identity has an owner-local operational manual topic
+DOC-23  command creation, rename and removal realign the corresponding manual topic in the same work unit
+DOC-24  permanent coverage mechanically detects command identities missing their required manual topic
 ```
