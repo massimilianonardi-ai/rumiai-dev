@@ -1,50 +1,37 @@
 # pkg install real validation
 
-Status: Active
+Status: Active  
 Updated: 2026-09-17
 
 ## Goal
 
-Rebuild `pkg install` validation from authentic execution of the public command on a real auxiliary Debian host, after first auditing the current implementation and catalog. Remove package-install tests that do not provide trustworthy composed-path evidence, debug real product/catalog defects exposed by execution, and keep validation claims limited to properties actually exercised.
+Rebuild `pkg install` validation from authentic execution of the public command on the ChatGPT-provided Debian host, after auditing the current implementation/catalog. Remove package-install tests that do not provide trustworthy composed-path evidence, fix real product/catalog defects exposed by execution, and keep validation claims limited to properties actually exercised.
 
-## Current repository revisions
+## Current repository revisions observed
 
 ```text
-rumiai-dev   cd106beb8cc5241d2f19b395a184109cf3935258
-rumiai-os    b18ae4439519bfe4081035a7d6d0a29423a81709
-rumiai-tests ceca7ec2cff6d537860cc9344d7beb8eb99c4c9e
+rumiai-dev   8ea9ce8438edd003b205a77d76eb66cf17292c83
+rumiai-os    14e413342261b23df840f40b355166c4d55f1b41
+rumiai-tests ae0f41b23ae477bf2f1b13332b4c52bf2df16f2f
 pkg-catalog  dd96a82e9022fb7c6f926d2b4b81f4718e824bb6
 ```
 
-Concurrent `rumiai-dev` changes after the latest retrieval concern documentation/pager work. Concurrent `rumiai-tests` changes from `d59a05417e91a97a10424f6dbc25047f9bfee383` to `ceca7ec2cff6d537860cc9344d7beb8eb99c4c9e` concern only the `read-key` tests. They do not alter the package-install work described here.
+`rumiai-os` advanced from the package-work revision `b18ae4439519bfe4081035a7d6d0a29423a81709` to `14e413342261b23df840f40b355166c4d55f1b41` through five commits affecting only `bin/sys/manual`, new `bin/sys/pager`, and their manual resources. The package implementation is unchanged by that delta.
 
-## Applicable canonical sources
-
-```text
-README.md
-RULES.md
-CONSISTENCY-GATE.md
-TESTING.md
-specifications/README.md
-specifications/rumiai-os/PACKAGE-MODEL.md
-```
-
-The current `pkg install` implementation and current package definitions are factual/mechanical evidence after those sources.
+`rumiai-tests` also advanced concurrently; the observed delta after `ceca7ec2cff6d537860cc9344d7beb8eb99c4c9e` affects digest/http-fetch/json/log tests and does not alter the package-install test files involved in this task.
 
 ## Current explicit user corrections
 
-- Target-specific package catalog directories must be named directly as `<os>-<arch>` under each package; the `catalog-` prefix is unnecessary and must not remain.
-- Existing tests that purport to validate `pkg install` are not trusted as evidence and are to be eliminated rather than incrementally preserved.
-- Test work must restart from real execution on the ChatGPT-provided Debian VM: first audit the implementation for defects and expected behavior, then execute `pkg install` for real on that VM.
-- If the VM has no direct Internet access, use an explicit transport workaround rather than replacing the package pipeline with mocks or stubs.
-
-These current user corrections supersede the previous task-local choice that assigned permanent proof responsibilities to `tests/rumiai-os/pkg/install.test` and `tests/external/nodejs/install-live.test`.
+- Target-specific package catalog directories are named directly as `<os>-<arch>` under each package; the `catalog-` prefix must not remain.
+- Existing tests that purport to validate `pkg install` are not trusted as evidence and are to be removed rather than incrementally preserved.
+- Test work restarts from real execution on the Debian VM: audit implementation first, then execute `pkg install` for real.
+- Lack of direct VM Internet access must be solved at the transport boundary, not by replacing package logic with mocks or stubs.
 
 ## Implemented changes
 
 ### pkg-catalog
 
-Commit `dd96a82e9022fb7c6f926d2b4b81f4718e824bb6` removes the `catalog-` prefix from every target-specific stream directory across the current package set. The change was performed by reusing the existing Git subtree SHAs. GitHub compare reports the catalog files as renames with zero additions/deletions of file content.
+Commit `dd96a82e9022fb7c6f926d2b4b81f4718e824bb6` removes the `catalog-` prefix from every target-specific stream directory by reusing the existing subtrees; file content is unchanged.
 
 Examples now use:
 
@@ -53,11 +40,9 @@ nodejs/linux-x86_64/...
 jq/linux-x86_64/...
 ```
 
-rather than `catalog-linux-x86_64`.
-
 ### rumiai-os
 
-The current `pkg install` audit confirmed the composed path:
+The audited install path is:
 
 ```text
 catalog snapshot
@@ -70,84 +55,82 @@ catalog snapshot
 -> integration
 ```
 
-The generic installer still built target stream paths as `catalog-$pkg_install_target`. This was realigned to `$pkg_install_target`.
+The target-stream selector was realigned from `catalog-$pkg_install_target` to `$pkg_install_target`. After an accidental unrelated variable edit in the first forward commit and its immediate forward correction, the net package-related diff from baseline `8c69d50bf675f6fab7ab447b71542c7808c988a8` to `b18ae4439519bfe4081035a7d6d0a29423a81709` contains only that intended one-line semantic change.
 
-Two forward commits were produced because the first full-file write accidentally changed an unrelated catalog-branch validation variable. The immediately following correction restored that line. The net comparison from the pre-change baseline `8c69d50bf675f6fab7ab447b71542c7808c988a8` to current `b18ae4439519bfe4081035a7d6d0a29423a81709` contains only the intended one-line semantic change:
-
-```text
-catalog-$pkg_install_target
-->
-$pkg_install_target
-```
-
-No product defect beyond the obsolete target-stream spelling has yet been established by real execution.
+No additional product defect has yet been established by real execution.
 
 ## Debian auxiliary VM state
 
-The available auxiliary host was detected as Debian 13 x86_64. Direct outbound connectivity is unavailable; the failure is not limited to DNS, so the VM cannot directly clone GitHub or download upstream package artifacts.
+The auxiliary host is Debian 13 x86_64. Direct outbound connectivity is unavailable beyond the VM, so it cannot clone GitHub or download upstream package artifacts directly.
 
-This environment is still useful under `TESTING.md`, provided it executes the real public command and real target components. Network unavailability must be solved at the transport boundary, not by replacing installer/catalog/adapter/download/extraction/integration logic.
+### Full repository transfer completed
 
-## Repository archive transfer work
-
-The user requested transferring the full repository archive into the VM rather than reconstructing a reduced target by hand.
-
-Direct binary archive download through the available VM/web path is blocked. A temporary branch was therefore created in `rumiai-os`:
+A temporary `rumiai-os` branch exists only as a transfer bridge:
 
 ```text
 tmp/pkg-install-vm-transfer-20260917
 ```
 
-The branch is based on exact product revision:
-
-```text
-b18ae4439519bfe4081035a7d6d0a29423a81709
-```
-
-and currently points to temporary workflow commit:
+Workflow commit:
 
 ```text
 f9c374098abe95577bc1dd75cfb436460e0cb782
 ```
 
-The workflow `.github/workflows/vm-transfer-rumiai-os.yml` checks out exactly `b18ae4439519bfe4081035a7d6d0a29423a81709`, verifies the checked-out SHA, produces both:
+The workflow checks out exact product revision:
+
+```text
+b18ae4439519bfe4081035a7d6d0a29423a81709
+```
+
+The user started the workflow successfully. GitHub Actions run `35268060605` completed with conclusion `success` and produced artifact `10517940248`.
+
+The artifact was downloaded through the connected GitHub interface into the VM and contains:
 
 ```text
 rumiai-os-b18ae4439519bfe4081035a7d6d0a29423a81709.zip
+rumiai-os-b18ae4439519bfe4081035a7d6d0a29423a81709.zip.sha256
 rumiai-os-b18ae4439519bfe4081035a7d6d0a29423a81709.tar
+rumiai-os-b18ae4439519bfe4081035a7d6d0a29423a81709.tar.sha256
 ```
 
-plus SHA-256 files, and uploads them as one GitHub Actions artifact.
+Both archive hashes were recomputed inside Debian and exactly match the workflow-generated SHA-256 values:
 
-The TAR is intended for execution because the repository contains Git symlinks (for example `bin/sys/m`, mode `120000`) and executable modes; TAR is the safer faithful materialization format even though ZIP is also produced as requested.
+```text
+ZIP f784d0588ebdd1d7bb71da6c98e8083ef362c0a8b176539169e6c0a1f7e20d04
+TAR 0f35d4889cded226595917c11001f1b823538bcb1502a307673b78ce6bcf8130
+```
 
-The initial branch push did not start a workflow run. The connected GitHub interface can inspect/re-run existing Actions runs but does not expose an action for starting `workflow_dispatch`, so the artifact has not yet been produced or transferred into the VM. The workflow now declares `workflow_dispatch` so a manual GitHub UI start is possible if no fully autonomous trigger becomes available.
+The TAR was extracted at:
+
+```text
+/mnt/data/rumiai-os-vm-transfer/extracted
+```
+
+The extracted tree preserves executable modes and Git symlinks; specifically `bin/sys/m` is a symlink to `../../m`, and `m` / `bin/sys/pkg` are executable.
+
+Because the subsequent `rumiai-os` main delta to `14e413342261b23df840f40b355166c4d55f1b41` touches only manual/pager surfaces, this snapshot remains suitable for exploratory execution of the unchanged package path. It is not formal evidence for the later overall `rumiai-os` revision.
 
 ## Test state
 
-The current user instruction is to remove the existing package-install proof tests and rebuild from observed real execution rather than preserve their current assertions. They have not yet been deleted in this task checkpoint; deletion and replacement should follow the real Debian execution path so the new permanent test is derived from actually observed behavior.
+The existing package-install proof tests are still pending removal. They must not be credited as evidence for this task. Replacement tests will be designed only after observing the real Debian execution path.
 
-Component tests for distinct package responsibilities are not automatically in this removal scope merely because they concern the package subsystem; the explicit removal target is tests claiming `pkg install` behavior without trustworthy real execution.
+Component tests for distinct package responsibilities are not automatically in the removal scope; the explicit target is tests claiming `pkg install` behavior without trustworthy composed-path execution.
 
-## Validation evidence obtained in this phase
+## Evidence obtained
 
-- All involved remote HEADs were refreshed before writes.
-- Current `README.md`, `RULES.md`, `CONSISTENCY-GATE.md`, `TESTING.md`, `specifications/README.md` and `PACKAGE-MODEL.md` were re-read.
-- The complete current `pkg install` source path relevant to target stream selection and composed installation was inspected.
-- `pkg-catalog` rename diff was reviewed as content-preserving renames.
-- `rumiai-os` net diff from the pre-change baseline was re-read and contains only the target-stream path correction.
-- Debian host identity and lack of outbound network were observed directly.
-- No end-to-end `pkg install` execution has yet succeeded on Debian; no PASS claim exists for the current product/catalog revisions.
+- RumiAI preflight sources were refreshed and applied before the package work.
+- The `pkg-catalog` rename and `rumiai-os` selector correction were diff-reviewed.
+- The Debian host identity and lack of outbound network were directly observed.
+- The full `rumiai-os` product snapshot was transferred through GitHub Actions rather than reconstructed file-by-file.
+- ZIP and TAR integrity were independently checked in Debian.
+- TAR extraction preserved the execution-relevant filesystem metadata checked so far.
+- No end-to-end `pkg install` execution has yet succeeded on Debian; there is still no PASS claim for composed installation.
 
 ## Next action
 
-Obtain a faithful full `rumiai-os` snapshot inside the Debian VM. Preferred prepared path: start the temporary `vm-transfer-rumiai-os` workflow, download its artifact through the connected GitHub interface, materialize the TAR/ZIP into the VM, verify SHA-256 and exact target revision, and use the TAR-extracted tree as the executable target.
+Solve the remaining external package-data/network boundary without replacing any `pkg install` component. Then execute the real public `pkg install` command against the transferred product tree, inspect every real failure, and only after the real path is understood remove/rebuild the permanent package-install tests.
 
-Then solve the external package/network boundary without replacing any `pkg install` component, execute the public `pkg install` command manually on Debian, inspect every real failure, and only after the real path is understood remove/rebuild the permanent package-install tests.
+## Remaining blocker
 
-## Blockers / open questions
-
-- The Debian VM has no outbound Internet connectivity.
-- The GitHub connector currently exposes no method to initiate a new `workflow_dispatch` run; the temporary workflow is prepared but not executed.
-- The full repository archive is therefore not yet present in the VM.
-- End-to-end `pkg install` behavior at the current revisions remains unvalidated.
+The Debian VM still has no direct outbound Internet connectivity for catalog refresh, repository API calls or package artifact download. Repository materialization itself is no longer blocked.
