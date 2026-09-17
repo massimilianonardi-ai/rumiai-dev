@@ -10,7 +10,7 @@ Maintain a long-lived meta-workstream for continuously evaluating and improving 
 ## Current repository revisions
 
 ```text
-rumiai-dev    cda528e87346e9adb8a5d73bbe91d777d11710f5  (pre-checkpoint HEAD after final manual-handoff reconciliation)
+rumiai-dev    af6e1a57bc59f45e85c310ee8c0383f2e74320f0  (pre-checkpoint HEAD after final consistency wording realignment)
 rumiai-os     14e413342261b23df840f40b355166c4d55f1b41  (current remote HEAD; manual inventory rechecked)
 rumiai-tests  ae0f41b23ae477bf2f1b13332b4c52bf2df16f2f  (current remote HEAD; active parallel suite work)
 pkg-catalog   94f58995cbd487b17f3b82bc2724c70540927b88  (last recorded; not involved in this correction)
@@ -49,6 +49,7 @@ Subsystem specifications are added only when a concrete workflow question reache
 - Library public/internal API visibility is explicit in naming: public functions do not begin with `_`; internal functions begin with `_`.
 - Library manuals expose the complete public function interface and do not expose internal functions as callable API.
 - Command/library lifecycle changes and manual realignment are one development consistency obligation.
+- Structural permanent coverage for both command→manual and library→manual completeness is mandatory; absent coverage keeps the corresponding completeness work open.
 
 ## Completed
 
@@ -115,6 +116,8 @@ This avoids both silent breaking renames and documentation that accidentally pro
 
 The current `rumiai-os@14e413342261b23df840f40b355166c4d55f1b41` manual tree was rechecked after concurrent pager movement and still contains no mandatory library-identity topics. The `e9cad... → 14e413...` product delta touched only `bin/sys/pager` and `res/sys/manual/pager`, so it did not invalidate the inspected library inventory or library-manual gap.
 
+The final consistency pass also eliminated an obligation-level mismatch: `LIBRARY-INTERFACES.md`, `DOCUMENTATION-MODEL.md` and `CONSISTENCY-GATE.md` now all make structural library→manual coverage mandatory rather than mixing `SHOULD` and `MUST` language.
+
 ### Concurrency evidence
 
 Concurrent `rumiai-dev` movement occurred again during this correction. A write to the active manual handoff was rejected because another chat had changed the same file; the new state was fetched and the library/manual delta was reapplied forward. No concurrent change was overwritten. A later product revision movement was also reconciled into the manual handoff before this checkpoint.
@@ -140,7 +143,7 @@ Observe the TODO lifecycle, specification promotion gate and command/library man
 1. verify every new/modified command retrieves and checks its operational manual;
 2. verify every new/modified library retrieves `LIBRARY-INTERFACES.md`, checks function visibility naming and checks its single library manual;
 3. verify internal library helpers are not accidentally documented/promoted as public API;
-4. verify the active manual task closes command/library topic gaps and adds structural permanent coverage;
+4. verify the active manual task closes command/library topic gaps and adds mandatory structural permanent coverage;
 5. verify the legacy visibility TODO is activated as a dedicated product/API migration rather than folded silently into unrelated work;
 6. watch for TODO/handoff/specification/manual duplication or taxonomy drift.
 
