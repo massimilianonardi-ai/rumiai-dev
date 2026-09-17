@@ -278,7 +278,7 @@ If no manual topics are materialized, discovery succeeds with exit status `0` an
 
 Discovery follows the general `res/*/manual/` shape and must not contain an explicit semantic dependency on the owner name `ai`.
 
-### 5.2 Unqualified lookup
+### 5.2 Unqualified lookup and substring fallback
 
 For:
 
@@ -286,31 +286,47 @@ For:
 manual <topic>
 ```
 
-`manual` searches the materialized global manual trees of the form:
+`manual` first searches the materialized global manual trees for exact matches of:
 
 ```text
 res/*/manual/<topic>
 ```
 
-The result is resolved by cardinality, not by owner precedence:
+Exact results are resolved by cardinality, not by owner precedence:
 
 ```text
-exactly one match
+exactly one exact match
     select and present that topic
 
-no matches
-    fail as topic not found
-
-more than one match
+more than one exact match
     fail as ambiguous and present the owner-qualified alternatives
+
+no exact matches
+    perform substring fallback
 ```
 
-An ambiguous lookup must not silently prefer `sys`, `ai` or any other owner. Its diagnostic is written to standard error, identifies the ambiguous topic and includes each matching owner-qualified invocation needed to select a specific result. Alternatives are emitted one per line in ascending lexical owner order, for example:
+An ambiguous exact lookup must not silently prefer `sys`, `ai` or any other owner. Its diagnostic is written to standard error, identifies the ambiguous topic and includes each matching owner-qualified invocation needed to select a specific result. Alternatives are emitted one per line in ascending lexical owner order, for example:
 
 ```text
 manual ai pkg
 manual sys pkg
 ```
+
+Substring fallback runs only when the exact-match count is zero. It compares the requested `<topic>` literally against each materialized topic leaf and selects topic names matching the conceptual pattern:
+
+```text
+*<topic>*
+```
+
+The fallback searches topic names, not owner names. Every fallback result is written to standard output in the same qualified identity form used by discovery:
+
+```text
+<owner> <topic>
+```
+
+Fallback results are sorted in ascending lexical order by owner and then topic. A non-empty fallback result is successful and exits with status `0`. It is a result listing rather than a selected topic, so it is written directly and never invokes `pager`.
+
+If both exact lookup and substring fallback produce no results, the request fails as topic not found.
 
 ### 5.3 Owner-qualified lookup
 
@@ -326,24 +342,26 @@ manual <owner> <topic>
 res/<owner>/manual/<topic>
 ```
 
-If that owner-local topic exists, it is selected and presented. If it does not exist, the lookup fails; owner-qualified lookup does not fall back to another owner.
+If that owner-local topic exists, it is selected and presented. If it does not exist, the lookup fails; owner-qualified lookup does not perform substring fallback and does not fall back to another owner.
 
 The current global owners remain those defined by `RESOURCE-MODEL.md`; this syntax does not create new owners or a universal resource resolver.
 
 ### 5.4 Paging option and output destination
 
-The same lookup semantics apply with `--no-pager`:
+The same exact/fallback lookup semantics apply with `--no-pager`:
 
 ```text
 manual --no-pager <topic>
 manual --no-pager <owner> <topic>
 ```
 
-The option changes only presentation of a successfully selected topic; it does not change discovery, ambiguity or owner qualification.
+For an exactly selected topic, `--no-pager` changes only presentation. It does not change exact lookup, ambiguity or owner qualification.
+
+For a substring-fallback result list, output is direct regardless of `--no-pager`, because no single topic is selected for presentation.
 
 `manual --no-pager` without a topic operand is an invalid invocation.
 
-For a successfully selected topic, presentation is:
+For a successfully selected exact topic, presentation is:
 
 ```text
 --no-pager specified
@@ -362,16 +380,18 @@ The first-delivery exit-status contract is:
 ```text
 0  success
 1  invalid invocation or invalid owner/topic identifier
-2  requested topic not found
-3  unqualified topic is ambiguous
+2  requested topic not found and no substring fallback result exists
+3  exact unqualified topic is ambiguous
 4  execution/presentation failure
 ```
 
-Status `2` applies both to an unqualified lookup with no matches and to an owner-qualified lookup whose exact owner-local topic does not exist.
+Status `0` includes a non-empty substring-fallback result list.
 
-Status `4` covers failures after a valid request has been resolved or while discovery/presentation is being executed, including inability to emit/read the selected resource and failure of the `pager` command when normal presentation is selected. `manual` maps pager failure to `4`; it does not expose the pager backend's implementation-specific status as its own public contract.
+Status `2` applies to an unqualified lookup only after both exact lookup and substring fallback are empty, and to an owner-qualified lookup whose exact owner-local topic does not exist.
 
-All failure diagnostics are written to standard error. Invalid invocation and ordinary execution failures use the existing structured `m` logging/fatal facilities. An ambiguity diagnostic additionally emits the owner-qualified `manual <owner> <topic>` alternatives required to resolve that ambiguity. Failure diagnostics do not write topic content to standard output.
+Status `4` covers failures after a valid request has been resolved or while discovery/search/presentation is being executed, including inability to emit/read the selected resource and failure of the `pager` command when normal presentation is selected. `manual` maps pager failure to `4`; it does not expose the pager backend's implementation-specific status as its own public contract.
+
+All failure diagnostics are written to standard error. Invalid invocation and ordinary execution failures use the existing structured `m` logging/fatal facilities. An exact ambiguity diagnostic additionally emits the owner-qualified `manual <owner> <topic>` alternatives required to resolve that ambiguity. Failure diagnostics do not write topic content to standard output.
 
 ## 6. Long-term multi-channel design target
 
@@ -446,11 +466,13 @@ Any later command-level help contract must be introduced explicitly. Overlapping
 
 Paging is a property of the access/viewing layer, not of the canonical operational page content.
 
-For normal presentation, `manual` delegates the selected topic to the technical `pager` command. `pager` is the host-normalizing boundary defined by `PAGER.md`; documentation lookup code therefore does not contain host-specific `more`/`less` policy.
+For normal presentation, `manual` delegates an exactly selected topic to the technical `pager` command. `pager` is the host-normalizing boundary defined by `PAGER.md`; documentation lookup code therefore does not contain host-specific `more`/`less` policy.
 
 `pager` writes directly when its standard output is not associated with a terminal and selects the appropriate interactive backend when it is associated with a terminal.
 
-When `--no-pager` is specified, `manual` bypasses `pager` and writes the selected topic directly to standard output.
+When `--no-pager` is specified, `manual` bypasses `pager` for an exactly selected topic and writes that topic directly to standard output.
+
+Discovery and substring-fallback result listings never invoke `pager`.
 
 The first implementation does not expose a `PAGER` environment contract, arbitrary pager command strings or user-selected backend configuration. Backend selection remains owned by `pager`.
 
@@ -458,7 +480,7 @@ A backend change must preserve the canonical topic-content contract and the norm
 
 ## 10. Testing and maintenance
 
-Permanent tests protect mechanical properties of the delivered interface, including resource layout, discovery, lookup, ambiguity handling, owner qualification, output/paging behavior and exit-status behavior once implemented.
+Permanent tests protect mechanical properties of the delivered interface, including resource layout, discovery, exact lookup, substring fallback, ambiguity handling, owner qualification, output/paging behavior and exit-status behavior once implemented.
 
 Permanent coverage MUST mechanically detect a RumiAI-owned directly executable command identity that lacks its required owner-local manual topic and a RumiAI-owned library identity that lacks its required owner-local library manual topic. These are one-way completeness checks from command/library identity to manual topic; additional non-command/non-library operational topics remain allowed.
 
@@ -481,11 +503,11 @@ DOC-05  each initial operational topic is an extensionless content artifact whos
 DOC-06  the public operational-documentation access utility is named manual
 DOC-07  bare manual discovers all materialized manual topics, always emits each result as <owner> <topic>, and sorts results by owner then topic
 DOC-08  discovery follows the general res/*/manual shape and does not semantically depend on the owner name ai
-DOC-09  --no-pager bypasses pager and writes the selected topic directly to standard output
-DOC-10  normal first-delivery presentation delegates to pager; manual does not select host pager backends
-DOC-11  unqualified manual lookup selects a topic only when exactly one owner-local match exists; it never applies implicit owner precedence
-DOC-12  ambiguous unqualified lookup fails and identifies each owner-qualified invocation that resolves the ambiguity
-DOC-13  manual <owner> <topic> resolves exactly that owner-local topic with no cross-owner fallback
+DOC-09  --no-pager bypasses pager for an exactly selected topic; discovery and substring-result listings remain direct output
+DOC-10  normal exact-topic presentation delegates to pager; manual does not select host pager backends
+DOC-11  unqualified manual lookup gives exact topic matches priority and never applies implicit owner precedence
+DOC-12  ambiguous exact unqualified lookup fails and identifies each owner-qualified invocation that resolves the ambiguity
+DOC-13  manual <owner> <topic> resolves exactly that owner-local topic with no substring or cross-owner fallback
 DOC-14  the first model avoids presentation-specific choices that unnecessarily obstruct later migration
 DOC-15  the long-term target separates informational content from channel-specific rendering
 DOC-16  long-term documentation build orchestration belongs to mk; runtime manual pages do not require the build toolchain
@@ -493,7 +515,7 @@ DOC-17  the first delivery does not introduce per-command --help or -h
 DOC-18  paging never changes the canonical page content contract
 DOC-19  every command modification includes a manual-consistency check and any resulting documentation realignment occurs in the same work unit
 DOC-20  the first-delivery executable is bin/sys/manual, belongs to m, and is bootstrap-integrated through #!/usr/bin/env m
-DOC-21  manual uses public exit statuses 0 success, 1 invalid request, 2 not found, 3 ambiguous, and 4 execution/presentation failure
+DOC-21  manual uses public exit statuses 0 success, 1 invalid request, 2 not found, 3 exact ambiguity, and 4 execution/presentation failure
 DOC-22  every RumiAI-owned directly executable command identity has an owner-local operational manual topic
 DOC-23  command creation, rename and removal realign the corresponding manual topic in the same work unit
 DOC-24  permanent coverage mechanically detects command identities missing their required manual topic
@@ -501,4 +523,5 @@ DOC-25  every RumiAI-owned library identity has exactly one owner-local operatio
 DOC-26  a library manual exposes every public function and does not expose internal functions as callable API
 DOC-27  library creation, rename, removal and public-interface changes realign the corresponding manual topic in the same work unit
 DOC-28  permanent coverage mechanically detects library identities missing their required manual topic
+DOC-29  when an unqualified exact lookup has zero matches, manual lists all topic-name substring matches as sorted <owner> <topic> identities; an empty fallback preserves not-found status 2
 ```
