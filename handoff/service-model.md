@@ -1,7 +1,7 @@
 # Service model
 
 Status: Active
-Updated: 2026-09-17 14:04 +02:00
+Updated: 2026-09-17 14:07 +02:00
 
 ## Goal
 
@@ -11,16 +11,16 @@ The task must converge on the semantic model and public contract before implemen
 
 ## Current repository revisions
 
-Revisions verified for this checkpoint:
+Revisions relied upon for this checkpoint:
 
 ```text
-rumiai-dev@c4f96d4547edd2c1258292d500c89705f25ec0b4
+rumiai-dev@59990ecfc5a010fe1f41a82f7ec3aca9c3dfb33d  canonical-source baseline
 rumiai-os@36c29d8412a523f722fd90004b78a07fdf0b06c8
 rumiai-tests@298931c1dca03d44755893d64b9b3a7c0058b7ea
 pkg-catalog@94f58995cbd487b17f3b82bc2724c70540927b88
 ```
 
-`rumiai-dev` advanced during the preflight from `67fb6fa1d4aafc048e0c27752e66abe77bc4d832` to the revision above. The intervening changes added unrelated TODO files only; the applicable rules/specifications did not change. The handoff commit itself advances `rumiai-dev` beyond the recorded authority baseline.
+The `rumiai-dev` SHA above is the canonical-source baseline re-read after concurrent workflow changes. Subsequent commits for this task only create/update this active handoff and do not replace the requirement for fresh HEAD verification when resuming.
 
 ## Applicable canonical sources
 
@@ -109,6 +109,7 @@ The following choices are fixed for this task unless the user explicitly correct
 - Current `srv` implementation and permanent lifecycle test were inspected.
 - Current package facility implementation and permanent facility test were inspected.
 - No existing `handoff/service-model.md` or deferred `service-model` TODO existed before activation.
+- Concurrent changes to `CONSISTENCY-GATE.md` and `handoff/README.md` were detected during the write, re-read and reconciled before this checkpoint.
 - The initial service-model choices agreed in the design discussion are captured above as resumable task-local state.
 
 ## Current state
