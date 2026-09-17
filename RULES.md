@@ -179,6 +179,18 @@ For every tool that actually supports `--` as an option terminator, use `--` whe
 
 The rule follows the real contract of the invoked tool, POSIX or otherwise.
 
+### Operational manual completeness
+
+Every RumiAI-owned directly executable command identity defined by the command-entrypoint model must have a corresponding operational manual topic under the owner-specific `manual` resource tree defined by `DOCUMENTATION-MODEL.md`.
+
+This requirement applies regardless of whether the command is intended primarily for end users, developers, maintenance or internal technical workflows. Internal sourced libraries are not commands and are outside this requirement. Package-owned external commands are also outside this RumiAI-owned command requirement.
+
+Creating a command and creating its manual topic are one development obligation and belong to the same work unit. Renaming or removing a command must realign its manual topic in the same work unit.
+
+Every modification of a command requires an explicit manual-consistency check. If purpose, invocation syntax, operands, options, output, exit statuses, environment/files, side effects or other documented observable behavior changes, update the affected manual topic in the same work unit. A purely internal implementation change requires no manual edit when the existing topic remains fully accurate, but the check is still required.
+
+A command work unit is not complete while its implementation and operational manual disagree.
+
 ## 12. Paths and relocatability
 
 RumiAI OS must be relocatable.
@@ -231,6 +243,7 @@ retrieve current authority
 → experiment only if a question is genuinely open
 → promote only settled contract into current specifications
 → implement in the proper repository
+→ create/realign operational manual content for every affected command
 → add/realign proportional permanent tests
 → execute real development tests
 → use broader/hosted testing when it adds evidence
