@@ -103,6 +103,35 @@ Git history is the archive for completed handoffs. Do not create a parallel `com
 
 The full lifecycle and template are defined in `handoff/README.md`.
 
+## Deferred work / TODO protocol
+
+Concrete work that is known to remain open but is intentionally **not yet active** is represented under:
+
+```text
+todo/<topic>.md
+```
+
+A TODO is current planning state only. It does not define a subsystem contract and it is not active task state. Keep each item minimal: future intent, why the work is known to remain pending, scope and pointers to current evidence.
+
+The lifecycle is:
+
+```text
+known deferred work
+→ todo/<topic>.md
+→ activate: delete TODO + create handoff/<task>.md
+→ active task work
+→ complete handoff
+→ Git history
+```
+
+When a TODO is activated, remove the TODO and create the handoff in the same authorized work unit and, when practical, the same commit. The same work must not remain represented simultaneously as both a current TODO and an active handoff.
+
+`todo/` is deliberately **not** part of the mandatory read order for every task. Read it when choosing deferred work, checking whether a newly discovered deferred issue is already known, activating work or maintaining the pending-work inventory.
+
+Do not create `todo/archive/` or `todo/completed/`. Git history preserves removed TODOs forward-only.
+
+The full qualification, shape, activation and historical-recovery rules are defined in `todo/README.md`.
+
 ## Current tree
 
 ```text
@@ -119,6 +148,10 @@ setup-dev.sh              development workspace bootstrap
 specifications/
     README.md              subsystem/topic routing index
     rumiai-os/             current RumiAI OS / m specifications only
+
+todo/
+    README.md              deferred-work lifecycle and minimal item contract
+    <topic>.md             known work intentionally deferred and not yet active
 
 handoff/
     README.md              active-handoff lifecycle and template
@@ -206,6 +239,8 @@ The exact current HEAD of each repository must always be retrieved; no SHA writt
 For product/runtime questions, start with `specifications/README.md` and follow the smallest applicable set of current specifications.
 
 For testing questions, start with `TESTING.md`; add `RUNNER.md`, `PHYSICAL-TESTING.md` or `TEST-PATTERNS.md` only when the topic requires them.
+
+For deferred-work discovery, review or activation, start with `todo/README.md` and then only the relevant TODO items.
 
 For a continuing multi-chat task, read the corresponding active handoff after project rules/specifications. The handoff should contain only task state that is not already canonical elsewhere.
 
