@@ -29,6 +29,26 @@ Therefore:
 
 `specifications/README.md` is the canonical topic-to-specification router.
 
+`specifications/` contains only **promoted current contracts**. A design statement may enter a current specification only when it is sufficiently settled that current implementation and future work must treat it as binding now.
+
+The following are not specification content merely because they may later become contractual:
+
+```text
+candidate choices
+provisional working assumptions
+alternatives still being compared
+decisions deliberately postponed inside an active task
+open questions
+evaluation criteria for an unresolved choice
+future-work or decision backlogs
+```
+
+During an active task, that material belongs in the task handoff as **working design state** when it is needed for safe resumption. Experiments used to resolve an open design question belong in `rumiai-dev-PoCs` and are referenced from the handoff. Concrete work postponed outside the active task belongs under `todo/`.
+
+A specification may state that it deliberately does **not constrain** a dimension only when that absence of constraint is itself a stable current boundary that future implementation must respect. Such a statement must express the boundary directly; it must not turn the specification into a list of candidates, comparisons or decisions still to be made.
+
+When working design becomes a durable subsystem contract, promote the resulting rule into the canonical current specification and remove the duplicated provisional material from the handoff. When an active task ends, any remaining working-design item must be promoted, converted into deferred work when still relevant, or discarded; it must not survive by being mislabeled as a specification.
+
 `handoff/` contains only active task state. A handoff never overrides `RULES.md`, `CONSISTENCY-GATE.md` or current specifications.
 
 ## 3. Repository roles
@@ -207,8 +227,9 @@ The normal sequence is:
 ```text
 retrieve current authority
 → extract applicable invariants
+→ keep unresolved active design in the task handoff
 → experiment only if a question is genuinely open
-→ update the current specification when the contract changes
+→ promote only settled contract into current specifications
 → implement in the proper repository
 → add/realign proportional permanent tests
 → execute real development tests
