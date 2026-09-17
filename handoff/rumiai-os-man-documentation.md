@@ -12,9 +12,9 @@ The first delivery is intentionally simple and terminal-first. The future multi-
 ## Current repository revisions
 
 ```text
-rumiai-dev   9375ac9f160fd3970e93cf1fb0b4ad4e14df0187  (current remote HEAD inspected before this checkpoint)
+rumiai-dev   5135dd34fcb341fce7a4cb7f9a739581e4708a00  (canonical manual paging contract checkpoint before this handoff update)
 rumiai-os    36c29d8412a523f722fd90004b78a07fdf0b06c8  (current remote HEAD inspected; no product change made by this task)
-rumiai-tests 298931c1dca03d44755893d64b9b3a7c0058b7ea  (current remote HEAD inspected while checking current mk coverage)
+rumiai-tests 298931c1dca03d44755893d64b9b3a7c0058b7ea  (last inspected while checking current mk coverage)
 ```
 
 Fresh remote HEAD retrieval remains mandatory before future writes.
@@ -30,6 +30,7 @@ specifications/rumiai-os/DOCUMENTATION-MODEL.md
 specifications/rumiai-os/RESOURCE-MODEL.md
 specifications/rumiai-os/FILESYSTEM-NAMING.md
 specifications/rumiai-os/COMMAND-ENTRYPOINTS.md
+specifications/rumiai-os/POSIX-PORTABILITY-LAYER.md
 specifications/rumiai-os/MK.md
 specifications/rumiai-os/MK-SOURCE-MATERIALIZATION.md
 handoff/README.md
@@ -43,6 +44,10 @@ The active `handoff/mk-tool-development.md` is relevant only to the cross-task s
 - Operational pages use the global `manual` resource class under `res/<owner>/manual/<topic>` for current global owners `sys` and `ai`.
 - Initial topic files are human-readable UTF-8 text and have no filename extension.
 - The public access utility is named `manual`.
+- The explicit paging-disable option is `--no-pager`.
+- Normal first-delivery presentation delegates to the POSIX `more` utility.
+- `--no-pager` bypasses `more` and writes the selected topic directly to standard output.
+- No generic RumiAI `pager` utility, `less` dependency, `$PAGER` contract or host-specific pager adapter is introduced in the first delivery. A generic pager abstraction requires a later concrete reusable need that POSIX `more` does not satisfy.
 - Per-command `--help`/`-h` is not part of the first-delivery direction.
 - The long-term multi-channel documentation model has a build step and that build responsibility belongs to `mk`.
 - Documentation generators/renderers are build-time concerns; generated operational pages must not require Python, Ruby or another documentation framework merely to be read at runtime.
@@ -57,15 +62,17 @@ The active `handoff/mk-tool-development.md` is relevant only to the cross-task s
 - Concurrent `mk` work advanced during this task: `specifications/rumiai-os/MK.md` is now the current high-level lifecycle contract and `MK-SOURCE-MATERIALIZATION.md` is subordinate to it.
 - Current `mk` implementation was rechecked: it still exposes only `mk materialize`; no documentation build behavior exists yet.
 - Current permanent `mk` coverage was rechecked: `tests/rumiai-os/mk/materialize.test` covers the implemented materialization baseline; no documentation-build test exists yet.
+- The paging design was resolved against the current POSIX portability contract. The first delivery reuses POSIX `more` rather than creating a new host abstraction; POSIX `more` already pages terminal output and copies input unchanged when standard output is not a terminal.
+- `specifications/rumiai-os/DOCUMENTATION-MODEL.md` now fixes `--no-pager`, POSIX `more` as the normal presentation mechanism, and the absence of a first-delivery generic `pager` abstraction.
 - No `rumiai-os` or `rumiai-tests` product/test modification has been made by this documentation task.
 
 ## Current state
 
-The storage identity and command name are fixed and are being propagated to the canonical documentation/resource contracts.
+Storage identity, command name and paging baseline are fixed.
 
-The remaining first-delivery design is primarily behavioral: topic lookup/discovery, owner qualification, paging, exit statuses and command executable placement must be fixed before implementing `manual` in `rumiai-os`.
+For normal viewing, `manual` can delegate the selected topic to POSIX `more`; no separate `manual` TTY-detection policy is required merely to support pipes and redirections because `more` itself defines direct-copy behavior when standard output is not a terminal. `--no-pager` provides explicit direct output.
 
-Paging now has a specific portability concern. RumiAI targets POSIX; making `less` an unconditional runtime requirement would require an explicit non-POSIX dependency decision. A promising direction is interactive paging only when stdout is a terminal, with direct stdout for pipes/redirections and a graceful pager fallback policy, but the exact pager contract and disable-option spelling are not fixed yet.
+The remaining first-delivery design is topic lookup/discovery and owner qualification, command executable ownership/location, exit statuses and proportional permanent tests. Those must be fixed before implementing `manual` in `rumiai-os`.
 
 The current high-level `mk` contract already owns complete lifecycle/build orchestration. The documentation-build requirement is therefore a concrete `mk` build/output responsibility rather than a separate documentation-specific build subsystem.
 
@@ -73,20 +80,17 @@ The current high-level `mk` contract already owns complete lifecycle/build orche
 
 Continue the first-delivery interface design in this order:
 
-1. fix `manual` topic lookup/discovery and owner qualification;
-2. fix interactive paging semantics, fallback behavior and the explicit no-pager option;
-3. fix command executable ownership/location and exit statuses;
-4. define proportional permanent tests;
-5. only then implement `manual` and initial pages in `rumiai-os`.
+1. fix `manual` topic lookup/discovery, zero-argument behavior and owner qualification;
+2. fix command executable ownership/location and exit-status behavior, including how a `more` execution failure maps to the public command status;
+3. define proportional permanent tests for storage, lookup, normal `more` presentation and `--no-pager` direct output;
+4. only then implement `manual` and initial pages in `rumiai-os`.
 
 In parallel, continue the long-term build-tool comparison as input to `mk` lifecycle design. Do not invent a documentation-specific build subsystem outside `mk`.
 
 ## Blockers / open questions
 
 - Exact `manual` lookup/discovery behavior, including zero-argument behavior and ambiguity across owners.
-- Whether `manual` should automatically page only for terminal stdout.
-- Preferred external pager order and fallback behavior; in particular whether `less` is preferred opportunistically while POSIX `more` and/or direct output provide portability fallback.
-- Exact spelling of the no-pager option.
 - `manual` executable owner/location and exit-status contract.
+- Failure mapping when the POSIX `more` invocation itself fails.
 - Which of Sphinx, Asciidoctor, Pandoc or another toolchain best fits the future `mk`-driven documentation build.
 - Exact source representation and generated artifact set for documentation model 2.
