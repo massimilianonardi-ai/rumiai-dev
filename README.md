@@ -148,6 +148,36 @@ The current tree follows these rules:
 - revision-specific validation evidence remains in the validation mechanisms/repository that produced it and is not rewritten as current contract text;
 - historical evidence is never relabelled as evidence for a later revision.
 
+## Documentation maintenance and language
+
+Current canonical **development documentation in `rumiai-dev` is maintained in English**. Existing current documents written in another language are translated in place; do not create parallel translated copies that would become a second authority. Technical identifiers, code, literal paths and externally defined tokens keep their exact spelling. Product/user-facing localization may establish a separate contract when there is a concrete requirement; this rule does not predefine that policy.
+
+Documentation maintenance is **event-driven by default**, not a recurring calendar exercise:
+
+- a small/local correction belongs in the work unit that discovers it and should update the canonical current source immediately when practical;
+- documentation-health observations, retrieval friction and lifecycle improvements belong to workflow governance;
+- a substantial documentation change gets its own task/handoff when it is independently resumable, broad or risky, spans multiple canonical surfaces, requires migration/restructuring, or would otherwise overload a long-lived workflow-governance task with implementation detail;
+- after that dedicated task completes, durable rules remain in canonical documentation and only reusable workflow lessons need to survive in workflow governance;
+- a broader documentation review is appropriate at natural structural milestones when evidence justifies it, not merely because a fixed amount of time has elapsed.
+
+Signals that should trigger correction or focused review include, as applicable:
+
+```text
+current meaning requires Git history or remembered conversation
+one current rule must be reconstructed from multiple documents
+an accepted correction is being stored as a patch instead of updating the canonical source
+routing or cross-references are ambiguous or broken
+ordinary tasks repeatedly retrieve substantially more documentation than needed
+a canonical document mixes unrelated responsibilities and is routinely over-retrieved
+the same normative rule exists in multiple independently editable places
+an active handoff accumulates durable project knowledge instead of task state
+implementation/tests repeatedly expose uncaptured specification drift
+a new subsystem/responsibility has no direct route from the current index
+a clean chat cannot resume or answer correctly without conversation memory
+```
+
+When one of these signals is observed, fix the local issue in the current work unit when it is small; otherwise create a dedicated resumable documentation task rather than accumulating cleanup debt.
+
 When a historical explanation is specifically needed, inspect Git history deliberately. Do not pull historical material into ordinary task context by default.
 
 ## Repository roles
