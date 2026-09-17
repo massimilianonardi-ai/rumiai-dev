@@ -121,30 +121,94 @@ manual
 
 The command name identifies the operational manual as a semantic surface; it does not imply Unix `man`, roff input, a host man database, or one presentation renderer.
 
-## 5. First-delivery details still unresolved
+## 5. First-delivery lookup and invocation
 
-The following details are not fixed yet:
+The first-delivery lookup forms are:
 
 ```text
-complete manual invocation syntax
-topic discovery and lookup behavior
-owner-qualified lookup syntax
+manual [--no-pager] <topic>
+manual [--no-pager] <owner> <topic>
+```
+
+`--no-pager` is an option and precedes the operands in these forms.
+
+### 5.1 Unqualified lookup
+
+For:
+
+```text
+manual <topic>
+```
+
+`manual` searches the materialized global manual trees of the form:
+
+```text
+res/*/manual/<topic>
+```
+
+The result is resolved by cardinality, not by owner precedence:
+
+```text
+exactly one match
+    select and present that topic
+
+no matches
+    fail as topic not found
+
+more than one match
+    fail as ambiguous and present the owner-qualified alternatives
+```
+
+An ambiguous lookup must not silently prefer `sys`, `ai` or any other owner. Its diagnostic is written to standard error, identifies the ambiguous topic and includes each matching owner-qualified invocation needed to select a specific result, for example:
+
+```text
+manual sys pkg
+manual ai pkg
+```
+
+The exact prose/layout of the diagnostic and the numeric exit status remain implementation-contract details to be fixed with the general exit-status design.
+
+The unqualified discovery mechanism operates on the general `res/*/manual/` shape and must not contain an explicit semantic dependency on the owner name `ai`.
+
+### 5.2 Owner-qualified lookup
+
+For:
+
+```text
+manual <owner> <topic>
+```
+
+`manual` resolves exactly:
+
+```text
+res/<owner>/manual/<topic>
+```
+
+If that owner-local topic exists, it is selected and presented. If it does not exist, the lookup fails; owner-qualified lookup does not fall back to another owner.
+
+The current global owners remain those defined by `RESOURCE-MODEL.md`; this syntax does not create new owners or a universal resource resolver.
+
+### 5.3 Paging option
+
+The same lookup semantics apply with `--no-pager`:
+
+```text
+manual --no-pager <topic>
+manual --no-pager <owner> <topic>
+```
+
+The option changes only presentation of a successfully selected topic; it does not change discovery, ambiguity or owner qualification.
+
+### 5.4 Details still unresolved
+
+The following first-delivery details are not fixed yet:
+
+```text
+zero-argument behavior
 command executable ownership/location
 search/index behavior
-exit-status contract
+numeric exit-status mapping and exact diagnostics
 ```
-
-The following first-delivery CLI/presentation choices are fixed:
-
-```text
---no-pager
-    disables paging and writes the selected topic directly to standard output
-
-default presentation
-    passes the selected topic to the POSIX `more` utility
-```
-
-These fixed choices do not decide topic lookup precedence, ambiguity handling, executable placement or exit-status mapping.
 
 ## 6. Long-term multi-channel design target
 
@@ -267,7 +331,8 @@ The task sequence is:
 fix documentation ownership/model
 → fix first-delivery storage and public access identity
 → fix paging baseline
-→ design lookup and exit-status behavior
+→ fix topic lookup and owner qualification
+→ design zero-argument behavior, executable placement and exit statuses
 → implement and test that first delivery
 → populate useful operational topics incrementally
 → continue the multi-channel architecture through mk as a separate long-term design track
@@ -287,12 +352,16 @@ DOC-05  each initial operational topic is an extensionless UTF-8 text file whose
 DOC-06  the public operational-documentation access utility is named manual
 DOC-07  --no-pager bypasses paging and writes the selected topic directly to standard output
 DOC-08  normal first-delivery presentation delegates to POSIX more; no generic pager abstraction is introduced
-DOC-09  manual lookup and exit-status behavior remain unresolved until their next design step
-DOC-10  the first model must avoid presentation-specific choices that unnecessarily obstruct later migration
-DOC-11  the long-term target separates informational content from channel-specific rendering
-DOC-12  the long-term documentation build mechanism belongs to mk while source schema and renderer/toolchain remain undecided
-DOC-13  a Markdown-plus-metadata bridge is an exploration candidate, not the adopted final architecture
-DOC-14  the first delivery does not introduce per-command --help or -h
-DOC-15  paging never changes the canonical page content contract
-DOC-16  interface changes realign affected operational documentation in the same work unit whenever practical
+DOC-09  unqualified manual lookup selects a topic only when exactly one owner-local match exists; it never applies implicit owner precedence
+DOC-10  ambiguous unqualified lookup fails and identifies each owner-qualified invocation that resolves the ambiguity
+DOC-11  manual <owner> <topic> resolves exactly that owner-local topic with no cross-owner fallback
+DOC-12  unqualified manual discovery follows the general res/*/manual shape and does not semantically depend on the owner name ai
+DOC-13  zero-argument behavior, executable placement and numeric exit-status mapping remain unresolved until their next design step
+DOC-14  the first model must avoid presentation-specific choices that unnecessarily obstruct later migration
+DOC-15  the long-term target separates informational content from channel-specific rendering
+DOC-16  the long-term documentation build mechanism belongs to mk while source schema and renderer/toolchain remain undecided
+DOC-17  a Markdown-plus-metadata bridge is an exploration candidate, not the adopted final architecture
+DOC-18  the first delivery does not introduce per-command --help or -h
+DOC-19  paging never changes the canonical page content contract
+DOC-20  interface changes realign affected operational documentation in the same work unit whenever practical
 ```
