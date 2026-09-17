@@ -14,8 +14,8 @@ The current first-delivery completion scope includes mandatory operational-manua
 ## Current repository revisions
 
 ```text
-rumiai-dev   0b5b41a7466c09f984481e51b3c68ff37651cd7e  (current contract includes manual substring fallback before this handoff checkpoint)
-rumiai-os    fce90adde7ee5901a6c71560a7cf72b8df9492b2  (manual substring fallback plus complete command-manual backfill and aligned-library manuals)
+rumiai-dev   118e6a97a739d878fbdbe3e08be53dd26c70d08f  (handoff checkpoint before publication of prepared product commit)
+rumiai-os    db0b25c20b08247cd68818ef9caea61a1cf02451  (current remote HEAD; command/library manual backfill prepared as descendant fce90adde7ee5901a6c71560a7cf72b8df9492b2 but not yet published when this checkpoint was written)
 rumiai-tests 122011d7aeb64d7d6a15a44a133b497c962fa89d  (parallel suite work; not modified by this documentation work unit)
 ```
 
@@ -71,16 +71,16 @@ The promoted first-delivery documentation contract lives in `DOCUMENTATION-MODEL
 - `pager` is the host-normalizing presentation boundary. Current Linux behavior prefers `less` and falls back to `more`; Debian auxiliary execution has exercised the degraded `more` path, and the richer `less` path was exercised using the VM's BusyBox `less` capability. This is development evidence, not physical/stable-host validation.
 - Manual substring fallback was implemented in `bin/sys/manual`, documented in `res/sys/manual/manual`, and promoted into `DOCUMENTATION-MODEL.md` as the current contract.
 - Debian 13 x86_64 targeted auxiliary execution exercised the exact committed manual logic for: exact unique lookup, exact ambiguity, substring fallback with one/multiple results and lexical qualification, `--no-pager` substring listing, empty fallback -> status `2`, and qualified lookup remaining exact-only. All targeted cases passed. `sh -n` also passed. This is development evidence, not a permanent-suite or stable-host PASS.
-- Mandatory command manual coverage is now materialized for the current command identity set. The 18 previously missing topics were added: `sys m`, `digest`, `extract`, `http-fetch`, `lang`, `lang-set`, `log`, `menu-ext`, `menu-ext-adv`, `menu-ext-adv-fs`, `mk`, `osarch-update`, `pkg-analyze`, `read-key`, `readc`, `shell`, plus branded `ai rumiai-os` and `ai rumiai-os-sh`. Existing `manual`, `pager`, `pkg`, `srv` and `state-path` topics were preserved.
-- Mandatory library coverage is partially advanced without guessing legacy API intent. `array.lib.sh`, `mk-materialize.lib.sh` and `mk-materialize-copy.lib.sh` now have owner-local manual topics because their public/internal API is explicit and naming-aligned. The concurrent package work's existing `pkg-install.lib.sh` manual was preserved.
-- `array.lib.sh` documents the single public `array` API and its operations/status contract. `mk-materialize.lib.sh` documents public `mk_materialize`; `mk-materialize-copy.lib.sh` documents the adapter function `mk_materialize_type` established by the materialization contract.
+- A product commit `fce90adde7ee5901a6c71560a7cf72b8df9492b2` has been prepared from current `rumiai-os@db0b25c20b08247cd68818ef9caea61a1cf02451` containing the 18 previously missing command manuals plus three manuals for already visibility-aligned libraries. Publication of that commit to `main` is the next immediate action; it is not treated as current product state until the ref advances.
+- The prepared command pages cover `sys m`, `digest`, `extract`, `http-fetch`, `lang`, `lang-set`, `log`, `menu-ext`, `menu-ext-adv`, `menu-ext-adv-fs`, `mk`, `osarch-update`, `pkg-analyze`, `read-key`, `readc`, `shell`, plus branded `ai rumiai-os` and `ai rumiai-os-sh`. Existing `manual`, `pager`, `pkg`, `srv` and `state-path` topics remain preserved in the prepared tree.
+- The prepared aligned-library pages cover `array.lib.sh`, `mk-materialize.lib.sh` and `mk-materialize-copy.lib.sh`; the concurrent package work's existing `pkg-install.lib.sh` manual is preserved.
 - Mandatory command/library manual coverage remains subject to permanent structural coverage in the parallel test-suite task before this documentation task can close.
 - No physical validation has been performed by this assistant for the manual/pager surface.
 - Concurrent repository changes were preserved forward-only.
 
 ## Current state
 
-The first-delivery `manual` framework, `pager` abstraction, substring fallback and **command manual completeness for the current command identity set** are implemented.
+The first-delivery `manual` framework, `pager` abstraction and substring fallback are implemented on the current product branch. Complete command-manual coverage and three additional aligned-library manuals are prepared in descendant product commit `fce90adde7ee5901a6c71560a7cf72b8df9492b2` pending fast-forward publication.
 
 Current unqualified lookup is:
 
@@ -105,9 +105,7 @@ manual lookup
         -> other TTY: more
 ```
 
-The current product command identity set has all required command topics after `rumiai-os@fce90adde7ee5901a6c71560a7cf72b8df9492b2`.
-
-Library documentation is not yet complete. Current materialized aligned library topics include `array.lib.sh`, `mk-materialize.lib.sh`, `mk-materialize-copy.lib.sh` and the concurrently added `pkg-install.lib.sh`. Many legacy `lib/sys/sh/*.lib.sh` identities still cannot be documented safely without first resolving their public/internal function intent under `todo/library-api-visibility-realignment.md`.
+Library documentation is not yet complete. Even after publication of the prepared pages, many legacy `lib/sys/sh/*.lib.sh` identities still cannot be documented safely without first resolving their public/internal function intent under `todo/library-api-visibility-realignment.md`.
 
 The prior permanent `manual` tests must not currently be treated as reliable closure evidence; the separate active test-suite task owns trustworthy test reconstruction and must also add/realign command-to-manual and library-to-manual structural completeness coverage.
 
@@ -119,13 +117,11 @@ The long-term source representation and documentation build toolchain remain int
 
 ## Next action
 
-Before this handoff can close:
-
-1. activate/complete the dedicated legacy library API visibility realignment work or otherwise establish the intended public function sets for the remaining libraries without guesswork;
-2. create the remaining mandatory library manual topics from those aligned public APIs;
-3. have permanent tests enforce both command-to-manual and library-to-manual structural completeness under the active test-suite task, including the new substring-fallback behavior where appropriate;
-4. run proportional real validation of the complete manual surface;
-5. only then perform the final consistency gate and handoff completion lifecycle.
+1. Publish `rumiai-os@fce90adde7ee5901a6c71560a7cf72b8df9492b2` by forward-only fast-forward if the remote HEAD remains its parent, then mechanically recheck command coverage.
+2. Activate/complete the dedicated legacy library API visibility realignment work or otherwise establish the intended public function sets for the remaining libraries without guesswork.
+3. Create the remaining mandatory library manual topics from those aligned public APIs.
+4. Have permanent tests enforce both command-to-manual and library-to-manual structural completeness under the active test-suite task, including the new substring-fallback behavior where appropriate.
+5. Run proportional real validation of the complete manual surface, then perform the final consistency gate and handoff completion lifecycle.
 
 Long-term multi-channel source/toolchain design remains independent working design and does not block first-delivery coverage.
 
