@@ -12,8 +12,8 @@ The first delivery is intentionally simple and terminal-first. The future multi-
 ## Current repository revisions
 
 ```text
-rumiai-dev  d58007e1f26e2c6c6c1228995e0f76a115c9caef  (current checkpoint before this handoff update)
-rumiai-os   36c29d8412a523f722fd90004b78a07fdf0b06c8  (last current remote HEAD inspected; no product change made by this task)
+rumiai-dev  d6e89c800685c536ebf7340f30b04f0bb170525a  (current remote HEAD inspected before this checkpoint)
+rumiai-os   36c29d8412a523f722fd90004b78a07fdf0b06c8  (current remote HEAD inspected; no product change made by this task)
 ```
 
 Fresh remote HEAD retrieval remains mandatory before future analysis or writes.
@@ -29,6 +29,7 @@ specifications/rumiai-os/DOCUMENTATION-MODEL.md
 specifications/rumiai-os/CURRENT-MODEL.md
 specifications/rumiai-os/FILESYSTEM-NAMING.md
 specifications/rumiai-os/RESOURCE-MODEL.md
+specifications/rumiai-os/COMMAND-ENTRYPOINTS.md
 handoff/README.md
 ```
 
@@ -40,8 +41,9 @@ Additional subsystem specifications must be retrieved only when the concrete acc
 - Operational documentation is revision-coupled product reference and must not become a second development-specification authority.
 - The first implementation uses a simple terminal-first model: one human-readable UTF-8 text source per operational topic, directly consumable without a rendering pipeline.
 - Initial content avoids ANSI/control formatting, fixed-width-dependent layout and other choices that would unnecessarily obstruct later migration.
+- The first-delivery work is intentionally separable into two implementation blocks: distributed documentation files/storage, then access/viewing utility or utilities.
 - The public utility name, invocation syntax, discovery behavior, filesystem location, resource-class classification, page filename convention and paging/search behavior are **not fixed yet**.
-- Command-level `--help`/`-h` is not introduced implicitly and must be considered explicitly when the access utility is designed.
+- Command-level `--help`/`-h` is not part of the intended first-delivery direction. The user is strongly opposed to adding per-command `--help`; reopen that only for a concrete future requirement rather than treating it as a default documentation surface.
 - A long-term documentation architecture must separate informational content from channel-specific rendering so the same canonical information can feed terminal, HTML, PDF and other consumers.
 - No long-term source schema, AST, renderer, generator or localization design is fixed yet.
 
@@ -53,11 +55,11 @@ Additional subsystem specifications must be retrieved only when the concrete acc
 - `specifications/rumiai-os/DOCUMENTATION-MODEL.md` now defines the current ownership split, simple terminal-first initial model, unresolved first-delivery details, migration discipline and long-term multi-channel target.
 - `specifications/README.md` now routes documentation-model questions directly to that canonical source.
 - No `rumiai-os` product modification has been committed by this task.
-- Existing open-source documentation toolchains were checked as possible accelerators for the long-term track:
-  - Sphinx already has builders for plain text, Unix man pages, HTML and LaTeX/PDF-oriented output, plus gettext-oriented localization support;
-  - Asciidoctor parses AsciiDoc into a structured document and has built-in HTML, DocBook and man-page converters, with PDF available through its add-on converter;
-  - Pandoc remains a plausible broad conversion bridge, but PDF generation normally relies on an external PDF engine/toolchain.
-- This means the long-term route may be substantially faster if RumiAI adopts an existing semantic/document-processing toolchain instead of defining a custom format first.
+- Existing open-source documentation toolchains were checked as possible accelerators for the long-term track.
+- Sphinx current stable packaging is Python-based and currently requires Python >= 3.12. It provides built-in HTML, plain-text, groff-man, gettext and LaTeX builders; practical PDF production adds a TeX/LaTeX toolchain unless another PDF builder is selected.
+- Asciidoctor core is Ruby-based (with JVM and JavaScript variants also available). Built-in converters include HTML5, DocBook5 and manpage; PDF requires the `asciidoctor-pdf` Ruby gem, which produces PDF directly without requiring LaTeX.
+- Pandoc is a Haskell-based converter with an explicit intermediate AST and writers including plain text, HTML, roff man and many other formats. Official Linux binaries can be statically linked/self-contained; PDF output still requires a selected external PDF engine such as LaTeX, Typst, WeasyPrint, groff or another supported engine.
+- The dependency profile therefore matters independently from source-model quality: the future toolchain should preferably be a documentation **build-time** dependency, while generated operational artifacts remain runtime-consumable without Python, Ruby or another documentation runtime.
 
 ## Current state
 
@@ -65,29 +67,31 @@ The documentation model is fixed sufficiently to proceed to the **next design la
 
 The immediate design problem is now narrow: choose the first terminal access surface and storage/discovery contract for simple plain-text operational topics. That design must remain compatible with later migration to a content/rendering architecture but must not pretend to solve that larger problem now.
 
-In parallel, the long-term track should evaluate Sphinx and Asciidoctor before inventing a RumiAI-specific semantic format. A lightweight Markdown/Pandoc-style bridge remains possible, but it should be judged against those existing structured toolchains rather than assumed to be the architecture.
+The current implementation context supports treating operational pages as distributed static content, which makes the existing global resource model a strong storage candidate; introducing a new resource class still requires an explicit documentation contract rather than filesystem symmetry.
+
+In parallel, the long-term track should compare Sphinx, Asciidoctor and Pandoc against RumiAI requirements for semantic source, terminal/HTML/PDF outputs, localization, offline operation, build-time dependencies, determinism and migration from the initial pages. The build-time-versus-runtime dependency boundary is now a primary evaluation criterion.
 
 ## Next action
 
 Design the first-delivery operational-reference interface, in this order:
 
-1. utility name and semantic responsibility;
-2. topic identity and lookup/discovery behavior;
-3. physical storage and ownership/resource classification;
-4. output/paging behavior and exit statuses;
-5. relationship with short command help;
-6. proportional permanent-test contract.
+1. select the utility name and semantic responsibility from a small explicit candidate set;
+2. fix topic identity and lookup/discovery behavior;
+3. fix physical storage and ownership/resource classification;
+4. fix output/paging behavior and exit statuses;
+5. keep command-level `--help` out of the first delivery unless a new explicit requirement changes that direction;
+6. define the proportional permanent-test contract.
 
 Only after these choices are fixed should `rumiai-os` implementation begin.
 
-In parallel, compare at least Sphinx and Asciidoctor against RumiAI requirements for semantic source, terminal/HTML/PDF outputs, localization, offline operation, build-time dependencies, determinism and migration from the initial pages.
+In parallel, perform a small dependency-oriented comparison/PoC of Sphinx, Asciidoctor and Pandoc before inventing a RumiAI-specific semantic format.
 
 ## Blockers / open questions
 
-- Name and exact semantic scope of the first terminal documentation utility.
-- Whether operational pages should be a new global resource class, another distributed product-content location, or a different existing ownership mechanism.
+- Name and exact semantic scope of the first terminal documentation utility. Current conversational candidates include `manny`, `mman`, `manu`, `docs` and `dokky`; none is adopted merely by being proposed.
+- Whether the strongest storage candidate should be formalized as a new global resource class under `res/<owner>/...`, and what that resource class should be called.
 - Whether the first utility should only display exact topics or also list/search topics.
 - Whether paging belongs to the utility baseline or should be delegated/omitted initially.
-- Whether Sphinx, Asciidoctor or another existing toolchain is sufficient for the long-term semantic/multi-channel model.
+- Whether Sphinx, Asciidoctor, Pandoc or another existing toolchain best balances semantic structure against dependency cost.
 - Whether a Markdown-based bridge adds useful migration value or merely creates an intermediate format to remove later.
 - Which concrete future channels beyond terminal, HTML and PDF create requirements that should shape the long-term content model.
