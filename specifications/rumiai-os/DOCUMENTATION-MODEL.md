@@ -126,19 +126,25 @@ The command name identifies the operational manual as a semantic surface; it doe
 The following details are not fixed yet:
 
 ```text
-manual invocation syntax
+complete manual invocation syntax
 topic discovery and lookup behavior
 owner-qualified lookup syntax
 command executable ownership/location
-interactive paging behavior and fallback policy
-exact spelling of an option that disables paging
 search/index behavior
 exit-status contract
 ```
 
-These decisions must be fixed before product implementation of the access utility.
+The following first-delivery CLI/presentation choices are fixed:
 
-The storage layout and command name fixed above do not by themselves decide lookup precedence, ambiguity handling or paging.
+```text
+--no-pager
+    disables paging and writes the selected topic directly to standard output
+
+default presentation
+    passes the selected topic to the POSIX `more` utility
+```
+
+These fixed choices do not decide topic lookup precedence, ambiguity handling, executable placement or exit-status mapping.
 
 ## 6. Long-term multi-channel design target
 
@@ -219,13 +225,29 @@ Operational reference is accessed through the dedicated manual surface instead o
 
 A future requirement may introduce short command help only through an explicit contract. If that happens, overlapping short help and long operational reference should derive from the same canonical informational source whenever practical rather than drifting independently.
 
-## 10. Paging principle
+## 10. Paging contract
 
 Paging is a property of the access/viewing layer, not of the canonical operational page content.
 
-The canonical page remains directly consumable as text regardless of whether `manual` chooses an interactive pager for terminal output.
+For the first delivery, normal `manual` presentation delegates the selected topic to the POSIX `more` utility. This deliberately reuses the platform baseline rather than introducing a RumiAI-specific pager abstraction.
 
-The exact first-delivery paging policy remains unresolved. In particular, this specification does not yet make `less`, `more`, another external pager, a bundled pager, or a pager-selection environment variable part of the runtime contract.
+The POSIX `more` contract already distinguishes terminal and non-terminal standard output: it pages interactively when standard output is a terminal and otherwise copies the input to standard output. `manual` therefore does not require a separate TTY-detection policy merely to preserve pipeline/redirection behavior.
+
+When `--no-pager` is specified, `manual` bypasses `more` and writes the selected topic directly to standard output.
+
+The first delivery does not introduce:
+
+```text
+pager command
+less dependency
+PAGER environment variable
+pager-selection configuration
+host-specific pager adapter
+```
+
+A generic `pager` facility or a non-POSIX pager may be introduced later only if a concrete reusable requirement cannot be satisfied adequately by the POSIX baseline. That future choice must not silently change the canonical topic-content contract.
+
+Exact diagnostic/exit-status mapping for a failure while invoking or running `more` remains part of the unresolved `manual` exit-status design.
 
 ## 11. Testing and maintenance
 
@@ -244,7 +266,8 @@ The task sequence is:
 ```text
 fix documentation ownership/model
 → fix first-delivery storage and public access identity
-→ design lookup, paging and exit-status behavior
+→ fix paging baseline
+→ design lookup and exit-status behavior
 → implement and test that first delivery
 → populate useful operational topics incrementally
 → continue the multi-channel architecture through mk as a separate long-term design track
@@ -262,12 +285,14 @@ DOC-03  the first operational model is terminal-first plain UTF-8 text with no r
 DOC-04  the first global operational-documentation resource class is manual under res/<owner>/manual/
 DOC-05  each initial operational topic is an extensionless UTF-8 text file whose leaf name is its owner-local topic identity
 DOC-06  the public operational-documentation access utility is named manual
-DOC-07  manual invocation, lookup, paging and exit-status behavior remain unresolved until their next design step
-DOC-08  the first model must avoid presentation-specific choices that unnecessarily obstruct later migration
-DOC-09  the long-term target separates informational content from channel-specific rendering
-DOC-10  the long-term documentation build mechanism belongs to mk while source schema and renderer/toolchain remain undecided
-DOC-11  a Markdown-plus-metadata bridge is an exploration candidate, not the adopted final architecture
-DOC-12  the first delivery does not introduce per-command --help or -h
-DOC-13  paging never changes the canonical page content contract
-DOC-14  interface changes realign affected operational documentation in the same work unit whenever practical
+DOC-07  --no-pager bypasses paging and writes the selected topic directly to standard output
+DOC-08  normal first-delivery presentation delegates to POSIX more; no generic pager abstraction is introduced
+DOC-09  manual lookup and exit-status behavior remain unresolved until their next design step
+DOC-10  the first model must avoid presentation-specific choices that unnecessarily obstruct later migration
+DOC-11  the long-term target separates informational content from channel-specific rendering
+DOC-12  the long-term documentation build mechanism belongs to mk while source schema and renderer/toolchain remain undecided
+DOC-13  a Markdown-plus-metadata bridge is an exploration candidate, not the adopted final architecture
+DOC-14  the first delivery does not introduce per-command --help or -h
+DOC-15  paging never changes the canonical page content contract
+DOC-16  interface changes realign affected operational documentation in the same work unit whenever practical
 ```
