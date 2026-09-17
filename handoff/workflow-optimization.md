@@ -5,15 +5,15 @@ Updated: 2026-09-17
 
 ## Goal
 
-Maintain a long-lived meta-workstream for continuously evaluating and improving the RumiAI development workflow: retrieval, documentation organization, Project Instructions, handoffs, deferred-work visibility, parallel work, repository coordination, testing/validation workflow and other mechanisms that affect how work is performed and resumed.
+Maintain a long-lived meta-workstream for continuously evaluating and improving the RumiAI development workflow: retrieval, documentation organization, Project Instructions, handoffs, deferred-work visibility, specification promotion, command/manual consistency, parallel work, repository coordination, testing/validation workflow and other mechanisms that affect how work is performed and resumed.
 
 ## Current repository revisions
 
 ```text
-rumiai-dev    1e76b934a5637a35ea249a34c1793901a7cadba1  (pre-checkpoint HEAD after final mk handoff synchronization)
-rumiai-os     36c29d8412a523f722fd90004b78a07fdf0b06c8  (last inspected; unchanged by this workflow/documentation correction)
-rumiai-tests  298931c1dca03d44755893d64b9b3a7c0058b7ea  (last inspected; unchanged by this workflow/documentation correction)
-pkg-catalog   94f58995cbd487b17f3b82bc2724c70540927b88  (last recorded; unchanged by this workflow/documentation correction)
+rumiai-dev    e4f80a4ccf41c75fa971c54c41e8d95f5778ceee  (pre-checkpoint HEAD after manual-task synchronization)
+rumiai-os     b18ae4439519bfe4081035a7d6d0a29423a81709  (current command/manual inventory inspected)
+rumiai-tests  d59a05417e91a97a10424f6dbc25047f9bfee383  (current remote HEAD inspected for manual-task state)
+pkg-catalog   94f58995cbd487b17f3b82bc2724c70540927b88  (last recorded; not involved in this correction)
 ```
 
 Fresh remote HEAD retrieval remains mandatory before future analysis or writes.
@@ -25,6 +25,8 @@ README.md
 RULES.md
 CONSISTENCY-GATE.md
 specifications/README.md
+specifications/rumiai-os/COMMAND-ENTRYPOINTS.md
+specifications/rumiai-os/DOCUMENTATION-MODEL.md
 todo/README.md
 handoff/README.md
 ```
@@ -44,6 +46,9 @@ Subsystem specifications are added only when a concrete workflow question reache
 - A TODO is minimal planning state, not a specification or active task state.
 - Activation transfers ownership from `todo/<topic>.md` to `handoff/<task>.md` in the same work unit, ideally the same commit, without keeping duplicate current representations.
 - `todo/` is not part of the mandatory read order for unrelated tasks.
+- `specifications/` contains promoted current contract only; unresolved active design belongs in handoff `Working design` until promotion.
+- Every RumiAI-owned directly executable command identity requires operational manual coverage regardless of whether the command is end-user-facing or primarily technical/internal.
+- Command creation/rename/removal and behavior-affecting modification are coupled to manual realignment in the same work unit; every command modification requires an explicit manual-consistency check.
 
 ## Completed
 
@@ -70,72 +75,30 @@ Substantial, parallel and multi-chat tasks use one stable active handoff each. M
 
 The hybrid/event-driven documentation-maintenance model was made canonical. A dedicated normalization task translated remaining current Italian/mixed-language documents to English and removed stale current-tree material discovered during that work.
 
-### `rumiai-os` operational documentation task
-
-A dedicated `handoff/rumiai-os-man-documentation.md` task is active to design the boundary between normative development specifications and runtime/user operational reference.
-
 ### Deferred-work TODO lifecycle
 
-The previously missing lifecycle layer for **known but not-yet-active work** has been implemented.
-
-Current separation is now:
+The missing lifecycle layer for known but not-yet-active work was implemented:
 
 ```text
-specifications/     current normative contracts
-todo/               concrete known work intentionally deferred
-handoff/            active/resumable task state
-Git history         past/completed state
+specifications/      promoted current contracts
+todo/                concrete known work intentionally deferred
+handoff/             active/resumable task state
+Git history          past/completed state
 implementation/tests current mechanical state and evidence
 ```
 
-The canonical TODO contract is `todo/README.md`. Root routing, `CONSISTENCY-GATE.md` and `handoff/README.md` were updated so the lifecycle is integrated rather than being a standalone convention.
-
-Important properties now fixed:
-
-- one small TODO file per independently activatable topic;
-- minimal shape: intent, why pending, scope, evidence;
-- no detailed execution state, progress narrative or project-management ranking by default;
-- no duplicate current TODO + handoff for the same work;
-- activation removes the TODO and creates the handoff in the same work unit;
-- removed TODOs are archived by Git history only;
-- TODO inventory is retrieved only when relevant, not during every task preflight.
-
-### One-time historical pending recovery
-
-A dedicated historical-recovery task was executed with explicit authorization to inspect Git history for work that became invisible during the current-only documentation reset.
-
-The recovery deliberately treated historical material only as candidate discovery and verified candidates against current specifications, implementation, tests and active handoffs.
-
-Two current TODOs were recovered:
+Two historical pending workstreams were deliberately recovered after current-state verification:
 
 ```text
 todo/pkg-install-real-validation.md
 todo/rumiai-tests-suite-realignment.md
 ```
 
-The first captures the current gap between the real-composed `pkg install` testing contract and the present permanent test that substitutes parts of the package pipeline. It is phrased as validate/debug so a future task does not pre-judge whether the actual defect is in product behavior or in the legacy test construction.
-
-The second captures a broader audit/realignment of the permanent suite. Current shared test infrastructure and authoring rules exist, while representative tests still preserve historical inline copies/reconstructed fixtures. The TODO explicitly requires evidence-based auditing rather than assuming every test needs rewriting.
-
-Historical candidates deliberately not restored include:
-
-- runner persistence/snapshot work, because current runner contracts/implementation/tests now contain it;
-- resource/srv remediation, because historical test-side remediation is reflected in current tests and the remaining old physical gate was revision-specific;
-- `mk`, because it is already represented by an active handoff;
-- older bootstrap/shell/naming/CLI/language/log/physical-pass items that are now completed, consolidated, superseded or represented by current contracts;
-- overlapping historical test-structure work, consolidated into the single suite-realignment TODO.
-
-The recovery completed its full handoff lifecycle: a final `Status: Complete` snapshot was committed and `handoff/historical-pending-recovery.md` was removed in a later forward commit. Git history is its archive.
-
-This was the intended transitional use of Git history. Future concrete deferred work should enter `todo/` when discovered, so routine workflow should not need historical mining to recover forgotten pending work.
-
 ### Specification promotion boundary
 
-A real workflow defect was observed during the active `mk` design task: provisional design state — postponed decisions, candidate implementation languages/runtimes, candidate serialization formats, comparison criteria and unresolved questions — had been written into `specifications/rumiai-os/MK.md` and routed by `specifications/README.md` as "open design choices".
+A workflow defect observed during active `mk` design had placed provisional candidates, postponed decisions and comparison criteria into `specifications/rumiai-os/MK.md`.
 
-That made persistent task memory look like current normative architecture and broke the intended meaning of `specifications/` as current promoted contract.
-
-The workflow was corrected with a specification promotion gate:
+The workflow was corrected to:
 
 ```text
 promoted / binding current contract      → specifications/
@@ -145,42 +108,59 @@ concrete work deferred outside task       → todo/
 past design state after completion        → Git history
 ```
 
-`RULES.md`, `CONSISTENCY-GATE.md` and `handoff/README.md` now encode this lifecycle. An active handoff has an optional `Working design` section specifically for persistent non-authoritative candidates, provisional assumptions, comparison criteria and postponed in-task choices.
+`RULES.md`, `CONSISTENCY-GATE.md` and `handoff/README.md` encode the promotion gate, and the concrete `mk` misuse was realigned by moving unresolved language/runtime, serialization and lifecycle design into the active handoff while keeping only promoted contract in current specifications.
 
-The rule includes one narrow exception: a specification may state that it does not constrain a dimension when that absence of constraint is itself a stable current boundary. It must state only the boundary, not the candidate list or decision process.
+### Command/manual completeness
 
-The concrete `mk` misuse was remediated in the same work unit:
+The user identified a lifecycle requirement after the first `manual` mechanism was implemented: operational documentation must not be optional for technical/internal commands.
 
-- `specifications/README.md` no longer routes `MK.md` as a source of open design choices;
-- `MK.md` now contains promoted lifecycle contract only;
-- provisional Python/JavaScript runtime directions, JSON/TOML comparison state, unresolved lifecycle/API/workspace choices and documentation-tool candidates were moved into `handoff/mk-tool-development.md` under `Working design`;
-- `CURRENT-MODEL.md` no longer presents undecided runtime/serialization state as architecture content;
-- `MK-SOURCE-MATERIALIZATION.md` was cleaned of future-planning sections and now limits itself to the current implemented capability and stable scope boundaries.
+The workflow now treats command implementation and operational manual consistency as one development obligation.
 
-The final consistency review reread the resulting specification state and confirmed that candidate language/runtime and JSON/TOML comparison material is absent from current `MK.md` while remaining persisted in the active handoff. The work-unit diff is restricted to workflow documentation, `mk` specifications and the two active handoffs. No product/runtime or permanent-test change occurred, so runtime tests were not applicable.
+Canonical changes made in the same correction:
+
+- `RULES.md` requires every RumiAI-owned directly executable command identity to have an operational manual topic and couples command create/rename/remove/change to manual consistency;
+- `COMMAND-ENTRYPOINTS.md` defines the covered command-identity classes and clarifies that multiple paths/symlink exposures of one command identity require one topic, while sourced libraries and package-owned external commands are outside the invariant;
+- `DOCUMENTATION-MODEL.md` makes command coverage mandatory regardless of audience and requires permanent mechanical coverage from command identity to owner-local manual topic;
+- `CONSISTENCY-GATE.md` now requires command tasks to retrieve `COMMAND-ENTRYPOINTS.md` + `DOCUMENTATION-MODEL.md`, inspect the manual topic, run the command/manual gate and refuse completion while code/reference disagree;
+- `specifications/README.md` routes command tasks explicitly to both contracts.
+
+The current product was inspected rather than assuming the new invariant was already satisfied. At `rumiai-os@b18ae4439519bfe4081035a7d6d0a29423a81709`, 22 RumiAI-owned command identities were observed: 20 technical `sys` identities including root `m`, plus branded `rumiai-os` and `rumiai-os-sh`. Only four current manual topics exist (`sys manual`, `sys pkg`, `sys srv`, `sys state-path`), leaving 18 command identities uncovered.
+
+Because manual development is already an active workstream, this remediation was not converted into a TODO. `handoff/rumiai-os-man-documentation.md` was expanded so it cannot complete until the missing command topics are created and permanent structural coverage detects missing required topics.
+
+No product files or permanent tests were changed by this workflow correction itself; the active manual task owns that implementation/test realignment.
 
 ### Concurrency evidence
 
-During earlier workflow work, other chats advanced `rumiai-dev` multiple times and introduced/modified independent documentation and handoffs, including `service-model`. Each movement was detected before writes and reconciled forward; unrelated concurrent work was preserved. This provides real evidence that the HEAD/reconciliation protocol is functioning under parallel work.
+Earlier workflow work observed concurrent `rumiai-dev` movement from other chats and reconciled it forward without overwriting unrelated work. This remains the required pattern for all subsequent workflow/documentation writes.
 
 ## Current state
 
 `workflow-optimization` remains active.
 
-The pending-work visibility gap is resolved through `todo/`, and the active-design/specification boundary is now explicit through the specification promotion gate and handoff `Working design` state.
+The current lifecycle now distinguishes:
 
-The first observed misuse (`mk`) has been corrected and validated, providing a concrete reference case for future tasks. Future workflow observation should verify that assistants keep provisional design in active task state and promote only sufficiently settled rules into current specifications.
+```text
+promoted contract       → specifications/
+active working design   → handoff/Working design
+deferred future work    → todo/
+command operational ref → revision-coupled manual topic in rumiai-os
+past state              → Git history
+```
+
+The command/manual rule is canonical, while current product coverage is explicitly pending inside the already-active manual task rather than hidden as specification drift.
 
 ## Next action
 
-Observe both the TODO lifecycle and the specification promotion gate in normal use. In particular:
+Observe the TODO lifecycle, specification promotion gate and command/manual gate in normal use. In particular:
 
 1. verify that new deferred work is captured only when concrete and intentionally postponed;
-2. verify that TODO activation cleanly transfers state into one active handoff;
-3. verify that active design candidates/open questions remain in `Working design` rather than being promoted for memory retention;
-4. verify that promoted specification changes contain only binding current contract;
-5. watch for TODO/handoff/specification accumulation, duplication or taxonomy drift.
+2. verify that active design candidates/open questions remain in `Working design` until promotion;
+3. verify that every command-development task retrieves and checks its operational manual;
+4. verify that technical/internal commands are not incorrectly exempted from manual coverage;
+5. verify that the active manual task closes the current 18-topic coverage gap and adds structural permanent coverage;
+6. watch for TODO/handoff/specification/manual duplication or taxonomy drift.
 
 ## Blockers / open questions
 
-None for the current TODO or specification-promotion lifecycle. Future corrections should be driven by observed workflow evidence rather than speculative expansion.
+None for the workflow rule itself. Current command-manual backfill and structural test work belong to the active `rumiai-os-man-documentation` task.
