@@ -155,12 +155,14 @@ and writes one owner-qualified entry per topic to standard output:
 
 Every discovery result is qualified, even when the topic name is unique across all owners. Discovery therefore never collapses a result to `<topic>` merely because that result would be unambiguous for lookup.
 
+Discovery output is sorted in ascending lexical order by `<owner>` and then by `<topic>`, using the controlled identifier spelling rather than locale-specific collation.
+
 For example, a discovery result may contain:
 
 ```text
+ai pkg
 sys pkg
 sys srv
-ai pkg
 ```
 
 Zero-argument discovery lists topic identities; it does not select or present a topic, and it does not invoke the topic pager.
@@ -334,7 +336,7 @@ DOC-03  the first operational model is terminal-first plain UTF-8 text with no r
 DOC-04  the first global operational-documentation resource class is manual under res/<owner>/manual/
 DOC-05  each initial operational topic is an extensionless UTF-8 text file whose leaf name is its owner-local topic identity
 DOC-06  the public operational-documentation access utility is named manual
-DOC-07  bare manual discovers all materialized manual topics and always emits each result as <owner> <topic>
+DOC-07  bare manual discovers all materialized manual topics, always emits each result as <owner> <topic>, and sorts results by owner then topic
 DOC-08  discovery follows the general res/*/manual shape and does not semantically depend on the owner name ai
 DOC-09  --no-pager bypasses paging and writes the selected topic directly to standard output
 DOC-10  normal first-delivery topic presentation delegates to POSIX more; no generic pager abstraction is introduced
