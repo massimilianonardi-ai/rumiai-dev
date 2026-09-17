@@ -172,7 +172,7 @@ add/change/remove public function
 
 Public function names must not begin with `_`; internal function names must begin with `_`. Internal functions must not be presented as callable API in the library manual. A purely internal library implementation change requires no manual text edit when the public page remains fully accurate.
 
-Command-to-manual and library-to-manual presence should be protected mechanically by permanent tests where the current test contract permits structural checks. Such tests prove required topic presence/identity, not prose/API semantic correctness.
+Command-to-manual and library-to-manual topic presence MUST be protected mechanically by permanent tests. These structural checks prove required topic presence/identity, not prose/API semantic correctness. If the applicable permanent coverage has not yet been implemented or realigned, the corresponding documentation-completeness work remains open rather than being reported complete.
 
 ## 9. Testing authenticity
 
@@ -283,7 +283,7 @@ A RumiAI task is ready to report as complete only when every applicable item is 
 [ ] every affected library has its required manual and passed a manual-consistency check
 [ ] every affected library function follows the public/internal leading-underscore contract
 [ ] each library manual exposes all public functions and no internal function as callable API
-[ ] command/library manual structural completeness has proportional permanent coverage when applicable
+[ ] mandatory command/library manual structural coverage is present or the corresponding completeness work remains explicitly open
 [ ] tests/evidence claim no more than what was actually exercised
 [ ] resulting diff was reread and stale terminology/mechanisms were scanned
 [ ] cross-references/current routing remain valid
