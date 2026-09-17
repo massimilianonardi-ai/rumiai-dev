@@ -17,6 +17,7 @@ Read only the smallest complete set relevant to the task.
 | command/runtime classification, shebangs and command identity | `rumiai-os/COMMAND-ENTRYPOINTS.md` |
 | controlled filesystem naming and internal library naming | `rumiai-os/FILESYSTEM-NAMING.md` |
 | POSIX portability and host-specific abstraction boundary | `rumiai-os/POSIX-PORTABILITY-LAYER.md` |
+| terminal paging abstraction and host backend policy | `rumiai-os/PAGER.md` |
 | state scopes, selectors, owners, areas, `state-path`, package HOME/state | `rumiai-os/STATE-MODEL.md` |
 | package subsystem ownership, public surface and launch/integration invariants | `rumiai-os/PACKAGE-MODEL.md` |
 | static/global resources | `rumiai-os/RESOURCE-MODEL.md` |
