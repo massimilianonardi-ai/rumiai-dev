@@ -73,3 +73,35 @@ If the user's observed failure is a repeated install of an already present concr
 - Mixed valid/invalid operand batch behavior is intentionally unresolved.
 - Already-installed/reinstall behavior is intentionally unresolved.
 - Product code remains under active user debugging.
+
+## Newly confirmed bootstrap collision
+
+A separate failure was reproduced from the user's real invocation form:
+
+```text
+./m pkg install jq
+```
+
+When the caller CWD is `$m_ROOT` and `$m_ROOT/pkg` already exists, the bootstrap's current `readpathce` resolution checks `./$1` before PATH for an operand without `/`. Therefore command operand `pkg` resolves to the package-store directory `$m_ROOT/pkg` instead of `$m_BIN_SYS_DIR/pkg`.
+
+The subsequent bootstrap validation rejects that directory because `m_COMMAND_BIN` must be a readable regular file, producing:
+
+```text
+filesystem.path-invalid
+command-original="pkg"
+command-resolved="$m_ROOT/pkg"
+```
+
+This happens before `bin/sys/pkg`, `pkg_install()` or `_pkg_install_one()` is entered.
+
+Important consequence: a first install can succeed on a clean tree, create `$m_ROOT/pkg`, and make subsequent `./m pkg ...` invocations from `$m_ROOT` fail at bootstrap command resolution. This is distinct from the already-confirmed reinstall rejection inside `pkg_integrate()`.
+
+Temporary debugging bypasses that preserve the package implementation are:
+
+```text
+./m bin/sys/pkg install jq
+```
+
+or invoking `m pkg ...` from a CWD that does not contain an object named `pkg`.
+
+Do not treat either bypass as the product fix. The bootstrap command-resolution behavior must be repaired deliberately so a non-command CWD object cannot shadow an integrated command.
