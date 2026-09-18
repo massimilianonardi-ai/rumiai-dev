@@ -212,10 +212,21 @@ Package default and facility default are distinct selections:
 
 A provider selector expresses intent rather than necessarily storing an already-resolved concrete identity.
 
-A selector may identify:
+A provider selector uses the package-spec shape:
 
-- a provider package, meaning that package's current/default concrete for the applicable platform class is resolved when the selector is used;
-- an exact installed provider concrete, meaning that concrete remains pinned until the selector is changed.
+```text
+<package>
+<package>@<version>
+<package>!<osarch>
+<package>@<version>!<osarch>
+```
+
+Selector semantics are:
+
+- when version is omitted, the provider package's current/default concrete for the applicable platform class is resolved when the selector is used;
+- when version is present, that provider version is pinned until the selector is changed;
+- when osarch is omitted, the consumer's applicable platform class is used;
+- when osarch is present, it must be eligible for the consumer.
 
 Resolution of a selector must validate that the selected installed concrete declares the required facility and satisfies the consumer's compatibility constraints.
 
@@ -309,7 +320,7 @@ PKG-13  concrete package identity names the installed distribution/provider, not
 PKG-14  facility declarations are independent of package identity
 PKG-15  multiple installed providers of the same facility/compatibility are valid
 PKG-16  explicit consumer binding overrides facility default; absent both, dependency resolution fails
-PKG-17  provider selectors preserve intent and may be package-default-following or exact/pinned
+PKG-17  provider selectors use package-spec grammar; omitted version follows package default and explicit version pins
 PKG-18  pkg install does not auto-install or silently choose missing dependency providers
 PKG-19  runtime re-resolves and validates mutable provider selection before provider use
 PKG-20  pkg provider configures facility defaults and per-consumer bindings
