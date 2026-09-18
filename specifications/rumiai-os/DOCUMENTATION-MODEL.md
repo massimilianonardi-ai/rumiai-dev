@@ -175,9 +175,13 @@ Therefore:
 lib/sys/sh/array.lib.sh
     ↓
 res/sys/manual/array.lib.sh
+
+lib/sys/sh/pkg/pkg-install.lib.sh
+    ↓
+res/sys/manual/pkg-install.lib.sh
 ```
 
-and an `ai`-owned library would map analogously under `res/ai/manual/`.
+Physical subsystem grouping directories are not part of the library topic identity. An `ai`-owned library maps analogously under `res/ai/manual/`.
 
 This mapping is deterministic and avoids command/library topic collisions without inventing a second library alias.
 
