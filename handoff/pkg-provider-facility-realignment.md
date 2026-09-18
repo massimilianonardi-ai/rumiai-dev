@@ -39,6 +39,22 @@ The following points remain unresolved and are not current contract yet:
 - dependency auto-install behavior is not established; current `pkg install` does not install missing providers automatically;
 - semantic package tests need a broader redesign after provider selection/binding behavior is specified.
 
+## Candidate design under evaluation
+
+This is working design, not current contract.
+
+- Keep provider installation separate from provider selection. Baseline package installation does not automatically install a missing facility provider.
+- A consumer dependency is satisfied through an effective provider selector: an explicit consumer/facility binding when present, otherwise the facility default. No implicit "only installed provider" fallback is proposed.
+- If the effective selector is absent, cannot resolve to an installed provider, or resolves to a provider incompatible with the consumer dependency, installation fails. Automatic dependency installation/provider choice is deferred as a separate future resolution capability.
+- Use the same selector semantics for facility defaults and consumer bindings. A selector may identify a provider package (for example `temurin`) or an exact provider concrete (for example `temurin@<version>!<osarch>`).
+- Preserve the selector as authoritative intent and resolve it when needed. A package selector therefore follows the provider package's current/default concrete; an exact selector remains pinned. Resolution may be cached only as non-authoritative derived state.
+- At runtime the launcher should resolve each dependency again, validate compatibility, and apply the selected provider's facility-specific runtime projection before executing the consumer.
+- A facility provider's runtime projection conceptually includes the commands and environment needed to consume that facility. For a consumer-specific binding, its command paths can precede global/default paths and its environment can override the globally inherited facility provider for that process.
+- The facility default owns global projection of that facility: the selected provider's facility commands become the globally exposed commands and its facility environment becomes part of the bootstrap environment. This is distinct from selecting the default concrete version of a package.
+- Provider package default and facility default are therefore separate selections: package default chooses a concrete version within one provider package; facility default chooses which provider selector supplies a facility globally.
+- Provider command/environment projection needs an explicit association with the facility it implements; the current package-wide `cmd`/`env` materialization does not express that mapping.
+- Service dependencies/providers remain outside this design step.
+
 ## Completed
 
 - `PACKAGE-MODEL.md` now separates concrete package identity from facility identity and defines multiple installed providers of the same facility/compatibility as valid.
