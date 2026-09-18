@@ -10,8 +10,8 @@ Rebuild `pkg install` from authentic execution and retain only validation eviden
 ## Current repository revisions
 
 ```text
-rumiai-dev   3b3be78224514b7cba876a4a98e2829df1e3cddc
-rumiai-os    01a3f40b2a9d5d253b1f0b1ceaaa45c4f60e6345
+rumiai-dev   cec2ec355a87811b57a960f614a5b65e06bed69e
+rumiai-os    eae5a7203fab8676e5914f073c2ab9e0c124dddf
 rumiai-tests d2c487ecdfb672ac7343019098fda98381f5cf82
 pkg-catalog  dd96a82e9022fb7c6f926d2b4b81f4718e824bb6
 ```
@@ -28,10 +28,6 @@ TESTING.md
 TEST-PATTERNS.md
 specifications/README.md
 specifications/rumiai-os/PACKAGE-MODEL.md
-specifications/rumiai-os/COMMAND-ENTRYPOINTS.md
-specifications/rumiai-os/FILESYSTEM-NAMING.md
-specifications/rumiai-os/LIBRARY-INTERFACES.md
-specifications/rumiai-os/DOCUMENTATION-MODEL.md
 ```
 
 ## Fixed task-local choices
@@ -39,34 +35,41 @@ specifications/rumiai-os/DOCUMENTATION-MODEL.md
 - Target-specific catalog streams use `<package>/<os>-<arch>`, without the old `catalog-` prefix.
 - A `pkg install` behavioral test must execute the real public command and real package pipeline.
 - The isolated Debian host may replay captured real upstream HTTPS responses only at the external network boundary; the reusable mechanism is documented in `TEST-PATTERNS.md`.
+- During the current debugging phase, functional defects in the install path take priority. Exit-status policy, manuals/contracts and the mixed-valid/invalid operand policy are intentionally deferred until the command works.
+- The correct behavior for a batch containing both valid and invalid operands is unresolved and must not be inferred from the current implementation.
+- The correct behavior when the requested concrete package is already installed is also unresolved.
 
 ## Completed
 
 - `pkg-catalog@dd96a82e...` removed the `catalog-` prefix from target stream directories.
 - The package stream selector was realigned to the new catalog layout.
 - The Debian auxiliary-host bridge was proven using GitHub Actions capture/transfer plus local HTTPS replay with temporary `/etc/hosts` and CA trust.
-- The bridge pattern is now documented canonically in `TEST-PATTERNS.md`.
+- The bridge pattern is documented in `TEST-PATTERNS.md`.
 - Earlier package-install tests that did not provide trustworthy composed-path evidence were replaced with a real `pkg install` live test.
-- Before the current user reimplementation, the rebuilt live test had passed against committed product/test revisions.
+- The user corrected the dispatcher typo from `pkg-${pkg_command}` to `pkg_${pkg_command}` for the current install path.
+- Diagnostic execution against exact `rumiai-os@eae5a720...` on a clean GitHub-hosted Ubuntu replica with live Internet proved:
+  - `pkg install jq@jq-1.8.2` on a clean store returns 0;
+  - `pkg install jq` on a separate clean store returns 0;
+  - the clean pinned path resolves the real catalog/repository data, downloads the official 2,267,912-byte jq asset, verifies SHA-256 `b1c22172dd303f3be49e935aa56aa48a8b7a46e0bc838b4997d3bb451495870f`, extracts and integrates successfully;
+  - repeating `pkg install jq@jq-1.8.2` on the same store returns 1.
+- The repeated-install failure was traced exactly: `_pkg_install_one()` reaches `pkg_integrate()`, which computes `$m_PKG_DIR/jq@jq-1.8.2!linux-x86_64`; because that concrete path already exists, the guard `[ ! -e "$pkg_integration_concrete" ] && [ ! -L "$pkg_integration_concrete" ] || return 1` rejects the reinstall.
 
 ## Current state
 
-The user is actively reimplementing/debugging `pkg install` and asked for analysis only; do not modify the current product code unless explicitly requested.
+The user is actively reimplementing/debugging `pkg install` and asked for analysis/debugging only; do not modify product main unless explicitly requested.
 
-Current `rumiai-os@01a3f40b...` has deterministic regressions:
+For exact current revision `eae5a720...`, `_pkg_install_one()` is proven to complete successfully for both clean pinned and clean unpinned jq installation. Therefore a failure observed locally is not evidence that the generic clean `_pkg_install_one` path is broken.
 
-1. `bin/sys/pkg` sources `pkg-${pkg_command}.lib.sh` and then executes `pkg-${pkg_command}`. The current libraries expose shell functions `pkg_install`, `pkg_uninstall`, `pkg_versions`, and `pkg_default_command`; there is no `pkg-install`/etc. command. Therefore the dispatcher cannot invoke the sourced implementation. The latest commit changed the attempted call from `install` to `pkg-install`, but neither matches `pkg_install`.
-2. Bare `pkg` now calls `fatal` without a numeric status. Under the current `fatal()` contract this defaults to exit status 1, while the current `pkg` manual specifies status 2 for invalid command/subcommand usage.
-3. `pkg_install()` now creates `$m_PKG_DIR`, package temporary state and a catalog snapshot before validating package operands. This contradicts the current command/library manuals and the permanent regression property that all operands are syntax-validated before installation side effects. On an offline/failed catalog path, an invalid operand can fail as an installation/catalog error before it is ever parsed.
-4. Because of item 3, `res/sys/manual/pkg` and `res/sys/manual/pkg-install.lib.sh` currently disagree with implementation.
+A confirmed state-dependent failure exists for reinstalling the same concrete version. That failure is inside `pkg_integrate()`, not version resolution/download/extraction: the pre-existing concrete package directory is rejected immediately.
 
-The dispatcher issue affects all current `pkg` subcommands, not only install. A generic transformation such as `pkg_${pkg_command}` would still not cover `default`, whose command-level entry function is `pkg_default_command`; any simplification must respect the actual public library interfaces rather than infer them from filenames.
+Temporary diagnostic workflows exist only on branch `tmp/pkg-install-vm-transfer-20260917`; product `main` was not changed by the assistant.
 
 ## Next action
 
-Wait for or inspect the user's next committed `pkg` revision, then refresh HEADs and re-analyse the exact committed implementation before running any validation.
+If the user's observed failure is a repeated install of an already present concrete package, decide later what reinstall semantics should be and then implement that choice. If the user's observed failure occurs on a genuinely clean store, reproduce that exact package/host/invocation and trace its first non-zero operation, because the clean jq path is already known to pass.
 
 ## Blockers / open questions
 
-- Product code is intentionally left untouched while the user is debugging it.
-- Current `rumiai-tests` evidence predates `rumiai-os@01a3f40b...` and must not be attributed to this reimplementation until rerun against the exact new revision.
+- Mixed valid/invalid operand batch behavior is intentionally unresolved.
+- Already-installed/reinstall behavior is intentionally unresolved.
+- Product code remains under active user debugging.
