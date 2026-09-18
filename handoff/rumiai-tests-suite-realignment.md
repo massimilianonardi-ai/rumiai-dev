@@ -221,3 +221,30 @@ As a consequence, generic isolation responsibility has been pushed into individu
 The user's expected execution model is materially different and is now the primary architectural question for this task: a central runner-owned disposable test environment, with an exact temporary product checkout/clone, isolated mutable host roots such as HOME and temporary storage, execution of the requested real tests against that environment, and centralized post-run observation of changes. The exact contract and division of responsibility between rumiai-test and rumiai-validate must be redesigned before continuing broad individual-test repair.
 
 No implementation change has been made yet for this architectural correction.
+
+
+## Working design direction — validator-owned environment isolation
+
+The user proposed a clearer responsibility split than the previous runner-owned isolation idea. This is still working design, not yet promoted into canonical testing contracts.
+
+Candidate direction:
+
+- `rumiai-test` remains a generic executor/observer and does not clone or synthesize a target environment.
+- Direct execution (a `.test` directly or through `rumiai-test`) uses the real ambient environment/target.
+- `rumiai-validate` owns formal-validation isolation: create a disposable independent `rumiai-os` checkout at the exact configured revision, create temporary user-scoped mutable roots such as `HOME` and `TMPDIR` (and other applicable standard user-state roots), export the existing target override, then invoke the real tests unchanged against that environment.
+- Individual tests must not clone/copy/reconstruct `rumiai-os`, create substitute target environments, or replace RumiAI-owned components whose behavior they claim to verify. They may still create scenario-specific inputs/resources inside the environment they receive and may model genuinely external boundaries where current testing rules permit it.
+- Formal validation should automatically perform metadata-only filesystem comparison around the disposable environment. The intended normal comparison boundary is the beginning/end of the entire `rumiai-validate` invocation, not every elementary `rumiai-test` sub-run.
+- The disposable environment must be observed before destruction so filesystem differences become validation evidence.
+- This is process/environment isolation, not a security sandbox: host resources not redirected into the disposable roots remain real.
+
+An optional stronger mode is being considered in which `rumiai-validate` creates/destroys a fresh environment for every individual test rather than one environment for the whole validation scope. This would enforce test-state independence and improve attribution of residual changes, but it adds orchestration cost because current groups are discovered/executed internally by `rumiai-test`. The design should avoid duplicating discovery semantics between runner and validator; a shared discovery primitive or another clean interface would be needed.
+
+Current recommendation from the audit:
+
+1. Prefer validator-owned isolation over moving target-specific sandboxing into `rumiai-test`; this preserves the runner's generic role.
+2. Design the validation environment as one disposable root containing the exact target clone plus temporary user-state roots, while leaving real host characteristics such as OS/toolchain available.
+3. Keep metadata comparison non-hashing as requested; avoid validator-created bookkeeping and Git administrative noise from becoming false filesystem changes.
+4. Treat session-scoped and per-test-scoped isolation as distinct evidence strengths. Do not yet fix which one is the permanent default until cost and current suite behavior are measured.
+5. Because one validation scope can currently produce multiple elementary runner sessions, session-wide filesystem evidence requires an outer validation-level evidence record rather than attaching the diff arbitrarily to one runner session.
+
+No canonical contract or implementation has been changed yet for this design direction.
