@@ -5,18 +5,15 @@ Updated: 2026-09-18
 
 ## Goal
 
-Realign the package model/catalog/tests for the first three settled corrections:
-1. concrete package identity must identify the concrete distribution/provider;
-2. facilities are separate from package identity;
-3. multiple installed providers of the same facility are a valid state.
+Realign package/provider/facility semantics and their catalog/test representation. The first three corrections are now implemented and validated; provider selection/binding, command/environment exposure and broader semantic testing remain active design work.
 
 ## Current repository revisions
 
 ```text
-rumiai-dev    f80db29d34d1c47c9071c4e87aae5c80db9b7e8b
+rumiai-dev    0e5c1db12bbfada4731f40177045f99a688cf950
 rumiai-os     25ab0e5a5b8267af715f320bd9ee17405a2b41f6
-rumiai-tests  20f04ab2665fdb0c7310226f57a12a39b701f212
-pkg-catalog   8407f2308cf0c5e7bdc3abd8aeb9538410e55b90
+rumiai-tests  9c0d7e7c51c179e3cac72475bcbed8017f7ebe65
+pkg-catalog   63140dcbbf89d93a924a4ac61ec967a4fe1b6d08
 ```
 
 ## Applicable canonical sources
@@ -29,13 +26,11 @@ pkg-catalog   8407f2308cf0c5e7bdc3abd8aeb9538410e55b90
 
 ## Fixed task-local choices
 
-- Eclipse Temurin is a concrete package identity and must be named `temurin`, not `java`.
-- Temurin and GraalVM may both declare the facility `java 25`.
-- Installing multiple providers of the same facility must be allowed; provider multiplicity itself is not a package-install conflict.
+None. The settled identity/facility/coexistence rules were promoted to `PACKAGE-MODEL.md`.
 
 ## Working design
 
-The following points are intentionally unresolved in this work unit and are not current contract yet:
+The following points remain unresolved and are not current contract yet:
 
 - provider/default selection may govern public command exposure, but environment such as `JAVA_HOME` makes the problem broader than command links alone;
 - a consumer package can bind to a specific provider independently of a global/default provider (for example Maven could bind Temurin while NetBeans binds GraalVM);
@@ -46,21 +41,40 @@ The following points are intentionally unresolved in this work unit and are not 
 
 ## Completed
 
-- Fresh preflight completed against the revisions above.
-- Current catalog/implementation/tests confirmed:
-  - catalog package `java` is actually Eclipse Temurin;
-  - `java` and `graalvm` both currently declare `java 25`;
-  - provider indexing supports more than one marker, while dependency resolution currently requires exactly one best provider;
-  - existing Java/GraalVM live tests do not exercise coexistence or provider choice.
+- `PACKAGE-MODEL.md` now separates concrete package identity from facility identity and defines multiple installed providers of the same facility/compatibility as valid.
+- `pkg-catalog` renamed the Eclipse Temurin package from `java` to `temurin` on all declared platforms without changing its `java 25` facility declaration.
+- GraalVM continues to declare `java 25`; Temurin and GraalVM therefore represent distinct packages providing the same facility.
+- Permanent tests were realigned:
+  - `external/java/install-live.test` became `external/temurin/install-live.test`;
+  - Maven and Keycloak setup now explicitly install/query `temurin`;
+  - `external/graalvm/temurin-coexistence-live.test` installs both providers in one real target and verifies both package identities remain installed/queryable.
+- Static scans found no remaining current `pkg install java` or `external/java` references in `rumiai-dev` or `rumiai-tests`.
+- Live GitHub Actions run `35372329744` succeeded on Ubuntu 24.04 using:
+  - `rumiai-os@25ab0e5a5b8267af715f320bd9ee17405a2b41f6`;
+  - `rumiai-tests@9c0d7e7c51c179e3cac72475bcbed8017f7ebe65`;
+  - observed `pkg-catalog@63140dcbbf89d93a924a4ac61ec967a4fe1b6d08`.
+- That run executed, without SKIP:
+  - Temurin install: `temurin@25.0.4.1+1!linux-x86_64`;
+  - Temurin + GraalVM coexistence: `temurin@25.0.4.1+1!linux-x86_64` and `graalvm@25.3.4.1!linux-x86_64`;
+  - Maven with Temurin provider;
+  - Keycloak with Temurin provider.
+- Earlier temporary validation run `35372232189` is not evidence because all selected tests SKIPPED; the final run deliberately made SKIP fail the validation.
 
 ## Current state
 
-No material repository change for this realignment has been made yet beyond this handoff.
+Points 1-3 are implemented and validated. No `rumiai-os` product-code change was required for coexistence: current facility indexing already accepts multiple provider markers; the missing semantics are provider selection/binding when a consumer needs one provider.
+
+A validation-only branch `validation/provider-facility-20260918` remains in `rumiai-tests`; its workflow is not on main and is not product/test-suite content.
 
 ## Next action
 
-Rename the catalog package to `temurin`, realign affected permanent tests, then add real coexistence coverage and update the package specification for the settled identity/facility/coexistence contract.
+Resume with provider selection/binding semantics before changing Temurin/GraalVM command exposure. Define how global/default choice, per-consumer binding, compatibility constraints/preferences and environment projection such as `JAVA_HOME` interact.
 
 ## Blockers / open questions
 
-None for points 1-3. Provider selection/binding and command/environment exposure remain deliberately outside this work unit.
+- provider selection/default semantics;
+- per-consumer provider binding;
+- command and environment projection for selected providers;
+- exact GraalVM facility/command surface;
+- dependency installation policy;
+- semantic test redesign for the completed provider model.
