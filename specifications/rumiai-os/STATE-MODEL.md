@@ -156,11 +156,19 @@ state-path user pkg <package> home
 
 The package launcher creates/validates that HOME as needed and exports it for the launched process.
 
-RumiAI-managed package configuration lives under the reserved `.m/` namespace inside package `conf`, for example:
+RumiAI-managed package configuration normally lives under the reserved `.m/` namespace inside package `conf`, for example:
 
 ```text
 <package-conf>/.m/env
 ```
+
+Package provider bindings are a specific package-configuration surface owned by the package dependency contract and live directly under:
+
+```text
+<package-conf>/binding/<facility>
+```
+
+for the system-scoped consumer package configuration. Each binding file contains one provider selector. This explicit binding surface is not duplicated under `.m/`.
 
 ## State Instances
 
@@ -225,4 +233,5 @@ STATE-12  package HOME is resolved through state-path at launch
 STATE-13  package var routing is static, system-scoped and follows system/current
 STATE-14  consumers do not duplicate deep state layout knowledge
 STATE-15  an explicitly declared absent var leaf denotes an initially empty directory only when its parent hierarchy is valid
+STATE-16  system package provider bindings live at <package-conf>/binding/<facility>, not under .m
 ```

@@ -251,15 +251,23 @@ pkg provider bind -u [--] <consumer> <facility>
 
 The query forms print the configured selector. The set forms replace the configured selector. The unset forms remove it; unsetting a consumer binding restores inheritance from the facility default.
 
-Provider-selection configuration is system-scoped authoritative configuration. Facility defaults belong to the package subsystem's system configuration. Consumer bindings belong to the consumer package's system configuration under the reserved RumiAI-managed `.m` namespace. Concrete pathname layout beneath those configuration areas is an implementation detail and must not be reconstructed by callers.
+Provider-selection configuration is system-scoped authoritative configuration.
 
-A package definition may provide an optional facility-specific runtime environment projection under:
+A consumer binding is stored directly in that consumer package's system `conf` area as:
 
 ```text
-facility-env/<facility>
+<consumer-package-conf>/binding/<facility>
 ```
 
-Each projection is a non-executable POSIX shell fragment associated with a facility declared by that package definition. During launch, after resolving a consumer dependency and before applying the consumer package environment, the launcher sources the resolved provider's projection for that facility when one exists. The fragment executes with `pkg_facility_provider_root` set to the resolved provider's useful root and may export the environment required to consume the facility, including PATH changes.
+The binding file contains exactly one provider selector followed by newline. If the binding file is absent, the consumer inherits the system facility default. Binding files are configuration, not installed-package material, and changing or removing one does not reinstall or rewrite the consumer package.
+
+Facility defaults belong to the package subsystem's system `conf` area. Their concrete pathname layout is owned by the package subsystem and must not be reconstructed by consumers.
+
+Provider runtime application is owned generically by the launcher. Package command wrappers and package environment scripts must not contain provider-specific dependency logic such as Java-provider lookup, concrete binding reads or hardcoded `JAVA_HOME` construction.
+
+Provider packages describe the commands and environment values exported by each facility through declarative package metadata. The launcher resolves the effective provider selector, validates the selected concrete against the consumer dependency, interprets that facility metadata and applies the resulting command-path and environment projection before launching the consumer.
+
+A facility-specific projection is data, not executable provider-specific shell logic. Its exact catalog/storage schema is defined separately before implementation.
 
 Facility-specific runtime projection is distinct from global command publication. The provider selected as facility default must ultimately own the global command/environment projection for that facility, but the exact global `bin` publication mechanism remains outside this contract until defined separately.
 
@@ -306,5 +314,6 @@ PKG-18  pkg install does not auto-install or silently choose missing dependency 
 PKG-19  runtime re-resolves and validates mutable provider selection before provider use
 PKG-20  pkg provider configures facility defaults and per-consumer bindings
 PKG-21  provider-selection configuration is system-scoped authoritative conf state
-PKG-22  facility-env/<facility> is the provider runtime-environment projection applied by launcher
+PKG-22  provider runtime projection is declarative facility metadata interpreted generically by launcher
+PKG-23  consumer bindings live in system package conf at binding/<facility> and contain one provider selector
 ```
