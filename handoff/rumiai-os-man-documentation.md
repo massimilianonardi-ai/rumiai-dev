@@ -12,7 +12,7 @@ The long-term multi-channel documentation source/rendering architecture remains 
 ## Current repository revisions
 
 ```text
-rumiai-dev   25bd37a6ddb68888e85644f92f9b968b2fc94f07  (remote HEAD immediately before this checkpoint)
+rumiai-dev   0f1a33c2a73dee434b71a7f833fa1a2a54fb5509  (remote HEAD immediately before this checkpoint)
 rumiai-os    e25f2aaaf9ba56d8a86eb285bec1bb24e9df71be
 rumiai-tests 1fbd3eab0507179417d0f78122a5d4f54b4a0468  (parallel suite work; not modified by this checkpoint)
 ```
@@ -57,6 +57,7 @@ Fresh remote HEAD retrieval remains mandatory before future writes.
   - `mk-materialize-copy.lib.sh` -> public `mk_materialize_type` adapter API.
 - The concurrently added `pkg-install.lib.sh` manual is preserved. These four aligned library topics are materialized in the current product tree.
 - Later product work first introduced `osarch-set`; current `rumiai-os@e25f2aaaf9ba56d8a86eb285bec1bb24e9df71be` consolidates the public surface under `osarch` with query, `show`, `update` and `set`, adds `res/sys/manual/osarch`, and retains `osarch-set` / `osarch-update` as compatibility commands with their own manuals. Command/manual completeness therefore remains true for the current product revision.
+- Targeted auxiliary-host development validation on Debian 13 x86_64 exercised the exact current `bin/sys/osarch` command body for explicit `set`, bare query, `show`, host `update`, selector-mismatch rejection and invalid explicit osarch rejection; all exercised cases behaved as specified. A direct GitHub clone of the complete checkout was unavailable in that environment because DNS resolution for github.com failed, so this is development evidence for the exact command body rather than formal/full-checkout validation.
 - No unrelated concurrent product or test-suite work was overwritten; Git history remained forward-only.
 
 ## Current state
