@@ -1,7 +1,7 @@
 # rumiai-os-man-documentation
 
 Status: Active
-Updated: 2026-09-17
+Updated: 2026-09-18
 
 ## Goal
 
@@ -12,9 +12,9 @@ The long-term multi-channel documentation source/rendering architecture remains 
 ## Current repository revisions
 
 ```text
-rumiai-dev   9f2ce49cb587862b5fb29929e73d28307cb4b6f7  (remote HEAD immediately before this checkpoint)
-rumiai-os    fce90adde7ee5901a6c71560a7cf72b8df9492b2
-rumiai-tests d2c487ecdfb672ac7343019098fda98381f5cf82  (parallel suite work; not modified by this work unit)
+rumiai-dev   022bade293da47986306aaacd145a0c1b636ba3f  (remote HEAD immediately before this checkpoint)
+rumiai-os    7002efe5a6d109244908d26680c45ae2a595b7e2
+rumiai-tests 1fbd3eab0507179417d0f78122a5d4f54b4a0468  (parallel suite work; not modified by this checkpoint)
 ```
 
 Fresh remote HEAD retrieval remains mandatory before future writes.
@@ -48,7 +48,7 @@ Fresh remote HEAD retrieval remains mandatory before future writes.
   - shell syntax check -> PASS.
 - After the command-manual backfill, a further Debian targeted check confirmed that `manual menu` lists `sys menu-ext`, `sys menu-ext-adv`, `sys menu-ext-adv-fs`, while exact `manual mk` still selects the exact topic rather than entering substring search.
 - `pager` remains the host-normalizing presentation boundary; earlier Debian development evidence exercised both Linux `more` degradation and a real available `less` backend. This remains auxiliary development evidence, not physical/stable-host validation.
-- `rumiai-os@fce90adde7ee5901a6c71560a7cf72b8df9492b2` materializes the 18 command topics that were previously missing. Together with the pre-existing topics, every current command identity now has an owner-local manual topic:
+- `rumiai-os@fce90adde7ee5901a6c71560a7cf72b8df9492b2` materialized the 18 command topics that were previously missing. Together with the pre-existing topics, every command identity at that checkpoint had an owner-local manual topic:
   - technical/root and sys: `m`, `digest`, `extract`, `http-fetch`, `lang`, `lang-set`, `log`, `manual`, `menu-ext`, `menu-ext-adv`, `menu-ext-adv-fs`, `mk`, `osarch-update`, `pager`, `pkg`, `pkg-analyze`, `read-key`, `readc`, `shell`, `srv`, `state-path`;
   - branded ai: `rumiai-os`, `rumiai-os-sh`.
 - The same product commit adds manuals for the libraries whose public/internal API is already explicit and naming-aligned:
@@ -56,6 +56,7 @@ Fresh remote HEAD retrieval remains mandatory before future writes.
   - `mk-materialize.lib.sh` -> public `mk_materialize` API;
   - `mk-materialize-copy.lib.sh` -> public `mk_materialize_type` adapter API.
 - The concurrently added `pkg-install.lib.sh` manual is preserved. These four aligned library topics are materialized in the current product tree.
+- Later current product work at `rumiai-os@7002efe5a6d109244908d26680c45ae2a595b7e2` adds the technical `osarch-set` command together with `res/sys/manual/osarch-set`, while retaining `osarch-update` as the detected-host compatibility command. Command/manual completeness therefore remains true for the current product revision.
 - No unrelated concurrent product or test-suite work was overwritten; Git history remained forward-only.
 
 ## Current state
