@@ -10,9 +10,9 @@ Validate the real public `pkg install` path against every package currently defi
 ## Current repository revisions
 
 ```text
-rumiai-dev   dfadaf2ed5aa7967eb593bf0e6709e694a6d453a
-rumiai-os    8177082a4254774db96d94aff2aff3d971da659f
-rumiai-tests 9943988048f012f040c139af733069b67da50710
+rumiai-dev   1c2d473e221563403c1c1d7286a859c3e5f52e62
+rumiai-os    e25f2aaaf9ba56d8a86eb285bec1bb24e9df71be
+rumiai-tests d73b658eb417a81cbb24d7e6451fa21750640efe
 pkg-catalog  d589fb5f5da62a3aece551a8f48bab0ed054f3da
 ```
 
@@ -63,9 +63,10 @@ The existing historical live-test pre-install status pattern was also shown to b
 
 ## Next action
 
-1. Complete the proportional permanent regression scope for the current package-install changes and reconcile any remaining stale live-test assumptions encountered in that scope.
-2. Define the smallest canonical State/package representation for an upstream runtime directory that is absent from the distributed artifact, then realign Keycloak and validate it end to end.
-3. Re-run the final all-catalog matrix after the Keycloak realignment so all twelve current packages have successful composed-path evidence.
+1. Create the `pkg-catalog` package definition for Java backed by Eclipse Temurin, using the current package/catalog contracts and validating it through the real public `pkg install` path.
+2. Complete the proportional permanent regression scope for the current package-install changes and reconcile any remaining stale live-test assumptions encountered in that scope.
+3. Define the smallest canonical State/package representation for an upstream runtime directory that is absent from the distributed artifact, then realign Keycloak and validate it end to end.
+4. Re-run the final all-catalog matrix after the Java/Temurin and Keycloak realignments so every current package path has composed-path evidence.
 
 ## Blockers / open questions
 
