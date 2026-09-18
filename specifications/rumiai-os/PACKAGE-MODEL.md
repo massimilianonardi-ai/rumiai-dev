@@ -34,6 +34,20 @@ pkg versions [args...]
 pkg default [args...]
 ```
 
+The dispatcher is intentionally generic. For every public subcommand `<name>`, the command library:
+
+```text
+lib/sys/sh/pkg-<name>.lib.sh
+```
+
+exposes the command entrypoint:
+
+```text
+pkg_<name>
+```
+
+Command-specific implementation helpers must adapt to this interface; the dispatcher must not accumulate per-subcommand naming exceptions.
+
 Invalid command/subcommand usage is a CLI error and must not be silently reinterpreted.
 
 ## Real composed pipeline
