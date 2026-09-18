@@ -10,8 +10,8 @@ Rebuild `pkg install` from authentic execution and retain only validation eviden
 ## Current repository revisions
 
 ```text
-rumiai-dev   203ec08ed098c1be23e2f04d7661eb7f52adc4e9
-rumiai-os    9e7a67c6406eb2995615f7f53bfe5eedefc9b95b
+rumiai-dev   b597b985267aabd246a731444999a338b16aeba9
+rumiai-os    75ce970efe22c00f6757d95d46d544bdd7f1eec6
 rumiai-tests ad2606602507ae0b7abd3eae31f7b24fe3ac5bcb
 pkg-catalog  dd96a82e9022fb7c6f926d2b4b81f4718e824bb6
 ```
@@ -102,16 +102,26 @@ Repeating installation of the same concrete version reaches `pkg_integrate()` an
 
 Desired behavior remains explicitly undecided. Do not reintroduce a simplistic all-or-nothing rule without resolving the user-facing behavior.
 
-### Adjacent existing test failures
+### Uninstall/dependency regression — resolved
 
-During broader selected regression execution, current tests exposed:
-- `tests/rumiai-os/pkg/dependency.test`: provider remained blocked after consumer removal.
-- `tests/rumiai-os/pkg/uninstall.test`: unversioned current uninstall failed.
+The two previously observed failures had one shared cause in `pkg-uninstall.lib.sh`: the calls that unset the current/default binding before deintegration had malformed shell quoting after the `pkg_default_apply` rename.
 
-These failures occur outside the live jq install criterion and have not yet been attributed to the entrypoint/install-binding changes. They require separate tracing before any conclusion or fix.
+That prevented the current selector from being cleared. `pkg_deintegrate()` then correctly refused to remove a concrete package that was still current. This surfaced both as:
+- `uninstall.test`: unversioned current uninstall failed;
+- `dependency.test`: provider remained blocked after consumer uninstall.
+
+Current `rumiai-os@75ce970e...` fixes those two calls without changing uninstall semantics.
+
+GitHub Actions run `35325311689` against exact `rumiai-os@75ce970e...` and `rumiai-tests@ad260660...` completed successfully:
+- package dependency regression: PASS;
+- package uninstall regression: PASS;
+- live pkg install + jq execution: PASS;
+- `installed=jq@jq-1.8.2!linux-x86_64`;
+- `catalog-head=dd96a82e9022fb7c6f926d2b4b81f4718e824bb6`;
+- `jq=jq-1.8.2`.
 
 ## Next action
 
-1. Reproduce and trace the current dependency/uninstall failures separately.
-2. Later resolve reinstall behavior and mixed valid/invalid operand policy.
-3. After functional behavior stabilizes, realign any remaining manual/API documentation required by the library-interface/documentation contracts.
+1. Resolve reinstall/already-installed behavior.
+2. Resolve mixed valid/invalid operand batch behavior.
+3. After functional behavior stabilizes, realign remaining manual/API documentation required by the library-interface/documentation contracts.
