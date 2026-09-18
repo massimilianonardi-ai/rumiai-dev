@@ -1,7 +1,7 @@
 # RumiAI Testing Rules
 
 Status: **Current / canonical**  
-Updated: 2026-09-17
+Updated: 2026-09-18
 
 This document defines the canonical rules for authoring, executing and preserving RumiAI tests.
 
@@ -60,7 +60,7 @@ A test must not depend on:
 
 A group is a container and selection unit, not an orchestrator. It does not introduce `before`, `after`, required shared setup or functional ordering.
 
-This independence **does not prohibit** shared libraries from the same `rumiai-tests` revision. Infrastructure helpers such as target discovery, creation of complete isolated target replicas, path normalization, temporary-resource plumbing and interactive drivers should be shared when the responsibility is genuinely common.
+This independence **does not prohibit** shared libraries from the same `rumiai-tests` revision. Infrastructure helpers such as target discovery, path normalization, temporary-resource plumbing and interactive drivers should be shared when the responsibility is genuinely common. Creation of a replacement target or a private execution environment is not a test-library responsibility; formal validation environment preparation belongs to `rumiai-validate`.
 
 The exact `rumiai-tests` Git revision is already part of validation evidence and makes the shared-helper version used by a session reproducible.
 
@@ -73,13 +73,15 @@ Each test must verify a clearly identifiable property.
 The test owns:
 
 - test-specific preconditions;
-- scenario-specific preparation;
+- scenario-specific preparation inside the environment it receives;
 - external inputs and, only when explicitly allowed, semantically specific simulations or fixtures;
-- execution of the target;
+- execution of the supplied target;
 - expected result;
 - comparison between expected and observed behavior;
 - specific diagnostics;
-- cleanup of resources created by the test.
+- cleanup of scenario-specific resources created by the test when the scenario requires it.
+
+A test does **not** own cloning, copying or reconstructing `rumiai-os`, creating a replacement `HOME`/temporary user environment, or substituting another target environment for the one it received. Direct execution uses the real ambient environment. Formal validation uses the disposable environment supplied by `rumiai-validate`.
 
 The runner must not know target semantics.
 
@@ -104,13 +106,15 @@ Unless explicitly required, do not use the following as proxies for behavior:
 
 A behavioral test must exercise the real system it claims to verify. Isolation exists to make the test repeatable and disposable; it does not authorize replacement of the system under test with an artificial reconstruction.
 
-When the target must be protected from test effects, use a complete isolated replica that is semantically indistinguishable from the real system for the property being verified. The replica must use the real target revision, real executables, real libraries, real adapters, real files and normal execution path. State, `HOME`, temporary directories and other mutable resources may and should be isolated when necessary, provided that isolation does not replace target logic.
+A permanent test must act on the target and execution environment it receives. It must not clone, copy, reconstruct or synthesize another `rumiai-os` tree, and it must not create a parallel private user environment merely to protect the supplied target. When formal isolation is required, `rumiai-validate` supplies an independent disposable clone of the exact target revision together with isolated mutable user roots while preserving the real target code and normal execution path.
 
 For behavior exposed by a command, the normal test form is a small number of real commands invoking the real executable through its normal interface with arguments chosen to cover the contract cases. A test of `pkg install` must actually execute `pkg install` and traverse the real pipeline used by that command.
 
 The following do not prove real target behavior:
 
+- cloning, copying or reconstructing a second target tree inside an individual test;
 - copying individual target files or fragments into an ad-hoc structure;
+- creating a test-private replacement `HOME`, package/runtime root or equivalent execution environment instead of using the environment supplied to the test;
 - sourcing an internal library instead of invoking the real entrypoint when the claimed contract is the entrypoint or composed system;
 - redefining, intercepting or replacing target functions;
 - replacing adapters, catalogs, downloaders, extractors, integrators or other components of the verified real path with fake implementations;
@@ -142,7 +146,7 @@ remove      no distinct current property or insufficient value
 
 A `.test` remains a directly executable program and must be able to locate the suite root from its own position when it needs common libraries.
 
-Direct execution and execution through `rumiai-test` must exercise the same verification logic.
+Direct execution and execution through `rumiai-test` must exercise the same verification logic. The difference between an ambient development execution and a formal isolated validation is supplied externally through the inherited environment; the `.test` must not switch to a different implementation strategy.
 
 Libraries under `rumiai-tests/lib/` may be deliberate runtime dependencies of permanent tests. They should be small, stable, testable and limited to common infrastructure responsibilities.
 
@@ -201,15 +205,25 @@ A real host incompatibility with a required property is `FAIL`, not `SKIP`.
 
 Historical outcomes are never reinterpreted retroactively.
 
-## 12. Isolation and cleanup
+## 12. Execution environments, isolation and cleanup
 
-A test that may modify state or produce persistent effects must not therefore be transformed into a target simulation. When protecting the operator's original checkout or installation is necessary, the test should create or use a complete disposable replica of the real system, or isolate only mutable state while preserving the real execution path.
+Individual tests do not own environment isolation.
 
-A target replica used for testing must come from the real revision under test, not from a selected collection of files rewritten or reconstructed ad hoc. The principle "do not modify the real target" means do not alter the operator's original instance; it does not mean replace the target with fixtures that imitate individual parts.
+A direct `.test` execution, and a development run through `rumiai-test`, acts on the real ambient target and process environment supplied by the caller. This is deliberate: development execution must be able to test the actual checkout/environment being worked on.
 
-Each test owns and cleans up resources created specifically for that test. Cleanup should be attempted after `FAIL` or `ERROR` as well.
+Formal validation through `rumiai-validate` uses a disposable validation environment prepared by the launcher. For a `rumiai-os` target the environment contains an independent Git clone checked out at the exact configured commit and isolated mutable user roots, including at least `HOME` and temporary storage plus applicable standard user-state roots such as XDG directories. The real host OS, architecture, system tools and other host properties remain real unless a specific current contract requires additional isolation.
 
-The runner does not implicitly implement target-specific sandboxing, setup, teardown or workspaces.
+Tests must use that supplied target/environment unchanged as their execution base. They may create scenario-specific inputs and resources inside it, but they must not create another target clone/copy, another replacement user environment, or a fake RumiAI-owned component whose real behavior is claimed by the test.
+
+The normal validation isolation granularity is `session`: one disposable environment spans the complete `rumiai-validate` invocation so the suite can also reveal cumulative state effects. `rumiai-validate` also provides a stronger `test` isolation mode in which each discovered test receives a newly created disposable environment. That mode mechanically prevents one test's filesystem state from becoming another test's starting state. Test correctness must not depend on which isolation granularity is selected.
+
+Formal validation performs an automatic metadata-only filesystem audit of each disposable environment from its prepared baseline until immediately before destruction. In `session` mode this comparison covers the whole validation invocation; in `test` mode it covers each per-test environment lifetime. `CHANGED` is evidence, not an automatic test failure. Failure to complete a required audit is validation infrastructure error.
+
+This environment isolation is not a security sandbox. Processes still execute on the real host and may access host resources not redirected by the validation environment when their permissions allow it.
+
+Each test remains responsible for cleanup that is semantically part of its scenario, especially processes or external resources whose lifetime must end before the assertion is complete. Environment destruction and generic target/user-state cleanup belong to `rumiai-validate`, not to the individual test.
+
+`rumiai-test` does not implicitly implement target-specific sandboxing, setup, teardown or workspaces.
 
 ## 13. Logging and diagnostics
 
@@ -241,7 +255,7 @@ Target and suite may be dirty and the run does not constitute formal evidence fo
 
 ### ChatGPT/Linux auxiliary environment
 
-When ChatGPT provides an executable Linux environment, use it as a fast real laboratory when materially useful: execute the real target or a complete replica, reproduce failures, perform exploratory tests, verify host-specific assumptions and develop permanent tests.
+When ChatGPT provides an executable Linux environment, use it as a fast real laboratory when materially useful: execute the real target in the environment being exercised, reproduce failures, perform exploratory tests, verify host-specific assumptions and develop permanent tests. Formal disposable target/user-state isolation remains a responsibility of `rumiai-validate`, not of permanent `.test` files.
 
 The auxiliary environment is not a shortcut around target-authenticity rules. It must execute the same real entrypoints and components intended to be verified. When an exploratory result protects a property worth keeping, move that property into the `rumiai-tests` suite rather than leaving it as ephemeral session knowledge.
 
@@ -333,8 +347,9 @@ Different task scopes must be able to coexist and run independently so unrelated
 Unless a documented exception applies:
 
 - the target and `rumiai-tests` must be committed;
-- working trees used for the test must be clean;
-- commits/revisions, host, architecture, date/time, executed selections, results and logs must be recorded;
+- the `rumiai-tests` working tree used to launch validation must be clean;
+- the actual target executed by formal validation must be the clean disposable clone of the exact configured target commit;
+- commits/revisions, host, architecture, date/time, executed selections, results, logs and validation-environment audit evidence must be recorded;
 - evidence must remain immutable and revision-specific.
 
 Cross-host task validation is closed only when all required scope tests PASS on all required applicable hosts.
@@ -347,13 +362,15 @@ Physical validation on stable reference hosts remains the final stage when requi
 
 ## 19. `rumiai-test` and `rumiai-validate`
 
-`rumiai-test` remains the simple semantically agnostic runner. Runner discovery, execution, logging, persistence and exit statuses are defined in `RUNNER.md`.
+`rumiai-test` remains the simple semantically agnostic runner. Runner discovery, execution, logging, persistence and exit statuses are defined in `RUNNER.md`. Its discovery-only `--list` mode is the canonical way for another RumiAI testing tool to expand a selection into the exact ordered test identifiers that the runner would execute.
 
-`rumiai-validate` is the operational launcher. It may apply a versioned validation scope composed of multiple selections and aggregate evidence without moving target semantics into the runner.
+`rumiai-validate` is the operational formal-validation launcher. It applies a versioned validation scope, prepares the exact disposable target/user environment, invokes the unchanged real tests, performs the validation-environment filesystem audit, publishes revision-specific evidence and aggregates the scope result without moving target assertions into the runner.
 
-The launcher may use a temporary Git checkout/worktree of the exact target revision when needed to validate different scopes without modifying the operator's main checkout. Such a checkout/worktree is a real target replica: tests must continue to use the real entrypoints and components of that revision, not ad-hoc copies or substitutions of the verified pipeline.
+For `rumiai-os`, formal validation always executes an independent disposable Git clone at the exact configured commit rather than the operator's target working tree or a Git worktree attached to it. The operator checkout may be used as a source/update point by the launcher, but it is never the target executed by the validation tests.
 
-An external workflow, including GitHub Actions, must remain an orchestrator: it may prepare checkouts, select hosts and invoke these tools, but must not duplicate target semantics or assertions that belong in `.test` files.
+The default validation isolation granularity is `session`. The explicit stronger `test` mode uses `rumiai-test --list` to obtain canonical discovery and then runs each listed test in a fresh disposable environment; the validator must not duplicate runner discovery rules.
+
+An external workflow, including GitHub Actions, must remain an orchestrator: it may prepare hosts and invoke these tools, but must not duplicate target semantics or assertions that belong in `.test` files.
 
 ## 20. Promotion and removal of tests
 

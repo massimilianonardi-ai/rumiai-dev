@@ -23,11 +23,14 @@ rumiai-test [options] [--] [selection]
 Current options:
 
 ```text
+--list
 --validation
 --snapshot=metadata|hash
 --snapshot-scope=selection|test|both
 --snapshot-root <pathname>
 ```
+
+`--list` is discovery-only. It prints one discovered test identifier per line in the exact deterministic order that normal execution would use, then exits without executing tests and without creating `.runs/`, `sessions/`, logs or snapshots. It accepts the same optional single `selection` as normal execution. `--list` cannot be combined with `--validation` or snapshot options.
 
 `--snapshot-root` is repeatable.
 
@@ -42,6 +45,8 @@ The form `rumiai-test .` is not allowed. `--snapshot-root .` remains valid.
 Development and validation runs execute the same `.test` in the same way.
 
 `--validation` adds reproducibility and evidence-persistence controls; it does not change the test's internal logic.
+
+`--list` performs only selection validation and canonical discovery. It is specifically suitable for `rumiai-validate` orchestration because it reuses the runner's discovery implementation without creating execution evidence.
 
 The runner does not perform `git add`, `commit`, `push`, checkout or target updates.
 
@@ -58,11 +63,13 @@ A group selection is recursive. During serial execution, order is deterministic 
 
 A selected group containing no tests is a `RUNNER ERROR`.
 
+Normal execution and `--list` must use the same discovery implementation and therefore produce the same ordered set of test identifiers for the same selection.
+
 ## 5. Runner -> test contract
 
 The contract remains empty.
 
-The runner does not communicate target, test-id, temporary directory or RumiAI-specific metadata; it does not prepare setup/cleanup; it does not change CWD; it does not modify `HOME`/`TMPDIR`; it does not provide implicit assertions or sandboxing.
+The runner does not communicate target, test-id, temporary directory or RumiAI-specific metadata; it does not prepare setup/cleanup; it does not change CWD; it does not modify `HOME`/`TMPDIR`; it does not provide implicit assertions or sandboxing. When invoked by `rumiai-validate`, it simply inherits the disposable target/user environment prepared by the launcher and passes that environment through to the tests.
 
 A test may use shared `rumiai-tests` libraries by locating them independently from its own position. Those libraries are not runner services.
 
@@ -101,8 +108,8 @@ The runner:
 - locates the suite;
 - validates the CLI;
 - resolves the selection;
-- performs discovery;
-- collects host/session context;
+- performs canonical discovery and, in `--list` mode, emits that ordered discovery result without execution;
+- collects host/session context for execution runs;
 - executes each `.test` according to its shebang;
 - captures the combined log;
 - classifies the exit status;
@@ -144,6 +151,8 @@ During a serial run, the runner displays at least test-id and result. At the end
 For FAIL/ERROR it may also display the relevant log.
 
 ## 11. Persistence
+
+`--list` creates no persisted run.
 
 Development run:
 
@@ -262,12 +271,14 @@ Snapshots are persisted separately from logs and results.
 
 - self-update the suite;
 - use validation-scope configuration;
-- prepare the exact target revision without modifying the operator's main checkout;
-- invoke the runner one or more times, one selection per run;
-- publish sessions;
+- prepare an independent disposable clone of the exact target revision together with isolated mutable user-state roots;
+- invoke `rumiai-test --list` to expand selections canonically when per-test isolation is requested;
+- invoke the runner one or more times, one selection per execution run;
+- perform and retain the outer validation-environment filesystem audit;
+- publish runner sessions and validation-level evidence;
 - aggregate outcomes to determine whether the task scope is validated.
 
-These responsibilities do not move into the runner.
+These target/environment responsibilities do not move into the runner.
 
 ## 16. Simplicity and portability
 

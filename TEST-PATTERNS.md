@@ -33,7 +33,6 @@ Promotion into `rumiai-os` is not automatic.
 A library under `rumiai-tests/lib/` is appropriate for common responsibilities such as:
 
 - target discovery;
-- creation of complete, disposable isolated replicas of the target;
 - preparation of external input or fixtures only at boundaries allowed by `TESTING.md`;
 - path normalization;
 - temporary-resource primitives;
@@ -57,7 +56,7 @@ The desire to avoid a dependency on the same suite revision is not sufficient ju
 
 Existing historical inline copies should be migrated when they create duplicated maintenance or drift; they do not need to be rewritten all at once when the risk exceeds the benefit, but no new copy should be introduced without justification.
 
-Copying files or fragments from the system under test must not be used to reconstruct its behavior artificially. When isolation is required, use the complete replica defined by `TESTING.md`.
+Copying files or fragments from the system under test must not be used to reconstruct its behavior artificially. Individual tests do not create target replicas for isolation; formal isolation is supplied by `rumiai-validate` according to `TESTING.md`.
 
 ## 4. Test the contract through the real target
 
@@ -87,21 +86,15 @@ lib/rumiai-os-target.lib
 
 A test may use a different strategy only when discovery itself is the property under test or when a different documented requirement exists.
 
-## 6. Pattern: isolated runnable `rumiai-os` replica
+## 6. Pattern: supplied validation environment
 
-The current reference implementation retains the historical name:
+A permanent `.test` must use the target and process environment it receives. It does not create a second `rumiai-os` tree, a replacement `HOME`, or another private runtime/package environment merely to isolate itself.
 
-```text
-lib/rumiai-os-fixture.lib
-```
+Direct development execution therefore observes the real ambient target/environment. Formal execution through `rumiai-validate` observes the independent disposable clone and isolated mutable user-state roots prepared by the launcher. The same `.test` logic is used in both cases.
 
-Its correct contract is not to construct a fake `rumiai-os`, but to create an isolated replica of the real runtime/product and separate only the mutable state required by the test.
+Scenario-specific files, processes and external-boundary fixtures remain legitimate when they are part of the property being exercised. They must be created inside or against the supplied environment and must not replace RumiAI-owned target components whose behavior is claimed by the test.
 
-Tests that need the normal isolated runtime replica should source this library when its contract matches the property being verified. The replica must come from the real revision under test and must contain the real entrypoints and components required by the normal execution path. If the product layout evolves, the shared library must be realigned so the replica remains semantically complete for the properties that use it.
-
-The historical `fixture` name of the library does not authorize tests to replace target parts with artificial implementations. If a test requires the real behavior of a part not present in the replica, the replica is insufficient and must be corrected, or the test must use the appropriate real target directly.
-
-A change to the standard product layout should therefore be realigned once in the shared library and in tests that explicitly verify that layout, rather than in many infrastructure copies.
+The historical `lib/rumiai-os-fixture.lib` replica mechanism is not a current authoring pattern under this contract; existing consumers must be realigned as part of the active suite-realignment task rather than copied into new tests.
 
 ## 7. Pattern: interactive programs through a TTY
 
@@ -232,7 +225,7 @@ The replay mechanism should be promoted into a shared `rumiai-tests` helper only
 Before adding infrastructure code to a `.test`, check in this order:
 
 1. can the behavior be exercised through the real entrypoint required by the contract?
-2. if isolation is needed, is the replica complete and derived from the real target revision?
+2. is the test using the target/environment supplied by its caller rather than creating a replacement environment?
 3. do any fixtures/fakes represent only allowed external inputs or boundaries rather than replacing behavior claimed as verified?
 4. does a library under `lib/` already provide the same responsibility?
 5. is there an existing documented pattern?

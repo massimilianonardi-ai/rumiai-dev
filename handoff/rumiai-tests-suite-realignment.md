@@ -1,7 +1,7 @@
 # rumiai-tests-suite-realignment
 
 Status: Active
-Updated: 2026-09-17 22:48 +02:00
+Updated: 2026-09-18 09:07 +02:00
 
 ## Goal
 
@@ -248,3 +248,24 @@ Current recommendation from the audit:
 5. Because one validation scope can currently produce multiple elementary runner sessions, session-wide filesystem evidence requires an outer validation-level evidence record rather than attaching the diff arbitrarily to one runner session.
 
 No canonical contract or implementation has been changed yet for this design direction.
+
+
+## Fixed execution-environment design — 2026-09-18
+
+The user approved the validator-owned isolation model and the discovery interface. These decisions are now being promoted into the canonical testing contracts and implementation:
+
+- `rumiai-test` remains the semantically agnostic executor/observer.
+- `rumiai-test --list [selection]` is the canonical discovery-only interface: one deterministic test id per line, same selection/discovery semantics as execution, no test execution and no run/session evidence.
+- direct test execution, including development execution through `rumiai-test`, acts on the real environment supplied by the caller;
+- individual permanent tests must not clone/copy/reconstruct `rumiai-os`, create a replacement user environment, or substitute another RumiAI target environment;
+- `rumiai-validate` owns formal-validation isolation and always executes an independent disposable clone of the exact configured `rumiai-os` commit;
+- the validator supplies isolated mutable user roots such as `HOME`, temporary storage and applicable XDG roots only to runner/test child processes, so validator bookkeeping itself does not contaminate the observed environment;
+- formal validation automatically records a metadata-only filesystem comparison before/after the lifetime of each disposable environment; `CHANGED` is evidence and not an automatic test failure;
+- default isolation granularity is `session`, one environment for the complete validator invocation;
+- explicit stronger `test` isolation creates/destroys a fresh environment for each canonical test id returned by `rumiai-test --list`;
+- per-test orchestration must consume runner discovery rather than reimplement it;
+- environment isolation is not a security sandbox; the real host remains the execution host.
+
+Because an invocation can contain multiple elementary runner sessions, filesystem/environment evidence belongs to an outer validation-level evidence record rather than arbitrarily to one child runner session.
+
+Implementation and permanent-test realignment remain in progress at this checkpoint.
