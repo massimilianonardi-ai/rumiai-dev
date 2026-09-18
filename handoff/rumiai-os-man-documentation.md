@@ -12,9 +12,9 @@ The long-term multi-channel documentation source/rendering architecture remains 
 ## Current repository revisions
 
 ```text
-rumiai-dev   0f1a33c2a73dee434b71a7f833fa1a2a54fb5509  (remote HEAD immediately before this checkpoint)
-rumiai-os    e25f2aaaf9ba56d8a86eb285bec1bb24e9df71be
-rumiai-tests 1fbd3eab0507179417d0f78122a5d4f54b4a0468  (parallel suite work; not modified by this checkpoint)
+rumiai-dev   c62b57a74699b03a889db7171a6bad960ab55068  (remote HEAD before this checkpoint)
+rumiai-os    9109b7f23afae446c36c331e01b2bcb70cc5b1f4
+rumiai-tests 322cee67192e38c828145325131c9fe6d0574c40  (parallel suite work; not modified by this checkpoint)
 ```
 
 Fresh remote HEAD retrieval remains mandatory before future writes.
@@ -56,6 +56,8 @@ Fresh remote HEAD retrieval remains mandatory before future writes.
   - `mk-materialize.lib.sh` -> public `mk_materialize` API;
   - `mk-materialize-copy.lib.sh` -> public `mk_materialize_type` adapter API.
 - The concurrently added `pkg-install.lib.sh` manual is preserved. These four aligned library topics are materialized in the current product tree.
+- The user explicitly identified the legacy random helper as library identity `rand.lib.sh`. The product now realigns `lib/sys/sh/rand.sh` to `lib/sys/sh/rand.lib.sh` without changing its content, sets the shell library to non-executable mode, and adds `res/sys/manual/rand.lib.sh`.
+- The `rand.lib.sh` manual exposes exactly the four implemented public functions `randhex`, `rand64`, `randuint` and `randstr`, including operands, outputs, dependencies and actual return-status behavior. No internal function API is advertised.
 - Later product work first introduced `osarch-set`; current `rumiai-os@e25f2aaaf9ba56d8a86eb285bec1bb24e9df71be` consolidates the public surface under `osarch` with query, `show`, `update` and `set`, adds `res/sys/manual/osarch`, and retains `osarch-set` / `osarch-update` as compatibility commands with their own manuals. Command/manual completeness therefore remains true for the current product revision.
 - Targeted auxiliary-host development validation on Debian 13 x86_64 exercised the exact current `bin/sys/osarch` command body for explicit `set`, bare query, `show`, host `update`, selector-mismatch rejection and invalid explicit osarch rejection; all exercised cases behaved as specified. A direct GitHub clone of the complete checkout was unavailable in that environment because DNS resolution for github.com failed, so this is development evidence for the exact command body rather than formal/full-checkout validation.
 - No unrelated concurrent product or test-suite work was overwritten; Git history remained forward-only.
@@ -77,7 +79,7 @@ manual <topic>
 
 All current command identities, including the unified `osarch` command and its compatibility wrappers, have manual topics.
 
-Library documentation is only partially complete. The current product contains compliant manuals for `array.lib.sh`, `mk-materialize.lib.sh`, `mk-materialize-copy.lib.sh` and `pkg-install.lib.sh`. The remaining legacy libraries cannot safely receive final public-API manuals until their intended public/internal function sets are classified and, where necessary, renamed with callers/tests realigned. That work is already represented by `todo/library-api-visibility-realignment.md` and is deliberately not guessed inside this documentation work unit.
+Library documentation is only partially complete. The current product contains compliant manuals for `array.lib.sh`, `mk-materialize.lib.sh`, `mk-materialize-copy.lib.sh`, `pkg-install.lib.sh` and `rand.lib.sh`. The remaining legacy libraries cannot safely receive final public-API manuals until their intended public/internal function sets are classified and, where necessary, renamed with callers/tests realigned. That work is already represented by `todo/library-api-visibility-realignment.md` and is deliberately not guessed inside this documentation work unit.
 
 The existing permanent manual tests are not closure evidence for this task. The active parallel suite-realignment task must provide trustworthy coverage for the current behavior, including substring fallback and command/library-to-manual structural completeness.
 
