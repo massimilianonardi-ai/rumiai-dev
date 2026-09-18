@@ -10,81 +10,80 @@ Rebuild `pkg install` from authentic execution and retain only validation eviden
 ## Current repository revisions
 
 ```text
-rumiai-dev   cec2ec355a87811b57a960f614a5b65e06bed69e
-rumiai-os    eae5a7203fab8676e5914f073c2ab9e0c124dddf
-rumiai-tests d2c487ecdfb672ac7343019098fda98381f5cf82
+rumiai-dev   189d870eb247fbc5625e37dcf2cc955209e8fc87
+rumiai-os    0376b12d54d5df02a7c391db6abf5583ce392978
+rumiai-tests bd333e6c8b5c4cc0555de06498e3b17394b18d8a
 pkg-catalog  dd96a82e9022fb7c6f926d2b4b81f4718e824bb6
 ```
 
-These SHAs are task state only; refresh remote HEADs before further work.
-
-## Applicable canonical sources
-
-```text
-README.md
-RULES.md
-CONSISTENCY-GATE.md
-TESTING.md
-TEST-PATTERNS.md
-specifications/README.md
-specifications/rumiai-os/PACKAGE-MODEL.md
-```
+Refresh all remote HEADs before continuing.
 
 ## Fixed task-local choices
 
 - Target-specific catalog streams use `<package>/<os>-<arch>`, without the old `catalog-` prefix.
-- A `pkg install` behavioral test must execute the real public command and real package pipeline.
+- A behavioral `pkg install` test must execute the real public command and real composed package pipeline.
 - The isolated Debian host may replay captured real upstream HTTPS responses only at the external network boundary; the reusable mechanism is documented in `TEST-PATTERNS.md`.
-- During the current debugging phase, functional defects in the install path take priority. Exit-status policy, manuals/contracts and the mixed-valid/invalid operand policy are intentionally deferred until the command works.
-- The correct behavior for a batch containing both valid and invalid operands is unresolved and must not be inferred from the current implementation.
-- The correct behavior when the requested concrete package is already installed is also unresolved.
+- Functional debugging takes priority over deferred CLI-policy questions while the install path is being made operational.
+- Mixed valid/invalid operand semantics remain unresolved.
+- Reinstall/already-installed semantics remain unresolved.
+- The `pkg` dispatcher remains generic. For every public subcommand `<name>`, `lib/sys/sh/pkg-<name>.lib.sh` exposes `pkg_<name>`. This is now canonical in `PACKAGE-MODEL.md`.
+- A live install test is not successful merely because a concrete package exists. For jq it must establish the public binding and successfully execute jq through the normal `m` command path.
 
 ## Completed
 
-- `pkg-catalog@dd96a82e...` removed the `catalog-` prefix from target stream directories.
-- The package stream selector was realigned to the new catalog layout.
-- The Debian auxiliary-host bridge was proven using GitHub Actions capture/transfer plus local HTTPS replay with temporary `/etc/hosts` and CA trust.
-- The bridge pattern is documented in `TEST-PATTERNS.md`.
-- Earlier package-install tests that did not provide trustworthy composed-path evidence were replaced with a real `pkg install` live test.
-- The user corrected the dispatcher typo from `pkg-${pkg_command}` to `pkg_${pkg_command}` for the current install path.
-- Diagnostic execution against exact `rumiai-os@eae5a720...` on a clean GitHub-hosted Ubuntu replica with live Internet proved:
-  - `pkg install jq@jq-1.8.2` on a clean store returns 0;
-  - `pkg install jq` on a separate clean store returns 0;
-  - the clean pinned path resolves the real catalog/repository data, downloads the official 2,267,912-byte jq asset, verifies SHA-256 `b1c22172dd303f3be49e935aa56aa48a8b7a46e0bc838b4997d3bb451495870f`, extracts and integrates successfully;
-  - repeating `pkg install jq@jq-1.8.2` on the same store returns 1.
-- The repeated-install failure was traced exactly: `_pkg_install_one()` reaches `pkg_integrate()`, which computes `$m_PKG_DIR/jq@jq-1.8.2!linux-x86_64`; because that concrete path already exists, the guard `[ ! -e "$pkg_integration_concrete" ] && [ ! -L "$pkg_integration_concrete" ] || return 1` rejects the reinstall.
+- `pkg-catalog@dd96a82e...` removed the obsolete `catalog-` target-stream prefix.
+- Package stream selection was realigned to the new catalog layout.
+- The Debian network-boundary workaround was proven and documented in `TEST-PATTERNS.md`.
+- The previous false-positive package-install tests were replaced by a real live jq install test.
+- The command-entrypoint convention was standardized without modifying `bin/sys/pkg`:
+  - command-level `pkg_default_command` was renamed to `pkg_default`;
+  - the lower-level binding operation formerly named `pkg_default` was renamed to `pkg_default_apply`;
+  - callers/tests were realigned;
+  - stale `pkg_default_command` references are absent from current `rumiai-os` and `rumiai-tests` searches.
+- `pkg install` now completes integration after concrete materialization by invoking `pkg_default_apply` directly with the already-resolved package/version/osarch. It does not re-enter the CLI parser.
+- Current live test `tests/rumiai-os/pkg/install-live.test`:
+  - builds a complete isolated target replica;
+  - initializes normal osarch selectors;
+  - executes `m pkg install jq@jq-1.8.2`;
+  - verifies the concrete package and internal command/link;
+  - verifies `pkg/jq!<osarch>` selector;
+  - verifies `bin/ext-<osarch>/jq` public binding;
+  - finally executes `m jq --version` and requires `jq-1.8.2`.
+- GitHub Actions run `35323394218` against exact `rumiai-os@0376b12d...` and `rumiai-tests@bd333e6c...` completed successfully. Evidence:
+  ```text
+  installed=jq@jq-1.8.2!linux-x86_64
+  catalog-head=dd96a82e9022fb7c6f926d2b4b81f4718e824bb6
+  jq=jq-1.8.2
+  ```
 
-## Current state
+## Confirmed bootstrap command-resolution bug
 
-The user is actively reimplementing/debugging `pkg install` and asked for analysis/debugging only; do not modify product main unless explicitly requested.
-
-For exact current revision `eae5a720...`, `_pkg_install_one()` is proven to complete successfully for both clean pinned and clean unpinned jq installation. Therefore a failure observed locally is not evidence that the generic clean `_pkg_install_one` path is broken.
-
-A confirmed state-dependent failure exists for reinstalling the same concrete version. That failure is inside `pkg_integrate()`, not version resolution/download/extraction: the pre-existing concrete package directory is rejected immediately.
-
-Temporary diagnostic workflows exist only on branch `tmp/pkg-install-vm-transfer-20260917`; product `main` was not changed by the assistant.
-
-## Next action
-
-If the user's observed failure is a repeated install of an already present concrete package, decide later what reinstall semantics should be and then implement that choice. If the user's observed failure occurs on a genuinely clean store, reproduce that exact package/host/invocation and trace its first non-zero operation, because the clean jq path is already known to pass.
-
-## Blockers / open questions
-
-- Mixed valid/invalid operand batch behavior is intentionally unresolved.
-- Already-installed/reinstall behavior is intentionally unresolved.
-- Product code remains under active user debugging.
-
-## Newly confirmed bootstrap collision
-
-A separate failure was reproduced from the user's real invocation form:
+Physical invocation from `$m_ROOT`:
 
 ```text
 ./m pkg install jq
 ```
 
-When the caller CWD is `$m_ROOT` and `$m_ROOT/pkg` already exists, the bootstrap's current `readpathce` resolution checks `./$1` before PATH for an operand without `/`. Therefore command operand `pkg` resolves to the package-store directory `$m_ROOT/pkg` instead of `$m_BIN_SYS_DIR/pkg`.
+fails after `$m_ROOT/pkg` exists because the root bootstrap's `readpathce` overloads pathname canonicalization and slashless command lookup.
 
-The subsequent bootstrap validation rejects that directory because `m_COMMAND_BIN` must be a readable regular file, producing:
+For a slashless argument, current logic is effectively:
+
+```text
+if an object named ./<name> exists in caller CWD
+    resolve that object
+else
+    resolve <name> through PATH
+```
+
+Therefore, from `$m_ROOT`:
+
+```text
+command operand: pkg
+CWD object:      $m_ROOT/pkg/          (package store directory)
+PATH command:    $m_ROOT/bin/sys/pkg   (real command)
+```
+
+The CWD directory wins before PATH lookup. `readpathce` canonicalizes it successfully; only afterward the bootstrap requires the resolved command to be a readable regular file and rejects the directory:
 
 ```text
 filesystem.path-invalid
@@ -92,54 +91,39 @@ command-original="pkg"
 command-resolved="$m_ROOT/pkg"
 ```
 
-This happens before `bin/sys/pkg`, `pkg_install()` or `_pkg_install_one()` is entered.
+This happens before `bin/sys/pkg` or any package library runs.
 
-Important consequence: a first install can succeed on a clean tree, create `$m_ROOT/pkg`, and make subsequent `./m pkg ...` invocations from `$m_ROOT` fail at bootstrap command resolution. This is distinct from the already-confirmed reinstall rejection inside `pkg_integrate()`.
+The bug is semantic: slashless command resolution allows any existing CWD object to shadow a command. The bootstrap should distinguish explicit pathname resolution from command-name resolution instead of using existence in CWD as command precedence. No product fix has yet been applied to `m`.
 
-Temporary debugging bypasses that preserve the package implementation are:
+Temporary diagnostic bypass only:
 
 ```text
 ./m bin/sys/pkg install jq
 ```
 
-or invoking `m pkg ...` from a CWD that does not contain an object named `pkg`.
+Do not treat this bypass as the product fix.
 
-Do not treat either bypass as the product fix. The bootstrap command-resolution behavior must be repaired deliberately so a non-command CWD object cannot shadow an integrated command.
+## Other confirmed/open behaviors
 
-## Newly confirmed missing public integration binding
+### Reinstall
 
-The user's physical run now reaches successful jq materialization under `$m_PKG_DIR`, but no public command binding appears.
+Repeating installation of the same concrete version reaches `pkg_integrate()` and fails when the concrete pathname already exists. Desired reinstall semantics remain undecided.
 
-Current `rumiai-os@eae5a720...` separates three objects:
+### Mixed valid/invalid operands
 
-```text
-concrete internal link:
-  pkg/jq@jq-1.8.2!linux-x86_64/link/jq
-  -> ../root/jq-linux-amd64
+Desired behavior remains explicitly undecided. Do not reintroduce a simplistic all-or-nothing rule without resolving the user-facing behavior.
 
-class/default selector:
-  pkg/jq!linux-x86_64
-  -> jq@jq-1.8.2!linux-x86_64
+### Adjacent existing test failures
 
-public command binding:
-  bin/ext-linux-x86_64/jq
-  -> ../../pkg/jq!linux-x86_64/cmd/jq
-```
+During broader selected regression execution, current tests exposed:
+- `tests/rumiai-os/pkg/dependency.test`: provider remained blocked after consumer removal.
+- `tests/rumiai-os/pkg/uninstall.test`: unversioned current uninstall failed.
 
-`pkg_integrate()` creates the concrete and, through `_pkg_integration_materialize_commands()`, creates only the concrete-internal `cmd/` and `link/` structures. It does not create the class/default selector or public binding.
+These failures occur outside the live jq install criterion and have not yet been attributed to the entrypoint/install-binding changes. They require separate tracing before any conclusion or fix.
 
-Those latter bindings are created only by `pkg_default()` / `_pkg_default_create_bindings()`.
+## Next action
 
-The current `pkg install` path ends after `pkg_integrate()`; it never invokes the default-binding path. Therefore a successful first installation can leave the package available in the managed store but not reachable through the public `bin/ext-<osarch>` command layer.
-
-The permanent `tests/rumiai-os/pkg/install-live.test` did not catch this because it checks only:
-- the concrete directory;
-- `concrete/cmd/jq`;
-- `concrete/link/jq`;
-- execution of the concrete wrapper directly.
-
-It does not assert the selector or public command binding.
-
-A second independent defect exists in the current generic `bin/sys/pkg` dispatcher: `default` is dispatched as `pkg_default`, but the command-level parser is `pkg_default_command`. `pkg_default` expects already-separated package/version/osarch arguments, so `pkg default jq@jq-1.8.2` currently returns a CLI-style status instead of creating the binding.
-
-Do not yet infer final install/default semantics. The confirmed mechanical fact is that current install does not establish the public command binding, and the explicit default CLI path is also mis-dispatched.
+1. Decide and fix the root-bootstrap slashless command-resolution bug in `readpathce` / command resolution without breaking legitimate explicit-path and bootstrap-root semantics.
+2. Reproduce and trace the current dependency/uninstall failures separately.
+3. Later resolve reinstall behavior and mixed valid/invalid operand policy.
+4. After functional behavior stabilizes, realign any remaining manual/API documentation required by the library-interface/documentation contracts.
