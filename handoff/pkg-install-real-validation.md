@@ -10,9 +10,9 @@ Rebuild `pkg install` from authentic execution and retain only validation eviden
 ## Current repository revisions
 
 ```text
-rumiai-dev   189d870eb247fbc5625e37dcf2cc955209e8fc87
-rumiai-os    0376b12d54d5df02a7c391db6abf5583ce392978
-rumiai-tests bd333e6c8b5c4cc0555de06498e3b17394b18d8a
+rumiai-dev   203ec08ed098c1be23e2f04d7661eb7f52adc4e9
+rumiai-os    9e7a67c6406eb2995615f7f53bfe5eedefc9b95b
+rumiai-tests ad2606602507ae0b7abd3eae31f7b24fe3ac5bcb
 pkg-catalog  dd96a82e9022fb7c6f926d2b4b81f4718e824bb6
 ```
 
@@ -56,52 +56,41 @@ Refresh all remote HEADs before continuing.
   jq=jq-1.8.2
   ```
 
-## Confirmed bootstrap command-resolution bug
+## Bootstrap command-resolution collision — resolved
 
-Physical invocation from `$m_ROOT`:
+The previously confirmed collision between slashless command names and same-named CWD objects has been corrected in current `rumiai-os@9e7a67c...`.
 
-```text
-./m pkg install jq
-```
-
-fails after `$m_ROOT/pkg` exists because the root bootstrap's `readpathce` overloads pathname canonicalization and slashless command lookup.
-
-For a slashless argument, current logic is effectively:
+Current `readpathce()` behavior in both the root bootstrap and `core.lib.sh` is:
 
 ```text
-if an object named ./<name> exists in caller CWD
-    resolve that object
-else
-    resolve <name> through PATH
+operand contains "/"
+    treat it as an explicit pathname
+
+operand contains no "/"
+    resolve it through PATH
 ```
 
-Therefore, from `$m_ROOT`:
+The implicit `./<name>` precedence was removed. Therefore, after `$m_ROOT/pkg/` exists, invoking:
 
 ```text
-command operand: pkg
-CWD object:      $m_ROOT/pkg/          (package store directory)
-PATH command:    $m_ROOT/bin/sys/pkg   (real command)
+cd "$m_ROOT"
+./m pkg ...
 ```
 
-The CWD directory wins before PATH lookup. `readpathce` canonicalizes it successfully; only afterward the bootstrap requires the resolved command to be a readable regular file and rejects the directory:
+still resolves `pkg` through the active m command PATH to `$m_ROOT/bin/sys/pkg`; the package-store directory no longer shadows the command.
 
-```text
-filesystem.path-invalid
-command-original="pkg"
-command-resolved="$m_ROOT/pkg"
-```
+The current canonical `ENTRYPOINT-ROOT-RESOLUTION.md` was realigned to this behavior.
 
-This happens before `bin/sys/pkg` or any package library runs.
+Permanent regression coverage now includes:
+- `tests/rumiai-os/command/command-bin-canonical.test`: a same-named directory in the caller CWD must not shadow a slashless command available in PATH;
+- `tests/rumiai-os/pkg/install-live.test`: executes `./m pkg install jq@jq-1.8.2` from the product root, verifies the store/bindings, invokes `./m pkg default jq` again after `./pkg/` exists, and executes `./m jq --version`.
 
-The bug is semantic: slashless command resolution allows any existing CWD object to shadow a command. The bootstrap should distinguish explicit pathname resolution from command-name resolution instead of using existence in CWD as command precedence. No product fix has yet been applied to `m`.
-
-Temporary diagnostic bypass only:
-
-```text
-./m bin/sys/pkg install jq
-```
-
-Do not treat this bypass as the product fix.
+GitHub Actions run `35324867683` against exact `rumiai-os@9e7a67c...` and `rumiai-tests@ad260660...` completed successfully:
+- command-resolution regression: PASS;
+- live pkg install from product root: PASS;
+- `installed=jq@jq-1.8.2!linux-x86_64`;
+- `catalog-head=dd96a82e9022fb7c6f926d2b4b81f4718e824bb6`;
+- `jq=jq-1.8.2`.
 
 ## Other confirmed/open behaviors
 
@@ -123,7 +112,6 @@ These failures occur outside the live jq install criterion and have not yet been
 
 ## Next action
 
-1. Decide and fix the root-bootstrap slashless command-resolution bug in `readpathce` / command resolution without breaking legitimate explicit-path and bootstrap-root semantics.
-2. Reproduce and trace the current dependency/uninstall failures separately.
-3. Later resolve reinstall behavior and mixed valid/invalid operand policy.
-4. After functional behavior stabilizes, realign any remaining manual/API documentation required by the library-interface/documentation contracts.
+1. Reproduce and trace the current dependency/uninstall failures separately.
+2. Later resolve reinstall behavior and mixed valid/invalid operand policy.
+3. After functional behavior stabilizes, realign any remaining manual/API documentation required by the library-interface/documentation contracts.
