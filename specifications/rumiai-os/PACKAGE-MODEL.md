@@ -87,6 +87,8 @@ Consumers must not assume private integration paths beyond a current documented 
 
 Package definitions describe how a package is resolved/integrated. Repository-specific behavior belongs behind repository adapters rather than leaking provider-specific assumptions into the generic package orchestration.
 
+A catalog range anchor is ordering metadata, not by itself a request to install or download that exact version. Repository comparison logic must therefore be able to order a syntactically valid historical anchor without treating current upstream availability as a prerequisite when the provider's version ordering can be determined locally. Concrete version resolution and artifact resolution remain responsible for enforcing actual upstream availability and integrity.
+
 The current catalog is external to `rumiai-os`; the exact package set and package-specific definitions are facts of the current `pkg-catalog` revision and must be inspected there when needed.
 
 Do not duplicate package catalog contents in `rumiai-dev` as a second editable source of truth.
