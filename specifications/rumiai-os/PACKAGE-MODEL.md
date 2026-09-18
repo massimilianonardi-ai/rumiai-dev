@@ -1,7 +1,7 @@
 # RumiAI OS — Package model
 
 Status: **Current / normative**  
-Updated: 2026-09-17
+Updated: 2026-09-18
 
 This document defines the current semantic contract of the `m` package subsystem without duplicating implementation internals that belong in `rumiai-os`.
 
@@ -178,6 +178,15 @@ Default materialization must not overwrite already-authoritative mutable state m
 
 Dependency/provider resolution belongs to the package subsystem contract. A dependency concept must not be duplicated into a second service/build/runtime graph unless a new requirement establishes that separate responsibility.
 
+Package identity and facility identity are distinct contracts:
+
+- a concrete package identity names the concrete software distribution/provider being installed; it must not be replaced by the generic name of one capability merely because the package provides that capability;
+- a package may declare one or more facilities independently of its package name;
+- different installed packages may declare the same facility and compatibility level simultaneously;
+- installing another provider of an already-provided facility is valid and must not fail merely because the facility already has a provider.
+
+Provider multiplicity therefore belongs to the normal installed state. Selection or binding of one provider for a particular consumer, and any command/environment projection that follows from that selection, are separate responsibilities from provider installation and coexistence.
+
 ## `mk` boundary
 
 `mk` is the source-materialization facility. It may be used when source must be transformed into a useful root, but it is not a second package manager and does not replace package selection/catalog/integration semantics.
@@ -212,4 +221,7 @@ PKG-09  State Instance uses @! in package state identity
 PKG-10  var routing is static and system-scoped, never dynamic user routing
 PKG-11  factory/default state is distinct from mutable current state
 PKG-12  mk materialization does not replace package management semantics
+PKG-13  concrete package identity names the installed distribution/provider, not a generic facility
+PKG-14  facility declarations are independent of package identity
+PKG-15  multiple installed providers of the same facility/compatibility are valid
 ```
