@@ -105,3 +105,41 @@ Temporary debugging bypasses that preserve the package implementation are:
 or invoking `m pkg ...` from a CWD that does not contain an object named `pkg`.
 
 Do not treat either bypass as the product fix. The bootstrap command-resolution behavior must be repaired deliberately so a non-command CWD object cannot shadow an integrated command.
+
+## Newly confirmed missing public integration binding
+
+The user's physical run now reaches successful jq materialization under `$m_PKG_DIR`, but no public command binding appears.
+
+Current `rumiai-os@eae5a720...` separates three objects:
+
+```text
+concrete internal link:
+  pkg/jq@jq-1.8.2!linux-x86_64/link/jq
+  -> ../root/jq-linux-amd64
+
+class/default selector:
+  pkg/jq!linux-x86_64
+  -> jq@jq-1.8.2!linux-x86_64
+
+public command binding:
+  bin/ext-linux-x86_64/jq
+  -> ../../pkg/jq!linux-x86_64/cmd/jq
+```
+
+`pkg_integrate()` creates the concrete and, through `_pkg_integration_materialize_commands()`, creates only the concrete-internal `cmd/` and `link/` structures. It does not create the class/default selector or public binding.
+
+Those latter bindings are created only by `pkg_default()` / `_pkg_default_create_bindings()`.
+
+The current `pkg install` path ends after `pkg_integrate()`; it never invokes the default-binding path. Therefore a successful first installation can leave the package available in the managed store but not reachable through the public `bin/ext-<osarch>` command layer.
+
+The permanent `tests/rumiai-os/pkg/install-live.test` did not catch this because it checks only:
+- the concrete directory;
+- `concrete/cmd/jq`;
+- `concrete/link/jq`;
+- execution of the concrete wrapper directly.
+
+It does not assert the selector or public command binding.
+
+A second independent defect exists in the current generic `bin/sys/pkg` dispatcher: `default` is dispatched as `pkg_default`, but the command-level parser is `pkg_default_command`. `pkg_default` expects already-separated package/version/osarch arguments, so `pkg default jq@jq-1.8.2` currently returns a CLI-style status instead of creating the binding.
+
+Do not yet infer final install/default semantics. The confirmed mechanical fact is that current install does not establish the public command binding, and the explicit default CLI path is also mis-dispatched.
