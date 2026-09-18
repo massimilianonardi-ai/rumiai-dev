@@ -104,15 +104,22 @@ bin/ext-osarch
 bin/ai-osarch
 ```
 
-The canonical selector command is:
+The canonical platform command is:
 
 ```text
-osarch-set [<osarch>]
+osarch
+osarch show
+osarch update
+osarch set <osarch>
 ```
 
-With no operand, `osarch-set` detects the normalized operating system and architecture of the host on which it is executing and selects that `osarch`. With exactly one `<osarch>` operand, it selects that explicit supported normalized identity instead of using host detection. Selection ensures the corresponding `sys-<osarch>`, `ext-<osarch>` and `ai-<osarch>` directories exist and makes all three selector symlinks relative to those roots.
+Bare `osarch` reports only the currently selected normalized `osarch`. The active selection is valid only when all three selectors are relative symbolic links to existing platform directories and represent the same supported identity.
 
-`osarch-update` remains a compatibility command equivalent to invoking `osarch-set` without operands. Neither selector command is run implicitly by the bootstrap.
+`osarch show` reports the selected `osarch`, its operating-system and architecture components, and for each selector its pathname, relative link target and resolved physical pathname.
+
+`osarch update` detects the normalized operating system and architecture of the host on which it is executing and selects that identity. `osarch set <osarch>` selects an explicit supported normalized identity instead of using host detection. Both mutation forms ensure the corresponding `sys-<osarch>`, `ext-<osarch>` and `ai-<osarch>` directories exist and make all three selector symlinks relative to those roots.
+
+`osarch-set` and `osarch-update` remain compatibility commands for the previous command surface. Platform selection is never run implicitly by the bootstrap.
 
 Command-name collisions between `m` and RumiAI SHOULD be avoided. A real exception requires an explicit current contract.
 
@@ -382,7 +389,9 @@ CURRENT-21   POSIX.1-2024 Issue 8 is the platform baseline
 CURRENT-22   Git history and historical evidence remain forward-only and revision-specific
 CURRENT-23   mk owns project development-lifecycle management and orchestration
 CURRENT-24   mk project configuration is structured declarative data, not shell-sourced/evaled configuration code
-CURRENT-25   osarch-set is the canonical explicit executable-platform selector command
-CURRENT-26   osarch-set keeps sys-osarch, ext-osarch and ai-osarch aligned to one selected osarch
-CURRENT-27   osarch-update remains the detected-host compatibility form of osarch-set
+CURRENT-25   osarch is the canonical executable-platform query/selection command
+CURRENT-26   bare osarch reports the active selection only when sys-osarch, ext-osarch and ai-osarch are valid and aligned
+CURRENT-27   osarch show reports selector targets and their resolved physical paths
+CURRENT-28   osarch update selects the detected host osarch and osarch set selects an explicit supported osarch
+CURRENT-29   osarch-set and osarch-update remain compatibility commands for the previous selector surface
 ```

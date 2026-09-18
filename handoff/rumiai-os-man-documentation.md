@@ -12,8 +12,8 @@ The long-term multi-channel documentation source/rendering architecture remains 
 ## Current repository revisions
 
 ```text
-rumiai-dev   022bade293da47986306aaacd145a0c1b636ba3f  (remote HEAD immediately before this checkpoint)
-rumiai-os    7002efe5a6d109244908d26680c45ae2a595b7e2
+rumiai-dev   25bd37a6ddb68888e85644f92f9b968b2fc94f07  (remote HEAD immediately before this checkpoint)
+rumiai-os    e25f2aaaf9ba56d8a86eb285bec1bb24e9df71be
 rumiai-tests 1fbd3eab0507179417d0f78122a5d4f54b4a0468  (parallel suite work; not modified by this checkpoint)
 ```
 
@@ -56,7 +56,7 @@ Fresh remote HEAD retrieval remains mandatory before future writes.
   - `mk-materialize.lib.sh` -> public `mk_materialize` API;
   - `mk-materialize-copy.lib.sh` -> public `mk_materialize_type` adapter API.
 - The concurrently added `pkg-install.lib.sh` manual is preserved. These four aligned library topics are materialized in the current product tree.
-- Later current product work at `rumiai-os@7002efe5a6d109244908d26680c45ae2a595b7e2` adds the technical `osarch-set` command together with `res/sys/manual/osarch-set`, while retaining `osarch-update` as the detected-host compatibility command. Command/manual completeness therefore remains true for the current product revision.
+- Later product work first introduced `osarch-set`; current `rumiai-os@e25f2aaaf9ba56d8a86eb285bec1bb24e9df71be` consolidates the public surface under `osarch` with query, `show`, `update` and `set`, adds `res/sys/manual/osarch`, and retains `osarch-set` / `osarch-update` as compatibility commands with their own manuals. Command/manual completeness therefore remains true for the current product revision.
 - No unrelated concurrent product or test-suite work was overwritten; Git history remained forward-only.
 
 ## Current state
@@ -74,7 +74,7 @@ manual <topic>
         -> empty: status 2
 ```
 
-All current command identities have manual topics.
+All current command identities, including the unified `osarch` command and its compatibility wrappers, have manual topics.
 
 Library documentation is only partially complete. The current product contains compliant manuals for `array.lib.sh`, `mk-materialize.lib.sh`, `mk-materialize-copy.lib.sh` and `pkg-install.lib.sh`. The remaining legacy libraries cannot safely receive final public-API manuals until their intended public/internal function sets are classified and, where necessary, renamed with callers/tests realigned. That work is already represented by `todo/library-api-visibility-realignment.md` and is deliberately not guessed inside this documentation work unit.
 
