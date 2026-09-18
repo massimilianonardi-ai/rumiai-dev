@@ -32,6 +32,8 @@ pkg install <package>...
 pkg uninstall <package>...
 pkg versions [args...]
 pkg default [args...]
+pkg provider default [args...]
+pkg provider bind [args...]
 ```
 
 The dispatcher is intentionally generic. For every public subcommand `<name>`, the command library:
@@ -235,7 +237,31 @@ Runtime launch must resolve and validate the effective selector before using the
 
 A facility provider may require a facility-specific runtime projection, including commands and environment needed to consume that facility. The facility default owns the global projection for that facility. A consumer-specific binding may override that global projection for the launched consumer through the package launcher.
 
-The exact storage layout, public configuration command syntax and detailed command/environment projection format are separate implementation contracts and are not defined by this section.
+The public provider-selection configuration surface is:
+
+```text
+pkg provider default <facility>
+pkg provider default <facility> <provider-selector>
+pkg provider default -u [--] <facility>
+
+pkg provider bind <consumer> <facility>
+pkg provider bind <consumer> <facility> <provider-selector>
+pkg provider bind -u [--] <consumer> <facility>
+```
+
+The query forms print the configured selector. The set forms replace the configured selector. The unset forms remove it; unsetting a consumer binding restores inheritance from the facility default.
+
+Provider-selection configuration is system-scoped authoritative configuration. Facility defaults belong to the package subsystem's system configuration. Consumer bindings belong to the consumer package's system configuration under the reserved RumiAI-managed `.m` namespace. Concrete pathname layout beneath those configuration areas is an implementation detail and must not be reconstructed by callers.
+
+A package definition may provide an optional facility-specific runtime environment projection under:
+
+```text
+facility-env/<facility>
+```
+
+Each projection is a non-executable POSIX shell fragment associated with a facility declared by that package definition. During launch, after resolving a consumer dependency and before applying the consumer package environment, the launcher sources the resolved provider's projection for that facility when one exists. The fragment executes with `pkg_facility_provider_root` set to the resolved provider's useful root and may export the environment required to consume the facility, including PATH changes.
+
+Facility-specific runtime projection is distinct from global command publication. The provider selected as facility default must ultimately own the global command/environment projection for that facility, but the exact global `bin` publication mechanism remains outside this contract until defined separately.
 
 ## `mk` boundary
 
@@ -278,4 +304,7 @@ PKG-16  explicit consumer binding overrides facility default; absent both, depen
 PKG-17  provider selectors preserve intent and may be package-default-following or exact/pinned
 PKG-18  pkg install does not auto-install or silently choose missing dependency providers
 PKG-19  runtime re-resolves and validates mutable provider selection before provider use
+PKG-20  pkg provider configures facility defaults and per-consumer bindings
+PKG-21  provider-selection configuration is system-scoped authoritative conf state
+PKG-22  facility-env/<facility> is the provider runtime-environment projection applied by launcher
 ```
