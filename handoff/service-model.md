@@ -14,13 +14,13 @@ The task must converge on the semantic model and public contract before implemen
 Revisions relied upon for this checkpoint:
 
 ```text
-rumiai-dev@59990ecfc5a010fe1f41a82f7ec3aca9c3dfb33d  canonical-source baseline
-rumiai-os@36c29d8412a523f722fd90004b78a07fdf0b06c8
-rumiai-tests@298931c1dca03d44755893d64b9b3a7c0058b7ea
-pkg-catalog@94f58995cbd487b17f3b82bc2724c70540927b88
+rumiai-dev@0b019fbe41881eafa2f11d7b7452804446f94995  canonical-source baseline
+rumiai-os@25ab0e5a5b8267af715f320bd9ee17405a2b41f6
+rumiai-tests@9c0d7e7c51c179e3cac72475bcbed8017f7ebe65
+pkg-catalog@63140dcbbf89d93a924a4ac61ec967a4fe1b6d08
 ```
 
-The `rumiai-dev` SHA above is the canonical-source baseline re-read after concurrent workflow changes. Subsequent commits for this task only create/update this active handoff and do not replace the requirement for fresh HEAD verification when resuming.
+The `rumiai-dev` SHA above is the canonical-source baseline re-read before the cross-task reconciliation; handoff synchronization commits advance it forward without replacing fresh-HEAD retrieval on resume.
 
 ## Applicable canonical sources
 
@@ -102,6 +102,21 @@ The following choices are fixed for this task unless the user explicitly correct
 
 12. Host-managed system services must preserve the canonical administrative/security boundary: system-wide integration is an explicit admin operation, and any dedicated OS service account must not gain ownership/write access over executable product roots merely because it runs the service. Detailed host adapter mechanics remain to be designed and validated separately.
 
+## Working design
+
+The package task has now promoted provider-selection semantics that materially narrow the service-model design:
+
+- package provider installation and provider selection are separate;
+- effective package dependency selection is explicit consumer/facility binding first, otherwise facility default, otherwise failure;
+- there is no implicit fallback to the only installed provider;
+- a facility default owns the global runtime projection of that facility;
+- selectors may follow a provider package default or pin an exact provider concrete;
+- facility runtime projection conceptually includes commands and environment, but its exact representation is still open and not implemented.
+
+For the service model, the leading candidate is therefore to avoid any service-specific provider resolver. A global `srv start <service>` has no consumer-package binding context, so if `<service>` is a facility identity its provider can naturally follow the facility default/global projection. The remaining question is how the selected facility projection declares that it is service-operable.
+
+The smallest candidate remains: a facility-specific provider projection that exposes the conventional `<facility>-start` command makes that facility operable as a service. This would let `srv` reuse both package provider selection and the existing launch-target convention without a second registry. This candidate must be evaluated only after the package task fixes the facility-specific projection contract; if the command convention cannot express the required association unambiguously, introduce only the smallest additional service declaration.
+
 ## Completed
 
 - Fresh preflight completed against current remote HEADs of `rumiai-dev`, `rumiai-os`, `rumiai-tests` and `pkg-catalog`.
@@ -116,25 +131,31 @@ The following choices are fixed for this task unless the user explicitly correct
 
 The canonical service specification still defines only the portable `srv start/stop` lifecycle and explicitly leaves host integration outside that baseline.
 
-The current implementation resolves `srv start <service>` through the conventional `<service>-start` command. The current facility implementation accepts multiple facility declarations for one package and maintains a derived provider index through the package integration lifecycle.
+The current implementation resolves `srv start <service>` through the conventional `<service>-start` command. The package facility implementation accepts multiple facility declarations/providers, while the current package dependency implementation is still mechanically based on a unique best installed provider.
 
-This makes reuse of the facility/provider mechanism structurally plausible, but no current canonical contract yet defines how a facility becomes a service, how `srv` selects the responsible provider when provider ambiguity exists, or how host integration consumes that identity.
+The canonical `PACKAGE-MODEL.md` has advanced beyond that implementation: it now defines explicit consumer binding, facility default, selector semantics, baseline no-auto-install policy and runtime re-resolution/projection. This removes the need for `service-model` to invent a parallel answer to multi-provider selection.
+
+The shared unresolved boundary is facility-specific runtime projection: the package contract says selected providers may project facility commands/environment, but the exact representation and implementation are still open. Service-operability should be evaluated on top of that mechanism rather than before it.
 
 No product, test or catalog implementation change is part of this checkpoint.
 
 ## Next action
 
-Analyze the existing facility -> provider -> integrated-command path and determine whether `facility + <facility>-start` is sufficient to represent package-provided services without any new service declaration or registry.
+First settle the shared package primitive: the exact facility-specific runtime projection that associates selected-provider commands/environment with a facility.
 
-That analysis must specifically resolve command/provider ownership and multi-provider ambiguity before proposing canonical specification changes. If the existing primitives are insufficient, introduce the smallest additional declaration/resolution responsibility only after proving the gap.
+Then evaluate the service layer against that concrete primitive:
 
-After the semantic model is settled, update the applicable canonical specification(s) before implementation.
+1. use the facility default/global projection as the provider-selection source for global `srv` operations rather than adding a `srv` resolver;
+2. test whether presence of the projected conventional `<facility>-start` command is sufficient to identify a service;
+3. introduce explicit service metadata only if that convention cannot represent the required semantics unambiguously.
+
+After this semantic model is settled, promote the resulting service contract into the applicable canonical specification(s) before implementation.
 
 ## Blockers / open questions
 
 - How is a service distinguished from a non-service facility without duplicating package metadata?
-- If multiple concrete packages provide the same facility, what makes `srv <operation> <service>` resolve to one operational provider without inventing an independent resolver or violating package ambiguity rules?
-- Can ownership of the integrated `<facility>-start` command provide the required unambiguous link to the facility provider?
+- Does global `srv <operation> <service>` use the facility default/global projection directly, as the current package provider-selection model suggests?
+- Once facility-specific projection is defined, is the projected `<facility>-start` command sufficient to distinguish a service from a non-service facility and link it unambiguously to the selected provider?
 - Should the final service identifier be exactly the facility identifier and therefore adopt the canonical facility-name grammar, or does the current broader `srv` name grammar remain justified?
 - What is the exact normalized host action set and the semantic mapping of actions such as `activate/deactivate` across systemd and launchd?
 - Does host `user` scope also need explicit install/uninstall operations, or are install/uninstall initially system-only?
