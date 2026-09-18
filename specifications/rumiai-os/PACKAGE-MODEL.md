@@ -278,7 +278,29 @@ Provider runtime application is owned generically by the launcher. Package comma
 
 Provider packages describe the commands and environment values exported by each facility through declarative package metadata. The launcher resolves the effective provider selector, validates the selected concrete against the consumer dependency, interprets that facility metadata and applies the resulting command-path and environment projection before launching the consumer.
 
-A facility-specific projection is data, not executable provider-specific shell logic. Its exact catalog/storage schema is defined separately before implementation.
+A facility-specific projection is data, not executable provider-specific shell logic.
+
+The catalog projection schema is:
+
+```text
+facility-cmd/<facility>/<command>
+facility-env/<facility>/<variable>
+```
+
+A `facility-cmd` entry is a scalar text file containing exactly one relative pathname, followed by newline, to an executable inside the provider useful root. The entry name is the command name exposed by that facility. Integration validates that the target remains inside the useful root and materializes a provider-private command projection for the facility. When a selected provider is applied to a consumer, that facility command directory is prepended to the consumer process PATH.
+
+A `facility-env` entry is a scalar text file whose pathname leaf is a valid POSIX environment-variable name and whose single line uses one of these forms:
+
+```text
+root
+root-path <relative-path>
+literal
+literal <value>
+```
+
+`root` sets the variable to the provider useful-root pathname. `root-path` sets it to a pathname below that root after containment validation. `literal` sets an ordinary literal value; the form without a value denotes the empty string. No shell expansion or evaluation is performed on projection metadata.
+
+Every facility referenced by `facility-cmd` or `facility-env` must also be declared by the package's `facility` metadata. Projection metadata is validated and interpreted generically by the package subsystem; provider-specific shell code is not part of the projection contract.
 
 Facility-specific runtime projection is distinct from global command publication. The provider selected as facility default must ultimately own the global command/environment projection for that facility, but the exact global `bin` publication mechanism remains outside this contract until defined separately.
 
@@ -327,4 +349,7 @@ PKG-20  pkg provider configures facility defaults and per-consumer bindings
 PKG-21  provider-selection configuration is system-scoped authoritative conf state
 PKG-22  provider runtime projection is declarative facility metadata interpreted generically by launcher
 PKG-23  consumer bindings live in system package conf at binding/<facility> and contain one provider selector
+PKG-24  facility-cmd and facility-env are declarative provider projection metadata, never provider shell code
+PKG-25  facility command targets remain inside the provider useful root and are projected through PATH
+PKG-26  facility environment metadata uses root, root-path or literal typed scalar values without shell evaluation
 ```
