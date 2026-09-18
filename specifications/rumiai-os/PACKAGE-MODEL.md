@@ -284,12 +284,18 @@ The catalog projection schema is:
 
 ```text
 facility-cmd/<facility>/<command>
-facility-env/<facility>/<variable>
+facility-env/<facility>
 ```
 
 A `facility-cmd` entry is a scalar text file containing exactly one relative pathname, followed by newline, to an executable inside the provider useful root. The entry name is the command name exposed by that facility. Integration validates that the target remains inside the useful root and materializes a provider-private command projection for the facility. When a selected provider is applied to a consumer, that facility command directory is prepended to the consumer process PATH.
 
-A `facility-env` entry is a scalar text file whose pathname leaf is a valid POSIX environment-variable name and whose single line uses one of these forms:
+A `facility-env/<facility>` entry is a text file containing one or more tab-separated records:
+
+```text
+<variable><TAB><descriptor>
+```
+
+Records are sorted by variable name and each variable appears at most once. `<variable>` is a valid POSIX environment-variable name. The descriptor uses one of these forms:
 
 ```text
 root
