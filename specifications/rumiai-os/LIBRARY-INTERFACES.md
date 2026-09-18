@@ -7,14 +7,9 @@ This specification defines the current interface-visibility and operational-docu
 
 ## 1. Scope and library identity
 
-A RumiAI-owned library uses the ownership- and runtime-qualified layout defined by `FILESYSTEM-NAMING.md`:
+A RumiAI-owned library uses the ownership- and runtime-qualified layout defined by `FILESYSTEM-NAMING.md`. A library may be physically grouped below its runtime directory when a current subsystem contract defines that grouping.
 
-```text
-lib/sys/<runtime>/<library-name>.lib.<runtime>
-lib/ai/<runtime>/<library-name>.lib.<runtime>
-```
-
-For this contract, one library identity is the semantic owner plus the runtime-qualified library leaf:
+For this contract, one library identity is the semantic owner plus the runtime-qualified library leaf; physical grouping directories are not part of that identity:
 
 ```text
 <library-name>.lib.<runtime>
@@ -24,12 +19,16 @@ For example:
 
 ```text
 lib/sys/sh/array.lib.sh
+lib/sys/sh/pkg/pkg-install.lib.sh
+lib/sys/sh/mk/mk-materialize.lib.sh
 ```
 
-has owner `sys` and library identity:
+have owner `sys` and library identities:
 
 ```text
 array.lib.sh
+pkg-install.lib.sh
+mk-materialize.lib.sh
 ```
 
 The `.lib.<runtime>` components are part of the library identity. They are not documentation-format suffixes.
@@ -77,6 +76,10 @@ For example:
 lib/sys/sh/array.lib.sh
     ↓
 res/sys/manual/array.lib.sh
+
+lib/sys/sh/pkg/pkg-install.lib.sh
+    ↓
+res/sys/manual/pkg-install.lib.sh
 ```
 
 This deterministic mapping keeps command and library topics distinct even when their semantic base names coincide.
@@ -135,7 +138,7 @@ the implemented public interface and manual disagree
 
 ## 5. Mechanical coverage
 
-Permanent structural coverage MUST detect every RumiAI-owned library identity that lacks its required owner-local manual topic.
+Permanent structural coverage MUST recursively detect every RumiAI-owned library below an owner/runtime library tree and detect every library identity that lacks its required owner-local manual topic. Physical subsystem grouping directories MUST NOT create nested manual-topic identities.
 
 The current plain-text manual model does not by itself make prose a machine-readable API declaration. Mechanical page-presence coverage therefore does not prove that every public function is documented or that an internal helper is absent from prose; those semantic checks remain part of library development and the final consistency gate.
 
@@ -152,5 +155,6 @@ LIB-05  every RumiAI-owned library identity has exactly one owner-local manual t
 LIB-06  a library manual topic uses the exact <library-name>.lib.<runtime> library leaf as topic identity
 LIB-07  a library manual exposes all public functions and does not expose internal functions as callable API
 LIB-08  library/API/manual realignment occurs in the same work unit for interface-affecting changes
-LIB-09  structural permanent coverage detects missing mandatory library manual topics
+LIB-09  structural permanent coverage recursively detects missing mandatory library manual topics across grouped library directories
+LIB-10  physical subsystem grouping directories are not part of library identity or manual topic identity
 ```
