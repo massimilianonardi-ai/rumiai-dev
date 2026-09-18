@@ -10,11 +10,13 @@ Realign package/provider/facility semantics and their catalog/test representatio
 ## Current repository revisions
 
 ```text
-rumiai-dev    0e5c1db12bbfada4731f40177045f99a688cf950
+rumiai-dev    0b019fbe41881eafa2f11d7b7452804446f94995
 rumiai-os     25ab0e5a5b8267af715f320bd9ee17405a2b41f6
 rumiai-tests  9c0d7e7c51c179e3cac72475bcbed8017f7ebe65
 pkg-catalog   63140dcbbf89d93a924a4ac61ec967a4fe1b6d08
 ```
+
+The `rumiai-dev` SHA is the canonical-source baseline re-read before this handoff synchronization.
 
 ## Applicable canonical sources
 
@@ -26,34 +28,18 @@ pkg-catalog   63140dcbbf89d93a924a4ac61ec967a4fe1b6d08
 
 ## Fixed task-local choices
 
-None. The settled identity/facility/coexistence rules were promoted to `PACKAGE-MODEL.md`.
+None. Package identity/facility coexistence and provider selection/binding/dependency policy are now promoted current contract in `PACKAGE-MODEL.md`.
 
 ## Working design
 
-The following points remain unresolved and are not current contract yet:
+The remaining package-design work is narrower than the previous checkpoint:
 
-- provider/default selection may govern public command exposure, but environment such as `JAVA_HOME` makes the problem broader than command links alone;
-- a consumer package can bind to a specific provider independently of a global/default provider (for example Maven could bind Temurin while NetBeans binds GraalVM);
-- users may select/change defaults at install time or later, bind a specific provider to a specific consumer package, and/or configure ordered or compatibility-aware provider preferences;
-- package command exposure for Temurin/GraalVM and the broader GraalVM facility set still require design;
-- dependency auto-install behavior is not established; current `pkg install` does not install missing providers automatically;
-- semantic package tests need a broader redesign after provider selection/binding behavior is specified.
+- define the exact storage/layout and public configuration surface for facility defaults and per-consumer bindings;
+- define the facility-specific runtime projection format that associates provider commands and environment with the facility they implement;
+- determine the concrete command/environment projection for Temurin/GraalVM and the broader GraalVM facility surface;
+- redesign semantic package tests around mutable selectors and runtime re-resolution after the implementation contract is fixed.
 
-## Candidate design under evaluation
-
-This is working design, not current contract.
-
-- Keep provider installation separate from provider selection. Baseline package installation does not automatically install a missing facility provider.
-- A consumer dependency is satisfied through an effective provider selector: an explicit consumer/facility binding when present, otherwise the facility default. No implicit "only installed provider" fallback is proposed.
-- If the effective selector is absent, cannot resolve to an installed provider, or resolves to a provider incompatible with the consumer dependency, installation fails. Automatic dependency installation/provider choice is deferred as a separate future resolution capability.
-- Use the same selector semantics for facility defaults and consumer bindings. A selector may identify a provider package (for example `temurin`) or an exact provider concrete (for example `temurin@<version>!<osarch>`).
-- Preserve the selector as authoritative intent and resolve it when needed. A package selector therefore follows the provider package's current/default concrete; an exact selector remains pinned. Resolution may be cached only as non-authoritative derived state.
-- At runtime the launcher should resolve each dependency again, validate compatibility, and apply the selected provider's facility-specific runtime projection before executing the consumer.
-- A facility provider's runtime projection conceptually includes the commands and environment needed to consume that facility. For a consumer-specific binding, its command paths can precede global/default paths and its environment can override the globally inherited facility provider for that process.
-- The facility default owns global projection of that facility: the selected provider's facility commands become the globally exposed commands and its facility environment becomes part of the bootstrap environment. This is distinct from selecting the default concrete version of a package.
-- Provider package default and facility default are therefore separate selections: package default chooses a concrete version within one provider package; facility default chooses which provider selector supplies a facility globally.
-- Provider command/environment projection needs an explicit association with the facility it implements; the current package-wide `cmd`/`env` materialization does not express that mapping.
-- Service dependencies/providers remain outside this design step.
+Provider installation vs selection, binding precedence, selector semantics, absence of implicit single-provider fallback, baseline no-auto-install policy, runtime re-resolution and the distinction between package default and facility default are no longer working design; they are current canonical package contract.
 
 ## Completed
 
@@ -78,19 +64,27 @@ This is working design, not current contract.
 
 ## Current state
 
-Points 1 and 2 are implemented and validated. For point 3, installation/indexing coexistence is implemented and validated: current facility indexing accepts multiple provider markers. Point 3 is not closed end-to-end because current dependency resolution still requires exactly one best provider (`pkg_dependency_best_count == 1`); resolving that ambiguity without arbitrary provider choice requires the provider selection/binding contract from the next design step.
+Provider coexistence is implemented and validated, and `PACKAGE-MODEL.md` now also defines the target provider-selection/binding semantics.
+
+Implementation is not yet aligned with that promoted contract:
+
+- current dependency resolution still scans installed providers, chooses the highest compatible facility compatibility and requires exactly one provider at that compatibility through `pkg_dependency_best_count == 1`;
+- integration still materializes `binding/<facility>` as an exact resolved concrete selected during install;
+- the current launcher applies package/user environment only and does not re-resolve mutable facility defaults/bindings or apply facility-specific provider projection at runtime.
+
+Therefore the canonical package contract is ahead of `rumiai-os` for provider selection/binding/runtime projection.
 
 A validation-only branch `validation/provider-facility-20260918` remains in `rumiai-tests`; its workflow is not on main and is not product/test-suite content.
 
 ## Next action
 
-Resume with provider selection/binding semantics before changing Temurin/GraalVM command exposure. Define how global/default choice, per-consumer binding, compatibility constraints/preferences and environment projection such as `JAVA_HOME` interact, then remove the resolver's single-provider assumption according to that contract.
+Define the smallest concrete storage/public-interface and facility-runtime-projection contract needed to implement the already-promoted provider selection semantics. Then realign dependency integration and launch behavior: replace the single-provider scan/uniqueness rule with effective-selector resolution, preserve selector intent rather than install-time exact binding, and apply/validate the selected provider projection at runtime.
 
 ## Blockers / open questions
 
-- provider selection/default semantics and replacement of the current `pkg_dependency_best_count == 1` uniqueness gate;
-- per-consumer provider binding;
-- command and environment projection for selected providers;
-- exact GraalVM facility/command surface;
-- dependency installation policy;
-- semantic test redesign for the completed provider model.
+- exact state/configuration layout and public command surface for facility defaults and consumer bindings;
+- exact facility-specific command/environment projection format;
+- exact Temurin/GraalVM projection and broader GraalVM facility/command surface;
+- proportional semantic test redesign for mutable selectors/runtime re-resolution.
+
+The baseline dependency-installation policy is no longer open: `pkg install` does not auto-install or silently choose a missing provider.
