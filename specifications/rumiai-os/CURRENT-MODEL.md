@@ -1,7 +1,7 @@
 # RumiAI OS — Current model
 
 Status: **Current / normative**  
-Updated: 2026-09-17
+Updated: 2026-09-18
 
 This document is the canonical high-level architecture contract for the current `rumiai-os` mainline.
 
@@ -95,6 +95,24 @@ RumiAI activation prepends:
 ai-osarch
 ai
 ```
+
+Platform selection is explicit and keeps the three active executable selectors aligned:
+
+```text
+bin/sys-osarch
+bin/ext-osarch
+bin/ai-osarch
+```
+
+The canonical selector command is:
+
+```text
+osarch-set [<osarch>]
+```
+
+With no operand, `osarch-set` detects the normalized operating system and architecture of the host on which it is executing and selects that `osarch`. With exactly one `<osarch>` operand, it selects that explicit supported normalized identity instead of using host detection. Selection ensures the corresponding `sys-<osarch>`, `ext-<osarch>` and `ai-<osarch>` directories exist and makes all three selector symlinks relative to those roots.
+
+`osarch-update` remains a compatibility command equivalent to invoking `osarch-set` without operands. Neither selector command is run implicitly by the bootstrap.
 
 Command-name collisions between `m` and RumiAI SHOULD be avoided. A real exception requires an explicit current contract.
 
@@ -364,4 +382,7 @@ CURRENT-21   POSIX.1-2024 Issue 8 is the platform baseline
 CURRENT-22   Git history and historical evidence remain forward-only and revision-specific
 CURRENT-23   mk owns project development-lifecycle management and orchestration
 CURRENT-24   mk project configuration is structured declarative data, not shell-sourced/evaled configuration code
+CURRENT-25   osarch-set is the canonical explicit executable-platform selector command
+CURRENT-26   osarch-set keeps sys-osarch, ext-osarch and ai-osarch aligned to one selected osarch
+CURRENT-27   osarch-update remains the detected-host compatibility form of osarch-set
 ```
