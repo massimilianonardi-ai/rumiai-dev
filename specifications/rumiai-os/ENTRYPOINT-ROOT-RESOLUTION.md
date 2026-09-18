@@ -21,9 +21,11 @@ Both are exported and readonly only after validation succeeds.
 
 ## Invocation pathname
 
-If `$0` contains `/`, it is treated as the invocation pathname.
+If `$0` contains `/`, it is treated as the invocation pathname. Relative pathnames are therefore interpreted relative to the caller CWD only when the invocation explicitly supplies a pathname such as `./m` or `path/to/m`.
 
-If `$0` contains no `/`, the bootstrap may first recognize an existing pathname in the caller CWD and otherwise resolve the command through PATH according to the current bootstrap contract.
+If `$0` contains no `/`, it is a command name and is resolved through `PATH`. The mere existence of an object with the same leaf name in the caller CWD does not take precedence over `PATH`.
+
+The same distinction applies to integrated command resolution: an operand containing `/` is an explicit pathname, while a slashless command operand is resolved through the active command `PATH`.
 
 Invocation through a symbolic link is supported; symlink invocation is not a reason to reject the command.
 
