@@ -10,9 +10,9 @@ Rebuild `pkg install` from authentic execution and retain only validation eviden
 ## Current repository revisions
 
 ```text
-rumiai-dev   b597b985267aabd246a731444999a338b16aeba9
-rumiai-os    75ce970efe22c00f6757d95d46d544bdd7f1eec6
-rumiai-tests ad2606602507ae0b7abd3eae31f7b24fe3ac5bcb
+rumiai-dev   2c59983c3b2f4f9f9fecad26b579d37fae23da21
+rumiai-os    5e47a3f0a242a57f8431fece2357532c19342cd9
+rumiai-tests 13867b6e82b33b16c0316f844be77419354815fa
 pkg-catalog  dd96a82e9022fb7c6f926d2b4b81f4718e824bb6
 ```
 
@@ -24,8 +24,6 @@ Refresh all remote HEADs before continuing.
 - A behavioral `pkg install` test must execute the real public command and real composed package pipeline.
 - The isolated Debian host may replay captured real upstream HTTPS responses only at the external network boundary; the reusable mechanism is documented in `TEST-PATTERNS.md`.
 - Functional debugging takes priority over deferred CLI-policy questions while the install path is being made operational.
-- Mixed valid/invalid operand semantics remain unresolved.
-- Reinstall/already-installed semantics remain unresolved.
 - The `pkg` dispatcher remains generic. For every public subcommand `<name>`, `lib/sys/sh/pkg-<name>.lib.sh` exposes `pkg_<name>`. This is now canonical in `PACKAGE-MODEL.md`.
 - A live install test is not successful merely because a concrete package exists. For jq it must establish the public binding and successfully execute jq through the normal `m` command path.
 
@@ -94,13 +92,46 @@ GitHub Actions run `35324867683` against exact `rumiai-os@9e7a67c...` and `rumia
 
 ## Other confirmed/open behaviors
 
-### Reinstall
+### Install batch/already-installed behavior — resolved
 
-Repeating installation of the same concrete version reaches `pkg_integrate()` and fails when the concrete pathname already exists. Desired reinstall semantics remain undecided.
+The current canonical behavior is defined in `PACKAGE-MODEL.md`:
 
-### Mixed valid/invalid operands
+- `pkg install` is best-effort per operand;
+- invalid/unavailable/already-installed operands emit errors but do not prevent later independently installable operands from being attempted;
+- a partially successful install batch returns status `1`;
+- status `2` remains for a globally invalid invocation;
+- an already installed concrete is not reinstalled;
+- its diagnostic includes `reason="already-installed"`, `already-installed="<concrete>"` and `current-default="<concrete|empty>"`.
 
-Desired behavior remains explicitly undecided. Do not reintroduce a simplistic all-or-nothing rule without resolving the user-facing behavior.
+Current `rumiai-os@5e47a3f0...` implements that behavior. `res/sys/manual/pkg` and `res/sys/manual/pkg-install.lib.sh` were updated in the same work unit.
+
+Current `tests/rumiai-os/pkg/install-live.test` validates through the real public command that:
+- an invalid-only install returns `1`, reports the bad operand and does not create `$m_PKG_DIR`;
+- a normal jq install succeeds and jq executes through `m`;
+- reinstalling the same jq concrete returns `1` and reports the installed/current-default identities without damaging the package;
+- jq can be uninstalled;
+- a mixed `invalid + jq` install returns `1` but still installs, integrates and successfully executes jq.
+
+GitHub Actions run `35328551119` against exact `rumiai-os@5e47a3f0...` and `rumiai-tests@13867b6e...` completed successfully after the final work-path correction.
+
+A broader permanent package regression also passed in run `35328620632` on the same revisions:
+- default.test
+- dependency.test
+- env.test
+- facility.test
+- install-live.test
+- setuid.test
+- state.test
+- uninstall.test
+- versions.test
+
+Live evidence remained:
+
+```text
+installed=jq@jq-1.8.2!linux-x86_64
+catalog-head=dd96a82e9022fb7c6f926d2b4b81f4718e824bb6
+jq=jq-1.8.2
+```
 
 ### Uninstall/dependency regression — resolved
 
@@ -122,6 +153,5 @@ GitHub Actions run `35325311689` against exact `rumiai-os@75ce970e...` and `rumi
 
 ## Next action
 
-1. Resolve reinstall/already-installed behavior.
-2. Resolve mixed valid/invalid operand batch behavior.
-3. After functional behavior stabilizes, realign remaining manual/API documentation required by the library-interface/documentation contracts.
+1. Re-run the current live install behavior on the isolated Debian VM using the documented external HTTPS replay bridge, against the exact current product/test revisions.
+2. If that replay passes without a new product defect, complete and retire this handoff according to the normal handoff lifecycle.
