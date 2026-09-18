@@ -189,6 +189,10 @@ No separate `instance/<name>` subtree is part of the current model.
 
 Package-local `var/` is a compatibility mechanism for upstream software that insists on mutable paths inside its installation tree.
 
+Each path declared under a package `var/<area>` definition is an explicit mutable package-root path. When that path exists in the extracted useful root as a regular file or real directory, its content is the factory/default state used only when no authoritative mutable state already exists.
+
+When the declared final path is absent but every parent component in the useful root exists as a real directory, the declaration represents an initially empty **directory**. Integration materializes an empty factory/default directory and an empty mutable directory when needed, then routes the package-root path to managed state. This absent-leaf rule never infers an empty file, never accepts a symlink or special object, and does not make a missing parent hierarchy valid.
+
 Such routing is static and **system-scoped**. Persistent bindings deliberately traverse:
 
 ```text
@@ -220,4 +224,5 @@ STATE-11  package State Instance uses @! in the identity
 STATE-12  package HOME is resolved through state-path at launch
 STATE-13  package var routing is static, system-scoped and follows system/current
 STATE-14  consumers do not duplicate deep state layout knowledge
+STATE-15  an explicitly declared absent var leaf denotes an initially empty directory only when its parent hierarchy is valid
 ```
