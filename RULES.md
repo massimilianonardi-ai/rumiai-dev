@@ -160,14 +160,15 @@ RumiAI-owned environment variables use the `m_*` namespace. This does **not** es
 
 Current unnamespaced shell interfaces include `log` and `lang`. The previous name `i18n` is superseded.
 
-Internal libraries are ownership- and runtime-qualified:
+Internal libraries are ownership- and runtime-qualified. Their physical grouping follows `specifications/rumiai-os/FILESYSTEM-NAMING.md`; a functional subdirectory does not change the library leaf identity. Current shell examples include:
 
 ```text
-lib/sys/<runtime>/<name>.lib.<runtime>
-lib/ai/<runtime>/<name>.lib.<runtime>
+lib/sys/sh/core.lib.sh
+lib/sys/sh/pkg/pkg-install.lib.sh
+lib/sys/sh/mk/mk-materialize.lib.sh
 ```
 
-Shell libraries such as `lib/sys/sh/*.lib.sh` are sourced files: no executable bit and no shebang.
+Shell libraries are sourced files: no executable bit and no shebang.
 
 Every function defined by a RumiAI-owned library is classified as public or internal. Function visibility is reflected in naming:
 
