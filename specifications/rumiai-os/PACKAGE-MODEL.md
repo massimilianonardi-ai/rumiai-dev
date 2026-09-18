@@ -39,7 +39,7 @@ pkg provider bind [args...]
 The dispatcher is intentionally generic. For every public subcommand `<name>`, the command library:
 
 ```text
-lib/sys/sh/pkg-<name>.lib.sh
+lib/sys/sh/pkg/pkg-<name>.lib.sh
 ```
 
 exposes the command entrypoint:
