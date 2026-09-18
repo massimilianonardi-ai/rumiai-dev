@@ -10,7 +10,7 @@ Realign the permanent RumiAI test suite so that failures are evidence about curr
 ## Current repository revisions
 
 ```text
-rumiai-dev   76b7704453d050f585073f264801f68168688c9e
+rumiai-dev   ea189c43ccfa4cf38d22394c00aac540299cd145
 rumiai-tests 20f04ab2665fdb0c7310226f57a12a39b701f212
 rumiai-os    25ab0e5a5b8267af715f320bd9ee17405a2b41f6
 pkg-catalog  8407f2308cf0c5e7bdc3abd8aeb9538410e55b90
@@ -66,11 +66,11 @@ The source/contract audit has no remaining proven false-negative mechanism from 
 
 Current package repository-adapter tests intentionally remain library/unit tests where they exercise public `pkg_repository_*` functions and model only the external HTTP/provider boundary. They must not be used as composed `pkg install` evidence.
 
-The 19 current external live tests passed the latest targeted source scan for the historical isolation/private-layout/pinning anti-patterns. They remain intrinsically sensitive to real host capabilities and upstream availability.
+The 19 current external live tests passed the latest targeted source scan for the historical isolation/private-layout/pinning anti-patterns. A fresh recheck of the newly added/changed Keycloak, Java, Maven, NetBeans, Pulsar, Chrome, Chromium, Electron and GraalVM live tests found no private concrete-layout reads, fixed external version/digest/catalog-tree pins, replacement HOME or synthetic target patterns. They remain intrinsically sensitive to real host capabilities and upstream availability.
 
 `pkg-analyze` permanent tests still assert several report vocabulary tokens such as `useful-root`, `executable`, `launch-like` and `exit-status`. The current manual specifies the report's semantic purpose but not a machine-stable field vocabulary. This is a contract/test-design ambiguity, not a currently proven false negative.
 
-No current full-suite runtime result has been produced by this chat. The repository has no persistent GitHub Actions workflow that can be dispatched through the available connector, and the local execution environment has not provided a network-capable current checkout. Historical or package-matrix Actions results must not be relabelled as validation of the current HEADs.
+No current full-suite runtime result has been produced by this chat. A direct runtime probe on 2026-09-18 confirmed that the available execution container cannot resolve `github.com` (`git ls-remote` fails with `Could not resolve host: github.com`), so it cannot materialize the current repositories through Git. The current `rumiai-tests` tree contains no `.github/workflows/*` files and the current HEAD has no associated workflow runs, so GitHub Actions cannot supply a current health run through the available connector. Historical or package-matrix Actions results must not be relabelled as validation of the current HEADs.
 
 ## Next action
 
