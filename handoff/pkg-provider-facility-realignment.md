@@ -5,7 +5,7 @@ Updated: 2026-09-18
 
 ## Goal
 
-Realign package/provider/facility semantics and their catalog/test representation. The first three corrections are now implemented and validated; provider selection/binding, command/environment exposure and broader semantic testing remain active design work.
+Realign package/provider/facility semantics and their catalog/test representation. Package identity and facility separation are implemented; multiple-provider installation/indexing coexistence is implemented and validated. Consumer resolution among multiple eligible providers remains coupled to the still-open provider selection/binding design.
 
 ## Current repository revisions
 
@@ -62,17 +62,17 @@ The following points remain unresolved and are not current contract yet:
 
 ## Current state
 
-Points 1-3 are implemented and validated. No `rumiai-os` product-code change was required for coexistence: current facility indexing already accepts multiple provider markers; the missing semantics are provider selection/binding when a consumer needs one provider.
+Points 1 and 2 are implemented and validated. For point 3, installation/indexing coexistence is implemented and validated: current facility indexing accepts multiple provider markers. Point 3 is not closed end-to-end because current dependency resolution still requires exactly one best provider (`pkg_dependency_best_count == 1`); resolving that ambiguity without arbitrary provider choice requires the provider selection/binding contract from the next design step.
 
 A validation-only branch `validation/provider-facility-20260918` remains in `rumiai-tests`; its workflow is not on main and is not product/test-suite content.
 
 ## Next action
 
-Resume with provider selection/binding semantics before changing Temurin/GraalVM command exposure. Define how global/default choice, per-consumer binding, compatibility constraints/preferences and environment projection such as `JAVA_HOME` interact.
+Resume with provider selection/binding semantics before changing Temurin/GraalVM command exposure. Define how global/default choice, per-consumer binding, compatibility constraints/preferences and environment projection such as `JAVA_HOME` interact, then remove the resolver's single-provider assumption according to that contract.
 
 ## Blockers / open questions
 
-- provider selection/default semantics;
+- provider selection/default semantics and replacement of the current `pkg_dependency_best_count == 1` uniqueness gate;
 - per-consumer provider binding;
 - command and environment projection for selected providers;
 - exact GraalVM facility/command surface;
