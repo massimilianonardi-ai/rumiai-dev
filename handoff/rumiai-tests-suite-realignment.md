@@ -1,271 +1,86 @@
-# rumiai-tests-suite-realignment
+# rumiai-tests suite realignment
 
 Status: Active
-Updated: 2026-09-18 09:07 +02:00
+Updated: 2026-09-18
 
 ## Goal
 
-Audit and realign the permanent RumiAI test suite so that failures are meaningful evidence about a current property rather than false negatives caused by legacy implementation coupling, artificial target reconstruction, external drift, stale revision binding or defective test logic.
+Realign the permanent RumiAI test suite so that failures are evidence about current contracted behavior rather than false negatives caused by obsolete implementation coupling, reconstructed targets, private-layout assumptions, stale revision binding or non-contractual diagnostics.
 
 ## Current repository revisions
 
 ```text
-rumiai-dev   97d1c6711658ed8ca4ce0e96b325ebfbd85d532d
-rumiai-tests d2c487ecdfb672ac7343019098fda98381f5cf82
-rumiai-os    db0b25c20b08247cd68818ef9caea61a1cf02451
+rumiai-dev   76b7704453d050f585073f264801f68168688c9e
+rumiai-tests 20f04ab2665fdb0c7310226f57a12a39b701f212
+rumiai-os    25ab0e5a5b8267af715f320bd9ee17405a2b41f6
+pkg-catalog  8407f2308cf0c5e7bdc3abd8aeb9538410e55b90
 ```
 
-These revisions were rechecked immediately before this checkpoint. Fresh HEAD retrieval remains mandatory before later writes.
+The `rumiai-dev` revision above is the authoritative source revision read before this handoff checkpoint; this handoff update itself advances that repository. Fresh HEAD retrieval remains mandatory before resumption.
 
-## Current authority used
+## Applicable canonical sources
 
-The current mandatory read order has been re-run. The active audit is governed by current `README.md`, `RULES.md`, `CONSISTENCY-GATE.md`, `TESTING.md`, `RUNNER.md`, `TEST-PATTERNS.md`, the routed subsystem specifications and current implementation/tests.
+- `README.md`
+- `RULES.md`
+- `CONSISTENCY-GATE.md`
+- `TESTING.md`
+- `RUNNER.md`
+- `TEST-PATTERNS.md`
+- `specifications/rumiai-os/PACKAGE-MODEL.md`
+- `specifications/rumiai-os/LIBRARY-INTERFACES.md`
+- `specifications/rumiai-os/STATE-MODEL.md`
+- other routed subsystem specifications only when auditing their tests
 
-Relevant current product specifications include `COMMAND-ENTRYPOINTS.md`, `BOOTSTRAP-ENVIRONMENT.md`, `ENTRYPOINT-ROOT-RESOLUTION.md`, `PACKAGE-MODEL.md`, `LIBRARY-INTERFACES.md`, `SERVICE-LIFECYCLE.md`, `STATE-MODEL.md`, `READ-KEY.md` and `MK-SOURCE-MATERIALIZATION.md` as applicable to the inspected tests.
+## Fixed task-local choices
 
-## Method correction fixed by current user feedback
+- Audit tests property-first: identify the current property and valid execution path before preserving or rewriting an assertion.
+- Repository-adapter tests that call current public adapter-library functions with synthetic external-service responses are classified as library/unit evidence, not as proof of the composed public `pkg install` path.
+- Live external tests remain host/upstream/revision-sensitive evidence and must not be interpreted as deterministic product-contract evidence merely because they are part of the root suite.
 
-The user reports repeated cases where permanent tests fail while the exercised product behavior works correctly. Current source inspection confirms that this is not merely anecdotal: the suite contains concrete false-negative mechanisms and over-coupled tests.
+## Completed
 
-The previous realignment method was therefore too conservative where it treated legacy assertions as presumptively valid and mainly replaced duplicated infrastructure. From this checkpoint onward the audit is property-first:
+- The validator-owned execution-environment redesign is canonical and implemented:
+  - `rumiai-test --list` is the shared deterministic discovery interface;
+  - direct execution uses the caller environment;
+  - `rumiai-validate` creates an independent exact target clone plus isolated mutable user roots;
+  - metadata filesystem audit is automatic;
+  - both session and per-test isolation are implemented.
+- Runner/validator self-tests cover discovery, isolation, scope orchestration and evidence publication.
+- The historical `rumiai-os-fixture.lib` target-replica mechanism and its self-test were removed.
+- Permanent tests were realigned to use the supplied target/environment rather than reconstructed RumiAI roots or replacement HOME environments.
+- Core package tests were reclassified and rewritten around current public command/library interfaces; tests coupled mainly to private package helpers were removed.
+- The shared package-release helper was reduced to public install/default/versions/runtime/HOME behavior; private concrete-layout inventory and fixed catalog-tree assertions were removed.
+- Bootstrap and shell families were audited and realigned; current targeted scans show no reconstructed target/runtime or replacement-HOME pattern.
+- `mk/materialize.test` no longer depends on the private staging pathname.
+- The former `srv/lifecycle.test` PID-parser finding is superseded: the current test gets service PIDs from process-written markers and no longer contains that false-negative mechanism.
+- Exact non-contractual diagnostic wording was removed from the audited digest, extract, http-fetch, log and package-install checks while preserving status/effect semantics.
+- `extract/dispatch.test` and the remaining audited package/adapter tests use shared target discovery rather than local copies.
+- Current external live tests no longer contain the audited replacement-HOME, synthetic-target, private-concrete-layout, fixed catalog-tree or known obsolete version-pin patterns.
+- Chrome/Pulsar setuid and Java/Maven/NetBeans facility/dependency live evidence no longer reads private concrete paths. Successful composed integration is relied upon for setuid/facility/dependency materialization; Maven additionally executes through its public command and NetBeans checks its public command binding.
+- `validation/rumiai-os-health.conf` is aligned to current `rumiai-os` revision `25ab0e5a5b8267af715f320bd9ee17405a2b41f6`.
+- This task has not modified `rumiai-os` product implementation.
 
-```text
-identify the current property claimed by the test
-→ determine whether that property is current contract/regression evidence
-→ determine the real execution path that proves it
-→ classify keep / simplify / merge / remove
-→ only then rewrite infrastructure or assertions
-```
+## Current state
 
-Existing assertions are not preserved merely because they already exist. A failing test is not evidence of a product defect until the test itself has passed this classification.
+The source/contract audit has no remaining proven false-negative mechanism from the historical finding list in the deterministic core families reviewed so far.
 
-## Implemented work already present in rumiai-tests
+Current package repository-adapter tests intentionally remain library/unit tests where they exercise public `pkg_repository_*` functions and model only the external HTTP/provider boundary. They must not be used as composed `pkg install` evidence.
 
-Twenty-two evidence-confirmed legacy tests have already received infrastructure or behavioral realignment in earlier tranches. They include command/runtime selection, language selection, service lifecycle, shell selection, state-path, read-key, log, digest, http-fetch, JSON and real tar.gz extraction tests.
+The 19 current external live tests passed the latest targeted source scan for the historical isolation/private-layout/pinning anti-patterns. They remain intrinsically sensitive to real host capabilities and upstream availability.
 
-The latest committed additions beyond the previous handoff checkpoint are:
+`pkg-analyze` permanent tests still assert several report vocabulary tokens such as `useful-root`, `executable`, `launch-like` and `exit-status`. The current manual specifies the report's semantic purpose but not a machine-stable field vocabulary. This is a contract/test-design ambiguity, not a currently proven false negative.
 
-```text
-tests/rumiai-os/http-fetch/backends.test
-tests/rumiai-os/http-fetch/cli.test
-tests/rumiai-os/json/object-read.test
-tests/rumiai-os/json/structure.test
-tests/rumiai-os/extract/real-targz.test
-```
-
-Those changes centralized target discovery while preserving their prior semantic assertions. This new audit explicitly reopens the validity of prior assertions when current contract evidence does not support them; a test being previously realigned does not exempt it from property-first review.
-
-No `rumiai-os` product implementation has been modified by this task.
-
-## Proven test defects / false-negative mechanisms
-
-### `srv/lifecycle.test` contains a definite parsing bug
-
-The current product prints a successful start line of the form:
-
-```text
-srv: <service> started pid=<pid>
-```
-
-The current test's first start parses only field 1 with `awk 'NR == 1 { print $1 }'` before removing `pid=`, so the value becomes `srv:` rather than the numeric PID. Its subsequent numeric assertion therefore fails against correct current output. Later code in the same test uses `sed -n 's/.*pid=//p'`, demonstrating the inconsistent parser.
-
-This failure is a test defect, not evidence that `srv` start is broken.
-
-### Full-suite health aggregates unrelated evidence classes
-
-The current repository contains 131 `*.test` files, including 100 under `tests/rumiai-os`. The root `tests/` tree also contains live external package/release tests, `rumiai-dev` tests, runner tests and `rumiai-tests` self-tests.
-
-Per the current runner/validation contract, an unselected full-suite run executes the complete root. A red aggregate session therefore does not by itself mean the RumiAI OS runtime is defective.
-
-### `rumiai-os-health` is revision-specific and currently points far behind product HEAD
-
-Current `validation/rumiai-os-health.conf` pins:
-
-```text
-0751add1a59f90d4a0fc19b36db9d4dbda0167ad
-```
-
-while current `rumiai-os` HEAD is:
-
-```text
-db0b25c20b08247cd68818ef9caea61a1cf02451
-```
-
-The current product is 27 commits ahead of that configured health target. This exact-revision behavior is intentional in `rumiai-validate`, but it means a user selecting `0) all tests` is not necessarily testing the current product checkout. Results must be interpreted against the pinned revision rather than against current HEAD.
-
-### Live external/release tests can fail on legitimate upstream/catalog change
-
-The root suite contains live tests for external packages/providers. The shared `lib/package-release.lib` performs real live installation and external/catalog inspection, but the package test files also pin package-catalog tree object IDs. For example the Node.js live test expects a fixed catalog tree SHA; any legitimate catalog edit causes `catalog tree drift` failure even if current `pkg install nodejs` and the installed commands work correctly.
-
-Current `tests/rumiai-os/pkg/install-live.test` similarly fixes a specific external package identity (`jq@jq-1.8.2`). Such tests are useful release/integration evidence for a defined revision but are not timeless indicators of package-manager correctness.
-
-### Several package tests violate the current authenticity boundary
-
-Current `PACKAGE-MODEL.md` explicitly defines `pkg` as the public package command and says composed package behavior traverses real catalog, repository adapter, download, extraction/materialization, integration, binding and launch responsibilities. Tests claiming public/composed behavior must not replace those RumiAI components.
-
-Current legacy package tests inspected during this audit include examples that instead source internal libraries and construct artificial runtimes:
-
-```text
-pkg/dependency.test
-pkg/default.test
-pkg/versions.test
-pkg/state.test
-pkg-download/contract.test
-pkg-extract/contract.test
-pkg-integration/contract.test
-pkg-launch/contract.test
-pkg/catalog-snapshot.test
-repository-adapter contract tests such as pkg-repository-apache-maven/contract.test
-```
-
-Observed techniques include handwritten `readpathce`/`log`, synthetic `m_*` roots, hard-coded `m_OSARCH`, copied or fake `state-path`, fake RumiAI `http-fetch`, fake RumiAI `extract`, direct calls into package libraries and assertions over private physical symlink/layout details.
-
-These tests may still be useful as narrowly scoped library/adapter unit tests when the directly called interface is a current public library API and their evidence is labelled accordingly. They do not prove failure of the composed public package command when they replace components of that path.
-
-### A current package test directly calls a private library function
-
-`pkg/catalog-snapshot.test` directly invokes and later overrides `_pkg_install_catalog_snapshot_impl`. Current `LIBRARY-INTERFACES.md` makes underscore-prefixed functions implementation-private and explicitly says consumers must not depend on them as callable API.
-
-That test is therefore coupled to a non-contractual private implementation surface and must be redesigned or removed as current permanent contract evidence.
-
-### Private implementation layout is asserted in other tests
-
-`mk/materialize.test` checks for residue matching a hard-coded `.mk-materialize-*` staging prefix. Current `MK-SOURCE-MATERIALIZATION.md` explicitly declares the staging pathname implementation-private. The useful property is cleanup/no unexpected residue, not that private spelling.
-
-Several package tests similarly assert physical link targets and internal managed layout even though `PACKAGE-MODEL.md` states consumers must not assume private integration paths beyond documented contract.
-
-### Exact diagnostic/report prose is overused
-
-A number of tests require exact logging message IDs, prose fragments or report headings in addition to status/effect. Examples exist in language, digest/http-fetch/extract, service lifecycle and package-analysis/release tests.
-
-Where wording/message identity is not itself a current documented interface, this creates false negatives from harmless diagnostic or presentation changes. Assertions should normally protect semantic status, structured fields when contracted, and observable effects.
-
-### Host/timing-sensitive tests need separate flake review
-
-PTY, service process lifecycle, manual paging and GUI/live package tests contain bounded sleeps/timeouts or depend on terminal/session capabilities. Some correctly SKIP missing prerequisites, but these tests need explicit flake/host classification and must not be treated as equivalent to deterministic contract tests.
-
-## Important hypothesis rejected
-
-A suspected issue that integrated commands could fail because `#!/usr/bin/env m` cannot resolve `m` from `PATH="$root/bin/sys:..."` was checked and rejected. Current `bin/sys/m` is the intended symlinked technical bootstrap entrypoint, so this is not a valid general explanation for the failures.
-
-## Current interpretation
-
-The suite has at least four materially different failure meanings mixed together today:
-
-```text
-real current product contract violation
-test implementation defect / false negative
-legacy/internal-unit expectation drift
-live external/host/revision drift
-```
-
-The aggregate FAIL status does not distinguish those categories. The user-observed phenomenon "test fails while product works" is therefore structurally plausible and, in at least the current `srv/lifecycle.test`, directly proven by source.
-
-## Validation limits of this audit
-
-The current chat execution environment cannot resolve GitHub for a local clone, so the exact current suite cannot be executed here. The findings above are source/contract analysis. No new runtime PASS/FAIL claim is made.
-
-Current local run logs under `.runs/` are not available through the repository connector, so the exact set of failures observed by the user cannot yet be mapped one-for-one to these causes from this chat alone. This does not block the property-first suite audit.
+No current full-suite runtime result has been produced by this chat. The repository has no persistent GitHub Actions workflow that can be dispatched through the available connector, and the local execution environment has not provided a network-capable current checkout. Historical or package-matrix Actions results must not be relabelled as validation of the current HEADs.
 
 ## Next action
 
-Do not continue mechanical helper-only migration as the main strategy.
+Run the current health scope through `rumiai-validate` in a real executable environment against the configured current product revision. Classify every non-PASS result property-first before considering a product change.
 
-Next work should audit the current suite family-by-family, starting with the highest false-negative concentration:
+If source work resumes before such a run is available, only pursue newly evidenced contract/test mismatches; do not mechanically rewrite already-clean families.
 
-```text
-1. repair or replace the proven-broken srv lifecycle test
-2. reclassify package/pkg-* tests against PACKAGE-MODEL and LIBRARY-INTERFACES
-3. separate composed public-command evidence from legitimate library/adapter unit evidence
-4. isolate live external/release checks from ordinary product-contract interpretation
-5. remove private-layout/private-function assertions unless a current contract promotes them
-6. reduce exact diagnostic/report-string assertions to contracted semantics
-7. review host/timing tests for deterministic prerequisite handling and flake risk
-8. then finish lower-risk infrastructure deduplication such as remaining target-discovery copies
-```
-
-When actual current FAIL logs become available, map each failed test to this classification before considering a product change.
+The `pkg-analyze` report-vocabulary ambiguity should be revisited only if a failing test or a product/documentation change makes the stable report interface material.
 
 ## Blockers / open questions
 
-- No network-capable executable clone of the current repositories is available in this chat, so runtime reproduction is not currently possible here.
-- No product modification is authorized or implied by this test-suite audit.
-- The separate deferred `library-api-visibility-realignment` work remains distinct; this task must not silently rename product APIs while repairing test evidence.
-
-
-## Runner/validator root-cause analysis — 2026-09-18
-
-The audit has moved below individual test semantics into the execution model itself.
-
-Current canonical RUNNER.md intentionally defines rumiai-test as an observational runner whose runner-to-test contract is empty. The runner does not discover or clone the target, create a disposable target workspace, provide a per-run/per-test temporary directory, change CWD, isolate HOME/TMPDIR, prepare setup/cleanup, or sandbox the host environment.
-
-Current implementation matches that contract:
-
-- rumiai-test creates only its evidence directory under .runs/ or sessions/;
-- it inherits the caller environment and current working directory;
-- it executes each discovered .test directly and captures combined output/status/timing;
-- filesystem snapshots are optional, require explicit roots/options, are observational only, and CHANGED does not affect the test result;
-- ordinary rumiai-validate invocations do not request runner snapshots.
-
-rumiai-validate performs revision preparation rather than execution-environment isolation:
-
-- it self-updates rumiai-tests;
-- discovers an existing local rumiai-os checkout and fast-forward pulls it;
-- if the configured target commit equals the checkout HEAD, that operator checkout itself becomes the test target;
-- otherwise it creates a detached temporary Git worktree from the same repository, not an independent clone;
-- it exports only RUMIAI_TEST_RUMIAI_OS_ROOT as target override before calling rumiai-test;
-- it does not create isolated HOME, TMPDIR, XDG/user directories or other generic mutable host roots, and it does not perform centralized before/after analysis of those roots.
-
-As a consequence, generic isolation responsibility has been pushed into individual tests/shared helpers. lib/rumiai-os-fixture.lib copies a runnable product tree for tests that explicitly choose to use it, while other tests operate directly on the discovered/validation target. This creates inconsistent isolation, duplicated environment plumbing, opportunities for host-state leakage and inter-test contamination, and incentives to replace real product components with local fixtures/fakes.
-
-The user's expected execution model is materially different and is now the primary architectural question for this task: a central runner-owned disposable test environment, with an exact temporary product checkout/clone, isolated mutable host roots such as HOME and temporary storage, execution of the requested real tests against that environment, and centralized post-run observation of changes. The exact contract and division of responsibility between rumiai-test and rumiai-validate must be redesigned before continuing broad individual-test repair.
-
-No implementation change has been made yet for this architectural correction.
-
-
-## Working design direction — validator-owned environment isolation
-
-The user proposed a clearer responsibility split than the previous runner-owned isolation idea. This is still working design, not yet promoted into canonical testing contracts.
-
-Candidate direction:
-
-- `rumiai-test` remains a generic executor/observer and does not clone or synthesize a target environment.
-- Direct execution (a `.test` directly or through `rumiai-test`) uses the real ambient environment/target.
-- `rumiai-validate` owns formal-validation isolation: create a disposable independent `rumiai-os` checkout at the exact configured revision, create temporary user-scoped mutable roots such as `HOME` and `TMPDIR` (and other applicable standard user-state roots), export the existing target override, then invoke the real tests unchanged against that environment.
-- Individual tests must not clone/copy/reconstruct `rumiai-os`, create substitute target environments, or replace RumiAI-owned components whose behavior they claim to verify. They may still create scenario-specific inputs/resources inside the environment they receive and may model genuinely external boundaries where current testing rules permit it.
-- Formal validation should automatically perform metadata-only filesystem comparison around the disposable environment. The intended normal comparison boundary is the beginning/end of the entire `rumiai-validate` invocation, not every elementary `rumiai-test` sub-run.
-- The disposable environment must be observed before destruction so filesystem differences become validation evidence.
-- This is process/environment isolation, not a security sandbox: host resources not redirected into the disposable roots remain real.
-
-An optional stronger mode is being considered in which `rumiai-validate` creates/destroys a fresh environment for every individual test rather than one environment for the whole validation scope. This would enforce test-state independence and improve attribution of residual changes, but it adds orchestration cost because current groups are discovered/executed internally by `rumiai-test`. The design should avoid duplicating discovery semantics between runner and validator; a shared discovery primitive or another clean interface would be needed.
-
-Current recommendation from the audit:
-
-1. Prefer validator-owned isolation over moving target-specific sandboxing into `rumiai-test`; this preserves the runner's generic role.
-2. Design the validation environment as one disposable root containing the exact target clone plus temporary user-state roots, while leaving real host characteristics such as OS/toolchain available.
-3. Keep metadata comparison non-hashing as requested; avoid validator-created bookkeeping and Git administrative noise from becoming false filesystem changes.
-4. Treat session-scoped and per-test-scoped isolation as distinct evidence strengths. Do not yet fix which one is the permanent default until cost and current suite behavior are measured.
-5. Because one validation scope can currently produce multiple elementary runner sessions, session-wide filesystem evidence requires an outer validation-level evidence record rather than attaching the diff arbitrarily to one runner session.
-
-No canonical contract or implementation has been changed yet for this design direction.
-
-
-## Fixed execution-environment design — 2026-09-18
-
-The user approved the validator-owned isolation model and the discovery interface. These decisions are now being promoted into the canonical testing contracts and implementation:
-
-- `rumiai-test` remains the semantically agnostic executor/observer.
-- `rumiai-test --list [selection]` is the canonical discovery-only interface: one deterministic test id per line, same selection/discovery semantics as execution, no test execution and no run/session evidence.
-- direct test execution, including development execution through `rumiai-test`, acts on the real environment supplied by the caller;
-- individual permanent tests must not clone/copy/reconstruct `rumiai-os`, create a replacement user environment, or substitute another RumiAI target environment;
-- `rumiai-validate` owns formal-validation isolation and always executes an independent disposable clone of the exact configured `rumiai-os` commit;
-- the validator supplies isolated mutable user roots such as `HOME`, temporary storage and applicable XDG roots only to runner/test child processes, so validator bookkeeping itself does not contaminate the observed environment;
-- formal validation automatically records a metadata-only filesystem comparison before/after the lifetime of each disposable environment; `CHANGED` is evidence and not an automatic test failure;
-- default isolation granularity is `session`, one environment for the complete validator invocation;
-- explicit stronger `test` isolation creates/destroys a fresh environment for each canonical test id returned by `rumiai-test --list`;
-- per-test orchestration must consume runner discovery rather than reimplement it;
-- environment isolation is not a security sandbox; the real host remains the execution host.
-
-Because an invocation can contain multiple elementary runner sessions, filesystem/environment evidence belongs to an outer validation-level evidence record rather than arbitrarily to one child runner session.
-
-Implementation and permanent-test realignment remain in progress at this checkpoint.
+- Current full-suite runtime validation is not executable from this chat environment, so no current suite PASS claim exists.
+- No unresolved execution-environment design remains; the validator-owned model is already canonical and implemented.
