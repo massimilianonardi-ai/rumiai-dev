@@ -278,6 +278,17 @@ Provider runtime application is owned generically by the launcher. Package comma
 
 Provider packages describe the commands and environment values exported by each facility through declarative package metadata. The launcher resolves the effective provider selector, validates the selected concrete against the consumer dependency, interprets that facility metadata and applies the resulting command-path and environment projection before launching the consumer.
 
+Launch-time environment precedence is:
+
+```text
+consumer package environment
+→ selected provider facility projections
+→ user package environment
+→ exec
+```
+
+Provider facility command directories are prepended while applying projections, so selected-provider commands precede the consumer's inherited/package PATH. The user package environment remains the final configuration layer and may explicitly override projected environment when desired.
+
 A facility-specific projection is data, not executable provider-specific shell logic.
 
 The catalog projection schema is:
