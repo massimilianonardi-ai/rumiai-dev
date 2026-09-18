@@ -191,3 +191,33 @@ When actual current FAIL logs become available, map each failed test to this cla
 - No network-capable executable clone of the current repositories is available in this chat, so runtime reproduction is not currently possible here.
 - No product modification is authorized or implied by this test-suite audit.
 - The separate deferred `library-api-visibility-realignment` work remains distinct; this task must not silently rename product APIs while repairing test evidence.
+
+
+## Runner/validator root-cause analysis — 2026-09-18
+
+The audit has moved below individual test semantics into the execution model itself.
+
+Current canonical RUNNER.md intentionally defines rumiai-test as an observational runner whose runner-to-test contract is empty. The runner does not discover or clone the target, create a disposable target workspace, provide a per-run/per-test temporary directory, change CWD, isolate HOME/TMPDIR, prepare setup/cleanup, or sandbox the host environment.
+
+Current implementation matches that contract:
+
+- rumiai-test creates only its evidence directory under .runs/ or sessions/;
+- it inherits the caller environment and current working directory;
+- it executes each discovered .test directly and captures combined output/status/timing;
+- filesystem snapshots are optional, require explicit roots/options, are observational only, and CHANGED does not affect the test result;
+- ordinary rumiai-validate invocations do not request runner snapshots.
+
+rumiai-validate performs revision preparation rather than execution-environment isolation:
+
+- it self-updates rumiai-tests;
+- discovers an existing local rumiai-os checkout and fast-forward pulls it;
+- if the configured target commit equals the checkout HEAD, that operator checkout itself becomes the test target;
+- otherwise it creates a detached temporary Git worktree from the same repository, not an independent clone;
+- it exports only RUMIAI_TEST_RUMIAI_OS_ROOT as target override before calling rumiai-test;
+- it does not create isolated HOME, TMPDIR, XDG/user directories or other generic mutable host roots, and it does not perform centralized before/after analysis of those roots.
+
+As a consequence, generic isolation responsibility has been pushed into individual tests/shared helpers. lib/rumiai-os-fixture.lib copies a runnable product tree for tests that explicitly choose to use it, while other tests operate directly on the discovered/validation target. This creates inconsistent isolation, duplicated environment plumbing, opportunities for host-state leakage and inter-test contamination, and incentives to replace real product components with local fixtures/fakes.
+
+The user's expected execution model is materially different and is now the primary architectural question for this task: a central runner-owned disposable test environment, with an exact temporary product checkout/clone, isolated mutable host roots such as HOME and temporary storage, execution of the requested real tests against that environment, and centralized post-run observation of changes. The exact contract and division of responsibility between rumiai-test and rumiai-validate must be redesigned before continuing broad individual-test repair.
+
+No implementation change has been made yet for this architectural correction.
