@@ -1,131 +1,67 @@
 # pkg install real validation
 
-Status: Active
+Status: Complete
 Updated: 2026-09-18
 
 ## Goal
 
-Rebuild `pkg install` from authentic execution and retain only validation evidence that traverses the real public command and composed package pipeline.
+Rebuild and validate `pkg install` through the authentic public command and composed package pipeline, retaining only evidence that exercises the real product path.
 
-## Current repository revisions
+## Final repository revisions
 
 ```text
-rumiai-dev   2c59983c3b2f4f9f9fecad26b579d37fae23da21
+rumiai-dev   852139296a4aff6d3ebe8244a2d920a64167bcd9
 rumiai-os    5e47a3f0a242a57f8431fece2357532c19342cd9
-rumiai-tests 13867b6e82b33b16c0316f844be77419354815fa
+rumiai-tests b180c43c27db969c61476f02eb230fcc60a6806e
 pkg-catalog  dd96a82e9022fb7c6f926d2b4b81f4718e824bb6
 ```
 
-Refresh all remote HEADs before continuing.
+The final handoff commit itself advances `rumiai-dev`; fresh retrieval remains required for any later task.
 
-## Fixed task-local choices
+## Applicable canonical sources
 
-- Target-specific catalog streams use `<package>/<os>-<arch>`, without the old `catalog-` prefix.
-- A behavioral `pkg install` test must execute the real public command and real composed package pipeline.
-- The isolated Debian host may replay captured real upstream HTTPS responses only at the external network boundary; the reusable mechanism is documented in `TEST-PATTERNS.md`.
-- Functional debugging takes priority over deferred CLI-policy questions while the install path is being made operational.
-- The `pkg` dispatcher remains generic. For every public subcommand `<name>`, `lib/sys/sh/pkg-<name>.lib.sh` exposes `pkg_<name>`. This is now canonical in `PACKAGE-MODEL.md`.
-- A live install test is not successful merely because a concrete package exists. For jq it must establish the public binding and successfully execute jq through the normal `m` command path.
+- `TESTING.md`
+- `TEST-PATTERNS.md`
+- `specifications/rumiai-os/PACKAGE-MODEL.md`
+- `specifications/rumiai-os/ENTRYPOINT-ROOT-RESOLUTION.md`
+- `specifications/rumiai-os/LIBRARY-INTERFACES.md`
+- `specifications/rumiai-os/DOCUMENTATION-MODEL.md`
 
-## Completed
+## Completed outcome
 
-- `pkg-catalog@dd96a82e...` removed the obsolete `catalog-` target-stream prefix.
-- Package stream selection was realigned to the new catalog layout.
-- The Debian network-boundary workaround was proven and documented in `TEST-PATTERNS.md`.
-- The previous false-positive package-install tests were replaced by a real live jq install test.
-- The command-entrypoint convention was standardized without modifying `bin/sys/pkg`:
-  - command-level `pkg_default_command` was renamed to `pkg_default`;
-  - the lower-level binding operation formerly named `pkg_default` was renamed to `pkg_default_apply`;
-  - callers/tests were realigned;
-  - stale `pkg_default_command` references are absent from current `rumiai-os` and `rumiai-tests` searches.
-- `pkg install` now completes integration after concrete materialization by invoking `pkg_default_apply` directly with the already-resolved package/version/osarch. It does not re-enter the CLI parser.
-- Current live test `tests/rumiai-os/pkg/install-live.test`:
-  - builds a complete isolated target replica;
-  - initializes normal osarch selectors;
-  - executes `m pkg install jq@jq-1.8.2`;
-  - verifies the concrete package and internal command/link;
-  - verifies `pkg/jq!<osarch>` selector;
-  - verifies `bin/ext-<osarch>/jq` public binding;
-  - finally executes `m jq --version` and requires `jq-1.8.2`.
-- GitHub Actions run `35323394218` against exact `rumiai-os@0376b12d...` and `rumiai-tests@bd333e6c...` completed successfully. Evidence:
-  ```text
-  installed=jq@jq-1.8.2!linux-x86_64
-  catalog-head=dd96a82e9022fb7c6f926d2b4b81f4718e824bb6
-  jq=jq-1.8.2
-  ```
+- Target catalog streams use `<package>/<os>-<arch>`; obsolete `catalog-` target prefixes were removed.
+- The generic `pkg` dispatcher remains unchanged and command-library entrypoints follow `pkg_<subcommand>`.
+- `pkg_default` is the command entrypoint and `pkg_default_apply` is the lower-level binding operation.
+- `pkg install` materializes the concrete package, selects it as current/default and creates the public command binding.
+- Slashless command resolution no longer gives implicit CWD objects precedence over `PATH`; a root-level `pkg/` directory cannot shadow the `pkg` command.
+- Current-package uninstall correctly clears the selector/bindings before deintegration.
+- `pkg install` is best-effort per operand:
+  - failed operands emit diagnostics and later independently installable operands continue;
+  - a partially successful batch returns status `1`;
+  - status `2` is reserved for a globally invalid invocation.
+- An already-installed concrete is not replaced or reinstalled and reports:
+  - `reason="already-installed"`
+  - `already-installed="<concrete>"`
+  - `current-default="<concrete|empty>"`
+- An invalid-only install returns `1` and does not materialize the package store.
+- Operational manuals `res/sys/manual/pkg` and `res/sys/manual/pkg-install.lib.sh` reflect the implemented install behavior.
+- The reusable isolated-host outbound-network bridge is documented in `TEST-PATTERNS.md`.
 
-## Bootstrap command-resolution collision — resolved
+## Final validation
 
-The previously confirmed collision between slashless command names and same-named CWD objects has been corrected in current `rumiai-os@9e7a67c...`.
+### Internet-enabled regression
 
-Current `readpathce()` behavior in both the root bootstrap and `core.lib.sh` is:
+GitHub Actions run `35329376338` completed successfully against exact:
 
 ```text
-operand contains "/"
-    treat it as an explicit pathname
-
-operand contains no "/"
-    resolve it through PATH
+rumiai-os    5e47a3f0a242a57f8431fece2357532c19342cd9
+rumiai-tests b180c43c27db969c61476f02eb230fcc60a6806e
+pkg-catalog  dd96a82e9022fb7c6f926d2b4b81f4718e824bb6
 ```
 
-The implicit `./<name>` precedence was removed. Therefore, after `$m_ROOT/pkg/` exists, invoking:
+It passed all permanent `tests/rumiai-os/pkg/*.test` plus the current `pkg-integration/contract.test` and `pkg-launch/contract.test`.
 
-```text
-cd "$m_ROOT"
-./m pkg ...
-```
-
-still resolves `pkg` through the active m command PATH to `$m_ROOT/bin/sys/pkg`; the package-store directory no longer shadows the command.
-
-The current canonical `ENTRYPOINT-ROOT-RESOLUTION.md` was realigned to this behavior.
-
-Permanent regression coverage now includes:
-- `tests/rumiai-os/command/command-bin-canonical.test`: a same-named directory in the caller CWD must not shadow a slashless command available in PATH;
-- `tests/rumiai-os/pkg/install-live.test`: executes `./m pkg install jq@jq-1.8.2` from the product root, verifies the store/bindings, invokes `./m pkg default jq` again after `./pkg/` exists, and executes `./m jq --version`.
-
-GitHub Actions run `35324867683` against exact `rumiai-os@9e7a67c...` and `rumiai-tests@ad260660...` completed successfully:
-- command-resolution regression: PASS;
-- live pkg install from product root: PASS;
-- `installed=jq@jq-1.8.2!linux-x86_64`;
-- `catalog-head=dd96a82e9022fb7c6f926d2b4b81f4718e824bb6`;
-- `jq=jq-1.8.2`.
-
-## Other confirmed/open behaviors
-
-### Install batch/already-installed behavior — resolved
-
-The current canonical behavior is defined in `PACKAGE-MODEL.md`:
-
-- `pkg install` is best-effort per operand;
-- invalid/unavailable/already-installed operands emit errors but do not prevent later independently installable operands from being attempted;
-- a partially successful install batch returns status `1`;
-- status `2` remains for a globally invalid invocation;
-- an already installed concrete is not reinstalled;
-- its diagnostic includes `reason="already-installed"`, `already-installed="<concrete>"` and `current-default="<concrete|empty>"`.
-
-Current `rumiai-os@5e47a3f0...` implements that behavior. `res/sys/manual/pkg` and `res/sys/manual/pkg-install.lib.sh` were updated in the same work unit.
-
-Current `tests/rumiai-os/pkg/install-live.test` validates through the real public command that:
-- an invalid-only install returns `1`, reports the bad operand and does not create `$m_PKG_DIR`;
-- a normal jq install succeeds and jq executes through `m`;
-- reinstalling the same jq concrete returns `1` and reports the installed/current-default identities without damaging the package;
-- jq can be uninstalled;
-- a mixed `invalid + jq` install returns `1` but still installs, integrates and successfully executes jq.
-
-GitHub Actions run `35328551119` against exact `rumiai-os@5e47a3f0...` and `rumiai-tests@13867b6e...` completed successfully after the final work-path correction.
-
-A broader permanent package regression also passed in run `35328620632` on the same revisions:
-- default.test
-- dependency.test
-- env.test
-- facility.test
-- install-live.test
-- setuid.test
-- state.test
-- uninstall.test
-- versions.test
-
-Live evidence remained:
+Live jq evidence:
 
 ```text
 installed=jq@jq-1.8.2!linux-x86_64
@@ -133,25 +69,45 @@ catalog-head=dd96a82e9022fb7c6f926d2b4b81f4718e824bb6
 jq=jq-1.8.2
 ```
 
-### Uninstall/dependency regression — resolved
+### Isolated Debian replay
 
-The two previously observed failures had one shared cause in `pkg-uninstall.lib.sh`: the calls that unset the current/default binding before deintegration had malformed shell quoting after the `pkg_default_apply` rename.
+The final product revision was also exercised on the isolated auxiliary host:
 
-That prevented the current selector from being cleared. `pkg_deintegrate()` then correctly refused to remove a concrete package that was still current. This surfaced both as:
-- `uninstall.test`: unversioned current uninstall failed;
-- `dependency.test`: provider remained blocked after consumer uninstall.
+```text
+Debian GNU/Linux 13
+x86_64
+rumiai-os    5e47a3f0a242a57f8431fece2357532c19342cd9
+rumiai-tests 85dba298afcc4824604ddad66968b44ad1f3a14f
+pkg-catalog  dd96a82e9022fb7c6f926d2b4b81f4718e824bb6
+jq artifact sha256 b1c22172dd303f3be49e935aa56aa48a8b7a46e0bc838b4997d3bb451495870f
+```
 
-Current `rumiai-os@75ce970e...` fixes those two calls without changing uninstall semantics.
+The later test-suite delta from `85dba298...` to `b180c43c...` did not modify `install-live.test`; the final Internet-enabled regression above covered the later current suite.
 
-GitHub Actions run `35325311689` against exact `rumiai-os@75ce970e...` and `rumiai-tests@ad260660...` completed successfully:
-- package dependency regression: PASS;
-- package uninstall regression: PASS;
-- live pkg install + jq execution: PASS;
-- `installed=jq@jq-1.8.2!linux-x86_64`;
-- `catalog-head=dd96a82e9022fb7c6f926d2b4b81f4718e824bb6`;
-- `jq=jq-1.8.2`.
+The Debian host used the canonical `TEST-PATTERNS.md` transport-boundary replay:
+- real clean product/test checkouts;
+- real clean cached `pkg-catalog` checkout with the canonical origin;
+- temporary HTTPS server for the captured real GitHub API response and official jq asset;
+- temporary `/etc/hosts` mapping and trusted local CA while normal TLS verification remained enabled;
+- unchanged public product commands.
 
-## Next action
+Observed results:
 
-1. Re-run the current live install behavior on the isolated Debian VM using the documented external HTTPS replay bridge, against the exact current product/test revisions.
-2. If that replay passes without a new product defect, complete and retire this handoff according to the normal handoff lifecycle.
+```text
+INVALID_ONLY=PASS status=1
+INSTALL=PASS jq=jq-1.8.2
+ALREADY_INSTALLED=PASS status=1
+MIXED=PASS status=1 jq=jq-1.8.2
+```
+
+The already-installed diagnostic contained the requested installed/current-default identities. The catalog refresh attempted its canonical GitHub remote, received the replay-boundary failure and followed the product's real validated-cache fallback. API and jq artifact requests used their canonical upstream HTTPS paths.
+
+Replay cleanup was verified:
+- temporary `/etc/hosts` entries removed;
+- temporary CA removed and trust store refreshed;
+- no replay HTTPS listener remained;
+- transferred product/test checkouts remained clean.
+
+## Final state
+
+The package-install task has no remaining working design, blocker or next action. Durable behavior is in current canonical specifications/manuals, implementation is in `rumiai-os`, and permanent validation is in `rumiai-tests`.
