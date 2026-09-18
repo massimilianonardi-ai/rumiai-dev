@@ -12,8 +12,8 @@ The long-term multi-channel documentation source/rendering architecture remains 
 ## Current repository revisions
 
 ```text
-rumiai-dev   c62b57a74699b03a889db7171a6bad960ab55068  (remote HEAD before this checkpoint)
-rumiai-os    9109b7f23afae446c36c331e01b2bcb70cc5b1f4
+rumiai-dev   ad101f3beab5f902aab2ad3b89f9bebd5ff72c8b  (remote HEAD before this checkpoint)
+rumiai-os    c0d5d878ed16b5573ff6012d54ec2be31bc5a5ba
 rumiai-tests 322cee67192e38c828145325131c9fe6d0574c40  (parallel suite work; not modified by this checkpoint)
 ```
 
@@ -58,6 +58,9 @@ Fresh remote HEAD retrieval remains mandatory before future writes.
 - The concurrently added `pkg-install.lib.sh` manual is preserved. These four aligned library topics are materialized in the current product tree.
 - The user explicitly identified the legacy random helper as library identity `rand.lib.sh`. The product now realigns `lib/sys/sh/rand.sh` to `lib/sys/sh/rand.lib.sh` without changing its content, sets the shell library to non-executable mode, and adds `res/sys/manual/rand.lib.sh`.
 - The `rand.lib.sh` manual exposes exactly the four implemented public functions `randhex`, `rand64`, `randuint` and `randstr`, including operands, outputs, dependencies and actual return-status behavior. No internal function API is advertised.
+- `map.lib.sh` is now covered by `res/sys/manual/map.lib.sh`. Its already-aligned public surface is exactly the single public function `map`; underscore-prefixed helpers remain internal and are not advertised as callable API.
+- The map manual documents creation/reset, `size`, `keys`, `get`, `put`, `rem`, `set` and `unset`, including insertion-order/duplicate-key behavior, output serialization, public statuses `0/1/2`, destination restrictions and the runtime `quote()` dependency.
+- The same work unit corrected `lib/sys/sh/map.lib.sh` from executable mode to the required non-executable `100644` mode and replaced its stale `arg.lib.sh` dependency comment with the current bootstrap `core.lib.sh`/`quote()` reality; executable logic was unchanged. Structural/documentation consistency validation passed; no new runtime behavior test was required.
 - Later product work first introduced `osarch-set`; current `rumiai-os@e25f2aaaf9ba56d8a86eb285bec1bb24e9df71be` consolidates the public surface under `osarch` with query, `show`, `update` and `set`, adds `res/sys/manual/osarch`, and retains `osarch-set` / `osarch-update` as compatibility commands with their own manuals. Command/manual completeness therefore remains true for the current product revision.
 - Targeted auxiliary-host development validation on Debian 13 x86_64 exercised the exact current `bin/sys/osarch` command body for explicit `set`, bare query, `show`, host `update`, selector-mismatch rejection and invalid explicit osarch rejection; all exercised cases behaved as specified. A direct GitHub clone of the complete checkout was unavailable in that environment because DNS resolution for github.com failed, so this is development evidence for the exact command body rather than formal/full-checkout validation.
 - No unrelated concurrent product or test-suite work was overwritten; Git history remained forward-only.
@@ -79,7 +82,7 @@ manual <topic>
 
 All current command identities, including the unified `osarch` command and its compatibility wrappers, have manual topics.
 
-Library documentation is only partially complete. The current product contains compliant manuals for `array.lib.sh`, `mk-materialize.lib.sh`, `mk-materialize-copy.lib.sh`, `pkg-install.lib.sh` and `rand.lib.sh`. The remaining legacy libraries cannot safely receive final public-API manuals until their intended public/internal function sets are classified and, where necessary, renamed with callers/tests realigned. That work is already represented by `todo/library-api-visibility-realignment.md` and is deliberately not guessed inside this documentation work unit.
+Library documentation is only partially complete. The current product contains compliant manuals for `array.lib.sh`, `map.lib.sh`, `mk-materialize.lib.sh`, `mk-materialize-copy.lib.sh`, `pkg-install.lib.sh` and `rand.lib.sh`. The remaining legacy libraries cannot safely receive final public-API manuals until their intended public/internal function sets are classified and, where necessary, renamed with callers/tests realigned. That work is already represented by `todo/library-api-visibility-realignment.md` and is deliberately not guessed inside this documentation work unit.
 
 The existing permanent manual tests are not closure evidence for this task. The active parallel suite-realignment task must provide trustworthy coverage for the current behavior, including substring fallback and command/library-to-manual structural completeness.
 
