@@ -5,7 +5,7 @@ Updated: 2026-09-18
 
 ## Goal
 
-Realign package/provider/facility semantics and their catalog/test representation. Package identity and facility separation are implemented; multiple-provider installation/indexing coexistence is implemented and validated. Consumer resolution among multiple eligible providers remains coupled to the still-open provider selection/binding design.
+Realign package/provider/facility semantics and their catalog/test representation. Package identity and facility separation are implemented; multiple-provider installation/indexing coexistence is implemented and validated. Provider selection/binding semantics are now canonical; the remaining task is to define their concrete configuration/runtime projection contract and realign implementation/tests.
 
 ## Current repository revisions
 
