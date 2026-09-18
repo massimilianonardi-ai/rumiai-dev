@@ -62,21 +62,31 @@ osarch-update
 
 ## Internal libraries
 
-Current internal library layout is ownership- and runtime-qualified:
+Current internal library layout is ownership- and runtime-qualified. Libraries may live directly under the runtime directory or under a subsystem grouping directory explicitly defined by the owning current specification.
+
+Direct library shape:
 
 ```text
 lib/sys/<runtime>/<library-name>.lib.<runtime>
 lib/ai/<runtime>/<library-name>.lib.<runtime>
 ```
 
-Shell examples:
+Current grouped shell-library layouts include:
+
+```text
+lib/sys/sh/pkg/pkg-<name>.lib.sh
+lib/sys/sh/mk/mk-<name>.lib.sh
+```
+
+Examples:
 
 ```text
 lib/sys/sh/core.lib.sh
-lib/sys/sh/pkg-launch.lib.sh
+lib/sys/sh/pkg/pkg-launch.lib.sh
+lib/sys/sh/mk/mk-materialize.lib.sh
 ```
 
-The `.lib` component identifies library role; the final suffix identifies load/runtime format.
+A grouping directory is physical organization only and is not part of the library leaf identity. The `.lib` component identifies library role; the final suffix identifies load/runtime format.
 
 Shell libraries are not commands: they have no shebang and no executable bit.
 
@@ -124,7 +134,7 @@ Internal naming restrictions must never justify unsafe shell handling of externa
 NAME-01  controlled names use the portable lowercase internal alphabet unless explicitly excepted
 NAME-02  hyphen is the default multiword separator for human-readable controlled names
 NAME-03  public commands do not expose implementation-language suffixes
-NAME-04  libraries live under lib/sys or lib/ai with runtime-qualified .lib.<runtime> names
+NAME-04  libraries live under lib/sys or lib/ai with runtime-qualified .lib.<runtime> leaf names; explicitly contracted subsystem grouping directories do not change library identity
 NAME-05  shell libraries are non-executable and have no shebang
 NAME-06  external/user names remain opaque data
 NAME-07  naming rules do not independently create architectural roots or APIs
