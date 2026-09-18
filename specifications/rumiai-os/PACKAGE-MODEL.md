@@ -185,7 +185,57 @@ Package identity and facility identity are distinct contracts:
 - different installed packages may declare the same facility and compatibility level simultaneously;
 - installing another provider of an already-provided facility is valid and must not fail merely because the facility already has a provider.
 
-Provider multiplicity therefore belongs to the normal installed state. Selection or binding of one provider for a particular consumer, and any command/environment projection that follows from that selection, are separate responsibilities from provider installation and coexistence.
+Provider multiplicity therefore belongs to the normal installed state.
+
+### Provider selection
+
+Provider installation and provider selection are separate responsibilities.
+
+For each facility required by a consumer, the effective provider selector is determined in this order:
+
+1. an explicit binding for that consumer and facility, when present;
+2. otherwise the default provider selector for that facility;
+3. otherwise no provider is selected and dependency resolution fails.
+
+There is no implicit fallback to "the only installed provider". Installing or removing an unrelated additional provider must not silently change a consumer's provider-selection semantics.
+
+A consumer binding is mutable independently of package installation and may be changed later. Removing a binding restores inheritance from the facility default.
+
+Package default and facility default are distinct selections:
+
+- a package default selects the current concrete version within one package/platform class;
+- a facility default selects which provider selector supplies that facility globally.
+
+### Provider selectors
+
+A provider selector expresses intent rather than necessarily storing an already-resolved concrete identity.
+
+A selector may identify:
+
+- a provider package, meaning that package's current/default concrete for the applicable platform class is resolved when the selector is used;
+- an exact installed provider concrete, meaning that concrete remains pinned until the selector is changed.
+
+Resolution of a selector must validate that the selected installed concrete declares the required facility and satisfies the consumer's compatibility constraints.
+
+A resolved concrete may be cached as derived state, but such a cache is not authoritative over the configured selector.
+
+### Dependency installation policy
+
+The baseline package-install contract does not automatically install missing dependency providers and does not silently choose a provider from the catalog.
+
+When installing a package with facility dependencies, every dependency must already have an effective provider selector that resolves to an installed compatible provider. Otherwise installation fails.
+
+Automatic provider discovery, preference policy and transitive dependency installation may be added later as a separate resolution capability; their absence does not weaken the baseline dependency contract.
+
+### Runtime provider application
+
+A consumer with no explicit binding inherits the facility default at runtime. A consumer with an explicit binding uses that selector instead.
+
+Runtime launch must resolve and validate the effective selector before using the provider so that mutable bindings, mutable facility defaults and package-default changes are observed according to selector semantics.
+
+A facility provider may require a facility-specific runtime projection, including commands and environment needed to consume that facility. The facility default owns the global projection for that facility. A consumer-specific binding may override that global projection for the launched consumer through the package launcher.
+
+The exact storage layout, public configuration command syntax and detailed command/environment projection format are separate implementation contracts and are not defined by this section.
 
 ## `mk` boundary
 
@@ -224,4 +274,8 @@ PKG-12  mk materialization does not replace package management semantics
 PKG-13  concrete package identity names the installed distribution/provider, not a generic facility
 PKG-14  facility declarations are independent of package identity
 PKG-15  multiple installed providers of the same facility/compatibility are valid
+PKG-16  explicit consumer binding overrides facility default; absent both, dependency resolution fails
+PKG-17  provider selectors preserve intent and may be package-default-following or exact/pinned
+PKG-18  pkg install does not auto-install or silently choose missing dependency providers
+PKG-19  runtime re-resolves and validates mutable provider selection before provider use
 ```
