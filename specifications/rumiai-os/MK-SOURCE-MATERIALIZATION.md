@@ -43,10 +43,10 @@ and, while this capability is implemented in shell and integrated with `m`, uses
 #!/usr/bin/env m
 ```
 
-Direct shell libraries of this capability are under:
+Direct shell libraries of this capability are grouped under:
 
 ```text
-lib/sys/sh/
+lib/sys/sh/mk/
 ```
 
 and follow the normal `.lib.sh` library contract.
@@ -129,7 +129,7 @@ The selected type owns validation of all remaining entries in the definition roo
 A materialization type is implemented by a direct `mk` library named:
 
 ```text
-lib/sys/sh/mk-materialize-<type>.lib.sh
+lib/sys/sh/mk/mk-materialize-<type>.lib.sh
 ```
 
 The type grammar makes direct pathname construction safe and deterministic.
@@ -344,8 +344,8 @@ The current materialization capability consists of these product files:
 
 ```text
 bin/sys/mk
-lib/sys/sh/mk-materialize.lib.sh
-lib/sys/sh/mk-materialize-copy.lib.sh
+lib/sys/sh/mk/mk-materialize.lib.sh
+lib/sys/sh/mk/mk-materialize-copy.lib.sh
 ```
 
 Additional `mk` implementation files require a concrete responsibility covered by a promoted current contract.
