@@ -1,6 +1,6 @@
 # menu filesystem multiselect default confirmation
 
-Status: Active
+Status: Complete
 Updated: 2026-09-19
 
 ## Goal
@@ -10,10 +10,12 @@ Allow filesystem multi-selection to work without an explicit `-K` by using Tab a
 ## Current repository revisions
 
 ```text
-rumiai-dev   aa3ef30161abb9295690db078b29bbe595aba6db
-rumiai-os    a21a4cdf31453d896e5af24eb2081061d180ff34
-rumiai-tests 5270842426c2316887076a4d77d7d0860654f1d4
+rumiai-dev   ec563924f6f79609eb4a9d556e94698189d0d2af  (before this final handoff snapshot)
+rumiai-os    4e6de5ec0ace036262bb6016424e235c7bd9bdc0
+rumiai-tests 1333c0467c1bd789b8eaadcf9a07044c19fbf64b
 ```
+
+Formal validation ran with `rumiai-tests` revision `0cb364fadc9b0267dbd997913ce1180ecff07460` and `rumiai-os` revision `4e6de5ec0ace036262bb6016424e235c7bd9bdc0`. The current `rumiai-tests` revision differs from that validated suite revision only by removal of the temporary `.github/workflows/menu-tab-fallback.yml`; permanent tests and `validation/menu.conf` are unchanged.
 
 ## Applicable canonical sources
 
@@ -33,39 +35,38 @@ rumiai-tests 5270842426c2316887076a4d77d7d0860654f1d4
 
 ## Fixed task-local choices
 
-- Filesystem single-selection continues to require at least one explicit `-K`.
-- Filesystem multi-selection with no explicit `-K` gets one implicit fallback action key: Tab.
-- If any explicit `-K` is present in filesystem multi-selection, no implicit Tab action is added.
-- If Tab is already unavailable because it is configured as the multi-selection toggle (for example `-S tab`) or another reserved role, filesystem multi-selection without explicit `-K` is invalid and requires an explicit action key.
-- Enter remains directory browsing, Space remains the default multi-selection toggle, Backspace remains parent navigation, and Escape remains cancellation.
-- This behavior belongs to the filesystem command policy in `bin/sys/menu`; no `menu.lib.sh` API change is required.
+All durable behavior has been promoted to `specifications/rumiai-os/MENU.md`. No unpromoted current-behavior design remains in this handoff.
 
 ## Completed
 
-- Mandatory preflight completed.
-- Current menu specification, implementation, manual, permanent tests and validation scope inspected.
-- Current key vocabulary and Tab mapping confirmed through `READ-KEY.md`.
-- Canonical menu contract updated with the filesystem multi-selection Tab fallback and its collision rules.
-- `bin/sys/menu` updated so filesystem multi-selection with no explicit action key installs Tab as the fallback action; filesystem single-selection still requires `-K`.
-- `res/sys/manual/menu` realigned with the new invocation/default-key behavior.
-- Permanent contract coverage extended for Tab collision cases.
-- Permanent interactive coverage extended for implicit Tab confirmation and suppression of the fallback when an explicit `-K` exists.
+- Mandatory preflight completed against the current remote HEADs before material changes.
+- Filesystem single-selection continues to require at least one explicit `-K`.
+- Filesystem multi-selection with no explicit `-K` now installs Tab as the fallback confirmation action.
+- Any explicit `-K` suppresses the implicit Tab fallback; only the explicit action keys remain active.
+- `-S tab` or `-P tab` without an explicit action key is invalid because Tab cannot simultaneously be fallback confirmation and another reserved role.
+- Enter remains directory browsing, Space remains the default multi-selection toggle, Backspace remains parent navigation and Escape remains cancellation.
+- The fallback was implemented only in `bin/sys/menu`; `menu.lib.sh` and its public API were intentionally unchanged.
+- The `menu` operational manual was realigned with the revised synopsis and default-key behavior.
+- Permanent contract tests protect the Tab collision cases and the continuing single-selection `-K` requirement.
+- Permanent interactive tests protect both implicit Tab confirmation and suppression of Tab when an explicit `-K` exists.
+- Development run on exact `rumiai-tests` `7f3100edee2fc3b0bef77314f8a9898f97d73314` against exact `rumiai-os` `4e6de5ec0ace036262bb6016424e235c7bd9bdc0`: 2 PASS, 0 FAIL, 0 SKIP, 0 ERROR.
+- `validation/menu.conf` was retargeted to exact product revision `4e6de5ec0ace036262bb6016424e235c7bd9bdc0`.
+- Formal `rumiai-validate menu` on Linux/x86_64 with session isolation, `rumiai-tests` `0cb364fadc9b0267dbd997913ce1180ecff07460` and exact product `4e6de5ec0ace036262bb6016424e235c7bd9bdc0`: 2 PASS, 0 FAIL, 0 SKIP, 0 ERROR; validation environment CLEAN; scope result VALIDATED.
+- Formal validation evidence was published as `validation/20260919T104057+0000-3649` and `validation/20260919T104057+0000-2348`.
+- Temporary GitHub Actions validation infrastructure was removed from the current `rumiai-tests` tree after successful validation.
+- Final consistency review confirmed specification/implementation/manual alignment, unchanged library API, absence of command-local `-h/--help`, correct executable/manual/test structure, exact validation target and no remaining temporary workflow.
 
 ## Current state
 
-Current revisions relied upon after implementation:
+The requested behavior is complete and formally validated.
 
-```text
-rumiai-dev   5fc521e8c96967a9891578e49c3c82e76890900a
-rumiai-os    4e6de5ec0ace036262bb6016424e235c7bd9bdc0
-rumiai-tests 7f3100edee2fc3b0bef77314f8a9898f97d73314
-```
+The earlier failed workflow attempts were infrastructure-only: one checkout origin spelling was not accepted by target discovery, one validation attempt lacked a target checkout, one malformed temporary workflow was corrected before useful execution, and one target checkout was placed inside the suite working tree. None represented a product-behavior failure. The exact development run and final formal validation both passed the permanent menu test scope.
 
-The validation scope still points to the previously validated product revision and must be retargeted only after the revised product passes the development run.
+No physical-host validation was performed or required for this work unit.
 
 ## Next action
 
-Run the menu permanent tests on the exact revised product/test revisions. If they pass, retarget `validation/menu.conf`, run formal task validation, then complete the final consistency gate.
+None.
 
 ## Blockers / open questions
 
