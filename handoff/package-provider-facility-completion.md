@@ -506,7 +506,7 @@ Accepted and promoted:
 - inert facility/provider definitions and conformance;
 - current trusted `cmd` and `env` parts.
 
-The separate service workstream has now promoted the trusted `service` typed part: service identity equals facility identity in the baseline, provider realization uses `facility-service/<facility>/start`, and portable process lifecycle remains owned by `srv`. Its conformance implementation proceeds under `handoff/service-model.md` and does not change the cmd/env core ownership.
+The separate service workstream has promoted and implemented conformance for the trusted `service` typed part: service identity equals facility identity in the baseline, provider realization uses `facility-service/<facility>/start`, and portable process lifecycle remains owned by `srv`. Runtime/install composition remains under `handoff/service-model.md` and does not change the cmd/env core ownership.
 
 ### Phase 2: catalog ownership and representation — complete
 

@@ -453,14 +453,15 @@ Provider facility command directories are prepended while applying projections, 
 
 A facility-specific projection is data, not executable provider-specific shell logic.
 
-The current provider-realization projection schema for these two supported parts is:
+The current provider-realization schema includes:
 
 ```text
 facility-cmd/<facility>/<command>
 facility-env/<facility>
+facility-service/<facility>/start
 ```
 
-These paths describe how one provider realizes command/environment portions of a facility; they are not the provider-independent facility-contract definition itself.
+These paths describe how one provider realizes command, environment and service portions of a facility; they are not the provider-independent facility-contract definition itself.
 
 A `facility-cmd` entry is a scalar text file containing exactly one relative pathname, followed by newline, to an executable inside the provider useful root. The entry name is the command name exposed by that facility. Integration validates that the target remains inside the useful root and materializes a provider-private command projection for the facility. When a selected provider is applied to a consumer, that facility command directory is prepended to the consumer process PATH.
 
@@ -483,7 +484,7 @@ literal <value>
 
 `PATH` is reserved to facility command projection and MUST NOT be declared by `facility-env`. Provider command availability is expressed through `facility-cmd` and the package subsystem's PATH projection rather than by replacing PATH from environment metadata.
 
-Every facility referenced by `facility-cmd` or `facility-env` must also be declared by the package's `facility` metadata. Projection metadata is validated and interpreted generically by the package subsystem; provider-specific shell code is not part of the projection contract.
+Every facility referenced by `facility-cmd`, `facility-env` or `facility-service` must also be declared by the package's `facility` metadata. Provider realization metadata is validated through the trusted facility-part semantics; provider-specific shell code is not a facility-contract mechanism.
 
 Facility-specific consumer runtime projection and facility-default global publication are two consumers of the same declarative provider metadata. Consumer launch applies only the facilities required by that consumer; bootstrap/global publication follows configured system facility defaults.
 
@@ -575,7 +576,7 @@ PKG-20  pkg provider configures facility defaults and per-consumer bindings
 PKG-21  provider-selection configuration is system-scoped authoritative conf state
 PKG-22  provider runtime projection is declarative facility metadata interpreted generically by launcher
 PKG-23  consumer bindings live in system package conf at binding/<facility> and contain one provider selector
-PKG-24  facility-cmd and facility-env are declarative provider projection metadata, never provider shell code
+PKG-24  facility-cmd, facility-env and facility-service are declarative provider realization metadata, never provider shell code
 PKG-25  facility command targets remain inside the provider useful root and are projected through PATH
 PKG-26  facility environment metadata uses root, root-path or literal typed scalar values without shell evaluation
 PKG-27  a facility default publishes facility commands through existing bin/ext or bin/ext-<osarch> roots according to provider-selector intent
@@ -592,7 +593,7 @@ PKG-37  ordinary package command publication does not by itself create a facilit
 PKG-38  facility contract, provider realization metadata and mutable provider-selection conf are distinct authorities
 PKG-39  facility contracts extend through typed declarative parts with defined generic semantics, not arbitrary provider-specific executable metadata
 PKG-40  delegation of a facility-contract part to srv, mk or another existing subsystem does not create a second provider/dependency model
-PKG-41  facility-cmd and facility-env are current provider-realization parts and are not the exhaustive definition of a facility
+PKG-41  facility-cmd, facility-env and facility-service are current provider-realization surfaces and are not the exhaustive definition of a facility
 PKG-42  pkg-catalog separates installable package definitions under pkg/<package> from provider-independent facility definitions under facility/<facility>
 PKG-43  package and facility catalog data used together are revision-coupled through the same pkg-catalog snapshot
 PKG-44  package resolution never treats the facility catalog area as an installable package namespace
