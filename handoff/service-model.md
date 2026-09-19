@@ -14,10 +14,10 @@ The task must converge on the semantic model and public contract before implemen
 Revisions relied upon for this checkpoint:
 
 ```text
-rumiai-dev@0b019fbe41881eafa2f11d7b7452804446f94995  canonical-source baseline
-rumiai-os@25ab0e5a5b8267af715f320bd9ee17405a2b41f6
-rumiai-tests@9c0d7e7c51c179e3cac72475bcbed8017f7ebe65
-pkg-catalog@63140dcbbf89d93a924a4ac61ec967a4fe1b6d08
+rumiai-dev@a8b08ffa24147bd8f3dad49874679dd9d9e646fb  synchronized package-facility baseline
+rumiai-os@34671a5a1e9917fa39e3bbbd4b155590202c9b22
+rumiai-tests@88b4e48f170da883889c2f418a34e8ad24066e9d
+pkg-catalog@bd06488d3c67160e820c04d13067f852c8861c32
 ```
 
 The `rumiai-dev` SHA above is the canonical-source baseline re-read before the cross-task reconciliation; handoff synchronization commits advance it forward without replacing fresh-HEAD retrieval on resume.
@@ -101,21 +101,31 @@ The following choices are fixed for this task unless the user explicitly correct
 11. The current `<service>-start` foreground target convention remains the portable launch convention during this design task. Package-integrated targets must continue to use the normal package launcher for package HOME/environment/dependency preparation.
 
 12. Host-managed system services must preserve the canonical administrative/security boundary: system-wide integration is an explicit admin operation, and any dedicated OS service account must not gain ownership/write access over executable product roots merely because it runs the service. Detailed host adapter mechanics remain to be designed and validated separately.
+13. The provider-independent facility contract belongs to `pkg`. `srv` must not own a parallel provider contract/registry; it interprets the service/lifecycle portion of the selected facility provider when the generalized package facility model defines such an aspect.
 
 ## Working design
 
-The package task has now promoted provider-selection semantics that materially narrow the service-model design:
+The package task has now promoted provider-selection semantics and has identified a broader facility-contract gap that materially narrows the service-model design:
 
 - package provider installation and provider selection are separate;
 - effective package dependency selection is explicit consumer/facility binding first, otherwise facility default, otherwise failure;
 - there is no implicit fallback to the only installed provider;
 - a facility default owns the global runtime projection of that facility;
 - selectors may follow a provider package default or pin an exact provider concrete;
-- facility runtime projection conceptually includes commands and environment, but its exact representation is still open and not implemented.
+- current `facility-cmd` and `facility-env` mechanics are concrete facility projections, but they are no longer assumed to be the complete general facility abstraction;
+- the generalized provider-independent facility contract is owned by `pkg`, with specialized subsystems interpreting only the aspects they own.
 
-For the service model, the leading candidate is therefore to avoid any service-specific provider resolver. A global `srv start <service>` has no consumer-package binding context, so if `<service>` is a facility identity its provider can naturally follow the facility default/global projection. The remaining question is how the selected facility projection declares that it is service-operable.
+For the service model, this weakens the earlier idea that the presence of a conventional `<facility>-start` command should itself define service-operability. That convention may remain an implementation mapping or compatibility mechanism, but it should not be the semantic service declaration if the generalized facility contract can express lifecycle explicitly.
 
-The smallest candidate remains: a facility-specific provider projection that exposes the conventional `<facility>-start` command makes that facility operable as a service. This would let `srv` reuse both package provider selection and the existing launch-target convention without a second registry. This candidate must be evaluated only after the package task fixes the facility-specific projection contract; if the command convention cannot express the required association unambiguously, introduce only the smallest additional service declaration.
+The leading direction is therefore:
+
+```text
+pkg selects provider for facility
+→ provider facility realization exposes a typed lifecycle/service aspect
+→ srv interprets that aspect and owns process lifecycle mechanics
+```
+
+A service-style facility may also need runtime endpoint information, but static provider capability/default metadata must remain distinct from the actual endpoint/state of a running instance. Exact lifecycle/endpoint aspect names and schema remain open until the package facility-contract model is settled.
 
 ## Completed
 
@@ -141,21 +151,22 @@ No product, test or catalog implementation change is part of this checkpoint.
 
 ## Next action
 
-First settle the shared package primitive: the exact facility-specific runtime projection that associates selected-provider commands/environment with a facility.
+First let the package provider/facility task settle the generalized provider-independent facility-contract model owned by `pkg`.
 
-Then evaluate the service layer against that concrete primitive:
+Then define the smallest service/lifecycle aspect on top of that model:
 
-1. use the facility default/global projection as the provider-selection source for global `srv` operations rather than adding a `srv` resolver;
-2. test whether presence of the projected conventional `<facility>-start` command is sufficient to identify a service;
-3. introduce explicit service metadata only if that convention cannot represent the required semantics unambiguously.
+1. keep provider selection in `pkg` and avoid a separate `srv` resolver;
+2. define how a selected provider declares the lifecycle operations/data that `srv` needs;
+3. preserve the current foreground-process lifecycle mechanics and decide whether `<service>-start` remains only an implementation mapping/compatibility convention;
+4. keep runtime endpoint state distinct from static provider capability/default metadata.
 
 After this semantic model is settled, promote the resulting service contract into the applicable canonical specification(s) before implementation.
 
 ## Blockers / open questions
 
-- How is a service distinguished from a non-service facility without duplicating package metadata?
-- Does global `srv <operation> <service>` use the facility default/global projection directly, as the current package provider-selection model suggests?
-- Once facility-specific projection is defined, is the projected `<facility>-start` command sufficient to distinguish a service from a non-service facility and link it unambiguously to the selected provider?
+- What is the minimal typed lifecycle/service aspect in the generalized package facility contract?
+- Does global `srv <operation> <service>` use the facility default/global provider selection directly, as the current package provider-selection model suggests?
+- What role, if any, should the current `<facility>-start` convention retain after lifecycle is represented explicitly in the facility contract?
 - Should the final service identifier be exactly the facility identifier and therefore adopt the canonical facility-name grammar, or does the current broader `srv` name grammar remain justified?
 - What is the exact normalized host action set and the semantic mapping of actions such as `activate/deactivate` across systemd and launchd?
 - Does host `user` scope also need explicit install/uninstall operations, or are install/uninstall initially system-only?
