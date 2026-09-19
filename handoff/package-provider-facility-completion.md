@@ -1,7 +1,7 @@
 # Package provider/facility completion
 
 Status: Active
-Updated: 2026-09-19 10:40 +02:00
+Updated: 2026-09-19 11:35 +02:00
 
 ## Goal
 
@@ -13,15 +13,15 @@ Services remain out of scope and stay owned by handoff/service-model.md.
 
 ## Current repository revisions
 
-Fresh activation preflight used:
+Latest reconciled pre-write baseline:
 
-rumiai-dev      322902bfaa570760b31e959c54fcc886d97ca8f7
-rumiai-os       1f4a4a8b62ed41042e4178b11f74f54ad291aadb
-rumiai-tests    9960eafb4d803211620f2975ffaef703c3fb8625
+rumiai-dev      56d4d4af7ca0e28a49fcf9b14e1c58f1f4c90d30
+rumiai-os       2955d720e47d2400fcd4334237fc5e159d1467cc
+rumiai-tests    d63352a58f54f54380215fad734a6444c441bc32
 pkg-catalog     bd06488d3c67160e820c04d13067f852c8861c32
 rumiai-dev-PoCs cb8c5d636ce65e6cb00626ed08947fe25a25988e
 
-The rumiai-dev revision above is the baseline read before this activation commit. Fresh HEAD retrieval remains mandatory before every later write.
+The rumiai-dev revision above is the baseline read before the Phase 1 canonical realignment commit. Concurrent menu work in rumiai-dev/rumiai-os/rumiai-tests was inspected and does not overlap this package task. Fresh HEAD retrieval remains mandatory before every later write.
 
 ## Applicable canonical sources
 
@@ -66,7 +66,7 @@ These come from explicit user direction and must survive deletion of the chat.
 10. The user explicitly stated that the provider selected as a facility default should expose its commands through the appropriate bin roots and its environment in the bootstrap.
 11. Services stay out of this task.
 
-Important authority mismatch: current PACKAGE-MODEL.md now says facility-default global publication exposes commands but does not inject facility-env into ambient m/bootstrap state. That conflicts with item 10 above. The user instruction has higher authority. The next task must realign the canonical specification and implementation unless the user explicitly changes that requirement.
+Phase 1 canonical realignment resolves the former authority mismatch: PACKAGE-MODEL.md and BOOTSTRAP-ENVIRONMENT.md now require facility-default provider environment to be derived by every new m bootstrap. Runtime implementation and permanent tests remain to be realigned to that promoted contract.
 
 ## Canonical model already settled
 
@@ -88,7 +88,13 @@ Do not reopen these points unless a current contradiction is found. PACKAGE-MODE
 - generic versus pinned global command links;
 - collision protection and package-default-triggered reconciliation.
 
-The commands-only global environment rule is the known mismatch described above.
+The former commands-only global environment rule has been superseded by the Phase 1 canonical bootstrap contract:
+
+- every new m bootstrap derives environment from currently resolvable facility defaults;
+- active osarch comes from a valid ext-osarch selector without implicit platform selection; otherwise only generic provider classes apply;
+- facilities are applied in LC_ALL=C name order and later facilities win duplicate ordinary variables;
+- PATH remains owned by facility command publication and is invalid in facility-env;
+- provider/facility default changes are observed by later bootstraps, not retroactively by already-running processes.
 
 ## Current implementation state
 
@@ -224,20 +230,18 @@ The task must make rate-limit behavior predictable without weakening package int
 
 ### A. Global facility environment
 
-User direction requires the facility-default provider environment in bootstrap/global environment. Current spec and implementation are commands-only globally.
+Canonical semantics are now settled in PACKAGE-MODEL.md and BOOTSTRAP-ENVIRONMENT.md:
 
-This is the highest-priority semantic mismatch.
+- compute from authoritative facility-default selector intent on every new m bootstrap;
+- keep PATH owned by facility-cmd/global command publication and reject PATH in facility-env;
+- process facility defaults in LC_ALL=C facility-name order, with the later facility assignment winning duplicate ordinary variables;
+- re-resolve on each new bootstrap so facility-default/package-default changes are observed without generated environment state;
+- do not mutate already-running processes;
+- use the valid active ext-osarch class when available, otherwise only generic provider classes;
+- unresolved valid selectors contribute no environment;
+- invalid/corrupt global environment projection is reported without making m unavailable and without partial provider-environment application.
 
-Before implementation, define deterministic rules for:
-
-- when global facility environment is computed;
-- how PATH contributions are ordered;
-- collision/precedence when multiple facility defaults export the same variable;
-- what changes when a facility default or provider package default changes;
-- behavior of already-running versus newly bootstrapped processes;
-- generic versus osarch provider classes.
-
-If repository analysis leaves more than one materially different semantic model, ask the user only that specific unresolved choice.
+Implementation and permanent tests are still pending.
 
 ### B. Global command projection proof
 
@@ -460,7 +464,7 @@ Green revision-specific provider validation exists for the pre-global-command im
 
 The principal remaining blockers are:
 
-1. global facility environment user-direction/spec mismatch;
+1. global facility environment runtime/test realignment to the newly promoted canonical contract;
 2. missing permanent proof for current global command projection;
 3. stale NetBeans provider integration;
 4. unresolved dependency/install policy choices;
@@ -491,7 +495,7 @@ User decisions still required:
 
 Non-user work still required:
 
-- canonical bootstrap environment realignment;
+- bootstrap provider-environment runtime implementation and permanent tests;
 - global projection regression tests;
 - NetBeans realignment;
 - GraalVM inventory;

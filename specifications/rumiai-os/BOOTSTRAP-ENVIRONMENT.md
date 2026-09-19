@@ -1,7 +1,7 @@
 # RumiAI OS — Bootstrap environment
 
 Status: **Current / normative**  
-Updated: 2026-09-17
+Updated: 2026-09-19
 
 This specification defines the environment established by the technical root runtime `$m_ROOT/m`.
 
@@ -85,7 +85,7 @@ After establishing the technical roots/PATH, `m` sources:
 $m_LIB_DIR/sys/sh/core.lib.sh
 ```
 
-The bootstrap does not source arbitrary feature libraries pre-emptively.
+The bootstrap does not source arbitrary feature libraries pre-emptively. The package provider library is the explicit exception required by the facility-default global-environment contract described below.
 
 ## State roots
 
@@ -100,6 +100,34 @@ m_STATE_USER_DIR=$m_STATE_DIR/user/current
 It does not resolve/canonicalize the targets of `system/current` or `user/current`, does not derive host-id or UID, and does not require those selectors to exist merely to initialize `m`.
 
 See `STATE-MODEL.md`.
+
+## Facility-default global environment
+
+After the core library and semantic state roots exist, `m` loads the package provider library:
+
+```text
+$m_LIB_DIR/sys/sh/pkg/pkg-provider.lib.sh
+```
+
+and applies the environment projections of currently resolvable system facility defaults before command dispatch or technical-shell entry.
+
+This bootstrap integration is derived directly from authoritative facility-default configuration and installed provider metadata. It does not create or consume a generated environment snapshot as a second authority.
+
+The active platform class is taken from a valid technical external selector:
+
+```text
+bin/ext-osarch -> ext-<osarch>
+```
+
+when present. Bootstrap does not run platform selection, validate the complete sys/ext/ai selector set or require an osarch selector merely to start. Without a valid active `ext-osarch` selector, only a resolvable generic provider class can contribute environment.
+
+Facility defaults are processed in ascending `LC_ALL=C` facility-name order. Their ordinary environment assignments override inherited values in that new bootstrap; if multiple defaults export the same variable, the later facility assignment wins. `PATH` is not valid `facility-env` metadata: executable exposure remains owned by the already-established `sys-osarch:sys:ext-osarch:ext` PATH layers and facility command publication.
+
+A configured selector that is currently unresolved or inapplicable to the active platform contributes no environment. Invalid/corrupt default or projection data makes the global environment application fail as one unit; `m` reports that projection failure but preserves bootstrap availability rather than partially applying provider environment.
+
+Facility-default and provider-package-default changes affect later `m` bootstraps. They do not mutate an already-running parent process or managed shell. Commands launched later through `#!/usr/bin/env m` receive a fresh bootstrap and therefore re-resolve current selector intent.
+
+See `PACKAGE-MODEL.md`.
 
 ## Command execution
 
@@ -139,4 +167,9 @@ BOOT-06  core.lib.sh is the bootstrap core library
 BOOT-07  state roots are semantic pathnames, not eagerly resolved selectors
 BOOT-08  bootstrap does not derive user identity from host-id/UID
 BOOT-09  m_COMMAND_BIN identifies the integrated command being sourced
+BOOT-10  every new m bootstrap derives facility-default environment before dispatch without persisting a second environment authority
+BOOT-11  facility-default environment uses a valid ext-osarch class when available and never triggers implicit platform selection
+BOOT-12  facility defaults are applied in LC_ALL=C facility-name order and later assignments win on duplicate ordinary variables
+BOOT-13  facility-env cannot replace PATH; executable exposure remains owned by the technical command-path layers
+BOOT-14  a failed global provider-environment projection does not make the technical bootstrap unavailable or leave a partially applied provider environment
 ```
