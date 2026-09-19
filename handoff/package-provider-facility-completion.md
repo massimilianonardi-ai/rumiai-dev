@@ -1,7 +1,7 @@
 # Package provider/facility completion
 
 Status: Active
-Updated: 2026-09-19 21:15 +02:00
+Updated: 2026-09-19 21:48 +02:00
 
 ## Goal
 
@@ -13,13 +13,13 @@ Services remain out of scope and stay owned by handoff/service-model.md.
 
 ## Current repository revisions
 
-Latest reconciled checkpoint before this handoff sync:
+Latest reconciled implementation checkpoint before this handoff sync:
 
 ```text
-rumiai-dev      30ce4aa6b86b332c4724a1418831cbfe2b45a2c9
-rumiai-os       50b760bd3cfe08922068ceb7d973d7edee12251c
-rumiai-tests    4faab7053c02fb954cad6b995b31b8d89774a6ff
-pkg-catalog     4c67eb5c7cf27fbc48c222fd8196f0127409be00
+rumiai-dev      076d0d463e859e51ac8773202a94ca29b558f317
+rumiai-os       cf2e2e02ac9da54a993c7f5f118f72fe6dbdbe06
+rumiai-tests    4af4183219ff42f07c9e6f116afc01ee0d3d2113
+pkg-catalog     5372c160441b0346b976db7f7a022196784c9425
 rumiai-dev-PoCs cb8c5d636ce65e6cb00626ed08947fe25a25988e
 ```
 
@@ -59,7 +59,7 @@ The durable semantic rules already promoted to `PACKAGE-MODEL.md` are not duplic
 2. Java consumers remain provider-independent. Maven, Keycloak, NetBeans and later consumers must not contain Temurin/GraalVM-specific provider selection or hardcoded Java-provider environment construction.
 3. Existing provider selector/default/binding semantics remain the baseline while the generalized facility contract is designed.
 4. `facility-cmd` and `facility-env` are current provider-realization mechanisms, not the complete semantic definition of a facility.
-5. The generalized meta-model must be demonstrated against both Java and a service-style facility such as GeoServer before implementation continues into the later phases.
+5. The generic typed-part boundary must remain capable of supporting service lifecycle without moving lifecycle execution into pkg. By current user direction, lifecycle schema/proof is deferred to the separate service workstream and does not block implementation of the inert cmd/env facility/provider core.
 6. Concrete facility definitions and package definitions live in the **same `pkg-catalog` revision**. The catalog namespace is now fixed as:
 
    ```text
@@ -86,7 +86,7 @@ The durable semantic rules already promoted to `PACKAGE-MODEL.md` are not duplic
 
    `pkg-provider.lib.sh` intentionally remains directly under `lib/sys/sh/pkg/`: it is the public `pkg provider` subcommand entrypoint and the shared provider-selection API. Physical grouping must not force dispatcher exceptions or conflate public provider configuration with future internal contract-validation responsibilities.
 8. No additional library subdivision is authorized by aesthetics alone. New facility libraries are introduced only after the meta-model establishes a real responsibility not already owned by an existing library.
-9. Phases 4 through 8 are blocked on Phase 1. Do not implement generalized conformance, Java contract migration, the service bridge, policy changes or additional GraalVM facilities until the facility contract meta-model is accepted and promoted.
+9. The facility-contract meta-model is accepted and promoted. The current authorized implementation scope is the inert facility/provider cmd/env conformance core only; installation hookup, selection/default/binding policy, bootstrap changes, service bridge and additional GraalVM facilities remain outside this work unit.
 
 ## Active implementation scope
 
@@ -208,13 +208,26 @@ Current grouped package libraries contain the provider model:
 - lib/sys/sh/pkg/pkg-provider.lib.sh
 - lib/sys/sh/pkg/facility/pkg-dependency.lib.sh
 - lib/sys/sh/pkg/facility/pkg-facility.lib.sh
+- lib/sys/sh/pkg/facility/pkg-facility-cmd.lib.sh
+- lib/sys/sh/pkg/facility/pkg-facility-env.lib.sh
 - lib/sys/sh/pkg/pkg-integration.lib.sh
 - lib/sys/sh/pkg/pkg-launch.lib.sh
 - lib/sys/sh/pkg/pkg-default.lib.sh
 - lib/sys/sh/pkg/pkg-install.lib.sh
 - bin/sys/pkg
 
-Current mechanics verified at activation:
+Current facility/provider-core mechanics:
+
+- `pkg_facility_contract_validate <contract-dir>` validates one exact contract envelope and dispatches only trusted `cmd`/`env` part handlers;
+- `pkg_facility_provider_validate <catalog-root> <provider-definition-dir> <provider-root>` requires the provider definition to resolve beneath the same snapshot's `pkg/` tree, loads exact contracts beneath that snapshot's `facility/` tree and validates the provider realization;
+- cmd conformance requires an exact command member set and executable targets contained by the useful root;
+- env conformance requires an exact variable set, rejects PATH and accepts only the existing `root | root-path | literal` descriptor grammar;
+- unknown contract parts and unknown `facility-*` provider realization surfaces fail validation;
+- both public conformance functions are inert: they do not mutate provider-selection state, publish commands or export environment;
+- the new cmd/env handler libraries are internal-only and now have their mandatory operational manual topics;
+- the pre-existing missing manual for `pkg-facility.lib.sh` has been corrected.
+
+Existing surrounding mechanics, deliberately unchanged in this work unit:
 
 - pkg provider default and pkg provider bind exist.
 - pkg-provider.lib.sh resolves selectors, effective consumer selection and provider references.
@@ -232,6 +245,9 @@ The global facility command implementation is newer than the last fully green pr
 
 Current catalog facts:
 
+- the first provider-independent contract now exists at `facility/java/25/`;
+- it defines 30 required cmd markers plus the required `JAVA_HOME` env marker;
+- the 30-command set exactly matches every current Temurin/GraalVM java 25 realization across the catalog's supported classes;
 - Temurin package identity is temurin.
 - Temurin declares java 25.
 - GraalVM declares java 25.
@@ -253,6 +269,7 @@ GraalVM currently exposes only java 25 as a facility. Additional real capabiliti
 
 Relevant permanent tests currently include:
 
+- tests/rumiai-os/pkg/facility-contract.test
 - tests/rumiai-os/pkg/provider.test
 - tests/rumiai-os/pkg/dependency.test
 - tests/rumiai-os/pkg-launch/contract.test
@@ -263,7 +280,9 @@ Relevant permanent tests currently include:
 - tests/external/keycloak/install-live.test
 - tests/external/netbeans/install-live.test
 
-Current structural tests cover provider configuration, binding/default precedence, late binding, no install-time concrete binding, runtime rebind and declarative provider projection.
+The new facility-contract test covers valid exact-contract/provider conformance, unknown typed parts/provider surfaces, missing/extra cmd/env members, PATH rejection, exact compatibility lookup, same-snapshot provider-definition containment and inertness with respect to facility default/environment mutation.
+
+Existing structural tests cover provider configuration, binding/default precedence, late binding, no install-time concrete binding, runtime rebind and declarative provider projection.
 
 Known test gaps:
 
@@ -331,30 +350,25 @@ The task must make rate-limit behavior predictable without weakening package int
 
 ## Open work and known mismatches
 
-### 0. Generalized facility-contract model
+### 0. Facility/provider contract core
 
-Phase 2 (catalog ownership/layout) and Phase 3 (package-library responsibility layout) are complete and promoted.
+The Phase-1 typed facility meta-model is accepted, promoted and implemented for the current `cmd` and `env` part types.
 
-Phase 1 is now narrowed to the typed-part implementation/representation question.
+Implemented at this checkpoint:
 
-Already promoted:
+- generic exact contract envelope validation;
+- trusted built-in `cmd`/`env` dispatch;
+- exact provider realization conformance;
+- same-snapshot provider-definition containment;
+- closed-world rejection of unknown parts/surfaces;
+- inert conformance API with no default/binding/environment/command side effects;
+- provider-independent `java 25` contract;
+- permanent focused conformance test;
+- facility library/manual consistency.
 
-- compatibility levels are independent exact contracts; there is no monotonic-lineage rule;
-- provider declarations identify one exact contract level;
-- consumer constraints alone express exact/range acceptance;
-- `pkg` does not infer backward compatibility;
-- every level is complete/self-contained and semantically immutable;
-- the baseline contract contains required interoperable members only;
-- provider conformance uses the same catalog snapshot as the package definition;
-- runtime does not refetch the facility contract.
+One deliberate implementation mismatch remains because of current user scope: `pkg-integration.lib.sh` still contains its earlier cmd/env validation/materialization mechanics and does not invoke the new conformance API. Do not resolve that by silently expanding this work unit. The later hookup must decide explicitly when package processing invokes conformance and then remove duplicated validation without changing the inert facility/provider contract.
 
-Still open:
-
-- concrete typed-part implementation boundary/API;
-- exact physical contract representation and member descriptor formats;
-- lifecycle/endpoint proof through the GeoServer case.
-
-Do not begin Phase 4 until the remaining typed-part representation is sufficiently settled and promoted.
+Formal exact-revision test execution is still missing. The available local environment cannot resolve github.com and no GitHub Actions workflow was automatically triggered for these commits. An isolated exploratory shell harness passed the core valid-provider, outside-snapshot rejection and missing-required-command cases; this is development evidence only, not a formal suite PASS.
 
 ### A. Global facility environment
 
@@ -479,21 +493,20 @@ Do not ask this abstractly. First produce a concrete artifact inventory and mini
 
 Exit: semantic ownership is no longer Java-specific, while unresolved representation remains explicitly non-canonical.
 
-### Phase 1: facility contract meta-model
+### Phase 1: facility contract meta-model — complete
 
-Design, without implementation-first shortcuts:
+Accepted and promoted:
 
-- facility identity + compatibility-to-contract relationship;
-- required contract surface;
-- optional/extra capability policy;
-- typed-part registration/validation semantics;
-- provider conformance rules;
-- consumer-visible guarantees;
-- distinction between static contract data, provider realization, selection conf and runtime state.
+- exact independent compatibility contracts;
+- complete/self-contained immutable contract levels;
+- required-only baseline surface;
+- trusted typed-part envelope `facility/<facility>/<compatibility>/<part>/...`;
+- no catalog-supplied executable handlers;
+- no generic runtime apply operation;
+- inert facility/provider definitions and conformance;
+- current trusted `cmd` and `env` parts.
 
-Model Java and GeoServer side by side.
-
-Exit: one provider-independent meta-model describes both cases without special-case provider logic.
+Service lifecycle remains a future typed part owned by the separate service workstream; its schema is not required to keep the current cmd/env facility/provider core correct.
 
 ### Phase 2: catalog ownership and representation — complete
 
@@ -522,16 +535,24 @@ lib/sys/sh/pkg/repository/
 
 Public subcommand entrypoints remain directly under `lib/sys/sh/pkg/`; specifically, `pkg-provider.lib.sh` remains there. No new facility-contract library has been invented before Phase 1 defines its actual responsibility.
 
-### Phase 4: generalized runtime/catalog implementation
+### Phase 4: facility/provider conformance core — implemented, composition deferred
 
-- implement facility contract loading/validation;
-- validate provider declarations/realizations against the selected facility contract;
-- adapt existing `facility-cmd` and `facility-env` to the generalized contract machinery rather than replacing them gratuitously;
-- factor reusable command projection internally where the ordinary package-command and facility-command paths genuinely share mechanics;
-- preserve existing provider selector/default/binding behavior;
-- add permanent property-focused tests.
+Implemented in the current checkpoint:
 
-Exit: current Java behavior is expressed through the generalized machinery without regression.
+- facility contract loading/validation for trusted `cmd` and `env`;
+- exact provider realization validation;
+- same-snapshot provider-definition boundary;
+- `java 25` contract;
+- permanent focused conformance test.
+
+Deliberately deferred by current user direction:
+
+- wiring conformance into package installation/integration;
+- refactoring the older integration cmd/env validators onto the new handlers;
+- any default/binding creation or assistance;
+- bootstrap/launcher/global projection changes.
+
+Exit for the current work unit is the inert conformance core itself, not automatic application.
 
 ### Phase 5: Java contract and consumer completion
 
@@ -603,33 +624,43 @@ Do not close this task until all applicable conditions hold:
 
 ## Current state
 
-Phases 2 and 3 remain complete.
+The inert facility/provider core requested by the user is implemented.
 
-Phase 1 has materially advanced. The compatibility and contract-evolution semantics, required-only surface and conformance lifecycle are now canonical in `PACKAGE-MODEL.md`.
+Current exact checkpoint:
 
-The former monotonic-lineage proposal is superseded. A facility level may change radically from another level of the same facility. Backward compatibility is represented only by the acceptance constraints declared by consumers; it is not a property inferred or enforced by `pkg`.
+```text
+rumiai-os@cf2e2e02ac9da54a993c7f5f118f72fe6dbdbe06
+rumiai-tests@4af4183219ff42f07c9e6f116afc01ee0d3d2113
+pkg-catalog@5372c160441b0346b976db7f7a022196784c9425
+```
 
-The current product already matches an important part of this direction mechanically: installed providers declare one exact facility compatibility and dependency declarations support exact and ordered constraints that can be combined into bounded ranges. That existing behavior is evidence, not authority, and later implementation must add exact-level contract validation rather than introduce monotonicity checks.
+The product adds trusted cmd/env facility handlers and public contract/provider conformance functions. The catalog now has the real `java 25` contract. The permanent test protects the accepted conformance and inertness properties.
 
-The typed-part architecture gate is resolved and promoted. Implementation is now active only for facility/provider contract and conformance primitives; selection/default/binding/bootstrap composition remains deliberately untouched.
+No install path, facility default/binding behavior, bootstrap environment application, launcher behavior or global command publication was modified by these product commits.
+
+Validation status is intentionally limited: structural/diff consistency checks and an isolated shell harness succeeded, but no full/current RumiAI test PASS is claimed because this environment cannot obtain a complete checkout and no CI workflow run exists for these commits.
 
 ## Next action
 
-Implement and validate the accepted facility/provider core: trusted `cmd`/`env` handlers, generic exact-contract/provider conformance, the real `java 25` contract and permanent tests.
+The current facility/provider implementation work unit is complete modulo formal exact-revision execution evidence.
 
-Do not wire the new conformance API into installation, defaults, bindings, bootstrap or launcher in this work unit.
+Do not continue automatically into installation/default/binding/bootstrap composition. The next semantic step is explicitly deferred until the user chooses to resume it. A future composition work unit should start from the inert conformance API, decide the requested operation that creates/selects a binding or default, and only then connect those selections to their existing runtime owners.
 
 ## Blockers / open questions
 
-There is no remaining Phase-1 semantic blocker for the facility/provider core.
+No semantic blocker remains inside the inert cmd/env facility/provider core.
+
+Current validation limitation:
+
+- no exact-revision permanent-suite run has executed for this checkpoint because the local environment cannot resolve github.com and no GitHub Actions workflow was triggered automatically.
 
 Explicitly deferred by current user direction:
 
-- when/how package installation invokes facility/provider conformance;
-- how facility defaults and consumer bindings are created or assisted from catalog/provider definitions;
+- when/how package processing invokes facility/provider conformance and removes duplicated legacy integration validators;
+- how catalog/provider definitions are used to create facility defaults or consumer bindings **on request**;
 - any changes to bootstrap/global environment or command publication;
 - lifecycle and endpoint typed-part schemas;
 - missing-provider/install-time configuration policy;
 - GraalVM additional facility boundaries after artifact inventory.
 
-The existing installation/default/binding/bootstrap behavior is not redefined by this work unit. Any mismatch exposed while implementing the isolated facility/provider core must be recorded rather than silently resolved by expanding scope.
+The existing installation/default/binding/bootstrap behavior remains unchanged.
