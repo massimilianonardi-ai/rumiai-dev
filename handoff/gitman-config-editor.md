@@ -1,6 +1,6 @@
 # gitman configuration editor
 
-Status: Active
+Status: Complete
 Updated: 2026-09-19
 
 ## Goal
@@ -10,50 +10,48 @@ Add a portable repository-configuration editing workflow to `gitman` without int
 ## Current repository revisions
 
 ```text
-rumiai-dev   2a1c64ef2b5c7f5b1c0e84940d919a43a4b9c2ba
-rumiai-os    7f6ced69baef8484d96e7db1572686d67c6bdaaf
-rumiai-tests b461be38979abd50f7f5f587eb316022fd17c924
+rumiai-dev   bfa60820161af2bf243be034b823fc2cde4e9544
+rumiai-os    9fcbc905e070799caf2ac72552d340621d7e03d8
+rumiai-tests 50495b29e0c37d75830f39b1f265cbd42917b636
+```
+
+Formal validation suite revision:
+
+```text
+rumiai-tests 19fad2bb8adebf5703378416cbe530415266951f
 ```
 
 ## Applicable canonical sources
 
-- `README.md`
-- `RULES.md`
-- `CONSISTENCY-GATE.md`
-- `specifications/README.md`
 - `specifications/rumiai-os/GITMAN.md`
-- `specifications/rumiai-os/MENU.md`
-- `specifications/rumiai-os/COMMAND-ENTRYPOINTS.md`
-- `specifications/rumiai-os/DOCUMENTATION-MODEL.md`
 - `TESTING.md`
 - `RUNNER.md`
 - `TEST-PATTERNS.md`
 
-## Fixed task-local choices
-
-- Repository-menu action key: `e` edits the repositories configuration.
-- Editor selection follows the conventional portable order: non-empty `VISUAL`, then non-empty `EDITOR`, then `vi`.
-- `nano` is not a dependency or implicit backend; users who prefer it select it through `VISUAL=nano` or `EDITOR=nano`.
-- The editor runs only after the selecting `menu` invocation has returned and restored normal terminal state.
-- A successful editor exit is followed by a single-select confirmation asking whether to discard the current in-memory repository set and reload the edited configuration.
-- Reload confirmation defaults to No; No/cancel preserves the current in-memory set.
-- Yes clears the current set and loads only entries from the configuration file, with normal decoding, Git working-tree validation, normalization, deduplication and aggregated bottom-footer errors. The startup `.` fallback is not applied to this explicit reload.
-- If explicit reload yields zero valid repositories, `gitman` naturally returns to filesystem acquisition.
-- A non-zero editor exit leaves the repository set unchanged and reports one concise bottom-footer error.
-
 ## Completed
 
-- Mandatory preflight completed.
-- Current gitman specification, implementation, manual and permanent tests inspected.
-- Current gitman already has repository save/config encoding and pager/terminal output-mode support; those behaviors must be preserved.
+- Repository menu exposes `e` for configuration editing.
+- Editor selection is `VISUAL` → `EDITOR` → `vi`; `nano` remains opt-in through the standard environment variables and is not a dependency.
+- Editor variables are treated as executable identities/pathnames and are not shell-evaluated.
+- Editor launches only after `menu` restores normal terminal state.
+- Successful editor exit asks whether to reset/reload; No is default and No/cancel keeps the current in-memory repository set.
+- Yes clears and reloads only configuration entries using existing decoding, Git validation, normalization, deduplication and aggregated error semantics.
+- Explicit post-edit reload does not apply startup `.` fallback; zero valid repositories returns to filesystem acquisition.
+- Non-zero editor exit preserves the current repository set and reports a bottom-footer error.
+- Canonical specification and owner-local manual were updated.
+- Permanent contract and interactive tests cover editor selection precedence, terminal restoration, No/Yes behavior, empty-config reload and non-zero editor exit.
+- Development run on exact `rumiai-os 9fcbc905e070799caf2ac72552d340621d7e03d8`: PASS 2, FAIL 0, SKIP 0, ERROR 0.
+- Formal validation on Linux/x86_64 using exact disposable `rumiai-os 9fcbc905e070799caf2ac72552d340621d7e03d8` and suite `19fad2bb8adebf5703378416cbe530415266951f`: PASS 2, FAIL 0, SKIP 0, ERROR 0; validation environment CLEAN; scope VALIDATED.
+- Temporary development/validation workflows removed.
+- Final consistency gate completed: diff reread, canonical specification/manual rechecked, validation scope pinned to the validated product revision, and no superseded save-only/menu-action wording remains in current searched surfaces.
 
 ## Current state
 
-No specification, product or permanent-test modification for this editor workflow has been made yet.
+Durable contract is promoted to `specifications/rumiai-os/GITMAN.md`; product/manual/tests and validation scope are aligned.
 
 ## Next action
 
-Promote the accepted editing contract into `GITMAN.md`, implement command/manual changes, add permanent tests, then run development and formal validation plus final consistency gate.
+None.
 
 ## Blockers / open questions
 
