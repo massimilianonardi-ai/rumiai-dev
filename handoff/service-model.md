@@ -1,7 +1,7 @@
 # Service model
 
 Status: Active
-Updated: 2026-09-19 14:50 +02:00
+Updated: 2026-09-19 16:04 +02:00
 
 ## Goal
 
@@ -14,10 +14,10 @@ The task must converge on the semantic model and public contract before implemen
 Revisions relied upon for this checkpoint:
 
 ```text
-rumiai-dev@4818e62cea467f0f12037a58e0bcb8ba86fd0188  generalized facility-contract checkpoint
-rumiai-os@34671a5a1e9917fa39e3bbbd4b155590202c9b22
-rumiai-tests@88b4e48f170da883889c2f418a34e8ad24066e9d
-pkg-catalog@bd06488d3c67160e820c04d13067f852c8861c32
+rumiai-dev@c4982e8df04fb0af22df8164e710ac1773a5b186  Phase-1 facility meta-model proposal checkpoint
+rumiai-os@a8e45d327b218f19cee82c3813bfc75fb5ea64b6
+rumiai-tests@2629d606913828a45f96acaef4bbc14dd443f1f7
+pkg-catalog@4c67eb5c7cf27fbc48c222fd8196f0127409be00
 ```
 
 The `rumiai-dev` SHA above is the canonical-source baseline re-read before the cross-task reconciliation; handoff synchronization commits advance it forward without replacing fresh-HEAD retrieval on resume.
@@ -129,6 +129,15 @@ The service proof case must preserve these distinctions:
 Changing the facility default after a service starts must not mutate or retarget the running instance. A later restart may resolve the new default.
 
 One design question remains especially important: whether a lifecycle part defines semantic operations such as `start`/`stop` while allowing an operation to be satisfied generically by `srv` rather than requiring a provider command. That would naturally cover a provider with a concrete start target but no provider-specific stop command, with `srv` using its normal SIGTERM contract. Exact representation is still open.
+
+The package task has now fixed two supporting decisions that the service model may rely on:
+
+```text
+pkg-catalog/pkg/<package>/...
+pkg-catalog/facility/<facility>/...
+```
+
+and the runtime package libraries now have explicit `facility/` and `repository/` responsibility groups. The active Phase-1 proposal further suggests that a typed lifecycle part should define contract schema, provider-realization schema, install-time conformance validation and application ownership as one coherent type boundary. This remains working design until the package meta-model is accepted; service implementation must continue to wait.
 
 ## Completed
 
