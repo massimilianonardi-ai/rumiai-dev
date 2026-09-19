@@ -21,7 +21,7 @@ explicit command-line items
 directory-backed filesystem browsing
 ```
 
-The two modes share navigation, action-key handling, multi-selection, rendering and result semantics through `menu.lib.sh`.
+The two modes share navigation, action-key handling, optional multi-selection, rendering and result semantics through `menu.lib.sh`.
 
 ## 2. Entrypoint and runtime
 
@@ -49,10 +49,11 @@ The current invocation forms are:
 
 ```text
 menu [-H <header>] [-F <footer>] [-B <bottom-footer>]
-     [-K <action-key> ...] [-S <toggle-key>] [--] <item> ...
+     [-K <action-key> ...] [-M] [-S <toggle-key>] [--] <item> ...
 
 menu [-H <header>] [-F <footer>] [-B <bottom-footer>]
-     -K <action-key> [-K <action-key> ...] [-S <toggle-key>]
+     -K <action-key> [-K <action-key> ...]
+     [-M] [-S <toggle-key>] [-P <parent-key>]
      [-n] [-m] [-c] -d <directory>
 ```
 
@@ -62,7 +63,13 @@ The first form is list mode. The second is filesystem mode.
 
 `-K` is repeatable and adds an action key. In list mode Enter remains the built-in confirmation action and `-K` adds alternate actions. In filesystem mode at least one `-K` is required because Enter is reserved for browsing.
 
-`-S` changes the multi-selection toggle key. The default is Space.
+Single selection is the default. In single-selection mode every successful action returns the current item only and no multi-selection marks are rendered.
+
+`-M` explicitly enables multi-selection with Space as the default toggle key.
+
+`-S <toggle-key>` explicitly enables multi-selection and selects its toggle key. Using `-M` together with `-S` is valid; `-S` determines the toggle key.
+
+In filesystem mode, Backspace is the default parent-navigation key. `-P <parent-key>` replaces it with another configurable key. `-P` is invalid outside filesystem mode.
 
 The first delivery does not add `-h`, `--help` or another command-local help surface; operational reference is provided by `manual` under `DOCUMENTATION-MODEL.md`.
 
@@ -102,19 +109,22 @@ Filesystem options are:
 -n  hide hidden entries
 -m  mix directories and non-directories into one lexical ordering
 -c  confine browsing to the physical subtree rooted at the starting directory
+-P  replace the default Backspace parent-navigation key
 ```
 
-Confinement applies to navigation, including directory symlinks: Enter must not move the browser to a physically resolved directory outside the starting subtree. At the confinement root, the parent entry is absent.
+Confinement applies to every directory transition, including directory symlinks and parent navigation. Enter must not move the browser to a physically resolved directory outside the starting subtree. At the confinement root, the parent entry is absent and the parent-navigation key is ignored. At filesystem root `/`, parent navigation is likewise ignored.
 
 Displayed filesystem labels are single-line safe representations of entry names. Returned values preserve the selected absolute path rather than the display sanitization.
 
-Enter on a directory resolves and enters that directory. Enter on a non-directory does not finish the menu. A configured action key returns the current/marked path values.
+Enter on a directory resolves and enters that directory. Enter on a non-directory does not finish the menu. A configured action key returns the current value in single-selection mode or the marked values in multi-selection mode.
 
-Changing directory is a provider reset and therefore clears the multi-selection marks of the previous directory view.
+The configured parent-navigation key behaves semantically as though the current directory's `..` entry had been selected and entered. The visible `..` entry remains available whenever parent navigation is allowed.
+
+Changing directory is a provider reset. It resets the cursor to index 0 and clears any multi-selection marks belonging to the previous directory view.
 
 ## 6. Navigation and keys
 
-The engine owns these keys:
+The reusable engine owns these keys:
 
 ```text
 Escape
@@ -126,17 +136,27 @@ Enter
 
 Escape cancels. Navigation keys move the current row. Enter is delivered to the provider as an event so the provider can implement confirmation or browsing semantics.
 
-The multi-selection toggle key is also reserved. Its default is Space. `-S` may replace it with another configurable key, after which the new key is reserved and Space becomes available as an action key if explicitly configured.
+Multi-selection has no reserved toggle key while it is disabled. Once multi-selection is enabled, its configured toggle key is reserved. Space is the default toggle key; `-S` may replace it. When multi-selection is disabled, Space is available as an action key if explicitly configured.
 
-Action/toggle keys may use one text key or supported named terminal keys. The command recognizes `space` as the symbolic name for Space and accepts `arrow_left` / `arrow_right` as input aliases for the canonical `left` / `right` key names.
+Filesystem mode additionally reserves its parent-navigation key. Backspace is the default; `-P` may replace it. The parent-navigation key is a filesystem-provider concern rather than a globally engine-owned navigation key, so Backspace remains available to non-filesystem callers unless they configure another behavior for it.
 
-A key cannot simultaneously be a navigation key, multi-selection toggle and action key. Duplicate action keys are invalid.
+Action/toggle/parent keys may use one text key or supported named terminal keys. The command recognizes `space` as the symbolic name for Space and accepts `arrow_left` / `arrow_right` as input aliases for the canonical `left` / `right` key names.
 
-## 7. Multi-selection semantics
+A key cannot simultaneously be an engine navigation key, action key, enabled multi-selection toggle or filesystem parent-navigation key. Duplicate action keys are invalid.
 
-Space, or the key selected by `-S`, toggles a mark on the current item without finishing the menu.
+## 7. Selection semantics
 
-When an action finishes the menu:
+### 7.1 Single selection
+
+Single selection is the default engine/command behavior.
+
+When an action finishes the menu in single-selection mode, the current item is returned. No mark state is used for the result and the renderer does not display multi-selection boxes.
+
+### 7.2 Multi-selection
+
+When multi-selection is explicitly enabled, Space or the key selected by `-S` toggles a mark on the current item without finishing the menu.
+
+When an action finishes a multi-selection menu:
 
 ```text
 no marked items
@@ -214,14 +234,22 @@ The library exposes these public functions:
 menu_reset
 menu_key_clear
 menu_key_add <key>
+menu_multiselect_enable
+menu_multiselect_disable
 menu_toggle_key_set <key>
 menu_run_provider <provider-function>
 menu_array_provider
 ```
 
-`menu_reset` restores default configuration, clears configured action keys and resets public result state.
+`menu_reset` restores default configuration, including disabled multi-selection with Space as the configured-but-inactive toggle key, clears configured action keys and resets public result state.
 
-`menu_key_add` adds one validated action key. `menu_key_clear` clears the action-key set. `menu_toggle_key_set` validates and changes the reserved multi-selection key.
+`menu_key_add` adds one validated action key. `menu_key_clear` clears the action-key set.
+
+`menu_multiselect_enable` enables multi-selection using the currently configured toggle key. Enabling fails when that key is already configured as an action.
+
+`menu_multiselect_disable` disables multi-selection and clears any current mark state. The configured toggle key ceases to be reserved while multi-selection is disabled.
+
+`menu_toggle_key_set` validates and changes the configured multi-selection toggle key without by itself changing the enabled/disabled state. If multi-selection is enabled, the new toggle key must not collide with an action key.
 
 `menu_run_provider` executes one menu session against the provider. On success it sets:
 
@@ -231,7 +259,7 @@ menu_result_value
 menu_result_values
 ```
 
-`menu_result_values` is an `array.lib.sh` array containing every returned value in provider order. `menu_result_value` is the first element as a single-result convenience. The library does not expose the command's serialized stdout format as its public result representation.
+`menu_result_values` is an `array.lib.sh` array containing every returned value in provider order. In single-selection mode it contains exactly one value. `menu_result_value` is the first element as a single-result convenience. The library does not expose the command's serialized stdout format as its public result representation.
 
 `menu_array_provider` adapts two parallel `array.lib.sh` arrays named by:
 
@@ -288,7 +316,7 @@ Provider failures are menu failures; providers do not print successful command r
 ```text
 provider dispatch
 cursor/navigation policy
-multi-selection state
+optional multi-selection state
 configurable action keys
 layout/rendering of menu text
 terminal-session lifecycle coordination
@@ -297,22 +325,25 @@ structured result state
 
 `term.lib.sh` owns terminal/TTY/terminfo mechanics. `menu.lib.sh` must not reimplement `stty`, `tput`, raw-byte decoding or terminal capability discovery.
 
-Filesystem enumeration, path confinement and directory-navigation policy belong to the `menu` command's filesystem provider rather than to the generic menu engine.
+Filesystem enumeration, path confinement, parent-navigation policy and directory-navigation policy belong to the `menu` command's filesystem provider rather than to the generic menu engine.
 
 ## 13. Invariants
 
 ```text
 MENU-01  menu is a bootstrap-integrated technical m command at bin/sys/menu
 MENU-02  menu supports explicit list input and directory-backed browsing
-MENU-03  Space is the default multi-selection toggle and the configured toggle key is reserved
-MENU-04  marked values are returned in provider order; with no marks the current value is returned
-MENU-05  command stdout is a quote-serialized argument vector: action key followed by values
-MENU-06  filesystem Enter navigates directories and does not finish on non-directories
-MENU-07  filesystem confinement prevents physical navigation outside the starting subtree
-MENU-08  changing filesystem directory resets marks for the previous provider view
-MENU-09  menu.lib.sh exposes structured key + array result state rather than command serialization
-MENU-10  provider reload preserves/prunes valid index marks; provider reset clears marks and cursor state
-MENU-11  menu.lib.sh delegates terminal mechanics to term.lib.sh
-MENU-12  internal menu.lib.sh functions follow the leading-underscore visibility contract
-MENU-13  menu and menu.lib.sh each have their required sys operational manual topic
+MENU-03  single selection is the default and multi-selection requires explicit enablement
+MENU-04  enabled multi-selection uses Space by default; its configured toggle key is reserved only while enabled
+MENU-05  single-selection actions return the current value; multi-selection returns marked values in provider order and falls back to the current value when nothing is marked
+MENU-06  command stdout is a quote-serialized argument vector: action key followed by values
+MENU-07  filesystem Enter navigates directories and does not finish on non-directories
+MENU-08  filesystem Backspace navigates to the parent by default; -P replaces that reserved parent key
+MENU-09  filesystem parent navigation obeys the same physical/confinement rules as entering ..
+MENU-10  filesystem confinement prevents physical navigation outside the starting subtree
+MENU-11  changing filesystem directory resets marks for the previous provider view
+MENU-12  menu.lib.sh exposes structured key + array result state rather than command serialization
+MENU-13  provider reload preserves/prunes valid index marks; provider reset clears marks and cursor state
+MENU-14  menu.lib.sh delegates terminal mechanics to term.lib.sh
+MENU-15  internal menu.lib.sh functions follow the leading-underscore visibility contract
+MENU-16  menu and menu.lib.sh each have their required sys operational manual topic
 ```
