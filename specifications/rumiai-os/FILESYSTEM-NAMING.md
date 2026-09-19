@@ -75,14 +75,21 @@ Current grouped shell-library layouts include:
 
 ```text
 lib/sys/sh/pkg/pkg-<name>.lib.sh
+lib/sys/sh/pkg/facility/pkg-<name>.lib.sh
+lib/sys/sh/pkg/repository/pkg-repository-<name>.lib.sh
 lib/sys/sh/mk/mk-<name>.lib.sh
 ```
+
+The second-level `pkg/facility/` and `pkg/repository/` directories are physical responsibility groups inside the package subsystem. Public `pkg` subcommand entrypoint libraries remain directly under `lib/sys/sh/pkg/` so the generic dispatcher contract does not depend on deeper physical grouping. A library's leaf identity is unchanged by either grouping level.
 
 Examples:
 
 ```text
 lib/sys/sh/core.lib.sh
 lib/sys/sh/pkg/pkg-launch.lib.sh
+lib/sys/sh/pkg/pkg-provider.lib.sh
+lib/sys/sh/pkg/facility/pkg-dependency.lib.sh
+lib/sys/sh/pkg/repository/pkg-repository-github.lib.sh
 lib/sys/sh/mk/mk-materialize.lib.sh
 ```
 
