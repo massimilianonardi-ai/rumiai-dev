@@ -16,7 +16,7 @@ Services remain out of scope and stay owned by handoff/service-model.md.
 Latest reconciled implementation checkpoint before this handoff sync:
 
 ```text
-rumiai-dev      076d0d463e859e51ac8773202a94ca29b558f317
+rumiai-dev      388bd5eb797c1b4bc464861bfd5173de2821fc9d
 rumiai-os       cf2e2e02ac9da54a993c7f5f118f72fe6dbdbe06
 rumiai-tests    4af4183219ff42f07c9e6f116afc01ee0d3d2113
 pkg-catalog     5372c160441b0346b976db7f7a022196784c9425
@@ -191,7 +191,7 @@ Do not reopen these points unless a current contradiction is found. PACKAGE-MODE
 - generic versus pinned global command links;
 - collision protection and package-default-triggered reconciliation.
 
-The former commands-only global environment rule has been superseded by the Phase 1 canonical bootstrap contract:
+The former commands-only global environment rule has been superseded by the current canonical bootstrap contract:
 
 - every new m bootstrap derives environment from currently resolvable facility defaults;
 - active osarch comes from a valid ext-osarch selector without implicit platform selection; otherwise only generic provider classes apply;
@@ -489,7 +489,7 @@ Do not ask this abstractly. First produce a concrete artifact inventory and mini
 - fresh preflight and current repository inspection;
 - close/remove the completed library-grouping handoff;
 - promote the provider-independent facility definition and authority boundaries into `PACKAGE-MODEL.md`;
-- preserve unresolved schema/location choices as working design here.
+- preserve only genuinely unresolved task-local design in the handoff until promotion.
 
 Exit: semantic ownership is no longer Java-specific, while unresolved representation remains explicitly non-canonical.
 
@@ -533,7 +533,7 @@ lib/sys/sh/pkg/repository/
     pkg-repository-*.lib.sh
 ```
 
-Public subcommand entrypoints remain directly under `lib/sys/sh/pkg/`; specifically, `pkg-provider.lib.sh` remains there. No new facility-contract library has been invented before Phase 1 defines its actual responsibility.
+Public subcommand entrypoints remain directly under `lib/sys/sh/pkg/`; specifically, `pkg-provider.lib.sh` remains there. The later accepted typed-part core added `pkg-facility-cmd.lib.sh` and `pkg-facility-env.lib.sh` within the already-fixed facility responsibility group.
 
 ### Phase 4: facility/provider conformance core — implemented, composition deferred
 

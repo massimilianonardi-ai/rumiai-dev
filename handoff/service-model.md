@@ -14,10 +14,10 @@ The task must converge on the semantic model and public contract before implemen
 Revisions relied upon for this checkpoint:
 
 ```text
-rumiai-dev@163403bb609d08f682b5d2a4db7dca60f6ae75b6  facility compatibility semantics reconciled
-rumiai-os@50b760bd3cfe08922068ceb7d973d7edee12251c
-rumiai-tests@899ac4df79429db1d28602ae08ded1f9f8a72f64
-pkg-catalog@4c67eb5c7cf27fbc48c222fd8196f0127409be00
+rumiai-dev@388bd5eb797c1b4bc464861bfd5173de2821fc9d  inert typed facility/provider core canonical
+rumiai-os@cf2e2e02ac9da54a993c7f5f118f72fe6dbdbe06
+rumiai-tests@4af4183219ff42f07c9e6f116afc01ee0d3d2113
+pkg-catalog@5372c160441b0346b976db7f7a022196784c9425
 ```
 
 The `rumiai-dev` SHA above is the canonical-source baseline re-read before the cross-task reconciliation; handoff synchronization commits advance it forward without replacing fresh-HEAD retrieval on resume.
