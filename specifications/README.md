@@ -20,6 +20,7 @@ Read only the smallest complete set relevant to the task.
 | POSIX portability and host-specific abstraction boundary | `rumiai-os/POSIX-PORTABILITY-LAYER.md` |
 | terminal paging abstraction and host backend policy | `rumiai-os/PAGER.md` |
 | interactive terminal menu engine, list/filesystem selection, multi-selection and result contract | `rumiai-os/MENU.md` |
+| interactive local Git working-tree manager `gitman` | `rumiai-os/GITMAN.md` |
 | state scopes, selectors, owners, areas, `state-path`, package HOME/state | `rumiai-os/STATE-MODEL.md` |
 | package subsystem ownership, public surface and launch/integration invariants | `rumiai-os/PACKAGE-MODEL.md` |
 | static/global resources | `rumiai-os/RESOURCE-MODEL.md` |
