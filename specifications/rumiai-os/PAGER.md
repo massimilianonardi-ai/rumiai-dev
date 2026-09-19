@@ -1,7 +1,7 @@
 # RumiAI OS — Terminal pager
 
 Status: **Current / normative**  
-Updated: 2026-09-17
+Updated: 2026-09-19
 
 This specification defines the current host-neutral terminal paging facility provided by `m`.
 
