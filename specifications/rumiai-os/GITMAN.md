@@ -49,11 +49,16 @@ and looks for:
 <gitman-conf>/repositories
 ```
 
-The configuration file is optional. Its first-delivery format is:
+The configuration file is optional. Its first-delivery format is one encoded directory pathname per non-empty line.
+
+The encoding is deliberately minimal:
 
 ```text
-one literal directory pathname per non-empty line
+\\n   pathname newline
+\\\\   literal backslash
 ```
+
+Every other character is literal. A backslash before any character other than `n` or backslash is preserved as a literal backslash followed by that character. This keeps the file line-oriented while allowing a pathname containing a newline to round-trip without ambiguity with a pathname containing the literal two-character sequence `\n`.
 
 Blank lines are ignored. No shell parsing, quoting, tilde expansion, variable expansion or comment syntax is applied.
 
@@ -67,7 +72,7 @@ If the configuration file is absent, or contains no non-empty entries, the initi
 
 If the configuration pathname exists but cannot be read as a regular file, `gitman` records that as the current error and falls back to `.`.
 
-The configuration area is read-only for this first delivery. `gitman` does not create or rewrite the configuration file.
+`gitman` may save the current in-memory repository set to this same configuration file through the explicit repository-menu save action defined below. It does not otherwise rewrite the file automatically.
 
 ## 4. Repository identity
 
@@ -145,6 +150,7 @@ Enter   open the selected repository
 a       add repositories
 r       remove repositories
 c       clear all repositories
+s       save current repositories to configuration
 Escape  exit gitman
 ```
 
@@ -172,6 +178,26 @@ Removal affects only the in-memory repository set.
 `c` clears the entire in-memory repository set without touching the filesystem or Git state.
 
 Because the repository set then has size zero, the command returns to filesystem acquisition.
+
+### Save configuration
+
+`s` saves the current repository set to:
+
+```text
+<gitman-conf>/repositories
+```
+
+using the line encoding defined in section 3.
+
+The configuration directory is materialized lazily when the save action needs it.
+
+If the configuration file does not exist or has zero bytes, the save proceeds without an overwrite prompt.
+
+If the configuration file already exists and has non-zero content, `gitman` must ask for explicit confirmation before replacing it. The confirmation menu defaults to the non-destructive choice. Cancelling or choosing not to overwrite returns to the repository menu without changing the file.
+
+A successful save replaces the configuration file with the current repository set in repository-menu order and clears the current error. A save failure leaves the interactive repository set unchanged and reports one concise error through the bottom footer.
+
+The save action is the only first-delivery operation that persists `gitman` state.
 
 ## 9. Repository action menu
 
@@ -267,8 +293,7 @@ The command does not:
 - change branches;
 - stage, commit, reset, checkout, merge, rebase, fetch, pull or push;
 - alter Git configuration;
-- persist the interactive repository list;
-- create or modify the optional repository configuration file.
+- persist the interactive repository list except when the user explicitly invokes the repository-menu save action.
 
 ## 13. Exit status
 
@@ -290,9 +315,9 @@ Signal-derived statuses may propagate when the surrounding runtime terminates th
 `gitman` owns:
 
 - repository-set workflow and in-memory state;
-- initial candidate/configuration loading;
+- initial candidate/configuration loading and configuration line encoding/decoding;
 - Git working-tree validation and normalization;
-- repository-list management actions;
+- repository-list management actions, including explicit configuration save;
 - mapping action identifiers to the approved read-only Git commands;
 - error aggregation and bottom-footer content;
 - orchestration between `menu`, Git execution and `read-key`.
@@ -311,12 +336,14 @@ Signal-derived statuses may propagate when the surrounding runtime terminates th
 GITMAN-01  gitman is a bootstrap-integrated technical m command at bin/sys/gitman
 GITMAN-02  explicit directory operands override configured initial directories
 GITMAN-03  zero operands use user sys/gitman/conf/repositories and fall back to . when absent or empty
+GITMAN-03A configuration stores one encoded pathname per line; \\n represents newline and \\\\ represents backslash
 GITMAN-04  repository identity is the physical top-level of a non-bare Git working tree
 GITMAN-05  identical working-tree top-levels are deduplicated while distinct linked worktrees remain distinct
 GITMAN-06  the bottom footer contains only the current error; one validation batch aggregates all of its failures into that message
 GITMAN-07  zero repositories uses filesystem multi-selection and revalidates confirmed selections
-GITMAN-08  one or more repositories uses a single-selection repository menu with add/remove/clear actions
+GITMAN-08  one or more repositories uses a single-selection repository menu with add/remove/clear/save actions
 GITMAN-09  repository removal and clear are in-memory only
+GITMAN-09A save explicitly persists the current set and confirms before replacing a non-empty configuration file
 GITMAN-10  the repository action menu returns with Backspace by default
 GITMAN-11  first-delivery Git actions are status, log, branch and diff and are read-only
 GITMAN-12  a Git action runs only after the selecting menu session has restored the terminal
