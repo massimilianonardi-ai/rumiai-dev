@@ -119,7 +119,7 @@ The active platform class is taken from a valid technical external selector:
 bin/ext-osarch -> ext-<osarch>
 ```
 
-when present. Bootstrap does not run platform selection, validate the complete sys/ext/ai selector set or require an osarch selector merely to start. Without a valid active `ext-osarch` selector, only a resolvable generic provider class can contribute environment.
+when present. Bootstrap does not run platform selection, validate the complete sys/ext/ai selector set or require an osarch selector merely to start. Global provider environment follows the same globally publishable package-class rules as facility command publication: an unqualified selector may use the active osarch-specific class only when that provider package class has a current package default, with generic-class fallback only when the generic class has a current package default; explicit osarch-qualified pins retain their direct pinned semantics. Without a valid active `ext-osarch` selector, only a globally publishable generic provider class can contribute environment.
 
 Facility defaults are processed in ascending `LC_ALL=C` facility-name order. Their ordinary environment assignments override inherited values in that new bootstrap; if multiple defaults export the same variable, the later facility assignment wins. `PATH` is not valid `facility-env` metadata: executable exposure remains owned by the already-established `sys-osarch:sys:ext-osarch:ext` PATH layers and facility command publication.
 
