@@ -15,9 +15,9 @@ Services remain out of scope and stay owned by handoff/service-model.md.
 
 Latest reconciled pre-write baseline:
 
-rumiai-dev      56d4d4af7ca0e28a49fcf9b14e1c58f1f4c90d30
-rumiai-os       2955d720e47d2400fcd4334237fc5e159d1467cc
-rumiai-tests    d63352a58f54f54380215fad734a6444c441bc32
+rumiai-dev      4a5c996dcf805ca7503947565e2a134b3c98eccc
+rumiai-os       34671a5a1e9917fa39e3bbbd4b155590202c9b22
+rumiai-tests    88b4e48f170da883889c2f418a34e8ad24066e9d
 pkg-catalog     bd06488d3c67160e820c04d13067f852c8861c32
 rumiai-dev-PoCs cb8c5d636ce65e6cb00626ed08947fe25a25988e
 
@@ -65,8 +65,24 @@ These come from explicit user direction and must survive deletion of the chat.
 9. A provider exposes facility commands and facility environment.
 10. The user explicitly stated that the provider selected as a facility default should expose its commands through the appropriate bin roots and its environment in the bootstrap.
 11. Services stay out of this task.
+12. The provider-independent facility-contract model belongs to `pkg`. `pkg` owns facility identity, compatibility, provider selection and the declarative contract that a provider must realize. Specialized subsystems such as `srv` or `mk` retain ownership of their own operational semantics when a facility-contract aspect delegates work to them; this does not create a parallel provider model in those subsystems.
 
 Phase 1 canonical realignment resolves the former authority mismatch: PACKAGE-MODEL.md and BOOTSTRAP-ENVIRONMENT.md now require facility-default provider environment to be derived by every new m bootstrap. Runtime implementation and permanent tests remain to be realigned to that promoted contract.
+
+## Working design
+
+The current `facility-cmd` and `facility-env` projection schema is now treated as the first concrete realization of facility-contract aspects rather than as a complete general definition of a facility.
+
+The design direction to evaluate before further Java-specific expansion is:
+
+- a facility is a provider-independent, substitutable capability contract;
+- a provider declares that it supplies the facility and describes how its concrete package realizes the contract;
+- contract aspects are typed and have generic semantics; they must not become an arbitrary provider-specific property bag or executable shell metadata;
+- service-like facilities motivate lifecycle and runtime-endpoint aspects, but exact aspect names/schema remain open and service lifecycle execution remains owned by `srv`;
+- an ordinary package command should not automatically become a selectable facility merely because it is linked into a bin root. The leading direction is to share a lower-level command-projection primitive with the facility command aspect while requiring a genuine provider-independent/substitutable contract before exposing a facility identity;
+- `lib/sys/sh/pkg/` is already large enough that deeper physical grouping is likely useful, especially around facility/provider/contract responsibilities and repository adapters. Exact grouping paths are not yet fixed and overlap the active `library-subsystem-subdirectories` workstream, so no new nested layout is promoted yet.
+
+Java and a service-style facility such as GeoServer should be used as contrasting design cases. The generalized facility model should describe both without provider-specific exceptions before its schema is promoted.
 
 ## Canonical model already settled
 
@@ -460,6 +476,8 @@ Do not close this task until all applicable conditions hold:
 
 The architecture is substantially implemented but not complete.
 
+A broader facility-contract gap has now been identified: the promoted package model defines provider selection plus command/environment projection, but it does not yet define a provider-independent facility contract that can express richer capabilities while preserving provider substitutability. This must be settled before treating the current Java-oriented projection shape as the final general facility abstraction.
+
 Green revision-specific provider validation exists for the pre-global-command implementation. Current product contains the later global command projection implementation. Current catalog contains corrected Temurin/GraalVM Java projections and corrected wrappers. Current tests cover most selector/runtime behavior.
 
 The principal remaining blockers are:
@@ -477,11 +495,12 @@ The principal remaining blockers are:
 In a clean new chat:
 
 1. perform mandatory fresh preflight;
-2. read this handoff;
-3. reconcile repository movement;
-4. start Phase 1 and Phase 2;
-5. realign NetBeans once the provider baseline is green;
-6. before Phase 4, ask the user Decision 1 and Decision 2 exactly as above.
+2. read this handoff and reconcile repository movement;
+3. settle the generalized provider-independent facility-contract model owned by `pkg`, using Java and a service-style facility as contrasting cases;
+4. decide which existing command/environment mechanics become reusable contract aspects versus lower-level package projection primitives, without automatically turning every installed command into a facility;
+5. settle the minimal deeper physical grouping needed under `lib/sys/sh/pkg/` in coordination with the active library-subdirectory workstream;
+6. only then resume the implementation/validation phases against the resulting promoted contract;
+7. before the later dependency/install-policy phase, ask the user Decision 1 and Decision 2 exactly as above.
 
 Do not ask the user to reconstruct this deleted conversation.
 
