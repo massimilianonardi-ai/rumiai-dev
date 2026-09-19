@@ -1,7 +1,7 @@
 # Library subsystem subdirectories
 
-Status: Active
-Updated: 2026-09-18
+Status: Complete
+Updated: 2026-09-19 14:50 +02:00
 
 ## Goal
 
@@ -10,12 +10,12 @@ Move the RumiAI-owned shell libraries whose leaf names begin with `pkg-` into `l
 ## Current repository revisions
 
 ```text
-rumiai-dev   011859f7a24183182e3593d77ab29d546c93deab
-rumiai-os    384677c6acc9424fd4ce4eca7aa9aed104bded5d
-rumiai-tests 36f873c127e17cb42fdbbf077e3c9f32b014a737
+rumiai-dev   c1e5b1d0e9a210fb7dd992dddf9c780f9072112b
+rumiai-os    34671a5a1e9917fa39e3bbbd4b155590202c9b22
+rumiai-tests 88b4e48f170da883889c2f418a34e8ad24066e9d
 ```
 
-Fresh remote HEAD retrieval remains mandatory before later writes.
+The final closure check re-inspected the current product tree and current permanent layout coverage at these revisions.
 
 ## Applicable canonical sources
 
@@ -48,18 +48,19 @@ Fresh remote HEAD retrieval remains mandatory before later writes.
 - Package repository adapter tests and core package/mk tests now reference the grouped paths.
 - Final product tree inspection found no remaining flat `pkg-*.lib.sh` or `mk-*.lib.sh` library files.
 - Diff review and targeted source scans found no stale flat-path references in the changed implementation/test surfaces except the intentional negative glob in the layout test.
-- A real runtime test run could not be executed from this chat environment because DNS resolution for `github.com` is unavailable; no runtime PASS is claimed.
+- A real runtime test run was not executed for the historical restructuring work unit; no runtime PASS is claimed for that earlier revision.
+- Final closure re-inspected the current `rumiai-os` tree and confirmed all current `pkg-*.lib.sh` and `mk-*.lib.sh` libraries remain under `lib/sys/sh/pkg/` and `lib/sys/sh/mk/`, with no remaining flat subsystem libraries.
+- Current permanent layout coverage still requires those grouped directories and rejects flat `pkg-*.lib.sh` / `mk-*.lib.sh` paths.
+- The user explicitly declared the restructuring task complete and requested that it be closed; no additional runtime-validation phase remains part of this task.
 
 ## Current state
 
-Implementation, canonical specifications, operational reference and permanent test sources are aligned to the grouped library layout. Git history remained forward-only and concurrent `rumiai-tests` changes were preserved.
-
-Runtime validation of the updated permanent tests remains pending in an executable environment with access to the exact repository revisions above.
+The restructuring is complete and current sources remain aligned to the grouped library layout. The user explicitly closed the task on 2026-09-19. Historical runtime validation was not added retroactively and is not claimed.
 
 ## Next action
 
-Run the proportional package/mk/layout test selections against `rumiai-os@384677c6acc9424fd4ce4eca7aa9aed104bded5d` and `rumiai-tests@36f873c127e17cb42fdbbf077e3c9f32b014a737` in a real validation environment.
+None. Remove this completed handoff from the current tree in the required later forward commit.
 
 ## Blockers / open questions
 
-- This chat environment cannot resolve `github.com`, so it cannot materialize and execute the exact current repository revisions for runtime validation.
+None.
