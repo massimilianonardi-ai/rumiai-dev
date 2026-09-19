@@ -276,6 +276,8 @@ facility/<facility>/<compatibility>/cmd/<command>
 facility/<facility>/<compatibility>/env/<variable>
 ```
 
+The `cmd/<command>` leaf follows the package command-name grammar. The `env/<variable>` leaf preserves the environment-variable identifier exactly and therefore uses the environment-name grammar, including uppercase letters and underscore, as a specific exception to the general lowercase RumiAI-controlled pathname rule. `PATH` remains excluded by the env-part contract.
+
 The existing provider-realization surfaces remain authoritative for these types:
 
 ```text
@@ -573,4 +575,5 @@ PKG-54  supported facility part types are implemented by trusted RumiAI code; un
 PKG-55  the generic facility layer orchestrates contract/provider conformance but defines no universal runtime apply operation
 PKG-56  cmd and env are the initial supported facility contract part types and retain the existing facility-cmd and facility-env provider-realization surfaces
 PKG-57  facility/provider definitions and conformance validation are inert: they do not create defaults/bindings or apply commands/environment merely by existing or being validated
+PKG-58  env contract marker leaves preserve environment-variable identifiers and use the env-name grammar as an explicit exception to general controlled-path lowercase naming
 ```
