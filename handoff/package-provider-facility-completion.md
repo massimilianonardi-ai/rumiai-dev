@@ -1,7 +1,7 @@
 # Package provider/facility completion
 
 Status: Active
-Updated: 2026-09-19 16:04 +02:00
+Updated: 2026-09-19 20:38 +02:00
 
 ## Goal
 
@@ -13,17 +13,17 @@ Services remain out of scope and stay owned by handoff/service-model.md.
 
 ## Current repository revisions
 
-Latest reconciled checkpoint:
+Latest reconciled checkpoint before this handoff sync:
 
 ```text
-rumiai-dev      908f1064d54e283514a1ce0a6f25911e32a053f7  pre-handoff-sync HEAD
-rumiai-os       a8e45d327b218f19cee82c3813bfc75fb5ea64b6
-rumiai-tests    2629d606913828a45f96acaef4bbc14dd443f1f7
+rumiai-dev      30ce4aa6b86b332c4724a1418831cbfe2b45a2c9
+rumiai-os       50b760bd3cfe08922068ceb7d973d7edee12251c
+rumiai-tests    899ac4df79429db1d28602ae08ded1f9f8a72f64
 pkg-catalog     4c67eb5c7cf27fbc48c222fd8196f0127409be00
 rumiai-dev-PoCs cb8c5d636ce65e6cb00626ed08947fe25a25988e
 ```
 
-The package/catalog/library work in this checkpoint was written forward-only on top of concurrent gitman activity. The later rumiai-dev, rumiai-os and rumiai-tests movement was inspected and affected only the separate gitman workstream; the package changes remain ancestors of the current HEADs. Fresh HEAD retrieval remains mandatory before every later write.
+Fresh remote HEAD retrieval remains mandatory before every later write.
 
 ## Applicable canonical sources
 
@@ -90,327 +90,116 @@ The durable semantic rules already promoted to `PACKAGE-MODEL.md` are not duplic
 
 ## Working design
 
-The catalog ownership and implementation grouping questions are now resolved. The only active architecture question before implementation continues is the **facility contract meta-model**.
+The compatibility/contract evolution question is now resolved and promoted to `PACKAGE-MODEL.md`. Do not retain the superseded monotonic-lineage proposal as an alternate current rule.
 
-The proposal below is intentionally working design, not current specification. It is detailed enough to be challenged point by point before promotion.
+The remaining Phase-1 design question is **how typed contract parts are represented and implemented** while preserving the accepted semantic boundary.
 
-### 1. Model boundary: four different information planes
-
-The facility model must keep four authorities separate.
+The already accepted abstract model is:
 
 ```text
 facility contract
-    provider-independent meaning and guarantees
+    provider-independent required guarantees for one exact compatibility level
 
 provider realization
-    how one package concrete satisfies those guarantees
+    concrete package data satisfying that exact contract
 
 selection configuration
-    which valid provider selector is chosen
+    facility default / consumer binding
 
-runtime / instance state
-    what a selected provider instance is doing now
+runtime state
+    transient state owned by the subsystem that executes the capability
 ```
 
-The facility contract belongs to the catalog and says what every conforming provider guarantees. It never contains a selected provider, mutable preference, concrete package path, PID, actual listening port or other runtime state.
+Compatibility levels of one facility are independent complete contracts. A provider concrete declares one exact level. A consumer expresses the levels it accepts through exact/range dependency constraints. `pkg` evaluates those declarations and must not infer backward compatibility.
 
-The provider realization belongs to a package definition and maps that package's concrete artifact onto the facility contract. It may contain paths, descriptors and other provider-specific implementation data, but it cannot redefine the facility.
+### Typed-part implementation question
 
-Selection configuration remains the existing system-scoped facility default / consumer binding model.
-
-Runtime state remains owned by the subsystem performing the operation. For a service this includes the concrete provider selected at start time, PID/log/lock state and any actual endpoint. Changing a facility default later must never mutate an already-running instance.
-
-### 2. Proposal: compatibility values are ordered **contract levels**
-
-The existing facility compatibility value should not be interpreted as a package version or merely as a number that happens to compare higher or lower. It should mean:
-
-> the exact provider-independent contract level that the provider guarantees.
-
-For one facility identity, compatibility levels form one **monotonic substitutability lineage**.
-
-A provider declaring:
+The semantic extension boundary remains promising:
 
 ```text
-java 25
+typed part
+    contract schema
+    provider-realization schema
+    conformance validation
+    application semantics / owner
 ```
 
-claims conformance to the complete `java` contract at level `25`. A consumer declaring:
+The user agrees with this model in principle but explicitly wants the implementation examined before it is considered settled. Therefore the four-part decomposition above remains working design except where current `PACKAGE-MODEL.md` already requires typed declarative parts with defined semantics.
 
-```text
-java >=17
-```
+The implementation should satisfy these properties:
 
-may accept that provider only because the `java` contract itself guarantees that every higher level in the same lineage preserves all guarantees of lower levels.
+- adding a new part type must not require provider-specific branching in the generic facility resolver;
+- an unknown part type fails validation rather than being ignored;
+- one provider is selected for the whole facility, never independently per part;
+- facility contracts do not create a second dependency graph; provider package dependencies remain normal package dependencies;
+- part-specific execution remains with the subsystem that already owns that operation (`srv` for process lifecycle, for example);
+- provider realization remains declarative data, never arbitrary executable provider logic;
+- the implementation must reuse existing command/environment machinery where it already owns the same responsibility instead of introducing synonymous APIs.
 
-This gives the existing numeric constraint language a real semantic basis instead of treating numerical ordering as a proxy for compatibility.
+### Candidate physical contract representation
 
-The proposed evolution rules are:
-
-```text
-same facility identity + higher compatibility
-    = backward-compatible additive evolution
-
-removal or semantic change of an existing guarantee
-    = NOT a higher compatibility level of the same lineage
-
-breaking contract
-    = new facility identity
-```
-
-A higher level may add new required members/parts, but it may not remove an inherited guarantee or change its meaning incompatibly.
-
-An exact dependency such as `java =25` keeps its current exact semantics. A range such as `>=17` relies on the monotonic lineage. A provider declares one compatibility level for one facility; a higher declared level is sufficient for lower range requirements because the lineage is cumulative.
-
-This is the most consequential proposal in Phase 1. If Java 17 and Java 25 cannot be represented honestly as one monotonic facility lineage once their required interoperable surface is inventoried, that is evidence against this rule or against using upstream Java release numbers directly as RumiAI facility contract levels. We must not hide that contradiction.
-
-### 3. Proposal: each published level is complete and semantically immutable
-
-Each `<facility, compatibility>` pair should contain a **complete, self-contained contract**, not a delta that must be merged with predecessor levels.
-
-Conceptually:
-
-```text
-facility/java/17
-    complete Java level-17 contract
-
-facility/java/25
-    complete Java level-25 contract
-```
-
-The level-25 definition repeats the inherited required surface and adds only compatible guarantees. This duplicates a small amount of declarative data but avoids inheritance chains, merge rules and hidden state when validating a provider.
-
-Once a compatibility level has been published and used by provider definitions, its consumer-visible semantics are immutable. Adding a new mandatory member, removing one or changing its meaning requires a new compatibility level; an incompatible change requires a new facility identity.
-
-This immutability is important because installed providers outlive the catalog snapshot from which they were installed. Runtime must be able to trust the stored declaration `<facility, compatibility>` without fetching a current catalog and wondering whether the old meaning changed underneath it.
-
-### 4. Proposal: first contract model is **required-surface only**
-
-The first facility-contract model should not contain optional members.
-
-A contract level defines exactly the provider-independent surface that every provider at that level must supply. A consumer depending only on that facility may rely on that entire surface and on nothing else.
-
-Provider-specific extras are intentionally outside the facility realization:
-
-```text
-common interoperable capability
-    -> facility contract
-
-provider-specific extra command/capability
-    -> ordinary package surface
-       or a separate facility when it deserves provider-independent substitution
-```
-
-For example, if `native-image` is not part of the Java contract shared by accepted Java providers, GraalVM must not smuggle it into the `java` facility merely because it is present in the artifact. It remains a GraalVM/package capability or becomes a separate facility after its own boundary is accepted.
-
-This required-only rule makes two providers of the same facility level structurally interchangeable and removes a large source of asymmetric test behavior.
-
-Optional contract members can be introduced later only if a real consumer requirement proves that capability discovery inside one facility is preferable to a separate facility. The baseline should not pay that complexity cost now.
-
-### 5. Proposal: a typed part defines a complete mini-contract
-
-A facility contract is a composition of typed declarative parts. The generic facility engine must not know provider-specific keys.
-
-Each supported part type defines four things:
-
-```text
-1. contract schema
-   what provider-independent members/guarantees the facility may declare
-
-2. provider-realization schema
-   what concrete data a provider must supply for those members
-
-3. conformance validator
-   what pkg can prove mechanically at install/integration time
-
-4. application semantics + owner
-   when/how the selected realization is consumed and which subsystem owns execution
-```
-
-Unknown part types are errors; they are never ignored. This keeps extensibility controlled rather than turning the catalog into an arbitrary property bag.
-
-One provider is selected for the **whole facility**. There is no part-level provider mixing: Java commands cannot come from Temurin while `JAVA_HOME` comes from GraalVM under one selected `java` facility.
-
-Facility contracts also do not declare implementation dependencies on other facilities. If a GeoServer provider requires Java, that remains a dependency of the provider package. This avoids creating a second dependency graph inside facility definitions.
-
-### 6. Initial part semantics
-
-The current command and environment mechanisms map naturally onto the typed-part model.
-
-#### command
-
-Contract side:
-
-```text
-set of required public command names
-```
-
-Provider side:
-
-```text
-required command name -> executable path inside provider useful root
-```
-
-Mechanical conformance can prove that every required name is realized exactly once, the target remains inside the useful root and is executable. Under the required-only proposal, a provider realization for that facility level contains no extra facility commands.
-
-Application semantics are already known:
-
-```text
-consumer-specific selected provider
-    -> selected facility command projection precedes inherited/package PATH
-
-facility default
-    -> facility commands are published through the existing global external-command roots
-```
-
-An ordinary package command continues to use the normal package/default mechanism and does not become a facility merely because the same low-level command-projection machinery may eventually be reused internally.
-
-#### environment
-
-Contract side:
-
-```text
-set of required exported variable names
-```
-
-Provider side:
-
-```text
-variable -> existing typed provider descriptor
-            root | root-path | literal
-```
-
-The facility contract guarantees that the variable is available when the facility is applied. The provider realization chooses its concrete value. The contract does not need to know that Temurin and GraalVM derive `JAVA_HOME` from different internal paths.
-
-Application semantics remain the current consumer-launch projection and facility-default bootstrap environment.
-
-#### lifecycle — proposed future type, not yet accepted
-
-The lifecycle part should define semantic operations/capabilities, while its provider realization supplies only the concrete operations that actually require provider-specific implementation.
-
-This allows a service contract to require `start` and `stop` while one provider realization supplies a concrete start target and `srv` supplies normal stop generically through its PID/SIGTERM lifecycle.
-
-The exact descriptor grammar remains open until the generic meta-model is accepted; the important architectural rule is that lifecycle semantics are declared by the facility contract, provider mapping is data, and process mechanics remain owned by `srv`.
-
-#### endpoint — proposed future type, not yet accepted
-
-The endpoint part should describe a provider-independent **network capability**, not a current socket.
-
-A contract could state that a running provider exposes a logical HTTP endpoint. Provider realization may eventually describe defaults or how the endpoint is discovered/configured. The actual address/port of a running instance remains runtime state.
-
-The endpoint type is useful as a stress test for the meta-model, but its first concrete schema should not be designed before lifecycle is understood.
-
-### 7. Proposed catalog representation
-
-The fixed catalog namespace is:
-
-```text
-facility/<facility>/...
-```
-
-The simplest candidate representation for Phase 1 is:
+The minimal candidate remains:
 
 ```text
 facility/<facility>/<compatibility>/<part>/<member>
 ```
 
-For example, conceptually:
+Each compatibility directory is a complete self-contained contract. The directory does not inherit from any other compatibility level.
+
+Conceptual example:
 
 ```text
 facility/java/25/
     command/
         java
         javac
-        ...
     environment/
         JAVA_HOME
 ```
 
-Each compatibility directory is a complete contract. Part directories are strict and known to the runtime. Each member is a declarative descriptor whose contents are owned by the part type; for a part where the member name alone is sufficient, an empty marker file is enough.
+This layout is not yet promoted. The exact part names, member file contents and any type-registration mechanism remain open until the typed-part implementation is designed.
 
-No generic free-form metadata bag, inheritance file, provider selector, package path or runtime configuration belongs here.
+### Command and environment proof
 
-The exact filesystem tokens `command` and `environment`, and the exact descriptor contents, are still proposal details. They should be fixed only after the semantic rules above are accepted.
+The current mechanisms provide the first implementation constraints.
 
-### 8. Proposed conformance lifecycle
+For a command part, the contract needs to identify required public command names while the provider realization maps each required name to an executable inside the provider useful root. Existing path-containment/executable validation and command projection should be reused.
 
-Provider conformance should be established at package install/integration time against the **same catalog snapshot** that supplied the package definition.
+For an environment part, the contract needs to identify required exported variable names while the provider realization maps each variable through the existing typed descriptors (`root`, `root-path`, `literal`). Existing no-shell-evaluation behavior should be reused.
 
-Conceptually:
+The accepted required-only rule means a facility consumer may rely on every contract member at the selected exact level. Provider-specific extras do not become hidden optional facility members.
 
-```text
-package range declares provides <facility> <compatibility>
-    ↓
-pkg loads facility/<facility>/<compatibility> from same snapshot
-    ↓
-validate facility contract structure and supported part types
-    ↓
-validate provider realization against every required part/member
-    ↓
-materialize only a validated provider declaration/realization
-    ↓
-index provider as installed
-```
+### Service/GeoServer proof
 
-A missing contract, unknown part type, missing required member, unexpected facility member under the required-only model, invalid target or invalid descriptor fails installation/integration.
+The service case remains the non-command/environment stress test.
 
-Runtime provider selection does not fetch the catalog again. It relies on an installed provider that already passed conformance validation and on the semantic immutability of the published facility level. This preserves local-first/offline operation and avoids a second runtime authority.
+A lifecycle part must be able to express provider-independent operations while allowing some operation mechanics to be supplied generically by `srv`. A provider may, for example, need a concrete start realization while normal stop remains generic SIGTERM/PID lifecycle behavior.
 
-Mechanical conformance must not be overstated as behavioral proof. `pkg` can prove that a command exists at the required mapping, not that the executable fully implements the Java specification. Behavioral semantics remain a provider assertion supported by appropriate package/live tests.
+An endpoint part, if required, must describe a static provider-independent network capability rather than a currently bound address/port. Actual endpoint state belongs to the running instance.
 
-### 9. Java proof case under this proposal
+The exact lifecycle/endpoint schemas are not fixed. Their purpose at this stage is to prove that the typed-part boundary is not Java-specific.
 
-A Java facility level would declare only the interoperable surface that every accepted provider at that level must guarantee.
+### Conformance implementation boundary
 
-Conceptually:
+The accepted lifecycle is:
 
 ```text
-java <level>
-    command
-        <required common JDK commands>
-
-    environment
-        JAVA_HOME
+package definition + facility realization
+    ↓
+same pkg-catalog snapshot
+    ↓
+load exact facility contract level
+    ↓
+validate contract structure / supported part types
+    ↓
+validate provider realization mechanically
+    ↓
+materialize and index only a conforming provider
 ```
 
-Temurin and GraalVM map those same contract members to their own concrete artifact layouts. Maven, Keycloak and NetBeans depend only on `java` compatibility constraints.
+Runtime does not refetch facility definitions.
 
-GraalVM-only capabilities are not added as optional Java members. They remain package-specific or become separate facilities.
-
-Before promoting the monotonic-level rule, Java 17 and Java 25 must be checked explicitly: the accepted level-25 required surface must preserve every guarantee in the accepted level-17 surface. If not, either the facility contract must be narrowed to the true stable interoperable surface or the compatibility model must be revised.
-
-### 10. GeoServer/service proof case under this proposal
-
-A service-style facility demonstrates that a facility is not merely PATH + environment.
-
-Conceptually:
-
-```text
-geoserver <level>
-    lifecycle
-        start
-        stop
-
-    endpoint
-        http
-```
-
-A provider realization may map `start` to one concrete package command while `stop` is fulfilled by generic `srv` process termination. The endpoint contract states that the running service exposes the named protocol capability; it does not encode the currently bound socket.
-
-`srv start <facility>` resolves the facility default through `pkg`, records the resolved concrete provider for the running instance and then interprets the lifecycle realization. A later facility-default change affects a future start/restart, not the already-running instance.
-
-If this case cannot be expressed without adding provider-specific exceptions to the facility engine, the meta-model is not ready.
-
-### 11. Main alternatives and why they are not the baseline
-
-Three alternatives remain useful as checks, but are not the proposed baseline.
-
-**Non-monotonic numeric compatibility.** This preserves arbitrary upstream versioning but makes constraints such as `>=17` semantically unsafe unless a separate compatibility matrix/graph is added.
-
-**Explicit compatibility graph/matrix.** This is more expressive but introduces a second relation that every resolver/test must understand. It is not justified while ordered substitutability can describe the required facilities.
-
-**Optional members inside one facility.** This makes provider discovery richer but weakens the statement “a consumer can depend on the facility without knowing the provider” and recreates provider-specific branching. Separate facilities/package extras are simpler until a real use case proves otherwise.
-
-The proposal therefore deliberately chooses a smaller, stricter abstraction first.
+Mechanical validation must remain honest about its limits: it can establish declared structural/artifact properties, not prove complete behavioral compliance with an external specification.
 
 ## Canonical model already settled
 
@@ -584,17 +373,26 @@ The task must make rate-limit behavior predictable without weakening package int
 
 Phase 2 (catalog ownership/layout) and Phase 3 (package-library responsibility layout) are complete and promoted.
 
-Phase 1 is now the only architecture gate before implementation continues. The proposal in Working design must be reviewed and either accepted or corrected, especially:
+Phase 1 is now narrowed to the typed-part implementation/representation question.
 
-- monotonic ordered compatibility levels versus a more complex compatibility relation;
-- self-contained immutable contracts per compatibility level;
-- required-only facility surface versus optional members;
-- the four-part typed-part responsibility model;
-- the candidate `facility/<facility>/<compatibility>/<part>/<member>` representation;
-- Java 17/25 monotonicity as a concrete proof;
-- lifecycle/endpoint expressiveness for the GeoServer proof case.
+Already promoted:
 
-Do not begin Phase 4 until these semantics are promoted to `PACKAGE-MODEL.md`.
+- compatibility levels are independent exact contracts; there is no monotonic-lineage rule;
+- provider declarations identify one exact contract level;
+- consumer constraints alone express exact/range acceptance;
+- `pkg` does not infer backward compatibility;
+- every level is complete/self-contained and semantically immutable;
+- the baseline contract contains required interoperable members only;
+- provider conformance uses the same catalog snapshot as the package definition;
+- runtime does not refetch the facility contract.
+
+Still open:
+
+- concrete typed-part implementation boundary/API;
+- exact physical contract representation and member descriptor formats;
+- lifecycle/endpoint proof through the GeoServer case.
+
+Do not begin Phase 4 until the remaining typed-part representation is sufficiently settled and promoted.
 
 ### A. Global facility environment
 
@@ -843,48 +641,50 @@ Do not close this task until all applicable conditions hold:
 
 ## Current state
 
-Phases 2 and 3 no longer block the task.
+Phases 2 and 3 remain complete.
 
-Current catalog structure is implemented at `pkg-catalog@4c67eb5c7cf27fbc48c222fd8196f0127409be00`: all 13 current package definition trees live under `pkg/`; `facility/` is the fixed provider-independent contract namespace and will materialize with the first accepted contract.
+Phase 1 has materially advanced. The compatibility and contract-evolution semantics, required-only surface and conformance lifecycle are now canonical in `PACKAGE-MODEL.md`.
 
-Current product grouping is present at the current `rumiai-os` HEAD: package installation resolves `<catalog-snapshot>/pkg/<package>`, repository adapters live under `lib/sys/sh/pkg/repository/`, and the existing internal facility/dependency libraries live under `lib/sys/sh/pkg/facility/`. Concurrent gitman commits advanced the product afterward without touching these package changes.
+The former monotonic-lineage proposal is superseded. A facility level may change radically from another level of the same facility. Backward compatibility is represented only by the acceptance constraints declared by consumers; it is not a property inferred or enforced by `pkg`.
 
-Current permanent test sources have been realigned to the grouped library paths and the Model 2 layout test now requires the two second-level package directories and rejects the superseded flat placements. Concurrent gitman test commits advanced the test HEAD afterward without touching the package changes.
+The current product already matches an important part of this direction mechanically: installed providers declare one exact facility compatibility and dependency declarations support exact and ordered constraints that can be combined into bounded ranges. That existing behavior is evidence, not authority, and later implementation must add exact-level contract validation rather than introduce monotonicity checks.
 
-No runtime PASS is claimed for this checkpoint. The local execution environment cannot resolve `github.com`, so the composed live install path against the newly restructured catalog has not been executed here. Structural tree/diff checks confirm the intended current paths and absence of the superseded catalog/package-library locations.
-
-The active architecture gate is now solely Phase 1. The detailed proposal above is intentionally unpromoted working design.
+The remaining architecture gate is the typed-part implementation and its catalog representation. No Phase-4 runtime/catalog conformance implementation has begun.
 
 ## Next action
 
-Review the Phase 1 proposal with the user, beginning with the compatibility model because it constrains every other choice.
+Design the smallest typed-part implementation that can express the already-existing command/environment parts without duplicating their mechanics and can also express the GeoServer lifecycle case without provider-specific branching.
 
-If the monotonic-contract-level rule is accepted, next validate it concretely against the Java 17/25 surface before promoting it. Then settle required-only surface and the typed-part representation, re-run the GeoServer thought experiment, and promote the complete accepted meta-model in one coherent `PACKAGE-MODEL.md` update.
-
-Do not start Phase 4 implementation before that promotion.
+Then decide the exact `facility/<facility>/<compatibility>/<part>/<member>` representation (or a simpler/better equivalent if the implementation analysis exposes a concrete problem) and promote only the settled generic rules before Phase 4.
 
 ## Blockers / open questions
 
-Phase 1 decisions requiring user review:
+Phase 1 remaining design work:
 
-- Should one facility identity define a monotonic substitutability lineage, so a higher compatibility level must preserve all lower-level guarantees and a breaking change requires a new facility identity?
-- Should each compatibility level be a complete/self-contained and semantically immutable contract rather than an inherited delta?
-- Should the first contract model expose only mandatory interoperable members, with provider extras kept outside the facility or modeled as separate facilities?
-- Is the typed-part model (contract schema + provider schema + validator + application owner) the correct generic extension boundary?
-- After those semantic choices, should the physical facility contract use the minimal `facility/<facility>/<compatibility>/<part>/<member>` shape?
+- exact typed-part implementation/API boundary;
+- exact contract/member filesystem representation;
+- lifecycle semantics sufficient for the GeoServer proof case;
+- whether endpoint metadata belongs in the first service-capable part set or can be postponed.
 
-Evidence still required before promotion:
+Explicitly resolved and no longer blockers:
 
-- compare actual candidate Java 17 and Java 25 required surfaces to test monotonicity;
-- exercise the lifecycle/endpoint model against GeoServer without provider-specific exceptions.
+- no monotonic compatibility lineage;
+- no inferred backward compatibility;
+- exact provider facility level plus consumer exact/range constraints;
+- complete self-contained immutable contracts;
+- required-only baseline contract surface;
+- install/integration conformance against the same catalog snapshot;
+- no runtime catalog refetch.
+
+A later concrete need for non-contiguous consumer acceptance sets or one provider advertising multiple exact contract levels would require separate design. Neither is introduced preemptively by the current baseline.
 
 Later user decisions remain deferred behind Phase 1:
 
-- missing dependency provider behavior: explicit-only versus assisted/manual versus automatic;
+- missing dependency provider behavior;
 - install-time provider configuration UX;
 - GraalVM additional facility boundaries after artifact inventory.
 
-Known non-Phase-1 work remains blocked or pending:
+Known later work remains blocked/pending:
 
 - generalized contract/conformance implementation and tests;
 - global provider environment/projection regression completion;
