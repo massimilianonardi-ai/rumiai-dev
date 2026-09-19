@@ -48,6 +48,7 @@ rumiai-tests 88b4e48f170da883889c2f418a34e8ad24066e9d
 - Repository selection with Enter opens the Git action menu.
 - Git action menu uses Backspace to return to the repository menu; Escape also cancels the submenu back to its parent.
 - Initial Git actions are read-only: status, log, branch, diff.
+- Git actions must not invoke Git's own pager; gitman owns the post-command pause and therefore uses Git's explicit no-pager mode.
 - A Git action runs only after the menu session has returned and restored the terminal. After the Git command finishes, `gitman` prompts `Press any key to continue...`, waits through `read-key`, then recreates the Git action menu.
 - Top-level Escape/cancellation exits `gitman` successfully. Submenu cancellation returns to the parent menu.
 - Repository-list add/remove/clear operations are in-memory only unless the user explicitly selects save; `gitman` never deletes repositories or modifies Git state in this first delivery.
@@ -67,20 +68,26 @@ None currently required.
 - User refinement accepted during the active task: configuration now supports newline/backslash escaping and repository menu gains explicit save with overwrite confirmation.
 - Canonical specification, command and manual have been updated for that refinement.
 - Concurrent `rumiai-os` movement was reconciled forward; the unrelated package-layout commit was preserved.
+- Revised permanent tests later passed 2/2 in development validation.
+- Two formal-validation bridge attempts were classified as infrastructure failures caused by detached-HEAD checkouts before the validation runner could execute the scope.
 
 ## Current state
 
 ```text
-rumiai-dev   1f0c2be698fb83e675a0afc9ed60fb8a8a4d9be5
+rumiai-dev   911c60cb32cb3f431e516b3be411445f8888975d
 rumiai-os    a8e45d327b218f19cee82c3813bfc75fb5ea64b6
-rumiai-tests 6d6c790309359a7c262c4c8c2487e3d9d3983d5a
+rumiai-tests 5065eab424302002693783d2bfd15ec77f04f8be
 ```
 
-The permanent tests still need to be realigned with the accepted configuration-save refinement and the ANSI-tolerant Git-status assertion. Formal validation has not yet been retargeted or run.
+Permanent gitman tests were realigned and a later development run passed both contract and interactive coverage, including configuration escaping/save/overwrite confirmation.
+
+Two formal-validation attempts failed before testing because the bridge checkout shape was incompatible with `rumiai-validate`: first `rumiai-tests`, then the target `rumiai-os`, was left on detached HEAD and the launcher refused its required fast-forward self-update. This is validation-infrastructure failure, not product/test evidence.
+
+User testing then exposed a product issue: read-only Git actions other than status can invoke Git's own pager and fail in environments where that pager is unavailable or incompatible with the desired gitman flow.
 
 ## Next action
 
-Update permanent tests for configuration escaping/save/confirmation and the corrected status-output assertion, rerun development validation on exact revisions, then create/retarget the gitman validation scope and run formal validation.
+Change gitman read-only actions to disable Git's internal pager explicitly, update specification/manual/tests, rerun development validation, then run formal validation from branch checkouts while keeping the validation scope pinned to the exact product revision.
 
 ## Blockers / open questions
 
