@@ -203,13 +203,22 @@ The save action is the only first-delivery operation that persists `gitman` stat
 
 Selecting a repository with Enter opens a single-selection Git action menu for that working tree.
 
-Backspace is the default explicit return key:
+Backspace is the default explicit return key. The Git action menu also owns a presentation-mode toggle:
 
 ```text
 Enter       run selected Git action
+p           toggle output mode: pager ↔ terminal
 Backspace   return to repository menu
 Escape      return to repository menu
 ```
+
+The current output mode is shown by the Git action menu. The initial mode for every `gitman` invocation is:
+
+```text
+pager
+```
+
+The selected mode is session state: toggling it applies to subsequent Git actions and remains in effect when returning to the repository list and opening another repository.
 
 The first delivery exposes only read-only Git actions:
 
@@ -238,13 +247,45 @@ diff
 
 No mutating Git operation is part of the first-delivery action set.
 
-`gitman` preserves Git's ordinary pager-selection behavior. It does not force `--no-pager`, override `GIT_PAGER`/`PAGER`, or replace repository/user Git pager configuration. If Git chooses a pager, that pager runs on the restored normal terminal before the existing post-command `read-key` pause.
+Git output presentation is explicit and owned by `gitman`.
+
+### Pager mode
+
+Pager mode is the default. Every supported Git action is executed with Git's global `--paginate` switch so paging is requested even for commands that would not normally page.
+
+For the Git process, `gitman` selects the RumiAI `pager` command through `GIT_PAGER=pager`. The caller's existing `LESS` options are retained and extended so the selected `less` backend:
+
+- enables raw control/color handling with `-R`;
+- disables `F`, preventing automatic exit when the output fits on one screen;
+- disables `X`, allowing normal terminal initialization/deinitialization and screen restoration.
+
+The effective appended less options are:
+
+```text
+-R -+F -+X
+```
+
+Pager-mode output therefore remains in the pager until the user exits it. Pager exit is itself the acknowledgement step: `gitman` recreates the Git action menu immediately afterward and does not show the separate `Press any key to continue...` prompt.
+
+### Terminal mode
+
+Terminal mode intentionally leaves Git output in the normal terminal. Every supported action is executed with Git's global `--no-pager` switch.
+
+Before the command, `gitman` prints a concise repository/action header so accumulated output remains attributable. After the command it displays:
+
+```text
+Press any key to continue...
+```
+
+and waits through `read-key` before recreating the Git action menu.
+
+The two explicit modes replace ad-hoc terminal clearing or insertion of arbitrary blank-line batches. `gitman` does not clear the user's normal terminal merely to separate Git actions.
 
 ## 10. Terminal lifecycle around Git actions
 
 A Git command is never executed while the `menu` session that selected it still owns terminal rendering state.
 
-The required sequence is:
+The common sequence begins:
 
 ```text
 menu selection completes
@@ -252,15 +293,19 @@ menu selection completes
 menu restores its terminal session
     ↓
 gitman runs the Git command on the normal terminal
-    ↓
-gitman displays "Press any key to continue..."
-    ↓
-read-key waits for one key
-    ↓
-gitman renders the Git action menu again
 ```
 
-`gitman` does not implement a second terminal-mode stack around Git execution. It relies on the existing `menu` terminal restoration contract and on `read-key` for the one-key pause.
+It then diverges by presentation mode:
+
+```text
+pager
+    Git → pager → user exits pager → Git action menu
+
+terminal
+    Git → "Press any key to continue..." → read-key → Git action menu
+```
+
+`gitman` does not implement a second menu-style terminal-mode stack around Git execution. It relies on the existing `menu` terminal restoration contract, on the selected pager for pager-mode terminal presentation, and on `read-key` only for terminal-mode acknowledgement.
 
 A non-zero Git command result does not terminate the interactive session. The Git command's own output remains visible, and `gitman` records a concise failure message as the current bottom-footer error before returning to the Git action menu.
 
@@ -349,8 +394,11 @@ GITMAN-09A save explicitly persists the current set and confirms before replacin
 GITMAN-10  the repository action menu returns with Backspace by default
 GITMAN-11  first-delivery Git actions are status, log, branch and diff and are read-only
 GITMAN-12  a Git action runs only after the selecting menu session has restored the terminal
-GITMAN-13  after every Git action gitman waits for one key through read-key before recreating the action menu
+GITMAN-13  terminal-mode Git actions wait for one key through read-key; pager-mode actions return after pager exit without a second acknowledgement
 GITMAN-14  Git action failure is interactive error state and does not terminate the session by itself
 GITMAN-15  gitman has its required sys operational manual topic
-GITMAN-16  gitman preserves Git's normal pager-selection behavior for read-only actions
+GITMAN-16  gitman starts in pager output mode and p toggles pager/terminal presentation for subsequent Git actions
+GITMAN-17  pager mode forces Git --paginate through the RumiAI pager and disables less F/X while retaining caller LESS options
+GITMAN-18  terminal mode forces Git --no-pager, leaves output accumulated, prints an action header and uses the explicit read-key pause
+GITMAN-19  gitman does not clear the normal terminal or inject arbitrary blank-line batches to separate action output
 ```
