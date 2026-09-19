@@ -58,4 +58,4 @@ setup-dev.sh
 - Do not search Git history unless historical rationale/evidence is specifically needed.
 - If a current specification conflicts with the current implementation, surface the mismatch; do not silently treat the old implementation as a new contract.
 - If a current contract changes, update the canonical file listed here rather than adding a parallel decision document that readers must merge mentally.
-- Package definitions themselves live in `pkg-catalog`; implementation details live in `rumiai-os`; permanent mechanical coverage lives in `rumiai-tests`.
+- Package definitions and provider-independent facility-contract definitions live in `pkg-catalog`; implementation details live in `rumiai-os`; permanent mechanical coverage lives in `rumiai-tests`.
