@@ -1,7 +1,7 @@
 # Service model
 
 Status: Active
-Updated: 2026-09-19 21:15 +02:00
+Updated: 2026-09-19 21:48 +02:00
 
 ## Goal
 
@@ -139,7 +139,7 @@ pkg-catalog/facility/<facility>/...
 
 Compatibility levels of a facility are independent exact contracts; `pkg` does not infer monotonic or backward-compatible evolution between them. A service provider therefore declares one exact facility level, while a service consumer expresses any accepted exact/range compatibility through normal package dependency constraints.
 
-The runtime package libraries now have explicit `facility/` and `repository/` responsibility groups. The generic typed-part boundary is now settled: trusted RumiAI handlers own contract/provider schemas and conformance, while runtime execution has no universal facility apply operation and remains with the owning subsystem. The current package work intentionally implements only `cmd` and `env`; lifecycle remains a later service-specific typed part. Service implementation therefore continues to wait for the lifecycle schema, not for the generic facility-part architecture.
+The runtime package libraries now have explicit `facility/` and `repository/` responsibility groups. The generic typed-part boundary is settled and the inert `cmd`/`env` facility/provider conformance core is now implemented. Trusted RumiAI handlers own contract/provider schemas and conformance, while runtime execution has no universal facility apply operation and remains with the owning subsystem. Lifecycle remains a later service-specific typed part. Service implementation therefore waits for the lifecycle schema, not for the generic facility-part architecture.
 
 ## Completed
 
@@ -163,9 +163,9 @@ No service runtime/test/catalog implementation changed in this checkpoint.
 
 ## Next action
 
-The generic typed-part/meta-model is now settled. Keep this service task paused while the package task implements only the facility/provider `cmd`/`env` core.
+The generic typed-part/meta-model is settled and the package task has implemented the inert facility/provider `cmd`/`env` core without changing defaults, bindings or runtime application.
 
-When service work resumes, this task should:
+Keep this service task paused. When service work resumes, it should:
 
 1. define the minimal lifecycle part against that generic meta-model;
 2. decide which lifecycle operations require provider realization and which may be satisfied generically by `srv`;
