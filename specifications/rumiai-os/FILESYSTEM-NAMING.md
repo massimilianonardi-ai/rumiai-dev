@@ -92,6 +92,7 @@ lib/sys/sh/pkg/facility/pkg-dependency.lib.sh
 lib/sys/sh/pkg/facility/pkg-facility.lib.sh
 lib/sys/sh/pkg/facility/pkg-facility-cmd.lib.sh
 lib/sys/sh/pkg/facility/pkg-facility-env.lib.sh
+lib/sys/sh/pkg/facility/pkg-facility-service.lib.sh
 lib/sys/sh/pkg/repository/pkg-repository-github.lib.sh
 lib/sys/sh/mk/mk-materialize.lib.sh
 ```

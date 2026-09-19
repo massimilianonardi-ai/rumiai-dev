@@ -506,7 +506,7 @@ Accepted and promoted:
 - inert facility/provider definitions and conformance;
 - current trusted `cmd` and `env` parts.
 
-Service lifecycle remains a future typed part owned by the separate service workstream; its schema is not required to keep the current cmd/env facility/provider core correct.
+The separate service workstream has now promoted the trusted `service` typed part: service identity equals facility identity in the baseline, provider realization uses `facility-service/<facility>/start`, and portable process lifecycle remains owned by `srv`. Its conformance implementation proceeds under `handoff/service-model.md` and does not change the cmd/env core ownership.
 
 ### Phase 2: catalog ownership and representation — complete
 
@@ -565,18 +565,11 @@ Exit for the current work unit is the inert conformance core itself, not automat
 
 Exit: all current Java consumers rely only on the provider-independent Java contract.
 
-### Phase 6: service bridge
+### Phase 6: service bridge — semantic model promoted, implementation active separately
 
-Coordinate with `handoff/service-model.md`:
+`handoff/service-model.md` now owns implementation of the promoted `service` typed part and later runtime bridge. The fixed baseline is package-command start, foreground process behavior and generic srv SIGTERM stop, with service identity equal to facility identity.
 
-- define the minimal lifecycle contract part;
-- determine whether endpoint/network capability is part of the first service contract or a subsequent typed part;
-- define provider-specific start mapping versus generic srv stop semantics;
-- make global srv operations consume facility-default selection without a second provider resolver;
-- preserve running-instance concrete-provider identity across later default changes;
-- decide the compatibility role, if any, of `<service>-start`.
-
-Exit: service lifecycle reuses pkg facility/provider selection without turning srv into a second package manager.
+The package task must not duplicate that implementation. Any later shared change to provider selection/default composition is reconciled across both active handoffs before modification.
 
 ### Phase 7: global projection + policy completion
 

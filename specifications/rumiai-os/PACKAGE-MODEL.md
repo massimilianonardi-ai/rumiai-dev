@@ -236,7 +236,7 @@ Facility contracts are extensible through typed declarative parts with defined g
 
 `pkg` owns facility identity, compatibility/conformance validation, provider registration and selection, and interpretation or dispatch of provider realization metadata. When one typed part belongs to an already-existing subsystem responsibility, `pkg` delegates that operation to the owning subsystem rather than creating a parallel implementation or provider graph. For example, portable service process lifecycle remains owned by `srv`; project development/build lifecycle remains owned by `mk` where applicable.
 
-The currently implemented command and environment projections are supported facility-realization parts, not an exhaustive definition of what a facility may be. Additional typed parts require their own explicit generic semantics before providers may use them.
+The current facility model supports trusted command, environment and service parts. Additional typed parts require their own explicit generic semantics before providers may use them.
 
 ### Typed facility parts
 
@@ -262,11 +262,12 @@ The generic facility layer enumerates the parts of the exact facility contract, 
 
 There is deliberately no universal runtime `apply` operation for facility parts. Runtime use belongs to the subsystem that owns the operation. Command projection, environment application and service lifecycle may therefore have different consumers without weakening the common facility contract.
 
-The initial supported contract part types are:
+The current supported contract part types are:
 
 ```text
 cmd
 env
+service
 ```
 
 For these types, the provider-independent contract contains the required names as regular marker files:
@@ -287,9 +288,42 @@ facility-env/<facility>
 
 They are not renamed merely for symmetry. The `cmd` handler owns command-name and executable-target conformance. The `env` handler owns environment-name and `root | root-path | literal` descriptor conformance; `PATH` remains invalid environment metadata.
 
+The `service` part marks a facility as portable-service-capable under `srv`. Baseline service identity is exactly facility identity; no second service registry or service-provider namespace is introduced.
+
+The exact baseline service contract is:
+
+```text
+facility/<facility>/<compatibility>/service/start
+    package-command
+
+facility/<facility>/<compatibility>/service/process
+    foreground
+
+facility/<facility>/<compatibility>/service/stop
+    sigterm
+```
+
+These scalar values are trusted schema tokens, not provider-defined properties:
+
+- `start = package-command` requires each provider to map service start to one ordinary command of that same provider package;
+- `process = foreground` requires the provider command to remain the managed foreground process rather than self-daemonizing and abandoning `srv` process ownership;
+- `stop = sigterm` delegates normal termination to generic `srv` SIGTERM lifecycle and does not require a provider-specific stop command.
+
+The corresponding provider realization is:
+
+```text
+facility-service/<facility>/start
+```
+
+and contains exactly one package-command name. That command is lifecycle implementation mapping only; it does not become a consumer-visible `cmd` facility member unless the facility contract independently declares it under `cmd/`.
+
+Service conformance validates the declarative shape, the package-command mapping and mechanically checkable target properties. Static validation cannot prove that an external process truly remains foreground or obeys SIGTERM correctly; those behavioral claims require real provider/service validation.
+
+Runtime execution of the service part remains owned by `srv`. After provider selection, `srv` must launch the start command belonging to that exact provider concrete rather than performing an unrelated PATH lookup. The normal package launcher remains responsible for package HOME, environment and dependency preparation.
+
 Facility and provider definitions are **inert declarations**. Validating or reading them does not create a facility default, create a consumer binding, publish commands, export environment variables or otherwise select/apply a provider. Provider selection and runtime application happen only through separate explicit operations owned by their respective subsystems.
 
-A future typed part such as service lifecycle must use the same trusted contract/realization/conformance boundary, while execution remains owned by `srv`. No lifecycle or endpoint schema is implied merely by the generic typed-part mechanism.
+The `service` part uses the same trusted contract/realization/conformance boundary as `cmd` and `env`, while process execution remains owned by `srv`. Endpoint, readiness and health are not implied by service capability and are not fields of the baseline service part. A later provider-independent contract for one of those responsibilities must use its own explicit semantics rather than extending `service` into an arbitrary property bag.
 
 ### Facility compatibility levels
 
@@ -573,7 +607,13 @@ PKG-52  runtime provider resolution/application does not reinterpret facility co
 PKG-53  facility contracts use the generic envelope facility/<facility>/<compatibility>/<part>/..., while each trusted part handler owns the schema below <part>
 PKG-54  supported facility part types are implemented by trusted RumiAI code; unknown catalog part types are invalid and catalog data never supplies executable handlers
 PKG-55  the generic facility layer orchestrates contract/provider conformance but defines no universal runtime apply operation
-PKG-56  cmd and env are the initial supported facility contract part types and retain the existing facility-cmd and facility-env provider-realization surfaces
-PKG-57  facility/provider definitions and conformance validation are inert: they do not create defaults/bindings or apply commands/environment merely by existing or being validated
+PKG-56  cmd, env and service are supported facility contract part types; cmd/env retain facility-cmd/facility-env and service uses facility-service/<facility>/start as its provider realization
+PKG-57  facility/provider definitions and conformance validation are inert: they do not create defaults/bindings or apply commands/environment/services merely by existing or being validated
 PKG-58  env contract marker leaves preserve environment-variable identifiers and use the env-name grammar as an explicit exception to general controlled-path lowercase naming
+PKG-59  baseline service identity is facility identity; a service-capable facility is identified by a service typed part and no second service registry/provider graph exists
+PKG-60  baseline service contract semantics are start=package-command, process=foreground and stop=sigterm
+PKG-61  a provider service start realization names one ordinary command of that same provider package and does not by itself add that command to the consumer-visible cmd facility surface
+PKG-62  srv owns service process lifecycle; pkg owns service-part contract/provider conformance and provider selection
+PKG-63  provider-backed service start launches the command from the exact selected provider concrete rather than re-resolving an unrelated PATH command
+PKG-64  endpoint, readiness and health are outside the baseline service typed part
 ```
