@@ -9,13 +9,23 @@ This document defines the current semantic contract of the `m` package subsystem
 
 `pkg` belongs to the technical `m` substrate.
 
-Package definition/catalog data live in the separate:
+Package definitions, provider-independent facility contracts and related catalog data live in the separate:
 
 ```text
 pkg-catalog
 ```
 
 repository. Runtime package logic lives in `rumiai-os` under the `m` layer.
+
+The catalog has two disjoint top-level semantic areas:
+
+```text
+pkg-catalog/
+    pkg/<package>/...
+    facility/<facility>/...
+```
+
+`pkg/` contains installable package definitions. `facility/` contains provider-independent facility-contract definitions. The two namespaces are intentionally separate: a facility definition is never an installable package merely because both are catalog data. Both are read from the same immutable catalog revision/snapshot, so a package/provider realization and the facility contract it claims to satisfy are revision-coupled without a second catalog authority. The exact contents of `facility/<facility>/` are defined only by the promoted facility-contract meta-model; this layout decision does not predefine that still-open schema.
 
 ## Public command
 
@@ -87,7 +97,17 @@ Consumers must not assume private integration paths beyond a current documented 
 
 ## Catalog and repository adapters
 
+A requested package name is resolved only beneath:
+
+```text
+pkg/<package>
+```
+
+inside the selected `pkg-catalog` snapshot. The `facility/` area is therefore outside the installable-package namespace and must never be enumerated or interpreted as a package merely because it is present in the same repository.
+
 Package definitions describe how a package is resolved/integrated. Repository-specific behavior belongs behind repository adapters rather than leaking provider-specific assumptions into the generic package orchestration.
+
+Current package-library physical organization keeps public subcommand entrypoint libraries and cross-cutting package orchestration directly under `lib/sys/sh/pkg/`. Internal facility/dependency libraries live under `lib/sys/sh/pkg/facility/`. Repository-specific upstream adapters live under `lib/sys/sh/pkg/repository/`. Physical grouping does not change library leaf identity or manual-topic identity. `pkg-provider.lib.sh` remains directly under `lib/sys/sh/pkg/` because it is both the public `pkg provider` subcommand entrypoint and the provider-selection API; internal facility-contract responsibilities must not be added to it merely to avoid creating appropriately owned internal libraries.
 
 A catalog range anchor is ordering metadata, not by itself a request to install or download that exact version. Repository comparison logic must therefore be able to order a syntactically valid historical anchor without treating current upstream availability as a prerequisite when the provider's version ordering can be determined locally. Concrete version resolution and artifact resolution remain responsible for enforcing actual upstream availability and integrity.
 
@@ -460,4 +480,8 @@ PKG-38  facility contract, provider realization metadata and mutable provider-se
 PKG-39  facility contracts extend through typed declarative parts with defined generic semantics, not arbitrary provider-specific executable metadata
 PKG-40  delegation of a facility-contract part to srv, mk or another existing subsystem does not create a second provider/dependency model
 PKG-41  facility-cmd and facility-env are current provider-realization parts and are not the exhaustive definition of a facility
+PKG-42  pkg-catalog separates installable package definitions under pkg/<package> from provider-independent facility definitions under facility/<facility>
+PKG-43  package and facility catalog data used together are revision-coupled through the same pkg-catalog snapshot
+PKG-44  package resolution never treats the facility catalog area as an installable package namespace
+PKG-45  package repository adapters live under lib/sys/sh/pkg/repository and internal facility/dependency libraries live under lib/sys/sh/pkg/facility; public pkg subcommand entrypoint libraries remain directly under lib/sys/sh/pkg
 ```
