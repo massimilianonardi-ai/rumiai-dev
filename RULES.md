@@ -67,7 +67,7 @@ rumiai-dev-PoCs
     experiments for questions that are not yet settled
 
 pkg-catalog
-    package definitions/catalog data used by the m package subsystem
+    package definitions, facility contracts and catalog data used by the m package subsystem
 ```
 
 Historical/reference repositories are design input only unless a current RumiAI source explicitly adopts a contract from them.
