@@ -189,6 +189,35 @@ Package identity and facility identity are distinct contracts:
 
 Provider multiplicity therefore belongs to the normal installed state.
 
+### Facility contract
+
+A facility is a **provider-independent, substitutable capability contract** owned by the `pkg` subsystem.
+
+The facility identity describes what a consumer may depend on independently of which concrete package provides it. A consumer requirement therefore names a facility and compatibility constraint, not a concrete provider package. A provider declaration states that one concrete package realizes that facility at the declared compatibility level and is subject to the facility contract for that level.
+
+A facility is not defined by how many runtime objects it exposes. Its contract may require one or several typed declarative parts. A capability whose complete interoperable contract consists of one command may legitimately be a facility when provider substitution and provider-independent consumption are real requirements. Conversely, installing or globally linking an ordinary package command does **not** by itself create a facility or provider-selection layer.
+
+The provider-independent contract, the provider's concrete realization of that contract and mutable provider-selection configuration are distinct classes of information:
+
+```text
+facility contract
+    provider-independent semantics and compatibility
+
+provider realization
+    concrete package metadata that satisfies the contract
+
+system conf
+    mutable facility default, consumer binding and later selection policy
+```
+
+Mutable `conf` is not the authority for what a facility means. Changing a facility default or consumer binding selects another realization; it does not redefine the facility contract.
+
+Facility contracts are extensible through typed declarative parts with defined generic semantics. They must not degrade into an arbitrary provider-specific property bag or executable configuration. Provider-specific shell logic is not a facility-contract mechanism.
+
+`pkg` owns facility identity, compatibility/conformance validation, provider registration and selection, and interpretation or dispatch of provider realization metadata. When one typed part belongs to an already-existing subsystem responsibility, `pkg` delegates that operation to the owning subsystem rather than creating a parallel implementation or provider graph. For example, portable service process lifecycle remains owned by `srv`; project development/build lifecycle remains owned by `mk` where applicable.
+
+The currently implemented command and environment projections are supported facility-realization parts, not an exhaustive definition of what a facility may be. Additional typed parts require their own explicit generic semantics before providers may use them.
+
 ### Provider selection
 
 Provider installation and provider selection are separate responsibilities.
@@ -276,7 +305,7 @@ Facility defaults belong to the package subsystem's system `conf` area. Their co
 
 Provider runtime application is owned generically by the launcher. Package command wrappers and package environment scripts must not contain provider-specific dependency logic such as Java-provider lookup, concrete binding reads or hardcoded `JAVA_HOME` construction.
 
-Provider packages describe the commands and environment values exported by each facility through declarative package metadata. The launcher resolves the effective provider selector, validates the selected concrete against the consumer dependency, interprets that facility metadata and applies the resulting command-path and environment projection before launching the consumer.
+For the currently supported command/environment parts of a facility realization, provider packages describe the concrete commands and environment values through declarative package metadata. The launcher resolves the effective provider selector, validates the selected concrete against the consumer dependency and facility contract, interprets the applicable realization metadata and applies the resulting command-path and environment projection before launching the consumer.
 
 Launch-time environment precedence is:
 
@@ -291,12 +320,14 @@ Provider facility command directories are prepended while applying projections, 
 
 A facility-specific projection is data, not executable provider-specific shell logic.
 
-The catalog projection schema is:
+The current provider-realization projection schema for these two supported parts is:
 
 ```text
 facility-cmd/<facility>/<command>
 facility-env/<facility>
 ```
+
+These paths describe how one provider realizes command/environment portions of a facility; they are not the provider-independent facility-contract definition itself.
 
 A `facility-cmd` entry is a scalar text file containing exactly one relative pathname, followed by newline, to an executable inside the provider useful root. The entry name is the command name exposed by that facility. Integration validates that the target remains inside the useful root and materializes a provider-private command projection for the facility. When a selected provider is applied to a consumer, that facility command directory is prepended to the consumer process PATH.
 
@@ -421,4 +452,12 @@ PKG-30  every new m bootstrap derives global facility environment from currently
 PKG-31  global facility environment uses the valid active ext-osarch class when available and otherwise only a resolvable generic provider class
 PKG-32  global facility environment processes facility defaults in LC_ALL=C facility-name order and later facilities win on duplicate ordinary variables
 PKG-33  PATH is reserved to facility command projection and is not a valid facility-env variable
+PKG-34  a facility is a provider-independent substitutable capability contract owned by pkg
+PKG-35  consumers depend on facility identity/compatibility rather than concrete provider identity
+PKG-36  a provider declaration claims conformance and supplies the concrete realization required by the facility contract
+PKG-37  ordinary package command publication does not by itself create a facility; a single-command facility is valid only when it represents a real provider-independent substitutable capability
+PKG-38  facility contract, provider realization metadata and mutable provider-selection conf are distinct authorities
+PKG-39  facility contracts extend through typed declarative parts with defined generic semantics, not arbitrary provider-specific executable metadata
+PKG-40  delegation of a facility-contract part to srv, mk or another existing subsystem does not create a second provider/dependency model
+PKG-41  facility-cmd and facility-env are current provider-realization parts and are not the exhaustive definition of a facility
 ```
