@@ -70,39 +70,29 @@ The preferred behavior is not a hard availability requirement. When the preferre
 
 The current backend policy is deliberately small and explicit.
 
-### Linux
+### Preferred backend
 
-On Linux, `pager` prefers:
+On every current host, `pager` prefers:
 
 ```text
 less
 ```
 
-The reason is observed divergence of the common util-linux `more` implementation from the preferred interactive behavior, including automatic exit at end-of-file in its normal host configuration.
+when that executable is available.
 
-`less` is not a POSIX baseline utility. On Linux it is therefore a preferred host capability of `pager`, hidden behind the abstraction rather than exposed to consumers.
+`less` is not a POSIX baseline utility. It remains an optional host capability hidden behind the `pager` abstraction rather than a dependency exposed to consumers. The preference is host-neutral because it is based on capability availability, not operating-system identity.
 
-If `less` is unavailable, `pager` falls back to:
+When `less` is selected, `pager` preserves the caller environment rather than neutralizing `LESS`, `LESSOPEN`, `LESSCLOSE` or equivalent caller-supplied pager behavior. Consumers may intentionally configure those variables to control session behavior.
 
-```text
-more
-```
+### Fallback backend
 
-The fallback is intentionally accepted as degraded behavior: availability of paging is preferred over failing only because the richer `less` interaction is unavailable. Consumers remain insulated from the backend choice.
-
-When `less` is selected, `pager` preserves the caller environment rather than neutralizing `LESS`, `LESSOPEN`, `LESSCLOSE` or equivalent caller-supplied pager behavior. Programs such as Git may intentionally set pager environment for their normal presentation semantics; the abstraction must not erase that policy.
-
-### Other hosts
-
-On other current POSIX/POSIX-compatible hosts, `pager` delegates to:
+If `less` is unavailable, `pager` falls back to the POSIX baseline:
 
 ```text
 more
 ```
 
-A host-specific adapter is added only when real host evidence shows that the backend does not provide the required operational behavior or when another concrete requirement justifies it.
-
-Host detection uses the existing `m` os/architecture normalization responsibility rather than creating a second platform detector.
+The fallback is intentionally accepted as degraded behavior. It provides paging but does not guarantee every richer interaction property available from `less`, including caller control through `LESS`.
 
 ## Configuration boundary
 
@@ -143,9 +133,9 @@ PAGER-01  pager belongs to m and is exposed as bin/sys/pager
 PAGER-02  pager accepts zero or more file operands; zero operands means standard input
 PAGER-03  non-terminal output is copied directly and remains non-interactive for both stdin and file input
 PAGER-04  pager owns host backend selection; consumers do not select more/less directly
-PAGER-05  Linux prefers less and falls back to more when less is unavailable
-PAGER-06  other current hosts use more until a concrete host divergence requires an adapter
-PAGER-07  less remains a host-specific capability hidden behind pager, not a POSIX baseline primitive
+PAGER-05  every current host prefers less when available and falls back to POSIX more when it is unavailable
+PAGER-06  backend selection is capability-based rather than OS-name-based
+PAGER-07  less remains an optional host capability hidden behind pager, not a POSIX baseline primitive
 PAGER-08  pager backend selection is fixed policy, not caller-supplied shell configuration
 PAGER-09  pager preserves caller environment consumed by the selected backend
 PAGER-10  manual normal presentation delegates to pager
