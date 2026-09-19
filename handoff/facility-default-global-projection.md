@@ -1,21 +1,23 @@
 # Facility default global projection
 
-Status: Active
+Status: Complete
 Updated: 2026-09-19
 
 ## Goal
 
-Define and implement the global command/environment projection owned by a facility default, while preserving the existing package-default publication model, consumer-specific provider overrides and the technical m bootstrap boundary.
+Define and implement facility-default global command publication while preserving package-default semantics, consumer-specific provider overrides and the technical `m` bootstrap boundary, with `facility-env` remaining consumer-launch-only.
 
 ## Current repository revisions
 
 ```text
-rumiai-dev       d034dcfca095a839200ce181908cf88381e3160e
-rumiai-os        a1644b2238f17633d19cdf2e963c7cc8f09dfa6a
-rumiai-tests     322cee67192e38c828145325131c9fe6d0574c40
+rumiai-dev       08e081763f125a38a5deea41abe6cb169094127d
+rumiai-os        7e2a4bfe519ac3ee87dab9c820a50bbcdfa2303f
+rumiai-tests     7273b6d304c0312046da91543effb00a93fec31e
 pkg-catalog      bd06488d3c67160e820c04d13067f852c8861c32
-rumiai-dev-PoCs  af61caccde43151ef83a96b8988536f9aa997a0b
+rumiai-dev-PoCs  cb8c5d636ce65e6cb00626ed08947fe25a25988e
 ```
+
+The recorded `rumiai-dev` revision is the current canonical state immediately before this final completion snapshot.
 
 ## Applicable canonical sources
 
@@ -34,40 +36,32 @@ rumiai-dev-PoCs  af61caccde43151ef83a96b8988536f9aa997a0b
 
 ## Fixed task-local choices
 
-- Global facility publication is command publication only; `facility-env` remains consumer-launch projection and is not injected into ambient `m`/shell state.
-- Global facility commands reuse the existing `bin/ext` and `bin/ext-<osarch>` roots.
-- Unversioned facility-default selectors publish through provider package-default selectors; versioned selectors publish through pinned concretes.
-- Consumer-specific bindings do not alter global facility command publication.
-- Publication must preserve external-command ownership and fail on unrelated command-name collisions.
-
-## Working design
-
-The remaining implementation design is transactional/mechanical rather than semantic:
-
-- reconcile command sets when a facility default changes;
-- reconcile unversioned facility projections when a provider package default changes and the selected concrete exposes a different command set;
-- preserve/restore existing valid projections on failed transitions as far as the package-default mutation contract requires.
-
-No bootstrap or shell environment mechanism is added by this task.
+No task-local semantic choices remain. Durable behavior is promoted to `specifications/rumiai-os/PACKAGE-MODEL.md`.
 
 ## Completed
 
-- Previous provider/facility realignment is complete and validated.
-- Current provider metadata already materializes generic `facility-cmd` and `facility-env` data.
-- Current consumer launch re-resolves provider selection and applies those projections generically.
-- Current package defaults publish package-owned commands into `bin/ext[-osarch]`.
-- Current bootstrap/PATH, osarch selection and shell startup behavior were inspected for reuse boundaries.
-- PoC 011 (`rumiai-dev-PoCs@cb8c5d636ce65e6cb00626ed08947fe25a25988e`) validated selector-preserving global command links, pinned selectors, independent osarch projections and exact-target collision ownership; GitHub Actions run `35425864532` PASS.
-- The global-command / consumer-environment distinction was promoted into `PACKAGE-MODEL.md`.
+- Facility defaults now reconcile owned commands into `bin/ext` and `bin/ext-<osarch>`.
+- Unversioned selectors publish through provider package-default selectors; pinned selectors target pinned concretes.
+- Provider package-default transitions reconcile command-set additions/removals and class disappearance/reappearance.
+- Consumer-specific bindings do not affect global command publication.
+- Unrelated external-command collisions reject the mutation and preserve authoritative selector/projection state.
+- `facility-env` remains a consumer-launch projection and is not injected into ambient `m`/shell state.
+- Public library interfaces and manuals are aligned with the current grouped package-library layout.
+- Permanent regression coverage exists in `tests/rumiai-os/pkg/facility-default-global.test`.
+- Structural validation run `35429901025` PASS on `rumiai-os@7e2a4bfe519ac3ee87dab9c820a50bbcdfa2303f` and `rumiai-tests@7273b6d304c0312046da91543effb00a93fec31e`, including provider config, late binding, no install-time binding, unversioned follow, command-set reconciliation, pinned selectors, collision rollback, binding independence, class-presence reconciliation, ambient facility-env absence and consumer runtime projection/precedence.
+- Live validation run `35429765096` attempt 2 PASS on the same product/catalog revisions with `rumiai-tests@3809d5854a5c9349786de463a5a803d39e29613c`: Linux Temurin, GraalVM, coexistence, Maven and Keycloak; macOS Temurin ARM64/Intel and GraalVM ARM64.
+- The five live-test file blobs are identical between `rumiai-tests@3809d5854a5c9349786de463a5a803d39e29613c` and final `rumiai-tests@7273b6d304c0312046da91543effb00a93fec31e`.
+- Final-suite live run `35429958951` passed every case except GraalVM macOS ARM64; that case failed only on upstream HTTP 403. A dedicated exact-revision retry `35430034548` reproduced the same upstream 403 before package integration.
+- The GitHub-backed repository rate-limit/reliability issue is intentionally deferred in `todo/github-package-repository-rate-limits.md`.
 
 ## Current state
 
-The global facility command publication contract is now settled and canonical, but implementation is still pending. Facility defaults currently store selector intent only and do not publish facility commands.
+The facility-default global projection contract and implementation are aligned. Permanent structural coverage passes on the final product/test revisions. Real live provider/consumer behavior is validated; the only final-suite live failure is an external GitHub 403 on GraalVM macOS ARM64, separately tracked as deferred repository-adapter reliability work.
 
 ## Next action
 
-Implement global facility command publication in the package subsystem, add permanent regression coverage and validate provider-default plus provider-package-default transitions.
+None for this task.
 
 ## Blockers / open questions
 
-- transactional rollback details when a facility-default or provider-package-default transition fails after partial filesystem mutation.
+None for facility-default global projection.
