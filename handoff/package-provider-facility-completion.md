@@ -206,8 +206,11 @@ Advantages:
 - a change that adds/changes a contract and updates its providers can be atomic in one commit/PR;
 - no second remote, cache, lock, refresh policy, rate-limit surface or offline dependency is introduced;
 - permanent/live tests can bind one catalog revision instead of coordinating two moving repositories;
-- the current install snapshot mechanism can potentially expose both package definitions and facility contracts without a second acquisition pipeline;
+- the current install snapshot mechanism already archives the whole `pkg-catalog` revision, so facility definitions placed elsewhere in that same repository would already be present in the local immutable snapshot without a second acquisition step;
+- the current package resolver addresses a requested package directly beneath that snapshot (`<snapshot>/<package>`) rather than requiring all root entries to be treated as packages, which makes a separate reserved logical contract area technically plausible;
 - local-first/offline behavior remains simpler because one cached catalog snapshot contains the semantic data required to interpret packages.
+
+This concrete implementation evidence weakens the main operational argument for a separate facility repository. The remaining same-repository design problem is namespace hygiene: the facility-definition area must use a reserved catalog location that cannot be confused with a valid package identity. The exact pathname is still intentionally open and must follow current naming rules rather than being invented conversationally.
 
 Costs/risks:
 
