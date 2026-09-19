@@ -18,7 +18,7 @@ Latest reconciled checkpoint before this handoff sync:
 ```text
 rumiai-dev      30ce4aa6b86b332c4724a1418831cbfe2b45a2c9
 rumiai-os       50b760bd3cfe08922068ceb7d973d7edee12251c
-rumiai-tests    899ac4df79429db1d28602ae08ded1f9f8a72f64
+rumiai-tests    4faab7053c02fb954cad6b995b31b8d89774a6ff
 pkg-catalog     4c67eb5c7cf27fbc48c222fd8196f0127409be00
 rumiai-dev-PoCs cb8c5d636ce65e6cb00626ed08947fe25a25988e
 ```
@@ -244,8 +244,8 @@ The former commands-only global environment rule has been superseded by the Phas
 Current grouped package libraries contain the provider model:
 
 - lib/sys/sh/pkg/pkg-provider.lib.sh
-- lib/sys/sh/pkg/pkg-dependency.lib.sh
-- lib/sys/sh/pkg/pkg-facility.lib.sh
+- lib/sys/sh/pkg/facility/pkg-dependency.lib.sh
+- lib/sys/sh/pkg/facility/pkg-facility.lib.sh
 - lib/sys/sh/pkg/pkg-integration.lib.sh
 - lib/sys/sh/pkg/pkg-launch.lib.sh
 - lib/sys/sh/pkg/pkg-default.lib.sh
