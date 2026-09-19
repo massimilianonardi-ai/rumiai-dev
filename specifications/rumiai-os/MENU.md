@@ -52,7 +52,7 @@ menu [-H <header>] [-F <footer>] [-B <bottom-footer>]
      [-K <action-key> ...] [-M] [-S <toggle-key>] [--] <item> ...
 
 menu [-H <header>] [-F <footer>] [-B <bottom-footer>]
-     -K <action-key> [-K <action-key> ...]
+     [-K <action-key> ...]
      [-M] [-S <toggle-key>] [-P <parent-key>]
      [-n] [-m] [-c] -d <directory>
 ```
@@ -61,13 +61,15 @@ The first form is list mode. The second is filesystem mode.
 
 `-H`, `-F` and `-B` configure the normal header, immediate footer and bottom-anchored footer respectively.
 
-`-K` is repeatable and adds an action key. In list mode Enter remains the built-in confirmation action and `-K` adds alternate actions. In filesystem mode at least one `-K` is required because Enter is reserved for browsing.
+`-K` is repeatable and adds an action key. In list mode Enter remains the built-in confirmation action and `-K` adds alternate actions. In filesystem single-selection mode at least one `-K` is required because Enter is reserved for browsing. In filesystem multi-selection mode, when no `-K` is supplied, Tab is installed as the fallback confirmation action key. If one or more `-K` options are supplied, only those explicit action keys are used and Tab is not added implicitly.
 
 Single selection is the default. In single-selection mode every successful action returns the current item only and no multi-selection marks are rendered.
 
 `-M` explicitly enables multi-selection with Space as the default toggle key.
 
 `-S <toggle-key>` explicitly enables multi-selection and selects its toggle key. Using `-M` together with `-S` is valid; `-S` determines the toggle key.
+
+The filesystem multi-selection Tab fallback is available only when Tab is not already reserved by another configured role. In particular, `menu -S tab -d <directory>` and `menu -M -P tab -d <directory>` require an explicit `-K` because Tab cannot simultaneously be the implicit confirmation action and the toggle or parent-navigation key.
 
 In filesystem mode, Backspace is the default parent-navigation key. `-P <parent-key>` replaces it with another configurable key. `-P` is invalid outside filesystem mode.
 
@@ -116,7 +118,7 @@ Confinement applies to every directory transition, including directory symlinks 
 
 Displayed filesystem labels are single-line safe representations of entry names. Returned values preserve the selected absolute path rather than the display sanitization.
 
-Enter on a directory resolves and enters that directory. Enter on a non-directory does not finish the menu. A configured action key returns the current value in single-selection mode or the marked values in multi-selection mode.
+Enter on a directory resolves and enters that directory. Enter on a non-directory does not finish the menu. A configured action key returns the current value in single-selection mode or the marked values in multi-selection mode. When filesystem multi-selection has no explicit action key, Tab serves as that confirmation action.
 
 The configured parent-navigation key behaves semantically as though the current directory's `..` entry had been selected and entered. The visible `..` entry remains available whenever parent navigation is allowed.
 
@@ -139,6 +141,8 @@ Escape cancels. Navigation keys move the current row. Enter is delivered to the 
 Multi-selection has no reserved toggle key while it is disabled. Once multi-selection is enabled, its configured toggle key is reserved. Space is the default toggle key; `-S` may replace it. When multi-selection is disabled, Space is available as an action key if explicitly configured.
 
 Filesystem mode additionally reserves its parent-navigation key. Backspace is the default; `-P` may replace it. The parent-navigation key is a filesystem-provider concern rather than a globally engine-owned navigation key, so Backspace remains available to non-filesystem callers unless they configure another behavior for it.
+
+In filesystem multi-selection mode with no explicit `-K`, Tab is reserved as the fallback confirmation action. Supplying any explicit `-K` suppresses that fallback. Tab must remain exclusive with the enabled multi-selection toggle and filesystem parent-navigation key.
 
 Action/toggle/parent keys may use one text key or supported named terminal keys. The command recognizes `space` as the symbolic name for Space and accepts `arrow_left` / `arrow_right` as input aliases for the canonical `left` / `right` key names.
 
@@ -346,4 +350,6 @@ MENU-13  provider reload preserves/prunes valid index marks; provider reset clea
 MENU-14  menu.lib.sh delegates terminal mechanics to term.lib.sh
 MENU-15  internal menu.lib.sh functions follow the leading-underscore visibility contract
 MENU-16  menu and menu.lib.sh each have their required sys operational manual topic
+MENU-17  filesystem multi-selection without explicit -K uses Tab as the fallback confirmation action
+MENU-18  explicit filesystem action keys suppress the implicit Tab fallback, and Tab cannot be shared with toggle or parent roles
 ```
