@@ -238,6 +238,57 @@ Facility contracts are extensible through typed declarative parts with defined g
 
 The currently implemented command and environment projections are supported facility-realization parts, not an exhaustive definition of what a facility may be. Additional typed parts require their own explicit generic semantics before providers may use them.
 
+### Typed facility parts
+
+A facility contract is a composition of trusted **typed parts**. The generic facility layer owns only the common envelope and conformance orchestration:
+
+```text
+facility/<facility>/<compatibility>/<part>/...
+```
+
+The content below `<part>/` belongs to that part type's schema. The generic layer must not force every part into one universal member/value format.
+
+A supported part type is implemented by RumiAI-owned trusted code. Catalog data cannot install executable validators, handlers or runtime logic. Unknown part types are invalid.
+
+For each supported part type, the facility/provider layer defines:
+
+```text
+contract schema
+provider-realization schema
+mechanical conformance validation
+```
+
+The generic facility layer enumerates the parts of the exact facility contract, dispatches validation to the trusted handler for each part and rejects undeclared or unsupported provider realization data. It does not interpret type-specific command names, environment descriptors, lifecycle operations or equivalent domain data itself.
+
+There is deliberately no universal runtime `apply` operation for facility parts. Runtime use belongs to the subsystem that owns the operation. Command projection, environment application and service lifecycle may therefore have different consumers without weakening the common facility contract.
+
+The initial supported contract part types are:
+
+```text
+cmd
+env
+```
+
+For these types, the provider-independent contract contains the required names as regular marker files:
+
+```text
+facility/<facility>/<compatibility>/cmd/<command>
+facility/<facility>/<compatibility>/env/<variable>
+```
+
+The existing provider-realization surfaces remain authoritative for these types:
+
+```text
+facility-cmd/<facility>/...
+facility-env/<facility>
+```
+
+They are not renamed merely for symmetry. The `cmd` handler owns command-name and executable-target conformance. The `env` handler owns environment-name and `root | root-path | literal` descriptor conformance; `PATH` remains invalid environment metadata.
+
+Facility and provider definitions are **inert declarations**. Validating or reading them does not create a facility default, create a consumer binding, publish commands, export environment variables or otherwise select/apply a provider. Provider selection and runtime application happen only through separate explicit operations owned by their respective subsystems.
+
+A future typed part such as service lifecycle must use the same trusted contract/realization/conformance boundary, while execution remains owned by `srv`. No lifecycle or endpoint schema is implied merely by the generic typed-part mechanism.
+
 ### Facility compatibility levels
 
 A facility compatibility value identifies one **exact provider-independent contract level** for that facility. Different compatibility levels of the same facility are not required to form a monotonic or backward-compatible lineage. A later/higher numeric level may preserve the previous surface, extend it, reduce it or change it substantially.
@@ -260,7 +311,7 @@ Each published `<facility, compatibility>` contract is complete and self-contain
 
 The baseline facility-contract model exposes only the required interoperable surface. Every member of the contract is mandatory for every provider that declares that exact level. Provider-specific extras remain outside that facility realization as ordinary package capabilities, or are represented by another facility when they deserve their own provider-independent substitutable contract. Optional facility members are not part of the baseline model.
 
-Provider conformance is established during installation/integration against the facility contract from the same immutable `pkg-catalog` snapshot that supplied the package definition. Runtime provider selection/application does not fetch the catalog again; it relies on the validated, materialized provider declaration/realization and on the immutable meaning of the declared facility level.
+Provider conformance is validated against the facility contract from the same immutable `pkg-catalog` snapshot that supplied the provider package definition. The facility/provider validation responsibility itself is independent of whichever later package operation invokes it. Runtime provider selection/application does not reinterpret facility meaning from another catalog revision; it relies on the validated provider declaration/realization and on the immutable meaning of the declared facility level.
 
 Mechanical conformance validation proves only properties that can actually be established from the package artifact and declarative metadata. It must not be described as proof of the provider's full behavioral implementation of the external capability.
 
@@ -515,6 +566,11 @@ PKG-47  pkg never infers backward compatibility from compatibility ordering; con
 PKG-48  a concrete provider declares one exact facility compatibility level and is validated against that exact self-contained contract
 PKG-49  published facility-level semantics are immutable; a change to required guarantees uses another compatibility level
 PKG-50  the baseline facility contract contains required interoperable members only; provider-specific extras are not optional members of that facility
-PKG-51  provider conformance is validated during install/integration against the facility contract from the same pkg-catalog snapshot as the package definition
-PKG-52  runtime provider resolution/application does not refetch facility contracts from the catalog
+PKG-51  provider conformance validation uses the facility contract from the same pkg-catalog snapshot as the provider package definition
+PKG-52  runtime provider resolution/application does not reinterpret facility contracts from another catalog revision
+PKG-53  facility contracts use the generic envelope facility/<facility>/<compatibility>/<part>/..., while each trusted part handler owns the schema below <part>
+PKG-54  supported facility part types are implemented by trusted RumiAI code; unknown catalog part types are invalid and catalog data never supplies executable handlers
+PKG-55  the generic facility layer orchestrates contract/provider conformance but defines no universal runtime apply operation
+PKG-56  cmd and env are the initial supported facility contract part types and retain the existing facility-cmd and facility-env provider-realization surfaces
+PKG-57  facility/provider definitions and conformance validation are inert: they do not create defaults/bindings or apply commands/environment merely by existing or being validated
 ```

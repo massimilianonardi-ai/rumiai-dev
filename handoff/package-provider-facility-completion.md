@@ -1,7 +1,7 @@
 # Package provider/facility completion
 
 Status: Active
-Updated: 2026-09-19 20:55 +02:00
+Updated: 2026-09-19 21:15 +02:00
 
 ## Goal
 
@@ -88,385 +88,80 @@ The durable semantic rules already promoted to `PACKAGE-MODEL.md` are not duplic
 8. No additional library subdivision is authorized by aesthetics alone. New facility libraries are introduced only after the meta-model establishes a real responsibility not already owned by an existing library.
 9. Phases 4 through 8 are blocked on Phase 1. Do not implement generalized conformance, Java contract migration, the service bridge, policy changes or additional GraalVM facilities until the facility contract meta-model is accepted and promoted.
 
-## Working design
+## Active implementation scope
 
-The compatibility/contract evolution question is resolved and canonical. The remaining Phase-1 design question is the implementation boundary for typed facility parts.
+The user accepted the typed-part proposal with one explicit correction: this phase must stay focused on **facility contracts and provider realizations**. Binding/default configuration, bootstrap environment application and other runtime selection/application behavior are separate later work.
 
-The current product already proves that different part types need different runtime semantics:
-
-- command projection is materialized under `facility-cmd`, consumed by launcher PATH projection and by global facility publication;
-- environment projection is materialized under `facility-env`, interpreted into concrete values and applied by provider/bootstrap logic;
-- service lifecycle is currently owned by `srv` and cannot be reduced to either PATH or environment projection.
-
-The proposal is therefore to standardize the **integration lifecycle of a part**, not to force one generic runtime `apply` interface onto all part types.
-
-### 1. Generic facility-part lifecycle
-
-Every supported part type participates in exactly three integration operations:
+The accepted core is now canonical in `PACKAGE-MODEL.md`:
 
 ```text
-contract_validate
-realization_validate
-realization_materialize
+facility contract
+    exact provider-independent required surface
+
+provider realization
+    concrete declarative mapping supplied by one package
+
+facility/provider conformance
+    trusted RumiAI validation of contract + realization
 ```
 
-Semantics:
+Definitions and validation are inert. They do not create defaults or bindings and do not apply environment or commands.
 
-1. `contract_validate`
-   - validates the provider-independent contract subtree for that part type;
-   - owns the grammar and semantic constraints of that type's contract data;
-   - performs no provider selection and no runtime action.
+The current implementation work unit is therefore limited to:
 
-2. `realization_validate`
-   - validates one provider's declarative realization of that contract part;
-   - receives the exact facility contract part, provider definition data and extracted useful root;
-   - proves only mechanically checkable conformance;
-   - rejects missing required members, unexpected facility members and invalid provider mappings.
+- generic facility contract envelope validation;
+- trusted built-in dispatch for supported part types;
+- `cmd` contract/provider validation;
+- `env` contract/provider validation;
+- whole-provider conformance against exact facility contracts;
+- the first real `java 25` facility contract in `pkg-catalog`;
+- permanent tests for those properties;
+- library/manual consistency for the facility libraries.
 
-3. `realization_materialize`
-   - runs only after the whole package/facility definition has passed validation;
-   - materializes the validated runtime representation needed by the eventual type owner;
-   - may incorporate contract semantics into the materialized representation so runtime never needs to refetch the catalog;
-   - does not execute the capability.
+The following are **not** part of this work unit:
 
-There is deliberately **no required generic runtime operation** such as `part_apply`. Runtime consumption remains type-specific.
+- changing `pkg_integrate` or deciding when package installation invokes conformance;
+- creating or changing facility defaults;
+- creating or changing consumer bindings;
+- applying provider environment in bootstrap/launcher;
+- global command publication;
+- lifecycle/service implementation;
+- endpoint metadata.
 
-This gives one common integration contract while preserving different operational owners.
+Existing behavior for those areas remains unchanged until its own explicitly resumed phase.
 
-### 2. Generic dispatcher versus type handlers
+### Implementation boundary
 
-The generic facility engine should know only:
+The generic facility library should own facility identity/compatibility parsing, exact contract lookup/envelope validation, supported-part enumeration/dispatch and whole-provider conformance.
 
-- facility identity and exact compatibility;
-- the selected contract directory;
-- which part types are supported by the current runtime;
-- how to dispatch the three integration operations above;
-- that unknown part types are fatal.
-
-It must not know command names, environment descriptors, lifecycle operations or provider-specific data formats.
-
-The simplest implementation is an explicit RumiAI-owned dispatch table/case in the facility subsystem, not dynamic code loading from the catalog. Conceptually:
-
-```text
-part=cmd
-    -> built-in cmd handler
-
-part=env
-    -> built-in env handler
-
-part=lifecycle
-    -> built-in lifecycle handler
-```
-
-Adding a new supported type therefore requires adding RumiAI runtime code and registering that type in the trusted dispatcher. Catalog data alone can never install executable validation/runtime logic.
-
-This is intentionally stricter than a plugin loader and avoids treating provider metadata as code.
-
-### 3. Proposed library responsibilities
-
-Prefer reusing `pkg-facility.lib.sh` as the generic facility-contract orchestrator rather than creating a synonymous second generic library.
-
-The shallow package grouping can then grow only when a real type exists:
+Type-specific trusted handlers should live directly under the existing facility responsibility group:
 
 ```text
 lib/sys/sh/pkg/facility/
     pkg-facility.lib.sh
-        facility identity/compatibility parsing
-        provider declaration/index
-        exact contract lookup
-        part enumeration
-        trusted type dispatch
-        whole-facility conformance orchestration
-
     pkg-dependency.lib.sh
-        consumer compatibility constraints and provider satisfaction
-
     pkg-facility-cmd.lib.sh
-        cmd contract validation
-        cmd provider-realization validation
-        cmd materialization helpers
-
     pkg-facility-env.lib.sh
-        env contract validation
-        env provider-realization validation
-        env materialization/descriptor helpers
-
-    pkg-facility-lifecycle.lib.sh
-        future only after lifecycle semantics are accepted
 ```
 
-Do not create `part/`, `contract/`, `handler/` or other deeper grouping solely for symmetry.
+No deeper grouping is introduced.
 
-Existing provider-selection/public command ownership remains in `pkg-provider.lib.sh`. Existing launcher orchestration remains in `pkg-launch.lib.sh`. Type handlers may expose internal helpers to those owners, but moving selection or lifecycle ownership into the generic facility engine is not part of this proposal.
-
-### 4. Physical contract envelope
-
-The generic filesystem contract should stop one level earlier than the previous `<part>/<member>` proposal:
+The generic contract envelope is:
 
 ```text
 facility/<facility>/<compatibility>/<part>/...
 ```
 
-The generic engine owns only the envelope through `<part>/`. Everything below that directory is the schema of the specific part handler.
+Current supported parts are `cmd` and `env`. Unknown parts fail validation. Catalog data cannot provide executable handler code.
 
-This is more general than forcing every type into the same member-file model.
-
-For the first two types the candidate schemas are naturally simple:
-
-```text
-facility/java/25/
-    cmd/
-        java
-        javac
-        jar
-
-    env/
-        JAVA_HOME
-```
-
-For `cmd` and `env`, the leaf entries can be empty regular marker files because the provider-independent contract only needs to identify required names. Provider-specific paths/values remain in the provider realization.
-
-A later lifecycle contract may need richer leaf contents. That does not require changing the generic envelope.
-
-Part names should be a small validated runtime-controlled token space. The exact grammar can be fixed with the implementation, but catalog part names must never be converted into arbitrary source paths or executable function names without trusted dispatch validation.
-
-### 5. Provider realization envelope
-
-Do **not** replace the existing working provider representation merely to make it visually symmetrical.
-
-The current catalog/runtime already uses:
+Provider realization remains in the existing shapes:
 
 ```text
 facility-cmd/<facility>/...
 facility-env/<facility>
 ```
 
-The generic convention can treat the provider realization for part `<part>` as the existing type-owned `facility-<part>` surface:
-
-```text
-facility-cmd/<facility>/...
-facility-env/<facility>
-facility-lifecycle/<facility>/...   # future candidate only
-```
-
-The part handler owns the shape below that point. In particular, `cmd` may use a directory while `env` may remain a descriptor file.
-
-This avoids a large migration that adds no semantic value and follows the existing Phase-4 rule to adapt `facility-cmd` / `facility-env` rather than replace them gratuitously.
-
-The generic facility validator must nevertheless enforce a closed world:
-
-- a provider realization may exist only for a facility declared by that package;
-- a `facility-<part>` realization may exist only when that exact facility contract contains the corresponding supported part;
-- unknown `facility-<part>` types are invalid;
-- missing realization data is invalid when the type handler says the contract requires provider-specific data;
-- provider-specific extras must not appear as undeclared members of the facility realization.
-
-### 6. Whole-facility validation algorithm
-
-For each exact provider declaration:
-
-```text
-<facility> <compatibility>
-```
-
-integration should perform:
-
-```text
-resolve:
-    <catalog>/facility/<facility>/<compatibility>
-
-validate generic contract envelope
-    ↓
-enumerate part directories
-    ↓
-for every part:
-    dispatch contract_validate
-
-then
-    ↓
-for every part:
-    locate provider realization
-    dispatch realization_validate
-
-then
-    ↓
-scan provider facility-* data
-and reject undeclared/unknown extra part realizations
-```
-
-Only after **all** package/facility validation succeeds may materialization begin.
-
-Materialization then dispatches `realization_materialize` for every validated part. This preserves the current validate-before-mutate discipline and keeps rollback limited to filesystem/I/O failures rather than semantic discovery during partial integration.
-
-### 7. Catalog snapshot must become explicit integration context
-
-The current `pkg install` path has the selected catalog snapshot, but the current `pkg_integrate` interface receives only the selected package range and extracted root.
-
-The generalized contract validator cannot safely derive the catalog root by walking parent directories or rely on hidden global state.
-
-The implementation should therefore make the selected catalog snapshot an explicit integration input.
-
-Preferred direction:
-
-```text
-pkg_integrate
-    receives the catalog snapshot/root explicitly
-    together with package/range/root identity
-```
-
-Then integration can prove both:
-
-- the package definition belongs to `<catalog>/pkg/<package>/...`;
-- the facility contract comes from `<catalog>/facility/<facility>/<compatibility>/...`.
-
-This mechanically enforces the already-canonical same-snapshot rule.
-
-Exact positional syntax is not fixed here because changing `pkg_integrate` is a library-interface change that must be designed with its current manual/tests, but implicit path derivation and hidden environment context are rejected directions.
-
-### 8. Runtime representation
-
-Runtime must not read `pkg-catalog`.
-
-Each type handler materializes enough validated information for its runtime owner.
-
-For current types this already exists:
-
-```text
-cmd
-    -> installed facility-cmd projection
-
-env
-    -> installed facility-env descriptor
-```
-
-A future lifecycle handler may materialize a resolved lifecycle descriptor that combines contract semantics and provider realization. That descriptor can tell `srv` whether an operation is provider-specific or supplied generically by `srv`, without requiring `srv` to read the original facility contract.
-
-Therefore runtime ownership becomes:
-
-```text
-pkg facility engine
-    validates + materializes
-
-pkg-provider / launcher
-    consume cmd/env representations where already owned
-
-srv
-    consumes lifecycle representation
-
-future owners
-    consume their own typed runtime representation
-```
-
-No type handler receives independent provider selection. The provider is selected once for the whole facility before runtime consumption.
-
-### 9. Command proof
-
-Candidate contract:
-
-```text
-facility/java/25/cmd/
-    java
-    javac
-    jar
-```
-
-Provider realization remains:
-
-```text
-facility-cmd/java/
-    java    -> bin/java
-    javac   -> bin/javac
-    jar     -> bin/jar
-```
-
-The cmd handler validates:
-
-- contract entries are valid command names;
-- contract entries are unique regular non-executable markers;
-- realization contains exactly the required facility command members;
-- every mapping is a valid relative path;
-- every resolved target stays inside the provider useful root;
-- every target is a regular executable file.
-
-It then reuses the existing facility-cmd materialization rather than introducing a second command projection format.
-
-### 10. Environment proof
-
-Candidate contract:
-
-```text
-facility/java/25/env/
-    JAVA_HOME
-```
-
-Provider realization remains conceptually:
-
-```text
-facility-env/java
-    JAVA_HOME<TAB>root
-```
-
-The env handler validates:
-
-- contract entries are valid environment names;
-- `PATH` remains forbidden;
-- provider realization contains exactly the required variables;
-- descriptors use the existing `root | root-path | literal` grammar;
-- root-relative references stay inside the useful root.
-
-It then reuses the current facility-env materialization and provider/bootstrap application semantics.
-
-This is also an opportunity to eliminate the current duplicated env-name/path/descriptor validation logic between integration and provider application by placing the shared parsing/validation primitive in the env handler. Runtime application itself still belongs to the current owner.
-
-### 11. Lifecycle proof
-
-The lifecycle case should use the same generic integration lifecycle without pretending runtime execution is the same as cmd/env.
-
-Conceptually:
-
-```text
-facility/geoserver/1/lifecycle/
-    start
-    stop
-```
-
-The lifecycle handler owns the meaning/content of those contract entries.
-
-A provider realization might need to supply a concrete foreground start target while `stop` is satisfied by generic `srv` PID/SIGTERM semantics.
-
-The lifecycle handler therefore validates the contract and provider mapping, then materializes one runtime lifecycle descriptor. `srv` consumes that descriptor; the generic facility engine never invokes start/stop itself.
-
-If lifecycle cannot be expressed through the same three integration operations without special provider branching in the generic engine, this proposal fails its non-Java proof.
-
-Endpoint/network metadata remains intentionally outside this proposal until lifecycle alone is proven. It is not necessary to validate the typed-part mechanism.
-
-### 12. Why this boundary is preferred
-
-This proposal avoids both extremes:
-
-```text
-too little abstraction:
-    pkg-integration hardcodes cmd, env, lifecycle, endpoint, ...
-
-too much abstraction:
-    every part must implement one fake generic runtime apply operation
-```
-
-Instead:
-
-```text
-generic facility layer
-    owns discovery + conformance orchestration + materialization dispatch
-
-typed handler
-    owns its schema and mechanical semantics
-
-runtime owner
-    owns actual operation
-```
-
-This is the smallest common boundary visible in the current implementation and the GeoServer stress case.
-
+The current work should expose one coherent facility/provider conformance responsibility without introducing a generic runtime `apply` abstraction.
 
 ## Canonical model already settled
 
@@ -916,50 +611,25 @@ The former monotonic-lineage proposal is superseded. A facility level may change
 
 The current product already matches an important part of this direction mechanically: installed providers declare one exact facility compatibility and dependency declarations support exact and ordered constraints that can be combined into bounded ranges. That existing behavior is evidence, not authority, and later implementation must add exact-level contract validation rather than introduce monotonicity checks.
 
-The remaining architecture gate is the typed-part implementation and its catalog representation. No Phase-4 runtime/catalog conformance implementation has begun.
+The typed-part architecture gate is resolved and promoted. Implementation is now active only for facility/provider contract and conformance primitives; selection/default/binding/bootstrap composition remains deliberately untouched.
 
 ## Next action
 
-Review the concrete typed-part proposal in Working design with the user.
+Implement and validate the accepted facility/provider core: trusted `cmd`/`env` handlers, generic exact-contract/provider conformance, the real `java 25` contract and permanent tests.
 
-If accepted, promote the stable generic rules into `PACKAGE-MODEL.md`, then design the exact `pkg_integrate` catalog-context interface and only afterward begin Phase 4 refactoring/implementation.
+Do not wire the new conformance API into installation, defaults, bindings, bootstrap or launcher in this work unit.
 
 ## Blockers / open questions
 
-Phase 1 now has a concrete typed-part proposal recorded in Working design. User review remains required before promotion.
+There is no remaining Phase-1 semantic blocker for the facility/provider core.
 
-The main decision points are:
+Explicitly deferred by current user direction:
 
-- accept the three-operation integration interface: contract validation, realization validation, realization materialization;
-- accept trusted built-in type dispatch rather than dynamic catalog/plugin code;
-- accept the generic contract envelope `facility/<facility>/<compatibility>/<part>/...`;
-- keep current `facility-cmd` and `facility-env` provider/runtime representations instead of renaming them for symmetry;
-- make the catalog snapshot/root explicit integration context rather than deriving it from paths;
-- use lifecycle as the non-Java proof while postponing endpoint metadata.
-
-Explicitly resolved and no longer blockers:
-
-- no monotonic compatibility lineage;
-- no inferred backward compatibility;
-- exact provider facility level plus consumer exact/range constraints;
-- complete self-contained immutable contracts;
-- required-only baseline contract surface;
-- install/integration conformance against the same catalog snapshot;
-- no runtime catalog refetch.
-
-A later concrete need for non-contiguous consumer acceptance sets or one provider advertising multiple exact contract levels would require separate design. Neither is introduced preemptively by the current baseline.
-
-Later user decisions remain deferred behind Phase 1:
-
-- missing dependency provider behavior;
-- install-time provider configuration UX;
+- when/how package installation invokes facility/provider conformance;
+- how facility defaults and consumer bindings are created or assisted from catalog/provider definitions;
+- any changes to bootstrap/global environment or command publication;
+- lifecycle and endpoint typed-part schemas;
+- missing-provider/install-time configuration policy;
 - GraalVM additional facility boundaries after artifact inventory.
 
-Known later work remains blocked/pending:
-
-- generalized contract/conformance implementation and tests;
-- global provider environment/projection regression completion;
-- NetBeans realignment;
-- GraalVM capability inventory;
-- GitHub rate-limit robustness;
-- final exact-revision validation.
+The existing installation/default/binding/bootstrap behavior is not redefined by this work unit. Any mismatch exposed while implementing the isolated facility/provider core must be recorded rather than silently resolved by expanding scope.

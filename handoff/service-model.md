@@ -1,7 +1,7 @@
 # Service model
 
 Status: Active
-Updated: 2026-09-19 20:38 +02:00
+Updated: 2026-09-19 21:15 +02:00
 
 ## Goal
 
@@ -139,7 +139,7 @@ pkg-catalog/facility/<facility>/...
 
 Compatibility levels of a facility are independent exact contracts; `pkg` does not infer monotonic or backward-compatible evolution between them. A service provider therefore declares one exact facility level, while a service consumer expresses any accepted exact/range compatibility through normal package dependency constraints.
 
-The runtime package libraries now have explicit `facility/` and `repository/` responsibility groups. The remaining package Phase-1 work is the concrete typed-part implementation/representation. In particular, a lifecycle part still needs to prove that contract schema, provider realization, mechanical validation and `srv` execution ownership fit one generic type boundary without provider-specific branching. Service implementation must continue to wait for that remaining boundary to settle.
+The runtime package libraries now have explicit `facility/` and `repository/` responsibility groups. The generic typed-part boundary is now settled: trusted RumiAI handlers own contract/provider schemas and conformance, while runtime execution has no universal facility apply operation and remains with the owning subsystem. The current package work intentionally implements only `cmd` and `env`; lifecycle remains a later service-specific typed part. Service implementation therefore continues to wait for the lifecycle schema, not for the generic facility-part architecture.
 
 ## Completed
 
@@ -163,9 +163,9 @@ No service runtime/test/catalog implementation changed in this checkpoint.
 
 ## Next action
 
-Wait for the package facility-contract Phase 1/2 work to settle the generic typed-part/meta-model and catalog representation, using GeoServer as one of its mandatory proof cases.
+The generic typed-part/meta-model is now settled. Keep this service task paused while the package task implements only the facility/provider `cmd`/`env` core.
 
-Then this task should:
+When service work resumes, this task should:
 
 1. define the minimal lifecycle part against that generic meta-model;
 2. decide which lifecycle operations require provider realization and which may be satisfied generically by `srv`;
