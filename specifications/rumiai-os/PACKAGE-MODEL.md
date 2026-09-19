@@ -451,7 +451,7 @@ consumer package environment
 
 Provider facility command directories are prepended while applying projections, so selected-provider commands precede the consumer's inherited/package PATH. The user package environment remains the final configuration layer and may explicitly override projected environment when desired.
 
-A facility-specific projection is data, not executable provider-specific shell logic.
+Command/environment facility projection is data, not executable provider-specific shell logic. Service realization is likewise declarative data, but is consumed by `srv` rather than projected into a consumer process.
 
 The current provider-realization schema includes:
 
@@ -486,7 +486,7 @@ literal <value>
 
 Every facility referenced by `facility-cmd`, `facility-env` or `facility-service` must also be declared by the package's `facility` metadata. Provider realization metadata is validated through the trusted facility-part semantics; provider-specific shell code is not a facility-contract mechanism.
 
-Facility-specific consumer runtime projection and facility-default global publication are two consumers of the same declarative provider metadata. Consumer launch applies only the facilities required by that consumer; bootstrap/global publication follows configured system facility defaults.
+For `cmd`/`env`, facility-specific consumer runtime projection and facility-default global publication are two consumers of the same declarative provider metadata. Consumer launch applies only the facilities required by that consumer; bootstrap/global publication follows configured system facility defaults. The `service` realization is not part of this PATH/environment projection path.
 
 A configured facility default publishes that facility's commands through the existing technical external-command roots:
 

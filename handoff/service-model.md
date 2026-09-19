@@ -16,7 +16,7 @@ Revisions relied upon for this checkpoint:
 ```text
 rumiai-dev@9b1b5b44fea8ec57ce3768e2b3cf0c9c44a73a75
 rumiai-os@7f6ced69baef8484d96e7db1572686d67c6bdaaf
-rumiai-tests@1c3d2d7c0d9731118cf6d946de02662e001cf374
+rumiai-tests@b461be38979abd50f7f5f587eb316022fd17c924
 pkg-catalog@5372c160441b0346b976db7f7a022196784c9425
 ```
 
@@ -160,11 +160,13 @@ Exact checkpoint:
 
 ```text
 rumiai-os@7f6ced69baef8484d96e7db1572686d67c6bdaaf
-rumiai-tests@1c3d2d7c0d9731118cf6d946de02662e001cf374
+rumiai-tests@b461be38979abd50f7f5f587eb316022fd17c924
 pkg-catalog@5372c160441b0346b976db7f7a022196784c9425
 ```
 
 Current runtime still uses the legacy PATH-resolved `<service>-start` mechanism. The product therefore has an intentional, explicit pending realignment: service contract/provider conformance exists, but package installation does not yet accept/materialize `facility-service` and `srv` cannot yet consume it.
+
+The permanent facility-contract test is now executable (`100755`); the consistency gate corrected the earlier non-executable mode.
 
 Formal exact-revision test execution is not available in the current ChatGPT auxiliary environment because github.com DNS resolution fails, and no CI workflow has automatically run these commits. No formal PASS is claimed.
 
