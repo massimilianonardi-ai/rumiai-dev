@@ -151,6 +151,7 @@ a       add repositories
 r       remove repositories
 c       clear all repositories
 s       save current repositories to configuration
+e       edit repositories configuration
 Escape  exit gitman
 ```
 
@@ -197,7 +198,48 @@ If the configuration file already exists and has non-zero content, `gitman` must
 
 A successful save replaces the configuration file with the current repository set in repository-menu order and clears the current error. A save failure leaves the interactive repository set unchanged and reports one concise error through the bottom footer.
 
-The save action is the only first-delivery operation that persists `gitman` state.
+The save action persists the current in-memory repository set.
+
+### Edit configuration
+
+`e` edits:
+
+```text
+<gitman-conf>/repositories
+```
+
+through a conventional external text editor.
+
+Editor selection is:
+
+```text
+VISUAL, when non-empty
+EDITOR, when VISUAL is empty/unset
+vi, when both are empty/unset
+```
+
+`nano` is not a required or implicit dependency. A user who prefers it selects it through `VISUAL=nano` or `EDITOR=nano`.
+
+The selected environment value is treated as one executable identity/pathname, not as shell syntax. `gitman` does not evaluate editor variables as arbitrary shell command strings.
+
+Before launching the editor, `gitman` ensures the configuration directory exists. An absent configuration file may be created by the editor; `gitman` does not implicitly save the current repository set before editing.
+
+The editor is launched only after the repository-menu invocation has completed and restored normal terminal state.
+
+A non-zero editor exit leaves the current repository set unchanged and records one concise bottom-footer error.
+
+After a successful editor exit, `gitman` asks whether to reset the current repository set and reload the edited configuration. The confirmation menu defaults to the non-destructive choice:
+
+```text
+No
+Yes
+```
+
+No or cancellation preserves the current in-memory repository set.
+
+Yes clears the current set and loads only non-empty entries from the configuration file using the normal configuration decoding, Git working-tree validation, physical normalization and deduplication rules. Validation failures from that one reload are aggregated into the current bottom-footer error.
+
+The explicit post-edit reload does not apply the startup `.` fallback. If the edited configuration is absent, empty, unreadable or contains no valid repositories, the resulting repository set is empty and `gitman` returns to filesystem acquisition; unreadable/invalid configuration contributes the corresponding current error.
 
 ## 9. Repository action menu
 
@@ -324,7 +366,7 @@ top-level repository menu
 filesystem acquisition with zero repositories
     exit gitman successfully
 
-add/remove/action submenus
+add/remove/edit-confirmation/action submenus
     return to the repository menu
 ```
 
@@ -364,7 +406,7 @@ Signal-derived statuses may propagate when the surrounding runtime terminates th
 - repository-set workflow and in-memory state;
 - initial candidate/configuration loading and configuration line encoding/decoding;
 - Git working-tree validation and normalization;
-- repository-list management actions, including explicit configuration save;
+- repository-list management actions, including explicit configuration save and edit/reload;
 - mapping action identifiers to the approved read-only Git commands;
 - error aggregation and bottom-footer content;
 - orchestration between `menu`, Git execution, `pager` and `read-key`.
@@ -390,9 +432,12 @@ GITMAN-04  repository identity is the physical top-level of a non-bare Git worki
 GITMAN-05  identical working-tree top-levels are deduplicated while distinct linked worktrees remain distinct
 GITMAN-06  the bottom footer contains only the current error; one validation batch aggregates all of its failures into that message
 GITMAN-07  zero repositories uses filesystem multi-selection and revalidates confirmed selections
-GITMAN-08  one or more repositories uses a single-selection repository menu with add/remove/clear/save actions
+GITMAN-08  one or more repositories uses a single-selection repository menu with add/remove/clear/save/edit actions
 GITMAN-09  repository removal and clear are in-memory only
 GITMAN-09A save explicitly persists the current set and confirms before replacing a non-empty configuration file
+GITMAN-09B edit selects VISUAL, then EDITOR, then vi; editor variables are executable identities, not shell fragments
+GITMAN-09C editor execution occurs outside menu terminal state; successful edit asks whether to reset/reload and defaults to No
+GITMAN-09D explicit post-edit reload loads only configuration entries, without the startup . fallback
 GITMAN-10  the repository action menu returns with Backspace by default
 GITMAN-11  first-delivery Git actions are status, log, branch and diff and are read-only
 GITMAN-12  a Git action runs only after the selecting menu session has restored the terminal
