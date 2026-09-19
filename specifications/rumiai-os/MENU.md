@@ -148,6 +148,26 @@ Action/toggle/parent keys may use one text key or supported named terminal keys.
 
 A key cannot simultaneously be an engine navigation key, action key, enabled multi-selection toggle or filesystem parent-navigation key. Duplicate action keys are invalid.
 
+### 6.1 Rendering discipline
+
+The menu renderer avoids whole-screen repaint when the visible layout has not changed.
+
+For ordinary navigation that leaves the same viewport active, the renderer updates only the rows whose selection marker changed: the previously selected row and the newly selected row.
+
+For a multi-selection toggle that does not otherwise invalidate layout, the renderer updates only the current row.
+
+A full repaint remains appropriate when broader visible state changes, including:
+
+```text
+initial render
+viewport/top-row change
+provider reload or reset
+terminal geometry change
+header/footer/bottom-footer layout change
+```
+
+Queued navigation input may be coalesced so only the final visible selection state is painted. Rendering optimizations must not change navigation, selection, provider, result or terminal-restoration semantics.
+
 ## 7. Selection semantics
 
 ### 7.1 Single selection
@@ -352,4 +372,6 @@ MENU-15  internal menu.lib.sh functions follow the leading-underscore visibility
 MENU-16  menu and menu.lib.sh each have their required sys operational manual topic
 MENU-17  filesystem mode without explicit -K uses Tab as the fallback confirmation action in both selection modes
 MENU-18  explicit filesystem action keys suppress the implicit Tab fallback, and Tab cannot be shared with toggle or parent roles
+MENU-19  unchanged-viewport navigation repaints only affected selection rows; multi-selection toggle repaints only the current row
+MENU-20  whole-screen repaint is reserved for initial or broader layout/view invalidation
 ```
