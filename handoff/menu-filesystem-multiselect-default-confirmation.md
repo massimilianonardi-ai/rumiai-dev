@@ -45,14 +45,27 @@ rumiai-tests 5270842426c2316887076a4d77d7d0860654f1d4
 - Mandatory preflight completed.
 - Current menu specification, implementation, manual, permanent tests and validation scope inspected.
 - Current key vocabulary and Tab mapping confirmed through `READ-KEY.md`.
+- Canonical menu contract updated with the filesystem multi-selection Tab fallback and its collision rules.
+- `bin/sys/menu` updated so filesystem multi-selection with no explicit action key installs Tab as the fallback action; filesystem single-selection still requires `-K`.
+- `res/sys/manual/menu` realigned with the new invocation/default-key behavior.
+- Permanent contract coverage extended for Tab collision cases.
+- Permanent interactive coverage extended for implicit Tab confirmation and suppression of the fallback when an explicit `-K` exists.
 
 ## Current state
 
-No product/specification/test changes for this work unit have been written yet.
+Current revisions relied upon after implementation:
+
+```text
+rumiai-dev   5fc521e8c96967a9891578e49c3c82e76890900a
+rumiai-os    4e6de5ec0ace036262bb6016424e235c7bd9bdc0
+rumiai-tests 7f3100edee2fc3b0bef77314f8a9898f97d73314
+```
+
+The validation scope still points to the previously validated product revision and must be retargeted only after the revised product passes the development run.
 
 ## Next action
 
-Update the canonical menu contract and operational manual, implement the command fallback, extend permanent tests, retarget the validation scope to the revised product commit, run proportional validation, and complete the final consistency gate.
+Run the menu permanent tests on the exact revised product/test revisions. If they pass, retarget `validation/menu.conf`, run formal task validation, then complete the final consistency gate.
 
 ## Blockers / open questions
 
