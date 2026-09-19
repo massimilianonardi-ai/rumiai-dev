@@ -1,7 +1,7 @@
 # Service model
 
 Status: Active
-Updated: 2026-09-19 23:03 +02:00
+Updated: 2026-09-19 23:58 +02:00
 
 ## Goal
 
@@ -198,10 +198,20 @@ The preferred implementation direction is now narrowed:
 - persist selected concrete provider identity in runtime state;
 - stop an existing instance from recorded state without provider re-resolution.
 
+The composition choices now fixed for implementation are:
+
+- normal `pkg install` performs provider conformance before package-store mutation while it owns the exact catalog snapshot;
+- integration materializes validated `facility-service` but does not receive/derive catalog context;
+- global provider-backed `srv start` uses the system facility default only;
+- consumer bindings never participate in global service selection;
+- a configured default that cannot resolve or lacks a valid service realization fails; it never falls back to PATH;
+- legacy PATH `<service>-start` remains temporarily only when no facility default applies, preserving current non-provider lifecycle tests until a real catalog service provider is approved;
+- provider-backed runtime state records the selected concrete provider and stop does not re-resolve selection.
+
 Still deferred:
 
-- exact public/internal name for a library-level facility-default query used by `srv`;
-- migration timing for removal of legacy PATH-based `<service>-start`;
+- removal timing for the temporary legacy PATH compatibility path;
+- selection of the first real catalog service provider used for end-to-end live proof;
 - host user/system supervision implementation and host account/environment mechanics.
 
 Endpoint/readiness/health remain outside the baseline service part.

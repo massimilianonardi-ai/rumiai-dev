@@ -34,9 +34,9 @@ srv stop [-f] <service>
 
 Service-operability for package providers is declared by the facility `service` typed part defined in `PACKAGE-MODEL.md`; command-name convention alone does not define a service.
 
-For a provider-backed service, the selected provider realization maps service start to one ordinary package command. The concrete command belonging to the selected provider instance is resolved before launch, so provider selection and the process actually started cannot diverge. The normal package launcher remains responsible for package HOME, environment and dependency preparation.
+For a provider-backed service, `srv start <service>` reads the system facility default for that same facility identity. Consumer package bindings are not consulted. The selected provider realization maps service start to one ordinary package command. The concrete command belonging to the selected provider instance is resolved before launch, so provider selection and the process actually started cannot diverge. The normal package launcher remains responsible for package HOME, environment and dependency preparation.
 
-The historical `<service>-start` name may remain a provider command naming convention during migration, but its presence is not the semantic test for service capability.
+During the current migration, the historical PATH-resolved `<service>-start` mechanism remains a compatibility path only when no system facility default exists for the requested service identity (or the requested legacy service name is outside facility-name grammar). Once a facility default is configured, failure to resolve that provider or its service realization is a lifecycle failure and must not silently fall back to PATH. The legacy command name is therefore not the semantic test for provider-backed service capability.
 
 ## Process model
 
@@ -128,4 +128,6 @@ SRV-14  provider-backed start is tied to the exact selected provider concrete an
 SRV-15  changing provider selection does not retarget an already-running service instance
 SRV-16  stop uses recorded runtime instance state rather than resolving a new provider
 SRV-17  endpoint, readiness and health are outside the baseline service typed part
+SRV-18  global provider-backed start uses the system facility default and never consumer package bindings
+SRV-19  during migration, legacy PATH <service>-start fallback is allowed only when no provider-backed facility default applies; a configured-but-invalid provider path must fail rather than fall back
 ```

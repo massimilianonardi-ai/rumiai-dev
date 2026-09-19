@@ -319,7 +319,7 @@ and contains exactly one package-command name. That command is lifecycle impleme
 
 Service conformance validates the declarative shape, the package-command mapping and mechanically checkable target properties. Static validation cannot prove that an external process truly remains foreground or obeys SIGTERM correctly; those behavioral claims require real provider/service validation.
 
-Runtime execution of the service part remains owned by `srv`. After provider selection, `srv` must launch the start command belonging to that exact provider concrete rather than performing an unrelated PATH lookup. The normal package launcher remains responsible for package HOME, environment and dependency preparation.
+Runtime execution of the service part remains owned by `srv`. A global provider-backed `srv start <facility>` uses the configured system facility default; consumer bindings do not participate because there is no package consumer identity for that global lifecycle operation. After provider selection, `srv` must launch the start command belonging to that exact provider concrete rather than performing an unrelated PATH lookup. The normal package launcher remains responsible for package HOME, environment and dependency preparation.
 
 Facility and provider definitions are **inert declarations**. Validating or reading them does not create a facility default, create a consumer binding, publish commands, export environment variables or otherwise select/apply a provider. Provider selection and runtime application happen only through separate explicit operations owned by their respective subsystems.
 
@@ -347,7 +347,7 @@ Each published `<facility, compatibility>` contract is complete and self-contain
 
 The baseline facility-contract model exposes only the required interoperable surface. Every member of the contract is mandatory for every provider that declares that exact level. Provider-specific extras remain outside that facility realization as ordinary package capabilities, or are represented by another facility when they deserve their own provider-independent substitutable contract. Optional facility members are not part of the baseline model.
 
-Provider conformance is validated against the facility contract from the same immutable `pkg-catalog` snapshot that supplied the provider package definition. The facility/provider validation responsibility itself is independent of whichever later package operation invokes it. Runtime provider selection/application does not reinterpret facility meaning from another catalog revision; it relies on the validated provider declaration/realization and on the immutable meaning of the declared facility level.
+Provider conformance is validated against the facility contract from the same immutable `pkg-catalog` snapshot that supplied the provider package definition. For the normal installation path, `pkg install` performs this conformance check after artifact extraction and before package-store mutation, while it simultaneously owns the exact snapshot, selected package range and extracted useful root. Integration then materializes only provider realization metadata that has passed that composed install-time boundary. Runtime provider selection/application does not reinterpret facility meaning from another catalog revision; it relies on installed validated provider declaration/realization and on the immutable meaning of the declared facility level.
 
 Mechanical conformance validation proves only properties that can actually be established from the package artifact and declarative metadata. It must not be described as proof of the provider's full behavioral implementation of the external capability.
 
@@ -617,4 +617,7 @@ PKG-61  a provider service start realization names one ordinary command of that 
 PKG-62  srv owns service process lifecycle; pkg owns service-part contract/provider conformance and provider selection
 PKG-63  provider-backed service start launches the command from the exact selected provider concrete rather than re-resolving an unrelated PATH command
 PKG-64  endpoint, readiness and health are outside the baseline service typed part
+PKG-65  normal pkg install validates provider conformance against the exact catalog snapshot and extracted useful root before package-store mutation
+PKG-66  integration materializes validated facility-service realization into the installed concrete for later srv consumption
+PKG-67  global provider-backed srv lifecycle uses the system facility default for the service facility and does not consult consumer bindings
 ```
