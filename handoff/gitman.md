@@ -36,20 +36,21 @@ rumiai-tests 88b4e48f170da883889c2f418a34e8ad24066e9d
 
 - Command identity: `gitman`, technical `m` layer, bootstrap-integrated.
 - Positional operands are candidate directories. With zero operands, read initial candidates from user-scoped `sys/gitman/conf`; if no usable configured candidate exists, fall back to `.`.
-- Initial configuration format is one literal directory pathname per non-empty line. Relative entries resolve against the invocation working directory; shell expansion is not applied.
+- Initial configuration remains one logical directory pathname per non-empty line, with minimal escaping: `\n` encodes a pathname newline and `\\` encodes a literal backslash. Other characters remain literal. Relative entries resolve against the invocation working directory; shell expansion is not applied.
 - Candidates are accepted only when they belong to a non-bare Git working tree.
 - Accepted candidates normalize to the physical Git working-tree top-level; duplicate top-levels are stored once.
 - Distinct linked Git worktrees remain distinct entries even when they share the same underlying Git repository.
 - The bottom footer contains only the most recent validation/configuration error. Multiple candidate failures from one validation operation are aggregated into one message.
 - Zero repositories opens filesystem `menu` multi-selection; confirmed selections are revalidated and added.
 - One or more repositories opens a single-select repository menu.
-- Repository-menu management actions: `a` add, `r` remove via multi-select, `c` clear all.
+- Repository-menu management actions: `a` add, `r` remove via multi-select, `c` clear all, `s` save current repositories to configuration.
+- Save confirms before replacing an existing non-empty configuration file; the confirmation defaults to No.
 - Repository selection with Enter opens the Git action menu.
 - Git action menu uses Backspace to return to the repository menu; Escape also cancels the submenu back to its parent.
 - Initial Git actions are read-only: status, log, branch, diff.
 - A Git action runs only after the menu session has returned and restored the terminal. After the Git command finishes, `gitman` prompts `Press any key to continue...`, waits through `read-key`, then recreates the Git action menu.
 - Top-level Escape/cancellation exits `gitman` successfully. Submenu cancellation returns to the parent menu.
-- Repository-list mutations are in-memory only; `gitman` never deletes repositories or modifies Git state in this first delivery.
+- Repository-list add/remove/clear operations are in-memory only unless the user explicitly selects save; `gitman` never deletes repositories or modifies Git state in this first delivery.
 
 ## Working design
 
@@ -59,15 +60,27 @@ None currently required.
 
 - Mandatory preflight completed.
 - Current command, state, menu, terminal-input, documentation and testing contracts inspected.
-- Existing product has no `gitman` command or conflicting Git-manager identity.
+- Canonical `GITMAN.md` created and routed from `specifications/README.md`.
+- Initial `gitman` command and operational manual implemented.
+- Permanent contract and interactive tests added.
+- First development run: contract test PASS; interactive test FAIL due a test expectation that searched for the colorized Git status token without allowing ANSI sequences. Product output itself showed correct terminal restoration, Git status output and pause prompt.
+- User refinement accepted during the active task: configuration now supports newline/backslash escaping and repository menu gains explicit save with overwrite confirmation.
+- Canonical specification, command and manual have been updated for that refinement.
+- Concurrent `rumiai-os` movement was reconciled forward; the unrelated package-layout commit was preserved.
 
 ## Current state
 
-No task-specific specification, product implementation or permanent tests have been written yet.
+```text
+rumiai-dev   1f0c2be698fb83e675a0afc9ed60fb8a8a4d9be5
+rumiai-os    a8e45d327b218f19cee82c3813bfc75fb5ea64b6
+rumiai-tests 6d6c790309359a7c262c4c8c2487e3d9d3983d5a
+```
+
+The permanent tests still need to be realigned with the accepted configuration-save refinement and the ANSI-tolerant Git-status assertion. Formal validation has not yet been retargeted or run.
 
 ## Next action
 
-Promote the accepted `gitman` contract into a current specification and route it, then implement command/manual and permanent tests, followed by development and formal validation.
+Update permanent tests for configuration escaping/save/confirmation and the corrected status-output assertion, rerun development validation on exact revisions, then create/retarget the gitman validation scope and run formal validation.
 
 ## Blockers / open questions
 
