@@ -19,7 +19,7 @@ The command is bootstrap-integrated and uses:
 #!/usr/bin/env m
 ```
 
-The first delivery depends on the existing `menu`, `read-key` and `state-path` command surfaces and on an available external `git` executable.
+The first delivery depends on the existing `menu`, `pager`, `read-key` and `state-path` command surfaces and on an available external `git` executable.
 
 ## 2. Invocation
 
@@ -367,9 +367,11 @@ Signal-derived statuses may propagate when the surrounding runtime terminates th
 - repository-list management actions, including explicit configuration save;
 - mapping action identifiers to the approved read-only Git commands;
 - error aggregation and bottom-footer content;
-- orchestration between `menu`, Git execution and `read-key`.
+- orchestration between `menu`, Git execution, `pager` and `read-key`.
 
 `menu` continues to own menu rendering, selection state, filesystem browsing and restoration of its terminal session.
+
+`pager` continues to own host/backend paging mechanics and caller pager-environment preservation.
 
 `read-key` continues to own normalized one-key terminal input.
 
