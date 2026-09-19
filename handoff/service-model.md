@@ -1,7 +1,7 @@
 # Service model
 
 Status: Active
-Updated: 2026-09-19 16:04 +02:00
+Updated: 2026-09-19 20:38 +02:00
 
 ## Goal
 
@@ -14,9 +14,9 @@ The task must converge on the semantic model and public contract before implemen
 Revisions relied upon for this checkpoint:
 
 ```text
-rumiai-dev@c4982e8df04fb0af22df8164e710ac1773a5b186  Phase-1 facility meta-model proposal checkpoint
-rumiai-os@a8e45d327b218f19cee82c3813bfc75fb5ea64b6
-rumiai-tests@2629d606913828a45f96acaef4bbc14dd443f1f7
+rumiai-dev@163403bb609d08f682b5d2a4db7dca60f6ae75b6  facility compatibility semantics reconciled
+rumiai-os@50b760bd3cfe08922068ceb7d973d7edee12251c
+rumiai-tests@899ac4df79429db1d28602ae08ded1f9f8a72f64
 pkg-catalog@4c67eb5c7cf27fbc48c222fd8196f0127409be00
 ```
 
@@ -38,7 +38,7 @@ Current implementation/test evidence inspected for this checkpoint:
 
 ```text
 rumiai-os/bin/sys/srv
-rumiai-os/lib/sys/sh/pkg/pkg-facility.lib.sh
+rumiai-os/lib/sys/sh/pkg/facility/pkg-facility.lib.sh
 rumiai-os/lib/sys/sh/pkg/pkg-provider.lib.sh
 rumiai-tests/tests/rumiai-os/srv/lifecycle.test
 rumiai-tests/tests/rumiai-os/pkg/provider.test
@@ -130,14 +130,16 @@ Changing the facility default after a service starts must not mutate or retarget
 
 One design question remains especially important: whether a lifecycle part defines semantic operations such as `start`/`stop` while allowing an operation to be satisfied generically by `srv` rather than requiring a provider command. That would naturally cover a provider with a concrete start target but no provider-specific stop command, with `srv` using its normal SIGTERM contract. Exact representation is still open.
 
-The package task has now fixed two supporting decisions that the service model may rely on:
+The package task has now fixed supporting decisions that the service model may rely on:
 
 ```text
 pkg-catalog/pkg/<package>/...
 pkg-catalog/facility/<facility>/...
 ```
 
-and the runtime package libraries now have explicit `facility/` and `repository/` responsibility groups. The active Phase-1 proposal further suggests that a typed lifecycle part should define contract schema, provider-realization schema, install-time conformance validation and application ownership as one coherent type boundary. This remains working design until the package meta-model is accepted; service implementation must continue to wait.
+Compatibility levels of a facility are independent exact contracts; `pkg` does not infer monotonic or backward-compatible evolution between them. A service provider therefore declares one exact facility level, while a service consumer expresses any accepted exact/range compatibility through normal package dependency constraints.
+
+The runtime package libraries now have explicit `facility/` and `repository/` responsibility groups. The remaining package Phase-1 work is the concrete typed-part implementation/representation. In particular, a lifecycle part still needs to prove that contract schema, provider realization, mechanical validation and `srv` execution ownership fit one generic type boundary without provider-specific branching. Service implementation must continue to wait for that remaining boundary to settle.
 
 ## Completed
 
