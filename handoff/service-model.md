@@ -1,7 +1,7 @@
 # Service model
 
 Status: Active
-Updated: 2026-09-19 21:48 +02:00
+Updated: 2026-09-19 22:29 +02:00
 
 ## Goal
 
@@ -14,8 +14,8 @@ The task must converge on the semantic model and public contract before implemen
 Revisions relied upon for this checkpoint:
 
 ```text
-rumiai-dev@388bd5eb797c1b4bc464861bfd5173de2821fc9d  inert typed facility/provider core canonical
-rumiai-os@cf2e2e02ac9da54a993c7f5f118f72fe6dbdbe06
+rumiai-dev@c70e36cab760ded60b99e9057ef3eba01b9b7033
+rumiai-os@2d953fc222b2ec01e5d124d1aaf64d4359a47af2
 rumiai-tests@4af4183219ff42f07c9e6f116afc01ee0d3d2113
 pkg-catalog@5372c160441b0346b976db7f7a022196784c9425
 ```
@@ -98,48 +98,408 @@ The following choices are fixed for this task unless the user explicitly correct
 
 ## Working design
 
-The shared semantic base is no longer open: `PACKAGE-MODEL.md` now defines a facility as a provider-independent substitutable capability contract owned by `pkg`, distinguishes provider realization from facility definition and mutable selection conf, and establishes typed declarative extensibility with delegation to existing subsystem owners.
+The user has explicitly resumed the service-model design and asked for a proposal that introduces services/daemons into the existing facility/provider model.
 
-The package task still owns the exact contract meta-model and storage representation. For service work, the implications are now:
+The proposal below is **working design only**. It is not yet promoted to `PACKAGE-MODEL.md` or `SERVICE-LIFECYCLE.md`.
+
+### 1. Service as a facility typed part
+
+Introduce one additional trusted facility part:
+
+```text
+service
+```
+
+alongside the current:
+
+```text
+cmd
+env
+```
+
+A facility that contains a `service` part is service-operable through `srv`. A facility without that part is not a service merely because one of its providers happens to expose a long-running command.
+
+This preserves the current architecture:
 
 ```text
 pkg
-    selects provider and validates provider realization
-        ↓
-facility realization
-    contains the service/lifecycle contract part once defined
-        ↓
+    facility identity
+    provider declaration / conformance
+    provider selection
+
 srv
-    interprets lifecycle semantics and owns process mechanics
-        ↓
-runtime state
-    records the concrete running provider instance and actual endpoint state
+    process lifecycle
+    runtime state
+    logging / locking / termination
 ```
 
-The previous hypothesis that `<facility>-start` itself defines service-operability is superseded as the semantic direction. Command presence may remain useful as an implementation mapping, but the facility contract must state lifecycle semantics explicitly enough that two providers can be validated as interchangeable service providers.
+There is no service registry separate from the facility/provider index.
 
-The service proof case must preserve these distinctions:
+### 2. Service identity
 
-- static facility contract: provider-independent service/lifecycle semantics;
-- provider realization: concrete start target and any provider-specific lifecycle mapping;
-- provider selection: facility default for global `srv` operations, unless a later explicit context is introduced;
-- runtime instance: concrete provider selected at start, PID/logging/lock state and actual runtime endpoint;
-- network capability/default metadata: static provider/contract information, never a claim that a process is currently listening.
+For the baseline model, the service identity should be exactly the facility identity.
 
-Changing the facility default after a service starts must not mutate or retarget the running instance. A later restart may resolve the new default.
-
-One design question remains especially important: whether a lifecycle part defines semantic operations such as `start`/`stop` while allowing an operation to be satisfied generically by `srv` rather than requiring a provider command. That would naturally cover a provider with a concrete start target but no provider-specific stop command, with `srv` using its normal SIGTERM contract. Exact representation is still open.
-
-The package task has now fixed supporting decisions that the service model may rely on:
+Conceptually:
 
 ```text
-pkg-catalog/pkg/<package>/...
-pkg-catalog/facility/<facility>/...
+srv start geoserver
+          │
+          └── facility: geoserver
 ```
 
-Compatibility levels of a facility are independent exact contracts; `pkg` does not infer monotonic or backward-compatible evolution between them. A service provider therefore declares one exact facility level, while a service consumer expresses any accepted exact/range compatibility through normal package dependency constraints.
+A package that exposes multiple independent services does so by providing multiple service-capable facilities. This preserves package → facility cardinality at 0..N without introducing a second package → service namespace.
 
-The runtime package libraries now have explicit `facility/` and `repository/` responsibility groups. The generic typed-part boundary is settled and the inert `cmd`/`env` facility/provider conformance core is now implemented. Trusted RumiAI handlers own contract/provider schemas and conformance, while runtime execution has no universal facility apply operation and remains with the owning subsystem. Lifecycle remains a later service-specific typed part. Service implementation therefore waits for the lifecycle schema, not for the generic facility-part architecture.
+A later requirement for multiple independently managed service roles inside one facility would require explicit design; the baseline does not introduce such a sub-identity pre-emptively.
+
+Provider-backed service names therefore use facility-name semantics. The current wider `srv` service-name grammar is implementation compatibility, not a reason to create a distinct service identity grammar in the provider model.
+
+### 3. Provider-independent service contract
+
+The first service-part schema should describe the process/lifecycle guarantees required by portable `srv`, rather than merely listing command names.
+
+Candidate exact contract:
+
+```text
+facility/<facility>/<compatibility>/service/
+    start
+    process
+    stop
+```
+
+with scalar contents:
+
+```text
+start    = package-command
+process  = foreground
+stop     = sigterm
+```
+
+For example:
+
+```text
+facility/geoserver/1/service/start
+    package-command
+
+facility/geoserver/1/service/process
+    foreground
+
+facility/geoserver/1/service/stop
+    sigterm
+```
+
+These tokens are type-owned schema values, not arbitrary metadata.
+
+Semantics:
+
+- `start = package-command`: each provider supplies one ordinary package command as its concrete start realization;
+- `process = foreground`: the provider start command must remain attached to the managed service process; it must not self-daemonize and exit while an unmanaged descendant continues;
+- `stop = sigterm`: normal portable stop is supplied generically by `srv` through SIGTERM and does not require a provider-specific stop command.
+
+The exact service contract therefore guarantees the process model required for provider substitutability under the portable `srv` lifecycle.
+
+The generic facility layer knows only that `service` is a trusted part type. The future service-part handler owns these schema tokens and their conformance rules.
+
+### 4. Provider service realization
+
+Use a type-specific provider-realization surface:
+
+```text
+facility-service/<facility>/start
+```
+
+The `start` file contains exactly one package command name.
+
+Example:
+
+```text
+pkg/geoserver/.../
+    facility
+        geoserver 1
+
+    facility-service/
+        geoserver/
+            start
+                geoserver-start
+
+    cmd/
+        geoserver-start
+
+    link/
+        geoserver-start
+```
+
+The start command is an **implementation mapping**, not automatically a consumer-visible `cmd` facility guarantee. Therefore it does not need to appear in:
+
+```text
+facility/geoserver/1/cmd/
+```
+
+unless consumers independently need that command as part of the provider-independent facility interface.
+
+This distinction prevents an internal lifecycle entrypoint from leaking into the public capability contract merely because `srv` needs it.
+
+### 5. Service conformance
+
+A future trusted `pkg-facility-service.lib.sh` handler should mechanically validate at least:
+
+- the service contract contains exactly the supported required descriptors for that contract schema;
+- descriptor values are recognized trusted tokens;
+- the provider supplies `facility-service/<facility>/start` when `start = package-command`;
+- the start descriptor contains exactly one valid package command name;
+- that package command is actually defined by the same provider package range through the normal `cmd/<name>` + `link/<name>` package-command mechanism;
+- no provider-specific stop realization is accepted for the baseline `stop = sigterm` contract;
+- no undeclared service realization exists for a facility without the service part.
+
+Mechanical validation cannot prove that the command really remains foreground or behaves correctly on SIGTERM. Those are behavioral provider-conformance claims and require real provider/service tests, just as generic facility validation cannot prove full Java semantic compliance.
+
+The service handler remains inert like the current cmd/env handlers: validation does not start a process and does not create a default or binding.
+
+### 6. Exact concrete start target
+
+Portable service execution must not resolve the provider start command through ordinary PATH.
+
+After a provider concrete has been selected, the service realization identifies a package command name inside **that exact installed concrete**.
+
+Conceptually:
+
+```text
+selected provider
+    geoserver@2.28.0
+
+service realization
+    start = geoserver-start
+
+exact launch command
+    $m_PKG_DIR/geoserver@2.28.0/cmd/geoserver-start
+```
+
+Invoking that exact package command preserves the normal package launcher semantics:
+
+- concrete useful root;
+- package HOME/configuration;
+- package environment;
+- facility dependencies;
+- user package environment.
+
+At the same time it prevents a later package-default change or another provider from changing what process is started between selection and launch.
+
+This is a material improvement over resolving the historical `<service>-start` name through PATH.
+
+### 7. Role of the existing <service>-start convention
+
+The historical convention:
+
+```text
+<service>-start
+```
+
+should cease to be the semantic test for “is this a service?”.
+
+Under the proposed model:
+
+```text
+facility service part
+    defines service-operability
+
+provider facility-service/.../start
+    identifies the concrete package start command
+```
+
+A provider may still choose the familiar command name `<facility>-start`, so existing package layouts can migrate with little mechanical change. But the name itself no longer creates service semantics.
+
+During implementation, the current PATH-based convention may need a compatibility transition so existing non-provider tests/uses are not broken abruptly. The final provider-backed model should not silently fall back to command-name inference when no service contract exists.
+
+### 8. What srv owns
+
+The current portable `srv` mechanics remain generic and should be retained:
+
+```text
+serialization / lock
+stale-state handling
+background launch via nohup
+combined managed log
+PID publication
+caller ownership metadata
+idempotent start
+idempotent stop
+SIGTERM
+finite clean-termination wait
+-f caller-ownership override
+```
+
+The provider supplies no daemon-management script beyond its start command.
+
+In particular:
+
+```text
+provider
+    does not self-daemonize
+    does not publish its own PID contract to RumiAI
+    does not need a stop command
+
+srv
+    daemonizes/backgrounds the foreground provider process
+    owns PID/log/runtime lifecycle
+    stops the managed PID generically
+```
+
+This keeps “service/daemon support” in RumiAI without turning each provider into its own daemon manager.
+
+### 9. Running-instance identity
+
+When `srv start` eventually consumes a selected facility provider, runtime state should persist the concrete provider identity in addition to the already-recorded PID/owner/command.
+
+Conceptually:
+
+```text
+service identity
+    geoserver
+
+provider concrete
+    geoserver@2.28.0
+
+command
+    .../pkg/geoserver@2.28.0/cmd/geoserver-start
+
+pid
+    12345
+```
+
+The configured selector/default is **not** runtime instance identity.
+
+Therefore changing a facility default after start does not mutate the running service. `srv stop geoserver` stops the recorded instance and does not re-resolve another provider. A future new start/restart may resolve current selection again.
+
+This preserves the already-fixed service handoff rule.
+
+### 10. Selection remains separate
+
+This proposal deliberately does not redesign facility defaults or consumer bindings.
+
+Facility/provider definitions and the service realization remain inert. A later composition step decides how global `srv start <facility>` obtains its selected provider. The current service handoff direction is that global `srv` operations use facility-default selection, but that selection policy is separate from the service typed-part contract itself.
+
+The service handler therefore must not create or mutate:
+
+```text
+facility defaults
+consumer bindings
+package defaults
+```
+
+### 11. Endpoint, readiness and health are not service lifecycle
+
+Do not put network endpoint metadata into the first `service` part.
+
+Reasons:
+
+- a service may expose no network endpoint;
+- a facility may expose network capability independently of service lifecycle;
+- actual bound address/port is runtime state, not a static facility guarantee;
+- readiness/health semantics are application-specific and the current portable `srv` contract explicitly does not infer them.
+
+If a provider-independent endpoint contract becomes necessary, model it later as its own typed part rather than making `service` a mixed property bag.
+
+Likewise, application readiness/health should get its own explicit semantics only when a real requirement exists.
+
+### 12. Host supervision
+
+Future:
+
+```text
+srv host user ...
+srv host system ...
+```
+
+must consume the same service-capable facility/provider realization. systemd/launchd adapters must not introduce a second service/provider registry.
+
+The exact host installation, account, environment and activation mechanics remain deferred. Nothing in the baseline service part requires host supervision to exist.
+
+### 13. GeoServer proof shape
+
+The first proof case can be conceptually:
+
+```text
+facility/geoserver/1/
+    service/
+        start       -> "package-command"
+        process     -> "foreground"
+        stop        -> "sigterm"
+
+pkg/geoserver/.../
+    facility
+        geoserver 1
+
+    facility-service/
+        geoserver/
+            start   -> "geoserver-start"
+
+    cmd/
+        geoserver-start
+
+    link/
+        geoserver-start -> <provider-specific executable/start path>
+```
+
+Then a second independent provider of `geoserver 1` could map `start` to a completely different package command while exposing the same service semantics.
+
+That is the actual provider-substitution proof.
+
+### 14. Proposed implementation responsibility map
+
+If this design is accepted:
+
+```text
+lib/sys/sh/pkg/facility/
+    pkg-facility.lib.sh
+        generic trusted-part dispatch / whole-provider conformance
+
+    pkg-facility-service.lib.sh
+        service contract schema
+        provider service-realization validation
+        no runtime execution
+
+bin/sys/srv
+    provider-backed service launch/stop mechanics
+    runtime instance state
+
+pkg-provider.lib.sh
+    provider selection only
+```
+
+There should be no `srv` provider index and no `pkg` process manager.
+
+### 15. Alternatives rejected by this proposal
+
+Do not use these as the baseline:
+
+```text
+infer service from <service>-start
+    -> no provider-independent service contract
+
+put provider start command in facility cmd merely because srv needs it
+    -> leaks implementation plumbing into consumer guarantees
+
+provider-specific stop commands by default
+    -> duplicates lifecycle policy already owned by srv
+
+separate service registry
+    -> duplicates facility/provider identity and selection
+
+resolve start through PATH after provider selection
+    -> selected provider and launched concrete can diverge
+
+mix endpoint/readiness/health into service part
+    -> conflates orthogonal contracts
+```
+
+The smallest coherent baseline is therefore:
+
+```text
+facility identity == service identity
+service typed part == portable process/lifecycle contract
+provider realization == exact package start-command mapping
+srv == generic process owner
+```
+
 
 ## Completed
 
@@ -153,34 +513,36 @@ The runtime package libraries now have explicit `facility/` and `repository/` re
 
 ## Current state
 
-The canonical package model now provides the provider-independent facility abstraction that the service task was waiting for.
+The generic facility/provider core is implemented for `cmd` and `env`. The service task is active again at design level.
 
-The current runtime still implements portable service launch through `<service>-start`, with `srv` owning locking, stale-state cleanup, background launch/logging, runtime metadata and SIGTERM-based stop. Package provider/default/binding resolution is now a separate generic package responsibility and no service-specific provider resolver is needed.
+Current `srv` still discovers a launch target by resolving `<service>-start` through PATH and stores PID, caller owner and canonical command. It does not yet resolve a facility provider or persist provider-concrete identity.
 
-The unresolved service boundary is no longer “how do commands/environment identify a service”; it is the exact lifecycle/service contract part and, separately, any endpoint/network contract part required by the first service implementation.
+The current design proposal introduces a trusted `service` facility part, makes baseline service identity equal facility identity, maps each provider to one exact package start command, leaves normal stop generic in `srv`, and keeps endpoint/readiness/health out of the first service part.
 
-No service runtime/test/catalog implementation changed in this checkpoint.
+No service runtime, package runtime, catalog or permanent test has been modified for this proposal.
 
 ## Next action
 
-The generic typed-part/meta-model is settled and the package task has implemented the inert facility/provider `cmd`/`env` core without changing defaults, bindings or runtime application.
+Review the proposed `service` typed-part model with the user.
 
-Keep this service task paused. When service work resumes, it should:
-
-1. define the minimal lifecycle part against that generic meta-model;
-2. decide which lifecycle operations require provider realization and which may be satisfied generically by `srv`;
-3. define the facility-default selection path for global `srv` operations;
-4. define what concrete provider identity/runtime metadata `srv` persists for a running instance;
-5. decide whether endpoint/network metadata is required in the first service contract;
-6. realign `SERVICE-LIFECYCLE.md`, runtime, manuals and permanent tests only after those semantics are settled.
+If accepted, promote the stable facility/service semantics into `PACKAGE-MODEL.md` and `SERVICE-LIFECYCLE.md` before implementing `pkg-facility-service.lib.sh`, any GeoServer catalog proof, runtime provider resolution in `srv`, or migration away from PATH-based `<service>-start` discovery.
 
 ## Blockers / open questions
 
-- Exact lifecycle typed-part schema inside the generalized facility contract.
-- Which lifecycle operations are provider-specific versus generically supplied by `srv`.
-- Final role of the existing `<service>-start` convention after explicit lifecycle metadata exists.
-- Whether the first service contract also needs endpoint/network capability metadata.
-- Whether service identity is exactly facility identity and therefore uses the facility-name grammar.
-- Exact normalized host action set and mapping across systemd/launchd.
-- Whether host `user` scope needs install/uninstall operations.
-- Host adapter metadata required for unit/plist generation while preserving package launch semantics and security boundaries.
+Primary decisions for user review:
+
+- accept `service` as the typed-part name rather than a generic `lifecycle` part;
+- accept baseline service identity == facility identity;
+- accept the first contract schema `start=package-command`, `process=foreground`, `stop=sigterm`;
+- accept `facility-service/<facility>/start` as the provider realization pointing to an ordinary package command;
+- accept generic `srv` SIGTERM stop with no provider-specific stop mapping in the baseline;
+- accept exact-concrete command launch instead of PATH lookup;
+- keep endpoint/readiness/health outside the first service part.
+
+Still deferred after those choices:
+
+- exact facility-default/provider-selection composition for global `srv`;
+- compatibility transition/removal strategy for legacy PATH-based `<service>-start`;
+- host user/system supervision implementation;
+- host installation/account/environment mechanics;
+- endpoint/readiness/health typed parts if later required.
