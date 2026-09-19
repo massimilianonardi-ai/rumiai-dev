@@ -1,7 +1,7 @@
 # Package provider/facility completion
 
 Status: Active
-Updated: 2026-09-19 11:35 +02:00
+Updated: 2026-09-19 14:50 +02:00
 
 ## Goal
 
@@ -13,15 +13,15 @@ Services remain out of scope and stay owned by handoff/service-model.md.
 
 ## Current repository revisions
 
-Latest reconciled pre-write baseline:
+Latest reconciled design baseline:
 
-rumiai-dev      4a5c996dcf805ca7503947565e2a134b3c98eccc
+rumiai-dev      0ab04f0b921477e161d467dc86249a279c56c8cf
 rumiai-os       34671a5a1e9917fa39e3bbbd4b155590202c9b22
 rumiai-tests    88b4e48f170da883889c2f418a34e8ad24066e9d
 pkg-catalog     bd06488d3c67160e820c04d13067f852c8861c32
 rumiai-dev-PoCs cb8c5d636ce65e6cb00626ed08947fe25a25988e
 
-The rumiai-dev revision above is the baseline read before the Phase 1 canonical realignment commit. Concurrent menu work in rumiai-dev/rumiai-os/rumiai-tests was inspected and does not overlap this package task. Fresh HEAD retrieval remains mandatory before every later write.
+The library-subsystem grouping task was explicitly closed by the user and its completed handoff was removed forward-only before this checkpoint. Fresh HEAD retrieval remains mandatory before every later write.
 
 ## Applicable canonical sources
 
@@ -44,7 +44,6 @@ Read through the normal mandatory order:
 
 Separate active work that may touch shared files but is not absorbed:
 
-- handoff/library-subsystem-subdirectories.md
 - handoff/rumiai-tests-suite-realignment.md
 - handoff/service-model.md
 
@@ -52,43 +51,293 @@ The deferred item todo/github-package-repository-rate-limits.md is activated int
 
 ## Fixed task-local choices
 
-These come from explicit user direction and must survive deletion of the chat.
+The durable facility semantics fixed by the user have now been promoted to `PACKAGE-MODEL.md`; do not duplicate them here as a shadow specification.
 
-1. Eclipse Temurin is a concrete package named temurin. java is a facility, not the package identity for Temurin.
-2. GraalVM is a separate package and may provide the same java facility.
-3. Multiple providers of one facility are a normal installed state.
-4. Consumer binding is configuration under the consumer system conf area at binding/<facility>.
-5. If that binding file does not exist, the consumer inherits the system facility default.
-6. A consumer binding can change at any time without reinstalling the consumer.
-7. A selector such as temurin is late-bound through the package default; a versioned selector such as temurin@<version> is pinned.
-8. Runtime provider application is generic launcher behavior. Maven, NetBeans, Keycloak and other consumers must not contain provider-specific provider lookup or hardcoded Java-provider environment logic.
-9. A provider exposes facility commands and facility environment.
-10. The user explicitly stated that the provider selected as a facility default should expose its commands through the appropriate bin roots and its environment in the bootstrap.
-11. Services stay out of this task.
-12. The provider-independent facility-contract model belongs to `pkg`. `pkg` owns facility identity, compatibility, provider selection and the declarative contract that a provider must realize. Specialized subsystems such as `srv` or `mk` retain ownership of their own operational semantics when a facility-contract aspect delegates work to them; this does not create a parallel provider model in those subsystems.
+Task-local choices that still matter for completion are:
 
-Phase 1 canonical realignment resolves the former authority mismatch: PACKAGE-MODEL.md and BOOTSTRAP-ENVIRONMENT.md now require facility-default provider environment to be derived by every new m bootstrap. Runtime implementation and permanent tests remain to be realigned to that promoted contract.
+1. Eclipse Temurin remains the concrete package `temurin`; GraalVM remains a distinct package. Both may provide the `java` facility at compatible levels.
+2. Java consumers must remain provider-independent. Maven, Keycloak, NetBeans and later consumers must not contain Temurin/GraalVM-specific selection or environment logic.
+3. The already implemented facility-default command/environment behavior remains part of the migration baseline, but `facility-cmd` and `facility-env` are no longer treated as the complete general definition of a facility.
+4. Before adding more Java- or GraalVM-specific facility surface, the generalized facility-contract model must be designed against at least two deliberately different cases: Java and a service-style facility such as GeoServer.
+5. Services remain implemented by the separate `service-model` workstream. This task owns the common `pkg` facility-contract substrate that the service model will consume.
+6. The exact storage location and physical schema of provider-independent facility definitions are still open. A same-revision location inside `pkg-catalog` is the leading candidate, but it is not yet a promoted contract.
+7. The exact deeper physical grouping under `lib/sys/sh/pkg/` is still open. The previous `pkg/` and `mk/` grouping task is complete; this task may introduce a further package-internal grouping only after responsibilities are settled.
 
 ## Working design
 
-The current `facility-cmd` and `facility-env` projection schema is now treated as the first concrete realization of facility-contract aspects rather than as a complete general definition of a facility.
+The canonical package model now defines the semantic core: a facility is a provider-independent substitutable capability contract owned by `pkg`; provider realization, facility contract and mutable provider-selection configuration are distinct authorities; ordinary command publication does not automatically create a facility; and specialized subsystems may interpret typed facility parts without acquiring a second provider graph.
 
-The design direction to evaluate before further Java-specific expansion is:
+The remaining design work is the concrete meta-model, catalog ownership and implementation structure.
 
-- a facility is a provider-independent, substitutable capability contract;
-- a provider declares that it supplies the facility and describes how its concrete package realizes the contract;
-- contract aspects are typed and have generic semantics; they must not become an arbitrary provider-specific property bag or executable shell metadata;
-- service-like facilities motivate lifecycle and runtime-endpoint aspects, but exact aspect names/schema remain open and service lifecycle execution remains owned by `srv`;
-- an ordinary package command should not automatically become a selectable facility merely because it is linked into a bin root. The leading direction is to share a lower-level command-projection primitive with the facility command aspect while requiring a genuine provider-independent/substitutable contract before exposing a facility identity;
-- `lib/sys/sh/pkg/` is already large enough that deeper physical grouping is likely useful, especially around facility/provider/contract responsibilities and repository adapters. Exact grouping paths are not yet fixed and overlap the active `library-subsystem-subdirectories` workstream, so no new nested layout is promoted yet.
+### 1. Four information planes
 
-Java and a service-style facility such as GeoServer should be used as contrasting design cases. The generalized facility model should describe both without provider-specific exceptions before its schema is promoted.
+The model must keep four kinds of information separate.
+
+#### 1.1 Facility contract
+
+Provider-independent definition of the capability.
+
+It answers questions such as:
+
+- what semantic capability does the facility identity represent;
+- what compatibility level a consumer may request;
+- which typed contract parts are required at that compatibility level;
+- what members/operations within each part are mandatory;
+- what a consumer is allowed to rely on regardless of selected provider.
+
+The contract must not contain a provider package path, a selected provider, mutable user/system preference or runtime instance state.
+
+A key unresolved point is the exact relation between the existing facility compatibility value and contract evolution. The design must determine whether one exact compatibility level identifies one exact contract surface, whether levels inherit prior requirements, and how range dependencies such as `java >=17` are validated against provider conformance.
+
+#### 1.2 Provider realization
+
+Concrete, version/osarch-specific package metadata that states how one package realizes a declared facility contract.
+
+Examples already implemented for Java are:
+
+- facility command names mapped to paths inside the provider useful root;
+- environment variables mapped to provider root, root-relative path or literal values.
+
+A provider realization must not redefine the meaning of the facility. It maps the provider's artifacts onto the provider-independent contract.
+
+Provider conformance therefore requires two classes of validation:
+
+```text
+facility contract is internally valid
++
+provider realization satisfies the required contract surface
+```
+
+A provider may contain additional package-specific functionality. Consumers of the facility must not silently rely on those extras unless the facility contract explicitly defines optional-member semantics or another facility represents that capability. Whether optional contract members exist at all is still open and must be decided deliberately; the safe baseline is a minimum interoperable required surface.
+
+#### 1.3 Selection/policy configuration
+
+Mutable system configuration chooses among valid installed realizations. Existing examples are:
+
+- facility default;
+- consumer binding.
+
+Possible future preference or assisted/automatic-resolution policy belongs here if adopted.
+
+This plane changes **which** realization is selected. It never changes **what** the facility means.
+
+#### 1.4 Runtime/instance state
+
+Derived/transient state records what actually happened after selection and execution.
+
+For service-style facilities this includes facts such as a running concrete provider instance, PID/lifecycle state and the actual bound endpoint. Such state is not facility definition and is not provider-selection configuration.
+
+This distinction is essential for network services: a provider may declare that it can expose an HTTP endpoint and may describe defaults/configuration, but the actual current address/port is runtime state.
+
+### 2. Typed and extensible contract parts
+
+A facility contract may contain one or many typed parts. The number of parts is not what makes something a facility.
+
+Each part must have:
+
+- a provider-independent semantic contract;
+- generic validation rules;
+- a defined owner/interpreter in `m`;
+- declarative provider realization data;
+- explicit projection/execution semantics where applicable.
+
+A new type is not accepted merely because a provider wants to store an extra key. The facility model must not become an arbitrary property bag.
+
+Currently implemented realization types are command and environment projection. They are the first supported types, not the complete abstraction.
+
+Candidate future types motivated by the service case include lifecycle and endpoint/network exposure. Those names and schemas are not yet fixed. If adopted, lifecycle execution remains owned by `srv`; static endpoint capability/default metadata remains distinct from actual runtime endpoint state.
+
+### 3. Ordinary commands versus command-only facilities
+
+The existing package command mechanism and a facility command part should share lower-level projection mechanics where that avoids duplication, but their semantics remain different.
+
+An ordinary package such as `jq` may simply install/expose `jq` through the package/default command mechanism. That fact alone must not create:
+
+- a facility identity;
+- a facility default;
+- a provider binding;
+- an artificial second selection layer.
+
+A facility whose complete contract consists of a single command is nevertheless valid when there is a real provider-independent capability and consumer substitution requirement. The discriminant is therefore abstraction/substitutability, not cardinality.
+
+Do not introduce a generic facility named `command` merely to normalize all executables. That would collapse unrelated command capabilities into one meaningless provider domain and duplicate the existing package/default mechanism.
+
+Implementation should instead look for a common internal command-projection primitive that can serve both ordinary package command publication and the command part of a facility while preserving the semantic distinction.
+
+### 4. Service-style facilities
+
+The service case is the main non-Java stress test.
+
+The intended responsibility split is:
+
+```text
+pkg
+    owns facility contract, provider conformance and provider selection
+
+selected provider realization
+    describes the lifecycle/network capability mapping
+
+srv
+    interprets the lifecycle portion and owns PID/locking/logging/termination mechanics
+
+runtime state
+    records the concrete running instance and actual endpoint state
+```
+
+A global operation such as `srv start <facility>` has no consumer package binding context; the leading direction is therefore to use the facility default/global provider selection rather than create a service-specific provider resolver.
+
+Changing a facility default must not retarget an already-running service instance. The running instance must remain tied to the concrete provider realization selected when it was started; a later stop/start may observe the new default.
+
+The previous convention `<service>-start` may remain an implementation mapping or compatibility surface, but it should not be the semantic definition of service-operability if the generalized contract contains an explicit lifecycle part.
+
+The design must also make a deliberate distinction between provider-specific lifecycle operations and lifecycle behavior supplied generically by `srv`. For example, a provider may need a concrete start target while normal stop may be satisfiable by the generic SIGTERM lifecycle. Exact representation remains open.
+
+### 5. Where concrete facility contracts should live
+
+Three placements are being evaluated.
+
+#### 5.1 Same `pkg-catalog` repository — leading candidate
+
+This keeps provider-independent facility definitions and package/provider definitions inside the **same immutable catalog snapshot** already acquired by `pkg install`.
+
+Advantages:
+
+- provider declaration and referenced facility contract can be validated against one Git revision;
+- a change that adds/changes a contract and updates its providers can be atomic in one commit/PR;
+- no second remote, cache, lock, refresh policy, rate-limit surface or offline dependency is introduced;
+- permanent/live tests can bind one catalog revision instead of coordinating two moving repositories;
+- the current install snapshot mechanism can potentially expose both package definitions and facility contracts without a second acquisition pipeline;
+- local-first/offline behavior remains simpler because one cached catalog snapshot contains the semantic data required to interpret packages.
+
+Costs/risks:
+
+- `pkg-catalog` broadens from package definitions to the complete package ecosystem catalog, so the logical namespace must clearly distinguish package definitions from provider-independent facility definitions;
+- the current catalog root is package-oriented, so a reserved logical area/schema must be introduced without accidentally treating facility-definition directories as installable packages;
+- contract validation and catalog layout tests become part of the same repository surface.
+
+This is presently the preferred direction because it minimizes revision skew and testing asymmetry.
+
+The exact directory names/layout are deliberately **not** fixed yet. They must be chosen after inspecting the current catalog resolver and proving that the new logical namespace does not create ambiguous package identities or special-case parsing.
+
+#### 5.2 Separate facility-contract repository
+
+Conceptually clean, but operationally more expensive.
+
+It would require at least:
+
+- a second remote and local cache/snapshot lifecycle;
+- an explicit rule binding one `pkg-catalog` revision to one facility-contract revision;
+- behavior for partial refresh/failure/offline availability of one repository but not the other;
+- cross-repository compatibility validation;
+- tests that reproduce exact pairs of revisions;
+- coordinated changes when a new contract and its first provider must land together;
+- another rate-limit/network failure surface.
+
+Without an exact revision-binding mechanism, provider and contract HEADs could drift independently and produce nondeterministic installs/tests. Adding such a binding mechanism largely recreates complexity that a single repository avoids.
+
+A separate repository becomes compelling only if facility contracts acquire an independent lifecycle/governance or are consumed materially outside the `pkg` ecosystem. No such requirement is established today.
+
+#### 5.3 Embed concrete facility definitions in `rumiai-os`
+
+This minimizes catalog acquisition work but couples every new/changed facility to a runtime/product revision.
+
+That would weaken the intended data-driven package model and make adding a facility more like adding product code. It is therefore not the leading direction for **concrete facility definitions**.
+
+A useful hybrid boundary does emerge:
+
+```text
+rumiai-os / pkg runtime
+    knows the supported contract-part types and how to validate/interpret them
+
+pkg-catalog
+    likely owns concrete provider-independent facility definitions
+    and package-specific provider realizations
+```
+
+This hybrid keeps the runtime vocabulary controlled while allowing concrete facilities to evolve as catalog data.
+
+### 6. Package library structure
+
+The completed earlier restructuring established `lib/sys/sh/pkg/` as the package library grouping directory while preserving leaf library identity.
+
+Current package libraries now mix several substantial responsibilities in one physical directory, including core install/integration/launch/state code, provider/facility/dependency code and many repository adapters.
+
+A deeper grouping is therefore justified if it follows the settled responsibility boundaries.
+
+Leading physical organization to evaluate:
+
+```text
+lib/sys/sh/pkg/
+    <cross-cutting package libraries remain here>
+
+    facility/
+        pkg-facility.lib.sh
+        pkg-provider.lib.sh
+        pkg-dependency.lib.sh
+        <future contract/conformance/projection libraries only when responsibilities require them>
+
+    repository/
+        pkg-repository-*.lib.sh
+```
+
+This is physical organization only. Existing leaf names and manual identities should remain stable under the current library contracts unless a genuine API/identity change is separately justified.
+
+Do not pre-create deeper trees such as `facility/contract/`, `facility/provider/` or one directory per contract type merely for symmetry. First define real responsibilities and library interfaces, then introduce the shallowest grouping that reduces coupling/retrieval cost.
+
+Likely responsibility boundaries to isolate during design are:
+
+- facility contract loading/validation;
+- provider declaration/conformance indexing;
+- provider selector/default/binding resolution;
+- provider realization application/projection;
+- dependency satisfaction;
+- catalog access;
+- repository-specific upstream adapters.
+
+The exact leaf split is not fixed yet; existing libraries must be reused/refactored before introducing synonymous responsibilities.
+
+### 7. Design proof cases
+
+No schema should be promoted until it can model at least these two cases without provider-specific exceptions.
+
+#### Java
+
+The model must express:
+
+- facility identity and compatibility (for example Java compatibility levels);
+- a contractually defined interoperable command surface;
+- required environment such as `JAVA_HOME` where the contract establishes it;
+- Temurin and GraalVM as distinct conforming providers;
+- consumer dependencies such as Maven/Keycloak/NetBeans without provider knowledge;
+- provider-specific extra commands without accidentally expanding the facility contract.
+
+#### GeoServer/service-style facility
+
+The model must express:
+
+- provider-independent service identity/compatibility;
+- lifecycle semantics delegated to `srv`;
+- provider-specific start realization where required;
+- generic stop behavior when no provider-specific stop operation is needed, if that semantic is accepted;
+- network protocol/endpoint capability without confusing static/default metadata with actual running endpoint state;
+- facility default selection for global service operations;
+- concrete-provider stability for a running instance across later default changes.
+
+If these two cases require unrelated special-case mechanisms, the abstraction is not yet general enough.
 
 ## Canonical model already settled
 
-Do not reopen these points unless a current contradiction is found. PACKAGE-MODEL.md already defines:
+Do not reopen these points unless a current contradiction is found. PACKAGE-MODEL.md now defines:
 
 - package identity versus facility identity;
+- a facility as a provider-independent substitutable capability contract owned by pkg;
+- consumer dependence on facility identity/compatibility rather than provider identity;
+- provider conformance/realization as distinct from the provider-independent contract;
+- distinction between facility contract, provider realization and mutable selection conf;
+- ordinary package command publication does not automatically create a facility, while a real command-only abstract capability may be one;
+- extensibility through typed declarative contract parts with generic semantics;
+- delegation to existing subsystems such as srv/mk without a second provider/dependency graph;
+- facility-cmd and facility-env as current realization parts rather than the exhaustive facility definition;
 - multiple installed providers;
 - consumer selection order: explicit binding, otherwise facility default, otherwise failure;
 - no implicit use of the only installed provider;
@@ -244,6 +493,18 @@ The task must make rate-limit behavior predictable without weakening package int
 
 ## Open work and known mismatches
 
+### 0. Generalized facility-contract model
+
+Before further Java-specific expansion, complete the meta-model described in Working design:
+
+- settle compatibility/contract-evolution semantics;
+- settle required versus optional/extra provider surface;
+- define the minimal typed-part schema and conformance rules;
+- decide the concrete facility-definition location, with same-revision `pkg-catalog` storage as the leading candidate;
+- prove the model against Java and GeoServer/service-style cases;
+- map implementation responsibilities before adding new libraries or deeper package-library grouping;
+- promote only settled rules to PACKAGE-MODEL before runtime/catalog implementation.
+
 ### A. Global facility environment
 
 Canonical semantics are now settled in PACKAGE-MODEL.md and BOOTSTRAP-ENVIRONMENT.md:
@@ -358,103 +619,124 @@ Do not ask this abstractly. First produce a concrete artifact inventory and mini
 
 ## Development plan
 
-### Phase 0: resume and reconcile
+### Phase 0: generalized facility semantic baseline — completed for this checkpoint
 
-- fetch fresh HEADs for all involved repositories;
-- read mandatory sources and this handoff;
-- reconcile concurrent movement forward;
-- check overlapping active handoffs only where they touched the same files/tests.
+- fresh preflight and current repository inspection;
+- close/remove the completed library-grouping handoff;
+- promote the provider-independent facility definition and authority boundaries into `PACKAGE-MODEL.md`;
+- preserve unresolved schema/location choices as working design here.
 
-Exit: one coherent current baseline.
+Exit: semantic ownership is no longer Java-specific, while unresolved representation remains explicitly non-canonical.
 
-### Phase 1: bootstrap environment realignment
+### Phase 1: facility contract meta-model
 
-- treat the user requirement for global default-provider environment as the pending authoritative correction;
-- analyze BOOTSTRAP-ENVIRONMENT and current m bootstrap;
-- settle deterministic variable/PATH precedence and lifecycle;
-- update canonical specification before dependent runtime changes;
-- implement and add permanent tests.
+Design, without implementation-first shortcuts:
 
-Exit: user direction, PACKAGE-MODEL, BOOTSTRAP-ENVIRONMENT and runtime agree.
+- facility identity + compatibility-to-contract relationship;
+- required contract surface;
+- optional/extra capability policy;
+- typed-part registration/validation semantics;
+- provider conformance rules;
+- consumer-visible guarantees;
+- distinction between static contract data, provider realization, selection conf and runtime state.
 
-### Phase 2: global command projection regression coverage
+Model Java and GeoServer side by side.
 
-- add property-focused permanent tests for all transitions listed in section B;
-- run them against the current implementation before changing that implementation further;
-- fix only evidenced failures.
+Exit: one provider-independent meta-model describes both cases without special-case provider logic.
 
-Exit: global command publication has durable regression proof.
+### Phase 2: catalog ownership and representation
 
-### Phase 3: Java consumer completion
+Evaluate the leading single-repository design against the real `pkg-catalog` resolver/snapshot behavior.
 
+Required proof:
+
+- package namespace and facility-definition namespace are unambiguous;
+- one snapshot can validate provider declarations against facility contracts;
+- no second mutable authority is introduced;
+- offline/cache behavior remains deterministic;
+- package install does not accidentally enumerate/interpret contract definitions as packages;
+- exact facility-contract revision is inherently bound to the package catalog revision.
+
+If this fails materially, compare a separate repository using an explicit revision-binding design rather than a pair of floating HEADs.
+
+Exit: one storage/ownership design is selected and promoted.
+
+### Phase 3: package library responsibility map
+
+Before moving files:
+
+- classify every current `lib/sys/sh/pkg/` responsibility;
+- identify existing functions that already own contract/provider/projection duties;
+- decide the shallowest useful physical groups;
+- preserve library leaf/manual identities unless a true semantic/API rename is required;
+- define any new public/internal library interface before implementation.
+
+Likely groups to test are `facility/` and `repository/`, but names/layout remain provisional until this phase exits.
+
+Exit: no duplicate facility/provider responsibility and one deliberate library topology.
+
+### Phase 4: generalized runtime/catalog implementation
+
+- implement facility contract loading/validation;
+- validate provider declarations/realizations against the selected facility contract;
+- adapt existing `facility-cmd` and `facility-env` to the generalized contract machinery rather than replacing them gratuitously;
+- factor reusable command projection internally where the ordinary package-command and facility-command paths genuinely share mechanics;
+- preserve existing provider selector/default/binding behavior;
+- add permanent property-focused tests.
+
+Exit: current Java behavior is expressed through the generalized machinery without regression.
+
+### Phase 5: Java contract and consumer completion
+
+- define the actual Java facility contract(s) needed by current compatibility levels;
+- validate Temurin and GraalVM conformance;
+- decide how provider-extra Java/GraalVM commands are represented without silently becoming consumer guarantees;
 - realign NetBeans;
-- scan all catalog/tests for old java package identity, concrete binding/java reads and consumer-specific Java provider logic;
-- validate Maven, Keycloak and NetBeans through the same generic mechanism;
-- exercise coexistence and at least one explicit binding override.
+- validate Maven, Keycloak and NetBeans with generic provider machinery;
+- exercise coexistence and explicit binding override.
 
-Exit: all current Java consumers use generic provider machinery.
+Exit: all current Java consumers rely only on the provider-independent Java contract.
 
-### Phase 4: user policy gate
+### Phase 6: service bridge
 
-Ask Decision 1 and Decision 2 if not yet answered.
+Coordinate with `handoff/service-model.md`:
 
-Then specify and implement only the selected policy. Do not invent provider preference or transaction semantics.
+- define the minimal lifecycle contract part;
+- determine whether endpoint/network capability is part of the first service contract or a subsequent typed part;
+- define provider-specific start mapping versus generic srv stop semantics;
+- make global srv operations consume facility-default selection without a second provider resolver;
+- preserve running-instance concrete-provider identity across later default changes;
+- decide the compatibility role, if any, of `<service>-start`.
 
-Exit: dependency installation and install-time provider configuration are unambiguous.
+Exit: service lifecycle reuses pkg facility/provider selection without turning srv into a second package manager.
 
-### Phase 5: GraalVM facilities
+### Phase 7: global projection + policy completion
 
-- inventory real artifacts per platform;
-- present only genuine facility-boundary choices;
-- implement accepted facility metadata/projection/tests.
+- complete global facility environment/runtime validation;
+- complete global command projection regression proof;
+- ask the still-open missing-provider resolution policy decision;
+- ask the still-open install-time provider configuration UX decision;
+- implement only the selected policy.
 
-Exit: GraalVM neither under-reports accepted base capabilities nor claims absent components.
+### Phase 8: GraalVM additional facilities and repository reliability
 
-### Phase 6: GitHub rate-limit robustness
+- inventory real GraalVM artifact capabilities;
+- map only genuine additional facilities;
+- resolve GitHub-backed repository rate-limit behavior without weakening integrity.
 
-- analyze current GitHub-backed adapters starting with GraalVM;
-- distinguish metadata API limits from downloads;
-- preserve digest/integrity checks;
-- add deterministic adapter coverage for rate-limit responses;
-- keep live tests classified as upstream-sensitive evidence.
+### Phase 9: exact-revision validation and closure
 
-Exit: rate limiting has predictable product/test behavior.
-
-### Phase 7: final validation
-
-At minimum run, against exact final revisions:
-
-- structural provider tests;
-- global command projection tests;
-- bootstrap/global environment tests;
-- Temurin install/projection;
-- GraalVM install/projection;
-- Temurin plus GraalVM coexistence;
-- Maven Java dependency/runtime;
-- Keycloak Java dependency/runtime;
-- NetBeans Java dependency/runtime;
-- package-default/facility-default transitions;
-- pinned versus unversioned selectors;
-- relevant Linux and macOS layouts;
-- Windows where executable infrastructure exists, otherwise state exact unvalidated surface;
-- rate-limit adapter tests.
-
-### Phase 8: consistency and closure
-
-- reread all changed diffs;
-- reread authoritative specs;
-- scan for superseded names/mechanics;
-- verify command/library manual completeness and public/internal visibility;
-- reconcile concurrent HEAD movement;
-- resolve all working design by promotion, deliberate discard or separate deferred ownership;
-- write Status: Complete snapshot;
-- commit it;
-- remove this handoff in a later forward commit.
+Run the final structural/live matrix against exact revisions, including generalized contract validation, provider coexistence, Java consumers, selector transitions, Linux/macOS coverage and the service bridge when that workstream is ready. Then perform the full consistency gate and handoff closure protocol.
 
 ## Completion criteria
 
 Do not close this task until all applicable conditions hold:
 
+- the generalized facility contract model is promoted and mechanically validated before Java/service-specific expansion;
+- concrete facility definition storage has one unambiguous authority and revision model;
+- provider conformance is validated against provider-independent facility contracts;
+- ordinary command publication remains distinct from facility identity while command-only facilities remain possible when semantically justified;
+- package library grouping reflects real responsibilities without duplicate APIs;
 - Temurin is never represented by package identity java;
 - Temurin and GraalVM coexist;
 - facility default and consumer binding use one coherent selector model;
@@ -474,49 +756,54 @@ Do not close this task until all applicable conditions hold:
 
 ## Current state
 
-The architecture is substantially implemented but not complete.
+The semantic gap identified in the previous checkpoint has now been partially closed at the canonical level.
 
-A broader facility-contract gap has now been identified: the promoted package model defines provider selection plus command/environment projection, but it does not yet define a provider-independent facility contract that can express richer capabilities while preserving provider substitutability. This must be settled before treating the current Java-oriented projection shape as the final general facility abstraction.
+`PACKAGE-MODEL.md` now explicitly defines a facility as a provider-independent substitutable capability contract owned by `pkg`, distinguishes facility contract / provider realization / mutable selection conf, rejects automatic promotion of ordinary commands to facilities, and establishes typed declarative extensibility plus delegation to existing subsystem owners.
 
-Green revision-specific provider validation exists for the pre-global-command implementation. Current product contains the later global command projection implementation. Current catalog contains corrected Temurin/GraalVM Java projections and corrected wrappers. Current tests cover most selector/runtime behavior.
+The exact facility-contract representation is intentionally not yet canonical. In particular, compatibility evolution, required-vs-optional surface, concrete catalog layout and lifecycle/endpoint schemas remain design work.
 
-The principal remaining blockers are:
+The leading architectural placement is now a hybrid:
 
-1. global facility environment runtime/test realignment to the newly promoted canonical contract;
-2. missing permanent proof for current global command projection;
-3. stale NetBeans provider integration;
-4. unresolved dependency/install policy choices;
-5. incomplete GraalVM facility surface;
-6. GitHub rate-limit robustness;
-7. final exact-current validation.
+```text
+rumiai-os/pkg
+    contract-part type implementations/interpreters
+
+pkg-catalog
+    concrete facility definitions + package/provider realizations
+```
+
+with both catalog data classes in one Git revision. A separate facility repository remains an evaluated alternative, not the preferred baseline.
+
+The previous library-subsystem grouping task is complete and its handoff has been removed. Any deeper `pkg` grouping is new work owned here and must be driven by the generalized facility responsibility map, not by the old restructuring task.
+
+No runtime, test or catalog behavior has been changed by this design checkpoint. Existing validation evidence therefore remains revision-specific and does not prove the generalized contract model.
 
 ## Next action
 
-In a clean new chat:
-
-1. perform mandatory fresh preflight;
-2. read this handoff and reconcile repository movement;
-3. settle the generalized provider-independent facility-contract model owned by `pkg`, using Java and a service-style facility as contrasting cases;
-4. decide which existing command/environment mechanics become reusable contract aspects versus lower-level package projection primitives, without automatically turning every installed command into a facility;
-5. settle the minimal deeper physical grouping needed under `lib/sys/sh/pkg/` in coordination with the active library-subdirectory workstream;
-6. only then resume the implementation/validation phases against the resulting promoted contract;
-7. before the later dependency/install-policy phase, ask the user Decision 1 and Decision 2 exactly as above.
-
-Do not ask the user to reconstruct this deleted conversation.
+1. Define the facility contract meta-model on paper using Java and GeoServer as simultaneous proof cases, including compatibility evolution, mandatory surface and provider extras.
+2. Inspect the real `pkg-catalog` resolver/snapshot assumptions and draft the smallest same-repository logical namespace that can hold facility definitions without ambiguity.
+3. From those two results, produce the package-library responsibility map and only then decide the deeper `lib/sys/sh/pkg/` grouping.
+4. Promote the resulting settled storage/schema rules before implementation.
 
 ## Blockers / open questions
 
-User decisions still required:
+User/design decisions that remain genuinely open:
 
-- explicit-only versus assisted versus automatic missing-provider resolution;
-- separate provider configuration versus explicit install-time default/binding syntax;
-- after GraalVM inventory, only facility naming/boundary choices that remain semantically ambiguous.
+- concrete facility-definition placement: same `pkg-catalog` revision is the leading candidate; separate repository remains possible only if a concrete independent-lifecycle requirement justifies its added revision/test complexity;
+- exact compatibility-to-contract evolution semantics;
+- whether facility contracts support optional members or expose only a mandatory interoperable surface;
+- exact first lifecycle/endpoint typed-part semantics for service-style facilities;
+- missing dependency provider behavior: explicit-only versus assisted/manual versus automatic;
+- install-time provider configuration UX: separate operations versus explicit atomic install options;
+- after GraalVM inventory, only facility boundaries that cannot be derived from the generalized contract model.
 
 Non-user work still required:
 
-- bootstrap provider-environment runtime implementation and permanent tests;
-- global projection regression tests;
+- catalog namespace/layout proof;
+- package-library responsibility mapping;
+- generalized contract/conformance implementation and tests;
+- global provider environment/projection regression completion;
 - NetBeans realignment;
-- GraalVM inventory;
-- GitHub rate-limit implementation/test work;
+- GraalVM capability inventory;
+- GitHub rate-limit robustness;
 - final exact-revision validation.
