@@ -238,6 +238,32 @@ Facility contracts are extensible through typed declarative parts with defined g
 
 The currently implemented command and environment projections are supported facility-realization parts, not an exhaustive definition of what a facility may be. Additional typed parts require their own explicit generic semantics before providers may use them.
 
+### Facility compatibility levels
+
+A facility compatibility value identifies one **exact provider-independent contract level** for that facility. Different compatibility levels of the same facility are not required to form a monotonic or backward-compatible lineage. A later/higher numeric level may preserve the previous surface, extend it, reduce it or change it substantially.
+
+`pkg` therefore does **not** infer backward compatibility from numeric ordering and does not require a higher facility level to include the guarantees of a lower level.
+
+A concrete provider declaration names the exact facility level realized by that provider. The provider realization is validated against the complete contract for that exact `<facility, compatibility>` pair.
+
+A consumer requirement declares the set of compatibility levels it accepts by using the dependency constraint language. Exact constraints express exact acceptance; ordered constraints and combinations of constraints express ranges. For example:
+
+```text
+java =25
+java >=17
+java >=17 <26
+```
+
+The semantic correctness of such an acceptance range belongs to the package/catalog authors that declare the provider and consumer metadata. `pkg` evaluates the declared constraints; it does not attempt to prove that two facility levels are behaviorally backward-compatible.
+
+Each published `<facility, compatibility>` contract is complete and self-contained. It is not interpreted as a delta inherited from another level. Its consumer-visible meaning is semantically immutable once published: changing required guarantees requires another compatibility level, while non-semantic editorial/catalog maintenance may leave the identity unchanged.
+
+The baseline facility-contract model exposes only the required interoperable surface. Every member of the contract is mandatory for every provider that declares that exact level. Provider-specific extras remain outside that facility realization as ordinary package capabilities, or are represented by another facility when they deserve their own provider-independent substitutable contract. Optional facility members are not part of the baseline model.
+
+Provider conformance is established during installation/integration against the facility contract from the same immutable `pkg-catalog` snapshot that supplied the package definition. Runtime provider selection/application does not fetch the catalog again; it relies on the validated, materialized provider declaration/realization and on the immutable meaning of the declared facility level.
+
+Mechanical conformance validation proves only properties that can actually be established from the package artifact and declarative metadata. It must not be described as proof of the provider's full behavioral implementation of the external capability.
+
 ### Provider selection
 
 Provider installation and provider selection are separate responsibilities.
@@ -484,4 +510,11 @@ PKG-42  pkg-catalog separates installable package definitions under pkg/<package
 PKG-43  package and facility catalog data used together are revision-coupled through the same pkg-catalog snapshot
 PKG-44  package resolution never treats the facility catalog area as an installable package namespace
 PKG-45  package repository adapters live under lib/sys/sh/pkg/repository and internal facility/dependency libraries live under lib/sys/sh/pkg/facility; public pkg subcommand entrypoint libraries remain directly under lib/sys/sh/pkg
+PKG-46  each facility compatibility value identifies one exact complete contract level; levels of the same facility are not required to be monotonic or backward-compatible
+PKG-47  pkg never infers backward compatibility from compatibility ordering; consumer exact/range constraints define the accepted level set
+PKG-48  a concrete provider declares one exact facility compatibility level and is validated against that exact self-contained contract
+PKG-49  published facility-level semantics are immutable; a change to required guarantees uses another compatibility level
+PKG-50  the baseline facility contract contains required interoperable members only; provider-specific extras are not optional members of that facility
+PKG-51  provider conformance is validated during install/integration against the facility contract from the same pkg-catalog snapshot as the package definition
+PKG-52  runtime provider resolution/application does not refetch facility contracts from the catalog
 ```
