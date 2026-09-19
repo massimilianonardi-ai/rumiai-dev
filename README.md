@@ -229,7 +229,7 @@ rumiai-dev-PoCs
     experiments for questions that are still open
 
 pkg-catalog
-    current package definitions/catalog data consumed by the m package subsystem
+    current package definitions, facility contracts and catalog data consumed by the m package subsystem
 ```
 
 The exact current HEAD of each repository must always be retrieved; no SHA written in documentation should be assumed to still be HEAD.
