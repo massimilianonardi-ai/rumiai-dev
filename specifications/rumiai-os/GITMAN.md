@@ -224,19 +224,21 @@ Their concrete commands are:
 
 ```text
 status
-    git -C <repository> status --short --branch
+    git -C <repository> --no-pager status --short --branch
 
 log
-    git -C <repository> log --oneline --decorate --graph -n 50
+    git -C <repository> --no-pager log --oneline --decorate --graph -n 50
 
 branch
-    git -C <repository> branch -vv
+    git -C <repository> --no-pager branch -vv
 
 diff
-    git -C <repository> diff
+    git -C <repository> --no-pager diff
 ```
 
 No mutating Git operation is part of the first-delivery action set.
+
+`gitman` explicitly disables Git's own pager for every action. The action output is written directly to the restored normal terminal and the existing post-command `read-key` pause remains the only pause/navigation boundary owned by `gitman`. This avoids any dependency on Git pager configuration, `less`, `more`, `PAGER` or `GIT_PAGER`.
 
 ## 10. Terminal lifecycle around Git actions
 
@@ -350,4 +352,5 @@ GITMAN-12  a Git action runs only after the selecting menu session has restored 
 GITMAN-13  after every Git action gitman waits for one key through read-key before recreating the action menu
 GITMAN-14  Git action failure is interactive error state and does not terminate the session by itself
 GITMAN-15  gitman has its required sys operational manual topic
+GITMAN-16  gitman disables Git's internal pager for every read-only action
 ```
