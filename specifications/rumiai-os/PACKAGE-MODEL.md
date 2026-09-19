@@ -246,7 +246,7 @@ A consumer with no explicit binding inherits the facility default at runtime. A 
 
 Runtime launch must resolve and validate the effective selector before using the provider so that mutable bindings, mutable facility defaults and package-default changes are observed according to selector semantics.
 
-A facility provider may require a facility-specific runtime projection, including commands and environment needed to consume that facility. The facility default owns the global projection for that facility. A consumer-specific binding may override that global projection for the launched consumer through the package launcher.
+A facility provider may require a facility-specific runtime projection, including commands and environment needed to consume that facility. The facility default owns global command publication for that facility. A consumer-specific binding may override provider selection for a launched consumer through the package launcher without changing the global facility command publication.
 
 The public provider-selection configuration surface is:
 
@@ -319,7 +319,32 @@ literal <value>
 
 Every facility referenced by `facility-cmd` or `facility-env` must also be declared by the package's `facility` metadata. Projection metadata is validated and interpreted generically by the package subsystem; provider-specific shell code is not part of the projection contract.
 
-Facility-specific runtime projection is distinct from global command publication. The provider selected as facility default must ultimately own the global command/environment projection for that facility, but the exact global `bin` publication mechanism remains outside this contract until defined separately.
+Facility-specific consumer runtime projection is distinct from global facility command publication.
+
+A configured facility default publishes that facility's commands through the existing technical external-command roots:
+
+```text
+generic provider package class
+    bin/ext/<command>
+
+osarch-specific provider package class
+    bin/ext-<osarch>/<command>
+```
+
+The publication follows provider-selector intent:
+
+- an unversioned provider selector publishes through the corresponding provider package-default selector, so changing the provider package default changes the concrete command reached without changing selector intent;
+- a versioned provider selector publishes through the pinned provider concrete;
+- an explicitly osarch-qualified provider selector publishes only for that osarch class;
+- a selector without an osarch may publish independently for each provider package class that currently has a resolvable package default.
+
+The set of public command names is derived from the selected concrete's materialized `facility-cmd/<facility>` projection. Publication is reconciled whenever the facility default changes and whenever a provider package-default transition can change the selected concrete or its facility command set.
+
+Global publication must not overwrite an unrelated pathname in an external-command root. An existing pathname may be replaced or removed as part of a facility-default transition only when it is the exact projection owned by that same facility. A collision causes the selecting mutation to fail rather than silently stealing another package/facility command name.
+
+Consumer-specific bindings never alter global facility command publication.
+
+`facility-env` remains a consumer-launch projection. Configuring a facility default does not inject those environment variables into the ambient `m` bootstrap, an already-running parent process or a managed shell merely because the default exists. When a package consumes the facility, the package launcher applies the selected provider environment according to the runtime precedence defined above.
 
 ## `mk` boundary
 
@@ -369,4 +394,8 @@ PKG-23  consumer bindings live in system package conf at binding/<facility> and 
 PKG-24  facility-cmd and facility-env are declarative provider projection metadata, never provider shell code
 PKG-25  facility command targets remain inside the provider useful root and are projected through PATH
 PKG-26  facility environment metadata uses root, root-path or literal typed scalar values without shell evaluation
+PKG-27  a facility default publishes facility commands through existing bin/ext or bin/ext-<osarch> roots according to provider-selector intent
+PKG-28  global facility command publication never silently overwrites unrelated external-command paths and is reconciled on relevant facility/package-default transitions
+PKG-29  consumer-specific bindings do not alter global facility command publication
+PKG-30  facility-env is consumer-launch projection and is not injected globally into the ambient m bootstrap or managed shell merely because a facility default exists
 ```
