@@ -1,22 +1,21 @@
 # Package provider/facility realignment
 
-Status: Active
-Updated: 2026-09-18
+Status: Complete
+Updated: 2026-09-19
 
 ## Goal
 
-Realign package/provider/facility semantics and their catalog/test representation. Package identity and facility separation are implemented; multiple-provider installation/indexing coexistence is implemented and validated. Provider selection/binding semantics are now canonical; the remaining task is to define their concrete configuration/runtime projection contract and realign implementation/tests.
+Realign package/provider/facility semantics, implementation, catalog representation and permanent tests so package identity remains distinct from facility identity, provider selection is explicit and mutable, and consumers receive provider runtime projection through the generic package launcher.
 
 ## Current repository revisions
 
 ```text
-rumiai-dev    0b019fbe41881eafa2f11d7b7452804446f94995
-rumiai-os     25ab0e5a5b8267af715f320bd9ee17405a2b41f6
-rumiai-tests  9c0d7e7c51c179e3cac72475bcbed8017f7ebe65
-pkg-catalog   63140dcbbf89d93a924a4ac61ec967a4fe1b6d08
+rumiai-dev baseline  20b6926a061da4e52a08baa36a0bd1e0f7cd9e84
+rumiai-os            b4df991dcfbea71e2ef2aa091e3daca7d1954a01
+rumiai-tests         322cee67192e38c828145325131c9fe6d0574c40
+pkg-catalog          bd06488d3c67160e820c04d13067f852c8861c32
+rumiai-dev-PoCs      af61caccde43151ef83a96b8988536f9aa997a0b
 ```
-
-The `rumiai-dev` SHA is the canonical-source baseline re-read before this handoff synchronization.
 
 ## Applicable canonical sources
 
@@ -25,66 +24,46 @@ The `rumiai-dev` SHA is the canonical-source baseline re-read before this handof
 - `TESTING.md`
 - `TEST-PATTERNS.md`
 - `specifications/rumiai-os/PACKAGE-MODEL.md`
+- `specifications/rumiai-os/STATE-MODEL.md`
+- `specifications/rumiai-os/FILESYSTEM-NAMING.md`
+- `specifications/rumiai-os/LIBRARY-INTERFACES.md`
+- `specifications/rumiai-os/DOCUMENTATION-MODEL.md`
+- `specifications/rumiai-os/COMMAND-ENTRYPOINTS.md`
 
 ## Fixed task-local choices
 
-None. Package identity/facility coexistence and provider selection/binding/dependency policy are now promoted current contract in `PACKAGE-MODEL.md`.
-
-## Working design
-
-The remaining package-design work is narrower than the previous checkpoint:
-
-- define the exact storage/layout and public configuration surface for facility defaults and per-consumer bindings;
-- define the facility-specific runtime projection format that associates provider commands and environment with the facility they implement;
-- determine the concrete command/environment projection for Temurin/GraalVM and the broader GraalVM facility surface;
-- redesign semantic package tests around mutable selectors and runtime re-resolution after the implementation contract is fixed.
-
-Provider installation vs selection, binding precedence, selector semantics, absence of implicit single-provider fallback, baseline no-auto-install policy, runtime re-resolution and the distinction between package default and facility default are no longer working design; they are current canonical package contract.
+None. Durable provider/facility semantics are promoted into the canonical package contract.
 
 ## Completed
 
-- `PACKAGE-MODEL.md` now separates concrete package identity from facility identity and defines multiple installed providers of the same facility/compatibility as valid.
-- `pkg-catalog` renamed the Eclipse Temurin package from `java` to `temurin` on all declared platforms without changing its `java 25` facility declaration.
-- GraalVM continues to declare `java 25`; Temurin and GraalVM therefore represent distinct packages providing the same facility.
-- Permanent tests were realigned:
-  - `external/java/install-live.test` became `external/temurin/install-live.test`;
-  - Maven and Keycloak setup now explicitly install/query `temurin`;
-  - `external/graalvm/temurin-coexistence-live.test` installs both providers in one real target and verifies both package identities remain installed/queryable.
-- Static scans found no remaining current `pkg install java` or `external/java` references in `rumiai-dev` or `rumiai-tests`.
-- Live GitHub Actions run `35372329744` succeeded on Ubuntu 24.04 using:
-  - `rumiai-os@25ab0e5a5b8267af715f320bd9ee17405a2b41f6`;
-  - `rumiai-tests@9c0d7e7c51c179e3cac72475bcbed8017f7ebe65`;
-  - observed `pkg-catalog@63140dcbbf89d93a924a4ac61ec967a4fe1b6d08`.
-- That run executed, without SKIP:
-  - Temurin install: `temurin@25.0.4.1+1!linux-x86_64`;
-  - Temurin + GraalVM coexistence: `temurin@25.0.4.1+1!linux-x86_64` and `graalvm@25.3.4.1!linux-x86_64`;
-  - Maven with Temurin provider;
-  - Keycloak with Temurin provider.
-- Earlier temporary validation run `35372232189` is not evidence because all selected tests SKIPPED; the final run deliberately made SKIP fail the validation.
+- Package identity and facility identity are separate; multiple installed providers of the same facility are supported.
+- Temurin is a concrete `temurin` package and GraalVM is a distinct package; both provide `java 25`.
+- `pkg provider default` and `pkg provider bind` implement system facility defaults and per-consumer selector bindings.
+- Dependency resolution uses explicit consumer binding first, otherwise facility default, with no implicit single-provider fallback and no automatic dependency-provider installation.
+- Provider selectors retain intent: unversioned selectors follow package defaults; explicit versions remain pinned.
+- Integration validates dependencies but does not materialize install-time concrete bindings.
+- Runtime launch re-resolves the effective selector and generically applies declarative `facility-cmd` and `facility-env` projections.
+- Uninstall protects concrete providers referenced by current provider-selection configuration.
+- Temurin/GraalVM catalog definitions materialize Java command and `JAVA_HOME` projections on supported platforms.
+- Maven and Keycloak consume Java only through dependency/provider projection; provider-specific package environment logic was removed.
+- All 64 current catalog command wrappers were realigned to the grouped `lib/sys/sh/pkg/pkg-launch.lib.sh` path.
+- Permanent tests cover provider configuration, selector precedence, late binding, package-default following, pinned selection, incompatible-provider rejection, no install-time binding, runtime rebinding, projection precedence, provider coexistence and live Maven/Keycloak consumption.
+- Operational manuals for the affected `pkg` command and package libraries match their current public interfaces and do not expose internal helpers.
+- Current hosted validation on exact revisions succeeded:
+  - structural provider-model run `35425393903`: PASS;
+  - live provider/runtime run `35425395236`: PASS, 8/8 matrix jobs.
+- Final static consistency scan found no residual highest-compatible-provider uniqueness mechanism, provider-specific Maven/Keycloak Java wiring or pre-grouping catalog launcher path.
 
 ## Current state
 
-Provider coexistence is implemented and validated, and `PACKAGE-MODEL.md` now also defines the target provider-selection/binding semantics.
+The provider/facility realignment defined by the current package contract is implemented, represented in the catalog, covered by permanent tests and validated against the revisions above.
 
-Implementation is not yet aligned with that promoted contract:
-
-- current dependency resolution still scans installed providers, chooses the highest compatible facility compatibility and requires exactly one provider at that compatibility through `pkg_dependency_best_count == 1`;
-- integration still materializes `binding/<facility>` as an exact resolved concrete selected during install;
-- the current launcher applies package/user environment only and does not re-resolve mutable facility defaults/bindings or apply facility-specific provider projection at runtime.
-
-Therefore the canonical package contract is ahead of `rumiai-os` for provider selection/binding/runtime projection.
-
-A validation-only branch `validation/provider-facility-20260918` remains in `rumiai-tests`; its workflow is not on main and is not product/test-suite content.
+The separately required future global command/environment publication owned by a facility default remains intentionally outside the current package contract's concrete mechanism and is tracked as deferred work in `todo/facility-default-global-projection.md`.
 
 ## Next action
 
-Define the smallest concrete storage/public-interface and facility-runtime-projection contract needed to implement the already-promoted provider selection semantics. Then realign dependency integration and launch behavior: replace the single-provider scan/uniqueness rule with effective-selector resolution, preserve selector intent rather than install-time exact binding, and apply/validate the selected provider projection at runtime.
+None for this task.
 
 ## Blockers / open questions
 
-- exact state/configuration layout and public command surface for facility defaults and consumer bindings;
-- exact facility-specific command/environment projection format;
-- exact Temurin/GraalVM projection and broader GraalVM facility/command surface;
-- proportional semantic test redesign for mutable selectors/runtime re-resolution.
-
-The baseline dependency-installation policy is no longer open: `pkg install` does not auto-install or silently choose a missing provider.
+None.
