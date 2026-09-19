@@ -48,7 +48,7 @@ rumiai-tests 88b4e48f170da883889c2f418a34e8ad24066e9d
 - Repository selection with Enter opens the Git action menu.
 - Git action menu uses Backspace to return to the repository menu; Escape also cancels the submenu back to its parent.
 - Initial Git actions are read-only: status, log, branch, diff.
-- Git actions must not invoke Git's own pager; gitman owns the post-command pause and therefore uses Git's explicit no-pager mode.
+- Git actions preserve Git's normal pager behavior. gitman must not force `--no-pager`, override `GIT_PAGER`/`PAGER`, or otherwise replace Git's pager-selection policy.
 - A Git action runs only after the menu session has returned and restored the terminal. After the Git command finishes, `gitman` prompts `Press any key to continue...`, waits through `read-key`, then recreates the Git action menu.
 - Top-level Escape/cancellation exits `gitman` successfully. Submenu cancellation returns to the parent menu.
 - Repository-list add/remove/clear operations are in-memory only unless the user explicitly selects save; `gitman` never deletes repositories or modifies Git state in this first delivery.
@@ -74,20 +74,20 @@ None currently required.
 ## Current state
 
 ```text
-rumiai-dev   911c60cb32cb3f431e516b3be411445f8888975d
-rumiai-os    a8e45d327b218f19cee82c3813bfc75fb5ea64b6
-rumiai-tests 5065eab424302002693783d2bfd15ec77f04f8be
+rumiai-dev   15a6cea5b376094751f7596f66c27292b81f1270
+rumiai-os    50b760bd3cfe08922068ceb7d973d7edee12251c
+rumiai-tests 5b39aeefc6af2198aacd014df31d4c03a4d24b66
 ```
 
 Permanent gitman tests were realigned and a later development run passed both contract and interactive coverage, including configuration escaping/save/overwrite confirmation.
 
 Two formal-validation attempts failed before testing because the bridge checkout shape was incompatible with `rumiai-validate`: first `rumiai-tests`, then the target `rumiai-os`, was left on detached HEAD and the launcher refused its required fast-forward self-update. This is validation-infrastructure failure, not product/test evidence.
 
-User testing then exposed a product issue: read-only Git actions other than status can invoke Git's own pager and fail in environments where that pager is unavailable or incompatible with the desired gitman flow.
+User testing exposed that the current RumiAI `pager` is not a conventional pager command: it requires one file operand and therefore cannot serve correctly as a stdin-driven pager selected by Git. The temporary `git --no-pager` workaround now present in product/spec/tests contradicts the user's required standard Git behavior and must be removed.
 
 ## Next action
 
-Change gitman read-only actions to disable Git's internal pager explicitly, update specification/manual/tests, rerun development validation, then run formal validation from branch checkouts while keeping the validation scope pinned to the exact product revision.
+Expand the canonical `pager` contract/implementation to support stdin with zero operands and multiple file operands while preserving caller pager environment, restore ordinary Git commands in gitman, update manuals/tests, then rerun development/formal validation on exact revisions.
 
 ## Blockers / open questions
 
