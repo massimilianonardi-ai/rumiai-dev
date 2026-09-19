@@ -14,9 +14,9 @@ The task must converge on the semantic model and public contract before implemen
 Revisions relied upon for this checkpoint:
 
 ```text
-rumiai-dev@c70e36cab760ded60b99e9057ef3eba01b9b7033
-rumiai-os@2d953fc222b2ec01e5d124d1aaf64d4359a47af2
-rumiai-tests@4af4183219ff42f07c9e6f116afc01ee0d3d2113
+rumiai-dev@3018ee79047c2aa9f27c47ff37e7c3a8ce7affd0
+rumiai-os@d39ad30b4788cb642ff242b59b8144914305376e
+rumiai-tests@3536bda91a51fa87bd5bb8fb5393a55eb6220149
 pkg-catalog@5372c160441b0346b976db7f7a022196784c9425
 ```
 
