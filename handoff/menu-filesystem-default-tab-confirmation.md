@@ -41,14 +41,25 @@ rumiai-tests 1333c0467c1bd789b8eaadcf9a07044c19fbf64b
 
 - Mandatory preflight completed.
 - Current canonical menu contract, key vocabulary, command implementation, manual, permanent tests and validation scope inspected.
+- Canonical menu contract updated so filesystem mode without explicit `-K` uses Tab in both selection modes.
+- `bin/sys/menu` updated by removing the multiselect-only restriction from the existing Tab fallback.
+- `res/sys/manual/menu` realigned with the uniform filesystem default.
+- Contract coverage updated so `-d <directory>` is no longer expected to be invalid solely for lacking `-K`; parent-key Tab collision remains invalid.
+- Interactive coverage now separately verifies single-select Tab fallback, multi-select Tab fallback, and suppression of implicit Tab by explicit `-K`.
 
 ## Current state
 
-No specification/product/test modification for this work unit has been written yet.
+```text
+rumiai-dev   c59b927582591a273e7287246156e314a99fb25c
+rumiai-os    34671a5a1e9917fa39e3bbbd4b155590202c9b22
+rumiai-tests 75a345002e75d53230ca9283c411e4f15a3943f5
+```
+
+The validation scope still targets the preceding product revision and must be retargeted only after the revised development run passes.
 
 ## Next action
 
-Update the canonical menu contract, command implementation, manual and permanent tests; run development tests; retarget and run formal validation; complete the consistency gate.
+Run the permanent menu tests on the exact revised product/test revisions; if clean, retarget `validation/menu.conf`, run formal validation, then complete the final consistency gate.
 
 ## Blockers / open questions
 
