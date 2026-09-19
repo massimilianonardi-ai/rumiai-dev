@@ -1,7 +1,7 @@
 # rumiai-os-man-documentation
 
 Status: Active
-Updated: 2026-09-18
+Updated: 2026-09-19
 
 ## Goal
 
@@ -12,8 +12,8 @@ The long-term multi-channel documentation source/rendering architecture remains 
 ## Current repository revisions
 
 ```text
-rumiai-dev   4ba4327468402b90ce1eeffb72a4f426216e348f  (remote HEAD before this checkpoint)
-rumiai-os    a1644b2238f17633d19cdf2e963c7cc8f09dfa6a
+rumiai-dev   0814f6cf26d51d4b3c50e33d8ab0fa78c9b7fa2b  (remote HEAD before this checkpoint)
+rumiai-os    e4949311e531e3dfe556147a361eed832d211bfe
 rumiai-tests 322cee67192e38c828145325131c9fe6d0574c40  (parallel suite work; not modified by this checkpoint)
 ```
 
@@ -64,6 +64,8 @@ Fresh remote HEAD retrieval remains mandatory before future writes.
 - `term.lib.sh` is now covered by `res/sys/manual/term.lib.sh`. Its explicit public interface comprises 21 `term_*` functions plus the documented public state for selected TTY, terminal dimensions, last byte/key data and escape timeout; underscore-prefixed helpers remain internal.
 - The terminal-library manual documents TTY selection/save/restore and character modes, size discovery, terminfo screen/keypad/cursor/clear operations, text-key validation, byte/key decoding, keymap initialization and secret-line input, together with public status semantics, caller restoration obligations and external utility dependencies.
 - The same work unit removed the legacy `#!/bin/sh` shebang from `lib/sys/sh/term.lib.sh`, preserving its existing non-executable `100644` mode as required for a sourced shell library. Executable function logic was unchanged. Mechanical consistency validation confirmed that every current public function appears in the manual and no underscore-prefixed helper is advertised.
+- `osarch.lib.sh` is now covered by `res/sys/manual/osarch.lib.sh`. The library exposes no public callable functions; its public interface is source-time initialization of readonly exported `m_OSARCH_OS`, `m_OSARCH_ARCH` and `m_OSARCH`.
+- The osarch-library manual documents POSIX `uname -s` / `uname -m` detection, normalization of known Linux/macOS/Windows and x86_64/arm64 spellings, preservation of unknown host values, combined identity construction, source-time fatal failure behavior and caller obligations. The implementation itself required no modification.
 - Later product work first introduced `osarch-set`; current `rumiai-os@e25f2aaaf9ba56d8a86eb285bec1bb24e9df71be` consolidates the public surface under `osarch` with query, `show`, `update` and `set`, adds `res/sys/manual/osarch`, and retains `osarch-set` / `osarch-update` as compatibility commands with their own manuals. Command/manual completeness therefore remains true for the current product revision.
 - Targeted auxiliary-host development validation on Debian 13 x86_64 exercised the exact current `bin/sys/osarch` command body for explicit `set`, bare query, `show`, host `update`, selector-mismatch rejection and invalid explicit osarch rejection; all exercised cases behaved as specified. A direct GitHub clone of the complete checkout was unavailable in that environment because DNS resolution for github.com failed, so this is development evidence for the exact command body rather than formal/full-checkout validation.
 - No unrelated concurrent product or test-suite work was overwritten; Git history remained forward-only.
@@ -85,7 +87,7 @@ manual <topic>
 
 All current command identities, including the unified `osarch` command and its compatibility wrappers, have manual topics.
 
-Library documentation is only partially complete. The current product contains compliant manuals for `array.lib.sh`, `map.lib.sh`, `mk-materialize.lib.sh`, `mk-materialize-copy.lib.sh`, `pkg-install.lib.sh`, `rand.lib.sh` and `term.lib.sh`. The remaining legacy libraries cannot safely receive final public-API manuals until their intended public/internal function sets are classified and, where necessary, renamed with callers/tests realigned. That work is already represented by `todo/library-api-visibility-realignment.md` and is deliberately not guessed inside this documentation work unit.
+Library documentation is only partially complete. The current product contains compliant manuals for `array.lib.sh`, `map.lib.sh`, `mk-materialize.lib.sh`, `mk-materialize-copy.lib.sh`, `osarch.lib.sh`, `pkg-install.lib.sh`, `rand.lib.sh` and `term.lib.sh`. The remaining legacy libraries cannot safely receive final public-API manuals until their intended public/internal function sets are classified and, where necessary, renamed with callers/tests realigned. That work is already represented by `todo/library-api-visibility-realignment.md` and is deliberately not guessed inside this documentation work unit.
 
 The existing permanent manual tests are not closure evidence for this task. The active parallel suite-realignment task must provide trustworthy coverage for the current behavior, including substring fallback and command/library-to-manual structural completeness.
 
