@@ -1,17 +1,17 @@
 # gitman command model
 
-Status: Active
+Status: Complete
 Updated: 2026-09-20
 
 ## Goal
 
-Refactor `gitman` so Git actions and nested action menus are simple to extend while preserving explicit, inspectable execution. Remove the former read-only product restriction without yet adding mutating Git actions in this work unit.
+Refactor `gitman` so Git actions and nested action menus are simple to extend while preserving explicit, inspectable execution. Remove the former read-only product restriction without adding mutating Git actions in this work unit.
 
 ## Current repository revisions
 
-- `rumiai-dev`: `dbbbef8ec2032573c4ab2be83801c58f62490d09`
-- `rumiai-os`: `b001d3893592ced06106fe268a67862ca7b7b5f8`
-- `rumiai-tests`: `d41b2f611a77d35426cee8bcd47ef88438814356`
+- `rumiai-dev`: `4ff787e954b364fcf24f9a45a2e3d92324be40f6`
+- `rumiai-os`: `22d5e1a57dcbd7e95c268f4357fac2d7478eb058`
+- `rumiai-tests`: `a7571571fc099584c8af283048e7f07943e300f0`
 
 ## Applicable canonical sources
 
@@ -26,30 +26,28 @@ Refactor `gitman` so Git actions and nested action menus are simple to extend wh
 - `specifications/rumiai-os/COMMAND-ENTRYPOINTS.md`
 - `specifications/rumiai-os/DOCUMENTATION-MODEL.md`
 
-## Fixed task-local choices
-
-- The previous `gitman` read-only restriction is removed.
-- This work unit refactors the command/action model first; it does not yet add mutating Git actions.
-- Leaf menu labels show the concrete Git command or command template that the action executes.
-- Menu definitions use action identifiers plus display labels; display text is never interpreted as shell code.
-- Action identifiers dispatch to explicit shell handler functions using the `gitman_action_<id>` convention.
-- Simple Git handlers delegate to one generic Git runner; complex handlers remain ordinary shell functions.
-- Nested menus are ordinary handler calls and use the shell call stack for return context; no generic menu-stack/context framework is introduced.
-- No command-string DSL and no `eval`-based Git execution is introduced.
-
 ## Completed
 
-- Mandatory preflight completed against the repository revisions above.
-- Current specification, implementation, operational manual and permanent gitman tests inspected.
+- Removed the normative read-only restriction from the gitman action model while keeping the currently delivered action set non-mutating.
+- Defined action menus as action-id/display-label pairs with concrete Git command/templates shown by leaf entries.
+- Defined explicit `gitman_action_<id>` handler dispatch, one generic Git runner for simple handlers, and ordinary shell handlers/call-stack return context for future nested menus.
+- Refactored `bin/sys/gitman` so `status`, `log`, `branch` and `diff` are separate handlers using the generic runner; command labels are descriptive only and Git execution uses argument vectors rather than command-string evaluation.
+- Realigned `res/sys/manual/gitman`, permanent contract coverage and the interactive action-label assertion.
+- Corrected the macOS interactive test to compare the physical repository identity required by the existing gitman contract.
+- Hosted validation run `35491746462` exercised `rumiai-os` `22d5e1a57dcbd7e95c268f4357fac2d7478eb058` with `rumiai-tests` `33ab5a2656faaf0bc9aeb53ac40f3250bcb182e5`; the `rumiai-os/gitman` scope passed on both Ubuntu and macOS.
+- The temporary validation workflow was removed afterward. A concurrent unrelated `rumiai-tests` change was preserved; the current gitman contract/interactive test blobs remain the same as those exercised by the successful run.
+- Final consistency review found no remaining old central gitman action executor/runner or obsolete read-only test prohibition in the affected current surfaces.
 
 ## Current state
 
-The current implementation still maps `status|log|branch|diff` through a central case statement and the current specification/manual still describe the action set as read-only.
+The canonical specification, implementation, operational manual and permanent gitman tests are aligned on the extensible handler model. The currently exposed Git actions remain `status`, `log`, `branch` and `diff`; adding new leaf actions or submenus is the next independent gitman feature work, not unfinished work from this refactor.
+
+Physical validation was not performed. The completed validation evidence is hosted Ubuntu/macOS evidence only and remains revision-specific to the revisions recorded above.
 
 ## Next action
 
-Update the canonical gitman specification, then refactor implementation/manual/tests to the accepted action-handler model and validate the unchanged existing Git actions.
+None for this task.
 
 ## Blockers / open questions
 
-None for this work unit.
+None.
