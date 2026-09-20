@@ -245,14 +245,16 @@ The explicit post-edit reload does not apply the startup `.` fallback. If the ed
 
 Selecting a repository with Enter opens a single-selection Git action menu for that working tree.
 
-Backspace is the default explicit return key. The Git action menu also owns a presentation-mode toggle:
+Backspace is the default explicit return key. Git action menus also own a presentation-mode toggle:
 
 ```text
-Enter       run selected Git action
+Enter       run the selected leaf action or open the selected submenu
 p           toggle output mode: pager ↔ terminal
-Backspace   return to repository menu
-Escape      return to repository menu
+Backspace   return to the parent menu
+Escape      return to the parent menu
 ```
+
+For the root Git action menu, the parent is the repository menu. For a nested Git action submenu, the parent is the calling action menu.
 
 The current output mode is shown by the Git action menu. The initial mode for every `gitman` invocation is:
 
@@ -397,8 +399,14 @@ top-level repository menu
 filesystem acquisition with zero repositories
     exit gitman successfully
 
-add/remove/edit-confirmation/action submenus
+add/remove/edit-confirmation submenus
     return to the repository menu
+
+root Git action menu
+    return to the repository menu
+
+nested Git action submenu
+    return to its parent Git action menu
 ```
 
 ## 12. Output and side effects
