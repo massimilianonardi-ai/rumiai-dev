@@ -55,7 +55,7 @@ bootstrap-created PATH semantics
 
 A later dependency on those facilities requires reclassification to the integrated-command model unless a new explicit contract says otherwise.
 
-`read-key` is a current example of an explicitly standalone utility.
+`read-key` and `pager` are current examples of explicitly standalone utilities.
 
 ## Branded root entrypoints
 
