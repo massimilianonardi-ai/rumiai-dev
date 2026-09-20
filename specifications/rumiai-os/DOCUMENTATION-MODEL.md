@@ -1,7 +1,7 @@
 # RumiAI OS — Documentation model
 
 Status: **Current / normative**  
-Updated: 2026-09-17
+Updated: 2026-09-20
 
 This specification defines documentation ownership, the first terminal-first operational-reference storage/access model, and the long-term multi-channel documentation target for RumiAI OS.
 
@@ -375,7 +375,7 @@ For a successfully selected exact topic, presentation is:
     delegate presentation to the technical pager command
 ```
 
-`pager` owns terminal detection, direct non-terminal output and host-specific interactive backend selection. `manual` does not select `more`, `less` or another host viewer itself.
+`pager` owns only host pager backend selection and transparent delegation. `manual` does not select `more`, `less` or another host viewer itself.
 
 ### 5.5 Exit status and diagnostics
 
@@ -472,7 +472,7 @@ Paging is a property of the access/viewing layer, not of the canonical operation
 
 For normal presentation, `manual` delegates an exactly selected topic to the technical `pager` command. `pager` is the host-normalizing boundary defined by `PAGER.md`; documentation lookup code therefore does not contain host-specific `more`/`less` policy.
 
-`pager` writes directly when its standard output is not associated with a terminal and selects the appropriate interactive backend when it is associated with a terminal.
+`pager` does not distinguish terminal from non-terminal output. It delegates its standard streams and any file operands to the selected backend, whose own semantics determine interactive and redirected behavior.
 
 When `--no-pager` is specified, `manual` bypasses `pager` for an exactly selected topic and writes that topic directly to standard output.
 
@@ -480,7 +480,7 @@ Discovery and substring-fallback result listings never invoke `pager`.
 
 The first implementation does not expose a `PAGER` environment contract, arbitrary pager command strings or user-selected backend configuration. Backend selection remains owned by `pager`.
 
-A backend change must preserve the canonical topic-content contract and the normal direct-output behavior required for pipelines/redirections.
+A backend change must preserve the canonical topic-content contract and the transparent delegation boundary defined by `PAGER.md`.
 
 ## 10. Testing and maintenance
 
