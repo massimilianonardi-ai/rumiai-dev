@@ -1,26 +1,33 @@
 # Service model
 
 Status: Active
-Updated: 2026-09-19 23:58 +02:00
+Updated: 2026-09-20
 
 ## Goal
 
 Define the service model that connects the portable `srv` lifecycle, package-provided facilities and explicit host supervision integration without introducing a duplicate package/service registry or a second dependency graph.
 
-The task must converge on the semantic model and public contract before implementation work is started.
+The task owns the portable/provider-backed service model and the later explicit host-supervision integration. The portable/provider-backed bridge is now implemented; host supervision remains a later phase of this active task.
 
 ## Current repository revisions
 
-Revisions relied upon for this checkpoint:
+Current checkpoint used for this handoff sync:
 
 ```text
-rumiai-dev@9b1b5b44fea8ec57ce3768e2b3cf0c9c44a73a75
-rumiai-os@7f6ced69baef8484d96e7db1572686d67c6bdaaf
-rumiai-tests@b461be38979abd50f7f5f587eb316022fd17c924
-pkg-catalog@5372c160441b0346b976db7f7a022196784c9425
+rumiai-dev      524bb9b1da2680c07b911b286c7d09be76155553  pre-sync HEAD
+rumiai-os       56bfd26e1c59d040fcf2bffe5a823c071e78bda9
+rumiai-tests    c1e6707943eb570ef7d8700233630fff6019f291
+pkg-catalog     5372c160441b0346b976db7f7a022196784c9425
 ```
 
-The `rumiai-dev` SHA above is the canonical-source baseline re-read before the cross-task reconciliation; handoff synchronization commits advance it forward without replacing fresh-HEAD retrieval on resume.
+The service-bridge product revision actually exercised by the latest targeted matrix is:
+
+```text
+rumiai-os@b18d0fc804814c7b99e841df6f5d1fc22d2e5a90
+rumiai-tests@c1e6707943eb570ef7d8700233630fff6019f291
+```
+
+Current `rumiai-os@56bfd26...` is a descendant of the exercised product revision and differs from it only in unrelated `gitman` command/manual changes. Fresh remote HEAD retrieval remains mandatory on resume.
 
 ## Applicable canonical sources
 
@@ -91,56 +98,31 @@ The following choices are fixed for this task unless the user explicitly correct
 
 10. Service-operability must be expressed through the generalized `pkg` facility contract rather than inferred semantically only from the presence of a conventional command. Do not introduce a separate service declaration/registry unless the generalized facility contract proves insufficient.
 
-11. The current runtime still uses PATH-resolved `<service>-start` as a legacy implementation mechanism, but it is no longer the semantic definition of a provider-backed service. The canonical provider model uses `facility-service/<facility>/start` and exact-concrete package-command launch; package-integrated targets continue to use the normal package launcher for package HOME/environment/dependency preparation.
+11. Provider-backed runtime now uses `facility-service/<facility>/start`, resolves the exact selected provider concrete and launches that exact package command through the active `m` bootstrap so package-launch semantics remain intact across hosts. PATH-resolved `<service>-start` remains only the temporary compatibility path when no facility default applies.
 
 12. Host-managed system services must preserve the canonical administrative/security boundary: system-wide integration is an explicit admin operation, and any dedicated OS service account must not gain ownership/write access over executable product roots merely because it runs the service. Detailed host adapter mechanics remain to be designed and validated separately.
 13. The provider-independent facility contract belongs to `pkg`. `srv` must not own a parallel provider contract/registry; it interprets the service/lifecycle portion of the selected facility provider when the generalized package facility model defines such an aspect.
 
 ## Active implementation scope
 
-The inert service typed-part checkpoint is implemented.
+The portable/provider-backed service bridge is implemented.
 
-Current product changes:
+Current product behavior:
 
-```text
-lib/sys/sh/pkg/facility/pkg-facility-service.lib.sh
-    validates exact service contract schema
-    validates facility-service/<facility>/start
-    validates the mapped ordinary provider package command and executable target
+- `service` is a trusted facility typed part with exact `package-command / foreground / sigterm` contract semantics;
+- normal `pkg install` validates provider conformance against the same immutable catalog snapshot after extraction and before package-store mutation;
+- `pkg_integrate` accepts and materializes validated `facility-service/<facility>/start` metadata without acquiring catalog context;
+- `pkg_provider_default_resolve <facility>` resolves only the system facility default for global service lifecycle;
+- `pkg_facility_service_start_resolve <facility> <concrete>` resolves the exact installed package command from materialized realization data;
+- `srv start <facility>` uses that exact provider concrete and does not consult consumer bindings;
+- provider-backed package commands are entered through `$m_BOOTSTRAP_BIN`, preserving `m_COMMAND_BIN`, bootstrap PATH and the normal package launcher on Linux and macOS;
+- provider-backed runtime state records the selected concrete provider; later default changes do not retarget the running process and stop performs no provider re-resolution;
+- configured-but-invalid provider state fails instead of silently falling back to PATH;
+- the historical PATH `<service>-start` path remains temporarily only when no provider-backed default applies.
 
-pkg-facility.lib.sh
-    trusts service as a third typed part beside cmd/env
-    rejects undeclared/unknown facility-service surfaces
+Permanent coverage now includes service conformance, integration/materialization/runtime resolution, provider-backed end-to-end `srv` behavior, default changes while running, no-invalid-default fallback, legacy lifecycle compatibility and real Temurin installation through the new install-time conformance boundary.
 
-manuals
-    document the internal service handler and updated generic conformance surface
-```
-
-Current permanent-test coverage extends `tests/rumiai-os/pkg/facility-contract.test` with:
-
-- valid service contract/provider realization;
-- service start command deliberately absent from the facility `cmd` contract;
-- invalid process semantic token;
-- missing start realization;
-- forbidden provider-specific stop realization;
-- mapping to a missing provider package command;
-- service realization without a service contract;
-- proof that conformance does not execute the service start target.
-
-No package installation/materialization, facility-default/binding behavior or `srv` runtime behavior changed in this checkpoint.
-
-### Bridge exposed by the implementation
-
-The next bridge is now concrete rather than hypothetical:
-
-1. current `pkg-integration.lib.sh` rejects `facility-service` as an unknown package-definition entry and does not materialize it into an installed concrete;
-2. therefore no normally installed provider can yet expose the canonical service realization to runtime;
-3. runtime must not solve this by re-reading `pkg-catalog`, because runtime provider use must rely on installed validated realization data;
-4. `pkg install` already owns the exact immutable catalog snapshot and selected package range, so a later composition step can invoke `pkg_facility_provider_validate <catalog-root> <selected-range> <extracted-root>` before integration without deriving catalog paths inside `pkg_integrate`;
-5. integration can then materialize validated `facility-service` data alongside the other provider realization surfaces;
-6. only after that exists should `srv` resolve a configured facility provider and launch the exact concrete package command.
-
-This is the preferred direction because it preserves the inert facility/provider core and avoids both hidden catalog context inside `pkg_integrate` and runtime catalog refetch.
+No real service provider has yet been added to `pkg-catalog`. The current end-to-end service lifecycle proof uses a synthetic package definition passed through the real `pkg_integrate` path; real catalog installation/conformance is separately exercised by the existing Temurin provider.
 
 ## Completed
 
@@ -152,66 +134,49 @@ This is the preferred direction because it preserves the inert facility/provider
 - Concurrent changes to `CONSISTENCY-GATE.md` and `handoff/README.md` were detected during the write, re-read and reconciled before this checkpoint.
 - The initial service-model choices agreed in the design discussion are captured above as resumable task-local state.
 
+
+- Promoted the service typed-part model into PACKAGE-MODEL.md and SERVICE-LIFECYCLE.md.
+- Implemented service contract/provider conformance and the public installed-realization resolver.
+- Wired exact-snapshot provider conformance into normal pkg install before package-store mutation.
+- Added facility-service validation/materialization to package integration.
+- Added system facility-default concrete resolution without consumer-binding semantics.
+- Implemented provider-backed srv exact-concrete launch and running-instance provider identity.
+- Diagnosed a real macOS failure where direct nohup of a #!/usr/bin/env m package command could not find m; corrected provider-backed launch to enter through the exact active m bootstrap.
+- Realigned stale package-env test paths/driver execution discovered by the widened regression scope.
+- GitHub Actions run 35491988828 passed the complete targeted development matrix on ubuntu-latest and macos-latest at rumiai-os@b18d0fc... / rumiai-tests@c1e670..., including external/temurin/install-live.test and all required provider/facility/srv selections.
+- The GitHub Actions run is clean multi-host development evidence; it is not relabelled as formal rumiai-validate evidence and is not physical validation of the stable reference hosts.
 ## Current state
 
-The service/facility semantic model is canonical and its inert conformance layer is implemented.
+The portable/provider-backed service model and composition bridge are implemented and pass the targeted Linux/macOS GitHub-hosted matrix.
 
-Exact checkpoint:
+The current `pkg-catalog` has no service-capable provider definition yet. Therefore the remaining portable-service work is no longer a generic bridge problem; it is choosing and modelling the first real package/provider whose real foreground/start semantics satisfy the canonical service contract.
 
-```text
-rumiai-os@7f6ced69baef8484d96e7db1572686d67c6bdaaf
-rumiai-tests@b461be38979abd50f7f5f587eb316022fd17c924
-pkg-catalog@5372c160441b0346b976db7f7a022196784c9425
-```
+The temporary legacy PATH compatibility path remains intentionally present until that migration has a concrete removal criterion.
 
-Current runtime still uses the legacy PATH-resolved `<service>-start` mechanism. The product therefore has an intentional, explicit pending realignment: service contract/provider conformance exists, but package installation does not yet accept/materialize `facility-service` and `srv` cannot yet consume it.
+Host supervision (`srv host user|system ...`) remains unimplemented and is a separate later phase of this active service task.
 
-The permanent facility-contract test is now executable (`100755`); the consistency gate corrected the earlier non-executable mode.
-
-Formal exact-revision test execution is not available in the current ChatGPT auxiliary environment because github.com DNS resolution fails, and no CI workflow has automatically run these commits. No formal PASS is claimed.
+Formal `rumiai-validate` evidence and physical stable-host validation have not been executed for this checkpoint. The available evidence is exact-revision GitHub-hosted development execution on Linux and macOS.
 
 ## Next action
 
-Design and implement the composition bridge as a separate checkpoint:
+The next portable-service step is to select one real current catalog package whose actual process model can satisfy the canonical `service` contract, add its facility contract/provider realization and exercise `pkg install -> facility default -> srv start/stop` end to end.
 
-1. invoke facility/provider conformance from package-install orchestration while the exact catalog snapshot, selected range and extracted root are all available;
-2. permit and materialize already-validated `facility-service` metadata in package integration;
-3. expose the smallest existing-provider API needed by `srv` to query the system facility default without introducing consumer-binding semantics;
-4. resolve that selector to one exact installed concrete for the active package class;
-5. read the installed service realization and launch exactly `$m_PKG_DIR/<concrete>/cmd/<start-command>`;
-6. persist the concrete provider identity in `srv` runtime state before removing the legacy PATH inference.
+Do not invent package-specific start policy merely to obtain a demo. In particular, Keycloak's existing generic package command requires explicit upstream start-mode arguments, so choosing production `start`, `start-dev` or another wrapper is a real provider-policy decision rather than a generic facility default.
 
-Do not make runtime read the catalog and do not create a service-specific provider registry.
+After a real provider proof and an explicit migration criterion, remove the temporary PATH `<service>-start` compatibility path.
+
+The separate later phase is host supervision through the already-fixed `srv host user|system ...` public shape.
 
 ## Blockers / open questions
 
-No blocker remains in the service typed-part conformance layer.
+No generic facility/provider/srv bridge blocker remains.
 
-The remaining blocker to a real provider-backed service is composition: current package integration rejects and does not materialize `facility-service`.
+Open service-task decisions that require concrete provider/host semantics rather than more generic infrastructure:
 
-The preferred implementation direction is now narrowed:
-
-- validate from `pkg install`, which already has the exact catalog snapshot;
-- keep `pkg_integrate` free from implicit catalog-path derivation;
-- materialize only validated service realization data;
-- let global `srv` use system facility-default intent, not a consumer binding;
-- persist selected concrete provider identity in runtime state;
-- stop an existing instance from recorded state without provider re-resolution.
-
-The composition choices now fixed for implementation are:
-
-- normal `pkg install` performs provider conformance before package-store mutation while it owns the exact catalog snapshot;
-- integration materializes validated `facility-service` but does not receive/derive catalog context;
-- global provider-backed `srv start` uses the system facility default only;
-- consumer bindings never participate in global service selection;
-- a configured default that cannot resolve or lacks a valid service realization fails; it never falls back to PATH;
-- legacy PATH `<service>-start` remains temporarily only when no facility default applies, preserving current non-provider lifecycle tests until a real catalog service provider is approved;
-- provider-backed runtime state records the selected concrete provider and stop does not re-resolve selection.
-
-Still deferred:
-
-- removal timing for the temporary legacy PATH compatibility path;
-- selection of the first real catalog service provider used for end-to-end live proof;
-- host user/system supervision implementation and host account/environment mechanics.
+- which current package is the first real service provider in `pkg-catalog`;
+- that provider's exact no-argument package start command and proof of `foreground` + SIGTERM behavior;
+- the criterion for removing the temporary legacy PATH compatibility path;
+- systemd/launchd adapter schemas and action mapping for `srv host user|system`;
+- system-wide installation/account/environment mechanics behind the explicit administrative boundary.
 
 Endpoint/readiness/health remain outside the baseline service part.
