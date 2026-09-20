@@ -1,9 +1,9 @@
 # RumiAI OS — Terminal pager
 
 Status: **Current / normative**  
-Updated: 2026-09-19
+Updated: 2026-09-20
 
-This specification defines the current host-neutral terminal paging facility provided by `m`.
+This specification defines the current host-neutral terminal pager wrapper provided by `m`.
 
 ## Ownership
 
@@ -19,124 +19,96 @@ pager
 bin/sys/pager
 ```
 
-It is bootstrap-integrated and uses:
+`pager` is intentionally independent from the `m` runtime and uses:
 
 ```sh
-#!/usr/bin/env m
+#!/bin/sh
 ```
 
-The purpose of `pager` is to keep host-specific pager selection and behavior out of consumers such as `manual`.
+Its responsibility is deliberately narrow: select the preferred available pager backend and delegate input to it without adding a second presentation policy.
 
 ## Public interface
 
-The current interface is:
+The interface is:
 
 ```text
 pager [file ...]
 ```
 
-With no file operands, `pager` reads its content from standard input. This makes the command suitable for the conventional Unix pager role, including use through environment/configuration surfaces such as a caller's pager command.
+With no file operands, the selected backend reads standard input.
 
-With one or more file operands, every operand must resolve to an existing readable regular file. `pager` resolves each pathname through the existing runtime path-resolution primitive before passing the resulting paths to the external viewer.
+With one or more file operands, `pager` passes those operands to the selected backend unchanged and in the original order.
 
-The command deliberately implements the common pager role rather than attempting to reproduce every option accepted by either `more` or `less`.
+`pager` does not resolve or validate file operands before delegation. File opening, diagnostics and file-related failure behavior belong to the selected backend.
 
-## Output destination
+The command does not define its own pager options or attempt to reproduce the option sets of `less` or `more`.
 
-`pager` owns the terminal/non-terminal distinction for normal paged presentation.
+## Delegation model
 
-When standard output is not associated with a terminal, `pager` remains non-interactive:
+`pager` is only a backend-selection wrapper.
 
-- with no file operands, it copies standard input directly to standard output;
-- with file operands, it concatenates the resolved files to standard output in operand order.
-
-When standard output is associated with a terminal, `pager` selects the host backend described below. With no file operands the backend reads standard input; with file operands it receives the resolved file operands.
-
-Consumers that explicitly require direct output may bypass `pager`; for example, `manual --no-pager` writes the selected manual topic directly.
-
-## Interactive behavior target
-
-The preferred interactive behavior is the conventional bidirectional pager model:
-
-- forward and backward navigation are available;
-- reaching end-of-file does not itself terminate the viewer;
-- the viewer remains active until the user explicitly exits.
-
-The abstraction exists because a host utility named `more` cannot be assumed to provide that behavior uniformly even where a POSIX `more` utility exists.
-
-The preferred behavior is not a hard availability requirement. When the preferred backend is unavailable, `pager` may deliberately degrade to a less capable baseline viewer rather than fail solely because the richer interaction cannot be provided.
-
-## Host backend policy
-
-The current backend policy is deliberately small and explicit.
-
-### Preferred backend
-
-On every current host, `pager` prefers:
+It does not:
 
 ```text
-less
+inspect whether stdin or stdout is a terminal
+switch to cat for pipes or redirections
+pre-read, concatenate or rewrite input
+resolve or validate file paths
+normalize backend diagnostics
+normalize backend exit statuses
 ```
 
-when that executable is available.
+The selected backend therefore receives the caller's standard streams and file operands directly. Interactive and non-interactive behavior follows that backend's own semantics.
 
-`less` is not a POSIX baseline utility. It remains an optional host capability hidden behind the `pager` abstraction rather than a dependency exposed to consumers. The preference is host-neutral because it is based on capability availability, not operating-system identity.
+## Backend policy
 
-When `less` is selected, `pager` preserves the caller environment rather than neutralizing `LESS`, `LESSOPEN`, `LESSCLOSE` or equivalent caller-supplied pager behavior. Consumers may intentionally configure those variables to control session behavior.
-
-### Fallback backend
-
-If `less` is unavailable, `pager` falls back to the POSIX baseline:
+The backend policy is capability-based and host-neutral:
 
 ```text
-more
+less available
+    -> less
+
+less unavailable
+    -> more
 ```
 
-The fallback is intentionally accepted as degraded behavior. It provides paging but does not guarantee every richer interaction property available from `less`, including caller control through `LESS`.
+`less` is the preferred optional capability. `more` is the POSIX baseline fallback.
 
-## Configuration boundary
+The choice depends only on whether `less` is available through the current command environment; it does not depend on operating-system identity.
 
-The first implementation does not expose its own backend-selection configuration:
+## Caller environment
 
-```text
-pager backend configuration
-user-selected backend commands
-arbitrary backend command strings
-```
+`pager` preserves the caller environment.
 
-Backend selection remains an implementation responsibility of `pager`, not a shell-evaluated configuration surface.
+Environment consumed by the selected backend, including variables such as `LESS`, `LESSOPEN` and `LESSCLOSE`, is neither cleared nor rewritten by `pager`.
 
-This does not mean that `pager` scrubs environment inherited from its caller. Environment variables consumed by the selected backend remain part of that backend/caller interaction and are passed through unchanged.
+The first implementation exposes no separate backend-selection configuration, arbitrary backend command string or user-selected backend mechanism.
 
 ## Exit status
 
-```text
-0  success
-1  input/file resolution/access or presentation/backend failure
-2  invalid invocation
-```
+`pager` does not define a normalized exit-status layer.
 
-`pager` does not make backend-specific exit statuses part of its public contract.
+The observable status is the status of the selected backend, or the shell execution failure status if that backend cannot be executed.
 
 ## Relationship with `manual`
 
-Normal `manual` topic presentation delegates to `pager`.
+Normal `manual` topic presentation delegates the selected topic file to `pager`.
 
-`manual` therefore owns documentation lookup and `--no-pager`, while `pager` owns normal presentation destination and host backend selection.
+`manual` owns documentation lookup and `--no-pager`; `pager` owns only the `less` / `more` backend choice and transparent delegation.
 
-This separation prevents documentation lookup code from accumulating Linux/macOS/vendor-specific pager logic.
+A caller that requires direct output rather than pager semantics bypasses `pager`. For example, `manual --no-pager` writes the selected topic directly.
 
 ## Invariants
 
 ```text
 PAGER-01  pager belongs to m and is exposed as bin/sys/pager
-PAGER-02  pager accepts zero or more file operands; zero operands means standard input
-PAGER-03  non-terminal output is copied directly and remains non-interactive for both stdin and file input
-PAGER-04  pager owns host backend selection; consumers do not select more/less directly
-PAGER-05  every current host prefers less when available and falls back to POSIX more when it is unavailable
-PAGER-06  backend selection is capability-based rather than OS-name-based
-PAGER-07  less remains an optional host capability hidden behind pager, not a POSIX baseline primitive
-PAGER-08  pager backend selection is fixed policy, not caller-supplied shell configuration
-PAGER-09  pager preserves caller environment consumed by the selected backend
+PAGER-02  pager is a standalone POSIX-sh wrapper and does not depend on the m runtime
+PAGER-03  zero file operands delegates standard input to the selected backend
+PAGER-04  file operands are forwarded unchanged and in order to the selected backend
+PAGER-05  pager does not inspect terminal state or substitute direct-output behavior
+PAGER-06  every current host prefers less when available and otherwise falls back to more
+PAGER-07  backend selection is capability-based rather than OS-name-based
+PAGER-08  pager preserves caller environment consumed by the selected backend
+PAGER-09  pager does not normalize backend diagnostics or exit statuses
 PAGER-10  manual normal presentation delegates to pager
 ```
