@@ -9,9 +9,9 @@ Build the first extensible Git action tree on the current gitman handler model, 
 
 ## Current repository revisions
 
-- `rumiai-dev`: `193d9694cba8329e5ef59fd306f1dbffc269107e`
-- `rumiai-os`: `b18d0fc804814c7b99e841df6f5d1fc22d2e5a90`
-- `rumiai-tests`: `ce04e33c0c9aef57db1e70b0dfe1616d69e30fa3`
+- `rumiai-dev`: `c370e84bcf3bc2db0c6750ee00b60a9c32bc04ed`
+- `rumiai-os`: `56bfd26e1c59d040fcf2bffe5a823c071e78bda9`
+- `rumiai-tests`: `ff093420a279cbd4f418c2f0061b11dd59632f09`
 
 ## Applicable canonical sources
 
@@ -40,15 +40,21 @@ Build the first extensible Git action tree on the current gitman handler model, 
 
 - Mandatory preflight completed.
 - Current gitman specification, implementation, manual and permanent tests inspected.
-- Current command tree inspected; no reusable line-input command exists beyond one-key input.
+- Promoted the root/submenu action tree and parameter-acquisition semantics to the canonical gitman specification.
+- Implemented the root actions and Changes, History, Branches, Remote and Stash handlers.
+- Implemented terminal commit-message acquisition and local-branch selection for git switch.
+- Updated the operational manual.
+- Updated permanent contract coverage and added interactive scenarios for submenu navigation plus Add all, Commit, Push, Switch and stash push/pop.
+- Updated the gitman validation target to rumiai-os `56bfd26e1c59d040fcf2bffe5a823c071e78bda9`.
+- Preserved concurrent unrelated advances in rumiai-dev and rumiai-tests.
 
 ## Current state
 
-The runtime still exposes the four flat actions Status, Log, Branches and Diff.
+Specification, runtime, manual and permanent tests now describe/implement the new tree. Validation has not yet been executed against the new revisions.
 
 ## Next action
 
-Promote the action-tree contract, implement the new handlers/submenus, update the manual/tests and validate the real gitman scope on Linux and macOS.
+Run the real `rumiai-os/gitman` scope on Linux and macOS, fix any regressions, then run the final consistency gate.
 
 ## Blockers / open questions
 
