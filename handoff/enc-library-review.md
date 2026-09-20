@@ -39,10 +39,14 @@ todo/library-api-visibility-realignment.md
 - `a2o` and `o2a` keep their current byte<->whitespace-separated-octal responsibility and are to be corrected before continuing the encryption helpers.
 - `encoded_file_import` is intended to behave like POSIX `.` for pathname resolution: an operand without `/` is searched through `PATH`; decrypted content is executed in the current shell. Use of `eval` is therefore intentional rather than accidental.
 - Authentication must still complete successfully before decrypted content is executed by `encoded_file_import`; exact implementation will be reviewed after the primitive helpers.
+- For `encode`/`decode`, an unset or empty passphrase variable delegates passphrase acquisition to GnuPG/Pinentry rather than a RumiAI TTY reader; a non-empty supplied passphrase is delivered to GnuPG through fd 3 and never intentionally placed in GnuPG argv or child environment.
+- Full `env -i` sanitization is not part of the design: GnuPG/Pinentry legitimately depend on session environment such as HOME/GNUPGHOME and GPG_TTY/TERM/DISPLAY. The supplied passphrase is instead copied into subshell positional state and its source variable is unset before any external process.
+- OCB capability selection prefers `--use-ocb-sym`; if absent, `--force-ocb` is used only when independently advertised by `gpg --no-options --dump-options`; otherwise encode fails before consuming plaintext or prompting.
 
 ## Working design
 
-- Interactive password acquisition for `encode`/`decode` is under review. The current product now contains private `_enc_password_read`; it restores exact TTY state and installs signal traps, while public `term_read_secret` deliberately leaves signal handling to its caller.
+- The current private `_enc_password_read` is no longer part of the intended final flow once GnuPG/Pinentry owns interactive passphrase acquisition; removal/realignment will occur with the encode/decode implementation change.
+- The exact RumiAI-owned name of the optional supplied-passphrase variable remains to be finalized under the current `m_*` environment-variable namespace rule.
 - The GnuPG/OpenPGP construction is mechanically coherent: AES-256, symmetric OCB AEAD, 64 KiB chunks, iterated-and-salted S2K with SHA-256 at count 65011712, no compression, loopback passphrase on a dedicated file descriptor and no symmetric-key cache.
 - GnuPG compatibility remains a design point: current `encode` requires `--use-ocb-sym`; older GnuPG releases can support OCB decryption and the legacy `--force-ocb` encryption spelling without exposing `--use-ocb-sym`.
 - Current `decode` intentionally streams; authentication failure may occur after plaintext has already been emitted. Consumers requiring authenticated all-or-nothing data must buffer until status 0.
@@ -67,7 +71,7 @@ todo/library-api-visibility-realignment.md
 
 ## Next action
 
-Settle the `encode`/`decode` corrections: eliminate environment propagation of passphrases structurally, choose the current `m_*` passphrase environment interface and GnuPG OCB compatibility policy, realign stale comments/error contract, then add proportional permanent tests before moving to `encoded_file_import`.
+Implement the settled encode/decode flow: GnuPG-managed interactive prompting, fd 3 for supplied passphrases, positional-parameter secret storage with source-variable unset before external execution, `--use-ocb-sym` then explicit `--force-ocb` fallback, stale-comment/error-contract realignment and proportional permanent tests; finalize the public `m_*` passphrase variable name in that work unit.
 
 ## Blockers / open questions
 
