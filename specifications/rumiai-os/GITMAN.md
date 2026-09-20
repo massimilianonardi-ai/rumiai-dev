@@ -320,9 +320,9 @@ git push
 
 `git pull --no-rebase --no-edit` owns the fetch-and-merge step. The workflow does not execute a redundant separate fetch or merge.
 
-After `git add --all`, `gitman` checks whether the index differs from HEAD. If no staged changes exist, it skips commit-message acquisition and the commit step. If staged changes exist, the workflow acquires the commit message using the same terminal interaction as the standalone Commit action.
+Before mutating the index, `gitman` checks whether the selected working tree has local changes. If the working tree is clean, it skips commit-message acquisition, `git add --all` and the commit step and continues directly with pull and push. If local changes exist, the workflow first acquires the commit message using the same terminal interaction as the standalone Commit action, then executes `git add --all` and `git commit -m <commit-message>`.
 
-An empty commit message cancels the composite workflow before pull or push. Any Git failure stops the remaining sequence. In particular, a failed commit or a pull/merge conflict MUST prevent push.
+An empty commit message cancels the composite workflow before `git add --all`, pull or push, so cancellation does not introduce a new staging side effect. Any Git failure stops the remaining sequence. In particular, a failed add/commit or a pull/merge conflict MUST prevent push.
 
 The action model is not restricted to read-only Git operations. The delivered tree includes mutating actions whose concrete semantics are explicit in their leaf labels.
 
@@ -550,7 +550,7 @@ GITMAN-26  Commit reads one message line from /dev/tty after menu restoration; e
 GITMAN-27  Switch enumerates local refs, lets the user choose a branch through menu, and executes git switch with that selected branch
 GITMAN-28  Changes groups diff --staged and add --all; History groups log and show HEAD
 GITMAN-29  Remote groups remote -v, fetch, pull and push; Stash groups list, push and pop
-GITMAN-30  Sync + Push runs add --all, conditionally commits staged changes, then pull --no-rebase --no-edit and push
-GITMAN-31  Sync + Push skips the commit prompt when the index matches HEAD and stops before pull/push when commit acquisition is cancelled
-GITMAN-32  Sync + Push stops on the first Git failure and never pushes after a failed commit or pull/merge
+GITMAN-30  Sync + Push checks for local changes, conditionally acquires a message and runs add --all plus commit, then pull --no-rebase --no-edit and push
+GITMAN-31  Sync + Push skips add/commit entirely when the working tree is clean and cancellation occurs before any new staging side effect
+GITMAN-32  Sync + Push stops on the first Git failure and never pushes after a failed add/commit or pull/merge
 ```
