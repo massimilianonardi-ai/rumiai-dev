@@ -264,32 +264,51 @@ pager
 
 The selected mode is session state: toggling it applies to subsequent Git actions and remains in effect when returning to the repository list and opening another repository.
 
-The currently delivered Git actions are:
+The root Git action menu keeps only a small set of frequent leaf actions ahead of grouped submenus:
 
 ```text
-status
-log
-branch
-diff
+Status: git status --short --branch
+Diff: git diff
+Pull: git pull
+Commit: git commit -m <commit-message>
+
+Changes >
+History >
+Branches >
+Remote >
+Stash >
 ```
 
-Their concrete commands are:
+The grouped action tree is:
 
 ```text
-status
-    git -C <repository> status --short --branch
+Changes >
+    Diff staged: git diff --staged
+    Add all: git add --all
 
-log
-    git -C <repository> log --oneline --decorate --graph -n 50
+History >
+    Log: git log --oneline --decorate --graph -n 50
+    Show HEAD: git show HEAD
 
-branch
-    git -C <repository> branch -vv
+Branches >
+    List: git branch -vv
+    Switch: git switch <branch>
 
-diff
-    git -C <repository> diff
+Remote >
+    Remotes: git remote -v
+    Fetch: git fetch
+    Pull: git pull
+    Push: git push
+
+Stash >
+    List: git stash list
+    Push: git stash push
+    Pop: git stash pop
 ```
 
-The action model is not restricted to read-only Git operations. Mutating actions may be added when their concrete semantics, interaction and validation are explicitly defined.
+The root Pull entry and the Remote > Pull entry intentionally dispatch to the same action handler; the root entry is a high-frequency shortcut.
+
+The action model is not restricted to read-only Git operations. The delivered tree includes mutating actions whose concrete semantics are explicit in their leaf labels.
 
 Leaf action entries show the concrete Git command or command template they execute, for example:
 
@@ -321,6 +340,24 @@ A submenu is an ordinary action handler that invokes the same action-menu select
 The generic action-menu helper performs one menu selection and returns control to its caller. This keeps nested menus POSIX-safe without relying on non-standard function-local variables.
 
 Git commands are executed from explicit shell argument vectors. Command labels and templates are never passed to `eval`, a shell parser or another command-string interpreter.
+
+### Parameter acquisition
+
+`Commit` prompts for one commit-message line after the selecting menu has restored the normal terminal. The prompt uses the POSIX shell `read` builtin directly from `/dev/tty`; no separate line-input utility is introduced. An empty message cancels the action without invoking Git. An input failure records one concise bottom-footer error and returns to the current action menu.
+
+`Switch` is a complex handler. It obtains local branch names with:
+
+```text
+git -C <repository> for-each-ref --format=%(refname:short) refs/heads
+```
+
+and presents those branches through `menu`. Selecting a branch executes:
+
+```text
+git -C <repository> switch <branch>
+```
+
+Cancelling the branch-selection menu returns to the Branches submenu without changing branch. If no local branches are available, `gitman` records a concise bottom-footer error instead of running Git switch.
 
 Git output presentation is explicit and owned by `gitman`.
 
@@ -415,9 +452,9 @@ nested Git action submenu
 
 The first delivery does not define a machine-readable stdout result.
 
-The currently delivered `status`, `log`, `branch` and `diff` actions do not modify repository state.
+The delivered tree includes both inspection and mutating Git actions. In particular, `add --all`, `commit -m`, `pull`, `switch`, `fetch`, `push`, `stash push` and `stash pop` may change local or remote Git state according to Git's normal semantics.
 
-The `gitman` action model itself is not read-only. Any mutating action added to the current action tree must expose its concrete command or command template in the leaf menu and must define its required interaction, side effects, failure handling and proportional permanent tests.
+`gitman` does not hide those side effects behind aggregate names: each leaf menu exposes the concrete Git command or command template it invokes.
 
 Repository-list persistence remains independent of Git actions: `gitman` changes the configured repository list only when the user explicitly invokes the repository-menu save or edit actions.
 
@@ -478,7 +515,7 @@ GITMAN-09B edit selects VISUAL, then EDITOR, then vi; editor variables are execu
 GITMAN-09C editor execution occurs outside menu terminal state; successful edit asks whether to reset/reload and defaults to No
 GITMAN-09D explicit post-edit reload loads only configuration entries, without the startup . fallback
 GITMAN-10  the repository action menu returns with Backspace by default
-GITMAN-11  the currently delivered Git actions are status, log, branch and diff; the action model is not restricted to read-only operations
+GITMAN-11  the root action menu exposes Status, Diff, Pull and Commit before grouped Changes, History, Branches, Remote and Stash submenus
 GITMAN-12  a Git action runs only after the selecting menu session has restored the terminal
 GITMAN-13  terminal-mode Git actions wait for one key through read-key; pager-mode actions return after pager exit without a second acknowledgement
 GITMAN-14  Git action failure is interactive error state and does not terminate the session by itself
@@ -492,4 +529,9 @@ GITMAN-21  action menus are composed from action-id/display-label pairs and disp
 GITMAN-22  simple handlers use one generic Git runner while complex interactions remain ordinary shell handlers
 GITMAN-23  nested action menus use ordinary handler calls and the shell call stack; no generic menu-stack state or command DSL is required
 GITMAN-24  Git execution uses explicit argument vectors and never evaluates action labels/templates as shell code
+GITMAN-25  leaf labels expose the concrete Git command or parameter template; submenu labels are grouping/navigation only
+GITMAN-26  Commit reads one message line from /dev/tty after menu restoration; empty input cancels without invoking Git
+GITMAN-27  Switch enumerates local refs, lets the user choose a branch through menu, and executes git switch with that selected branch
+GITMAN-28  Changes groups diff --staged and add --all; History groups log and show HEAD
+GITMAN-29  Remote groups remote -v, fetch, pull and push; Stash groups list, push and pop
 ```
