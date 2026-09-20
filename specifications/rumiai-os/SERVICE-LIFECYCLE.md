@@ -102,6 +102,8 @@ srv host user restart <service>
 
 Here `user` means the host supervisor associated with the calling POSIX account/login context. It is **not** the `state/user` scope from `STATE-MODEL.md`, is not an RumiAI user identity and does not redefine that state model.
 
+Host-user adapter discovery and persistent registration therefore follow the actual calling host account/supervisor context rather than caller-overridable RumiAI validation/application environment roots such as `HOME`, `XDG_CONFIG_HOME` or `XDG_RUNTIME_DIR`. Those variables may be redirected by an enclosing process without changing which POSIX account's supervisor `srv host user` addresses. Host-specific account/runtime discovery remains inside the systemd/launchd adapter boundary.
+
 The normalized actions have host-neutral semantics:
 
 - `install` persistently registers the service with the calling account's host supervisor but does not itself start the service in the current session;
@@ -183,4 +185,5 @@ SRV-28  host user definitions preserve exact relocatable m/srv argv as data and 
 SRV-29  the systemd user adapter enters m through /bin/sh and serialized argv so arbitrary special-character m paths are not used as the systemd executable pathname
 SRV-30  the launchd user adapter uses a ProgramArguments argv array built through the host plist utility rather than manual XML interpolation
 SRV-31  persistent host definitions do not freeze a concrete provider; the internal foreground runner resolves current facility-default intent at each host start/restart
+SRV-32  host-user registration and supervisor discovery follow the actual calling POSIX account context rather than caller-overridden HOME/XDG roots
 ```
