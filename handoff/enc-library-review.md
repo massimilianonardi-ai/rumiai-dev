@@ -10,9 +10,9 @@ Review and realign `lib/sys/sh/enc.lib.sh` function by function, preserving inte
 ## Current repository revisions
 
 ```text
-rumiai-dev   13c9500a9ddfc035e4457f52fba1a45729c55395
-rumiai-os    708588615bec88f729d8619b45b4f59c24e6b959
-rumiai-tests 8846e04b494ea8df15b74048cc52fc0e1a19983d
+rumiai-dev   97b54cf18d9f627a0e57c5a9f34875aad75d2667
+rumiai-os    b83d4f65233f42ffe452c0543b9b8561f53fec2b
+rumiai-tests f384b9da79b467d8cdb6e26482b5ef350d543af4
 ```
 
 Fresh remote HEAD retrieval remains mandatory before future writes.
@@ -47,10 +47,9 @@ todo/library-api-visibility-realignment.md
 
 ## Working design
 
-- The current private `_enc_password_read` is no longer part of the intended final flow once GnuPG/Pinentry owns interactive passphrase acquisition; removal/realignment will occur with the encode/decode implementation change.
-- The exact RumiAI-owned name of the optional supplied-passphrase variable remains to be finalized under the current `m_*` environment-variable namespace rule.
-- The GnuPG/OpenPGP construction is mechanically coherent: AES-256, symmetric OCB AEAD, 64 KiB chunks, iterated-and-salted S2K with SHA-256 at count 65011712, no compression, loopback passphrase on a dedicated file descriptor and no symmetric-key cache.
-- GnuPG compatibility remains a design point: current `encode` requires `--use-ocb-sym`; older GnuPG releases can support OCB decryption and the legacy `--force-ocb` encryption spelling without exposing `--use-ocb-sym`.
+- The optional supplied-passphrase shell variable is now fixed as `m_ENC_PASS`. It is intentionally a shell variable and should not be exported; encode/decode still unset their subshell copy before any external process.
+- The GnuPG/OpenPGP construction remains AES-256, symmetric OCB AEAD, 64 KiB chunks, iterated-and-salted S2K with SHA-256 at count 65011712, no compression and no symmetric-key cache.
+- Interactive passphrase acquisition is now owned by GnuPG/Pinentry. Supplied-passphrase mode uses fd 3 with a here-document; payload stdin remains fd 0.
 - Current `decode` intentionally streams; authentication failure may occur after plaintext has already been emitted. Consumers requiring authenticated all-or-nothing data must buffer until status 0.
 - Full public/internal API classification and the mandatory `enc.lib.sh` operational manual remain to be completed as this library review proceeds.
 
@@ -66,14 +65,19 @@ todo/library-api-visibility-realignment.md
 - The current product contains a stale OpenSSL/ENC1/AES-CBC comment block immediately before `_enc_password_read` even though the implementation remains GnuPG/OpenPGP OCB; this is a documentation mismatch to remove in the encode/decode work unit.
 - Current `gpg` invocation can be shadowed by a shell function because it is executed as `gpg` after `command -v gpg`; invoking the external dependency through the project-appropriate command form is a hardening candidate.
 - Real OCB corruption checks confirmed `decode` returns failure while possibly having emitted one or more authenticated/decrypted chunks already, including full plaintext before a final-tag failure in a near-end corruption case.
+- Real fd-routing comparison on Debian 13 x86_64 showed that dash, BusyBox sh and Bash POSIX implement both short here-documents and builtin-printf pipelines with a pipe fd; fd0 remained the payload and fd3 carried the supplied secret. A forced external printf exposed the secret in its argv, while the here-document path exposed it in neither child argv nor child environment. This confirms the here-document as the stronger portable design for the passphrase channel.
+- `rumiai-os@b83d4f65233f42ffe452c0543b9b8561f53fec2b` implements the settled encode/decode flow: `m_ENC_PASS`, GnuPG/Pinentry interactive mode, supplied passphrase on fd 3 via here-document, fd0 unchanged, `command gpg` to bypass shell-function shadowing, `--use-ocb-sym` preference with verified `--force-ocb` fallback, removal of `_enc_password_read`, removal of stale OpenSSL/ENC1 commentary and explicit partial-ciphertext documentation for encode.
+- The same product work realigns `lib/sys/sh/enc.lib.sh` from executable mode 100755 to the required sourced-library mode 100644.
+- `rumiai-tests@f384b9da79b467d8cdb6e26482b5ef350d543af4` adds executable permanent tests `gpg-interface.test` and `gpg-roundtrip.test`: the first protects fd3 routing, argv/environment secret exclusion, shell-function shadow resistance, interactive/unattended option separation and OCB option preference/fallback at the external GPG boundary; the second protects real GnuPG OCB round-trip behavior, wrong-passphrase failure, newline-passphrase rejection and argument statuses when a suitable GnuPG is available.
+- Auxiliary Debian 13 x86_64 execution of the exact candidate encode/decode logic passed real GnuPG 2.4.7 OCB round trips under dash, BusyBox sh and Bash POSIX using the `--force-ocb` fallback and a passphrase containing spaces and shell metacharacters. Supplied-passphrase fd3 behavior also passed against an external-boundary probe under all three shells. Automated real Pinentry interaction was attempted through a pseudo-TTY but did not complete reliably in the auxiliary environment, so real interactive GnuPG/Pinentry behavior remains unvalidated there.
 
 ## Current state
 
-`a2o` and `o2a` are functionally closed for their intended byte/octal contract and protected by permanent regression coverage; arbitrary binary input is supplied through stdin because shell argument strings cannot contain NUL. `encode`/`decode` are not yet closed: their cryptographic construction is sound, but secret-environment handling, environment-variable naming, compatibility policy, error-output documentation and permanent coverage/manual alignment remain open.
+`a2o` and `o2a` are functionally closed for their intended byte/octal contract. `encode`/`decode` are now implementation-complete for the settled streaming and passphrase-routing design and have permanent interface plus real-GnuPG coverage. Remaining closure items are real interactive Pinentry validation on applicable hosts and the library-wide public API/manual completion.
 
 ## Next action
 
-Implement the settled encode/decode flow: GnuPG-managed interactive prompting, fd 3 for supplied passphrases, positional-parameter secret storage with source-variable unset before external execution, `--use-ocb-sym` then explicit `--force-ocb` fallback, stale-comment/error-contract realignment and proportional permanent tests; finalize the public `m_*` passphrase variable name in that work unit.
+Continue with `encoded_file_import`: implement POSIX-dot-style PATH lookup, require successful complete decode before eval, preserve current-shell execution semantics, then add proportional permanent coverage. After the remaining public functions are reviewed, create the mandatory `res/sys/manual/enc.lib.sh` topic and complete library-wide validation.
 
 ## Blockers / open questions
 
