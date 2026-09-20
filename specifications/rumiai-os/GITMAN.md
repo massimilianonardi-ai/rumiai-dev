@@ -5,7 +5,7 @@ Updated: 2026-09-19
 
 ## 1. Scope
 
-`gitman` is the technical `m` command for interactively managing a temporary set of local Git working trees and running read-only Git inspection commands against them.
+`gitman` is the technical `m` command for interactively managing a temporary set of local Git working trees and running explicit Git actions against them.
 
 Canonical executable:
 
@@ -262,7 +262,7 @@ pager
 
 The selected mode is session state: toggling it applies to subsequent Git actions and remains in effect when returning to the repository list and opening another repository.
 
-The first delivery exposes only read-only Git actions:
+The currently delivered Git actions are:
 
 ```text
 status
@@ -287,7 +287,38 @@ diff
     git -C <repository> diff
 ```
 
-No mutating Git operation is part of the first-delivery action set.
+The action model is not restricted to read-only Git operations. Mutating actions may be added when their concrete semantics, interaction and validation are explicitly defined.
+
+Leaf action entries show the concrete Git command or command template they execute, for example:
+
+```text
+Status: git status --short --branch
+Commit: git commit -m <commit-message>
+```
+
+The display label is descriptive only. It is never evaluated or parsed as shell code.
+
+### Action composition model
+
+Action menus are defined from pairs of:
+
+```text
+<action-id> <display-label>
+```
+
+An action identifier dispatches to an explicit shell handler named:
+
+```text
+gitman_action_<action-id>
+```
+
+Simple handlers delegate to one generic Git runner with a repository and an argument vector. Complex handlers remain ordinary shell functions and may perform additional selection, confirmation or parameter acquisition before invoking Git.
+
+A submenu is an ordinary action handler that invokes the same action-menu selection helper for its own entries and returns to its caller when the submenu exits. The shell call stack is the submenu return context; `gitman` does not introduce a generic menu-stack object or command-definition DSL.
+
+The generic action-menu helper performs one menu selection and returns control to its caller. This keeps nested menus POSIX-safe without relying on non-standard function-local variables.
+
+Git commands are executed from explicit shell argument vectors. Command labels and templates are never passed to `eval`, a shell parser or another command-string interpreter.
 
 Git output presentation is explicit and owned by `gitman`.
 
@@ -376,13 +407,11 @@ add/remove/edit-confirmation/action submenus
 
 The first delivery does not define a machine-readable stdout result.
 
-The command does not:
+The currently delivered `status`, `log`, `branch` and `diff` actions do not modify repository state.
 
-- create, delete or modify repositories;
-- change branches;
-- stage, commit, reset, checkout, merge, rebase, fetch, pull or push;
-- alter Git configuration;
-- persist the interactive repository list except when the user explicitly invokes the repository-menu save action.
+The `gitman` action model itself is not read-only. Any mutating action added to the current action tree must expose its concrete command or command template in the leaf menu and must define its required interaction, side effects, failure handling and proportional permanent tests.
+
+Repository-list persistence remains independent of Git actions: `gitman` changes the configured repository list only when the user explicitly invokes the repository-menu save or edit actions.
 
 ## 13. Exit status
 
@@ -407,7 +436,9 @@ Signal-derived statuses may propagate when the surrounding runtime terminates th
 - initial candidate/configuration loading and configuration line encoding/decoding;
 - Git working-tree validation and normalization;
 - repository-list management actions, including explicit configuration save and edit/reload;
-- mapping action identifiers to the approved read-only Git commands;
+- action-menu composition from explicit identifiers and display labels;
+- convention-based dispatch from action identifiers to explicit `gitman_action_<id>` handlers;
+- one generic Git runner for common repository/presentation/error handling;
 - error aggregation and bottom-footer content;
 - orchestration between `menu`, Git execution, `pager` and `read-key`.
 
@@ -439,7 +470,7 @@ GITMAN-09B edit selects VISUAL, then EDITOR, then vi; editor variables are execu
 GITMAN-09C editor execution occurs outside menu terminal state; successful edit asks whether to reset/reload and defaults to No
 GITMAN-09D explicit post-edit reload loads only configuration entries, without the startup . fallback
 GITMAN-10  the repository action menu returns with Backspace by default
-GITMAN-11  first-delivery Git actions are status, log, branch and diff and are read-only
+GITMAN-11  the currently delivered Git actions are status, log, branch and diff; the action model is not restricted to read-only operations
 GITMAN-12  a Git action runs only after the selecting menu session has restored the terminal
 GITMAN-13  terminal-mode Git actions wait for one key through read-key; pager-mode actions return after pager exit without a second acknowledgement
 GITMAN-14  Git action failure is interactive error state and does not terminate the session by itself
@@ -448,4 +479,9 @@ GITMAN-16  gitman starts in pager output mode and p toggles pager/terminal prese
 GITMAN-17  pager mode forces Git --paginate through the RumiAI pager and disables less F/X while retaining caller LESS options
 GITMAN-18  terminal mode forces Git --no-pager, leaves output accumulated, prints an action header and uses the explicit read-key pause
 GITMAN-19  gitman does not clear the normal terminal or inject arbitrary blank-line batches to separate action output
+GITMAN-20  leaf action labels show the concrete Git command or command template and are display-only, never executable command strings
+GITMAN-21  action menus are composed from action-id/display-label pairs and dispatch to explicit gitman_action_<id> shell handlers
+GITMAN-22  simple handlers use one generic Git runner while complex interactions remain ordinary shell handlers
+GITMAN-23  nested action menus use ordinary handler calls and the shell call stack; no generic menu-stack state or command DSL is required
+GITMAN-24  Git execution uses explicit argument vectors and never evaluates action labels/templates as shell code
 ```
