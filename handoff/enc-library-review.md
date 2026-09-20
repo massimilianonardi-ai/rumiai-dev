@@ -10,9 +10,9 @@ Review and realign `lib/sys/sh/enc.lib.sh` function by function, preserving inte
 ## Current repository revisions
 
 ```text
-rumiai-dev   34fb1c0ada45bf99a8e9a2d212767eed6417470f
-rumiai-os    794d0d60900cdd1aa25cbc4e541819ba6c853b22
-rumiai-tests e31641259396b6ce503df1283fed4a5b186e5596
+rumiai-dev   de144b287b7aecebcc7880e17f89858596903340
+rumiai-os    a23e81e376bfe28f4f0040ee2b46b9ad42c3c68c
+rumiai-tests db46c6fe980a1433dce6a30d3a272ab66faa79d9
 ```
 
 Fresh remote HEAD retrieval remains mandatory before future writes.
@@ -48,15 +48,18 @@ todo/library-api-visibility-realignment.md
 ## Completed
 
 - Current `encode`/`decode` streaming structure and GnuPG option model were reviewed.
-- Two concrete octal-helper defects were established: `a2o` can emit `*` because `od` lacks `-v`, and `o2a` currently splits only on newline instead of all POSIX shell whitespace.
+- Two concrete octal-helper defects were established: `a2o` could emit `*` because `od` lacked `-v`, and `o2a` split only on newline instead of all POSIX shell whitespace.
+- `rumiai-os@a23e81e376bfe28f4f0040ee2b46b9ad42c3c68c` corrects both helpers: `a2o` uses `od -v`; `o2a` tokenizes on space/tab/newline and sets that IFS before joining arguments so behavior is independent of caller IFS.
+- `rumiai-tests@db46c6fe980a1433dce6a30d3a272ab66faa79d9` adds executable permanent regression coverage at `tests/rumiai-os/enc/octal.test`.
+- Auxiliary Debian 13 x86_64 development checks passed for text and binary round trips, repeated-byte input, NUL and 0xff bytes, mixed POSIX shell whitespace, separate arguments, non-default caller IFS, empty input, and invalid octets with no partial output. Direct GitHub clone was unavailable in the auxiliary environment because DNS resolution for github.com failed, so this is development evidence rather than formal validation.
 
 ## Current state
 
-No product/test modification for the octal helpers has yet been committed in this task.
+`a2o` and `o2a` are corrected and protected by a permanent regression test. Diff review shows only the intended octal-helper changes in `enc.lib.sh`; the new test is mode `100755`. The library manual remains intentionally pending until the ongoing public/internal API review establishes the complete stable surface.
 
 ## Next action
 
-Correct `a2o` and `o2a`, add proportional permanent regression coverage, run targeted validation, then continue with `encode`/`decode`.
+Continue with `encode`/`decode`, starting from interactive passphrase acquisition and environment exposure.
 
 ## Blockers / open questions
 
