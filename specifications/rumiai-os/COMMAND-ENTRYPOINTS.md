@@ -57,6 +57,42 @@ A later dependency on those facilities requires reclassification to the integrat
 
 `read-key` and `pager` are current examples of explicitly standalone utilities.
 
+## Shell command structure best practice
+
+RumiAI-owned shell command entrypoints SHOULD normally separate definition/loading from operational execution by defining their functions first and invoking one `main "$@"` function as the final top-level command:
+
+```sh
+#!/usr/bin/env m
+
+helper()
+{
+    ...
+}
+
+main()
+{
+    ...
+}
+
+main "$@"
+```
+
+The same structural practice applies to standalone `#!/bin/sh` commands; the shebang/runtime class does not change the recommendation.
+
+This is a best practice rather than a mandatory entrypoint invariant. A very small command whose complete logic is clearer as direct top-level shell code may deliberately omit `main`. The exception should remain proportional to the command's simplicity rather than becoming an alternative structural convention for larger commands.
+
+The pattern provides a clear load/run boundary, minimizes operational code executed while the command file is still being loaded, and makes long-running or interactive commands easier to reason about.
+
+For `#!/usr/bin/env m` commands the pattern additionally improves robustness during concurrent code replacement. The `m` bootstrap sources the command file into the current shell. When all function definitions have been read before the final `main "$@"` call, execution after entry into `main` uses those already-loaded shell function definitions. Replacing the command file afterward therefore normally affects a later invocation rather than redefining the functions used by the invocation already in progress.
+
+This is not a general hot-update atomicity guarantee. In particular:
+
+- replacement while the command file is itself still being sourced remains a race/case-limit outside this practice;
+- executables, configuration, resources or other dependencies resolved/read later during execution may reflect newer filesystem state;
+- standalone `#!/bin/sh` commands do not gain the `m` sourcing property merely by following the same `main` structure.
+
+The intent is invocation robustness and a clear command structure, not live code reloading.
+
 ## Branded root entrypoints
 
 The branded root entrypoints are:
@@ -118,4 +154,5 @@ ENTRY-05  rumiai-os and rumiai-os-sh are branded entrypoints, not the m runtime
 ENTRY-06  public command names do not expose implementation-language suffixes
 ENTRY-07  internal libraries are not executable entrypoints
 ENTRY-08  every RumiAI-owned directly executable command identity has an operational manual topic
+ENTRY-09  shell command entrypoints should normally define functions before a final main "$@" call; simple commands may omit that structure when direct top-level code is clearer
 ```
