@@ -5,178 +5,206 @@ Updated: 2026-09-20
 
 ## Goal
 
-Define the service model that connects the portable `srv` lifecycle, package-provided facilities and explicit host supervision integration without introducing a duplicate package/service registry or a second dependency graph.
+Complete the service model that connects portable `srv` lifecycle, package-provided facilities and later explicit host-supervision integration without introducing a duplicate service registry, provider graph or dependency graph.
 
-The task owns the portable/provider-backed service model and the later explicit host-supervision integration. The portable/provider-backed bridge is now implemented; host supervision remains a later phase of this active task.
+The portable/provider-backed bridge is implemented and formally validated. The active task now begins only where real-provider policy and host-supervision design remain.
 
 ## Current repository revisions
 
-Current checkpoint used for this handoff sync:
+Checkpoint used for this synchronization:
 
 ```text
-rumiai-dev      524bb9b1da2680c07b911b286c7d09be76155553  pre-sync HEAD
-rumiai-os       56bfd26e1c59d040fcf2bffe5a823c071e78bda9
-rumiai-tests    c1e6707943eb570ef7d8700233630fff6019f291
-pkg-catalog     5372c160441b0346b976db7f7a022196784c9425
+rumiai-dev      73d62079a053712f0f4a7f63ddeca6595542397e  pre-sync HEAD
+rumiai-os       3a5691f46a2538dad00657d47334d1d1eb0329f0
+rumiai-tests    e31641259396b6ce503df1283fed4a5b186e5596
+pkg-catalog     12ea704ee4e25e62ab3ed0125133660b4e0c42cb
 ```
 
-The service-bridge product revision actually exercised by the latest targeted matrix is:
+The exact service-bridge product revision exercised by the current formal validation is:
 
 ```text
 rumiai-os@b18d0fc804814c7b99e841df6f5d1fc22d2e5a90
-rumiai-tests@c1e6707943eb570ef7d8700233630fff6019f291
 ```
 
-Current `rumiai-os@56bfd26...` is a descendant of the exercised product revision and differs from it only in unrelated `gitman` command/manual changes. Fresh remote HEAD retrieval remains mandatory on resume.
+Current `rumiai-os@3a5691...` is a descendant of that revision; intervening changes are outside the service/package-provider subsystem.
+
+Fresh remote HEAD retrieval remains mandatory on resume.
 
 ## Applicable canonical sources
 
+Use the mandatory project read order. The direct service contract is owned by:
+
 ```text
-README.md
-RULES.md
-CONSISTENCY-GATE.md
-handoff/README.md
-specifications/README.md
 specifications/rumiai-os/SERVICE-LIFECYCLE.md
 specifications/rumiai-os/PACKAGE-MODEL.md
 ```
 
-Current implementation/test evidence inspected for this checkpoint:
-
-```text
-rumiai-os/bin/sys/srv
-rumiai-os/lib/sys/sh/pkg/facility/pkg-facility.lib.sh
-rumiai-os/lib/sys/sh/pkg/pkg-provider.lib.sh
-rumiai-tests/tests/rumiai-os/srv/lifecycle.test
-rumiai-tests/tests/rumiai-os/pkg/provider.test
-```
+Add the host/platform/state/security specifications when host-supervision work becomes active.
 
 ## Fixed task-local choices
 
-The following choices are fixed for this task unless the user explicitly corrects them or a current canonical contract makes one impossible:
+Durable service semantics are canonical in the specifications; this handoff records only current task state.
 
-1. The portable, host-independent lifecycle remains:
+- Portable lifecycle remains:
+  ```text
+  srv start <service>
+  srv stop [-f] <service>
+  ```
+- Provider-backed service identity is the facility identity. No second service inventory/provider registry exists.
+- Portable service capability is declared through the trusted facility `service` part.
+- Baseline service contract remains:
+  ```text
+  start   package-command
+  process foreground
+  stop    sigterm
+  ```
+- `pkg` owns facility identity, provider conformance and selection; `srv` owns process lifecycle.
+- Global provider-backed `srv start <facility>` uses only the system facility default. Consumer bindings do not participate.
+- A running provider-backed instance persists its selected concrete provider. Later default changes do not retarget it; stop does not re-resolve provider selection.
+- A configured-but-invalid provider path fails. It must not silently fall back to PATH.
+- The historical PATH `<service>-start` mechanism remains a temporary compatibility path only when no provider-backed default applies.
+- Endpoint, readiness and application health remain outside the baseline service part.
+- Explicit host integration retains the public design shape:
+  ```text
+  srv host user <action> <service>
+  srv host system <action> <service>
+  ```
+  but its adapter mechanics are not yet implemented.
+- System-wide host integration remains an explicit administrative boundary; a service account must not gain ownership/write access over executable product roots merely because it runs a service.
 
-   ```text
-   srv start <service>
-   srv stop [-f] <service>
-   ```
+## Implemented portable/provider-backed bridge
 
-2. Explicit host integration uses the public shape:
+Current product behavior includes:
 
-   ```text
-   srv host user <action> <service>
-   srv host system <action> <service>
-   ```
+- trusted `service` facility-contract/provider validation;
+- same-snapshot provider conformance during normal `pkg install` before package-store mutation;
+- materialization of validated `facility-service/<facility>/start`;
+- public system-facility-default resolution through the package provider model;
+- exact installed-provider service-start command resolution;
+- provider-backed `srv` launch through the exact active `m` bootstrap, preserving package-launch HOME/environment/dependency behavior on Linux and macOS;
+- runtime persistence of selected concrete provider identity;
+- SIGTERM stop through recorded running-instance state;
+- no provider re-resolution during stop;
+- no fallback from configured-but-invalid provider state to the legacy PATH path.
 
-   `user` and `system` identify the host-supervision integration scope. They do not redefine the existing `m` state-scope semantics.
+The macOS bootstrap fix is part of this bridge: directly executing a `#!/usr/bin/env m` package command under host `nohup` could lose discovery of `m`; provider-backed launch therefore enters through `$m_BOOTSTRAP_BIN` with the exact package command as the command operand.
 
-3. Host runtime/policy actions such as:
+Permanent service coverage exercises the real `srv` entrypoint and the real package integration/provider machinery. The current service provider used by that regression test is synthetic package input to `pkg_integrate`; no real `pkg-catalog` package has yet been promoted as a service provider.
 
-   ```text
-   start
-   stop
-   restart
-   status
-   activate
-   deactivate
-   ```
+## Formal validation evidence
 
-   are normalized `m` operations translated by host adapters onto the corresponding systemd/launchd semantics. They are not required to be literal textual aliases because the host interfaces are not perfectly isomorphic.
+All evidence is revision-specific.
 
-4. `srv host system install <service>` and `srv host system uninstall <service>` are higher-level `m` integration operations, not simple supervisor dispatch. They may need to manage host-specific unit/plist generation, registration, paths, account/ownership boundaries and other installation/removal mechanics under the explicit administrative boundary required by the canonical service contract.
+### Baseline provider/facility/service formal validation
 
-5. Service integration remains opt-in and separate from the portable lifecycle. The portable `srv start/stop` contract must remain usable without systemd/launchd and must not be replaced by host supervision.
+GitHub Actions run:
 
-6. A service is conceptually related to a package facility, but `service` and `facility` are not synonyms. A facility is an abstract function/interface supplied by a package; a service adds an operational lifecycle contract. Not every facility is a service.
+```text
+35495425634
+```
 
-7. A package may expose zero, one or multiple services. Do not impose a package-to-service 1:1 restriction merely for convenience. The existing facility implementation already supports one package declaring multiple facilities, so the service model should preserve the natural 0..N cardinality unless a concrete contradiction is found.
+Exact revisions:
 
-8. Reuse the package facility declaration/provider-index responsibility for service registration/identity as far as its contract permits. Do not introduce a second service inventory/registry or a parallel provider lifecycle unless a concrete requirement proves the existing responsibility insufficient.
+```text
+rumiai-tests@aa7ff12a0ecb63ef2b83f26576df19eff424da27
+rumiai-os@b18d0fc804814c7b99e841df6f5d1fc22d2e5a90
+```
 
-9. Facility/dependency semantics must not be reinterpreted as a service dependency graph. `srv` owns service lifecycle; `pkg` continues to own package facility/provider/dependency semantics.
+Formal `package-provider-facility` task scope:
 
-10. Service-operability must be expressed through the generalized `pkg` facility contract rather than inferred semantically only from the presence of a conventional command. Do not introduce a separate service declaration/registry unless the generalized facility contract proves insufficient.
+```text
+Linux/x86_64   VALIDATED
+Darwin/arm64   VALIDATED
+```
 
-11. Provider-backed runtime now uses `facility-service/<facility>/start`, resolves the exact selected provider concrete and launches that exact package command through the active `m` bootstrap so package-launch semantics remain intact across hosts. PATH-resolved `<service>-start` remains only the temporary compatibility path when no facility default applies.
+All required provider/facility/integration/launcher/service selections passed with no required SKIP. `rumiai-validate` published the individual sessions and aggregate validation records.
 
-12. Host-managed system services must preserve the canonical administrative/security boundary: system-wide integration is an explicit admin operation, and any dedicated OS service account must not gain ownership/write access over executable product roots merely because it runs the service. Detailed host adapter mechanics remain to be designed and validated separately.
-13. The provider-independent facility contract belongs to `pkg`. `srv` must not own a parallel provider contract/registry; it interprets the service/lifecycle portion of the selected facility provider when the generalized package facility model defines such an aspect.
+### Expanded Java-consumer formal validation
 
-## Active implementation scope
+GitHub Actions run:
 
-The portable/provider-backed service bridge is implemented.
+```text
+35495727155
+```
 
-Current product behavior:
+Exact revisions:
 
-- `service` is a trusted facility typed part with exact `package-command / foreground / sigterm` contract semantics;
-- normal `pkg install` validates provider conformance against the same immutable catalog snapshot after extraction and before package-store mutation;
-- `pkg_integrate` accepts and materializes validated `facility-service/<facility>/start` metadata without acquiring catalog context;
-- `pkg_provider_default_resolve <facility>` resolves only the system facility default for global service lifecycle;
-- `pkg_facility_service_start_resolve <facility> <concrete>` resolves the exact installed package command from materialized realization data;
-- `srv start <facility>` uses that exact provider concrete and does not consult consumer bindings;
-- provider-backed package commands are entered through `$m_BOOTSTRAP_BIN`, preserving `m_COMMAND_BIN`, bootstrap PATH and the normal package launcher on Linux and macOS;
-- provider-backed runtime state records the selected concrete provider; later default changes do not retarget the running process and stop performs no provider re-resolution;
-- configured-but-invalid provider state fails instead of silently falling back to PATH;
-- the historical PATH `<service>-start` path remains temporarily only when no provider-backed default applies.
+```text
+rumiai-tests@f4b46a079d81cc15bdc0eb9fa215ba1c1f652444
+rumiai-os@b18d0fc804814c7b99e841df6f5d1fc22d2e5a90
+```
 
-Permanent coverage now includes service conformance, integration/materialization/runtime resolution, provider-backed end-to-end `srv` behavior, default changes while running, no-invalid-default fallback, legacy lifecycle compatibility and real Temurin installation through the new install-time conformance boundary.
+The same formal task scope, now including live Temurin/NetBeans/Keycloak/Maven consumers, again finished:
 
-No real service provider has yet been added to `pkg-catalog`. The current end-to-end service lifecycle proof uses a synthetic package definition passed through the real `pkg_integrate` path; real catalog installation/conformance is separately exercised by the existing Temurin provider.
+```text
+Linux/x86_64   VALIDATED
+Darwin/arm64   VALIDATED
+```
 
-## Completed
+The `rumiai-os/srv` selection passed on both hosts.
 
-- Fresh preflight completed against current remote HEADs of `rumiai-dev`, `rumiai-os`, `rumiai-tests` and `pkg-catalog`.
-- Current documentation router, rules, consistency gate, service lifecycle specification, package model and handoff lifecycle were read.
-- Current `srv` implementation and permanent lifecycle test were inspected.
-- Current package facility implementation and permanent facility test were inspected.
-- No existing `handoff/service-model.md` or deferred `service-model` TODO existed before activation.
-- Concurrent changes to `CONSISTENCY-GATE.md` and `handoff/README.md` were detected during the write, re-read and reconciled before this checkpoint.
-- The initial service-model choices agreed in the design discussion are captured above as resumable task-local state.
+These GitHub-hosted validations are formal RumiAI validation evidence, but they are not physical validation of the stable reference hosts.
 
-
-- Promoted the service typed-part model into PACKAGE-MODEL.md and SERVICE-LIFECYCLE.md.
-- Implemented service contract/provider conformance and the public installed-realization resolver.
-- Wired exact-snapshot provider conformance into normal pkg install before package-store mutation.
-- Added facility-service validation/materialization to package integration.
-- Added system facility-default concrete resolution without consumer-binding semantics.
-- Implemented provider-backed srv exact-concrete launch and running-instance provider identity.
-- Diagnosed a real macOS failure where direct nohup of a #!/usr/bin/env m package command could not find m; corrected provider-backed launch to enter through the exact active m bootstrap.
-- Realigned stale package-env test paths/driver execution discovered by the widened regression scope.
-- GitHub Actions run 35491988828 passed the complete targeted development matrix on ubuntu-latest and macos-latest at rumiai-os@b18d0fc... / rumiai-tests@c1e670..., including external/temurin/install-live.test and all required provider/facility/srv selections.
-- The GitHub Actions run is clean multi-host development evidence; it is not relabelled as formal rumiai-validate evidence and is not physical validation of the stable reference hosts.
 ## Current state
 
-The portable/provider-backed service model and composition bridge are implemented and pass the targeted Linux/macOS GitHub-hosted matrix.
+The generic portable/provider-backed service bridge is no longer a blocker.
 
-The current `pkg-catalog` has no service-capable provider definition yet. Therefore the remaining portable-service work is no longer a generic bridge problem; it is choosing and modelling the first real package/provider whose real foreground/start semantics satisfy the canonical service contract.
+No current `pkg-catalog` package declares the `service` facility part. The next portable-service step therefore requires a real package whose normal RumiAI package command can expose a deterministic no-argument foreground start operation satisfying the canonical `foreground` + SIGTERM contract.
 
-The temporary legacy PATH compatibility path remains intentionally present until that migration has a concrete removal criterion.
+Keycloak is a plausible current catalog candidate, but the existing package command maps directly to upstream `kc.sh`; selecting a production-vs-development start mode and any required production configuration is a real provider-policy choice, not generic service plumbing. Do not encode `start-dev`, `start` arguments or networking/TLS policy merely to obtain a demonstration.
 
-Host supervision (`srv host user|system ...`) remains unimplemented and is a separate later phase of this active service task.
+The temporary legacy PATH path remains because there is not yet a real catalog provider/migration criterion.
 
-Formal `rumiai-validate` evidence and physical stable-host validation have not been executed for this checkpoint. The available evidence is exact-revision GitHub-hosted development execution on Linux and macOS.
+Host supervision remains unimplemented.
+
+## Remaining active work
+
+### 1. First real service provider
+
+Choose a current package whose actual launch semantics meet the service contract, define its provider-independent service facility contract/realization, and exercise:
+
+```text
+pkg install
+→ explicit facility default
+→ srv start
+→ running provider identity
+→ srv stop
+```
+
+Do not add a wrapper whose policy is semantically arbitrary. If the candidate requires a meaningful product choice about operating mode, surface that choice rather than guessing.
+
+### 2. Legacy-path removal
+
+After at least one real provider migration and a clear compatibility criterion, decide when the historical PATH `<service>-start` fallback can be removed.
+
+### 3. Host supervision
+
+Design and implement the separate opt-in host boundary:
+
+```text
+srv host user <action> <service>
+srv host system <action> <service>
+```
+
+The design must normalize `m` operations onto systemd/launchd semantics rather than pretending the host APIs are textually identical.
+
+System-wide `install`/`uninstall` are higher-level administrative integration operations, not merely supervisor subcommands.
 
 ## Next action
 
-The next portable-service step is to select one real current catalog package whose actual process model can satisfy the canonical `service` contract, add its facility contract/provider realization and exercise `pkg install -> facility default -> srv start/stop` end to end.
+Proceed autonomously with host-supervision analysis that can be derived from current POSIX/state/security contracts and real systemd/launchd mechanics.
 
-Do not invent package-specific start policy merely to obtain a demo. In particular, Keycloak's existing generic package command requires explicit upstream start-mode arguments, so choosing production `start`, `start-dev` or another wrapper is a real provider-policy decision rather than a generic facility default.
-
-After a real provider proof and an explicit migration criterion, remove the temporary PATH `<service>-start` compatibility path.
-
-The separate later phase is host supervision through the already-fixed `srv host user|system ...` public shape.
+For the first real catalog service provider, stop only at the point where a package-specific operating-mode decision is genuinely required. Do not choose a development/insecure mode or production networking/security defaults on the user's behalf.
 
 ## Blockers / open questions
 
-No generic facility/provider/srv bridge blocker remains.
+No generic portable-service implementation blocker remains.
 
-Open service-task decisions that require concrete provider/host semantics rather than more generic infrastructure:
+Actual decision gates are now limited to:
 
-- which current package is the first real service provider in `pkg-catalog`;
-- that provider's exact no-argument package start command and proof of `foreground` + SIGTERM behavior;
-- the criterion for removing the temporary legacy PATH compatibility path;
-- systemd/launchd adapter schemas and action mapping for `srv host user|system`;
-- system-wide installation/account/environment mechanics behind the explicit administrative boundary.
+- first real catalog service provider and any package-specific operating-mode policy it requires;
+- removal criterion for the temporary legacy PATH compatibility path;
+- exact normalized host actions and adapter mechanics where systemd and launchd differ;
+- system-wide account/environment/install mechanics behind the administrative boundary.
 
-Endpoint/readiness/health remain outside the baseline service part.
+Physical stable-host validation has not been performed for this checkpoint.
