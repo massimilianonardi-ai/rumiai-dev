@@ -10,9 +10,9 @@ Review and realign `lib/sys/sh/enc.lib.sh` function by function, preserving inte
 ## Current repository revisions
 
 ```text
-rumiai-dev   de144b287b7aecebcc7880e17f89858596903340
-rumiai-os    a23e81e376bfe28f4f0040ee2b46b9ad42c3c68c
-rumiai-tests db46c6fe980a1433dce6a30d3a272ab66faa79d9
+rumiai-dev   128901b65da3b77c41df6240d1aae1e7efc4c010
+rumiai-os    6940b3304f8da5b559d0bf91aa37cd5e3ffa2454
+rumiai-tests 6a62e876652fa3fc9a9f8e04c50d600407c49232
 ```
 
 Fresh remote HEAD retrieval remains mandatory before future writes.
@@ -42,7 +42,10 @@ todo/library-api-visibility-realignment.md
 
 ## Working design
 
-- Interactive password acquisition for `encode`/`decode` is under review. A previously used private `_enc_password_read` implementation has been supplied by the user; the current tree also has public terminal primitive `term_read_secret`.
+- Interactive password acquisition for `encode`/`decode` is under review. The current product now contains private `_enc_password_read`; it restores exact TTY state and installs signal traps, while public `term_read_secret` deliberately leaves signal handling to its caller.
+- The GnuPG/OpenPGP construction is mechanically coherent: AES-256, symmetric OCB AEAD, 64 KiB chunks, iterated-and-salted S2K with SHA-256 at count 65011712, no compression, loopback passphrase on a dedicated file descriptor and no symmetric-key cache.
+- GnuPG compatibility remains a design point: current `encode` requires `--use-ocb-sym`; older GnuPG releases can support OCB decryption and the legacy `--force-ocb` encryption spelling without exposing `--use-ocb-sym`.
+- Current `decode` intentionally streams; authentication failure may occur after plaintext has already been emitted. Consumers requiring authenticated all-or-nothing data must buffer until status 0.
 - Full public/internal API classification and the mandatory `enc.lib.sh` operational manual remain to be completed as this library review proceeds.
 
 ## Completed
@@ -51,15 +54,20 @@ todo/library-api-visibility-realignment.md
 - Two concrete octal-helper defects were established: `a2o` could emit `*` because `od` lacked `-v`, and `o2a` split only on newline instead of all POSIX shell whitespace.
 - `rumiai-os@a23e81e376bfe28f4f0040ee2b46b9ad42c3c68c` corrects both helpers: `a2o` uses `od -v`; `o2a` tokenizes on space/tab/newline and sets that IFS before joining arguments so behavior is independent of caller IFS.
 - `rumiai-tests@db46c6fe980a1433dce6a30d3a272ab66faa79d9` adds executable permanent regression coverage at `tests/rumiai-os/enc/octal.test`.
-- Auxiliary Debian 13 x86_64 development checks passed for text and binary round trips, repeated-byte input, NUL and 0xff bytes, mixed POSIX shell whitespace, separate arguments, non-default caller IFS, empty input, and invalid octets with no partial output. Direct GitHub clone was unavailable in the auxiliary environment because DNS resolution for github.com failed, so this is development evidence rather than formal validation.
+- Auxiliary Debian 13 x86_64 development checks passed for text and binary round trips, repeated-byte input, NUL and 0xff bytes, mixed POSIX shell whitespace, separate arguments, non-default caller IFS, empty input, and invalid octets with no partial output. Additional exhaustive 0..255 round trips passed under both dash and BusyBox sh. Direct GitHub clone was unavailable in the auxiliary environment because DNS resolution for github.com failed, so this is development evidence rather than formal validation.
+- Deep `encode`/`decode` review found the cryptographic/streaming structure sound but identified shell-integration gaps that prevent closure: an exported `ENC_PASS` reaches the external capability probe before it is unset; a pre-exported internal `_enc_password` variable causes the reassigned passphrase to be inherited by the real GPG process; `ENC_PASS` also violates the current RumiAI `m_*` environment-variable namespace rule.
+- Current `encode` should document that a runtime failure may leave partial ciphertext already written to stdout, paralleling `decode`'s explicit partial-plaintext warning.
+- The current product contains a stale OpenSSL/ENC1/AES-CBC comment block immediately before `_enc_password_read` even though the implementation remains GnuPG/OpenPGP OCB; this is a documentation mismatch to remove in the encode/decode work unit.
+- Current `gpg` invocation can be shadowed by a shell function because it is executed as `gpg` after `command -v gpg`; invoking the external dependency through the project-appropriate command form is a hardening candidate.
+- Real OCB corruption checks confirmed `decode` returns failure while possibly having emitted one or more authenticated/decrypted chunks already, including full plaintext before a final-tag failure in a near-end corruption case.
 
 ## Current state
 
-`a2o` and `o2a` are corrected and protected by a permanent regression test. Diff review shows only the intended octal-helper changes in `enc.lib.sh`; the new test is mode `100755`. The library manual remains intentionally pending until the ongoing public/internal API review establishes the complete stable surface.
+`a2o` and `o2a` are functionally closed for their intended byte/octal contract and protected by permanent regression coverage; arbitrary binary input is supplied through stdin because shell argument strings cannot contain NUL. `encode`/`decode` are not yet closed: their cryptographic construction is sound, but secret-environment handling, environment-variable naming, compatibility policy, error-output documentation and permanent coverage/manual alignment remain open.
 
 ## Next action
 
-Continue with `encode`/`decode`, starting from interactive passphrase acquisition and environment exposure.
+Settle the `encode`/`decode` corrections: eliminate environment propagation of passphrases structurally, choose the current `m_*` passphrase environment interface and GnuPG OCB compatibility policy, realign stale comments/error contract, then add proportional permanent tests before moving to `encoded_file_import`.
 
 ## Blockers / open questions
 
