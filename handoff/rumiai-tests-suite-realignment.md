@@ -1,7 +1,7 @@
 # rumiai-tests suite realignment
 
 Status: Active
-Updated: 2026-09-18
+Updated: 2026-09-20
 
 ## Goal
 
@@ -10,10 +10,10 @@ Realign the permanent RumiAI test suite so that failures are evidence about curr
 ## Current repository revisions
 
 ```text
-rumiai-dev   ea189c43ccfa4cf38d22394c00aac540299cd145
-rumiai-tests 20f04ab2665fdb0c7310226f57a12a39b701f212
-rumiai-os    25ab0e5a5b8267af715f320bd9ee17405a2b41f6
-pkg-catalog  8407f2308cf0c5e7bdc3abd8aeb9538410e55b90
+rumiai-dev   5e9afbb1380b34674fbfac49b77291a30419956c
+rumiai-tests 818ff15403efe62ba56e40ed76f1e9c829a25dcf
+rumiai-os    ee7811a9ff9211ee0f6806447b115d0cdc00bf58
+pkg-catalog  5372c160441b0346b976db7f7a022196784c9425
 ```
 
 The `rumiai-dev` revision above is the authoritative source revision read before this handoff checkpoint; this handoff update itself advances that repository. Fresh HEAD retrieval remains mandatory before resumption.
@@ -57,12 +57,14 @@ The `rumiai-dev` revision above is the authoritative source revision read before
 - `extract/dispatch.test` and the remaining audited package/adapter tests use shared target discovery rather than local copies.
 - Current external live tests no longer contain the audited replacement-HOME, synthetic-target, private-concrete-layout, fixed catalog-tree or known obsolete version-pin patterns.
 - Chrome/Pulsar setuid and Java/Maven/NetBeans facility/dependency live evidence no longer reads private concrete paths. Successful composed integration is relied upon for setuid/facility/dependency materialization; Maven additionally executes through its public command and NetBeans checks its public command binding.
-- `validation/rumiai-os-health.conf` is aligned to current `rumiai-os` revision `25ab0e5a5b8267af715f320bd9ee17405a2b41f6`.
-- This task has not modified `rumiai-os` product implementation.
+- `validation/rumiai-os-health.conf` remains the broad health-scope binding from the earlier checkpoint; pager-specific validation is independently bound by `validation/pager.conf` to `rumiai-os@ee7811a9ff9211ee0f6806447b115d0cdc00bf58`.
+- The pager contract change was product work in `rumiai-os`; this suite task only realigned the affected permanent pager tests and validation binding.
 
 ## Current state
 
 The source/contract audit has no remaining proven false-negative mechanism from the historical finding list in the deterministic core families reviewed so far.
+
+The pager group is aligned to the 2026-09-20 wrapper contract: `contract.test` checks the standalone command/manual surface and simple stdin/file delegation, while `delegation.test` exercises the real pager entrypoint against controlled external pager backends to verify `less` preference, `more` fallback, unchanged operand/stdin forwarding, caller-environment preservation and backend-status propagation. The superseded PTY-oriented `interactive.test` was removed.
 
 Current package repository-adapter tests intentionally remain library/unit tests where they exercise public `pkg_repository_*` functions and model only the external HTTP/provider boundary. They must not be used as composed `pkg install` evidence.
 
@@ -70,7 +72,7 @@ The 19 current external live tests passed the latest targeted source scan for th
 
 `pkg-analyze` permanent tests still assert several report vocabulary tokens such as `useful-root`, `executable`, `launch-like` and `exit-status`. The current manual specifies the report's semantic purpose but not a machine-stable field vocabulary. This is a contract/test-design ambiguity, not a currently proven false negative.
 
-No current full-suite runtime result has been produced by this chat. A direct runtime probe on 2026-09-18 confirmed that the available execution container cannot resolve `github.com` (`git ls-remote` fails with `Could not resolve host: github.com`), so it cannot materialize the current repositories through Git. The current `rumiai-tests` tree contains no `.github/workflows/*` files and the current HEAD has no associated workflow runs, so GitHub Actions cannot supply a current health run through the available connector. Historical or package-matrix Actions results must not be relabelled as validation of the current HEADs.
+No current full-suite runtime result has been produced by this chat. A fresh 2026-09-20 probe again confirmed that the available execution container cannot resolve `github.com`, so it cannot materialize the current repositories through Git. The current tree contains only the package-provider/facility bridge workflow; no pager or general health workflow was available for this checkpoint. Historical or unrelated workflow results must not be relabelled as validation of the current HEADs.
 
 ## Next action
 
