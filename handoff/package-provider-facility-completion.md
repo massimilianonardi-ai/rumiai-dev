@@ -222,36 +222,20 @@ GitHub-hosted formal validation is not physical validation of the stable referen
 
 ## Remaining active work
 
-### 1. GraalVM additional facility inventory
+### Final package-task closure
 
-Current GraalVM catalog representation exposes only `java 25`.
+The remaining task-local work is closure only:
 
-Before adding another facility, inspect the exact current GraalVM artifacts and identify capabilities that are both actually present and provider-independent/substitutable enough to deserve a facility contract. Do not infer a facility from the GraalVM brand alone.
-
-This is still an active design/inventory item; no additional facility name or contract is fixed yet.
-
-### 2. GitHub-backed repository reliability
-
-The GitHub repository adapter currently performs unauthenticated GitHub API requests. Hosted executions have previously produced real HTTP 403 responses while other runs against the same package succeeded.
-
-The remaining work is to make this behavior predictable without weakening artifact integrity or introducing mandatory credentials.
-
-Potential authentication/configuration changes are not yet fixed. Do not silently make a new environment variable, token requirement or credential source part of the product contract merely to improve CI reliability.
-
-### 3. Optional cmd/env integration cleanup
-
-`pkg-integration.lib.sh` still contains earlier cmd/env validation logic in addition to the generalized install-time conformance layer.
-
-This is technical duplication, not a semantic blocker. Refactor only if the resulting code can preserve the current validate-before-mutate/materialization behavior and permanent tests.
-
-### 4. Final package-task closure
-
-After the remaining GraalVM/repository-reliability work is resolved or deliberately deferred under the project TODO protocol:
-
-- rerun the proportional final formal scopes against the resulting exact revisions;
+- complete the exact-revision deterministic formal closure scope on Linux and macOS;
 - perform the full consistency gate;
 - synchronize this handoff as `Status: Complete`;
 - remove it in a later forward commit.
+
+The GraalVM capability inventory is resolved for the current task: the current artifact has additional capabilities such as Native Image, but no current RumiAI consumer establishes a provider-independent/substitutable contract for them. Under the canonical facility model they remain provider extras; no additional GraalVM facility is introduced.
+
+GitHub-backed repository reliability has been mechanically improved without changing public policy: all current adapters that use `api.github.com` avoid remote release lookups for equal-version comparison, and GraalVM latest resolution uses `/releases/latest` before falling back to enumeration. Real hosted 403 evidence remains possible because the API path is unauthenticated. Introducing optional authentication is a separate credential/configuration design task and is deferred to `todo/github-package-repository-authentication.md`.
+
+The duplicate legacy cmd/env integration validation is non-blocking cleanup and is deferred to `todo/pkg-facility-integration-validation-dedup.md`.
 
 ## No longer open
 
@@ -268,18 +252,12 @@ The following items were previously listed as pending but are already settled by
 
 ## Next action
 
-Continue autonomously with the current GraalVM artifact-capability inventory and GitHub repository reliability analysis.
-
-Stop for user input only if that analysis reaches a genuine product-policy choice that cannot be derived from current contracts, such as introducing a new credential/configuration surface or choosing among semantically different GraalVM facility boundaries.
+Complete the current deterministic formal closure scope on Linux and macOS. If both hosts validate, run the final consistency gate and execute the handoff completion protocol.
 
 ## Blockers / open questions
 
-No blocker remains in the generalized facility/provider core, Java consumer model, global projection path or service bridge.
+No package-task design blocker remains.
 
-The only current package-task questions requiring further work are:
-
-- which additional GraalVM capabilities, if any, should become provider-independent facilities after exact artifact inventory;
-- whether GitHub repository reliability can be improved mechanically without a new user-visible authentication/configuration contract;
-- whether the duplicate cmd/env integration validation is worth refactoring after the higher-value remaining work.
+The only remaining condition for closure is successful formal validation of the exact final package-task revision on the deterministic closure scope. GitHub API authentication and cmd/env validation deduplication have separate deferred owners under `todo/` and are no longer active-task blockers.
 
 Physical stable-host validation has not been performed for this checkpoint.
