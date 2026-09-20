@@ -1,6 +1,6 @@
 # gitman action tree
 
-Status: Active
+Status: Complete
 Updated: 2026-09-20
 
 ## Goal
@@ -9,9 +9,9 @@ Build the first extensible Git action tree on the current gitman handler model, 
 
 ## Current repository revisions
 
-- `rumiai-dev`: `c370e84bcf3bc2db0c6750ee00b60a9c32bc04ed`
+- `rumiai-dev`: `990b9add8fd96354305499edbbf6d7e3af14d478`
 - `rumiai-os`: `56bfd26e1c59d040fcf2bffe5a823c071e78bda9`
-- `rumiai-tests`: `ff093420a279cbd4f418c2f0061b11dd59632f09`
+- `rumiai-tests`: `39b4efaee8c12a82be8bc10c2d77f01668610885`
 
 ## Applicable canonical sources
 
@@ -26,35 +26,31 @@ Build the first extensible Git action tree on the current gitman handler model, 
 - `specifications/rumiai-os/COMMAND-ENTRYPOINTS.md`
 - `specifications/rumiai-os/DOCUMENTATION-MODEL.md`
 
-## Fixed task-local choices
-
-- Root actions stay intentionally small and expose common operations directly: Status, Diff, Pull and Commit.
-- Nested groups are Changes, History, Branches, Remote and Stash.
-- Leaf labels continue to show the exact Git command or a parameter template.
-- Commit uses `git commit -m <commit-message>`; the message is read from the restored terminal with POSIX shell `read`, because no current reusable line-input command exists.
-- Branch switching is a complex handler: enumerate local branches, select one through `menu`, then execute `git switch <branch>`.
-- The first nested tree adds: diff staged, add all, log, show HEAD, branch list/switch, remote list/fetch/pull/push and stash list/push/pop.
-- Destructive restore/reset/delete operations are not added in this work unit.
-
 ## Completed
 
-- Mandatory preflight completed.
-- Current gitman specification, implementation, manual and permanent tests inspected.
-- Promoted the root/submenu action tree and parameter-acquisition semantics to the canonical gitman specification.
-- Implemented the root actions and Changes, History, Branches, Remote and Stash handlers.
-- Implemented terminal commit-message acquisition and local-branch selection for git switch.
-- Updated the operational manual.
-- Updated permanent contract coverage and added interactive scenarios for submenu navigation plus Add all, Commit, Push, Switch and stash push/pop.
-- Updated the gitman validation target to rumiai-os `56bfd26e1c59d040fcf2bffe5a823c071e78bda9`.
-- Preserved concurrent unrelated advances in rumiai-dev and rumiai-tests.
+- Added the small root action set: Status, Diff, Pull and Commit.
+- Added Changes, History, Branches, Remote and Stash submenus.
+- Added leaf actions for staged diff, add all, log, show HEAD, branch list, remote list/fetch/pull/push and stash list/push/pop.
+- Added commit-message acquisition from the restored terminal and `git commit -m <commit-message>`.
+- Added local-branch enumeration, branch selection through `menu` and `git switch <branch>`.
+- Kept menu labels descriptive only; Git execution still uses explicit shell argument vectors.
+- Updated the canonical specification and the operational manual.
+- Updated permanent contract and interactive coverage.
+- Interactive coverage exercises submenu navigation plus real Add all, Commit, Push, Switch and stash push/pop behavior against local Git repositories/remotes.
+- Validation run `35492257989` exercised `rumiai-os` `56bfd26e1c59d040fcf2bffe5a823c071e78bda9` with `rumiai-tests` `0e8949b0b1e7a06eb2b2ff67233c3df229d6c9c9`; the `rumiai-os/gitman` scope passed on both Ubuntu and macOS.
+- The temporary validation workflow was removed after the successful run. The current permanent gitman test blobs are unchanged from the successful validation revision.
+- Final consistency review reread the task diffs and current specification/runtime/manual/tests, found no residual old flat Branches label or old read-only contract in the affected surfaces, and confirmed the validation target remains pinned to the validated product revision.
+- Concurrent unrelated changes in `rumiai-dev` and `rumiai-tests` were preserved forward-only.
 
 ## Current state
 
-Specification, runtime, manual and permanent tests now describe/implement the new tree. Validation has not yet been executed against the new revisions.
+The action tree is implemented, documented and protected by permanent tests. The currently delivered root and grouped actions match the canonical gitman specification.
+
+Physical validation was not performed. Validation evidence is GitHub-hosted Ubuntu/macOS evidence for the revisions recorded above.
 
 ## Next action
 
-Run the real `rumiai-os/gitman` scope on Linux and macOS, fix any regressions, then run the final consistency gate.
+None for this task.
 
 ## Blockers / open questions
 
