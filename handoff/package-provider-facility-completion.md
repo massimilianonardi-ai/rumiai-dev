@@ -139,6 +139,9 @@ Type-specific trusted handlers should live directly under the existing facility 
 ```text
 lib/sys/sh/pkg/facility/
     pkg-facility.lib.sh
+    pkg-facility-cmd.lib.sh
+    pkg-facility-env.lib.sh
+    pkg-facility-service.lib.sh
     pkg-dependency.lib.sh
     pkg-facility-cmd.lib.sh
     pkg-facility-env.lib.sh
@@ -504,7 +507,7 @@ Accepted and promoted:
 - no catalog-supplied executable handlers;
 - no generic runtime apply operation;
 - inert facility/provider definitions and conformance;
-- current trusted `cmd` and `env` parts.
+- current trusted `cmd`, `env` and `service` parts.
 
 The separate service workstream has promoted and implemented the trusted `service` typed part and its composition bridge: service identity equals facility identity in the baseline, provider realization uses `facility-service/<facility>/start`, normal `pkg install` performs same-snapshot provider conformance, integration materializes the realization, and provider-backed `srv` launches the exact selected concrete while retaining process lifecycle ownership. The service work remains owned by `handoff/service-model.md` and does not change cmd/env ownership.
 
@@ -533,7 +536,7 @@ lib/sys/sh/pkg/repository/
     pkg-repository-*.lib.sh
 ```
 
-Public subcommand entrypoints remain directly under `lib/sys/sh/pkg/`; specifically, `pkg-provider.lib.sh` remains there. The later accepted typed-part core added `pkg-facility-cmd.lib.sh` and `pkg-facility-env.lib.sh` within the already-fixed facility responsibility group.
+Public subcommand entrypoints remain directly under `lib/sys/sh/pkg/`; specifically, `pkg-provider.lib.sh` remains there. The accepted typed-part core added `pkg-facility-cmd.lib.sh`, `pkg-facility-env.lib.sh` and `pkg-facility-service.lib.sh` within the already-fixed facility responsibility group.
 
 ### Phase 4: facility/provider conformance core — implemented
 
