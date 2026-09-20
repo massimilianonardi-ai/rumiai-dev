@@ -29,10 +29,10 @@ Add one high-frequency gitman shortcut that stages local changes, commits them w
 ## Fixed task-local choices
 
 - The new action is a root/high-frequency shortcut.
-- The sequence is: `git add --all`; if staged changes exist, acquire one commit message and run `git commit -m <commit-message>`; then `git pull --no-rebase --no-edit`; then `git push`.
+- The sequence is: inspect whether local changes exist; when they do, acquire one commit message before mutating the index, then run `git add --all` and `git commit -m <commit-message>`; finally run `git pull --no-rebase --no-edit` and `git push`.
 - A separate `git fetch` and `git merge` are not executed because `git pull` already fetches and integrates, while `--no-rebase` fixes integration to merge semantics.
-- If there are no staged changes after `git add --all`, the commit prompt and commit step are skipped.
-- Any failed step stops the sequence; in particular push must not run after a failed commit or pull/conflict.
+- If the working tree is clean, message acquisition, `git add --all` and commit are skipped; an empty commit message cancels before any staging side effect.
+- Any failed step stops the sequence; in particular push must not run after a failed add/commit or pull/conflict.
 - The leaf label exposes the sequence rather than hiding it behind an opaque aggregate action name.
 
 ## Completed
