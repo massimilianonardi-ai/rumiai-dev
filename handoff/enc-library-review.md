@@ -52,6 +52,8 @@ todo/library-api-visibility-realignment.md
 - Interactive passphrase acquisition is now owned by GnuPG/Pinentry. Supplied-passphrase mode uses fd 3 with a here-document; payload stdin remains fd 0.
 - Current `decode` intentionally streams; authentication failure may occur after plaintext has already been emitted. Consumers requiring authenticated all-or-nothing data must buffer until status 0.
 - Full public/internal API classification and the mandatory `enc.lib.sh` operational manual remain to be completed as this library review proceeds.
+- Proposed `encoded_file_import` design: accept exactly one encrypted-source operand; if it contains `/`, use it directly, otherwise scan `PATH` in order with empty components denoting the current directory and no executable-bit requirement. Buffer the complete `decode` output in shell memory and proceed to `eval` only on decode status 0; then return the evaluated source status. No temporary plaintext file and no `command -v`.
+- Because `encoded_file_import` is itself a POSIX shell function, it cannot reproduce the caller's outer positional parameters exactly as dot can; the implementation should avoid exposing its own file operand or plaintext buffer as positional parameters to the imported source. Decrypted input is expected to be valid POSIX shell source text; NUL-bearing binary content is outside this API purpose.
 
 ## Completed
 
