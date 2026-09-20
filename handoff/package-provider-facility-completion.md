@@ -1,6 +1,6 @@
 # Package provider/facility completion
 
-Status: Active
+Status: Complete
 Updated: 2026-09-20
 
 ## Goal
@@ -11,25 +11,24 @@ This handoff owns package/facility work only. Portable/service lifecycle work re
 
 ## Current repository revisions
 
-Checkpoint used for this synchronization:
+Final closure checkpoint:
 
 ```text
-rumiai-dev      5f0b09859475488e775b32e20a10f7b9ac303be2  pre-sync HEAD
-rumiai-os       3a5691f46a2538dad00657d47334d1d1eb0329f0
-rumiai-tests    e31641259396b6ce503df1283fed4a5b186e5596
+rumiai-dev      128901b65da3b77c41df6240d1aae1e7efc4c010  pre-completion HEAD
+rumiai-os       6940b3304f8da5b559d0bf91aa37cd5e3ffa2454
+rumiai-tests    6a62e876652fa3fc9a9f8e04c50d600407c49232
 pkg-catalog     12ea704ee4e25e62ab3ed0125133660b4e0c42cb
 rumiai-dev-PoCs cb8c5d636ce65e6cb00626ed08947fe25a25988e
 ```
 
-The package/facility/service bridge validation target remains:
+The exact final package-task validation target is:
 
 ```text
-rumiai-os@b18d0fc804814c7b99e841df6f5d1fc22d2e5a90
+rumiai-os@ffcc9d047ae467b6acb5c6013ea5705d102a6621
+rumiai-tests@6a62e876652fa3fc9a9f8e04c50d600407c49232
 ```
 
-Current `rumiai-os@3a5691...` is a descendant of that target. The intervening product changes are outside the package/provider/facility subsystem (`gitman`, `pager`, `core.lib.sh`).
-
-Fresh remote HEAD retrieval remains mandatory before every later write.
+Current `rumiai-os@6940b33...` is a descendant of that target and differs only in `lib/sys/sh/enc.lib.sh`, outside this task's package/provider/facility surface.
 
 ## Applicable canonical sources
 
@@ -220,22 +219,49 @@ This scope is deliberately Linux-only because the coexistence test is currently 
 
 GitHub-hosted formal validation is not physical validation of the stable reference hosts.
 
-## Remaining active work
+### Final deterministic package-task closure
 
-### Final package-task closure
+GitHub Actions run:
 
-The remaining task-local work is closure only:
+```text
+35498298186
+```
 
-- complete the exact-revision deterministic formal closure scope on Linux and macOS;
-- perform the full consistency gate;
-- synchronize this handoff as `Status: Complete`;
-- remove it in a later forward commit.
+Formal scope:
 
-The GraalVM capability inventory is resolved for the current task: the current artifact has additional capabilities such as Native Image, but no current RumiAI consumer establishes a provider-independent/substitutable contract for them. Under the canonical facility model they remain provider extras; no additional GraalVM facility is introduced.
+```text
+package-provider-facility-final
+```
 
-GitHub-backed repository reliability has been mechanically improved without changing public policy: all current adapters that use `api.github.com` avoid remote release lookups for equal-version comparison, and GraalVM latest resolution uses `/releases/latest` before falling back to enumeration. Real hosted 403 evidence remains possible because the API path is unauthenticated. Introducing optional authentication is a separate credential/configuration design task and is deferred to `todo/github-package-repository-authentication.md`.
+Exact suite/target:
 
-The duplicate legacy cmd/env integration validation is non-blocking cleanup and is deferred to `todo/pkg-facility-integration-validation-dedup.md`.
+```text
+rumiai-tests@6a62e876652fa3fc9a9f8e04c50d600407c49232
+rumiai-os@ffcc9d047ae467b6acb5c6013ea5705d102a6621
+```
+
+Results:
+
+```text
+Linux/x86_64   VALIDATED
+Darwin/arm64   VALIDATED
+```
+
+All required selections passed with zero FAIL, zero ERROR and zero required SKIP. The scope covered real Temurin/Maven installation plus provider, dependency, environment, facility-contract/default, integration, launcher, service and current GitHub/GraalVM/NetBeans/Node.js repository-adapter regressions. `rumiai-validate` published revision-specific session and aggregate validation evidence.
+
+GitHub-hosted formal validation is not physical validation of the stable reference hosts.
+
+## Completion state
+
+All package/provider/facility work owned by this handoff is complete.
+
+Durable semantics are already in canonical specifications and current implementation/tests. Remaining non-blocking follow-up work is owned elsewhere:
+
+- optional GitHub repository authentication: `todo/github-package-repository-authentication.md`;
+- duplicate legacy cmd/env integration validation cleanup: `todo/pkg-facility-integration-validation-dedup.md`;
+- portable/service real-provider and host-supervision work: `handoff/service-model.md`.
+
+No additional GraalVM facility is introduced by this task because no current consumer establishes a provider-independent/substitutable contract for GraalVM-specific extras.
 
 ## No longer open
 
@@ -252,12 +278,10 @@ The following items were previously listed as pending but are already settled by
 
 ## Next action
 
-Complete the current deterministic formal closure scope on Linux and macOS. If both hosts validate, run the final consistency gate and execute the handoff completion protocol.
+Remove this completed handoff in the next forward commit. Git history preserves this completion snapshot.
 
 ## Blockers / open questions
 
-No package-task design blocker remains.
+None for this completed task.
 
-The only remaining condition for closure is successful formal validation of the exact final package-task revision on the deterministic closure scope. GitHub API authentication and cmd/env validation deduplication have separate deferred owners under `todo/` and are no longer active-task blockers.
-
-Physical stable-host validation has not been performed for this checkpoint.
+Physical stable-host validation was not performed for this package-task closure; the final formal evidence is GitHub-hosted Linux/x86_64 and Darwin/arm64 validation.
