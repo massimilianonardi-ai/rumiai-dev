@@ -10,8 +10,8 @@ Review and realign `lib/sys/sh/enc.lib.sh` function by function, preserving inte
 ## Current repository revisions
 
 ```text
-rumiai-dev   97b54cf18d9f627a0e57c5a9f34875aad75d2667
-rumiai-os    b83d4f65233f42ffe452c0543b9b8561f53fec2b
+rumiai-dev   b963551a7a40f1fb8e92a7cd0bad8d6f4e4f2369
+rumiai-os    470f36729cf1ff8b64c4a8534e79b0f82d047258
 rumiai-tests f384b9da79b467d8cdb6e26482b5ef350d543af4
 ```
 
@@ -52,7 +52,7 @@ todo/library-api-visibility-realignment.md
 - Interactive passphrase acquisition is now owned by GnuPG/Pinentry. Supplied-passphrase mode uses fd 3 with a here-document; payload stdin remains fd 0.
 - Current `decode` intentionally streams; authentication failure may occur after plaintext has already been emitted. Consumers requiring authenticated all-or-nothing data must buffer until status 0.
 - Full public/internal API classification and the mandatory `enc.lib.sh` operational manual remain to be completed as this library review proceeds.
-- Proposed `encoded_file_import` design: accept exactly one encrypted-source operand; if it contains `/`, use it directly, otherwise scan `PATH` in order with empty components denoting the current directory and no executable-bit requirement. Buffer the complete `decode` output in shell memory and proceed to `eval` only on decode status 0; then return the evaluated source status. No temporary plaintext file and no `command -v`.
+- Proposed `encoded_file_import` design: accept exactly one encrypted-source operand; resolve it through the existing public `core.lib.sh` primitive `pathsearch` instead of duplicating PATH traversal. `pathsearch` already handles explicit pathnames, ordered PATH search, empty PATH components as the current directory, no executable-bit requirement and canonicalized result assignment. Normalize path-resolution failure to import status 1. Buffer the complete `decode` output in shell memory and proceed to `eval` only on decode status 0; then return the evaluated source status. No temporary plaintext file and no `command -v`.
 - Because `encoded_file_import` is itself a POSIX shell function, it cannot reproduce the caller's outer positional parameters exactly as dot can; the implementation should avoid exposing its own file operand or plaintext buffer as positional parameters to the imported source. Decrypted input is expected to be valid POSIX shell source text; NUL-bearing binary content is outside this API purpose.
 
 ## Completed
