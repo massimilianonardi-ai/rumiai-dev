@@ -506,7 +506,7 @@ Accepted and promoted:
 - inert facility/provider definitions and conformance;
 - current trusted `cmd` and `env` parts.
 
-The separate service workstream has promoted and implemented conformance for the trusted `service` typed part: service identity equals facility identity in the baseline, provider realization uses `facility-service/<facility>/start`, and portable process lifecycle remains owned by `srv`. Runtime/install composition remains under `handoff/service-model.md` and does not change the cmd/env core ownership.
+The separate service workstream has promoted and implemented the trusted `service` typed part and its composition bridge: service identity equals facility identity in the baseline, provider realization uses `facility-service/<facility>/start`, normal `pkg install` performs same-snapshot provider conformance, integration materializes the realization, and provider-backed `srv` launches the exact selected concrete while retaining process lifecycle ownership. The service work remains owned by `handoff/service-model.md` and does not change cmd/env ownership.
 
 ### Phase 2: catalog ownership and representation — complete
 
@@ -535,24 +535,20 @@ lib/sys/sh/pkg/repository/
 
 Public subcommand entrypoints remain directly under `lib/sys/sh/pkg/`; specifically, `pkg-provider.lib.sh` remains there. The later accepted typed-part core added `pkg-facility-cmd.lib.sh` and `pkg-facility-env.lib.sh` within the already-fixed facility responsibility group.
 
-### Phase 4: facility/provider conformance core — implemented, composition deferred
+### Phase 4: facility/provider conformance core — implemented
 
-Implemented in the current checkpoint:
+Implemented:
 
-- facility contract loading/validation for trusted `cmd` and `env`;
+- facility contract loading/validation for trusted `cmd`, `env` and `service`;
 - exact provider realization validation;
 - same-snapshot provider-definition boundary;
 - `java 25` contract;
-- permanent focused conformance test.
+- normal `pkg install` invocation of provider conformance before package-store mutation;
+- permanent focused conformance coverage.
 
-Deliberately deferred by current user direction:
+The older local cmd/env integration validators still coexist with the generalized install-time conformance boundary. Refactoring that duplication remains separate cleanup; it is not needed for the service bridge and must not silently change current package integration semantics.
 
-- wiring conformance into package installation/integration;
-- refactoring the older integration cmd/env validators onto the new handlers;
-- any default/binding creation or assistance;
-- bootstrap/launcher/global projection changes.
-
-Exit for the current work unit is the inert conformance core itself, not automatic application.
+Default/binding creation policy and broader bootstrap/global projection policy remain separate from conformance.
 
 ### Phase 5: Java contract and consumer completion
 
@@ -565,11 +561,11 @@ Exit for the current work unit is the inert conformance core itself, not automat
 
 Exit: all current Java consumers rely only on the provider-independent Java contract.
 
-### Phase 6: service bridge — semantic model promoted, implementation active separately
+### Phase 6: service bridge — implemented separately
 
-`handoff/service-model.md` now owns implementation of the promoted `service` typed part and later runtime bridge. The fixed baseline is package-command start, foreground process behavior and generic srv SIGTERM stop, with service identity equal to facility identity.
+`handoff/service-model.md` owns the implemented `service` typed part and provider-backed runtime bridge. The fixed baseline is package-command start, foreground process behavior and generic srv SIGTERM stop, with service identity equal to facility identity.
 
-The package task must not duplicate that implementation. Any later shared change to provider selection/default composition is reconciled across both active handoffs before modification.
+The bridge now includes same-snapshot install-time conformance, `facility-service` materialization, system facility-default resolution, exact-concrete package-command launch through the active `m` bootstrap, and running-instance provider identity. The package task must not duplicate that implementation.
 
 ### Phase 7: global projection + policy completion
 
@@ -617,43 +613,30 @@ Do not close this task until all applicable conditions hold:
 
 ## Current state
 
-The inert facility/provider core requested by the user is implemented.
+The generalized facility/provider core is implemented for `cmd`, `env` and `service`. The catalog contains the provider-independent `java 25` contract, and normal `pkg install` now validates provider declarations/realizations against the exact facility contract from the same immutable catalog snapshot before package-store mutation.
 
-Current exact checkpoint:
+The separate service workstream has completed the generic provider-backed runtime bridge. Exact-revision GitHub-hosted development execution at `rumiai-os@b18d0fc804814c7b99e841df6f5d1fc22d2e5a90` and `rumiai-tests@c1e6707943eb570ef7d8700233630fff6019f291` passed the targeted provider/facility/service matrix on Ubuntu and macOS, including a real `pkg install temurin` against the current catalog. This is multi-host development evidence, not formal `rumiai-validate` evidence or physical validation.
 
-```text
-rumiai-os@cf2e2e02ac9da54a993c7f5f118f72fe6dbdbe06
-rumiai-tests@4af4183219ff42f07c9e6f116afc01ee0d3d2113
-pkg-catalog@5372c160441b0346b976db7f7a022196784c9425
-```
-
-The product adds trusted cmd/env facility handlers and public contract/provider conformance functions. The catalog now has the real `java 25` contract. The permanent test protects the accepted conformance and inertness properties.
-
-No install path, facility default/binding behavior, bootstrap environment application, launcher behavior or global command publication was modified by these product commits.
-
-Validation status is intentionally limited: structural/diff consistency checks and an isolated shell harness succeeded, but no full/current RumiAI test PASS is claimed because this environment cannot obtain a complete checkout and no CI workflow run exists for these commits.
+General facility definitions/conformance remain inert with respect to creating defaults or bindings. The service runtime consumes an already configured system facility default; it does not create one.
 
 ## Next action
 
-The current facility/provider implementation work unit is complete modulo formal exact-revision execution evidence.
+Continue this package task only on its remaining package-specific phases: Java consumer completion, global projection/policy decisions, GraalVM additional facility inventory, repository reliability and final package-task validation/closure.
 
-Do not continue automatically into installation/default/binding/bootstrap composition. The next semantic step is explicitly deferred until the user chooses to resume it. A future composition work unit should start from the inert conformance API, decide the requested operation that creates/selects a binding or default, and only then connect those selections to their existing runtime owners.
+Do not reopen the generic service bridge here; its remaining real-provider and host-supervision work is owned by `handoff/service-model.md`.
 
 ## Blockers / open questions
 
-No semantic blocker remains inside the inert cmd/env facility/provider core.
+No generic facility-contract or service-bridge blocker remains in this task.
 
-Current validation limitation:
+Still open here:
 
-- no exact-revision permanent-suite run has executed for this checkpoint because the local environment cannot resolve github.com and no GitHub Actions workflow was triggered automatically.
+- refactoring duplicated legacy cmd/env integration validation onto the generalized conformance helpers without changing semantics;
+- missing-provider resolution policy;
+- install-time provider configuration UX;
+- remaining Java consumer/provider completion;
+- GraalVM additional facility boundaries;
+- GitHub repository/rate-limit reliability work;
+- formal package-task validation/closure.
 
-Explicitly deferred by current user direction:
-
-- when/how package processing invokes facility/provider conformance and removes duplicated legacy integration validators;
-- how catalog/provider definitions are used to create facility defaults or consumer bindings **on request**;
-- any changes to bootstrap/global environment or command publication;
-- lifecycle and endpoint typed-part schemas;
-- missing-provider/install-time configuration policy;
-- GraalVM additional facility boundaries after artifact inventory.
-
-The existing installation/default/binding/bootstrap behavior remains unchanged.
+Default/binding creation remains explicit policy/configuration work; facility/provider definitions do not create them merely by existing or validating.
