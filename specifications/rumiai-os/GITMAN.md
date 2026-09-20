@@ -271,6 +271,7 @@ Status: git status --short --branch
 Diff: git diff
 Pull: git pull
 Commit: git commit -m <commit-message>
+Sync + Push: git add --all → git commit -m <commit-message> → git pull --no-rebase --no-edit → git push
 
 Changes >
 History >
@@ -307,6 +308,21 @@ Stash >
 ```
 
 The root Pull entry and the Remote > Pull entry intentionally dispatch to the same action handler; the root entry is a high-frequency shortcut.
+
+The root Sync + Push entry is a composite high-frequency workflow. Its displayed sequence is:
+
+```text
+git add --all
+[if staged changes exist] git commit -m <commit-message>
+git pull --no-rebase --no-edit
+git push
+```
+
+`git pull --no-rebase --no-edit` owns the fetch-and-merge step. The workflow does not execute a redundant separate fetch or merge.
+
+After `git add --all`, `gitman` checks whether the index differs from HEAD. If no staged changes exist, it skips commit-message acquisition and the commit step. If staged changes exist, the workflow acquires the commit message using the same terminal interaction as the standalone Commit action.
+
+An empty commit message cancels the composite workflow before pull or push. Any Git failure stops the remaining sequence. In particular, a failed commit or a pull/merge conflict MUST prevent push.
 
 The action model is not restricted to read-only Git operations. The delivered tree includes mutating actions whose concrete semantics are explicit in their leaf labels.
 
@@ -515,7 +531,7 @@ GITMAN-09B edit selects VISUAL, then EDITOR, then vi; editor variables are execu
 GITMAN-09C editor execution occurs outside menu terminal state; successful edit asks whether to reset/reload and defaults to No
 GITMAN-09D explicit post-edit reload loads only configuration entries, without the startup . fallback
 GITMAN-10  the repository action menu returns with Backspace by default
-GITMAN-11  the root action menu exposes Status, Diff, Pull and Commit before grouped Changes, History, Branches, Remote and Stash submenus
+GITMAN-11  the root action menu exposes Status, Diff, Pull, Commit and Sync + Push before grouped Changes, History, Branches, Remote and Stash submenus
 GITMAN-12  a Git action runs only after the selecting menu session has restored the terminal
 GITMAN-13  terminal-mode Git actions wait for one key through read-key; pager-mode actions return after pager exit without a second acknowledgement
 GITMAN-14  Git action failure is interactive error state and does not terminate the session by itself
@@ -534,4 +550,7 @@ GITMAN-26  Commit reads one message line from /dev/tty after menu restoration; e
 GITMAN-27  Switch enumerates local refs, lets the user choose a branch through menu, and executes git switch with that selected branch
 GITMAN-28  Changes groups diff --staged and add --all; History groups log and show HEAD
 GITMAN-29  Remote groups remote -v, fetch, pull and push; Stash groups list, push and pop
+GITMAN-30  Sync + Push runs add --all, conditionally commits staged changes, then pull --no-rebase --no-edit and push
+GITMAN-31  Sync + Push skips the commit prompt when the index matches HEAD and stops before pull/push when commit acquisition is cancelled
+GITMAN-32  Sync + Push stops on the first Git failure and never pushes after a failed commit or pull/merge
 ```
