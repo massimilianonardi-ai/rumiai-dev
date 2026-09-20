@@ -1,7 +1,7 @@
 # rumiai-os-man-documentation
 
 Status: Active
-Updated: 2026-09-19
+Updated: 2026-09-20
 
 ## Goal
 
@@ -12,9 +12,9 @@ The long-term multi-channel documentation source/rendering architecture remains 
 ## Current repository revisions
 
 ```text
-rumiai-dev   0814f6cf26d51d4b3c50e33d8ab0fa78c9b7fa2b  (remote HEAD before this checkpoint)
-rumiai-os    e4949311e531e3dfe556147a361eed832d211bfe
-rumiai-tests 322cee67192e38c828145325131c9fe6d0574c40  (parallel suite work; not modified by this checkpoint)
+rumiai-dev   25a3966f954e6253905fa14d6e24a8c1702b1d11  (remote HEAD before this checkpoint)
+rumiai-os    ee7811a9ff9211ee0f6806447b115d0cdc00bf58
+rumiai-tests 818ff15403efe62ba56e40ed76f1e9c829a25dcf
 ```
 
 Fresh remote HEAD retrieval remains mandatory before future writes.
@@ -27,11 +27,11 @@ Fresh remote HEAD retrieval remains mandatory before future writes.
 - If the substring fallback is also empty, unqualified lookup returns status `2`.
 - Exact ambiguity remains status `3`; owner-qualified lookup remains exact-only with no substring fallback.
 - Normal exact-topic presentation delegates to `pager`; `--no-pager` writes an exactly selected topic directly.
-- Linux `pager` prefers `less` and degrades to `more` when `less` is unavailable; other current hosts use `more` until concrete evidence requires another adapter.
+- `pager` is a standalone POSIX-sh wrapper: it selects `less` whenever available and otherwise `more`, delegates stdin/file operands directly, does not inspect terminal state, does not pre-resolve files, and does not normalize backend statuses.
 - Every RumiAI-owned directly executable command identity requires an owner-local manual topic.
 - Every RumiAI-owned library identity requires exactly one owner-local `<library-name>.lib.<runtime>` manual topic that exposes all public functions and no internal functions as callable API.
 - Legacy library API visibility must not be inferred from historical unprefixed helper names. `todo/library-api-visibility-realignment.md` owns the separate product/API migration needed before those libraries can receive stable compliant manuals.
-- `rumiai-tests` remains owned by the active parallel suite-realignment task; this documentation work unit does not modify it.
+- Broader `rumiai-tests` ownership remains with the active suite-realignment task; the pager-specific permanent tests were realigned in this work unit because the newly accepted pager contract made the previous tests stale.
 
 ## Completed
 
@@ -47,7 +47,7 @@ Fresh remote HEAD retrieval remains mandatory before future writes.
   - owner-qualified missing topic -> `2` with no fallback;
   - shell syntax check -> PASS.
 - After the command-manual backfill, a further Debian targeted check confirmed that `manual menu` lists `sys menu-ext`, `sys menu-ext-adv`, `sys menu-ext-adv-fs`, while exact `manual mk` still selects the exact topic rather than entering substring search.
-- `pager` remains the host-normalizing presentation boundary; earlier Debian development evidence exercised both Linux `more` degradation and a real available `less` backend. This remains auxiliary development evidence, not physical/stable-host validation.
+- `pager` was deliberately reduced to a standalone backend-selection wrapper at `rumiai-os@ee7811a9ff9211ee0f6806447b115d0cdc00bf58`: no TTY branch, no `cat` substitution, no path resolution/validation and no status normalization. Its operational manual was realigned in the same product work unit.
 - `rumiai-os@fce90adde7ee5901a6c71560a7cf72b8df9492b2` materialized the 18 command topics that were previously missing. Together with the pre-existing topics, every command identity at that checkpoint had an owner-local manual topic:
   - technical/root and sys: `m`, `digest`, `extract`, `http-fetch`, `lang`, `lang-set`, `log`, `manual`, `menu-ext`, `menu-ext-adv`, `menu-ext-adv-fs`, `mk`, `osarch-update`, `pager`, `pkg`, `pkg-analyze`, `read-key`, `readc`, `shell`, `srv`, `state-path`;
   - branded ai: `rumiai-os`, `rumiai-os-sh`.
@@ -72,7 +72,7 @@ Fresh remote HEAD retrieval remains mandatory before future writes.
 
 ## Current state
 
-The `manual` lookup/paging surface and command-manual completeness requirement are implemented for the current product revision.
+The `manual` lookup/paging surface and command-manual completeness requirement are implemented for the current product revision. `pager` now has only the accepted `less`-when-available / `more`-otherwise wrapper responsibility.
 
 Current unqualified lookup is:
 
@@ -89,7 +89,7 @@ All current command identities, including the unified `osarch` command and its c
 
 Library documentation is only partially complete. The current product contains compliant manuals for `array.lib.sh`, `map.lib.sh`, `mk-materialize.lib.sh`, `mk-materialize-copy.lib.sh`, `osarch.lib.sh`, `pkg-install.lib.sh`, `rand.lib.sh` and `term.lib.sh`. The remaining legacy libraries cannot safely receive final public-API manuals until their intended public/internal function sets are classified and, where necessary, renamed with callers/tests realigned. That work is already represented by `todo/library-api-visibility-realignment.md` and is deliberately not guessed inside this documentation work unit.
 
-The existing permanent manual tests are not closure evidence for this task. The active parallel suite-realignment task must provide trustworthy coverage for the current behavior, including substring fallback and command/library-to-manual structural completeness.
+The existing permanent manual tests are not closure evidence for the whole documentation task. Pager-specific coverage has been realigned to the new wrapper contract; the active parallel suite-realignment task still owns broader trustworthy coverage, including substring fallback and command/library-to-manual structural completeness.
 
 No physical or formal cross-host/stable-host validation has been performed for this final revision.
 
