@@ -112,7 +112,20 @@ The normalized actions have host-neutral semantics:
 
 Native manager verbs and file formats are adapter details. Linux/systemd and macOS/launchd are not required to expose textually identical operations.
 
-The host manager supervises the provider's foreground process directly. It must not invoke portable `srv start`, because that command owns its own background/PID lifecycle. Each host-managed launch resolves the current system facility default and then the exact provider service realization before entering the package launcher. A provider-default change therefore affects a later host start/restart, not an already-running host process.
+The host manager supervises the provider's foreground process directly. It must not invoke portable `srv start`, because that command owns its own background/PID lifecycle. Each host-managed launch enters an internal foreground execution path in `srv`, resolves the current system facility default and exact provider service realization at launch time, then replaces itself with the normal package-launch path. The persistent host definition therefore does not freeze a concrete provider. A provider-default change affects a later host start/restart, not an already-running host process.
+
+Persistent host definitions must encode the exact `m` bootstrap invocation as argv/data rather than generated shell source.
+
+For the current Linux/systemd user adapter:
+
+- the unit `ExecStart` executable is the already-contracted `/bin/sh`, because systemd rejects arbitrary special-character executable pathnames even when unit escaping reconstructs them correctly;
+- the exact `m` bootstrap, `srv` command, internal foreground-run operand and service identity are passed as separately serialized arguments;
+- the serializer must preserve relocatable paths containing spaces and shell/systemd metacharacters without shell evaluation.
+
+For the current macOS/launchd user adapter:
+
+- the plist `ProgramArguments` array carries the exact `m` bootstrap, `srv` command, internal foreground-run operand and service identity as distinct argv elements;
+- the plist is constructed through the host property-list utility rather than by interpolating arbitrary paths into XML source.
 
 User host integration does not silently enable a host policy that extends account lifetime beyond the host's normal user-manager/session rules, and it does not invent an automatic restart policy. Such policies require separate explicit contracts.
 
@@ -166,4 +179,8 @@ SRV-24  host managers supervise the provider foreground process directly rather 
 SRV-25  each host-managed launch resolves current system facility-default intent; later selector changes do not mutate an already-running host process
 SRV-26  user host integration does not automatically enable linger or an automatic restart policy
 SRV-27  system-wide host supervision remains behind a separate administrative/account/environment contract
+SRV-28  host user definitions preserve exact relocatable m/srv argv as data and do not reinterpret RumiAI pathnames as generated shell source
+SRV-29  the systemd user adapter enters m through /bin/sh and serialized argv so arbitrary special-character m paths are not used as the systemd executable pathname
+SRV-30  the launchd user adapter uses a ProgramArguments argv array built through the host plist utility rather than manual XML interpolation
+SRV-31  persistent host definitions do not freeze a concrete provider; the internal foreground runner resolves current facility-default intent at each host start/restart
 ```

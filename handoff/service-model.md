@@ -218,7 +218,7 @@ macOS/launchd gui/<uid>
     uninstall bootout when needed + remove definition
 ```
 
-Native verbs remain adapter detail. The remaining user-adapter issue before product implementation is safe serialization/relocatability of the exact `m` bootstrap invocation into systemd unit and launchd plist definitions. Do not assume that `m_ROOT` or the host account home contains no spaces or metacharacters.
+Native verbs remain adapter detail. The serialization/relocatability boundary is resolved by PoC 012 follow-up run `35511575613` at `rumiai-dev-PoCs@a500e3073d89d00127e0a174958ad64a0d43dbef`: Ubuntu and macOS both passed with bootstrap/command paths containing spaces and multiple metacharacters. Linux must use `/bin/sh` as the systemd executable and serialize the exact `m` + command paths as arguments; macOS safely constructs distinct `ProgramArguments` entries through `plutil`.
 
 ### 4. System host supervision
 
@@ -226,7 +226,7 @@ System scope remains blocked on a genuine administrative-policy question: execut
 
 ## Next action
 
-Proceed autonomously with the user-host adapter serialization/relocatability proof and, if that boundary is resolved cleanly, implement and permanently test `srv host user`.
+Implement and permanently test `srv host user` using the resolved serialization contract. The host definition must invoke an internal foreground `srv` execution path that re-resolves current facility-default intent at every host start/restart and then `exec`s the exact provider package command through `m`.
 
 Do not implement `srv host system` until the execution-account/environment/privilege contract is fixed.
 
@@ -240,7 +240,7 @@ Actual decision gates are now limited to:
 
 - first real catalog service provider and any package-specific operating-mode policy it requires;
 - removal criterion for the temporary legacy PATH compatibility path;
-- safe manifest serialization and relocatability for user host adapters;
+- product implementation/permanent validation of the now-proven user host adapters;
 - system-wide account/environment/install mechanics behind the administrative boundary.
 
 Physical stable-host validation has not been performed for this checkpoint.
