@@ -64,12 +64,19 @@ Durable service semantics are canonical in the specifications; this handoff reco
 - A configured-but-invalid provider path fails. It must not silently fall back to PATH.
 - The historical PATH `<service>-start` mechanism remains a temporary compatibility path only when no provider-backed default applies.
 - Endpoint, readiness and application health remain outside the baseline service part.
-- Explicit host integration retains the public design shape:
+- User host integration is now canonically normalized as:
   ```text
-  srv host user <action> <service>
-  srv host system <action> <service>
+  srv host user install <service>
+  srv host user uninstall <service>
+  srv host user start <service>
+  srv host user stop <service>
+  srv host user restart <service>
   ```
-  but its adapter mechanics are not yet implemented.
+- Host `user` is the calling POSIX account/login supervisor context and is distinct from RumiAI `state/user`.
+- Host managers supervise the foreground provider directly; they do not invoke portable `srv start`.
+- Each host-managed launch resolves current system facility-default intent; selector changes affect a later launch/restart, not the running instance.
+- User integration does not enable systemd linger or an automatic restart policy.
+- `srv host system ...` remains a design boundary only; system-wide account/environment/privilege semantics are not yet fixed.
 - System-wide host integration remains an explicit administrative boundary; a service account must not gain ownership/write access over executable product roots merely because it runs a service.
 
 ## Implemented portable/provider-backed bridge
@@ -155,7 +162,7 @@ Keycloak is a plausible current catalog candidate, but the existing package comm
 
 The temporary legacy PATH path remains because there is not yet a real catalog provider/migration criterion.
 
-Host supervision remains unimplemented.
+User host-supervision semantics are now promoted, but product adapters are not yet implemented. System scope remains unresolved.
 
 ## Remaining active work
 
@@ -177,22 +184,51 @@ Do not add a wrapper whose policy is semantically arbitrary. If the candidate re
 
 After at least one real provider migration and a clear compatibility criterion, decide when the historical PATH `<service>-start` fallback can be removed.
 
-### 3. Host supervision
+### 3. User host supervision
 
-Design and implement the separate opt-in host boundary:
+PoC 012 in `rumiai-dev-PoCs` exercised real user supervisors on GitHub-hosted Ubuntu and macOS.
+
+Evidence:
 
 ```text
-srv host user <action> <service>
-srv host system <action> <service>
+run 35509150751
+    Linux systemd user lifecycle   PASS
+    macOS launchd user lifecycle   PASS
+
+run 35509294369
+    Linux systemd user lifecycle   PASS
+    macOS awaited bootout/bootstrap lifecycle PASS
 ```
 
-The design must normalize `m` operations onto systemd/launchd semantics rather than pretending the host APIs are textually identical.
+The tested native mapping establishes:
 
-System-wide `install`/`uninstall` are higher-level administrative integration operations, not merely supervisor subcommands.
+```text
+Linux/systemd --user
+    install   unit persistence + enable
+    start     start
+    stop      stop
+    restart   restart
+    uninstall stop + disable + remove + reload
+
+macOS/launchd gui/<uid>
+    install   persistent LaunchAgent definition
+    start     bootstrap when unloaded
+    stop      bootout while definition remains installed
+    restart   kickstart -k for a loaded job
+    uninstall bootout when needed + remove definition
+```
+
+Native verbs remain adapter detail. The remaining user-adapter issue before product implementation is safe serialization/relocatability of the exact `m` bootstrap invocation into systemd unit and launchd plist definitions. Do not assume that `m_ROOT` or the host account home contains no spaces or metacharacters.
+
+### 4. System host supervision
+
+System scope remains blocked on a genuine administrative-policy question: execution account, environment/state mapping and privilege transition. Do not implement `srv host system` by silently assuming root execution, creating an account, enabling sudo or reusing `state/user`.
 
 ## Next action
 
-Proceed autonomously with host-supervision analysis that can be derived from current POSIX/state/security contracts and real systemd/launchd mechanics.
+Proceed autonomously with the user-host adapter serialization/relocatability proof and, if that boundary is resolved cleanly, implement and permanently test `srv host user`.
+
+Do not implement `srv host system` until the execution-account/environment/privilege contract is fixed.
 
 For the first real catalog service provider, stop only at the point where a package-specific operating-mode decision is genuinely required. Do not choose a development/insecure mode or production networking/security defaults on the user's behalf.
 
@@ -204,7 +240,7 @@ Actual decision gates are now limited to:
 
 - first real catalog service provider and any package-specific operating-mode policy it requires;
 - removal criterion for the temporary legacy PATH compatibility path;
-- exact normalized host actions and adapter mechanics where systemd and launchd differ;
+- safe manifest serialization and relocatability for user host adapters;
 - system-wide account/environment/install mechanics behind the administrative boundary.
 
 Physical stable-host validation has not been performed for this checkpoint.

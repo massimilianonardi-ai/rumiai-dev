@@ -88,9 +88,35 @@ launchd
 an internal permanent m supervisor daemon
 ```
 
-Future host-service integration is a separate, opt-in, host-specific capability and must preserve the portable lifecycle rather than replacing it.
+Host-service integration is a separate, opt-in, host-specific capability and preserves the portable service/facility model rather than replacing it.
 
-System-wide installation/supervision requires an explicit administrative boundary and separate host validation.
+The current **user host-supervision** surface is:
+
+```text
+srv host user install <service>
+srv host user uninstall <service>
+srv host user start <service>
+srv host user stop <service>
+srv host user restart <service>
+```
+
+Here `user` means the host supervisor associated with the calling POSIX account/login context. It is **not** the `state/user` scope from `STATE-MODEL.md`, is not an RumiAI user identity and does not redefine that state model.
+
+The normalized actions have host-neutral semantics:
+
+- `install` persistently registers the service with the calling account's host supervisor but does not itself start the service in the current session;
+- `start` starts an installed host integration;
+- `stop` stops the current hosted process while leaving the integration installed;
+- `restart` replaces/restarts the current hosted process through the host supervisor;
+- `uninstall` stops/unloads the integration when necessary and removes its persistent host registration.
+
+Native manager verbs and file formats are adapter details. Linux/systemd and macOS/launchd are not required to expose textually identical operations.
+
+The host manager supervises the provider's foreground process directly. It must not invoke portable `srv start`, because that command owns its own background/PID lifecycle. Each host-managed launch resolves the current system facility default and then the exact provider service realization before entering the package launcher. A provider-default change therefore affects a later host start/restart, not an already-running host process.
+
+User host integration does not silently enable a host policy that extends account lifetime beyond the host's normal user-manager/session rules, and it does not invent an automatic restart policy. Such policies require separate explicit contracts.
+
+System-wide installation/supervision remains outside this user baseline. It requires an explicit administrative boundary, account/environment semantics and separate host validation before `srv host system ...` can be implemented.
 
 ## Deferred unless separately specified
 
@@ -104,8 +130,10 @@ service dependency graphs
 multi-instance service orchestration
 generic health protocols
 automatic SIGKILL escalation
-systemd installation
-launchd installation
+automatic systemd user lingering
+automatic systemd/launchd restart policy
+system-wide systemd installation
+system-wide launchd installation
 ```
 
 ## Invariants
@@ -130,4 +158,12 @@ SRV-16  stop uses recorded runtime instance state rather than resolving a new pr
 SRV-17  endpoint, readiness and health are outside the baseline service typed part
 SRV-18  global provider-backed start uses the system facility default and never consumer package bindings
 SRV-19  during migration, legacy PATH <service>-start fallback is allowed only when no provider-backed facility default applies; a configured-but-invalid provider path must fail rather than fall back
+SRV-20  user host supervision exposes normalized install, uninstall, start, stop and restart actions
+SRV-21  host user scope denotes the calling POSIX account/login supervisor context and is distinct from m state/user
+SRV-22  user host install persists supervisor registration without starting the current hosted process
+SRV-23  user host stop leaves persistent host integration installed and uninstall removes it
+SRV-24  host managers supervise the provider foreground process directly rather than portable srv start
+SRV-25  each host-managed launch resolves current system facility-default intent; later selector changes do not mutate an already-running host process
+SRV-26  user host integration does not automatically enable linger or an automatic restart policy
+SRV-27  system-wide host supervision remains behind a separate administrative/account/environment contract
 ```
