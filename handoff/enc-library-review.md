@@ -10,7 +10,7 @@ Review and realign `lib/sys/sh/enc.lib.sh` function by function, preserving inte
 ## Current repository revisions
 
 ```text
-rumiai-dev   fb46feb05d69b8d5d7ab26a42aee4311d3417fb0
+rumiai-dev   668cd3118c8110c16eb644b7e0e9a099bf52a775
 rumiai-os    1de834c981f5c00965158ca0a82760997ef0e54b
 rumiai-tests f439cd998af58273d1868e809a608f3e4f443976
 ```
@@ -87,6 +87,11 @@ todo/library-api-visibility-realignment.md
 - The same product work realigns `lib/sys/sh/enc.lib.sh` from executable mode 100755 to the required sourced-library mode 100644.
 - `rumiai-tests@f384b9da79b467d8cdb6e26482b5ef350d543af4` adds executable permanent tests `gpg-interface.test` and `gpg-roundtrip.test`: the first protects fd3 routing, argv/environment secret exclusion, shell-function shadow resistance, interactive/unattended option separation and OCB option preference/fallback at the external GPG boundary; the second protects real GnuPG OCB round-trip behavior, wrong-passphrase failure, newline-passphrase rejection and argument statuses when a suitable GnuPG is available.
 - Auxiliary Debian 13 x86_64 execution of the exact candidate encode/decode logic passed real GnuPG 2.4.7 OCB round trips under dash, BusyBox sh and Bash POSIX using the `--force-ocb` fallback and a passphrase containing spaces and shell metacharacters. Supplied-passphrase fd3 behavior also passed against an external-boundary probe under all three shells. Automated real Pinentry interaction was attempted through a pseudo-TTY but did not complete reliably in the auxiliary environment, so real interactive GnuPG/Pinentry behavior remains unvalidated there.
+
+- `encoded_file_edit` contract exploration now favors a sequential per-file transaction for one-or-more operands. Each operand is resolved with `pathsearch`; a private mode-0700 directory is created adjacent to the canonical target using atomic `mkdir` rather than non-POSIX `mktemp`; the original ciphertext is copied into that directory, decoded into a mode-0600 plaintext file, edited, re-encoded into a separate ciphertext file whose baseline metadata is seeded with POSIX `cp -p`, and only then committed over the target with same-filesystem `mv -f`. A decode/editor/encode/commit failure leaves the original target untouched and removes the temporary directory; already-completed earlier operands remain committed and processing stops at the first failure.
+- The candidate also compares the live target against the initial ciphertext snapshot before and after re-encoding, using POSIX `cmp`, to catch ordinary concurrent content changes before replacement. This is best-effort conflict detection rather than a locking contract; a narrow race still exists without a project-wide locking primitive.
+- A separate public `encoded_file_editor` helper appears unnecessary. Preferred direction is a direct optional `m_ENC_EDITOR` shell variable containing one editor utility name/path, defaulting to POSIX `vi`; no eval-based parsing of editor command strings or arguments. Editors must block until editing is complete. Generic editors may create their own swap/backup/undo artifacts outside the private temp directory according to user configuration, which the library cannot portably prevent.
+- Auxiliary stubbed validation of the proposed edit transaction passed under dash, BusyBox sh and Bash POSIX for two-file success, decode failure, editor failure, encode failure, concurrent target-content change detection and cleanup of temporary directories. No product implementation has been modified yet.
 
 ## Current state
 
