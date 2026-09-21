@@ -183,9 +183,9 @@ state-path system pkg <package> conf <service>
 The service account must not gain ownership or write access to executable RumiAI
 product/package roots merely because host registration required administrative
 privilege. Package-declared static `var/` routing remains governed by the existing
-system-state package contract; software requiring mutable data outside that contract
-must place/configure it in managed mutable state rather than make the installed
-provider root writable.
+system-state package contract. Provider-specific mutable-path behavior inside an
+upstream installation is a separate package concern and is not inferred or rewritten
+by the generic host-service lifecycle.
 
 For the Linux/systemd system adapter:
 

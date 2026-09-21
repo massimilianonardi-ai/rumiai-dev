@@ -12,8 +12,8 @@ service registry, provider graph or dependency graph.
 The portable/provider-backed bridge, the first real service provider, user-scope
 host supervision and legacy PATH-start migration are complete. The system-scope
 administrative policy is now approved and canonical; implementation/validation of
-that generic path is active. GeoServer-specific mutable-root analysis is explicitly
-deferred outside this work.
+that path is active. GeoServer remains the real reference service for system-host
+validation. Its broader mutable-root audit is deferred and does not block this task.
 
 ## Current repository revisions
 
@@ -224,9 +224,10 @@ to the current service/state/package specifications. Generic implementation is n
 present in `rumiai-os` and is undergoing permanent-test/formal-validation
 realignment.
 
-Provider-specific mutable installation-root requirements are not part of this generic
-closure. In particular, GeoServer system-host execution is not claimed until its
-mutable root surface has been audited separately.
+GeoServer is the real provider used to validate the system-host path. Its current
+upstream installation-root mutability is intentionally left unchanged in this work;
+the later mutable-root audit is a separate package-model refinement rather than a
+precondition for service-host validation.
 
 ### 2. Physical validation
 
@@ -416,5 +417,6 @@ A clean resume should:
    path;
 5. perform physical validation separately when the stable hosts are available.
 
-GeoServer mutable-root analysis is intentionally deferred and is not part of this
-generic service/facility/pkg closure.
+GeoServer mutable-root analysis is intentionally deferred. Continue to use GeoServer
+as the real service-provider validation case while leaving that separate package
+layout question unchanged.
