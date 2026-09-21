@@ -1,7 +1,7 @@
 # rumiai-tests suite realignment
 
 Status: Active
-Updated: 2026-09-20
+Updated: 2026-09-21
 
 ## Goal
 
@@ -10,9 +10,9 @@ Realign the permanent RumiAI test suite so that failures are evidence about curr
 ## Current repository revisions
 
 ```text
-rumiai-dev   5e9afbb1380b34674fbfac49b77291a30419956c
-rumiai-tests 818ff15403efe62ba56e40ed76f1e9c829a25dcf
-rumiai-os    ee7811a9ff9211ee0f6806447b115d0cdc00bf58
+rumiai-dev   e29fb8ac332ad8c0c9cfcab9f2edfea479a50566  (remote HEAD before this checkpoint)
+rumiai-tests e3f7d42f03747b924b18b7915f7d860d9148c913
+rumiai-os    564b27ce776b91f32870bdf771052dbe7afac38c
 pkg-catalog  5372c160441b0346b976db7f7a022196784c9425
 ```
 
@@ -59,12 +59,15 @@ The `rumiai-dev` revision above is the authoritative source revision read before
 - Chrome/Pulsar setuid and Java/Maven/NetBeans facility/dependency live evidence no longer reads private concrete paths. Successful composed integration is relied upon for setuid/facility/dependency materialization; Maven additionally executes through its public command and NetBeans checks its public command binding.
 - `validation/rumiai-os-health.conf` remains the broad health-scope binding from the earlier checkpoint; pager-specific validation is independently bound by `validation/pager.conf` to `rumiai-os@ee7811a9ff9211ee0f6806447b115d0cdc00bf58`.
 - The pager contract change was product work in `rumiai-os`; this suite task only realigned the affected permanent pager tests and validation binding.
+- `rumiai-tests@e3f7d42f03747b924b18b7915f7d860d9148c913` adds `tests/rumiai-os/editor/contract.test` for the new standalone editor abstraction. It exercises the real `editor` entrypoint against controlled external editor backends and protects the `nano` -> `vim` -> `vi` preference, unchanged argument forwarding, backend-status propagation, standalone shebang/syntax and operational-manual presence.
 
 ## Current state
 
 The source/contract audit has no remaining proven false-negative mechanism from the historical finding list in the deterministic core families reviewed so far.
 
 The pager group is aligned to the 2026-09-20 wrapper contract: `contract.test` checks the standalone command/manual surface and simple stdin/file delegation, while `delegation.test` exercises the real pager entrypoint against controlled external pager backends to verify `less` preference, `more` fallback, unchanged operand/stdin forwarding, caller-environment preservation and backend-status propagation. The superseded PTY-oriented `interactive.test` was removed.
+
+The editor group now contains one proportional contract test covering its complete wrapper responsibility; the editor backends are external dependencies and are controlled only at that boundary, while the real RumiAI-owned `bin/sys/editor` entrypoint is executed unchanged.
 
 Current package repository-adapter tests intentionally remain library/unit tests where they exercise public `pkg_repository_*` functions and model only the external HTTP/provider boundary. They must not be used as composed `pkg install` evidence.
 

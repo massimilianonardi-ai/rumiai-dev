@@ -1,7 +1,7 @@
 # enc.lib.sh review
 
 Status: Active
-Updated: 2026-09-20
+Updated: 2026-09-21
 
 ## Goal
 
@@ -10,9 +10,9 @@ Review and realign `lib/sys/sh/enc.lib.sh` function by function, preserving inte
 ## Current repository revisions
 
 ```text
-rumiai-dev   668cd3118c8110c16eb644b7e0e9a099bf52a775
-rumiai-os    1de834c981f5c00965158ca0a82760997ef0e54b
-rumiai-tests f439cd998af58273d1868e809a608f3e4f443976
+rumiai-dev   e29fb8ac332ad8c0c9cfcab9f2edfea479a50566  (remote HEAD before this checkpoint)
+rumiai-os    564b27ce776b91f32870bdf771052dbe7afac38c
+rumiai-tests e3f7d42f03747b924b18b7915f7d860d9148c913
 ```
 
 Fresh remote HEAD retrieval remains mandatory before future writes.
@@ -90,7 +90,7 @@ todo/library-api-visibility-realignment.md
 
 - `encoded_file_edit` contract exploration now favors a sequential per-file transaction for one-or-more operands. Each operand is resolved with `pathsearch`; a private mode-0700 directory is created adjacent to the canonical target using atomic `mkdir` rather than non-POSIX `mktemp`; the original ciphertext is copied into that directory, decoded into a mode-0600 plaintext file, edited, re-encoded into a separate ciphertext file whose baseline metadata is seeded with POSIX `cp -p`, and only then committed over the target with same-filesystem `mv -f`. A decode/editor/encode/commit failure leaves the original target untouched and removes the temporary directory; already-completed earlier operands remain committed and processing stops at the first failure.
 - The candidate also compares the live target against the initial ciphertext snapshot before and after re-encoding, using POSIX `cmp`, to catch ordinary concurrent content changes before replacement. This is best-effort conflict detection rather than a locking contract; a narrow race still exists without a project-wide locking primitive.
-- A separate public `encoded_file_editor` helper appears unnecessary. Preferred direction is a direct optional `m_ENC_EDITOR` shell variable containing one editor utility name/path, defaulting to POSIX `vi`; no eval-based parsing of editor command strings or arguments. Editors must block until editing is complete. Generic editors may create their own swap/backup/undo artifacts outside the private temp directory according to user configuration, which the library cannot portably prevent.
+- A separate public `encoded_file_editor` helper and a dedicated `m_ENC_EDITOR` variable are unnecessary. The generic `bin/sys/editor` command now owns terminal-editor selection (`nano` -> `vim` -> `vi`), so the preferred direction for `encoded_file_edit` is to invoke `editor` and not duplicate backend selection inside `enc.lib.sh`. The selected editor must block until editing is complete. Generic editors may create their own swap/backup/undo artifacts outside the private temp directory according to user configuration, which the library cannot portably prevent.
 - Auxiliary stubbed validation of the proposed edit transaction passed under dash, BusyBox sh and Bash POSIX for two-file success, decode failure, editor failure, encode failure, concurrent target-content change detection and cleanup of temporary directories. No product implementation has been modified yet.
 
 ## Current state

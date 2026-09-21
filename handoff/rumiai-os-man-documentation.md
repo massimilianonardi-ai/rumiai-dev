@@ -1,7 +1,7 @@
 # rumiai-os-man-documentation
 
 Status: Active
-Updated: 2026-09-20
+Updated: 2026-09-21
 
 ## Goal
 
@@ -12,9 +12,9 @@ The long-term multi-channel documentation source/rendering architecture remains 
 ## Current repository revisions
 
 ```text
-rumiai-dev   25a3966f954e6253905fa14d6e24a8c1702b1d11  (remote HEAD before this checkpoint)
-rumiai-os    ee7811a9ff9211ee0f6806447b115d0cdc00bf58
-rumiai-tests 818ff15403efe62ba56e40ed76f1e9c829a25dcf
+rumiai-dev   e29fb8ac332ad8c0c9cfcab9f2edfea479a50566  (remote HEAD before this checkpoint)
+rumiai-os    564b27ce776b91f32870bdf771052dbe7afac38c
+rumiai-tests e3f7d42f03747b924b18b7915f7d860d9148c913
 ```
 
 Fresh remote HEAD retrieval remains mandatory before future writes.
@@ -28,6 +28,7 @@ Fresh remote HEAD retrieval remains mandatory before future writes.
 - Exact ambiguity remains status `3`; owner-qualified lookup remains exact-only with no substring fallback.
 - Normal exact-topic presentation delegates to `pager`; `--no-pager` writes an exactly selected topic directly.
 - `pager` is a standalone POSIX-sh wrapper: it selects `less` whenever available and otherwise `more`, delegates stdin/file operands directly, does not inspect terminal state, does not pre-resolve files, and does not normalize backend statuses.
+- `editor` is a standalone POSIX-sh wrapper: it selects `nano`, then `vim`, then `vi`, forwards arguments unchanged, and leaves editing behavior and status to the selected backend.
 - Every RumiAI-owned directly executable command identity requires an owner-local manual topic.
 - Every RumiAI-owned library identity requires exactly one owner-local `<library-name>.lib.<runtime>` manual topic that exposes all public functions and no internal functions as callable API.
 - Legacy library API visibility must not be inferred from historical unprefixed helper names. `todo/library-api-visibility-realignment.md` owns the separate product/API migration needed before those libraries can receive stable compliant manuals.
@@ -48,6 +49,7 @@ Fresh remote HEAD retrieval remains mandatory before future writes.
   - shell syntax check -> PASS.
 - After the command-manual backfill, a further Debian targeted check confirmed that `manual menu` lists `sys menu-ext`, `sys menu-ext-adv`, `sys menu-ext-adv-fs`, while exact `manual mk` still selects the exact topic rather than entering substring search.
 - `pager` was deliberately reduced to a standalone backend-selection wrapper at `rumiai-os@ee7811a9ff9211ee0f6806447b115d0cdc00bf58`: no TTY branch, no `cat` substitution, no path resolution/validation and no status normalization. Its operational manual was realigned in the same product work unit.
+- `rumiai-os@564b27ce776b91f32870bdf771052dbe7afac38c` adds the standalone `bin/sys/editor` wrapper and its required `res/sys/manual/editor` topic. The command uses the fixed backend order `nano` -> `vim` -> `vi` and delegates arguments/status without adding editor-specific policy.
 - `rumiai-os@fce90adde7ee5901a6c71560a7cf72b8df9492b2` materialized the 18 command topics that were previously missing. Together with the pre-existing topics, every command identity at that checkpoint had an owner-local manual topic:
   - technical/root and sys: `m`, `digest`, `extract`, `http-fetch`, `lang`, `lang-set`, `log`, `manual`, `menu-ext`, `menu-ext-adv`, `menu-ext-adv-fs`, `mk`, `osarch-update`, `pager`, `pkg`, `pkg-analyze`, `read-key`, `readc`, `shell`, `srv`, `state-path`;
   - branded ai: `rumiai-os`, `rumiai-os-sh`.
@@ -85,7 +87,7 @@ manual <topic>
         -> empty: status 2
 ```
 
-All current command identities, including the unified `osarch` command and its compatibility wrappers, have manual topics.
+All current command identities, including `editor`, the unified `osarch` command and its compatibility wrappers, have manual topics.
 
 Library documentation is only partially complete. The current product contains compliant manuals for `array.lib.sh`, `map.lib.sh`, `mk-materialize.lib.sh`, `mk-materialize-copy.lib.sh`, `osarch.lib.sh`, `pkg-install.lib.sh`, `rand.lib.sh` and `term.lib.sh`. The remaining legacy libraries cannot safely receive final public-API manuals until their intended public/internal function sets are classified and, where necessary, renamed with callers/tests realigned. That work is already represented by `todo/library-api-visibility-realignment.md` and is deliberately not guessed inside this documentation work unit.
 
