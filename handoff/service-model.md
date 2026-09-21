@@ -10,8 +10,10 @@ facilities and explicit host-supervision integration without introducing a dupli
 service registry, provider graph or dependency graph.
 
 The portable/provider-backed bridge, the first real service provider, user-scope
-host supervision and legacy PATH-start migration are now complete. The remaining
-active work is limited to system-scope administrative policy and physical validation.
+host supervision and legacy PATH-start migration are complete. The system-scope
+administrative policy is now approved and canonical; implementation/validation of
+that generic path is active. GeoServer-specific mutable-root analysis is explicitly
+deferred outside this work.
 
 ## Current repository revisions
 
@@ -217,27 +219,14 @@ corrected to a valid unique facility identity before the final successful run.
 
 ### 1. System host supervision
 
-`srv host system ...` remains intentionally unimplemented.
+The administrative/account/state policy has been explicitly approved and promoted
+to the current service/state/package specifications. Generic implementation is now
+present in `rumiai-os` and is undergoing permanent-test/formal-validation
+realignment.
 
-This is now the only remaining service-model design gate. Before implementation,
-the project must decide the administrative contract for at least:
-
-```text
-execution account
-account creation/reuse policy
-privilege transition
-system service environment
-package/state HOME mapping
-ownership and writable-state boundaries
-installation/registration privilege
-service-account access to package/provider state
-```
-
-Do not silently implement system scope as root execution, create a service account,
-enable sudo, reuse RumiAI `state/user`, or grant a service account ownership/write
-access over executable product roots.
-
-This is a genuine policy decision rather than missing generic plumbing.
+Provider-specific mutable installation-root requirements are not part of this generic
+closure. In particular, GeoServer system-host execution is not claimed until its
+mutable root surface has been audited separately.
 
 ### 2. Physical validation
 
@@ -247,11 +236,11 @@ implemented portable and user-host service paths.
 Physical validation on the stable reference hosts remains separate under
 `PHYSICAL-TESTING.md` and must not be inferred from GitHub-hosted evidence.
 
-## Working system-host proposal — not yet canonical
+## Accepted system-host implementation checkpoint
 
-The following is the current proposal for resolving the remaining system-scope
-administrative gate. It is working design state only until explicitly accepted and
-promoted into the canonical service/state/package specifications.
+The system-host policy below has been accepted and promoted into the canonical
+service/state/package specifications. This section now records only the task-local
+implementation checkpoint while permanent validation is completed.
 
 ### Administrative invocation
 
@@ -265,7 +254,7 @@ srv host system stop <service>
 srv host system restart <service>
 ```
 
-The proposed baseline requires the caller of every `srv host system ...` mutation
+The baseline requires the caller of every `srv host system ...` mutation
 to already possess host administrative/root authority. `srv` does not invoke
 `sudo`, `doas` or another privilege-escalation mechanism itself.
 
@@ -295,7 +284,7 @@ state. No equivalent generic dynamic-account mechanism is assumed on macOS.
 A system-hosted provider must not use RumiAI `state/user`; that namespace is not a
 POSIX account identity.
 
-The proposed launch context instead uses system package state and isolates it by the
+The launch context uses system package state and isolates it by the
 service facility identity through the existing State Instance mechanism:
 
 ```text
@@ -339,21 +328,16 @@ catalog/runtime code
 ```
 
 Package-declared mutable `var/` state remains governed by the existing static
-system-state routing model. Where a provider requires mutable data that otherwise
-lives in its executable tree, the package definition must route/configure that data
-into managed mutable state rather than making the executable package root writable.
-
-For GeoServer specifically, production system-host support should move
-`GEOSERVER_DATA_DIR` away from the immutable installation root and into its
-package HOME/data state derived from the system-service launch context.
+system-state routing model. Provider-specific mutable-root analysis is outside the
+generic system-host implementation work and must not be guessed from one upstream
+directory convention.
 
 ### Provider reconciliation
 
 The system facility default remains the provider-selection authority; system-host
 registration does not become a second provider registry.
 
-Because system service state permissions are prepared administratively, the proposed
-system registration records the exact concrete provider that was resolved when
+Because system service state permissions are prepared administratively, the system registration records the exact concrete provider that was resolved when
 `install` last reconciled the service. At each hosted launch the internal runner:
 
 1. resolves the current system facility default;
@@ -378,7 +362,7 @@ authoritative package/service state.
 
 ### Host adapters
 
-Proposed Linux baseline:
+Linux baseline:
 
 ```text
 systemd system unit
@@ -388,7 +372,7 @@ exact serialized m/srv argv
 persistent enablement without implicit start during install
 ```
 
-Proposed macOS baseline:
+macOS baseline:
 
 ```text
 /Library/LaunchDaemons
@@ -421,16 +405,16 @@ providers.
 
 ## Next action
 
-The next implementation work is blocked on the system-scope administrative policy.
-
-A clean resume should therefore:
+A clean resume should:
 
 1. perform the normal mandatory retrieval/preflight;
-2. confirm that current HEAD deltas do not alter the service/package contracts above;
-3. review/accept or correct the working system-host proposal recorded above;
-4. after acceptance, promote the policy into current specifications and implement
-   `srv host system ...`;
+2. reconcile any concurrent HEAD movement;
+3. complete permanent tests for generic `srv host system ...`, including
+   non-root execution account, State Instance HOME, provider reconciliation/stale
+   registration and native systemd/launchd lifecycle;
+4. run formal Linux/x86_64 and Darwin/arm64 validation for the generic system-host
+   path;
 5. perform physical validation separately when the stable hosts are available.
 
-No first-provider, Java 21, GeoServer, repository-metadata or legacy-PATH migration
-work remains pending.
+GeoServer mutable-root analysis is intentionally deferred and is not part of this
+generic service/facility/pkg closure.
