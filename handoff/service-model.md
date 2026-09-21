@@ -18,7 +18,7 @@ active work is limited to system-scope administrative policy and physical valida
 Current synchronized checkpoint before this handoff update:
 
 ```text
-rumiai-dev      94f43ef27d531aac90e0d1da6fd8921917666461
+rumiai-dev      c221eb8562f5939b2ae46472fd1fbc528f9a5231
 rumiai-os       f27f08f80d1e7407c8d8bd686a2beb4eb443eeb3
 rumiai-tests    d61616898215d88a762aed191e7bbf5f096842c0
 pkg-catalog     3749496e16172db00556751955280e7f3c7cbf61
@@ -247,6 +247,178 @@ implemented portable and user-host service paths.
 Physical validation on the stable reference hosts remains separate under
 `PHYSICAL-TESTING.md` and must not be inferred from GitHub-hosted evidence.
 
+## Working system-host proposal — not yet canonical
+
+The following is the current proposal for resolving the remaining system-scope
+administrative gate. It is working design state only until explicitly accepted and
+promoted into the canonical service/state/package specifications.
+
+### Administrative invocation
+
+System-scope lifecycle operations remain explicit administrative actions:
+
+```text
+srv host system install <service> <account>
+srv host system uninstall <service>
+srv host system start <service>
+srv host system stop <service>
+srv host system restart <service>
+```
+
+The proposed baseline requires the caller of every `srv host system ...` mutation
+to already possess host administrative/root authority. `srv` does not invoke
+`sudo`, `doas` or another privilege-escalation mechanism itself.
+
+### Execution account
+
+`install` receives one explicit pre-existing POSIX account. The account:
+
+- must already exist in the host account database;
+- must not be UID 0/root in the baseline;
+- is not created, removed or modified by `srv`;
+- may be a dedicated non-login service account and that is the recommended
+  deployment shape;
+- uses its host primary/supplementary group membership as configured by the
+  administrator; group-management policy remains outside `srv`.
+
+Linux/systemd should express this through the native system-unit execution-account
+field. macOS/launchd should express the same semantic choice through the native
+LaunchDaemon account field. The provider process itself never starts as root merely
+because registration required administrative privilege.
+
+Linux `DynamicUser=` is deliberately not the baseline because it is host-specific
+and its recycled UID lifetime is a poor match for persistent RumiAI-managed service
+state. No equivalent generic dynamic-account mechanism is assumed on macOS.
+
+### System package state
+
+A system-hosted provider must not use RumiAI `state/user`; that namespace is not a
+POSIX account identity.
+
+The proposed launch context instead uses system package state and isolates it by the
+service facility identity through the existing State Instance mechanism:
+
+```text
+state-path system pkg <provider-package> home <service>
+state-path system pkg <provider-package> conf <service>
+```
+
+and analogously for other package areas when needed.
+
+This gives a service-specific package-state identity such as:
+
+```text
+<package>@!<service>
+```
+
+without adding a new state scope, owner class or registry.
+
+The package launcher therefore needs an explicit internal system-service launch
+context so that HOME/config resolution can use `scope=system` plus
+`state-instance=<service>` instead of the normal user package state. The exact
+private transport/API for that context remains an implementation question and
+should reuse the existing launcher rather than create a second launcher model.
+
+### Ownership boundary
+
+Administrative install/reconciliation creates only the exact mutable system-state
+paths required by the selected provider/service and assigns those paths to the
+configured execution account.
+
+The account must not receive ownership or write access to:
+
+```text
+$m_ROOT
+$m_ROOT/m
+$m_ROOT/bin
+$m_ROOT/lib
+$m_ROOT/res
+$m_ROOT/pkg/<concrete>
+provider executable/useful roots
+catalog/runtime code
+```
+
+Package-declared mutable `var/` state remains governed by the existing static
+system-state routing model. Where a provider requires mutable data that otherwise
+lives in its executable tree, the package definition must route/configure that data
+into managed mutable state rather than making the executable package root writable.
+
+For GeoServer specifically, production system-host support should move
+`GEOSERVER_DATA_DIR` away from the immutable installation root and into its
+package HOME/data state derived from the system-service launch context.
+
+### Provider reconciliation
+
+The system facility default remains the provider-selection authority; system-host
+registration does not become a second provider registry.
+
+Because system service state permissions are prepared administratively, the proposed
+system registration records the exact concrete provider that was resolved when
+`install` last reconciled the service. At each hosted launch the internal runner:
+
+1. resolves the current system facility default;
+2. requires it to match the concrete prepared by the installed system registration;
+3. resolves that concrete's service realization;
+4. launches it with the prepared system-service package-state context.
+
+If the facility default changes, the currently running process is unaffected and a
+later system start/restart fails as a stale registration until the administrator
+reruns:
+
+```text
+srv host system install <service> <account>
+```
+
+That install is an idempotent reconciliation operation: it prepares the current
+provider's state permissions and atomically refreshes native registration, but does
+not itself start or retarget an already-running service.
+
+Uninstall removes native registration only. It does not delete the POSIX account or
+authoritative package/service state.
+
+### Host adapters
+
+Proposed Linux baseline:
+
+```text
+systemd system unit
+Type=simple
+User=<account>
+exact serialized m/srv argv
+persistent enablement without implicit start during install
+```
+
+Proposed macOS baseline:
+
+```text
+/Library/LaunchDaemons
+UserName=<account>
+ProgramArguments exact argv array
+persistent registration without implicit start during install
+```
+
+Both managers supervise the provider foreground process directly, as already required
+for user-host supervision. Automatic restart policy remains outside the baseline.
+
+### Proposal rationale
+
+This shape preserves current RumiAI boundaries:
+
+- no new service/provider graph;
+- no new state scope or owner class;
+- no implicit mapping from RumiAI `state/user` to POSIX users;
+- no automatic account-management subsystem;
+- no hidden privilege escalation;
+- no writable executable product/package tree for service accounts;
+- host-specific account dropping stays inside the systemd/launchd adapters;
+- provider/default changes remain explicit administrative deployment transitions.
+
+The principal tradeoff is intentional: system-host provider changes require an
+explicit privileged reconciliation step before the next hosted launch. This is
+preferred over granting service accounts broad write access to system package state
+or allowing a boot-time unprivileged process to materialize state for arbitrary new
+providers.
+
 ## Next action
 
 The next implementation work is blocked on the system-scope administrative policy.
@@ -255,8 +427,9 @@ A clean resume should therefore:
 
 1. perform the normal mandatory retrieval/preflight;
 2. confirm that current HEAD deltas do not alter the service/package contracts above;
-3. resolve the system-host execution-account/privilege/state policy with the user;
-4. only then specify and implement `srv host system ...`;
+3. review/accept or correct the working system-host proposal recorded above;
+4. after acceptance, promote the policy into current specifications and implement
+   `srv host system ...`;
 5. perform physical validation separately when the stable hosts are available.
 
 No first-provider, Java 21, GeoServer, repository-metadata or legacy-PATH migration
