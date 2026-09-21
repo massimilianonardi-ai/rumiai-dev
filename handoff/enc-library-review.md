@@ -10,9 +10,9 @@ Review and realign `lib/sys/sh/enc.lib.sh` function by function, preserving inte
 ## Current repository revisions
 
 ```text
-rumiai-dev   84254a56fe490466fab25be16a954b2128723284  (remote HEAD before this checkpoint)
-rumiai-os    62f170806176943d7f699846cc42b4c5c7aa8eaa
-rumiai-tests a1c3e346848fea60fe2b066a80916de53f0ad724
+rumiai-dev   852c8adec75fef15b49c4d6d6846396821291a19  (remote HEAD before this checkpoint)
+rumiai-os    f27f08f80d1e7407c8d8bd686a2beb4eb443eeb3
+rumiai-tests d61616898215d88a762aed191e7bbf5f096842c0
 ```
 
 Fresh remote HEAD retrieval remains mandatory before future writes.
