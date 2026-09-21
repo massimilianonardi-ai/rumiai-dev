@@ -10,9 +10,9 @@ Review and realign `lib/sys/sh/enc.lib.sh` function by function, preserving inte
 ## Current repository revisions
 
 ```text
-rumiai-dev   b963551a7a40f1fb8e92a7cd0bad8d6f4e4f2369
-rumiai-os    470f36729cf1ff8b64c4a8534e79b0f82d047258
-rumiai-tests f384b9da79b467d8cdb6e26482b5ef350d543af4
+rumiai-dev   1f5805b8980af948ccb8e841f2bac80c42791fec
+rumiai-os    6eca0babbdcf8a71aab81ce69692aee6f7f98e70
+rumiai-tests 064cf7dec9f28c9459f1e53e54a0d3451a9bdaa0
 ```
 
 Fresh remote HEAD retrieval remains mandatory before future writes.
@@ -56,6 +56,11 @@ todo/library-api-visibility-realignment.md
 - Because `encoded_file_import` is itself a POSIX shell function, it cannot reproduce the caller's outer positional parameters exactly as dot can; the implementation should avoid exposing its own file operand or plaintext buffer as positional parameters to the imported source. Decrypted input is expected to be valid POSIX shell source text; NUL-bearing binary content is outside this API purpose.
 - A candidate multi-file loop using `eval "$( ... )"` was analyzed and is not suitable unchanged. Failures from `pathsearch` or `decode` inside the command substitution become an empty eval operand and are therefore reported as success; the following `shift` also overwrites ordinary non-zero eval status. Passing the decrypted source through `printf '%s\n' "$source"` would additionally expose the full plaintext in argv on implementations where printf is external. With xtrace enabled, the plaintext is exposed in assignment/eval tracing. Finally, code executed by eval can modify the function's positional parameters (for example with `set --`) and therefore corrupt a multi-file iteration, and a top-level `return` inside eval returns from `encoded_file_import` rather than merely from one sourced unit.
 - Preferred correction direction: capture the complete resolver+decode command substitution in an outer assignment and test that assignment status before eval. A variable assignment whose value contains a command substitution preserves that substitution's exit status across dash, BusyBox sh and Bash POSIX in auxiliary checks, eliminating the extra plaintext printf and preserving the authentication barrier. Multi-file semantics and xtrace policy remain to be settled before implementation.
+- Contract exploration established three distinct models. A one-file function `encoded_file_import file [arg...]` can `shift` the file operand and let authenticated source execute with the supplied positional arguments; function positional parameters are temporary, so modifications do not propagate to the caller, while `return` inside the evaluated source naturally returns from the import function. This closely matches the historical KornShell dot-with-arguments extension described in POSIX rationale, although POSIX dot itself accepts only the file operand.
+- A multi-file function taking serialized positional state such as `encoded_file_import "$(quote "$@")" file1 file2 ...` can authenticate all files before execution and evaluate them as one import unit with shared temporary positional parameters. Changes to those parameters can flow between imported files but still do not escape to the caller; `return` from any imported source returns from the whole import unit.
+- A generator form `eval "$(encoded_file_import file1 file2 ...)"` executes source in the caller's exact frame, so caller positional parameters are visible and `set --` changes persist. This is the only simple POSIX/no-temp model that preserves caller positional mutation, but it has two hard tradeoffs: `return` is relative to the caller context (and is unspecified when no function/dot context exists), and caller xtrace exposes the complete expanded plaintext in the outer eval command before generated code can disable tracing.
+- For generated error status, plain `exit N` is not suitable because it terminates the caller shell, and plain `return N` is context-dependent. A generated subshell command `(exit N)` returns status N from eval without terminating the caller; auxiliary checks passed under dash, BusyBox sh and Bash POSIX. Direct `eval "$(generator)"` must nevertheless buffer/authenticate the complete multi-file source before emitting any plaintext, otherwise a later decode failure can still leave earlier generated source executable.
+- The remaining contract choice is therefore explicit: prioritize safe import-function semantics (one-file or aggregate function) versus exact caller positional-parameter mutation (generator+outer eval with documented xtrace/return constraints).
 
 ## Completed
 
