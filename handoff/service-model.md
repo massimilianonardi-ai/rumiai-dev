@@ -1,7 +1,7 @@
 # Service model
 
 Status: Active
-Updated: 2026-09-20
+Updated: 2026-09-21
 
 ## Goal
 
@@ -220,9 +220,11 @@ As with the earlier GitHub-hosted formal runs, this is formal revision-specific 
 
 The generic portable/provider-backed service bridge and user-scope native host supervision are no longer implementation blockers.
 
-No current `pkg-catalog` package declares the `service` facility part. The next portable-service step requires a real package whose normal RumiAI package command can expose a deterministic no-argument foreground start operation satisfying the canonical `foreground` + SIGTERM contract.
+No current `pkg-catalog` package declares the `service` facility part.
 
-Keycloak and Pulsar are plausible current catalog candidates, but both require an operating-mode/subcommand choice. For Keycloak, choosing production `start` versus insecure/development `start-dev` plus any required production configuration is provider policy. For Pulsar, choosing standalone versus broker/cluster semantics is likewise provider policy. None of those choices should be invented merely to obtain a demo.
+The user has now selected **GeoServer as the first real service provider**. GeoServer is not yet present in the current catalog. The current GeoServer 3.0 binary is an appropriate lifecycle target because its official `bin/startup.sh` replaces itself with the Java/Jetty process, satisfying the foreground-process requirement without a RumiAI daemon wrapper.
+
+GeoServer 3.0.x officially targets Java 17/21; the current RumiAI catalog exposes only `java 25`. The first real-provider work therefore includes adding a supported Java 21 concrete/provider path (preferably another Temurin feature line under the existing `temurin` package identity) before GeoServer is declared as a `java >=17 <22` consumer.
 
 The temporary legacy PATH path remains because there is not yet a real catalog provider/migration criterion.
 
@@ -232,9 +234,9 @@ Physical stable-host validation remains pending.
 
 ## Remaining active work
 
-### 1. First real service provider
+### 1. First real service provider — GeoServer selected
 
-Choose a current package whose actual launch semantics meet the service contract, define its provider-independent service facility contract/realization, and exercise:
+Implement GeoServer as the first real service provider. Define its provider-independent service facility contract/realization and exercise:
 
 ```text
 pkg install
@@ -245,7 +247,7 @@ pkg install
 → srv host user install/start/restart/stop/uninstall
 ```
 
-Do not add a wrapper whose operating policy is semantically arbitrary. Current plausible candidates require a real mode choice and therefore mark the first user decision gate.
+The service command must launch the official foreground GeoServer binary semantics rather than introducing an arbitrary operating-mode wrapper. Add the Java 21 provider path needed by the supported GeoServer 3.0 runtime before the end-to-end service proof.
 
 ### 2. Legacy-path removal
 
@@ -261,15 +263,16 @@ GitHub-hosted systemd/launchd formal validation is complete for the implemented 
 
 ## Next action
 
-There is no further generic user-host infrastructure work to implement safely.
+The first real-provider gate is resolved: proceed with GeoServer.
 
-Resume implementation when one of these gates is explicitly resolved:
+Current implementation sequence:
 
-1. select the first real service provider and its operating mode;
-2. define the compatibility criterion for removing the legacy PATH fallback after that migration;
-3. define the system-scope execution-account/environment/privilege contract.
+1. add a supported Java 21 provider path without changing existing Java 25 semantics;
+2. add GeoServer package/repository/catalog definitions and the `geoserver` service facility;
+3. validate real `pkg install -> facility/default/binding -> srv start/stop -> srv host user` behavior;
+4. only after that proof revisit the legacy PATH fallback removal criterion.
 
-Until then, preserve the now-formally-validated portable/provider/user-host behavior and do not add speculative service policy.
+System-scope execution-account/environment/privilege policy remains a separate unresolved gate.
 
 ## Blockers / open questions
 
@@ -277,8 +280,7 @@ No generic portable-service or user-host implementation blocker remains.
 
 The remaining gates require policy rather than more generic plumbing:
 
-- first real catalog service provider and its package-specific operating mode;
-- removal criterion for the temporary legacy PATH compatibility path;
+- removal criterion for the temporary legacy PATH compatibility path after the GeoServer migration;
 - system-wide account/environment/privilege/install mechanics behind the administrative boundary;
 - physical validation on the stable reference hosts.
 
