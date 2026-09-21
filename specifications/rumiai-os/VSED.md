@@ -138,13 +138,13 @@ It must:
 
 ```text
 save the prior TTY state before interactive editing
-restore that exact state on normal exit and handled signals
+restore the saved TTY configuration on normal exit and handled signals
 use /dev/tty through term.lib.sh for UI/input
 keep stdout free of UI text
 clear/leave the alternate screen during cleanup
 ```
 
-Signal-derived exits restore terminal state where execution is still possible. SIGKILL and equivalent uncatchable termination remain outside the cleanup guarantee.
+Signal-derived exits restore terminal state where execution is still possible. The restoration guarantee concerns the saved terminal configuration; host-managed transient state flags may change as a consequence of line-discipline processing (for example Darwin PENDIN). SIGKILL and equivalent uncatchable termination remain outside the cleanup guarantee.
 
 ## 8. Save fidelity
 
@@ -162,12 +162,18 @@ Editing operations change only the corresponding logical text.
 ## 9. Exit status
 
 ```text
-0  saved successfully
-1  user cancellation
-2  invalid invocation, unsupported input, terminal/runtime failure or save failure
+0    saved successfully
+1    user cancellation
+2    invalid invocation, unsupported input, terminal/runtime failure or save failure
+129  HUP
+130  INT
+131  QUIT
+141  PIPE
+143  TERM
+148  TSTP
 ```
 
-Diagnostics must not include document content.
+Handled signals restore terminal state where possible and retain their signal-derived status rather than being normalized to status 2. Diagnostics must not include document content.
 
 ## 10. Initial non-goals
 
@@ -205,5 +211,5 @@ VSED-10  file save is direct/non-atomic in order to avoid a plaintext staging fi
 VSED-11  terminal mechanics are delegated to term.lib.sh
 VSED-12  unchanged save is byte-faithful within the supported text domain
 VSED-13  Ctrl-X saves/exits and Escape cancels
-VSED-14  exit statuses are 0 save, 1 cancel, 2 invalid/runtime/save failure
+VSED-14  semantic exit statuses are 0 save, 1 cancel, 2 invalid/runtime/save failure; handled signals retain their signal-derived statuses
 ```
