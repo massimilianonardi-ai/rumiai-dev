@@ -10,8 +10,8 @@ Review and realign `lib/sys/sh/enc.lib.sh` function by function, preserving inte
 ## Current repository revisions
 
 ```text
-rumiai-dev   1f5805b8980af948ccb8e841f2bac80c42791fec
-rumiai-os    6eca0babbdcf8a71aab81ce69692aee6f7f98e70
+rumiai-dev   20c738fe8680ee6311dbbeb67fe06718e66bf577
+rumiai-os    1de834c981f5c00965158ca0a82760997ef0e54b
 rumiai-tests 064cf7dec9f28c9459f1e53e54a0d3451a9bdaa0
 ```
 
@@ -61,6 +61,8 @@ todo/library-api-visibility-realignment.md
 - A generator form `eval "$(encoded_file_import file1 file2 ...)"` executes source in the caller's exact frame, so caller positional parameters are visible and `set --` changes persist. This is the only simple POSIX/no-temp model that preserves caller positional mutation, but it has two hard tradeoffs: `return` is relative to the caller context (and is unspecified when no function/dot context exists), and caller xtrace exposes the complete expanded plaintext in the outer eval command before generated code can disable tracing.
 - For generated error status, plain `exit N` is not suitable because it terminates the caller shell, and plain `return N` is context-dependent. A generated subshell command `(exit N)` returns status N from eval without terminating the caller; auxiliary checks passed under dash, BusyBox sh and Bash POSIX. Direct `eval "$(generator)"` must nevertheless buffer/authenticate the complete multi-file source before emitting any plaintext, otherwise a later decode failure can still leave earlier generated source executable.
 - The remaining contract choice is therefore explicit: prioritize safe import-function semantics (one-file or aggregate function) versus exact caller positional-parameter mutation (generator+outer eval with documented xtrace/return constraints).
+- The user selected the one-file function contract and renamed the function to `encoded_file_eval <file> [arg...]`: the file is resolved/authenticated first, then the function shifts the file operand so the evaluated source sees only the explicitly forwarded arguments. Positional changes made by the source remain local to the function frame, while `return` exits the import/eval function rather than an outer caller.
+- Analysis of a new candidate implementation found several concrete defects: it references `_encoded_file_import_file` instead of the resolved `_encoded_file_eval_file`; `"$_encoded_file_eval_source"` executes the plaintext value as a command name rather than emitting/evaluating it and can execute unauthenticated partial plaintext after decode failure; error-print branches do not stop generation; shifts inside the command-substitution subshell do not change the parent function's positional parameters; successful eval with initial xtrace off returns 1 because the final test is false; and xtrace is not restored when eval fails or evaluated source executes `return`. The safer implementation direction remains outer assignment from resolver+decode, status check before eval, parent-side `shift`, and xtrace restoration embedded before evaluated source when tracing was originally enabled.
 
 ## Completed
 
