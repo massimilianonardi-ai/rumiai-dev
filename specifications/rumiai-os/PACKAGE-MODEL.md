@@ -242,6 +242,13 @@ system conf
 
 Mutable `conf` is not the authority for what a facility means. Changing a facility default or consumer binding selects another realization; it does not redefine the facility contract.
 
+Provider-selector configuration remains private under the normal state permission
+model by default. When `srv host system install` reconciles a service for a
+different non-root execution account, it may prepare only the non-secret selector
+metadata required by bootstrap and dependency resolution as read-only/traversable
+for that runtime. This preparation must not grant that account mutation rights over
+facility defaults, consumer bindings or enclosing authoritative configuration.
+
 Facility contracts are extensible through typed declarative parts with defined generic semantics. They must not degrade into an arbitrary provider-specific property bag or executable configuration. Provider-specific shell logic is not a facility-contract mechanism.
 
 `pkg` owns facility identity, compatibility/conformance validation, provider registration and selection, and interpretation or dispatch of provider realization metadata. When one typed part belongs to an already-existing subsystem responsibility, `pkg` delegates that operation to the owning subsystem rather than creating a parallel implementation or provider graph. For example, portable service process lifecycle remains owned by `srv`; project development/build lifecycle remains owned by `mk` where applicable.
@@ -631,4 +638,5 @@ PKG-65  normal pkg install validates provider conformance against the exact cata
 PKG-66  integration materializes validated facility-service realization into the installed concrete for later srv consumption
 PKG-67  global provider-backed srv lifecycle uses the system facility default for the service facility and does not consult consumer bindings
 PKG-68  the trusted srv system-host launch path reuses the normal package launcher with system scope and State Instance equal to service identity; ordinary package launch remains user-scoped
+PKG-69  provider selectors remain private by default; system-host reconciliation may expose only required non-secret selector metadata read-only/traversable to the service runtime without granting mutation rights
 ```
