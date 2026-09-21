@@ -5,418 +5,200 @@ Updated: 2026-09-21
 
 ## Goal
 
-Complete the service model that connects portable `srv` lifecycle, package-provided
-facilities and explicit host-supervision integration without introducing a duplicate
-service registry, provider graph or dependency graph.
+Complete the service model connecting portable `srv` lifecycle, package-provided
+service facilities and explicit user/system host supervision without introducing a
+duplicate service registry, provider graph or dependency graph.
 
-The portable/provider-backed bridge, the first real service provider, user-scope
-host supervision and legacy PATH-start migration are complete. The system-scope
-administrative policy is now approved and canonical; implementation/validation of
-that path is active. GeoServer remains the real reference service for system-host
-validation. Its broader mutable-root audit is deferred and does not block this task.
+The software/specification/formal-validation work is complete. The only remaining
+active stage is physical validation on the stable reference hosts.
 
 ## Current repository revisions
 
-Current synchronized checkpoint before this handoff update:
-
 ```text
-rumiai-dev      c221eb8562f5939b2ae46472fd1fbc528f9a5231
-rumiai-os       f27f08f80d1e7407c8d8bd686a2beb4eb443eeb3
-rumiai-tests    d61616898215d88a762aed191e7bbf5f096842c0
-pkg-catalog     3749496e16172db00556751955280e7f3c7cbf61
+rumiai-dev      9bd32662ac47d14fc08b90f0c5ac278a94924596
+rumiai-os       cbcf6467838eda79c1afedd22061299d5c1a40ff
+rumiai-tests    ed173d66480579e1eb869d80beb43cfb9fccdf5d
+pkg-catalog     39abe7d9ae53753dda9e2714fc39fe69adfafb8c
 rumiai-dev-PoCs ab470307cb8a3e26d57b798fe021109209d66792
 ```
 
 Fresh remote HEAD retrieval remains mandatory on resume.
 
-The service-relevant product revision formally validated below is:
-
-```text
-rumiai-os@6fd3656a7f8abdbc169ca2b9de94e02ec5e8cfbf
-```
-
-The current `rumiai-os` HEAD is a forward descendant whose only delta from that
-revision is the unrelated addition of `res/sys/manual/enc.lib.sh`; no service,
-package or GeoServer implementation changed in that delta.
-
 ## Applicable canonical sources
-
-Use the mandatory project read order. The direct service contract is owned by:
 
 ```text
 specifications/rumiai-os/SERVICE-LIFECYCLE.md
 specifications/rumiai-os/PACKAGE-MODEL.md
+specifications/rumiai-os/STATE-MODEL.md
+specifications/rumiai-os/POSIX-PORTABILITY-LAYER.md
+TESTING.md
+PHYSICAL-TESTING.md
 ```
 
-Add the host/platform/state/security specifications before system-scope host work.
+Add command/library/documentation specifications when modifying those surfaces.
 
-## Completed implementation state
+## Completed
 
-### Generic facility/service bridge
+### Service/facility/pkg model
 
-The current product implements the provider-backed service contract through the
-facility `service` typed part. Provider conformance remains install-time/inert;
-runtime service lifecycle remains owned by `srv`.
+The current implementation and canonical specifications now cover:
 
-`srv start <service>` now requires:
+- provider-backed portable `srv start/stop` through the facility `service` typed part;
+- exact concrete provider launch with package-launcher HOME/environment/dependency semantics;
+- GeoServer 3.0.1 as the first real service provider, with Temurin Java 21;
+- user host supervision through systemd user units and launchd LaunchAgents;
+- system host supervision through systemd system units and launchd LaunchDaemons;
+- explicit pre-existing non-root execution accounts for system services;
+- system package State Instance equal to service identity;
+- exact provider reconciliation for system registrations and stale-registration failure;
+- recursive preparation of only the provider-selector metadata required by a
+  non-root system-service runtime;
+- provider defaults/bindings remaining private under normal configuration and being
+  made read-only/traversable only by system-service reconciliation when required;
+- removal of the historical PATH-resolved `<service>-start` fallback.
+
+`srv` never invokes privilege escalation itself and does not create/remove host
+accounts.
+
+### Permanent tests
+
+`tests/rumiai-os/srv/host-system.test` protects the generic system-host contract,
+including:
 
 ```text
-system facility default
-→ installed concrete provider
-→ valid facility-service/<facility>/start realization
-→ ordinary package command
-→ foreground provider process
+administrative boundary
+non-root execution account
+system package State Instance HOME
+dependency provider resolution under the service account
+provider-default change -> stale registration
+explicit install reconciliation
+start/restart/stop/uninstall
+state/account preservation
 ```
 
-Command naming and PATH are no longer a service-discovery mechanism.
-
-Existing runtime records created by older revisions without provider metadata remain
-readable for stop/stale-state cleanup. New starts persist concrete provider identity.
-
-### First real provider: GeoServer
-
-`pkg-catalog` now contains the first real service provider:
+`tests/external/geoserver/service-live.test` uses the real package pipeline and
+real GeoServer provider to exercise:
 
 ```text
-facility/geoserver/1/service/start     package-command
-facility/geoserver/1/service/process   foreground
-facility/geoserver/1/service/stop      sigterm
-
-pkg/geoserver/.../facility             geoserver 1
-pkg/geoserver/.../dependency           java >=17 <22
-pkg/geoserver/.../facility-service/geoserver/start
-                                       geoserver-start
+pkg install Temurin Java 21
+pkg install GeoServer 3.0.1
+portable srv start/stop
+srv host user install/start/restart/stop/uninstall
+srv host system install/start/restart/stop/uninstall
 ```
 
-Temurin now provides the Java 21 path required by GeoServer 3.0.x while existing
-Java 25 semantics remain intact.
-
-The GeoServer repository adapter uses:
+GeoServer remains the real system-service reference. Its broader upstream mutable
+installation-root audit is intentionally separate under:
 
 ```text
-GitHub releases API
-    stable release inventory/latest only
-
-SourceForge release RSS
-    exact-version binary existence
-    artifact size
-    MD5 digest
+todo/geoserver-mutable-runtime-state.md
 ```
 
-Exact installs therefore do not depend on anonymous GitHub API quota. The exact
-GeoServer 3.0.1 SourceForge binary metadata validated by the live test is:
+and does not block the current service-host validation.
 
-```text
-size    126971831
-md5     1b8b60c512dd983f7996074d69119566
-```
+### Validation workflow
 
-### User host supervision
-
-The implemented public surface remains:
-
-```text
-srv host user install <service>
-srv host user uninstall <service>
-srv host user start <service>
-srv host user stop <service>
-srv host user restart <service>
-```
-
-Linux uses the calling account's systemd user manager; macOS uses the calling
-account's launchd GUI domain. Host managers supervise the provider foreground process
-directly and re-resolve current facility-default intent on a later start/restart.
-
-No systemd linger or automatic restart policy is introduced.
-
-### Legacy PATH migration
-
-The historical PATH-resolved `<service>-start` fallback has been removed.
-
-The removal criterion was satisfied because:
-
-- GeoServer completed the first real catalog-provider migration;
-- the current catalog contains no package `*-start` command other than GeoServer's
-  provider-internal `geoserver-start`;
-- service capability is now explicitly represented by the facility `service` part;
-- permanent tests prove that both a configured-invalid default and an absent default
-  fail instead of executing a same-named PATH command.
-
-The canonical invariant is now SRV-19 in `SERVICE-LIFECYCLE.md`.
+The two task workflows keep `rumiai-validate` blocking. Upload of recoverable local
+artifact copies is non-blocking because canonical revision-specific validation
+evidence is already published by `rumiai-validate`; an external artifact-storage
+failure must not relabel a successful formal validation.
 
 ## Current formal validation evidence
 
-All evidence is revision-specific and GitHub-hosted; it is not physical stable-host
-validation.
+All evidence below is GitHub-hosted technical/formal evidence, not physical
+stable-host validation.
 
-### GeoServer end-to-end service validation
-
-GitHub Actions run:
-
-```text
-35629714037
-```
-
-Exact revisions:
-
-```text
-rumiai-tests@d61616898215d88a762aed191e7bbf5f096842c0
-rumiai-os@6fd3656a7f8abdbc169ca2b9de94e02ec5e8cfbf
-pkg-catalog@3749496e16172db00556751955280e7f3c7cbf61
-```
-
-Formal `geoserver-service` scope:
-
-```text
-Linux/x86_64   VALIDATED
-Darwin/arm64   VALIDATED
-```
-
-The scope validates live Temurin Java 21 installation, both repository adapters,
-live GeoServer metadata resolution, facility contract, real `pkg install geoserver`,
-provider default, portable `srv start/stop`, and
-`srv host user install/start/restart/stop/uninstall`.
-
-### Broad provider/facility/srv validation
+### GeoServer real service path
 
 GitHub Actions run:
 
 ```text
-35629713722
+35656229331
 ```
 
-Exact revisions:
+Exact validated revisions:
 
 ```text
-rumiai-tests@d61616898215d88a762aed191e7bbf5f096842c0
-rumiai-os@6fd3656a7f8abdbc169ca2b9de94e02ec5e8cfbf
+rumiai-tests@ed173d66480579e1eb869d80beb43cfb9fccdf5d
+rumiai-os@cbcf6467838eda79c1afedd22061299d5c1a40ff
 ```
 
-Formal `package-provider-facility-final` scope:
+Scope:
 
 ```text
+geoserver-service
 Linux/x86_64   VALIDATED
 Darwin/arm64   VALIDATED
 ```
 
-The `rumiai-os/srv` selection passed on both hosts with no required SKIP:
+Both matrix jobs completed successfully.
+
+### Broad provider/facility/srv regression
+
+GitHub Actions run:
 
 ```text
-rumiai-os/srv/host-user.test   PASS
-rumiai-os/srv/lifecycle.test   PASS
-rumiai-os/srv/provider.test    PASS
+35656229627
 ```
 
-The lifecycle test now exercises its concurrency, ownership, stale-state,
-idempotence and failure behavior through an integrated provider/facility rather than
-the removed PATH compatibility path.
-
-A pre-existing malformed permanent-test fixture
-`service_facility=servicefacility$` was discovered by this broader validation and
-corrected to a valid unique facility identity before the final successful run.
-
-## Remaining active work
-
-### 1. System host supervision
-
-The administrative/account/state policy has been explicitly approved and promoted
-to the current service/state/package specifications. Generic implementation is now
-present in `rumiai-os` and is undergoing permanent-test/formal-validation
-realignment.
-
-GeoServer is the real provider used to validate the system-host path. Its current
-upstream installation-root mutability is intentionally left unchanged in this work;
-the later mutable-root audit is a separate package-model refinement rather than a
-precondition for service-host validation.
-
-### 2. Physical validation
-
-GitHub-hosted Linux/x86_64 and Darwin/arm64 formal validation is complete for the
-implemented portable and user-host service paths.
-
-Physical validation on the stable reference hosts remains separate under
-`PHYSICAL-TESTING.md` and must not be inferred from GitHub-hosted evidence.
-
-## Accepted system-host implementation checkpoint
-
-The system-host policy below has been accepted and promoted into the canonical
-service/state/package specifications. This section now records only the task-local
-implementation checkpoint while permanent validation is completed.
-
-### Administrative invocation
-
-System-scope lifecycle operations remain explicit administrative actions:
+Exact validated revisions:
 
 ```text
-srv host system install <service> <account>
-srv host system uninstall <service>
-srv host system start <service>
-srv host system stop <service>
-srv host system restart <service>
+rumiai-tests@ed173d66480579e1eb869d80beb43cfb9fccdf5d
+rumiai-os@cbcf6467838eda79c1afedd22061299d5c1a40ff
 ```
 
-The baseline requires the caller of every `srv host system ...` mutation
-to already possess host administrative/root authority. `srv` does not invoke
-`sudo`, `doas` or another privilege-escalation mechanism itself.
-
-### Execution account
-
-`install` receives one explicit pre-existing POSIX account. The account:
-
-- must already exist in the host account database;
-- must not be UID 0/root in the baseline;
-- is not created, removed or modified by `srv`;
-- may be a dedicated non-login service account and that is the recommended
-  deployment shape;
-- uses its host primary/supplementary group membership as configured by the
-  administrator; group-management policy remains outside `srv`.
-
-Linux/systemd should express this through the native system-unit execution-account
-field. macOS/launchd should express the same semantic choice through the native
-LaunchDaemon account field. The provider process itself never starts as root merely
-because registration required administrative privilege.
-
-Linux `DynamicUser=` is deliberately not the baseline because it is host-specific
-and its recycled UID lifetime is a poor match for persistent RumiAI-managed service
-state. No equivalent generic dynamic-account mechanism is assumed on macOS.
-
-### System package state
-
-A system-hosted provider must not use RumiAI `state/user`; that namespace is not a
-POSIX account identity.
-
-The launch context uses system package state and isolates it by the
-service facility identity through the existing State Instance mechanism:
+Scope:
 
 ```text
-state-path system pkg <provider-package> home <service>
-state-path system pkg <provider-package> conf <service>
+package-provider-facility-final
+Linux/x86_64   VALIDATED
+Darwin/arm64   VALIDATED
 ```
 
-and analogously for other package areas when needed.
+Both required matrix jobs completed successfully. The dispatch-only
+`graalvm-coexistence` job is outside this task scope and is expected to remain
+skipped on a normal push-triggered run.
 
-This gives a service-specific package-state identity such as:
+## Current state
 
-```text
-<package>@!<service>
-```
+Implementation, manuals, canonical specifications and permanent tests are aligned at
+the revisions above. The final consistency review also corrected temporary-path PID
+uniqueness and restored normal provider-selector privacy outside explicit
+system-service reconciliation.
 
-without adding a new state scope, owner class or registry.
+No software/design blocker remains in the active service-model work.
 
-The package launcher therefore needs an explicit internal system-service launch
-context so that HOME/config resolution can use `scope=system` plus
-`state-instance=<service>` instead of the normal user package state. The exact
-private transport/API for that context remains an implementation question and
-should reuse the existing launcher rather than create a second launcher model.
-
-### Ownership boundary
-
-Administrative install/reconciliation creates only the exact mutable system-state
-paths required by the selected provider/service and assigns those paths to the
-configured execution account.
-
-The account must not receive ownership or write access to:
-
-```text
-$m_ROOT
-$m_ROOT/m
-$m_ROOT/bin
-$m_ROOT/lib
-$m_ROOT/res
-$m_ROOT/pkg/<concrete>
-provider executable/useful roots
-catalog/runtime code
-```
-
-Package-declared mutable `var/` state remains governed by the existing static
-system-state routing model. Provider-specific mutable-root analysis is outside the
-generic system-host implementation work and must not be guessed from one upstream
-directory convention.
-
-### Provider reconciliation
-
-The system facility default remains the provider-selection authority; system-host
-registration does not become a second provider registry.
-
-Because system service state permissions are prepared administratively, the system registration records the exact concrete provider that was resolved when
-`install` last reconciled the service. At each hosted launch the internal runner:
-
-1. resolves the current system facility default;
-2. requires it to match the concrete prepared by the installed system registration;
-3. resolves that concrete's service realization;
-4. launches it with the prepared system-service package-state context.
-
-If the facility default changes, the currently running process is unaffected and a
-later system start/restart fails as a stale registration until the administrator
-reruns:
-
-```text
-srv host system install <service> <account>
-```
-
-That install is an idempotent reconciliation operation: it prepares the current
-provider's state permissions and atomically refreshes native registration, but does
-not itself start or retarget an already-running service.
-
-Uninstall removes native registration only. It does not delete the POSIX account or
-authoritative package/service state.
-
-### Host adapters
-
-Linux baseline:
-
-```text
-systemd system unit
-Type=simple
-User=<account>
-exact serialized m/srv argv
-persistent enablement without implicit start during install
-```
-
-macOS baseline:
-
-```text
-/Library/LaunchDaemons
-UserName=<account>
-ProgramArguments exact argv array
-persistent registration without implicit start during install
-```
-
-Both managers supervise the provider foreground process directly, as already required
-for user-host supervision. Automatic restart policy remains outside the baseline.
-
-### Proposal rationale
-
-This shape preserves current RumiAI boundaries:
-
-- no new service/provider graph;
-- no new state scope or owner class;
-- no implicit mapping from RumiAI `state/user` to POSIX users;
-- no automatic account-management subsystem;
-- no hidden privilege escalation;
-- no writable executable product/package tree for service accounts;
-- host-specific account dropping stays inside the systemd/launchd adapters;
-- provider/default changes remain explicit administrative deployment transitions.
-
-The principal tradeoff is intentional: system-host provider changes require an
-explicit privileged reconciliation step before the next hosted launch. This is
-preferred over granting service accounts broad write access to system package state
-or allowing a boot-time unprivileged process to materialize state for arbitrary new
-providers.
+GitHub-hosted validation does not satisfy the project's physical-validation stage.
 
 ## Next action
 
-A clean resume should:
+Run the already-fixed scopes on both stable physical reference hosts:
 
-1. perform the normal mandatory retrieval/preflight;
-2. reconcile any concurrent HEAD movement;
-3. complete permanent tests for generic `srv host system ...`, including
-   non-root execution account, State Instance HOME, provider reconciliation/stale
-   registration and native systemd/launchd lifecycle;
-4. run formal Linux/x86_64 and Darwin/arm64 validation for the generic system-host
-   path;
-5. perform physical validation separately when the stable hosts are available.
+```text
+macOS
+Ubuntu 26.04 ARM64
+```
 
-GeoServer mutable-root analysis is intentionally deferred. Continue to use GeoServer
-as the real service-provider validation case while leaving that separate package
-layout question unchanged.
+Required physical scopes:
+
+```text
+geoserver-service
+package-provider-facility-final
+```
+
+A required test returning `SKIP` is not a PASS.
+
+If both scopes pass on both applicable physical hosts:
+
+1. synchronize this handoff one final time with `Status: Complete` and the exact
+   physical evidence/revisions;
+2. commit that final snapshot;
+3. remove this handoff in a later forward commit.
+
+## Blockers / open questions
+
+Physical validation requires access to the stable reference hosts and cannot be
+performed from the current GitHub-hosted/chat execution environment.
+
+There are no remaining service-model design questions.
