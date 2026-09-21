@@ -98,14 +98,16 @@ todo/library-api-visibility-realignment.md
 - Product implementation is current at `rumiai-os@7aeac3258a3b324c7825a4265540a357c5e41305`. Permanent coverage was realigned at `tests/rumiai-os/enc/encoded-file-edit.test` in `rumiai-tests@c466a1311f33bca0623464a368ccfd98e115a8a3`; it covers multi-file success, invalid invocation, permission/executable and owner/group preservation, preserved/default mtime, decode/vsed/encode failures, concurrent content change, noclobber collision preservation and stop-on-first-failure.
 - Auxiliary execution of the simplified implementation logic passed under dash, BusyBox sh and Bash POSIX for all of those behavioral cases. The auxiliary environment cannot resolve github.com, so the repository runner itself was not executed there. Full real interactive GnuPG/Pinentry + vsed integration remains a physical/integration validation item; concurrent pipeline startup can still make Pinentry ordering visible to the user.
 
+- `rumiai-os@f27f08f80d1e7407c8d8bd686a2beb4eb443eeb3` adds the mandatory `res/sys/manual/enc.lib.sh` topic. It documents all six current public functions, `m_ENC_PASS`, encryption profile, streaming/authentication behavior, encrypted-source execution semantics, `vsed`/`pipefail` file editing, metadata/timestamp behavior, octal conversion, dependencies and security boundaries. Structural validation confirmed every implemented public function is represented and no `_enc_*` / `_encoded_file_*` internal symbol is advertised.
+
 ## Current state
 
-`a2o`/`o2a`, `encode`/`decode`, `encoded_file_eval` and the simplified `vsed`/`pipefail` `encoded_file_edit` implementation are present in the product. The obsolete `encoded_file_editor` function is no longer present. `encoded_file_edit` now has permanent metadata, failure, collision and transaction coverage. Full real interactive GnuPG/Pinentry + vsed integration and the library-wide operational manual/public API classification remain open.
+`a2o`/`o2a`, `encode`/`decode`, `encoded_file_eval` and the simplified `vsed`/`pipefail` `encoded_file_edit` implementation are present in the product. The obsolete `encoded_file_editor` function is no longer present. `encoded_file_edit` has permanent metadata, failure, collision and transaction coverage. `res/sys/manual/enc.lib.sh` now documents the complete current public surface: `encode`, `decode`, `encoded_file_eval`, `encoded_file_edit`, `a2o` and `o2a`; no internal symbol is exposed as public API. Full real interactive GnuPG/Pinentry + vsed integration remains open.
 
 ## Next action
 
-Resolve the remaining `encoded_file_editor` API cleanup, add proportional permanent coverage for `encoded_file_eval` if not already present, then create/update the mandatory `res/sys/manual/enc.lib.sh` topic and run library-wide validation including the available real interactive Pinentry/vsed path.
+Add proportional permanent coverage for `encoded_file_eval`, then run library-wide validation including the available real interactive Pinentry/vsed path. The operational manual/public API documentation for `enc.lib.sh` is complete.
 
 ## Blockers / open questions
 
-- Final library manual/public API completion depends on finishing the function-by-function visibility review.
+- No manual/API-classification blocker remains for `enc.lib.sh`; remaining closure work is validation/test coverage.
