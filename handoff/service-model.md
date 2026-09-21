@@ -12,10 +12,12 @@ duplicate service registry, provider graph or dependency graph.
 The software/specification/formal-validation work is complete. The only remaining
 active stage is physical validation on the stable reference hosts.
 
-## Current repository revisions
+## Repository checkpoint
+
+Repository revisions immediately before this handoff synchronization:
 
 ```text
-rumiai-dev      9bd32662ac47d14fc08b90f0c5ac278a94924596
+rumiai-dev      d96bd519323d24f96f1c1c5ad55c6b0b18dfefbb
 rumiai-os       cbcf6467838eda79c1afedd22061299d5c1a40ff
 rumiai-tests    ed173d66480579e1eb869d80beb43cfb9fccdf5d
 pkg-catalog     39abe7d9ae53753dda9e2714fc39fe69adfafb8c
