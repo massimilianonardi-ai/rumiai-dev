@@ -38,9 +38,9 @@ vsed <file>
 
 No options are defined by the first delivery.
 
-With no operand, `vsed` reads the complete initial document from standard input before entering the interactive editor. The interactive user interface uses the selected TTY rather than standard input/output. Saving writes the complete edited document to standard output and then exits successfully.
+With no operand, `vsed` uses standard input as the initial document only when standard input is not a terminal. When standard input is a terminal, the initial document is empty and interactive editing starts immediately. The interactive user interface uses the selected TTY rather than standard input/output. Saving writes the complete edited document to standard output and then exits successfully.
 
-With one file operand, `vsed` loads that existing readable/writable regular file, edits it in memory, and on save writes the complete edited document directly back to the same pathname. Successful file-mode save does not write document content to standard output.
+With one file operand, an existing readable/writable regular file is loaded and edited in memory. If the pathname does not exist, `vsed` starts with an empty document and treats that pathname as a new file to create on save. Saving writes the complete edited document directly to the selected pathname and does not write document content to standard output. An existing non-regular or inaccessible file is rejected.
 
 More than one operand is invalid invocation.
 
@@ -84,7 +84,7 @@ The save-and-exit action is:
 Ctrl-X
 ```
 
-Escape cancels the editing session and exits without writing stdout in stream mode and without modifying the target file in file mode.
+Escape cancels the editing session and exits without writing stdout in stream mode, without modifying an existing file, and without creating a new file pathname.
 
 Unsupported keys are ignored.
 
@@ -103,11 +103,12 @@ vsed does not invoke an external editor
 vsed keeps the editable document in non-exported process-local shell state
 vsed disables shell xtrace/verbose tracing before document content is loaded
 file mode writes plaintext only to the explicitly selected file when saving
+a new file selected by pathname is created only on save and under a restrictive process umask
 stream mode writes plaintext only to stdout when saving
 cancel writes neither destination
 ```
 
-The first implementation writes file-mode saves directly to the selected file rather than through a plaintext staging file. This deliberately favors the memory-only security property over atomic replacement: a runtime failure during the direct save can therefore leave a partially written target.
+The first implementation writes file-mode saves directly to the selected file rather than through a plaintext staging file. A non-existing selected pathname is created directly on save under `umask 077`. This deliberately favors the memory-only security property over atomic replacement: a runtime failure during the direct save can therefore leave a partially written target.
 
 The command clears its alternate screen and unsets document variables during normal/trapped cleanup where the shell permits, but portable POSIX shell cannot provide cryptographic memory zeroization.
 
@@ -200,14 +201,14 @@ These are future capabilities only when a concrete requirement justifies them.
 ```text
 VSED-01  vsed belongs to m and is exposed as bin/sys/vsed
 VSED-02  vsed is a bootstrap-integrated POSIX-sh command
-VSED-03  zero operands means stdin -> in-memory edit -> stdout on save
-VSED-04  one file operand means file -> in-memory edit -> same file on save
+VSED-03  zero operands means non-terminal stdin -> in-memory edit -> stdout; terminal stdin starts from an empty document
+VSED-04  one file operand edits an existing regular file or starts empty for a non-existing pathname and saves to that pathname
 VSED-05  UI traffic uses the TTY and never contaminates stream-mode stdout
-VSED-06  cancel produces no saved output and does not modify file mode
+VSED-06  cancel produces no saved output, does not modify an existing file and does not create a new file pathname
 VSED-07  initial text domain is caller-guaranteed NUL-free printable 7-bit ASCII plus TAB/LF; deterministic NUL rejection is not claimed
 VSED-08  vsed creates no plaintext temporary/swap/backup/undo/journal file
 VSED-09  document state is non-exported and xtrace/verbose tracing is disabled before load
-VSED-10  file save is direct/non-atomic in order to avoid a plaintext staging file
+VSED-10  file save is direct/non-atomic in order to avoid a plaintext staging file; new files are created under umask 077
 VSED-11  terminal mechanics are delegated to term.lib.sh
 VSED-12  unchanged save is byte-faithful within the supported text domain
 VSED-13  Ctrl-X saves/exits and Escape cancels
