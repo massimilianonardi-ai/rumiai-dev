@@ -1,6 +1,6 @@
 # vsed performance optimization
 
-Status: Active
+Status: Complete
 Updated: 2026-09-21
 
 ## Goal
@@ -10,12 +10,12 @@ Make `vsed` practically usable during interactive typing by removing per-charact
 ## Current repository revisions
 
 ```text
-rumiai-dev   f83fd30527acfdae96bb085d268c94001154a3e5
-rumiai-os    587ccc948c2f9d082c99038f53d61dd36bf3f9d9
-rumiai-tests 561923c6374bc2d5e5518c62de25449ccd0199e6
+rumiai-dev   1ea6e83f6d8e92255b23b91486c9df53fb3f09f5  (before final handoff snapshot)
+rumiai-os    c681a028dbcbd219186a8973b39489a59df04d24
+rumiai-tests a8a722fac83c049a6a98a483e850245ee57406bb
 ```
 
-Fresh HEAD retrieval remains mandatory before future writes.
+Fresh HEAD retrieval remains mandatory before future work.
 
 ## Applicable canonical sources
 
@@ -32,28 +32,32 @@ specifications/rumiai-os/READ-KEY.md
 specifications/rumiai-os/LIBRARY-INTERFACES.md
 ```
 
-## Working design
-
-- The current main performance defect is structural: every key invokes a full-screen render; each render calls `term_size_update`, clears the screen, moves to every visible row, clears every row, redraws the status line, and finally repositions the cursor.
-- The common printable-typing path should become incremental: keep terminal dimensions cached during the session, avoid full-screen clear/redraw, update only the affected row and cursor, and use a direct fast path when appending printable text at the visible end of the line.
-- Structural edits that change line count, viewport or horizontal scroll may still request a full redraw.
-- `term_read_byte` also has avoidable per-key external-process cost. POSIX `od -N 1` is available and may allow replacing the current `dd | od | tr` pipeline with one `od` invocation, subject to cross-host validation.
-- The canonical `vsed` behavior/security contract should remain unchanged unless a performance optimization exposes a necessary observable contract clarification.
-
 ## Completed
 
-- Mandatory preflight completed.
-- Current `vsed`, `term.lib.sh`, array implementation and permanent testing contracts inspected.
-- Current hot paths identified statically.
+- Replaced per-key full-screen rendering with incremental rendering.
+- Printable append at the visible end of the current line writes only the new display character and performs no cursor/clear/geometry `tput` calls.
+- Insertions inside a line redraw only the affected line unless horizontal scrolling changes.
+- Cursor-only navigation moves only the cursor unless the viewport or horizontal scroll changes.
+- Structural edits such as line split/join redraw the viewport without global screen clear.
+- Terminal dimensions are no longer re-read for each ordinary keypress; they are refreshed on full redraw.
+- The status line was simplified to static controls so it does not require per-key repaint.
+- `term_read_byte` removes the per-byte `tr` process and, during an established saved TTY session, avoids the previous repeated availability probe. The retained `dd | od` path is portable on both validated hosts.
+- A one-process `od -N 1` input experiment passed Linux but blocked in the Darwin PTY and was therefore rejected rather than promoted.
+- Permanent PTY coverage now traces the real external `tput` boundary and asserts that a 20-character printable burst uses exactly two `clear` calls (session entry/cleanup) and one `lines` plus one `cols` geometry query.
+- Final formal validation for `rumiai-os@c681a028dbcbd219186a8973b39489a59df04d24` and `rumiai-tests@a8a722fac83c049a6a98a483e850245ee57406bb`:
+  - Linux/x86_64: 2 PASS, 0 FAIL/SKIP/ERROR, environment CLEAN, scope VALIDATED.
+  - Darwin/arm64: 2 PASS, 0 FAIL/SKIP/ERROR, environment CLEAN, scope VALIDATED.
+- The canonical `VSED.md` behavioral/security contract remains unchanged; the optimization is implementation-level.
+- `term.lib.sh` operational documentation remains aligned with its actual external dependencies.
 
 ## Current state
 
-No performance code has been changed yet.
+The performance optimization work unit is complete and revision-specific multi-host validation is stored in `rumiai-tests`.
 
 ## Next action
 
-Implement the smallest incremental-rendering and input-cost reductions, add regression/performance-oriented permanent coverage where mechanically meaningful, and validate on Linux and macOS.
+None for this completed work unit. Further performance tuning should begin from current HEADs and be driven by observed remaining latency.
 
 ## Blockers / open questions
 
-None currently.
+None.
