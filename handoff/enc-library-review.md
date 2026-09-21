@@ -10,9 +10,9 @@ Review and realign `lib/sys/sh/enc.lib.sh` function by function, preserving inte
 ## Current repository revisions
 
 ```text
-rumiai-dev   e29fb8ac332ad8c0c9cfcab9f2edfea479a50566  (remote HEAD before this checkpoint)
-rumiai-os    5acea93938cb4e4e486c1ce8dce0f2abe9383199
-rumiai-tests e3f7d42f03747b924b18b7915f7d860d9148c913
+rumiai-dev   e9922693b19fac6ed439d0c7a80b710d723a3669
+rumiai-os    a2f12038ceb17277abadc3150af582f1712d89a2
+rumiai-tests bb9a38d8897fc8a193d8e900f9242fc00d00f428
 ```
 
 Fresh remote HEAD retrieval remains mandatory before future writes.
@@ -92,6 +92,13 @@ todo/library-api-visibility-realignment.md
 - The candidate also compares the live target against the initial ciphertext snapshot before and after re-encoding, using POSIX `cmp`, to catch ordinary concurrent content changes before replacement. This is best-effort conflict detection rather than a locking contract; a narrow race still exists without a project-wide locking primitive.
 - A separate public `encoded_file_editor` helper and a dedicated `m_ENC_EDITOR` variable are unnecessary. The generic `bin/sys/editor` command now owns terminal-editor selection (`nano` -> `vim` -> `vi`), so the preferred direction for `encoded_file_edit` is to invoke `editor` and not duplicate backend selection inside `enc.lib.sh`. The selected editor must block until editing is complete. Generic editors may create their own swap/backup/undo artifacts outside the private temp directory according to user configuration, which the library cannot portably prevent.
 - Auxiliary stubbed validation of the proposed edit transaction passed under dash, BusyBox sh and Bash POSIX for two-file success, decode failure, editor failure, encode failure, concurrent target-content change detection and cleanup of temporary directories. No product implementation has been modified yet.
+
+- Current parallel work has now landed the generic editor abstraction and visual stream editor. Bootstrap sets `EDITOR=editor` and `VISUAL=editor`; `bin/sys/editor` currently selects nano, then vim, then vi. The normative `VSED.md` contract defines `vsed` stream mode as complete stdin load into non-exported in-memory state, TTY-only UI, stdout only on successful Ctrl-X save, status 1 on Escape cancel, status 2 on invalid/runtime failure, and no plaintext temp/swap/backup/undo/journal files created by vsed. Initial input domain is printable 7-bit ASCII plus TAB/LF.
+- This changes the preferred `encoded_file_edit` architecture. `encoded_file_editor` is unnecessary: `EDITOR`/`VISUAL` plus `editor` remain the generic pathname-editor facility, while encrypted editing deliberately uses the stronger stream/in-memory `vsed` contract.
+- Preferred `encoded_file_edit` design accepts one or more encrypted operands, resolves each with `pathsearch`, and processes them sequentially, stopping on first non-success while preserving earlier committed files. For each target it creates a private adjacent directory with atomic POSIX `mkdir`; only an encrypted snapshot, a new ciphertext candidate and small numeric status files are persisted. Plaintext flows only through the anonymous POSIX pipeline `decode | vsed | encode`.
+- Because POSIX has no pipeline-wide `pipefail`, each pipeline stage records its own status into the private status directory. Commit occurs only when decode=0, vsed=0 and encode=0. vsed status 1 is treated distinctly as user cancellation; status 2/other is runtime/editor failure. A failed decode can still stream partial plaintext into vsed before its final authentication failure is known, but that content is never committed because the decode status gates replacement; unlike `encoded_file_eval`, no plaintext is executed.
+- The encrypted snapshot is the stable decode source and supports best-effort concurrent-content detection with `cmp` before replacement. The new ciphertext file is seeded with `cp -p` from the snapshot so normal POSIX metadata is retained; after all stages and the conflict check succeed, same-directory `mv -f` commits the new ciphertext. The comparison is content-only and not a locking/CAS guarantee.
+- Auxiliary stubbed execution of this pipeline/status-file candidate passed under dash, BusyBox sh and Bash POSIX for success, partial-output decode failure, vsed failure/cancel-style nonzero, partial-ciphertext encode failure, target preservation and temp cleanup. Syntax validation also passed under all three. Real `vsed` integration/PTTY behavior is covered independently by the parallel permanent vsed tests, but full encrypted edit integration remains pending.
 
 ## Current state
 
