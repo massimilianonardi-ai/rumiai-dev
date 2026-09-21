@@ -10,7 +10,7 @@ Add a minimal terminal visual stream editor `vsed` for sensitive text. With no o
 ## Current repository revisions
 
 ```text
-rumiai-dev   49af8ce13df8c5b7e9019766318095c5e0b56e2c
+rumiai-dev   0f6653052cc9fb3a1d52df82eec32adb56e462e7  (remote HEAD before this checkpoint)
 rumiai-os    4a673b91dace2c4f131773bf0d41970e92ad2aba
 rumiai-tests b911b41a124a4e176352102e7a6710a1fccc7b7e
 ```
@@ -42,27 +42,22 @@ specifications/rumiai-os/MENU.md
 - The security objective is no plaintext temporary/swap/backup/undo/journal file created by `vsed`. File mode writes only the explicitly selected destination at save; stdin mode writes only stdout at save.
 - This command-level guarantee does not claim control over operating-system paging/hibernation/core-dump policy, process inspection, terminal-emulator capture/history, or opaque implementation internals below the POSIX shell/runtime.
 - `vsed` disables shell xtrace/verbose tracing before loading sensitive content and keeps document state in non-exported shell variables.
-- The initial editor is text-oriented and deliberately minimal.
+- The first-delivery contract has been promoted to `specifications/rumiai-os/VSED.md`; implementation remains intentionally minimal.
 
-## Working design
-
-- Initial editing keys: printable text insertion, Tab, Enter, Backspace/Delete, arrows, Home/End, PageUp/PageDown; Ctrl-X saves and exits; Escape cancels without output/write.
-- The document is represented as an array of logical lines. The current line is split into left/right shell strings so character insertion/deletion/navigation can use POSIX parameter expansion without temporary files.
-- UI is rendered on `/dev/tty` in the alternate screen. Stdout remains reserved for the saved document in stdin mode.
-- File save is deliberately direct/non-atomic so the security contract does not require a plaintext staging file.
 
 ## Completed
 
 - Mandatory preflight completed against the revisions above.
 - Existing terminal/menu/array facilities and permanent PTY-test patterns were inspected.
+- The initial contract was promoted to `specifications/rumiai-os/VSED.md` and routed from `specifications/README.md`.
 
 ## Current state
 
-No `vsed` implementation, specification, manual or permanent test has been added yet.
+The canonical first-delivery contract is defined. Product implementation, operational manual and permanent tests remain to be added.
 
 ## Next action
 
-Promote the settled first-delivery contract, implement `bin/sys/vsed` plus `res/sys/manual/vsed`, add proportional PTY/security-oriented permanent coverage, and execute available development validation.
+Implement `bin/sys/vsed` plus `res/sys/manual/vsed`, add proportional PTY/security-oriented permanent coverage, and execute available development validation.
 
 ## Blockers / open questions
 
