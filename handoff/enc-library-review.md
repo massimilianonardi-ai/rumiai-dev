@@ -10,7 +10,7 @@ Review and realign `lib/sys/sh/enc.lib.sh` function by function, preserving inte
 ## Current repository revisions
 
 ```text
-rumiai-dev   852c8adec75fef15b49c4d6d6846396821291a19  (remote HEAD before this checkpoint)
+rumiai-dev   8c0902ecfb9897b9e63178b49ae6910850db5e10  (remote HEAD before this checkpoint)
 rumiai-os    f27f08f80d1e7407c8d8bd686a2beb4eb443eeb3
 rumiai-tests d61616898215d88a762aed191e7bbf5f096842c0
 ```
@@ -99,6 +99,8 @@ todo/library-api-visibility-realignment.md
 - Auxiliary execution of the simplified implementation logic passed under dash, BusyBox sh and Bash POSIX for all of those behavioral cases. The auxiliary environment cannot resolve github.com, so the repository runner itself was not executed there. Full real interactive GnuPG/Pinentry + vsed integration remains a physical/integration validation item; concurrent pipeline startup can still make Pinentry ordering visible to the user.
 
 - `rumiai-os@f27f08f80d1e7407c8d8bd686a2beb4eb443eeb3` adds the mandatory `res/sys/manual/enc.lib.sh` topic. It documents all six current public functions, `m_ENC_PASS`, encryption profile, streaming/authentication behavior, encrypted-source execution semantics, `vsed`/`pipefail` file editing, metadata/timestamp behavior, octal conversion, dependencies and security boundaries. Structural validation confirmed every implemented public function is represented and no `_enc_*` / `_encoded_file_*` internal symbol is advertised.
+
+- The stale deferred item `todo/review-enc-lib.md` was removed after activation because the same work is already owned by this active handoff. This restores the required TODO/handoff lifecycle invariant: one current owner for the task, no duplicate deferred state.
 
 ## Current state
 
