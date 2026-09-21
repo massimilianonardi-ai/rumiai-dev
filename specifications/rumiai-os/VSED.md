@@ -54,9 +54,9 @@ TAB                       0x09
 LF line separators        0x0a
 ```
 
-Other input is outside the first-delivery text contract.
+Other input is outside the first-delivery text contract. NUL-free input is a caller precondition rather than a reliably detectable runtime condition: portable POSIX shell variables cannot represent NUL, and supported shells can discard NUL bytes while reading into variables. `vsed` therefore MUST NOT claim deterministic NUL rejection in this shell implementation. Detectable non-TAB/non-LF control bytes and non-ASCII input are rejected.
 
-This restriction is deliberate. Portable POSIX shell variables cannot represent NUL, and byte-wise POSIX-shell parameter operations are not a sufficient UTF-8 cursor/edit primitive across the supported shell implementations. UTF-8 editing must not be claimed until a current primitive preserves complete scalar-value boundaries portably.
+This restriction is deliberate. Byte-wise POSIX-shell parameter operations are not a sufficient UTF-8 cursor/edit primitive across the supported shell implementations. UTF-8 editing must not be claimed until a current primitive preserves complete scalar-value boundaries portably.
 
 TAB is preserved in the document and displayed using a safe one-column placeholder in the initial UI.
 
@@ -198,7 +198,7 @@ VSED-03  zero operands means stdin -> in-memory edit -> stdout on save
 VSED-04  one file operand means file -> in-memory edit -> same file on save
 VSED-05  UI traffic uses the TTY and never contaminates stream-mode stdout
 VSED-06  cancel produces no saved output and does not modify file mode
-VSED-07  initial text domain is printable 7-bit ASCII plus TAB/LF and excludes NUL
+VSED-07  initial text domain is caller-guaranteed NUL-free printable 7-bit ASCII plus TAB/LF; deterministic NUL rejection is not claimed
 VSED-08  vsed creates no plaintext temporary/swap/backup/undo/journal file
 VSED-09  document state is non-exported and xtrace/verbose tracing is disabled before load
 VSED-10  file save is direct/non-atomic in order to avoid a plaintext staging file
