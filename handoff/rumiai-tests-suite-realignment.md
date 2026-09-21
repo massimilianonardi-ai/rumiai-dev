@@ -12,7 +12,7 @@ Realign the permanent RumiAI test suite so that failures are evidence about curr
 ```text
 rumiai-dev   e29fb8ac332ad8c0c9cfcab9f2edfea479a50566  (remote HEAD before this checkpoint)
 rumiai-tests e3f7d42f03747b924b18b7915f7d860d9148c913
-rumiai-os    564b27ce776b91f32870bdf771052dbe7afac38c
+rumiai-os    5acea93938cb4e4e486c1ce8dce0f2abe9383199
 pkg-catalog  5372c160441b0346b976db7f7a022196784c9425
 ```
 

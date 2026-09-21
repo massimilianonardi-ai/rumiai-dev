@@ -11,7 +11,7 @@ Review and realign `lib/sys/sh/enc.lib.sh` function by function, preserving inte
 
 ```text
 rumiai-dev   e29fb8ac332ad8c0c9cfcab9f2edfea479a50566  (remote HEAD before this checkpoint)
-rumiai-os    564b27ce776b91f32870bdf771052dbe7afac38c
+rumiai-os    5acea93938cb4e4e486c1ce8dce0f2abe9383199
 rumiai-tests e3f7d42f03747b924b18b7915f7d860d9148c913
 ```
 
