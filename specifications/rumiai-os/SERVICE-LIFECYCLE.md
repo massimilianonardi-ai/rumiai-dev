@@ -131,7 +131,84 @@ For the current macOS/launchd user adapter:
 
 User host integration does not silently enable a host policy that extends account lifetime beyond the host's normal user-manager/session rules, and it does not invent an automatic restart policy. Such policies require separate explicit contracts.
 
-System-wide installation/supervision remains outside this user baseline. It requires an explicit administrative boundary, account/environment semantics and separate host validation before `srv host system ...` can be implemented.
+The current **system host-supervision** surface is:
+
+```text
+srv host system install <service> <account>
+srv host system uninstall <service>
+srv host system start <service>
+srv host system stop <service>
+srv host system restart <service>
+```
+
+System-host operations are administrative. The baseline requires the caller to
+already execute with effective UID 0; `srv` does not invoke `sudo`, `doas` or
+another privilege-escalation mechanism.
+
+`install` requires one explicit pre-existing POSIX account. The account must
+resolve through host account data, must not be UID 0/root, and is never created,
+modified or removed by `srv`. A dedicated non-login service account is the
+recommended deployment shape but is not a RumiAI-managed identity. Host primary and
+supplementary group policy remains administrator-owned.
+
+A system host registration resolves the current system facility default to one exact
+installed concrete provider and reconciles that deployment administratively. The
+registration records that concrete provider as the prepared deployment identity; it
+does not create another provider selector. At each hosted launch the internal runner
+re-resolves the current system facility default and requires it to equal the concrete
+recorded by the registration. A provider-default change does not mutate a running
+process, but a later system start/restart fails as stale registration until the
+administrator reruns:
+
+```text
+srv host system install <service> <account>
+```
+
+System `install` is idempotent reconciliation. It prepares the service-specific
+package HOME required by the selected provider, assigns only that mutable HOME to the
+execution account, and atomically refreshes native registration without starting or
+retargeting an already-running service. `uninstall` removes native registration;
+it does not delete the POSIX account or authoritative package/service state.
+
+System-hosted package launch reuses the normal package launcher under a dedicated
+system-service state context. For provider package `<package>` and service
+`<service>`, package HOME/configuration resolve through the existing package State
+Instance mechanism:
+
+```text
+state-path system pkg <package> home <service>
+state-path system pkg <package> conf <service>
+```
+
+The service account must not gain ownership or write access to executable RumiAI
+product/package roots merely because host registration required administrative
+privilege. Package-declared static `var/` routing remains governed by the existing
+system-state package contract; software requiring mutable data outside that contract
+must place/configure it in managed mutable state rather than make the installed
+provider root writable.
+
+For the Linux/systemd system adapter:
+
+- registration is a system unit under the host systemd system-manager boundary;
+- `User=<account>` expresses the selected non-root execution account;
+- the provider is supervised as `Type=simple`;
+- the exact `m` bootstrap, `srv` internal system-run operand, service identity
+  and reconciled concrete provider are serialized as argv/data;
+- install enables persistent boot intent without starting the service in the current
+  session.
+
+For the macOS/launchd system adapter:
+
+- registration is a LaunchDaemon under the host system domain;
+- `UserName=<account>` expresses the selected non-root execution account;
+- `ProgramArguments` carries the exact `m`/`srv` argv and reconciled concrete
+  provider as data;
+- install establishes persistent boot intent without starting the service in the
+  current session.
+
+Neither system adapter introduces automatic account creation, automatic restart
+policy or dynamic/recycled service identities. Linux `DynamicUser=` is not the
+portable RumiAI baseline.
 
 ## Deferred unless separately specified
 
@@ -147,8 +224,8 @@ generic health protocols
 automatic SIGKILL escalation
 automatic systemd user lingering
 automatic systemd/launchd restart policy
-system-wide systemd installation
-system-wide launchd installation
+automatic service-account creation/removal
+dynamic/recycled service-account allocation
 ```
 
 ## Invariants
@@ -180,10 +257,19 @@ SRV-23  user host stop leaves persistent host integration installed and uninstal
 SRV-24  host managers supervise the provider foreground process directly rather than portable srv start
 SRV-25  each host-managed launch resolves current system facility-default intent; later selector changes do not mutate an already-running host process
 SRV-26  user host integration does not automatically enable linger or an automatic restart policy
-SRV-27  system-wide host supervision remains behind a separate administrative/account/environment contract
+SRV-27  system host supervision exposes normalized install, uninstall, start, stop and restart actions behind an explicit administrative boundary
 SRV-28  host user definitions preserve exact relocatable m/srv argv as data and do not reinterpret RumiAI pathnames as generated shell source
 SRV-29  the systemd user adapter enters m through /bin/sh and serialized argv so arbitrary special-character m paths are not used as the systemd executable pathname
 SRV-30  the launchd user adapter uses a ProgramArguments argv array built through the host plist utility rather than manual XML interpolation
 SRV-31  persistent host definitions do not freeze a concrete provider; the internal foreground runner resolves current facility-default intent at each host start/restart
 SRV-32  host-user registration and supervisor discovery follow the actual calling POSIX account context rather than caller-overridden HOME/XDG roots
+SRV-33  system host mutations require pre-existing effective UID 0 authority and never invoke an internal privilege-escalation mechanism
+SRV-34  system host install requires one explicit pre-existing non-root POSIX execution account and never creates, modifies or removes that account
+SRV-35  system host registration records the exact concrete provider prepared at reconciliation time while the system facility default remains the provider-selection authority
+SRV-36  a later system start/restart requires current facility-default resolution to equal the reconciled concrete provider and otherwise fails until install reconciliation is repeated
+SRV-37  system-hosted package launch uses system package State Instance equal to service identity and never reinterprets state/user as POSIX account state
+SRV-38  system host reconciliation grants the execution account write ownership only over required mutable service state, never over executable product/package roots
+SRV-39  system host uninstall removes native registration without deleting the POSIX account or authoritative package/service state
+SRV-40  Linux system supervision uses a systemd system unit with an explicit non-root User and direct foreground-provider supervision
+SRV-41  macOS system supervision uses a LaunchDaemon with an explicit non-root UserName and direct foreground-provider supervision
 ```

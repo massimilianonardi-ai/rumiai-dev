@@ -156,6 +156,20 @@ state-path user pkg <package> home
 
 The package launcher creates/validates that HOME as needed and exports it for the launched process.
 
+A package launched as a system-hosted service uses the existing system scope plus a
+package State Instance equal to the service/facility identity:
+
+```text
+state-path system pkg <package> home <service>
+state-path system pkg <package> conf <service>
+```
+
+This is service-specific package state, not a new state scope or owner class. The
+selected POSIX execution account is a host security principal and does not become
+part of the RumiAI state identity. Administrative service installation may prepare
+and assign host filesystem ownership for the exact mutable State Instance paths it
+requires; `state-path` itself remains a pure resolver.
+
 RumiAI-managed package configuration normally lives under the reserved `.m/` namespace inside package `conf`, for example:
 
 ```text
@@ -234,4 +248,5 @@ STATE-13  package var routing is static, system-scoped and follows system/curren
 STATE-14  consumers do not duplicate deep state layout knowledge
 STATE-15  an explicitly declared absent var leaf denotes an initially empty directory only when its parent hierarchy is valid
 STATE-16  system package provider bindings live at <package-conf>/binding/<facility>, not under .m
+STATE-17  system-hosted package services use system package State Instance equal to service identity rather than mapping POSIX accounts into state/user
 ```

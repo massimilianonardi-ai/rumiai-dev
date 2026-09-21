@@ -143,8 +143,11 @@ For a launched package, the launcher:
 
 - identifies the concrete managed package command/version from the real command pathname;
 - validates that the useful root/command target belongs to the managed package store;
-- resolves user package `home` and `conf` through `state-path`;
-- creates/validates the package HOME as needed;
+- normally resolves user package `home` and `conf` through `state-path`;
+- when invoked through the trusted system-service context owned by `srv`, resolves
+  system package `home` and `conf` with State Instance equal to the service
+  identity instead;
+- creates/validates the selected package HOME as needed;
 - exports that HOME to the process;
 - applies package-level environment materialization when present;
 - applies user package environment from `<package-conf>/.m/env` when present;
@@ -168,7 +171,14 @@ Package State Instance uses:
 
 inside the state identity.
 
-Package HOME is selected at launch through user-scoped state.
+Package HOME is normally selected at launch through user-scoped state.
+
+The system-host service path is the explicit exception: it reuses the same launcher
+with `scope=system` and State Instance equal to the service identity. This does not
+create a second launcher/state model, and ordinary package commands must not infer
+system scope from POSIX UID, username or inherited HOME. The system-service launch
+context is supplied only by the `srv` host-system path; filesystem permissions
+remain the enforcement boundary for service-account access to prepared state.
 
 RumiAI-managed package configuration uses the reserved:
 
@@ -620,4 +630,5 @@ PKG-64  endpoint, readiness and health are outside the baseline service typed pa
 PKG-65  normal pkg install validates provider conformance against the exact catalog snapshot and extracted useful root before package-store mutation
 PKG-66  integration materializes validated facility-service realization into the installed concrete for later srv consumption
 PKG-67  global provider-backed srv lifecycle uses the system facility default for the service facility and does not consult consumer bindings
+PKG-68  the trusted srv system-host launch path reuses the normal package launcher with system scope and State Instance equal to service identity; ordinary package launch remains user-scoped
 ```
