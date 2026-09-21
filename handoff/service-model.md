@@ -5,31 +5,37 @@ Updated: 2026-09-21
 
 ## Goal
 
-Complete the service model that connects portable `srv` lifecycle, package-provided facilities and later explicit host-supervision integration without introducing a duplicate service registry, provider graph or dependency graph.
+Complete the service model that connects portable `srv` lifecycle, package-provided
+facilities and explicit host-supervision integration without introducing a duplicate
+service registry, provider graph or dependency graph.
 
-The portable/provider-backed bridge and user-scope host supervision are implemented and formally validated. The active task now begins only where real-provider policy, legacy migration and system-scope administrative policy remain.
+The portable/provider-backed bridge, the first real service provider, user-scope
+host supervision and legacy PATH-start migration are now complete. The remaining
+active work is limited to system-scope administrative policy and physical validation.
 
 ## Current repository revisions
 
-Current synchronized checkpoint:
+Current synchronized checkpoint before this handoff update:
 
 ```text
-rumiai-dev      035ec37e87dd50bdb7620a695723355dea049772  pre-sync HEAD
-rumiai-os       708588615bec88f729d8619b45b4f59c24e6b959
-rumiai-tests    8846e04b494ea8df15b74048cc52fc0e1a19983d
-pkg-catalog     12ea704ee4e25e62ab3ed0125133660b4e0c42cb
+rumiai-dev      94f43ef27d531aac90e0d1da6fd8921917666461
+rumiai-os       f27f08f80d1e7407c8d8bd686a2beb4eb443eeb3
+rumiai-tests    d61616898215d88a762aed191e7bbf5f096842c0
+pkg-catalog     3749496e16172db00556751955280e7f3c7cbf61
 rumiai-dev-PoCs ab470307cb8a3e26d57b798fe021109209d66792
 ```
 
-The latest formal user-host/provider/facility validation exercised exactly:
+Fresh remote HEAD retrieval remains mandatory on resume.
+
+The service-relevant product revision formally validated below is:
 
 ```text
-rumiai-os@708588615bec88f729d8619b45b4f59c24e6b959
-rumiai-tests@8846e04b494ea8df15b74048cc52fc0e1a19983d
-GitHub Actions run 35526602708
+rumiai-os@6fd3656a7f8abdbc169ca2b9de94e02ec5e8cfbf
 ```
 
-Fresh remote HEAD retrieval remains mandatory on resume.
+The current `rumiai-os` HEAD is a forward descendant whose only delta from that
+revision is the unrelated addition of `res/sys/manual/enc.lib.sh`; no service,
+package or GeoServer implementation changed in that delta.
 
 ## Applicable canonical sources
 
@@ -40,69 +46,72 @@ specifications/rumiai-os/SERVICE-LIFECYCLE.md
 specifications/rumiai-os/PACKAGE-MODEL.md
 ```
 
-Add the host/platform/state/security specifications when host-supervision work becomes active.
+Add the host/platform/state/security specifications before system-scope host work.
 
-## Fixed task-local choices
+## Completed implementation state
 
-Durable service semantics are canonical in the specifications; this handoff records only current task state.
+### Generic facility/service bridge
 
-- Portable lifecycle remains:
-  ```text
-  srv start <service>
-  srv stop [-f] <service>
-  ```
-- Provider-backed service identity is the facility identity. No second service inventory/provider registry exists.
-- Portable service capability is declared through the trusted facility `service` part.
-- Baseline service contract remains:
-  ```text
-  start   package-command
-  process foreground
-  stop    sigterm
-  ```
-- `pkg` owns facility identity, provider conformance and selection; `srv` owns process lifecycle.
-- Global provider-backed `srv start <facility>` uses only the system facility default. Consumer bindings do not participate.
-- A running provider-backed instance persists its selected concrete provider. Later default changes do not retarget it; stop does not re-resolve provider selection.
-- A configured-but-invalid provider path fails. It must not silently fall back to PATH.
-- The historical PATH `<service>-start` mechanism remains a temporary compatibility path only when no provider-backed default applies.
-- Endpoint, readiness and application health remain outside the baseline service part.
-- User host integration is now canonically normalized as:
-  ```text
-  srv host user install <service>
-  srv host user uninstall <service>
-  srv host user start <service>
-  srv host user stop <service>
-  srv host user restart <service>
-  ```
-- Host `user` is the calling POSIX account/login supervisor context and is distinct from RumiAI `state/user`.
-- Host-user supervisor discovery and registration follow the actual POSIX account context rather than caller-overridden `HOME`/XDG roots; this is canonical as SRV-32.
-- Host managers supervise the foreground provider directly; they do not invoke portable `srv start`.
-- Each host-managed launch resolves current system facility-default intent; selector changes affect a later launch/restart, not the running instance.
-- User integration does not enable systemd linger or an automatic restart policy.
-- `srv host system ...` remains a design boundary only; system-wide account/environment/privilege semantics are not yet fixed.
-- System-wide host integration remains an explicit administrative boundary; a service account must not gain ownership/write access over executable product roots merely because it runs a service.
+The current product implements the provider-backed service contract through the
+facility `service` typed part. Provider conformance remains install-time/inert;
+runtime service lifecycle remains owned by `srv`.
 
-## Implemented portable/provider-backed bridge
+`srv start <service>` now requires:
 
-Current product behavior includes:
+```text
+system facility default
+→ installed concrete provider
+→ valid facility-service/<facility>/start realization
+→ ordinary package command
+→ foreground provider process
+```
 
-- trusted `service` facility-contract/provider validation;
-- same-snapshot provider conformance during normal `pkg install` before package-store mutation;
-- materialization of validated `facility-service/<facility>/start`;
-- public system-facility-default resolution through the package provider model;
-- exact installed-provider service-start command resolution;
-- provider-backed `srv` launch through the exact active `m` bootstrap, preserving package-launch HOME/environment/dependency behavior on Linux and macOS;
-- runtime persistence of selected concrete provider identity;
-- SIGTERM stop through recorded running-instance state;
-- no provider re-resolution during stop;
-- no fallback from configured-but-invalid provider state to the legacy PATH path.
+Command naming and PATH are no longer a service-discovery mechanism.
 
-The macOS bootstrap fix is part of this bridge: directly executing a `#!/usr/bin/env m` package command under host `nohup` could lose discovery of `m`; provider-backed launch therefore enters through `$m_BOOTSTRAP_BIN` with the exact package command as the command operand.
+Existing runtime records created by older revisions without provider metadata remain
+readable for stop/stale-state cleanup. New starts persist concrete provider identity.
 
-Permanent service coverage exercises the real `srv` entrypoint and the real package integration/provider machinery. The current service provider used by that regression test is synthetic package input to `pkg_integrate`; no real `pkg-catalog` package has yet been promoted as a service provider.
+### First real provider: GeoServer
 
-## Implemented user host supervision
+`pkg-catalog` now contains the first real service provider:
 
-Current product behavior also includes the canonical user-scope host adapter surface:
+```text
+facility/geoserver/1/service/start     package-command
+facility/geoserver/1/service/process   foreground
+facility/geoserver/1/service/stop      sigterm
+
+pkg/geoserver/.../facility             geoserver 1
+pkg/geoserver/.../dependency           java >=17 <22
+pkg/geoserver/.../facility-service/geoserver/start
+                                       geoserver-start
+```
+
+Temurin now provides the Java 21 path required by GeoServer 3.0.x while existing
+Java 25 semantics remain intact.
+
+The GeoServer repository adapter uses:
+
+```text
+GitHub releases API
+    stable release inventory/latest only
+
+SourceForge release RSS
+    exact-version binary existence
+    artifact size
+    MD5 digest
+```
+
+Exact installs therefore do not depend on anonymous GitHub API quota. The exact
+GeoServer 3.0.1 SourceForge binary metadata validated by the live test is:
+
+```text
+size    126971831
+md5     1b8b60c512dd983f7996074d69119566
+```
+
+### User host supervision
+
+The implemented public surface remains:
 
 ```text
 srv host user install <service>
@@ -112,89 +121,73 @@ srv host user stop <service>
 srv host user restart <service>
 ```
 
-Implementation properties:
+Linux uses the calling account's systemd user manager; macOS uses the calling
+account's launchd GUI domain. Host managers supervise the provider foreground process
+directly and re-resolve current facility-default intent on a later start/restart.
 
-- Linux uses the real calling account's systemd user manager and registration tree;
-- Linux resolves the account UID/home from host account data and connects through `/run/user/<uid>`, explicitly supplying the real account `HOME`, `XDG_CONFIG_HOME`, `XDG_RUNTIME_DIR` and user-bus address to `systemctl --user`;
-- systemd `ExecStart` uses fixed `/bin/sh` plus separately serialized exact arguments for the active `m` bootstrap, `srv`, the internal foreground runner and service identity;
-- macOS resolves the real account UID/home, uses `launchd gui/<uid>`, constructs `ProgramArguments` through `plutil`, and stores the LaunchAgent below the actual account home;
-- install persists/enables native intent without starting the service;
-- start/restart re-resolve the current facility default and exact provider command;
-- stop leaves native registration installed;
-- uninstall removes adapter-owned registration;
-- the native supervisor manages the provider foreground process directly and never calls portable `srv start`;
-- no systemd linger or automatic restart policy is introduced;
-- manifest writes use process-unique temporary files before atomic replacement.
+No systemd linger or automatic restart policy is introduced.
 
-The permanent `rumiai-os/srv/host-user.test` exercises real systemd user / launchd operations, two provider versions, start/stop/restart/uninstall, SIGTERM delivery and provider re-resolution across default changes.
+### Legacy PATH migration
 
-## Formal validation evidence
+The historical PATH-resolved `<service>-start` fallback has been removed.
 
-All evidence is revision-specific.
+The removal criterion was satisfied because:
 
-### Baseline provider/facility/service formal validation
+- GeoServer completed the first real catalog-provider migration;
+- the current catalog contains no package `*-start` command other than GeoServer's
+  provider-internal `geoserver-start`;
+- service capability is now explicitly represented by the facility `service` part;
+- permanent tests prove that both a configured-invalid default and an absent default
+  fail instead of executing a same-named PATH command.
+
+The canonical invariant is now SRV-19 in `SERVICE-LIFECYCLE.md`.
+
+## Current formal validation evidence
+
+All evidence is revision-specific and GitHub-hosted; it is not physical stable-host
+validation.
+
+### GeoServer end-to-end service validation
 
 GitHub Actions run:
 
 ```text
-35495425634
+35629714037
 ```
 
 Exact revisions:
 
 ```text
-rumiai-tests@aa7ff12a0ecb63ef2b83f26576df19eff424da27
-rumiai-os@b18d0fc804814c7b99e841df6f5d1fc22d2e5a90
+rumiai-tests@d61616898215d88a762aed191e7bbf5f096842c0
+rumiai-os@6fd3656a7f8abdbc169ca2b9de94e02ec5e8cfbf
+pkg-catalog@3749496e16172db00556751955280e7f3c7cbf61
 ```
 
-Formal `package-provider-facility` task scope:
+Formal `geoserver-service` scope:
 
 ```text
 Linux/x86_64   VALIDATED
 Darwin/arm64   VALIDATED
 ```
 
-All required provider/facility/integration/launcher/service selections passed with no required SKIP. `rumiai-validate` published the individual sessions and aggregate validation records.
+The scope validates live Temurin Java 21 installation, both repository adapters,
+live GeoServer metadata resolution, facility contract, real `pkg install geoserver`,
+provider default, portable `srv start/stop`, and
+`srv host user install/start/restart/stop/uninstall`.
 
-### Expanded Java-consumer formal validation
+### Broad provider/facility/srv validation
 
 GitHub Actions run:
 
 ```text
-35495727155
+35629713722
 ```
 
 Exact revisions:
 
 ```text
-rumiai-tests@f4b46a079d81cc15bdc0eb9fa215ba1c1f652444
-rumiai-os@b18d0fc804814c7b99e841df6f5d1fc22d2e5a90
-```
-
-The same formal task scope, now including live Temurin/NetBeans/Keycloak/Maven consumers, again finished:
-
-```text
-Linux/x86_64   VALIDATED
-Darwin/arm64   VALIDATED
-```
-
-The `rumiai-os/srv` selection passed on both hosts.
-
-These GitHub-hosted validations are formal RumiAI validation evidence, but they are not physical validation of the stable reference hosts.
-
-### User host-supervision formal validation
-
-GitHub Actions run:
-
-```text
-35526602708
-```
-
-Exact revisions:
-
-```text
-rumiai-tests@8846e04b494ea8df15b74048cc52fc0e1a19983d
-rumiai-os@708588615bec88f729d8619b45b4f59c24e6b959
+rumiai-tests@d61616898215d88a762aed191e7bbf5f096842c0
+rumiai-os@6fd3656a7f8abdbc169ca2b9de94e02ec5e8cfbf
 ```
 
 Formal `package-provider-facility-final` scope:
@@ -204,7 +197,7 @@ Linux/x86_64   VALIDATED
 Darwin/arm64   VALIDATED
 ```
 
-The required `rumiai-os/srv` selection contained no SKIP:
+The `rumiai-os/srv` selection passed on both hosts with no required SKIP:
 
 ```text
 rumiai-os/srv/host-user.test   PASS
@@ -212,76 +205,59 @@ rumiai-os/srv/lifecycle.test   PASS
 rumiai-os/srv/provider.test    PASS
 ```
 
-This validation is especially relevant because `rumiai-validate` redirects mutable `HOME`/XDG roots. The host-user adapter still reached the actual account supervisor on both hosts, proving that native account/supervisor discovery is no longer accidentally coupled to RumiAI validation/application user-state roots.
+The lifecycle test now exercises its concurrency, ownership, stale-state,
+idempotence and failure behavior through an integrated provider/facility rather than
+the removed PATH compatibility path.
 
-As with the earlier GitHub-hosted formal runs, this is formal revision-specific RumiAI evidence but is not physical stable-host validation.
-
-## Current state
-
-The generic portable/provider-backed service bridge and user-scope native host supervision are no longer implementation blockers.
-
-No current `pkg-catalog` package declares the `service` facility part.
-
-The user has now selected **GeoServer as the first real service provider**. GeoServer is not yet present in the current catalog. The current GeoServer 3.0 binary is an appropriate lifecycle target because its official `bin/startup.sh` replaces itself with the Java/Jetty process, satisfying the foreground-process requirement without a RumiAI daemon wrapper.
-
-GeoServer 3.0.x officially targets Java 17/21; the current RumiAI catalog exposes only `java 25`. The first real-provider work therefore includes adding a supported Java 21 concrete/provider path (preferably another Temurin feature line under the existing `temurin` package identity) before GeoServer is declared as a `java >=17 <22` consumer.
-
-The temporary legacy PATH path remains because there is not yet a real catalog provider/migration criterion.
-
-User host supervision is implemented and formally validated on GitHub-hosted Linux/x86_64 and Darwin/arm64. System scope remains intentionally unimplemented because execution account, privilege transition, environment/state mapping and installation semantics are genuine administrative-policy decisions.
-
-Physical stable-host validation remains pending.
+A pre-existing malformed permanent-test fixture
+`service_facility=servicefacility$` was discovered by this broader validation and
+corrected to a valid unique facility identity before the final successful run.
 
 ## Remaining active work
 
-### 1. First real service provider — GeoServer selected
+### 1. System host supervision
 
-Implement GeoServer as the first real service provider. Define its provider-independent service facility contract/realization and exercise:
+`srv host system ...` remains intentionally unimplemented.
+
+This is now the only remaining service-model design gate. Before implementation,
+the project must decide the administrative contract for at least:
 
 ```text
-pkg install
-→ explicit facility default
-→ srv start
-→ running provider identity
-→ srv stop
-→ srv host user install/start/restart/stop/uninstall
+execution account
+account creation/reuse policy
+privilege transition
+system service environment
+package/state HOME mapping
+ownership and writable-state boundaries
+installation/registration privilege
+service-account access to package/provider state
 ```
 
-The service command must launch the official foreground GeoServer binary semantics rather than introducing an arbitrary operating-mode wrapper. Add the Java 21 provider path needed by the supported GeoServer 3.0 runtime before the end-to-end service proof.
+Do not silently implement system scope as root execution, create a service account,
+enable sudo, reuse RumiAI `state/user`, or grant a service account ownership/write
+access over executable product roots.
 
-### 2. Legacy-path removal
+This is a genuine policy decision rather than missing generic plumbing.
 
-After at least one real provider migration and a clear compatibility criterion, decide when the historical PATH `<service>-start` fallback can be removed.
+### 2. Physical validation
 
-### 3. System host supervision
+GitHub-hosted Linux/x86_64 and Darwin/arm64 formal validation is complete for the
+implemented portable and user-host service paths.
 
-System scope remains blocked on a genuine administrative-policy question: execution account, environment/state mapping, privilege transition and installation ownership. Do not implement `srv host system` by silently assuming root execution, creating an account, enabling sudo or reusing RumiAI `state/user`.
-
-### 4. Physical validation
-
-GitHub-hosted systemd/launchd formal validation is complete for the implemented user scope. Required physical stable-host validation remains separate under `PHYSICAL-TESTING.md`.
+Physical validation on the stable reference hosts remains separate under
+`PHYSICAL-TESTING.md` and must not be inferred from GitHub-hosted evidence.
 
 ## Next action
 
-The first real-provider gate is resolved: proceed with GeoServer.
+The next implementation work is blocked on the system-scope administrative policy.
 
-Current implementation sequence:
+A clean resume should therefore:
 
-1. add a supported Java 21 provider path without changing existing Java 25 semantics;
-2. add GeoServer package/repository/catalog definitions and the `geoserver` service facility;
-3. validate real `pkg install -> facility/default/binding -> srv start/stop -> srv host user` behavior;
-4. only after that proof revisit the legacy PATH fallback removal criterion.
+1. perform the normal mandatory retrieval/preflight;
+2. confirm that current HEAD deltas do not alter the service/package contracts above;
+3. resolve the system-host execution-account/privilege/state policy with the user;
+4. only then specify and implement `srv host system ...`;
+5. perform physical validation separately when the stable hosts are available.
 
-System-scope execution-account/environment/privilege policy remains a separate unresolved gate.
-
-## Blockers / open questions
-
-No generic portable-service or user-host implementation blocker remains.
-
-The remaining gates require policy rather than more generic plumbing:
-
-- removal criterion for the temporary legacy PATH compatibility path after the GeoServer migration;
-- system-wide account/environment/privilege/install mechanics behind the administrative boundary;
-- physical validation on the stable reference hosts.
-
-Do not treat GitHub-hosted validation as physical evidence.
+No first-provider, Java 21, GeoServer, repository-metadata or legacy-PATH migration
+work remains pending.
