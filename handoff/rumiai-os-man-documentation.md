@@ -12,9 +12,9 @@ The long-term multi-channel documentation source/rendering architecture remains 
 ## Current repository revisions
 
 ```text
-rumiai-dev   e29fb8ac332ad8c0c9cfcab9f2edfea479a50566  (remote HEAD before this checkpoint)
-rumiai-os    5acea93938cb4e4e486c1ce8dce0f2abe9383199
-rumiai-tests e3f7d42f03747b924b18b7915f7d860d9148c913
+rumiai-dev   cb4ecf2ac00150584bf908349ec62d98701afb57  (remote HEAD before this checkpoint)
+rumiai-os    f27f08f80d1e7407c8d8bd686a2beb4eb443eeb3
+rumiai-tests d61616898215d88a762aed191e7bbf5f096842c0
 ```
 
 Fresh remote HEAD retrieval remains mandatory before future writes.
