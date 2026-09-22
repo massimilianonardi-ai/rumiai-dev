@@ -160,13 +160,13 @@ The current parser supports project configuration versions:
 
 Version 1 is the original static lifecycle model and remains supported without changing its existing semantics.
 
-Version 2 extends the same lifecycle model with project dependencies, contextual collections, trusted operation providers, declarative conditions, named outputs and runtime plan refinement.
+Version 2 extends the same lifecycle model with project dependencies, declarative external requirements, contextual collections, trusted operation providers, declarative conditions, named outputs and runtime plan refinement.
 
 Unknown members are rejected so configuration mistakes are not silently ignored.
 
 ### 6.1 Names
 
-Project-defined goal, operation, provider, collection, dependency and profile names use the controlled-name shape:
+Project-defined goal, operation, provider, collection, dependency, requirement and profile names use the controlled-name shape:
 
 ```text
 [a-z0-9][a-z0-9._-]*[a-z0-9]
@@ -241,6 +241,7 @@ operations
 collections
 providers
 dependencies
+requirements
 profiles
 ```
 
@@ -249,10 +250,13 @@ A version-2 goal may select root operations or providers.
 A version-2 operation retains `prerequisites` and `action` and may additionally define:
 
 ```text
+requirements
 when
 outputs
 failure
 ```
+
+`requirements` is an optional array of named requirement definitions. A selected operation is not ready until all of its current requirements are satisfied.
 
 `when` is a declarative guard. A guarded operation is selected when the condition resolves true, skipped when it resolves false, and remains conditional while required evidence is unavailable.
 
@@ -321,6 +325,8 @@ The first provider type is:
 ```text
 map-process
 ```
+
+A version-2 provider may declare an optional `requirements` array. A provider cannot execute derived work until its current requirements are satisfied.
 
 Its current shape is:
 
@@ -406,12 +412,13 @@ Version-2 profiles may additionally define:
 collections
 providers
 dependencies
+requirements
 ```
 
 Profile composition remains replacement-by-name:
 
 - profile environment entries replace same-named base entries;
-- goal/operation/collection/provider/dependency entries replace same-named base definitions and may add new entries;
+- goal/operation/collection/provider/dependency/requirement entries replace same-named base definitions and may add new entries;
 - absent entries inherit the base project value;
 - no implicit deletion syntax exists.
 
@@ -452,6 +459,61 @@ The baseline intentionally provides no request-wide de-duplication across indepe
 
 Version-2 plan inspection recursively plans active dependencies without executing their lifecycle work and preserves each child request/plan as nested project structure rather than flattening child operations into the parent plan.
 
+### 6.9 External requirements
+
+Version 2 introduces named `requirements` as declarative external conditions consumed by lifecycle nodes. A requirement is distinct from an operation prerequisite and from a project dependency.
+
+The first requirement type is:
+
+```text
+facility
+```
+
+with this shape:
+
+```json
+{
+  "type": "facility",
+  "facility": "java",
+  "constraints": [">=21", "<26"]
+}
+```
+
+`facility` is a provider-independent facility identity owned by `pkg`. `constraints` is a non-empty array using the existing package facility-compatibility constraint language.
+
+Operations and trusted providers may reference named requirements through their `requirements` arrays.
+
+Only requirements referenced by currently reachable lifecycle nodes are resolved. Unreachable declarations do not trigger package/provider queries.
+
+Facility requirements are resolved by consuming the package subsystem's existing provider/facility contract. `mk` MUST NOT duplicate compatibility parsing, provider selection, package installation policy or facility conformance logic.
+
+A project is not a package consumer and does not acquire a synthetic package-consumer identity. The first baseline resolves a facility requirement against the configured **system facility default** using normal `pkg` package-class/osarch semantics.
+
+Requirement resolution is read-only. It MUST NOT install packages, create/change provider defaults, create package-consumer bindings or silently select among installed providers.
+
+The package query surface is:
+
+```text
+pkg requirement resolve <facility> <constraint>...
+```
+
+On success it prints the selected concrete provider identity. Status 1 means the requirement is not currently satisfiable; status 2 means invalid invocation/syntax. The query performs no provider/facility mutation.
+
+A reachable requirement has plan state:
+
+```text
+satisfied
+unsatisfied
+```
+
+and a satisfied facility requirement records the selected provider concrete.
+
+An unsatisfied requirement blocks the operation/provider that references it but does not make plan inspection execute or mutate anything. During execution, requirements are re-resolved during normal runtime refinement. This allows an earlier explicit prerequisite to change relevant external state before a later lifecycle node becomes ready.
+
+If no executable lifecycle work remains and a required reachable requirement is still unsatisfied, the lifecycle request fails before that consuming action executes.
+
+Facility requirements are gates, not a second runtime projection layer. The current `m` bootstrap continues to own globally published facility commands/environment from system facility defaults. Already-running processes are not retroactively mutated by later provider-configuration changes.
+
 ## 7. Resolution, planning and runtime refinement
 
 For a request, `mk` resolves conceptually:
@@ -476,13 +538,14 @@ resolve reachable context
 → continue
 ```
 
-Only dynamic collections/providers reachable from the requested goals are resolved or scanned. Model/schema/reference validation still applies normally; reachability does not make invalid declared structure acceptable.
+Only dynamic collections/providers/requirements reachable from the requested goals are resolved or scanned. Model/schema/reference validation still applies normally; reachability does not make invalid declared structure acceptable.
 
 Immediate context-derived facts, such as current membership of a declared source directory, are resolved during plan inspection. Future-dependent facts remain explicit:
 
 - a collection behind an unsatisfied `after` barrier remains pending;
 - a provider depending on a pending collection remains pending;
-- a guarded operation whose operand evidence does not yet exist remains conditional.
+- a guarded operation whose operand evidence does not yet exist remains conditional;
+- a reachable external requirement that cannot currently be satisfied remains unsatisfied and blocks only its consumer nodes.
 
 When execution produces new evidence, the next resolution pass may add derived operations or select/skip conditional alternatives.
 
@@ -498,7 +561,7 @@ For every currently concrete execution path:
 
 Version 1 retains its static fully resolved prerequisite plan and sequential execution behavior.
 
-Incremental fingerprints, caching, parallel scheduling, remote execution, declarative requirement resolution and watch/hot-update triggers remain outside the implemented baseline.
+Incremental fingerprints, caching, parallel scheduling, remote execution and watch/hot-update triggers remain outside the implemented baseline.
 
 ## 8. Public command line
 
@@ -541,12 +604,13 @@ Version 2 writes a structured JSON plan containing the currently relevant:
 version
 goals
 dependencies
+requirements
 collections
 providers
 operations
 ```
 
-Each active dependency entry identifies the dependency name, canonical child project root, requested child goals, optional explicit child profile and the nested child plan. Resolved collections expose current items; pending collections expose their blocking `waitingFor` nodes. Providers expose their current state and derived operation identities. Operations expose their current state and, when applicable, observation/condition/derivation information.
+Each active dependency entry identifies the dependency name, canonical child project root, requested child goals, optional explicit child profile and the nested child plan. Reachable requirements identify their type, facility/constraints, current satisfaction state and selected concrete provider when satisfied. Resolved collections expose current items; pending collections expose their blocking `waitingFor` nodes. Providers expose their current state and derived operation identities. Operations expose their current state and, when applicable, observation/condition/derivation information.
 
 Version-2 operation states include:
 
@@ -602,6 +666,8 @@ Version 1 remains fail-fast: a non-zero action result, signal termination, spawn
 Version 2 also defaults to fail-fast. Only an operation explicitly declaring `failure: "continue"` converts its execution failure into observable terminal result evidence and allows refinement to continue. That continued failure still does not satisfy an ordinary prerequisite.
 
 For version 2, active project dependencies are delegated and must complete successfully before local operations execute. Dependency execution uses a fresh `mk` engine process for each active direct dependency request. Parent profile selection is not propagated unless the dependency explicitly selects a child profile.
+
+Reachable facility requirements are queried through the public `pkg requirement resolve` boundary during each refinement pass. Satisfied requirements permit their consumer nodes to become ready; unsatisfied requirements keep those nodes blocked. `mk` does not auto-install or mutate provider-selection configuration.
 
 The current executor is sequential. This is an implementation property rather than a semantic ordering rule for otherwise independent operations.
 
@@ -701,4 +767,12 @@ MK-32  multiple parent goals mapped to one direct dependency are delegated as on
 MK-33  project dependencies must complete successfully before parent local lifecycle work; operation failure-continue semantics do not apply to them
 MK-34  version-2 plans preserve active dependent-project requests as nested project plans
 MK-35  project dependency semantics do not imply request-wide exactly-once execution or de-duplication across independent sibling branches
+MK-36  version-2 requirements are named external conditions distinct from operation prerequisites and project dependencies
+MK-37  the first requirement type is pkg facility identity plus existing pkg compatibility constraints
+MK-38  operations and trusted providers may reference requirements and only requirements reachable from requested lifecycle nodes are resolved
+MK-39  mk consumes pkg provider/facility resolution through the public pkg requirement query and does not duplicate provider selection, compatibility or installation policy
+MK-40  project facility requirements use the system facility default and do not create synthetic package-consumer bindings
+MK-41  requirement resolution is read-only and does not install packages or mutate provider-selection configuration
+MK-42  reachable unsatisfied requirements remain inspectable in plans, block only their consumers and are re-resolved during runtime refinement
+MK-43  version-2 plans expose reachable requirement state and the selected provider concrete for satisfied facility requirements
 ```
