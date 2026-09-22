@@ -1,7 +1,7 @@
 # RumiAI OS — Package model
 
 Status: **Current / normative**  
-Updated: 2026-09-19
+Updated: 2026-09-22
 
 This document defines the current semantic contract of the `m` package subsystem without duplicating implementation internals that belong in `rumiai-os`.
 
@@ -563,9 +563,11 @@ When a package consumes a facility, the package launcher continues to apply the 
 
 ## `mk` boundary
 
-`mk` is the source-materialization facility. It may be used when source must be transformed into a useful root, but it is not a second package manager and does not replace package selection/catalog/integration semantics.
+`mk` is the project development-lifecycle orchestrator of `m`. It may invoke package commands or consume package-provided tools/facilities as part of a project lifecycle, but it is not a second package manager and does not replace package selection, catalog, provider/facility, dependency-resolution or integration semantics owned by `pkg`.
 
-See `MK-SOURCE-MATERIALIZATION.md`.
+The project-to-project `dependency` relation defined by the `mk` project model is distinct from package/facility dependency semantics owned by `pkg`. Where a build requirement is satisfied through a `pkg` facility/provider contract, `mk` must consume that existing contract rather than creating a parallel provider-selection graph.
+
+See `MK.md`.
 
 ## Package-specific truth
 
@@ -594,7 +596,7 @@ PKG-08  .m is reserved for RumiAI-managed package configuration
 PKG-09  State Instance uses @! in package state identity
 PKG-10  var routing is static and system-scoped, never dynamic user routing
 PKG-11  factory/default state is distinct from mutable current state
-PKG-12  mk materialization does not replace package management semantics
+PKG-12  mk lifecycle orchestration does not replace package-management, provider/facility or package-dependency semantics
 PKG-13  concrete package identity names the installed distribution/provider, not a generic facility
 PKG-14  facility declarations are independent of package identity
 PKG-15  multiple installed providers of the same facility/compatibility are valid
