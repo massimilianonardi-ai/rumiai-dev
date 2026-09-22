@@ -1,7 +1,7 @@
 # enc.lib.sh review
 
 Status: Active
-Updated: 2026-09-21
+Updated: 2026-09-22
 
 ## Goal
 
@@ -10,9 +10,9 @@ Review and realign `lib/sys/sh/enc.lib.sh` function by function, preserving inte
 ## Current repository revisions
 
 ```text
-rumiai-dev   8c0902ecfb9897b9e63178b49ae6910850db5e10  (remote HEAD before this checkpoint)
-rumiai-os    f27f08f80d1e7407c8d8bd686a2beb4eb443eeb3
-rumiai-tests d61616898215d88a762aed191e7bbf5f096842c0
+rumiai-dev   a839dd907041b0183a547eaf60ab5b37d9ce4559  (remote HEAD before this checkpoint)
+rumiai-os    688379f67ea3a2ddc55f43fbfc5020a07bb3ae0b
+rumiai-tests 5e155007ce174aa44eee6aa281e07beab16f0be6
 ```
 
 Fresh remote HEAD retrieval remains mandatory before future writes.
@@ -51,7 +51,7 @@ todo/library-api-visibility-realignment.md
 - The GnuPG/OpenPGP construction remains AES-256, symmetric OCB AEAD, 64 KiB chunks, iterated-and-salted S2K with SHA-256 at count 65011712, no compression and no symmetric-key cache.
 - Interactive passphrase acquisition is now owned by GnuPG/Pinentry. Supplied-passphrase mode uses fd 3 with a here-document; payload stdin remains fd 0.
 - Current `decode` intentionally streams; authentication failure may occur after plaintext has already been emitted. Consumers requiring authenticated all-or-nothing data must buffer until status 0.
-- Full public/internal API classification and the mandatory `enc.lib.sh` operational manual remain to be completed as this library review proceeds.
+- Public/internal API classification and the mandatory `enc.lib.sh` operational manual are complete. Remaining task work is validation/closure.
 - Proposed `encoded_file_import` design: accept exactly one encrypted-source operand; resolve it through the existing public `core.lib.sh` primitive `pathsearch` instead of duplicating PATH traversal. `pathsearch` already handles explicit pathnames, ordered PATH search, empty PATH components as the current directory, no executable-bit requirement and canonicalized result assignment. Normalize path-resolution failure to import status 1. Buffer the complete `decode` output in shell memory and proceed to `eval` only on decode status 0; then return the evaluated source status. No temporary plaintext file and no `command -v`.
 - Because `encoded_file_import` is itself a POSIX shell function, it cannot reproduce the caller's outer positional parameters exactly as dot can; the implementation should avoid exposing its own file operand or plaintext buffer as positional parameters to the imported source. Decrypted input is expected to be valid POSIX shell source text; NUL-bearing binary content is outside this API purpose.
 - A candidate multi-file loop using `eval "$( ... )"` was analyzed and is not suitable unchanged. Failures from `pathsearch` or `decode` inside the command substitution become an empty eval operand and are therefore reported as success; the following `shift` also overwrites ordinary non-zero eval status. Passing the decrypted source through `printf '%s\n' "$source"` would additionally expose the full plaintext in argv on implementations where printf is external. With xtrace enabled, the plaintext is exposed in assignment/eval tracing. Finally, code executed by eval can modify the function's positional parameters (for example with `set --`) and therefore corrupt a multi-file iteration, and a top-level `return` inside eval returns from `encoded_file_import` rather than merely from one sourced unit.
@@ -102,14 +102,30 @@ todo/library-api-visibility-realignment.md
 
 - The stale deferred item `todo/review-enc-lib.md` was removed after activation because the same work is already owned by this active handoff. This restores the required TODO/handoff lifecycle invariant: one current owner for the task, no duplicate deferred state.
 
+- `rumiai-tests@f7eefe2a6feab34e34543e8addad3604b71774c2` adds executable permanent coverage at `tests/rumiai-os/enc/encoded-file-eval.test`. The test uses the real target `core.lib.sh`/`enc.lib.sh` and real GnuPG OCB rather than replacing `decode`; it protects invalid-operand statuses, PATH resolution, exact forwarded arguments, source return-status propagation, caller positional isolation, ordinary source shell-state effects, decode/authentication status 3, rejection of plaintext emitted by a failing real decode, and xtrace disable/restore behavior.
+- A temporary GitHub-hosted development matrix first exposed a real macOS `/bin/sh` parse defect in the supplied-passphrase here-document form used by `encode`/`decode`: all enc tests failed before execution with a syntax error at the following `else`.
+- `rumiai-os@7c296e90ca96259bad960534aa4333e23e7ec60f` corrects that here-document portability defect by separating GnuPG execution from explicit status testing after the here-document. Public API and documented behavior are unchanged, so `res/sys/manual/enc.lib.sh` required no text change.
+- The same hosted development run then exposed that current `o2a` had regressed to newline-only `IFS`, contradicting both its whitespace-separated public contract and `octal.test`.
+- `rumiai-os@688379f67ea3a2ddc55f43fbfc5020a07bb3ae0b` restores POSIX shell whitespace tokenization in `o2a` by using space, tab and newline in `IFS`. The existing operational manual already described this intended behavior and required no change.
+- Final temporary hosted development execution against `rumiai-os@688379f67ea3a2ddc55f43fbfc5020a07bb3ae0b` showed:
+  - macOS 26.6.2 ARM64 hosted: all five `rumiai-os/enc` permanent tests PASS;
+  - Ubuntu hosted: `encoded-file-eval.test`, `gpg-interface.test`, `gpg-roundtrip.test` and `octal.test` PASS; `encoded-file-edit.test` cannot exercise its contract because that runner's `/bin/sh` rejects `set -o pipefail`, while the RumiAI baseline requires POSIX.1-2024 pipefail.
+- The temporary hosted development workflow was removed forward-only in `rumiai-tests@5e155007ce174aa44eee6aa281e07beab16f0be6`; no temporary workflow remains in the current tree.
+
 ## Current state
 
-`a2o`/`o2a`, `encode`/`decode`, `encoded_file_eval` and the simplified `vsed`/`pipefail` `encoded_file_edit` implementation are present in the product. The obsolete `encoded_file_editor` function is no longer present. `encoded_file_edit` has permanent metadata, failure, collision and transaction coverage. `res/sys/manual/enc.lib.sh` now documents the complete current public surface: `encode`, `decode`, `encoded_file_eval`, `encoded_file_edit`, `a2o` and `o2a`; no internal symbol is exposed as public API. Full real interactive GnuPG/Pinentry + vsed integration remains open.
+`a2o`/`o2a`, `encode`/`decode`, `encoded_file_eval` and the simplified `vsed`/`pipefail` `encoded_file_edit` implementation are present in the product. The obsolete `encoded_file_editor` function is no longer present. All six public functions now have proportional permanent coverage, including real-GnuPG coverage for `encoded_file_eval`. `res/sys/manual/enc.lib.sh` documents the complete current public surface and no internal symbol is exposed as public API.
+
+Current product revision `rumiai-os@688379f67ea3a2ddc55f43fbfc5020a07bb3ae0b` also contains the macOS here-document portability correction and restored POSIX-whitespace `o2a` tokenization discovered during hosted development validation. The complete `rumiai-os/enc` group passes on hosted macOS 26 ARM64. On hosted Ubuntu, four tests pass and only `encoded-file-edit.test` is blocked by the runner's pre-POSIX.1-2024 `/bin/sh` lacking `pipefail`; this auxiliary-host limitation is not evidence for or against Ubuntu 26.04 ARM64.
+
+Full real interactive GnuPG/Pinentry + `vsed` validation on the applicable stable physical reference hosts remains open.
 
 ## Next action
 
-Add proportional permanent coverage for `encoded_file_eval`, then run library-wide validation including the available real interactive Pinentry/vsed path. The operational manual/public API documentation for `enc.lib.sh` is complete.
+Run the final real interactive GnuPG/Pinentry + `vsed` path on the applicable stable physical reference hosts (macOS and Ubuntu 26.04 ARM64) against the exact current product/test revisions. If the required scope passes, perform the final consistency gate, write a `Status: Complete` handoff snapshot, then remove this handoff in a later forward commit.
 
 ## Blockers / open questions
 
-- No manual/API-classification blocker remains for `enc.lib.sh`; remaining closure work is validation/test coverage.
+- No implementation, permanent-test, manual or API-classification blocker is currently known for `enc.lib.sh`.
+- Physical interactive validation cannot be supplied by the hosted/auxiliary environments already exercised; hosted results must not be relabelled as physical reference-host evidence.
+- The hosted Ubuntu `pipefail` failure is an auxiliary-host baseline mismatch. The required stable Linux reference remains Ubuntu 26.04 ARM64 under the current POSIX.1-2024 contract.
