@@ -440,7 +440,7 @@ pager
     Git → pager → user exits pager → Git action menu
 
 terminal
-    Git → "Press any key to continue..." → read-key → Git action menu
+    sequence header → Git sequence → "Press any key to continue..." → read-key → Git action menu
 ```
 
 `gitman` does not implement a second menu-style terminal-mode stack around Git execution. It relies on the existing `menu` terminal restoration contract, on the selected pager for pager-mode terminal presentation, and on `read-key` only for terminal-mode acknowledgement.
@@ -541,9 +541,9 @@ GITMAN-09B edit selects VISUAL, then EDITOR, then vi; editor variables are execu
 GITMAN-09C editor execution occurs outside menu terminal state; successful edit asks whether to reset/reload and defaults to No
 GITMAN-09D explicit post-edit reload loads only configuration entries, without the startup . fallback
 GITMAN-10  the repository action menu returns with Backspace by default
-GITMAN-11  the root action menu exposes Status, Diff, Pull, Commit and Sync + Push before grouped Changes, History, Branches, Remote and Stash submenus
+GITMAN-11  the root action menu exposes Sync + Push first, followed by Status, Diff, Pull and Commit, before grouped Changes, History, Branches, Remote and Stash submenus
 GITMAN-12  a Git action runs only after the selecting menu session has restored the terminal
-GITMAN-13  terminal-mode Git actions wait for one key through read-key; pager-mode actions return after pager exit without a second acknowledgement
+GITMAN-13  every terminal-mode menu-selected Git sequence prints one 50-hyphen / concrete selected-label / 50-hyphen header and then waits for one key through read-key; pager-mode actions return after pager exit without a second acknowledgement
 GITMAN-14  Git action failure is interactive error state and does not terminate the session by itself
 GITMAN-15  gitman has its required sys operational manual topic
 GITMAN-16  gitman starts in pager output mode and p toggles pager/terminal presentation for subsequent Git actions
