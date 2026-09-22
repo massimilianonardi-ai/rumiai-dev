@@ -1,7 +1,7 @@
 # rumiai-tests suite realignment
 
 Status: Active
-Updated: 2026-09-21
+Updated: 2026-09-22
 
 ## Goal
 
@@ -10,10 +10,10 @@ Realign the permanent RumiAI test suite so that failures are evidence about curr
 ## Current repository revisions
 
 ```text
-rumiai-dev   e29fb8ac332ad8c0c9cfcab9f2edfea479a50566  (remote HEAD before this checkpoint)
-rumiai-tests e3f7d42f03747b924b18b7915f7d860d9148c913
-rumiai-os    5acea93938cb4e4e486c1ce8dce0f2abe9383199
-pkg-catalog  5372c160441b0346b976db7f7a022196784c9425
+rumiai-dev   df441ef486b1e80d3772a40542a94ad39f7ad21b  (pre-checkpoint HEAD before this handoff synchronization)
+rumiai-tests 8a78802f536ca65052ddb3a3bc4d152fb361ebf1
+rumiai-os    826da364cd9aaaed05b30f2c4cdbe0c47c730782
+pkg-catalog  64d67a73f4f9485749e1b47712e42f77afb4773e
 ```
 
 The `rumiai-dev` revision above is the authoritative source revision read before this handoff checkpoint; this handoff update itself advances that repository. Fresh HEAD retrieval remains mandatory before resumption.
@@ -59,7 +59,7 @@ The `rumiai-dev` revision above is the authoritative source revision read before
 - Chrome/Pulsar setuid and Java/Maven/NetBeans facility/dependency live evidence no longer reads private concrete paths. Successful composed integration is relied upon for setuid/facility/dependency materialization; Maven additionally executes through its public command and NetBeans checks its public command binding.
 - `validation/rumiai-os-health.conf` remains the broad health-scope binding from the earlier checkpoint; pager-specific validation is independently bound by `validation/pager.conf` to `rumiai-os@ee7811a9ff9211ee0f6806447b115d0cdc00bf58`.
 - The pager contract change was product work in `rumiai-os`; this suite task only realigned the affected permanent pager tests and validation binding.
-- `rumiai-tests@e3f7d42f03747b924b18b7915f7d860d9148c913` adds `tests/rumiai-os/editor/contract.test` for the new standalone editor abstraction. It exercises the real `editor` entrypoint against controlled external editor backends and protects the `nano` -> `vim` -> `vi` preference, unchanged argument forwarding, backend-status propagation, standalone shebang/syntax and operational-manual presence.
+- `rumiai-tests@e3f7d42f03747b924b18b7915f7d860d9148c913` adds `tests/rumiai-os/editor/contract.test` for the new standalone editor abstraction. It exercises the real `editor` entrypoint against controlled external editor backends and protects the `nano` -> `vim` -> `vi` preference, unchanged argument forwarding, backend-status propagation, standalone shebang/syntax and operational-manual presence.\n- `rumiai-tests@8a78802f536ca65052ddb3a3bc4d152fb361ebf1` adds the `rumiai-os/readpass` permanent group and dedicated `readpass` validation scope/workflow. `contract.test` protects command class, shebangs, bootstrap independence, syntax, invocation status and mandatory manual presence. `pty.test` exercises the real `readpass` and `readpassv` entrypoints through a pseudo-terminal, including echo suppression, whitespace/backslash and `-n` preservation, terminal restoration after success and `SIGINT`, verification success and mismatch behavior.\n- Formal `readpass` validation against `rumiai-os@826da364cd9aaaed05b30f2c4cdbe0c47c730782` passed on Linux/x86_64 and Darwin/arm64 with audit status `CLEAN`; both permanent tests passed on both hosts.
 
 ## Current state
 
@@ -75,7 +75,7 @@ The 19 current external live tests passed the latest targeted source scan for th
 
 `pkg-analyze` permanent tests still assert several report vocabulary tokens such as `useful-root`, `executable`, `launch-like` and `exit-status`. The current manual specifies the report's semantic purpose but not a machine-stable field vocabulary. This is a contract/test-design ambiguity, not a currently proven false negative.
 
-No current full-suite runtime result has been produced by this chat. A fresh 2026-09-20 probe again confirmed that the available execution container cannot resolve `github.com`, so it cannot materialize the current repositories through Git. The current tree contains only the package-provider/facility bridge workflow; no pager or general health workflow was available for this checkpoint. Historical or unrelated workflow results must not be relabelled as validation of the current HEADs.
+No current full-suite runtime result has been produced by this chat. The available execution container still does not provide a normal live GitHub checkout path, so it is not used as full-suite evidence. The current tree now includes a dedicated `readpass` validation workflow in addition to the existing targeted workflows. The hosted `readpass` scope passed on Linux/x86_64 and Darwin/arm64 for `rumiai-tests@8a78802f536ca65052ddb3a3bc4d152fb361ebf1` against `rumiai-os@826da364cd9aaaed05b30f2c4cdbe0c47c730782`; that targeted result does not substitute for a full-suite health run.
 
 ## Next action
 

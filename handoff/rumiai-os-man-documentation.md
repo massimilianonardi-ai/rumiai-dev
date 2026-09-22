@@ -1,7 +1,7 @@
 # rumiai-os-man-documentation
 
 Status: Active
-Updated: 2026-09-21
+Updated: 2026-09-22
 
 ## Goal
 
@@ -12,9 +12,9 @@ The long-term multi-channel documentation source/rendering architecture remains 
 ## Current repository revisions
 
 ```text
-rumiai-dev   cb4ecf2ac00150584bf908349ec62d98701afb57  (remote HEAD before this checkpoint)
-rumiai-os    f27f08f80d1e7407c8d8bd686a2beb4eb443eeb3
-rumiai-tests d61616898215d88a762aed191e7bbf5f096842c0
+rumiai-dev   df441ef486b1e80d3772a40542a94ad39f7ad21b  (pre-checkpoint HEAD before this handoff synchronization)
+rumiai-os    826da364cd9aaaed05b30f2c4cdbe0c47c730782
+rumiai-tests 8a78802f536ca65052ddb3a3bc4d152fb361ebf1
 ```
 
 Fresh remote HEAD retrieval remains mandatory before future writes.
@@ -71,7 +71,7 @@ Fresh remote HEAD retrieval remains mandatory before future writes.
 - `enc.lib.sh` is now covered by `res/sys/manual/enc.lib.sh`. Its classified public API is exactly `encode`, `decode`, `encoded_file_eval`, `encoded_file_edit`, `a2o` and `o2a`. The manual also documents `m_ENC_PASS`, the GnuPG OCB profile, streaming/authentication caveats, `vsed`/`pipefail` encrypted editing, metadata and optional mtime preservation, octal conversion, dependencies and security boundaries. Structural validation confirmed that every current public function is represented and no internal `_enc_*` / `_encoded_file_*` symbol is advertised.
 - Later product work first introduced `osarch-set`; current `rumiai-os@e25f2aaaf9ba56d8a86eb285bec1bb24e9df71be` consolidates the public surface under `osarch` with query, `show`, `update` and `set`, adds `res/sys/manual/osarch`, and retains `osarch-set` / `osarch-update` as compatibility commands with their own manuals. Command/manual completeness therefore remains true for the current product revision.
 - Targeted auxiliary-host development validation on Debian 13 x86_64 exercised the exact current `bin/sys/osarch` command body for explicit `set`, bare query, `show`, host `update`, selector-mismatch rejection and invalid explicit osarch rejection; all exercised cases behaved as specified. A direct GitHub clone of the complete checkout was unavailable in that environment because DNS resolution for github.com failed, so this is development evidence for the exact command body rather than formal/full-checkout validation.
-- No unrelated concurrent product or test-suite work was overwritten; Git history remained forward-only.
+- `rumiai-os@826da364cd9aaaed05b30f2c4cdbe0c47c730782` adds the required `res/sys/manual/readpass` and `res/sys/manual/readpassv` topics alongside the hardened command implementations. Both new command identities therefore satisfy mandatory owner-local manual coverage.\n- `specifications/rumiai-os/READPASS.md` now owns the promoted secret-line input contract and is routed directly from `specifications/README.md`.\n- Formal `readpass` task validation at `rumiai-tests@8a78802f536ca65052ddb3a3bc4d152fb361ebf1` against `rumiai-os@826da364cd9aaaed05b30f2c4cdbe0c47c730782` passed on hosted Linux/x86_64 and Darwin/arm64 with filesystem audit `CLEAN`; both `contract.test` and `pty.test` passed on both hosts.\n- No unrelated concurrent product or test-suite work was overwritten; Git history remained forward-only.
 
 ## Current state
 
@@ -88,13 +88,13 @@ manual <topic>
         -> empty: status 2
 ```
 
-All current command identities, including `editor`, the unified `osarch` command and its compatibility wrappers, have manual topics.
+All current command identities, including `editor`, `readpass`, `readpassv`, the unified `osarch` command and its compatibility wrappers, have manual topics.
 
 Library documentation is only partially complete. The current product contains compliant manuals for `array.lib.sh`, `enc.lib.sh`, `map.lib.sh`, `mk-materialize.lib.sh`, `mk-materialize-copy.lib.sh`, `osarch.lib.sh`, `pkg-install.lib.sh`, `rand.lib.sh` and `term.lib.sh`. The remaining legacy libraries cannot safely receive final public-API manuals until their intended public/internal function sets are classified and, where necessary, renamed with callers/tests realigned. That work is already represented by `todo/library-api-visibility-realignment.md` and is deliberately not guessed inside this documentation work unit.
 
 The existing permanent manual tests are not closure evidence for the whole documentation task. Pager-specific coverage has been realigned to the new wrapper contract; the active parallel suite-realignment task still owns broader trustworthy coverage, including substring fallback and command/library-to-manual structural completeness.
 
-No physical or formal cross-host/stable-host validation has been performed for this final revision.
+Targeted formal cross-host validation has been performed for the `readpass`/`readpassv` work unit on hosted Linux/x86_64 and Darwin/arm64, with both required tests passing and audit status `CLEAN`. No full documentation-surface physical/stable-host validation is claimed by that targeted result.
 
 ## Next action
 
