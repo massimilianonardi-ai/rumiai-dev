@@ -10,10 +10,10 @@ Add a macOS Apple Silicon package definition that installs the MacGPG engine fro
 ## Current repository revisions
 
 ```text
-rumiai-dev   62d51f54ab720ae858f586dba90515a910571b73
-rumiai-os    b3c39830b66e85f4ec63def3f3bcd91af853cbe7
-rumiai-tests 80faa275df8c97be088c79419a70d54c7d8131c7
-pkg-catalog  64d67a73f4f9485749e1b47712e42f77afb4773e
+rumiai-dev   2eb63fab51db6eb943c75167b758fcf071a5e5a8
+rumiai-os    364e57d1c0f2eca9ff2578c6b1a0a13fbe83eeb7
+rumiai-tests 3088682fd298ee84953c55bc56beb7d207a2cb45
+pkg-catalog  6a77995d317f2ec08c98585c4462b92557ccfaea
 ```
 
 ## Applicable canonical sources
@@ -33,35 +33,38 @@ handoff/README.md
 
 ## Fixed task-local choices
 
+- The concrete package identity is `macgpg`; it exposes the public package command `gpg`.
 - The upstream distribution is GPGTools MacGPG carried inside the official GPG Suite DMG.
-- Mutable GnuPG state must use the existing package HOME/state model rather than being stored inside the immutable package root.
-- Provider-specific component identity remains catalog data; generic package code must not hardcode `MacGPG2.pkg`.
-
-## Working design
-
-The current package pipeline can extract a DMG but cannot materialize one component payload from a flat installer package embedded in that DMG. The minimal candidate extension is a generic compound package-extraction format for:
-
-```text
-DMG -> flat .pkg -> named component .pkg -> Payload
-```
-
-The component name would be declarative package metadata. This avoids a GPGTools-specific installer in generic code. The exact metadata spelling and public `pkg_extract` API change still require final consistency review before promotion.
+- Mutable GnuPG state uses the existing package HOME/state model rather than the immutable package root.
+- Provider-specific component identity remains catalog data; generic package code does not hardcode `MacGPG2.pkg`.
+- The catalog pins GPG Suite 2026.1 build 3633n with its official SHA-256 rather than scraping mutable release HTML at install time.
 
 ## Completed
 
-- Mandatory preflight completed against the repository revisions above.
-- Current package install, extraction and integration paths inspected.
-- Existing permanent `pkg-extract` contract test inspected.
-- Upstream GPGTools distribution shape and current release source investigated.
+- Mandatory preflight and forward-concurrency reconciliation completed.
+- Promoted generic `dmg-pkg` compound materialization to `specifications/rumiai-os/PACKAGE-MODEL.md`.
+- Implemented `DMG -> flat pkg -> named component -> Payload` materialization in the package extraction path.
+- Added `component` package-range validation and install orchestration.
+- Added the GPGTools repository adapter and mandatory operational manuals.
+- Added `pkg/macgpg/macos-arm64` catalog data for GPG Suite 2026.1 (3633n), SHA-256 `16fa6c1dfa6b440e900632618a6ebaac7d974c3faed3a0e14ce3d1ee6826c9c5`, component `MacGPG2.pkg`, and command target `bin/gpg`.
+- Added permanent adapter coverage, a real macOS synthetic `dmg-pkg` materialization test, and a live external `pkg install macgpg` / `gpg --version` validation test.
+- Final static consistency reread corrected the artifact regex and collision-safe private extraction staging.
 
 ## Current state
 
-A catalog-only definition is insufficient for the requested portable MacGPG result because `format=dmg` materializes the installer package rather than the MacGPG payload. A generic compound-extraction capability is required before the package definition can be correct.
+Implementation, specification, catalog, manuals and permanent tests are aligned at the revisions above. Upstream release identity/digest was rechecked against the official GPGTools hotfix publication. The current execution environment cannot perform the real macOS DMG mount/install path, and direct artifact download from this environment was unavailable.
 
 ## Next action
 
-Finalize the smallest generic compound-extraction contract, promote it to the package specification, implement it in the existing package extraction/integration path with operational documentation and permanent tests, then add the MacGPG catalog definition.
+Run the new macOS ARM64 validation tests against these revisions, especially:
+
+```text
+tests/rumiai-os/pkg-extract/dmg-pkg.test
+tests/external/macgpg/install-live.test
+```
+
+If they pass, perform the final task consistency checkpoint and complete/remove this handoff according to the handoff lifecycle.
 
 ## Blockers / open questions
 
-- Physical macOS validation is not yet available in the current execution environment and must be reported revision-specifically unless an applicable macOS validation path is executed.
+- Physical macOS ARM64 validation remains pending.
