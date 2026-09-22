@@ -1,7 +1,7 @@
 # RumiAI OS — `mk` development lifecycle
 
 Status: **Current / normative**  
-Updated: 2026-09-17
+Updated: 2026-09-22
 
 ## 1. Role
 
@@ -46,9 +46,13 @@ project configuration
 → development outputs
 ```
 
-Build, test, run, clean and production of development outputs are `mk` lifecycle responsibilities.
+`mk` MUST be able to orchestrate a project lifecycle at different levels of granularity. When an upstream project already provides a suitable build/lifecycle engine, `mk` may delegate the applicable lifecycle operation to that engine. When delegation is insufficient, the lifecycle model must also be capable of expressing and orchestrating finer-grained dependencies, actions, tools and outputs directly.
+
+Lifecycle operation names are extensible project/model data rather than a fixed global set. Common names such as `build`, `test`, `run` and `clean` are conventional examples, not universally mandatory or intrinsically hard-coded goals. A project may expose only the operations that are meaningful for it and may define additional lifecycle operations.
 
 General lifecycle orchestration responsibilities SHOULD remain separate from tool-specific integration. Compilers, interpreters, external build engines and other development tools SHOULD be integrated through stable modular boundaries rather than accumulated as unrelated hard-coded special cases in one monolithic core.
+
+The general model SHOULD minimize tool-, language- and lifecycle-specific behavior in the core. Common project shapes SHOULD be expressible concisely, while projects that require finer control MUST be able to opt into more explicit orchestration without changing the core model.
 
 Existing standard formats, protocols and tool interfaces SHOULD be preferred when they satisfy the required contract.
 
@@ -92,8 +96,10 @@ MK-02  mk owns project development-lifecycle management and orchestration
 MK-03  mk consumes structured declarative project configuration and does not shell-source/eval configuration as code
 MK-04  projects and profiles are first-class lifecycle concepts
 MK-05  mk orchestrates external compilers, interpreters, build engines and pkg rather than replacing them
-MK-06  build, test, run, clean and production of development outputs are mk lifecycle responsibilities
+MK-06  lifecycle operation names are extensible project/model data; common operations such as build, test, run and clean are examples rather than mandatory hard-coded goals
 MK-07  mk-managed RumiAI state resolves through state-path
 MK-08  MK-SOURCE-MATERIALIZATION.md defines an implemented mk capability without defining the complete lifecycle subsystem
 MK-09  RumiAI documentation build orchestration is an mk lifecycle responsibility while rendering tooling remains externally selectable
+MK-10  mk supports both delegation to suitable external lifecycle/build engines and direct finer-grained orchestration when delegation is insufficient
+MK-11  the mk core minimizes tool-, language- and lifecycle-specific hard-coding while allowing concise common configurations and explicit advanced orchestration
 ```
