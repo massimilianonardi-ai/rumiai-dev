@@ -70,6 +70,12 @@ Inline copying of common helpers is not the default. It is allowed only when the
 
 Each test must verify a clearly identifiable property.
 
+Before implementing or materially extending a permanent test, identify the exact current property or properties it protects. Prefer a current invariant identifier when one exists; otherwise identify the authoritative specification section and observable rule. This protected-property set is the semantic boundary of the test.
+
+Every semantic assertion in the test must map to that protected-property set. Setup, synchronization, terminal driving, fixture preparation and observation machinery may be necessary to reach the property, but they do not become additional product requirements merely because the test happens to depend on them.
+
+In particular, an interactive test must not turn renderer details, cursor movement, terminal width, timing, intermediate screen contents, driver sequencing or another incidental observation into a product assertion unless the current contract explicitly makes that behavior normative. A task-validation test must not add unrelated product assertions simply because the same scenario can conveniently observe them.
+
 The test owns:
 
 - test-specific preconditions;
@@ -201,6 +207,10 @@ Test exit statuses remain:
 - `SKIP`: the test is not applicable or a declared precondition is absent;
 - `ERROR`: the test could not determine a result because of a test, environment or infrastructure error.
 
+`FAIL` is reserved for a contradiction of a declared protected property after the test has successfully reached and observed that property. A timeout, PTY/terminal-driver mismatch, parser failure, fixture/setup failure, unexpected harness exception or inability to synchronize the scenario is `ERROR` unless the awaited timing/event is itself the protected contract and the test has independently established that its observation mechanism is functioning.
+
+A test harness must not collapse arbitrary exceptions or synchronization failures into `FAIL`. When one executable test contains both contract assertions and infrastructure/driver logic, those two failure classes must remain distinguishable in its exit status and diagnostics.
+
 A real host incompatibility with a required property is `FAIL`, not `SKIP`.
 
 Historical outcomes are never reinterpreted retroactively.
@@ -234,6 +244,8 @@ The runner captures test stdout and stderr into a single ordered stream equivale
 ```
 
 A `FAIL` or `ERROR` must make at least the failed property, expected value and observed value understandable when applicable.
+
+For `FAIL`, diagnostics should identify the protected invariant or specification rule when practical. For `ERROR`, diagnostics should identify the test/harness stage that prevented observation. This distinction must be visible without reverse-engineering the test implementation.
 
 Diagnostics should be concise and cause-oriented rather than large unnecessary dumps.
 
