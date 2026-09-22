@@ -1,92 +1,76 @@
 # gitman quick-action ordering and terminal headers
 
-Status: Active
+Status: Complete
 Updated: 2026-09-22
 
 ## Goal
 
 Move the existing Sync + Push quick action to the first position in the root Git action menu and make terminal/no-pager execution print one three-line header per menu-selected command sequence: 50 hyphens, the selected menu label, then 50 hyphens.
 
-## Current repository revisions
+## Final repository revisions
 
 ```text
-rumiai-dev    ad5c903f9dad2a20183d3828fe4d3b733368b27f  canonical/task state before this checkpoint
+rumiai-dev    0ad47bd6ec8bb650076438b510c6646cbadc0ebc  pre-completion HEAD
 rumiai-os     0a45bddce0318e111a72b052f7bc8366d2911b0b  current main
 rumiai-tests  1062ffcd51d3c66e16a4a07a1aa9d84a46a56f83
 ```
 
-Task validation continues to pin the implemented gitman target at:
+The validated task target is:
 
 ```text
-1683ff139cfa775adeb832ffae10944b40155256
+rumiai-os 1683ff139cfa775adeb832ffae10944b40155256
 ```
 
-Later `rumiai-os` commits through current main affect unrelated package/http-fetch surfaces. `rumiai-tests` later advanced from the gitman realignment commit `47f2ffbb55068c5218a02a4b357f99475e0b6b9d` to current main only through unrelated validation-scope updates for other package/service work.
+Later `rumiai-os` commits through current main are unrelated to gitman.
 
-## Fixed task-local choices
+## Completed outcome
 
-- Preserve the public action name `Sync + Push`.
-- `Sync + Push` is the first root action; `Status` follows it.
-- Terminal mode emits exactly one header per menu-selected command sequence.
-- The header contains the full concrete selected menu label; composite actions emit it once for the whole sequence.
-- Task validation protects only the changed contract properties, not unrelated gitman health properties.
+- `Sync + Push` is the first root Git action and `Status` follows it.
+- Terminal mode emits exactly one header per selected command sequence:
+  `50 hyphens / concrete selected menu label / 50 hyphens`.
+- Composite `Sync + Push` emits the header once for the whole sequence.
+- Canonical `GITMAN.md`, implementation and operational manual are aligned.
+- The focused task validation protects `GITMAN-11` and `GITMAN-13`.
+- Gitman permanent tests were realigned to current contract-driven testing rules.
+- `TESTING.md` and `TEST-PATTERNS.md` now require contract-traceable assertions and distinguish product `FAIL` from harness/infrastructure `ERROR`.
+- Broader permanent-test cleanup remains intentionally deferred in `todo/contract-driven-permanent-test-audit.md`.
 
-## Current implementation state
+## Final validation
 
-Specification, implementation and operational manual are aligned with the requested behavior.
-
-Current focused validation selection:
+Formal validation succeeded on Linux/x86_64:
 
 ```text
-rumiai-os/gitman/terminal-output.test
+scope                 gitman
+kind                  task
+selection             rumiai-os/gitman/terminal-output.test
+rumiai-tests          1062ffcd51d3c66e16a4a07a1aa9d84a46a56f83
+rumiai-os target      1683ff139cfa775adeb832ffae10944b40155256
+session               20260922T101108+0200-144005
+validation            20260922T101107+0200-142553
+result                PASS 1 / FAIL 0 / SKIP 0 / ERROR 0
+duration              0.95s
+environment audit     CLEAN
+aggregate status      0 / VALIDATED
 ```
 
-The gitman tests were realigned after repeated false failures:
-
-- `contract.test` now protects only normative structural properties (`GITMAN-01`, `GITMAN-15` and applicable interpreter/manual structure); implementation-source grep and manual-prose assertions were removed.
-- `terminal-output.test` now protects only `GITMAN-11` and `GITMAN-13`: selecting the default root action must produce the complete Sync + Push header, one Down must produce the Status header, and each terminal sequence has exactly one 50-hyphen/label/50-hyphen header plus the required pause. It no longer asserts rendered menu text, Git SHA/upstream state, remote behavior or unrelated Git output.
-- `interactive.test` now distinguishes semantic assertions from PTY/driver/setup failures. Contract assertion mismatches remain `FAIL`; synchronization timeouts, driver exceptions and infrastructure failures are `ERROR`.
-
-The canonical testing rules were strengthened in `TESTING.md` and `TEST-PATTERNS.md`: permanent tests must identify protected current properties, semantic assertions must map to those properties, and harness failures must not be collapsed into product `FAIL`.
-
-A broader repository-wide audit is intentionally deferred under:
+Published evidence:
 
 ```text
-todo/contract-driven-permanent-test-audit.md
+validation session commit
+5d64f4ff63c6de807100d9c79a70378256a7a86b
+
+validation aggregate commit
+4c36787bc7227eb36e382c4e6479262f6433cc32
 ```
 
-## Validation evidence
+## Current state
 
-Linux/x86_64 formal runs supplied by the user:
-
-```text
-20260922T093848+0200-65348
-rumiai-tests 5a149673fe5d9803dfef9273d0ae38f53571b750
-FAIL 1 / PASS 0
-CLEAN validation environment
-```
-
-That run exposed a test bug: it waited for the complete long Sync + Push label in menu rendering even though `menu` normatively truncates rendered items to terminal width.
-
-```text
-20260922T095346+0200-97688
-rumiai-tests 8513947696dfc1290a52d669eab16f700a4c48dd
-FAIL 1 / PASS 0
-CLEAN validation environment
-```
-
-The second session evidence is published only in the user's local checkout and its detailed log is not available through GitHub. It therefore does not establish a specific product defect. Rather than patch another synchronization symptom, the test model was realigned as described above.
+Task complete. Durable behavior is in canonical specifications, implementation/manual, permanent tests and immutable validation evidence.
 
 ## Next action
 
-Run the current formal scope from a real `rumiai-tests` checkout:
+None.
 
-```sh
-./rumiai-validate gitman
-```
+## Blockers / open questions
 
-A result from suite revision `47f2ffbb55068c5218a02a4b357f99475e0b6b9d` or later is required. If the test reports `FAIL`, its diagnostic must now identify a declared GITMAN contract violation. If the PTY/driver cannot obtain reliable evidence, the result must be `ERROR` instead.
-
-## Blocker
-
-Formal execution of the contract-driven focused test is still pending.
+None.
