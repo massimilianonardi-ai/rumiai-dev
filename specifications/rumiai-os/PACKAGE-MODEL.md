@@ -436,6 +436,18 @@ Selector semantics are:
 
 Resolution of a selector must validate that the selected installed concrete declares the required facility and satisfies the consumer's compatibility constraints.
 
+Package distribution class and dependency-consumer platform class are distinct when
+the consumer concrete came from the `all` stream. Such a concrete remains
+platform-independent and has no `!<osarch>` suffix, but its dependencies are still
+resolved for an applicable target platform. During `pkg install`, that platform is
+the target osarch used for exact-stream selection before falling back to `all`.
+At runtime, a platform-independent consumer concrete uses the active `m_OSARCH`.
+An unqualified provider selector may therefore resolve to a matching
+osarch-specific provider, with the normal generic-provider fallback, while an
+explicitly osarch-qualified selector is eligible only when it matches that
+applicable target. Dependency resolution does not add the target osarch to the
+consumer's concrete identity.
+
 A resolved concrete may be cached as derived state, but such a cache is not authoritative over the configured selector.
 
 ### Dependency installation policy
@@ -672,4 +684,5 @@ PKG-70  a resolved artifact descriptor carries one or more ordered URL candidate
 PKG-71  pkg-download accepts a candidate only after expected size and configured digest verification, removes failed candidate output before fallback, and fails when no candidate validates
 PKG-72  package stream resolution prefers pkg/<package>/<osarch> and falls back only to pkg/<package>/all; catalog is not a package stream name
 PKG-73  packages resolved from the all stream use platform-independent concrete identity without an !<osarch> suffix
+PKG-74  an all-stream consumer resolves dependencies against its applicable target osarch (install target or active runtime m_OSARCH) without adding that osarch to the consumer concrete identity
 ```
