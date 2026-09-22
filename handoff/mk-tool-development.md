@@ -10,11 +10,12 @@ Continue development of `mk` as the `m` subsystem for project development-lifecy
 ## Current repository revisions
 
 ```text
-rumiai-dev      a1311f81612b5f29f3b74a6d5674155fd4841762  (pre-checkpoint HEAD; PACKAGE-MODEL mk boundary realigned)
-rumiai-os       bacf3b6d37b508c6b07bd8b6bb88019bc50a627f  (mk implementation exercised by Maven PoC)
-rumiai-tests    0b5fabccd79092af5c452dec65ddc7b49ad57d9a  (lifecycle permanent test unchanged)
-rumiai-dev-PoCs 1bb5474f2c5f0e31dd1af85e458d84fd5e376395  (Maven delegation PoC with recorded result)
-pkg-catalog     39abe7d9ae53753dda9e2714fc39fe69adfafb8c  (Maven/Temurin catalog used by PoC)
+rumiai-dev      eca99e4a77b29dfa67230072b4f30fd156f6100f  (pre-checkpoint HEAD before this handoff synchronization)
+rumiai-os       c2dcde09c2582ff67733911816088952fa1eb5ee  (current mk implementation exercised by native C++ PoC)
+rumiai-tests    12992b0b3d6198347a393f2735db725f49d0ba0e  (current main; mk lifecycle permanent test unchanged by this work)
+rumiai-dev-PoCs 28c83b01aaa1e95ad47d7966e2ef64d9db13e396  (native C++ graph-expansion PoC with recorded result)
+pkg-catalog     64d67a73f4f9485749e1b47712e42f77afb4773e  (current main; no GCC/Clang package definition found for this PoC)
+legacy m        2a57a29880c2d7a32e18782122062c695fcb1a3a  (reference-only current master used for historical makefile evidence)
 ```
 
 Fresh remote HEAD retrieval remains mandatory before later work.
@@ -144,6 +145,71 @@ Conclusion from this stress case: the current generic `process` action is suffic
 
 During the same work unit, stale source-materialization wording in `PACKAGE-MODEL.md` was realigned with the current lifecycle boundary. `pkg` continues to own package/facility/provider/dependency semantics, while `mk` may consume package-provided tools/facilities without creating a parallel provider graph.
 
+
+### Native C++ fine-grained stress test
+
+`pocs/015-mk-native-cpp` tested the opposite end of the orchestration spectrum.
+
+The current reference file:
+
+```text
+massimilianonardi-ai/m
+var/#_os/m/bin/makefiles/makefile_type_cpp_gcc.mk
+revision 2a57a29880c2d7a32e18782122062c695fcb1a3a
+```
+
+was used only as historical/design evidence. The relevant behavior is recursive source discovery, derived object paths/directories, one compile per source and one final link, with source add/remove/rename changing the effective graph without editing the build description.
+
+The PoC first used a hand-written static `mk.json` containing separate compile operations and a final link operation. The current unmodified `mk` planner/executor built and ran that graph successfully.
+
+The PoC then added a new translation unit and changed `main.cpp` to require it without changing the static graph. The build failed as expected because the new source had no operation. This isolates the missing behavior as graph derivation rather than compile/link execution.
+
+A PoC-only JavaScript expander then performed:
+
+```text
+project filesystem
+    -> deterministic source discovery
+    -> concrete operation graph
+    -> ordinary current version-1 mk.json
+    -> existing mk planner/executor
+```
+
+The generated model uses only current primitives:
+
+```text
+goal
+operation
+prerequisite
+process action
+```
+
+and successfully handled source add, rename and removal without editing the experimental project descriptor.
+
+Hosted evidence:
+
+```text
+GitHub Actions run
+    35720179362
+
+PoC revision initially exercised
+    1e3260d4f07b7e365ba1cde961cdac199988ed35
+
+result-recording PoC HEAD
+    28c83b01aaa1e95ad47d7966e2ef64d9db13e396
+
+rumiai-os exercised
+    c2dcde09c2582ff67733911816088952fa1eb5ee
+
+Ubuntu
+    PASS poc-015 mk native C++ graph expansion
+```
+
+The macOS job did not reach `mk` in either workflow attempt. Both attempts failed during `pkg install nodejs` because the upstream download returned HTTP 403. Therefore there is positive Ubuntu hosted evidence and no macOS execution evidence for this PoC; the macOS provisioning failure is not evidence against the mk graph model.
+
+The architectural consequence is narrower than a new public API: the existing planner/executor is sufficient once a concrete graph exists. The demonstrated missing responsibility is **pre-planning derivation/expansion of the concrete operation graph from declarative project intent plus current project state**.
+
+The PoC deliberately does not select the final expansion boundary. A trusted reusable builder/operation provider, a generic declarative expansion facility, or another extension mechanism remain working-design candidates. No `mk` product code or canonical schema was changed from this experiment.
+
 ## Working design still open
 
 The following areas remain deliberately unresolved and must be derived from concrete lifecycle cases rather than treated as implicit features:
@@ -152,7 +218,8 @@ The following areas remain deliberately unresolved and must be derived from conc
 project dependency execution/composition
 declarative requirement resolution and its boundary with pkg facilities/providers
 input/output and artifact semantics beyond the current process action
-automatic source/input discovery
+pre-planning graph derivation/expansion from project state
+automatic source/input discovery within that expansion boundary
 incremental invalidation and fingerprints
 cache semantics
 parallel scheduling and resource constraints
@@ -170,24 +237,24 @@ The current vocabulary remains useful for design discussion, but vocabulary term
 
 The first executable lifecycle vertical is present and tested. The current implementation intentionally stops before incrementality, caching, parallelism, project dependency execution and a generalized extension/plugin API.
 
-The delegated Maven case has now validated the coarse-grained end of the model. The next design/implementation work should stress the opposite, fine-grained end rather than adding abstractions speculatively.
+The delegated Maven case validated the coarse-grained end of the model. The native C++ PoC now validates that the existing planner/executor also handles the fine-grained end once a concrete graph has been produced. The next design question is therefore the extension boundary that produces such graphs, not a second execution architecture.
 
 ## Next action
 
 Use one or more concrete project scenarios to extend the current baseline. Good stress cases remain:
 
 ```text
-native C/C++ compilation with automatically discovered sources
 generated sources feeding later operations
 project-to-project dependency orchestration
 long-running JavaScript development/hot-update flow
 ```
 
-Promote or implement a new abstraction only when those cases demonstrate that the current goal/operation/prerequisite/process model is insufficient.
+Use the generated-source case next to compare graph-expansion boundary shapes before promoting or implementing one. In particular, determine whether one reusable operation-provider/builder boundary can express both filesystem discovery and generated-source graph growth without introducing a general executable configuration language or tool/language hard-coding in the mk core.
 
 ## Blockers / open questions
 
 - What exact semantics should project `dependency` have when requested goals differ across dependent projects?
 - Should `requirement` resolve directly to an existing `pkg` facility/provider contract, or is an additional mk-level abstraction justified by a concrete build-time need?
 - Which explicit input/output identity is minimally sufficient for correct incremental execution?
+- What trusted extension boundary should derive/expand concrete operations before planning without turning mk.json into executable configuration?
 - Does long-running/watch execution belong to operation/action semantics or to an execution-session/scheduler layer?
