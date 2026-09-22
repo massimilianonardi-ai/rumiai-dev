@@ -12,7 +12,7 @@ Move the existing Sync + Push quick action to the first position in the root Git
 ```text
 rumiai-dev    ad5c903f9dad2a20183d3828fe4d3b733368b27f  canonical/task state before this checkpoint
 rumiai-os     0a45bddce0318e111a72b052f7bc8366d2911b0b  current main
-rumiai-tests  47f2ffbb55068c5218a02a4b357f99475e0b6b9d
+rumiai-tests  1062ffcd51d3c66e16a4a07a1aa9d84a46a56f83
 ```
 
 Task validation continues to pin the implemented gitman target at:
@@ -21,7 +21,7 @@ Task validation continues to pin the implemented gitman target at:
 1683ff139cfa775adeb832ffae10944b40155256
 ```
 
-Later `rumiai-os` commits through current main affect unrelated package/http-fetch surfaces.
+Later `rumiai-os` commits through current main affect unrelated package/http-fetch surfaces. `rumiai-tests` later advanced from the gitman realignment commit `47f2ffbb55068c5218a02a4b357f99475e0b6b9d` to current main only through unrelated validation-scope updates for other package/service work.
 
 ## Fixed task-local choices
 
