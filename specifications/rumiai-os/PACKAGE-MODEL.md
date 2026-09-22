@@ -478,6 +478,16 @@ pkg provider bind <consumer> <facility> <provider-selector>
 pkg provider bind -u [--] <consumer> <facility>
 ```
 
+The public read-only requirement query surface is:
+
+```text
+pkg requirement resolve <facility> <constraint>...
+```
+
+This query resolves only the configured **system facility default** through the normal global package-class/osarch semantics, validates that the selected installed concrete declares the requested facility and satisfies every supplied compatibility constraint, and prints that concrete provider identity on success.
+
+It does not install packages, choose a provider implicitly, create/change a facility default or create a package-consumer binding. Status 1 means the requested facility requirement is not currently satisfiable; status 2 means invalid invocation or constraint/facility syntax.
+
 The query forms print the configured selector. The set forms replace the configured selector. The unset forms remove it; unsetting a consumer binding restores inheritance from the facility default.
 
 Provider-selection configuration is system-scoped authoritative configuration.
@@ -591,7 +601,9 @@ When a package consumes a facility, the package launcher continues to apply the 
 
 `mk` is the project development-lifecycle orchestrator of `m`. It may invoke package commands or consume package-provided tools/facilities as part of a project lifecycle, but it is not a second package manager and does not replace package selection, catalog, provider/facility, dependency-resolution or integration semantics owned by `pkg`.
 
-The project-to-project `dependency` relation defined by the `mk` project model is distinct from package/facility dependency semantics owned by `pkg`. Where a build requirement is satisfied through a `pkg` facility/provider contract, `mk` must consume that existing contract rather than creating a parallel provider-selection graph.
+The project-to-project `dependency` relation defined by the `mk` project model is distinct from package/facility dependency semantics owned by `pkg`. Where a build requirement is satisfied through a `pkg` facility/provider contract, `mk` consumes that existing contract through `pkg requirement resolve` rather than creating a parallel provider-selection graph.
+
+A project is not a package consumer and does not receive a synthetic package-consumer binding. Project facility requirements use the configured system facility default, matching the existing global non-package-consumer selection pattern. The query is read-only and preserves the baseline package policy of no automatic provider installation or implicit provider choice.
 
 See `MK.md`.
 
@@ -685,4 +697,6 @@ PKG-71  pkg-download accepts a candidate only after expected size and configured
 PKG-72  package stream resolution prefers pkg/<package>/<osarch> and falls back only to pkg/<package>/all; catalog is not a package stream name
 PKG-73  packages resolved from the all stream use platform-independent concrete identity without an !<osarch> suffix
 PKG-74  an all-stream consumer resolves dependencies against its applicable target osarch (install target or active runtime m_OSARCH) without adding that osarch to the consumer concrete identity
+PKG-75  pkg requirement resolve is a read-only system-facility-default query that validates existing facility compatibility constraints and prints the selected concrete provider on success
+PKG-76  project/non-package requirement queries do not create synthetic package-consumer bindings and do not install or implicitly select providers
 ```
