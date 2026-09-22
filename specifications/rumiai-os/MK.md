@@ -160,13 +160,13 @@ The current parser supports project configuration versions:
 
 Version 1 is the original static lifecycle model and remains supported without changing its existing semantics.
 
-Version 2 extends the same lifecycle model with contextual collections, trusted operation providers, declarative conditions, named outputs and runtime plan refinement.
+Version 2 extends the same lifecycle model with project dependencies, contextual collections, trusted operation providers, declarative conditions, named outputs and runtime plan refinement.
 
 Unknown members are rejected so configuration mistakes are not silently ignored.
 
 ### 6.1 Names
 
-Project-defined goal, operation, provider, collection and profile names use the controlled-name shape:
+Project-defined goal, operation, provider, collection, dependency and profile names use the controlled-name shape:
 
 ```text
 [a-z0-9][a-z0-9._-]*[a-z0-9]
@@ -240,6 +240,7 @@ goals
 operations
 collections
 providers
+dependencies
 profiles
 ```
 
@@ -404,16 +405,52 @@ Version-2 profiles may additionally define:
 ```text
 collections
 providers
+dependencies
 ```
 
 Profile composition remains replacement-by-name:
 
 - profile environment entries replace same-named base entries;
-- goal/operation/collection/provider entries replace same-named base definitions and may add new entries;
+- goal/operation/collection/provider/dependency entries replace same-named base definitions and may add new entries;
 - absent entries inherit the base project value;
 - no implicit deletion syntax exists.
 
 No profile is selected unless the caller supplies `--profile <profile>`.
+
+### 6.8 Project dependencies
+
+Version 2 introduces `dependencies` as first-class project-to-project lifecycle relations.
+
+Each dependency is named and currently has this declarative shape:
+
+```json
+{
+  "project": "../core",
+  "goals": {
+    "build": ["compile"],
+    "check": ["verify"]
+  },
+  "profile": "release"
+}
+```
+
+`project` is required. A relative pathname resolves from the declaring project root; an absolute pathname remains explicit project data. The target must resolve to a project root containing `mk.json`.
+
+`goals` explicitly maps requested goals of the parent project to requested goals of the dependent project. An unmapped parent goal does not activate that dependency. When one request contains multiple parent goals that map to the same direct dependency, the mapped child goals are de-duplicated and delegated as one child request.
+
+`profile` is optional and selects a profile explicitly in the child request. The parent project's selected profile is **not** inherited implicitly by a dependent project.
+
+An active dependency is delegated to another `mk` engine process rooted at the dependent project. The child owns its complete lifecycle model, including its own dependencies, operations, providers, collections, conditions and profiles. The parent does not import or flatten the child's internal operation graph.
+
+All active direct project dependencies must complete successfully before the parent executes local lifecycle operations for the requested goals. A child failure fails the parent request; project dependencies do not acquire operation-level `failure: "continue"` semantics.
+
+Recursive delegation carries only the canonical project roots of the active dependency chain as private invocation context. Re-entering a project already in that chain is a project-dependency cycle and is rejected.
+
+Sibling project dependencies have no semantic ordering merely because of declaration or name ordering. The current executor may visit them sequentially.
+
+The baseline intentionally provides no request-wide de-duplication across independent sibling branches. In a diamond such as `A -> B/C -> D`, `B` and `C` may independently request `D`. Exactly-once/session/cache behavior is not implied by the project-dependency relation and remains a separate future concern.
+
+Version-2 plan inspection recursively plans active dependencies without executing their lifecycle work and preserves each child request/plan as nested project structure rather than flattening child operations into the parent plan.
 
 ## 7. Resolution, planning and runtime refinement
 
@@ -449,6 +486,8 @@ Immediate context-derived facts, such as current membership of a declared source
 
 When execution produces new evidence, the next resolution pass may add derived operations or select/skip conditional alternatives.
 
+Before local version-2 lifecycle execution begins, active project dependencies for the requested goal set are resolved from the selected parent model and delegated recursively. Plan inspection performs the same project-request resolution but asks each child for a plan instead of executing it.
+
 For every currently concrete execution path:
 
 - missing referenced lifecycle nodes are rejected;
@@ -459,7 +498,7 @@ For every currently concrete execution path:
 
 Version 1 retains its static fully resolved prerequisite plan and sequential execution behavior.
 
-Incremental fingerprints, caching, parallel scheduling, remote execution, project-dependency execution, declarative requirement resolution and watch/hot-update triggers remain outside the implemented baseline.
+Incremental fingerprints, caching, parallel scheduling, remote execution, declarative requirement resolution and watch/hot-update triggers remain outside the implemented baseline.
 
 ## 8. Public command line
 
@@ -501,12 +540,13 @@ Version 2 writes a structured JSON plan containing the currently relevant:
 ```text
 version
 goals
+dependencies
 collections
 providers
 operations
 ```
 
-Resolved collections expose current items; pending collections expose their blocking `waitingFor` nodes. Providers expose their current state and derived operation identities. Operations expose their current state and, when applicable, observation/condition/derivation information.
+Each active dependency entry identifies the dependency name, canonical child project root, requested child goals, optional explicit child profile and the nested child plan. Resolved collections expose current items; pending collections expose their blocking `waitingFor` nodes. Providers expose their current state and derived operation identities. Operations expose their current state and, when applicable, observation/condition/derivation information.
 
 Version-2 operation states include:
 
@@ -560,6 +600,8 @@ Standard input, standard output and standard error are inherited by the executed
 Version 1 remains fail-fast: a non-zero action result, signal termination, spawn failure, invalid model, missing runtime requirement or other lifecycle failure stops execution.
 
 Version 2 also defaults to fail-fast. Only an operation explicitly declaring `failure: "continue"` converts its execution failure into observable terminal result evidence and allows refinement to continue. That continued failure still does not satisfy an ordinary prerequisite.
+
+For version 2, active project dependencies are delegated and must complete successfully before local operations execute. Dependency execution uses a fresh `mk` engine process for each active direct dependency request. Parent profile selection is not propagated unless the dependency explicitly selects a child profile.
 
 The current executor is sequential. This is an implementation property rather than a semantic ordering rule for otherwise independent operations.
 
@@ -651,4 +693,12 @@ MK-24  result/output condition references create observation dependencies distin
 MK-25  declared output evidence is bound to the producing operation's current-request result; stale pathnames alone are not producer output evidence
 MK-26  failure continue exposes terminal failure evidence for refinement but does not satisfy an ordinary prerequisite
 MK-27  version-2 plan inspection uses structured output that preserves resolved, pending and conditional lifecycle structure
+MK-28  version-2 project dependencies map requested parent goals explicitly to child-project goals and are delegated recursively to another mk engine process
+MK-29  child project lifecycle internals remain owned by the child mk instance and are not flattened into the parent operation graph
+MK-30  parent profiles are not inherited implicitly across project boundaries; a dependency may select a child profile explicitly
+MK-31  project-dependency cycles are rejected from canonical project identity in the active recursive invocation chain
+MK-32  multiple parent goals mapped to one direct dependency are delegated as one de-duplicated child-goal request
+MK-33  project dependencies must complete successfully before parent local lifecycle work; operation failure-continue semantics do not apply to them
+MK-34  version-2 plans preserve active dependent-project requests as nested project plans
+MK-35  project dependency semantics do not imply request-wide exactly-once execution or de-duplication across independent sibling branches
 ```
