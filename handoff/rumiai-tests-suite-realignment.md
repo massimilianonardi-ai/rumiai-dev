@@ -10,10 +10,10 @@ Realign the permanent RumiAI test suite so that failures are evidence about curr
 ## Current repository revisions
 
 ```text
-rumiai-dev   ea6f1c68bb8affdcac179587d6c7d045665ed24c  (pre-checkpoint HEAD before this handoff synchronization)
+rumiai-dev   9ec187516ee855a24c654aa4010953cf6eaf8314  (pre-checkpoint HEAD before this handoff synchronization)
 rumiai-tests 37fd46063c33d1b080c4b2da5fb23d53254241b9
-rumiai-os    7e6d4483071eccd2acad670e4986a8ddb542df0b
-pkg-catalog  8695de7ba57ad4da2b26692dc73aff6b63275e2a
+rumiai-os    baae8bf2ccb987f1be0dd0e20528c0a2301b0264
+pkg-catalog  cb2a11f4fb597f01d9140d7fc7bf05ef21cf698c
 ```
 
 The `rumiai-dev` revision above is the authoritative source revision read before this handoff checkpoint; this handoff update itself advances that repository. Fresh HEAD retrieval remains mandatory before resumption.
@@ -75,7 +75,7 @@ The new cross-host health run `35781423515` is executing from `rumiai-tests@af74
 
 A local duplicate run could not be executed in the assistant container because that environment could not resolve `github.com`; this is an environment limitation and provides no product/test result.
 
-Repositories continued to advance during the run. Current observed HEADs at this checkpoint are `rumiai-tests@37fd46063c33d1b080c4b2da5fb23d53254241b9`, `rumiai-os@7e6d4483071eccd2acad670e4986a8ddb542df0b` and `pkg-catalog@8695de7ba57ad4da2b26692dc73aff6b63275e2a`. The health run remains valid evidence only for its pinned revisions; it must not be relabelled as health evidence for later HEADs.
+Repositories continued to advance during the run. Current observed HEADs at this checkpoint are `rumiai-tests@37fd46063c33d1b080c4b2da5fb23d53254241b9`, `rumiai-os@baae8bf2ccb987f1be0dd0e20528c0a2301b0264` and `pkg-catalog@cb2a11f4fb597f01d9140d7fc7bf05ef21cf698c`. The health run remains valid evidence only for its pinned revisions; it must not be relabelled as health evidence for later HEADs.
 
 The two forward `rumiai-tests` commits after `af74470` change only Chrome/Electron live tests and must be preserved when continuing this task.
 
