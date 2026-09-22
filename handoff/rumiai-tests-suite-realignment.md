@@ -10,10 +10,10 @@ Realign the permanent RumiAI test suite so that failures are evidence about curr
 ## Current repository revisions
 
 ```text
-rumiai-dev   2ca53e446691acd24c5ec4841cc390e29675c1e0  (pre-checkpoint HEAD before this handoff synchronization)
-rumiai-tests 2ad28a4516f47875020f34e46f249aba5ce27f74
-rumiai-os    bdb66dde9e8fe45caef98c78f9084ed836232594
-pkg-catalog  64d67a73f4f9485749e1b47712e42f77afb4773e
+rumiai-dev   ea6f1c68bb8affdcac179587d6c7d045665ed24c  (pre-checkpoint HEAD before this handoff synchronization)
+rumiai-tests 37fd46063c33d1b080c4b2da5fb23d53254241b9
+rumiai-os    7e6d4483071eccd2acad670e4986a8ddb542df0b
+pkg-catalog  8695de7ba57ad4da2b26692dc73aff6b63275e2a
 ```
 
 The `rumiai-dev` revision above is the authoritative source revision read before this handoff checkpoint; this handoff update itself advances that repository. Fresh HEAD retrieval remains mandatory before resumption.
@@ -63,26 +63,30 @@ The `rumiai-dev` revision above is the authoritative source revision read before
 - `rumiai-tests@8a78802f536ca65052ddb3a3bc4d152fb361ebf1` adds the `rumiai-os/readpass` permanent group and dedicated `readpass` validation scope/workflow. `contract.test` protects command class, shebangs, bootstrap independence, syntax, invocation status and mandatory manual presence. `pty.test` exercises the real `readpass` and `readpassv` entrypoints through a pseudo-terminal, including echo suppression, whitespace/backslash and `-n` preservation, terminal restoration after success and `SIGINT`, verification success and mismatch behavior.
 - Formal `readpass` validation against `rumiai-os@826da364cd9aaaed05b30f2c4cdbe0c47c730782` passed on Linux/x86_64 and Darwin/arm64 with audit status `CLEAN`; both permanent tests passed on both hosts.
 - A full-suite health validation was produced on 2026-09-22: outer validation `20260922T152932+0200-246048`, runner session `20260922T152933+0200-247370`, Linux/x86_64 (Ubuntu 24.04.5 LTS), `rumiai-tests@2ad28a4516f47875020f34e46f249aba5ce27f74`. It executed all 156 tests and recorded 34 PASS, 84 FAIL, 7 SKIP and 31 ERROR, aggregate status 2, audit status `CHANGED`.
+- `rumiai-tests@828b739a717160ca2912f1e385e424492b19d81d` corrected the known off-by-one suite-root derivation in `tests/rumiai-os/bootstrap/current-layout.test`.
+- The broad health binding was advanced again in `rumiai-tests@af74470aecf0106b2df07d6a13424c01a02e0670` to `rumiai-os@1973e4469ba40b5f085820ac018507ec8aca1873`, which triggered GitHub Actions health run `35781423515` on Ubuntu and macOS.
+- Concurrent forward changes after that checkpoint were preserved: `rumiai-tests` advanced by two test-only commits realigning Chrome/Electron live command lookup, and the product/catalog repositories also advanced under parallel work.
 
 ## Current state
 
-The first current full-suite runtime result is now available, but it does **not** establish current-product health.
+The original 31-ERROR suite-root defect and the original stale product binding are no longer the current blockers described by the first health run.
 
-The health scope `validation/rumiai-os-health.conf` in `rumiai-tests@2ad28a4516f47875020f34e46f249aba5ce27f74` is still bound to `rumiai-os@25ab0e5a5b8267af715f320bd9ee17405a2b41f6`. Current `rumiai-os` HEAD is `bdb66dde9e8fe45caef98c78f9084ed836232594`, 160 commits ahead of that configured target. The current suite therefore runs newly realigned/current tests against a substantially older product revision. Representative FAIL logs directly reflect that mismatch: current tests expect `editor`, `gitman`, `menu`, `readpass`, `vsed` and the current package-library layout, all absent from the configured old target.
+The new cross-host health run `35781423515` is executing from `rumiai-tests@af74470aecf0106b2df07d6a13424c01a02e0670` against the revision-pinned target `rumiai-os@1973e4469ba40b5f085820ac018507ec8aca1873`. At the latest checkpoint, both Ubuntu and macOS jobs were still inside the real `rumiai-validate rumiai-os-health` step, so no result from that run has yet been classified.
 
-The runner/validator infrastructure itself executed and its current self-tests passed in the full-suite session. The 31 ERROR results are not product failures: all 31 ERROR logs report `rumiai-os target helper is unavailable`. Representative source inspection shows an off-by-one suite-root derivation in affected tests, causing them to search for `lib/rumiai-os-target.lib` above the actual suite root even though the helper exists in the same suite revision.
+A local duplicate run could not be executed in the assistant container because that environment could not resolve `github.com`; this is an environment limitation and provides no product/test result.
 
-The remaining 84 FAIL results cannot be treated as evidence that current `rumiai-os` is broken. Many are already explained by the stale target binding; the residual set must be re-run against the intended current target after the test-root defect is corrected, then classified property-first. External live tests remain separately sensitive to real host capabilities and upstream availability.
+Repositories continued to advance during the run. Current observed HEADs at this checkpoint are `rumiai-tests@37fd46063c33d1b080c4b2da5fb23d53254241b9`, `rumiai-os@7e6d4483071eccd2acad670e4986a8ddb542df0b` and `pkg-catalog@8695de7ba57ad4da2b26692dc73aff6b63275e2a`. The health run remains valid evidence only for its pinned revisions; it must not be relabelled as health evidence for later HEADs.
 
-The full-suite result is therefore useful diagnostic evidence about the test system, but it is not a valid current RumiAI health verdict.
+The two forward `rumiai-tests` commits after `af74470` change only Chrome/Electron live tests and must be preserved when continuing this task.
 
 ## Next action
 
-1. Correct the affected permanent tests so suite-root/shared-helper discovery resolves the actual current `rumiai-tests` root.
-2. Rebind `validation/rumiai-os-health.conf` to the intended current `rumiai-os` revision after a fresh HEAD check.
-3. Re-run the complete health scope and classify every residual FAIL/ERROR/SKIP property-first before considering any product change.
+1. Inspect the completed evidence from health run `35781423515` for both hosts and classify every residual FAIL/ERROR/SKIP property-first.
+2. Apply only test-suite realignments supported by those logs; do not infer product defects from obsolete/private/non-contractual assertions.
+3. Before launching a later current-HEAD health gate, fresh-check all involved HEADs and bind the health scope to the exact intended target revision; repository movement during an already-running revision-pinned validation does not invalidate that older run's evidence.
+4. Preserve the concurrent Chrome/Electron live-test realignments already present at current `rumiai-tests` HEAD.
 
 ## Blockers / open questions
 
-- The current full-suite health scope is revision-stale relative to current `rumiai-os`, so its aggregate result cannot be interpreted as current-product health.
-- The affected permanent tests have a suite-root discovery defect that must be corrected before their ERROR results can become meaningful.
+- No current result from health run `35781423515` had completed at the checkpoint, so residual failures cannot yet be classified from that run.
+- Parallel product/catalog development is advancing HEAD while health validation is revision-pinned. This is not itself a validation defect, but a later health gate intended to describe then-current HEAD must be rebound after a fresh HEAD check.
