@@ -1,7 +1,7 @@
 # RumiAI OS — Current model
 
 Status: **Current / normative**  
-Updated: 2026-09-18
+Updated: 2026-09-22
 
 This document is the canonical high-level architecture contract for the current `rumiai-os` mainline.
 
@@ -315,7 +315,9 @@ See `LANG-BOOTSTRAP.md`.
 
 `mk` belongs to `m` and is responsible for management and orchestration of the development lifecycle of a project.
 
-It interprets structured declarative configuration, manages projects and profiles, resolves and orchestrates development requirements and dependencies, coordinates external tools, manages development workspace/state/output, and performs lifecycle operations such as build, test, run, clean and production of outputs required by later consumers.
+It interprets structured declarative configuration, manages projects and profiles, resolves and orchestrates development requirements and dependencies, coordinates external tools, manages development workspace/state/output, and performs project-defined lifecycle operations.
+
+Lifecycle operations are extensible rather than a mandatory hard-coded global set. Common operations such as build, test, run and clean are examples. `mk` may delegate an operation to a suitable external lifecycle/build engine, or orchestrate finer-grained dependencies/actions directly when delegation is insufficient.
 
 `mk` does not replace compilers, interpreters, external build engines or `pkg`; it orchestrates them through modular boundaries.
 
@@ -394,4 +396,6 @@ CURRENT-26   bare osarch reports the active selection only when sys-osarch, ext-
 CURRENT-27   osarch show reports selector targets and their resolved physical paths
 CURRENT-28   osarch update selects the detected host osarch and osarch set selects an explicit supported osarch
 CURRENT-29   osarch-set and osarch-update remain compatibility commands for the previous selector surface
+CURRENT-30   mk lifecycle operation names are extensible rather than a mandatory hard-coded global set
+CURRENT-31   mk supports both delegation to suitable external lifecycle/build engines and finer-grained direct orchestration
 ```
