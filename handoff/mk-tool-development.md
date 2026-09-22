@@ -10,7 +10,7 @@ Define and develop `mk` as the `m` subsystem responsible for project development
 ## Current repository revisions
 
 ```text
-rumiai-dev   e9235f673a9b035eef34380099693279af34403b  (pre-checkpoint HEAD before vocabulary working-design update)
+rumiai-dev   e65058acc3783310dde3533ec1a25a40c320c928  (pre-checkpoint HEAD before implementation/CLI working-design update)
 rumiai-os    0a45bddce0318e111a72b052f7bc8366d2911b0b  (current main; unchanged by this design checkpoint)
 rumiai-tests 1062ffcd51d3c66e16a4a07a1aa9d84a46a56f83  (current main; unchanged by this design checkpoint)
 pkg-catalog  94f58995cbd487b17f3b82bc2724c70540927b88  (refresh before pkg-catalog work)
@@ -195,6 +195,136 @@ workspace
 
 The likely minimal semantic nucleus is currently `project + profile + goal + operation + prerequisite + requirement + dependency + input/output`. Terms such as action, invocation, artifact, executor, scheduler, fingerprint, cache, selector and trigger appear useful as specializations or later execution/incrementality concepts but are not yet candidates for mandatory core primitives.
 
+
+### Candidate implementation decomposition
+
+A candidate implementation structure is to keep the public `bin/sys/mk` entrypoint thin and stable while placing the broader lifecycle engine behind it. The implementation runtime and exact physical library/module layout remain unresolved.
+
+Logical responsibilities:
+
+```text
+CLI/request layer
+    parse project/profile/goal request and introspection/execution mode
+
+project/configuration layer
+    discover project
+    load and validate declarative configuration
+    select/compose profile
+
+model layer
+    normalize projects, dependencies, goals, operations,
+    prerequisites, requirements, inputs and outputs
+
+resolution layer
+    resolve project dependencies
+    resolve requirements/tools/environment
+    expand goals to root operations
+    expand reusable builders/adapters/providers into operations/actions as needed
+
+planning layer
+    compute required operation closure
+    validate graph
+    determine current/invalidated work
+    construct execution plan
+
+execution layer
+    schedule ready actions
+    execute actions
+    collect result/output
+    stop/continue according to execution policy
+
+state layer
+    persist only the execution/incrementality/cache state that the selected model requires
+
+extension boundaries
+    external-engine adapters
+    reusable/native builders or operation providers
+    action/executor implementations
+    requirement/tool resolvers
+    selectors/triggers when those concepts become required
+```
+
+The data flow is conceptually:
+
+```text
+CLI request
+    -> project discovery/config
+    -> profile selection
+    -> project dependency graph
+    -> requested goal(s)
+    -> operation graph closure
+    -> requirement/environment resolution
+    -> execution plan
+    -> scheduler/executor
+    -> result/output/state
+```
+
+The project graph and operation graph remain conceptually distinct:
+
+```text
+project -> dependency -> project
+
+operation -> prerequisite -> operation
+
+operation/project -> requirement -> external capability/tool/runtime/environment
+```
+
+A delegated Maven/CMake/etc. build should be representable by an adapter that resolves one opaque operation/action, while a native builder may expose a detailed operation graph. Both use the same planning/execution path.
+
+The current `mk materialize` command remains an existing separately specified capability. This candidate design does not yet decide whether materialization later becomes a lifecycle operation/provider, remains an explicit utility command, or exposes both roles.
+
+### Candidate command-line shape
+
+The preferred normal lifecycle surface is currently:
+
+```text
+mk [options] <goal> [<goal> ...]
+```
+
+where goal names are project data rather than built-in command names. Multiple requested goals, if retained, would represent a requested set whose combined prerequisite closure is planned once; they would not imply left-to-right sequencing unless an explicit prerequisite establishes it.
+
+Candidate global selectors/modes:
+
+```text
+--project <path>
+    explicitly select a project/project root instead of implicit discovery
+
+--profile <profile>
+    select the project profile/configuration
+
+--plan
+    resolve and print the execution plan without executing it
+
+--goals
+    list externally addressable goals of the selected project
+
+--show-goal <goal>
+    inspect the resolved definition/root operations of one goal
+```
+
+Examples:
+
+```text
+mk build
+mk --profile release build
+mk test package
+mk --plan build
+mk --goals
+mk --project ../other-project --profile debug build
+```
+
+A zero-argument `mk` could eventually execute a project-declared default goal, but no default-goal behavior is selected yet.
+
+The current public form remains separately valid:
+
+```text
+mk materialize <source-root> <definition-root> <useful-root>
+```
+
+This creates a namespace question because `materialize` is currently a real command word while the candidate lifecycle CLI otherwise treats non-option operands as arbitrary goal names. Compatibility/migration or an explicit disambiguation mechanism must be resolved before the shorthand `mk <goal>` is promoted as normative CLI.
+
+The candidate CLI deliberately does not introduce hard-coded `build`, `test`, `run`, `clean`, `watch` or similar lifecycle commands. Such names remain ordinary project-defined goals.
+
 The following design areas remain active and unresolved:
 
 ```text
@@ -263,7 +393,7 @@ Future `mk` work must now derive the minimum general orchestration model needed 
 
 Continue the functional design of the `mk` project lifecycle from the promoted boundaries in `MK.md`, using the working-design items above as non-authoritative design state.
 
-The next concrete design area is to stress-test the candidate goal/root-operation graph model against delegated engines, native C/C++-style fine-grained builds, generated sources, automatic source discovery, incremental rebuilds and long-running/hot-update flows. From that evidence, determine whether operation/action/result need distinct promoted concepts. Do not select serialization format or implementation runtime merely for convenience.
+The next concrete design area is to stress-test the candidate implementation decomposition and CLI against delegated Maven/CMake execution, native C/C++-style fine-grained builds, generated sources, project dependencies, automatic source discovery, incremental rebuilds and long-running/hot-update flows. Resolve the CLI namespace question around the existing materialize command before promoting the shorthand mk <goal>. From that evidence, determine which concepts and boundaries are stable enough to promote. Do not select serialization format or implementation runtime merely for convenience.
 
 ## Blockers / open questions
 
