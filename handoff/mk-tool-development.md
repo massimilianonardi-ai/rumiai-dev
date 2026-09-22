@@ -10,10 +10,10 @@ Continue development of `mk` as the `m` subsystem for project development-lifecy
 ## Current repository revisions
 
 ```text
-rumiai-dev       c4370189dfdf9f9d844a631048efc402ac21fb7b  (pre-synchronization HEAD)
-rumiai-os        926179d3cb8808623dfe6f0bfed1e982dd0763ee
-rumiai-tests     89e079fa0487551451db5ec0acf5eb43969a9f50
-rumiai-dev-PoCs  1ee1da8f2295ef694dc542def05e012f907fe64e
+rumiai-dev       1ce0bf53450d4d856c811bbce9e122c03a35464e  (pre-synchronization HEAD)
+rumiai-os        688379f67ea3a2ddc55f43fbfc5020a07bb3ae0b
+rumiai-tests     c58831f8eb9763ea779d88f06ee03010203805fb
+rumiai-dev-PoCs  9b7c755aac5db5ae6eb90ff2a5de7772de6db9fb
 pkg-catalog      64d67a73f4f9485749e1b47712e42f77afb4773e
 ```
 
@@ -57,101 +57,88 @@ rumiai-tests/validation/mk-runtime-refinement.conf
 
 and is pinned to `rumiai-os` commit `926179d3cb8808623dfe6f0bfed1e982dd0763ee`.
 
-## Completed
+## Working design
 
-The contextual/conditional runtime-refinement design requested by the current task has been promoted and implemented.
+PoC 017 now supports the following candidate project-dependency model, which is not yet promoted to `MK.md`:
 
-PoC 016 established the minimal general model for:
+- a project dependency remains a first-class project-to-project relation rather than a fake operation or generic process action;
+- the parent maps its requested goal(s) explicitly to requested goal(s) of the dependent project;
+- one child `mk` instance owns the dependent project's planning/execution recursively;
+- multiple parent goals mapped to the same direct dependency are aggregated into one child request with a de-duplicated child-goal set;
+- parent profiles are not inherited implicitly across project boundaries;
+- a dependency may select a child profile explicitly;
+- `--plan` may preserve project boundaries by nesting the child `mk --plan` result instead of flattening child operations into the parent graph;
+- a small invocation-chain context containing canonical project roots is sufficient to reject direct or indirect project-dependency cycles.
 
-- context-derived file collections;
-- generated-source collections blocked by successful current-request completion;
-- trusted operation providers;
-- result/output/state condition operands;
-- conditional plan structure;
-- iterative runtime refinement;
-- compatibility with version-1 static planning.
-
-The durable contract is now canonical in:
+PoC 017 exposed one material open semantic boundary before promotion:
 
 ```text
-specifications/rumiai-os/MK.md
-specifications/rumiai-os/CURRENT-MODEL.md
+    A
+   / \
+  B   C
+   \ /
+    D
 ```
 
-`rumiai-os` commit `926179d3cb8808623dfe6f0bfed1e982dd0763ee` implements:
+Independent recursive child process trees can request `D` more than once. The first promoted contract still needs to decide whether repeated requests across sibling branches are permitted or whether one top-level request must provide shared project/goal de-duplication context.
 
-- version 1 unchanged as the static fully resolved lifecycle model;
-- version 2 contextual `files` collections;
-- explicit include/exclude/profile replacement;
-- `after` barriers requiring successful current-request completion;
-- trusted `map-process` provider derivation;
-- declarative `when` conditions;
-- result/output/state operands;
-- named declared outputs;
-- `failure: "continue"`;
-- structured version-2 plan output;
-- iterative resolve/execute/observe/refine execution;
-- dependency-cycle rejection across the dynamic model.
+The exact `mk.json` field names used by PoC 017 remain provisional until that semantic boundary is resolved.
 
-The implementation also protects these edge cases:
+## Completed
 
-- a skipped producer does not satisfy a generated-collection `after` barrier;
-- a failed/skipped producer cannot make a stale pathname count as current-request output evidence;
-- provider prerequisites remain effective when the mapped collection is empty.
+The contextual/conditional runtime-refinement model remains promoted and implemented as previously recorded.
 
-The command and library manuals were realigned in the same product commit. The library exposes only public `mkMain`; all implementation helpers remain underscore-prefixed.
+PoC 016 established the current version-2 runtime-refinement model, now implemented in `rumiai-os` and protected by permanent lifecycle/refinement tests.
 
-`rumiai-tests` now contains permanent `refinement.test` coverage for the dynamic model and retains `lifecycle.test` for the version-1/static vertical.
+PoC 017 was added at:
+
+```text
+rumiai-dev-PoCs/pocs/017-mk-project-dependency-delegation/
+```
+
+and experimentally verifies:
+
+- recursive `A → B → C` delegation;
+- child-before-parent execution ordering;
+- direct child-goal aggregation for multiple requested parent goals;
+- no implicit profile inheritance;
+- explicit child-profile selection;
+- nested, non-executing `--plan`;
+- `A → B → A` cycle rejection through propagated invocation-chain context;
+- child request failure propagation.
+
+The PoC passes locally with Node.js 22.16.0.
+
+No `rumiai-os` product code or canonical `MK.md` contract was changed by PoC 017.
 
 ## Validation evidence
 
-Hosted development validation used the unchanged permanent tests through `rumiai-test` and the real public `mk` command after provisioning the real RumiAI-managed Node.js package.
-
-GitHub Actions run:
+Hosted development validation for the previously completed runtime-refinement work unit remains:
 
 ```text
-35768833988
-```
+GitHub Actions run 35768833988
 
-Exact revisions exercised:
-
-```text
 rumiai-os
     926179d3cb8808623dfe6f0bfed1e982dd0763ee
 
 rumiai-tests
     570dcde5142c38e130295ee46912e87e7882f319
-```
 
 Ubuntu hosted runner:
-
-```text
-PASS rumiai-os/mk/lifecycle.test
-PASS rumiai-os/mk/refinement.test
-PASS 2 / FAIL 0 / SKIP 0 / ERROR 0
+    PASS rumiai-os/mk/lifecycle.test
+    PASS rumiai-os/mk/refinement.test
+    PASS 2 / FAIL 0 / SKIP 0 / ERROR 0
 ```
 
-macOS hosted runner did not reach either `mk` test. `pkg install nodejs` failed three consecutive times because the real Node.js distribution request returned HTTP 403. This is a provisioning/upstream blocker, not evidence against the `mk` behavior under test.
+The macOS hosted runner did not reach either `mk` test because the real Node.js distribution request used by `pkg install nodejs` returned HTTP 403. Formal `rumiai-validate` task validation for that work unit remains unclosed because the disposable validation target has no managed/default Node provisioning path. Required SKIP is not PASS under `TESTING.md`.
 
-The temporary hosted-development workflow was removed after recording the run; current `rumiai-tests` HEAD therefore contains the permanent test and validation scope but not the temporary workflow.
-
-Formal `rumiai-validate` task validation has not been closed. The current permanent tests deliberately SKIP when a managed/default Node.js runtime is absent, while the current formal validator creates a clean disposable target clone and this work unit did not introduce a validation-environment package-provisioning hook. Required SKIP is not PASS under `TESTING.md`.
+PoC 017 evidence is experimental only and does not replace permanent product validation.
 
 ## Current state
 
-There is no known remaining specification/implementation mismatch for the runtime-refinement model covered by this work unit.
+The promoted single-project runtime-refinement contract still matches the current implementation baseline.
 
-The promoted version-2 contract and the current implementation now agree on:
-
-```text
-declarative intent
-+ current observable context
-→ partially resolved structured plan
-→ execute ready work
-→ observe new evidence
-→ refine
-→ continue
-```
+Project-to-project dependency execution remains unimplemented in `rumiai-os`, but PoC 017 has now reduced the candidate design to recursive `mk` delegation rather than a global flattened multi-project lifecycle graph.
 
 The current baseline still deliberately excludes:
 
@@ -167,17 +154,20 @@ public generic provider/plugin registration
 
 ## Next action
 
-Use project-to-project dependency orchestration as the next concrete stress case for `mk`.
+Resolve the request-wide repeated-dependency/diamond semantic exposed by PoC 017.
 
-The next work unit should determine the smallest declarative/runtime semantics needed when one project depends on another and requested goals may differ, reusing the current resolution/refinement model instead of inventing a second orchestration mechanism.
+Then, if the recursive delegation model remains sufficient:
 
-Keep the macOS Node.js hosted-provisioning blocker explicit; do not alter `pkg` from this `mk` task merely to manufacture validation evidence.
+1. promote the minimal project-dependency contract into `specifications/rumiai-os/MK.md` and `CURRENT-MODEL.md`;
+2. implement it in `rumiai-os`;
+3. add permanent multi-project tests in `rumiai-tests`;
+4. run proportional development validation without altering `pkg` merely to manufacture hosted evidence.
 
 ## Blockers / open questions
 
+- Should one top-level `mk` request permit the same dependent project to be requested independently through sibling branches, or must project+goal requests be de-duplicated across the whole request?
 - macOS hosted `pkg install nodejs` currently receives HTTP 403 from the real Node.js distribution endpoint, preventing hosted macOS execution of the permanent `mk` tests;
 - formal task validation still lacks a managed-Node provisioning path inside the disposable `rumiai-validate` target environment;
-- what exact semantics should project `dependency` have when requested goals differ across dependent projects?
 - should a future `requirement` resolve directly to an existing `pkg` facility/provider contract or require a distinct `mk` abstraction?
 - what explicit input/output identity is minimally sufficient before incremental execution can be designed?
 - where should long-running/watch behavior live relative to operation/action versus session/scheduler semantics?
