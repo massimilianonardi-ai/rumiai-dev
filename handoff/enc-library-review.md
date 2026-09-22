@@ -10,9 +10,9 @@ Review and realign `lib/sys/sh/enc.lib.sh` function by function, preserving inte
 ## Current repository revisions
 
 ```text
-rumiai-dev   3cfe4494c8f8fb8b8ef3ccf3d2eff8515120705c  (remote HEAD before this checkpoint)
+rumiai-dev   d594612df48c8d1f0e470d4e8225d9aa76697b86  (remote HEAD before this checkpoint)
 rumiai-os    688379f67ea3a2ddc55f43fbfc5020a07bb3ae0b
-rumiai-tests 79548d73a1e3659d6e367769a9fb4d0892a493a9
+rumiai-tests c58831f8eb9763ea779d88f06ee03010203805fb
 ```
 
 Fresh remote HEAD retrieval remains mandatory before future writes.
@@ -112,6 +112,9 @@ todo/library-api-visibility-realignment.md
   - Ubuntu hosted: `encoded-file-eval.test`, `gpg-interface.test`, `gpg-roundtrip.test` and `octal.test` PASS; `encoded-file-edit.test` cannot exercise its contract because that runner's `/bin/sh` rejects `set -o pipefail`, while the RumiAI baseline requires POSIX.1-2024 pipefail.
 - The temporary hosted development workflow was removed forward-only in `rumiai-tests@5e155007ce174aa44eee6aa281e07beab16f0be6`; no temporary workflow remains in the current tree.
 - `rumiai-tests@79548d73a1e3659d6e367769a9fb4d0892a493a9` adds the fixed task validation scope `validation/enc-library.conf`, pinned to `rumiai-os@688379f67ea3a2ddc55f43fbfc5020a07bb3ae0b` with selection `rumiai-os/enc`. This scope is the permanent-test portion of final physical validation and must not be narrowed after a failure.
+- Physical macOS evidence was published from `rumiai-tests@79548d73a1e3659d6e367769a9fb4d0892a493a9` against `rumiai-os@688379f67ea3a2ddc55f43fbfc5020a07bb3ae0b` as session `validation/20260922T211420+0200-89195` and aggregate record `validation/20260922T211418+0200-87710`. The real host was Darwin 27.0 / arm64 and the validation environment was CLEAN. `encoded-file-edit.test`, `gpg-interface.test` and `octal.test` passed; `encoded-file-eval.test` and `gpg-roundtrip.test` returned SKIP because `gpg` was unavailable on the physical host. The task scope therefore correctly remained NOT VALIDATED.
+- Physical Ubuntu evidence was published from the same exact test/product revisions as session `validation/20260922T211438+0200-89521` and aggregate record `validation/20260922T211438+0200-88043`. The real host was Ubuntu 26.04.1 LTS / aarch64, the environment was CLEAN, and all five `rumiai-os/enc` tests passed; this host/property is physically VALIDATED.
+- After those physical runs, `rumiai-tests` advanced to `c58831f8eb9763ea779d88f06ee03010203805fb` only by rebinding the unrelated `rumiai-os-health` validation scope to the current product revision. No `rumiai-os/enc` test, shared test runtime used by this task, or `validation/enc-library.conf` changed. The Ubuntu physical evidence remains attributed strictly to `rumiai-tests@79548d73...`; it is not relabelled as evidence for `c58831f...`.
 
 ## Current state
 
@@ -119,14 +122,15 @@ todo/library-api-visibility-realignment.md
 
 Current product revision `rumiai-os@688379f67ea3a2ddc55f43fbfc5020a07bb3ae0b` also contains the macOS here-document portability correction and restored POSIX-whitespace `o2a` tokenization discovered during hosted development validation. The complete `rumiai-os/enc` group passes on hosted macOS 26 ARM64. On hosted Ubuntu, four tests pass and only `encoded-file-edit.test` is blocked by the runner's pre-POSIX.1-2024 `/bin/sh` lacking `pipefail`; this auxiliary-host limitation is not evidence for or against Ubuntu 26.04 ARM64.
 
-Full real interactive GnuPG/Pinentry + `vsed` validation on the applicable stable physical reference hosts remains open.
+Ubuntu 26.04.1 ARM64 has complete physical task-scope validation at the exact recorded revisions. macOS physical validation is incomplete only because the host does not currently provide the external `gpg` dependency required by the two real-GnuPG tests. Full real interactive GnuPG/Pinentry + `vsed` composed-path validation remains open on both physical reference hosts.
 
 ## Next action
 
-On each applicable stable physical reference host (macOS and Ubuntu 26.04 ARM64), run `./rumiai-validate enc-library` from the exact current `rumiai-tests` revision and additionally exercise the real interactive GnuPG/Pinentry + `vsed` composed edit path. The fixed permanent-test scope is `rumiai-os/enc` against `rumiai-os@688379f67ea3a2ddc55f43fbfc5020a07bb3ae0b`; it must not be narrowed after a failure. If both hosts provide the required PASS/evidence, perform the final consistency gate, write a `Status: Complete` handoff snapshot, then remove this handoff in a later forward commit.
+Provide GNU `gpg` on the physical macOS host without changing the fixed validation scope, then rerun `./rumiai-validate enc-library`. Separately exercise the real interactive GnuPG/Pinentry + `vsed` composed edit path on macOS and Ubuntu 26.04 ARM64 with `m_ENC_PASS` unset. If those remaining physical checks succeed, perform the final consistency gate, write a `Status: Complete` handoff snapshot, then remove this handoff in a later forward commit.
 
 ## Blockers / open questions
 
 - No implementation, permanent-test, manual or API-classification blocker is currently known for `enc.lib.sh`.
-- Physical interactive validation cannot be supplied by the hosted/auxiliary environments already exercised; hosted results must not be relabelled as physical reference-host evidence.
-- The hosted Ubuntu `pipefail` failure is an auxiliary-host baseline mismatch. The required stable Linux reference remains Ubuntu 26.04 ARM64 under the current POSIX.1-2024 contract.
+- Physical macOS task validation is blocked only by the missing external `gpg` executable; required SKIP remains non-PASS by contract.
+- No current `pkg-catalog` entry provides `gpg`, `gnupg` or Pinentry, so satisfying that physical-host prerequisite is currently host provisioning rather than an existing RumiAI package path.
+- Physical interactive GnuPG/Pinentry + `vsed` composed-path validation remains to be performed on both stable reference hosts.
