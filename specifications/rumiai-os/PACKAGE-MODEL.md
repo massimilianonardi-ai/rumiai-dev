@@ -105,6 +105,20 @@ pkg/<package>
 
 inside the selected `pkg-catalog` snapshot. The `facility/` area is therefore outside the installable-package namespace and must never be enumerated or interpreted as a package merely because it is present in the same repository.
 
+Each installable package may expose one or both of these package streams:
+
+```text
+pkg/<package>/<osarch>/...
+pkg/<package>/all/...
+```
+
+For a requested/current target, an exact `<osarch>` stream has precedence. When
+that exact stream is absent, `all` is the platform-independent fallback stream.
+A package installed from `all` has platform-independent concrete identity and
+therefore does not gain an `!<osarch>` suffix merely because resolution happened
+on a particular host. The historical name `catalog` is not a package stream name
+and has no fallback semantics.
+
 Package definitions describe how a package is resolved/integrated. Repository-specific behavior belongs behind repository adapters rather than leaking provider-specific assumptions into the generic package orchestration.
 
 Current package-library physical organization keeps public subcommand entrypoint libraries and cross-cutting package orchestration directly under `lib/sys/sh/pkg/`. Internal facility/dependency libraries live under `lib/sys/sh/pkg/facility/`. Repository-specific upstream adapters live under `lib/sys/sh/pkg/repository/`. Physical grouping does not change library leaf identity or manual-topic identity. `pkg-provider.lib.sh` remains directly under `lib/sys/sh/pkg/` because it is both the public `pkg provider` subcommand entrypoint and the provider-selection API; internal facility-contract responsibilities must not be added to it merely to avoid creating appropriately owned internal libraries.
@@ -656,4 +670,6 @@ PKG-68  the trusted srv system-host launch path reuses the normal package launch
 PKG-69  provider selectors remain private by default; system-host reconciliation may expose only required non-secret selector metadata read-only/traversable to the service runtime without granting mutation rights
 PKG-70  a resolved artifact descriptor carries one or more ordered URL candidates for the same artifact; repository adapters own provider-specific mirror candidate construction
 PKG-71  pkg-download accepts a candidate only after expected size and configured digest verification, removes failed candidate output before fallback, and fails when no candidate validates
+PKG-72  package stream resolution prefers pkg/<package>/<osarch> and falls back only to pkg/<package>/all; catalog is not a package stream name
+PKG-73  packages resolved from the all stream use platform-independent concrete identity without an !<osarch> suffix
 ```
