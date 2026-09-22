@@ -5,18 +5,18 @@ Updated: 2026-09-22
 
 ## Goal
 
-Define and develop `mk` as the `m` subsystem responsible for project development-lifecycle management and orchestration, with modular, standardized and flexible orchestration while keeping project configuration declarative and non-executable.
+Continue development of `mk` as the `m` subsystem for project development-lifecycle orchestration, starting from the promoted JavaScript/JSON lifecycle baseline and extending it only from concrete project needs.
 
 ## Current repository revisions
 
 ```text
-rumiai-dev   e65058acc3783310dde3533ec1a25a40c320c928  (pre-checkpoint HEAD before implementation/CLI working-design update)
-rumiai-os    0a45bddce0318e111a72b052f7bc8366d2911b0b  (current main; unchanged by this design checkpoint)
-rumiai-tests 1062ffcd51d3c66e16a4a07a1aa9d84a46a56f83  (current main; unchanged by this design checkpoint)
-pkg-catalog  94f58995cbd487b17f3b82bc2724c70540927b88  (refresh before pkg-catalog work)
+rumiai-dev   1e8119bab2af742ad8ca2495c21aeea35d5f55f7  (pre-checkpoint HEAD before this handoff synchronization)
+rumiai-os    bacf3b6d37b508c6b07bd8b6bb88019bc50a627f  (current main; mk implementation unchanged since validated 6f26a4993337b7020d1ace2d46c827538b6de966)
+rumiai-tests 0b5fabccd79092af5c452dec65ddc7b49ad57d9a  (current main; lifecycle.test unchanged since validated workflow revision)
+pkg-catalog  39abe7d9ae53753dda9e2714fc39fe69adfafb8c  (current main at final consistency check)
 ```
 
-Fresh remote HEAD retrieval remains mandatory before later writes.
+Fresh remote HEAD retrieval remains mandatory before later work.
 
 ## Applicable canonical sources
 
@@ -24,381 +24,122 @@ Fresh remote HEAD retrieval remains mandatory before later writes.
 README.md
 RULES.md
 CONSISTENCY-GATE.md
+TESTING.md
+TEST-PATTERNS.md
 specifications/README.md
 specifications/rumiai-os/CURRENT-MODEL.md
 specifications/rumiai-os/MK.md
-specifications/rumiai-os/MK-SOURCE-MATERIALIZATION.md
+specifications/rumiai-os/COMMAND-ENTRYPOINTS.md
+specifications/rumiai-os/FILESYSTEM-NAMING.md
+specifications/rumiai-os/LIBRARY-INTERFACES.md
+specifications/rumiai-os/DOCUMENTATION-MODEL.md
 handoff/README.md
 ```
 
-`specifications/rumiai-os/DOCUMENTATION-MODEL.md` is additionally relevant when designing the documentation-build capability owned by `mk`.
+Additional subsystem specifications are retrieved only when a future mk extension actually crosses their boundary.
 
-## Fixed task-local choices
+## Completed in the current implementation checkpoint
 
-No additional task-local choice is currently fixed outside the promoted canonical `MK.md` contract.
+- The lifecycle contract was promoted in `specifications/rumiai-os/MK.md`.
+- JavaScript is the current mk lifecycle-engine implementation language.
+- JSON is the current declarative project configuration representation.
+- The project configuration identity is project-root `mk.json`.
+- The public command is goal-driven rather than based on hard-coded lifecycle subcommands.
+- `dependency`, `prerequisite` and `requirement` have distinct meanings in the promoted model.
+- The obsolete source-materialization capability, its specification, shell implementation, operational manuals and permanent test were removed.
+- `bin/sys/mk` is a thin bootstrap-integrated launcher.
+- `lib/sys/js/mk.lib.js` implements the first lifecycle vertical:
+  - project discovery;
+  - JSON parsing/validation;
+  - profile overlays;
+  - goal resolution;
+  - operation/prerequisite planning;
+  - cycle/reference validation;
+  - `--goals`, `--show-goal` and `--plan`;
+  - multiple requested goals as one plan;
+  - sequential execution;
+  - shell-free `process` actions.
+- The public command and JavaScript library manuals were realigned with the implementation.
+- The initial parser syntax defect discovered during test preparation was corrected in `rumiai-os` commit `6f26a4993337b7020d1ace2d46c827538b6de966`.
+- `tests/rumiai-os/mk/lifecycle.test` replaced the obsolete materialization test and exercises the real public command.
 
-## Working design
+## Validation evidence
 
-The items in this section are **active design state, not current specification**. They must not be treated as architectural decisions or implementation requirements until an individual choice passes the specification promotion gate.
+A temporary GitHub Actions development workflow provisioned the managed Node.js runtime through the real `pkg` path and then executed the unchanged permanent lifecycle test through `rumiai-test`.
 
-### Implementation runtime / language
-
-No implementation runtime has been selected for the broader `mk` subsystem.
-
-Current candidate directions that remain worth evaluating are:
-
-```text
-Python
-JavaScript-capable runtime
-```
-
-Python must not be selected on the assumption that a suitable host Python is universally available. If Python is to be provided through `pkg`, the relevant package/runtime portability and relocatability behavior must be good enough to support the resulting bootstrap/dependency model before selection is promoted.
-
-For a JavaScript direction, Node.js, Deno, GraalVM or another JavaScript-capable runtime must not be treated as interchangeable. The actual runtime contract and package consequences must be evaluated before selection.
-
-The existing shell implementation of `mk materialize` is evidence about that capability only and does not select the runtime of the broader subsystem.
-
-### Structured project configuration
-
-The promoted contract requires structured declarative non-executable project configuration, but no concrete serialization format has been selected.
-
-Current candidates retained for comparison are:
-
-```text
-JSON
-TOML
-```
-
-The comparison should consider at least:
+Evidence:
 
 ```text
-structured-data expressiveness
-unambiguous/deterministic parsing semantics
-schema and validation support
-human authoring ergonomics
-comment and embedded-documentation needs
-tooling and interoperability
-parser/runtime availability
-dependency footprint
-coupling or bias toward a particular implementation runtime
-long-term portability and stability
+GitHub Actions run
+    35711640304
+
+rumiai-os exercised
+    6f26a4993337b7020d1ace2d46c827538b6de966
+
+rumiai-tests exercised
+    dc58d8df8592ea05cd5dc243ca9c3f56473e0d2d
+
+Ubuntu hosted runner
+    PASS rumiai-os/mk/lifecycle.test
+    PASS 1 / FAIL 0 / SKIP 0 / ERROR 0
+
+macOS hosted runner
+    job completed successfully
+    managed Node.js installation succeeded
+    mk lifecycle permanent-test step succeeded
 ```
 
-No configuration filename, extension, project-discovery pathname or physical project layout is selected by this candidate set.
+The temporary workflow was removed afterward in `rumiai-tests` commit `0b5fabccd79092af5c452dec65ddc7b49ad57d9a`; the validated `lifecycle.test` content remains unchanged.
 
-### Lifecycle design still to resolve
+After validation, `rumiai-os` advanced to the current HEAD only through concurrent changes to `readpass`/`readpassv`. The current `bin/sys/mk` and `lib/sys/js/mk.lib.js` blobs remain unchanged from the validated mk revision, so the hosted evidence still applies to the current mk implementation.
 
-The promoted contract now requires one general lifecycle model that can cover both delegation to an upstream build/lifecycle engine and direct fine-grained orchestration. The exact internal abstractions remain unresolved.
+This was development/hosted test evidence, not a formal `rumiai-validate` task-validation record and not physical-host validation.
 
-A current candidate minimal model is:
+## Working design still open
+
+The following areas remain deliberately unresolved and must be derived from concrete lifecycle cases rather than treated as implicit features:
 
 ```text
-named lifecycle goal/request
-    -> one or more root operations
-    -> operation prerequisite graph
-    -> executable leaf operations
+project dependency execution/composition
+declarative requirement resolution and its boundary with pkg facilities/providers
+input/output and artifact semantics beyond the current process action
+automatic source/input discovery
+incremental invalidation and fingerprints
+cache semantics
+parallel scheduling and resource constraints
+external-engine adapter interface
+native/reusable builder or operation-provider interface
+generated-source flows
+long-running/watch/hot-update execution
+workspace and persistent mk state layout when such state becomes necessary
+documentation-build declarations inside the general lifecycle model
 ```
 
-Under this model, the simple delegated case and the fine-grained native case differ only in graph visibility/granularity. A delegated Maven/CMake/etc. invocation can be represented as one opaque leaf operation with the required tool, arguments, working directory and environment, while a native builder exposes the finer operation graph directly. A goal is therefore better treated as an externally addressable entrypoint/root selection over operations than as a hard-coded lifecycle primitive.
-
-This remains working design rather than promoted terminology. In particular, the final names and the exact boundary between an operation, an executable action and a produced result/target remain to be resolved.
-
-### Candidate vocabulary
-
-The following terminology is proposed only as a working vocabulary for reasoning and stress-testing the model:
-
-```text
-project
-    logical development unit managed by mk
-
-profile
-    named selection/variation of project configuration
-
-goal
-    externally addressable requested outcome; selects one or more root operations
-
-operation
-    orchestratable unit of work in the lifecycle graph
-
-prerequisite
-    relation in which one operation must be satisfied before another operation can proceed
-
-requirement
-    external capability, tool, runtime, package or environment condition needed by an operation/project
-
-dependency
-    dependency relation between projects; kept distinct from operation prerequisites and external requirements
-
-input
-    data/resource/state consumed by an operation
-
-output
-    data/resource/state produced by an operation
-
-artifact
-    identifiable persistent output such as a file, tree, executable, archive or documentation set
-
-result
-    execution outcome/status/metadata, distinct from produced artifacts
-
-action
-    concrete executable realization of an operation after resolution
-
-invocation
-    process-oriented action: executable/tool + arguments + cwd + environment
-
-tool
-    executable or technical facility used by an action
-
-environment
-    resolved execution context in which an action runs
-
-adapter
-    integration boundary translating mk's abstract model to/from an external tool or engine
-
-builder
-    candidate reusable higher-level component that derives or provides operations for a class of projects; whether this deserves a first-class contract remains open
-
-operation graph
-    graph of operations and their prerequisite relationships
-
-execution plan
-    resolved subset/instance of the operation graph required for a requested goal and profile
-
-executor
-    mechanism that performs actions
-
-scheduler
-    mechanism deciding which ready actions may run and when, subject to prerequisites/resources
-
-state
-    persisted knowledge used by mk across executions when needed
-
-fingerprint
-    identity of the relevant inputs/configuration/tool/action state for incremental validity
-
-cache
-    reusable stored result/output indexed by an identity such as a fingerprint
-
-invalidation
-    determination that prior state/output can no longer satisfy the current request
-
-selector
-    declarative mechanism yielding a dynamic set of inputs/resources, useful for automatic source discovery
-
-trigger
-    event/request causing reevaluation or execution, useful for watch/hot-update flows
-
-workspace
-    managed area for intermediate/generated development data
-```
-
-The likely minimal semantic nucleus is currently `project + profile + goal + operation + prerequisite + requirement + dependency + input/output`. Terms such as action, invocation, artifact, executor, scheduler, fingerprint, cache, selector and trigger appear useful as specializations or later execution/incrementality concepts but are not yet candidates for mandatory core primitives.
-
-
-### Candidate implementation decomposition
-
-A candidate implementation structure is to keep the public `bin/sys/mk` entrypoint thin and stable while placing the broader lifecycle engine behind it. The implementation runtime and exact physical library/module layout remain unresolved.
-
-Logical responsibilities:
-
-```text
-CLI/request layer
-    parse project/profile/goal request and introspection/execution mode
-
-project/configuration layer
-    discover project
-    load and validate declarative configuration
-    select/compose profile
-
-model layer
-    normalize projects, dependencies, goals, operations,
-    prerequisites, requirements, inputs and outputs
-
-resolution layer
-    resolve project dependencies
-    resolve requirements/tools/environment
-    expand goals to root operations
-    expand reusable builders/adapters/providers into operations/actions as needed
-
-planning layer
-    compute required operation closure
-    validate graph
-    determine current/invalidated work
-    construct execution plan
-
-execution layer
-    schedule ready actions
-    execute actions
-    collect result/output
-    stop/continue according to execution policy
-
-state layer
-    persist only the execution/incrementality/cache state that the selected model requires
-
-extension boundaries
-    external-engine adapters
-    reusable/native builders or operation providers
-    action/executor implementations
-    requirement/tool resolvers
-    selectors/triggers when those concepts become required
-```
-
-The data flow is conceptually:
-
-```text
-CLI request
-    -> project discovery/config
-    -> profile selection
-    -> project dependency graph
-    -> requested goal(s)
-    -> operation graph closure
-    -> requirement/environment resolution
-    -> execution plan
-    -> scheduler/executor
-    -> result/output/state
-```
-
-The project graph and operation graph remain conceptually distinct:
-
-```text
-project -> dependency -> project
-
-operation -> prerequisite -> operation
-
-operation/project -> requirement -> external capability/tool/runtime/environment
-```
-
-A delegated Maven/CMake/etc. build should be representable by an adapter that resolves one opaque operation/action, while a native builder may expose a detailed operation graph. Both use the same planning/execution path.
-
-The current `mk materialize` command remains an existing separately specified capability. This candidate design does not yet decide whether materialization later becomes a lifecycle operation/provider, remains an explicit utility command, or exposes both roles.
-
-### Candidate command-line shape
-
-The preferred normal lifecycle surface is currently:
-
-```text
-mk [options] <goal> [<goal> ...]
-```
-
-where goal names are project data rather than built-in command names. Multiple requested goals, if retained, would represent a requested set whose combined prerequisite closure is planned once; they would not imply left-to-right sequencing unless an explicit prerequisite establishes it.
-
-Candidate global selectors/modes:
-
-```text
---project <path>
-    explicitly select a project/project root instead of implicit discovery
-
---profile <profile>
-    select the project profile/configuration
-
---plan
-    resolve and print the execution plan without executing it
-
---goals
-    list externally addressable goals of the selected project
-
---show-goal <goal>
-    inspect the resolved definition/root operations of one goal
-```
-
-Examples:
-
-```text
-mk build
-mk --profile release build
-mk test package
-mk --plan build
-mk --goals
-mk --project ../other-project --profile debug build
-```
-
-A zero-argument `mk` could eventually execute a project-declared default goal, but no default-goal behavior is selected yet.
-
-The current public form remains separately valid:
-
-```text
-mk materialize <source-root> <definition-root> <useful-root>
-```
-
-This creates a namespace question because `materialize` is currently a real command word while the candidate lifecycle CLI otherwise treats non-option operands as arbitrary goal names. Compatibility/migration or an explicit disambiguation mechanism must be resolved before the shorthand `mk <goal>` is promoted as normative CLI.
-
-The candidate CLI deliberately does not introduce hard-coded `build`, `test`, `run`, `clean`, `watch` or similar lifecycle commands. Such names remain ordinary project-defined goals.
-
-The following design areas remain active and unresolved:
-
-```text
-minimum relationship among lifecycle operations, targets/results, project dependencies, prerequisites, requirements and executable actions
-representation of delegated external-engine operations versus directly orchestrated fine-grained actions
-support for long-running/watch/hot-update development flows without special-casing a language
-automatic source/input discovery and invalidation when files are added, removed or renamed
-project discovery and exact configuration location
-profile schema and composition rules
-public lifecycle CLI and profile-selection syntax
-lifecycle ordering / graph representation
-incremental execution and cache model
-parallel execution model
-adapter or plugin interface
-build-environment requirement representation
-project dependency representation
-workspace/state/output layout
-local package-install bridge
-source-only pkg orchestration
-```
-
-These are not a checklist of implicit future requirements. Each choice must be derived from concrete lifecycle needs and promoted individually when sufficiently settled.
-
-### Documentation-build design
-
-The promoted contract currently assigns RumiAI documentation-build orchestration to `mk` as a lifecycle/build-output responsibility. The following remain working design:
-
-```text
-documentation source representation
-documentation renderer/toolchain
-how selected documentation tooling is declared/resolved
-public documentation-build CLI/configuration shape
-relationship between general project build declarations and documentation-specific needs
-```
-
-Sphinx, Asciidoctor and Pandoc are examples previously considered as possible external tooling classes; none is selected by current contract.
-
-## Completed
-
-- The active `mk-tool-development` workstream was created.
-- The high-level promoted `mk` lifecycle responsibility is represented by `specifications/rumiai-os/MK.md`.
-- Structured declarative non-executable project configuration is a promoted `mk` boundary.
-- Projects and profiles are represented by the promoted current lifecycle contract; lifecycle operation names are now explicitly extensible rather than a mandatory hard-coded `build`/`test`/`run`/`clean` set.
-- The already implemented source-materialization capability remains separately specified by `MK-SOURCE-MATERIALIZATION.md`.
-- Documentation-build orchestration is represented as an `mk` lifecycle responsibility while renderer/tool selection remains outside the promoted contract.
-- A workflow correction on 2026-09-17 introduced the specification promotion gate and `Working design` handoff state.
-- Provisional runtime/language choices, JSON/TOML comparison material, deferred lifecycle choices and documentation-tool candidates were removed from `specifications/rumiai-os/MK.md` and preserved here as non-authoritative active design state.
-- `specifications/README.md` no longer describes `MK.md` as a source of open design choices.
-- `CURRENT-MODEL.md` was realigned so it states only promoted `mk` architecture and no longer carries undecided runtime/serialization planning.
-- `MK-SOURCE-MATERIALIZATION.md` was reduced to current capability contract and stable scope boundaries; future package/runtime/dependency design was removed from the specification.
-- Final documentation consistency review confirmed that the current `MK.md` contains no Python/JavaScript or JSON/TOML candidate material and that the removed design state remains recoverable here.
-- The promoted `mk` contract now explicitly supports both delegation to suitable external lifecycle/build engines and direct finer-grained orchestration when delegation is insufficient.
-- The promoted contract now requires minimizing tool-, language- and lifecycle-specific hard-coding while keeping common configurations concise and advanced orchestration explicit.
-- `CURRENT-MODEL.md` was realigned with the same lifecycle-operation and delegation/direct-orchestration boundary.
-- No `rumiai-os`, `rumiai-tests` or `pkg-catalog` product/test change was made by this design checkpoint; runtime tests were therefore not applicable.
+The current vocabulary remains useful for design discussion, but vocabulary terms do not by themselves create implementation requirements.
 
 ## Current state
 
-The current `MK.md` now defines a general extensible lifecycle boundary: lifecycle operation names are project/model data rather than a mandatory fixed set, and `mk` must support both delegation to suitable upstream engines and direct finer-grained orchestration.
+The first executable lifecycle vertical is present and tested. The current implementation intentionally stops before incrementality, caching, parallelism, project dependency execution and a generalized extension/plugin API.
 
-The product still implements only the current materialization capability. No product or permanent-test change was made by this design checkpoint.
-
-Future `mk` work must now derive the minimum general orchestration model needed to satisfy both ends of that spectrum without encoding language- or tool-specific assumptions in the core. A choice moves from working design to a canonical specification only after it is sufficiently settled to constrain current implementation and future work.
+The next design/implementation work should therefore stress the existing model with a real project shape rather than adding abstractions speculatively.
 
 ## Next action
 
-Continue the functional design of the `mk` project lifecycle from the promoted boundaries in `MK.md`, using the working-design items above as non-authoritative design state.
+Use one or more concrete project scenarios to extend the current baseline. Good stress cases remain:
 
-The next concrete design area is to stress-test the candidate implementation decomposition and CLI against delegated Maven/CMake execution, native C/C++-style fine-grained builds, generated sources, project dependencies, automatic source discovery, incremental rebuilds and long-running/hot-update flows. Resolve the CLI namespace question around the existing materialize command before promoting the shorthand mk <goal>. From that evidence, determine which concepts and boundaries are stable enough to promote. Do not select serialization format or implementation runtime merely for convenience.
+```text
+delegation to Maven or CMake as one opaque operation
+native C/C++ compilation with automatically discovered sources
+generated sources feeding later operations
+project-to-project dependency orchestration
+long-running JavaScript development/hot-update flow
+```
+
+Promote or implement a new abstraction only when those cases demonstrate that the current goal/operation/prerequisite/process model is insufficient.
 
 ## Blockers / open questions
 
-- What is the minimum general model of lifecycle operations, results/targets, project dependencies, prerequisites, requirements and executable actions that supports both delegation and fine-grained orchestration without hard-coded goal names?
-- Which minimum project/profile semantics are required before a public lifecycle CLI can be fixed?
-- What evidence is required to choose the broader `mk` implementation runtime?
-- What concrete authoring/validation requirements are needed to choose a project-configuration serialization format?
-- How should documentation build declarations fit the general project lifecycle without creating a documentation-specific parallel build API?
+- What exact semantics should project `dependency` have when requested goals differ across dependent projects?
+- Should `requirement` resolve directly to an existing `pkg` facility/provider contract, or is an additional mk-level abstraction justified by a concrete build-time need?
+- Which explicit input/output identity is minimally sufficient for correct incremental execution?
+- Does long-running/watch execution belong to operation/action semantics or to an execution-session/scheduler layer?
