@@ -9,17 +9,20 @@ Complete the service model connecting portable `srv` lifecycle, package-provided
 service facilities and explicit user/system host supervision without introducing a
 duplicate service registry, provider graph or dependency graph.
 
-The software/specification/formal-validation work is complete. The only remaining
-active stage is physical validation on the stable reference hosts.
+The service/facility/pkg implementation and current hosted formal validation are
+complete. A physical Ubuntu/x86_64 work session exposed a SourceForge regional
+mirror timeout, which led to a generic multi-candidate artifact-download contract
+and implementation. Stable-reference-host physical validation remains the final
+stage.
 
 ## Repository checkpoint
 
 Repository revisions immediately before this handoff synchronization:
 
 ```text
-rumiai-dev      d96bd519323d24f96f1c1c5ad55c6b0b18dfefbb
-rumiai-os       cbcf6467838eda79c1afedd22061299d5c1a40ff
-rumiai-tests    ed173d66480579e1eb869d80beb43cfb9fccdf5d
+rumiai-dev      e9235f673a9b035eef34380099693279af34403b
+rumiai-os       0a45bddce0318e111a72b052f7bc8366d2911b0b
+rumiai-tests    1062ffcd51d3c66e16a4a07a1aa9d84a46a56f83
 pkg-catalog     39abe7d9ae53753dda9e2714fc39fe69adfafb8c
 rumiai-dev-PoCs ab470307cb8a3e26d57b798fe021109209d66792
 ```
@@ -105,6 +108,17 @@ artifact copies is non-blocking because canonical revision-specific validation
 evidence is already published by `rumiai-validate`; an external artifact-storage
 failure must not relabel a successful formal validation.
 
+### Artifact download resilience
+
+A physical Ubuntu/x86_64 session exposed a real SourceForge redirect to
+`netix.dl.sourceforge.net` that timed out. The generic artifact descriptor now
+supports ordered URL candidates for the same artifact. `pkg-download` advances to
+the next candidate only after transfer, size or digest failure and accepts a
+candidate only after the descriptor's expected size/digest checks succeed.
+GeoServer supplies the canonical SourceForge URL plus explicit mirror candidates;
+provider-specific mirror policy remains in the repository adapter.
+
+
 ## Current formal validation evidence
 
 All evidence below is GitHub-hosted technical/formal evidence, not physical
@@ -115,14 +129,14 @@ stable-host validation.
 GitHub Actions run:
 
 ```text
-35656229331
+35702983502
 ```
 
 Exact validated revisions:
 
 ```text
-rumiai-tests@ed173d66480579e1eb869d80beb43cfb9fccdf5d
-rumiai-os@cbcf6467838eda79c1afedd22061299d5c1a40ff
+rumiai-tests@1062ffcd51d3c66e16a4a07a1aa9d84a46a56f83
+rumiai-os@0a45bddce0318e111a72b052f7bc8366d2911b0b
 ```
 
 Scope:
@@ -140,14 +154,14 @@ Both matrix jobs completed successfully.
 GitHub Actions run:
 
 ```text
-35656229627
+35702983369
 ```
 
 Exact validated revisions:
 
 ```text
-rumiai-tests@ed173d66480579e1eb869d80beb43cfb9fccdf5d
-rumiai-os@cbcf6467838eda79c1afedd22061299d5c1a40ff
+rumiai-tests@1062ffcd51d3c66e16a4a07a1aa9d84a46a56f83
+rumiai-os@0a45bddce0318e111a72b052f7bc8366d2911b0b
 ```
 
 Scope:
@@ -164,10 +178,31 @@ skipped on a normal push-triggered run.
 
 ## Current state
 
-Implementation, manuals, canonical specifications and permanent tests are aligned at
-the revisions above. The final consistency review also corrected temporary-path PID
-uniqueness and restored normal provider-selector privacy outside explicit
-system-service reconciliation.
+Implementation, manuals, canonical specifications and permanent tests are aligned
+with the current service model, artifact-fallback contract and current http-fetch
+behavior.
+
+Additional physical/real-host evidence from Ubuntu 24.04.5 x86_64
+`PRTL-GS-01`:
+
+```text
+geoserver-service
+  rumiai-tests@5a149673fe5d9803dfef9273d0ae38f53571b750
+  rumiai-os@1683ff139cfa775adeb832ffae10944b40155256
+  Scope result: VALIDATED
+
+package-provider-facility-final
+  rumiai-tests@8513947696dfc1290a52d669eab16f700a4c48dd
+  rumiai-os@1683ff139cfa775adeb832ffae10944b40155256
+  Scope result: NOT VALIDATED
+  only blocker: rumiai-os/srv/host-system.test SKIP because sudo -n authorization
+  was no longer available after the earlier sudo timestamp expired
+```
+
+The Ubuntu/x86_64 host is useful auxiliary physical evidence but is not the stable
+Ubuntu 26.04 ARM64 reference host. Because current hosted validation now targets
+`rumiai-os@0a45bddce0318e111a72b052f7bc8366d2911b0b`, auxiliary physical reruns on
+the work host should use that current pinned revision as well.
 
 No software/design blocker remains in the active service-model work.
 
@@ -175,7 +210,11 @@ GitHub-hosted validation does not satisfy the project's physical-validation stag
 
 ## Next action
 
-Run the already-fixed scopes on both stable physical reference hosts:
+While the Ubuntu/x86_64 work session is available, rerun both task scopes against
+the current pinned revision with fresh sudo authorization immediately before each
+scope. This is auxiliary physical evidence.
+
+Then run the same scopes on both stable physical reference hosts:
 
 ```text
 macOS
