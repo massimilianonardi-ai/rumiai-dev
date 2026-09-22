@@ -5,15 +5,15 @@ Updated: 2026-09-22
 
 ## Goal
 
-Continue development of `mk` as the `m` subsystem for project development-lifecycle orchestration, extending the promoted declarative lifecycle model from concrete project needs while keeping tool/language-specific behavior outside the core.
+Continue development of `mk` as the `m` subsystem for project development-lifecycle orchestration, extending the promoted declarative lifecycle model from concrete project needs while keeping package/provider semantics in `pkg` and tool/language-specific behavior outside the core.
 
 ## Current repository revisions
 
 ```text
-rumiai-dev       a15a5f115a2a96f48f271028cf6d8cf0e0ed1123  (pre-synchronization HEAD)
-rumiai-os        78f1ebf6f11d40f2f722ae3f37875118cbda8015
-rumiai-tests     82a96f008b22e3e8fcd533206e174912591000ca
-rumiai-dev-PoCs  416a30fd02531dbb74a21da1765ff4fb1ebbdff2
+rumiai-dev       00a51d6811e7a68f17ee656c546448b20060937d  (pre-synchronization HEAD)
+rumiai-os        b3c39830b66e85f4ec63def3f3bcd91af853cbe7
+rumiai-tests     80faa275df8c97be088c79419a70d54c7d8131c7
+rumiai-dev-PoCs  1821be1904c432b969f395b28dc193ac8ced01b1
 pkg-catalog      64d67a73f4f9485749e1b47712e42f77afb4773e
 ```
 
@@ -31,6 +31,7 @@ TEST-PATTERNS.md
 specifications/README.md
 specifications/rumiai-os/CURRENT-MODEL.md
 specifications/rumiai-os/MK.md
+specifications/rumiai-os/PACKAGE-MODEL.md
 specifications/rumiai-os/COMMAND-ENTRYPOINTS.md
 specifications/rumiai-os/FILESYSTEM-NAMING.md
 specifications/rumiai-os/LIBRARY-INTERFACES.md
@@ -40,170 +41,306 @@ handoff/README.md
 
 Additional subsystem specifications are retrieved only when a future `mk` extension crosses their boundary.
 
-## Fixed task-local choices
+## Fixed validation scopes
 
-The runtime-refinement validation scope remains:
+Runtime refinement:
 
 ```text
+validation/mk-runtime-refinement.conf
+rumiai-os-commit 926179d3cb8808623dfe6f0bfed1e982dd0763ee
 rumiai-os/mk/lifecycle.test
 rumiai-os/mk/refinement.test
 ```
 
-stored in `rumiai-tests/validation/mk-runtime-refinement.conf` and pinned to `rumiai-os` commit `926179d3cb8808623dfe6f0bfed1e982dd0763ee`.
-
-The project-dependency validation scope is:
+Project dependencies:
 
 ```text
+validation/mk-project-dependency.conf
+rumiai-os-commit 78f1ebf6f11d40f2f722ae3f37875118cbda8015
 rumiai-os/mk/lifecycle.test
 rumiai-os/mk/refinement.test
 rumiai-os/mk/project-dependency.test
 ```
 
-stored in `rumiai-tests/validation/mk-project-dependency.conf` and pinned to `rumiai-os` commit `78f1ebf6f11d40f2f722ae3f37875118cbda8015`.
-
-## Completed
-
-The contextual/conditional runtime-refinement model remains promoted and implemented as previously recorded.
-
-PoC 017 established the project-to-project dependency baseline and is preserved under:
+Facility requirements:
 
 ```text
-rumiai-dev-PoCs/pocs/017-mk-project-dependency-delegation/
+validation/mk-facility-requirement.conf
+rumiai-os-commit b3c39830b66e85f4ec63def3f3bcd91af853cbe7
+rumiai-os/pkg/dependency.test
+rumiai-os/mk/lifecycle.test
+rumiai-os/mk/refinement.test
+rumiai-os/mk/project-dependency.test
+rumiai-os/mk/requirement.test
 ```
 
-The resulting model has been promoted into `specifications/rumiai-os/MK.md` and `CURRENT-MODEL.md`.
+## Completed model
 
-The promoted version-2 project-dependency contract now requires:
+The following version-2 capabilities are promoted, implemented and protected by permanent tests:
 
-- a dependency remains a first-class project-to-project relation, distinct from operation prerequisites and process actions;
-- a dependency declares its child project and explicitly maps requested parent goals to requested child goals;
-- one child `mk` engine process owns the dependent project's lifecycle recursively;
-- child lifecycle operations/providers/collections/conditions are not flattened into the parent graph;
-- multiple requested parent goals mapped to the same direct dependency are aggregated into one de-duplicated child-goal request;
-- a parent profile is not inherited implicitly across a project boundary;
-- a dependency may select a child profile explicitly;
-- active direct dependencies must complete successfully before parent-local lifecycle work begins;
-- recursive project cycles are rejected from canonical project identity carried in a private active invocation chain;
-- version-2 plans preserve active dependencies as nested child-project plans;
-- the dependency relation does not imply request-wide exactly-once execution or sibling-branch de-duplication; a diamond may independently request the same downstream project more than once.
+- contextual file collections;
+- trusted operation providers;
+- declarative conditions and observable result/output/state operands;
+- named declared outputs and runtime refinement;
+- recursive project-to-project dependency delegation;
+- named external facility requirements resolved through the existing `pkg` facility/provider model.
 
-`rumiai-os` commit `9ced19f7376cc8b4697a8240dea72f436a9facf1` implements the recursive dependency model in `lib/sys/js/mk.lib.js`.
+Project `dependency`, operation `prerequisite` and external `requirement` remain distinct concepts.
 
-Subsequent product commits align the manuals:
+## Facility requirement work unit
+
+PoC 018 is preserved under:
 
 ```text
-69fb9ea5a8db918410ce35a4e79182db6050b183
-    res/sys/manual/mk
-
-78f1ebf6f11d40f2f722ae3f37875118cbda8015
-    res/sys/manual/mk.lib.js
+rumiai-dev-PoCs/pocs/018-mk-facility-requirements/
 ```
 
-The implementation:
+It established that `mk` does not need a second provider/dependency resolver.
 
-- accepts version-2 top-level/profile `dependencies`;
-- validates dependency names, path/goal/profile shape and parent-goal references;
-- resolves active child requests from the selected parent model;
-- resolves child roots canonically;
-- delegates each active direct child request to a fresh Node process loading the same current `mk.lib.js` engine and calling `mkMain`;
-- passes only an internal canonical project-chain context needed for recursive cycle detection;
-- reconstructs the caller environment for child delegation and prevents the private chain from leaking into normal project actions;
-- supports nested planning for version-2 children and wraps a version-1 child line plan when reached from a version-2 parent;
-- executes active dependencies before the parent project's local version-2 lifecycle.
-
-The public shell launcher `bin/sys/mk` was not changed.
-
-`rumiai-tests` contains the permanent executable:
+The promoted baseline is:
 
 ```text
-tests/rumiai-os/mk/project-dependency.test
+mk named requirement
+    facility identity + pkg compatibility constraints
+
+reachable operation/provider
+    -> requirement query
+
+pkg
+    -> configured system facility default
+    -> installed provider resolution
+    -> existing compatibility validation
+
+satisfied
+    -> consumer may become ready
+
+unsatisfied
+    -> plan remains inspectable
+    -> consumer remains blocked
+    -> requirement is queried again on later refinement passes
 ```
 
-protecting MK-28 through MK-35 through the real public `bin/sys/mk` path. It covers recursive A→B→C delegation, child-before-parent behavior, direct child-goal aggregation, implicit/explicit profile behavior, nested non-executing plan output, A→B→A cycle rejection, child failure propagation and deliberate repeated D execution in a diamond A→B/C→D.
+A project is not a package consumer. It therefore does not receive a synthetic package-consumer binding. Project requirements use the system facility default, matching the existing non-package-consumer/global facility selection model.
 
-The test was initially created with non-executable mode by the repository contents API; the first hosted run therefore classified it as test infrastructure ERROR before execution. Commit `f010b0337e95c4877c91b46a764c386a0577b20b` corrected only its Git mode to `100755`.
+Requirement resolution is read-only. It does not:
 
-The temporary hosted development workflow was removed after evidence collection.
+- install providers;
+- choose among installed providers implicitly;
+- create or modify facility defaults;
+- create package-consumer bindings;
+- introduce another facility command/environment projection layer.
 
-## Validation evidence
+Facility commands/environment remain owned by normal `m`/`pkg` bootstrap semantics.
 
-Project-dependency development validation used the real public `mk` command, the unchanged permanent tests and the real RumiAI-managed Node.js package provisioning path.
+## Canonical promotion
 
-GitHub Actions run:
+The requirement model was promoted in `rumiai-dev`:
 
 ```text
-35774948617
+9fddcde54ea39dc8882752765c7ee6eba6397a54
+    specifications/rumiai-os/MK.md
+
+9a6dd735755ec715e37b195c3936a1df93fb64c3
+    specifications/rumiai-os/PACKAGE-MODEL.md
+
+197fca75b9fd52ae4e6e464bdb8ceaf3fe332ac6
+    specifications/rumiai-os/CURRENT-MODEL.md
 ```
 
-Exact revisions exercised:
+The promoted `mk` invariants are MK-36 through MK-43. The package query is protected by PKG-75/PKG-76 and the current-model summary by CURRENT-45 through CURRENT-48.
+
+## Product implementation
+
+`pkg` now exposes:
+
+```text
+pkg requirement resolve <facility> <constraint>...
+```
+
+The query resolves the configured system facility default through the normal package-class/osarch semantics, validates that the selected installed concrete declares the requested facility at a compatibility satisfying every supplied constraint, and prints the concrete provider identity.
+
+Implementation surfaces:
+
+```text
+lib/sys/sh/pkg/facility/pkg-dependency.lib.sh
+    public pkg_dependency_default_resolve
+
+lib/sys/sh/pkg/pkg-requirement.lib.sh
+    public pkg_requirement subcommand entrypoint
+
+bin/sys/pkg
+    requirement dispatch
+```
+
+The new public subcommand library explicitly loads both the facility contract and dependency resolver. The first hosted development run exposed that the historical dependency library relied on facility helpers already having been loaded by its caller; commit `2b8696ad2cbba822d59df07551fd6b0b1da811ee` fixed this new public-boundary load-order dependency without changing resolution policy.
+
+`mk` version 2 now accepts:
+
+```json
+{
+  "requirements": {
+    "jdk": {
+      "type": "facility",
+      "facility": "java",
+      "constraints": [">=21", "<26"]
+    }
+  }
+}
+```
+
+Operations and trusted providers may reference named requirements through a `requirements` array. Profiles may replace/add named requirement definitions.
+
+The JavaScript engine:
+
+- validates requirement declarations and references without reimplementing the package compatibility parser;
+- resolves only requirements reachable from the requested lifecycle;
+- invokes the real public package boundary through a fresh `m pkg requirement resolve ...` query;
+- resolves each reachable requirement once per refinement pass and queries it again on later passes;
+- exposes `satisfied`/`unsatisfied` state and selected provider concrete in structured plans;
+- keeps conditional operations conditional before requirement state can make them executable;
+- blocks ordinary operations and trusted-provider derived work while requirements are unsatisfied;
+- does not retroactively invalidate already-completed operations if external provider state later changes;
+- reports unsatisfied requirements only when they are the actual blocker preventing further progress;
+- preserves pending collection/refinement semantics for providers before treating a provider requirement as the terminal blocker.
+
+The public `bin/sys/mk` launcher was not changed.
+
+The final product HEAD for this work unit is:
+
+```text
+b3c39830b66e85f4ec63def3f3bcd91af853cbe7
+```
+
+The last commit after the behaviorally tested revision is documentation-only, aligning the dependency list in `pkg-requirement.lib.sh`'s manual.
+
+## Permanent tests
+
+`rumiai-tests/tests/rumiai-os/pkg/dependency.test` now also protects the public requirement query, including:
+
+- successful resolution through a system facility default;
+- package-default late binding;
+- compatibility mismatch;
+- invalid constraint status;
+- independence from package-consumer bindings;
+- absence of implicit fallback when no facility default exists.
+
+New permanent executable:
+
+```text
+tests/rumiai-os/mk/requirement.test
+```
+
+protects MK-36 through MK-43 through the real public `bin/sys/mk` and `pkg` paths. It covers:
+
+- unreachable requirements omitted from the plan;
+- reachable unsatisfied requirement plan state;
+- operation blocking without executing the consumer;
+- prerequisite-driven provider-default change followed by successful re-resolution;
+- satisfied plan state with selected provider concrete;
+- profile replacement of a requirement;
+- requirement gating on a trusted `map-process` provider;
+- final unsatisfied requirement failure before the consuming action runs.
+
+The test file is committed executable (`100755`).
+
+## Development validation evidence
+
+The first diagnostic hosted run:
+
+```text
+35778910973
+```
+
+failed in the new package-query coverage before Node provisioning. It exposed the missing explicit facility-library load in the new public `pkg-requirement.lib.sh` boundary. This was a real implementation integration defect and was corrected forward.
+
+The successful hosted development run is:
+
+```text
+35779022415
+```
+
+Exact behavior revisions exercised:
 
 ```text
 rumiai-os
-    78f1ebf6f11d40f2f722ae3f37875118cbda8015
+    2b8696ad2cbba822d59df07551fd6b0b1da811ee
 
 rumiai-tests
-    f010b0337e95c4877c91b46a764c386a0577b20b
+    ab1fcf2c0b388f902c821ddf70809f4d651fb375
 ```
 
 GitHub-hosted Ubuntu auxiliary runner:
 
 ```text
+PASS rumiai-os/pkg/dependency.test
 PASS rumiai-os/mk/lifecycle.test
 PASS rumiai-os/mk/refinement.test
 PASS rumiai-os/mk/project-dependency.test
-PASS 3 / FAIL 0 / SKIP 0 / ERROR 0
+PASS rumiai-os/mk/requirement.test
+PASS 5 / FAIL 0 / SKIP 0 / ERROR 0
 ```
 
-The macOS hosted job did not reach the tests. Real `pkg install nodejs` again failed because the Node.js distribution request returned:
+GitHub-hosted macOS runner:
 
 ```text
-curl: (56) The requested URL returned error: 403
+PASS rumiai-os/pkg/dependency.test
+PASS rumiai-os/mk/lifecycle.test
+PASS rumiai-os/mk/refinement.test
+PASS rumiai-os/mk/project-dependency.test
+PASS rumiai-os/mk/requirement.test
+PASS 5 / FAIL 0 / SKIP 0 / ERROR 0
 ```
 
-This is provisioning/upstream evidence and is not a failure of the project-dependency behavior.
+In this run the real managed-Node provisioning path also succeeded on macOS, so the previous intermittent Node.js distribution HTTP-403 blocker did not prevent macOS execution. This does not establish that the upstream 403 condition is permanently resolved.
 
-The earlier run `35774808861` is diagnostic only: managed Node provisioning succeeded on both jobs, lifecycle/refinement passed, but the new test was classified ERROR immediately because its Git executable bit had not yet been set. It is not product-failure evidence.
+The temporary hosted-development workflow was removed after evidence collection.
 
-Formal `rumiai-validate` validation remains unclosed. The disposable committed target clone has no managed/default Node.js provisioning mechanism, and required SKIP is not PASS under `TESTING.md`. This work unit did not change `pkg` or validation infrastructure merely to manufacture formal evidence.
+Formal `rumiai-validate` validation remains unclosed. The current disposable validation target model does not provision a managed/default Node runtime into the fresh target clone, and required SKIP is not PASS under `TESTING.md`. This work unit did not change validation/package provisioning merely to manufacture formal evidence.
 
 ## Current state
 
-The promoted single-project runtime-refinement model and the promoted project-to-project dependency model are implemented in the current product baseline and covered by permanent tests.
-
-The current project-dependency architecture is deliberately recursive rather than a flattened global multi-project operation graph:
+The current version-2 lifecycle model is:
 
 ```text
-parent requested goals
-→ active dependency mapping
-→ child project + child goals (+ optional explicit child profile)
-→ fresh child mk engine process
-→ recursive child lifecycle
-→ child success
-→ parent local lifecycle
+declarative project intent
++ selected profile
++ project dependencies
++ currently observable context/state
++ reachable external facility requirements
+    -> partially resolved structured plan
+    -> recursive child-project lifecycle
+    -> execute ready local work
+    -> observe result/output/state/external provider state
+    -> refine
+    -> continue
 ```
 
-The current baseline still deliberately excludes:
+The current baseline deliberately excludes:
 
 ```text
 incremental fingerprints/cache
 parallel scheduling
 remote execution
-declarative requirement resolution
 watch/hot-update session semantics
 public generic provider/plugin registration
 request-wide exactly-once/de-duplication semantics
+automatic requirement/provider installation
+project-specific persistent provider bindings
+requirement types outside pkg facilities
 ```
 
 ## Next action
 
-Use declarative requirement resolution as the next `mk` stress case only after retrieving the current `pkg` facility/provider contract and determining whether `mk` should consume that existing model directly or needs a distinct boundary.
+Use **incremental execution / input-output identity and fingerprints** as the next concrete `mk` stress case.
 
-Do not conflate a project dependency with an external requirement, and do not reopen the completed recursive project-dependency model merely to add future cache/session semantics.
+Start from concrete project scenarios and determine the smallest identity/freshness contract needed before introducing cache state. Keep incremental state distinct from requirement/provider resolution and from the already-fixed project dependency semantics.
 
-## Blockers / open questions
+Do not introduce watch/session behavior merely to implement incremental one-shot execution; long-running ownership remains a later separate stress case.
 
-- formal task validation still lacks a managed-Node provisioning path inside the disposable `rumiai-validate` target environment;
-- macOS hosted `pkg install nodejs` still intermittently/consistently receives HTTP 403 from the real Node.js distribution endpoint and may prevent hosted macOS execution;
-- should a future `requirement` resolve directly to the existing `pkg` facility/provider contract or require a distinct `mk` abstraction?
-- what explicit input/output identity is minimally sufficient before incremental execution can be designed?
+## Open questions
+
+- what explicit input/output identity is minimally sufficient for deterministic incremental execution?
+- what state must be persisted through the canonical `state-path` boundary versus remaining derivable from current project files?
+- how should project dependency requests participate in later incremental freshness without adding request-wide exactly-once semantics implicitly?
 - where should long-running/watch behavior live relative to operation/action versus session/scheduler semantics?
+- formal validation still lacks managed-Node provisioning inside the disposable `rumiai-validate` target.
