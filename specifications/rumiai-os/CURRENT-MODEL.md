@@ -321,7 +321,11 @@ The lifecycle model distinguishes project `dependency`, operation `prerequisite`
 
 Goal names are extensible project data rather than a mandatory hard-coded set. `mk` can delegate an operation to a suitable external lifecycle/build engine or orchestrate a fine-grained operation graph directly.
 
-The first lifecycle CLI uses `mk [options] [--] <goal>...` plus project/profile selection and plan/goal introspection. The first executor runs a resolved plan sequentially and provides a shell-free process action. Incremental execution, cache, parallel scheduling, project-dependency execution, declarative requirement resolution and watch/hot-update behavior are not yet part of the first implementation.
+`mk.json` expresses declarative project intent and is not required to duplicate details that are derivable from authoritative current project/runtime context. For example, when a declared source collection semantically means the applicable files currently present under a directory, concrete membership is resolved from that directory rather than copied into configuration merely as an inventory; explicit selection remains appropriate when intended membership differs, including profile-specific subsets.
+
+Lifecycle planning is not required to produce a completely fixed graph before execution. Some decisions may remain conditional until earlier operations produce the evidence required to resolve them. Plan inspection resolves everything that can be determined from current configuration/context without executing project operations and must preserve future-dependent alternatives as conditional structure rather than pretending one branch is already selected.
+
+The first lifecycle CLI uses `mk [options] [--] <goal>...` plus project/profile selection and plan/goal introspection. The first executor currently runs only a fully resolved static plan sequentially and provides a shell-free process action; contextual graph derivation, conditional planning and runtime plan refinement are therefore current implementation gaps relative to the broader lifecycle contract. Incremental execution, cache, parallel scheduling, project-dependency execution, declarative requirement resolution and watch/hot-update behavior are also not yet part of the first implementation.
 
 `mk` does not replace compilers, interpreters, external build engines or `pkg`; it orchestrates them through modular boundaries.
 
@@ -400,4 +404,7 @@ CURRENT-30   mk lifecycle operation names are extensible rather than a mandatory
 CURRENT-31   mk supports both delegation to suitable external lifecycle/build engines and finer-grained direct orchestration
 CURRENT-32   mk lifecycle engine implementation language is JavaScript
 CURRENT-33   mk project configuration is JSON rooted at project-root mk.json
+CURRENT-34   mk configuration expresses declarative intent and does not require duplication of details derivable from authoritative current project/runtime context
+CURRENT-35   mk planning may preserve conditional alternatives whose selection depends on evidence produced only during lifecycle execution
+CURRENT-36   mk plan inspection resolves current observable facts without executing project operations and preserves unresolved future-dependent alternatives
 ```
