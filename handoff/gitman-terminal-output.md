@@ -10,9 +10,9 @@ Move the existing Sync + Push quick action to the first position in the root Git
 ## Current repository revisions
 
 ```text
-rumiai-dev    fd79342a101a7d167f6b2e386da2328f516ff7e5  canonical sources before this checkpoint
+rumiai-dev    8d341060cd1403097cb460ebacfb62cf3953a0d3  canonical/task state before this checkpoint
 rumiai-os     0a45bddce0318e111a72b052f7bc8366d2911b0b  current main
-rumiai-tests  528dd8e72eb89cd8bb2d64aef243ee144e87dbdb
+rumiai-tests  5a149673fe5d9803dfef9273d0ae38f53571b750
 ```
 
 The task validation scope deliberately pins `rumiai-os` at `1683ff139cfa775adeb832ffae10944b40155256`. That revision contains the complete gitman change. Later current-main commits through `0a45bddc...` affect only unrelated package/http-fetch surfaces and were checked for forward-only compatibility.
@@ -24,6 +24,8 @@ README.md
 RULES.md
 CONSISTENCY-GATE.md
 TESTING.md
+TEST-PATTERNS.md
+RUNNER.md
 specifications/README.md
 specifications/rumiai-os/GITMAN.md
 specifications/rumiai-os/PAGER.md
@@ -37,6 +39,7 @@ specifications/rumiai-os/DOCUMENTATION-MODEL.md
 - Preserve the existing public action name `Sync + Push`; only its root-menu position changes.
 - The terminal-mode header is emitted once for the whole command sequence selected from a menu, not once for every internal Git subprocess of a composite action.
 - The header text is the concrete selected menu label. For branch switching this is the concrete branch item such as `Switch: git switch feature/example`.
+- Task validation must protect only the properties changed by this work unit; the broad historical `interactive.test` remains a general regression test and is not the task scope for the terminal-header change.
 
 ## Completed
 
@@ -44,26 +47,32 @@ specifications/rumiai-os/DOCUMENTATION-MODEL.md
 - Canonical `GITMAN.md` contract updated: Sync + Push is first and terminal sequence headers are normative.
 - `rumiai-os/bin/sys/gitman` updated to carry the selected menu label into execution, print the exact 50-hyphen header once per terminal-mode sequence, start the composite Sync + Push header before its preliminary Git status check, and preserve pager behavior.
 - `rumiai-os/res/sys/manual/gitman` updated for the new root order and terminal output.
-- Permanent contract and PTY interactive tests updated. The interactive test checks Sync + Push ordering, exact header shape, concrete labels including branch selection, and one header per composite sequence.
-- `validation/gitman.conf` updated to the exact target revision `1683ff139cfa775adeb832ffae10944b40155256`.
-- Final static consistency review found no remaining `Repository:` / `Action:` terminal-header expectations and reconciled concurrent unrelated repository movement forward.
+- Initial permanent tests were updated, but the first formal user run reported one PASS and one FAIL while normal gitman use remained functionally healthy. The exact failed-session log was not published in the repository, so that historical FAIL cannot be attributed to a specific property from repository evidence alone.
+- Review found that `validation/gitman.conf` selected the entire `rumiai-os/gitman` group. Its broad `interactive.test` covers many unrelated properties (configuration, repository management, editor behavior, branches, stash, Sync + Push and output presentation), so one unrelated failure could incorrectly invalidate this narrow work unit.
+- Added executable `tests/rumiai-os/gitman/terminal-output.test`, a focused real-entrypoint PTY test that verifies Sync + Push is first, exact 50-hyphen / selected-label / 50-hyphen terminal headers, one header for the composite Sync + Push sequence, one header for Status, and successful real local pull/push state against a temporary bare remote.
+- Removed duplicate exact-header assertions from the broad `interactive.test`; it continues to verify its workflow/state properties without owning terminal-header formatting.
+- Narrowed `validation/gitman.conf` to `rumiai-os/gitman/terminal-output.test` while retaining the exact task target revision.
+- Verified the new test is stored with executable mode `100755`.
+- Final static consistency review confirms the focused test is the behavioral owner of the changed terminal-header contract and the broad test contains no remaining exact-header helper/assertions.
 
 ## Current state
 
-Implementation, specification, manual and permanent tests are aligned and committed.
+Implementation, specification and manual remain aligned. The task validation scope is now minimum-sufficient for the changed behavior rather than the complete historical gitman regression group.
 
-No real executable validation result has been obtained in this ChatGPT session. The available auxiliary Linux container has no RumiAI checkout, direct network clone/download is unavailable, and no existing GitHub Actions workflow targets gitman. This is a validation limitation, not a PASS or FAIL.
+No real executable result for the new focused test has yet been obtained in this ChatGPT session. The auxiliary Linux container has no network access to clone the repositories, and no existing GitHub Actions workflow targets gitman. This is a validation limitation, not a PASS or FAIL.
 
 ## Next action
 
-From a real `rumiai-tests` checkout, run the current formal task scope:
+From a real `rumiai-tests` checkout, run:
 
 ```sh
 ./rumiai-validate gitman
 ```
 
-Record the resulting session evidence and then complete/remove this handoff according to the normal completion protocol if all required tests pass.
+The scope now executes only `rumiai-os/gitman/terminal-output.test`. Record the resulting evidence and complete/remove this handoff if it passes.
+
+If the broad `rumiai-os/gitman/interactive.test` is run separately and still fails, treat that as a separate regression/health investigation using its concrete log rather than as evidence that this terminal-header task is broken.
 
 ## Blockers / open questions
 
-- Formal/real execution of the gitman task scope is still pending.
+- Formal execution of the new focused task scope is still pending.
