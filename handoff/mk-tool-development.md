@@ -10,9 +10,9 @@ Continue development of `mk` as the `m` subsystem for project development-lifecy
 ## Current repository revisions
 
 ```text
-rumiai-dev      c645428518caf5d8dfe71a03f246be788cd4464c  (pre-checkpoint HEAD; contextual/conditional planning contract promoted)
+rumiai-dev      b4fe4185290994719210dfe855bc833f16476d71  (pre-checkpoint HEAD before this handoff synchronization)
 rumiai-os       bdb66dde9e8fe45caef98c78f9084ed836232594  (current main; implementation still supports only static fully resolved plans)
-rumiai-tests    b3553477e78247ff0d9e5ed8066a99fdd0798adf  (current main; no permanent coverage yet for contextual/conditional planning)
+rumiai-tests    2ad28a4516f47875020f34e46f249aba5ce27f74  (current main at checkpoint; no permanent coverage yet for contextual/conditional planning)
 rumiai-dev-PoCs e3dcd58c9c39dae29c7c5a18a810833539553313  (native C++ PoC conclusion narrowed to its actual evidence)
 pkg-catalog     64d67a73f4f9485749e1b47712e42f77afb4773e  (current main)
 legacy m        2a57a29880c2d7a32e18782122062c695fcb1a3a  (reference-only current master used for historical makefile evidence)
@@ -251,6 +251,53 @@ The canonical contract now requires:
 - runtime refinement of the plan as operation results/outputs become available.
 
 Current `rumiai-os` does not implement these broader rules yet. It still accepts only the first-delivery static JSON model and emits/executes a fully resolved linear plan. This is a known specification/implementation gap, not a reason to weaken the promoted contract.
+
+
+### Resume checkpoint: declarative economy and dynamic resolution
+
+The durable architectural correction is already canonical in `MK.md` (including invariants MK-16 through MK-19) and summarized in `CURRENT-MODEL.md`. Do not reopen it as an unresolved choice.
+
+The active implementation/design problem is now:
+
+```text
+declarative project intent
++ selected profile
++ currently observable context/state
+        ↓
+resolve what is knowable now
+        ↓
+plan containing concrete work + unresolved conditional alternatives
+        ↓
+execute ready work
+        ↓
+observe results/outputs/new state
+        ↓
+refine/resolve the plan
+        ↓
+continue
+```
+
+Important consequences for the next chat/work unit:
+
+- `mk.json` must not become an inventory of details already implied by an authoritative project structure. If a declared source directory means all applicable sources under that directory, membership is discovered from the filesystem at resolution time.
+- Explicit file selection/exclusion remains valid when the intended set differs from the default, including profile-specific cases such as a release subset.
+- `mk --plan` should resolve context-derived facts available now, including concrete current source membership, even when those files are not enumerated in `mk.json`.
+- A plan may be only partially resolved. When a decision depends on evidence not yet available, `--plan` must preserve both/all conditional alternatives rather than select one speculatively.
+- Execution is conceptually iterative: resolve -> execute -> observe -> resolve/refine -> execute.
+- Examples already accepted as architectural stress cases:
+  - try a preferred/latest project dependency/version; on failure, fall back to an earlier usable one;
+  - produce an artifact, then choose ZIP if its size is below a threshold and 7zip otherwise.
+- Dynamic resolution must remain declarative/trusted. Do not solve this by turning `mk.json` into arbitrary JavaScript or another executable configuration language.
+- The previous C++ PoC proved only that one finite filesystem-discovery case can be expanded before execution. It is not evidence that every lifecycle can be fully pre-planned.
+
+The next design task should focus on the smallest general representation of:
+1. context-derived collections/selections;
+2. conditions whose operands may be operation results, outputs or observable state;
+3. conditional branches in the plan;
+4. runtime plan refinement;
+5. the trusted resolver/provider/builder boundary that supplies derived operations without tool/language hard-coding in the core.
+
+Generated sources are a particularly useful next PoC because they bridge both classes: some source membership may be known initially, while additional sources become known only after an earlier operation executes.
 
 ## Next action
 
