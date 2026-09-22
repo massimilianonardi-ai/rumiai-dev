@@ -95,7 +95,7 @@ A current candidate minimal model is:
 ```text
 named lifecycle goal/request
     -> one or more root operations
-    -> operation dependency graph
+    -> operation prerequisite graph
     -> executable leaf operations
 ```
 
