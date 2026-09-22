@@ -12,7 +12,7 @@ Review and realign `lib/sys/sh/enc.lib.sh` function by function, preserving inte
 ```text
 rumiai-dev   a839dd907041b0183a547eaf60ab5b37d9ce4559  (remote HEAD before this checkpoint)
 rumiai-os    688379f67ea3a2ddc55f43fbfc5020a07bb3ae0b
-rumiai-tests 5e155007ce174aa44eee6aa281e07beab16f0be6
+rumiai-tests 79548d73a1e3659d6e367769a9fb4d0892a493a9
 ```
 
 Fresh remote HEAD retrieval remains mandatory before future writes.
@@ -111,6 +111,7 @@ todo/library-api-visibility-realignment.md
   - macOS 26.6.2 ARM64 hosted: all five `rumiai-os/enc` permanent tests PASS;
   - Ubuntu hosted: `encoded-file-eval.test`, `gpg-interface.test`, `gpg-roundtrip.test` and `octal.test` PASS; `encoded-file-edit.test` cannot exercise its contract because that runner's `/bin/sh` rejects `set -o pipefail`, while the RumiAI baseline requires POSIX.1-2024 pipefail.
 - The temporary hosted development workflow was removed forward-only in `rumiai-tests@5e155007ce174aa44eee6aa281e07beab16f0be6`; no temporary workflow remains in the current tree.
+- `rumiai-tests@79548d73a1e3659d6e367769a9fb4d0892a493a9` adds the fixed task validation scope `validation/enc-library.conf`, pinned to `rumiai-os@688379f67ea3a2ddc55f43fbfc5020a07bb3ae0b` with selection `rumiai-os/enc`. This scope is the permanent-test portion of final physical validation and must not be narrowed after a failure.
 
 ## Current state
 
@@ -122,7 +123,7 @@ Full real interactive GnuPG/Pinentry + `vsed` validation on the applicable stabl
 
 ## Next action
 
-Run the final real interactive GnuPG/Pinentry + `vsed` path on the applicable stable physical reference hosts (macOS and Ubuntu 26.04 ARM64) against the exact current product/test revisions. If the required scope passes, perform the final consistency gate, write a `Status: Complete` handoff snapshot, then remove this handoff in a later forward commit.
+On each applicable stable physical reference host (macOS and Ubuntu 26.04 ARM64), run `./rumiai-validate enc-library` from the exact current `rumiai-tests` revision and additionally exercise the real interactive GnuPG/Pinentry + `vsed` composed edit path. The fixed permanent-test scope is `rumiai-os/enc` against `rumiai-os@688379f67ea3a2ddc55f43fbfc5020a07bb3ae0b`; it must not be narrowed after a failure. If both hosts provide the required PASS/evidence, perform the final consistency gate, write a `Status: Complete` handoff snapshot, then remove this handoff in a later forward commit.
 
 ## Blockers / open questions
 
