@@ -1,7 +1,7 @@
 # Service model
 
 Status: Active
-Updated: 2026-09-21
+Updated: 2026-09-22
 
 ## Goal
 
@@ -20,7 +20,7 @@ stage.
 Repository revisions immediately before this handoff synchronization:
 
 ```text
-rumiai-dev      e9235f673a9b035eef34380099693279af34403b
+rumiai-dev      d7aabf7af3c0841cdd461a55a8a0ef161043cfbd
 rumiai-os       0a45bddce0318e111a72b052f7bc8366d2911b0b
 rumiai-tests    1062ffcd51d3c66e16a4a07a1aa9d84a46a56f83
 pkg-catalog     39abe7d9ae53753dda9e2714fc39fe69adfafb8c
@@ -182,27 +182,31 @@ Implementation, manuals, canonical specifications and permanent tests are aligne
 with the current service model, artifact-fallback contract and current http-fetch
 behavior.
 
-Additional physical/real-host evidence from Ubuntu 24.04.5 x86_64
-`PRTL-GS-01`:
+Additional auxiliary physical evidence from Ubuntu 24.04.5 x86_64
+`PRTL-GS-01` now validates both required task scopes at the current product/test
+revisions:
 
 ```text
 geoserver-service
-  rumiai-tests@5a149673fe5d9803dfef9273d0ae38f53571b750
-  rumiai-os@1683ff139cfa775adeb832ffae10944b40155256
+  rumiai-tests@1062ffcd51d3c66e16a4a07a1aa9d84a46a56f83
+  rumiai-os@0a45bddce0318e111a72b052f7bc8366d2911b0b
+  evidence: validation/20260922T103106+0200-147249
   Scope result: VALIDATED
 
 package-provider-facility-final
-  rumiai-tests@8513947696dfc1290a52d669eab16f700a4c48dd
-  rumiai-os@1683ff139cfa775adeb832ffae10944b40155256
-  Scope result: NOT VALIDATED
-  only blocker: rumiai-os/srv/host-system.test SKIP because sudo -n authorization
-  was no longer available after the earlier sudo timestamp expired
+  rumiai-tests@1062ffcd51d3c66e16a4a07a1aa9d84a46a56f83
+  rumiai-os@0a45bddce0318e111a72b052f7bc8366d2911b0b
+  evidence: validation/20260922T103534+0200-175877
+  Scope result: VALIDATED
 ```
 
+This rerun is also direct evidence that the SourceForge mirror-fallback correction
+works on the same physical Ubuntu/x86_64 host whose earlier GeoServer installation
+failed after a redirect to `netix.dl.sourceforge.net`.
+
 The Ubuntu/x86_64 host is useful auxiliary physical evidence but is not the stable
-Ubuntu 26.04 ARM64 reference host. Because current hosted validation now targets
-`rumiai-os@0a45bddce0318e111a72b052f7bc8366d2911b0b`, auxiliary physical reruns on
-the work host should use that current pinned revision as well.
+Ubuntu 26.04 ARM64 reference host and therefore does not close the final physical
+gate.
 
 No software/design blocker remains in the active service-model work.
 
@@ -210,11 +214,7 @@ GitHub-hosted validation does not satisfy the project's physical-validation stag
 
 ## Next action
 
-While the Ubuntu/x86_64 work session is available, rerun both task scopes against
-the current pinned revision with fresh sudo authorization immediately before each
-scope. This is auxiliary physical evidence.
-
-Then run the same scopes on both stable physical reference hosts:
+Run the same scopes on both stable physical reference hosts:
 
 ```text
 macOS
