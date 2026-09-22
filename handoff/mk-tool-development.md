@@ -1,7 +1,7 @@
 # mk tool development
 
 Status: Active
-Updated: 2026-09-17
+Updated: 2026-09-22
 
 ## Goal
 
@@ -10,9 +10,9 @@ Define and develop `mk` as the `m` subsystem responsible for project development
 ## Current repository revisions
 
 ```text
-rumiai-dev   e15a940d4baae58b6ece050138bc05897870538d  (pre-checkpoint HEAD after specification consistency review)
-rumiai-os    36c29d8412a523f722fd90004b78a07fdf0b06c8  (last inspected; unchanged by this documentation correction)
-rumiai-tests 298931c1dca03d44755893d64b9b3a7c0058b7ea  (last inspected; unchanged by this documentation correction)
+rumiai-dev   641145a688f0b1822dd690fbda32a9dc29fa296c  (pre-checkpoint HEAD after mk lifecycle contract realignment)
+rumiai-os    0a45bddce0318e111a72b052f7bc8366d2911b0b  (current main; unchanged by this design checkpoint)
+rumiai-tests 5a149673fe5d9803dfef9273d0ae38f53571b750  (current main; unchanged by this design checkpoint)
 pkg-catalog  94f58995cbd487b17f3b82bc2724c70540927b88  (refresh before pkg-catalog work)
 ```
 
@@ -88,9 +88,15 @@ No configuration filename, extension, project-discovery pathname or physical pro
 
 ### Lifecycle design still to resolve
 
+The promoted contract now requires one general lifecycle model that can cover both delegation to an upstream build/lifecycle engine and direct fine-grained orchestration. The exact internal abstractions remain unresolved.
+
 The following design areas remain active and unresolved:
 
 ```text
+minimum relationship among lifecycle operations, targets/results, dependencies and executable actions
+representation of delegated external-engine operations versus directly orchestrated fine-grained actions
+support for long-running/watch/hot-update development flows without special-casing a language
+automatic source/input discovery and invalidation when files are added, removed or renamed
 project discovery and exact configuration location
 profile schema and composition rules
 public lifecycle CLI and profile-selection syntax
@@ -126,7 +132,7 @@ Sphinx, Asciidoctor and Pandoc are examples previously considered as possible ex
 - The active `mk-tool-development` workstream was created.
 - The high-level promoted `mk` lifecycle responsibility is represented by `specifications/rumiai-os/MK.md`.
 - Structured declarative non-executable project configuration is a promoted `mk` boundary.
-- Projects/profiles and build/test/run/clean/output production are represented by the promoted current lifecycle contract.
+- Projects and profiles are represented by the promoted current lifecycle contract; lifecycle operation names are now explicitly extensible rather than a mandatory hard-coded `build`/`test`/`run`/`clean` set.
 - The already implemented source-materialization capability remains separately specified by `MK-SOURCE-MATERIALIZATION.md`.
 - Documentation-build orchestration is represented as an `mk` lifecycle responsibility while renderer/tool selection remains outside the promoted contract.
 - A workflow correction on 2026-09-17 introduced the specification promotion gate and `Working design` handoff state.
@@ -135,24 +141,28 @@ Sphinx, Asciidoctor and Pandoc are examples previously considered as possible ex
 - `CURRENT-MODEL.md` was realigned so it states only promoted `mk` architecture and no longer carries undecided runtime/serialization planning.
 - `MK-SOURCE-MATERIALIZATION.md` was reduced to current capability contract and stable scope boundaries; future package/runtime/dependency design was removed from the specification.
 - Final documentation consistency review confirmed that the current `MK.md` contains no Python/JavaScript or JSON/TOML candidate material and that the removed design state remains recoverable here.
-- No `rumiai-os`, `rumiai-tests` or `pkg-catalog` change was made by this documentation/workflow correction; runtime tests were therefore not applicable.
+- The promoted `mk` contract now explicitly supports both delegation to suitable external lifecycle/build engines and direct finer-grained orchestration when delegation is insufficient.
+- The promoted contract now requires minimizing tool-, language- and lifecycle-specific hard-coding while keeping common configurations concise and advanced orchestration explicit.
+- `CURRENT-MODEL.md` was realigned with the same lifecycle-operation and delegation/direct-orchestration boundary.
+- No `rumiai-os`, `rumiai-tests` or `pkg-catalog` product/test change was made by this design checkpoint; runtime tests were therefore not applicable.
 
 ## Current state
 
-The current `MK.md` and `MK-SOURCE-MATERIALIZATION.md` are limited to promoted current contract. The unresolved design space needed to continue the task is preserved in `Working design` instead of being mixed into specifications.
+The current `MK.md` now defines a general extensible lifecycle boundary: lifecycle operation names are project/model data rather than a mandatory fixed set, and `mk` must support both delegation to suitable upstream engines and direct finer-grained orchestration.
 
-The product still implements only the current materialization capability. No product or permanent-test change was made by this documentation/workflow correction.
+The product still implements only the current materialization capability. No product or permanent-test change was made by this design checkpoint.
 
-Future `mk` work must evaluate and resolve working-design items incrementally. A choice moves from this section to a canonical specification only after it is sufficiently settled to constrain current implementation and future work.
+Future `mk` work must now derive the minimum general orchestration model needed to satisfy both ends of that spectrum without encoding language- or tool-specific assumptions in the core. A choice moves from working design to a canonical specification only after it is sufficiently settled to constrain current implementation and future work.
 
 ## Next action
 
 Continue the functional design of the `mk` project lifecycle from the promoted boundaries in `MK.md`, using the working-design items above as non-authoritative design state.
 
-The next concrete design area should be project/configuration discovery and the minimum project/profile lifecycle model, without selecting serialization format or implementation runtime merely for convenience.
+The next concrete design area is the minimum general lifecycle/orchestration model: determine which abstract entities and relationships are required to express both a simple delegated external-engine operation and a fully explicit fine-grained dependency/action flow. Do not select serialization format or implementation runtime merely for convenience.
 
 ## Blockers / open questions
 
+- What is the minimum general model of lifecycle operations, results/targets, dependencies and executable actions that supports both delegation and fine-grained orchestration without hard-coded goal names?
 - Which minimum project/profile semantics are required before a public lifecycle CLI can be fixed?
 - What evidence is required to choose the broader `mk` implementation runtime?
 - What concrete authoring/validation requirements are needed to choose a project-configuration serialization format?
