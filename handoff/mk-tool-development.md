@@ -10,9 +10,9 @@ Define and develop `mk` as the `m` subsystem responsible for project development
 ## Current repository revisions
 
 ```text
-rumiai-dev   970930c8e904da87d3fd52898e5d24bcdff26ce5  (pre-checkpoint HEAD before lifecycle graph working-design update)
+rumiai-dev   e9235f673a9b035eef34380099693279af34403b  (pre-checkpoint HEAD before vocabulary working-design update)
 rumiai-os    0a45bddce0318e111a72b052f7bc8366d2911b0b  (current main; unchanged by this design checkpoint)
-rumiai-tests 8513947696dfc1290a52d669eab16f700a4c48dd  (current main; unchanged by this design checkpoint)
+rumiai-tests 1062ffcd51d3c66e16a4a07a1aa9d84a46a56f83  (current main; unchanged by this design checkpoint)
 pkg-catalog  94f58995cbd487b17f3b82bc2724c70540927b88  (refresh before pkg-catalog work)
 ```
 
@@ -102,6 +102,95 @@ named lifecycle goal/request
 Under this model, the simple delegated case and the fine-grained native case differ only in graph visibility/granularity. A delegated Maven/CMake/etc. invocation can be represented as one opaque leaf operation with the required tool, arguments, working directory and environment, while a native builder exposes the finer operation graph directly. A goal is therefore better treated as an externally addressable entrypoint/root selection over operations than as a hard-coded lifecycle primitive.
 
 This remains working design rather than promoted terminology. In particular, the final names and the exact boundary between an operation, an executable action and a produced result/target remain to be resolved.
+
+### Candidate vocabulary
+
+The following terminology is proposed only as a working vocabulary for reasoning and stress-testing the model:
+
+```text
+project
+    logical development unit managed by mk
+
+profile
+    named selection/variation of project configuration
+
+goal
+    externally addressable requested outcome; selects one or more root operations
+
+operation
+    orchestratable unit of work in the lifecycle graph
+
+prerequisite
+    ordering/data dependency between operations; distinct from software/package requirements
+
+requirement
+    external capability, tool, runtime, package or environment condition needed by an operation/project
+
+input
+    data/resource/state consumed by an operation
+
+output
+    data/resource/state produced by an operation
+
+artifact
+    identifiable persistent output such as a file, tree, executable, archive or documentation set
+
+result
+    execution outcome/status/metadata, distinct from produced artifacts
+
+action
+    concrete executable realization of an operation after resolution
+
+invocation
+    process-oriented action: executable/tool + arguments + cwd + environment
+
+tool
+    executable or technical facility used by an action
+
+environment
+    resolved execution context in which an action runs
+
+adapter
+    integration boundary translating mk's abstract model to/from an external tool or engine
+
+builder
+    candidate reusable higher-level component that derives or provides operations for a class of projects; whether this deserves a first-class contract remains open
+
+operation graph
+    graph of operations and their prerequisite relationships
+
+execution plan
+    resolved subset/instance of the operation graph required for a requested goal and profile
+
+executor
+    mechanism that performs actions
+
+scheduler
+    mechanism deciding which ready actions may run and when, subject to prerequisites/resources
+
+state
+    persisted knowledge used by mk across executions when needed
+
+fingerprint
+    identity of the relevant inputs/configuration/tool/action state for incremental validity
+
+cache
+    reusable stored result/output indexed by an identity such as a fingerprint
+
+invalidation
+    determination that prior state/output can no longer satisfy the current request
+
+selector
+    declarative mechanism yielding a dynamic set of inputs/resources, useful for automatic source discovery
+
+trigger
+    event/request causing reevaluation or execution, useful for watch/hot-update flows
+
+workspace
+    managed area for intermediate/generated development data
+```
+
+The likely minimal semantic nucleus is currently `project + profile + goal + operation + prerequisite + requirement + input/output`. Terms such as action, invocation, artifact, executor, scheduler, fingerprint, cache, selector and trigger appear useful as specializations or later execution/incrementality concepts but are not yet candidates for mandatory core primitives.
 
 The following design areas remain active and unresolved:
 
