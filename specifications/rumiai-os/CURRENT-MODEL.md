@@ -341,7 +341,9 @@ This supports generated-source flows in which initial sources are known at plan 
 
 Version 1 remains the original fully resolved static lifecycle model for compatibility. Both versions keep the shell-free `process` action and sequential executor baseline.
 
-Incremental fingerprints/cache, parallel scheduling, remote execution, project-dependency execution, declarative requirement resolution and watch/hot-update behavior remain unimplemented.
+Version 2 also implements project-to-project dependency delegation. A dependency explicitly maps requested parent goals to child-project goals and delegates the child lifecycle to another `mk` engine process rooted at that project. Child lifecycle internals remain encapsulated; they are not flattened into the parent operation graph. Parent profiles are not inherited implicitly, project-dependency cycles are rejected through canonical project identity in the active invocation chain, and active direct dependencies must succeed before parent local lifecycle work begins. Version-2 plans preserve dependent-project requests as nested child plans. The baseline does not imply request-wide de-duplication across independent sibling branches.
+
+Incremental fingerprints/cache, parallel scheduling, remote execution, declarative requirement resolution and watch/hot-update behavior remain unimplemented.
 
 `mk` does not replace compilers, interpreters, external build engines or `pkg`; it orchestrates them through modular boundaries.
 
@@ -426,4 +428,9 @@ CURRENT-36   mk plan inspection resolves current observable facts without execut
 CURRENT-37   mk version 2 implements contextual collections, trusted operation providers, declarative conditions, named outputs and iterative runtime plan refinement
 CURRENT-38   mk provider implementations are trusted runtime behavior selected declaratively; mk.json is not an arbitrary executable resolver/module-loading surface
 CURRENT-39   mk declared-output observation is bound to current-request producer results rather than stale pathname existence alone
+CURRENT-40   mk version 2 implements project-to-project dependencies by recursively delegating explicit child-goal requests to another mk engine process
+CURRENT-41   dependent-project lifecycle internals remain owned by the child mk instance rather than being flattened into the parent operation graph
+CURRENT-42   parent profiles are not inherited implicitly by dependent projects and recursive project cycles are rejected from canonical project identity
+CURRENT-43   active direct project dependencies must succeed before parent local lifecycle work begins
+CURRENT-44   mk project dependency semantics do not imply request-wide de-duplication across independent sibling branches
 ```
