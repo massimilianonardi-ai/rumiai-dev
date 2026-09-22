@@ -10,9 +10,9 @@ Move the existing Sync + Push quick action to the first position in the root Git
 ## Current repository revisions
 
 ```text
-rumiai-dev    8d341060cd1403097cb460ebacfb62cf3953a0d3  canonical/task state before this checkpoint
+rumiai-dev    526b3f398b50be2639cbeb83f23a24d740eef9a1  canonical/task state before this checkpoint
 rumiai-os     0a45bddce0318e111a72b052f7bc8366d2911b0b  current main
-rumiai-tests  5a149673fe5d9803dfef9273d0ae38f53571b750
+rumiai-tests  8513947696dfc1290a52d669eab16f700a4c48dd
 ```
 
 The task validation scope deliberately pins `rumiai-os` at `1683ff139cfa775adeb832ffae10944b40155256`. That revision contains the complete gitman change. Later current-main commits through `0a45bddc...` affect only unrelated package/http-fetch surfaces and were checked for forward-only compatibility.
@@ -54,12 +54,19 @@ specifications/rumiai-os/DOCUMENTATION-MODEL.md
 - Narrowed `validation/gitman.conf` to `rumiai-os/gitman/terminal-output.test` while retaining the exact task target revision.
 - Verified the new test is stored with executable mode `100755`.
 - Final static consistency review confirms the focused test is the behavioral owner of the changed terminal-header contract and the broad test contains no remaining exact-header helper/assertions.
+- User executed the focused formal validation on Linux/x86_64 at target `1683ff139cfa775adeb832ffae10944b40155256`; session `20260922T093848+0200-65348` returned one FAIL after 10.36s and the validation environment was CLEAN.
+- The published validation evidence is local to the user's checkout and is not available from GitHub, but source inspection identified a deterministic false-failure condition: the focused PTY test waited for the complete long Sync + Push label inside the rendered menu, while the current menu renderer explicitly truncates each item to terminal width (`_menu_term_cols - 2`). The observed ~10s duration matches the test's 10-second `wait_for` timeout.
+- Updated `terminal-output.test` to verify menu ordering using the stable visible prefix `Sync + Push: git add --all`, while retaining the complete label assertion on the terminal-mode sequence header where no menu truncation occurs.
+- Removed redundant Home-key driving from the PTY scenario; each recreated Git action menu starts at the first item, so the test now avoids an unrelated terminal-key dependency.
+- Post-change consistency review confirms only `terminal-output.test` changed, its executable mode remains `100755`, no full-label menu wait remains, and the exact full-label header assertions remain intact.
 
 ## Current state
 
 Implementation, specification and manual remain aligned. The task validation scope is now minimum-sufficient for the changed behavior rather than the complete historical gitman regression group.
 
-No real executable result for the new focused test has yet been obtained in this ChatGPT session. The auxiliary Linux container has no network access to clone the repositories, and no existing GitHub Actions workflow targets gitman. This is a validation limitation, not a PASS or FAIL.
+A real formal execution of the focused test has now been obtained from the user's Linux/x86_64 checkout. That run failed because the test waited for a menu-rendered string that the menu contract truncates to terminal width; no product defect was established by that run. The false-failure condition has been corrected in `rumiai-tests`.
+
+A successful formal rerun of the corrected focused test is still pending.
 
 ## Next action
 
@@ -69,10 +76,10 @@ From a real `rumiai-tests` checkout, run:
 ./rumiai-validate gitman
 ```
 
-The scope now executes only `rumiai-os/gitman/terminal-output.test`. Record the resulting evidence and complete/remove this handoff if it passes.
+The scope executes only `rumiai-os/gitman/terminal-output.test`. The corrected suite revision is `8513947696dfc1290a52d669eab16f700a4c48dd`. Record the resulting evidence and complete/remove this handoff if it passes.
 
 If the broad `rumiai-os/gitman/interactive.test` is run separately and still fails, treat that as a separate regression/health investigation using its concrete log rather than as evidence that this terminal-header task is broken.
 
 ## Blockers / open questions
 
-- Formal execution of the new focused task scope is still pending.
+- Formal rerun of the corrected focused task scope is still pending.
