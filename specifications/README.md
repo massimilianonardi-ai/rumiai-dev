@@ -31,6 +31,7 @@ Read only the smallest complete set relevant to the task.
 | promoted current `mk` development-lifecycle contract | `rumiai-os/MK.md` |
 | portable local service lifecycle through `srv` | `rumiai-os/SERVICE-LIFECYCLE.md` |
 | standalone terminal key input | `rumiai-os/READ-KEY.md` |
+| secret-line terminal input and verification | `rumiai-os/READPASS.md` |
 
 ## Testing and development
 

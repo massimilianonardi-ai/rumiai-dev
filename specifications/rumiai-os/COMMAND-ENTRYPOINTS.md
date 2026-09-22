@@ -55,7 +55,7 @@ bootstrap-created PATH semantics
 
 A later dependency on those facilities requires reclassification to the integrated-command model unless a new explicit contract says otherwise.
 
-`read-key` and `pager` are current examples of explicitly standalone utilities.
+`read-key`, `readpass` and `pager` are current examples of explicitly standalone utilities. `readpassv` is bootstrap-integrated because its contract depends on the `m` runtime to resolve the RumiAI-owned `readpass` command.
 
 ## Shell command structure best practice
 
