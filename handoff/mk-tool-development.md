@@ -329,6 +329,34 @@ project-specific persistent provider bindings
 requirement types outside pkg facilities
 ```
 
+## Working design — incremental fingerprints
+
+PoC 019 is active under:
+
+```text
+rumiai-dev-PoCs/pocs/019-mk-incremental-fingerprints/
+```
+
+The experiment has fixed the following candidate direction but it is not yet promoted contract:
+
+- incremental behavior is explicit per operation through an `incremental` object;
+- `incremental.inputs` is a named map whose first candidate sources are `path`, `collection` and another operation's named `output`;
+- existing named `outputs` remain the output identity surface; an incremental operation must have declared outputs;
+- an output input creates a data dependency and therefore must not require duplicate `prerequisites` declaration;
+- freshness is SHA-256/content based and excludes mtime;
+- a reusable success requires both the same effective fingerprint and current declared outputs matching the recorded successful output snapshots;
+- a verified hit is represented as `up-to-date` and must satisfy prerequisites, collection `after` barriers and downstream output/data evidence in the current request;
+- failed executions never create reusable freshness state;
+- the candidate persistent metadata location is the user-scoped `state-path user sys mk cache` area, isolated by canonical-project-root hash and operation identity;
+- cache state is non-authoritative: missing/corrupt/unsupported state is a miss, never a false success;
+- `--plan` may read freshness state but must not write it;
+- project dependencies remain recursively delegated; the child owns its own incremental decisions;
+- the first baseline is freshness metadata only, not artifact storage/restoration, shared cache, watch/session behavior or request-wide dependency de-duplication.
+
+The candidate fingerprint includes operation/action definition, effective execution environment, observable executable identity, resolved requirement-provider concrete identities and resolved named input snapshots.
+
+Before promotion, reconcile the exact meaning of cached success with current result/output observation semantics. In particular, a cache hit must provide verified current-request success/output evidence without claiming that the action executed in the current request.
+
 ## Next action
 
 Use **incremental execution / input-output identity and fingerprints** as the next concrete `mk` stress case.
