@@ -1,7 +1,7 @@
 # RumiAI OS — gitman
 
 Status: **Current / normative**  
-Updated: 2026-09-20
+Updated: 2026-09-22
 
 ## 1. Scope
 
@@ -264,14 +264,14 @@ pager
 
 The selected mode is session state: toggling it applies to subsequent Git actions and remains in effect when returning to the repository list and opening another repository.
 
-The root Git action menu keeps only a small set of frequent leaf actions ahead of grouped submenus:
+The root Git action menu keeps only a small set of frequent leaf actions ahead of grouped submenus. The composite Sync + Push shortcut is the first selectable root action:
 
 ```text
+Sync + Push: git add --all → git commit -m <commit-message> → git pull --no-rebase --no-edit → git push
 Status: git status --short --branch
 Diff: git diff
 Pull: git pull
 Commit: git commit -m <commit-message>
-Sync + Push: git add --all → git commit -m <commit-message> → git pull --no-rebase --no-edit → git push
 
 Changes >
 History >
@@ -399,7 +399,17 @@ Pager-mode output therefore remains in the pager until the user exits it. Pager 
 
 Terminal mode intentionally leaves Git output in the normal terminal. Every supported action is executed with Git's global `--no-pager` switch.
 
-Before the command, `gitman` prints a concise repository/action header so accumulated output remains attributable. After the command it displays:
+Before each command sequence selected from a menu, `gitman` prints exactly one header using the concrete selected menu label:
+
+```text
+--------------------------------------------------
+<selected-menu-label>
+--------------------------------------------------
+```
+
+Each separator line contains exactly 50 hyphen (`-`) characters. The header is emitted once for the selected sequence, not once per internal Git subprocess. Therefore a composite action such as Sync + Push prints one header for the whole sequence. A branch switch uses the concrete selected branch entry, for example `Switch: git switch feature/example`.
+
+After the selected sequence stops or completes, terminal mode displays:
 
 ```text
 Press any key to continue...
