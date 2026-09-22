@@ -10,9 +10,9 @@ Realign the permanent RumiAI test suite so that failures are evidence about curr
 ## Current repository revisions
 
 ```text
-rumiai-dev   df441ef486b1e80d3772a40542a94ad39f7ad21b  (pre-checkpoint HEAD before this handoff synchronization)
-rumiai-tests 8a78802f536ca65052ddb3a3bc4d152fb361ebf1
-rumiai-os    826da364cd9aaaed05b30f2c4cdbe0c47c730782
+rumiai-dev   2ca53e446691acd24c5ec4841cc390e29675c1e0  (pre-checkpoint HEAD before this handoff synchronization)
+rumiai-tests 2ad28a4516f47875020f34e46f249aba5ce27f74
+rumiai-os    bdb66dde9e8fe45caef98c78f9084ed836232594
 pkg-catalog  64d67a73f4f9485749e1b47712e42f77afb4773e
 ```
 
@@ -62,32 +62,27 @@ The `rumiai-dev` revision above is the authoritative source revision read before
 - `rumiai-tests@e3f7d42f03747b924b18b7915f7d860d9148c913` adds `tests/rumiai-os/editor/contract.test` for the new standalone editor abstraction. It exercises the real `editor` entrypoint against controlled external editor backends and protects the `nano` -> `vim` -> `vi` preference, unchanged argument forwarding, backend-status propagation, standalone shebang/syntax and operational-manual presence.
 - `rumiai-tests@8a78802f536ca65052ddb3a3bc4d152fb361ebf1` adds the `rumiai-os/readpass` permanent group and dedicated `readpass` validation scope/workflow. `contract.test` protects command class, shebangs, bootstrap independence, syntax, invocation status and mandatory manual presence. `pty.test` exercises the real `readpass` and `readpassv` entrypoints through a pseudo-terminal, including echo suppression, whitespace/backslash and `-n` preservation, terminal restoration after success and `SIGINT`, verification success and mismatch behavior.
 - Formal `readpass` validation against `rumiai-os@826da364cd9aaaed05b30f2c4cdbe0c47c730782` passed on Linux/x86_64 and Darwin/arm64 with audit status `CLEAN`; both permanent tests passed on both hosts.
+- A full-suite health validation was produced on 2026-09-22: outer validation `20260922T152932+0200-246048`, runner session `20260922T152933+0200-247370`, Linux/x86_64 (Ubuntu 24.04.5 LTS), `rumiai-tests@2ad28a4516f47875020f34e46f249aba5ce27f74`. It executed all 156 tests and recorded 34 PASS, 84 FAIL, 7 SKIP and 31 ERROR, aggregate status 2, audit status `CHANGED`.
 
 ## Current state
 
-The source/contract audit has no remaining proven false-negative mechanism from the historical finding list in the deterministic core families reviewed so far.
+The first current full-suite runtime result is now available, but it does **not** establish current-product health.
 
-The pager group is aligned to the 2026-09-20 wrapper contract: `contract.test` checks the standalone command/manual surface and simple stdin/file delegation, while `delegation.test` exercises the real pager entrypoint against controlled external pager backends to verify `less` preference, `more` fallback, unchanged operand/stdin forwarding, caller-environment preservation and backend-status propagation. The superseded PTY-oriented `interactive.test` was removed.
+The health scope `validation/rumiai-os-health.conf` in `rumiai-tests@2ad28a4516f47875020f34e46f249aba5ce27f74` is still bound to `rumiai-os@25ab0e5a5b8267af715f320bd9ee17405a2b41f6`. Current `rumiai-os` HEAD is `bdb66dde9e8fe45caef98c78f9084ed836232594`, 160 commits ahead of that configured target. The current suite therefore runs newly realigned/current tests against a substantially older product revision. Representative FAIL logs directly reflect that mismatch: current tests expect `editor`, `gitman`, `menu`, `readpass`, `vsed` and the current package-library layout, all absent from the configured old target.
 
-The editor group now contains one proportional contract test covering its complete wrapper responsibility; the editor backends are external dependencies and are controlled only at that boundary, while the real RumiAI-owned `bin/sys/editor` entrypoint is executed unchanged.
+The runner/validator infrastructure itself executed and its current self-tests passed in the full-suite session. The 31 ERROR results are not product failures: all 31 ERROR logs report `rumiai-os target helper is unavailable`. Representative source inspection shows an off-by-one suite-root derivation in affected tests, causing them to search for `lib/rumiai-os-target.lib` above the actual suite root even though the helper exists in the same suite revision.
 
-Current package repository-adapter tests intentionally remain library/unit tests where they exercise public `pkg_repository_*` functions and model only the external HTTP/provider boundary. They must not be used as composed `pkg install` evidence.
+The remaining 84 FAIL results cannot be treated as evidence that current `rumiai-os` is broken. Many are already explained by the stale target binding; the residual set must be re-run against the intended current target after the test-root defect is corrected, then classified property-first. External live tests remain separately sensitive to real host capabilities and upstream availability.
 
-The 19 current external live tests passed the latest targeted source scan for the historical isolation/private-layout/pinning anti-patterns. A fresh recheck of the newly added/changed Keycloak, Java, Maven, NetBeans, Pulsar, Chrome, Chromium, Electron and GraalVM live tests found no private concrete-layout reads, fixed external version/digest/catalog-tree pins, replacement HOME or synthetic target patterns. They remain intrinsically sensitive to real host capabilities and upstream availability.
-
-`pkg-analyze` permanent tests still assert several report vocabulary tokens such as `useful-root`, `executable`, `launch-like` and `exit-status`. The current manual specifies the report's semantic purpose but not a machine-stable field vocabulary. This is a contract/test-design ambiguity, not a currently proven false negative.
-
-No current full-suite runtime result has been produced by this chat. The available execution container still does not provide a normal live GitHub checkout path, so it is not used as full-suite evidence. The current tree now includes a dedicated `readpass` validation workflow in addition to the existing targeted workflows. The hosted `readpass` scope passed on Linux/x86_64 and Darwin/arm64 for `rumiai-tests@8a78802f536ca65052ddb3a3bc4d152fb361ebf1` against `rumiai-os@826da364cd9aaaed05b30f2c4cdbe0c47c730782`; that targeted result does not substitute for a full-suite health run.
+The full-suite result is therefore useful diagnostic evidence about the test system, but it is not a valid current RumiAI health verdict.
 
 ## Next action
 
-Run the current health scope through `rumiai-validate` in a real executable environment against the configured current product revision. Classify every non-PASS result property-first before considering a product change.
-
-If source work resumes before such a run is available, only pursue newly evidenced contract/test mismatches; do not mechanically rewrite already-clean families.
-
-The `pkg-analyze` report-vocabulary ambiguity should be revisited only if a failing test or a product/documentation change makes the stable report interface material.
+1. Correct the affected permanent tests so suite-root/shared-helper discovery resolves the actual current `rumiai-tests` root.
+2. Rebind `validation/rumiai-os-health.conf` to the intended current `rumiai-os` revision after a fresh HEAD check.
+3. Re-run the complete health scope and classify every residual FAIL/ERROR/SKIP property-first before considering any product change.
 
 ## Blockers / open questions
 
-- Current full-suite runtime validation is not executable from this chat environment, so no current suite PASS claim exists.
-- No unresolved execution-environment design remains; the validator-owned model is already canonical and implemented.
+- The current full-suite health scope is revision-stale relative to current `rumiai-os`, so its aggregate result cannot be interpreted as current-product health.
+- The affected permanent tests have a suite-root discovery defect that must be corrected before their ERROR results can become meaningful.
