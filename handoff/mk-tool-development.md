@@ -121,10 +121,13 @@ operation
     orchestratable unit of work in the lifecycle graph
 
 prerequisite
-    ordering/data dependency between operations; distinct from software/package requirements
+    relation in which one operation must be satisfied before another operation can proceed
 
 requirement
     external capability, tool, runtime, package or environment condition needed by an operation/project
+
+dependency
+    dependency relation between projects; kept distinct from operation prerequisites and external requirements
 
 input
     data/resource/state consumed by an operation
@@ -190,12 +193,12 @@ workspace
     managed area for intermediate/generated development data
 ```
 
-The likely minimal semantic nucleus is currently `project + profile + goal + operation + prerequisite + requirement + input/output`. Terms such as action, invocation, artifact, executor, scheduler, fingerprint, cache, selector and trigger appear useful as specializations or later execution/incrementality concepts but are not yet candidates for mandatory core primitives.
+The likely minimal semantic nucleus is currently `project + profile + goal + operation + prerequisite + requirement + dependency + input/output`. Terms such as action, invocation, artifact, executor, scheduler, fingerprint, cache, selector and trigger appear useful as specializations or later execution/incrementality concepts but are not yet candidates for mandatory core primitives.
 
 The following design areas remain active and unresolved:
 
 ```text
-minimum relationship among lifecycle operations, targets/results, dependencies and executable actions
+minimum relationship among lifecycle operations, targets/results, project dependencies, prerequisites, requirements and executable actions
 representation of delegated external-engine operations versus directly orchestrated fine-grained actions
 support for long-running/watch/hot-update development flows without special-casing a language
 automatic source/input discovery and invalidation when files are added, removed or renamed
@@ -264,7 +267,7 @@ The next concrete design area is to stress-test the candidate goal/root-operatio
 
 ## Blockers / open questions
 
-- What is the minimum general model of lifecycle operations, results/targets, dependencies and executable actions that supports both delegation and fine-grained orchestration without hard-coded goal names?
+- What is the minimum general model of lifecycle operations, results/targets, project dependencies, prerequisites, requirements and executable actions that supports both delegation and fine-grained orchestration without hard-coded goal names?
 - Which minimum project/profile semantics are required before a public lifecycle CLI can be fixed?
 - What evidence is required to choose the broader `mk` implementation runtime?
 - What concrete authoring/validation requirements are needed to choose a project-configuration serialization format?
