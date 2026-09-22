@@ -10,11 +10,11 @@ Continue development of `mk` as the `m` subsystem for project development-lifecy
 ## Current repository revisions
 
 ```text
-rumiai-dev      eca99e4a77b29dfa67230072b4f30fd156f6100f  (pre-checkpoint HEAD before this handoff synchronization)
-rumiai-os       c2dcde09c2582ff67733911816088952fa1eb5ee  (current mk implementation exercised by native C++ PoC)
-rumiai-tests    12992b0b3d6198347a393f2735db725f49d0ba0e  (current main; mk lifecycle permanent test unchanged by this work)
-rumiai-dev-PoCs 28c83b01aaa1e95ad47d7966e2ef64d9db13e396  (native C++ graph-expansion PoC with recorded result)
-pkg-catalog     64d67a73f4f9485749e1b47712e42f77afb4773e  (current main; no GCC/Clang package definition found for this PoC)
+rumiai-dev      c645428518caf5d8dfe71a03f246be788cd4464c  (pre-checkpoint HEAD; contextual/conditional planning contract promoted)
+rumiai-os       bdb66dde9e8fe45caef98c78f9084ed836232594  (current main; implementation still supports only static fully resolved plans)
+rumiai-tests    b3553477e78247ff0d9e5ed8066a99fdd0798adf  (current main; no permanent coverage yet for contextual/conditional planning)
+rumiai-dev-PoCs e3dcd58c9c39dae29c7c5a18a810833539553313  (native C++ PoC conclusion narrowed to its actual evidence)
+pkg-catalog     64d67a73f4f9485749e1b47712e42f77afb4773e  (current main)
 legacy m        2a57a29880c2d7a32e18782122062c695fcb1a3a  (reference-only current master used for historical makefile evidence)
 ```
 
@@ -206,9 +206,13 @@ Ubuntu
 
 The macOS job did not reach `mk` in either workflow attempt. Both attempts failed during `pkg install nodejs` because the upstream download returned HTTP 403. Therefore there is positive Ubuntu hosted evidence and no macOS execution evidence for this PoC; the macOS provisioning failure is not evidence against the mk graph model.
 
-The architectural consequence is narrower than a new public API: the existing planner/executor is sufficient once a concrete graph exists. The demonstrated missing responsibility is **pre-planning derivation/expansion of the concrete operation graph from declarative project intent plus current project state**.
+The PoC demonstrates only that, for this finite filesystem-discovery case, the existing planner/executor works once the currently relevant concrete operations are derived. It does **not** establish that all graph derivation must finish before execution.
 
-The PoC deliberately does not select the final expansion boundary. A trusted reusable builder/operation provider, a generic declarative expansion facility, or another extension mechanism remain working-design candidates. No `mk` product code or canonical schema was changed from this experiment.
+A later user correction promoted a broader lifecycle rule into `MK.md` and `CURRENT-MODEL.md`: `mk.json` expresses declarative intent without duplicating context-derived detail, and lifecycle resolution may remain conditional and be refined during execution when later choices depend on evidence not available initially.
+
+Examples include selecting a fallback dependency/version only after a preferred attempt fails, or choosing a compression path only after an artifact size is known.
+
+The PoC deliberately does not select the final derivation/extension boundary. A trusted reusable builder/operation provider, a generic declarative derivation facility, or another extension mechanism remain working-design candidates.
 
 ## Working design still open
 
@@ -218,8 +222,9 @@ The following areas remain deliberately unresolved and must be derived from conc
 project dependency execution/composition
 declarative requirement resolution and its boundary with pkg facilities/providers
 input/output and artifact semantics beyond the current process action
-pre-planning graph derivation/expansion from project state
-automatic source/input discovery within that expansion boundary
+contextual graph derivation from declarative intent plus current project/runtime state
+conditional alternatives and runtime plan refinement
+automatic source/input discovery without redundant configuration enumeration
 incremental invalidation and fingerprints
 cache semantics
 parallel scheduling and resource constraints
@@ -237,7 +242,15 @@ The current vocabulary remains useful for design discussion, but vocabulary term
 
 The first executable lifecycle vertical is present and tested. The current implementation intentionally stops before incrementality, caching, parallelism, project dependency execution and a generalized extension/plugin API.
 
-The delegated Maven case validated the coarse-grained end of the model. The native C++ PoC now validates that the existing planner/executor also handles the fine-grained end once a concrete graph has been produced. The next design question is therefore the extension boundary that produces such graphs, not a second execution architecture.
+The delegated Maven case validated the coarse-grained end of the model. The native C++ PoC validated fine-grained execution for a currently concrete graph, but the architecture now explicitly rejects the stronger assumption that lifecycle state and branch selection are always fully knowable before execution.
+
+The canonical contract now requires:
+- declarative configuration to omit redundant derivable detail;
+- resolution of currently observable facts at planning time;
+- conditional alternatives when later evidence is required;
+- runtime refinement of the plan as operation results/outputs become available.
+
+Current `rumiai-os` does not implement these broader rules yet. It still accepts only the first-delivery static JSON model and emits/executes a fully resolved linear plan. This is a known specification/implementation gap, not a reason to weaken the promoted contract.
 
 ## Next action
 
@@ -249,12 +262,17 @@ project-to-project dependency orchestration
 long-running JavaScript development/hot-update flow
 ```
 
-Use the generated-source case next to compare graph-expansion boundary shapes before promoting or implementing one. In particular, determine whether one reusable operation-provider/builder boundary can express both filesystem discovery and generated-source graph growth without introducing a general executable configuration language or tool/language hard-coding in the mk core.
+Use the next PoCs to design one resolution/orchestration model that covers both:
+- facts derivable immediately from current context, such as the current members of a declared source directory;
+- facts/choices that become decidable only after execution produces new evidence, such as generated sources, failed preferred alternatives or output-dependent branches.
+
+Do not model `mk.json` as an inventory of every implied file/operation and do not turn it into executable JavaScript. The unresolved design problem is the declarative representation plus trusted resolution mechanism for dynamic/conditional graphs.
 
 ## Blockers / open questions
 
 - What exact semantics should project `dependency` have when requested goals differ across dependent projects?
 - Should `requirement` resolve directly to an existing `pkg` facility/provider contract, or is an additional mk-level abstraction justified by a concrete build-time need?
 - Which explicit input/output identity is minimally sufficient for correct incremental execution?
-- What trusted extension boundary should derive/expand concrete operations before planning without turning mk.json into executable configuration?
+- What trusted resolution/extension boundary derives contextual operations and evaluates conditional alternatives without turning mk.json into executable configuration?
+- How should a plan represent conditions whose evidence is not available yet, and how should execution refine that plan when evidence arrives?
 - Does long-running/watch execution belong to operation/action semantics or to an execution-session/scheduler layer?
