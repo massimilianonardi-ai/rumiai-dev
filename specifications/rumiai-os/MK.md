@@ -160,7 +160,7 @@ The current parser supports project configuration versions:
 
 Version 1 is the original static lifecycle model and remains supported without changing its existing semantics.
 
-Version 2 extends the same lifecycle model with project dependencies, declarative external requirements, contextual collections, trusted operation providers, declarative conditions, named outputs and runtime plan refinement.
+Version 2 extends the same lifecycle model with project dependencies, declarative external requirements, contextual collections, trusted operation providers, declarative conditions, named outputs, incremental freshness and runtime plan refinement.
 
 Unknown members are rejected so configuration mistakes are not silently ignored.
 
@@ -254,6 +254,7 @@ requirements
 when
 outputs
 failure
+incremental
 ```
 
 `requirements` is an optional array of named requirement definitions. A selected operation is not ready until all of its current requirements are satisfied.
@@ -514,6 +515,101 @@ If no executable lifecycle work remains and a required reachable requirement is 
 
 Facility requirements are gates, not a second runtime projection layer. The current `m` bootstrap continues to own globally published facility commands/environment from system facility defaults. Already-running processes are not retroactively mutated by later provider-configuration changes.
 
+### 6.10 Incremental operation freshness
+
+Version 2 supports explicit opt-in incremental freshness for ordinary process-action operations.
+
+The declarative shape is:
+
+```json
+{
+  "incremental": {
+    "inputs": {
+      "sources": {"collection": "sources"},
+      "config": {"path": "build.conf"},
+      "generated": {"output": {"operation": "generate", "name": "artifact"}}
+    }
+  }
+}
+```
+
+`incremental.inputs` is a named map. The first supported input source forms are:
+
+```json
+{"path": "relative/or/absolute/path"}
+{"collection": "collection-name"}
+{"output": {"operation": "producer", "name": "output-name"}}
+```
+
+An incremental operation MUST have a process action and at least one declared named output. The input map may be empty for an operation whose complete varying identity is otherwise represented by its effective operation/action/environment/requirements.
+
+Relative path inputs resolve from the project root. Absolute path inputs remain explicit project data.
+
+A collection input fingerprints the currently resolved regular-file membership of that collection and each member's supported content identity. Existing collection `after` semantics apply normally.
+
+An output input consumes a named output of another operation and creates a **data dependency** on that producer. The same relation does not need to be duplicated as an ordinary `prerequisites` entry merely to make the producer reachable.
+
+The first incremental baseline is content based. For supported regular files and directories, identity includes logical pathname identity, type, portable mode bits and content. Regular-file content uses SHA-256. Directory identity recursively contains a lexical representation of supported contained directories/files and their corresponding mode/content identity. File modification time is not part of the freshness identity.
+
+The effective operation fingerprint additionally includes:
+
+- the effective operation definition;
+- the complete effective environment passed to its process action;
+- the resolved executable identity when that executable can be fingerprinted as a supported regular file;
+- the resolved concrete provider identity of every referenced satisfied facility requirement;
+- every named input's resolved content identity.
+
+All fingerprint serialization is deterministic before SHA-256 is applied.
+
+The first baseline is conservative for unsupported identity. If a required incremental input, declared output or executable identity cannot be represented safely by the supported fingerprint model, that operation is not reusable from persistent freshness state for that request. This produces a cache miss/execution rather than a false success.
+
+A prior successful record is reusable only when:
+
+```text
+current effective fingerprint == recorded successful fingerprint
+and
+every current declared output exists in a supported fingerprintable form
+and
+every current output fingerprint == recorded successful output fingerprint
+```
+
+A reusable operation has plan/runtime state:
+
+```text
+up-to-date
+```
+
+`up-to-date` is verified current-request success-equivalent evidence for:
+
+- ordinary prerequisite satisfaction;
+- collection `after` barriers;
+- named output observation;
+- downstream incremental output inputs.
+
+It does **not** synthesize an execution result. Existing `result.status`, `result.ok`, `result.signal` and `result.error` operands retain their actual current-request execution-result meaning. If a reachable condition requires one of those result fields from an otherwise up-to-date operation, that producer MUST execute in the current request rather than reuse the freshness hit.
+
+A successful execution refreshes persistent freshness metadata only after the action succeeds and every declared output is present and fingerprintable. Failed execution never creates or refreshes reusable freshness state. If the action succeeds but its declared outputs are absent or unsupported for fingerprinting, the existing operation-success semantics remain unchanged but no reusable record is written.
+
+Incremental correctness depends on the effective fingerprint representing every mutable influence on the action. A cacheable action MUST NOT rely on undeclared mutable external state that is absent from its declared inputs, effective environment, executable identity and requirements.
+
+The first baseline applies to ordinary configured operations. It does not establish provider-level incremental templates for derived `map-process` members.
+
+Persistent freshness metadata is non-authoritative and regenerable. It is rooted through:
+
+```text
+state-path user sys mk cache
+```
+
+and private `mk` cache layout below that semantic cache area isolates project records by a SHA-256 key derived from the canonical project root and then by operation identity. A copied or moved checkout therefore starts as a cache miss in the first baseline.
+
+Missing, unreadable, corrupt or unsupported cache records are cache misses. They do not make lifecycle execution fail and MUST NOT produce a false `up-to-date` result.
+
+`--plan` may inspect existing freshness state to expose `up-to-date`, but MUST NOT create or refresh persistent freshness metadata.
+
+The first baseline stores freshness metadata only. It does not store, restore or distribute artifact bytes and does not establish a local/remote/shared artifact-cache protocol.
+
+Project-to-project dependency delegation remains recursive. A parent continues to invoke the child `mk` request; the child independently decides which of its own operations are up-to-date. Incremental freshness does not add request-wide exactly-once or sibling-branch de-duplication semantics.
+
 ## 7. Resolution, planning and runtime refinement
 
 For a request, `mk` resolves conceptually:
@@ -532,8 +628,10 @@ Version 2 implements the iterative model:
 
 ```text
 resolve reachable context
+→ establish verified up-to-date work where possible
 → execute one ready operation
 → observe result/output/state changes
+→ refresh successful incremental metadata when applicable
 → resolve/refine reachable context again
 → continue
 ```
@@ -561,7 +659,7 @@ For every currently concrete execution path:
 
 Version 1 retains its static fully resolved prerequisite plan and sequential execution behavior.
 
-Incremental fingerprints, caching, parallel scheduling, remote execution and watch/hot-update triggers remain outside the implemented baseline.
+Artifact storage/restoration, shared/remote caching, provider-level incremental templates, parallel scheduling, remote execution and watch/hot-update triggers remain outside the implemented baseline.
 
 ## 8. Public command line
 
@@ -619,6 +717,7 @@ ready
 blocked
 conditional
 skipped
+up-to-date
 completed
 failed
 ```
@@ -669,6 +768,10 @@ For version 2, active project dependencies are delegated and must complete succe
 
 Reachable facility requirements are queried through the public `pkg requirement resolve` boundary during each refinement pass. Satisfied requirements permit their consumer nodes to become ready; unsatisfied requirements keep those nodes blocked. `mk` does not auto-install or mutate provider-selection configuration.
 
+For an eligible incremental operation whose guard/prerequisites/requirements and data dependencies are currently satisfiable, `mk` compares the current effective fingerprint and current declared outputs with the stored successful freshness record. A verified match establishes `up-to-date` without running the process action. A cache miss leaves the operation ready for ordinary execution.
+
+When actual execution-result evidence is required by a reachable condition, an otherwise matching freshness record is not enough and the producer executes.
+
 The current executor is sequential. This is an implementation property rather than a semantic ordering rule for otherwise independent operations.
 
 ## 10. Output and exit status
@@ -715,11 +818,17 @@ Existing standard formats, protocols and tool interfaces SHOULD be preferred whe
 
 ## 12. State and outputs
 
-When `mk` introduces managed persistent state, that state MUST use the current `state-path` contract rather than reconstructing the physical state tree.
+Managed persistent `mk` state MUST use the current `state-path` contract rather than reconstructing the physical state tree.
+
+Version-2 incremental freshness uses user-scoped technical cache state resolved from:
+
+```text
+state-path user sys mk cache
+```
+
+This state is non-authoritative and regenerable. Private project/operation record layout below that cache area is an `mk` implementation detail and does not extend the public state-path grammar.
 
 Development output is distinct from package installation. Executing a project lifecycle does not by itself publish the project as an installed package.
-
-The first lifecycle delivery defined here introduces no persistent `mk` state.
 
 ## 13. Documentation build ownership
 
@@ -775,4 +884,15 @@ MK-40  project facility requirements use the system facility default and do not 
 MK-41  requirement resolution is read-only and does not install packages or mutate provider-selection configuration
 MK-42  reachable unsatisfied requirements remain inspectable in plans, block only their consumers and are re-resolved during runtime refinement
 MK-43  version-2 plans expose reachable requirement state and the selected provider concrete for satisfied facility requirements
+MK-44  version-2 ordinary process operations may opt into incremental freshness through named incremental inputs plus existing named outputs
+MK-45  incremental path, collection and output inputs use deterministic content identity; mtime is not part of freshness
+MK-46  an incremental output input creates a data dependency on its producer without requiring duplicate prerequisite declaration
+MK-47  a reusable incremental success requires both the same effective fingerprint and current declared outputs equal to the recorded successful output fingerprints
+MK-48  up-to-date is verified current-request success-equivalent evidence for prerequisites, collection after barriers and output evidence but does not synthesize actual execution-result fields
+MK-49  a reachable result-field observation forces actual execution of an otherwise up-to-date producer
+MK-50  failed execution never creates reusable freshness state and unsupported/corrupt freshness state degrades conservatively to a miss
+MK-51  incremental freshness metadata is user-scoped non-authoritative mk cache state resolved through state-path user sys mk cache
+MK-52  --plan may read freshness metadata but does not create or refresh it
+MK-53  the first incremental baseline stores freshness metadata only and does not establish artifact storage/restoration, shared/remote cache or provider-level incremental templates
+MK-54  project dependency delegation remains recursive; child mk instances own their own incremental decisions and no request-wide de-duplication is implied
 ```
