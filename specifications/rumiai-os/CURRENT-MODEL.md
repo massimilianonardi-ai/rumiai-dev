@@ -343,7 +343,9 @@ Version 1 remains the original fully resolved static lifecycle model for compati
 
 Version 2 also implements project-to-project dependency delegation. A dependency explicitly maps requested parent goals to child-project goals and delegates the child lifecycle to another `mk` engine process rooted at that project. Child lifecycle internals remain encapsulated; they are not flattened into the parent operation graph. Parent profiles are not inherited implicitly, project-dependency cycles are rejected through canonical project identity in the active invocation chain, and active direct dependencies must succeed before parent local lifecycle work begins. Version-2 plans preserve dependent-project requests as nested child plans. The baseline does not imply request-wide de-duplication across independent sibling branches.
 
-Incremental fingerprints/cache, parallel scheduling, remote execution, declarative requirement resolution and watch/hot-update behavior remain unimplemented.
+Version 2 also implements named external requirements. The first requirement type is a `pkg` facility identity plus the package subsystem's existing compatibility constraints. Operations and trusted providers may reference named requirements; only requirements reachable from the requested lifecycle are resolved. `mk` queries them through the read-only `pkg requirement resolve` surface against the system facility default, never creates synthetic package-consumer bindings, and never installs or selects providers implicitly. Unsatisfied requirements remain visible in plans, block only their consumers and are re-resolved during runtime refinement.
+
+Incremental fingerprints/cache, parallel scheduling, remote execution and watch/hot-update behavior remain unimplemented.
 
 `mk` does not replace compilers, interpreters, external build engines or `pkg`; it orchestrates them through modular boundaries.
 
@@ -433,4 +435,8 @@ CURRENT-41   dependent-project lifecycle internals remain owned by the child mk 
 CURRENT-42   parent profiles are not inherited implicitly by dependent projects and recursive project cycles are rejected from canonical project identity
 CURRENT-43   active direct project dependencies must succeed before parent local lifecycle work begins
 CURRENT-44   mk project dependency semantics do not imply request-wide de-duplication across independent sibling branches
+CURRENT-45   mk version 2 implements named external requirements and the first requirement type is a pkg facility with pkg compatibility constraints
+CURRENT-46   reachable mk facility requirements are resolved through the read-only pkg requirement query against the system facility default
+CURRENT-47   mk requirement resolution does not create synthetic package-consumer bindings, install packages or implicitly select providers
+CURRENT-48   unsatisfied reachable requirements remain inspectable, block only their consumer lifecycle nodes and participate in iterative runtime refinement
 ```
