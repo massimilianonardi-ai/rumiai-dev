@@ -317,15 +317,31 @@ See `LANG-BOOTSTRAP.md`.
 
 The lifecycle engine is implemented in JavaScript and consumes declarative JSON project configuration from project-root `mk.json`. The public `mk` entrypoint remains bootstrap-integrated with `m` and delegates to the JavaScript engine through the current RumiAI-managed Node.js package runtime.
 
-The lifecycle model distinguishes project `dependency`, operation `prerequisite` and external `requirement`. Project-defined goals select root operations; operation prerequisites form the detailed lifecycle graph.
+The lifecycle model distinguishes project `dependency`, operation `prerequisite` and external `requirement`. Project-defined goals select lifecycle roots; operation prerequisites form the detailed lifecycle graph.
 
 Goal names are extensible project data rather than a mandatory hard-coded set. `mk` can delegate an operation to a suitable external lifecycle/build engine or orchestrate a fine-grained operation graph directly.
 
-`mk.json` expresses declarative project intent and is not required to duplicate details that are derivable from authoritative current project/runtime context. For example, when a declared source collection semantically means the applicable files currently present under a directory, concrete membership is resolved from that directory rather than copied into configuration merely as an inventory; explicit selection remains appropriate when intended membership differs, including profile-specific subsets.
+`mk.json` expresses declarative project intent and is not required to duplicate details derivable from authoritative current project/runtime context. Version 2 implements contextual file collections so the current members of a declared directory/tree can be resolved from the filesystem; explicit selection remains available when intended membership differs, including profile-specific subsets.
 
-Lifecycle planning is not required to produce a completely fixed graph before execution. Some decisions may remain conditional until earlier operations produce the evidence required to resolve them. Plan inspection resolves everything that can be determined from current configuration/context without executing project operations and must preserve future-dependent alternatives as conditional structure rather than pretending one branch is already selected.
+Version 2 also implements a trusted operation-provider boundary. The first generic `map-process` provider derives ordinary process operations from collection members without introducing compiler/language-specific behavior into the core. Project configuration selects trusted provider types/data and does not become an arbitrary executable JavaScript/module-loading surface.
 
-The first lifecycle CLI uses `mk [options] [--] <goal>...` plus project/profile selection and plan/goal introspection. The first executor currently runs only a fully resolved static plan sequentially and provides a shell-free process action; contextual graph derivation, conditional planning and runtime plan refinement are therefore current implementation gaps relative to the broader lifecycle contract. Incremental execution, cache, parallel scheduling, project-dependency execution, declarative requirement resolution and watch/hot-update behavior are also not yet part of the first implementation.
+Lifecycle planning is not required to produce a completely fixed graph before execution. Version-2 plans preserve pending collections/providers and conditional operations when required evidence does not yet exist. Conditions may observe operation results, declared outputs and current project state. Declared output evidence is tied to the producing operation's current request result so stale pathnames do not masquerade as newly produced output.
+
+Version-2 execution follows the iterative model:
+
+```text
+resolve reachable context
+→ execute ready work
+→ observe results/outputs/state
+→ resolve/refine
+→ continue
+```
+
+This supports generated-source flows in which initial sources are known at plan time while later sources become authoritative only after a generator succeeds. It also supports explicit continued failure as branch evidence without treating that failure as an ordinary satisfied prerequisite.
+
+Version 1 remains the original fully resolved static lifecycle model for compatibility. Both versions keep the shell-free `process` action and sequential executor baseline.
+
+Incremental fingerprints/cache, parallel scheduling, remote execution, project-dependency execution, declarative requirement resolution and watch/hot-update behavior remain unimplemented.
 
 `mk` does not replace compilers, interpreters, external build engines or `pkg`; it orchestrates them through modular boundaries.
 
@@ -407,4 +423,7 @@ CURRENT-33   mk project configuration is JSON rooted at project-root mk.json
 CURRENT-34   mk configuration expresses declarative intent and does not require duplication of details derivable from authoritative current project/runtime context
 CURRENT-35   mk planning may preserve conditional alternatives whose selection depends on evidence produced only during lifecycle execution
 CURRENT-36   mk plan inspection resolves current observable facts without executing project operations and preserves unresolved future-dependent alternatives
+CURRENT-37   mk version 2 implements contextual collections, trusted operation providers, declarative conditions, named outputs and iterative runtime plan refinement
+CURRENT-38   mk provider implementations are trusted runtime behavior selected declaratively; mk.json is not an arbitrary executable resolver/module-loading surface
+CURRENT-39   mk declared-output observation is bound to current-request producer results rather than stale pathname existence alone
 ```
