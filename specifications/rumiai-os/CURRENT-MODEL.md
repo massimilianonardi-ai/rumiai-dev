@@ -345,7 +345,9 @@ Version 2 also implements project-to-project dependency delegation. A dependency
 
 Version 2 also implements named external requirements. The first requirement type is a `pkg` facility identity plus the package subsystem's existing compatibility constraints. Operations and trusted providers may reference named requirements; only requirements reachable from the requested lifecycle are resolved. `mk` queries them through the read-only `pkg requirement resolve` surface against the system facility default, never creates synthetic package-consumer bindings, and never installs or selects providers implicitly. Unsatisfied requirements remain visible in plans, block only their consumers and are re-resolved during runtime refinement.
 
-Incremental fingerprints/cache, parallel scheduling, remote execution and watch/hot-update behavior remain unimplemented.
+Version 2 also implements explicit incremental freshness for ordinary process operations. Cacheable operations declare named `incremental.inputs` using path, collection or named-output sources and reuse the existing named `outputs` surface. Freshness is content/SHA-256 based rather than mtime based and includes effective operation/action/environment identity plus resolved requirement-provider identities. A stored successful record is reusable only when the current fingerprint and current declared outputs both match. Verified hits appear as `up-to-date`, satisfy prerequisites/collection barriers/output evidence, but do not synthesize actual execution-result fields; reachable result-field observation forces real execution. Persistent freshness metadata is non-authoritative user-scoped `mk` cache state resolved through `state-path`.
+
+Artifact storage/restoration, shared/remote caching, provider-level incremental templates, parallel scheduling, remote execution and watch/hot-update behavior remain unimplemented.
 
 `mk` does not replace compilers, interpreters, external build engines or `pkg`; it orchestrates them through modular boundaries.
 
@@ -439,4 +441,9 @@ CURRENT-45   mk version 2 implements named external requirements and the first r
 CURRENT-46   reachable mk facility requirements are resolved through the read-only pkg requirement query against the system facility default
 CURRENT-47   mk requirement resolution does not create synthetic package-consumer bindings, install packages or implicitly select providers
 CURRENT-48   unsatisfied reachable requirements remain inspectable, block only their consumer lifecycle nodes and participate in iterative runtime refinement
+CURRENT-49   mk version 2 implements explicit content-based incremental freshness for ordinary process operations with named inputs and existing named outputs
+CURRENT-50   reusable incremental freshness requires both an effective fingerprint match and current declared outputs matching recorded successful output fingerprints
+CURRENT-51   up-to-date work satisfies prerequisite/collection/output evidence without fabricating execution-result fields; result observation forces execution
+CURRENT-52   mk incremental metadata is non-authoritative user-scoped cache state resolved through state-path
+CURRENT-53   the incremental baseline does not imply artifact storage/restoration, remote/shared cache, provider-level incremental templates or request-wide project-dependency de-duplication
 ```
