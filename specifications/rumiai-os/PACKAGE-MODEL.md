@@ -125,6 +125,19 @@ If the resolved concrete package identity already exists as an installed concret
 
 The generic pipeline must keep provider-specific discovery/resolution behind the applicable adapter and use the generic download/extract/integration facilities where their contracts apply.
 
+A resolved artifact descriptor contains exactly one artifact name, exactly one positive
+expected size, optional integrity digest metadata, and **one or more ordered URL
+candidates** for the same artifact. Repository adapters own provider-specific mirror
+discovery/selection and candidate ordering; generic download code does not encode
+SourceForge, GitHub or another upstream's mirror policy.
+
+`pkg-download` attempts URL candidates in descriptor order. A candidate is accepted
+only after the transferred file satisfies the descriptor's expected size and, when a
+digest is present, the expected digest. A failed transfer or failed size/digest check
+removes that candidate's partial output and may advance to the next candidate.
+Success through a later candidate never weakens or bypasses the descriptor's
+integrity requirements. If no candidate validates, the download fails.
+
 Artifact integrity information supplied by the package definition/adapter must be enforced by the current package contracts rather than bypassed for convenience.
 
 A package-specific exception belongs in the package definition/adapter/integration boundary that owns it, not as an accidental special case in unrelated generic code.
@@ -639,4 +652,6 @@ PKG-66  integration materializes validated facility-service realization into the
 PKG-67  global provider-backed srv lifecycle uses the system facility default for the service facility and does not consult consumer bindings
 PKG-68  the trusted srv system-host launch path reuses the normal package launcher with system scope and State Instance equal to service identity; ordinary package launch remains user-scoped
 PKG-69  provider selectors remain private by default; system-host reconciliation may expose only required non-secret selector metadata read-only/traversable to the service runtime without granting mutation rights
+PKG-70  a resolved artifact descriptor carries one or more ordered URL candidates for the same artifact; repository adapters own provider-specific mirror candidate construction
+PKG-71  pkg-download accepts a candidate only after expected size and configured digest verification, removes failed candidate output before fallback, and fails when no candidate validates
 ```
