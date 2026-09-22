@@ -222,17 +222,30 @@ The replay mechanism should be promoted into a shared `rumiai-tests` helper only
 
 ## 10. Rule for new tests
 
+Before writing the mechanics of a permanent test, write down its protected current property set. Use invariant identifiers when available; otherwise use the authoritative specification section/rule. Then classify every planned check as either:
+
+```text
+contract assertion    may produce FAIL when the observed target contradicts the protected property
+test infrastructure   may produce ERROR when the property cannot be observed reliably
+```
+
+Do not promote a synchronization point, renderer artifact, timing assumption, fixture detail or convenient intermediate observation into a contract assertion unless the current specification requires it.
+
 Before adding infrastructure code to a `.test`, check in this order:
 
-1. can the behavior be exercised through the real entrypoint required by the contract?
-2. is the test using the target/environment supplied by its caller rather than creating a replacement environment?
-3. do any fixtures/fakes represent only allowed external inputs or boundaries rather than replacing behavior claimed as verified?
-4. does a library under `lib/` already provide the same responsibility?
-5. is there an existing documented pattern?
-6. is the additional logic genuinely specific to the property under test?
-7. does the new test protect a property distinct from those already covered?
-8. is future maintenance cost proportional to the risk?
+1. what exact current property or properties does this test protect?
+2. does every semantic assertion map directly to that protected-property set?
+3. can the behavior be exercised through the real entrypoint required by the contract?
+4. is the test using the target/environment supplied by its caller rather than creating a replacement environment?
+5. do any fixtures/fakes represent only allowed external inputs or boundaries rather than replacing behavior claimed as verified?
+6. does a library under `lib/` already provide the same responsibility?
+7. is there an existing documented pattern?
+8. is the additional logic genuinely specific to observing the protected property?
+9. does the new test protect a property distinct from those already covered?
+10. is future maintenance cost proportional to the risk?
 
-If the answers point to reuse or merging, do not create a new copy or a new test merely for formal isolation.
+If the answers point to reuse, merging or deletion of an incidental check, do that instead of expanding the test.
+
+For interactive tests, keep driver synchronization and contract assertions visibly separate. A missing prompt caused by a PTY/terminal-driver problem, timeout or unexpected driver exception is not a product `FAIL`; report `ERROR` unless that exact prompt/timing is itself the protected contract.
 
 When a property is common across multiple hosts, prefer the same real `.test` on those environments rather than host-specific copies. Necessary differences should remain in infrastructure or abstractions already provided by the contract, not duplicate test semantics.
