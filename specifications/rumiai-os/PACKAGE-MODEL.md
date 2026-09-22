@@ -154,6 +154,16 @@ integrity requirements. If no candidate validates, the download fails.
 
 Artifact integrity information supplied by the package definition/adapter must be enforced by the current package contracts rather than bypassed for convenience.
 
+Package materialization supports ordinary single-format artifacts and the macOS compound format:
+
+```text
+dmg-pkg
+```
+
+`dmg-pkg` represents an Apple disk image containing one top-level flat installer package whose archive contains a named component package. The selected package range MUST provide exactly one scalar `component` value naming that component package as a basename (no path separators). Materialization extracts the outer DMG, expands the flat installer package, extracts the selected component's `Payload` into staging, and then applies the normal useful-root normalization. The component name is package-definition data; generic package code must not hardcode provider-specific component identities. Supplying `component` for another format, or omitting it for `dmg-pkg`, is invalid package metadata.
+
+This compound format is host-specific materialization behind the package abstraction; it does not change package identity or state semantics. Mutable state exposed by software installed this way remains governed by the normal package HOME/conf/state model rather than being stored in the immutable package root.
+
 A package-specific exception belongs in the package definition/adapter/integration boundary that owns it, not as an accidental special case in unrelated generic code.
 
 ## Uninstall, versions and default
@@ -699,4 +709,6 @@ PKG-73  packages resolved from the all stream use platform-independent concrete 
 PKG-74  an all-stream consumer resolves dependencies against its applicable target osarch (install target or active runtime m_OSARCH) without adding that osarch to the consumer concrete identity
 PKG-75  pkg requirement resolve is a read-only system-facility-default query that validates existing facility compatibility constraints and prints the selected concrete provider on success
 PKG-76  project/non-package requirement queries do not create synthetic package-consumer bindings and do not install or implicitly select providers
+PKG-77  dmg-pkg compound materialization extracts a named flat-installer component payload without hardcoding provider-specific component identity
+PKG-78  component metadata is required only for dmg-pkg and ordinary package state remains outside the immutable package root
 ```
