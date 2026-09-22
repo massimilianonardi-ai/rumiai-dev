@@ -20,7 +20,7 @@ For example:
 ```text
 lib/sys/sh/array.lib.sh
 lib/sys/sh/pkg/pkg-install.lib.sh
-lib/sys/sh/mk/mk-materialize.lib.sh
+lib/sys/js/mk.lib.js
 ```
 
 have owner `sys` and library identities:
@@ -28,7 +28,7 @@ have owner `sys` and library identities:
 ```text
 array.lib.sh
 pkg-install.lib.sh
-mk-materialize.lib.sh
+mk.lib.js
 ```
 
 The `.lib.<runtime>` components are part of the library identity. They are not documentation-format suffixes.

@@ -165,7 +165,7 @@ Internal libraries are ownership- and runtime-qualified. Their physical grouping
 ```text
 lib/sys/sh/core.lib.sh
 lib/sys/sh/pkg/pkg-install.lib.sh
-lib/sys/sh/mk/mk-materialize.lib.sh
+lib/sys/js/mk.lib.js
 ```
 
 Shell libraries are sourced files: no executable bit and no shebang.

@@ -29,7 +29,6 @@ Read only the smallest complete set relevant to the task.
 | documentation ownership, mandatory command/library manual coverage, initial terminal-first operational model, long-term multi-channel target | `rumiai-os/DOCUMENTATION-MODEL.md` |
 | technical localization facility `lang` | `rumiai-os/LANG-BOOTSTRAP.md` |
 | promoted current `mk` development-lifecycle contract | `rumiai-os/MK.md` |
-| current source-materialization capability of `mk` | `rumiai-os/MK-SOURCE-MATERIALIZATION.md` |
 | portable local service lifecycle through `srv` | `rumiai-os/SERVICE-LIFECYCLE.md` |
 | standalone terminal key input | `rumiai-os/READ-KEY.md` |
 

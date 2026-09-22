@@ -313,19 +313,19 @@ See `LANG-BOOTSTRAP.md`.
 
 ## 11. Project development lifecycle
 
-`mk` belongs to `m` and is responsible for management and orchestration of the development lifecycle of a project.
+`mk` belongs to `m` and is responsible for management and orchestration of a project's development lifecycle.
 
-It interprets structured declarative configuration, manages projects and profiles, resolves and orchestrates development requirements and dependencies, coordinates external tools, manages development workspace/state/output, and performs project-defined lifecycle operations.
+The lifecycle engine is implemented in JavaScript and consumes declarative JSON project configuration from project-root `mk.json`. The public `mk` entrypoint remains bootstrap-integrated with `m` and delegates to the JavaScript engine through the current RumiAI-managed Node.js package runtime.
 
-Lifecycle operations are extensible rather than a mandatory hard-coded global set. Common operations such as build, test, run and clean are examples. `mk` may delegate an operation to a suitable external lifecycle/build engine, or orchestrate finer-grained dependencies/actions directly when delegation is insufficient.
+The lifecycle model distinguishes project `dependency`, operation `prerequisite` and external `requirement`. Project-defined goals select root operations; operation prerequisites form the detailed lifecycle graph.
+
+Goal names are extensible project data rather than a mandatory hard-coded set. `mk` can delegate an operation to a suitable external lifecycle/build engine or orchestrate a fine-grained operation graph directly.
+
+The first lifecycle CLI uses `mk [options] [--] <goal>...` plus project/profile selection and plan/goal introspection. The first executor runs a resolved plan sequentially and provides a shell-free process action. Incremental execution, cache, parallel scheduling, project-dependency execution, declarative requirement resolution and watch/hot-update behavior are not yet part of the first implementation.
 
 `mk` does not replace compilers, interpreters, external build engines or `pkg`; it orchestrates them through modular boundaries.
 
-Project configuration consumed by `mk` is data and MUST NOT be shell-sourced, `eval`ed or treated as executable configuration merely to describe a project.
-
-See `MK.md` for the promoted lifecycle contract.
-
-The currently implemented `mk materialize` source-materialization capability remains specified by `MK-SOURCE-MATERIALIZATION.md`; it is one capability of the broader lifecycle subsystem rather than the complete definition of `mk`.
+See `MK.md` for the current lifecycle contract.
 
 ## 12. Local service lifecycle
 
@@ -398,4 +398,6 @@ CURRENT-28   osarch update selects the detected host osarch and osarch set selec
 CURRENT-29   osarch-set and osarch-update remain compatibility commands for the previous selector surface
 CURRENT-30   mk lifecycle operation names are extensible rather than a mandatory hard-coded global set
 CURRENT-31   mk supports both delegation to suitable external lifecycle/build engines and finer-grained direct orchestration
+CURRENT-32   mk lifecycle engine implementation language is JavaScript
+CURRENT-33   mk project configuration is JSON rooted at project-root mk.json
 ```
