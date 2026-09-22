@@ -10,10 +10,11 @@ Continue development of `mk` as the `m` subsystem for project development-lifecy
 ## Current repository revisions
 
 ```text
-rumiai-dev   1e8119bab2af742ad8ca2495c21aeea35d5f55f7  (pre-checkpoint HEAD before this handoff synchronization)
-rumiai-os    bacf3b6d37b508c6b07bd8b6bb88019bc50a627f  (current main; mk implementation unchanged since validated 6f26a4993337b7020d1ace2d46c827538b6de966)
-rumiai-tests 0b5fabccd79092af5c452dec65ddc7b49ad57d9a  (current main; lifecycle.test unchanged since validated workflow revision)
-pkg-catalog  39abe7d9ae53753dda9e2714fc39fe69adfafb8c  (current main at final consistency check)
+rumiai-dev      a1311f81612b5f29f3b74a6d5674155fd4841762  (pre-checkpoint HEAD; PACKAGE-MODEL mk boundary realigned)
+rumiai-os       bacf3b6d37b508c6b07bd8b6bb88019bc50a627f  (mk implementation exercised by Maven PoC)
+rumiai-tests    0b5fabccd79092af5c452dec65ddc7b49ad57d9a  (lifecycle permanent test unchanged)
+rumiai-dev-PoCs 1bb5474f2c5f0e31dd1af85e458d84fd5e376395  (Maven delegation PoC with recorded result)
+pkg-catalog     39abe7d9ae53753dda9e2714fc39fe69adfafb8c  (Maven/Temurin catalog used by PoC)
 ```
 
 Fresh remote HEAD retrieval remains mandatory before later work.
@@ -95,6 +96,54 @@ After validation, `rumiai-os` advanced to the current HEAD only through concurre
 
 This was development/hosted test evidence, not a formal `rumiai-validate` task-validation record and not physical-host validation.
 
+
+### Maven delegation stress test
+
+`pocs/014-mk-maven-delegation` tested the simplest external-engine case against a real Maven project.
+
+The project model was deliberately minimal:
+
+```text
+goal build
+    -> operation maven-package
+    -> process action
+    -> mvn -q package
+```
+
+There is no Maven-specific adapter in `mk`.
+
+The PoC verifies that:
+
+- `mk --plan build` resolves exactly one operation, `maven-package`;
+- `mk build` delegates that operation to the real managed Maven package;
+- Maven compiles the Java source and produces `target/mk-maven-poc-1.0.0.jar`;
+- the built class executes through the selected managed Java provider and prints `mk-maven-ok`.
+
+Hosted evidence:
+
+```text
+GitHub Actions run
+    35717912561
+
+PoC revision exercised
+    7fdb760c31e9168db68f72e51d0d0b62b67c68da
+
+rumiai-os exercised
+    bacf3b6d37b508c6b07bd8b6bb88019bc50a627f
+
+Ubuntu
+    PASS poc-014 mk -> Maven delegation
+
+macOS
+    PASS poc-014 mk -> Maven delegation
+```
+
+The first PoC run (`35717818592`) failed before reaching `mk`: Maven was installed before a provider was selected for Maven's catalog-declared `java >=17` dependency. Reordering provisioning to install/select Temurin first and install Maven afterward made both hosts pass. This confirms an existing `pkg` dependency/provider rule; it does not justify Maven-specific behavior in `mk`.
+
+Conclusion from this stress case: the current generic `process` action is sufficient for a simple opaque Maven delegation. No Maven-specific adapter or new mk core primitive is justified by this case.
+
+During the same work unit, stale source-materialization wording in `PACKAGE-MODEL.md` was realigned with the current lifecycle boundary. `pkg` continues to own package/facility/provider/dependency semantics, while `mk` may consume package-provided tools/facilities without creating a parallel provider graph.
+
 ## Working design still open
 
 The following areas remain deliberately unresolved and must be derived from concrete lifecycle cases rather than treated as implicit features:
@@ -121,14 +170,13 @@ The current vocabulary remains useful for design discussion, but vocabulary term
 
 The first executable lifecycle vertical is present and tested. The current implementation intentionally stops before incrementality, caching, parallelism, project dependency execution and a generalized extension/plugin API.
 
-The next design/implementation work should therefore stress the existing model with a real project shape rather than adding abstractions speculatively.
+The delegated Maven case has now validated the coarse-grained end of the model. The next design/implementation work should stress the opposite, fine-grained end rather than adding abstractions speculatively.
 
 ## Next action
 
 Use one or more concrete project scenarios to extend the current baseline. Good stress cases remain:
 
 ```text
-delegation to Maven or CMake as one opaque operation
 native C/C++ compilation with automatically discovered sources
 generated sources feeding later operations
 project-to-project dependency orchestration
