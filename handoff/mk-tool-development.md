@@ -355,7 +355,12 @@ The experiment has fixed the following candidate direction but it is not yet pro
 
 The candidate fingerprint includes operation/action definition, effective execution environment, observable executable identity, resolved requirement-provider concrete identities and resolved named input snapshots.
 
-Before promotion, reconcile the exact meaning of cached success with current result/output observation semantics. In particular, a cache hit must provide verified current-request success/output evidence without claiming that the action executed in the current request.
+The result/output evidence interaction is now fixed for the candidate baseline:
+
+- `up-to-date` is success-equivalent for prerequisite satisfaction, collection `after` barriers and validated output evidence;
+- it does not synthesize an execution result;
+- if a reachable condition observes `result.status`, `result.ok`, `result.signal` or `result.error` of an otherwise up-to-date operation, that producer must execute in the current request so the result operand keeps its existing actual-execution meaning;
+- output observations may reuse a validated up-to-date producer because the recorded successful output fingerprint plus current output comparison is explicit evidence beyond stale pathname existence.
 
 ## Next action
 
