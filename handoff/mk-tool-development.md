@@ -10,9 +10,9 @@ Define and develop `mk` as the `m` subsystem responsible for project development
 ## Current repository revisions
 
 ```text
-rumiai-dev   641145a688f0b1822dd690fbda32a9dc29fa296c  (pre-checkpoint HEAD after mk lifecycle contract realignment)
+rumiai-dev   970930c8e904da87d3fd52898e5d24bcdff26ce5  (pre-checkpoint HEAD before lifecycle graph working-design update)
 rumiai-os    0a45bddce0318e111a72b052f7bc8366d2911b0b  (current main; unchanged by this design checkpoint)
-rumiai-tests 5a149673fe5d9803dfef9273d0ae38f53571b750  (current main; unchanged by this design checkpoint)
+rumiai-tests 8513947696dfc1290a52d669eab16f700a4c48dd  (current main; unchanged by this design checkpoint)
 pkg-catalog  94f58995cbd487b17f3b82bc2724c70540927b88  (refresh before pkg-catalog work)
 ```
 
@@ -90,6 +90,19 @@ No configuration filename, extension, project-discovery pathname or physical pro
 
 The promoted contract now requires one general lifecycle model that can cover both delegation to an upstream build/lifecycle engine and direct fine-grained orchestration. The exact internal abstractions remain unresolved.
 
+A current candidate minimal model is:
+
+```text
+named lifecycle goal/request
+    -> one or more root operations
+    -> operation dependency graph
+    -> executable leaf operations
+```
+
+Under this model, the simple delegated case and the fine-grained native case differ only in graph visibility/granularity. A delegated Maven/CMake/etc. invocation can be represented as one opaque leaf operation with the required tool, arguments, working directory and environment, while a native builder exposes the finer operation graph directly. A goal is therefore better treated as an externally addressable entrypoint/root selection over operations than as a hard-coded lifecycle primitive.
+
+This remains working design rather than promoted terminology. In particular, the final names and the exact boundary between an operation, an executable action and a produced result/target remain to be resolved.
+
 The following design areas remain active and unresolved:
 
 ```text
@@ -158,7 +171,7 @@ Future `mk` work must now derive the minimum general orchestration model needed 
 
 Continue the functional design of the `mk` project lifecycle from the promoted boundaries in `MK.md`, using the working-design items above as non-authoritative design state.
 
-The next concrete design area is the minimum general lifecycle/orchestration model: determine which abstract entities and relationships are required to express both a simple delegated external-engine operation and a fully explicit fine-grained dependency/action flow. Do not select serialization format or implementation runtime merely for convenience.
+The next concrete design area is to stress-test the candidate goal/root-operation graph model against delegated engines, native C/C++-style fine-grained builds, generated sources, automatic source discovery, incremental rebuilds and long-running/hot-update flows. From that evidence, determine whether operation/action/result need distinct promoted concepts. Do not select serialization format or implementation runtime merely for convenience.
 
 ## Blockers / open questions
 
