@@ -682,7 +682,26 @@ Shared-local publication is concurrency-safe without requiring a global lock. A 
 
 Writers MUST NOT destructively replace or remove another process's verified committed candidate merely to publish the same fingerprint. A corrupt selected candidate is a conservative miss; refresh publishes another verified immutable recovery candidate and atomically selects it rather than requiring destructive replacement of the candidate a reader may already hold.
 
-Per-attempt staging/selector temporary state is best-effort cleanup state and is never a restoration candidate. Committed but unselected candidates may remain until a future garbage-collection policy; the current baseline does not define eviction, reclamation of abandoned staging after abrupt process death, or cache-size management.
+Per-attempt staging/selector temporary state is best-effort cleanup state and is never a restoration candidate.
+
+The current baseline performs private best-effort **structural hygiene** inside shared-artifact fingerprint namespaces that `mk` already touches. This hygiene is owned by `mk` because the artifact store is private `user/sys/mk/cache` state; it is not a generic state/cache service and exposes no public cache-management command.
+
+Structural hygiene may reclaim:
+
+- verified committed candidates that are not named by the current selector;
+- abandoned `.staging-*` attempt state whose matching activity ownership is no longer live;
+- abandoned `.current-*` selector temporary state after no live publication owner protects the fingerprint;
+- stale private activity-token pathnames.
+
+Ordinary hygiene MUST NOT reclaim the candidate currently named by the selector. It does not remove project-scoped freshness metadata. If freshness metadata later refers to artifact bytes that are absent, the existing conservative miss semantics apply.
+
+Reader registration is not required. Candidate reclamation first atomically removes an eligible immutable candidate from the canonical candidate namespace into private quarantine before deletion. A concurrent restoration that already captured that candidate either completes from readable bytes or fails before declared project destinations are committed and falls back to ordinary execution.
+
+Publication/maintenance ownership uses private per-fingerprint POSIX FIFO activity tokens. An owner publishes a unique FIFO only after opening its read end non-blocking and keeps that descriptor open for the protected section. Another process probes the token with a non-blocking write open: success means a live reader still owns the token; `ENXIO` means no reader remains and the pathname is stale. Abrupt process termination therefore releases live ownership through kernel descriptor closure without PID inspection or timeout heuristics. Unknown/unsupported ownership state is treated conservatively.
+
+Publication and hygiene use a symmetric visibility handshake: a publisher with a live publication token backs off from artifact selection when live maintenance is visible, while maintenance with a live maintenance token performs no reclamation when live publication is visible. This coordination protects the verified-candidate-to-selector-commit window without a global publication lock.
+
+Hygiene is opportunistic and local to fingerprint namespaces touched by ordinary artifact restoration/publication. The baseline does **not** define TTL/LRU behavior, cache-size limits, whole-fingerprint eviction, global sweeping guarantees or automatic reclamation of untouched selected fingerprints. Those are separate retention-policy concerns. Hygiene failure remains non-authoritative cache failure and MUST NOT make an otherwise valid lifecycle action fail.
 
 A copied or moved checkout may therefore restore equivalent work from the same user-local shared artifact namespace when the existing effective operation fingerprint matches. Successful restore still creates freshness metadata only for the receiving canonical project root.
 
@@ -1071,5 +1090,9 @@ MK-81  verified artifact bytes may be shared across canonical project roots by t
 MK-82  shared-local artifact publication exposes only fully verified immutable candidates and atomically selects a candidate per fingerprint
 MK-83  equivalent concurrent publishers may converge idempotently without a global lock and must not destructively replace another process's verified committed candidate
 MK-84  corrupt selected shared artifact state is a conservative miss and refresh publishes/selects another verified immutable candidate without requiring deletion of the previously committed candidate
-MK-85  shared-local artifact reuse does not imply remote/network transport, cross-user trust, artifact eviction/garbage collection, distributed locking, parallel lifecycle scheduling or request-wide exactly-once semantics
+MK-85  shared-local artifact reuse does not imply remote/network transport, cross-user trust, whole-fingerprint eviction/cache-size policy, distributed locking, parallel lifecycle scheduling or request-wide exactly-once semantics
+MK-86  mk privately performs best-effort structural hygiene only in shared-artifact fingerprint namespaces it touches; ordinary hygiene preserves the selected candidate and does not delete project-scoped freshness metadata
+MK-87  structural hygiene may quarantine/reclaim unselected immutable candidates and crash residue while transactional restoration requires no reader lease and degrades a disappearing candidate to ordinary execution
+MK-88  publication/hygiene activity ownership uses crash-released POSIX FIFO tokens whose live read descriptor is probed non-blockingly; stale ownership is detectable without PID inspection or age-based timeout and unknown ownership is conservative
+MK-89  shared-artifact hygiene is opportunistic rather than a retention policy and defines no TTL/LRU, cache-size limit, whole-fingerprint eviction, global sweep guarantee or public cache-management command
 ```
