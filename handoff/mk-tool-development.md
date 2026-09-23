@@ -120,45 +120,60 @@ request-wide exactly-once/de-duplication
 
 ## Working design — watch/hot-update
 
-The next stress case is long-running watch/hot-update behavior.
-
-Initial design question:
-
-Can watch be a **session/supervision layer around complete one-shot mk requests** rather than extending one `_executeV2` invocation indefinitely?
-
-The candidate direction to test is:
+PoC 020 is preserved under:
 
 ```text
-watch session
--> run one normal mk request
--> observe declared change triggers
--> on relevant change, start a fresh normal mk request
+rumiai-dev-PoCs/pocs/020-mk-watch-session/
+```
+
+The session-boundary experiment is complete. GitHub Actions run `35824307930` passed on both Ubuntu and macOS.
+
+The validated working direction is:
+
+```text
+thin watch supervisor
+-> run one complete one-shot mk request
+-> establish trigger baseline after the cycle
+-> wait for trigger identity change
+-> run a fresh one-shot mk request
 -> repeat
 ```
 
-This would preserve the already-promoted one-shot resolver/refinement/freshness semantics and naturally reuse incremental hits. It is not yet a promoted contract.
+The experiment established:
 
-Questions the PoC must settle before specification changes:
+- the supervisor can own repetition without extending one `_executeV2` invocation indefinitely;
+- cycle failure can be reported while the watch session waits for a later trigger change instead of busy-looping;
+- post-cycle baselining prevents a cycle's own filesystem effects from automatically causing an immediate second cycle;
+- SIGINT/SIGTERM ownership can remain at the session layer and be forwarded to an active one-shot child.
 
-- what exact declared/project-derived surfaces form the watch trigger set;
-- whether `mk.json` changes trigger a full fresh reload;
-- how collection membership changes are detected without watching generated outputs and causing loops;
-- how project dependencies participate without flattening or introducing global session ownership;
-- whether the portable baseline should poll content identity rather than depend on host-specific file notification APIs;
-- cancellation/signal and failed-cycle behavior;
-- whether a watch cycle always runs a fresh child `mk` process or may call the same engine in-process while preserving equivalent isolation.
+This is still working design, not promoted contract.
+
+The unresolved part is authoritative trigger derivation.
+
+Current `mk.lib.js` already owns the relevant resolved identity machinery for incremental path/collection/output inputs, collection barriers, requirement-provider identities, executable/environment identity and current-request output/data evidence.
+
+Therefore the outer watch supervisor must not reconstruct lifecycle trigger identity independently from `mk.json` or by scanning the project tree. The next experiment should derive an opaque deterministic trigger snapshot **inside the existing trusted mk engine** and expose only that snapshot to the session layer.
+
+Open trigger questions include:
+
+- whether project `mk.json` identity is always part of the trigger snapshot;
+- how non-incremental reachable operations participate when they do not declare incremental inputs;
+- whether executable/requirement-provider identity changes are watch triggers in the first baseline;
+- how generated outputs are excluded or represented without feedback loops;
+- recursive project-dependency watch ownership without graph flattening;
+- portable polling cadence versus future host notification optimizations.
 
 ## Next action
 
-Create and exercise **PoC 020 — mk watch session** in `rumiai-dev-PoCs`.
+Create **PoC 021 — mk internal watch trigger snapshot**.
 
-Start with local-project scenarios only and test the session boundary before changing `MK.md` or `rumiai-os`.
+The experiment should reuse/extract current incremental-resolution primitives rather than duplicate them. It should first target local-project requests and produce one opaque deterministic snapshot suitable for PoC 020's supervisor.
 
-Do not promote a public `--watch` CLI or project schema until the trigger/ownership semantics are sufficiently settled.
+Do not add a public `--watch` CLI or promote watch semantics to `MK.md` until trigger identity is settled.
 
 ## Blockers / open questions
 
-- watch trigger identity and generated-output exclusion;
+- authoritative trigger identity for non-incremental lifecycle work;
 - recursive project-dependency watch ownership;
-- cycle failure/retry semantics and signal handling;
+- portable polling policy versus optional host notification backends;
 - formal `rumiai-validate` still requires its own managed-Node provisioning solution.
