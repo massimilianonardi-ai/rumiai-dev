@@ -10,10 +10,10 @@ Continue development of `mk` as the `m` project development-lifecycle orchestrat
 ## Current repository revisions
 
 ```text
-rumiai-dev       737701533e58f5f9888ba8665fd826cb7fe10fb9  (pre-synchronization HEAD)
+rumiai-dev       17e6376a2437a93e7b5db11d9e8a54e3f9418718  (pre-synchronization HEAD)
 rumiai-os        533095820ea4f22446510a0f7b338253d908d018
 rumiai-tests     58fba497a00bd66452b4e8ce36eddbc117eda337
-rumiai-dev-PoCs  0efd2066878dac2cb41bcf762b643e6234bc7017
+rumiai-dev-PoCs  1d38deef61a742c646ff0f27ae250376f54fb5d6
 pkg-catalog      da7507439b71737cf4a40d85cac059824e4b9a63
 ```
 
@@ -385,6 +385,50 @@ The temporary hosted workflow was removed after evidence collection.
 
 Formal `rumiai-validate` remains unclosed; hosted evidence is not formal validation.
 
+## Cross-checkout artifact identity working design
+
+PoC 031 is preserved under:
+
+```text
+rumiai-dev-PoCs/pocs/031-mk-cross-checkout-artifact-identity/
+```
+
+The corrected experiment passed on Ubuntu and macOS in GitHub Actions run `35846792755` against exact `rumiai-os` revision `533095820ea4f22446510a0f7b338253d908d018`.
+
+It validates a candidate split without changing current product/specification behavior:
+
+```text
+project-scoped freshness metadata
+    remains canonical-root/operation scoped
+
+user-local shared artifact bytes
+    may be keyed by the existing effective operation fingerprint
+
+cross-checkout restore
+    verifies artifact bytes/snapshots
+    materializes outputs
+    writes receiving checkout's local freshness record
+    returns to ordinary refinement
+```
+
+The current fingerprint was sufficient in the exercised cases. Different operation definitions, different declared input identity and different operation names did not share merely because output bytes could match. Provider-derived members reused the same existing per-operation fingerprint mechanism.
+
+The first diagnostic run `35846703434` had only a fixture-selection defect: it corrupted an arbitrary byte-identical artifact store after intentionally creating several different fingerprints. The corrected test captures the exact initial store before adding those alternatives.
+
+This model remains **unpromoted**. Sharing artifact bytes across canonical project roots introduces a new concurrency surface that the sequential PoC did not validate.
+
+Current promotion blocker:
+
+```text
+simultaneous publishers/restorers of the same fingerprint
+    must not expose partial state
+    must not delete another process's valid publication
+    must converge safely when equivalent writers race
+    must degrade conservatively on corrupt/incomplete candidates
+```
+
+Remote/network transport is still outside this design step.
+
 ## Current state
 
 Watch is no longer working design. It is a promoted, implemented and permanently tested version-2 execution mode.
@@ -410,27 +454,28 @@ optional --watch execution mode
 
 ## Next action
 
-Use **cross-checkout/shared artifact identity** as the next concrete incremental-cache stress case, starting with a PoC rather than changing the current local store.
-
-The first question is whether artifact bytes can be keyed by verified content/effective operation identity independently from canonical project-root metadata while preserving the current local project-scoped freshness contract.
+Create **PoC 032 — concurrent shared artifact publication/restoration** before promoting the PoC 031 identity split.
 
 Stress at least:
 
 ```text
-same project copied/moved to another canonical root
-same effective operation/input/output identity across two independent checkouts
-different operation definitions producing byte-identical outputs
-corrupt/incomplete shared candidate
-permission/mode identity
-provider-derived member identity
-no false reuse across incompatible fingerprints
+two equivalent checkouts publish the same fingerprint concurrently
+one publisher finishes while another is still staging
+simultaneous restore attempts of the same fingerprint
+restore while another checkout refreshes a corrupt shared candidate
+publisher failure during staging
+cleanup after losing/racing publication
+verified final artifact remains readable and complete
+receiving checkout freshness metadata stays project-scoped
 ```
 
-Do not introduce network transport, remote service/API, eviction/GC, parallel execution or project-dependency exactly-once semantics in the first experiment. Establish artifact identity/reuse semantics before choosing distribution transport.
+Prefer a publication protocol based on immutable verified fingerprint directories and atomic commit/rename semantics. Avoid a global lock if correctness can be obtained from idempotent identical publication plus per-attempt staging.
+
+Do not add network transport, remote APIs, eviction/GC or distributed locking in this PoC.
 
 ## Blockers / open questions
 
-- can verified artifact bytes become content-addressed/reusable across canonical project roots while freshness metadata remains project-scoped?
-- which identity tuple prevents false cross-project reuse when output bytes happen to match but operation/fingerprint semantics differ?
-- should a future shared artifact store remain user-local first, with remote transport layered later?
+- what local concurrent-publication protocol prevents one process from deleting/replacing another process's already verified fingerprint store?
+- can identical fingerprint publication be made idempotent with atomic winner/loser behavior and no long-lived lock?
+- how should a corrupt already-committed shared artifact be quarantined/refreshed when another process may be reading it?
 - formal `rumiai-validate` for Node-backed mk scopes still needs current evidence before it can be called closed.
