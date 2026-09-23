@@ -233,7 +233,11 @@ Package materialization supports ordinary single-format artifacts and the macOS 
 dmg-pkg
 ```
 
-`dmg-pkg` represents an Apple disk image containing one top-level flat installer package whose archive contains a named component package. The selected package range MUST provide exactly one scalar `component` value naming that component package as a basename (no path separators). Materialization extracts the outer DMG, expands the flat installer package, extracts the selected component's `Payload` into staging, and then applies the normal useful-root normalization. The component name is package-definition data; generic package code must not hardcode provider-specific component identities. Supplying `component` for another format, or omitting it for `dmg-pkg`, is invalid package metadata.
+`dmg-pkg` represents an Apple disk image containing one top-level flat installer package whose archive contains a named component package. The selected package range MUST provide exactly one scalar `component` value naming that component package as a basename (no path separators).
+
+Materialization extracts the outer DMG, expands the flat installer package and extracts the selected component's `Payload`. A `dmg-pkg` range MAY additionally provide one scalar `payload-root` relative pathname when the component Payload contains installer-only siblings or an intermediate staging prefix around the useful package tree. `payload-root` must be a non-empty relative pathname with no empty, `.` or `..` path component and must resolve to a real directory inside the extracted Payload. When present, only that directory's contents become package staging; Payload siblings outside it are discarded. When absent, the complete extracted Payload becomes staging. The normal useful-root normalization is then applied to the resulting staging tree.
+
+The component name and optional Payload-root selector are package-definition data; generic package code must not hardcode provider-specific component identities or Payload paths. Supplying `component` or `payload-root` for another format, omitting `component` for `dmg-pkg`, or selecting a `payload-root` outside the extracted Payload is invalid package metadata/materialization.
 
 This compound format is host-specific materialization behind the package abstraction; it does not change package identity or state semantics. Mutable state exposed by software installed this way remains governed by the normal package HOME/conf/state model rather than being stored in the immutable package root.
 
@@ -784,4 +788,5 @@ PKG-75  pkg requirement resolve is a read-only system-facility-default query tha
 PKG-76  project/non-package requirement queries do not create synthetic package-consumer bindings and do not install or implicitly select providers
 PKG-77  dmg-pkg compound materialization extracts a named flat-installer component payload without hardcoding provider-specific component identity
 PKG-78  component metadata is required only for dmg-pkg and ordinary package state remains outside the immutable package root
+PKG-79  optional dmg-pkg payload-root selects one validated relative subtree as the useful package tree without hardcoding provider paths in generic code
 ```
