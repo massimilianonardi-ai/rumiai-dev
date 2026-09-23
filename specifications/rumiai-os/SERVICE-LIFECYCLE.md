@@ -100,9 +100,9 @@ srv host user stop <service>
 srv host user restart <service>
 ```
 
-Here `user` means the host supervisor associated with the calling POSIX account/login context. It is **not** the `state/user` scope from `STATE-MODEL.md`, is not an RumiAI user identity and does not redefine that state model.
+Here `user` means the host supervisor associated with the calling POSIX account/login context. It is **not** the `state/user` scope from `STATE-MODEL.md`, is not an `m` user-scope identity and does not redefine that state model.
 
-Host-user adapter discovery and persistent registration therefore follow the actual calling host account/supervisor context rather than caller-overridable RumiAI validation/application environment roots such as `HOME`, `XDG_CONFIG_HOME` or `XDG_RUNTIME_DIR`. Those variables may be redirected by an enclosing process without changing which POSIX account's supervisor `srv host user` addresses. Host-specific account/runtime discovery remains inside the systemd/launchd adapter boundary.
+Host-user adapter discovery and persistent registration therefore follow the actual calling host account/supervisor context rather than caller-overridable process environment variables such as `HOME`, `XDG_CONFIG_HOME` or `XDG_RUNTIME_DIR`. Those variables may be redirected by an enclosing process without changing which POSIX account's supervisor `srv host user` addresses. Host-specific account/runtime discovery remains inside the systemd/launchd adapter boundary.
 
 The normalized actions have host-neutral semantics:
 
@@ -148,7 +148,7 @@ another privilege-escalation mechanism.
 `install` requires one explicit pre-existing POSIX account. The account must
 resolve through host account data, must not be UID 0/root, and is never created,
 modified or removed by `srv`. A dedicated non-login service account is the
-recommended deployment shape but is not a RumiAI-managed identity. Host primary and
+recommended deployment shape but is not an `m`-managed identity. Host primary and
 supplementary group policy remains administrator-owned.
 
 A system host registration resolves the current system facility default to one exact
@@ -180,8 +180,8 @@ state-path system pkg <package> home <service>
 state-path system pkg <package> conf <service>
 ```
 
-The service account must not gain ownership or write access to executable RumiAI
-product/package roots merely because host registration required administrative
+The service account must not gain ownership or write access to executable `m`/package
+roots merely because host registration required administrative
 privilege. Package-declared static `var/` routing remains governed by the existing
 system-state package contract. Provider-specific mutable-path behavior inside an
 upstream installation is a separate package concern and is not inferred or rewritten
@@ -208,7 +208,7 @@ For the macOS/launchd system adapter:
 
 Neither system adapter introduces automatic account creation, automatic restart
 policy or dynamic/recycled service identities. Linux `DynamicUser=` is not the
-portable RumiAI baseline.
+portable `m` baseline.
 
 ## Deferred unless separately specified
 
@@ -258,7 +258,7 @@ SRV-24  host managers supervise the provider foreground process directly rather 
 SRV-25  each host-managed launch resolves current system facility-default intent; later selector changes do not mutate an already-running host process
 SRV-26  user host integration does not automatically enable linger or an automatic restart policy
 SRV-27  system host supervision exposes normalized install, uninstall, start, stop and restart actions behind an explicit administrative boundary
-SRV-28  host user definitions preserve exact relocatable m/srv argv as data and do not reinterpret RumiAI pathnames as generated shell source
+SRV-28  host user definitions preserve exact relocatable m/srv argv as data and do not reinterpret `m` pathnames as generated shell source
 SRV-29  the systemd user adapter enters m through /bin/sh and serialized argv so arbitrary special-character m paths are not used as the systemd executable pathname
 SRV-30  the launchd user adapter uses a ProgramArguments argv array built through the host plist utility rather than manual XML interpolation
 SRV-31  persistent host definitions do not freeze a concrete provider; the internal foreground runner resolves current facility-default intent at each host start/restart

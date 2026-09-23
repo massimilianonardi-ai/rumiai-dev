@@ -19,7 +19,7 @@ It belongs to `m` and is located at:
 bin/sys/vsed
 ```
 
-The command depends on the `m` runtime and RumiAI-owned shell libraries and therefore uses:
+The command depends on the `m` runtime and `m`-owned shell libraries and therefore uses:
 
 ```sh
 #!/usr/bin/env m

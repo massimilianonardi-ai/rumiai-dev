@@ -31,9 +31,9 @@ bin/sys/readpassv
 #!/bin/sh
 ```
 
-It MUST NOT depend on `m_*` variables, `m_COMMAND_BIN`, `log`, `lang`, RumiAI shell libraries or bootstrap-created PATH semantics.
+It MUST NOT depend on `m_*` variables, `m_COMMAND_BIN`, `log`, `lang`, `m` shell libraries or bootstrap-created PATH semantics.
 
-`readpassv` depends on the `m` runtime to resolve the RumiAI-owned `readpass` command and uses exactly:
+`readpassv` depends on the `m` runtime to resolve the `m`-owned `readpass` command and uses exactly:
 
 ```sh
 #!/usr/bin/env m
@@ -136,7 +136,7 @@ readpassv <prompt> <verify-prompt> [<mismatch-message>]
 
 Exactly two or three arguments are valid.
 
-`readpassv` invokes the RumiAI-owned `readpass` command once with `prompt` and once with `verify-prompt`.
+`readpassv` invokes the `m`-owned `readpass` command once with `prompt` and once with `verify-prompt`.
 
 A non-zero `readpass` result is propagated as failure and verification stops.
 
@@ -213,7 +213,7 @@ READPASS-07  readpass stdout contains only the successful secret record
 READPASS-08  readpass preserves shell-line whitespace and backslashes through IFS= read -r semantics
 READPASS-09  readpass uses statuses 0 success, 1 operational/signal failure, 2 invalid invocation
 READPASS-10  readpassv is bootstrap-integrated through #!/usr/bin/env m
-READPASS-11  readpassv resolves the RumiAI-owned readpass command from the m system command directory
+READPASS-11  readpassv resolves the `m`-owned readpass command from the m system command directory
 READPASS-12  readpassv emits the secret only when the two captured values match exactly
 READPASS-13  readpassv uses status 3 for mismatch and writes an optional mismatch message only to /dev/tty
 READPASS-14  both command identities have owner-local operational manual topics
