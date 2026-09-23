@@ -163,17 +163,54 @@ Open trigger questions include:
 - recursive project-dependency watch ownership without graph flattening;
 - portable polling cadence versus future host notification optimizations.
 
+PoC 021 is preserved under:
+
+```text
+rumiai-dev-PoCs/pocs/021-mk-watch-trigger-snapshot/
+```
+
+The corrected experiment passed on Ubuntu and macOS in GitHub Actions run `35824764421` using the real current `rumiai-os/lib/sys/js/mk.lib.js` resolver through runtime instrumentation.
+
+It established:
+
+- a deterministic opaque watch-trigger digest can be derived from the existing trusted mk engine without a second lifecycle resolver;
+- current resolved incremental input fingerprints, output validity, executable identity and reachable condition state provide meaningful trigger evidence;
+- mtime-only changes remain invisible as intended by the content-based model;
+- formatting-only `mk.json` changes can remain invisible when identity is based on the selected normalized model rather than raw JSON bytes;
+- a non-incremental operation's undeclared mutable input is necessarily invisible to the trigger resolver.
+
+The first diagnostic run `35824693503` failed because the PoC driver and snapshot process used different effective environments; since the product correctly fingerprints the complete effective environment, the cache record could not match. The PoC was corrected by invoking the real `mkMain` with the same environment identity.
+
+The remaining local-project watchability question is now narrowly scoped:
+
+```text
+incremental.inputs currently owns declared input identity
+but
+watch may need declared input identity even for a non-incremental operation
+```
+
+A candidate worth testing is to separate **operation input identity** from the **incremental freshness policy** so both incremental reuse and watch triggering consume one shared declaration instead of introducing parallel `watch.inputs` and `incremental.inputs` surfaces.
+
+This is working design only. The already-promoted `incremental.inputs` contract must not be changed until the compatibility/migration consequences are validated.
+
 ## Next action
 
-Create **PoC 021 — mk internal watch trigger snapshot**.
+Create **PoC 022 — shared operation input identity**.
 
-The experiment should reuse/extract current incremental-resolution primitives rather than duplicate them. It should first target local-project requests and produce one opaque deterministic snapshot suitable for PoC 020's supervisor.
+Test whether a first-class operation input map can serve:
 
-Do not add a public `--watch` CLI or promote watch semantics to `MK.md` until trigger identity is settled.
+- ordinary data/input declaration;
+- incremental fingerprinting when incremental freshness is enabled;
+- watch trigger derivation even when the operation itself is not incrementally reusable.
+
+The experiment must compare this against retaining current `incremental.inputs` plus a separate watch-only trigger surface, and should prefer the smallest model that avoids duplicated declarations.
+
+Do not modify `MK.md` or `rumiai-os` until this design question is settled.
 
 ## Blockers / open questions
 
-- authoritative trigger identity for non-incremental lifecycle work;
+- whether first-class operation inputs can be introduced compatibly with the promoted `incremental.inputs` schema;
 - recursive project-dependency watch ownership;
+- transient invalid project configuration behavior during an active watch session;
 - portable polling policy versus optional host notification backends;
 - formal `rumiai-validate` still requires its own managed-Node provisioning solution.
