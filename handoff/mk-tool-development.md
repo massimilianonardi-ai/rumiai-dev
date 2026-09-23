@@ -295,6 +295,80 @@ fatal-trigger-error=session-failure
 
 Both temporary hosted workflows were removed after evidence collection.
 
+### PoC 026 — local watch trigger composition
+
+```text
+rumiai-dev-PoCs/pocs/026-mk-watch-trigger-composition/
+```
+
+GitHub Actions run `35829179152` passed on Ubuntu and macOS against exact `rumiai-os` revision `c2d8d4a0c4503e1de461e72840a13abb0da61c41`.
+
+The experiment closed the local trigger-composition question. The authoritative digest must compose existing trusted mk evidence rather than scan the project independently:
+
+- selected normalized model and current resolved local plan;
+- executable/effective-environment identity for reachable non-skipped process actions;
+- declared path/collection/output input content identity;
+- member content for reachable resolved collections consumed by providers;
+- reachable facility requirement/provider state already exposed by resolution;
+- declared output evidence for incremental operations;
+- current incremental fingerprints.
+
+The output feedback boundary is fixed for working design:
+
+```text
+ordinary non-incremental unconsumed output
+    not trigger identity
+
+output explicitly consumed as operation input
+    trigger identity
+
+incremental declared output
+    trigger/freshness identity
+```
+
+Observed:
+
+```text
+nonincremental-executable=trigger-identity
+requirement-provider=reachable-plan-identity
+output-input=trigger-identity
+ordinary-output=not-trigger-identity
+provider-collection-content=trigger-identity
+```
+
+### PoC 027 — fresh-bootstrap watch supervision
+
+```text
+rumiai-dev-PoCs/pocs/027-mk-watch-fresh-bootstrap/
+```
+
+GitHub Actions run `35830031823` passed on Ubuntu and macOS against exact `rumiai-os` revision `c2d8d4a0c4503e1de461e72840a13abb0da61c41`.
+
+The experiment used the real m bootstrap and real pkg facility-default environment projection. It established:
+
+```text
+long-running supervisor
+    may retain its original environment
+
+every trigger-resolution pass
+    -> fresh m bootstrap
+
+every one-shot lifecycle cycle
+    -> fresh m bootstrap
+```
+
+A provider-default change from an environment value `one` to `two` left the supervisor itself at `one`, while both the subsequent trigger child and lifecycle child observed `two`. No in-process environment refresh or duplicate package resolver is required.
+
+Observed:
+
+```text
+supervisor-environment=stable-old-bootstrap
+trigger-environment=fresh-bootstrap
+lifecycle-environment=fresh-bootstrap
+```
+
+All temporary PoC 026/027 hosted workflows were removed after evidence collection.
+
 ## Promoted shared-input contract
 
 The model was promoted in current `MK.md` and `CURRENT-MODEL.md`.
@@ -451,35 +525,41 @@ thin long-running supervisor
 
 First-class operation inputs remove the local-project undeclared-input gap when the project declares its actual change-driving data, without creating `watch.inputs`.
 
-PoC 024 and PoC 025 now close two previously open design questions:
+PoC 024 through PoC 027 now close the core technical watch questions:
 
 - recursive project-dependency trigger ownership is child-owned and opaque, without graph flattening;
-- transient invalid root/child configuration is a retryable trigger-unavailable state, distinct from fatal resolver failure.
+- transient invalid root/child configuration is a retryable trigger-unavailable state, distinct from fatal resolver failure;
+- local trigger identity has a concrete minimum composition reusing current trusted resolver primitives and excluding ordinary unconsumed outputs;
+- package/facility environment changes require fresh m bootstraps for both trigger resolution and lifecycle execution; the long-running supervisor does not mutate its own environment.
 
-Remaining design questions before a public watch contract:
+The remaining choices are public/session policy rather than missing lifecycle identity:
 
-- exact local trigger composition for reachable non-incremental executable identity, requirements and output evidence without introducing generated-output feedback loops;
-- portable polling policy versus optional host notification backends;
-- lifecycle-cycle failure policy/options beyond the current PoC 020 continue-wait baseline;
-- eventual user-facing representation of temporary trigger-unavailable diagnostics/status.
+- public invocation shape;
+- portable polling baseline versus later optional notification optimization;
+- whether the first baseline needs a stop-on-cycle-failure option or simply keeps the already-tested continue/wait behavior;
+- user-facing wording for temporary configuration-unavailable/recovery diagnostics.
 
 ## Next action
 
-Create **PoC 026 — watch trigger composition**.
-
-Stress the current real resolver and determine the minimum authoritative local digest inputs for all reachable operations, especially:
+Create **PoC 028 — public watch baseline** using the smallest surface consistent with the evidence:
 
 ```text
-non-incremental process executable identity
-facility requirement provider identity
-incremental output validity
-producer output used as declared downstream input
-generated outputs that must NOT become self-triggering watch inputs
+mk --watch [existing project/profile options] <goal>...
 ```
 
-Prefer reusing existing trusted `mk` executable/requirement/input/output identity functions. Do not build a second filesystem or provider resolver.
+Working candidate constraints to test rather than promote prematurely:
 
-Keep watch as working design. Do not add public `--watch` CLI/session semantics until trigger composition and the remaining session/polling policy are settled.
+- version 2 only;
+- `--watch` is an execution mode, not a project goal and not a new `mk.json` namespace;
+- no public polling-interval option in the first baseline;
+- portable polling is the initial implementation mechanism; host notification backends may later optimize wakeup without changing trigger semantics;
+- failed lifecycle cycles are reported and the session waits for the next trigger change, matching PoC 020; no stop-on-failure option initially;
+- transient configuration invalidity waits/retries with the last valid baseline;
+- fatal trigger/supervisor failures terminate the session;
+- SIGINT/SIGTERM terminate the session and are forwarded to an active one-shot child;
+- trigger resolution and every lifecycle cycle use fresh m bootstraps.
+
+Do not promote this public surface until the end-to-end PoC exercises the real current mk engine and bootstrap boundary on Ubuntu and macOS.
 
 ## Other remaining non-watch boundaries
 
