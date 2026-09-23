@@ -515,25 +515,24 @@ If no executable lifecycle work remains and a required reachable requirement is 
 
 Facility requirements are gates, not a second runtime projection layer. The current `m` bootstrap continues to own globally published facility commands/environment from system facility defaults. Already-running processes are not retroactively mutated by later provider-configuration changes.
 
-### 6.10 Incremental operation freshness
+### 6.10 Operation input identity and incremental freshness
 
-Version 2 supports explicit opt-in incremental freshness for ordinary process-action operations.
+Version 2 supports named operation inputs independently from whether an operation opts into reusable incremental freshness.
 
-The declarative shape is:
+The preferred declarative shape is:
 
 ```json
 {
-  "incremental": {
-    "inputs": {
-      "sources": {"collection": "sources"},
-      "config": {"path": "build.conf"},
-      "generated": {"output": {"operation": "generate", "name": "artifact"}}
-    }
-  }
+  "inputs": {
+    "sources": {"collection": "sources"},
+    "config": {"path": "build.conf"},
+    "generated": {"output": {"operation": "generate", "name": "artifact"}}
+  },
+  "incremental": {}
 }
 ```
 
-`incremental.inputs` is a named map. The first supported input source forms are:
+`inputs` is a named map owned by the operation. The first supported input source forms are:
 
 ```json
 {"path": "relative/or/absolute/path"}
@@ -541,13 +540,29 @@ The declarative shape is:
 {"output": {"operation": "producer", "name": "output-name"}}
 ```
 
-An incremental operation MUST have a process action and at least one declared named output. The input map may be empty for an operation whose complete varying identity is otherwise represented by its effective operation/action/environment/requirements.
+Input identity is distinct from incremental reuse policy. An operation may declare `inputs` without declaring `incremental`; its inputs still participate in lifecycle data/reachability semantics, but the operation executes normally whenever reached and never becomes `up-to-date` merely because those inputs are unchanged.
+
+Declaring `incremental` opts an ordinary process-action operation into reusable freshness using the operation's shared `inputs`. An incremental operation MUST have a process action and at least one declared named output. The input map may be empty for an operation whose complete varying identity is otherwise represented by its effective operation/action/environment/requirements.
+
+For compatibility, the previously promoted form remains accepted:
+
+```json
+{
+  "incremental": {
+    "inputs": {
+      "sources": {"collection": "sources"}
+    }
+  }
+}
+```
+
+Legacy `incremental.inputs` is normalized to the same operation input map. A configuration MUST NOT declare both a non-empty operation `inputs` map and a non-empty `incremental.inputs` map for the same operation; the ambiguous duplicate declaration is rejected rather than merged.
 
 Relative path inputs resolve from the project root. Absolute path inputs remain explicit project data.
 
-A collection input fingerprints the currently resolved regular-file membership of that collection and each member's supported content identity. Existing collection `after` semantics apply normally.
+A collection input makes that collection part of the operation's data/reachability relation. When incremental freshness is enabled, the resolved regular-file membership and each member's supported content identity participate in the fingerprint. Existing collection `after` semantics apply normally.
 
-An output input consumes a named output of another operation and creates a **data dependency** on that producer. The same relation does not need to be duplicated as an ordinary `prerequisites` entry merely to make the producer reachable.
+An output input consumes a named output of another operation and creates a **data dependency** on that producer whether or not the consumer is incremental. The same relation does not need to be duplicated as an ordinary `prerequisites` entry merely to make the producer reachable.
 
 The first incremental baseline is content based. For supported regular files and directories, identity includes logical pathname identity, type, portable mode bits and content. Regular-file content uses SHA-256. Directory identity recursively contains a lexical representation of supported contained directories/files and their corresponding mode/content identity. File modification time is not part of the freshness identity.
 
@@ -590,7 +605,7 @@ It does **not** synthesize an execution result. Existing `result.status`, `resul
 
 A successful execution refreshes persistent freshness metadata only after the action succeeds and every declared output is present and fingerprintable. Failed execution never creates or refreshes reusable freshness state. If the action succeeds but its declared outputs are absent or unsupported for fingerprinting, the existing operation-success semantics remain unchanged but no reusable record is written.
 
-Incremental correctness depends on the effective fingerprint representing every mutable influence on the action. A cacheable action MUST NOT rely on undeclared mutable external state that is absent from its declared inputs, effective environment, executable identity and requirements.
+Incremental correctness depends on the effective fingerprint representing every mutable influence on the action. A cacheable action MUST NOT rely on undeclared mutable external state that is absent from its operation inputs, effective environment, executable identity and requirements. First-class input declaration does not itself assert purity or enable caching; it records lifecycle data/change identity that may also be consumed by future trigger/session behavior.
 
 The first baseline applies to ordinary configured operations. It does not establish provider-level incremental templates for derived `map-process` members.
 
@@ -884,9 +899,9 @@ MK-40  project facility requirements use the system facility default and do not 
 MK-41  requirement resolution is read-only and does not install packages or mutate provider-selection configuration
 MK-42  reachable unsatisfied requirements remain inspectable in plans, block only their consumers and are re-resolved during runtime refinement
 MK-43  version-2 plans expose reachable requirement state and the selected provider concrete for satisfied facility requirements
-MK-44  version-2 ordinary process operations may opt into incremental freshness through named incremental inputs plus existing named outputs
-MK-45  incremental path, collection and output inputs use deterministic content identity; mtime is not part of freshness
-MK-46  an incremental output input creates a data dependency on its producer without requiring duplicate prerequisite declaration
+MK-44  version-2 operations may declare named path, collection and output inputs independently from incremental reuse policy
+MK-45  when incremental freshness is enabled, operation path, collection and output inputs use deterministic content identity; mtime is not part of freshness
+MK-46  an operation output input creates a data dependency on its producer without requiring duplicate prerequisite declaration
 MK-47  a reusable incremental success requires both the same effective fingerprint and current declared outputs equal to the recorded successful output fingerprints
 MK-48  up-to-date is verified current-request success-equivalent evidence for prerequisites, collection after barriers and output evidence but does not synthesize actual execution-result fields
 MK-49  a reachable result-field observation forces actual execution of an otherwise up-to-date producer
@@ -895,4 +910,7 @@ MK-51  incremental freshness metadata is user-scoped non-authoritative mk cache 
 MK-52  --plan may read freshness metadata but does not create or refresh it
 MK-53  the first incremental baseline stores freshness metadata only and does not establish artifact storage/restoration, shared/remote cache or provider-level incremental templates
 MK-54  project dependency delegation remains recursive; child mk instances own their own incremental decisions and no request-wide de-duplication is implied
+MK-55  operation input identity is first-class and does not by itself enable incremental reuse or imply action purity
+MK-56  incremental freshness consumes the shared operation input map; the legacy incremental.inputs form remains accepted and normalizes to that same map
+MK-57  a non-empty operation inputs map and a non-empty incremental.inputs map on the same operation are rejected as ambiguous duplicate declarations
 ```
