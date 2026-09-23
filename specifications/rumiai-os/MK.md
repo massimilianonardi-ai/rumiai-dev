@@ -813,7 +813,7 @@ For every currently concrete execution path:
 
 Version 1 retains its static fully resolved prerequisite plan and sequential execution behavior.
 
-Shared/remote artifact caching, cross-project artifact reuse, cache eviction/garbage collection, parallel scheduling and remote execution remain outside the implemented baseline.
+Remote/network artifact transport, cross-user artifact sharing/trust, whole-fingerprint retention/eviction policy, parallel scheduling and remote execution remain outside the implemented baseline.
 
 ## 8. Public command line
 
