@@ -625,6 +625,61 @@ The first baseline stores freshness metadata only. It does not store, restore or
 
 Project-to-project dependency delegation remains recursive. A parent continues to invoke the child `mk` request; the child independently decides which of its own operations are up-to-date. Incremental freshness does not add request-wide exactly-once or sibling-branch de-duplication semantics.
 
+### 6.11 Watch execution mode
+
+Version 2 supports a long-running watch execution mode selected by:
+
+```text
+mk --watch [existing project/profile options] <goal>...
+```
+
+`--watch` is an execution mode. It is not a lifecycle goal, does not reserve the project goal name `watch`, and does not add a watch-specific member to `mk.json`.
+
+The first watch baseline is version 2 only. It is incompatible with `--plan`, `--goals` and `--show-goal`. It adds no public polling interval, debounce, host-notification-backend or stop-on-cycle-failure option.
+
+The watch session is a thin long-running supervisor around complete ordinary one-shot `mk` requests:
+
+```text
+wait for valid trigger identity
+→ run one initial one-shot request
+→ establish a post-cycle valid trigger baseline
+→ wait for trigger identity to change
+→ run one fresh one-shot request
+→ establish a new post-cycle baseline
+→ repeat
+```
+
+Each trigger-resolution pass and each lifecycle cycle starts through a **fresh `m` bootstrap** from the original caller environment. The long-running supervisor does not mutate or reuse an already-projected package/facility environment as authoritative state for a later cycle.
+
+The authoritative watch trigger identity is derived by trusted `mk` resolution from the selected request/model rather than by an outer filesystem watcher reconstructing lifecycle semantics. The first baseline includes the currently reachable identity of:
+
+- the normalized selected project model and local resolved plan;
+- declared operation inputs and reachable collection member content;
+- process executable identity and the effective action environment;
+- resolved requirement/provider identity;
+- incremental fingerprints and incremental declared-output validity;
+- recursively active dependent-project trigger identity.
+
+Ordinary non-incremental outputs that are neither declared inputs to reachable consumers nor incremental freshness evidence do not become watch triggers merely because their bytes change.
+
+Project dependency trigger ownership remains recursive. Each active child request owns resolution of its own trigger identity and exposes only an opaque deterministic digest to its parent. A parent does not flatten child operations, collections, requirements, inputs or fingerprints. The existing lack of request-wide de-duplication across independent sibling branches remains unchanged.
+
+A root or recursively active child project configuration that is temporarily invalid makes trigger identity temporarily unavailable. During that state:
+
+- no lifecycle cycle begins;
+- startup waits for the first valid trigger identity;
+- an established session retains its last valid baseline and retries trigger resolution;
+- restoration of the same normalized identity causes no cycle;
+- restoration of a changed valid identity causes one new cycle.
+
+Temporary configuration unavailability is distinct from a fatal trigger/supervisor failure. Fatal trigger/supervisor failure terminates the session.
+
+A failed one-shot lifecycle cycle is reported but does not terminate the first-baseline watch session. After that cycle, the session establishes the next valid post-cycle trigger baseline and waits for another relevant change rather than busy-looping retries.
+
+SIGINT and SIGTERM are owned by the watch supervisor and are forwarded to an active one-shot lifecycle child before the session terminates.
+
+The first implementation uses portable polling only as an internal wakeup mechanism. Polling cadence is not public project semantics. A future host notification backend may reduce wakeups only if it preserves the same authoritative trigger identity and session behavior.
+
 ## 7. Resolution, planning and runtime refinement
 
 For a request, `mk` resolves conceptually:
@@ -674,7 +729,7 @@ For every currently concrete execution path:
 
 Version 1 retains its static fully resolved prerequisite plan and sequential execution behavior.
 
-Artifact storage/restoration, shared/remote caching, provider-level incremental templates, parallel scheduling, remote execution and watch/hot-update triggers remain outside the implemented baseline.
+Artifact storage/restoration, shared/remote caching, provider-level incremental templates, parallel scheduling and remote execution remain outside the implemented baseline.
 
 ## 8. Public command line
 
@@ -682,6 +737,7 @@ The lifecycle CLI remains:
 
 ```text
 mk [options] [--] <goal> [<goal> ...]
+mk --watch [options] [--] <goal> [<goal> ...]
 mk [options] --goals
 mk [options] --show-goal <goal>
 ```
@@ -695,6 +751,10 @@ Options:
 --profile <profile>
     select a named profile
 
+--watch
+    run a version-2 lifecycle request initially and again whenever its
+    authoritative trigger identity changes
+
 --plan
     resolve and print the execution plan without executing project operations
 
@@ -706,6 +766,8 @@ Options:
 ```
 
 `--plan` requires at least one goal operand.
+
+`--watch` requires at least one goal operand, is supported only for version 2 and is incompatible with `--plan`, `--goals` and `--show-goal`.
 
 Plan inspection resolves everything that can be determined from declarative configuration and currently observable context without executing project operations.
 
@@ -787,6 +849,8 @@ For an eligible incremental operation whose guard/prerequisites/requirements and
 
 When actual execution-result evidence is required by a reachable condition, an otherwise matching freshness record is not enough and the producer executes.
 
+In watch mode, the long-running supervisor does not keep one `_executeV2` invocation alive across changes. Every cycle is a fresh ordinary lifecycle request, and trigger resolution is separately re-entered through a fresh `m` bootstrap. Failed lifecycle cycles are reported and followed by waiting for another trigger change; they do not become tight retries.
+
 The current executor is sequential. This is an implementation property rather than a semantic ordering rule for otherwise independent operations.
 
 ## 10. Output and exit status
@@ -801,13 +865,15 @@ Version-2 `--plan` writes the structured JSON plan defined in section 8.
 
 `--show-goal` writes the version-appropriate JSON form defined in section 8.
 
-Public exit statuses remain:
+Public ordinary-request exit statuses remain:
 
 ```text
 0  success
 1  project/configuration/resolution/execution/runtime failure
 2  invalid CLI invocation
 ```
+
+A watch session normally remains active until interrupted or a fatal watch trigger/supervisor failure occurs. SIGINT and SIGTERM termination use conventional statuses 130 and 143 respectively after forwarding the signal to any active lifecycle child.
 
 ## 11. Extension boundaries
 
@@ -913,4 +979,15 @@ MK-54  project dependency delegation remains recursive; child mk instances own t
 MK-55  operation input identity is first-class and does not by itself enable incremental reuse or imply action purity
 MK-56  incremental freshness consumes the shared operation input map; the legacy incremental.inputs form remains accepted and normalizes to that same map
 MK-57  a non-empty operation inputs map and a non-empty incremental.inputs map on the same operation are rejected as ambiguous duplicate declarations
+MK-58  --watch is a version-2 execution mode rather than a lifecycle goal or mk.json namespace
+MK-59  the first watch baseline has no public polling/debounce/backend/stop-on-cycle-failure tuning surface
+MK-60  watch trigger identity is derived by the trusted mk resolver from normalized reachable lifecycle/input/executable/requirement/incremental-output evidence rather than by a second outer resolver
+MK-61  ordinary non-incremental unconsumed output bytes are not watch triggers unless they participate through a declared input or incremental freshness contract
+MK-62  dependent-project watch identity remains child-owned and recursively opaque to the parent; project graphs are not flattened and sibling-branch de-duplication is not implied
+MK-63  each watch trigger-resolution pass and lifecycle cycle starts through a fresh m bootstrap from the original caller environment
+MK-64  temporarily invalid root/active-child configuration pauses trigger availability without executing work and retains the last valid baseline until valid resolution returns
+MK-65  restoring unchanged valid watch identity after temporary invalidity causes no cycle; restoring changed valid identity causes one cycle
+MK-66  failed watch lifecycle cycles are reported and the session waits for another trigger change rather than terminating or busy-looping
+MK-67  SIGINT/SIGTERM are owned by the watch supervisor and forwarded to an active one-shot lifecycle child before session termination
+MK-68  portable polling is the first internal watch wakeup mechanism; later notification backends must preserve identical authoritative trigger semantics
 ```
