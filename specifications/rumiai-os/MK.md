@@ -336,6 +336,13 @@ Its current shape is:
   "type": "map-process",
   "collection": "sources",
   "prerequisites": ["prepare"],
+  "inputs": {
+    "config": {"path": "build.conf"}
+  },
+  "outputs": {
+    "artifact": {"path": "out/${item}.out"}
+  },
+  "incremental": {},
   "action": {
     "type": "process",
     "command": "tool",
@@ -344,9 +351,25 @@ Its current shape is:
 }
 ```
 
-For each resolved collection item, the provider derives one ordinary process operation from the action template. `${item}` substitution is supported in the process command, arguments, cwd and environment values. No other configuration expression or executable interpolation is evaluated.
+`inputs`, `outputs` and `incremental` are optional. When absent, the provider retains the original non-incremental behavior.
 
-A provider acts as an aggregate lifecycle node. It is satisfied only when its collection has resolved, all provider prerequisites are satisfied and all derived item operations are satisfied. Provider prerequisites remain real even when the resolved collection is empty.
+For each resolved collection item, the provider derives one ordinary process operation from the provider template. `${item}` substitution is supported in the process command, arguments, cwd and environment values, in provider path-input values, and in declared output pathnames. Collection-input references and output-input operation/name references remain ordinary literal lifecycle references; no additional expression language is introduced.
+
+Every derived member receives a trusted private path input named `$item` whose pathname is the concrete collection item. `$item` is not a project-configurable input name and exists so the collection item content participates in ordinary operation identity without requiring the project to duplicate its already-declared map relation.
+
+Provider-declared `inputs` use the same path/collection/output input forms as ordinary operations. Provider-declared `outputs` use the same named-path output form. Provider `incremental` uses only the preferred empty-object opt-in form:
+
+```json
+"incremental": {}
+```
+
+The legacy ordinary-operation compatibility form `incremental.inputs` is not part of the provider template surface. An incremental provider MUST declare at least one output.
+
+A provider does not acquire a separate aggregate cache record. Each derived member uses the existing ordinary-operation incremental machinery independently: effective definition/environment/executable/requirements, the implicit `$item` input, provider-declared inputs, declared outputs, freshness metadata and `up-to-date` state.
+
+Derived operation identity remains based on provider identity plus collection-item pathname identity rather than collection enumeration position. Consequently, adding/removing/reordering collection membership does not invalidate otherwise unchanged reachable members merely because their enumeration position changes. Freshness/output cleanup for a member that becomes unreachable is not implied; stale metadata remains non-authoritative.
+
+A provider acts as an aggregate lifecycle node. It is satisfied only when its collection has resolved, all provider prerequisites are satisfied and all derived item operations are satisfied. An `up-to-date` derived member satisfies this ordinary aggregate relation exactly as an `up-to-date` configured operation satisfies ordinary prerequisites. Provider prerequisites remain real even when the resolved collection is empty.
 
 The current provider set is an internal trusted registry, not yet a public plugin-registration API.
 
@@ -607,7 +630,7 @@ A successful execution refreshes persistent freshness metadata only after the ac
 
 Incremental correctness depends on the effective fingerprint representing every mutable influence on the action. A cacheable action MUST NOT rely on undeclared mutable external state that is absent from its operation inputs, effective environment, executable identity and requirements. First-class input declaration does not itself assert purity or enable caching; it records lifecycle data/change identity that may also be consumed by future trigger/session behavior.
 
-The first baseline applies to ordinary configured operations. It does not establish provider-level incremental templates for derived `map-process` members.
+The same incremental machinery also applies to derived `map-process` members when the provider template opts into `incremental: {}`. Provider-derived members are ordinary operations after trusted derivation and use the same fingerprint, output verification, freshness-record and `up-to-date` semantics. No provider-level aggregate freshness record is introduced.
 
 Persistent freshness metadata is non-authoritative and regenerable. It is rooted through:
 
@@ -729,7 +752,7 @@ For every currently concrete execution path:
 
 Version 1 retains its static fully resolved prerequisite plan and sequential execution behavior.
 
-Artifact storage/restoration, shared/remote caching, provider-level incremental templates, parallel scheduling and remote execution remain outside the implemented baseline.
+Artifact storage/restoration, shared/remote caching, parallel scheduling and remote execution remain outside the implemented baseline.
 
 ## 8. Public command line
 
@@ -990,4 +1013,11 @@ MK-65  restoring unchanged valid watch identity after temporary invalidity cause
 MK-66  failed watch lifecycle cycles are reported and the session waits for another trigger change rather than terminating or busy-looping
 MK-67  SIGINT/SIGTERM are owned by the watch supervisor and forwarded to an active one-shot lifecycle child before session termination
 MK-68  portable polling is the first internal watch wakeup mechanism; later notification backends must preserve identical authoritative trigger semantics
+MK-69  map-process providers may template ordinary inputs, outputs and incremental opt-in for their derived item operations
+MK-70  every derived provider member receives the concrete collection item as trusted private $item path input so item content participates in ordinary operation identity without duplicate project declaration
+MK-71  provider incremental members reuse ordinary operation fingerprint/freshness/up-to-date semantics and do not create a provider-level aggregate cache record
+MK-72  provider path inputs and declared output paths may use the existing ${item} substitution while collection/output-reference identities remain literal lifecycle references
+MK-73  provider incremental opt-in uses the preferred empty-object form and requires at least one declared output; legacy incremental.inputs is not a provider-template compatibility form
+MK-74  derived provider operation identity is item-based rather than enumeration-position-based, so collection add/remove/reorder does not by itself invalidate unchanged reachable members
+MK-75  provider incremental freshness does not imply cleanup of stale outputs or freshness records for collection members that become unreachable
 ```
