@@ -270,9 +270,12 @@ Snapshots are persisted separately from logs and results.
 `rumiai-validate` may:
 
 - self-update the suite;
-- use validation-scope configuration;
-- prepare an independent disposable clone of the exact target revision together with isolated mutable user-state roots;
-- invoke `rumiai-test --list` to expand selections canonically when per-test isolation is requested;
+- use validation-scope configuration only to choose the requested test subset;
+- resolve the exact current or deliberately pinned product revision;
+- invoke `rumiai-test --list` before environment preparation to expand the requested subset into the canonical discovered test set;
+- resolve suite-owned execution requirements against that discovered set;
+- prepare an independent disposable clone of the exact target revision together with isolated mutable user-state roots and the automatically required target packages;
+- reuse the same canonical discovered set for session or per-test isolation;
 - invoke the runner one or more times, one selection per execution run;
 - perform and retain the outer validation-environment filesystem audit;
 - publish runner sessions and validation-level evidence;
