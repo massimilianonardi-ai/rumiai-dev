@@ -5,19 +5,21 @@ Updated: 2026-09-23
 
 ## Goal
 
-Continue development of `mk` as the `m` subsystem for project development-lifecycle orchestration, extending the promoted declarative lifecycle model from concrete project needs without duplicating responsibilities already owned by `pkg`, state-path or external build tools.
+Continue development of `mk` as the `m` subsystem for project development-lifecycle orchestration, extending the promoted declarative lifecycle model from concrete needs while preserving subsystem boundaries.
 
 ## Current repository revisions
 
 ```text
-rumiai-dev       f8ad0c2b507200501a7557f6e5a3db54f828b6ce  (pre-synchronization HEAD)
-rumiai-os        f2747e16560d0fbbe1cc0fe6e4d5c6c836ef041b
-rumiai-tests     a238deb4c54bfd6542da6b29402201b9ce77c2d2
-rumiai-dev-PoCs  86d64c9167879076316961e8762bb12963f7a534
+rumiai-dev       b5bd71d35008bafc69227df01dfc96e630300fde  (pre-synchronization HEAD)
+rumiai-os        87d9db09708faf4bffda7f9c1f108516be252bfd
+rumiai-tests     25e2e9c407c58d328a93a12396ec835f75f19650
+rumiai-dev-PoCs  23cdb37e3ced0eb4e99b9fdccb7cf34f4896e023
 pkg-catalog      6a77995d317f2ec08c98585c4462b92557ccfaea
 ```
 
 Fresh remote HEAD retrieval remains mandatory before later work.
+
+The current `rumiai-os` HEAD is one unrelated package-repository commit ahead of the exact mk behavior revision exercised by the hosted validation run described below.
 
 ## Applicable canonical sources
 
@@ -39,7 +41,7 @@ specifications/rumiai-os/DOCUMENTATION-MODEL.md
 handoff/README.md
 ```
 
-## Completed model
+## Current promoted mk model
 
 Version 2 currently promotes and implements:
 
@@ -49,11 +51,12 @@ Version 2 currently promotes and implements:
 - named outputs and iterative refinement;
 - recursive project-to-project dependency delegation;
 - named external facility requirements resolved through `pkg`;
-- explicit content-based incremental freshness for ordinary process operations.
+- first-class named operation input identity;
+- opt-in content-based incremental freshness using those shared inputs.
 
-Project `dependency`, operation `prerequisite`, external `requirement` and incremental input/data relations remain distinct.
+Project `dependency`, operation `prerequisite`, external `requirement`, operation `input` and incremental reuse policy remain distinct.
 
-## Incremental freshness work unit
+## Incremental freshness
 
 PoC 019 is preserved under:
 
@@ -61,51 +64,308 @@ PoC 019 is preserved under:
 rumiai-dev-PoCs/pocs/019-mk-incremental-fingerprints/
 ```
 
-The resulting baseline is already promoted in `MK.md` and `CURRENT-MODEL.md`, implemented in current `rumiai-os/lib/sys/js/mk.lib.js`, documented by current manuals and protected by:
+The resulting incremental baseline remains promoted. Persistent metadata is non-authoritative user-scoped state rooted through:
 
 ```text
-tests/rumiai-os/mk/incremental.test
-validation/mk-incremental-freshness.conf
+state-path user sys mk cache
 ```
 
-The validation scope is pinned to the current product revision:
+A verified hit is `up-to-date`; mtime is not freshness identity; unsupported/corrupt evidence is a conservative miss; artifact bytes are not stored/restored; result-field observation still forces actual execution.
+
+## Watch session experiments
+
+### PoC 020 — session boundary
 
 ```text
-rumiai-os-commit f2747e16560d0fbbe1cc0fe6e4d5c6c836ef041b
+rumiai-dev-PoCs/pocs/020-mk-watch-session/
 ```
 
-Current incremental contract:
+GitHub Actions run `35824307930` passed on Ubuntu and macOS.
 
-- opt-in `incremental.inputs` supports path, collection and named-output sources;
-- existing named `outputs` are the reusable output-evidence surface;
-- content identity uses deterministic SHA-256-based snapshots and excludes mtime;
-- effective action/environment/executable identity and satisfied facility-provider identities participate in freshness;
-- reusable state requires both matching effective fingerprint and matching current declared outputs;
-- a verified hit is `up-to-date` and satisfies prerequisites, collection `after` barriers and output/data evidence;
-- `up-to-date` does not fabricate process-result fields; reachable result observation forces execution;
-- successful execution refreshes non-authoritative user-scoped metadata rooted through `state-path user sys mk cache`;
-- missing/corrupt/unsupported cache data is a conservative miss;
-- `--plan` may read but does not write freshness metadata;
-- the baseline stores metadata only, not artifact bytes;
-- project dependencies remain recursively delegated and each child owns its incremental decisions.
-
-The previous handoff still described PoC 019 as unpromoted; current specifications, implementation and permanent tests show that statement was stale. This handoff has now been reconciled to the current branch state.
-
-## Current state
-
-The current one-shot lifecycle is:
+Validated working direction:
 
 ```text
-resolve requested project/dependencies/context/requirements
--> establish verified up-to-date operations where possible
--> execute ready work
--> observe results/outputs/state
--> refresh successful freshness metadata
--> refine
--> complete
+thin watch supervisor
+-> complete one-shot mk request
+-> post-cycle trigger baseline
+-> wait for trigger change
+-> fresh one-shot mk request
+-> repeat
 ```
 
-The current baseline deliberately still excludes:
+The supervisor can own repetition, failed-cycle waiting and SIGINT/SIGTERM forwarding without extending one `_executeV2` invocation indefinitely.
+
+### PoC 021 — internal trigger snapshot
+
+```text
+rumiai-dev-PoCs/pocs/021-mk-watch-trigger-snapshot/
+```
+
+Corrected GitHub Actions run `35824764421` passed on Ubuntu and macOS against the real current `mk.lib.js` through runtime instrumentation.
+
+It established that an opaque deterministic trigger digest can be derived from the existing trusted mk resolver for already-declared lifecycle influences. It also demonstrated the real semantic gap:
+
+```text
+undeclared mutable input of non-incremental operation
+    -> invisible to authoritative trigger identity
+```
+
+A second watch-specific input namespace was therefore not introduced.
+
+## Shared operation input work unit
+
+### PoC 022 — normalization
+
+```text
+rumiai-dev-PoCs/pocs/022-mk-shared-operation-inputs/
+```
+
+GitHub Actions run `35825100360` passed on Ubuntu and macOS.
+
+It validated the normalization split:
+
+```text
+inputs
+    operation data/change identity
+
+incremental
+    opt-in reusable freshness policy
+```
+
+Compatibility:
+
+```text
+legacy incremental.inputs
+    -> shared normalized operation inputs + incremental enabled
+
+inputs + incremental {}
+    -> same shared normalized operation inputs + incremental enabled
+
+inputs only
+    -> shared normalized operation inputs + incremental disabled
+```
+
+A non-empty top-level `inputs` map plus a non-empty `incremental.inputs` map is rejected as ambiguous.
+
+### PoC 023 — real resolver integration
+
+```text
+rumiai-dev-PoCs/pocs/023-mk-shared-inputs-real-resolver/
+```
+
+The experiment transforms the real current `mk.lib.js` in memory rather than copying its resolver.
+
+Diagnostic runs:
+
+```text
+35825437879
+    PoC source-instrumentation escaping failure; no candidate semantics exercised.
+
+35825511309
+    Ubuntu PASS; macOS harness used non-canonical /var/... while mkMain used
+    canonical /private/var/..., producing different project cache identity.
+```
+
+After canonicalizing the internal-resolver project root exactly as `mkMain` does, final run:
+
+```text
+35825649079
+Ubuntu PASS
+macOS  PASS
+```
+
+The real-resolver experiment confirmed:
+
+- legacy `incremental.inputs` and new `inputs + incremental {}` normalize identically inside the candidate engine;
+- both use the same current incremental fingerprint machinery;
+- both reach `up-to-date` through the normal persistent freshness path;
+- `inputs` on a non-incremental operation are observable but do not enable cache reuse;
+- output inputs create producer data dependencies without duplicate prerequisites;
+- collection inputs use the existing collection reachability machinery;
+- ambiguous duplicate declarations fail.
+
+## Promoted shared-input contract
+
+The model was promoted in current `MK.md` and `CURRENT-MODEL.md`.
+
+Current preferred declaration:
+
+```json
+{
+  "inputs": {
+    "source": {"path": "src/input.txt"},
+    "sources": {"collection": "sources"},
+    "generated": {"output": {"operation": "generate", "name": "artifact"}}
+  },
+  "incremental": {}
+}
+```
+
+`inputs` is first-class operation data/change identity.
+
+Declaring `inputs` alone:
+
+- participates in path/collection/output data identity;
+- makes referenced collections/producers reachable as appropriate;
+- does not assert action purity;
+- does not make the operation reusable or `up-to-date`.
+
+Declaring `incremental` opts an ordinary process operation into reusable freshness using that same input map.
+
+The previous form remains valid:
+
+```json
+{
+  "incremental": {
+    "inputs": {
+      "source": {"path": "src/input.txt"}
+    }
+  }
+}
+```
+
+It is normalized to the same shared operation input map.
+
+Current invariants include MK-44 through MK-57 and CURRENT-49 through CURRENT-55.
+
+## Product implementation
+
+The shared-input implementation was introduced in `rumiai-os/lib/sys/js/mk.lib.js` at:
+
+```text
+58d797ac8d286f54420b279713c431ce97c1d53a
+```
+
+Manual alignment followed through:
+
+```text
+7a996e652016cd5a5edfcfd77963b8e12dc2a81a
+a5e4ca011af107b43ad2b1b1f5b135b98ce29ae2
+```
+
+A later unrelated package-repository commit advanced the repository; the mk behavior tested below is unchanged in that current descendant.
+
+Implementation details:
+
+- operation parser accepts first-class `inputs`;
+- legacy `incremental.inputs` normalizes into the shared map;
+- derived `map-process` operations receive an empty shared input map;
+- reference validation covers shared collection/output inputs;
+- reachability/data dependency traversal is shared by incremental and non-incremental consumers;
+- runtime records resolved operation input snapshots independently from incremental fingerprints;
+- non-incremental inputs may block on unresolved producer/collection data but never produce `up-to-date`;
+- incremental freshness consumes the same shared input resolver;
+- structured version-2 operation plan entries expose normalized `inputs`.
+
+Freshness records remain non-authoritative. An engine/schema evolution may conservatively cause old records to miss; preserving old cache hits is not required, while false hits remain forbidden.
+
+## Permanent tests and validation evidence
+
+New permanent executable:
+
+```text
+tests/rumiai-os/mk/inputs.test
+```
+
+It protects:
+
+- ordinary non-incremental path input declaration;
+- no accidental cache reuse from `inputs` alone;
+- non-incremental output-input producer data dependency;
+- collection input reachability;
+- new `inputs + incremental {}` reuse;
+- legacy `incremental.inputs` compatibility;
+- ambiguous dual declaration rejection.
+
+Task validation scope:
+
+```text
+validation/mk-shared-operation-inputs.conf
+
+rumiai-os-commit d50e5f096ea56c1afd4d19a0ae1361e9ce6326b0
+rumiai-os/mk/lifecycle.test
+rumiai-os/mk/refinement.test
+rumiai-os/mk/project-dependency.test
+rumiai-os/mk/requirement.test
+rumiai-os/mk/incremental.test
+rumiai-os/mk/inputs.test
+```
+
+Hosted development validation:
+
+```text
+GitHub Actions run 35826099148
+
+exact rumiai-os
+    d50e5f096ea56c1afd4d19a0ae1361e9ce6326b0
+
+exact rumiai-tests behavior revision
+    2576ed3b4c594f31a7945e00cd326280107a6916
+```
+
+Both GitHub-hosted Ubuntu and macOS completed:
+
+```text
+PASS rumiai-os/mk/lifecycle.test
+PASS rumiai-os/mk/refinement.test
+PASS rumiai-os/mk/project-dependency.test
+PASS rumiai-os/mk/requirement.test
+PASS rumiai-os/mk/incremental.test
+PASS rumiai-os/mk/inputs.test
+PASS 6 / FAIL 0 / SKIP 0 / ERROR 0
+```
+
+The later `inputs.test` commit only corrects an invariant number in a failure diagnostic; executable assertions are unchanged.
+
+The temporary hosted workflows were removed after evidence collection.
+
+Formal `rumiai-validate` remains unclosed because the disposable validation target still lacks a managed/default Node provisioning path; required SKIP is not PASS.
+
+## Current watch design status
+
+Watch/hot-update itself remains **unpromoted and unimplemented**.
+
+The evidence now supports this architecture:
+
+```text
+existing mk resolver
+    -> authoritative trigger identity from normalized model + declared inputs/
+       conditions/requirements/executable/output evidence
+    -> opaque deterministic trigger digest
+
+thin long-running supervisor
+    -> compare digest
+    -> run fresh one-shot mk request when it changes
+```
+
+First-class operation inputs remove the local-project undeclared-input gap when the project declares its actual change-driving data, without creating `watch.inputs`.
+
+Remaining design questions before a public watch contract:
+
+- recursive project-dependency trigger ownership without graph flattening;
+- transient invalid `mk.json` behavior during an active session;
+- exact trigger composition for requirements/executable identity and output evidence;
+- portable polling policy versus optional host notification backends;
+- cycle failure policy/options beyond the PoC baseline.
+
+## Next action
+
+Create **PoC 024 — recursive watch trigger ownership**.
+
+Stress:
+
+```text
+A -> B -> C
+A -> B/C -> D
+```
+
+and determine whether each child project should own and expose its own opaque trigger digest recursively, matching the existing project-dependency execution ownership, rather than the parent flattening child input identity.
+
+Keep watch as working design. Do not add public `--watch` CLI/session semantics until recursive ownership and transient-invalid-config behavior are resolved.
+
+## Other remaining non-watch boundaries
+
+Still outside the current baseline:
 
 ```text
 artifact storage/restoration
@@ -113,104 +373,6 @@ shared/remote cache
 provider-level incremental templates
 parallel scheduling
 remote execution
-watch/hot-update session semantics
 public generic provider/plugin registration
 request-wide exactly-once/de-duplication
 ```
-
-## Working design — watch/hot-update
-
-PoC 020 is preserved under:
-
-```text
-rumiai-dev-PoCs/pocs/020-mk-watch-session/
-```
-
-The session-boundary experiment is complete. GitHub Actions run `35824307930` passed on both Ubuntu and macOS.
-
-The validated working direction is:
-
-```text
-thin watch supervisor
--> run one complete one-shot mk request
--> establish trigger baseline after the cycle
--> wait for trigger identity change
--> run a fresh one-shot mk request
--> repeat
-```
-
-The experiment established:
-
-- the supervisor can own repetition without extending one `_executeV2` invocation indefinitely;
-- cycle failure can be reported while the watch session waits for a later trigger change instead of busy-looping;
-- post-cycle baselining prevents a cycle's own filesystem effects from automatically causing an immediate second cycle;
-- SIGINT/SIGTERM ownership can remain at the session layer and be forwarded to an active one-shot child.
-
-This is still working design, not promoted contract.
-
-The unresolved part is authoritative trigger derivation.
-
-Current `mk.lib.js` already owns the relevant resolved identity machinery for incremental path/collection/output inputs, collection barriers, requirement-provider identities, executable/environment identity and current-request output/data evidence.
-
-Therefore the outer watch supervisor must not reconstruct lifecycle trigger identity independently from `mk.json` or by scanning the project tree. The next experiment should derive an opaque deterministic trigger snapshot **inside the existing trusted mk engine** and expose only that snapshot to the session layer.
-
-Open trigger questions include:
-
-- whether project `mk.json` identity is always part of the trigger snapshot;
-- how non-incremental reachable operations participate when they do not declare incremental inputs;
-- whether executable/requirement-provider identity changes are watch triggers in the first baseline;
-- how generated outputs are excluded or represented without feedback loops;
-- recursive project-dependency watch ownership without graph flattening;
-- portable polling cadence versus future host notification optimizations.
-
-PoC 021 is preserved under:
-
-```text
-rumiai-dev-PoCs/pocs/021-mk-watch-trigger-snapshot/
-```
-
-The corrected experiment passed on Ubuntu and macOS in GitHub Actions run `35824764421` using the real current `rumiai-os/lib/sys/js/mk.lib.js` resolver through runtime instrumentation.
-
-It established:
-
-- a deterministic opaque watch-trigger digest can be derived from the existing trusted mk engine without a second lifecycle resolver;
-- current resolved incremental input fingerprints, output validity, executable identity and reachable condition state provide meaningful trigger evidence;
-- mtime-only changes remain invisible as intended by the content-based model;
-- formatting-only `mk.json` changes can remain invisible when identity is based on the selected normalized model rather than raw JSON bytes;
-- a non-incremental operation's undeclared mutable input is necessarily invisible to the trigger resolver.
-
-The first diagnostic run `35824693503` failed because the PoC driver and snapshot process used different effective environments; since the product correctly fingerprints the complete effective environment, the cache record could not match. The PoC was corrected by invoking the real `mkMain` with the same environment identity.
-
-The remaining local-project watchability question is now narrowly scoped:
-
-```text
-incremental.inputs currently owns declared input identity
-but
-watch may need declared input identity even for a non-incremental operation
-```
-
-A candidate worth testing is to separate **operation input identity** from the **incremental freshness policy** so both incremental reuse and watch triggering consume one shared declaration instead of introducing parallel `watch.inputs` and `incremental.inputs` surfaces.
-
-This is working design only. The already-promoted `incremental.inputs` contract must not be changed until the compatibility/migration consequences are validated.
-
-## Next action
-
-Create **PoC 022 — shared operation input identity**.
-
-Test whether a first-class operation input map can serve:
-
-- ordinary data/input declaration;
-- incremental fingerprinting when incremental freshness is enabled;
-- watch trigger derivation even when the operation itself is not incrementally reusable.
-
-The experiment must compare this against retaining current `incremental.inputs` plus a separate watch-only trigger surface, and should prefer the smallest model that avoids duplicated declarations.
-
-Do not modify `MK.md` or `rumiai-os` until this design question is settled.
-
-## Blockers / open questions
-
-- whether first-class operation inputs can be introduced compatibly with the promoted `incremental.inputs` schema;
-- recursive project-dependency watch ownership;
-- transient invalid project configuration behavior during an active watch session;
-- portable polling policy versus optional host notification backends;
-- formal `rumiai-validate` still requires its own managed-Node provisioning solution.
