@@ -50,7 +50,7 @@ and therefore uses:
 #!/usr/bin/env m
 ```
 
-The command entrypoint is a thin POSIX-shell launcher. The lifecycle engine itself is JavaScript and is executed with the current RumiAI-managed Node.js runtime supplied through the `nodejs` package integration. `mk` does not depend on a host Python runtime and does not automatically install its runtime as a side effect of a lifecycle request.
+The command entrypoint is a thin POSIX-shell launcher. The lifecycle engine itself is JavaScript and is executed with the current `m`-managed Node.js runtime supplied through the `nodejs` package integration. `mk` does not depend on a host Python runtime and does not automatically install its runtime as a side effect of a lifecycle request.
 
 Project configuration is structured declarative **JSON**. It MUST NOT be shell-sourced, `eval`ed or otherwise treated as executable configuration.
 
@@ -984,7 +984,7 @@ MK-02  mk owns project development-lifecycle management and orchestration
 MK-03  mk project configuration is structured declarative JSON data and is not sourced/evaled as code
 MK-04  the current project configuration identity is project-root mk.json
 MK-05  the mk lifecycle engine implementation language is JavaScript
-MK-06  the current JavaScript execution runtime is the RumiAI-managed nodejs package integration
+MK-06  the current JavaScript execution runtime is the `m`-managed nodejs package integration
 MK-07  projects and profiles are first-class lifecycle concepts
 MK-08  lifecycle goal names are project data rather than a mandatory hard-coded global set
 MK-09  goals select root operations and operations relate through prerequisites

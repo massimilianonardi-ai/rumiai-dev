@@ -150,7 +150,7 @@ reuse the same trusted handler mechanisms without requiring those mechanisms to
 be exposed as catalog overrides.
 
 Override metadata is inert declarative data. Every supported override type has a
-closed schema implemented by RumiAI-owned trusted code. Catalog data must not
+closed schema implemented by trusted `m` package-subsystem code. Catalog data must not
 supply shell code, callbacks, arbitrary expressions, executable parsers or an
 open-ended property bag.
 
@@ -290,7 +290,7 @@ system scope from POSIX UID, username or inherited HOME. The system-service laun
 context is supplied only by the `srv` host-system path; filesystem permissions
 remain the enforcement boundary for service-account access to prepared state.
 
-RumiAI-managed package configuration uses the reserved:
+`m`-managed package configuration uses the reserved:
 
 ```text
 .m/
@@ -375,7 +375,7 @@ facility/<facility>/<compatibility>/<part>/...
 
 The content below `<part>/` belongs to that part type's schema. The generic layer must not force every part into one universal member/value format.
 
-A supported part type is implemented by RumiAI-owned trusted code. Catalog data cannot install executable validators, handlers or runtime logic. Unknown part types are invalid.
+A supported part type is implemented by trusted `m` package-subsystem code. Catalog data cannot install executable validators, handlers or runtime logic. Unknown part types are invalid.
 
 For each supported part type, the facility/provider layer defines:
 
@@ -404,7 +404,7 @@ facility/<facility>/<compatibility>/cmd/<command>
 facility/<facility>/<compatibility>/env/<variable>
 ```
 
-The `cmd/<command>` leaf follows the package command-name grammar. The `env/<variable>` leaf preserves the environment-variable identifier exactly and therefore uses the environment-name grammar, including uppercase letters and underscore, as a specific exception to the general lowercase RumiAI-controlled pathname rule. `PATH` remains excluded by the env-part contract.
+The `cmd/<command>` leaf follows the package command-name grammar. The `env/<variable>` leaf preserves the environment-variable identifier exactly and therefore uses the environment-name grammar, including uppercase letters and underscore, as a specific exception to the general lowercase controlled pathname rule. `PATH` remains excluded by the env-part contract.
 
 The existing provider-realization surfaces remain authoritative for these types:
 
@@ -713,7 +713,7 @@ PKG-04  public pkg behavior is tested through the real composed command path
 PKG-05  package store root is m_PKG_DIR
 PKG-06  package launch validates/uses the managed concrete package target
 PKG-07  package HOME/conf are resolved through state-path
-PKG-08  .m is reserved for RumiAI-managed package configuration
+PKG-08  .m is reserved for `m`-managed package configuration
 PKG-09  State Instance uses @! in package state identity
 PKG-10  var routing is static and system-scoped, never dynamic user routing
 PKG-11  factory/default state is distinct from mutable current state
@@ -759,7 +759,7 @@ PKG-50  the baseline facility contract contains required interoperable members o
 PKG-51  provider conformance validation uses the facility contract from the same pkg-catalog snapshot as the provider package definition
 PKG-52  runtime provider resolution/application does not reinterpret facility contracts from another catalog revision
 PKG-53  facility contracts use the generic envelope facility/<facility>/<compatibility>/<part>/..., while each trusted part handler owns the schema below <part>
-PKG-54  supported facility part types are implemented by trusted RumiAI code; unknown catalog part types are invalid and catalog data never supplies executable handlers
+PKG-54  supported facility part types are implemented by trusted `m` package-subsystem code; unknown catalog part types are invalid and catalog data never supplies executable handlers
 PKG-55  the generic facility layer orchestrates contract/provider conformance but defines no universal runtime apply operation
 PKG-56  cmd, env and service are supported facility contract part types; cmd/env retain facility-cmd/facility-env and service uses facility-service/<facility>/start as its provider realization
 PKG-57  facility/provider definitions and conformance validation are inert: they do not create defaults/bindings or apply commands/environment/services merely by existing or being validated

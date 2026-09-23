@@ -25,7 +25,7 @@ The two modes share navigation, action-key handling, optional multi-selection, r
 
 ## 2. Entrypoint and runtime
 
-`menu` belongs to the technical `m` layer and depends on `m` runtime facilities and RumiAI-owned libraries. Its executable is:
+`menu` belongs to the technical `m` layer and depends on `m` runtime facilities and `m`-owned libraries. Its executable is:
 
 ```text
 bin/sys/menu

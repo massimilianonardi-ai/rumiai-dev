@@ -381,7 +381,7 @@ Git output presentation is explicit and owned by `gitman`.
 
 Pager mode is the default. Every supported Git action is executed with Git's global `--paginate` switch so paging is requested even for commands that would not normally page.
 
-For the Git process, `gitman` selects the RumiAI `pager` command through `GIT_PAGER=pager`. The caller's existing `LESS` options are retained and extended so the selected `less` backend:
+For the Git process, `gitman` selects the technical `m` `pager` command through `GIT_PAGER=pager`. The caller's existing `LESS` options are retained and extended so the selected `less` backend:
 
 - enables raw control/color handling with `-R`;
 - disables `F`, preventing automatic exit when the output fits on one screen;
@@ -547,7 +547,7 @@ GITMAN-13  every terminal-mode menu-selected Git sequence prints one 50-hyphen /
 GITMAN-14  Git action failure is interactive error state and does not terminate the session by itself
 GITMAN-15  gitman has its required sys operational manual topic
 GITMAN-16  gitman starts in pager output mode and p toggles pager/terminal presentation for subsequent Git actions
-GITMAN-17  pager mode forces Git --paginate through the RumiAI pager and disables less F/X while retaining caller LESS options
+GITMAN-17  pager mode forces Git --paginate through the technical `m` pager and disables less F/X while retaining caller LESS options
 GITMAN-18  terminal mode forces Git --no-pager, leaves output accumulated, prints an action header and uses the explicit read-key pause
 GITMAN-19  gitman does not clear the normal terminal or inject arbitrary blank-line batches to separate action output
 GITMAN-20  leaf action labels show the concrete Git command or command template and are display-only, never executable command strings

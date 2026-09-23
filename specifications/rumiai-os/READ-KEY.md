@@ -11,7 +11,7 @@ Updated: 2026-09-09
 - the original printable UTF-8 character; or
 - a stable logical name for a non-printable/special key.
 
-It is intentionally independent from the RumiAI bootstrap.
+It is intentionally independent from the `m` bootstrap.
 
 ---
 
@@ -35,7 +35,7 @@ The file is a regular executable with exact shebang:
 #!/bin/sh
 ```
 
-This standalone shebang is explicitly authorized by `decisions/rumiai-os/2026-09-09-command-shebang-and-read-key.md`.
+This standalone shebang is explicitly authorized by the current standalone-utility contract in `COMMAND-ENTRYPOINTS.md` and by this specification.
 
 The command accepts no options, arguments or operands.
 
@@ -43,7 +43,7 @@ The command accepts no options, arguments or operands.
 
 ## 3. Bootstrap independence
 
-`read-key` MUST NOT require the RumiAI bootstrap for normal execution.
+`read-key` MUST NOT require the `m` bootstrap for normal execution.
 
 In particular its runtime contract MUST NOT depend on:
 
@@ -52,7 +52,7 @@ m_*
 log
 lang
 m_COMMAND_BIN
-RumiAI shell libraries/functions sourced by the bootstrap
+`m` shell libraries/functions sourced by the bootstrap
 bootstrap-derived root/configuration/state
 ```
 
@@ -134,7 +134,7 @@ No diagnostic, terminfo control sequence or presentation message may be mixed in
 
 `read-key` emits no application-level diagnostic messages. For managed failures described by this specification, stdout and stderr remain empty and the failure is communicated only through the exit status. Expected diagnostics from internal utilities used to implement the operation are suppressed.
 
-This silence is intentional: `read-key` is a low-level standalone input primitive. The consumer that requested the key owns user-facing diagnostics and, when it runs inside the RumiAI bootstrap runtime, may use the established `fatal`/`log` facilities without making `read-key` depend on them.
+This silence is intentional: `read-key` is a low-level standalone input primitive. The consumer that requested the key owns user-facing diagnostics and, when it runs inside the `m` bootstrap runtime, may use the established `fatal`/`log` facilities without making `read-key` depend on them.
 
 `printf` with constant formats is used for successful data output; `echo` is not used as a serializer.
 
@@ -319,7 +319,7 @@ The exit path invokes terminal cleanup.
 ```text
 READ-KEY-01  canonical executable is bin/sys/read-key with #!/bin/sh
 READ-KEY-02  command accepts zero arguments only
-READ-KEY-03  no RumiAI bootstrap dependency is part of the runtime contract
+READ-KEY-03  no `m` bootstrap dependency is part of the runtime contract
 READ-KEY-04  keyboard input and terminal control use /dev/tty
 READ-KEY-05  stdout contains only the success result; managed failures emit no stdout/stderr diagnostics and use exit status only
 READ-KEY-06  terminal state is saved and restored
