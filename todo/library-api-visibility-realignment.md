@@ -2,7 +2,7 @@
 
 ## Intent
 
-Audit existing libraries owned by `m` or RumiAI against the current public/internal function visibility convention and realign legacy function names plus dependent callers/tests where necessary.
+Audit remaining libraries owned by `m` or RumiAI against the current public/internal function visibility convention and realign legacy function names plus dependent callers/tests where necessary.
 
 ## Why pending
 
@@ -19,6 +19,8 @@ rumiai-dev    only contract/handoff realignment required by findings
 ```
 
 Coordinate with the active `rumiai-os-man-documentation` task because stable library manuals require the intended public function set to be known and naming-aligned.
+
+`ipc.lib.sh` is no longer part of the remaining scope: its public/internal function set, operational manual and dedicated regression coverage were aligned by the completed IPC library hardening task.
 
 ## Evidence
 
