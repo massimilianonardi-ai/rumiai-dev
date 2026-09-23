@@ -221,9 +221,15 @@ Individual tests do not own environment isolation.
 
 A direct `.test` execution, and a development run through `rumiai-test`, acts on the real ambient target and process environment supplied by the caller. This is deliberate: development execution must be able to test the actual checkout/environment being worked on.
 
-Formal validation through `rumiai-validate` uses a disposable validation environment prepared by the launcher. For a `rumiai-os` target the environment contains an independent Git clone checked out at the exact configured commit and isolated mutable user roots, including at least `HOME` and temporary storage plus applicable standard user-state roots such as XDG directories. The real host OS, architecture, system tools and other host properties remain real unless a specific current contract requires additional isolation.
+Formal validation through `rumiai-validate` uses a disposable validation environment prepared by the launcher. For a `rumiai-os` target the environment starts from an independent clean Git clone checked out at the exact configured commit and isolated mutable user roots, including at least `HOME` and temporary storage plus applicable standard user-state roots such as XDG directories. The real host OS, architecture, system tools and other host properties remain real unless a specific current contract requires additional isolation.
 
-Tests must use that supplied target/environment unchanged as their execution base. They may create scenario-specific inputs and resources inside it, but they must not create another target clone/copy, another replacement user environment, or a fake RumiAI-owned component whose real behavior is claimed by the test.
+Target preparation is part of the validation environment, not test setup. Before the audit baseline and before any test executes, `rumiai-validate` selects the real host platform through the target's canonical `osarch update` path. A validation scope may additionally declare target packages that must be present. Those packages are installed inside the same disposable target through the real public `pkg install` path; no host runtime may be copied or injected as a substitute. A declared package operand should pin a concrete version whenever the validated work depends on that concrete runtime rather than merely on whatever version current package resolution would select.
+
+When target-package preparation consumes `pkg-catalog`, the validation scope must also declare the exact expected catalog commit. The launcher records the actual immutable catalog snapshot used by package preparation and rejects the environment before tests run if it differs from the configured commit. This prevents silent catalog drift from being attributed to the configured validation scope. The package subsystem remains the authority for package resolution and installation; `rumiai-validate` does not reimplement catalog or package semantics.
+
+Host-platform selection and declared package preparation may create or change operational selector/package paths in the disposable tree after the exact source commit has been materialized. Those changes are validation-environment preparation, not source revision changes. The filesystem audit baseline is captured only after preparation completes, so test-induced changes remain distinguishable from the declared prepared state.
+
+Tests must use that supplied prepared target/environment unchanged as their execution base. They may create scenario-specific inputs and resources inside it, but they must not create another target clone/copy, another replacement user environment, or a fake RumiAI-owned component whose real behavior is claimed by the test.
 
 The normal validation isolation granularity is `session`: one disposable environment spans the complete `rumiai-validate` invocation so the suite can also reveal cumulative state effects. `rumiai-validate` also provides a stronger `test` isolation mode in which each discovered test receives a newly created disposable environment. That mode mechanically prevents one test's filesystem state from becoming another test's starting state. Test correctness must not depend on which isolation granularity is selected.
 
@@ -343,6 +349,15 @@ A **validation scope** is the versioned set of selections required to validate a
 
 A scope may contain one or more existing tests or groups. It does not require duplicating tests into a new hierarchy.
 
+For a `rumiai-os` scope, target-environment prerequisites are versioned with the scope rather than hidden in an external workflow. Current preparation records are:
+
+```text
+target-package<TAB><package-spec>
+pkg-catalog-commit<TAB><exact-commit>
+```
+
+`target-package` is repeatable and means that the real disposable target must successfully execute `pkg install <package-spec>` during launcher preparation. `pkg-catalog-commit` is a singleton and is required when one or more target packages are declared; it is invalid without target-package preparation. The package spec uses the package subsystem's existing operand grammar rather than introducing a validation-only package identity syntax.
+
 At least two uses are distinguished:
 
 ```text
@@ -360,8 +375,9 @@ Unless a documented exception applies:
 
 - the target and `rumiai-tests` must be committed;
 - the `rumiai-tests` working tree used to launch validation must be clean;
-- the actual target executed by formal validation must be the clean disposable clone of the exact configured target commit;
-- commits/revisions, host, architecture, date/time, executed selections, results, logs and validation-environment audit evidence must be recorded;
+- the target environment must start from a clean disposable clone of the exact configured target commit, with any declared platform/package preparation performed only inside that disposable environment before the audit baseline;
+- commits/revisions, host, architecture, selected target platform, date/time, executed selections, results, logs and validation-environment audit evidence must be recorded;
+- when package preparation participates, the declared package operands and actual `pkg-catalog` commit used by the real package path must also be recorded;
 - evidence must remain immutable and revision-specific.
 
 Cross-host task validation is closed only when all required scope tests PASS on all required applicable hosts.
@@ -378,7 +394,7 @@ Physical validation on stable reference hosts remains the final stage when requi
 
 `rumiai-validate` is the operational formal-validation launcher. It applies a versioned validation scope, prepares the exact disposable target/user environment, invokes the unchanged real tests, performs the validation-environment filesystem audit, publishes revision-specific evidence and aggregates the scope result without moving target assertions into the runner.
 
-For `rumiai-os`, formal validation always executes an independent disposable Git clone at the exact configured commit rather than the operator's target working tree or a Git worktree attached to it. The operator checkout may be used as a source/update point by the launcher, but it is never the target executed by the validation tests.
+For `rumiai-os`, formal validation always executes an independent disposable Git clone at the exact configured commit rather than the operator's target working tree or a Git worktree attached to it. The operator checkout may be used as a source/update point by the launcher, but it is never the target executed by the validation tests. Host-platform selection and target-package preparation are launcher responsibilities performed through the disposable target's own canonical public commands; they must not be moved into workflows, permanent tests or `rumiai-test`.
 
 The default validation isolation granularity is `session`. The explicit stronger `test` mode uses `rumiai-test --list` to obtain canonical discovery and then runs each listed test in a fresh disposable environment; the validator must not duplicate runner discovery rules.
 
