@@ -644,7 +644,41 @@ Missing, unreadable, corrupt or unsupported cache records are cache misses. They
 
 `--plan` may inspect existing freshness state to expose `up-to-date`, but MUST NOT create or refresh persistent freshness metadata.
 
-The first baseline stores freshness metadata only. It does not store, restore or distribute artifact bytes and does not establish a local/remote/shared artifact-cache protocol.
+The local incremental baseline also stores verified copies of declared output artifacts so a matching prior success can restore missing or modified outputs without re-running the action.
+
+Artifact bytes are separate from freshness metadata and remain persistent non-authoritative/regenerable user-scoped `mk` cache state rooted through:
+
+```text
+state-path user sys mk cache
+```
+
+After a successful incremental action, `mk` first verifies the declared output snapshots. Cacheable regular-file and directory-tree outputs may then be copied into the local artifact store together with a manifest tied to the operation identity, effective fingerprint and recorded output snapshots. Failure to write artifact cache state does not fail the lifecycle and does not make incomplete artifact state authoritative.
+
+Artifact restoration is attempted **only during execution**, immediately before an otherwise-ready incremental operation would execute. `--plan` remains read-only and MUST NOT restore project outputs.
+
+A restoration candidate is usable only when:
+
+```text
+current effective fingerprint == recorded successful fingerprint
+and
+the local artifact manifest matches that successful record
+and
+every cached output artifact is present in a supported form
+and
+every cached output snapshot equals the recorded successful output snapshot
+```
+
+Restoration is staged and verified before declared destinations are replaced. After successful restoration, normal lifecycle refinement observes the restored outputs and establishes ordinary `up-to-date` evidence. Restoration does not synthesize process-result fields. If reachable result-field observation requires that operation's current-request result, the operation executes normally rather than using restoration-only reuse.
+
+Missing, unreadable, corrupt, incomplete or unsupported artifact cache state is a conservative miss. The process action executes normally and a later successful execution may refresh both artifact bytes and freshness metadata.
+
+The first artifact representation supports the same cacheable filesystem forms as incremental output snapshots: regular files and directory trees of supported regular files/directories, including portable mode bits and content identity. Symlinks and special filesystem objects remain non-restorable cache misses.
+
+Ordinary output-input consumers and provider-derived incremental members inherit the same restoration semantics because restoration operates at the ordinary operation boundary.
+
+The private local artifact layout remains project-scoped by the existing canonical-project-root cache identity. A copied or moved checkout therefore does not reuse another checkout's local artifact store in this baseline.
+
+Local restoration does not establish shared/remote artifact distribution, cross-project content-addressed reuse, cache eviction/garbage collection, stale provider-member cleanup, parallel execution or remote execution.
 
 Project-to-project dependency delegation remains recursive. A parent continues to invoke the child `mk` request; the child independently decides which of its own operations are up-to-date. Incremental freshness does not add request-wide exactly-once or sibling-branch de-duplication semantics.
 
@@ -752,7 +786,7 @@ For every currently concrete execution path:
 
 Version 1 retains its static fully resolved prerequisite plan and sequential execution behavior.
 
-Artifact storage/restoration, shared/remote caching, parallel scheduling and remote execution remain outside the implemented baseline.
+Shared/remote artifact caching, cross-project artifact reuse, cache eviction/garbage collection, parallel scheduling and remote execution remain outside the implemented baseline.
 
 ## 8. Public command line
 
@@ -930,7 +964,7 @@ Version-2 incremental freshness uses user-scoped technical cache state resolved 
 state-path user sys mk cache
 ```
 
-This state is non-authoritative and regenerable. Private project/operation record layout below that cache area is an `mk` implementation detail and does not extend the public state-path grammar.
+This state is non-authoritative and regenerable. It may contain both incremental freshness metadata and verified local copies of declared incremental outputs used for restoration. Private project/operation/cache-artifact layout below that cache area is an `mk` implementation detail and does not extend the public state-path grammar.
 
 Development output is distinct from package installation. Executing a project lifecycle does not by itself publish the project as an installed package.
 
@@ -997,7 +1031,7 @@ MK-49  a reachable result-field observation forces actual execution of an otherw
 MK-50  failed execution never creates reusable freshness state and unsupported/corrupt freshness state degrades conservatively to a miss
 MK-51  incremental freshness metadata is user-scoped non-authoritative mk cache state resolved through state-path user sys mk cache
 MK-52  --plan may read freshness metadata but does not create or refresh it
-MK-53  the first incremental baseline stores freshness metadata only and does not establish artifact storage/restoration, shared/remote cache or provider-level incremental templates
+MK-53  incremental cache state remains non-authoritative user-scoped mk cache state and does not imply shared/remote cache or request-wide project-dependency de-duplication
 MK-54  project dependency delegation remains recursive; child mk instances own their own incremental decisions and no request-wide de-duplication is implied
 MK-55  operation input identity is first-class and does not by itself enable incremental reuse or imply action purity
 MK-56  incremental freshness consumes the shared operation input map; the legacy incremental.inputs form remains accepted and normalizes to that same map
@@ -1020,4 +1054,10 @@ MK-72  provider path inputs and declared output paths may use the existing ${ite
 MK-73  provider incremental opt-in uses the preferred empty-object form and requires at least one declared output; legacy incremental.inputs is not a provider-template compatibility form
 MK-74  derived provider operation identity is item-based rather than enumeration-position-based, so collection add/remove/reorder does not by itself invalidate unchanged reachable members
 MK-75  provider incremental freshness does not imply cleanup of stale outputs or freshness records for collection members that become unreachable
+MK-76  successful incremental operations may store verified copies of their declared outputs as local non-authoritative mk cache artifacts separate from freshness metadata
+MK-77  artifact restoration occurs only on the execution path; plan inspection never restores or otherwise mutates declared project outputs
+MK-78  restoration requires the current fingerprint to match recorded successful freshness plus complete verified cached artifacts matching the recorded output snapshots; invalid artifact state is a conservative miss
+MK-79  successful restoration is observed through normal lifecycle refinement as ordinary up-to-date output evidence and never synthesizes execution-result fields; result observation forces actual execution
+MK-80  ordinary output-input consumers and provider-derived incremental members inherit the same per-operation restoration semantics
+MK-81  the first local artifact store remains scoped by canonical project-root/operation identity and does not imply cross-project/shared/remote reuse, cache garbage collection or stale-member cleanup
 ```
