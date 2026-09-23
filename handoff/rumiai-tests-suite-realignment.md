@@ -10,10 +10,10 @@ Realign the permanent RumiAI test suite so that failures are evidence about curr
 ## Current repository revisions
 
 ```text
-rumiai-dev   d268c4be5d1a93acc415ab24d39daf8ca4bf27de  (pre-checkpoint HEAD before this handoff synchronization)
-rumiai-tests 91290e23b7c7a26aaa8c5419e7b7e7c1769ca64d
-rumiai-os    58d797ac8d286f54420b279713c431ce97c1d53a
-pkg-catalog  6a77995d317f2ec08c98585c4462b92557ccfaea
+rumiai-dev   249d06c00ae6732f3555aa4bd3e21c525ae7eba2  (pre-checkpoint HEAD before this handoff synchronization)
+rumiai-tests f51de6247535f87a2e61d03a087c1d8d8ac57e42
+rumiai-os    5f01f0bccef37020057195c98809ba492f02443c
+pkg-catalog  da7507439b71737cf4a40d85cac059824e4b9a63
 ```
 
 The `rumiai-dev` revision above is the authoritative source revision read before this handoff checkpoint; this handoff update itself advances that repository. Fresh HEAD retrieval remains mandatory before resumption.
@@ -78,33 +78,32 @@ The `rumiai-dev` revision above is the authoritative source revision read before
 
 ## Current state
 
-The historical 31-ERROR suite-root failure and the later package/srv fixture cascade are resolved as test-suite defects. The current Ubuntu evidence is now concentrated rather than noisy.
+The historical 31-ERROR suite-root failure, the package/srv fixture cascade, the accidental non-executable probe coupling, the MacGPG test mode defect, menu terminal-width coupling, the unsupported-shell pipefail classification and the former `pkg/uninstall.test` setup mismatch have all been resolved as test-suite issues.
 
-Health run `35825284621` was triggered from `rumiai-tests@af30a9a528b6dff8416c131b8fb10e4bc0557a0e` against `rumiai-os@f2747e16560d0fbbe1cc0fe6e4d5c6c836ef041b`. Its Ubuntu job completed with 146 PASS / 4 FAIL / 14 SKIP / 0 ERROR. Its macOS job was still running at this checkpoint. That run includes the bootstrap/command executable-fixture fixes and MacGPG mode fix, but predates the later menu, pipefail-prerequisite and shared-osarch-discovery commits.
+Current permanent evidence is now concentrated. Health run `35840466032` (`rumiai-tests@c6b218840ea14d71334e4c6b97fd0043622ae34f` against `rumiai-os@e856f31039f1c42820f920837e7c1d471396ca04`) completed with:
+- Ubuntu/x86_64: 143 PASS / 3 FAIL / 17 SKIP / 0 ERROR across 163 tests.
+- macOS/arm64: 131 PASS / 13 FAIL / 19 SKIP / 0 ERROR across 163 tests.
+- `pkg/uninstall.test` passes on both hosts in that gate.
+- deterministic residual failures are already separated from test realignment: branded entrypoint bootstrap recursion/state growth, missing public `osarch-set`/`osarch-update` compatibility entrypoints, macOS readable/non-executable integrated-command dispatch, and macOS `http-fetch -o` TTY progress. Each has a current dedicated TODO under `todo/`.
+- the remaining external live failures are host/upstream-sensitive observations, predominantly HTTP 403/timeout failures; they are not evidence that the permanent test mechanics are stale.
 
-Two residual failures are already classified as current product/spec mismatches rather than stale tests:
+A later exact current-head gate was required because parallel `mk` work advanced both the suite and product revision. `rumiai-tests@f51de6247535f87a2e61d03a087c1d8d8ac57e42` therefore binds `rumiai-os-health` to `rumiai-os@5f01f0bccef37020057195c98809ba492f02443c` and triggered GitHub Actions run `35842193417`.
 
-- `bootstrap/branded-path-prepend.test`: the current branded-entrypoint implementation recursively re-enters `m` until PATH/environment growth causes execution failure, while `BOOTSTRAP-ENVIRONMENT.md` still requires branded activation to delegate to `m`, prepend the AI executable layers and enter the shell.
-- `osarch/update.test`: `CURRENT-MODEL.md` still requires compatibility commands `osarch-update` and `osarch-set`, while the current product exposes only the consolidated `osarch` command.
+The Ubuntu half of run `35842193417` is complete: outer validation `20260923T091901+0000-2292`, runner session `20260923T091902+0000-3752`, Ubuntu 24.04.5 LTS / Linux x86_64. It executed 164 tests and recorded 136 PASS / 10 FAIL / 18 SKIP / 0 ERROR, aggregate status 1 and audit status `CHANGED`. The only deterministic/non-live FAILs are the already-classified `bootstrap/branded-path-prepend.test` and `osarch/update.test`. The other eight FAILs are external live tests, and every inspected failure is an HTTP 403 from the live upstream path. No new test-suite defect is exposed by this current-head Ubuntu evidence.
 
-`pkg/uninstall.test` now reaches its intended package setup but fails while selecting an osarch-specific current/default version before the uninstall operation. It must be classified against the current public package-default contract before any test rewrite.
+The macOS half of run `35842193417` is still executing at this checkpoint, so this task remains Active. Closure requires reading that exact revision-pinned macOS result; a previous macOS gate cannot be relabelled as evidence for the later `f51de624/5f01f0bc` pair.
 
-The current branch contains additional realignments after the running gate: terminal-width-independent menu interaction, pipefail prerequisite classification and shared osarch target discovery. A later current-HEAD health gate is therefore still required before closure.
-
-The assistant execution container still cannot resolve `github.com`; local duplicate runs there are unavailable and must not be reported as validation evidence.
+The assistant execution container still cannot resolve `github.com`; no local duplicate run is being counted as validation evidence.
 
 ## Next action
 
-1. Inspect the completed macOS evidence from health run `35825284621`; classify only the residual failures after the executable-fixture fixes.
-2. Classify `pkg/uninstall.test` against the current package/default implementation and public contract without bypassing a genuine product defect.
-3. Run a fresh current-HEAD cross-host health gate including `56f44d4a`, `81b2649d` and `91290e23` after a new HEAD check and exact target binding.
-4. Preserve real product/spec mismatches as failing evidence; do not make the suite green by weakening `branded-path`, `osarch` compatibility or another settled contract.
-5. Perform the final consistency gate and synchronize this handoff again before reporting completion.
+1. Read the completed macOS result of GitHub Actions run `35842193417`.
+2. If it exposes no new test-suite defect, classify its residuals against the already-created TODOs/live-upstream category and complete the suite-realignment handoff.
+3. Perform the final consistency gate against fresh remote HEADs, record the final Complete handoff snapshot, then remove the completed handoff in a later forward commit as required by the handoff lifecycle.
+4. If macOS instead exposes a new permanent-test defect, fix only that test/infrastructure issue, preserve product mismatches, and rerun the smallest sufficient cross-host evidence before closure.
 
 ## Blockers / open questions
 
-- The macOS half of health run `35825284621` had not completed at this checkpoint.
-- `pkg/uninstall.test` still fails during setup when selecting an osarch-specific package default; the exact source of that failure remains to be classified.
-- The macOS behavior of the dedicated readable/non-executable integrated-command test and of `http-fetch/progress.test` must be judged from the current post-fixture health evidence rather than from the obsolete broad-failure run.
-- External live tests remain host/upstream-sensitive; failures such as upstream HTTP errors are evidence about that live validation attempt, not automatically deterministic RumiAI product-contract failures.
-- Parallel product/catalog development can advance HEAD during validation. Every health result remains revision-specific, and a final current-HEAD gate must be rebound after a fresh HEAD check.
+- The macOS job of final current-head health run `35842193417` is still in progress.
+- Product/runtime mismatches discovered by this task are intentionally deferred and already represented by current TODOs: `branded-entrypoint-bootstrap-realignment.md`, `osarch-compatibility-entrypoints.md`, `macos-readable-integrated-command.md`, and `macos-http-fetch-progress.md`.
+- Live package tests remain subject to real external service availability/rate limits; current HTTP 403 observations are retained as live evidence rather than converted into deterministic suite failures.
