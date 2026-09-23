@@ -1,7 +1,7 @@
 # rumiai-tests suite realignment
 
 Status: Active
-Updated: 2026-09-22
+Updated: 2026-09-23
 
 ## Goal
 
@@ -10,10 +10,10 @@ Realign the permanent RumiAI test suite so that failures are evidence about curr
 ## Current repository revisions
 
 ```text
-rumiai-dev   9ec187516ee855a24c654aa4010953cf6eaf8314  (pre-checkpoint HEAD before this handoff synchronization)
-rumiai-tests 37fd46063c33d1b080c4b2da5fb23d53254241b9
-rumiai-os    baae8bf2ccb987f1be0dd0e20528c0a2301b0264
-pkg-catalog  cb2a11f4fb597f01d9140d7fc7bf05ef21cf698c
+rumiai-dev   d268c4be5d1a93acc415ab24d39daf8ca4bf27de  (pre-checkpoint HEAD before this handoff synchronization)
+rumiai-tests 91290e23b7c7a26aaa8c5419e7b7e7c1769ca64d
+rumiai-os    58d797ac8d286f54420b279713c431ce97c1d53a
+pkg-catalog  6a77995d317f2ec08c98585c4462b92557ccfaea
 ```
 
 The `rumiai-dev` revision above is the authoritative source revision read before this handoff checkpoint; this handoff update itself advances that repository. Fresh HEAD retrieval remains mandatory before resumption.
@@ -67,26 +67,44 @@ The `rumiai-dev` revision above is the authoritative source revision read before
 - The broad health binding was advanced again in `rumiai-tests@af74470aecf0106b2df07d6a13424c01a02e0670` to `rumiai-os@1973e4469ba40b5f085820ac018507ec8aca1873`, which triggered GitHub Actions health run `35781423515` on Ubuntu and macOS.
 - Concurrent forward changes after that checkpoint were preserved: `rumiai-tests` advanced by two test-only commits realigning Chrome/Electron live command lookup, and the product/catalog repositories also advanced under parallel work.
 
+- `rumiai-tests@0de32c1d78da8ab764f9e011f0347564f38a9646` corrected the executable modes of the new `pkg-extract/dmg-pkg.test` and `pkg-repository-gpgtools/contract.test`; a whole-tree mode audit later found no remaining `.test` blob outside mode `100755`.
+- `rumiai-tests@f690ba79847c31df2808b4b283350069c77fa739` realigned 13 synthetic package/srv integration fixtures with the current mandatory package-range `format` metadata. Health run `35824640188` confirmed the former package/srv cascade was removed on Ubuntu: `pkg-integration`, `pkg-launch`, default/dependency/env/facility/state/versions and all four `srv` tests passed.
+- `rumiai-tests@d43848bb96d035f445caa43948eada5d7261f88f` and `rumiai-tests@7a7b5fd58481ae40d236590a61648407343eb342` removed accidental non-executable-command assertions from bootstrap, command, log and osarch fixtures. The dedicated `command/explicit-source-readable.test` remains the only intentional readable/non-executable integrated-command test.
+- `rumiai-tests@0ee770c633ce89296edd617734221db6365b9052` made the new MacGPG live test executable; Ubuntu health now classifies it as the intended platform SKIP rather than infrastructure ERROR.
+- `rumiai-tests@56f44d4a183fce0da1eb34daea6360b341d62dbf` made filesystem-menu dialogue synchronization independent of the full temporary pathname so terminal-width truncation on macOS is not mistaken for a navigation failure.
+- `rumiai-tests@81b2649ddc79b509e4485505c6966094c3ca5881` classified absence of the documented `set -o pipefail` shell capability as a prerequisite SKIP for `enc/encoded-file-edit.test`, rather than a function-contract FAIL on hosts whose `/bin/sh` does not yet provide that POSIX.1-2024 option.
+- `rumiai-tests@91290e23b7c7a26aaa8c5419e7b7e7c1769ca64d` removed the remaining private target-discovery copy from `osarch/detection.test` and uses `lib/rumiai-os-target.lib`.
+- Health run `35824640188`, `rumiai-tests@fa5e811b84954e734e1b3fde4b0bb946998fa80e` against `rumiai-os@f2747e16560d0fbbe1cc0fe6e4d5c6c836ef041b`, completed on Ubuntu with 146 PASS / 4 FAIL / 14 SKIP / 0 ERROR across 164 tests. The four FAILs were `bootstrap/branded-path-prepend.test`, `enc/encoded-file-edit.test`, `osarch/update.test`, and `pkg/uninstall.test`; the first and third match current product/spec mismatches, the second is already realigned in the current suite as described above, and the fourth remains under classification.
+
 ## Current state
 
-The original 31-ERROR suite-root defect and the original stale product binding are no longer the current blockers described by the first health run.
+The historical 31-ERROR suite-root failure and the later package/srv fixture cascade are resolved as test-suite defects. The current Ubuntu evidence is now concentrated rather than noisy.
 
-The new cross-host health run `35781423515` is executing from `rumiai-tests@af74470aecf0106b2df07d6a13424c01a02e0670` against the revision-pinned target `rumiai-os@1973e4469ba40b5f085820ac018507ec8aca1873`. At the latest checkpoint, both Ubuntu and macOS jobs were still inside the real `rumiai-validate rumiai-os-health` step, so no result from that run has yet been classified.
+Health run `35825284621` was triggered from `rumiai-tests@af30a9a528b6dff8416c131b8fb10e4bc0557a0e` against `rumiai-os@f2747e16560d0fbbe1cc0fe6e4d5c6c836ef041b`. Its Ubuntu job completed with 146 PASS / 4 FAIL / 14 SKIP / 0 ERROR. Its macOS job was still running at this checkpoint. That run includes the bootstrap/command executable-fixture fixes and MacGPG mode fix, but predates the later menu, pipefail-prerequisite and shared-osarch-discovery commits.
 
-A local duplicate run could not be executed in the assistant container because that environment could not resolve `github.com`; this is an environment limitation and provides no product/test result.
+Two residual failures are already classified as current product/spec mismatches rather than stale tests:
 
-Repositories continued to advance during the run. Current observed HEADs at this checkpoint are `rumiai-tests@37fd46063c33d1b080c4b2da5fb23d53254241b9`, `rumiai-os@baae8bf2ccb987f1be0dd0e20528c0a2301b0264` and `pkg-catalog@cb2a11f4fb597f01d9140d7fc7bf05ef21cf698c`. The health run remains valid evidence only for its pinned revisions; it must not be relabelled as health evidence for later HEADs.
+- `bootstrap/branded-path-prepend.test`: the current branded-entrypoint implementation recursively re-enters `m` until PATH/environment growth causes execution failure, while `BOOTSTRAP-ENVIRONMENT.md` still requires branded activation to delegate to `m`, prepend the AI executable layers and enter the shell.
+- `osarch/update.test`: `CURRENT-MODEL.md` still requires compatibility commands `osarch-update` and `osarch-set`, while the current product exposes only the consolidated `osarch` command.
 
-The two forward `rumiai-tests` commits after `af74470` change only Chrome/Electron live tests and must be preserved when continuing this task.
+`pkg/uninstall.test` now reaches its intended package setup but fails while selecting an osarch-specific current/default version before the uninstall operation. It must be classified against the current public package-default contract before any test rewrite.
+
+The current branch contains additional realignments after the running gate: terminal-width-independent menu interaction, pipefail prerequisite classification and shared osarch target discovery. A later current-HEAD health gate is therefore still required before closure.
+
+The assistant execution container still cannot resolve `github.com`; local duplicate runs there are unavailable and must not be reported as validation evidence.
 
 ## Next action
 
-1. Inspect the completed evidence from health run `35781423515` for both hosts and classify every residual FAIL/ERROR/SKIP property-first.
-2. Apply only test-suite realignments supported by those logs; do not infer product defects from obsolete/private/non-contractual assertions.
-3. Before launching a later current-HEAD health gate, fresh-check all involved HEADs and bind the health scope to the exact intended target revision; repository movement during an already-running revision-pinned validation does not invalidate that older run's evidence.
-4. Preserve the concurrent Chrome/Electron live-test realignments already present at current `rumiai-tests` HEAD.
+1. Inspect the completed macOS evidence from health run `35825284621`; classify only the residual failures after the executable-fixture fixes.
+2. Classify `pkg/uninstall.test` against the current package/default implementation and public contract without bypassing a genuine product defect.
+3. Run a fresh current-HEAD cross-host health gate including `56f44d4a`, `81b2649d` and `91290e23` after a new HEAD check and exact target binding.
+4. Preserve real product/spec mismatches as failing evidence; do not make the suite green by weakening `branded-path`, `osarch` compatibility or another settled contract.
+5. Perform the final consistency gate and synchronize this handoff again before reporting completion.
 
 ## Blockers / open questions
 
-- No current result from health run `35781423515` had completed at the checkpoint, so residual failures cannot yet be classified from that run.
-- Parallel product/catalog development is advancing HEAD while health validation is revision-pinned. This is not itself a validation defect, but a later health gate intended to describe then-current HEAD must be rebound after a fresh HEAD check.
+- The macOS half of health run `35825284621` had not completed at this checkpoint.
+- `pkg/uninstall.test` still fails during setup when selecting an osarch-specific package default; the exact source of that failure remains to be classified.
+- The macOS behavior of the dedicated readable/non-executable integrated-command test and of `http-fetch/progress.test` must be judged from the current post-fixture health evidence rather than from the obsolete broad-failure run.
+- External live tests remain host/upstream-sensitive; failures such as upstream HTTP errors are evidence about that live validation attempt, not automatically deterministic RumiAI product-contract failures.
+- Parallel product/catalog development can advance HEAD during validation. Every health result remains revision-specific, and a final current-HEAD gate must be rebound after a fresh HEAD check.
