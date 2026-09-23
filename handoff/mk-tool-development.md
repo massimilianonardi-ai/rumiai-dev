@@ -10,16 +10,16 @@ Continue development of `mk` as the `m` subsystem for project development-lifecy
 ## Current repository revisions
 
 ```text
-rumiai-dev       b5bd71d35008bafc69227df01dfc96e630300fde  (pre-synchronization HEAD)
-rumiai-os        fde0ae399da0994e19ff7657605017f809b8fe8e
-rumiai-tests     25e2e9c407c58d328a93a12396ec835f75f19650
-rumiai-dev-PoCs  23cdb37e3ced0eb4e99b9fdccb7cf34f4896e023
-pkg-catalog      6a77995d317f2ec08c98585c4462b92557ccfaea
+rumiai-dev       1de3fbb032201c289538ccfbe4d8b1ea73fee45b  (pre-synchronization HEAD)
+rumiai-os        92f0d459225ee4117f3c2cb32aa1b8aa9f17ec90
+rumiai-tests     63a7c475cc96a0ff694c1061ccbada90f0826aef
+rumiai-dev-PoCs  defccee6b182c161b325a3817a841eee031ed109
+pkg-catalog      da7507439b71737cf4a40d85cac059824e4b9a63
 ```
 
 Fresh remote HEAD retrieval remains mandatory before later work.
 
-The current `rumiai-os` HEAD is two unrelated package-repository/manual commits ahead of the exact mk behavior revision exercised by the hosted validation run described below.
+The current `rumiai-os` advances only package-repository implementation beyond the mk behavior used by PoC 024; PoC 025 was exercised directly against the current `92f0d459...` target.
 
 ## Applicable canonical sources
 
@@ -184,6 +184,117 @@ The real-resolver experiment confirmed:
 - collection inputs use the existing collection reachability machinery;
 - ambiguous duplicate declarations fail.
 
+### PoC 024 — recursive watch trigger ownership
+
+```text
+rumiai-dev-PoCs/pocs/024-mk-recursive-watch-trigger/
+```
+
+Corrected GitHub Actions run:
+
+```text
+35827023231
+Ubuntu PASS
+macOS  PASS
+```
+
+against exact `rumiai-os` revision:
+
+```text
+fde0ae399da0994e19ff7657605017f809b8fe8e
+```
+
+The experiment validated recursive trigger ownership aligned with current project-dependency execution ownership:
+
+```text
+parent local trigger identity
++ active direct child request -> opaque child digest
+-> parent digest
+```
+
+The parent consumes only dependency identity/request data and an opaque child digest. It does not flatten child operations, collections, requirements, inputs or incremental fingerprints.
+
+Verified behavior includes:
+
+- `A -> B -> C` propagation of deep child input changes through opaque child digests;
+- mtime-only deep-child changes remain stable under content identity;
+- parent/local changes do not mutate child digest identity;
+- formatting-only child `mk.json` rewrites preserve digest identity through normalized-model semantics;
+- inactive dependencies do not participate;
+- explicit child profile selection participates only inside that child request;
+- same-named operations across projects do not collide;
+- dependency cycles are rejected by canonical project identity;
+- in `A -> B/C -> D`, D is resolved independently through both sibling branches, preserving the current no-request-wide-de-duplication semantics.
+
+The first diagnostic run `35826969986` failed only because its fixture mapped a nonexistent parent goal while trying to model an inactive dependency. The current validator correctly rejects that declaration. The fixture was corrected by using a real but unrequested goal; no product change was needed.
+
+Observed result:
+
+```text
+child-trigger-identity=opaque-recursive
+diamond-downstream-resolution=per-branch
+```
+
+### PoC 025 — transient invalid watch configuration
+
+```text
+rumiai-dev-PoCs/pocs/025-mk-watch-transient-invalid-config/
+```
+
+GitHub Actions run:
+
+```text
+35827415176
+Ubuntu PASS
+macOS  PASS
+```
+
+against exact current target:
+
+```text
+rumiai-os 92f0d459225ee4117f3c2cb32aa1b8aa9f17ec90
+```
+
+The experiment validated a separate trigger outcome for temporarily invalid root/child project configuration:
+
+```text
+configuration temporarily unavailable
+    -> no lifecycle cycle
+    -> retain last valid trigger baseline
+    -> retry resolver
+
+fatal trigger resolver failure
+    -> terminate watch session
+```
+
+The classification belongs inside the trusted mk trigger resolver; the outer supervisor does not parse `mk.json` or reconstruct child dependency semantics.
+
+Startup policy validated by the PoC:
+
+```text
+wait for first valid trigger snapshot
+-> run initial one-shot request
+-> establish post-cycle valid baseline
+```
+
+During an established session:
+
+- temporary invalid root or active child configuration keeps the session alive;
+- repeated polling while invalid does not busy-loop lifecycle execution;
+- restoring identical normalized semantics produces no cycle;
+- restoring valid configuration after a declared input changed produces exactly one cycle;
+- invalidity is not encoded as an ordinary digest value;
+- genuine resolver failure remains fatal.
+
+Observed result:
+
+```text
+invalid-config=retry-with-last-valid-baseline
+fatal-trigger-error=session-failure
+```
+
+Both temporary hosted workflows were removed after evidence collection.
+
 ## Promoted shared-input contract
 
 The model was promoted in current `MK.md` and `CURRENT-MODEL.md`.
@@ -340,28 +451,35 @@ thin long-running supervisor
 
 First-class operation inputs remove the local-project undeclared-input gap when the project declares its actual change-driving data, without creating `watch.inputs`.
 
+PoC 024 and PoC 025 now close two previously open design questions:
+
+- recursive project-dependency trigger ownership is child-owned and opaque, without graph flattening;
+- transient invalid root/child configuration is a retryable trigger-unavailable state, distinct from fatal resolver failure.
+
 Remaining design questions before a public watch contract:
 
-- recursive project-dependency trigger ownership without graph flattening;
-- transient invalid `mk.json` behavior during an active session;
-- exact trigger composition for requirements/executable identity and output evidence;
+- exact local trigger composition for reachable non-incremental executable identity, requirements and output evidence without introducing generated-output feedback loops;
 - portable polling policy versus optional host notification backends;
-- cycle failure policy/options beyond the PoC baseline.
+- lifecycle-cycle failure policy/options beyond the current PoC 020 continue-wait baseline;
+- eventual user-facing representation of temporary trigger-unavailable diagnostics/status.
 
 ## Next action
 
-Create **PoC 024 — recursive watch trigger ownership**.
+Create **PoC 026 — watch trigger composition**.
 
-Stress:
+Stress the current real resolver and determine the minimum authoritative local digest inputs for all reachable operations, especially:
 
 ```text
-A -> B -> C
-A -> B/C -> D
+non-incremental process executable identity
+facility requirement provider identity
+incremental output validity
+producer output used as declared downstream input
+generated outputs that must NOT become self-triggering watch inputs
 ```
 
-and determine whether each child project should own and expose its own opaque trigger digest recursively, matching the existing project-dependency execution ownership, rather than the parent flattening child input identity.
+Prefer reusing existing trusted `mk` executable/requirement/input/output identity functions. Do not build a second filesystem or provider resolver.
 
-Keep watch as working design. Do not add public `--watch` CLI/session semantics until recursive ownership and transient-invalid-config behavior are resolved.
+Keep watch as working design. Do not add public `--watch` CLI/session semantics until trigger composition and the remaining session/polling policy are settled.
 
 ## Other remaining non-watch boundaries
 
