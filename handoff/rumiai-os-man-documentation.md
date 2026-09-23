@@ -1,7 +1,7 @@
 # rumiai-os-man-documentation
 
 Status: Active
-Updated: 2026-09-22
+Updated: 2026-09-23
 
 ## Goal
 
@@ -12,9 +12,8 @@ The long-term multi-channel documentation source/rendering architecture remains 
 ## Current repository revisions
 
 ```text
-rumiai-dev   df441ef486b1e80d3772a40542a94ad39f7ad21b  (pre-checkpoint HEAD before this handoff synchronization)
-rumiai-os    826da364cd9aaaed05b30f2c4cdbe0c47c730782
-rumiai-tests 8a78802f536ca65052ddb3a3bc4d152fb361ebf1
+rumiai-dev   2f7a2031dac4608d612a5e6af5884d80bf4ca32a  (pre-checkpoint HEAD before this handoff synchronization)
+rumiai-os    533095820ea4f22446510a0f7b338253d908d018
 ```
 
 Fresh remote HEAD retrieval remains mandatory before future writes.
@@ -99,6 +98,14 @@ The existing permanent manual tests are not closure evidence for the whole docum
 
 Targeted formal cross-host validation has been performed for the `readpass`/`readpassv` work unit on hosted Linux/x86_64 and Darwin/arm64, with both required tests passing and audit status `CLEAN`. No full documentation-surface physical/stable-host validation is claimed by that targeted result.
 
+A repository-wide case-insensitive textual audit of `rumiai` at `rumiai-os@533095820ea4f22446510a0f7b338253d908d018` scanned all 177 blobs and found 53 occurrences across 18 files, including 26 occurrences in operational manuals. The audit separates three classes:
+
+- clearly valid branded/product references: `product-name`, the repository-level README where it describes both layers, the branded root entrypoints and their `res/ai/manual/` topics;
+- clear technical-`m` drift that should not remain branded: the `.rumiai-pkg-*` temporary names in `pkg-extract.lib.sh`, generated `srv` host-unit descriptions naming RumiAI, and technical-manual wording such as relocatable “RumiAI roots” / RumiAI OS-managed shell state where the described responsibility is owned by `m`;
+- canonical-but-ambiguous project-ownership wording inside technical-`m` material, including “RumiAI pager/commands”, “RumiAI-managed nodejs/package configuration”, “RumiAI readpass”, “managed RumiAI state” and “RumiAI-owned shell code”. Several of these mirror current canonical specifications, so they must not be normalized only in product manuals: the canonical terminology boundary between “RumiAI” as the branded upper layer and “RumiAI-owned/managed” as project ownership needs an explicit consistency realignment.
+
+No `rumiai-os` file was modified by this audit.
+
 ## Next action
 
 1. Activate and complete `todo/library-api-visibility-realignment.md` as its own product/API work unit, including caller/test realignment where legacy names must change.
@@ -109,6 +116,7 @@ Targeted formal cross-host validation has been performed for the `readpass`/`rea
 
 ## Blockers / open questions
 
+- The audit exposed a terminology-boundary inconsistency: `CURRENT-MODEL.md` defines RumiAI as the branded upper layer and forbids semantic `m` dependency on it, while several current technical-`m` specifications still use “RumiAI-owned/managed” wording as a project-ownership umbrella. Product cleanup of those canonical-backed occurrences requires coordinated specification/manual realignment rather than a manual-only wording edit.
 - Remaining library manuals depend on the explicit legacy library API-visibility realignment already captured in `todo/library-api-visibility-realignment.md`.
 - Trustworthy permanent structural/behavioral coverage is pending the active test-suite reimplementation/realignment task.
 - Formal multi-host/stable-host validation remains pending.
