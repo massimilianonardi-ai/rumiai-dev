@@ -2,7 +2,7 @@
 
 ## Intent
 
-Audit existing RumiAI-owned libraries against the current public/internal function visibility convention and realign legacy function names plus dependent callers/tests where necessary.
+Audit existing libraries owned by `m` or RumiAI against the current public/internal function visibility convention and realign legacy function names plus dependent callers/tests where necessary.
 
 ## Why pending
 
@@ -13,7 +13,7 @@ This product/API migration is separate from the current workflow/documentation r
 ## Scope
 
 ```text
-rumiai-os     RumiAI-owned libraries and all product callers
+rumiai-os     libraries owned by `m` or RumiAI and all product callers
 rumiai-tests  affected permanent tests and API coverage
 rumiai-dev    only contract/handoff realignment required by findings
 ```

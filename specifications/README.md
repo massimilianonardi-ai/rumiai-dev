@@ -55,8 +55,8 @@ setup-dev.sh
 
 - A file not listed here is not automatically a current normative source.
 - Files under `specifications/` contain promoted current contract only; active candidates, provisional assumptions, unresolved comparisons and postponed design choices belong in the applicable active handoff until they pass the specification promotion gate.
-- Any task that creates, renames, removes or modifies a RumiAI-owned directly executable command must retrieve both `COMMAND-ENTRYPOINTS.md` and `DOCUMENTATION-MODEL.md`.
-- Any task that creates, renames, removes or modifies a RumiAI-owned library or one of its functions must retrieve `FILESYSTEM-NAMING.md`, `LIBRARY-INTERFACES.md` and `DOCUMENTATION-MODEL.md`.
+- Any task that creates, renames, removes or modifies a directly executable command owned by `m` or RumiAI must retrieve both `COMMAND-ENTRYPOINTS.md` and `DOCUMENTATION-MODEL.md`.
+- Any task that creates, renames, removes or modifies a library owned by `m` or RumiAI or one of its functions must retrieve `FILESYSTEM-NAMING.md`, `LIBRARY-INTERFACES.md` and `DOCUMENTATION-MODEL.md`.
 - Do not search Git history unless historical rationale/evidence is specifically needed.
 - If a current specification conflicts with the current implementation, surface the mismatch; do not silently treat the old implementation as a new contract.
 - If a current contract changes, update the canonical file listed here rather than adding a parallel decision document that readers must merge mentally.

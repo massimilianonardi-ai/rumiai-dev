@@ -5,7 +5,7 @@ Updated: 2026-09-23
 
 ## Goal
 
-Deliver the current terminal-first operational documentation surface for RumiAI OS, including reliable lookup/presentation and mandatory manual coverage for RumiAI-owned command and library identities.
+Deliver the current terminal-first operational documentation surface for RumiAI OS, including reliable lookup/presentation and mandatory manual coverage for command and library identities owned by `m` or RumiAI.
 
 The long-term multi-channel documentation source/rendering architecture remains independent working design and does not block this first-delivery surface.
 
