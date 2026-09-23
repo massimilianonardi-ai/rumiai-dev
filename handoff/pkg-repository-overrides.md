@@ -10,9 +10,9 @@ Refactor the package repository-adapter model so each repository `type` remains 
 ## Current repository revisions
 
 ```text
-rumiai-dev      075759fce59a76016575660347c199fef373768a  (pre-checkpoint HEAD before this synchronization)
-rumiai-os       c2d8d4a0c4503e1de461e72840a13abb0da61c41
-rumiai-tests    5515865dcc574af140db796c80d174c3b4d47483
+rumiai-dev      ae577be8bd227601132d861704aace77422d7c24  (pre-checkpoint HEAD before this synchronization)
+rumiai-os       605e9e0e12b6907d0958bbd72d7f3bab79db6d2e
+rumiai-tests    4c77fa4832f3999d9fc828ff8ec5c16a62bb70b2
 rumiai-dev-PoCs 3610a24139a309ad15e0172f8758d4347a832042
 pkg-catalog     da7507439b71737cf4a40d85cac059824e4b9a63
 ```
@@ -69,16 +69,20 @@ pkg-catalog     da7507439b71737cf4a40d85cac059824e4b9a63
 - Permanent artifact-handler coverage now exercises direct template URL reuse, both checksum-sidecar record formats, and direct checksum-sidecar reuse. Existing Apache Maven contract coverage continues to exercise digest-only acceptance plus filename/duplicate/bad-digest rejection through the public Maven adapter.
 - Final static consistency review verified public function/manual coverage, absence of the superseded internal checksum-sidecar helper, and agreement between implementation, permanent tests and canonical specification.
 - Added dedicated task validation scope `validation/pkg-repository-overrides.conf` covering artifact handlers, GitHub composition, Apache Maven reuse and GeoServer SourceForge reuse against the exact current `rumiai-os` revision.
+- Ubuntu x64 task validation against `rumiai-os@c2d8d4a0c4503e1de461e72840a13abb0da61c41` produced real FAILs in `pkg-repository-artifact/contract.test` (`checksum-sidecar resolution failed`) and `pkg-repository-github/artifact.test` (`composed download+metadata overrides failed`), while Apache Maven and GeoServer passed.
+- Diagnosed both FAILs to one POSIX-shell variable-clobbering bug: `_pkg_repository_artifact_metadata_validate` reused `pkg_repository_artifact_name` as an internal field-name variable, overwriting the caller's resolved artifact name with `url-template`; composed metadata resolution therefore expanded `{name}` incorrectly.
+- Fixed the bug by isolating download/metadata validators in subshells so their temporary state cannot mutate the calling resolver. The isolated reproduction of the checksum-sidecar path passes after this change.
+- Retargeted `validation/pkg-repository-overrides.conf` to `rumiai-os@605e9e0e12b6907d0958bbd72d7f3bab79db6d2e`.
 
 ## Current state
 
 The architecture and implementation are aligned around one shared artifact-mechanism layer usable in two ways: explicit catalog overrides and internal composition by complete repository types. Current evidence supports `template-url`, `checksum-sidecar`, `checksum-manifest` and `sourceforge-rss`; other adapters remain custom rather than being forced into broader handlers.
 
-Manual Ubuntu x64 validation was attempted directly with `rumiai-test --validation`. The correct runner selection namespace is relative to `tests/` (for example `rumiai-os/pkg-repository-artifact`); the earlier `tests/...` and `./tests/...` invocations were invalid. The first correctly selected artifact-handler validation produced a real FAIL. Subsequent direct `--validation` runs were blocked because the first completed validation session made the suite working tree non-clean, which is expected runner behavior; multi-selection task validation belongs to `rumiai-validate`. A dedicated `pkg-repository-overrides` validation scope now exists for that purpose. The exact artifact-handler failure still needs diagnosis from its persisted log before validation can complete.
+Ubuntu x64 validation has now exercised the full dedicated task scope. The original revision failed only in the shared artifact metadata path and GitHub composition path; Apache Maven and GeoServer passed. The common failure was diagnosed to validator variable leakage rather than provider semantics or host-specific behavior. The validator-isolation fix is committed in `rumiai-os@605e9e0e12b6907d0958bbd72d7f3bab79db6d2e`, and the validation scope is pinned to that exact revision. Formal rerun evidence for the fixed revision is still pending.
 
 ## Next action
 
-Inspect the persisted log from the failed Ubuntu x64 artifact-handler run, correct the implementation/test mismatch if confirmed, then run `./rumiai-validate pkg-repository-overrides` on a clean Ubuntu x64 checkout. If the task scope passes without required SKIPs, perform the final completion checkpoint and close this handoff forward-only.
+On Ubuntu x64, fast-forward `rumiai-tests` and run `./rumiai-validate pkg-repository-overrides`. The launcher will update `rumiai-os`, validate exactly `605e9e0e12b6907d0958bbd72d7f3bab79db6d2e`, and publish evidence. If the task scope passes without required SKIPs, perform the final completion checkpoint and close this handoff forward-only.
 
 ## Blockers / open questions
 
