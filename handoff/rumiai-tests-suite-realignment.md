@@ -78,32 +78,32 @@ The `rumiai-dev` revision above is the authoritative source revision read before
 
 ## Current state
 
-The historical 31-ERROR suite-root failure, the package/srv fixture cascade, the accidental non-executable probe coupling, the MacGPG test mode defect, menu terminal-width coupling, the unsupported-shell pipefail classification and the former `pkg/uninstall.test` setup mismatch have all been resolved as test-suite issues.
+The user has explicitly tightened the suite contract after observing that the current full-suite health scope invokes tests without automatically preparing requirements owned by task scopes.
 
-Current permanent evidence is now concentrated. Health run `35840466032` (`rumiai-tests@c6b218840ea14d71334e4c6b97fd0043622ae34f` against `rumiai-os@e856f31039f1c42820f920837e7c1d471396ca04`) completed with:
-- Ubuntu/x86_64: 143 PASS / 3 FAIL / 17 SKIP / 0 ERROR across 163 tests.
-- macOS/arm64: 131 PASS / 13 FAIL / 19 SKIP / 0 ERROR across 163 tests.
-- `pkg/uninstall.test` passes on both hosts in that gate.
-- deterministic residual failures are already separated from test realignment: branded entrypoint bootstrap recursion/state growth, missing public `osarch-set`/`osarch-update` compatibility entrypoints, macOS readable/non-executable integrated-command dispatch, and macOS `http-fetch -o` TTY progress. Each has a current dedicated TODO under `todo/`.
-- the remaining external live failures are host/upstream-sensitive observations, predominantly HTTP 403/timeout failures; they are not evidence that the permanent test mechanics are stale.
+The current implementation has two structural mismatches with the requested product-validation semantics:
 
-A later exact current-head gate was required because parallel `mk` work advanced both the suite and product revision. `rumiai-tests@f51de6247535f87a2e61d03a087c1d8d8ac57e42` therefore binds `rumiai-os-health` to `rumiai-os@5f01f0bccef37020057195c98809ba492f02443c` and triggered GitHub Actions run `35842193417`.
+- `validation/rumiai-os-health.conf` is pinned to an older product revision instead of validating the current updated `rumiai-os` HEAD;
+- execution prerequisites such as managed Node.js for the `rumiai-os/mk` tests are currently stored in a task scope, so the root suite can discover those tests yet still run them without the required prepared environment and receive SKIP.
 
-The Ubuntu half of run `35842193417` is complete: outer validation `20260923T091901+0000-2292`, runner session `20260923T091902+0000-3752`, Ubuntu 24.04.5 LTS / Linux x86_64. It executed 164 tests and recorded 136 PASS / 10 FAIL / 18 SKIP / 0 ERROR, aggregate status 1 and audit status `CHANGED`. The only deterministic/non-live FAILs are the already-classified `bootstrap/branded-path-prepend.test` and `osarch/update.test`. The other eight FAILs are external live tests, and every inspected failure is an HTTP 403 from the live upstream path. No new test-suite defect is exposed by this current-head Ubuntu evidence.
+The accepted direction for this work unit is now:
 
-The macOS half of run `35842193417` is still executing at this checkpoint, so this task remains Active. Closure requires reading that exact revision-pinned macOS result; a previous macOS gate cannot be relabelled as evidence for the later `f51de624/5f01f0bc` pair.
+- full-product validation targets the current updated `rumiai-os` HEAD and executes the complete discovered suite;
+- the operator does not need to know task-scope names or test prerequisites in order to validate the whole product;
+- validation scopes select subsets only; they are not the authority for prerequisites;
+- suite-owned declarative requirement metadata is resolved automatically from the actually selected/discovered test set;
+- a named `mk` development scope selects the complete current `rumiai-os/mk` group and receives its Node.js requirement automatically through the same resolver used by the full suite;
+- revision-specific validation evidence still records the exact product, suite, host, prepared platform, package and catalog revisions actually exercised.
 
-The assistant execution container still cannot resolve `github.com`; no local duplicate run is being counted as validation evidence.
+The current permanent suite contains 168 tests, of which exactly 11 are under `tests/rumiai-os/mk/`. The recently completed `mk-shared-artifacts` physical run selected all 11; the new work does not reopen those product semantics, but removes the operator-facing need to know a special scope merely to supply their prerequisite.
 
 ## Next action
 
-1. Read the completed macOS result of GitHub Actions run `35842193417`.
-2. If it exposes no new test-suite defect, classify its residuals against the already-created TODOs/live-upstream category and complete the suite-realignment handoff.
-3. Perform the final consistency gate against fresh remote HEADs, record the final Complete handoff snapshot, then remove the completed handoff in a later forward commit as required by the handoff lifecycle.
-4. If macOS instead exposes a new permanent-test defect, fix only that test/infrastructure issue, preserve product mismatches, and rerun the smallest sufficient cross-host evidence before closure.
+1. Promote the accepted full-product/current-target and suite-owned-requirements contract into `TESTING.md` / `RUNNER.md` as applicable.
+2. Implement automatic requirement resolution in `rumiai-validate`, add current `mk` subset selection, and remove the Node.js prerequisite from task-scope ownership.
+3. Add/realign permanent validator tests for current-target selection and automatic requirement preparation.
+4. Run proportional validator self-tests plus real `mk` validation, then run the complete full-product health validation on clean hosted environments.
+5. Reassess residual FAIL/ERROR/SKIP results as product, upstream or applicability evidence; do not report the suite realignment complete until the new full-product path itself has been exercised.
 
 ## Blockers / open questions
 
-- The macOS job of final current-head health run `35842193417` is still in progress.
-- Product/runtime mismatches discovered by this task are intentionally deferred and already represented by current TODOs: `branded-entrypoint-bootstrap-realignment.md`, `osarch-compatibility-entrypoints.md`, `macos-readable-integrated-command.md`, and `macos-http-fetch-progress.md`.
-- Live package tests remain subject to real external service availability/rate limits; current HTTP 403 observations are retained as live evidence rather than converted into deterministic suite failures.
+None at this checkpoint.
