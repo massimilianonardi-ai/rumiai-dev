@@ -53,6 +53,7 @@ The current architecture remains authoritative. This research does not create a 
 8. Before any commercial or distribution-relevant implementation in a concrete area, perform claim-level patent screening for that exact mechanism and target jurisdictions. Keyword overlap or a patent title is not an infringement analysis.
 9. Patent status recorded here is a research snapshot, not legal advice. Patent rights are territorial; family members can have different status, scope and expiration. Google Patents itself states that its legal-status field is not a legal conclusion.
 10. This research must remain compatible with the current RumiAI architecture boundary: `m` is the general-purpose technical substrate and MUST NOT acquire RumiAI-specific cognitive semantics merely to host an experimental theory.
+11. Keep this research/watch workstream **active** until the user explicitly closes it or its durable outcomes have been promoted/deferred according to the normal RumiAI handoff lifecycle. Do not close it merely because no immediate PoC or implementation is planned.
 
 ## Working design
 
@@ -1329,7 +1330,7 @@ energy/resource consumption
 
 ## Current state
 
-This is an active research/watch workstream.
+This is an active research/watch workstream and is intentionally kept open across future RumiAI development so that relevant dynamical-systems opportunities and patent risks can be recognized when they emerge.
 
 The important conclusion is not that RumiAI should adopt chaos control. It is that nonlinear dynamics, synchronization and sparse/minimum-intervention control are powerful enough that they should remain available as a deliberate analytical lens when future RumiAI behavior presents a real dynamical problem.
 
