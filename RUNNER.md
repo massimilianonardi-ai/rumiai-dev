@@ -25,6 +25,7 @@ Current options:
 ```text
 --list
 --validation
+--exclude <selection>
 --snapshot=metadata|hash
 --snapshot-scope=selection|test|both
 --snapshot-root <pathname>
@@ -33,6 +34,8 @@ Current options:
 `--list` is discovery-only. It prints one discovered test identifier per line in the exact deterministic order that normal execution would use, then exits without executing tests and without creating `.runs/`, `sessions/`, logs or snapshots. It accepts the same optional single `selection` as normal execution. `--list` cannot be combined with `--validation` or snapshot options.
 
 `--snapshot-root` is repeatable.
+
+`--exclude <selection>` is repeatable and removes the discovered tests under that test/group selection from the requested execution/discovery set. Exclusions use the same canonical test/group selection rules as the primary selection. They are a runner-level set operation only; they do not encode target semantics or execution requirements.
 
 An omitted `selection` selects the `tests/` root; a directory pathname recursively selects the group; a `*.test` pathname selects the individual test.
 
@@ -63,7 +66,7 @@ A group selection is recursive. During serial execution, order is deterministic 
 
 A selected group containing no tests is a `RUNNER ERROR`.
 
-Normal execution and `--list` must use the same discovery implementation and therefore produce the same ordered set of test identifiers for the same selection.
+Normal execution and `--list` must use the same discovery implementation and exclusions and therefore produce the same ordered set of test identifiers for the same selection/exclusion set. Exclusions are applied after canonical discovery and before execution; excluding every discovered test is a runner error.
 
 ## 5. Runner -> test contract
 
@@ -107,8 +110,8 @@ The runner:
 
 - locates the suite;
 - validates the CLI;
-- resolves the selection;
-- performs canonical discovery and, in `--list` mode, emits that ordered discovery result without execution;
+- resolves the primary selection and any exclusions;
+- performs canonical discovery, applies exclusions, and in `--list` mode emits that ordered resulting set without execution;
 - collects host/session context for execution runs;
 - executes each `.test` according to its shebang;
 - captures the combined log;
@@ -274,8 +277,10 @@ Snapshots are persisted separately from logs and results.
 - resolve the exact current or deliberately pinned product revision;
 - invoke `rumiai-test --list` before environment preparation to expand the requested subset into the canonical discovered test set;
 - resolve suite-owned execution requirements against that discovered set;
-- prepare an independent disposable clone of the exact target revision together with isolated mutable user-state roots and the automatically required target packages;
-- reuse the same canonical discovered set for session or per-test isolation;
+- for complete-product validation, partition requirement-bearing groups from the baseline set so a package prepared for one group cannot invalidate the preconditions of another group;
+- use runner exclusions to execute the baseline set without requirement-bearing groups, then execute each requirement group in its separately prepared environment;
+- prepare independent disposable clones of the exact target revision together with isolated mutable user-state roots and only the target packages required by each execution group;
+- reuse canonical runner discovery rather than implementing a second test-discovery engine;
 - invoke the runner one or more times, one selection per execution run;
 - perform and retain the outer validation-environment filesystem audit;
 - publish runner sessions and validation-level evidence;
