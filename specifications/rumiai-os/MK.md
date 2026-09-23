@@ -644,7 +644,7 @@ Missing, unreadable, corrupt or unsupported cache records are cache misses. They
 
 `--plan` may inspect existing freshness state to expose `up-to-date`, but MUST NOT create or refresh persistent freshness metadata.
 
-The local incremental baseline also stores verified copies of declared output artifacts so a matching prior success can restore missing or modified outputs without re-running the action.
+The local incremental baseline also stores verified copies of declared output artifacts so a matching effective fingerprint can restore missing or modified outputs without re-running the action.
 
 Artifact bytes are separate from freshness metadata and remain persistent non-authoritative/regenerable user-scoped `mk` cache state rooted through:
 
@@ -652,35 +652,43 @@ Artifact bytes are separate from freshness metadata and remain persistent non-au
 state-path user sys mk cache
 ```
 
-After a successful incremental action, `mk` first verifies the declared output snapshots. Cacheable regular-file and directory-tree outputs may then be copied into the local artifact store together with a manifest tied to the operation identity, effective fingerprint and recorded output snapshots. Failure to write artifact cache state does not fail the lifecycle and does not make incomplete artifact state authoritative.
+Freshness metadata remains project-scoped by canonical project-root/operation identity. Artifact bytes are user-local and may be shared across different canonical project roots by the existing effective operation fingerprint. No second operation identity is introduced.
 
-Artifact restoration is attempted **only during execution**, immediately before an otherwise-ready incremental operation would execute. `--plan` remains read-only and MUST NOT restore project outputs.
+After a successful incremental action, `mk` first verifies the declared output snapshots. Cacheable regular-file and directory-tree outputs may then be published into the shared local artifact store with a manifest tied to operation name, effective fingerprint and verified output snapshots. Failure to publish artifact cache state does not fail the lifecycle and does not make incomplete artifact state authoritative.
 
-A restoration candidate is usable only when:
+Artifact restoration is attempted **only during execution**, immediately before an otherwise-ready incremental operation would execute. `--plan` remains read-only and MUST NOT restore project outputs or create receiving-checkout freshness metadata.
+
+A shared restoration candidate is usable only when:
 
 ```text
-current effective fingerprint == recorded successful fingerprint
+current effective fingerprint identifies the shared artifact namespace
 and
-the local artifact manifest matches that successful record
+the selected immutable artifact candidate manifest matches that operation/fingerprint
 and
 every cached output artifact is present in a supported form
 and
-every cached output snapshot equals the recorded successful output snapshot
+every cached output snapshot equals the candidate manifest
 ```
 
-Restoration is staged and verified before declared destinations are replaced. After successful restoration, normal lifecycle refinement observes the restored outputs and establishes ordinary `up-to-date` evidence. Restoration does not synthesize process-result fields. If reachable result-field observation requires that operation's current-request result, the operation executes normally rather than using restoration-only reuse.
+A receiving checkout does not need a pre-existing project-local freshness record to consume a verified shared candidate. Restoration is staged and verified before declared destinations are replaced. After successful restoration, `mk` writes that receiving checkout's own project-scoped successful freshness record and normal lifecycle refinement observes ordinary `up-to-date` output evidence. Restoration does not synthesize process-result fields. If reachable result-field observation requires that operation's current-request result, the operation executes normally rather than using restoration-only reuse.
 
-Missing, unreadable, corrupt, incomplete or unsupported artifact cache state is a conservative miss. The process action executes normally and a later successful execution may refresh both artifact bytes and freshness metadata.
+Missing, unreadable, corrupt, incomplete or unsupported artifact cache state is a conservative miss. The process action executes normally and a later successful execution may publish a new verified artifact candidate and refresh project-local freshness metadata.
 
 The first artifact representation supports the same cacheable filesystem forms as incremental output snapshots: regular files and directory trees of supported regular files/directories, including portable mode bits and content identity. Symlinks and special filesystem objects remain non-restorable cache misses.
 
 Ordinary output-input consumers and provider-derived incremental members inherit the same restoration semantics because restoration operates at the ordinary operation boundary.
 
-The private local artifact layout remains project-scoped by the existing canonical-project-root cache identity. A copied or moved checkout therefore does not reuse another checkout's local artifact store in this baseline.
+Shared-local publication is concurrency-safe without requiring a global lock. A publisher prepares and verifies private staging state before publication. Published artifact candidates are immutable. Equivalent publishers may converge idempotently on the same deterministic candidate identity. A small per-fingerprint selector is replaced atomically and MUST point only to a completely verified candidate.
 
-Local restoration does not establish shared/remote artifact distribution, cross-project content-addressed reuse, cache eviction/garbage collection, stale provider-member cleanup, parallel execution or remote execution.
+Writers MUST NOT destructively replace or remove another process's verified committed candidate merely to publish the same fingerprint. A corrupt selected candidate is a conservative miss; refresh publishes another verified immutable recovery candidate and atomically selects it rather than requiring destructive replacement of the candidate a reader may already hold.
 
-Project-to-project dependency delegation remains recursive. A parent continues to invoke the child `mk` request; the child independently decides which of its own operations are up-to-date. Incremental freshness does not add request-wide exactly-once or sibling-branch de-duplication semantics.
+Per-attempt staging/selector temporary state is best-effort cleanup state and is never a restoration candidate. Committed but unselected candidates may remain until a future garbage-collection policy; the current baseline does not define eviction, reclamation of abandoned staging after abrupt process death, or cache-size management.
+
+A copied or moved checkout may therefore restore equivalent work from the same user-local shared artifact namespace when the existing effective operation fingerprint matches. Successful restore still creates freshness metadata only for the receiving canonical project root.
+
+This shared local store does not establish remote/network artifact transport, cross-user trust/sharing, distributed locking, cross-operation semantic equivalence, stale provider-member cleanup, parallel lifecycle scheduling or remote execution.
+
+Project-to-project dependency delegation remains recursive. A parent continues to invoke the child `mk` request; the child independently decides which of its own operations are up-to-date/restorable. Shared artifact reuse does not add request-wide exactly-once or sibling-branch de-duplication semantics.
 
 ### 6.11 Watch execution mode
 
@@ -1054,10 +1062,14 @@ MK-72  provider path inputs and declared output paths may use the existing ${ite
 MK-73  provider incremental opt-in uses the preferred empty-object form and requires at least one declared output; legacy incremental.inputs is not a provider-template compatibility form
 MK-74  derived provider operation identity is item-based rather than enumeration-position-based, so collection add/remove/reorder does not by itself invalidate unchanged reachable members
 MK-75  provider incremental freshness does not imply cleanup of stale outputs or freshness records for collection members that become unreachable
-MK-76  successful incremental operations may store verified copies of their declared outputs as local non-authoritative mk cache artifacts separate from freshness metadata
+MK-76  successful incremental operations may store verified copies of their declared outputs as user-local non-authoritative mk cache artifacts separate from project-scoped freshness metadata
 MK-77  artifact restoration occurs only on the execution path; plan inspection never restores or otherwise mutates declared project outputs
-MK-78  restoration requires the current fingerprint to match recorded successful freshness plus complete verified cached artifacts matching the recorded output snapshots; invalid artifact state is a conservative miss
-MK-79  successful restoration is observed through normal lifecycle refinement as ordinary up-to-date output evidence and never synthesizes execution-result fields; result observation forces actual execution
+MK-78  restoration requires a complete verified artifact candidate matching the current effective fingerprint and recorded candidate output snapshots; invalid artifact state is a conservative miss
+MK-79  successful restoration writes receiving-checkout freshness evidence and is observed through normal lifecycle refinement as ordinary up-to-date output evidence without synthesizing execution-result fields; result observation forces actual execution
 MK-80  ordinary output-input consumers and provider-derived incremental members inherit the same per-operation restoration semantics
-MK-81  the first local artifact store remains scoped by canonical project-root/operation identity and does not imply cross-project/shared/remote reuse, cache garbage collection or stale-member cleanup
+MK-81  verified artifact bytes may be shared across canonical project roots by the existing effective operation fingerprint while freshness metadata remains canonical-project-root/operation scoped
+MK-82  shared-local artifact publication exposes only fully verified immutable candidates and atomically selects a candidate per fingerprint
+MK-83  equivalent concurrent publishers may converge idempotently without a global lock and must not destructively replace another process's verified committed candidate
+MK-84  corrupt selected shared artifact state is a conservative miss and refresh publishes/selects another verified immutable candidate without requiring deletion of the previously committed candidate
+MK-85  shared-local artifact reuse does not imply remote/network transport, cross-user trust, artifact eviction/garbage collection, distributed locking, parallel lifecycle scheduling or request-wide exactly-once semantics
 ```
