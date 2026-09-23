@@ -10,10 +10,10 @@ Add a macOS Apple Silicon package definition that installs the MacGPG engine fro
 ## Current repository revisions
 
 ```text
-rumiai-dev   6e3cd138a654a4800f4da77525cff51a3534486c
-rumiai-os    a15ef6171e614a4862df0e2da4d40a5375eefc45
-rumiai-tests 78c4c770150ce6ef70677b8895c2ab0588395c0f
-pkg-catalog  da7507439b71737cf4a40d85cac059824e4b9a63
+rumiai-dev   887c99819114a328d61e820543106be5e6677667 (parent of this handoff update)
+rumiai-os    6db7c00e77c25946c46342900fa21038f2d9f290
+rumiai-tests a1138610ca5a7a747e3226c7e45aa5feec2c1c53
+pkg-catalog  8e32f2dc3e471c38da087dc69db06050abdd7c4e
 ```
 
 ## Applicable canonical sources
@@ -36,7 +36,7 @@ handoff/README.md
 - The concrete package identity is `macgpg`; it exposes the public package command `gpg`.
 - The upstream distribution is GPGTools MacGPG carried inside the official GPG Suite DMG.
 - Mutable GnuPG state uses the existing package HOME/state model rather than the immutable package root.
-- Provider-specific component identity remains catalog data; generic package code does not hardcode `MacGPG2.pkg`.
+- Provider-specific component identity remains catalog data; generic package code does not hardcode a GPGTools component name.
 - The catalog pins GPG Suite 2026.1 build 3633n with its official SHA-256 rather than scraping mutable release HTML at install time.
 
 ## Completed
@@ -46,26 +46,35 @@ handoff/README.md
 - Implemented `DMG -> flat pkg -> named component -> Payload` materialization in the package extraction path.
 - Added `component` package-range validation and install orchestration.
 - Added the GPGTools repository adapter and mandatory operational manuals.
-- Added `pkg/macgpg/macos-arm64` catalog data for GPG Suite 2026.1 (3633n), SHA-256 `16fa6c1dfa6b440e900632618a6ebaac7d974c3faed3a0e14ce3d1ee6826c9c5`, component `MacGPG2.pkg`, and command target `bin/gpg`.
+- Added `pkg/macgpg/macos-arm64` catalog data for GPG Suite 2026.1 (3633n), SHA-256 `16fa6c1dfa6b440e900632618a6ebaac7d974c3faed3a0e14ce3d1ee6826c9c5`, component `MacGPG2.1_Core.pkg`, and command target `bin/gpg`.
 - Added permanent adapter coverage, a real macOS synthetic `dmg-pkg` materialization test, and a live external `pkg install macgpg` / `gpg --version` validation test.
 - Final static consistency reread corrected the artifact regex and collision-safe private extraction staging.
 - A physical macOS ARM64 install attempt on 2026-09-23 reached the real GPG Suite DMG download but failed in generic `extract dmg`: `hdiutil attach ... -mountpoint <RumiAI state path>` returned `Permission denied`. The failure occurred before package integration, so no `gpg` command was published.
 - Corrected generic macOS DMG extraction in `rumiai-os` to avoid a custom mount point. Modern macOS now uses `diskutil image ... -plist`, resolves exactly one mounted entity from structured plist output, copies with `ditto`, and ejects the image device. Older macOS retains an `hdiutil -plist` fallback without a forced mount point.
 - Static shell syntax validation of the modified DMG block passed; the existing real macOS `dmg-pkg` and live MacGPG tests remain the required physical regression validation.
+- A second physical macOS ARM64 install attempt at `a15ef6171e614a4862df0e2da4d40a5375eefc45` confirmed that native DMG mounting/copying now succeeds; failure moved into `pkg-extract dmg-pkg`.
+- Rechecked the real GPG Suite package shape. The outer package is `Install.pkg`; the MacGPG component identity used by GPG Suite is `MacGPG2.1_Core.pkg`, and its flat-package `Payload` is gzip-compressed cpio rather than the raw cpio used by the original synthetic test.
+- Corrected the MacGPG catalog component to `MacGPG2.1_Core.pkg`.
+- Extended generic `dmg-pkg` extraction to accept both raw cpio and gzip-compressed cpio Payloads while preserving the existing path-safety validation before extraction.
+- Updated the `pkg-extract.lib.sh` operational manual for gzip-compressed Payload support.
+- Updated the permanent macOS `dmg-pkg` fixture to use `Install.pkg`, `MacGPG2.1_Core.pkg` and a gzip-compressed cpio Payload, so the physical regression is represented mechanically.
 
 ## Current state
 
-The original package/catalog design remains unchanged. The physical failure identified a generic macOS DMG backend defect rather than a MacGPG-specific defect. The defect is corrected at `rumiai-os` revision `a15ef6171e614a4862df0e2da4d40a5375eefc45`.
+The first physical defect (forced custom DMG mount point) is fixed and the second physical run demonstrated that the corrected native DMG path reaches the compound flat-package extraction stage.
 
-The operational `extract` manual remains accurate because the public command contract and supported formats did not change; only the host-specific native DMG backend changed. The existing permanent `dmg-pkg` test exercises this real path on macOS and should now protect the regression.
+The second defect was a mismatch between the synthetic fixture and the real GPG Suite installer shape: wrong component metadata plus an uncompressed synthetic Payload. Implementation, catalog, manual and permanent test are now aligned with the real flat-package structure at the revisions above.
 
-Physical validation of the corrected revision is still pending.
+No new package-model semantic is required: the canonical `dmg-pkg` contract already requires extraction of the selected component's Payload without constraining the installer-internal compression encoding.
+
+Physical validation of the corrected component/Payload path is still pending.
 
 ## Next action
 
-Update the physical macOS ARM64 checkout to the corrected `rumiai-os` revision and retry the real composed path:
+Update the physical macOS ARM64 checkouts to the corrected `rumiai-os` and `pkg-catalog` revisions and retry the real composed path from an `m` shell:
 
 ```text
+./m
 pkg install macgpg
 gpg --version
 ```
@@ -81,4 +90,4 @@ If the corrected physical path passes, perform the final task consistency checkp
 
 ## Blockers / open questions
 
-- Physical macOS ARM64 validation of the corrected DMG backend remains pending.
+- Physical macOS ARM64 validation of the corrected component name and compressed Payload handling remains pending.
