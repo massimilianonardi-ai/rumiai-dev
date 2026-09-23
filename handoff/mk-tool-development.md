@@ -12,9 +12,9 @@ This handoff stores only current task state and revision-specific evidence. Dura
 ## Current repository revisions
 
 ```text
-rumiai-dev       eedb38892322091944d90b2fe90eedd12a3e8707  (pre-synchronization HEAD)
-rumiai-os        6a9e2da2c3a91ab1ac29b64c8268dc92030b5599
-rumiai-tests     a8befac73543de44f6c451569189ab1a8cc2aa3c
+rumiai-dev       0f7edcb790c67f29881ae555606f71421f3ad0b0  (pre-synchronization HEAD)
+rumiai-os        ec670644237079b6e809aa2efe95cba5ed853b92
+rumiai-tests     ae97cca15f37394c364417a20202f9919b766dfc
 rumiai-dev-PoCs  dfdb0d553ff94f27d6408aa8cdbedf266055cd7e
 pkg-catalog      da7507439b71737cf4a40d85cac059824e4b9a63
 ```
@@ -189,7 +189,7 @@ Formal `rumiai-validate` evidence for this Node-backed scope has not been re-est
 
 No physical stable-reference-host validation was performed in this work unit.
 
-## Completed maintenance-safety experiments
+## Completed maintenance-safety experiments and promotion
 
 PoC 033:
 
@@ -200,7 +200,7 @@ Ubuntu PASS
 macOS  PASS
 ```
 
-PoC 033 established experimentally that immutable candidate reclamation does not require reader leases when maintenance first removes an unselected candidate from the canonical namespace and restoration remains transactional. It also established that persistent marker-file ownership is safe but not crash-live.
+PoC 033 established that immutable candidate reclamation does not require reader leases when maintenance first removes an unselected candidate from the canonical namespace and restoration remains transactional. Persistent marker-file ownership was race-safe but not crash-live.
 
 PoC 034:
 
@@ -212,7 +212,7 @@ Ubuntu PASS
 macOS  PASS
 ```
 
-The final run observed on both hosted platforms:
+Observed on both hosted platforms:
 
 ```text
 ownership-witness=posix-fifo-open-reader
@@ -222,31 +222,118 @@ selector-temp=reclaimable-after-owner-death
 reader-lease=still-not-required
 ```
 
-Two preceding PoC 034 hosted attempts failed because of test-driver defects and were corrected forward. The successful run above is the evidence-bearing experiment. The temporary hosted workflow was removed after evidence collection.
+The product-policy boundary was then resolved from current subsystem ownership:
 
-No current `MK.md`, `CURRENT-MODEL.md`, product implementation or permanent test has yet been changed by PoC 033/034.
+- shared-artifact maintenance remains private `mk` behavior because the store is private `user/sys/mk/cache` state;
+- the baseline is structural hygiene, not a retention/eviction policy;
+- ordinary hygiene is opportunistic and limited to fingerprint namespaces touched by `mk`;
+- the selected candidate is preserved;
+- committed unselected candidates and stale crash residue may be reclaimed;
+- publication/maintenance liveness uses POSIX FIFO ownership released by kernel descriptor closure;
+- no TTL/LRU, cache-size limit, whole-fingerprint eviction, global sweeping guarantee or public cache-management command was introduced.
+
+Canonical promotion:
+
+```text
+rumiai-dev
+811c9cea97bfcb204ba9ff670735d6d47e202e9b
+    specifications/rumiai-os/MK.md
+
+9eb71609664a5b39324a49d41b315e7664004c76
+    specifications/rumiai-os/CURRENT-MODEL.md
+
+0f7edcb790c67f29881ae555606f71421f3ad0b0
+    MK.md stale pre-shared-artifact scope sentence removed during consistency gate
+```
+
+Product/manual implementation:
+
+```text
+rumiai-os
+4a54c2928ad763097805e44e961b60fca46a5d0c
+    lib/sys/js/mk.lib.js
+
+378abdb3d477ff055df697e730529328fb5197fc
+    res/sys/manual/mk
+
+ec670644237079b6e809aa2efe95cba5ed853b92
+    res/sys/manual/mk.lib.js
+```
+
+The implementation adds private attempt/publication/maintenance FIFO leases, stale-owner probing without PID/timeout heuristics, quarantine-first unselected-candidate reclamation, abandoned staging/selector cleanup and opportunistic hygiene before restore/publication. Reader registration is still not required because restoration remains transactional.
+
+Permanent-test changes:
+
+```text
+rumiai-tests
+c44c01489e14bc86dfb7071aca3040d131d0fdba
+    shared-artifact-concurrency.test realigned for post-selector reclamation
+
+e71fb632f040c6123243d756f1d6b4987c57dd30
+7aa87fb737e6ffbd14374a828c6c0c364fcba269
+    shared-artifact-maintenance.test added and made executable
+
+5764a1897512803703b0fedd205f01529250e5b1
+    maintenance test observes the newly created artifact namespace directly
+
+9614d96ab42588be9161e4ab996ed222f7fbd08a
+    maintenance crash test kills the actual FIFO-owning Node process
+```
+
+Task scope:
+
+```text
+validation/mk-shared-artifacts.conf
+rumiai-os-commit ec670644237079b6e809aa2efe95cba5ed853b92
+11 selections, including shared-artifact-concurrency.test and
+shared-artifact-maintenance.test
+```
+
+Final auxiliary hosted product run:
+
+```text
+35864985781
+exact rumiai-os ec670644237079b6e809aa2efe95cba5ed853b92
+
+Ubuntu 24.04 / nodejs v26.10.0
+    PASS shared local artifact concurrency
+    PASS shared artifact structural hygiene
+
+macOS 26 arm64 / nodejs v26.10.0
+    PASS shared local artifact concurrency
+    PASS shared artifact structural hygiene
+```
+
+This is auxiliary hosted evidence, not formal validation.
+
+Formal `rumiai-validate mk-shared-artifacts` was also exercised in hosted runs. The launcher correctly creates a fresh isolated clone of the configured product revision, but that clone currently has no managed/default Node.js runtime. Consequently Node-backed selections report SKIP and task validation is not positively closed. The final diagnostic formal run was:
+
+```text
+35864985930
+Ubuntu: validation failure because selections are SKIP
+macOS:  validation failure because selections are SKIP
+```
+
+Provisioning Node.js in the source/update checkout does not solve this because formal validation intentionally executes a different disposable clone. Per current `TESTING.md`, preparation of such a target runtime belongs to `rumiai-validate`; no workflow-only bypass should be relabelled as formal evidence.
+
+Temporary hosted/formal workflows created for this work unit were removed after evidence collection. No physical stable-reference-host validation was performed.
 
 ## Active next work unit
 
-Resolve the product-policy boundary for shared-artifact maintenance before promotion.
+The shared-artifact structural-hygiene product work is promoted and has positive auxiliary cross-host evidence, but the broader `mk` task is not formally closed because the Node-backed validation environment cannot yet satisfy its declared runtime precondition.
 
-The coordination/safety mechanism is experimentally settled enough to promote only after the remaining policy choices are made from current subsystem responsibilities:
+The next work unit is therefore the validation-environment preparation problem for Node-backed `rumiai-os` scopes. Do not solve it by injecting a host Node binary or by preparing only the operator/source checkout. Any solution must preserve:
 
-```text
-who owns maintenance behavior
-when maintenance runs
-what baseline retention/reclamation policy exists
-whether any user-facing maintenance control is in scope
-```
+- execution against the exact disposable target revision;
+- real RumiAI package/runtime composition;
+- revision-specific/reproducible evidence;
+- current test independence and runner neutrality;
+- explicit accounting for any catalog/package revision that materially participates in target preparation.
 
-Do not introduce a public cache-management command merely because safe reclamation is now possible. Keep remote transport, cross-user trust and distributed coordination out of scope unless a concrete current requirement introduces them.
-
-After the policy boundary is settled, apply the specification promotion gate. If promoted, realign the canonical specification(s), `mk` implementation, library/command manuals as applicable, permanent tests and proportional validation in one forward-only sequence.
+Once that infrastructure is canonically defined and implemented, rerun `rumiai-validate mk-shared-artifacts` on required hosts. Whole-fingerprint retention/eviction policy remains a separate future `mk` concern and is not implied by this validation work.
 
 ## Open questions
 
-- Does shared-artifact maintenance remain a private `mk` implementation responsibility, or does an existing current general state/cache responsibility already own it?
-- What is the smallest baseline maintenance trigger that avoids unbounded residue without inventing a user-facing policy prematurely?
-- Which committed candidates are retained versus reclaimable in the baseline?
-- Is whole-fingerprint eviction part of the baseline or only a future policy mechanism?
-- Formal `rumiai-validate` evidence for Node-backed `mk` scopes still needs current evidence before the task can be called closed.
+- What is the canonical, reproducible way for `rumiai-validate` to prepare managed target packages/runtime dependencies inside its disposable clone?
+- Which revision/package identity evidence must be recorded when `pkg-catalog` participates in validation-environment preparation?
+- After formal Node-backed validation is available, does this work unit require physical stable-reference-host execution or is hosted cross-host evidence sufficient for the current milestone?
