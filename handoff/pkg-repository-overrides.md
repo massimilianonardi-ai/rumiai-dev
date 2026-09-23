@@ -12,7 +12,7 @@ Refactor the package repository-adapter model so each repository `type` remains 
 ```text
 rumiai-dev      075759fce59a76016575660347c199fef373768a  (pre-checkpoint HEAD before this synchronization)
 rumiai-os       c2d8d4a0c4503e1de461e72840a13abb0da61c41
-rumiai-tests    82e19ac266283925ae59f0de050775c6378efec1
+rumiai-tests    5515865dcc574af140db796c80d174c3b4d47483
 rumiai-dev-PoCs 3610a24139a309ad15e0172f8758d4347a832042
 pkg-catalog     da7507439b71737cf4a40d85cac059824e4b9a63
 ```
@@ -68,16 +68,17 @@ pkg-catalog     da7507439b71737cf4a40d85cac059824e4b9a63
 - Added the missing Apache Maven repository library manual and realigned the artifact-handler manual and canonical package-model specification.
 - Permanent artifact-handler coverage now exercises direct template URL reuse, both checksum-sidecar record formats, and direct checksum-sidecar reuse. Existing Apache Maven contract coverage continues to exercise digest-only acceptance plus filename/duplicate/bad-digest rejection through the public Maven adapter.
 - Final static consistency review verified public function/manual coverage, absence of the superseded internal checksum-sidecar helper, and agreement between implementation, permanent tests and canonical specification.
+- Added dedicated task validation scope `validation/pkg-repository-overrides.conf` covering artifact handlers, GitHub composition, Apache Maven reuse and GeoServer SourceForge reuse against the exact current `rumiai-os` revision.
 
 ## Current state
 
 The architecture and implementation are aligned around one shared artifact-mechanism layer usable in two ways: explicit catalog overrides and internal composition by complete repository types. Current evidence supports `template-url`, `checksum-sidecar`, `checksum-manifest` and `sourceforge-rss`; other adapters remain custom rather than being forced into broader handlers.
 
-No live/runtime validation has been obtained for the latest revisions in this task. The available execution container cannot resolve github.com. The current full-health validation scope in `rumiai-tests` is still pinned to `rumiai-os@92f0d459225ee4117f3c2cb32aa1b8aa9f17ec90`, so running that workflow would not validate current `rumiai-os@c2d8d4a0c4503e1de461e72840a13abb0da61c41`. That validation-scope state belongs to the parallel test-suite-realignment task and was preserved.
+Manual Ubuntu x64 validation was attempted directly with `rumiai-test --validation`. The correct runner selection namespace is relative to `tests/` (for example `rumiai-os/pkg-repository-artifact`); the earlier `tests/...` and `./tests/...` invocations were invalid. The first correctly selected artifact-handler validation produced a real FAIL. Subsequent direct `--validation` runs were blocked because the first completed validation session made the suite working tree non-clean, which is expected runner behavior; multi-selection task validation belongs to `rumiai-validate`. A dedicated `pkg-repository-overrides` validation scope now exists for that purpose. The exact artifact-handler failure still needs diagnosis from its persisted log before validation can complete.
 
 ## Next action
 
-Run proportional permanent validation for the current artifact-handler, GitHub repository and Apache Maven repository groups against `rumiai-os@c2d8d4a0c4503e1de461e72840a13abb0da61c41` in an executable environment. If it passes, perform the final completion checkpoint and close this handoff forward-only.
+Inspect the persisted log from the failed Ubuntu x64 artifact-handler run, correct the implementation/test mismatch if confirmed, then run `./rumiai-validate pkg-repository-overrides` on a clean Ubuntu x64 checkout. If the task scope passes without required SKIPs, perform the final completion checkpoint and close this handoff forward-only.
 
 ## Blockers / open questions
 
