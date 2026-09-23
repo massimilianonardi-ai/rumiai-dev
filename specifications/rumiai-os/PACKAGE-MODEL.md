@@ -1,7 +1,7 @@
 # RumiAI OS — Package model
 
 Status: **Current / normative**  
-Updated: 2026-09-22
+Updated: 2026-09-23
 
 This document defines the current semantic contract of the `m` package subsystem without duplicating implementation internals that belong in `rumiai-os`.
 
@@ -120,6 +120,75 @@ on a particular host. The historical name `catalog` is not a package stream name
 and has no fallback semantics.
 
 Package definitions describe how a package is resolved/integrated. Repository-specific behavior belongs behind repository adapters rather than leaking provider-specific assumptions into the generic package orchestration.
+
+
+A repository `type` is a **complete default adapter**. Selecting a type must be
+sufficient to provide that type's normal version and artifact behavior; optional
+artifact overrides do not turn the type into a partial adapter.
+
+A repository descriptor may replace specific artifact-resolution responsibilities
+through trusted typed subdescriptors:
+
+```text
+repository/
+    type
+    ...
+    download/      # optional
+        type
+        <type-specific declarative fields>
+
+    metadata/      # optional
+        type
+        <type-specific declarative fields>
+```
+
+An absent override means "use the repository type's default behavior" for that
+responsibility. A present override replaces only its own responsibility; all
+other behavior, including version discovery/order/exact-release semantics,
+continues to come from the repository type. Repository types may internally
+reuse the same trusted handler mechanisms without requiring those mechanisms to
+be exposed as catalog overrides.
+
+Override metadata is inert declarative data. Every supported override type has a
+closed schema implemented by RumiAI-owned trusted code. Catalog data must not
+supply shell code, callbacks, arbitrary expressions, executable parsers or an
+open-ended property bag.
+
+The current download override type is:
+
+```text
+template-url
+```
+
+It resolves a deterministic artifact name and HTTPS URL from closed templates.
+The current template vocabulary is deliberately small: `{version}` is accepted
+for artifact-name templates; URL templates may additionally use the already
+resolved `{name}`. Platform/vendor spelling remains ordinary stream-specific
+catalog data rather than creating a second generic os/arch translation system.
+
+The current metadata override types are:
+
+```text
+checksum-sidecar
+checksum-manifest
+sourceforge-rss
+```
+
+They resolve authoritative artifact metadata through their own closed schemas.
+`checksum-sidecar` and `checksum-manifest` select the checksum for exactly the
+resolved artifact name and obtain a positive byte size for that resolved
+download. `sourceforge-rss` selects the RSS entry for the exact resolved
+download URL and obtains its positive byte size and digest.
+
+The existing range value `digest_type` remains the required integrity
+**algorithm** where applicable (for example `md5`, `sha256` or `sha512`).
+It is independent of the metadata-handler type and must not be overloaded to
+select an override implementation.
+
+Regardless of which default/override mechanisms produced it, artifact resolution
+converges to the same canonical artifact descriptor consumed by `pkg-download`.
+The generic downloader therefore remains unaware of repository type, override
+type and upstream metadata protocol.
 
 Current package-library physical organization keeps public subcommand entrypoint libraries and cross-cutting package orchestration directly under `lib/sys/sh/pkg/`. Internal facility/dependency libraries live under `lib/sys/sh/pkg/facility/`. Repository-specific upstream adapters live under `lib/sys/sh/pkg/repository/`. Physical grouping does not change library leaf identity or manual-topic identity. `pkg-provider.lib.sh` remains directly under `lib/sys/sh/pkg/` because it is both the public `pkg provider` subcommand entrypoint and the provider-selection API; internal facility-contract responsibilities must not be added to it merely to avoid creating appropriately owned internal libraries.
 
