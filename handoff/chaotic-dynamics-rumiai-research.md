@@ -802,10 +802,11 @@ Independent-claim structure includes:
 - anomaly detection when a variable leaves the range;
 - autonomous-agent mitigation of potential harm.
 
-The family has active members in multiple jurisdictions according to the Google Patents family view, including US, CA, CN, JP and KR; the EP application is shown as pending in the family snapshot.
+The family has active members in multiple jurisdictions according to the Google Patents family view, including US, CA, CN, JP and KR. The European application **EP3918526A4 / EP20748525.1A** is shown as pending in the current Google Patents snapshot. This European family member is especially relevant to future EU deployment and must be re-checked in the official EPO register if a concrete RumiAI mechanism approaches its claims.
 
-Reference:
+References:
 https://patents.google.com/patent/US10901375B2/en
+https://patents.google.com/patent/EP3918526A4/en
 
 ##### C. Continuation in the same Morgan Stanley family
 
@@ -991,6 +992,52 @@ Potentially relevant only if a future implementation specifically adopts tensor-
 
 Reference:
 https://patents.google.com/patent/US20250200248A1/en
+
+
+##### L. Broader risk-bounded dynamical control: not chaos-specific
+
+**US9753441B2 — Controlling dynamical systems with bounded probability of failure**
+
+Snapshot:
+
+```text
+priority: 2013-05-13
+assignee: Massachusetts Institute of Technology
+Google Patents status: Active
+listed adjusted expiration: 2036-01-19
+```
+
+This family is important precisely because it shows why future screening must not search only for the word `chaos`. The disclosed/claimed approach concerns a dynamical system in an uncertain environment, a bounded probability of failure, diffusion of a risk constraint into a martingale, augmentation of state/control with that martingale, and iterative MDP refinement.
+
+RumiAI relevance:
+
+Potentially material if a future RumiAI governor represents behavior as a controlled dynamical system and adopts a closely similar risk-constrained stochastic-control construction. It is not a patent on dynamical control in general and should not discourage ordinary Lyapunov, synchronization, invariant-set or other mathematically distinct approaches.
+
+Reference:
+https://patents.google.com/patent/US9753441B2/en
+
+##### M. Pending European oscillator-reservoir family
+
+**EP4555443A2 — No-delay, stochastic limit cycle oscillator reservoir computer and related methods**
+
+Snapshot:
+
+```text
+priority: 2022-07-12
+assignee shown: North Carolina State University
+Google Patents status: Pending
+application: EP23863889.4A
+publication: 2025-05-21
+```
+
+The published claims describe a physical reservoir computer with a forced limit-cycle oscillator implemented without delay or feedback; dependent claims identify Hopf or Lorenz oscillators and stochastic masking.
+
+RumiAI relevance:
+
+Low for conventional software-only dynamical models; potentially high for future European deployment of physical/neuromorphic RumiAI acceleration based on a single forced Hopf/Lorenz oscillator reservoir with similar architecture.
+
+Reference:
+https://patents.google.com/patent/EP4555443A2/en
 
 #### 10.4 Current non-US examples showing active patenting of chaos + ML/synchronization
 
@@ -1307,6 +1354,7 @@ autonomous-agent anomaly response in sensed chaotic environments
 physical/photonic/oscillator reservoir computing
 specific neural/observer + chaotic synchronization implementations
 hardware chaotic RNG / memristor / FPGA implementations
+broader risk-bounded dynamical-control methods when their specific claimed construction is reused
 ```
 
 No implementation should be inferred from this state.
