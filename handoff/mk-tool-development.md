@@ -12,9 +12,9 @@ This handoff stores only current task state and revision-specific evidence. Dura
 ## Current repository revisions
 
 ```text
-rumiai-dev       6208ddfd08627b4bd8553bc3a5ce5dcca1269f48  (pre-synchronization HEAD)
-rumiai-os        ec670644237079b6e809aa2efe95cba5ed853b92
-rumiai-tests     11449dde82c20559ead0ee23760a087c5abc9ed3
+rumiai-dev       88644da801a60484995fa90157af2bee1a3763e2  (pre-synchronization HEAD)
+rumiai-os        e82f68ba7862e11d52c01aa2f421881f86c37dd4
+rumiai-tests     895aaf54ade8da4fb23e62f23f18c41c27aad2eb
 rumiai-dev-PoCs  8bec42ffa657d22aac4641af2bb2c98217625554
 pkg-catalog      da7507439b71737cf4a40d85cac059824e4b9a63
 ```
@@ -380,6 +380,8 @@ Hosted formal run `35866953309` reached real Node-backed execution on both hosts
 - macOS in run `35869614435` has already published PASS for the corrected `watch.test`; the overall macOS formal job was still running at the latest observation.
 
 No product `mk` implementation or current `MK.md` semantics were changed by this test realignment.
+
+Concurrent IPC work advanced the repository HEADs after the formal `mk` run was started. The intervening `rumiai-os` changes touch only `lib/sys/sh/ipc.lib.sh` and its manual; the intervening `rumiai-tests` change touches only `tests/rumiai-os/ipc/contract.test`. They are orthogonal to the `mk` implementation/test surfaces. Formal `mk` evidence remains revision-specific to `rumiai-os` `ec670644237079b6e809aa2efe95cba5ed853b92` and `rumiai-tests` `11449dde82c20559ead0ee23760a087c5abc9ed3`.
 
 ## Active next work unit
 
