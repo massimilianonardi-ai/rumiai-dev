@@ -221,13 +221,25 @@ Individual tests do not own environment isolation.
 
 A direct `.test` execution, and a development run through `rumiai-test`, acts on the real ambient target and process environment supplied by the caller. This is deliberate: development execution must be able to test the actual checkout/environment being worked on.
 
-Formal validation through `rumiai-validate` uses a disposable validation environment prepared by the launcher. For a `rumiai-os` target the environment starts from an independent clean Git clone checked out at the exact configured commit and isolated mutable user roots, including at least `HOME` and temporary storage plus applicable standard user-state roots such as XDG directories. The real host OS, architecture, system tools and other host properties remain real unless a specific current contract requires additional isolation.
+Formal validation through `rumiai-validate` uses a disposable validation environment prepared by the launcher. For a `rumiai-os` target the normal current-product path starts from the updated committed HEAD of the operator's product checkout and materializes that exact revision in an independent clean Git clone with isolated mutable user roots, including at least `HOME` and temporary storage plus applicable standard user-state roots such as XDG directories. A deliberately revision-pinned scope may still name an exact older commit when reproducing or closing a revision-specific work unit. The real host OS, architecture, system tools and other host properties remain real unless a specific current contract requires additional isolation.
 
-Target preparation is part of the validation environment, not test setup. Before the audit baseline and before any test executes, `rumiai-validate` selects the real host platform through the target's canonical `osarch update` path. A validation scope may additionally declare target packages that must be present. Those packages are installed inside the same disposable target through the real public `pkg install` path; no host runtime may be copied or injected as a substitute. A declared package operand should pin a concrete version whenever the validated work depends on that concrete runtime rather than merely on whatever version current package resolution would select.
+Target preparation is part of the validation environment, not test setup. Before the audit baseline and before any test executes, `rumiai-validate` selects the real host platform through the target's canonical `osarch update` path and resolves the execution requirements associated with the tests that will actually run.
 
-When target-package preparation consumes `pkg-catalog`, the validation scope must also declare the exact expected catalog commit. The launcher records the actual immutable catalog snapshot used by package preparation and rejects the environment before tests run if it differs from the configured commit. This prevents silent catalog drift from being attributed to the configured validation scope. The package subsystem remains the authority for package resolution and installation; `rumiai-validate` does not reimplement catalog or package semantics.
+Execution requirements are suite-owned declarative metadata, independent from validation scopes. A requirement profile identifies one or more canonical test selections and the target packages needed when at least one discovered selected test intersects that profile. The validator uses `rumiai-test --list` for both scope expansion and requirement matching so selection/discovery semantics remain single-sourced.
 
-Host-platform selection and declared package preparation may create or change operational selector/package paths in the disposable tree after the exact source commit has been materialized. Those changes are validation-environment preparation, not source revision changes. The filesystem audit baseline is captured only after preparation completes, so test-induced changes remain distinguishable from the declared prepared state.
+Current package preparation records inside a requirement profile are:
+
+```text
+selection<TAB><test-or-group>
+target-package<TAB><package-spec>
+pkg-catalog-commit<TAB><exact-commit>
+```
+
+`selection` and `target-package` are repeatable. A profile that declares target packages must declare exactly one expected `pkg-catalog` commit. The package spec uses the package subsystem's existing operand grammar. Requirements from all matching profiles are merged and deduplicated before the disposable environment is prepared; conflicting catalog commitments are validation-configuration errors.
+
+Required target packages are installed inside the same disposable target through the real public `pkg install` path; no host runtime may be copied or injected as a substitute. The launcher records the actual immutable catalog snapshot used by package preparation and rejects the environment before tests run if it differs from the applicable requirement metadata. Failure to prepare a declared execution requirement is a validation infrastructure/configuration error, not a test SKIP.
+
+Host-platform selection and automatically resolved package preparation may create or change operational selector/package paths in the disposable tree after the exact source commit has been materialized. Those changes are validation-environment preparation, not source revision changes. The filesystem audit baseline is captured only after preparation completes, so test-induced changes remain distinguishable from the declared prepared state.
 
 Tests must use that supplied prepared target/environment unchanged as their execution base. They may create scenario-specific inputs and resources inside it, but they must not create another target clone/copy, another replacement user environment, or a fake RumiAI-owned component whose real behavior is claimed by the test.
 
@@ -314,25 +326,39 @@ development/change
 
 Not every work unit requires every intermediate step, but each used step must exercise the real property it claims to verify. The purpose of progression is to move defect discovery as early as possible, not to accumulate formal gates.
 
-## 16. Validation run, session result and task validation
+## 16. Validation run, session result and product/task validation
 
 A validation run produces evidence associated with precise revisions.
 
-Distinguish three levels:
+Distinguish four levels:
 
 ```text
-test result       result of an individual property
-session result    aggregation of tests executed in the session
-task validation   evaluation of only the tests required by the work unit
+test result          result of an individual property
+session result       aggregation of tests executed in one prepared environment/session
+task validation      evaluation of the selected subset required by one work unit
+product validation   evaluation of the complete permanent suite for the current product revision
 ```
 
-The overall session result does not automatically invalidate a work unit.
+The complete product path is first-class. The operator must not need to know task-scope names, test locations or hidden execution prerequisites in order to validate `rumiai-os` as a whole.
+
+A full-product validation must therefore:
+
+1. update and resolve the current committed `rumiai-os` HEAD;
+2. discover the complete permanent suite through `rumiai-test --list`;
+3. resolve every suite-owned execution requirement that intersects that discovered set;
+4. prepare the required target environment automatically;
+5. execute the complete discovered suite;
+6. retain exact revision/environment/result evidence.
+
+A task scope remains useful during development because it reduces the selected test set. It must not change the meaning or prerequisites of those tests.
 
 If a session contains tests from multiple contexts, a work unit is validated when **all tests declared necessary by its validation scope PASS** on the applicable hosts. FAIL, ERROR or SKIP from tests outside the scope remain real evidence but do not invalidate that work unit.
 
-A required test that returns `SKIP` is not a PASS: the work unit remains unvalidated on that host until the required property is actually exercised or the applicable scope/host is corrected by authoritative current input.
+A required task test that returns `SKIP` is not a PASS: the work unit remains unvalidated on that host until the required property is actually exercised or current applicability is corrected by authoritative input.
 
-Required test selection must be fixed **before validation** based on:
+Full-product validation may contain host-inapplicable SKIPs where the permanent test itself correctly classifies the property as not applicable on that host. A SKIP caused by a preparable execution requirement that the suite failed to declare or prepare is a suite/validation defect and must not be accepted as successful product evidence.
+
+Required task-test selection must be fixed **before validation** based on:
 
 - the changed contract;
 - directly and materially affected consumers;
@@ -341,33 +367,35 @@ Required test selection must be fixed **before validation** based on:
 
 The scope must not be narrowed after a failure merely to exclude a test that demonstrated material dependence on the change.
 
-If a test initially considered unrelated fails during a session and analysis shows that the work unit caused the failure, that test enters the required scope before closure.
+If a test initially considered unrelated fails during a task session and analysis shows that the work unit caused the failure, that test enters the required scope before closure.
 
-## 17. Validation scope
+## 17. Validation scopes and execution requirements
 
-A **validation scope** is the versioned set of selections required to validate a work unit or health gate.
+A **validation scope** is only a versioned test-selection definition.
 
-A scope may contain one or more existing tests or groups. It does not require duplicating tests into a new hierarchy.
-
-For a `rumiai-os` scope, target-environment prerequisites are versioned with the scope rather than hidden in an external workflow. Current preparation records are:
-
-```text
-target-package<TAB><package-spec>
-pkg-catalog-commit<TAB><exact-commit>
-```
-
-`target-package` is repeatable and means that the real disposable target must successfully execute `pkg install <package-spec>` during launcher preparation. `pkg-catalog-commit` is a singleton and is required when one or more target packages are declared; it is invalid without target-package preparation. The package spec uses the package subsystem's existing operand grammar rather than introducing a validation-only package identity syntax.
+A scope may contain one or more existing tests or groups. It does not duplicate tests into a new hierarchy and it does not own the prerequisites needed to execute them.
 
 At least two uses are distinguished:
 
 ```text
-task    minimum sufficient scope to close a work unit
-health  broad system health/integrity check
+task    selected subset for focused development/work-unit validation
+health  complete product validation over the full permanent suite
 ```
 
-The full suite is normally a `health` gate. It is appropriate for releases, milestones, cross-cutting changes or deliberate broad checks, but **it is not the universal prerequisite for closing every task**.
+The normal health scope contains no explicit selection; it means the complete `tests/` root. The normal current-product scope also need not pin a `rumiai-os` commit: after the product checkout is updated, the validator resolves its exact committed HEAD and records that revision in the evidence.
 
-Different task scopes must be able to coexist and run independently so unrelated development is not blocked by unrelated failures.
+An explicit `rumiai-os-commit` remains permitted only when a scope deliberately needs revision-pinned reproduction/closure rather than current-product validation.
+
+Execution requirements are stored separately under suite-owned validation requirement metadata. They follow the tests, not the scope. Therefore the same selected test receives the same automatically prepared requirement whether it is reached through:
+
+```text
+full product validation
+a subsystem scope
+a work-unit scope
+per-test isolation
+```
+
+Different task scopes can coexist and run independently, but the operator never has to compose them in order to obtain complete product coverage. Full-product validation is the single operation that covers the whole suite and exposes regressions caused outside the subsystem currently being developed.
 
 ## 18. Formal validation requirements
 
@@ -375,12 +403,17 @@ Unless a documented exception applies:
 
 - the target and `rumiai-tests` must be committed;
 - the `rumiai-tests` working tree used to launch validation must be clean;
-- the target environment must start from a clean disposable clone of the exact configured target commit, with any declared platform/package preparation performed only inside that disposable environment before the audit baseline;
+- the current-product path updates the primary `rumiai-os` checkout and records its exact committed HEAD before preparing the disposable target;
+- a deliberately revision-pinned scope records and materializes its explicit exact commit;
+- the target environment starts from a clean disposable clone of that resolved exact target revision;
+- the validator resolves all applicable suite-owned execution requirements before the audit baseline and prepares them only inside the disposable target;
 - commits/revisions, host, architecture, selected target platform, date/time, executed selections, results, logs and validation-environment audit evidence must be recorded;
-- when package preparation participates, the declared package operands and actual `pkg-catalog` commit used by the real package path must also be recorded;
+- when package preparation participates, the resolved package operands plus expected and observed `pkg-catalog` revision must be recorded;
 - evidence must remain immutable and revision-specific.
 
 Cross-host task validation is closed only when all required scope tests PASS on all required applicable hosts.
+
+A full-product result is revision-specific to the exact product and suite revisions recorded by that validation; it does not retroactively validate later commits.
 
 Previous sessions remain valid for properties they actually exercised; an overall FAIL session does not turn its individual PASS results into FAIL.
 
@@ -390,15 +423,25 @@ Physical validation on stable reference hosts remains the final stage when requi
 
 ## 19. `rumiai-test` and `rumiai-validate`
 
-`rumiai-test` remains the simple semantically agnostic runner. Runner discovery, execution, logging, persistence and exit statuses are defined in `RUNNER.md`. Its discovery-only `--list` mode is the canonical way for another RumiAI testing tool to expand a selection into the exact ordered test identifiers that the runner would execute.
+`rumiai-test` remains the simple semantically agnostic runner. Runner discovery, execution, logging, persistence and exit statuses are defined in `RUNNER.md`. Its discovery-only `--list` mode is the canonical source for the exact ordered test identifiers selected by a test/group/root selection.
 
-`rumiai-validate` is the operational formal-validation launcher. It applies a versioned validation scope, prepares the exact disposable target/user environment, invokes the unchanged real tests, performs the validation-environment filesystem audit, publishes revision-specific evidence and aggregates the scope result without moving target assertions into the runner.
+`rumiai-validate` is the operational formal-validation launcher. It:
 
-For `rumiai-os`, formal validation always executes an independent disposable Git clone at the exact configured commit rather than the operator's target working tree or a Git worktree attached to it. The operator checkout may be used as a source/update point by the launcher, but it is never the target executed by the validation tests. Host-platform selection and target-package preparation are launcher responsibilities performed through the disposable target's own canonical public commands; they must not be moved into workflows, permanent tests or `rumiai-test`.
+- applies an optional selection scope;
+- resolves the exact current or explicitly pinned product revision;
+- expands the selected test set through `rumiai-test --list`;
+- resolves applicable suite-owned execution requirements from that discovered set;
+- prepares the disposable target/user environment;
+- invokes the unchanged real tests;
+- performs the validation-environment filesystem audit;
+- publishes revision-specific evidence;
+- aggregates the scope/product result.
 
-The default validation isolation granularity is `session`. The explicit stronger `test` mode uses `rumiai-test --list` to obtain canonical discovery and then runs each listed test in a fresh disposable environment; the validator must not duplicate runner discovery rules.
+For `rumiai-os`, formal validation always executes an independent disposable Git clone rather than the operator's target working tree or a Git worktree attached to it. The operator checkout is the source/update point for normal current-product validation, but it is never the executed target. Host-platform selection and target-package preparation are launcher responsibilities performed through the disposable target's own canonical public commands; they must not be moved into workflows, permanent tests or `rumiai-test`.
 
-An external workflow, including GitHub Actions, must remain an orchestrator: it may prepare hosts and invoke these tools, but must not duplicate target semantics or assertions that belong in `.test` files.
+The default validation isolation granularity is `session`. The explicit stronger `test` mode uses the same precomputed canonical discovered test set and gives each test a fresh disposable environment with the same automatically resolved applicable requirements.
+
+An external workflow, including GitHub Actions, remains an orchestrator: it may prepare hosts and invoke these tools, but it must not duplicate test selection, execution-requirement resolution, target semantics or assertions that belong in the suite/validator.
 
 ## 20. Promotion and removal of tests
 
