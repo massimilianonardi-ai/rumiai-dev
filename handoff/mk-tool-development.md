@@ -1,6 +1,6 @@
 # mk tool development
 
-Status: Active
+Status: Complete
 Updated: 2026-09-23
 
 ## Goal
@@ -12,8 +12,8 @@ This handoff stores only current task state and revision-specific evidence. Dura
 ## Current repository revisions
 
 ```text
-rumiai-dev       a6553b1ee17432638076e4b610cd84bbdc18136c  (pre-synchronization HEAD)
-rumiai-os        4cf6fb85f234db8db23114351c9da1f437e9a344
+rumiai-dev       e9742ce038c3c4a325da61cc3eb32c3282f97a3e  (pre-synchronization HEAD)
+rumiai-os        a15ef6171e614a4862df0e2da4d40a5375eefc45
 rumiai-tests     78c4c770150ce6ef70677b8895c2ab0588395c0f
 rumiai-dev-PoCs  8bec42ffa657d22aac4641af2bb2c98217625554
 pkg-catalog      da7507439b71737cf4a40d85cac059824e4b9a63
@@ -383,43 +383,85 @@ No product `mk` implementation or current `MK.md` semantics were changed by this
 
 Concurrent IPC work advanced the repository HEADs after the formal `mk` run was started. The intervening `rumiai-os` changes touch only `lib/sys/sh/ipc.lib.sh` and its manual; the intervening `rumiai-tests` change touches only `tests/rumiai-os/ipc/contract.test`. They are orthogonal to the `mk` implementation/test surfaces. Formal `mk` evidence remains revision-specific to `rumiai-os` `ec670644237079b6e809aa2efe95cba5ed853b92` and `rumiai-tests` `11449dde82c20559ead0ee23760a087c5abc9ed3`.
 
-## Physical stable-host validation attempt
+## Final physical stable-host validation
 
-The user executed the interactive physical validation launcher on both stable host classes on 2026-09-23, but selected scope `0`, which maps to `rumiai-os-health`, not the task scope `mk-shared-artifacts`.
+The dedicated formal task scope was executed successfully on both stable host classes on 2026-09-23.
 
-Published aggregate evidence:
+Exact validated inputs on both hosts:
 
 ```text
-macOS ARM64
-    validation/20260923T213109+0200-92949
-    rumiai-tests 78c4c770150ce6ef70677b8895c2ab0588395c0f
-    rumiai-os    5f01f0bccef37020057195c98809ba492f02443c
-    target-osarch macos-arm64
-    aggregate-status 2
+rumiai-tests
+    78c4c770150ce6ef70677b8895c2ab0588395c0f
 
-Ubuntu ARM64
-    validation/20260923T214445+0200-106287
-    rumiai-tests 78c4c770150ce6ef70677b8895c2ab0588395c0f
-    rumiai-os    5f01f0bccef37020057195c98809ba492f02443c
-    target-osarch linux-arm64
-    aggregate-status 2
+rumiai-os
+    ec670644237079b6e809aa2efe95cba5ed853b92
+
+target-package
+    nodejs@v26.10.0
+
+pkg-catalog
+    da7507439b71737cf4a40d85cac059824e4b9a63
+
+scope
+    mk-shared-artifacts
+    11 selections
 ```
 
-These runs do not close the physical `mk` gate for two independent reasons:
+Ubuntu 26.04 ARM64 physical validation:
 
-1. every selected `rumiai-os/mk/*.test` returned SKIP because the full-suite health scope does not declare the managed/default Node.js target package; the published `mk` logs report `managed nodejs runtime is not installed/default in the supplied target`;
-2. `rumiai-os-health` is pinned to `rumiai-os` `5f01f0bccef37020057195c98809ba492f02443c`, which predates the final shared-artifact `mk` revision `ec670644237079b6e809aa2efe95cba5ed853b92`; the delta includes `lib/sys/js/mk.lib.js`.
+```text
+aggregate branch
+    validation/20260923T215420+0200-246613
 
-The full health runs also contain unrelated FAIL/ERROR results, so they must not be reinterpreted as `mk` failures.
+target-osarch
+    linux-arm64
 
-## Active next work unit
+aggregate-status
+    0
 
-The Node-backed hosted formal-validation blocker is closed. Run `35869614435` is positive on both hosted Ubuntu and hosted macOS for exact `rumiai-os` `ec670644237079b6e809aa2efe95cba5ed853b92` and exact `rumiai-tests` `11449dde82c20559ead0ee23760a087c5abc9ed3`.
+result
+    VALIDATED
+```
 
-Complete the physical gate by running the dedicated scope `mk-shared-artifacts` on macOS ARM64 and Ubuntu 26.04 ARM64. That scope pins the exact product revision, declares `nodejs@v26.10.0`, pins `pkg-catalog` `da7507439b71737cf4a40d85cac059824e4b9a63`, and selects the 11 permanent `mk` tests.
+macOS ARM64 physical validation:
 
-Whole-fingerprint retention/eviction policy remains a separate future `mk` concern and is not implied by this validation work.
+```text
+aggregate branch
+    validation/20260923T215429+0200-70862
 
-## Open questions
+target-osarch
+    macos-arm64
 
-- Do both physical `rumiai-validate mk-shared-artifacts` runs complete with all 11 required selections PASS and no required SKIP/FAIL/ERROR?
+aggregate-status
+    0
+
+result
+    VALIDATED
+```
+
+Both aggregate records contain the same 11 required `mk` selections. The user-visible runs show every selection PASS with zero FAIL, SKIP or ERROR. The launcher also recorded the expected immutable `pkg-catalog` revision as the observed catalog revision on both hosts.
+
+The earlier full-health attempts remain separate diagnostic evidence and are not part of this successful task validation.
+
+## Completed outcome
+
+The shared-artifact / structural-hygiene `mk` work unit is complete.
+
+The final evidence chain now includes:
+
+- promoted current `mk` semantics and aligned manuals;
+- permanent regression coverage for the 11-selection task scope;
+- positive hosted auxiliary and formal validation;
+- positive physical formal validation on both stable reference host classes.
+
+No product or specification change was required by the final physical validation. Later repository HEADs contain unrelated work and are not relabelled as validation evidence for this revision-specific `mk` milestone.
+
+Whole-fingerprint retention/eviction remains outside this completed work unit; the current `MK.md` contract intentionally does not define TTL/LRU, cache-size limits, whole-fingerprint eviction or global sweeping.
+
+## Next action
+
+None for this work unit.
+
+## Blockers / open questions
+
+None.
