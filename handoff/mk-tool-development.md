@@ -12,9 +12,9 @@ This handoff stores only current task state and revision-specific evidence. Dura
 ## Current repository revisions
 
 ```text
-rumiai-dev       88644da801a60484995fa90157af2bee1a3763e2  (pre-synchronization HEAD)
+rumiai-dev       d7dfd3bcd9ff2c6f3a48d2b721651a1fa6c824dd  (pre-synchronization HEAD)
 rumiai-os        e82f68ba7862e11d52c01aa2f421881f86c37dd4
-rumiai-tests     895aaf54ade8da4fb23e62f23f18c41c27aad2eb
+rumiai-tests     78c4c770150ce6ef70677b8895c2ab0588395c0f
 rumiai-dev-PoCs  8bec42ffa657d22aac4641af2bb2c98217625554
 pkg-catalog      da7507439b71737cf4a40d85cac059824e4b9a63
 ```
@@ -376,8 +376,8 @@ Hosted formal run `35866953309` reached real Node-backed execution on both hosts
 - `rumiai-tests` commit `25f2b52335484ee063edc47feee00b2644b2fb62` stabilizes `watch.test` by widening observation time, using explicit quiescence windows and accepting `>=` while waiting so an overshoot is not misreported as timeout.
 - `rumiai-tests` commit `11449dde82c20559ead0ee23760a087c5abc9ed3` makes the temporary hosted formal workflow run when `watch.test` changes so the corrected test revision is actually exercised.
 - Formal hosted run `35869614435` exercises exact `rumiai-os` `ec670644237079b6e809aa2efe95cba5ed853b92` with exact `rumiai-tests` `11449dde82c20559ead0ee23760a087c5abc9ed3`.
-- Ubuntu in run `35869614435` completed successfully; its published validation record has aggregate status 0 and all selected tests PASS.
-- macOS in run `35869614435` has already published PASS for the corrected `watch.test`; the overall macOS formal job was still running at the latest observation.
+- Ubuntu in run `35869614435` completed successfully; published aggregate validation record `validation/20260923T134818+0000-2220` has aggregate status 0 and all 11 selected tests PASS.
+- macOS in run `35869614435` completed successfully; corrected `watch.test` PASSed and published aggregate validation record `validation/20260923T134832+0000-1393` has aggregate status 0. The formal scope is therefore VALIDATED on both hosted environments for the exact revisions above.
 
 No product `mk` implementation or current `MK.md` semantics were changed by this test realignment.
 
@@ -385,15 +385,12 @@ Concurrent IPC work advanced the repository HEADs after the formal `mk` run was 
 
 ## Active next work unit
 
-Finish observing hosted formal run `35869614435`.
+The Node-backed hosted formal-validation blocker is closed. Run `35869614435` is positive on both hosted Ubuntu and hosted macOS for exact `rumiai-os` `ec670644237079b6e809aa2efe95cba5ed853b92` and exact `rumiai-tests` `11449dde82c20559ead0ee23760a087c5abc9ed3`.
 
-- If the macOS job completes successfully, capture the exact formal validation evidence and perform the final consistency check for the shared-artifact work unit.
-- If the macOS job fails after the corrected `watch.test` PASS, diagnose only the newly failing selection/infrastructure path and correct it forward.
-- After positive formal evidence is available, resolve whether additional physical stable-reference-host validation is required for this milestone, then either close this work unit or record the remaining validation obligation explicitly.
+The remaining closure decision is whether this milestone also requires physical validation on the stable reference hosts defined by current testing policy. GitHub-hosted execution is formal revision-specific evidence but is not physical stable-host evidence.
 
 Whole-fingerprint retention/eviction policy remains a separate future `mk` concern and is not implied by this validation work.
 
 ## Open questions
 
-- What is the final aggregate outcome of macOS in hosted formal run `35869614435`?
-- After positive formal Node-backed validation is available, does this work unit require physical stable-reference-host execution or is the formal hosted cross-host evidence sufficient for the current milestone?
+- Does this `mk` milestone require final physical execution on the stable reference hosts (macOS and Ubuntu 26.04 ARM64), or is the current formal hosted evidence sufficient for the intended milestone closure?
