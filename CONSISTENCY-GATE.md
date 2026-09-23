@@ -21,9 +21,9 @@ This is an execution precondition, not a recommendation.
 
 Conversation memory, summaries and historical commits do not satisfy the preflight when current repository sources can answer the question.
 
-For any task that creates, renames, removes or modifies a RumiAI-owned directly executable command, `specifications/rumiai-os/COMMAND-ENTRYPOINTS.md` and `specifications/rumiai-os/DOCUMENTATION-MODEL.md` are part of the smallest complete source set, and the affected operational manual topic must be inspected together with the command.
+For any task that creates, renames, removes or modifies a `m`- or RumiAI-owned directly executable command, `specifications/rumiai-os/COMMAND-ENTRYPOINTS.md` and `specifications/rumiai-os/DOCUMENTATION-MODEL.md` are part of the smallest complete source set, and the affected operational manual topic must be inspected together with the command.
 
-For any task that creates, renames, removes or modifies a RumiAI-owned library or one of its functions, `specifications/rumiai-os/FILESYSTEM-NAMING.md`, `specifications/rumiai-os/LIBRARY-INTERFACES.md` and `specifications/rumiai-os/DOCUMENTATION-MODEL.md` are part of the smallest complete source set, and the affected library manual topic must be inspected together with the library.
+For any task that creates, renames, removes or modifies a `m`- or RumiAI-owned library or one of its functions, `specifications/rumiai-os/FILESYSTEM-NAMING.md`, `specifications/rumiai-os/LIBRARY-INTERFACES.md` and `specifications/rumiai-os/DOCUMENTATION-MODEL.md` are part of the smallest complete source set, and the affected library manual topic must be inspected together with the library.
 
 `todo/` is not part of the mandatory preflight for unrelated tasks. Read `todo/README.md` and the relevant TODO item when choosing deferred work, checking whether a newly discovered deferred issue is already known, activating a TODO or maintaining the pending-work inventory.
 
@@ -140,7 +140,7 @@ Do not rewrite historical commits or historical validation evidence.
 
 ## 8. Command/library manual consistency gate
 
-Every RumiAI-owned directly executable command identity is coupled to an owner-local operational manual topic under `DOCUMENTATION-MODEL.md`.
+Every `m`- or RumiAI-owned directly executable command identity is coupled to an owner-local operational manual topic under `DOCUMENTATION-MODEL.md`.
 
 For any command change:
 
@@ -154,7 +154,7 @@ modify
 
 When documented observable behavior changes, update the manual in the same work unit. A purely internal command implementation change requires no textual manual edit when the existing page remains fully accurate.
 
-Every RumiAI-owned library identity is likewise coupled to exactly one owner-local manual topic, and every defined library function is classified public or internal under `LIBRARY-INTERFACES.md`.
+Every `m`- or RumiAI-owned library identity is likewise coupled to exactly one owner-local manual topic, and every defined library function is classified public or internal under `LIBRARY-INTERFACES.md`.
 
 For any library change:
 
@@ -201,8 +201,8 @@ After every modification:
 1. reread the resulting diff;
 2. re-evaluate it against `RULES.md` and the applicable current specifications;
 3. when a specification was changed, reclassify every added design statement through the specification promotion gate;
-4. when a RumiAI-owned command was created, renamed, removed or modified, perform the command/manual consistency gate;
-5. when a RumiAI-owned library or function was created, renamed, removed or modified, verify library visibility naming and perform the library/manual consistency gate;
+4. when a `m`- or RumiAI-owned command was created, renamed, removed or modified, perform the command/manual consistency gate;
+5. when a `m`- or RumiAI-owned library or function was created, renamed, removed or modified, verify library visibility naming and perform the library/manual consistency gate;
 6. scan the touched subsystem for superseded terminology/mechanisms;
 7. verify no unrelated user/repository changes were overwritten;
 8. run only tests proportional to the change under `TESTING.md`;
@@ -225,7 +225,7 @@ When documentation is touched, additionally verify:
 - current specifications contain only promoted contract and do not accumulate provisional design;
 - operational manual content remains revision-coupled to the implementation/API it describes;
 - mandatory command manual topics are not omitted because a command is technical/internal;
-- mandatory library manual topics are present for every RumiAI-owned library identity;
+- mandatory library manual topics are present for every `m`- or RumiAI-owned library identity;
 - library manuals expose the complete public function API and do not expose underscore-prefixed internal functions as callable API;
 - public/internal library function naming follows `LIBRARY-INTERFACES.md`;
 - TODO files contain only deferred-work planning state and do not become substitute specifications or task handoffs;

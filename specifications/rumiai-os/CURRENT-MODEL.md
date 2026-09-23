@@ -27,6 +27,8 @@ RumiAI
 
 `m` MUST NOT semantically depend on RumiAI.
 
+Terminology follows that layer boundary. In current development contracts, implementation and operational reference, unqualified `RumiAI` denotes the branded upper layer or the product as a whole only when that broader product context is actually intended. A technical responsibility owned by `m` MUST be described as `m` (or by its concrete `sys`/`pkg` responsibility), not as RumiAI-owned or RumiAI-managed. A rule that applies to both semantic layers names both explicitly as `m` and RumiAI. Repository-level references may use `rumiai-os` or RumiAI OS when the repository/product as a whole is the subject.
+
 `pkg`, package runtime infrastructure and `pkg-catalog` belong to `m`.
 
 ## 2. Root entrypoints
@@ -273,7 +275,7 @@ default
 
 Package definitions/catalog data live in the separate `pkg-catalog` repository. Runtime adapters, resolution, download, extraction, integration and launcher logic belong to `m` inside `rumiai-os`.
 
-Package launchers resolve mutable state through `state-path`. Package HOME is user-scoped state selected at launch. RumiAI-managed package configuration uses the reserved `.m/` subnamespace within the package configuration area.
+Package launchers resolve mutable state through `state-path`. Package HOME is user-scoped state selected at launch. `m`-managed package configuration uses the reserved `.m/` subnamespace within the package configuration area.
 
 Package `var/` compatibility routing is static and system-scoped; it does not become a dynamic user-state router.
 
@@ -315,7 +317,7 @@ See `LANG-BOOTSTRAP.md`.
 
 `mk` belongs to `m` and is responsible for management and orchestration of a project's development lifecycle.
 
-The lifecycle engine is implemented in JavaScript and consumes declarative JSON project configuration from project-root `mk.json`. The public `mk` entrypoint remains bootstrap-integrated with `m` and delegates to the JavaScript engine through the current RumiAI-managed Node.js package runtime.
+The lifecycle engine is implemented in JavaScript and consumes declarative JSON project configuration from project-root `mk.json`. The public `mk` entrypoint remains bootstrap-integrated with `m` and delegates to the JavaScript engine through the current `m`-managed Node.js package runtime.
 
 The lifecycle model distinguishes project `dependency`, operation `prerequisite` and external `requirement`. Project-defined goals select lifecycle roots; operation prerequisites form the detailed lifecycle graph.
 
@@ -472,4 +474,5 @@ CURRENT-68   local artifact restoration requires matching successful fingerprint
 CURRENT-69   artifact restoration produces ordinary output/up-to-date evidence through normal refinement without synthesizing process results, so result observation still forces execution
 CURRENT-70   output-input consumers and provider-derived incremental members reuse the same ordinary per-operation restoration mechanism
 CURRENT-71   the first local artifact store is canonical-project-root scoped and does not imply cross-project/shared/remote artifact reuse or cache garbage collection
+CURRENT-72   technical m responsibilities use m/sys/pkg terminology rather than RumiAI branding; rules spanning both semantic layers name m and RumiAI explicitly
 ```

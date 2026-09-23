@@ -132,7 +132,7 @@ The technical root bootstrap `$m_ROOT/m` uses exactly:
 #!/bin/sh
 ```
 
-A command integrated with `m` or using `m`/RumiAI runtime facilities uses:
+A command integrated with `m` or using `m` runtime facilities uses:
 
 ```sh
 #!/usr/bin/env m
@@ -146,7 +146,7 @@ Do not accidentally depend on Bash syntax or unapproved GNU/vendor extensions.
 
 ## 9. Defensive shell quoting
 
-In RumiAI `sh` code, quote variable expansions, substitutions and value operands with double quotes whenever doing so preserves the intended shell semantics.
+In `m` or RumiAI `sh` code, quote variable expansions, substitutions and value operands with double quotes whenever doing so preserves the intended shell semantics.
 
 Protection must derive from code shape, not assumptions about current data.
 
@@ -156,7 +156,7 @@ The pattern positions of `case` branches are syntax and need not be quoted. `fat
 
 Public executable names describe function, not implementation language; do not add `.sh`, `.py`, `.js` and similar suffixes merely to reveal the interpreter.
 
-RumiAI-owned environment variables use the `m_*` namespace. This does **not** establish an `m_*` namespace for functions, commands, files, APIs or components.
+`m`- or RumiAI-owned environment variables use the `m_*` namespace. This does **not** establish an `m_*` namespace for functions, commands, files, APIs or components.
 
 Current unnamespaced shell interfaces include `log` and `lang`. The previous name `i18n` is superseded.
 
@@ -170,7 +170,7 @@ lib/sys/js/mk.lib.js
 
 Shell libraries are sourced files: no executable bit and no shebang.
 
-Every function defined by a RumiAI-owned library is classified as public or internal. Function visibility is reflected in naming:
+Every function defined by a `m`- or RumiAI-owned library is classified as public or internal. Function visibility is reflected in naming:
 
 ```text
 public function    name does not begin with _
@@ -191,15 +191,15 @@ The rule follows the real contract of the invoked tool, POSIX or otherwise.
 
 ### Operational manual completeness
 
-Every RumiAI-owned directly executable command identity defined by the command-entrypoint model must have a corresponding operational manual topic under the owner-specific `manual` resource tree defined by `DOCUMENTATION-MODEL.md`.
+Every `m`- or RumiAI-owned directly executable command identity defined by the command-entrypoint model must have a corresponding operational manual topic under the owner-specific `manual` resource tree defined by `DOCUMENTATION-MODEL.md`.
 
-This requirement applies regardless of whether the command is intended primarily for end users, developers, maintenance or internal technical workflows. Package-owned external commands are outside this RumiAI-owned command requirement.
+This requirement applies regardless of whether the command is intended primarily for end users, developers, maintenance or internal technical workflows. Package-owned external commands are outside this `m`- or RumiAI-owned command requirement.
 
 Creating a command and creating its manual topic are one development obligation and belong to the same work unit. Renaming or removing a command must realign its manual topic in the same work unit.
 
 Every modification of a command requires an explicit manual-consistency check. If purpose, invocation syntax, operands, options, output, exit statuses, environment/files, side effects or other documented observable behavior changes, update the affected manual topic in the same work unit. A purely internal implementation change requires no manual edit when the existing topic remains fully accurate, but the check is still required.
 
-Every RumiAI-owned library identity must likewise have exactly one owner-local operational manual topic. Its topic identity is the runtime-qualified library leaf `<library-name>.lib.<runtime>`. The library manual exposes the complete public function interface and does not expose internal functions as callable API.
+Every `m`- or RumiAI-owned library identity must likewise have exactly one owner-local operational manual topic. Its topic identity is the runtime-qualified library leaf `<library-name>.lib.<runtime>`. The library manual exposes the complete public function interface and does not expose internal functions as callable API.
 
 Creating, renaming or removing a library requires corresponding manual realignment in the same work unit. Every library modification requires both a visibility-naming check and a manual-consistency check. Any public-function addition, removal, rename or contract change updates the library manual in the same work unit.
 

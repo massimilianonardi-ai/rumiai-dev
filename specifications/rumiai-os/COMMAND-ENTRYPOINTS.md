@@ -55,11 +55,11 @@ bootstrap-created PATH semantics
 
 A later dependency on those facilities requires reclassification to the integrated-command model unless a new explicit contract says otherwise.
 
-`read-key`, `readpass` and `pager` are current examples of explicitly standalone utilities. `readpassv` is bootstrap-integrated because its contract depends on the `m` runtime to resolve the RumiAI-owned `readpass` command.
+`read-key`, `readpass` and `pager` are current examples of explicitly standalone utilities. `readpassv` is bootstrap-integrated because its contract depends on the `m` runtime to resolve the `m`-owned `readpass` command.
 
 ## Shell command structure best practice
 
-RumiAI-owned shell command entrypoints SHOULD normally separate definition/loading from operational execution by defining their functions first and invoking one `main "$@"` function as the final top-level command:
+`m`- or RumiAI-owned shell command entrypoints SHOULD normally separate definition/loading from operational execution by defining their functions first and invoking one `main "$@"` function as the final top-level command:
 
 ```sh
 #!/usr/bin/env m
@@ -114,7 +114,7 @@ Multiword public command names normally use lowercase hyphen-separated names.
 
 ## Operational manual coverage
 
-Every RumiAI-owned directly executable command identity covered by this command-entrypoint model MUST have a corresponding operational manual topic under the owner-specific `manual` resource tree defined by `DOCUMENTATION-MODEL.md`.
+Every `m`- or RumiAI-owned directly executable command identity covered by this command-entrypoint model MUST have a corresponding operational manual topic under the owner-specific `manual` resource tree defined by `DOCUMENTATION-MODEL.md`.
 
 This includes:
 
@@ -122,13 +122,13 @@ This includes:
 the technical root command m
 bootstrap-integrated m commands
 bootstrap-integrated RumiAI commands
-standalone RumiAI-owned command utilities
+standalone `m`- or RumiAI-owned command utilities
 branded root entrypoints
 ```
 
 The requirement follows semantic command identity, not the number of physical executable paths. An exposure/symlink of the same command identity does not require a duplicate manual topic. For example, `$m_ROOT/m` and its `bin/sys/m` exposure are one command identity and therefore one manual topic.
 
-RumiAI-owned command coverage does not extend to package-owned external executables merely because they become reachable through package integration.
+`m`- or RumiAI-owned command coverage does not extend to package-owned external executables merely because they become reachable through package integration.
 
 Creating, renaming, removing or changing a command must obey the manual-consistency lifecycle defined by `DOCUMENTATION-MODEL.md` and the project consistency gate.
 
@@ -153,6 +153,6 @@ ENTRY-04  standalone #!/bin/sh utilities require a deliberate current contract
 ENTRY-05  rumiai-os and rumiai-os-sh are branded entrypoints, not the m runtime
 ENTRY-06  public command names do not expose implementation-language suffixes
 ENTRY-07  internal libraries are not executable entrypoints
-ENTRY-08  every RumiAI-owned directly executable command identity has an operational manual topic
+ENTRY-08  every `m`- or RumiAI-owned directly executable command identity has an operational manual topic
 ENTRY-09  shell command entrypoints should normally define functions before a final main "$@" call; simple commands may omit that structure when direct top-level code is clearer
 ```

@@ -129,13 +129,13 @@ The absence of a documentation-format extension is intentional: topic identity i
 
 ### 4.1 Mandatory command coverage
 
-Every RumiAI-owned directly executable command identity defined by `COMMAND-ENTRYPOINTS.md` MUST have a corresponding operational manual topic in the `manual` resource tree of the command's semantic owner.
+Every `m`- or RumiAI-owned directly executable command identity defined by `COMMAND-ENTRYPOINTS.md` MUST have a corresponding operational manual topic in the `manual` resource tree of the command's semantic owner.
 
 This requirement is independent of intended audience. It applies to commands used primarily by end users, developers, maintenance flows or internal technical workflows.
 
 The requirement follows semantic command identity rather than executable pathname count. Multiple paths or symlink exposures of the same command identity require one manual topic, not duplicate pages. In particular, `$m_ROOT/m` and its `bin/sys/m` exposure are the same command identity.
 
-RumiAI-owned libraries are not command identities; their separate mandatory coverage is defined in section 4.2. Package-owned external executables are not RumiAI-owned command identities and are outside this coverage requirement.
+`m`- or RumiAI-owned libraries are not command identities; their separate mandatory coverage is defined in section 4.2. Package-owned external executables are not `m`- or RumiAI-owned command identities and are outside this coverage requirement.
 
 Command lifecycle and manual lifecycle are coupled:
 
@@ -161,7 +161,7 @@ A command-development work unit is incomplete while the command and its operatio
 
 ### 4.2 Mandatory library coverage
 
-Every RumiAI-owned library identity defined by `LIBRARY-INTERFACES.md` MUST have exactly one corresponding operational manual topic in the `manual` resource tree of the library's semantic owner.
+Every `m`- or RumiAI-owned library identity defined by `LIBRARY-INTERFACES.md` MUST have exactly one corresponding operational manual topic in the `manual` resource tree of the library's semantic owner.
 
 The topic identity is exactly the runtime-qualified library leaf:
 
@@ -486,7 +486,7 @@ A backend change must preserve the canonical topic-content contract and the tran
 
 Permanent tests protect mechanical properties of the delivered interface, including resource layout, discovery, exact lookup, substring fallback, ambiguity handling, owner qualification, output/paging behavior and exit-status behavior once implemented.
 
-Permanent coverage MUST mechanically detect a RumiAI-owned directly executable command identity that lacks its required owner-local manual topic and a RumiAI-owned library identity that lacks its required owner-local library manual topic. These are one-way completeness checks from command/library identity to manual topic; additional non-command/non-library operational topics remain allowed.
+Permanent coverage MUST mechanically detect a `m`- or RumiAI-owned directly executable command identity that lacks its required owner-local manual topic and a `m`- or RumiAI-owned library identity that lacks its required owner-local library manual topic. These are one-way completeness checks from command/library identity to manual topic; additional non-command/non-library operational topics remain allowed.
 
 Tests do not make prose normative and cannot prove that a manual page semantically describes behavior accurately. In the initial plain-text model they also cannot prove that every public library function is documented or that no internal helper is presented as API. Those semantic consistency checks remain part of command/library development and the final consistency gate.
 
@@ -520,10 +520,10 @@ DOC-18  paging never changes the canonical page content contract
 DOC-19  every command modification includes a manual-consistency check and any resulting documentation realignment occurs in the same work unit
 DOC-20  the first-delivery executable is bin/sys/manual, belongs to m, and is bootstrap-integrated through #!/usr/bin/env m
 DOC-21  manual uses public exit statuses 0 success, 1 invalid request, 2 not found, 3 exact ambiguity, and 4 execution/presentation failure
-DOC-22  every RumiAI-owned directly executable command identity has an owner-local operational manual topic
+DOC-22  every `m`- or RumiAI-owned directly executable command identity has an owner-local operational manual topic
 DOC-23  command creation, rename and removal realign the corresponding manual topic in the same work unit
 DOC-24  permanent coverage mechanically detects command identities missing their required manual topic
-DOC-25  every RumiAI-owned library identity has exactly one owner-local operational manual topic named <library-name>.lib.<runtime>
+DOC-25  every `m`- or RumiAI-owned library identity has exactly one owner-local operational manual topic named <library-name>.lib.<runtime>
 DOC-26  a library manual exposes every public function and does not expose internal functions as callable API
 DOC-27  library creation, rename, removal and public-interface changes realign the corresponding manual topic in the same work unit
 DOC-28  permanent coverage mechanically detects library identities missing their required manual topic
