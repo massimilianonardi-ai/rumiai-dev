@@ -10,10 +10,10 @@ Continue development of `mk` as the `m` project development-lifecycle orchestrat
 ## Current repository revisions
 
 ```text
-rumiai-dev       61c3649b09525eba1d5398594333f9968a756a58  (pre-synchronization HEAD)
-rumiai-os        5f01f0bccef37020057195c98809ba492f02443c
-rumiai-tests     f51de6247535f87a2e61d03a087c1d8d8ac57e42
-rumiai-dev-PoCs  583e28b6bfff6dde7647c6b710b7f59ded29e937
+rumiai-dev       737701533e58f5f9888ba8665fd826cb7fe10fb9  (pre-synchronization HEAD)
+rumiai-os        533095820ea4f22446510a0f7b338253d908d018
+rumiai-tests     58fba497a00bd66452b4e8ce36eddbc117eda337
+rumiai-dev-PoCs  0efd2066878dac2cb41bcf762b643e6234bc7017
 pkg-catalog      da7507439b71737cf4a40d85cac059824e4b9a63
 ```
 
@@ -53,6 +53,7 @@ Version 2 currently promotes and implements:
 - named external facility requirements resolved through `pkg`;
 - first-class named operation input identity;
 - opt-in content-based incremental freshness for ordinary configured operations and derived `map-process` members;
+- verified local artifact restoration for incremental declared outputs;
 - long-running `--watch` execution using resolver-owned trigger identity and fresh one-shot lifecycle cycles.
 
 Project `dependency`, operation `prerequisite`, external `requirement`, operation `input`, incremental reuse policy and watch/session semantics remain distinct.
@@ -60,7 +61,6 @@ Project `dependency`, operation `prerequisite`, external `requirement`, operatio
 The current baseline still excludes:
 
 ```text
-artifact storage/restoration
 shared/remote artifact cache
 parallel scheduling
 remote execution
@@ -303,6 +303,88 @@ The temporary provider-incremental hosted workflow has been removed.
 
 Formal `rumiai-validate` evidence is still not re-established by these hosted runs and must not be inferred from them.
 
+## Local artifact restoration work unit
+
+PoC 030 is preserved under:
+
+```text
+rumiai-dev-PoCs/pocs/030-mk-local-artifact-restoration/
+```
+
+Its final experiment run `35843428637` passed on Ubuntu and macOS and supported the model now promoted as MK-76 through MK-81 / CURRENT-67 through CURRENT-71.
+
+Product implementation and manual alignment are current in `rumiai-os`:
+
+```text
+617a1cf22bf5cbe27bf278c744aa9164f9e1e9a9
+    implement local mk artifact restoration
+
+e97844988f6c82c6fd7ede6363953923fb184369
+    document local mk artifact restoration
+
+533095820ea4f22446510a0f7b338253d908d018
+    document mk artifact restoration engine
+```
+
+A new permanent executable now protects the promoted contract through the real public `bin/sys/mk` path:
+
+```text
+tests/rumiai-os/mk/artifact-restoration.test
+```
+
+introduced at `9688e57301045bbbdde447173c43fea53695e844`.
+
+It covers execution-only restoration, read-only planning, regular-file and directory-tree outputs, multiple outputs, output-input consumers, provider-derived members, corrupt-store conservative misses, result-observation forcing actual execution and canonical-root isolation of copied/moved checkouts.
+
+The work unit exposed two stale permanent-test expectations from the pre-restoration baseline and realigned them forward:
+
+```text
+9a1ab3fa810ed589fc7a6fac72a2beaac8728bc1
+    incremental.test: tampered outputs may be restored without action execution
+
+e8c7fa37a34d34ba0f0a6ae351042580b0bc2c6b
+    provider-incremental.test: derived-member outputs use the same restoration path
+```
+
+Task scope:
+
+```text
+validation/mk-artifact-restoration.conf
+
+rumiai-os-commit 533095820ea4f22446510a0f7b338253d908d018
+rumiai-os/mk/lifecycle.test
+rumiai-os/mk/refinement.test
+rumiai-os/mk/project-dependency.test
+rumiai-os/mk/requirement.test
+rumiai-os/mk/incremental.test
+rumiai-os/mk/inputs.test
+rumiai-os/mk/provider-incremental.test
+rumiai-os/mk/watch.test
+rumiai-os/mk/artifact-restoration.test
+```
+
+Hosted development run `35845891876` exercised the exact target `533095820ea4f22446510a0f7b338253d908d018` and test behavior revision `e8c7fa37a34d34ba0f0a6ae351042580b0bc2c6b`.
+
+Ubuntu completed all nine required tests:
+
+```text
+PASS lifecycle
+PASS refinement
+PASS project-dependency
+PASS requirement
+PASS incremental
+PASS inputs
+PASS provider-incremental
+PASS watch
+PASS artifact-restoration
+```
+
+The macOS job in that run and a dedicated retry `35846003232` did not reach tests because real `pkg install nodejs` received HTTP 403 from the Node.js distribution endpoint. This is provisioning/upstream evidence, not an mk behavior failure.
+
+The temporary hosted workflow was removed after evidence collection.
+
+Formal `rumiai-validate` remains unclosed; hosted evidence is not formal validation.
+
 ## Current state
 
 Watch is no longer working design. It is a promoted, implemented and permanently tested version-2 execution mode.
@@ -328,31 +410,27 @@ optional --watch execution mode
 
 ## Next action
 
-Use **artifact storage/restoration** as the next concrete incremental `mk` stress case.
+Use **cross-checkout/shared artifact identity** as the next concrete incremental-cache stress case, starting with a PoC rather than changing the current local store.
 
-Start with a PoC. Determine the smallest local artifact-cache contract that can restore declared outputs for an otherwise reusable incremental operation after those outputs are missing/corrupt, while preserving the current rule that freshness metadata alone never fabricates artifacts.
+The first question is whether artifact bytes can be keyed by verified content/effective operation identity independently from canonical project-root metadata while preserving the current local project-scoped freshness contract.
 
 Stress at least:
 
 ```text
-single-file declared output
-directory-tree declared output
-multiple outputs
-producer -> output-input consumer
-provider-derived incremental member output
-corrupt/incomplete artifact store
-canonical project/operation identity
-copied/moved checkout
+same project copied/moved to another canonical root
+same effective operation/input/output identity across two independent checkouts
+different operation definitions producing byte-identical outputs
+corrupt/incomplete shared candidate
+permission/mode identity
+provider-derived member identity
+no false reuse across incompatible fingerprints
 ```
 
-Keep artifact storage distinct from metadata freshness and from shared/remote distribution. The first experiment should remain local and user-scoped through the existing `state-path user sys mk cache` boundary unless current evidence requires a distinct state class.
-
-Do not introduce remote/shared cache, parallel execution, remote execution or stale-member cleanup merely to solve local restoration.
+Do not introduce network transport, remote service/API, eviction/GC, parallel execution or project-dependency exactly-once semantics in the first experiment. Establish artifact identity/reuse semantics before choosing distribution transport.
 
 ## Blockers / open questions
 
-- should local artifact bytes live below the existing user-scoped mk cache area or require a separately named semantic state path?
-- what archive/materialization representation is portable and deterministic for files versus directory trees?
-- how should restoration validate artifact integrity before making an operation `up-to-date`?
-- should copied/moved checkouts intentionally miss local artifact storage because project identity remains canonical-root based, or may content-addressed artifacts be reused independently of project metadata?
+- can verified artifact bytes become content-addressed/reusable across canonical project roots while freshness metadata remains project-scoped?
+- which identity tuple prevents false cross-project reuse when output bytes happen to match but operation/fingerprint semantics differ?
+- should a future shared artifact store remain user-local first, with remote transport layered later?
 - formal `rumiai-validate` for Node-backed mk scopes still needs current evidence before it can be called closed.
