@@ -441,9 +441,11 @@ CURRENT-45   mk version 2 implements named external requirements and the first r
 CURRENT-46   reachable mk facility requirements are resolved through the read-only pkg requirement query against the system facility default
 CURRENT-47   mk requirement resolution does not create synthetic package-consumer bindings, install packages or implicitly select providers
 CURRENT-48   unsatisfied reachable requirements remain inspectable, block only their consumer lifecycle nodes and participate in iterative runtime refinement
-CURRENT-49   mk version 2 implements explicit content-based incremental freshness for ordinary process operations with named inputs and existing named outputs
+CURRENT-49   mk version 2 implements first-class named operation input identity and explicit content-based incremental freshness for ordinary process operations
 CURRENT-50   reusable incremental freshness requires both an effective fingerprint match and current declared outputs matching recorded successful output fingerprints
 CURRENT-51   up-to-date work satisfies prerequisite/collection/output evidence without fabricating execution-result fields; result observation forces execution
 CURRENT-52   mk incremental metadata is non-authoritative user-scoped cache state resolved through state-path
 CURRENT-53   the incremental baseline does not imply artifact storage/restoration, remote/shared cache, provider-level incremental templates or request-wide project-dependency de-duplication
+CURRENT-54   operation inputs participate in data/reachability semantics independently from incremental reuse; declaring inputs alone never makes an operation up-to-date
+CURRENT-55   incremental freshness consumes the shared operation input map while legacy incremental.inputs remains accepted as a compatibility form
 ```
