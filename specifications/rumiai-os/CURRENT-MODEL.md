@@ -347,7 +347,11 @@ Version 2 also implements named external requirements. The first requirement typ
 
 Version 2 also implements explicit incremental freshness for ordinary process operations. Cacheable operations declare named `incremental.inputs` using path, collection or named-output sources and reuse the existing named `outputs` surface. Freshness is content/SHA-256 based rather than mtime based and includes effective operation/action/environment identity plus resolved requirement-provider identities. A stored successful record is reusable only when the current fingerprint and current declared outputs both match. Verified hits appear as `up-to-date`, satisfy prerequisites/collection barriers/output evidence, but do not synthesize actual execution-result fields; reachable result-field observation forces real execution. Persistent freshness metadata is non-authoritative user-scoped `mk` cache state resolved through `state-path`.
 
-Artifact storage/restoration, shared/remote caching, provider-level incremental templates, parallel scheduling, remote execution and watch/hot-update behavior remain unimplemented.
+Version 2 also implements a long-running `--watch` execution mode. Watch remains a thin supervisor around fresh ordinary one-shot lifecycle requests rather than extending one mutable `_executeV2` invocation indefinitely. Trusted `mk` resolution derives an opaque deterministic trigger identity from the selected normalized model plus currently reachable declared input/collection content, executable/effective-environment identity, requirement-provider identity and incremental output/fingerprint evidence. Ordinary non-incremental unconsumed output bytes are excluded from trigger identity. Active project dependencies contribute recursively through child-owned opaque trigger digests rather than graph flattening.
+
+Every watch trigger pass and every lifecycle cycle enters through a fresh `m` bootstrap from the original caller environment. Temporary invalid root/active-child configuration pauses trigger availability, retains the previous valid baseline and runs no lifecycle work until valid resolution returns. Failed lifecycle cycles are reported and followed by waiting for another trigger change instead of terminating or busy-looping. SIGINT/SIGTERM are forwarded to an active lifecycle child. Portable polling is the first internal wakeup mechanism and has no public tuning surface in the baseline.
+
+Artifact storage/restoration, shared/remote caching, provider-level incremental templates, parallel scheduling and remote execution remain unimplemented.
 
 `mk` does not replace compilers, interpreters, external build engines or `pkg`; it orchestrates them through modular boundaries.
 
@@ -448,4 +452,11 @@ CURRENT-52   mk incremental metadata is non-authoritative user-scoped cache stat
 CURRENT-53   the incremental baseline does not imply artifact storage/restoration, remote/shared cache, provider-level incremental templates or request-wide project-dependency de-duplication
 CURRENT-54   operation inputs participate in data/reachability semantics independently from incremental reuse; declaring inputs alone never makes an operation up-to-date
 CURRENT-55   incremental freshness consumes the shared operation input map while legacy incremental.inputs remains accepted as a compatibility form
+CURRENT-56   mk version 2 implements --watch as a lifecycle execution mode rather than a project goal or mk.json namespace
+CURRENT-57   watch trigger identity is resolver-owned and content based over normalized reachable lifecycle/input/executable/requirement/incremental-output evidence
+CURRENT-58   dependent-project watch trigger identity is recursively child-owned and opaque to the parent without graph flattening or request-wide de-duplication
+CURRENT-59   every watch trigger pass and lifecycle cycle uses a fresh m bootstrap from the original caller environment
+CURRENT-60   temporary invalid watch configuration pauses without work and resumes from the last valid baseline; failed lifecycle cycles report and wait for another trigger
+CURRENT-61   the first watch baseline uses internal portable polling with no public polling/backend/stop-on-cycle-failure tuning surface
+CURRENT-62   SIGINT/SIGTERM terminate watch supervision after forwarding to an active one-shot lifecycle child
 ```
