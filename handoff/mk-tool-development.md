@@ -12,10 +12,10 @@ This handoff stores only current task state and revision-specific evidence. Dura
 ## Current repository revisions
 
 ```text
-rumiai-dev       0f7edcb790c67f29881ae555606f71421f3ad0b0  (pre-synchronization HEAD)
+rumiai-dev       a1af4b379b682fdc31673f0d7b26271cbfe74c09  (pre-synchronization HEAD)
 rumiai-os        ec670644237079b6e809aa2efe95cba5ed853b92
-rumiai-tests     ae97cca15f37394c364417a20202f9919b766dfc
-rumiai-dev-PoCs  dfdb0d553ff94f27d6408aa8cdbedf266055cd7e
+rumiai-tests     132012f4b015e0b41e0d3d1bfc9fa684caef92b9
+rumiai-dev-PoCs  8bec42ffa657d22aac4641af2bb2c98217625554
 pkg-catalog      da7507439b71737cf4a40d85cac059824e4b9a63
 ```
 
@@ -38,6 +38,7 @@ specifications/rumiai-os/COMMAND-ENTRYPOINTS.md
 specifications/rumiai-os/FILESYSTEM-NAMING.md
 specifications/rumiai-os/LIBRARY-INTERFACES.md
 specifications/rumiai-os/DOCUMENTATION-MODEL.md
+specifications/rumiai-os/PACKAGE-MODEL.md
 handoff/README.md
 ```
 
@@ -318,22 +319,64 @@ Provisioning Node.js in the source/update checkout does not solve this because f
 
 Temporary hosted/formal workflows created for this work unit were removed after evidence collection. No physical stable-reference-host validation was performed.
 
+## Validation target preparation work unit
+
+PoC 035 is now positive on the current experimental revision:
+
+```text
+rumiai-dev-PoCs
+8bec42ffa657d22aac4641af2bb2c98217625554
+
+pocs/035-validation-runtime-preparation/
+hosted run 35866177032
+Ubuntu PASS
+macOS  PASS
+```
+
+The experiment confirmed that a disposable exact-revision `rumiai-os` clone can select the real host platform, install the managed Node.js package through the real public `pkg install` path and recover the immutable `pkg-catalog` revision used by package preparation, without injecting a host Node binary.
+
+The validation-environment contract has been promoted into current `TESTING.md`: formal target preparation selects the host platform through `osarch update`, may install declared target packages inside the disposable target through the real `pkg install` path, and requires an exact expected `pkg-catalog` commit whenever package preparation consumes the catalog.
+
+Current launcher implementation in `rumiai-tests/lib/sh/rumiai-validate.lib.sh` implements that contract. The current `mk-shared-artifacts` scope declares:
+
+```text
+rumiai-os-commit ec670644237079b6e809aa2efe95cba5ed853b92
+target-package nodejs@v26.10.0
+pkg-catalog-commit da7507439b71737cf4a40d85cac059824e4b9a63
+11 mk selections
+```
+
+The launcher records target package declarations, expected catalog revision, observed target osarch and observed immutable catalog revision in validation evidence and rejects catalog drift before tests run.
+
+A hosted formal-validation workflow is active on the exact current suite revision:
+
+```text
+rumiai-tests
+132012f4b015e0b41e0d3d1bfc9fa684caef92b9
+
+workflow
+.github/workflows/mk-formal-validation-hosted.yml
+
+run
+35866953309
+
+Ubuntu: in progress at last observation
+macOS:  in progress at last observation
+```
+
+This run executes `./rumiai-validate mk-shared-artifacts` directly; its result will determine whether the previous Node-runtime validation blocker is closed.
+
 ## Active next work unit
 
-The shared-artifact structural-hygiene product work is promoted and has positive auxiliary cross-host evidence, but the broader `mk` task is not formally closed because the Node-backed validation environment cannot yet satisfy its declared runtime precondition.
+Inspect hosted formal run `35866953309`.
 
-The next work unit is therefore the validation-environment preparation problem for Node-backed `rumiai-os` scopes. Do not solve it by injecting a host Node binary or by preparing only the operator/source checkout. Any solution must preserve:
+- If both jobs complete successfully, capture the exact formal validation evidence and perform the final consistency check for the shared-artifact work unit.
+- If either job fails, diagnose the formal launcher/package-preparation path from the run evidence and correct it forward without introducing a workflow-only bypass.
+- After positive formal evidence is available, resolve whether additional physical stable-reference-host validation is required for this milestone, then either close this work unit or record the remaining validation obligation explicitly.
 
-- execution against the exact disposable target revision;
-- real RumiAI package/runtime composition;
-- revision-specific/reproducible evidence;
-- current test independence and runner neutrality;
-- explicit accounting for any catalog/package revision that materially participates in target preparation.
-
-Once that infrastructure is canonically defined and implemented, rerun `rumiai-validate mk-shared-artifacts` on required hosts. Whole-fingerprint retention/eviction policy remains a separate future `mk` concern and is not implied by this validation work.
+Whole-fingerprint retention/eviction policy remains a separate future `mk` concern and is not implied by this validation work.
 
 ## Open questions
 
-- What is the canonical, reproducible way for `rumiai-validate` to prepare managed target packages/runtime dependencies inside its disposable clone?
-- Which revision/package identity evidence must be recorded when `pkg-catalog` participates in validation-environment preparation?
-- After formal Node-backed validation is available, does this work unit require physical stable-reference-host execution or is hosted cross-host evidence sufficient for the current milestone?
+- What is the final outcome of hosted formal validation run `35866953309` on Ubuntu and macOS?
+- After positive formal Node-backed validation is available, does this work unit require physical stable-reference-host execution or is the formal hosted cross-host evidence sufficient for the current milestone?
