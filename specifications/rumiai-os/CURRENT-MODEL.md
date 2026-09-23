@@ -349,11 +349,13 @@ Version 2 also implements explicit incremental freshness. Configured operations 
 
 Trusted `map-process` providers may also template ordinary inputs, outputs and `incremental: {}` for each derived collection member. Each member remains an ordinary derived operation and reuses the same per-operation fingerprint/freshness machinery; there is no provider-level aggregate cache record. The concrete mapped item is injected as a trusted private `$item` path input so item content participates without duplicate project declaration. Provider path inputs and output paths may use the existing `${item}` substitution. Derived operation identity remains item-based rather than collection-position-based, so adding/removing/reordering collection membership does not by itself invalidate unchanged reachable members.
 
+Version 2 also implements local artifact restoration for incremental operations. After successful incremental execution, supported declared output files/directory trees may be stored as verified non-authoritative user-scoped `mk` cache artifacts separately from freshness metadata. If a later execution has the same effective fingerprint but current declared outputs are missing or modified, `mk` may restore those outputs from a complete verified local artifact store instead of running the action. Restoration occurs only on the execution path; `--plan` remains non-mutating. Invalid artifact cache state is a conservative miss. A successful restore is observed through normal refinement as ordinary `up-to-date` output evidence and does not fabricate process-result fields, so result observation still forces actual execution. Output-input consumers and provider-derived incremental members inherit the same ordinary operation restoration semantics. The first local store remains scoped by canonical project-root/operation identity, so a moved/copied checkout does not reuse another checkout's artifacts.
+
 Version 2 also implements a long-running `--watch` execution mode. Watch remains a thin supervisor around fresh ordinary one-shot lifecycle requests rather than extending one mutable `_executeV2` invocation indefinitely. Trusted `mk` resolution derives an opaque deterministic trigger identity from the selected normalized model plus currently reachable declared input/collection content, executable/effective-environment identity, requirement-provider identity and incremental output/fingerprint evidence. Ordinary non-incremental unconsumed output bytes are excluded from trigger identity. Active project dependencies contribute recursively through child-owned opaque trigger digests rather than graph flattening.
 
 Every watch trigger pass and every lifecycle cycle enters through a fresh `m` bootstrap from the original caller environment. Temporary invalid root/active-child configuration pauses trigger availability, retains the previous valid baseline and runs no lifecycle work until valid resolution returns. Failed lifecycle cycles are reported and followed by waiting for another trigger change instead of terminating or busy-looping. SIGINT/SIGTERM are forwarded to an active lifecycle child. Portable polling is the first internal wakeup mechanism and has no public tuning surface in the baseline.
 
-Artifact storage/restoration, shared/remote caching, parallel scheduling and remote execution remain unimplemented.
+Shared/remote artifact caching, cross-project artifact reuse, cache eviction/garbage collection, parallel scheduling and remote execution remain unimplemented.
 
 `mk` does not replace compilers, interpreters, external build engines or `pkg`; it orchestrates them through modular boundaries.
 
@@ -451,7 +453,7 @@ CURRENT-49   mk version 2 implements first-class named operation input identity 
 CURRENT-50   reusable incremental freshness requires both an effective fingerprint match and current declared outputs matching recorded successful output fingerprints
 CURRENT-51   up-to-date work satisfies prerequisite/collection/output evidence without fabricating execution-result fields; result observation forces execution
 CURRENT-52   mk incremental metadata is non-authoritative user-scoped cache state resolved through state-path
-CURRENT-53   the incremental baseline does not imply artifact storage/restoration, remote/shared cache or request-wide project-dependency de-duplication
+CURRENT-53   mk incremental cache state may contain local verified declared-output artifacts while remaining non-authoritative; this does not imply shared/remote cache or request-wide project-dependency de-duplication
 CURRENT-54   operation inputs participate in data/reachability semantics independently from incremental reuse; declaring inputs alone never makes an operation up-to-date
 CURRENT-55   incremental freshness consumes the shared operation input map while legacy incremental.inputs remains accepted as a compatibility form
 CURRENT-56   mk version 2 implements --watch as a lifecycle execution mode rather than a project goal or mk.json namespace
@@ -465,4 +467,9 @@ CURRENT-63   map-process providers may template shared inputs, declared outputs 
 CURRENT-64   each derived provider member receives its concrete collection item as private $item path input and reuses ordinary per-operation freshness rather than provider-level cache state
 CURRENT-65   provider-derived incremental identity is item-based and independent of collection enumeration position; add/remove/reorder does not by itself invalidate unchanged reachable members
 CURRENT-66   provider incremental freshness does not imply cleanup of stale outputs or freshness metadata for collection members that become unreachable
+CURRENT-67   mk local artifact restoration is execution-only and never makes plan inspection mutate declared project outputs
+CURRENT-68   local artifact restoration requires matching successful fingerprint evidence plus complete cached outputs verified against recorded output snapshots; invalid cache state is a conservative miss
+CURRENT-69   artifact restoration produces ordinary output/up-to-date evidence through normal refinement without synthesizing process results, so result observation still forces execution
+CURRENT-70   output-input consumers and provider-derived incremental members reuse the same ordinary per-operation restoration mechanism
+CURRENT-71   the first local artifact store is canonical-project-root scoped and does not imply cross-project/shared/remote artifact reuse or cache garbage collection
 ```
