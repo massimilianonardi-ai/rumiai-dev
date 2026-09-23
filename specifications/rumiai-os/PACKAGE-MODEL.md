@@ -175,10 +175,14 @@ sourceforge-rss
 ```
 
 They resolve authoritative artifact metadata through their own closed schemas.
-`checksum-sidecar` and `checksum-manifest` select the checksum for exactly the
-resolved artifact name and obtain a positive byte size for that resolved
-download. `sourceforge-rss` selects the RSS entry for the exact resolved
-download URL and obtains its positive byte size and digest.
+`checksum-sidecar` supports two closed record formats: `digest-name`, which
+requires exactly one checksum record bound to the resolved artifact name, and
+`digest-only`, which requires exactly one checksum-only record from an
+artifact-specific sidecar URL. `checksum-manifest` selects the checksum for
+exactly the resolved artifact name. These checksum handlers also obtain a
+positive byte size for the resolved download. `sourceforge-rss` selects the
+RSS entry for the exact resolved download URL and obtains its positive byte size
+and digest.
 
 The existing range value `digest_type` remains the required integrity
 **algorithm** where applicable (for example `md5`, `sha256` or `sha512`).
