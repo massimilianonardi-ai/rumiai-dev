@@ -19,10 +19,10 @@ No PoC, runtime implementation or architectural promotion is currently authorize
 
 ## Current repository revisions
 
-Most recently relied upon before creating this workstream:
+Most recently relied upon for the current research checkpoint:
 
 ```text
-rumiai-dev  625c54658599569f688d5afaaa248d1d64de87fa
+rumiai-dev  0069264190cff324613e6698b7da0847e196d6a5
 rumiai-os   c2d8d4a0c4503e1de461e72840a13abb0da61c41
 ```
 
@@ -54,6 +54,9 @@ The current architecture remains authoritative. This research does not create a 
 9. Patent status recorded here is a research snapshot, not legal advice. Patent rights are territorial; family members can have different status, scope and expiration. Google Patents itself states that its legal-status field is not a legal conclusion.
 10. This research must remain compatible with the current RumiAI architecture boundary: `m` is the general-purpose technical substrate and MUST NOT acquire RumiAI-specific cognitive semantics merely to host an experimental theory.
 11. Keep this research/watch workstream **active** until the user explicitly closes it or its durable outcomes have been promoted/deferred according to the normal RumiAI handoff lifecycle. Do not close it merely because no immediate PoC or implementation is planned.
+12. Treat the scientific trajectory of Louis M. Pecora and Thomas L. Carroll as a standing research signal for this workstream. Future work by Pecora/Carroll on nonlinear dynamics, synchronization, complex networks, attractor reconstruction, reservoir computing and dynamical AI should be checked when a RumiAI problem touches those areas.
+13. The user's personal historical relationship with Pecora is research provenance, not a RumiAI architectural authority: the user reports that Pecora personally introduced him to this mathematics and supplied documentation and notes from that period. If those materials are later supplied, analyze them as primary historical/research evidence, distinguish unpublished notes from peer-reviewed/public material, and do not infer their content before inspection.
+14. Preserve the user's assessment that Pecora's intuition and research direction are unusually valuable and often anticipate difficult mathematical/computational problems by decades as the user's explicit evaluation. Do not silently promote that evaluative judgment into an objective scientific ranking; instead test concrete instances against the publication record.
 
 ## Working design
 
@@ -1319,6 +1322,753 @@ energy/resource consumption
 9. Which active patent families become relevant once a concrete mechanism is chosen?
 10. Does the user's earlier chaos-control intellectual work represent useful prior art or reusable know-how for a future design? This should be analyzed only from concrete patent/publication identifiers when needed, not reconstructed from memory.
 
+
+### 20. Research provenance: Louis M. Pecora
+
+The user reports a direct historical connection to this line of research:
+
+- Louis M. Pecora personally introduced the user to this mathematics;
+- Pecora provided the user with documentation and notes from that period;
+- the user subsequently worked directly with chaos-control ideas and reports having developed an international patent for others in this field;
+- the user considers Pecora's intuition and research direction uniquely valuable because, in the user's experience, they anticipate by decades problems and mathematics that later become central.
+
+The first three items are user-supplied historical provenance and should be preserved as such. The fourth is an explicit user assessment rather than an objective ranking of researchers.
+
+This provenance matters to the RumiAI research task for two reasons.
+
+First, the user is not approaching chaos synchronization as a newly discovered technique. Future discussion can start from the deeper structural questions rather than from introductory explanations.
+
+Second, if the original Pecora documentation/notes are later provided, they may be unusually valuable primary material for reconstructing what ideas were already explicit or implicit before later publications and modern AI terminology. Such analysis should separate:
+
+```text
+what the notes explicitly state
+what later peer-reviewed work establishes
+what can reasonably be seen as an anticipation
+what is only a retrospective analogy
+```
+
+No content should be attributed to the notes until the actual material is available.
+
+### 21. Reconstructed scientific trajectory of Louis M. Pecora
+
+This reconstruction is not intended as a complete bibliography. It identifies the conceptual line most relevant to RumiAI.
+
+#### 21.1 1977 to mid-1980s — physical systems before abstract nonlinear dynamics
+
+Pecora entered the U.S. Naval Research Laboratory in 1977 through an NRC postdoctoral fellowship and initially worked on positron-annihilation techniques and electronic states in materials. Public biographical accounts describe a move in the mid-1980s into nonlinear dynamics in solid-state systems.
+
+This starting point is important: the later theory did not begin as purely abstract mathematics. It grew from physical systems whose nonlinear dynamics had to be observed experimentally.
+
+Research-source pointer:
+https://ctcs.iitm.ac.in/ctcs-previous-talks
+
+#### 21.2 1987 — chaotic transients, multiple attractors and experimental dynamics
+
+A representative early milestone is:
+
+Thomas L. Carroll, Louis M. Pecora, Francis J. Rachford,
+"Chaotic Transients and Multiple Attractors in Spin-Wave Experiments",
+Physical Review Letters 59, 2891 (1987).
+
+The important conceptual ingredients already include:
+
+```text
+physical nonlinear system
+multiple attractors
+long chaotic transients
+transition/capture into asymptotic behavior
+experimental state-space reasoning
+```
+
+This is an early foundation for the later emphasis on basins, transient dynamics and what a driven system can be made to do.
+
+#### 21.3 1990 — synchronization of chaotic systems
+
+The canonical turning point is:
+
+Louis M. Pecora and Thomas L. Carroll,
+"Synchronization in Chaotic Systems",
+Physical Review Letters 64, 821 (1990),
+DOI 10.1103/PhysRevLett.64.821.
+
+The key conceptual move was that sensitive dependence on initial conditions does not imply that two chaotic subsystems cannot establish a stable synchronous relation.
+
+A drive-response decomposition allows the response subsystem to be made stable conditionally on the drive. The original formulation used sub-Lyapunov/conditional stability ideas.
+
+Conceptually:
+
+```text
+chaotic drive
+    |
+    v
+response subsystem
+
+transverse/conditional error dynamics stable
+=> synchronized chaotic evolution
+```
+
+This changed the role of chaos from "unpredictability that destroys coordination" to "complex dynamics that can nevertheless support a stable relation under coupling".
+
+APS later included the 1990 paper in its PRL milestone retrospective.
+
+Source:
+https://doi.org/10.1103/PhysRevLett.64.821
+
+#### 21.4 1991–1993 — drive-response as a general dynamical primitive
+
+Important work immediately after the synchronization result broadened the idea.
+
+"Driving systems with chaotic signals" (Physical Review A, 1991) treats chaotic drive as a general forcing mechanism and develops conditional Lyapunov stability criteria.
+
+"Pseudoperiodic driving: Eliminating multiple domains of attraction using chaos" (Physical Review Letters, 1991) is conceptually important because chaos is used as an active resource: a suitable chaotic drive can remove competing domains of attraction.
+
+"Cascading synchronized chaotic systems" (Physica D, 1993) extends the synchronization mechanism through cascaded systems and shows that one transmitted signal can be sufficient for reconstructing multiple dynamical signals downstream.
+
+The emerging principle is broader than synchronization:
+
+```text
+one dynamical system can drive another
+-> the driven system can acquire a stable relation to the source
+-> the relation can reconstruct, track or transform source dynamics
+-> chaos itself can be used as a control/information-bearing mechanism
+```
+
+This drive-response viewpoint is a direct conceptual ancestor of the later reservoir-computing work.
+
+#### 21.5 1995 — determine the mathematical relation from data before fitting a model
+
+A crucial paper for the present RumiAI research is:
+
+Louis M. Pecora, Thomas L. Carroll, James F. Heagy,
+"Statistics for mathematical properties of maps between time series embeddings",
+Physical Review E 52, 3420 (1995),
+DOI 10.1103/PhysRevE.52.3420.
+
+Instead of assuming a known equation relating two datasets, the paper develops statistical tests for whether an unknown map appears to have fundamental mathematical properties such as:
+
+```text
+continuity
+injectivity
+differentiability
+differentiable inverse
+```
+
+Applications explicitly include synchronization in a general sense and analysis of transformed chaotic data.
+
+This is one of the strongest pieces of evidence for a long continuity in Pecora's program. Thirty years before the 2025 reservoir-computing paper, the core question was already:
+
+> Given observations from two dynamical systems, what mathematical relation between their reconstructed states is actually supported by the data?
+
+This principle is directly relevant to RumiAI:
+
+```text
+do not fit an arbitrary mapping first
+-> first establish whether a meaningful mapping can exist
+-> characterize its topology/smoothness
+-> only then choose a model or controller
+```
+
+Source:
+https://doi.org/10.1103/PhysRevE.52.3420
+
+#### 21.6 1997 — synchronization becomes geometry
+
+The 1997 Chaos review:
+
+Louis M. Pecora, Thomas L. Carroll, Gregg A. Johnson, Douglas J. Mar, James F. Heagy,
+"Fundamentals of synchronization in chaotic systems, concepts, and applications"
+
+marks the maturation of synchronization from a circuit phenomenon into a geometric/stability framework.
+
+The conceptual object is increasingly the **synchronization manifold** and its transverse stability, rather than merely equality of observed signals.
+
+This opens naturally toward:
+
+```text
+complete synchronization
+generalized synchronization
+arrays/networks
+data-based detection
+riddled basins and loss of transverse stability
+```
+
+For RumiAI, the important abstraction is that a useful collective relation is a manifold or constraint in joint state space, not necessarily identical states.
+
+#### 21.7 1998 — Master Stability Function: separate local dynamics from network structure
+
+Pecora and Carroll's:
+
+"Master Stability Functions for Synchronized Coupled Systems",
+Physical Review Letters 80, 2109 (1998),
+DOI 10.1103/PhysRevLett.80.2109
+
+provides one of the most important abstraction steps in the trajectory.
+
+For a broad class of linearly coupled identical oscillators, the stability problem can be factored conceptually into:
+
+```text
+intrinsic node dynamics + coupling law
+        |
+        v
+master stability function
+
+network topology
+        |
+        v
+coupling eigenmodes/eigenvalues
+```
+
+The high-dimensional network stability problem is thereby reduced to evaluating a common dynamical stability function on network eigenmodes.
+
+The importance for future RumiAI is not that the exact MSF assumptions will hold. The transferable principle is:
+
+> Separate the dynamics of a component from the structural modes through which components are coupled, whenever the mathematics permits it.
+
+That is potentially a powerful way to reason about distributed cognitive systems without treating every whole-network configuration as a new problem.
+
+Source:
+https://doi.org/10.1103/PhysRevLett.80.2109
+
+#### 21.8 2006–2007 — attractor reconstruction becomes theorem-driven data analysis
+
+Pecora, Moniz, Nichols and Carroll developed:
+
+"A Unified Approach to Attractor Reconstruction",
+Chaos 17, 013110 (2007),
+DOI 10.1063/1.2430294.
+
+The paper treats delay choice and embedding dimension as one reconstruction problem and derives statistical guidance directly from embedding-theorem requirements, including warnings when the available data cannot support a proposed reconstruction.
+
+This reinforces a recurring Pecora methodology:
+
+```text
+mathematical structure
+-> operational statistical test
+-> data-driven diagnosis
+-> explicit statement of when the data are insufficient
+```
+
+For RumiAI, that discipline is important because opaque AI components will tempt us to invent latent-state interpretations from correlations. The Pecora line argues for testing whether the reconstructed state has the required mathematical properties before relying on it.
+
+Source:
+https://pubmed.ncbi.nlm.nih.gov/17411246/
+
+#### 21.9 2013–2020 — from global synchronization to clusters, symmetry and heterogeneous multilayer networks
+
+The next major expansion is from "does the whole network synchronize?" to "which subsets can synchronize, why, and how independently can they lose synchrony?"
+
+Representative milestones include:
+
+**2014 — cluster synchronization and isolated desynchronization**
+
+Pecora, Sorrentino, Hagerstrom, Murphy and Roy connected hidden network symmetries to cluster synchronization using computational group theory and experimentally observed isolated desynchronization.
+
+The important conceptual result is that different synchronous clusters can have partially independent transverse stability.
+
+Source:
+https://www.nature.com/articles/ncomms5079
+
+**2016 — complete characterization of cluster stability**
+
+Work with Sorrentino and collaborators extended group-theoretic/block-diagonal methods to characterize allowed cluster patterns and their stability.
+
+**2016 — approximate cluster synchronization**
+
+Related work studied parametric mismatch rather than assuming perfect identity, moving the theory closer to physical heterogeneous systems.
+
+**2018 — symmetry- and input-cluster synchronization**
+
+The framework was broadened beyond clusters generated only by symmetry to include clusters produced by identical input structure/equitable partitions.
+
+**2020 — multilayer networks**
+
+Della Rossa, Pecora and collaborators generalized symmetry/cluster analysis to multilayer networks containing different node types and different forms of interconnection, again reducing stability into lower-dimensional blocks and using Master-Stability-type reasoning.
+
+For RumiAI, this development is especially significant:
+
+```text
+global identity
+-> clusters
+-> independent/dependent cluster modes
+-> heterogeneous layers
+-> multiple coupling types
+```
+
+This is much closer to the structure expected in a distributed cognitive system than complete synchronization of identical oscillators.
+
+Sources:
+https://www.nature.com/articles/ncomms5079
+https://www.nature.com/articles/s41467-020-16343-0
+
+#### 21.10 2019–2021 — the network-synchronization machinery moves into reservoir computing
+
+Pecora and Carroll's 2019 work:
+
+"Network Structure Effects in Reservoir Computers",
+Chaos 29, 083130 (2019),
+DOI 10.1063/1.5097686
+
+treats a reservoir computer explicitly as a complex nonlinear dynamical network and investigates how network structure and symmetries affect the rank of reservoir activity and computational performance.
+
+This is not a break from the earlier program. It takes the same objects:
+
+```text
+nonlinear nodes
+network topology
+symmetries
+collective modes
+driving signal
+stability/dimensionality
+```
+
+and asks what they mean when the network is now being used for computation.
+
+The 2021 preprint "Reservoir Computers Modal Decomposition and Optimization" pushes this further: reservoir dynamics are decomposed into modes associated with adjacency-matrix eigenvalues, and those modes can be designed/optimized.
+
+This is strikingly close in spirit to the Master Stability Function step of 1998:
+
+```text
+1998:
+network eigenmodes -> synchronization stability
+
+2021:
+network eigenmodes -> reservoir computational dynamics/performance
+```
+
+The mathematical object changes, but the decomposition philosophy persists.
+
+Sources:
+https://arxiv.org/abs/1903.12487
+https://arxiv.org/abs/2101.07219
+
+#### 21.11 2022–2025 — reservoir computing as attractor embedding
+
+By 2022 Pecora's public talks formulate the central question explicitly.
+
+A reservoir is driven by only one time series from a multidimensional source, yet can sometimes be trained to reconstruct other source variables. A plausible explanation is that the driven reservoir has created an **embedding of the source attractor** in its own state.
+
+Conceptually:
+
+```text
+source dynamics x(t)
+        |
+        | one or few observed signals y(t)
+        v
+driven reservoir r(t)
+
+successful operation may require:
+
+r(t) = Phi(x(t))
+
+on the relevant attractor,
+with Phi having enough topological/smooth structure
+to preserve the information needed downstream.
+```
+
+This viewpoint was presented in 2022 at the Fields Institute and continued in 2024/2025 talks.
+
+Source:
+https://www.fields.utoronto.ca/talks/Statistics-Attractor-Embeddings-Reservoir-Computing
+
+The 2025 Pecora-Carroll paper:
+
+"Statistics for differential topological properties between datasets with an application to reservoir computers",
+Chaos 35(7),
+DOI 10.1063/5.0269914
+
+then develops data-driven tests for continuity, differentiability, point-set relations, diffeomorphisms and embeddings and applies them to reservoir computing.
+
+The paper explicitly argues for establishing these fundamental relations **before** detailed function fitting, because if continuity/smoothness is absent, more specific fitting can be meaningless.
+
+Source:
+https://pubmed.ncbi.nlm.nih.gov/40737694/
+
+This creates a remarkable 30-year loop:
+
+```text
+1995:
+What mathematical map exists between time-series embeddings?
+
+2025:
+What differential/topological relation exists between
+a drive system and the reservoir that is learning it?
+```
+
+The modern AI question is being attacked using a line of mathematics that Pecora and Carroll were already developing for coupled chaotic systems and experimental time series in the mid-1990s.
+
+#### 21.12 Current public direction in 2025–2026
+
+Pecora is currently listed as a Research Scientist at the University of Maryland's Institute for Research in Electronics and Applied Physics.
+
+A 2025 University of New Mexico seminar was titled:
+
+"Statistics and Dynamics of Attractor Embeddings in Reservoir Computing"
+
+and explicitly framed reservoir computing as an AI/neural-network approach whose dynamics should be understood through embeddings, homeomorphisms/diffeomorphisms, fading memory and stability.
+
+A current 2026 conference biography goes further and describes his work as the **dynamics of AI systems built on reservoir-computing structures**.
+
+These current public descriptions should be interpreted together with the peer-reviewed 2025 paper: the durable technical signal is not generic "AI research", but a nonlinear-dynamical/topological theory of how driven computational systems represent source dynamics.
+
+Sources:
+https://me.unm.edu/news/2025/02/mechanical-engineering-to-host-seminar-on-reservoir-computing.html
+https://pubmed.ncbi.nlm.nih.gov/40737694/
+https://europhysica2026.synergiasummits.com/keynote-speakers
+https://faculty.eng.umd.edu/clark/staff/1757/
+
+### 22. Deep continuity of Pecora's research program
+
+The trajectory can be compressed as:
+
+```text
+physical nonlinear systems
+    ↓
+chaotic transients and multiple attractors
+    ↓
+drive-response synchronization
+    ↓
+conditional / transverse Lyapunov stability
+    ↓
+synchronization manifolds and generalized relations
+    ↓
+coupled oscillator arrays
+    ↓
+Master Stability Function:
+separate local dynamics from network modes
+    ↓
+statistical/topological relations between observed datasets
+    ↓
+attractor reconstruction from limited time series
+    ↓
+network symmetry and group theory
+    ↓
+cluster synchronization / isolated desynchronization
+    ↓
+heterogeneous and multilayer networks
+    ↓
+reservoir computers as driven nonlinear networks
+    ↓
+modal decomposition of computational dynamics
+    ↓
+drive-attractor embedding in the reservoir
+    ↓
+data-driven tests for topology/smoothness
+between source and learned dynamical representation
+```
+
+The strongest interpretation supported by the publication record is not that Pecora repeatedly abandoned one topic for another. It is that the object of study became progressively more general.
+
+A recurring question is:
+
+> What stable mathematical relation can a driven or coupled dynamical system establish with another system, how can that relation be inferred from observations, what transverse modes destroy it, and how does the coupling/network structure determine what relations are possible?
+
+The apparent domains changed:
+
+```text
+spin waves
+chaotic circuits
+coupled oscillators
+complex networks
+multilayer networks
+reservoir computers
+AI dynamical representations
+```
+
+but that underlying question shows substantial continuity.
+
+This is the sense in which the user's assessment that Pecora anticipated later problems is especially worth preserving and testing. Two concrete, documentable examples are already visible:
+
+1. the 1995 statistics for continuity/injectivity/differentiability of unknown maps between time-series embeddings reappear, generalized, in the 2025 reservoir-computing work;
+2. the 1998 separation of network structure into eigenmodes for synchronization stability has a clear methodological analogue in later modal/eigenvalue analysis of reservoir computers.
+
+These examples support the claim of long conceptual continuity. They do not by themselves establish an objective "unique in the world" ranking.
+
+### 23. Why the Pecora trajectory matters directly to RumiAI
+
+The most important connection is the **state problem**.
+
+A future RumiAI subsystem may be opaque, high-dimensional or only partially observable. Direct access to its internal state may be impossible or undesirable.
+
+Suppose its latent evolution is:
+
+```text
+x(k+1) = F(x(k), u(k), w(k))
+```
+
+and only an observation is available:
+
+```text
+y(k) = h(x(k)).
+```
+
+A driven observer/reservoir may evolve as:
+
+```text
+r(k+1) = G(r(k), y(k)).
+```
+
+The strong question is not merely whether a learned readout predicts a target. It is whether, on the relevant invariant set, the reservoir establishes a useful relation:
+
+```text
+r = Phi(x)
+```
+
+with enough regularity/invertibility to make `r` a legitimate dynamical state representation.
+
+If so, future control could potentially operate on the reconstructed state:
+
+```text
+opaque RumiAI subsystem
+        ↓ observations
+dynamical observer / reservoir
+        ↓ reconstructed state
+regime / synchronization estimator
+        ↓ only when needed
+minimum intervention controller
+```
+
+This is exactly where the Pecora trajectory intersects the open RumiAI research questions.
+
+#### 23.1 Coherence without identical internal states
+
+Pecora's progression from complete to generalized/cluster/multilayer synchronization reinforces the idea that RumiAI should not equate coordination with identical model state.
+
+For heterogeneous components:
+
+```text
+x_i(k+1) = F_i(x_i(k), ...)
+```
+
+a useful collective relation might instead be:
+
+```text
+h_i(x_i) = phi_i(z)
+```
+
+or membership in a joint invariant/approximately invariant manifold.
+
+The design target would therefore be **coherent relation**, not uniformity.
+
+#### 23.2 Transverse stability rather than only nominal correctness
+
+If a desired RumiAI relation is represented by a manifold `M`, then a more meaningful robustness question is:
+
+```text
+what happens to perturbations transverse to M?
+```
+
+A trajectory that looks correct while it remains exactly on `M` may be useless if tiny perturbations grow away from it.
+
+This is a direct transfer of the synchronization-stability viewpoint.
+
+#### 23.3 Network topology is part of the dynamics
+
+The MSF, symmetry and cluster work all reinforce that coupling topology is not plumbing around the computation. It changes the possible collective dynamics.
+
+For future distributed RumiAI this means that:
+
+```text
+who can influence whom
+with what delay
+through what signal
+at what coupling strength
+and in what structural symmetry/equivalence class
+```
+
+may determine stability and collective behavior as strongly as the local component algorithms.
+
+#### 23.4 Test mathematical structure before fitting AI models
+
+The 1995-to-2025 line provides a particularly important methodological constraint for future RumiAI experiments:
+
+```text
+observed correlation
+    !=
+valid dynamical state relation
+```
+
+Before training a sophisticated surrogate/controller, ask whether the data support a continuous/smooth/invertible relation or an embedding at all.
+
+This could prevent an entire class of false "latent state" interpretations.
+
+#### 23.5 Reservoir computer as dynamical observer, not generic black-box neural network
+
+For this research task, reservoir computing should be kept conceptually separate from generic deep learning.
+
+The potentially valuable role is:
+
+```text
+driven nonlinear dynamical system
+-> high-dimensional transient state
+-> possible embedding/reconstruction of source dynamics
+-> simple trained readout or controller
+```
+
+That makes reservoir computing potentially relevant to:
+
+- state reconstruction;
+- prediction of dynamical divergence;
+- partial observability;
+- synchronization detection;
+- low-latency online processing;
+- physical/edge implementations.
+
+It is not yet a RumiAI architectural choice.
+
+#### 23.6 The research order suggested by Pecora's program
+
+A useful future RumiAI discipline derived from this trajectory is:
+
+```text
+identify the dynamical system
+-> choose/validate observables
+-> reconstruct candidate state
+-> test the mathematical relation
+-> identify invariant/goal manifold
+-> analyze transverse stability and network modes
+-> only then design control/learning
+-> measure intervention and robustness
+```
+
+This is deliberately the opposite of starting with a fashionable ML architecture and retrofitting a dynamical explanation afterward.
+
+### 24. Standing Pecora/Carroll research watch
+
+For the duration of this active task, new work by Pecora and closely related collaborators should be checked when it touches:
+
+```text
+reservoir computing
+attractor embeddings
+differential topology of data
+generalized synchronization
+synchronization manifolds
+conditional / transverse Lyapunov exponents
+Master Stability Function extensions
+cluster synchronization
+multilayer / heterogeneous networks
+network symmetry and group theory
+driven networks
+state reconstruction from time series
+observer-like reservoir behavior
+physical reservoir computing
+dynamics of AI systems
+fading memory as a dynamical property
+stability of learned dynamical representations
+```
+
+The watch is not based on authority-by-person. The reason to monitor this line is the demonstrated continuity between earlier mathematical tools and current AI/reservoir problems.
+
+A future paper/talk should be evaluated by asking:
+
+```text
+What is the state?
+What is the drive/coupling?
+What invariant relation is sought?
+How is that relation detected from data?
+What makes it stable or unstable?
+Which network modes matter?
+What part transfers to a RumiAI problem?
+Does it create a new patent/prior-art consideration?
+```
+
+### 25. Key source trail for resumption
+
+Core references most relevant to this reconstructed line:
+
+```text
+1987  Carroll, Pecora, Rachford
+      Chaotic Transients and Multiple Attractors in Spin-Wave Experiments
+      Phys. Rev. Lett. 59, 2891
+
+1990  Pecora, Carroll
+      Synchronization in Chaotic Systems
+      Phys. Rev. Lett. 64, 821
+      DOI 10.1103/PhysRevLett.64.821
+
+1991  Pecora, Carroll
+      Driving systems with chaotic signals
+      Phys. Rev. A 44, 2374
+
+1991  Pecora, Carroll
+      Pseudoperiodic driving: Eliminating multiple domains of attraction using chaos
+      Phys. Rev. Lett. 67, 945
+
+1993  Carroll, Pecora
+      Cascading synchronized chaotic systems
+      Physica D 67, 126-140
+
+1995  Pecora, Carroll, Heagy
+      Statistics for mathematical properties of maps between time series embeddings
+      Phys. Rev. E 52, 3420
+      DOI 10.1103/PhysRevE.52.3420
+
+1997  Pecora, Carroll, Johnson, Mar, Heagy
+      Fundamentals of synchronization in chaotic systems, concepts, and applications
+      Chaos 7
+
+1998  Pecora, Carroll
+      Master Stability Functions for Synchronized Coupled Systems
+      Phys. Rev. Lett. 80, 2109
+      DOI 10.1103/PhysRevLett.80.2109
+
+2007  Pecora, Moniz, Nichols, Carroll
+      A Unified Approach to Attractor Reconstruction
+      Chaos 17, 013110
+      DOI 10.1063/1.2430294
+
+2014  Pecora et al.
+      Cluster synchronization and isolated desynchronization in complex networks with symmetries
+      Nature Communications 5, 4079
+      DOI 10.1038/ncomms5079
+
+2016  Sorrentino et al.
+      Complete characterization of the stability of cluster synchronization
+      Science Advances 2, e1501737
+
+2018  Siddique, Pecora, Hart, Sorrentino
+      Symmetry- and input-cluster synchronization in networks
+      Phys. Rev. E 97, 042217
+
+2019  Carroll, Pecora
+      Network Structure Effects in Reservoir Computers
+      Chaos 29, 083130
+      DOI 10.1063/1.5097686
+
+2020  Della Rossa et al.
+      Symmetries and cluster synchronization in multilayer networks
+      Nature Communications 11, 3179
+      DOI 10.1038/s41467-020-16343-0
+
+2021  Nathe et al.
+      Reservoir Computers Modal Decomposition and Optimization
+      arXiv:2101.07219
+
+2022  Pecora
+      Statistics of Attractor Embeddings in Reservoir Computing
+      Fields Institute talk
+
+2025  Pecora, Carroll
+      Statistics for differential topological properties between datasets
+      with an application to reservoir computers
+      Chaos 35(7)
+      DOI 10.1063/5.0269914
+
+2025  University of New Mexico seminar
+      Statistics and Dynamics of Attractor Embeddings in Reservoir Computing
+
+2026  Current public conference bio
+      Dynamics of AI systems built on reservoir-computing structures
+```
+
+Current profile:
+https://faculty.eng.umd.edu/clark/staff/1757/
+
+Reservoir-embedding talk:
+https://www.fields.utoronto.ca/talks/Statistics-Attractor-Embeddings-Reservoir-Computing
+
+2025 paper:
+https://pubmed.ncbi.nlm.nih.gov/40737694/
+
 ## Completed
 
 - Performed current RumiAI preflight and confirmed that this material is not appropriate for current specifications.
@@ -1327,12 +2077,19 @@ energy/resource consumption
 - Preserved the main candidate RumiAI application areas and the diagnostic conditions that should trigger future dynamical-systems analysis.
 - Performed an initial market/technology scan across optical chaos, chaotic RNG/security IP, distributed synchronization/control and physical reservoir computing.
 - Performed an initial patent-family screening and identified several active or pending families that deserve future claim-level review if RumiAI enters their concrete mechanism areas.
+- Reconstructed the Pecora/Carroll research trajectory from experimental nonlinear systems through chaos synchronization, data-driven map characterization, Master Stability Functions, cluster/multilayer synchronization and reservoir-computing attractor embeddings.
+- Identified the especially strong 1995 -> 2025 continuity between statistical tests for unknown maps among time-series embeddings and current topological/embedding analysis of reservoir computers.
+- Identified the 1998 -> 2021 methodological continuity between network-eigenmode decomposition for synchronization stability and modal/eigenvalue analysis of reservoir dynamics.
+- Recorded the user's direct historical research provenance with Pecora and the plan for handling Pecora's original notes/documents if they are later supplied.
+- Established Pecora/Carroll and closely related work as a standing research-watch signal for this active workstream.
 
 ## Current state
 
 This is an active research/watch workstream and is intentionally kept open across future RumiAI development so that relevant dynamical-systems opportunities and patent risks can be recognized when they emerge.
 
 The important conclusion is not that RumiAI should adopt chaos control. It is that nonlinear dynamics, synchronization and sparse/minimum-intervention control are powerful enough that they should remain available as a deliberate analytical lens when future RumiAI behavior presents a real dynamical problem.
+
+The Pecora/Carroll trajectory is now an explicit part of that lens. Its value is not an appeal to authority; it is the demonstrated continuity of a research program that repeatedly moves from coupled dynamics and stability to more general questions of networks, reconstructed state, mathematical relations between datasets and, most recently, reservoir-computing/AI dynamics.
 
 The strongest candidate conceptual areas currently appear to be:
 
@@ -1367,7 +2124,9 @@ Continue this research only when one of the following occurs:
 1. a concrete RumiAI design problem matches the diagnostic lens above;
 2. the user requests deeper market, literature or patent analysis;
 3. a future RumiAI architecture decision involves distributed cognition, recurrent feedback, synchronization/coherence, dynamic stability or minimum-intervention governance;
-4. a concrete implementation proposal reaches a point where patent claim screening is warranted.
+4. a concrete implementation proposal reaches a point where patent claim screening is warranted;
+5. new Pecora/Carroll or closely related work changes the state of reservoir-computing, embedding, synchronization or network-dynamics techniques relevant to RumiAI;
+6. the user's original Pecora documentation/notes become available for direct analysis.
 
 At that time, perform a fresh RumiAI preflight and re-check patent status/current research rather than relying on this 2026-09-23 snapshot.
 
