@@ -11,7 +11,7 @@ Continue development of `mk` as the `m` subsystem for project development-lifecy
 
 ```text
 rumiai-dev       b5bd71d35008bafc69227df01dfc96e630300fde  (pre-synchronization HEAD)
-rumiai-os        87d9db09708faf4bffda7f9c1f108516be252bfd
+rumiai-os        fde0ae399da0994e19ff7657605017f809b8fe8e
 rumiai-tests     25e2e9c407c58d328a93a12396ec835f75f19650
 rumiai-dev-PoCs  23cdb37e3ced0eb4e99b9fdccb7cf34f4896e023
 pkg-catalog      6a77995d317f2ec08c98585c4462b92557ccfaea
@@ -19,7 +19,7 @@ pkg-catalog      6a77995d317f2ec08c98585c4462b92557ccfaea
 
 Fresh remote HEAD retrieval remains mandatory before later work.
 
-The current `rumiai-os` HEAD is one unrelated package-repository commit ahead of the exact mk behavior revision exercised by the hosted validation run described below.
+The current `rumiai-os` HEAD is two unrelated package-repository/manual commits ahead of the exact mk behavior revision exercised by the hosted validation run described below.
 
 ## Applicable canonical sources
 
