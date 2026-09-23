@@ -12,9 +12,9 @@ This handoff stores only current task state and revision-specific evidence. Dura
 ## Current repository revisions
 
 ```text
-rumiai-dev       a1af4b379b682fdc31673f0d7b26271cbfe74c09  (pre-synchronization HEAD)
+rumiai-dev       6208ddfd08627b4bd8553bc3a5ce5dcca1269f48  (pre-synchronization HEAD)
 rumiai-os        ec670644237079b6e809aa2efe95cba5ed853b92
-rumiai-tests     132012f4b015e0b41e0d3d1bfc9fa684caef92b9
+rumiai-tests     11449dde82c20559ead0ee23760a087c5abc9ed3
 rumiai-dev-PoCs  8bec42ffa657d22aac4641af2bb2c98217625554
 pkg-catalog      da7507439b71737cf4a40d85cac059824e4b9a63
 ```
@@ -366,17 +366,32 @@ macOS:  in progress at last observation
 
 This run executes `./rumiai-validate mk-shared-artifacts` directly; its result will determine whether the previous Node-runtime validation blocker is closed.
 
+## Latest formal-validation checkpoint
+
+Hosted formal run `35866953309` reached real Node-backed execution on both hosts.
+
+- Ubuntu completed successfully with all 11 selected `mk` tests PASS.
+- macOS reached the same tests but `watch.test` returned infrastructure ERROR at the CURRENT-58 child-trigger observation. A direct rerun of the unchanged revision reproduced the same point, so this was not treated as a random hosted-run interruption.
+- The observed failure was classified as test synchronization rather than a product-contract failure: the test used short fixed quiescence windows and exact trace-count equality around an asynchronous polling supervisor.
+- `rumiai-tests` commit `25f2b52335484ee063edc47feee00b2644b2fb62` stabilizes `watch.test` by widening observation time, using explicit quiescence windows and accepting `>=` while waiting so an overshoot is not misreported as timeout.
+- `rumiai-tests` commit `11449dde82c20559ead0ee23760a087c5abc9ed3` makes the temporary hosted formal workflow run when `watch.test` changes so the corrected test revision is actually exercised.
+- Formal hosted run `35869614435` exercises exact `rumiai-os` `ec670644237079b6e809aa2efe95cba5ed853b92` with exact `rumiai-tests` `11449dde82c20559ead0ee23760a087c5abc9ed3`.
+- Ubuntu in run `35869614435` completed successfully; its published validation record has aggregate status 0 and all selected tests PASS.
+- macOS in run `35869614435` has already published PASS for the corrected `watch.test`; the overall macOS formal job was still running at the latest observation.
+
+No product `mk` implementation or current `MK.md` semantics were changed by this test realignment.
+
 ## Active next work unit
 
-Inspect hosted formal run `35866953309`.
+Finish observing hosted formal run `35869614435`.
 
-- If both jobs complete successfully, capture the exact formal validation evidence and perform the final consistency check for the shared-artifact work unit.
-- If either job fails, diagnose the formal launcher/package-preparation path from the run evidence and correct it forward without introducing a workflow-only bypass.
+- If the macOS job completes successfully, capture the exact formal validation evidence and perform the final consistency check for the shared-artifact work unit.
+- If the macOS job fails after the corrected `watch.test` PASS, diagnose only the newly failing selection/infrastructure path and correct it forward.
 - After positive formal evidence is available, resolve whether additional physical stable-reference-host validation is required for this milestone, then either close this work unit or record the remaining validation obligation explicitly.
 
 Whole-fingerprint retention/eviction policy remains a separate future `mk` concern and is not implied by this validation work.
 
 ## Open questions
 
-- What is the final outcome of hosted formal validation run `35866953309` on Ubuntu and macOS?
+- What is the final aggregate outcome of macOS in hosted formal run `35869614435`?
 - After positive formal Node-backed validation is available, does this work unit require physical stable-reference-host execution or is the formal hosted cross-host evidence sufficient for the current milestone?
