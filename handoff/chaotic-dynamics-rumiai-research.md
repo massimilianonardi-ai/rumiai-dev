@@ -23,7 +23,7 @@ Most recently relied upon for the current research checkpoint:
 
 ```text
 rumiai-dev  0069264190cff324613e6698b7da0847e196d6a5
-rumiai-os   c2d8d4a0c4503e1de461e72840a13abb0da61c41
+rumiai-os   605e9e0e12b6907d0958bbd72d7f3bab79db6d2e
 ```
 
 These SHAs are task state only. Resume work with the normal fresh preflight and current remote HEAD verification.
