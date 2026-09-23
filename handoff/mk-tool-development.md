@@ -10,10 +10,10 @@ Continue development of `mk` as the `m` project development-lifecycle orchestrat
 ## Current repository revisions
 
 ```text
-rumiai-dev       17e6376a2437a93e7b5db11d9e8a54e3f9418718  (pre-synchronization HEAD)
-rumiai-os        533095820ea4f22446510a0f7b338253d908d018
-rumiai-tests     58fba497a00bd66452b4e8ce36eddbc117eda337
-rumiai-dev-PoCs  1d38deef61a742c646ff0f27ae250376f54fb5d6
+rumiai-dev       54be82eae3e9781b8ee1b10795de1505d79b86a4  (pre-synchronization HEAD)
+rumiai-os        c3c51e6f070c774c103eeb7f71c759e3ebfda4ec
+rumiai-tests     dd33d9d8c69d053c49f2d521efaf568e965d0842
+rumiai-dev-PoCs  7195c53517dc3bd3b4c3244fbb9458670ebb5213
 pkg-catalog      da7507439b71737cf4a40d85cac059824e4b9a63
 ```
 
@@ -53,7 +53,7 @@ Version 2 currently promotes and implements:
 - named external facility requirements resolved through `pkg`;
 - first-class named operation input identity;
 - opt-in content-based incremental freshness for ordinary configured operations and derived `map-process` members;
-- verified local artifact restoration for incremental declared outputs;
+- shared-local verified artifact publication/restoration for incremental declared outputs, with project-scoped freshness metadata and fingerprint-shared artifact bytes;
 - long-running `--watch` execution using resolver-owned trigger identity and fresh one-shot lifecycle cycles.
 
 Project `dependency`, operation `prerequisite`, external `requirement`, operation `input`, incremental reuse policy and watch/session semantics remain distinct.
@@ -61,7 +61,9 @@ Project `dependency`, operation `prerequisite`, external `requirement`, operatio
 The current baseline still excludes:
 
 ```text
-shared/remote artifact cache
+remote/network artifact transport
+cross-user artifact sharing/trust
+artifact eviction/garbage collection and abandoned-staging reclamation
 parallel scheduling
 remote execution
 public generic provider/plugin registration
@@ -385,55 +387,259 @@ The temporary hosted workflow was removed after evidence collection.
 
 Formal `rumiai-validate` remains unclosed; hosted evidence is not formal validation.
 
-## Cross-checkout artifact identity working design
+## Shared-local artifact work unit
 
-PoC 031 is preserved under:
+PoC evidence is preserved under:
 
 ```text
 rumiai-dev-PoCs/pocs/031-mk-cross-checkout-artifact-identity/
+rumiai-dev-PoCs/pocs/032-mk-concurrent-shared-artifacts/
 ```
 
-The corrected experiment passed on Ubuntu and macOS in GitHub Actions run `35846792755` against exact `rumiai-os` revision `533095820ea4f22446510a0f7b338253d908d018`.
-
-It validates a candidate split without changing current product/specification behavior:
+PoC 031 established the identity split:
 
 ```text
-project-scoped freshness metadata
-    remains canonical-root/operation scoped
+freshness metadata
+    canonical project root + operation scoped
 
-user-local shared artifact bytes
-    may be keyed by the existing effective operation fingerprint
-
-cross-checkout restore
-    verifies artifact bytes/snapshots
-    materializes outputs
-    writes receiving checkout's local freshness record
-    returns to ordinary refinement
+artifact bytes
+    user-local and keyed by the existing effective operation fingerprint
 ```
 
-The current fingerprint was sufficient in the exercised cases. Different operation definitions, different declared input identity and different operation names did not share merely because output bytes could match. Provider-derived members reused the same existing per-operation fingerprint mechanism.
+Its corrected hosted run `35846792755` passed on Ubuntu and macOS against exact `rumiai-os` revision `533095820ea4f22446510a0f7b338253d908d018`.
 
-The first diagnostic run `35846703434` had only a fixture-selection defect: it corrupted an arbitrary byte-identical artifact store after intentionally creating several different fingerprints. The corrected test captures the exact initial store before adding those alternatives.
-
-This model remains **unpromoted**. Sharing artifact bytes across canonical project roots introduces a new concurrency surface that the sequential PoC did not validate.
-
-Current promotion blocker:
+PoC 032 closed the concurrency promotion blocker. GitHub Actions run:
 
 ```text
-simultaneous publishers/restorers of the same fingerprint
-    must not expose partial state
-    must not delete another process's valid publication
-    must converge safely when equivalent writers race
-    must degrade conservatively on corrupt/incomplete candidates
+35854778813
 ```
 
-Remote/network transport is still outside this design step.
+passed on Ubuntu and macOS against exact `rumiai-os` revision:
+
+```text
+446418f1a9bfd31238088b8dee81a29e0c814b14
+```
+
+Observed:
+
+```text
+publication=immutable-candidate+atomic-selector
+equivalent-writers=idempotent-no-global-lock
+corrupt-refresh=no-delete-of-committed-candidate
+freshness-metadata=project-scoped
+```
+
+The validated protocol is:
+
+```text
+<mk-cache>/shared-artifacts/<effective-fingerprint>/
+    current
+    candidates/
+        <immutable-candidate>/
+            manifest.json
+            payload/...
+```
+
+A publisher prepares/verifies private staging first. Equivalent writers may converge on the same deterministic candidate. A small `current` selector is replaced atomically and points only to a fully verified immutable candidate. Writers never destructively replace another process's committed candidate.
+
+A corrupt selected candidate is a conservative miss. Refresh publishes another immutable verified recovery candidate and atomically selects it; the prior candidate is not deleted while a reader may still hold its identity.
+
+Committed unselected candidates and abandoned staging are deliberately not reclaimed by the publication path. Safe garbage collection remains a separate future responsibility.
+
+## Promoted shared-local artifact contract
+
+The PoC 031/032 model is promoted in current:
+
+```text
+specifications/rumiai-os/MK.md
+specifications/rumiai-os/CURRENT-MODEL.md
+```
+
+Promotion commits:
+
+```text
+e845f2894b2d2e4b5bf74805de0e8316fa433db6
+    MK.md shared-local artifact contract
+
+54be82eae3e9781b8ee1b10795de1505d79b86a4
+    CURRENT-MODEL.md shared-local artifact contract
+```
+
+Current invariants include MK-81 through MK-85 and CURRENT-71 / CURRENT-73 through CURRENT-75.
+
+The promoted contract requires:
+
+- freshness metadata remains canonical-project-root/operation scoped;
+- artifact bytes may be reused across canonical project roots by the existing effective operation fingerprint;
+- no second operation identity is introduced;
+- `--plan` remains non-mutating and never restores outputs or creates receiving-checkout freshness metadata;
+- execution may restore without a pre-existing receiving-checkout freshness record;
+- successful restore writes and verifies the receiving checkout's own freshness record;
+- published candidates are immutable and selected atomically;
+- equivalent concurrent publishers are idempotent without a global lock;
+- corrupt shared state is a conservative miss and is recovered non-destructively;
+- shared-local reuse does not imply remote transport, cross-user trust, GC, distributed locking, parallel scheduling or request-wide exactly-once semantics.
+
+## Product implementation
+
+The shared-local artifact implementation was introduced in:
+
+```text
+699c77923cda2cd5fd58844f29a6dc9e175d760b
+    lib/sys/js/mk.lib.js
+```
+
+Manual alignment followed through:
+
+```text
+276cc837babaec38489ee40d080cef4953f9ed87
+    res/sys/manual/mk
+
+c3c51e6f070c774c103eeb7f71c759e3ebfda4ec
+    res/sys/manual/mk.lib.js
+```
+
+The implementation changes only artifact publication/restoration mechanics. Existing operation fingerprints, project-scoped freshness identity, lifecycle resolution, project dependencies, requirements, provider derivation and watch semantics remain unchanged.
+
+The product now:
+
+- stores artifact namespaces below user-scoped `shared-artifacts/<fingerprint>`;
+- publishes verified immutable candidates;
+- uses an atomic regular-file selector per fingerprint;
+- converges equivalent concurrent publishers on one deterministic candidate when possible;
+- publishes a uniquely named recovery candidate when a deterministic committed candidate is corrupt;
+- never removes committed candidates from the writer path;
+- restores from a selected verified candidate without requiring local freshness metadata;
+- stages/verifies destination bytes before final replacement;
+- writes and reads back receiving-checkout freshness metadata before treating restore as successful;
+- falls back conservatively to action execution when restoration or local freshness establishment cannot be verified.
+
+The JS library continues to export only `mkMain`; the new artifact helpers remain private.
+
+## Permanent tests and validation
+
+Existing permanent executable:
+
+```text
+tests/rumiai-os/mk/artifact-restoration.test
+```
+
+was realigned for the promoted shared-local contract at:
+
+```text
+10a27b32e0adce996b74622d8cad6e61241e1069
+```
+
+It now protects cross-checkout restore, read-only planning, receiving-checkout freshness establishment and corrupt selected-candidate conservative miss/recovery through the real public `bin/sys/mk` path.
+
+New permanent executable:
+
+```text
+tests/rumiai-os/mk/shared-artifact-concurrency.test
+```
+
+introduced at:
+
+```text
+096bdcd9e701f328509925433dac14f1453ecfc3
+```
+
+It protects:
+
+- concurrent equivalent publishers through the real public `mk`;
+- one deterministic committed candidate for equivalent concurrent publication;
+- concurrent cross-checkout restores without action execution;
+- project-scoped freshness records in each receiving checkout;
+- corrupt selected-candidate conservative execution/refresh;
+- non-destructive immutable recovery;
+- no normal staging/selector temporary leakage.
+
+The shared-local promotion exposed two superseded expectations in `incremental.test`:
+
+```text
+a520387658ca9efa34331ba1639ebfe066a82c27
+    corrupt local freshness must not be treated as up-to-date, but execution may
+    recover through separately verified shared artifact state
+
+609158df06efe08b594be9174ad37a150fa6c5a6
+    returning from an alternate profile to an earlier fingerprint may restore the
+    earlier verified artifact rather than forcing action execution
+```
+
+These are test realignments to the promoted freshness/artifact separation, not product fixes.
+
+Task scope:
+
+```text
+validation/mk-shared-artifacts.conf
+
+rumiai-os-commit c3c51e6f070c774c103eeb7f71c759e3ebfda4ec
+rumiai-os/mk/lifecycle.test
+rumiai-os/mk/refinement.test
+rumiai-os/mk/project-dependency.test
+rumiai-os/mk/requirement.test
+rumiai-os/mk/incremental.test
+rumiai-os/mk/inputs.test
+rumiai-os/mk/provider-incremental.test
+rumiai-os/mk/watch.test
+rumiai-os/mk/artifact-restoration.test
+rumiai-os/mk/shared-artifact-concurrency.test
+```
+
+Final successful hosted product run:
+
+```text
+GitHub Actions run 35856233217
+
+exact rumiai-os
+    c3c51e6f070c774c103eeb7f71c759e3ebfda4ec
+
+exact rumiai-tests behavior revision
+    609158df06efe08b594be9174ad37a150fa6c5a6
+```
+
+GitHub-hosted Ubuntu auxiliary runner completed all ten required tests:
+
+```text
+PASS rumiai-os/mk/lifecycle.test
+PASS rumiai-os/mk/refinement.test
+PASS rumiai-os/mk/project-dependency.test
+PASS rumiai-os/mk/requirement.test
+PASS rumiai-os/mk/incremental.test
+PASS rumiai-os/mk/inputs.test
+PASS rumiai-os/mk/provider-incremental.test
+PASS rumiai-os/mk/watch.test
+PASS rumiai-os/mk/artifact-restoration.test
+PASS rumiai-os/mk/shared-artifact-concurrency.test
+
+PASS 10 / FAIL 0 / SKIP 0 / ERROR 0
+```
+
+The macOS job in that final run did not reach tests because real `pkg install nodejs` received HTTP 403 from the Node.js distribution endpoint. This is provisioning/upstream evidence, not an mk behavior failure.
+
+PoC 032 independently exercised the promoted concurrency protocol on macOS and Ubuntu with PASS before product promotion. It is experimental evidence and does not replace the missing macOS permanent-test execution for the final product revision.
+
+Diagnostic product runs before the final green Ubuntu run:
+
+```text
+35855864496
+    first permanent scope run; incremental.test still encoded the pre-shared
+    expectation that corrupt local freshness must force action execution
+
+35856077678
+    second run; incremental.test still encoded the pre-shared expectation that
+    returning to an earlier profile fingerprint must force action execution
+```
+
+Both exposed stale permanent-test expectations rather than product semantic failures and were realigned forward as recorded above.
+
+The temporary hosted workflow was removed after evidence collection.
+
+Formal `rumiai-validate` evidence is not established by these hosted runs and must not be inferred from them.
 
 ## Current state
 
-Watch is no longer working design. It is a promoted, implemented and permanently tested version-2 execution mode.
-
-The current lifecycle architecture is conceptually:
+The current version-2 architecture now includes:
 
 ```text
 declarative project/model
@@ -445,37 +651,52 @@ declarative project/model
     -> iterative one-shot lifecycle
 
 optional incremental policy
-    -> freshness reuse for eligible ordinary operations
+    -> project-scoped freshness evidence
+    -> shared-local verified artifact reuse by effective fingerprint
 
 optional --watch execution mode
     -> resolver-owned trigger identity
     -> fresh one-shot lifecycle on relevant change
 ```
 
-## Next action
-
-Create **PoC 032 — concurrent shared artifact publication/restoration** before promoting the PoC 031 identity split.
-
-Stress at least:
+The current artifact-sharing boundary is intentionally **local to one user cache root**. It does not yet provide:
 
 ```text
-two equivalent checkouts publish the same fingerprint concurrently
-one publisher finishes while another is still staging
-simultaneous restore attempts of the same fingerprint
-restore while another checkout refreshes a corrupt shared candidate
-publisher failure during staging
-cleanup after losing/racing publication
-verified final artifact remains readable and complete
-receiving checkout freshness metadata stays project-scoped
+remote/network artifact transport
+cross-user artifact trust/sharing
+artifact eviction/garbage collection
+abandoned-staging reclamation
+distributed locking
+parallel lifecycle scheduling
+remote execution
+public generic provider/plugin registration
+request-wide exactly-once/de-duplication
 ```
 
-Prefer a publication protocol based on immutable verified fingerprint directories and atomic commit/rename semantics. Avoid a global lock if correctness can be obtained from idempotent identical publication plus per-attempt staging.
+## Next action
 
-Do not add network transport, remote APIs, eviction/GC or distributed locking in this PoC.
+Create **PoC 033 — shared artifact garbage collection/reclamation safety**.
+
+Stress the concrete consequences of immutable publication:
+
+```text
+selected candidate must never be reclaimed
+reader may hold a previously selected immutable candidate while selector advances
+unselected recovery candidates may become reclaimable only when reader safety is established
+abandoned .staging-* paths are never valid candidates but may require age/liveness policy
+.current-* temporary selector files may remain after abrupt termination
+multiple mk processes may publish/restore while maintenance runs
+project-scoped freshness metadata may still reference fingerprints whose artifacts are absent
+```
+
+Determine the smallest safe local maintenance protocol and ownership boundary before adding any public cache-management command or automatic eviction policy.
+
+Do not add remote transport, cross-user trust, distributed locking or cache-size policy in PoC 033 unless the safety model itself requires them.
 
 ## Blockers / open questions
 
-- what local concurrent-publication protocol prevents one process from deleting/replacing another process's already verified fingerprint store?
-- can identical fingerprint publication be made idempotent with atomic winner/loser behavior and no long-lived lock?
-- how should a corrupt already-committed shared artifact be quarantined/refreshed when another process may be reading it?
-- formal `rumiai-validate` for Node-backed mk scopes still needs current evidence before it can be called closed.
+- how can shared immutable candidates be reclaimed without deleting a candidate an active reader may still hold after reading `current`?
+- is reader registration/lease metadata necessary, or can a simpler generation/grace-period protocol provide deterministic local safety?
+- how should abandoned private staging and selector temp files be distinguished from a live writer's in-progress state?
+- should cache maintenance be an explicit `mk` command, an internal opportunistic action or a separate general state/cache facility?
+- formal `rumiai-validate` for Node-backed mk scopes still requires current evidence before it can be called closed.
