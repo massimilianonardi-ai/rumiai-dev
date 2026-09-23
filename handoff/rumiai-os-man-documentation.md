@@ -12,8 +12,9 @@ The long-term multi-channel documentation source/rendering architecture remains 
 ## Current repository revisions
 
 ```text
-rumiai-dev   2f7a2031dac4608d612a5e6af5884d80bf4ca32a  (pre-checkpoint HEAD before this handoff synchronization)
-rumiai-os    533095820ea4f22446510a0f7b338253d908d018
+rumiai-dev   0aa56abd3d4ca1ec5ef7648b27c35af14a882928  (pre-checkpoint HEAD before this handoff synchronization)
+rumiai-os    0fd6778cbf73a6f33d7795984367806e84535986
+rumiai-tests 58fba497a00bd66452b4e8ce36eddbc117eda337
 ```
 
 Fresh remote HEAD retrieval remains mandatory before future writes.
@@ -28,8 +29,8 @@ Fresh remote HEAD retrieval remains mandatory before future writes.
 - Normal exact-topic presentation delegates to `pager`; `--no-pager` writes an exactly selected topic directly.
 - `pager` is a standalone POSIX-sh wrapper: it selects `less` whenever available and otherwise `more`, delegates stdin/file operands directly, does not inspect terminal state, does not pre-resolve files, and does not normalize backend statuses.
 - `editor` is a standalone POSIX-sh wrapper: it selects `nano`, then `vim`, then `vi`, forwards arguments unchanged, and leaves editing behavior and status to the selected backend.
-- Every RumiAI-owned directly executable command identity requires an owner-local manual topic.
-- Every RumiAI-owned library identity requires exactly one owner-local `<library-name>.lib.<runtime>` manual topic that exposes all public functions and no internal functions as callable API.
+- Every directly executable command identity owned by `m` or RumiAI requires an owner-local manual topic.
+- Every library identity owned by `m` or RumiAI requires exactly one owner-local `<library-name>.lib.<runtime>` manual topic that exposes all public functions and no internal functions as callable API.
 - Legacy library API visibility must not be inferred from historical unprefixed helper names. `todo/library-api-visibility-realignment.md` owns the separate product/API migration needed before those libraries can receive stable compliant manuals.
 - Broader `rumiai-tests` ownership remains with the active suite-realignment task; the pager-specific permanent tests were realigned in this work unit because the newly accepted pager contract made the previous tests stale.
 
@@ -98,13 +99,11 @@ The existing permanent manual tests are not closure evidence for the whole docum
 
 Targeted formal cross-host validation has been performed for the `readpass`/`readpassv` work unit on hosted Linux/x86_64 and Darwin/arm64, with both required tests passing and audit status `CLEAN`. No full documentation-surface physical/stable-host validation is claimed by that targeted result.
 
-A repository-wide case-insensitive textual audit of `rumiai` at `rumiai-os@533095820ea4f22446510a0f7b338253d908d018` scanned all 177 blobs and found 53 occurrences across 18 files, including 26 occurrences in operational manuals. The audit separates three classes:
+The terminology audit has now been fully realigned across canonical contracts and the current product. `CURRENT-MODEL.md` explicitly reserves unqualified RumiAI terminology for the branded upper layer or real product-wide context; technical responsibilities owned by `m` use `m`/`sys`/`pkg` terminology, while rules spanning both semantic layers name both explicitly.
 
-- clearly valid branded/product references: `product-name`, the repository-level README where it describes both layers, the branded root entrypoints and their `res/ai/manual/` topics;
-- clear technical-`m` drift that should not remain branded: the `.rumiai-pkg-*` temporary names in `pkg-extract.lib.sh`, generated `srv` host-unit descriptions naming RumiAI, and technical-manual wording such as relocatable “RumiAI roots” / RumiAI OS-managed shell state where the described responsibility is owned by `m`;
-- canonical-but-ambiguous project-ownership wording inside technical-`m` material, including “RumiAI pager/commands”, “RumiAI-managed nodejs/package configuration”, “RumiAI readpass”, “managed RumiAI state” and “RumiAI-owned shell code”. Several of these mirror current canonical specifications, so they must not be normalized only in product manuals: the canonical terminology boundary between “RumiAI” as the branded upper layer and “RumiAI-owned/managed” as project ownership needs an explicit consistency realignment.
+The same work unit updated project rules, consistency/manual/library contracts and affected subsystem specifications, removed stale technical-brand wording from the current operational manuals, changed `srv` host-unit descriptions to `m user/system service`, and changed internal `pkg-extract` temporary names from `.rumiai-pkg-*` to controlled `m-pkg-*` names. A follow-up case-insensitive scan of every file that previously contained a `rumiai` occurrence confirmed that the remaining product occurrences are branded/product references, product metadata, branded entrypoints/resources, or intentional cross-references from `m` documentation to those branded entrypoints.
 
-No `rumiai-os` file was modified by this audit.
+Targeted permanent tests for `srv`, `pkg-extract`, `gitman`, `readpass` and `state-path` were inspected at `rumiai-tests@58fba497a00bd66452b4e8ce36eddbc117eda337`; none encode the removed branded descriptions or temporary-name prefixes, so no test realignment was required. No runtime/formal validation was executed in this work unit because the available execution container cannot resolve github.com and therefore cannot obtain an executable checkout; the implementation changes are limited to literal host-description text and internal temporary pathnames, with command/library control flow unchanged.
 
 ## Next action
 
@@ -116,7 +115,6 @@ No `rumiai-os` file was modified by this audit.
 
 ## Blockers / open questions
 
-- The audit exposed a terminology-boundary inconsistency: `CURRENT-MODEL.md` defines RumiAI as the branded upper layer and forbids semantic `m` dependency on it, while several current technical-`m` specifications still use “RumiAI-owned/managed” wording as a project-ownership umbrella. Product cleanup of those canonical-backed occurrences requires coordinated specification/manual realignment rather than a manual-only wording edit.
 - Remaining library manuals depend on the explicit legacy library API-visibility realignment already captured in `todo/library-api-visibility-realignment.md`.
 - Trustworthy permanent structural/behavioral coverage is pending the active test-suite reimplementation/realignment task.
 - Formal multi-host/stable-host validation remains pending.
