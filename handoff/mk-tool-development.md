@@ -12,10 +12,10 @@ This handoff stores only current task state and revision-specific evidence. Dura
 ## Current repository revisions
 
 ```text
-rumiai-dev       74971f7fc6088be79a960e9d5515cd92223c506e  (pre-synchronization HEAD)
-rumiai-os        c3c51e6f070c774c103eeb7f71c759e3ebfda4ec
-rumiai-tests     dd33d9d8c69d053c49f2d521efaf568e965d0842
-rumiai-dev-PoCs  7195c53517dc3bd3b4c3244fbb9458670ebb5213
+rumiai-dev       eedb38892322091944d90b2fe90eedd12a3e8707  (pre-synchronization HEAD)
+rumiai-os        6a9e2da2c3a91ab1ac29b64c8268dc92030b5599
+rumiai-tests     a8befac73543de44f6c451569189ab1a8cc2aa3c
+rumiai-dev-PoCs  dfdb0d553ff94f27d6408aa8cdbedf266055cd7e
 pkg-catalog      da7507439b71737cf4a40d85cac059824e4b9a63
 ```
 
@@ -189,40 +189,64 @@ Formal `rumiai-validate` evidence for this Node-backed scope has not been re-est
 
 No physical stable-reference-host validation was performed in this work unit.
 
-## Active next work unit
+## Completed maintenance-safety experiments
 
-Create **PoC 033 — shared artifact garbage collection/reclamation safety**.
-
-The promoted shared-local artifact publication model deliberately keeps committed candidates immutable and never removes them from the writer path. That leaves a concrete local-maintenance problem which must be solved before automatic eviction/GC can be promoted.
-
-Stress at minimum:
+PoC 033:
 
 ```text
-selected candidate must never be reclaimed
-
-reader may hold a previously selected immutable candidate while current advances
-
-unselected recovery candidates become reclaimable only when reader safety is established
-
-abandoned .staging-* paths are never valid candidates but maintenance must not
-remove staging owned by a live writer
-
-.current-* selector temporaries may remain after abrupt termination
-
-publication/restoration may race with maintenance
-
-project-scoped freshness metadata may reference fingerprints whose artifact bytes
-have been reclaimed; this must remain a conservative execution/restore miss
+rumiai-dev-PoCs/pocs/033-mk-shared-artifact-reclamation/
+hosted run 35859604116
+Ubuntu PASS
+macOS  PASS
 ```
 
-Keep the first PoC local/user-scoped. Do not add remote transport, cross-user trust, distributed locking or a cache-size/retention policy unless the safety model itself requires them.
+PoC 033 established experimentally that immutable candidate reclamation does not require reader leases when maintenance first removes an unselected candidate from the canonical namespace and restoration remains transactional. It also established that persistent marker-file ownership is safe but not crash-live.
 
-Do not create a public cache-management command before ownership and reader/writer safety are settled.
+PoC 034:
 
-## Open questions for PoC 033
+```text
+rumiai-dev-PoCs/pocs/034-mk-artifact-crash-released-coordination/
+hosted run 35862288363
+exact rumiai-os e07902112ef0075933399d9b3834ea110448a6cc
+Ubuntu PASS
+macOS  PASS
+```
 
-- Is explicit reader registration/lease state required to reclaim an unselected candidate safely, or can a simpler local generation/grace protocol prove safety?
-- How should maintenance distinguish abandoned staging/selector temporary files from a live writer's in-progress state without relying on non-portable process inspection?
-- Is safe reclamation an `mk` responsibility or should a current general state/cache responsibility own it?
-- What minimum crash model must be supported for POSIX-local artifact maintenance?
-- Formal `rumiai-validate` for Node-backed `mk` scopes still needs current evidence before it can be called closed.
+The final run observed on both hosted platforms:
+
+```text
+ownership-witness=posix-fifo-open-reader
+crash-liveness=stale-fifo-detectable-without-pid-or-timeout
+abandoned-staging=reclaimable-after-owner-death
+selector-temp=reclaimable-after-owner-death
+reader-lease=still-not-required
+```
+
+Two preceding PoC 034 hosted attempts failed because of test-driver defects and were corrected forward. The successful run above is the evidence-bearing experiment. The temporary hosted workflow was removed after evidence collection.
+
+No current `MK.md`, `CURRENT-MODEL.md`, product implementation or permanent test has yet been changed by PoC 033/034.
+
+## Active next work unit
+
+Resolve the product-policy boundary for shared-artifact maintenance before promotion.
+
+The coordination/safety mechanism is experimentally settled enough to promote only after the remaining policy choices are made from current subsystem responsibilities:
+
+```text
+who owns maintenance behavior
+when maintenance runs
+what baseline retention/reclamation policy exists
+whether any user-facing maintenance control is in scope
+```
+
+Do not introduce a public cache-management command merely because safe reclamation is now possible. Keep remote transport, cross-user trust and distributed coordination out of scope unless a concrete current requirement introduces them.
+
+After the policy boundary is settled, apply the specification promotion gate. If promoted, realign the canonical specification(s), `mk` implementation, library/command manuals as applicable, permanent tests and proportional validation in one forward-only sequence.
+
+## Open questions
+
+- Does shared-artifact maintenance remain a private `mk` implementation responsibility, or does an existing current general state/cache responsibility already own it?
+- What is the smallest baseline maintenance trigger that avoids unbounded residue without inventing a user-facing policy prematurely?
+- Which committed candidates are retained versus reclaimable in the baseline?
+- Is whole-fingerprint eviction part of the baseline or only a future policy mechanism?
+- Formal `rumiai-validate` evidence for Node-backed `mk` scopes still needs current evidence before the task can be called closed.
