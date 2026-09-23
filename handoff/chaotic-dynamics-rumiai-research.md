@@ -22,8 +22,8 @@ No PoC, runtime implementation or architectural promotion is currently authorize
 Most recently relied upon for the current research checkpoint:
 
 ```text
-rumiai-dev  0069264190cff324613e6698b7da0847e196d6a5
-rumiai-os   605e9e0e12b6907d0958bbd72d7f3bab79db6d2e
+rumiai-dev  5bc837948d662de0750661d21bbf8773ec42540d
+rumiai-os   5f01f0bccef37020057195c98809ba492f02443c
 ```
 
 These SHAs are task state only. Resume work with the normal fresh preflight and current remote HEAD verification.
@@ -2069,6 +2069,518 @@ https://www.fields.utoronto.ca/talks/Statistics-Attractor-Embeddings-Reservoir-C
 2025 paper:
 https://pubmed.ncbi.nlm.nih.gov/40737694/
 
+
+### 26. Chaos, synchronization and reservoir computing in AI learning and LLMs
+
+A current literature review on 2026-09-23 shows a strongly uneven landscape.
+
+The central distinction is:
+
+```text
+AI / recurrent neural computation:
+    mature dynamical-systems tradition
+
+deep-network trainability / criticality:
+    substantial and mathematically developed
+
+reservoir computing:
+    mature machine-learning paradigm with explicit nonlinear-dynamics foundations
+
+Transformers / LLMs analyzed as dynamical systems:
+    active and growing research area
+
+reservoir computing used directly for language modeling:
+    real but still sparse
+
+classical chaos synchronization/control used to train, coordinate or steer LLMs:
+    largely unexplored
+```
+
+This means the mathematics relevant to the active RumiAI workstream is not foreign to AI. Large parts of it are deeply embedded in the history of recurrent neural computation. The specific combination with modern LLMs, however, remains only partially explored.
+
+#### 26.1 Chaos has been part of neural-network theory since before modern deep learning
+
+A foundational example is:
+
+H. Sompolinsky, A. Crisanti, H. J. Sommers,
+"Chaos in Random Neural Networks",
+Physical Review Letters 61, 259 (1988).
+
+The work derives a transition from a stationary regime to a chaotic regime in a large random recurrent neural network and computes the maximal Lyapunov exponent.
+
+This established very early that recurrent neural computation can be treated as a nonlinear dynamical system with order/chaos phase structure.
+
+Source:
+https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.61.259
+
+A later major learning result is:
+
+D. Sussillo, L. F. Abbott,
+"Generating coherent patterns of activity from chaotic neural networks",
+Neuron 63, 544-557 (2009).
+
+FORCE learning demonstrated that a recurrent network with chaotic spontaneous dynamics can be trained into coherent target activity while retaining recurrent feedback.
+
+Conceptually:
+
+```text
+rich chaotic recurrent dynamics
+        ↓ learning / feedback adaptation
+desired coherent low-dimensional behavior
+```
+
+Source:
+https://pubmed.ncbi.nlm.nih.gov/19709635/
+
+A 2025 review in Neural Networks explicitly surveys chaotic RNNs, FORCE-type learning, reservoir computing and newer biologically plausible approaches, confirming that this is a substantial research lineage rather than a niche historical curiosity.
+
+Source:
+https://www.sciencedirect.com/science/article/pii/S0893608024010086
+
+#### 26.2 The "edge of chaos" has been studied extensively as a trainability/criticality problem
+
+Modern deep-learning theory imported statistical-physics and dynamical-systems tools to study forward signal propagation and backpropagated gradients.
+
+A representative result is:
+
+Schoenholz et al.,
+"Deep Information Propagation",
+ICLR 2017.
+
+Their mean-field analysis identifies ordered and chaotic phases in random deep networks and shows that trainable signal-propagation depth increases near the critical boundary between them.
+
+Source:
+https://openreview.net/pdf?id=H1W1UN9gg
+
+Subsequent work develops this through:
+
+- critical initialization;
+- dynamical isometry;
+- Jacobian spectra;
+- vanishing/exploding gradient analysis;
+- signal-propagation depth scales;
+- spectral normalization and stability.
+
+For current RumiAI purposes, an important warning is that "edge of chaos" in this literature often refers to a **critical initialization/signal-propagation regime**, not necessarily to a trained network executing on a strange attractor.
+
+Do not conflate:
+
+```text
+critical parameter regime for trainability
+!=
+measured deterministic chaos during inference
+```
+
+#### 26.3 Reservoir computing is already an AI paradigm built directly on driven nonlinear dynamics
+
+Reservoir computing is one of the clearest places where the mathematics of driven dynamical systems and machine learning are already deeply integrated.
+
+The basic structure is:
+
+```text
+input u(t)
+   ↓
+fixed nonlinear dynamical reservoir r(t)
+   ↓
+simple trained readout
+   ↓
+output
+```
+
+The crucial mathematical property is fading memory / echo-state behavior: for the same drive, dependence on arbitrary initial reservoir state must decay sufficiently.
+
+A 2024 review makes explicit that, when the input is generated by another dynamical system, the source and the reservoir form a unidirectionally coupled drive-response pair and **generalized synchronization** is closely related to the echo-state property.
+
+Conceptually:
+
+```text
+source state z(t)
+        ↓ drive
+reservoir state r(t)
+
+generalized synchronization:
+r(t) = psi(z(t))
+```
+
+This is extremely close to the Pecora-style framework already recorded in this handoff.
+
+Source:
+https://www.frontiersin.org/journals/applied-mathematics-and-statistics/articles/10.3389/fams.2024.1221051/full
+
+This means generalized synchronization is not merely an analogy to machine learning. In reservoir computing it is already a serious explanatory mechanism for why a driven nonlinear system can become a reproducible computational representation of its input source.
+
+#### 26.4 Reservoir computing and language existed before the present LLM-specific wave
+
+Reservoir methods have long been used for temporal/sequential tasks, including speech and language.
+
+A particularly direct modern bridge is:
+
+Shen et al.,
+"Reservoir Transformers",
+ACL-IJCNLP 2021.
+
+The authors showed that some Transformer layers can be randomly initialized and left untrained as nonlinear reservoir layers while retaining strong performance and reducing wall-clock convergence time in machine translation and masked language modeling.
+
+Source:
+https://aclanthology.org/2021.acl-long.331/
+
+This is important because it demonstrates that Transformer computation does not require every internal transformation to be conventionally trained.
+
+However, "Reservoir Transformers" does **not** mean the entire language model is a classical echo-state network, nor does it establish chaos synchronization inside the model.
+
+#### 26.5 Direct evidence of transient chaos in a Transformer-derived language model
+
+A particularly relevant result is:
+
+K. Inoue, S. Ohara, Y. Kuniyoshi, K. Nakajima,
+"Transient chaos in bidirectional encoder representations from transformers",
+Physical Review Research 4, 013204 (2022).
+
+The work exploits ALBERT's weight-sharing architecture: the same Transformer encoder can be iterated repeatedly, allowing it to be treated naturally as a discrete high-dimensional dynamical system.
+
+The authors report:
+
+- high-dimensional transient trajectories;
+- intrinsic transient chaos;
+- local Lyapunov analysis;
+- significantly longer chaotic transients in pretrained ALBERT than in randomly initialized ALBERT;
+- an interpretation that local chaoticity may contribute to NLP expressive capacity.
+
+Source:
+https://journals.aps.org/prresearch/abstract/10.1103/PhysRevResearch.4.013204
+
+This is one of the strongest direct bridges between chaos theory and language-model internals.
+
+Important limitation:
+
+ALBERT's repeated shared encoder gives a particularly clean iterative map. A standard decoder-only LLM does not automatically have the same simple state equation.
+
+#### 26.6 Decoder-only LLMs require a larger state definition
+
+For an encoder recurrence such as ALBERT one can write approximately:
+
+```text
+x_{n+1} = F(x_n)
+```
+
+when repeatedly applying the same encoder.
+
+Autoregressive decoder-only models such as GPT-2 or Llama depend on the generated history and cached key/value states.
+
+If one defines state only as the current hidden vector:
+
+```text
+x_t = h_t
+```
+
+then generally:
+
+```text
+x_{t+1} != F(x_t)
+```
+
+because the next step depends on earlier cached information.
+
+A 2025 Advanced Science study analyzing ALBERT, GPT-2, Llama-3.1 and a Japanese Llama variant explicitly notes this issue while nevertheless treating the temporal hidden-state evolution as "internal dynamics" for comparative energy-landscape analysis.
+
+Source:
+https://advanced.onlinelibrary.wiley.com/doi/10.1002/advs.202414016
+
+For rigorous dynamical-systems work on decoder LLMs, the natural move would be to augment the state:
+
+```text
+X_t =
+{
+current representations,
+KV cache/history state,
+decoder state,
+possibly sampling/RNG state
+}
+```
+
+so that the augmented process can be investigated as a Markov or hybrid dynamical system.
+
+This is a RumiAI-relevant methodological point: state definition must precede Lyapunov/attractor/synchronization claims.
+
+#### 26.7 LLM internal dynamics are now an explicit research subject
+
+The University of Tokyo / Nakajima line has continued beyond the 2022 ALBERT result.
+
+A 2026 IEICE article by Kohei Nakajima is explicitly titled:
+
+"Butterfly behind LLM: A Reservoir Computing Perspective".
+
+Its framing is:
+
+```text
+LLM as a pretrained dynamical system / reservoir
+```
+
+and it reports complex internal dynamics and transient chaos in some LLM settings, with the suggestion that these dynamics could be exploited for reservoir computing.
+
+Source:
+https://globals.ieice.org/en_journal/ieice_journal/2026/k109_2_125/_f
+
+This is currently a frontier signal rather than an established mainstream LLM paradigm.
+
+#### 26.8 Reservoir computing used directly as a language model remains sparse but is becoming concrete
+
+A 2026 Physical Review Applied paper:
+
+F. Köster, A. Uchida,
+"Reservoir computing as a language model"
+
+directly compares two reservoir-computing language-model approaches with a Transformer baseline for character-level language modeling.
+
+The authors explicitly state that studies using reservoir computing as a language model remain sparse.
+
+Their result:
+
+```text
+Transformer:
+    better prediction quality
+
+Reservoir computing:
+    substantially lower training/inference cost
+    possible path to fast/energy-efficient hardware
+
+Attention-enhanced reservoir:
+    intermediate/hybrid direction
+```
+
+Source:
+https://journals.aps.org/prapplied/abstract/10.1103/sd11-x3ny
+
+A separate 2025 study of large Echo State Networks reported competitive or better grammaticality judgments than Transformers under some controlled training conditions with approximately 100M words, but this was presented as a workshop/non-archival language-learning study and should not be generalized into an LLM-replacement claim.
+
+Source:
+https://arxiv.org/abs/2503.01724
+
+The current conclusion is therefore:
+
+```text
+reservoir computing for language:
+    demonstrated
+
+reservoir computing for LLM-scale general language capability:
+    not demonstrated
+
+reservoir computing as an efficiency complement/hybrid:
+    plausible and increasingly studied
+```
+
+#### 26.9 Transformers are increasingly being analyzed with dynamical-systems mathematics even when "chaos" is not the label
+
+Several current research streams use dynamical concepts without invoking classical chaos control.
+
+Examples:
+
+**Signal propagation / training stability**
+
+"Transformers Get Stable" (ICML 2024) develops an end-to-end theory for forward/backward signal moments and addresses vanishing/exploding gradients, rank collapse and high-attention instability.
+
+Source:
+https://proceedings.mlr.press/v235/kedia24a.html
+
+**Attention as consensus dynamics**
+
+"Consensus Is All You Get" (ICML 2025) analyzes self-attention asymptotically and shows token representations tending toward consensus under studied assumptions, with empirical GPT-2 experiments.
+
+Source:
+https://proceedings.mlr.press/v267/abella25a.html
+
+This is mathematically adjacent to synchronization/consensus theory, but it is not equivalent to Pecora-style chaotic synchronization.
+
+**Training / in-context learning dynamics**
+
+Recent theoretical work models in-context learning and Transformer optimization through mean-field flows, spectral-rank evolution, subspace stability and phase-like transitions.
+
+Examples:
+https://proceedings.mlr.press/v235/kim24af.html
+https://proceedings.mlr.press/v282/mainali26a.html
+
+This area is becoming substantial, but the state variables are often parameters, attention matrices, ranks or feature subspaces rather than physical-style trajectories of an autonomous chaotic system.
+
+#### 26.10 AI is heavily used to learn chaotic systems, but this is a different direction
+
+There is now a large literature on:
+
+```text
+AI -> learn/predict/control a chaotic physical system
+```
+
+Examples include recurrent networks, reservoir computers, Transformers, neural operators and hybrid models.
+
+This must be distinguished from:
+
+```text
+chaos/dynamical-systems mathematics -> understand or train the AI itself
+```
+
+Representative modern examples:
+
+- ICML 2025 "Chaos Meets Attention" uses a Transformer specifically designed for long-term high-dimensional chaotic prediction while preserving ergodic statistics.
+- Nature Communications 2025 combines a Transformer with reservoir computing to reconstruct unseen nonlinear dynamics from sparse observations.
+- EMNLP 2024 shows pretrained LLaMA-2 can infer and extrapolate governing behavior of several dynamical systems in context.
+
+Sources:
+https://proceedings.mlr.press/v267/he25s.html
+https://www.nature.com/articles/s41467-025-63019-8
+https://aclanthology.org/2024.emnlp-main.842/
+
+These works demonstrate a strong interface between LLM/Transformer methods and dynamical systems, but they do not establish that LLM learning itself uses chaos or synchronization.
+
+#### 26.11 Synchronization specifically: mature in reservoir computing, weakly explored in LLMs
+
+A key conclusion for this research task is:
+
+```text
+generalized synchronization
+    in reservoir computing:
+        mature and theoretically central
+
+token convergence / consensus
+    in Transformer analysis:
+        actively studied
+
+synchronization between LLMs or LLM subsystems
+    as a training/coordination mechanism:
+        very little established literature found
+
+chaos synchronization used to steer LLM inference:
+        no mature research program identified
+
+Pecora-style drive-response / transverse-stability analysis
+    of distributed LLM systems:
+        major open space
+```
+
+The direct ALBERT result is especially suggestive because token representations synchronize after repeated encoder iteration and the system can exhibit transient chaos. However, this should not be promoted to a general claim that normal LLM inference is a synchronized chaotic process.
+
+#### 26.12 Chaos control specifically: rich neural-network history, little direct LLM adoption
+
+In recurrent neural systems, chaos can be deliberately shaped or suppressed for computation.
+
+Examples:
+
+- FORCE learning trains chaotic recurrent networks into desired patterns.
+- Later work studies biologically plausible rules for "taming" chaos.
+- A 2025 Nature Communications paper introduces predictive alignment to transform chaotic recurrent activity into desired patterns without directly minimizing output error in the recurrent weights.
+
+Source:
+https://www.nature.com/articles/s41467-025-61309-9
+
+For LLMs, however, the mainstream steering toolbox remains:
+
+```text
+fine-tuning
+RL / preference optimization
+prompting
+activation steering
+representation engineering
+decoding control
+test-time/inference-time optimization
+architectural normalization/scaling
+```
+
+rather than:
+
+```text
+identify chaotic attractor
+-> measure transverse Lyapunov spectrum
+-> stabilize target orbit/manifold
+-> synchronize to drive/reference
+```
+
+This gap is scientifically important for RumiAI.
+
+#### 26.13 Current maturity map
+
+```text
+Area                                                     Maturity
+
+Chaos in recurrent neural-network theory                 high
+Chaos used as computational richness in RNNs             high
+Learning/control of chaotic RNN activity                  high
+Reservoir computing                                      high
+Generalized synchronization as RC explanation            high
+Edge-of-chaos / criticality in deep-network theory       high
+Dynamical-systems analysis of Transformer training       medium-high
+Dynamical-systems analysis of Transformer representations medium
+Direct measured transient chaos in Transformer models    real but narrow
+Reservoir/Transformer hybrids                            medium
+Reservoir computing as a language model                  low-medium / emerging
+LLM-as-reservoir analysis                                emerging
+Classical synchronization as an LLM coordination tool    very low
+Chaos control as an LLM steering/training method         very low
+Pecora-style network synchronization for multi-LLM AI    largely open
+```
+
+These are qualitative maturity assessments based on the current literature review, not publication-count metrics.
+
+#### 26.14 The most important research gap for RumiAI
+
+The unexplored gap is not:
+
+> Can chaos exist in neural networks?
+
+That is old and well established.
+
+Nor is it:
+
+> Can nonlinear dynamical systems compute?
+
+Reservoir computing already answers yes.
+
+Nor even:
+
+> Can Transformer-derived models show chaotic or collective dynamics?
+
+There is already direct evidence in restricted settings.
+
+The deeper open problem is:
+
+> Can we define a mathematically valid state space for modern heterogeneous AI/LLM components, identify stable/generalized synchronization relations among them, diagnose transverse instability, and apply sparse/minimum intervention control to maintain useful cognitive regimes?
+
+This can be written schematically as:
+
+```text
+opaque component i
+x_i(k+1) = F_i(...)
+
+observable
+y_i = h_i(x_i)
+
+learned/reconstructed state
+r_i = Phi_i(x_i)
+
+desired collective relation
+C(r_1, ..., r_n, z) = 0
+
+stability question
+delta_perp -> 0 ?
+
+control question
+minimum u_i needed to restore/maintain C = 0 ?
+```
+
+Current LLM literature contains pieces of this problem:
+
+```text
+state/trajectory analysis
+criticality
+transient chaos
+consensus
+reservoir embeddings
+state reconstruction
+stability
+hybrid Transformer-reservoir models
+```
+
+but no mature unified framework combining them in the Pecora-style way relevant to RumiAI.
+
+That gap should remain a standing research opportunity, without being interpreted as evidence that a future RumiAI implementation will necessarily benefit from chaos control.
+
 ## Completed
 
 - Performed current RumiAI preflight and confirmed that this material is not appropriate for current specifications.
@@ -2082,6 +2594,9 @@ https://pubmed.ncbi.nlm.nih.gov/40737694/
 - Identified the 1998 -> 2021 methodological continuity between network-eigenmode decomposition for synchronization stability and modal/eigenvalue analysis of reservoir dynamics.
 - Recorded the user's direct historical research provenance with Pecora and the plan for handling Pecora's original notes/documents if they are later supplied.
 - Established Pecora/Carroll and closely related work as a standing research-watch signal for this active workstream.
+- Mapped the use of chaos, synchronization and reservoir computing across AI learning and modern language models, separating mature recurrent/RC theory from the still-emerging direct LLM applications.
+- Identified direct published evidence of transient chaos in ALBERT and current 2026 work explicitly treating pretrained LLMs as reservoirs/dynamical systems.
+- Identified the main current gap: classical/generalized synchronization and chaos-control mathematics are not yet a mature method for coordinating or steering modern LLM systems.
 
 ## Current state
 
