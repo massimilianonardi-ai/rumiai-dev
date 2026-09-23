@@ -10,10 +10,10 @@ Refactor the package repository-adapter model so each repository `type` remains 
 ## Current repository revisions
 
 ```text
-rumiai-dev      ba0b7dce41fd7757f81a17f5490d0cffb5043976  (pre-checkpoint HEAD before this synchronization)
-rumiai-os       92f0d459225ee4117f3c2cb32aa1b8aa9f17ec90
-rumiai-tests    63a7c475cc96a0ff694c1061ccbada90f0826aef
-rumiai-dev-PoCs 4c2e43644f6b5c42c542bf37fd07ab7caaae03bd
+rumiai-dev      075759fce59a76016575660347c199fef373768a  (pre-checkpoint HEAD before this synchronization)
+rumiai-os       c2d8d4a0c4503e1de461e72840a13abb0da61c41
+rumiai-tests    82e19ac266283925ae59f0de050775c6378efec1
+rumiai-dev-PoCs 3610a24139a309ad15e0172f8758d4347a832042
 pkg-catalog     da7507439b71737cf4a40d85cac059824e4b9a63
 ```
 
@@ -44,12 +44,14 @@ pkg-catalog     da7507439b71737cf4a40d85cac059824e4b9a63
 
 - Download handler `template-url`: deterministic `name-template` using `{version}`, and `url-template` using `{version}`/`{name}`.
 - Metadata handlers:
-  - `checksum-sidecar`
-  - `checksum-manifest`
-  - `sourceforge-rss`
-- NetBeans and Node.js now use `type=github` plus download/metadata overrides; their dedicated repository adapters are removed.
-- GeoServer remains `type=geoserver` because its strict numeric X.Y.Z ordering and exact-version semantics are genuinely different, while its RSS metadata parsing is now delegated to the shared SourceForge handler.
-- Temurin remains custom: its name and download API mapping do not fit the current template handler without adding unsupported generalization.
+  - `checksum-sidecar`, with closed `record-format` values `digest-name` and `digest-only`;
+  - `checksum-manifest`;
+  - `sourceforge-rss`.
+- NetBeans and Node.js use `type=github` plus download/metadata overrides; their dedicated repository adapters are removed.
+- GeoServer remains `type=geoserver` because its strict numeric X.Y.Z ordering and exact-version semantics are genuinely different, while its RSS metadata parsing is delegated to the shared SourceForge handler.
+- Apache Maven remains `type=apache-maven` because its version/index semantics are specific, while artifact name/download URL and digest-only SHA-512 sidecar handling are delegated to the same shared artifact mechanisms used by overrides.
+- Temurin remains custom: its artifact identity is selected from checksum/API data and its binary endpoint does not fit the current independent template/download + already-resolved-name metadata contract without broadening responsibility boundaries.
+- Chrome, Chromium, GraalVM and GPGTools remain custom/default implementations because their current provider metadata or release-asset semantics do not provide evidence for another clean handler under the current responsibility split.
 
 ## Completed
 
@@ -60,17 +62,24 @@ pkg-catalog     da7507439b71737cf4a40d85cac059824e4b9a63
 - Migrated all NetBeans and Node.js catalog streams to `type=github` with closed typed overrides.
 - Removed the superseded NetBeans and Node.js product adapters.
 - Replaced their repository-specific permanent tests with generic artifact-handler coverage plus GitHub composition coverage.
-- Canonical package-model realignment is part of this checkpoint.
+- Extended `checksum-sidecar` with the demonstrated `digest-only` record format while preserving `digest-name`.
+- Exposed direct trusted mechanism entrypoints for `template-url` and `checksum-sidecar`, so complete repository types can compose the same mechanisms without catalog overrides.
+- Realigned `apache-maven` to reuse both shared mechanisms while preserving its complete type and existing external artifact descriptor.
+- Added the missing Apache Maven repository library manual and realigned the artifact-handler manual and canonical package-model specification.
+- Permanent artifact-handler coverage now exercises direct template URL reuse, both checksum-sidecar record formats, and direct checksum-sidecar reuse. Existing Apache Maven contract coverage continues to exercise digest-only acceptance plus filename/duplicate/bad-digest rejection through the public Maven adapter.
+- Final static consistency review verified public function/manual coverage, absence of the superseded internal checksum-sidecar helper, and agreement between implementation, permanent tests and canonical specification.
 
 ## Current state
 
-Implementation, catalog and permanent-test surfaces have been structurally realigned to the promoted model. No live external/package-install validation has yet been obtained for the new revisions in this task. The execution container cannot resolve github.com and is therefore not being treated as live validation evidence.
+The architecture and implementation are aligned around one shared artifact-mechanism layer usable in two ways: explicit catalog overrides and internal composition by complete repository types. Current evidence supports `template-url`, `checksum-sidecar`, `checksum-manifest` and `sourceforge-rss`; other adapters remain custom rather than being forced into broader handlers.
+
+No live/runtime validation has been obtained for the latest revisions in this task. The available execution container cannot resolve github.com. The current full-health validation scope in `rumiai-tests` is still pinned to `rumiai-os@92f0d459225ee4117f3c2cb32aa1b8aa9f17ec90`, so running that workflow would not validate current `rumiai-os@c2d8d4a0c4503e1de461e72840a13abb0da61c41`. That validation-scope state belongs to the parallel test-suite-realignment task and was preserved.
 
 ## Next action
 
-Perform the final consistency pass: inspect current diffs/references for superseded NetBeans/Node.js repository types and stale override API names, validate library/manual visibility consistency, run the strongest available real validation path, and classify any remaining failure before closing the task.
+Run proportional permanent validation for the current artifact-handler, GitHub repository and Apache Maven repository groups against `rumiai-os@c2d8d4a0c4503e1de461e72840a13abb0da61c41` in an executable environment. If it passes, perform the final completion checkpoint and close this handoff forward-only.
 
 ## Blockers / open questions
 
-- No architectural blocker remains in the baseline override model.
-- Broader handler types (for example Apache digest-only sidecars or Temurin API-specific mapping) should be added only when a current package supplies concrete evidence for a genuinely reusable mechanism rather than by speculative generalization.
+- Runtime validation of the latest revisions is the only remaining completion blocker.
+- No unresolved architectural choice remains in the current override/composition model.
