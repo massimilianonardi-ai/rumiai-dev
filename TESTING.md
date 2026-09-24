@@ -221,7 +221,7 @@ Individual tests do not own environment isolation.
 
 A direct `.test` execution, and a development run through `rumiai-test`, acts on the real ambient target and process environment supplied by the caller. This is deliberate: development execution must be able to test the actual checkout/environment being worked on.
 
-Formal validation through `rumiai-validate` uses a disposable validation environment prepared by the launcher. For a `rumiai-os` target the normal current-product path starts from the updated committed HEAD of the operator's product checkout and materializes that exact revision in an independent clean Git clone with isolated mutable user roots, including at least `HOME` and temporary storage plus applicable standard user-state roots such as XDG directories. A deliberately revision-pinned scope may still name an exact older commit when reproducing or closing a revision-specific work unit. The real host OS, architecture, system tools and other host properties remain real unless a specific current contract requires additional isolation.
+Formal validation through `rumiai-validate` uses a disposable validation environment prepared by the launcher. For a `rumiai-os` target the normal single-host current-product path starts from the updated committed HEAD of the operator's product checkout and materializes that exact revision in an independent clean Git clone with isolated mutable user roots, including at least `HOME` and temporary storage plus applicable standard user-state roots such as XDG directories. A deliberately revision-pinned scope may still name an exact older commit when reproducing or closing a revision-specific work unit. A multi-host orchestrated validation resolves the current product revision once before host fan-out and supplies that exact revision to every host; repository advancement during the run belongs to a later validation and must not change the revision identity of an in-progress matrix. The real host OS, architecture, system tools and other host properties remain real unless a specific current contract requires additional isolation.
 
 Target preparation is part of the validation environment, not test setup. Before the audit baseline and before any test executes, `rumiai-validate` selects the real host platform through the target's canonical `osarch update` path and resolves the execution requirements associated with the tests that will actually run.
 
@@ -343,12 +343,15 @@ The complete product path is first-class. The operator must not need to know tas
 
 A full-product validation must therefore:
 
-1. update and resolve the current committed `rumiai-os` HEAD;
-2. discover the complete permanent suite through `rumiai-test --list`;
-3. resolve every suite-owned execution requirement that intersects that discovered set;
-4. prepare the required target environment automatically;
-5. execute the complete discovered suite;
-6. retain exact revision/environment/result evidence.
+1. resolve one exact committed `rumiai-tests` revision and one exact committed `rumiai-os` revision for the validation run;
+2. for a direct single-host invocation, update and resolve the current committed `rumiai-os` HEAD; for a multi-host orchestrated run, resolve the current product HEAD once before fan-out and reuse it unchanged on every host;
+3. discover the complete permanent suite through `rumiai-test --list`;
+4. resolve every suite-owned execution requirement that intersects that discovered set;
+5. prepare the required target environment automatically;
+6. execute the complete discovered suite;
+7. retain exact revision/environment/result evidence.
+
+Every host belonging to one multi-host validation must exercise the same `rumiai-tests` and `rumiai-os` revisions. A host that observes a later repository HEAD must not silently substitute it into that already-started validation.
 
 A task scope remains useful during development because it reduces the selected test set. It must not change the meaning or prerequisites of those tests.
 
@@ -384,7 +387,7 @@ health  complete product validation over the full permanent suite
 
 The normal health scope contains no explicit selection; it means the complete `tests/` root. The normal current-product scope also need not pin a `rumiai-os` commit: after the product checkout is updated, the validator resolves its exact committed HEAD and records that revision in the evidence.
 
-An explicit `rumiai-os-commit` remains permitted only when a scope deliberately needs revision-pinned reproduction/closure rather than current-product validation.
+An explicit `rumiai-os-commit` remains permitted in a scope when that scope deliberately needs revision-pinned reproduction/closure rather than current-product validation. Separately, the launcher may receive an exact operational target-revision override for one invocation so an external multi-host orchestrator can freeze the current product revision once before fan-out without modifying the versioned scope. A scope-level pin and an invocation-level target override are mutually exclusive.
 
 Execution requirements are stored separately under suite-owned validation requirement metadata. They follow the tests, not the scope. Therefore the same selected test receives the same automatically prepared requirement whether it is reached through:
 
@@ -403,8 +406,9 @@ Unless a documented exception applies:
 
 - the target and `rumiai-tests` must be committed;
 - the `rumiai-tests` working tree used to launch validation must be clean;
-- the current-product path updates the primary `rumiai-os` checkout and records its exact committed HEAD before preparing the disposable target;
-- a deliberately revision-pinned scope records and materializes its explicit exact commit;
+- the normal single-host current-product path updates the primary `rumiai-os` checkout and records its exact committed HEAD before preparing the disposable target;
+- a multi-host orchestrator freezes one exact `rumiai-tests` revision and one exact current `rumiai-os` revision before host fan-out, and every host records those same revisions;
+- a deliberately revision-pinned scope or invocation-level target override records and materializes its explicit exact commit;
 - the target environment starts from a clean disposable clone of that resolved exact target revision;
 - the validator resolves all applicable suite-owned execution requirements before the audit baseline and prepares them only inside the disposable target;
 - commits/revisions, host, architecture, selected target platform, date/time, executed selections, results, logs and validation-environment audit evidence must be recorded;
@@ -441,7 +445,7 @@ For `rumiai-os`, formal validation always executes an independent disposable Git
 
 The default validation isolation granularity is `session`. For complete-product validation, `session` means one disposable environment per requirement class rather than one environment for the entire heterogeneous suite. The explicit stronger `test` mode uses the same precomputed canonical discovered test set and gives each test a fresh disposable environment with its automatically resolved applicable requirements.
 
-An external workflow, including GitHub Actions, remains an orchestrator: it may prepare hosts and invoke these tools, but it must not duplicate test selection, execution-requirement resolution, target semantics or assertions that belong in the suite/validator.
+An external workflow, including GitHub Actions, remains an orchestrator: it may prepare hosts, freeze the exact suite/product revision identity for one multi-host run and invoke these tools, but it must not duplicate test selection, execution-requirement resolution, target semantics or assertions that belong in the suite/validator. When a workflow fans one validation out to multiple hosts, it must resolve the product commit once before the matrix starts, check out the exact triggering suite commit on every host, prevent launcher self-update from changing that suite revision during the run, and pass the same exact product-commit override to every host.
 
 ## 20. Promotion and removal of tests
 
