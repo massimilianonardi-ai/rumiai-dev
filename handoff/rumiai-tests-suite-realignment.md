@@ -10,13 +10,13 @@ Realign the permanent RumiAI test suite so that failures are evidence about curr
 ## Current repository revisions
 
 ```text
-rumiai-dev   3bbe55bd93815311fb3998378441cd71d50f1d87  (pre-checkpoint HEAD before this handoff synchronization)
-rumiai-tests f18bec19ae34eaa9b33af888798fae48ef0a8241
-rumiai-os    c4e2f3292fb72763c3145e9466db54fb75acf41c
+rumiai-dev   9da67ab98ee543111cea2cb65d30529db14b0b07  (pre-checkpoint HEAD)
+rumiai-tests 21556a6230048a2973530a5c4523c43450b97594
+rumiai-os    7d5a1c75b4e40b60c3a831edf2aa2b9d3da04f6a  (current HEAD at this checkpoint)
 pkg-catalog  be0ecd84afc65699d55225b1aa4adaa3b6c20a54
 ```
 
-The `rumiai-dev` revision above is the authoritative source revision read before this handoff checkpoint; this handoff update itself advances that repository. Fresh HEAD retrieval remains mandatory before resumption.
+The `rumiai-dev` revision above is the authoritative source revision read before this handoff checkpoint; this update itself advances that repository. Fresh HEAD retrieval remains mandatory before resumption.
 
 ## Applicable canonical sources
 
@@ -83,30 +83,31 @@ The `rumiai-dev` revision above is the authoritative source revision read before
 - `rumiai-tests@386328536f06ec41fa1f04d61c49e76d2e7c6e96` initialized the validation-evidence fixture required by `environment-isolation.test` after target preparation began recording `target-osarch`.
 - `rumiai-tests@f18bec19ae34eaa9b33af888798fae48ef0a8241` extends the requirement-resolution self-test to protect the complete grouped execution shape: baseline environment without Node, `mk` excluded from that baseline, then an independent Node-prepared environment containing the `mk` tests.
 - The current permanent suite contains 169 tests, including exactly 11 under `tests/rumiai-os/mk/`.
+- Hosted run `35965239854` demonstrated the grouped full-product execution on both hosted systems: the baseline excluded all 11 `mk` tests, `external/nodejs/release-live.test` returned PASS from the Node-free baseline, and the separate Node-prepared requirement group executed all 11 `mk` tests with PASS. Validator self-tests `environment-isolation.test` and `requirements-resolution.test` also returned PASS after their fixture corrections.
+- `extract/dispatch.test` was realigned with the current DMG native-backend precondition (`ditto + plutil + diskutil|hdiutil`) and returned PASS on Ubuntu and macOS in run `35965239854`.
+- That run also exposed a cross-host evidence defect: Ubuntu and macOS independently updated the product source checkout and therefore validated different `rumiai-os` commits while belonging to the same matrix run.
+- Canonical `TESTING.md` now requires one exact `rumiai-tests` revision and one exact `rumiai-os` revision per multi-host validation. The product revision is resolved once before fan-out; repository advancement during the run belongs to a later validation.
+- `rumiai-validate` now supports `--rumiai-os-commit=<commit>` as an invocation-level exact target override and `--no-suite-update` to preserve an already-frozen suite revision. Scope-level and invocation-level product pins are mutually exclusive. Permanent launcher self-tests cover both semantics.
+- The health workflow now has a `resolve-product` job, checks out the exact triggering suite revision on every host, disables suite self-update and passes the same resolved product commit to every matrix job.
+- GitHub Actions run `35967138758` is the first revision-coherent hosted full-product validation of this redesign; it uses `rumiai-tests@21556a6230048a2973530a5c4523c43450b97594`. The exact frozen product SHA will be confirmed from both matrix job transcripts before closure.
+- The prior Ubuntu `pkg/install-live.test` failure protects the current `PACKAGE-MODEL.md` best-effort multi-operand install contract: an invalid operand must not prevent a later valid independent operand from being attempted. If it reproduces on the frozen current-product run, it is a product defect/deferred item rather than a stale test.
 
 ## Current state
 
-The full-product/current-target and suite-owned-requirements redesign is implemented and canonical.
+The complete-product/current-target redesign and requirement-group isolation are implemented and mechanically demonstrated.
 
-The normal complete-product path now has these properties:
+The remaining validation-specific issue from the previous checkpoint—different product revisions entering different matrix hosts—has now been corrected structurally. A multi-host run has one frozen suite/product revision identity; hosts cannot silently substitute a newer repository HEAD after fan-out.
 
-- the operator invokes one health/full-product validation instead of manually composing task scopes;
-- the exact current committed `rumiai-os` HEAD is resolved after the product checkout is updated;
-- the complete permanent test set is discovered through the canonical runner discovery path;
-- execution prerequisites are owned by suite requirement metadata rather than scopes;
-- requirement-bearing tests are separated from the baseline so their prepared packages do not contaminate unrelated test preconditions;
-- `rumiai-validate mk` remains available as a focused development selector, but the same 11 `mk` tests and Node.js requirement are automatically reached by the complete-product path.
+Run `35967138758` is currently exercising that exact mechanism. The run must complete before this work unit can be closed. Its two matrix jobs must report the same `rumiai-tests` SHA and the same `rumiai-os` SHA, the validator/runner self-tests must remain clean, and the 11 `mk` tests must continue to execute in the Node-prepared requirement group.
 
-The latest implementation checkpoint is `rumiai-tests@f18bec19ae34eaa9b33af888798fae48ef0a8241`. GitHub Actions health run `35964122542` is exercising that exact suite revision on hosted Ubuntu and macOS against current `rumiai-os@c4e2f3292fb72763c3145e9466db54fb75acf41c`.
-
-The run must finish before this work unit can be closed. In particular, confirm that validator/runner self-tests are no longer ERROR, that the baseline excludes the 11 `mk` tests, that the independent `mk` requirement group prepares Node.js and runs all 11 tests, and that any remaining FAIL/SKIP results are product/upstream/host-applicability evidence rather than validator orchestration defects.
+Known current product failures that are already represented outside this task include branded bootstrap PATH recursion, `osarch` compatibility entrypoints, macOS readable integrated commands and macOS `http-fetch` progress. They must remain visible as product evidence rather than being weakened in the suite.
 
 ## Next action
 
-1. Inspect hosted health run `35964122542` on Ubuntu and macOS.
-2. If validator/runner orchestration is clean, classify remaining FAIL/SKIP results without weakening valid product tests.
-3. Re-read the final diff and canonical testing contracts, verify concurrent changes remain preserved, and execute the final consistency gate.
-4. If the suite realignment is complete, capture a final `Status: Complete` handoff snapshot and remove the handoff in a later forward commit.
+1. Inspect run `35967138758` on hosted Ubuntu and macOS and confirm identical suite/product revision identity.
+2. Classify the remaining FAIL/SKIP set against current contracts; create/update minimal TODO only for newly confirmed out-of-scope product defects not already represented.
+3. Re-read the final `rumiai-tests` diff and canonical testing contracts, confirm no superseded scope-owned-prerequisite or non-coherent matrix mechanism remains, and run the final consistency gate.
+4. If the suite realignment is complete, write a final `Status: Complete` handoff snapshot and remove the handoff in a later forward commit.
 
 ## Blockers / open questions
 
