@@ -64,6 +64,7 @@ handoff/README.md
 - The public `gpg` launcher now ensures the active GNUPGHOME has a relocatable `pinentry-program` pointing through the stable RumiAI package selector to the packaged `pinentry-mac`. An existing custom pinentry is preserved; the historical GPG Suite `/usr/local/MacGPG2/.../pinentry-mac` line is migrated.
 - Permanent coverage now validates synthetic overlay materialization, overlay metadata integration, real pinentry dylib resolution, relocatable agent configuration, relocated agent startup/query and real key generation through the live package path.
 - Formal macOS ARM64 validation run 20 completed successfully on 2026-09-24 for `rumiai-tests` `280c0af57c84e95c91630983e2fc738354ce4a84` and `rumiai-os` `50cb1a6734f74bc8faa5296189e60c0e9cdc8bc0`: repository-adapter contract PASS, `pkg-extract/dmg-pkg.test` PASS, `pkg-integration/contract.test` PASS, `external/macgpg/install-live.test` PASS, scope result `VALIDATED`. The intervening `rumiai-os` advancement after the package changes only touched `rsudo.lib.sh` and was preserved.
+- Physical macOS ARM64 checkpoint on the user's Mac at `rumiai-os` `9f254d470fd238852e63570044127d5559da768a` succeeded for the real public path: `pkg install macgpg` completed, the MacGPG and pinentry Payloads reported `79697` and `1459` cpio blocks respectively, and repeated `gpg --version` invocations reported `gpg (GnuPG/MacGPG2) 2.5.21` with HOME under RumiAI package state. This physically confirms download, DMG/flat-pkg extraction, overlay materialization, integration/publication and basic command launch on the user's host.
 
 ## Current state
 
@@ -71,21 +72,12 @@ The portable MacGPG package path is now formally validated on macOS ARM64 throug
 
 The generic `dmg-pkg` overlay mechanism, catalog metadata, package integration, pinentry runtime relocation and GnuPG agent configuration are aligned. The live validation installs the package without system-wide GPG Suite installation, observes the relocated `pinentry-mac`, starts and queries the relocated agent, and generates a real test key.
 
-GitHub-hosted macOS ARM64 validation is not the final physical-host checkpoint. A retry on the user's physical Mac remains pending before this task can be closed under `PHYSICAL-TESTING.md`.
+GitHub-hosted macOS ARM64 validation is complete, and the user's physical Mac has now passed installation plus basic `gpg` launch. The only remaining physical-host checkpoint is one non-loopback operation that actually invokes the packaged pinentry/agent path on the user's desktop.
 
 ## Next action
 
-Update the physical macOS ARM64 checkout to current committed HEADs and retry the composed user path:
-
-```text
-./m
-pkg uninstall macgpg   # only if an older failed/superseded concrete is present
-pkg install macgpg
-gpg --version
-```
-
-Then exercise one operation that reaches the normal agent/pinentry path without `--pinentry-mode loopback` so the packaged GUI pinentry is observed on the physical desktop. If that physical checkpoint passes, perform the final consistency gate, mark this handoff Complete, commit the final snapshot, then remove the handoff in a later forward commit.
+Exercise one operation on the user's physical Mac that reaches the normal agent/pinentry path without `--pinentry-mode loopback` so the packaged GUI pinentry is observed on the physical desktop. Use a short temporary `GNUPGHOME` so the check does not modify the normal package keyring and does not approach the macOS Unix-socket pathname limit. If that physical checkpoint passes, perform the final consistency gate, mark this handoff Complete, commit the final snapshot, then remove the handoff in a later forward commit.
 
 ## Blockers / open questions
 
-- Physical macOS ARM64 validation of the now-formally-validated portable pinentry path remains pending.
+- Physical macOS ARM64 observation of the packaged pinentry/agent interactive path remains pending; installation and basic command launch already passed physically.
