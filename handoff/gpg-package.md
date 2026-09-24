@@ -10,10 +10,10 @@ Add a macOS Apple Silicon package definition that installs the MacGPG engine fro
 ## Current repository revisions
 
 ```text
-rumiai-dev   887c99819114a328d61e820543106be5e6677667 (parent of this handoff update)
-rumiai-os    6db7c00e77c25946c46342900fa21038f2d9f290
-rumiai-tests a1138610ca5a7a747e3226c7e45aa5feec2c1c53
-pkg-catalog  8e32f2dc3e471c38da087dc69db06050abdd7c4e
+rumiai-dev   fc0ddd3695a60bfd02a6c3d43b0389f91d365db6 (parent of this handoff update)
+rumiai-os    4938f6f4e60e0053f30b4ab31092fc0537401ec1
+rumiai-tests a24135dd28513f37c3165f90d62f1e1edabc420c
+pkg-catalog  da9b8989088c8b3f2d8201ad09e5f7180f334a16
 ```
 
 ## Applicable canonical sources
@@ -25,9 +25,8 @@ CONSISTENCY-GATE.md
 TESTING.md
 specifications/README.md
 specifications/rumiai-os/PACKAGE-MODEL.md
-specifications/rumiai-os/FILESYSTEM-NAMING.md
-specifications/rumiai-os/LIBRARY-INTERFACES.md
-specifications/rumiai-os/DOCUMENTATION-MODEL.md
+specifications/rumiai-os/STATE-MODEL.md
+PHYSICAL-TESTING.md
 handoff/README.md
 ```
 
@@ -60,8 +59,8 @@ handoff/README.md
 - Updated the permanent macOS `dmg-pkg` fixture to use `Install.pkg`, `MacGPG2.1_Core.pkg` and a gzip-compressed cpio Payload, so the physical regression is represented mechanically.
 - Extended the generic `dmg-pkg` contract implementation end-to-end for declarative component overlays: `pkg install` now passes overlay metadata through to `pkg_extract`, integration validates the same overlay envelope, and the operational manuals describe the current six-argument form.
 - Added the MacGPG `pinentry_Core.pkg` as a catalog overlay targeting `libexec`. Real-package validation established that its Payload contains `pinentry-mac.app` at Payload root, so no overlay payload-root is required.
-- The live package test then exposed the remaining relocation issue: `pinentry-mac` links against `/usr/local/MacGPG2/lib/libassuan.9.dylib`. The MacGPG package environment now exports the package root `lib` through `DYLD_LIBRARY_PATH`, avoiding Mach-O rewriting or system-wide installation.
-- The public `gpg` launcher now ensures the active GNUPGHOME has a relocatable `pinentry-program` pointing through the stable RumiAI package selector to the packaged `pinentry-mac`. An existing custom pinentry is preserved; the historical GPG Suite `/usr/local/MacGPG2/.../pinentry-mac` line is migrated.
+- The live package test exposed that upstream `pinentry-mac` carries MacGPG-local Mach-O dependencies rooted at `/usr/local/MacGPG2`. An initial `DYLD_LIBRARY_PATH` relocation attempt passed hosted validation but was later disproved by physical-host evidence and is no longer part of the current package.
+- The public `gpg` launcher ensures the active GNUPGHOME has a managed relocatable `pinentry-program`. Existing unrelated custom pinentry configuration is preserved, while known superseded GPG Suite/RumiAI-managed pinentry paths are migrated forward.
 - Permanent coverage now validates synthetic overlay materialization, overlay metadata integration, real pinentry dylib resolution, relocatable agent configuration, relocated agent startup/query and real key generation through the live package path.
 - Formal macOS ARM64 validation run 20 completed successfully on 2026-09-24 for `rumiai-tests` `280c0af57c84e95c91630983e2fc738354ce4a84` and `rumiai-os` `50cb1a6734f74bc8faa5296189e60c0e9cdc8bc0`: repository-adapter contract PASS, `pkg-extract/dmg-pkg.test` PASS, `pkg-integration/contract.test` PASS, `external/macgpg/install-live.test` PASS, scope result `VALIDATED`. The intervening `rumiai-os` advancement after the package changes only touched `rsudo.lib.sh` and was preserved.
 - Physical macOS ARM64 checkpoint on the user's Mac at `rumiai-os` `9f254d470fd238852e63570044127d5559da768a` succeeded for the real public path: `pkg install macgpg` completed, the MacGPG and pinentry Payloads reported `79697` and `1459` cpio blocks respectively, and repeated `gpg --version` invocations reported `gpg (GnuPG/MacGPG2) 2.5.21` with HOME under RumiAI package state. This physically confirms download, DMG/flat-pkg extraction, overlay materialization, integration/publication and basic command launch on the user's host.
@@ -73,19 +72,27 @@ handoff/README.md
 - A second physical non-loopback attempt after reinstalling the corrected catalog confirmed migration to `pinentry-program "<RumiAI state>/pkg/macgpg/run/pinentry"`, but the operation still failed with `gpg: problem with the agent: No pinentry`; therefore the direct-Mach-O/DYLD inheritance defect was not the complete physical-host cause.
 - Strengthened the macOS hosted validation to place its disposable environment under a `TMPDIR` containing a literal space and strengthened the live MacGPG test to require the managed pinentry wrapper to complete an Assuan startup/`BYE` exchange, not only `--version`.
 - Formal macOS ARM64 validation run 23 completed successfully on 2026-09-24 for `rumiai-tests` `b88b8e7abfce3c8802fd7e64d30546fbf60f7f19` and `rumiai-os` `9f254d470fd238852e63570044127d5559da768a`: all MacGPG scope tests PASS and the scope result is `VALIDATED` while the validation temp path contains a space. This rules out spaced-path parsing/quoting and basic Assuan wrapper startup as explanations for the physical-only failure.
+- Physical diagnosis on the user's Mac then executed the managed wrapper directly and reproduced the real loader failure: dyld ignored the wrapper-supplied `DYLD_LIBRARY_PATH` for the signed/hardened `pinentry-mac` and aborted while loading `/usr/local/MacGPG2/lib/libassuan.9.dylib`. The corresponding agent log showed `assuan_pipe_connect` ending with EOF and GnuPG mapping that failure to `No pinentry`.
+- Replaced the DYLD-based wrapper with a regenerable package-cache copy of `pinentry-mac.app`. The launcher copies the upstream app and MacGPG dylib closure into the package `cache` state, rewrites MacGPG-local absolute and `@rpath` dependencies to `@loader_path/<basename>`, removes stale `/usr/local/MacGPG2` runpaths, rewrites dylib IDs, and ad-hoc signs/verifies the resulting bundle. The immutable concrete root is never modified and no system-wide path is created.
+- The cached app is stamped with the selected concrete root and is reused only when its stamp, signature and Mach-O load/runpath checks remain valid. Superseded run-state wrapper/app artifacts are removed. Known previous managed pinentry configurations are migrated to the cached executable.
+- Permanent live coverage now checks the complete cached Mach-O closure: no copied executable/dylib may retain a `/usr/local/MacGPG2` load command or runpath; copied libraries must exist; the main executable must use loader-relative package libraries; deep code-sign verification, `--version`, Assuan startup/`BYE`, managed-config migration, relocated agent startup/query, and real key generation all remain covered.
+- Intermediate hosted runs intentionally caught and corrected four portability defects before another physical attempt: oversized absolute install-name replacement, non-portable macOS `chmod --`, transitive `@rpath` dependency resolution, and duplicate universal-binary `LC_RPATH` deletion.
+- Formal macOS ARM64 validation run 27 attempt 4 completed successfully on 2026-09-24 for `rumiai-tests` `a24135dd28513f37c3165f90d62f1e1edabc420c`, `rumiai-os` `4938f6f4e60e0053f30b4ab31092fc0537401ec1`, and catalog `da9b8989088c8b3f2d8201ad09e5f7180f334a16`: repository-adapter PASS, `pkg-extract/dmg-pkg.test` PASS, `pkg-integration/contract.test` PASS, `external/macgpg/install-live.test` PASS, scope result `VALIDATED`. The workflow also executes with a temp path containing a literal space.
 
 ## Current state
 
-The portable MacGPG package path is now formally validated on macOS ARM64 through the real public install pipeline and the official pinned GPG Suite DMG.
+The generic `dmg-pkg` extraction/overlay path and the MacGPG package are formally validated on hosted macOS ARM64 through the real public install pipeline and the official pinned GPG Suite DMG.
 
-The generic `dmg-pkg` overlay mechanism, catalog metadata, package integration, pinentry runtime relocation and GnuPG agent configuration are aligned. The live validation installs the package without system-wide GPG Suite installation, observes the relocated `pinentry-mac`, starts and queries the relocated agent, and generates a real test key.
+The current pinentry strategy no longer relies on `DYLD_LIBRARY_PATH`. A self-contained, regenerable, ad-hoc-signed pinentry bundle is materialized under MacGPG package `cache` state with loader-relative copies of the MacGPG dylib closure. The live test mechanically rejects stale `/usr/local/MacGPG2` load commands and runpaths and verifies the Assuan startup path.
 
-GitHub-hosted macOS ARM64 validation is complete for the corrected agent-safe pinentry wrapper, including a spaced execution path and an Assuan wrapper handshake. The user's physical Mac passes installation and basic `gpg` launch but still fails when `gpg-agent` launches pinentry non-loopback. The remaining work is now physical-host diagnosis of the concrete `assuan_pipe_connect` failure logged by `gpg-agent`; no further speculative package change should be made before that evidence.
+The only remaining gate is physical confirmation on the user's Mac that this final cached Mach-O relocation produces the graphical non-loopback pinentry dialog and a successful symmetric-encryption output.
 
 ## Next action
 
-On the user's physical Mac, use the already-installed current package with a short temporary `GNUPGHOME` to (1) execute the managed pinentry wrapper directly through a non-interactive Assuan `BYE` handshake and (2) enable `gpg-agent` verbose logging, restart the agent, reproduce the non-loopback symmetric-encryption failure, and read the resulting agent log. Use that concrete failure to determine the next package correction. After the interactive physical path passes, perform the final consistency gate, mark this handoff Complete, commit the final snapshot, then remove the handoff in a later forward commit.
+On the user's physical macOS ARM64 host, update to the current `rumiai-os`, reinstall `macgpg` so the current catalog launcher is materialized, and use a fresh short temporary `GNUPGHOME`. Confirm that `gpg-agent.conf` points to `<package-cache>/pinentry-mac.app/Contents/MacOS/pinentry-mac`, then perform one non-loopback symmetric-encryption operation. The graphical pinentry must appear and the encrypted output file must be created.
+
+If that physical checkpoint passes, perform the final consistency gate, set this handoff to Complete in one forward commit, then remove it in a later forward commit.
 
 ## Blockers / open questions
 
-- Physical macOS ARM64 diagnosis of why `gpg-agent` cannot connect to a wrapper that passes hosted Assuan startup remains pending; installation and basic command launch already passed physically.
+- Physical macOS ARM64 confirmation of the final cached Mach-O pinentry relocation remains pending. Hosted macOS ARM64 formal validation is green on the current recorded product/test/catalog revisions.
