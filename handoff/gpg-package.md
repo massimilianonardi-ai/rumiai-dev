@@ -65,6 +65,11 @@ handoff/README.md
 - Permanent coverage now validates synthetic overlay materialization, overlay metadata integration, real pinentry dylib resolution, relocatable agent configuration, relocated agent startup/query and real key generation through the live package path.
 - Formal macOS ARM64 validation run 20 completed successfully on 2026-09-24 for `rumiai-tests` `280c0af57c84e95c91630983e2fc738354ce4a84` and `rumiai-os` `50cb1a6734f74bc8faa5296189e60c0e9cdc8bc0`: repository-adapter contract PASS, `pkg-extract/dmg-pkg.test` PASS, `pkg-integration/contract.test` PASS, `external/macgpg/install-live.test` PASS, scope result `VALIDATED`. The intervening `rumiai-os` advancement after the package changes only touched `rsudo.lib.sh` and was preserved.
 - Physical macOS ARM64 checkpoint on the user's Mac at `rumiai-os` `9f254d470fd238852e63570044127d5559da768a` succeeded for the real public path: `pkg install macgpg` completed, the MacGPG and pinentry Payloads reported `79697` and `1459` cpio blocks respectively, and repeated `gpg --version` invocations reported `gpg (GnuPG/MacGPG2) 2.5.21` with HOME under RumiAI package state. This physically confirms download, DMG/flat-pkg extraction, overlay materialization, integration/publication and basic command launch on the user's host.
+- The first physical non-loopback pinentry attempt on the same Mac reached the configured RumiAI pinentry path but failed with `gpg: problem with the agent: No pinentry`; no output file was created. This established that the prior direct `pinentry-program` plus package-level `DYLD_LIBRARY_PATH` did not survive the `gpg-agent -> pinentry` process boundary on the physical host.
+- Corrected the package-specific runtime so `gpg` materializes a private pinentry wrapper under the MacGPG package `run` state. The wrapper resolves the stable MacGPG selector, sets `DYLD_LIBRARY_PATH` immediately before execing `pinentry-mac`, and the agent config points to this wrapper rather than the Mach-O directly. The broad package-environment `DYLD_LIBRARY_PATH` export was removed.
+- The launcher migrates both the historical GPG Suite `/usr/local/MacGPG2/.../pinentry-mac` line and the previous direct RumiAI selector pinentry line to the managed wrapper while preserving unrelated custom pinentry configuration.
+- Permanent live coverage now launches the managed pinentry wrapper without caller-supplied DYLD state and verifies migration from the previous direct RumiAI pinentry path.
+- Formal macOS ARM64 validation run 21 completed successfully on 2026-09-24 for `rumiai-tests` `8e5e2344f1885e2a5b9bc50ec8f3e831e003f4ef`, `rumiai-os` `9f254d470fd238852e63570044127d5559da768a` and current MacGPG catalog runtime `d1ceb7b3b095846c67d08a17d3074e60c9e579d9`: all four MacGPG scope tests PASS and the scope result is `VALIDATED`.
 
 ## Current state
 
@@ -72,12 +77,12 @@ The portable MacGPG package path is now formally validated on macOS ARM64 throug
 
 The generic `dmg-pkg` overlay mechanism, catalog metadata, package integration, pinentry runtime relocation and GnuPG agent configuration are aligned. The live validation installs the package without system-wide GPG Suite installation, observes the relocated `pinentry-mac`, starts and queries the relocated agent, and generates a real test key.
 
-GitHub-hosted macOS ARM64 validation is complete, and the user's physical Mac has now passed installation plus basic `gpg` launch. The only remaining physical-host checkpoint is one non-loopback operation that actually invokes the packaged pinentry/agent path on the user's desktop.
+GitHub-hosted macOS ARM64 validation is complete for the corrected agent-safe pinentry wrapper. The user's physical Mac has passed installation plus basic `gpg` launch, but its first non-loopback pinentry attempt exposed the inherited-DYLD defect described above. The only remaining checkpoint is to repeat that same non-loopback physical operation after reinstalling the current catalog definition.
 
 ## Next action
 
-Exercise one operation on the user's physical Mac that reaches the normal agent/pinentry path without `--pinentry-mode loopback` so the packaged GUI pinentry is observed on the physical desktop. Use a short temporary `GNUPGHOME` so the check does not modify the normal package keyring and does not approach the macOS Unix-socket pathname limit. If that physical checkpoint passes, perform the final consistency gate, mark this handoff Complete, commit the final snapshot, then remove the handoff in a later forward commit.
+On the user's physical Mac, reinstall `macgpg` so the current catalog launcher/runtime is materialized, then repeat one non-loopback symmetric-encryption operation with a short temporary `GNUPGHOME`. Confirm that the graphical packaged pinentry appears and that the encrypted output file is created. If that checkpoint passes, perform the final consistency gate, mark this handoff Complete, commit the final snapshot, then remove the handoff in a later forward commit.
 
 ## Blockers / open questions
 
-- Physical macOS ARM64 observation of the packaged pinentry/agent interactive path remains pending; installation and basic command launch already passed physically.
+- Physical macOS ARM64 re-validation of the corrected agent-safe pinentry wrapper remains pending; installation and basic command launch already passed physically.
