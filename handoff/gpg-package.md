@@ -1,7 +1,7 @@
 # Portable MacGPG package
 
 Status: Active
-Updated: 2026-09-23
+Updated: 2026-09-24
 
 ## Goal
 
@@ -58,36 +58,34 @@ handoff/README.md
 - Extended generic `dmg-pkg` extraction to accept both raw cpio and gzip-compressed cpio Payloads while preserving the existing path-safety validation before extraction.
 - Updated the `pkg-extract.lib.sh` operational manual for gzip-compressed Payload support.
 - Updated the permanent macOS `dmg-pkg` fixture to use `Install.pkg`, `MacGPG2.1_Core.pkg` and a gzip-compressed cpio Payload, so the physical regression is represented mechanically.
+- Extended the generic `dmg-pkg` contract implementation end-to-end for declarative component overlays: `pkg install` now passes overlay metadata through to `pkg_extract`, integration validates the same overlay envelope, and the operational manuals describe the current six-argument form.
+- Added the MacGPG `pinentry_Core.pkg` as a catalog overlay targeting `libexec`. Real-package validation established that its Payload contains `pinentry-mac.app` at Payload root, so no overlay payload-root is required.
+- The live package test then exposed the remaining relocation issue: `pinentry-mac` links against `/usr/local/MacGPG2/lib/libassuan.9.dylib`. The MacGPG package environment now exports the package root `lib` through `DYLD_LIBRARY_PATH`, avoiding Mach-O rewriting or system-wide installation.
+- The public `gpg` launcher now ensures the active GNUPGHOME has a relocatable `pinentry-program` pointing through the stable RumiAI package selector to the packaged `pinentry-mac`. An existing custom pinentry is preserved; the historical GPG Suite `/usr/local/MacGPG2/.../pinentry-mac` line is migrated.
+- Permanent coverage now validates synthetic overlay materialization, overlay metadata integration, real pinentry dylib resolution, relocatable agent configuration, relocated agent startup/query and real key generation through the live package path.
+- Formal macOS ARM64 validation run 20 completed successfully on 2026-09-24 for `rumiai-tests` `280c0af57c84e95c91630983e2fc738354ce4a84` and `rumiai-os` `50cb1a6734f74bc8faa5296189e60c0e9cdc8bc0`: repository-adapter contract PASS, `pkg-extract/dmg-pkg.test` PASS, `pkg-integration/contract.test` PASS, `external/macgpg/install-live.test` PASS, scope result `VALIDATED`. The intervening `rumiai-os` advancement after the package changes only touched `rsudo.lib.sh` and was preserved.
 
 ## Current state
 
-The first physical defect (forced custom DMG mount point) is fixed and the second physical run demonstrated that the corrected native DMG path reaches the compound flat-package extraction stage.
+The portable MacGPG package path is now formally validated on macOS ARM64 through the real public install pipeline and the official pinned GPG Suite DMG.
 
-The second defect was a mismatch between the synthetic fixture and the real GPG Suite installer shape: wrong component metadata plus an uncompressed synthetic Payload. Implementation, catalog, manual and permanent test are now aligned with the real flat-package structure at the revisions above.
+The generic `dmg-pkg` overlay mechanism, catalog metadata, package integration, pinentry runtime relocation and GnuPG agent configuration are aligned. The live validation installs the package without system-wide GPG Suite installation, observes the relocated `pinentry-mac`, starts and queries the relocated agent, and generates a real test key.
 
-No new package-model semantic is required: the canonical `dmg-pkg` contract already requires extraction of the selected component's Payload without constraining the installer-internal compression encoding.
-
-Physical validation of the corrected component/Payload path is still pending.
+GitHub-hosted macOS ARM64 validation is not the final physical-host checkpoint. A retry on the user's physical Mac remains pending before this task can be closed under `PHYSICAL-TESTING.md`.
 
 ## Next action
 
-Update the physical macOS ARM64 checkouts to the corrected `rumiai-os` and `pkg-catalog` revisions and retry the real composed path from an `m` shell:
+Update the physical macOS ARM64 checkout to current committed HEADs and retry the composed user path:
 
 ```text
 ./m
+pkg uninstall macgpg   # only if an older failed/superseded concrete is present
 pkg install macgpg
 gpg --version
 ```
 
-Then run, or otherwise use as formal regression evidence, the existing macOS tests:
-
-```text
-tests/rumiai-os/pkg-extract/dmg-pkg.test
-tests/external/macgpg/install-live.test
-```
-
-If the corrected physical path passes, perform the final task consistency checkpoint and complete/remove this handoff according to the handoff lifecycle.
+Then exercise one operation that reaches the normal agent/pinentry path without `--pinentry-mode loopback` so the packaged GUI pinentry is observed on the physical desktop. If that physical checkpoint passes, perform the final consistency gate, mark this handoff Complete, commit the final snapshot, then remove the handoff in a later forward commit.
 
 ## Blockers / open questions
 
-- Physical macOS ARM64 validation of the corrected component name and compressed Payload handling remains pending.
+- Physical macOS ARM64 validation of the now-formally-validated portable pinentry path remains pending.
