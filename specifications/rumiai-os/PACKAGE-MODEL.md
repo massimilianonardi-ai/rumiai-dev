@@ -233,11 +233,23 @@ Package materialization supports ordinary single-format artifacts and the macOS 
 dmg-pkg
 ```
 
-`dmg-pkg` represents an Apple disk image containing one top-level flat installer package whose archive contains a named component package. The selected package range MUST provide exactly one scalar `component` value naming that component package as a basename (no path separators).
+`dmg-pkg` represents an Apple disk image containing one top-level flat installer package whose archive contains one primary named component package and, when needed, selected additional component overlays. The selected package range MUST provide exactly one scalar `component` value naming the primary component package as a basename (no path separators).
 
-Materialization extracts the outer DMG, expands the flat installer package and extracts the selected component's `Payload`. A `dmg-pkg` range MAY additionally provide one scalar `payload-root` relative pathname when the component Payload contains installer-only siblings or an intermediate staging prefix around the useful package tree. `payload-root` must be a non-empty relative pathname with no empty, `.` or `..` path component and must resolve to a real directory inside the extracted Payload. When present, only that directory's contents become package staging; Payload siblings outside it are discarded. When absent, the complete extracted Payload becomes staging. The normal useful-root normalization is then applied to the resulting staging tree.
+Materialization extracts the outer DMG, expands the flat installer package and extracts the primary component's `Payload`. A `dmg-pkg` range MAY additionally provide one scalar `payload-root` relative pathname when the primary component Payload contains installer-only siblings or an intermediate staging prefix around the useful package tree. `payload-root` must be a non-empty relative pathname with no empty, `.` or `..` path component and must resolve to a real directory inside the extracted Payload. When present, only that directory's contents become primary package staging; Payload siblings outside it are discarded. When absent, the complete primary Payload becomes staging.
 
-The component name and optional Payload-root selector are package-definition data; generic package code must not hardcode provider-specific component identities or Payload paths. Supplying `component` or `payload-root` for another format, omitting `component` for `dmg-pkg`, or selecting a `payload-root` outside the extracted Payload is invalid package metadata/materialization.
+A `dmg-pkg` range MAY also contain:
+
+```text
+overlay/
+    <controlled-name>/
+        component
+        payload-root    # optional
+        target-root     # optional
+```
+
+Each overlay entry is declarative package data. `component` is one scalar component-package basename. Optional `payload-root` uses the same source-subtree rules as the primary component. Optional `target-root` is a safe relative directory pathname below package staging; when absent, the overlay targets the staging root. The selected overlay Payload/subtree is materialized independently and its direct entries are merged into that target directory. Overlay materialization MUST reject an existing destination entry rather than silently replace primary or earlier overlay content. Overlay entry order therefore carries no overwrite precedence. The normal useful-root normalization is applied once, after the primary component and all selected overlays have been materialized.
+
+Component names, Payload-root selectors and overlay target paths are package-definition data; generic package code must not hardcode provider-specific component identities or Payload paths. Supplying `component`, `payload-root` or `overlay` for another format, omitting the primary `component` for `dmg-pkg`, selecting a Payload root outside an extracted component, using an unsafe overlay target, or producing an overlay collision is invalid package metadata/materialization.
 
 This compound format is host-specific materialization behind the package abstraction; it does not change package identity or state semantics. Mutable state exposed by software installed this way remains governed by the normal package HOME/conf/state model rather than being stored in the immutable package root.
 
@@ -789,4 +801,5 @@ PKG-76  project/non-package requirement queries do not create synthetic package-
 PKG-77  dmg-pkg compound materialization extracts a named flat-installer component payload without hardcoding provider-specific component identity
 PKG-78  component metadata is required only for dmg-pkg and ordinary package state remains outside the immutable package root
 PKG-79  optional dmg-pkg payload-root selects one validated relative subtree as the useful package tree without hardcoding provider paths in generic code
+PKG-80  dmg-pkg overlays add only explicitly selected component payloads at validated relative targets and reject overwrite collisions
 ```
