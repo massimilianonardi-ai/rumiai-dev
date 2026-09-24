@@ -15,5 +15,5 @@ Establish `rsudo` as a dedicated future task. Define its intended semantics and 
 
 ## Evidence
 
-- The current `rumiai-os` tree contains no `rsudo` command or library path.
-- The topic has been explicitly retained as deferred work.
+- The current `rumiai-os` tree contains `rsudo` command/library implementation, but its intended semantics, ownership, operational documentation and permanent validation remain intentionally deferred to the dedicated task.
+- Local maintenance corrections to the existing implementation do not by themselves activate or define that broader task.
