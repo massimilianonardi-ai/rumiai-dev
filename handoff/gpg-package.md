@@ -1,6 +1,6 @@
 # Portable MacGPG package
 
-Status: Active
+Status: Complete
 Updated: 2026-09-24
 
 ## Goal
@@ -10,8 +10,8 @@ Add a macOS Apple Silicon package definition that installs the MacGPG engine fro
 ## Current repository revisions
 
 ```text
-rumiai-dev   fc0ddd3695a60bfd02a6c3d43b0389f91d365db6 (parent of this handoff update)
-rumiai-os    4938f6f4e60e0053f30b4ab31092fc0537401ec1
+rumiai-dev   8bba59b678147f9e8ce8915277f12d6a5b0418a6 (parent of final Complete snapshot)
+rumiai-os    352d48a0c85d8496dbaca2d5f00806de455999ab
 rumiai-tests a24135dd28513f37c3165f90d62f1e1edabc420c
 pkg-catalog  da9b8989088c8b3f2d8201ad09e5f7180f334a16
 ```
@@ -79,20 +79,22 @@ handoff/README.md
 - Intermediate hosted runs intentionally caught and corrected four portability defects before another physical attempt: oversized absolute install-name replacement, non-portable macOS `chmod --`, transitive `@rpath` dependency resolution, and duplicate universal-binary `LC_RPATH` deletion.
 - Formal macOS ARM64 validation run 27 attempt 4 completed successfully on 2026-09-24 for `rumiai-tests` `a24135dd28513f37c3165f90d62f1e1edabc420c`, `rumiai-os` `4938f6f4e60e0053f30b4ab31092fc0537401ec1`, and catalog `da9b8989088c8b3f2d8201ad09e5f7180f334a16`: repository-adapter PASS, `pkg-extract/dmg-pkg.test` PASS, `pkg-integration/contract.test` PASS, `external/macgpg/install-live.test` PASS, scope result `VALIDATED`. The workflow also executes with a temp path containing a literal space.
 
+- Final physical macOS ARM64 confirmation on the user's Mac at `rumiai-os` `c1059a76449409d0b059fac4b521da8b161cb76c` passed the final cached Mach-O pinentry path: the cached pinentry executable reported only loader-relative MacGPG library dependencies, deep code-sign verification succeeded, a direct Assuan `BYE` exchange returned `OK`, the graphical non-loopback symmetric-encryption operation completed, and `test.gpg` was created. This is the physical evidence for the interactive pinentry property.
+- The current `rumiai-os` HEAD `352d48a0c85d8496dbaca2d5f00806de455999ab` differs from that physically exercised revision only by a one-line `core.lib.sh` exit-code parser correction that does not touch the package, state, launcher, Mach-O or pinentry surfaces. The physical PASS remains attributed to `c1059a76449409d0b059fac4b521da8b161cb76c` rather than relabelled.
+- Final hosted macOS ARM64 task validation rerun (workflow run 27 attempt 5) completed successfully on 2026-09-24 for `rumiai-tests` `a24135dd28513f37c3165f90d62f1e1edabc420c` and current `rumiai-os` `352d48a0c85d8496dbaca2d5f00806de455999ab`: repository-adapter PASS, `pkg-extract/dmg-pkg.test` PASS, `pkg-integration/contract.test` PASS, `external/macgpg/install-live.test` PASS, scope result `VALIDATED`.
+
 ## Current state
 
-The generic `dmg-pkg` extraction/overlay path and the MacGPG package are formally validated on hosted macOS ARM64 through the real public install pipeline and the official pinned GPG Suite DMG.
+Complete. The portable MacGPG package is implemented and validated for macOS ARM64 through the real GPG Suite artifact and RumiAI package pipeline.
 
-The current pinentry strategy no longer relies on `DYLD_LIBRARY_PATH`. A self-contained, regenerable, ad-hoc-signed pinentry bundle is materialized under MacGPG package `cache` state with loader-relative copies of the MacGPG dylib closure. The live test mechanically rejects stale `/usr/local/MacGPG2` load commands and runpaths and verifies the Assuan startup path.
+The package installs MacGPG plus the required pinentry component without system-wide GPG Suite installation, relocates the pinentry Mach-O dependency closure into regenerable package cache state, preserves the immutable concrete root, configures package-owned GnuPG state, and exposes `gpg` through the normal package launcher. Hosted validation passes on the current product/test revisions and the final non-loopback graphical pinentry path passed on the user's physical Mac.
 
-The only remaining gate is physical confirmation on the user's Mac that this final cached Mach-O relocation produces the graphical non-loopback pinentry dialog and a successful symmetric-encryption output.
+No task-local working design or unresolved blocker remains.
 
 ## Next action
 
-On the user's physical macOS ARM64 host, update to the current `rumiai-os`, reinstall `macgpg` so the current catalog launcher is materialized, and use a fresh short temporary `GNUPGHOME`. Confirm that `gpg-agent.conf` points to `<package-cache>/pinentry-mac.app/Contents/MacOS/pinentry-mac`, then perform one non-loopback symmetric-encryption operation. The graphical pinentry must appear and the encrypted output file must be created.
-
-If that physical checkpoint passes, perform the final consistency gate, set this handoff to Complete in one forward commit, then remove it in a later forward commit.
+None. Remove this completed handoff from the current tree in the required later forward commit.
 
 ## Blockers / open questions
 
-- Physical macOS ARM64 confirmation of the final cached Mach-O pinentry relocation remains pending. Hosted macOS ARM64 formal validation is green on the current recorded product/test/catalog revisions.
+None.
