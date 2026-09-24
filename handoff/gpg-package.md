@@ -70,6 +70,9 @@ handoff/README.md
 - The launcher migrates both the historical GPG Suite `/usr/local/MacGPG2/.../pinentry-mac` line and the previous direct RumiAI selector pinentry line to the managed wrapper while preserving unrelated custom pinentry configuration.
 - Permanent live coverage now launches the managed pinentry wrapper without caller-supplied DYLD state and verifies migration from the previous direct RumiAI pinentry path.
 - Formal macOS ARM64 validation run 21 completed successfully on 2026-09-24 for `rumiai-tests` `8e5e2344f1885e2a5b9bc50ec8f3e831e003f4ef`, `rumiai-os` `9f254d470fd238852e63570044127d5559da768a` and current MacGPG catalog runtime `d1ceb7b3b095846c67d08a17d3074e60c9e579d9`: all four MacGPG scope tests PASS and the scope result is `VALIDATED`.
+- A second physical non-loopback attempt after reinstalling the corrected catalog confirmed migration to `pinentry-program "<RumiAI state>/pkg/macgpg/run/pinentry"`, but the operation still failed with `gpg: problem with the agent: No pinentry`; therefore the direct-Mach-O/DYLD inheritance defect was not the complete physical-host cause.
+- Strengthened the macOS hosted validation to place its disposable environment under a `TMPDIR` containing a literal space and strengthened the live MacGPG test to require the managed pinentry wrapper to complete an Assuan startup/`BYE` exchange, not only `--version`.
+- Formal macOS ARM64 validation run 23 completed successfully on 2026-09-24 for `rumiai-tests` `b88b8e7abfce3c8802fd7e64d30546fbf60f7f19` and `rumiai-os` `9f254d470fd238852e63570044127d5559da768a`: all MacGPG scope tests PASS and the scope result is `VALIDATED` while the validation temp path contains a space. This rules out spaced-path parsing/quoting and basic Assuan wrapper startup as explanations for the physical-only failure.
 
 ## Current state
 
@@ -77,12 +80,12 @@ The portable MacGPG package path is now formally validated on macOS ARM64 throug
 
 The generic `dmg-pkg` overlay mechanism, catalog metadata, package integration, pinentry runtime relocation and GnuPG agent configuration are aligned. The live validation installs the package without system-wide GPG Suite installation, observes the relocated `pinentry-mac`, starts and queries the relocated agent, and generates a real test key.
 
-GitHub-hosted macOS ARM64 validation is complete for the corrected agent-safe pinentry wrapper. The user's physical Mac has passed installation plus basic `gpg` launch, but its first non-loopback pinentry attempt exposed the inherited-DYLD defect described above. The only remaining checkpoint is to repeat that same non-loopback physical operation after reinstalling the current catalog definition.
+GitHub-hosted macOS ARM64 validation is complete for the corrected agent-safe pinentry wrapper, including a spaced execution path and an Assuan wrapper handshake. The user's physical Mac passes installation and basic `gpg` launch but still fails when `gpg-agent` launches pinentry non-loopback. The remaining work is now physical-host diagnosis of the concrete `assuan_pipe_connect` failure logged by `gpg-agent`; no further speculative package change should be made before that evidence.
 
 ## Next action
 
-On the user's physical Mac, reinstall `macgpg` so the current catalog launcher/runtime is materialized, then repeat one non-loopback symmetric-encryption operation with a short temporary `GNUPGHOME`. Confirm that the graphical packaged pinentry appears and that the encrypted output file is created. If that checkpoint passes, perform the final consistency gate, mark this handoff Complete, commit the final snapshot, then remove the handoff in a later forward commit.
+On the user's physical Mac, use the already-installed current package with a short temporary `GNUPGHOME` to (1) execute the managed pinentry wrapper directly through a non-interactive Assuan `BYE` handshake and (2) enable `gpg-agent` verbose logging, restart the agent, reproduce the non-loopback symmetric-encryption failure, and read the resulting agent log. Use that concrete failure to determine the next package correction. After the interactive physical path passes, perform the final consistency gate, mark this handoff Complete, commit the final snapshot, then remove the handoff in a later forward commit.
 
 ## Blockers / open questions
 
-- Physical macOS ARM64 re-validation of the corrected agent-safe pinentry wrapper remains pending; installation and basic command launch already passed physically.
+- Physical macOS ARM64 diagnosis of why `gpg-agent` cannot connect to a wrapper that passes hosted Assuan startup remains pending; installation and basic command launch already passed physically.
