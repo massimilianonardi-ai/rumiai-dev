@@ -1,7 +1,7 @@
 # rumiai-tests suite realignment
 
 Status: Active
-Updated: 2026-09-23
+Updated: 2026-09-24
 
 ## Goal
 
@@ -10,10 +10,10 @@ Realign the permanent RumiAI test suite so that failures are evidence about curr
 ## Current repository revisions
 
 ```text
-rumiai-dev   249d06c00ae6732f3555aa4bd3e21c525ae7eba2  (pre-checkpoint HEAD before this handoff synchronization)
-rumiai-tests f51de6247535f87a2e61d03a087c1d8d8ac57e42
-rumiai-os    5f01f0bccef37020057195c98809ba492f02443c
-pkg-catalog  da7507439b71737cf4a40d85cac059824e4b9a63
+rumiai-dev   3bbe55bd93815311fb3998378441cd71d50f1d87  (pre-checkpoint HEAD before this handoff synchronization)
+rumiai-tests f18bec19ae34eaa9b33af888798fae48ef0a8241
+rumiai-os    c4e2f3292fb72763c3145e9466db54fb75acf41c
+pkg-catalog  be0ecd84afc65699d55225b1aa4adaa3b6c20a54
 ```
 
 The `rumiai-dev` revision above is the authoritative source revision read before this handoff checkpoint; this handoff update itself advances that repository. Fresh HEAD retrieval remains mandatory before resumption.
@@ -75,34 +75,38 @@ The `rumiai-dev` revision above is the authoritative source revision read before
 - `rumiai-tests@81b2649ddc79b509e4485505c6966094c3ca5881` classified absence of the documented `set -o pipefail` shell capability as a prerequisite SKIP for `enc/encoded-file-edit.test`, rather than a function-contract FAIL on hosts whose `/bin/sh` does not yet provide that POSIX.1-2024 option.
 - `rumiai-tests@91290e23b7c7a26aaa8c5419e7b7e7c1769ca64d` removed the remaining private target-discovery copy from `osarch/detection.test` and uses `lib/rumiai-os-target.lib`.
 - Health run `35824640188`, `rumiai-tests@fa5e811b84954e734e1b3fde4b0bb946998fa80e` against `rumiai-os@f2747e16560d0fbbe1cc0fe6e4d5c6c836ef041b`, completed on Ubuntu with 146 PASS / 4 FAIL / 14 SKIP / 0 ERROR across 164 tests. The four FAILs were `bootstrap/branded-path-prepend.test`, `enc/encoded-file-edit.test`, `osarch/update.test`, and `pkg/uninstall.test`; the first and third match current product/spec mismatches, the second is already realigned in the current suite as described above, and the fourth remains under classification.
+- The user-facing full-product validation contract is now promoted in `TESTING.md` and `RUNNER.md`: the normal health path resolves current committed `rumiai-os` HEAD, discovers the whole permanent suite, resolves suite-owned execution requirements automatically, and does not require the operator to compose task scopes.
+- `rumiai-tests` now has `validation/requirements/mk.conf` for `nodejs@v26.10.0`, a current `validation/mk.conf` selector, and an unpinned `validation/rumiai-os-health.conf` for current-product validation.
+- Runner exclusion support was added so complete-product validation can execute a baseline without requirement-bearing tests and then execute each disjoint requirement group in a separately prepared environment; this prevents a prerequisite such as Node.js from changing the starting conditions of unrelated tests such as the Node.js release test.
+- A first hosted full-product run confirmed the original defect was removed: all 11 permanent `mk` tests executed and passed after automatic Node.js preparation, while the same full run exposed failures in unrelated product areas.
+- Consistency review then found stale duplicate definitions of `run_validation_session_isolation` and `run_validation_test_isolation` later in `lib/sh/rumiai-validate.lib.sh`; POSIX shell last-definition semantics silently restored the old single-environment behavior. `rumiai-tests@49c4e51f8134a9c52c866d293aaedd20dd3e7f40` removed those stale overrides.
+- `rumiai-tests@386328536f06ec41fa1f04d61c49e76d2e7c6e96` initialized the validation-evidence fixture required by `environment-isolation.test` after target preparation began recording `target-osarch`.
+- `rumiai-tests@f18bec19ae34eaa9b33af888798fae48ef0a8241` extends the requirement-resolution self-test to protect the complete grouped execution shape: baseline environment without Node, `mk` excluded from that baseline, then an independent Node-prepared environment containing the `mk` tests.
+- The current permanent suite contains 169 tests, including exactly 11 under `tests/rumiai-os/mk/`.
 
 ## Current state
 
-The user has explicitly tightened the suite contract after observing that the current full-suite health scope invokes tests without automatically preparing requirements owned by task scopes.
+The full-product/current-target and suite-owned-requirements redesign is implemented and canonical.
 
-The current implementation has two structural mismatches with the requested product-validation semantics:
+The normal complete-product path now has these properties:
 
-- `validation/rumiai-os-health.conf` is pinned to an older product revision instead of validating the current updated `rumiai-os` HEAD;
-- execution prerequisites such as managed Node.js for the `rumiai-os/mk` tests are currently stored in a task scope, so the root suite can discover those tests yet still run them without the required prepared environment and receive SKIP.
+- the operator invokes one health/full-product validation instead of manually composing task scopes;
+- the exact current committed `rumiai-os` HEAD is resolved after the product checkout is updated;
+- the complete permanent test set is discovered through the canonical runner discovery path;
+- execution prerequisites are owned by suite requirement metadata rather than scopes;
+- requirement-bearing tests are separated from the baseline so their prepared packages do not contaminate unrelated test preconditions;
+- `rumiai-validate mk` remains available as a focused development selector, but the same 11 `mk` tests and Node.js requirement are automatically reached by the complete-product path.
 
-The accepted direction for this work unit is now:
+The latest implementation checkpoint is `rumiai-tests@f18bec19ae34eaa9b33af888798fae48ef0a8241`. GitHub Actions health run `35964122542` is exercising that exact suite revision on hosted Ubuntu and macOS against current `rumiai-os@c4e2f3292fb72763c3145e9466db54fb75acf41c`.
 
-- full-product validation targets the current updated `rumiai-os` HEAD and executes the complete discovered suite;
-- the operator does not need to know task-scope names or test prerequisites in order to validate the whole product;
-- validation scopes select subsets only; they are not the authority for prerequisites;
-- suite-owned declarative requirement metadata is resolved automatically from the actually selected/discovered test set;
-- a named `mk` development scope selects the complete current `rumiai-os/mk` group and receives its Node.js requirement automatically through the same resolver used by the full suite;
-- revision-specific validation evidence still records the exact product, suite, host, prepared platform, package and catalog revisions actually exercised.
-
-The current permanent suite contains 168 tests, of which exactly 11 are under `tests/rumiai-os/mk/`. The recently completed `mk-shared-artifacts` physical run selected all 11; the new work does not reopen those product semantics, but removes the operator-facing need to know a special scope merely to supply their prerequisite.
+The run must finish before this work unit can be closed. In particular, confirm that validator/runner self-tests are no longer ERROR, that the baseline excludes the 11 `mk` tests, that the independent `mk` requirement group prepares Node.js and runs all 11 tests, and that any remaining FAIL/SKIP results are product/upstream/host-applicability evidence rather than validator orchestration defects.
 
 ## Next action
 
-1. Promote the accepted full-product/current-target and suite-owned-requirements contract into `TESTING.md` / `RUNNER.md` as applicable.
-2. Implement automatic requirement resolution in `rumiai-validate`, add current `mk` subset selection, and remove the Node.js prerequisite from task-scope ownership.
-3. Add/realign permanent validator tests for current-target selection and automatic requirement preparation.
-4. Run proportional validator self-tests plus real `mk` validation, then run the complete full-product health validation on clean hosted environments.
-5. Reassess residual FAIL/ERROR/SKIP results as product, upstream or applicability evidence; do not report the suite realignment complete until the new full-product path itself has been exercised.
+1. Inspect hosted health run `35964122542` on Ubuntu and macOS.
+2. If validator/runner orchestration is clean, classify remaining FAIL/SKIP results without weakening valid product tests.
+3. Re-read the final diff and canonical testing contracts, verify concurrent changes remain preserved, and execute the final consistency gate.
+4. If the suite realignment is complete, capture a final `Status: Complete` handoff snapshot and remove the handoff in a later forward commit.
 
 ## Blockers / open questions
 
