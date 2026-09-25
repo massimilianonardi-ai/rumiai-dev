@@ -9,9 +9,9 @@ Rework the rsudo filesystem transfer module so get/put support safe streamed tra
 
 ## Current repository revisions
 
-- rumiai-dev: 6fd6714b55cdd13dcaade3bd1f79d54fe025d9d1
+- rumiai-dev: 097e05f162acc3e7f7b3ef886d51c82e15a0dfe9
 - rumiai-os: eaf015fe516713c73eccceb9339a5b624fe63c76
-- rumiai-tests: ef5c01b104726f03a2f11e8c70dc49a85545ad8a
+- rumiai-tests: d96b3d5bbf69d25fe39d147b2d3f88195dae8bc6
 
 ## Applicable canonical sources
 
@@ -50,23 +50,23 @@ Rework the rsudo filesystem transfer module so get/put support safe streamed tra
 - Promoted observable fs behavior into specifications/rumiai-os/RSUDO.md as RSUDO-14 through RSUDO-19.
 - Added tests/rumiai-os/rsudo/fs.test through the real rsudo entrypoint. Coverage includes regular files, directories, symlink-to-file, symlink-to-directory, dangling symlink, destination replacement, forced transfer failure before promotion, forced put/get promotion failure with rollback, insufficient staged space, preservation of the old destination, explicit-delete diagnostics, and successful retry after explicit fs delete.
 - Auxiliary local smoke execution of the consolidated functions passed for put/get of regular files, directories, symlink-to-file, symlink-to-directory and dangling symlink, including successful replacement paths.
-- Confirmed that tests/rumiai-os/rsudo/fs.test exists on current rumiai-tests HEAD ef5c01b104726f03a2f11e8c70dc49a85545ad8a.
-- Confirmed there is no dedicated rsudo-fs validation scope. The current full-product backing scope is validation/rumiai-os-health.conf and, by contract, executes the complete permanent suite including fs.test after rumiai-validate self-updates rumiai-tests.
+- Confirmed that tests/rumiai-os/rsudo/fs.test exists on the current rumiai-tests revision.
+- Added validation/rsudo-fs.conf as a focused task scope selecting only rumiai-os/rsudo/fs.test, so this work unit can be formally validated without running the complete product suite.
 
 ## Current state
 
 Implementation, canonical rsudo contract, operational library manual and permanent test coverage are aligned.
 
-Formal stable-host product validation has not been executed for the current repository revisions. A local checkout that does not yet show fs.test is behind the current rumiai-tests remote HEAD; the normal rumiai-validate path updates the suite with git pull --ff-only before discovery.
+Formal stable-host validation of the focused rsudo-fs scope has not yet been executed. The normal rumiai-validate path self-updates rumiai-tests before discovering validation scopes and tests.
 
 ## Next action
 
 From the rumiai-tests repository on a stable host, run:
 
-./rumiai-validate rumiai-os-health
+./rumiai-validate rsudo-fs
 
-This self-updates rumiai-tests, resolves and freezes the current committed rumiai-os revision, and executes the complete product suite. Inspect fs.test together with all full-suite regressions, then perform the completion gate and remove this handoff after successful closure.
+This self-updates rumiai-tests, resolves the current committed rumiai-os revision and executes the focused rsudo fs task test. Inspect the resulting evidence, then perform the completion gate and remove this handoff after successful closure.
 
 ## Blockers / open questions
 
-- Formal stable-host full-product validation is pending.
+- Formal stable-host rsudo-fs task validation is pending.
