@@ -76,6 +76,30 @@ The normal command-preservation mode must preserve the caller-visible command/ar
 
 `--no-preserve-quotes` selects the documented alternate command-passing behavior.
 
+## Filesystem submodule
+
+The `fs` submodule provides privileged remote filesystem operations through the same rsudo connection and privilege boundary.
+
+`rsudo fs get remote_path local_path` transfers one remote filesystem object to the local system. Regular files, directories and symbolic links retain their object kind; a symbolic link is transferred as the link rather than by copying the object it references.
+
+When the local destination already exists, `get` completes the incoming transfer in sibling staging on the destination parent filesystem before replacing the existing destination. Failure before promotion leaves the existing destination in place. If promotion fails after the existing destination has been renamed aside, rollback is attempted.
+
+`rsudo fs put local_path remote_path [owner_group] [permissions]` streams one local filesystem object directly into the privileged destination filesystem. It must not require a second complete copy through an unprivileged remote staging filesystem.
+
+Before replacing an existing remote destination, `put` estimates the incoming allocated size, destination-filesystem free space and reclaimable allocated size of the existing destination.
+
+If current free space is sufficient for the incoming object while the existing destination remains present, `put` may proceed with sibling staging on the destination parent filesystem.
+
+If current free space is insufficient for staged replacement but the estimate would fit after deleting the existing destination, `put` fails and reports that destructive replacement would require an explicit prior `rsudo fs delete`. It must not delete the existing destination implicitly.
+
+If the estimate would still not fit after reclaiming the existing destination, `put` fails as insufficient space.
+
+These space checks are preflight estimates, not allocation guarantees. Sparse files, quotas, filesystem allocation behavior and other runtime conditions may still cause a transfer to fail.
+
+When replacing an existing remote destination, the incoming object is promoted only after transfer and requested metadata application succeed. The old destination is renamed aside, the completed stage is promoted, and the old copy is then removed. If promotion fails after the old destination was renamed aside, rollback is attempted.
+
+The replacement sequence is staged and rollback-capable; it is not specified as one indivisible filesystem transaction.
+
 ## Credential loading
 
 `--load file:group` separates the operand at its final `:`.
@@ -163,4 +187,10 @@ RSUDO-10  per-invocation resources are cleaned up on completion/termination
 RSUDO-11  password data is not exposed as ordinary target input/output
 RSUDO-12  internal SSH/sudo mechanics are not part of the observable contract
 RSUDO-13  --load file:group treats file and group as independently optional components
+RSUDO-14  fs get/put preserve regular-file, directory and symbolic-link object kind
+RSUDO-15  fs put streams directly into the privileged destination filesystem without requiring an intermediate unprivileged full copy
+RSUDO-16  fs put never performs an implicit destructive fallback when staged replacement lacks free space
+RSUDO-17  fs put reports when explicit deletion would make the estimated transfer fit, and fails until that deletion is explicitly requested
+RSUDO-18  fs put promotes an existing-destination replacement only after transfer and requested metadata application succeed
+RSUDO-19  fs get/put attempt rollback when staged replacement promotion fails after moving the previous destination aside
 ```
