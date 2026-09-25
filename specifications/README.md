@@ -32,6 +32,7 @@ Read only the smallest complete set relevant to the task.
 | portable local service lifecycle through `srv` | `rumiai-os/SERVICE-LIFECYCLE.md` |
 | standalone terminal key input | `rumiai-os/READ-KEY.md` |
 | secret-line terminal input and verification | `rumiai-os/READPASS.md` |
+| remote SSH/sudo authentication, stdin separation and execution invariants | `rumiai-os/RSUDO.md` |
 
 ## Testing and development
 
