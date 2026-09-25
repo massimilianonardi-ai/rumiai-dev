@@ -9,9 +9,9 @@ Rework the rsudo filesystem transfer module so get/put support safe streamed tra
 
 ## Current repository revisions
 
-- rumiai-dev: e31b993ba955430f91e04e4bbcd15a2e5a4e89dd
+- rumiai-dev: 71efd72c7a450743c1c499cca006cdf92d783223
 - rumiai-os: eaf015fe516713c73eccceb9339a5b624fe63c76
-- rumiai-tests: de7a0ddfc59cffd9a14c199f7452fc00186f5692
+- rumiai-tests: 61c032c88b69a287c5517a8d034b593f24b2563b
 
 ## Applicable canonical sources
 
@@ -54,12 +54,14 @@ Rework the rsudo filesystem transfer module so get/put support safe streamed tra
 - Added validation/rsudo-fs.conf as a focused task scope selecting only rumiai-os/rsudo/fs.test, so this work unit can be formally validated without running the complete product suite.
 - First macOS focused validation against rumiai-tests d96b3d5bbf69d25fe39d147b2d3f88195dae8bc6 and rumiai-os eaf015fe516713c73eccceb9339a5b624fe63c76 produced TEST ERROR before test execution; the published session recorded observed termination 126.
 - Root cause was test file mode 100644: the runner executes .test programs directly through their shebang, so fs.test was not executable. Changed only tests/rumiai-os/rsudo/fs.test mode to 100755 in rumiai-tests de7a0ddfc59cffd9a14c199f7452fc00186f5692; blob/content is unchanged.
+- Post-executable focused validation ran on macOS/arm64 and Linux/aarch64 and failed functionally at the same assertion: `put succeeded despite forced promotion failure`.
+- Inspection showed the failure-injection `mv` fixture only matched two-argument `mv source destination`, while the product correctly invokes `mv -- source destination`; the fixture therefore never injected the promotion failure. Updated the fixture to recognize both argv forms while delegating the original argv unchanged. No product/runtime change was required for this defect.
 
 ## Current state
 
 Implementation, canonical rsudo contract, operational library manual and permanent test coverage are aligned.
 
-The first focused stable-host invocation reached the test but ended as TEST ERROR because fs.test lacked its executable bit. That test-infrastructure defect is fixed in rumiai-tests de7a0ddfc59cffd9a14c199f7452fc00186f5692. No post-fix formal validation result exists yet.
+Focused validation now executes the test on both macOS/arm64 and Linux/aarch64. Both hosts exposed the same test-fixture defect in forced promotion failure. That fixture has been corrected in rumiai-tests 61c032c88b69a287c5517a8d034b593f24b2563b. No validation result exists yet for the corrected fixture revision.
 
 ## Next action
 
@@ -67,8 +69,8 @@ From the rumiai-tests repository on a stable host, run:
 
 ./rumiai-validate rsudo-fs
 
-This self-updates rumiai-tests to the executable fs.test revision, resolves the current committed rumiai-os revision and executes the focused rsudo fs task test. Inspect the resulting evidence, then perform the completion gate and remove this handoff after successful closure.
+This self-updates rumiai-tests to the corrected fs.test fixture revision, resolves the current committed rumiai-os revision and executes the focused rsudo fs task test. Inspect the resulting evidence on the required hosts, then perform the completion gate and remove this handoff after successful closure.
 
 ## Blockers / open questions
 
-- Post-fix formal stable-host rsudo-fs task validation is pending.
+- Formal rsudo-fs validation against the corrected promotion-failure fixture is pending.
