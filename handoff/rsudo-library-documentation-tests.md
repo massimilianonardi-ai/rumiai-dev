@@ -5,13 +5,13 @@ Updated: 2026-09-25
 
 ## Goal
 
-Align the operational manual and permanent tests for `lib/sys/sh/rsudo/rsudo.lib.sh` without modifying the runtime implementation in this work unit.
+Align the operational documentation and permanent tests for `lib/sys/sh/rsudo/rsudo.lib.sh` without modifying the runtime implementation in this work unit.
 
 ## Current repository revisions
 
-- rumiai-dev: eaa9cf99528af373af978018ed5032c177787748
-- rumiai-os: 8579cf1d8e3ebb0f47598e7d650ece90a6dfc922
-- rumiai-tests: 9cea0e6a5232371d020d6c576919157779778e47
+- rumiai-dev: f113f15530cd25d69a859ab185bce90e78746737
+- rumiai-os: 518cd309f4264bee707d61746655b781c89bd622
+- rumiai-tests: 4055a71f10fd3ff202ae22e1ea3462529c7e0d3b
 
 ## Applicable canonical sources
 
@@ -22,6 +22,7 @@ Align the operational manual and permanent tests for `lib/sys/sh/rsudo/rsudo.lib
 - specifications/rumiai-os/FILESYSTEM-NAMING.md
 - specifications/rumiai-os/LIBRARY-INTERFACES.md
 - specifications/rumiai-os/DOCUMENTATION-MODEL.md
+- specifications/rumiai-os/RSUDO.md
 - TESTING.md
 - TEST-PATTERNS.md
 - RUNNER.md
@@ -29,24 +30,34 @@ Align the operational manual and permanent tests for `lib/sys/sh/rsudo/rsudo.lib
 ## Fixed task-local choices
 
 - Scope is documentation and permanent tests for `rsudo.lib.sh`; runtime implementation is not modified.
-- The accepted non-interactive authentication model is: consume the transferred sudo password separately from target stdin, validate credentials with `sudo -S --prompt='' -v`, then execute the target with `sudo -n`.
-- After pre-authentication, both interactive and non-interactive target execution must not request or consume a password from target stdin/TTY.
-- Tests must protect observable behavior through the real RumiAI target and may replace only external SSH/sudo boundaries where needed.
+- The accepted authentication model is now promoted to `specifications/rumiai-os/RSUDO.md`.
+- Tests exercise the real RumiAI rsudo/rsudo-askpass/IPC path and replace only external SSH/sudo boundaries where needed.
 
 ## Completed
 
 - Mandatory preflight and current implementation/test inspection completed.
-- Confirmed `rsudo.lib.sh` currently exposes public functions `rsudo_core` and `rsudo`.
-- Confirmed no current permanent rsudo tests and no `res/sys/manual/rsudo.lib.sh` topic exist.
+- Promoted `specifications/rumiai-os/RSUDO.md` and routed it from `specifications/README.md`.
+- Added `res/sys/manual/rsudo.lib.sh`, documenting public functions `rsudo` and `rsudo_core`.
+- Added `tests/rumiai-os/rsudo/contract.test` covering the non-interactive authentication/input contract, selective NOPASSWD behavior, SSH one-shot askpass and target-status propagation.
+- Added `tests/rumiai-os/rsudo/interactive.test` covering the two-SSH interactive path, sudo pre-validation, non-interactive target sudo and remote rendezvous cleanup.
+- Removed the pre-existing broad `todo/rsudo.md` when rsudo work became active.
+- Recorded the intentionally out-of-scope runtime mismatch as `todo/rsudo-runtime-authentication-realignment.md`.
+- Diff review confirmed only the intended documentation/test/task-state surfaces were changed.
+- Local clone-based execution was attempted but the container cannot resolve github.com.
+- GitHub Actions full-product validation was triggered for the new suite revisions.
 
 ## Current state
 
-The current runtime still uses the older non-interactive `sudo -n true` probe followed by `sudo -S` target execution, and interactive target execution does not yet force `sudo -n`. Documentation/tests will encode the accepted model and therefore may expose this pending runtime mismatch.
+The documentation and permanent tests encode the accepted rsudo contract.
+
+The current runtime remains intentionally unmodified and is known to conflict with that contract: non-interactive mode still uses an unrelated `sudo -n true` probe followed by target `sudo -S`, and the interactive target does not yet force `sudo -n`.
+
+The latest full-product validation for suite revision `4055a71f10fd3ff202ae22e1ea3462529c7e0d3b` is run `36136046947` and is still in progress. Earlier runs for intermediate suite revisions are also in progress. No PASS is claimed.
 
 ## Next action
 
-Create the library manual and permanent rsudo contract test, then run proportional validation and record the implementation mismatch explicitly if the current runtime does not satisfy the new test.
+Inspect run `36136046947` when it completes, distinguish expected rsudo contract failures from test-infrastructure defects, fix only the latter if present, then perform the final consistency gate for this documentation/test work unit.
 
 ## Blockers / open questions
 
-None.
+- Formal validation is still in progress.
