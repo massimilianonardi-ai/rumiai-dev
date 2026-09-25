@@ -9,9 +9,9 @@ Align the operational documentation and permanent tests for `lib/sys/sh/rsudo/rs
 
 ## Current repository revisions
 
-- rumiai-dev: a3ab8d41da578578aa2f5167c2109eb7b72a39c4
-- rumiai-os: 4e2771d77dc38a398c955b7af49e4662de2af050
-- rumiai-tests: 21bf4ed1994c3fff70b7a2859e8f2d04c856d190
+- rumiai-dev: c8bde6dc8ffc3c7a40501155c52a96dd41fda124
+- rumiai-os: 323085f1cb6657bf7330ad2370f30968206ff6e7
+- rumiai-tests: 11c97f6c08712b0c82e06efbdd3972e217dc1cd4
 
 ## Applicable canonical sources
 
@@ -32,6 +32,7 @@ Align the operational documentation and permanent tests for `lib/sys/sh/rsudo/rs
 - Scope remains documentation and permanent tests; `rsudo.lib.sh` runtime implementation is not modified.
 - Permanent product tests verify observable rsudo behavior for defined inputs and remote-system characteristics. They do not require a specific SSH/sudo sequence, IPC mechanism, process topology, temporary-resource layout or internal call order.
 - Scenario-specific SSH/sudo fixtures are external-boundary infrastructure only. Unsupported fixture interactions are test ERROR, not product FAIL.
+- `--load file:group` has two independently optional components. `file:group`, `file:`, `:group`, and `:` are all valid forms with distinct observable semantics.
 
 ## Completed
 
@@ -45,6 +46,11 @@ Align the operational documentation and permanent tests for `lib/sys/sh/rsudo/rs
 - Removed the erroneous `todo/rsudo-runtime-authentication-realignment.md`; it was created from the assistant's incorrect interpretation, not from a real current contract mismatch.
 - The user advanced `rumiai-os`: `rsudo.lib.sh` no longer sources `rsudo-env.lib.sh`; `--load` uses `encoded_file_eval` directly through the existing `enc.lib.sh` dependency.
 - The operational manual dependency list was realigned to the current direct sources: `rand.lib.sh`, `enc.lib.sh`, and `ipc.lib.sh`.
+- The user advanced the `--load` contract: `file` and `group` may each be empty, including both empty.
+- `specifications/rumiai-os/RSUDO.md` and `res/sys/manual/rsudo.lib.sh` now define the four `--load` cases and the current `RSUDO_CREDENTIALS_GROUP_<group>_{HOST,USER,PASS}` namespace.
+- The manual's public rsudo status table was aligned with the current implementation after removal of the former invalid-group status.
+- `tests/rumiai-os/rsudo/contract.test` was aligned to the current public status codes.
+- Added `tests/rumiai-os/rsudo/load.test` protecting only the observable `--load` contract. It covers `file:group`, `file:`, `:group`, `:`, and a same-invocation `file:` then `:group` sequence proving that file-only loading actually populates in-memory group state without selecting it.
 - Permanent rsudo tests were intentionally left unchanged because they assert observable behavior and contain no dependency on the removed internal library path.
 - Consistency scan confirms permanent test assertions no longer require `sudo -n`, `sudo -v`, SSH_ASKPASS, IPC identities, FIFO layout, number of SSH sessions or internal call order.
 - Diff review confirmed the correction touched only the rsudo specification/manual/tests, task-state correction and specification-index metadata.
@@ -53,16 +59,18 @@ Align the operational documentation and permanent tests for `lib/sys/sh/rsudo/rs
 
 Documentation and tests now follow the observable-contract rules in `TESTING.md` sections 5-6 and `TEST-PATTERNS.md`.
 
-The latest corrected suite revision is `21bf4ed1994c3fff70b7a2859e8f2d04c856d190`.
+The latest corrected suite revision is `11c97f6c08712b0c82e06efbdd3972e217dc1cd4`.
 
-The product subsequently advanced to `4e2771d77dc38a398c955b7af49e4662de2af050`. Validation evidence started before that product change does not validate the new product HEAD.
+The current product revision is `323085f1cb6657bf7330ad2370f30968206ff6e7`, containing the user's `--load` contract change plus the aligned operational manual.
+
+Full-product validation run `36144167133` is in progress for this suite/product state.
 
 No product implementation mismatch is asserted by this task.
 
 ## Next action
 
-Run/inspect full-product validation for the current product HEAD `4e2771d77dc38a398c955b7af49e4662de2af050`, distinguish rsudo results from unrelated suite failures, then perform the final completion gate.
+Inspect full-product validation run `36144167133`, distinguish rsudo results from unrelated suite failures, correct only genuine test/documentation defects if any, then perform the final completion gate.
 
 ## Blockers / open questions
 
-- Current-product formal validation must cover the new rumiai-os HEAD after the user's rsudo dependency change.
+- Formal validation for the current suite/product pair is still in progress.
