@@ -9,9 +9,9 @@ Rework the rsudo filesystem transfer module so get/put support safe streamed tra
 
 ## Current repository revisions
 
-- rumiai-dev: 544fa4a0934f82cbb6192a6d30ea2b19c56bf726
-- rumiai-os: 83aa1a18bf0fdbf24807119cad4dd9bb4b8ec8a0
-- rumiai-tests: e1cbdd302ab3b5283a6529b4c748b774ba0f86e7
+- rumiai-dev: 6fd6714b55cdd13dcaade3bd1f79d54fe025d9d1
+- rumiai-os: eaf015fe516713c73eccceb9339a5b624fe63c76
+- rumiai-tests: ef5c01b104726f03a2f11e8c70dc49a85545ad8a
 
 ## Applicable canonical sources
 
@@ -49,19 +49,24 @@ Rework the rsudo filesystem transfer module so get/put support safe streamed tra
 - Created res/sys/manual/rsudo-mod-fs.lib.sh documenting all four public functions and the streaming/staging/space behavior.
 - Promoted observable fs behavior into specifications/rumiai-os/RSUDO.md as RSUDO-14 through RSUDO-19.
 - Added tests/rumiai-os/rsudo/fs.test through the real rsudo entrypoint. Coverage includes regular files, directories, symlink-to-file, symlink-to-directory, dangling symlink, destination replacement, forced transfer failure before promotion, forced put/get promotion failure with rollback, insufficient staged space, preservation of the old destination, explicit-delete diagnostics, and successful retry after explicit fs delete.
-- The published runtime file is byte-identical to the locally syntax-checked implementation (FNV-1a 32 e30b4456); the published fs.test is byte-identical to the locally syntax-checked test (FNV-1a 32 2dc5879c before failure-coverage strengthening; the strengthened local test was syntax-checked before publication).
 - Auxiliary local smoke execution of the consolidated functions passed for put/get of regular files, directories, symlink-to-file, symlink-to-directory and dangling symlink, including successful replacement paths.
+- Confirmed that tests/rumiai-os/rsudo/fs.test exists on current rumiai-tests HEAD ef5c01b104726f03a2f11e8c70dc49a85545ad8a.
+- Confirmed there is no dedicated rsudo-fs validation scope. The current full-product backing scope is validation/rumiai-os-health.conf and, by contract, executes the complete permanent suite including fs.test after rumiai-validate self-updates rumiai-tests.
 
 ## Current state
 
 Implementation, canonical rsudo contract, operational library manual and permanent test coverage are aligned.
 
-Formal stable-host product validation has not been executed for the new repository revisions. The current environment cannot clone the repositories (no network resolution from the execution container), and the available GitHub connector does not expose workflow dispatch. Therefore auxiliary syntax/smoke evidence must not be represented as formal validation.
+Formal stable-host product validation has not been executed for the current repository revisions. A local checkout that does not yet show fs.test is behind the current rumiai-tests remote HEAD; the normal rumiai-validate path updates the suite with git pull --ff-only before discovery.
 
 ## Next action
 
-Run the normal RumiAI validation path for the current rumiai-tests / rumiai-os revisions on an applicable stable host, inspect rsudo/fs.test together with full-suite regressions, then perform the completion gate and remove this handoff after successful closure.
+From the rumiai-tests repository on a stable host, run:
+
+./rumiai-validate rumiai-os-health
+
+This self-updates rumiai-tests, resolves and freezes the current committed rumiai-os revision, and executes the complete product suite. Inspect fs.test together with all full-suite regressions, then perform the completion gate and remove this handoff after successful closure.
 
 ## Blockers / open questions
 
-- Formal stable-host validation is pending.
+- Formal stable-host full-product validation is pending.
