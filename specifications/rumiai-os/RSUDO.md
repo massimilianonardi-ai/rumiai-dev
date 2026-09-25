@@ -3,115 +3,129 @@
 Status: **Current / normative**  
 Updated: 2026-09-25
 
-This specification defines the current authentication, input-separation and execution contract for the `rsudo` subsystem implemented by `lib/sys/sh/rsudo/rsudo.lib.sh`.
+This specification defines the observable contract of the `rsudo` subsystem implemented by `lib/sys/sh/rsudo/rsudo.lib.sh`.
+
+Implementation choices used to satisfy this contract are not part of the contract unless another current specification explicitly makes them normative.
 
 ## Scope
 
-`rsudo` executes commands on a remote host through SSH and elevates them through remote `sudo`.
+`rsudo` executes a command on a remote host through SSH and requests remote privilege elevation through `sudo`.
 
-The current public library surface is documented operationally in:
+The operational public API is documented in:
 
 ```text
 res/sys/manual/rsudo.lib.sh
 ```
 
-This specification defines only the subsystem semantics that permanent tests and future implementation changes must preserve.
+Permanent tests protect the observable properties below through the real RumiAI entrypoint. External SSH/sudo behavior may be represented by scenario-specific external-boundary fixtures when allowed by `TESTING.md`.
 
-## Authentication separation
+## Connection and credentials
 
-SSH authentication and sudo authentication are separate credential-consumption events.
+A resolved rsudo operation requires:
 
-SSH password delivery uses the local one-shot IPC facility through `rsudo-askpass` and `SSH_ASKPASS`. Each SSH invocation receives its own one-shot credential identity and the local owner remains responsible for clearing it.
+```text
+remote host
+remote login user
+non-empty password value
+```
 
-The sudo password must never be passed as part of the remote command line.
+The password is available to rsudo for the remote authentication steps that actually require it.
+
+If the remote SSH/sudo environment does not require the password for a particular step, rsudo must still complete the operation correctly.
+
+The password must not become ordinary target-command input or ordinary command output merely because an authentication step did not consume it.
 
 ## Non-interactive execution
 
-For non-interactive execution, the SSH input stream conceptually contains:
+Given a reachable remote system, valid connection data and a target command, non-interactive rsudo must:
 
 ```text
-sudo password record
-target stdin bytes/records...
+execute the requested target under remote sudo
+preserve the target's intended stdin
+propagate target stdout/stderr
+return the resulting remote execution status
 ```
 
-The remote rsudo prelude MUST consume the sudo password record itself before target execution.
-
-It then validates sudo credentials with:
-
-```sh
-printf '%s\n' "$RSUDO_PASSWORD" |
-    sudo -S --prompt='' -v
-```
-
-After successful validation, the target MUST be executed through non-interactive sudo:
+The same functional behavior must hold for at least these remote privilege configurations:
 
 ```text
-sudo -n ... -- target
+sudo authentication requires the supplied password
+the remote user may execute sudo without a password
+the remote login is already privileged
 ```
 
-The target therefore receives only its own stdin. Whether the selected sudoers rule requires a password, is `NOPASSWD`, or the remote login user is already privileged MUST NOT cause the sudo password record to reach target stdin.
-
-A probe against an unrelated command MUST NOT be used to decide whether the target sudo invocation will consume a password.
+Authentication transport data must not be delivered to the target as stdin data.
 
 ## Interactive execution
 
-Interactive execution uses separate SSH sessions for remote password staging and the foreground TTY session.
+Interactive mode must execute the requested remote target under sudo with an interactive terminal path suitable for commands that require a TTY.
 
-The remote password staging/rendezvous remains private to the remote login user.
+When valid credentials and a suitable remote system are supplied, rsudo must propagate the interactive target's observable output and final status.
 
-Before foreground target execution, the second remote session validates sudo credentials with `sudo -S --prompt='' -v`.
+Authentication data must not be exposed as ordinary terminal output.
 
-The foreground target MUST then execute through `sudo -n` under the allocated remote TTY.
+## Target user
 
-After validation, sudo MUST NOT fall back to reading a password from the target command's TTY.
+When `--user sudo_as_user` is supplied, the remote target must execute as the requested sudo target user, subject to the remote sudo policy.
 
-## Failure behavior
+## Argument and command handling
 
-If credential validation fails, target execution does not begin.
+A literal `--` ends rsudo option/submodule interpretation and sends the remaining operands to normal remote execution.
 
-If the later `sudo -n` target invocation cannot proceed without further authentication, it fails rather than requesting or consuming another password.
+The normal command-preservation mode must preserve the caller-visible command/argument meaning across the remote execution boundary.
 
-The final foreground SSH/remote-target status is preserved.
+`--no-preserve-quotes` selects the documented alternate command-passing behavior.
 
-For interactive execution, when the foreground operation succeeds but the asynchronous password-staging helper fails, the helper failure becomes the final result.
+## Password acquisition
 
-## Cleanup and signals
+When `--askpass` is selected and stdin is not a TTY, rsudo consumes the password record designated by that mode before forwarding the operation's remaining input.
 
-Each `rsudo_core` invocation owns its local one-shot SSH credential state and any asynchronous helper process it starts.
+When the password is absent and interactive acquisition is applicable, rsudo may acquire it from the terminal.
 
-Normal exit clears owned one-shot state.
+A failed required password acquisition prevents remote execution.
 
-Termination handling must clean up owned state and preserve the terminating signal semantics rather than absorbing the signal and continuing execution.
+## Errors and status
 
-Remote temporary password-rendezvous state must be removed after successful use or failure.
+Invalid local invocation is rejected before remote execution.
+
+When remote execution is reached, rsudo returns the resulting operation status rather than replacing it with an unrelated success status.
+
+Infrastructure/setup failure that prevents the remote operation produces a non-zero result.
+
+## Cleanup and termination
+
+Resources owned only by one rsudo invocation must not remain live after that invocation has completed or been terminated.
+
+Termination handling must preserve termination semantics rather than cleaning up and then continuing the interrupted operation.
 
 ## Security boundary
 
-The password may exist transiently in process memory and in the private transport mechanisms required by the current execution mode.
+The supplied password is authentication data.
 
-It MUST NOT be:
+It must not be:
 
 ```text
-embedded in the remote command line
-left as target stdin data
-logged as plaintext
-reused through a persistent broker
+printed as ordinary command output
+delivered to the target as ordinary stdin data
+embedded in an ordinary target argument merely as a side effect of authentication
+left in per-invocation temporary resources after cleanup
 ```
 
-One-shot SSH credential identities are opaque and must be exposed only to the SSH process intended to consume them.
+This contract does not require one specific internal SSH/sudo authentication sequence, process topology, FIFO layout, IPC primitive, command probe or call order.
 
 ## Invariants
 
 ```text
-RSUDO-01  SSH authentication uses one-shot local IPC through SSH_ASKPASS
-RSUDO-02  sudo authentication data is separated from target stdin/TTY
-RSUDO-03  non-interactive remote code consumes the sudo password before target stdin
-RSUDO-04  sudo credentials are validated with sudo -S --prompt='' -v before target execution
-RSUDO-05  target execution uses sudo -n after validation
-RSUDO-06  NOPASSWD/root cases never expose the password record to target stdin
-RSUDO-07  unrelated sudo command probes do not decide target password consumption
-RSUDO-08  foreground target status is preserved
-RSUDO-09  owned local/remote credential state is cleaned up on completion/failure
-RSUDO-10  termination cleanup preserves terminating-signal semantics
-RSUDO-11  the sudo password is never embedded in the remote command line
+RSUDO-01  valid connection data executes the requested remote target under sudo
+RSUDO-02  target stdin is preserved and does not receive authentication data
+RSUDO-03  target stdout/stderr remain observable to the caller
+RSUDO-04  resulting remote target status is propagated
+RSUDO-05  password-required sudo is supported
+RSUDO-06  passwordless sudo/root operation is supported without contaminating target stdin
+RSUDO-07  interactive mode executes the target through a terminal-capable remote path
+RSUDO-08  --user selects the requested sudo target user
+RSUDO-09  required password acquisition failure prevents remote execution
+RSUDO-10  per-invocation resources are cleaned up on completion/termination
+RSUDO-11  password data is not exposed as ordinary target input/output
+RSUDO-12  internal SSH/sudo mechanics are not part of the observable contract
 ```
