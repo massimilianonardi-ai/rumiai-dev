@@ -9,8 +9,8 @@ Align the operational documentation and permanent tests for `lib/sys/sh/rsudo/rs
 
 ## Current repository revisions
 
-- rumiai-dev: 4c74b33038ae24bf4bb10363056ee84912c75742
-- rumiai-os: b411b8c2388d8a3377b1e2911cbc50e231aeab02
+- rumiai-dev: a3ab8d41da578578aa2f5167c2109eb7b72a39c4
+- rumiai-os: 4e2771d77dc38a398c955b7af49e4662de2af050
 - rumiai-tests: 21bf4ed1994c3fff70b7a2859e8f2d04c856d190
 
 ## Applicable canonical sources
@@ -43,7 +43,9 @@ Align the operational documentation and permanent tests for `lib/sys/sh/rsudo/rs
 - The external sudo fixture accepts multiple legitimate authentication sequences. If a future valid implementation uses an unmodeled sequence, the harness reports ERROR rather than product FAIL.
 - Target fixtures now distinguish privileged execution from direct/bypassed execution instead of assuming root.
 - Removed the erroneous `todo/rsudo-runtime-authentication-realignment.md`; it was created from the assistant's incorrect interpretation, not from a real current contract mismatch.
-- The current runtime implementation in `rumiai-os` remains unchanged.
+- The user advanced `rumiai-os`: `rsudo.lib.sh` no longer sources `rsudo-env.lib.sh`; `--load` uses `encoded_file_eval` directly through the existing `enc.lib.sh` dependency.
+- The operational manual dependency list was realigned to the current direct sources: `rand.lib.sh`, `enc.lib.sh`, and `ipc.lib.sh`.
+- Permanent rsudo tests were intentionally left unchanged because they assert observable behavior and contain no dependency on the removed internal library path.
 - Consistency scan confirms permanent test assertions no longer require `sudo -n`, `sudo -v`, SSH_ASKPASS, IPC identities, FIFO layout, number of SSH sessions or internal call order.
 - Diff review confirmed the correction touched only the rsudo specification/manual/tests, task-state correction and specification-index metadata.
 
@@ -51,14 +53,16 @@ Align the operational documentation and permanent tests for `lib/sys/sh/rsudo/rs
 
 Documentation and tests now follow the observable-contract rules in `TESTING.md` sections 5-6 and `TEST-PATTERNS.md`.
 
-The latest corrected suite revision is `21bf4ed1994c3fff70b7a2859e8f2d04c856d190`. Full-product validation run `36137988781` has been triggered against the current product revision.
+The latest corrected suite revision is `21bf4ed1994c3fff70b7a2859e8f2d04c856d190`.
+
+The product subsequently advanced to `4e2771d77dc38a398c955b7af49e4662de2af050`. Validation evidence started before that product change does not validate the new product HEAD.
 
 No product implementation mismatch is asserted by this task.
 
 ## Next action
 
-Inspect run `36137988781` when complete, distinguish rsudo product results from test-infrastructure errors and unrelated full-suite failures, then perform the final completion gate.
+Run/inspect full-product validation for the current product HEAD `4e2771d77dc38a398c955b7af49e4662de2af050`, distinguish rsudo results from unrelated suite failures, then perform the final completion gate.
 
 ## Blockers / open questions
 
-- Formal validation for the final corrected suite revision has not completed yet.
+- Current-product formal validation must cover the new rumiai-os HEAD after the user's rsudo dependency change.
