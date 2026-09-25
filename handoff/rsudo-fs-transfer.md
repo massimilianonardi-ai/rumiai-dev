@@ -9,7 +9,7 @@ Rework the rsudo filesystem transfer module so get/put support safe streamed tra
 
 ## Current repository revisions
 
-- rumiai-dev: 761037fb0affe8fb1bc950e36f848b568e539e04
+- rumiai-dev: ba1ff3058caafa00d87362c10f54bbb0bdb82be8
 - rumiai-os: e3abb0c38438d5c93459f29d088f59bacf652ad7
 - rumiai-tests: 61c032c88b69a287c5517a8d034b593f24b2563b
 
@@ -56,22 +56,21 @@ Rework the rsudo filesystem transfer module so get/put support safe streamed tra
 - Root cause was test file mode 100644: the runner executes .test programs directly through their shebang, so fs.test was not executable. Changed only tests/rumiai-os/rsudo/fs.test mode to 100755 in rumiai-tests de7a0ddfc59cffd9a14c199f7452fc00186f5692; blob/content is unchanged.
 - Post-executable focused validation ran on macOS/arm64 and Linux/aarch64 and failed functionally at the same assertion: `put succeeded despite forced promotion failure`.
 - Inspection showed the failure-injection `mv` fixture only matched two-argument `mv source destination`, while the product invokes `mv -- source destination`; the fixture therefore never injected the promotion failure. Updated the fixture to recognize both argv forms while delegating the original argv unchanged. Auxiliary shell execution confirmed the corrected fixture returns the injected status for stage -> canonical promotion and does not inject failure for .orig -> canonical rollback. No product/runtime change was required for this defect.
-- rumiai-os advanced concurrently from eaf015fe516713c73eccceb9339a5b624fe63c76 to e3abb0c38438d5c93459f29d088f59bacf652ad7. The intervening commits modify only rsudo-mod-db-pg.lib.sh; rsudo-mod-fs.lib.sh is unchanged. The next formal validation must nevertheless record and exercise the new current product revision.
+- rumiai-os advanced concurrently from eaf015fe516713c73eccceb9339a5b624fe63c76 to e3abb0c38438d5c93459f29d088f59bacf652ad7. The intervening commits modify only rsudo-mod-db-pg.lib.sh; rsudo-mod-fs.lib.sh is unchanged.
+- Focused formal validation of rsudo-fs passed on Darwin/arm64 (target macos-arm64) with validation 20260925T230402+0200-89087 and session 20260925T230404+0200-90877: aggregate status 0, fs.test PASS, audit CLEAN.
+- The same focused validation passed on Linux/aarch64 (target linux-arm64) with validation 20260925T230437+0200-579965 and session 20260925T230438+0200-581684: aggregate status 0, fs.test PASS, audit CLEAN.
+- Both successful validations exercised rumiai-tests 61c032c88b69a287c5517a8d034b593f24b2563b against rumiai-os e3abb0c38438d5c93459f29d088f59bacf652ad7.
 
 ## Current state
 
 Implementation, canonical rsudo contract, operational library manual and permanent test coverage are aligned.
 
-Focused validation now executes the test on both macOS/arm64 and Linux/aarch64. Both hosts exposed the same test-fixture defect in forced promotion failure. That fixture has been corrected in rumiai-tests 61c032c88b69a287c5517a8d034b593f24b2563b. No validation result exists yet for the corrected fixture revision.
+Implementation, canonical rsudo contract, operational library manual and permanent test coverage are aligned. The corrected focused rsudo-fs scope is formally VALIDATED on both Darwin/arm64 and Linux/aarch64 for rumiai-tests 61c032c88b69a287c5517a8d034b593f24b2563b against rumiai-os e3abb0c38438d5c93459f29d088f59bacf652ad7.
 
 ## Next action
 
-From the rumiai-tests repository on a stable host, run:
-
-./rumiai-validate rsudo-fs
-
-This self-updates rumiai-tests to the corrected fs.test fixture revision, resolves the current committed rumiai-os revision and executes the focused rsudo fs task test. Inspect the resulting evidence on the required hosts, then perform the completion gate and remove this handoff after successful closure.
+Perform the final consistency/completion gate for the rsudo-fs work unit. If no new mismatch is found, synchronize a final Complete handoff snapshot and remove the active handoff in a later forward commit.
 
 ## Blockers / open questions
 
-- Formal rsudo-fs validation against the corrected promotion-failure fixture is pending.
+- None currently known; final consistency/completion gate remains.
