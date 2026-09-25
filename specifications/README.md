@@ -1,7 +1,7 @@
 # RumiAI current specification index
 
 Status: **Current**  
-Updated: 2026-09-17
+Updated: 2026-09-25
 
 This directory contains **current contracts only**. Historical specifications and superseded decisions are intentionally absent from the current tree and remain available through Git history.
 
