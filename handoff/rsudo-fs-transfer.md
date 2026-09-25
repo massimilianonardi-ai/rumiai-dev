@@ -9,9 +9,9 @@ Rework the rsudo filesystem transfer module so get/put support safe streamed tra
 
 ## Current repository revisions
 
-- rumiai-dev: ba1ff3058caafa00d87362c10f54bbb0bdb82be8
-- rumiai-os: e3abb0c38438d5c93459f29d088f59bacf652ad7
-- rumiai-tests: 61c032c88b69a287c5517a8d034b593f24b2563b
+- rumiai-dev: 53e978d35e850bcbe31ad758f219962e67d31855
+- rumiai-os: 948df6b668afee5b548de5ec39f571b435fc8cff
+- rumiai-tests: e91b0413ce76b2ca2b288afdd8f6537afd56f183
 
 ## Applicable canonical sources
 
@@ -30,12 +30,13 @@ Rework the rsudo filesystem transfer module so get/put support safe streamed tra
 
 ## Fixed task-local choices
 
-- put never performs an implicit destructive fallback when staged replacement lacks space; the user must explicitly delete the existing remote destination first.
+- get and put never perform an implicit destructive fallback when staged replacement lacks space; the user must explicitly delete the existing destination first (local destination for get, remote destination via rsudo fs delete for put).
 - transfers remain streamed directly between source and final filesystem; no intermediate scp/sftp staging area is introduced.
 - existing destinations are replaced through a sibling staging pathname in the same parent filesystem, with rollback if promotion fails.
 - file, directory and symbolic-link transfer semantics are protected explicitly; tar is used without dereference options and source operands are passed without trailing slash.
 - caller TAR_OPTIONS is unset for transfer producer/consumer execution so environment configuration cannot silently enable dereferencing.
 - awk remains in the implementation where it improves robustness for parsing/comparing multi-terabyte filesystem-space values instead of relying on the minimum integer width of POSIX shell arithmetic.
+- User correction: the earlier asymmetry was caused by get/put confusion in a prompt. get must use the same destination-space preflight policy as put.
 
 ## Completed
 
@@ -60,17 +61,22 @@ Rework the rsudo filesystem transfer module so get/put support safe streamed tra
 - Focused formal validation of rsudo-fs passed on Darwin/arm64 (target macos-arm64) with validation 20260925T230402+0200-89087 and session 20260925T230404+0200-90877: aggregate status 0, fs.test PASS, audit CLEAN.
 - The same focused validation passed on Linux/aarch64 (target linux-arm64) with validation 20260925T230437+0200-579965 and session 20260925T230438+0200-581684: aggregate status 0, fs.test PASS, audit CLEAN.
 - Both successful validations exercised rumiai-tests 61c032c88b69a287c5517a8d034b593f24b2563b against rumiai-os e3abb0c38438d5c93459f29d088f59bacf652ad7.
+- After those validations, the get/put space-policy asymmetry was corrected by explicit user instruction. RSUDO.md now requires get to estimate remote source size, local destination free space and reclaimable size of an existing local destination, with the same ok/delete/full policy as put.
+- rumiai-os get now performs that preflight before creating destination directories or staging, logs insufficient-space / explicit-delete-required consistently, and never deletes the local destination implicitly.
+- res/sys/manual/rsudo-mod-fs.lib.sh documents the get preflight and local explicit-delete behavior.
+- fs.test now applies the df fixture to both local and remote preflight and covers get's explicit-delete-required case, preservation of the old local destination, successful retry after explicit local deletion, and insufficient-space failure when no old local destination exists.
+- The fs.test executable bit remains 100755 after the test update.
 
 ## Current state
 
 Implementation, canonical rsudo contract, operational library manual and permanent test coverage are aligned.
 
-Implementation, canonical rsudo contract, operational library manual and permanent test coverage are aligned. The corrected focused rsudo-fs scope is formally VALIDATED on both Darwin/arm64 and Linux/aarch64 for rumiai-tests 61c032c88b69a287c5517a8d034b593f24b2563b against rumiai-os e3abb0c38438d5c93459f29d088f59bacf652ad7.
+Implementation, canonical rsudo contract, operational library manual and permanent test coverage are aligned for the corrected symmetric get/put space policy. The previous Darwin/arm64 and Linux/aarch64 PASS evidence applies to the earlier revisions and does not validate the newly added get-space behavior.
 
 ## Next action
 
-Perform the final consistency/completion gate for the rsudo-fs work unit. If no new mismatch is found, synchronize a final Complete handoff snapshot and remove the active handoff in a later forward commit.
+Run ./rumiai-validate rsudo-fs on the required stable hosts against the current rumiai-tests and rumiai-os revisions. Inspect the new get-space assertions and only then perform the final consistency/completion gate.
 
 ## Blockers / open questions
 
-- None currently known; final consistency/completion gate remains.
+- Formal rsudo-fs validation of the corrected get-space behavior is pending.
