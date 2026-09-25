@@ -9,8 +9,8 @@ Rework the rsudo filesystem transfer module so get/put support safe streamed tra
 
 ## Current repository revisions
 
-- rumiai-dev: 71efd72c7a450743c1c499cca006cdf92d783223
-- rumiai-os: eaf015fe516713c73eccceb9339a5b624fe63c76
+- rumiai-dev: 761037fb0affe8fb1bc950e36f848b568e539e04
+- rumiai-os: e3abb0c38438d5c93459f29d088f59bacf652ad7
 - rumiai-tests: 61c032c88b69a287c5517a8d034b593f24b2563b
 
 ## Applicable canonical sources
@@ -55,7 +55,8 @@ Rework the rsudo filesystem transfer module so get/put support safe streamed tra
 - First macOS focused validation against rumiai-tests d96b3d5bbf69d25fe39d147b2d3f88195dae8bc6 and rumiai-os eaf015fe516713c73eccceb9339a5b624fe63c76 produced TEST ERROR before test execution; the published session recorded observed termination 126.
 - Root cause was test file mode 100644: the runner executes .test programs directly through their shebang, so fs.test was not executable. Changed only tests/rumiai-os/rsudo/fs.test mode to 100755 in rumiai-tests de7a0ddfc59cffd9a14c199f7452fc00186f5692; blob/content is unchanged.
 - Post-executable focused validation ran on macOS/arm64 and Linux/aarch64 and failed functionally at the same assertion: `put succeeded despite forced promotion failure`.
-- Inspection showed the failure-injection `mv` fixture only matched two-argument `mv source destination`, while the product correctly invokes `mv -- source destination`; the fixture therefore never injected the promotion failure. Updated the fixture to recognize both argv forms while delegating the original argv unchanged. No product/runtime change was required for this defect.
+- Inspection showed the failure-injection `mv` fixture only matched two-argument `mv source destination`, while the product invokes `mv -- source destination`; the fixture therefore never injected the promotion failure. Updated the fixture to recognize both argv forms while delegating the original argv unchanged. Auxiliary shell execution confirmed the corrected fixture returns the injected status for stage -> canonical promotion and does not inject failure for .orig -> canonical rollback. No product/runtime change was required for this defect.
+- rumiai-os advanced concurrently from eaf015fe516713c73eccceb9339a5b624fe63c76 to e3abb0c38438d5c93459f29d088f59bacf652ad7. The intervening commits modify only rsudo-mod-db-pg.lib.sh; rsudo-mod-fs.lib.sh is unchanged. The next formal validation must nevertheless record and exercise the new current product revision.
 
 ## Current state
 
