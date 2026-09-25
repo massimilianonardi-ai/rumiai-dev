@@ -1,6 +1,6 @@
 # rsudo fs transfer
 
-Status: Active
+Status: Complete
 Updated: 2026-09-25
 
 ## Goal
@@ -9,8 +9,8 @@ Rework the rsudo filesystem transfer module so get/put support safe streamed tra
 
 ## Current repository revisions
 
-- rumiai-dev: 53e978d35e850bcbe31ad758f219962e67d31855
-- rumiai-os: 948df6b668afee5b548de5ec39f571b435fc8cff
+- rumiai-dev: ecb0985fa5afd32f748c3e8d775903da8f198be5
+- rumiai-os: 4781025f6639454cdc16905a894aa366ec0ce630
 - rumiai-tests: e91b0413ce76b2ca2b288afdd8f6537afd56f183
 
 ## Applicable canonical sources
@@ -66,17 +66,20 @@ Rework the rsudo filesystem transfer module so get/put support safe streamed tra
 - res/sys/manual/rsudo-mod-fs.lib.sh documents the get preflight and local explicit-delete behavior.
 - fs.test now applies the df fixture to both local and remote preflight and covers get's explicit-delete-required case, preservation of the old local destination, successful retry after explicit local deletion, and insufficient-space failure when no old local destination exists.
 - The fs.test executable bit remains 100755 after the test update.
+- Final focused validation of the corrected get-space behavior passed on Darwin/arm64 with validation 20260925T235108+0200-94547 and session 20260925T235110+0200-96281: aggregate status 0, fs.test PASS, audit CLEAN.
+- The same final focused validation passed on Linux/aarch64 with validation 20260925T235152+0200-587073 and session 20260925T235153+0200-588782: aggregate status 0, fs.test PASS, audit CLEAN.
+- Both final validations exercised rumiai-tests e91b0413ce76b2ca2b288afdd8f6537afd56f183 against rumiai-os 4781025f6639454cdc16905a894aa366ec0ce630.
+- The only rumiai-os change between the rsudo-fs implementation commit 948df6b668afee5b548de5ec39f571b435fc8cff and validated HEAD 4781025f6639454cdc16905a894aa366ec0ce630 modifies rsudo-mod-db-pg.lib.sh; rsudo-mod-fs.lib.sh and its manual are unchanged.
+- Final consistency review found canonical RSUDO contract, runtime implementation, operational manual, validation scope and permanent fs.test coverage aligned. No current deferred-work item is required for this work unit.
 
 ## Current state
 
-Implementation, canonical rsudo contract, operational library manual and permanent test coverage are aligned.
-
-Implementation, canonical rsudo contract, operational library manual and permanent test coverage are aligned for the corrected symmetric get/put space policy. The previous Darwin/arm64 and Linux/aarch64 PASS evidence applies to the earlier revisions and does not validate the newly added get-space behavior.
+Implementation, canonical rsudo contract, operational library manual, focused validation scope and permanent test coverage are aligned for the symmetric get/put space policy. The final corrected revisions are formally VALIDATED on Darwin/arm64 and Linux/aarch64.
 
 ## Next action
 
-Run ./rumiai-validate rsudo-fs on the required stable hosts against the current rumiai-tests and rumiai-os revisions. Inspect the new get-space assertions and only then perform the final consistency/completion gate.
+Task complete. Remove this completed handoff from the current tree in a later forward commit; Git history retains this final snapshot.
 
 ## Blockers / open questions
 
-- Formal rsudo-fs validation of the corrected get-space behavior is pending.
+- None.
