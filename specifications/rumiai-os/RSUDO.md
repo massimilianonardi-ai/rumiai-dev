@@ -76,6 +76,40 @@ The normal command-preservation mode must preserve the caller-visible command/ar
 
 `--no-preserve-quotes` selects the documented alternate command-passing behavior.
 
+## Credential loading
+
+`--load file:group` separates the operand at its final `:`.
+
+The `file` and `group` components are independent and each may be empty.
+
+The observable cases are:
+
+```text
+file:group
+    load/evaluate file, then select group credentials
+
+file:
+    load/evaluate file, do not select or replace credentials from a group
+
+:group
+    do not load a file, select group credentials already present in memory
+
+:
+    do not load a file and do not select a group; preserve existing connection state
+```
+
+A non-empty group selects credentials from:
+
+```text
+RSUDO_CREDENTIALS_GROUP_<group>_HOST
+RSUDO_CREDENTIALS_GROUP_<group>_USER
+RSUDO_CREDENTIALS_GROUP_<group>_PASS
+```
+
+A non-empty file may populate one or more such groups and other authenticated shell state. Loading the file alone does not imply selecting one of those groups.
+
+The operand must contain the separator `:`; omitting the separator is invalid.
+
 ## Password acquisition
 
 When `--askpass` is selected and stdin is not a TTY, rsudo consumes the password record designated by that mode before forwarding the operation's remaining input.
@@ -128,4 +162,5 @@ RSUDO-09  required password acquisition failure prevents remote execution
 RSUDO-10  per-invocation resources are cleaned up on completion/termination
 RSUDO-11  password data is not exposed as ordinary target input/output
 RSUDO-12  internal SSH/sudo mechanics are not part of the observable contract
+RSUDO-13  --load file:group treats file and group as independently optional components
 ```
