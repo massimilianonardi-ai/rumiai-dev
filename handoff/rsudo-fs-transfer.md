@@ -9,9 +9,9 @@ Rework the rsudo filesystem transfer module so get/put support safe streamed tra
 
 ## Current repository revisions
 
-- rumiai-dev: 097e05f162acc3e7f7b3ef886d51c82e15a0dfe9
+- rumiai-dev: e31b993ba955430f91e04e4bbcd15a2e5a4e89dd
 - rumiai-os: eaf015fe516713c73eccceb9339a5b624fe63c76
-- rumiai-tests: d96b3d5bbf69d25fe39d147b2d3f88195dae8bc6
+- rumiai-tests: de7a0ddfc59cffd9a14c199f7452fc00186f5692
 
 ## Applicable canonical sources
 
@@ -52,12 +52,14 @@ Rework the rsudo filesystem transfer module so get/put support safe streamed tra
 - Auxiliary local smoke execution of the consolidated functions passed for put/get of regular files, directories, symlink-to-file, symlink-to-directory and dangling symlink, including successful replacement paths.
 - Confirmed that tests/rumiai-os/rsudo/fs.test exists on the current rumiai-tests revision.
 - Added validation/rsudo-fs.conf as a focused task scope selecting only rumiai-os/rsudo/fs.test, so this work unit can be formally validated without running the complete product suite.
+- First macOS focused validation against rumiai-tests d96b3d5bbf69d25fe39d147b2d3f88195dae8bc6 and rumiai-os eaf015fe516713c73eccceb9339a5b624fe63c76 produced TEST ERROR before test execution; the published session recorded observed termination 126.
+- Root cause was test file mode 100644: the runner executes .test programs directly through their shebang, so fs.test was not executable. Changed only tests/rumiai-os/rsudo/fs.test mode to 100755 in rumiai-tests de7a0ddfc59cffd9a14c199f7452fc00186f5692; blob/content is unchanged.
 
 ## Current state
 
 Implementation, canonical rsudo contract, operational library manual and permanent test coverage are aligned.
 
-Formal stable-host validation of the focused rsudo-fs scope has not yet been executed. The normal rumiai-validate path self-updates rumiai-tests before discovering validation scopes and tests.
+The first focused stable-host invocation reached the test but ended as TEST ERROR because fs.test lacked its executable bit. That test-infrastructure defect is fixed in rumiai-tests de7a0ddfc59cffd9a14c199f7452fc00186f5692. No post-fix formal validation result exists yet.
 
 ## Next action
 
@@ -65,8 +67,8 @@ From the rumiai-tests repository on a stable host, run:
 
 ./rumiai-validate rsudo-fs
 
-This self-updates rumiai-tests, resolves the current committed rumiai-os revision and executes the focused rsudo fs task test. Inspect the resulting evidence, then perform the completion gate and remove this handoff after successful closure.
+This self-updates rumiai-tests to the executable fs.test revision, resolves the current committed rumiai-os revision and executes the focused rsudo fs task test. Inspect the resulting evidence, then perform the completion gate and remove this handoff after successful closure.
 
 ## Blockers / open questions
 
-- Formal stable-host rsudo-fs task validation is pending.
+- Post-fix formal stable-host rsudo-fs task validation is pending.
