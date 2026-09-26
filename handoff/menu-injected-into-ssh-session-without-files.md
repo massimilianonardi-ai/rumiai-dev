@@ -9,7 +9,7 @@ Define and validate a source-streaming mechanism that can inject the existing `m
 
 ## Current repository revisions
 
-- rumiai-dev: b9515af1086aae2eb3d562eea7f8e5238b3ae97a
+- rumiai-dev: 5ceb807339faeefcc9b3767ccf88039bdb0b2914
 - rumiai-os: 7e78fc9842d1fd6acd6f83584c3b0a931f8027e7
 - rumiai-tests: 4bad71ec5b75adfb5e6ee1c98d5256e356bef605
 
