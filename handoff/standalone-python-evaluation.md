@@ -15,15 +15,17 @@ The task should establish what each candidate actually guarantees, where host/pl
 ## Current repository revisions
 
 ```text
-rumiai-dev       cd6d0d67af214b1714df2d4cb9139cc0f872f828
-rumiai-os        b1ec3502b911c414945300df6165385ec0d196ef
-rumiai-dev-PoCs  b89d8866413298b29f233a7b23554b764732a7e8
+rumiai-dev       758db914093f6db53f3fcc905c6330ce80e3623e
+rumiai-os        b6f33c542155d58b770e5afabd460d116936318d
+rumiai-dev-PoCs  aeb15a20f711cdf28a240dedd4d38aa8d54220b8
 pkg-catalog      565adc534399e5d4759c8eae24fca197aa912ab9
-rumiai-tests      17f4c7fc18e079cde37c3dba70a2d5df578ba713
+rumiai-tests      17a0afde1fb1fcafb3dbc5f737ea74575d1bcc7c
 
 upstream evidence inspected:
 scc-tw/standalone-python             3528f5677e7b6b70bd52c191dc1468a347025b68
 astral-sh/python-build-standalone    8750017c954b01979121ea4717f99985912eeb70
+mamba-org/micromamba-releases        346bb1cf50c51a92d58dd4c3063e7c70b78a8246
+conda-forge/python-feedstock          bec19c59feecacae3cf6f4471446f22ab7241903
 ```
 
 These revisions are task state only; every resumed work unit must re-run the normal remote-HEAD preflight.
@@ -107,6 +109,20 @@ Hands-on evidence from PoC 038 (`rumiai-dev-PoCs/pocs/038-python-environment-lat
 - The PoC used `PYTHONPATH="$pkg_launch_root/python/site-packages"` only as an experimental root-relative visibility probe. Neither `PYTHONPATH` nor the internal `pkg_launch_root` variable is adopted as the final package-environment contract.
 - The successful PoC narrows the package-installation problem substantially: a dedicated final wheel-materialization boundary can preserve RumiAI late binding without replacing dependency resolution/download/build-to-wheel. It does not yet choose the standalone CPython distribution or final installer implementation.
 
+Hands-on evidence from PoC 039 (`rumiai-dev-PoCs/pocs/039-python-build-standalone-provider`):
+
+- Hosted Linux run `36269289831` passed at PoC revision `e311db990ebae3d8674b90cdc53c4f082c16463d` using the pinned `python-build-standalone` CPython 3.13.15 install-only artifact and exact `rumiai-os` revision `7d71de0de59120fb85236f087f0298c6dc637d71`.
+- The standalone runtime started before and after direct movement; `sys.prefix` and the tested `sysconfig` include path followed the live runtime location, and a CPython native extension built successfully only after the runtime had already moved.
+- The moved standalone runtime then acted as the real selected Python facility provider for the PoC 038 pure/native consumer model. The complete disposable RumiAI root, including provider and consumers, moved again without rewriting consumer scripts; the tested managed old-prefix scan was clean.
+- A macOS extension at PoC revision `7c85c96c6a41f1af05c9bd7edb3b37b1a8de7709` reached the same direct-runtime checkpoint successfully on Apple Silicon: CPython 3.13.15 started after movement and reported the moved `sys.prefix`, `sysconfig`, SSL, sqlite and ctypes state correctly. Run `36269415163` then failed because the harness compared the shell-visible `/var/...` temporary path with macOS's physical `/private/var/...` pathname.
+- That failure is a harness-path canonicalization bug, not negative runtime evidence. PoC commit `00da3691eab956902a4b8a7303f62d7e3d0a1b93` now canonicalizes runtime/RumiAI roots before pathname comparisons and old-prefix scanning. Hosted rerun `36270231418` is queued; no macOS PASS is recorded until that run completes.
+
+Hands-on comparison PoC 040 (`rumiai-dev-PoCs/pocs/040-micromamba-python-prefix-relocation`):
+
+- PoC commit `aeb15a20f711cdf28a240dedd4d38aa8d54220b8` adds a pinned micromamba 2.9.0-0 experiment for Linux and macOS.
+- It creates a real conda-forge Python 3.13 + pip prefix, records interpreter/runtime behavior, counts Conda `info/paths.json` prefix-placeholder metadata, captures the generated pip shebang, moves the complete prefix without relinking, and separately tests moved CPython, `python -m pip`, direct `pip`, micromamba prefix recognition and residual original-prefix references.
+- Hosted run `36270462725` is queued. No behavioral conclusion from PoC 040 is fixed until the run completes.
+
 Candidate-specific evidence:
 
 ### scc-tw/standalone-python
@@ -146,6 +162,9 @@ These are evaluation findings and candidate design state, not adopted RumiAI sub
 - Verified experimentally that pip/venv absolute shebang generation breaks after movement, while `#!/usr/bin/env python` plus current `pkg` late binding follows facility defaults and per-consumer bindings without rewriting the installed consumer.
 - Verified the ordinary CPython ABI boundary with a 3.12 native extension rebound to a 3.13 provider and discovered the independent `.pyc` absolute-source-path/package-root-mutation surface.
 - Verified one provisional bytecode mitigation (`PYTHONDONTWRITEBYTECODE=1`) and clean whole-root relocation/old-prefix scan; this mitigation remains experimental rather than contractual.
+- Created and passed the Linux form of PoC 039 with an actual `python-build-standalone` CPython provider, including runtime movement before native-extension build and a second movement after provider/consumer integration.
+- Extended PoC 039 to macOS, identified the first hosted macOS failure as a harness physical-path canonicalization defect after the runtime itself had already relocated successfully, and committed the canonicalized-path correction for hosted revalidation.
+- Created PoC 040 to measure a real micromamba/conda-forge Python prefix against the stronger RumiAI relocation goal instead of relying only on Conda documentation.
 
 ## Current state
 
@@ -155,22 +174,24 @@ This does **not** mean that arbitrary Python-provider rebinding is safe. The nat
 
 The experiment also strengthens the case against replacing all of pip. The remaining package-installation problem appears narrow enough to center on controlled final wheel materialization plus validation, while an existing frontend can continue to resolve/download/build wheels. The exact materializer implementation remains open.
 
-The largest unresolved half is now the Python runtime itself. Neither standalone-Python upstream has been adopted. The next evidence should compose the successful package-environment model with a genuinely relocatable standalone CPython artifact and test its runtime/sysconfig/native-build behavior before any product/catalog integration.
+The Python runtime side now has strong Linux evidence for the pinned `python-build-standalone` artifact: direct movement, live-prefix `sysconfig`, native-extension build after movement, RumiAI-provider integration and whole-root movement all passed in PoC 039. macOS direct-runtime relocation also reached the same checkpoint, but the full macOS composition still awaits the rerun after fixing the harness's `/var` versus `/private/var` comparison.
+
+The micromamba/Conda model is now being tested hands-on rather than treated only as a reference description. PoC 040 will tell us empirically which parts of a real conda-forge Python prefix remain movable and exactly where original-prefix binding survives. Neither upstream model is adopted yet.
 
 ## Next action
 
-Extend the hands-on evaluation rather than changing product repositories:
+Continue the hands-on evaluation without product/catalog changes:
 
-1. create a PoC using the current `python-build-standalone` artifact as an actual relocatable Python provider, first on Linux and then on macOS where materially different loader/path behavior exists;
-2. move the standalone runtime itself before and after consumer materialization and validate interpreter startup, stdlib, SSL/TLS, ctypes/dynamic libraries, package imports and generated `#!/usr/bin/env python` commands;
-3. layer the PoC 038 consumer environment/materializer over that provider so the interpreter and consumer tree are both genuinely relocated rather than delegating to host CPython;
-4. test source-distribution -> wheel building after runtime relocation, including `sysconfig` and a native extension, and scan build/install outputs for behaviorally significant old-prefix references;
-5. compare environment-visibility mechanisms without promoting one prematurely: the current experimental `PYTHONPATH` probe, a generic declarative root-relative package environment projection, and Python-native alternatives if they preserve provider independence;
-6. compare bytecode-cache policies: disabled writes versus cache-as-derived-state outside the immutable package root, including behavior after whole-root movement;
-7. determine the minimum Python compatibility dimensions required by `pkg` from real wheel/native evidence (language/runtime version, implementation and ABI/wheel-tag constraints) before defining any facility compatibility level;
-8. after those results, decide whether final wheel materialization should configure/extend an existing installer, use a narrow pip/installer patch, or become an owned `m` package responsibility.
+1. collect hosted rerun `36270231418`; if macOS passes after physical-path canonicalization, record the cross-host PoC 039 evidence and any remaining loader/sysconfig differences rather than assuming Linux equivalence;
+2. collect PoC 040 run `36270462725` and classify separately: moved CPython behavior, generated command/shebang behavior, Conda prefix-placeholder metadata and old-prefix residue;
+3. use those results to decide which Conda ideas are worth borrowing as validation/materialization techniques without adopting destination-prefix rewriting as the runtime model;
+4. test source-distribution -> wheel building after runtime relocation beyond the current hand-built native fixture, including an ordinary packaging frontend/backend path;
+5. compare environment-visibility mechanisms without promoting one prematurely: current experimental `PYTHONPATH`, a generic declarative root-relative package projection, and Python-native alternatives that preserve provider independence;
+6. compare bytecode-cache policies: disabled writes versus cache-as-derived-state outside the immutable package root;
+7. derive the minimum Python compatibility dimensions required by `pkg` from real pure-Python, `abi3` and ordinary CPython-ABI wheel evidence;
+8. only after those boundaries are established, decide whether final wheel materialization should configure/extend an existing installer, use a narrow pip/installer patch, or become an owned `m` package responsibility.
 
-The scc-tw candidate remains useful as a contrasting Linux/musl design, but the broader `python-build-standalone` candidate is the next practical artifact to exercise because it directly covers both Linux and macOS paths relevant to the current evaluation.
+The scc-tw candidate remains a useful contrasting Linux/musl design. The current practical lead remains `python-build-standalone`, subject to completion of macOS composition evidence and the unresolved package-environment/materializer contracts.
 
 ## Blockers / open questions
 
