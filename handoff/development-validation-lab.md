@@ -9,7 +9,7 @@ Design a developer-facing live experimentation and validation environment mechan
 
 ## Current repository revisions
 
-- rumiai-dev: 4bfd43721c2abaac7f2b094d2b3019825e488003
+- rumiai-dev: 4bfd43721c2abaac7f2b094d2b3019825e488003 (pre-handoff checkpoint HEAD)
 - rumiai-os: 4f429c811f9c19889d0d8f6fa42b0423356beecd
 - rumiai-tests: e30ef19cabe1d2c1511fe49db23c8d7b89feff11
 - historical/reference m: 2a57a29880c2d7a32e18782122062c695fcb1a3a (master)
