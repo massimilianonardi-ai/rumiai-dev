@@ -1,7 +1,7 @@
 # RumiAI OS — rsudo remote privilege execution
 
 Status: **Current / normative**  
-Updated: 2026-09-25
+Updated: 2026-09-26
 
 This specification defines the observable contract of the `rsudo` subsystem implemented by `lib/sys/sh/rsudo/rsudo.lib.sh`.
 
@@ -68,13 +68,36 @@ Authentication data must not be exposed as ordinary terminal output.
 
 When `--user sudo_as_user` is supplied, the remote target must execute as the requested sudo target user, subject to the remote sudo policy.
 
+## Invocation-local mode state
+
+`rsudo` distinguishes reusable connection/credential state from modes that belong only to one invocation.
+
+Connection state may remain in the current shell and be reused by a submodule and by recursive `rsudo` calls. This includes the current `RSUDO_HOST`, `RSUDO_USER`, `RSUDO_PASSWORD` values and credential groups loaded into shell memory.
+
+At the start of every `rsudo` invocation, these invocation modes are inactive regardless of values left by an outer call or supplied as ambient shell variables:
+
+```text
+sudo target user
+interactive mode
+askpass mode
+no-preserve-quotes mode
+```
+
+Only options parsed from the current invocation may enable those modes.
+
+Therefore, when a submodule calls `rsudo` recursively, the nested call reuses connection/credential state but does not implicitly inherit `--user`, `--interactive`, `--askpass` or `--no-preserve-quotes` from the outer call.
+
+The lower-level public `rsudo_core` function has a separate caller-state boundary: direct callers may provide `RSUDO_AS_USER`, `RSUDO_INTERACTIVE` and `RSUDO_NO_PRESERVE_QUOTES` as documented operational caller state. `RSUDO_ASKPASS` is not an `rsudo_core` input; password acquisition is performed by `rsudo` before delegation.
+
 ## Argument and command handling
 
 A literal `--` ends rsudo option/submodule interpretation and sends the remaining operands to normal remote execution.
 
 The normal command-preservation mode must preserve the caller-visible command/argument meaning across the remote execution boundary.
 
-`--no-preserve-quotes` selects the documented alternate command-passing behavior.
+`--no-preserve-quotes` selects the documented alternate command-passing behavior for the current invocation.
+
+The current `rsudo` option surface uses the documented long option spellings. The former short aliases `-n`, `-i` and `-A` are not `rsudo` options.
 
 ## Filesystem submodule
 
@@ -201,4 +224,6 @@ RSUDO-16  fs get/put never perform an implicit destructive fallback when staged 
 RSUDO-17  fs get/put report when explicit deletion would make the estimated transfer fit, and fail until that deletion is explicitly requested
 RSUDO-18  fs put promotes an existing-destination replacement only after transfer and requested metadata application succeed
 RSUDO-19  fs get/put attempt rollback when staged replacement promotion fails after moving the previous destination aside
+RSUDO-20  each rsudo invocation resets invocation-local target-user, interactive, askpass and no-preserve-quotes mode state before parsing its own options
+RSUDO-21  recursive rsudo calls may reuse connection/credential state but do not inherit invocation modes from the outer call
 ```

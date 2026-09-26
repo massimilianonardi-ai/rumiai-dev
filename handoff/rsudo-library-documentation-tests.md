@@ -5,13 +5,13 @@ Updated: 2026-09-26
 
 ## Goal
 
-Align the operational documentation and permanent tests for `lib/sys/sh/rsudo/rsudo.lib.sh` without modifying the runtime implementation in this work unit.
+Align the current rsudo contract, command/library operational documentation and permanent tests with the user-authored runtime implementation, without modifying rsudo runtime logic in this work unit.
 
 ## Current repository revisions
 
-- rumiai-dev: b2e380c2a242777f17f7a57cafb8b83f3e6bc060
-- rumiai-os: 3d1f687cc12bac0467d37def42169bd5dbfb9912
-- rumiai-tests: e91b0413ce76b2ca2b288afdd8f6537afd56f183
+- rumiai-dev: afa16ac4c2e130c8ee0494fdc10ad20b307b5050 (pre-checkpoint HEAD)
+- rumiai-os: 4f429c811f9c19889d0d8f6fa42b0423356beecd
+- rumiai-tests: e5515f55aad6d3de193e5472e630f7b56bed5031
 
 ## Applicable canonical sources
 
@@ -33,13 +33,9 @@ Align the operational documentation and permanent tests for `lib/sys/sh/rsudo/rs
 - Permanent product tests verify observable rsudo behavior for defined inputs and remote-system characteristics. They do not require a specific SSH/sudo sequence, IPC mechanism, process topology, temporary-resource layout or internal call order.
 - Scenario-specific SSH/sudo fixtures are external-boundary infrastructure only. Unsupported fixture interactions are test ERROR, not product FAIL.
 - `--load file:group` has two independently optional components. `file:group`, `file:`, `:group`, and `:` are all valid forms with distinct observable semantics.
-
-## Working design
-
-- The user advanced `rumiai-os` to `3d1f687cc12bac0467d37def42169bd5dbfb9912`. The current implementation adds short aliases `-n`, `-i`, and `-A`, and resets `RSUDO_NO_PRESERVE_QUOTES` at entry to every `rsudo()` invocation.
-- The short aliases are not yet accepted as durable contract. The parser remains positionally clear once the first non-option operand or literal `--` is reached, but the spellings are semantically easy to confuse with existing `ssh`/`sudo` short-option meanings. If short options are retained, unknown leading `-x` behavior and short-option grouping should be made explicit rather than left accidental.
-- Resetting `RSUDO_NO_PRESERVE_QUOTES` is coherent if quote-preservation mode is intentionally invocation-local: an outer rsudo/submodule call then cannot silently alter the command interpretation of a nested `rsudo` call. This also means the previously documented ambient `RSUDO_NO_PRESERVE_QUOTES=true` input is no longer part of `rsudo` behavior and must be realigned if this design is accepted.
-- The broader recursive-state model still needs an explicit classification. `RSUDO_HOST`, `RSUDO_USER`, and `RSUDO_PASSWORD` are connection state that recursive submodule calls are designed to reuse. By contrast, `RSUDO_ASKPASS` and `RSUDO_INTERACTIVE` are invocation modes that currently remain set across recursive calls; in particular, inherited `RSUDO_ASKPASS=true` can cause a nested non-TTY `rsudo` call to consume another stdin record. `RSUDO_AS_USER` also needs an explicit inherited-vs-invocation-local decision.
+- `RSUDO_HOST`, `RSUDO_USER`, `RSUDO_PASSWORD` and loaded credential groups are reusable connection/credential state.
+- Target-user, interactive, askpass and no-preserve-quotes modes are invocation-local. Every `rsudo` call resets them before parsing its own options, so recursive calls do not inherit those modes.
+- The current public rsudo option surface uses the documented long spellings; `-n`, `-i` and `-A` are not rsudo aliases.
 
 ## Completed
 
@@ -61,24 +57,26 @@ Align the operational documentation and permanent tests for `lib/sys/sh/rsudo/rs
 - Permanent rsudo tests were intentionally left unchanged because they assert observable behavior and contain no dependency on the removed internal library path.
 - Consistency scan confirms permanent test assertions no longer require `sudo -n`, `sudo -v`, SSH_ASKPASS, IPC identities, FIFO layout, number of SSH sessions or internal call order.
 - Diff review confirmed the correction touched only the rsudo specification/manual/tests, task-state correction and specification-index metadata.
+- The user advanced runtime behavior in `rumiai-os@571e0df39a103349eae78ba2d4d8161660f084e4`: rsudo now resets `RSUDO_NO_PRESERVE_QUOTES`, `RSUDO_INTERACTIVE`, `RSUDO_ASKPASS` and `RSUDO_AS_USER` on every invocation and removes the temporary short aliases.
+- `specifications/rumiai-os/RSUDO.md` now promotes the reusable-connection-state versus invocation-local-mode distinction and the resulting recursive-call rule.
+- `rumiai-os@4f429c811f9c19889d0d8f6fa42b0423356beecd` realigns `res/sys/manual/rsudo.lib.sh`, adds the previously missing command topics `res/sys/manual/rsudo` and `res/sys/manual/rsudo-askpass`, and removes the stale `rsudo-env.lib.sh` cross-reference.
+- `rumiai-tests@e5515f55aad6d3de193e5472e630f7b56bed5031` adds invocation-state regression coverage: ambient askpass/target-user/quote state is ignored, a real recursive `fs delete` call reuses credentials without inheriting outer modes, and ambient `RSUDO_INTERACTIVE=true` does not force a new invocation into interactive mode.
+- Added `validation/rsudo.conf` selecting the complete `rumiai-os/rsudo` permanent-test group for focused formal validation.
 
 ## Current state
 
-Documentation and tests now follow the observable-contract rules in `TESTING.md` sections 5-6 and `TEST-PATTERNS.md`.
+The runtime, canonical rsudo contract, operational manuals and permanent test suite are now aligned on the invocation-state model.
 
-The latest corrected suite revision is `11c97f6c08712b0c82e06efbdd3972e217dc1cd4`.
+The current product revision is `4f429c811f9c19889d0d8f6fa42b0423356beecd`; its parent `571e0df39a103349eae78ba2d4d8161660f084e4` contains the user-authored runtime change and `4f429c8` adds only the required operational documentation.
 
-The current product revision is `3d1f687cc12bac0467d37def42169bd5dbfb9912`. It adds the short aliases and invocation-entry reset described in Working design.
+The current suite revision is `e5515f55aad6d3de193e5472e630f7b56bed5031`.
 
-The current specification/manual still describe only the long option spellings and still document `RSUDO_NO_PRESERVE_QUOTES` as ambient caller state. Permanent rsudo tests do not yet protect the new short aliases or recursive quote-mode reset. This is an active implementation/documentation/test mismatch pending the user's design decision.
-
-Full-product validation run `36144167133` applies only to the older suite/product pair recorded when that run started; it cannot validate the new product revision.
+The previous full-product validation run `36144167133` remains evidence only for its older recorded product/suite revisions and does not validate this state.
 
 ## Next action
 
-Resolve the invocation-state model and whether short aliases remain part of rsudo. Then realign the canonical rsudo specification, operational manual and proportional permanent tests to the accepted contract before validating the new product revision.
+Run focused formal validation through `validation/rsudo.conf` against the current product and suite revisions. If the focused result is clean, inspect whether a broader current-product validation is already required by the surrounding suite work before completing this handoff.
 
 ## Blockers / open questions
 
-- Keep or remove the new `-n`, `-i`, and `-A` aliases?
-- Which rsudo state is deliberately inherited by recursive calls versus reset per invocation, especially `RSUDO_ASKPASS`, `RSUDO_INTERACTIVE`, and `RSUDO_AS_USER`?
+- Formal validation of the new rsudo product/suite pair is pending.
