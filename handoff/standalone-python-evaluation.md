@@ -15,7 +15,7 @@ The task should establish what each candidate actually guarantees, where host/pl
 ## Current repository revisions
 
 ```text
-rumiai-dev       8e60879fd765dc9da837ace3085c9a713e3baabb
+rumiai-dev       802fb6e95230e8222b1948367ccadefb3edd187e
 rumiai-os        b1ec3502b911c414945300df6165385ec0d196ef
 rumiai-dev-PoCs  94e2d6a385236a081815b0a700b7c2b2be0c92bd
 pkg-catalog      565adc534399e5d4759c8eae24fca197aa912ab9
