@@ -15,9 +15,9 @@ The task should establish what each candidate actually guarantees, where host/pl
 ## Current repository revisions
 
 ```text
-rumiai-dev       802fb6e95230e8222b1948367ccadefb3edd187e
+rumiai-dev       cd6d0d67af214b1714df2d4cb9139cc0f872f828
 rumiai-os        b1ec3502b911c414945300df6165385ec0d196ef
-rumiai-dev-PoCs  94e2d6a385236a081815b0a700b7c2b2be0c92bd
+rumiai-dev-PoCs  b89d8866413298b29f233a7b23554b764732a7e8
 pkg-catalog      565adc534399e5d4759c8eae24fca197aa912ab9
 rumiai-tests      17f4c7fc18e079cde37c3dba70a2d5df578ba713
 
@@ -95,6 +95,18 @@ Reference-model evidence from Conda/micromamba:
 - Standard `venv` remains useful as a behavioral reference for separating `sys.prefix` / environment packages from `sys.base_prefix` / the base interpreter, but its absolute base-interpreter relationship and generated absolute script shebangs conflict with the current RumiAI relocatability/late-binding goal.
 - A new issue exposed by this comparison must be tested explicitly: changing the Python provider at runtime is safe only when the consumer's installed Python packages remain compatible with the selected interpreter/ABI. Pure-Python packages and native-extension packages have materially different compatibility constraints; provider late binding must not silently cross an incompatible Python ABI.
 
+Hands-on evidence from PoC 038 (`rumiai-dev-PoCs/pocs/038-python-environment-late-binding`):
+
+- Hosted run `36267854427` passed on Ubuntu 24.04 at PoC revision `b8a61e5215dbdc2ea54e459e4da128428bfeb78b`, testing exact `rumiai-os` revision `b1ec3502b911c414945300df6165385ec0d196ef` with real CPython 3.12 and 3.13 providers.
+- The ordinary `venv` + pip control installed both a `console_scripts` entry point and a wheel `.data/scripts` `#!python` script with the absolute venv interpreter pathname. Moving that venv caused the command to fail with status 127.
+- A minimal experimental wheel materializer emitted `#!/usr/bin/env python` for both command forms and kept the consumer's `site-packages` physically separate from the interpreter.
+- Through the real current RumiAI package launcher, an unbound pure-Python consumer followed facility default A, a consumer binding switched the same installed script to provider B without rewriting it, binding removal restored inheritance, and changing the facility default changed interpreter selection without rewriting the script.
+- A CPython extension built for 3.12 loaded under provider A but failed after the same consumer was bound to Python 3.13. The provider switch itself succeeded. This establishes that late binding and binary compatibility are separate concerns: the eventual Python facility/dependency contract must prevent ABI-incompatible selections rather than relying on import failure.
+- An intermediate run discovered that ordinary CPython imports wrote `__pycache__/*.pyc` into the consumer package root and that those bytecode files retained the original absolute source pathname. This violates the current immutable-package-root model and creates another relocation surface.
+- The final run projected `PYTHONDONTWRITEBYTECODE=1` from the synthetic Python provider as an experimental mitigation; no package-root `__pycache__` was created, the complete disposable RumiAI root moved successfully without consumer-script rewrite, and an old-prefix byte scan of the relocated consumer concretes was clean.
+- The PoC used `PYTHONPATH="$pkg_launch_root/python/site-packages"` only as an experimental root-relative visibility probe. Neither `PYTHONPATH` nor the internal `pkg_launch_root` variable is adopted as the final package-environment contract.
+- The successful PoC narrows the package-installation problem substantially: a dedicated final wheel-materialization boundary can preserve RumiAI late binding without replacing dependency resolution/download/build-to-wheel. It does not yet choose the standalone CPython distribution or final installer implementation.
+
 Candidate-specific evidence:
 
 ### scc-tw/standalone-python
@@ -130,29 +142,40 @@ These are evaluation findings and candidate design state, not adopted RumiAI sub
 - Verified the current `rumiai-os` implementation: `_pkg_launch_provider_apply` prepends the selected provider's `facility-cmd/<facility>` directory to `PATH`, and `_pkg_launch_dependencies_apply` resolves the effective provider at each launch before exec.
 - Verified permanent tests in `rumiai-tests`: `pkg-launch/contract.test` proves an unbound consumer follows the facility default, an explicit binding switches provider at runtime without reinstalling the consumer, removing the binding restores inheritance, and changing the facility default is observed by the same installed consumer. `pkg/dependency.test` separately proves late binding and provider-package-default changes.
 - Identified the main non-relocatability surfaces and narrowed the most promising intervention point to final package materialization rather than a wholesale pip replacement.
+- Created PoC 038 in `rumiai-dev-PoCs` and validated the environment/interpreter separation hypothesis with the real RumiAI package launcher on hosted Ubuntu.
+- Verified experimentally that pip/venv absolute shebang generation breaks after movement, while `#!/usr/bin/env python` plus current `pkg` late binding follows facility defaults and per-consumer bindings without rewriting the installed consumer.
+- Verified the ordinary CPython ABI boundary with a 3.12 native extension rebound to a 3.13 provider and discovered the independent `.pyc` absolute-source-path/package-root-mutation surface.
+- Verified one provisional bytecode mitigation (`PYTHONDONTWRITEBYTECODE=1`) and clean whole-root relocation/old-prefix scan; this mitigation remains experimental rather than contractual.
 
 ## Current state
 
-The source-level evaluation is sufficiently advanced to reject the simplistic model "pip is the entire relocatability problem", while confirming that pip-style entry-point generation is one major root cause of relocation breakage after additional packages are installed.
+The package-environment side of the hypothesis is now experimentally validated on one Linux host against the current RumiAI launcher. A Python consumer can keep its package environment separate from the interpreter, use `#!/usr/bin/env python`, and follow current `pkg` facility-default / consumer-binding selection without reinstalling or rewriting the command. Whole-root movement also works for the tested consumer once runtime bytecode writes are prevented from mutating the immutable package root.
 
-No upstream base-runtime candidate has been adopted yet. The package-command direction is now fixed task-locally: combine a relocatable base Python distribution with a controlled wheel materialization boundary that emits `#!/usr/bin/env python`, while concrete interpreter selection remains dynamically owned by the existing `pkg` facility binding/default and PATH projection model. This further reduces the reason to fork the complete pip dependency resolver/build frontend.
+This does **not** mean that arbitrary Python-provider rebinding is safe. The native-extension test proves that interpreter selection and consumer compatibility are independent: a provider can be selected correctly yet be ABI-incompatible with already-materialized native extensions. A future Python facility/consumer contract must make incompatible selections mechanically unsatisfiable.
+
+The experiment also strengthens the case against replacing all of pip. The remaining package-installation problem appears narrow enough to center on controlled final wheel materialization plus validation, while an existing frontend can continue to resolve/download/build wheels. The exact materializer implementation remains open.
+
+The largest unresolved half is now the Python runtime itself. Neither standalone-Python upstream has been adopted. The next evidence should compose the successful package-environment model with a genuinely relocatable standalone CPython artifact and test its runtime/sysconfig/native-build behavior before any product/catalog integration.
 
 ## Next action
 
-Create a focused PoC in `rumiai-dev-PoCs` that tests the materialization hypothesis independently of product integration:
+Extend the hands-on evaluation rather than changing product repositories:
 
-1. install representative pure-Python wheels with console entry points using a minimal wheel-installer path and emit `#!/usr/bin/env python`;
-2. run the generated commands under a controlled PATH and verify that changing the selected Python provider changes interpreter resolution without rewriting the scripts;
-3. exercise both facility-default selection and a consumer-specific Python binding, verifying that the consumer binding wins through the package launcher's provider command projection;
-4. move the entire Python/package tree and verify imports plus every generated command;
-5. add a native wheel and a source-built-to-wheel case to expose loader/sysconfig boundaries;
-6. scan the moved tree for behaviorally significant references to the original root and classify each source;
-7. compare the result with Conda's prefix-rewrite metadata model and determine whether a generic relocation scanner/manifest is useful as validation evidence without making destination-prefix rewriting part of the runtime contract;
-8. verify provider rebinding separately for a pure-Python package and a native-extension package, so Python language-version compatibility is not mistaken for binary-ABI compatibility.
+1. create a PoC using the current `python-build-standalone` artifact as an actual relocatable Python provider, first on Linux and then on macOS where materially different loader/path behavior exists;
+2. move the standalone runtime itself before and after consumer materialization and validate interpreter startup, stdlib, SSL/TLS, ctypes/dynamic libraries, package imports and generated `#!/usr/bin/env python` commands;
+3. layer the PoC 038 consumer environment/materializer over that provider so the interpreter and consumer tree are both genuinely relocated rather than delegating to host CPython;
+4. test source-distribution -> wheel building after runtime relocation, including `sysconfig` and a native extension, and scan build/install outputs for behaviorally significant old-prefix references;
+5. compare environment-visibility mechanisms without promoting one prematurely: the current experimental `PYTHONPATH` probe, a generic declarative root-relative package environment projection, and Python-native alternatives if they preserve provider independence;
+6. compare bytecode-cache policies: disabled writes versus cache-as-derived-state outside the immutable package root, including behavior after whole-root movement;
+7. determine the minimum Python compatibility dimensions required by `pkg` from real wheel/native evidence (language/runtime version, implementation and ABI/wheel-tag constraints) before defining any facility compatibility level;
+8. after those results, decide whether final wheel materialization should configure/extend an existing installer, use a narrow pip/installer patch, or become an owned `m` package responsibility.
 
-Only after this experiment should the task decide whether the required behavior can be obtained by configuring/extending an existing installer, a narrow patch around pip/installer, or a RumiAI-owned materialization responsibility.
+The scc-tw candidate remains useful as a contrasting Linux/musl design, but the broader `python-build-standalone` candidate is the next practical artifact to exercise because it directly covers both Linux and macOS paths relevant to the current evaluation.
 
 ## Blockers / open questions
 
-- The POSIX-side Python command launcher form is no longer open for the PoC: test `#!/usr/bin/env python` against the controlled `pkg` PATH/provider-selection semantics. Any failure should be treated as evidence about package/provider projection or installer behavior, not replaced pre-emptively with a self-relative launcher.
-- The acceptable policy for source distributions and editable installs remains open. A likely test boundary is "sdist may be built to a wheel in a controlled build phase; final runtime materialization consumes wheels", while editable installs may be incompatible with an immutable relocatable runtime by construction.
+- The POSIX-side managed Python command launcher direction is supported by PoC 038: use `#!/usr/bin/env python` with controlled `pkg` provider projection. Cross-host validation is still required before promotion.
+- The final mechanism that exposes a consumer-owned Python package tree to the selected provider is still open; PoC 038's `PYTHONPATH` use is evidence only.
+- Bytecode-cache ownership is open. Runtime `__pycache__` in the immutable package root is unacceptable under the current package model; disabling bytecode writes worked experimentally, but routing discardable cache to state may be preferable and needs evidence.
+- Python compatibility semantics are open. Pure-Python version compatibility, CPython implementation/minor compatibility, stable `abi3`, ordinary CPython ABI tags and platform/native dependencies must not be collapsed into one vague "Python version" requirement.
+- The acceptable policy for source distributions and editable installs remains open. The strongest current boundary is "sdist may be built to a wheel in a controlled build phase; final runtime materialization consumes wheels", while editable installs may be incompatible with an immutable relocatable runtime by construction.
