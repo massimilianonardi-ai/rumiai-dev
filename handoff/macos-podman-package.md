@@ -1,19 +1,19 @@
 # macOS Podman package
 
-Status: Active
+Status: Complete
 Updated: 2026-09-26
 
 ## Goal
 
 Implement a non-invasive RumiAI `pkg podman` for macOS arm64 using the exact official Podman installer payload without installing Podman into the host system.
 
-## Current repository revisions
+## Final repository revisions
 
-- rumiai-dev: ff1a9421adf625973cb5ada8ed5f959a234f3435
-- rumiai-os: 4f429c811f9c19889d0d8f6fa42b0423356beecd
-- pkg-catalog: da9b8989088c8b3f2d8201ad09e5f7180f334a16
-- rumiai-tests: e30ef19cabe1d2c1511fe49db23c8d7b89feff11
-- rumiai-dev-PoCs: 94e2d6a385236a081815b0a700b7c2b2be0c92bd
+- rumiai-os: `7e78fc9842d1fd6acd6f83584c3b0a931f8027e7`
+- pkg-catalog: `565adc534399e5d4759c8eae24fca197aa912ab9`
+- rumiai-tests: `4bad71ec5b75adfb5e6ee1c98d5256e356bef605`
+- rumiai-dev-PoCs: `94e2d6a385236a081815b0a700b7c2b2be0c92bd`
+- rumiai-dev before this final handoff snapshot: `5990e321bb6909b00da5d54675ca727f48dd0ac6`
 
 ## Applicable canonical sources
 
@@ -21,50 +21,100 @@ Implement a non-invasive RumiAI `pkg podman` for macOS arm64 using the exact off
 - RULES.md
 - CONSISTENCY-GATE.md
 - TESTING.md
-- RUNNER.md
-- TEST-PATTERNS.md
 - specifications/README.md
 - specifications/rumiai-os/PACKAGE-MODEL.md
-- specifications/rumiai-os/POSIX-PORTABILITY-LAYER.md
-- specifications/rumiai-os/FILESYSTEM-NAMING.md
-- specifications/rumiai-os/LIBRARY-INTERFACES.md
-- specifications/rumiai-os/DOCUMENTATION-MODEL.md
 - handoff/README.md
 
-## Fixed task-local choices
+## Final design
 
-- Scope is macOS arm64 only; do not add a Linux Podman package.
-- Use the official Podman macOS release artifact and preserve its shipped binaries unchanged.
-- Do not run the installer's preinstall/postinstall scripts and do not modify `/opt`, `/etc/paths.d`, system manpaths or install `podman-mac-helper` into the host.
-- Runtime helper discovery must point to the managed package root using a Podman-supported mechanism rather than patching the binaries.
-- The package should remain relocatable under the existing `pkg` model and use package-owned HOME/state.
-- Product/catalog changes are authorized by the user's current instruction to proceed with the macOS Podman package.
+- Scope is macOS arm64 only; no Linux Podman package was added.
+- The official Podman v6.1.2 `podman-installer-macos-arm64.pkg` is used unchanged.
+- Generic package materialization now supports `flat-pkg`: a macOS flat installer package is expanded and a selected component Payload is materialized without executing installer scripts or performing installer-owned host integration.
+- The Podman package selects component `podman.pkg` and payload root `podman`.
+- Podman helper discovery is redirected at runtime through `CONTAINERS_HELPER_BINARY_DIR` to the relocated managed package `bin/`; that directory is also prepended to the package process PATH.
+- No Podman binaries are patched.
+- Podman repository resolution uses a catalog-pinned provider-specific adapter, following the existing catalog-pinned adapter pattern: version, official release URL and SHA-256 are fixed in `pkg-catalog`, while the adapter validates them and resolves HTTP size. Installation therefore does not depend on the GitHub Releases API or credentials.
+- The temporary experiment to authenticate the generic GitHub adapter with `GITHUB_TOKEN` was fully reverted after proving unsuitable for third-party public repositories with repository-scoped Actions tokens.
 
-## Working design
+## Completed implementation
 
-The official v6.1.2 arm64 installer is a signed flat product `.pkg` whose component payload contains the `podman` tree normally installed at `/opt/podman`. The current package extractor supports `dmg-pkg` but not a direct flat product package.
+### rumiai-dev
 
-The smallest general extension is expected to add a direct macOS flat-package materialization format that reuses the existing validated component/payload extraction semantics without executing installer scripts.
+- `PACKAGE-MODEL.md` defines `flat-pkg` alongside `dmg-pkg`.
+- Invariants PKG-77 through PKG-81 now cover named component extraction, payload-root selection and the prohibition on executing installer scripts/system integration.
 
-For Podman runtime helper lookup, `CONTAINERS_HELPER_BINARY_DIR` is supported by the upstream containers configuration library and can point directly at the relocated package `bin` directory. This avoids generating or mutating a host-level `containers.conf`.
+### rumiai-os
 
-## Completed
+- Added direct `flat-pkg` extraction with host `pkgutil --expand-full`.
+- Extended package install/integration validation for `flat-pkg` component and payload-root metadata.
+- Updated relevant package manuals.
+- Added `pkg-repository-podman.lib.sh` and its manual.
 
-- PoC 037 proved that the exact official Podman v6.1.2 arm64 payload remains signed and can complete `podman machine init` after relocation when helper lookup is redirected.
-- Fresh mandatory preflight completed for the implementation task.
+### pkg-catalog
 
-## Current state
+Added `pkg/podman/macos-arm64` for Podman v6.1.2 with:
 
-No product, catalog or permanent-test implementation changes have been made yet for this task.
+- `format = flat-pkg`
+- `component = podman.pkg`
+- `payload-root = podman`
+- public command `podman`
+- runtime helper environment
+- official release URL
+- official SHA-256 `88def43af7fbe7baf40fc2f12d69267f6d845768020709900fb1b8c3bfe015b3`
 
-## Next action
+### rumiai-tests
 
-1. Finalize the smallest generic flat-`.pkg` extraction contract and implementation.
-2. Add proportional permanent extractor tests and manual/spec updates.
-3. Add the macOS arm64 Podman catalog definition using the official GitHub release.
-4. Add and run live package validation on macOS.
+Added:
 
-## Blockers / open questions
+- `rumiai-os/pkg-extract/flat-pkg.test`
+- `rumiai-os/pkg-repository-podman/contract.test`
+- `external/podman/install-live.test`
+- task validation scope `podman`
+- macOS GitHub Actions workflow for the Podman task
 
-- Whether the current GitHub repository adapter can consume the Podman release asset and release digest without any adapter change.
-- Whether `podman machine start` can be physically validated in this work unit; hosted macOS CI cannot provide nested virtualization.
+The flat-pkg fixture includes a postinstall trap and verifies that materialization does not execute it.
+
+## Validation
+
+Dedicated macOS task validation at rumiai-tests `4bad71ec5b75adfb5e6ee1c98d5256e356bef605` against rumiai-os `7e78fc9842d1fd6acd6f83584c3b0a931f8027e7`:
+
+- `rumiai-os/pkg-extract/contract.test`: PASS
+- `rumiai-os/pkg-extract/dmg-pkg.test`: PASS
+- `rumiai-os/pkg-extract/flat-pkg.test`: PASS
+- `rumiai-os/pkg-integration/contract.test`: PASS
+- `rumiai-os/pkg-repository-podman/contract.test`: PASS
+- `external/podman/install-live.test`: PASS
+- task scope result: VALIDATED
+
+The live test recorded:
+
+```text
+installed=podman@v6.1.2!macos-arm64
+osarch=macos-arm64
+version=podman version 6.1.2
+machine-init=ok
+host-system-integration=absent
+```
+
+It exercises the real RumiAI `pkg install podman`, the managed public command, `podman --version`, `podman machine info`, `podman machine init`, `podman machine inspect`, package-owned HOME/state, cleanup/uninstall, and verifies that `/opt/podman`, `/etc/paths.d/podman-pkg` and `/usr/local/etc/man.d/podman.man.conf` remain absent.
+
+The complete health suite was also run on the same product revision. It remains red on both Ubuntu and macOS because of failures outside this task. Comparison with the immediately preceding health run shows no new unrelated FAIL/ERROR introduced by this work: the Ubuntu failure set is unchanged, while macOS Podman changed from FAIL to PASS and the previous `rumiai-os/pkg/install-live.test` failure no longer appears.
+
+## Validation boundary
+
+`podman machine start` and an actual container workload are not claimed as validated here. GitHub-hosted macOS arm64 runners are not treated as evidence for nested-virtualization behavior on a physical Mac. The package/runtime path through machine initialization is validated; physical VM start remains a separate host-dependent validation if required.
+
+## Consistency gate
+
+- Current remote HEADs were rechecked before closure.
+- The current package specification contains the implemented `flat-pkg` contract.
+- Final diffs were reread across rumiai-os, pkg-catalog and rumiai-tests.
+- The temporary GitHub-token path is absent from the final generic GitHub adapter.
+- Provider-specific identities/paths remain in package definition/adapter boundaries rather than generic extraction code.
+- The official Podman binaries are preserved unchanged.
+- Relevant permanent tests and the real live install scenario pass.
+- Full-product health failures were not reclassified or hidden; they remain separate revision-specific evidence outside this task.
+
+## Remaining task state
+
+No implementation blocker remains for the macOS arm64 Podman package. The task is complete within the validation boundary stated above.
