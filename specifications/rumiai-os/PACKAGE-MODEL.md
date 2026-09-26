@@ -227,15 +227,20 @@ integrity requirements. If no candidate validates, the download fails.
 
 Artifact integrity information supplied by the package definition/adapter must be enforced by the current package contracts rather than bypassed for convenience.
 
-Package materialization supports ordinary single-format artifacts and the macOS compound format:
+Package materialization supports ordinary single-format artifacts and two macOS installer-package forms:
 
 ```text
+flat-pkg
 dmg-pkg
 ```
 
-`dmg-pkg` represents an Apple disk image containing one top-level flat installer package whose archive contains one primary named component package and, when needed, selected additional component overlays. The selected package range MUST provide exactly one scalar `component` value naming the primary component package as a basename (no path separators).
+Both forms materialize files from an Apple flat installer package **without running installer scripts or performing the package's system-install side effects**. The selected package range MUST provide exactly one scalar `component` value naming the primary component package as a basename with no path separators.
 
-Materialization extracts the outer DMG, expands the flat installer package and extracts the primary component's `Payload`. A `dmg-pkg` range MAY additionally provide one scalar `payload-root` relative pathname when the primary component Payload contains installer-only siblings or an intermediate staging prefix around the useful package tree. `payload-root` must be a non-empty relative pathname with no empty, `.` or `..` path component and must resolve to a real directory inside the extracted Payload. When present, only that directory's contents become primary package staging; Payload siblings outside it are discarded. When absent, the complete primary Payload becomes staging.
+`flat-pkg` represents a flat macOS product installer package directly. Materialization expands the package with the host package tooling, selects the named component package and copies only that component's expanded `Payload` into package staging. Installer metadata, preinstall/postinstall scripts and other non-Payload content are not executed or materialized into the managed package root.
+
+`dmg-pkg` represents an Apple disk image containing exactly one top-level flat installer package. Materialization first extracts the outer DMG, then expands that installer and extracts the named primary component's `Payload`.
+
+A `flat-pkg` or `dmg-pkg` range MAY additionally provide one scalar `payload-root` relative pathname when the primary component Payload contains installer-only siblings or an intermediate staging prefix around the useful package tree. `payload-root` must be a non-empty relative pathname with no empty, `.` or `..` path component and must resolve to a real directory inside the extracted Payload. When present, only that directory's contents become primary package staging; Payload siblings outside it are discarded. When absent, the complete primary Payload becomes staging.
 
 A `dmg-pkg` range MAY also contain:
 
@@ -249,9 +254,9 @@ overlay/
 
 Each overlay entry is declarative package data. `component` is one scalar component-package basename. Optional `payload-root` uses the same source-subtree rules as the primary component. Optional `target-root` is a safe relative directory pathname below package staging; when absent, the overlay targets the staging root. The selected overlay Payload/subtree is materialized independently and its direct entries are merged into that target directory. Overlay materialization MUST reject an existing destination entry rather than silently replace primary or earlier overlay content. Overlay entry order therefore carries no overwrite precedence. The normal useful-root normalization is applied once, after the primary component and all selected overlays have been materialized.
 
-Component names, Payload-root selectors and overlay target paths are package-definition data; generic package code must not hardcode provider-specific component identities or Payload paths. Supplying `component`, `payload-root` or `overlay` for another format, omitting the primary `component` for `dmg-pkg`, selecting a Payload root outside an extracted component, using an unsafe overlay target, or producing an overlay collision is invalid package metadata/materialization.
+Component names, Payload-root selectors and overlay target paths are package-definition data; generic package code must not hardcode provider-specific component identities or Payload paths. Supplying `component` or `payload-root` for a format other than `flat-pkg` or `dmg-pkg`, supplying `overlay` for a format other than `dmg-pkg`, omitting the primary `component` for either installer-package form, selecting a Payload root outside an extracted component, using an unsafe overlay target, or producing an overlay collision is invalid package metadata/materialization.
 
-This compound format is host-specific materialization behind the package abstraction; it does not change package identity or state semantics. Mutable state exposed by software installed this way remains governed by the normal package HOME/conf/state model rather than being stored in the immutable package root.
+These installer-package forms are host-specific materialization behind the package abstraction; they do not change package identity or state semantics. Mutable state exposed by software installed this way remains governed by the normal package HOME/conf/state model rather than being stored in the immutable package root.
 
 A package-specific exception belongs in the package definition/adapter/integration boundary that owns it, not as an accidental special case in unrelated generic code.
 
@@ -798,8 +803,9 @@ PKG-73  packages resolved from the all stream use platform-independent concrete 
 PKG-74  an all-stream consumer resolves dependencies against its applicable target osarch (install target or active runtime m_OSARCH) without adding that osarch to the consumer concrete identity
 PKG-75  pkg requirement resolve is a read-only system-facility-default query that validates existing facility compatibility constraints and prints the selected concrete provider on success
 PKG-76  project/non-package requirement queries do not create synthetic package-consumer bindings and do not install or implicitly select providers
-PKG-77  dmg-pkg compound materialization extracts a named flat-installer component payload without hardcoding provider-specific component identity
-PKG-78  component metadata is required only for dmg-pkg and ordinary package state remains outside the immutable package root
-PKG-79  optional dmg-pkg payload-root selects one validated relative subtree as the useful package tree without hardcoding provider paths in generic code
+PKG-77  flat-pkg and dmg-pkg materialization extract a named flat-installer component payload without hardcoding provider-specific component identity
+PKG-78  component metadata is required only for flat-pkg and dmg-pkg and ordinary package state remains outside the immutable package root
+PKG-79  optional flat-pkg/dmg-pkg payload-root selects one validated relative subtree as the useful package tree without hardcoding provider paths in generic code
 PKG-80  dmg-pkg overlays add only explicitly selected component payloads at validated relative targets and reject overwrite collisions
+PKG-81  flat-pkg and dmg-pkg materialization never execute installer scripts or perform installer-owned system integration side effects
 ```
