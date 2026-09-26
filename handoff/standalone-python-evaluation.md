@@ -15,9 +15,9 @@ The task should establish what each candidate actually guarantees, where host/pl
 ## Current repository revisions
 
 ```text
-rumiai-dev       758db914093f6db53f3fcc905c6330ce80e3623e
+rumiai-dev       ef4ad202e3c742593d6bf0075ccc1e813981a8b9
 rumiai-os        b6f33c542155d58b770e5afabd460d116936318d
-rumiai-dev-PoCs  aeb15a20f711cdf28a240dedd4d38aa8d54220b8
+rumiai-dev-PoCs  5e3453d01d83d1e09e1cbe446fb126a86f53b9bb
 pkg-catalog      565adc534399e5d4759c8eae24fca197aa912ab9
 rumiai-tests      9302b65fc9e386390695bb8161fe135b04e2155b
 
@@ -114,14 +114,30 @@ Hands-on evidence from PoC 039 (`rumiai-dev-PoCs/pocs/039-python-build-standalon
 - Hosted Linux run `36269289831` passed at PoC revision `e311db990ebae3d8674b90cdc53c4f082c16463d` using the pinned `python-build-standalone` CPython 3.13.15 install-only artifact and exact `rumiai-os` revision `7d71de0de59120fb85236f087f0298c6dc637d71`.
 - The standalone runtime started before and after direct movement; `sys.prefix` and the tested `sysconfig` include path followed the live runtime location, and a CPython native extension built successfully only after the runtime had already moved.
 - The moved standalone runtime then acted as the real selected Python facility provider for the PoC 038 pure/native consumer model. The complete disposable RumiAI root, including provider and consumers, moved again without rewriting consumer scripts; the tested managed old-prefix scan was clean.
-- A macOS extension at PoC revision `7c85c96c6a41f1af05c9bd7edb3b37b1a8de7709` reached the same direct-runtime checkpoint successfully on Apple Silicon: CPython 3.13.15 started after movement and reported the moved `sys.prefix`, `sysconfig`, SSL, sqlite and ctypes state correctly. Run `36269415163` then failed because the harness compared the shell-visible `/var/...` temporary path with macOS's physical `/private/var/...` pathname.
-- That failure is a harness-path canonicalization bug, not negative runtime evidence. PoC commit `00da3691eab956902a4b8a7303f62d7e3d0a1b93` now canonicalizes runtime/RumiAI roots before pathname comparisons and old-prefix scanning. Hosted rerun `36270231418` is queued; no macOS PASS is recorded until that run completes.
+- The corrected cross-host rerun `36270231418` at PoC revision `00da3691eab956902a4b8a7303f62d7e3d0a1b93` passed both Ubuntu 24.04 and macOS 14 Apple Silicon. On both hosts CPython 3.13.15 survived direct runtime movement, the tested `sysconfig` include path followed the live runtime prefix, a native extension built after relocation, the standalone runtime integrated as the real RumiAI Python provider, pure/native consumers ran through `#!/usr/bin/env python`, the whole managed root moved again, and the managed old-prefix scan was clean.
+- The earlier macOS run `36269415163` was a harness pathname-equivalence defect (`/var/...` versus physical `/private/var/...`), not negative runtime evidence.
 
 Hands-on comparison PoC 040 (`rumiai-dev-PoCs/pocs/040-micromamba-python-prefix-relocation`):
 
-- PoC commit `aeb15a20f711cdf28a240dedd4d38aa8d54220b8` adds a pinned micromamba 2.9.0-0 experiment for Linux and macOS.
-- It creates a real conda-forge Python 3.13 + pip prefix, records interpreter/runtime behavior, counts Conda `info/paths.json` prefix-placeholder metadata, captures the generated pip shebang, moves the complete prefix without relinking, and separately tests moved CPython, `python -m pip`, direct `pip`, micromamba prefix recognition and residual original-prefix references.
-- Hosted run `36270462725` is queued. No behavioral conclusion from PoC 040 is fixed until the run completes.
+- Hosted run `36271204228` at PoC revision `2bb78d88eab49ab43749a9b8647ffc04b369fc8c` passed on Ubuntu 24.04 and macOS 14 Apple Silicon with micromamba 2.9.0-0 and conda-forge Python 3.13.15.
+- The interpreter itself moved successfully on both hosts: `sys.prefix` followed the new environment location, `python -m pip` still worked and micromamba could still list the moved prefix.
+- The generated `pip` command remained bound to the original environment through an absolute shebang and failed after the raw move (status 127 on Linux, 126 on macOS).
+- Conda's package cache exposed explicit relocation metadata: 207 prefix-placeholder entries across 7058 path entries on Linux and 206 across 7014 path entries on macOS; 12 placeholder entries belonged to the Python package on each host.
+- A raw move left the old installation prefix embedded in 654 files on Linux and 163 files on macOS.
+- The result therefore distinguishes "the Conda CPython interpreter can discover a moved prefix" from "the materialized Conda environment is permanently location-independent". The former worked; the latter did not.
+
+Hands-on evidence from PoC 041 (`rumiai-dev-PoCs/pocs/041-relocated-standalone-python-sdist-build`):
+
+- Initial hosted run `36271127218` proved that, after moving the standalone runtime, its bundled pip could execute isolated PEP 517 builds with pinned setuptools/wheel for both a pure-Python sdist and a CPython C-extension sdist on Linux and macOS. Both resulting wheels materialized with `#!/usr/bin/env python`, ran successfully before a second runtime move and still ran after that second move.
+- That first run then exposed a separate mutation surface: pip/build execution populated hundreds of `.pyc` files inside the standalone runtime, and those generated files retained the previous runtime prefix after the second move (489 hits Linux, 493 macOS).
+- Follow-up run `36271484958` at PoC revision `abdfe2664cedb8efb8f0c846f3363b42d9a5ba38` externalized build-time bytecode through `PYTHONPYCACHEPREFIX` and passed on both hosts. The standalone runtime's three pre-existing bytecode files remained unchanged, the pure/native wheels built successfully, materialized consumers ran before and after the second move, build outputs contained no old runtime prefix and the twice-moved runtime old-prefix scan reported zero hits.
+- This strongly supports keeping an existing pip/build frontend for resolve/build-to-wheel responsibilities while treating bytecode-cache ownership and final wheel materialization as separate concerns.
+
+Hands-on evidence from PoC 042 (`rumiai-dev-PoCs/pocs/042-python-bytecode-state-cache`):
+
+- The first hosted run `36271370883` already proved on Linux that `PYTHONPYCACHEPREFIX="$HOME/.cache/python"` keeps runtime-generated bytecode out of the immutable consumer package root and writes it under consumer state; the test observed 18 state `.pyc` files.
+- That run failed later because it searched raw byte strings for source paths inside `.pyc` files, which is not a reliable cache-identity test across platforms/relocations. Revision `5e3453d01d83d1e09e1cbe446fb126a86f53b9bb` now verifies the expected cache pathname structurally with `importlib.util.cache_from_source()`.
+- Hosted rerun `36271549826` is queued. No final bytecode-state-cache conclusion is fixed until that rerun completes.
 
 Candidate-specific evidence:
 
@@ -165,38 +181,39 @@ These are evaluation findings and candidate design state, not adopted RumiAI sub
 - Created and passed the Linux form of PoC 039 with an actual `python-build-standalone` CPython provider, including runtime movement before native-extension build and a second movement after provider/consumer integration.
 - Extended PoC 039 to macOS, identified the first hosted macOS failure as a harness physical-path canonicalization defect after the runtime itself had already relocated successfully, and committed the canonicalized-path correction for hosted revalidation.
 - Created PoC 040 to measure a real micromamba/conda-forge Python prefix against the stronger RumiAI relocation goal instead of relying only on Conda documentation.
+- Completed cross-host PoC 039 validation: the tested python-build-standalone artifact passed direct relocation, post-relocation native build, RumiAI provider integration and whole-root relocation on Linux and macOS.
+- Completed cross-host PoC 040: conda-forge CPython itself followed a raw prefix move, while generated pip launchers and hundreds of environment files remained tied to the original prefix.
+- Created and completed PoC 041: an ordinary relocated `python -m pip wheel` + isolated PEP 517 + setuptools/wheel build path produced working pure/native wheels on Linux and macOS; externalizing build bytecode kept the standalone provider tree unchanged and the second-move prefix scan clean.
+- Created PoC 042 to test bytecode cache as consumer state instead of disabling bytecode globally; its first run validated package-root cleanliness/state cache creation and the structural relocation rerun is pending.
 
 ## Current state
 
-The package-environment side of the hypothesis is now experimentally validated on one Linux host against the current RumiAI launcher. A Python consumer can keep its package environment separate from the interpreter, use `#!/usr/bin/env python`, and follow current `pkg` facility-default / consumer-binding selection without reinstalling or rewriting the command. Whole-root movement also works for the tested consumer once runtime bytecode writes are prevented from mutating the immutable package root.
+The evaluation now has cross-host evidence for a coherent split of responsibilities.
 
-This does **not** mean that arbitrary Python-provider rebinding is safe. The native-extension test proves that interpreter selection and consumer compatibility are independent: a provider can be selected correctly yet be ABI-incompatible with already-materialized native extensions. A future Python facility/consumer contract must make incompatible selections mechanically unsatisfiable.
+The tested `python-build-standalone` CPython 3.13.15 install-only artifacts behave as genuinely movable runtimes for the exercised Linux/macOS cases: direct runtime movement, live-prefix `sysconfig`, native-extension build after relocation, RumiAI provider integration and a second whole-root movement all passed. This is materially stronger than the Conda environment model tested in PoC 040.
 
-The experiment also strengthens the case against replacing all of pip. The remaining package-installation problem appears narrow enough to center on controlled final wheel materialization plus validation, while an existing frontend can continue to resolve/download/build wheels. The exact materializer implementation remains open.
+The Conda/micromamba comparison is useful precisely because it separates reusable engineering ideas from the final runtime model. The conda-forge interpreter itself also survived a raw move, but generated `pip` remained absolute-prefix-bound and hundreds of files retained the old prefix. Conda's explicit relocation metadata is therefore interesting as a validation/materialization technique, while destination-prefix binding is not the target RumiAI semantics.
 
-The Python runtime side now has strong Linux evidence for the pinned `python-build-standalone` artifact: direct movement, live-prefix `sysconfig`, native-extension build after movement, RumiAI-provider integration and whole-root movement all passed in PoC 039. macOS direct-runtime relocation also reached the same checkpoint, but the full macOS composition still awaits the rerun after fixing the harness's `/var` versus `/private/var` comparison.
+PoC 041 also narrows the pip question further: the standard pip/PEP 517/setuptools build path worked after runtime relocation for both pure and native fixtures on Linux and macOS. The evidence no longer supports replacing pip wholesale. The remaining owned boundary is much narrower: final wheel materialization must preserve `#!/usr/bin/env python`, package/runtime trees must remain immutable, bytecode/cache writes need explicit state ownership, and compatibility selection must prevent ABI-invalid provider rebinding.
 
-The micromamba/Conda model is now being tested hands-on rather than treated only as a reference description. PoC 040 will tell us empirically which parts of a real conda-forge Python prefix remain movable and exactly where original-prefix binding survives. Neither upstream model is adopted yet.
+No product or catalog contract has been promoted yet. The exact consumer-environment projection, bytecode-state policy, Python facility compatibility dimensions and final materializer implementation remain open.
 
 ## Next action
 
-Continue the hands-on evaluation without product/catalog changes:
+Continue the evaluation without product/catalog changes:
 
-1. collect hosted rerun `36270231418`; if macOS passes after physical-path canonicalization, record the cross-host PoC 039 evidence and any remaining loader/sysconfig differences rather than assuming Linux equivalence;
-2. collect PoC 040 run `36270462725` and classify separately: moved CPython behavior, generated command/shebang behavior, Conda prefix-placeholder metadata and old-prefix residue;
-3. use those results to decide which Conda ideas are worth borrowing as validation/materialization techniques without adopting destination-prefix rewriting as the runtime model;
-4. test source-distribution -> wheel building after runtime relocation beyond the current hand-built native fixture, including an ordinary packaging frontend/backend path;
-5. compare environment-visibility mechanisms without promoting one prematurely: current experimental `PYTHONPATH`, a generic declarative root-relative package projection, and Python-native alternatives that preserve provider independence;
-6. compare bytecode-cache policies: disabled writes versus cache-as-derived-state outside the immutable package root;
-7. derive the minimum Python compatibility dimensions required by `pkg` from real pure-Python, `abi3` and ordinary CPython-ABI wheel evidence;
-8. only after those boundaries are established, decide whether final wheel materialization should configure/extend an existing installer, use a narrow pip/installer patch, or become an owned `m` package responsibility.
+1. collect PoC 042 rerun `36271549826` and decide whether `PYTHONPYCACHEPREFIX` is a sound state-cache candidate for consumers and build tooling;
+2. compare consumer package visibility mechanisms: the current provisional `PYTHONPATH`, a generic declarative root-relative package-environment projection, and Python-native alternatives, paying particular attention to `.pth` processing and package isolation semantics;
+3. exercise Python compatibility dimensions with real wheel tags: pure-Python, stable `abi3`, ordinary CPython-minor ABI and platform-specific wheels, then derive the minimum compatibility information that `pkg` must enforce before rebinding a consumer;
+4. inspect/configure existing lower-level wheel installers (especially PyPA `installer`) against the now-proven requirements before deciding whether RumiAI needs a narrow adapter/patch or an owned materializer;
+5. once those boundaries are resolved, decide whether `python-build-standalone` should be adopted as a concrete Python provider source and then promote only the settled behavior into canonical specifications/catalog/product work.
 
-The scc-tw candidate remains a useful contrasting Linux/musl design. The current practical lead remains `python-build-standalone`, subject to completion of macOS composition evidence and the unresolved package-environment/materializer contracts.
+The scc-tw candidate remains a useful contrasting Linux/musl design, but the current practical evidence strongly favors continuing with `python-build-standalone` as the runtime candidate.
 
 ## Blockers / open questions
 
-- The POSIX-side managed Python command launcher direction is supported by PoC 038: use `#!/usr/bin/env python` with controlled `pkg` provider projection. Cross-host validation is still required before promotion.
+- The managed POSIX Python command launcher direction now has Linux/macOS evidence across PoCs 039 and 041: use `#!/usr/bin/env python` with controlled `pkg` provider projection. Promotion still depends on settling the surrounding environment/materializer contract.
 - The final mechanism that exposes a consumer-owned Python package tree to the selected provider is still open; PoC 038's `PYTHONPATH` use is evidence only.
-- Bytecode-cache ownership is open. Runtime `__pycache__` in the immutable package root is unacceptable under the current package model; disabling bytecode writes worked experimentally, but routing discardable cache to state may be preferable and needs evidence.
+- Bytecode-cache ownership is open. Runtime `__pycache__` in immutable package/provider roots is unacceptable. Disabling writes works, and PoCs 041/042 show that externalizing cache with `PYTHONPYCACHEPREFIX` is promising; PoC 042 cross-host relocation/regeneration evidence is still pending.
 - Python compatibility semantics are open. Pure-Python version compatibility, CPython implementation/minor compatibility, stable `abi3`, ordinary CPython ABI tags and platform/native dependencies must not be collapsed into one vague "Python version" requirement.
 - The acceptable policy for source distributions and editable installs remains open. The strongest current boundary is "sdist may be built to a wheel in a controlled build phase; final runtime materialization consumes wheels", while editable installs may be incompatible with an immutable relocatable runtime by construction.
