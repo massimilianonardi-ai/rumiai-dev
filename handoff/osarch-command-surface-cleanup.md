@@ -1,6 +1,6 @@
 # osarch command surface cleanup
 
-Status: Active
+Status: Complete
 Updated: 2026-09-26
 
 ## Goal
@@ -10,9 +10,9 @@ Remove the obsolete `osarch-update` and `osarch-set` compatibility commands so t
 ## Current repository revisions
 
 ```text
-rumiai-dev   17fea0e7f6912afd12823b8fcd409ac5fec4ac13
-rumiai-os    b6f33c542155d58b770e5afabd460d116936318d
-rumiai-tests 9302b65fc9e386390695bb8161fe135b04e2155b
+rumiai-dev   3092f91d0e43b2d0d76c0a3ad972b1216b55f5ed
+rumiai-os    51d0cba5696a94caaf5ae39e2e476a31598a0ae1
+rumiai-tests 1341e7790bb0e33f70fab915322ee75020ec9ec3
 ```
 
 ## Applicable canonical sources
@@ -26,22 +26,29 @@ rumiai-tests 9302b65fc9e386390695bb8161fe135b04e2155b
 
 ## Fixed task-local choices
 
-- The user explicitly corrected the current contract: `osarch-update` and `osarch-set` are obsolete and must not remain as compatibility commands.
+- The user explicitly corrected the current contract: `osarch-update` and `osarch-set` are obsolete and are not compatibility commands.
 - The canonical public surface is `osarch`, `osarch show`, `osarch update` and `osarch set <osarch>`.
 
 ## Completed
 
-- Fresh preflight completed.
-- Historical lineage identified: commit `2b4e7871365ae2dfc6f9ec071f7d0242e6389271`, timestamp 2026-09-26T19:55:17Z, restored the obsolete wrappers because the then-current specification and TODO incorrectly required them.
+- Historical lineage identified: `rumiai-os@2b4e7871365ae2dfc6f9ec071f7d0242e6389271`, authored/committed by GitHub account `massimilianonardi-ai` at 2026-09-26T19:55:17Z, restored the wrappers because the then-current specification/TODO required them.
+- Removed `todo/osarch-compatibility-entrypoints.md`.
+- Removed the compatibility requirement and invariant from `CURRENT-MODEL.md`.
+- Removed `bin/sys/osarch-update` and `bin/sys/osarch-set`.
+- Removed `res/sys/manual/osarch-update` and `res/sys/manual/osarch-set`.
+- Realigned `res/sys/manual/osarch` and the active manual-documentation handoff.
+- Removed compatibility-command assertions from `tests/rumiai-os/osarch/update.test`.
+- Final tree inspection confirms the obsolete executable/manual paths are absent and the canonical specification/manual/test no longer require them.
+- The remaining `osarch-update-failure` language-resource identity belongs to the current `osarch update` subcommand diagnostic and is not a compatibility command.
 
 ## Current state
 
-No product/test/specification cleanup has yet been committed.
+Only the canonical `osarch` command surface remains.
 
 ## Next action
 
-Remove the obsolete commands and their manuals, remove compatibility assertions from the osarch permanent test, realign canonical/current documentation, then run the proportional consistency checks.
+None.
 
 ## Blockers / open questions
 
-- None.
+None.
