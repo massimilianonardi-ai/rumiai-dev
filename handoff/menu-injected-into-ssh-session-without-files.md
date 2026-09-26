@@ -9,8 +9,8 @@ Define and validate a source-streaming mechanism that can inject the existing `m
 
 ## Current repository revisions
 
-- rumiai-dev: 5ceb807339faeefcc9b3767ccf88039bdb0b2914
-- rumiai-os: 7e78fc9842d1fd6acd6f83584c3b0a931f8027e7
+- rumiai-dev: f1e06b50f99acada4bfb66503fc0ae0e8457cf90
+- rumiai-os: 4d55321e42167ec0fe8a6f6a449db2d1442ed3dd
 - rumiai-tests: 4bad71ec5b75adfb5e6ee1c98d5256e356bef605
 
 ## Applicable canonical sources
@@ -64,40 +64,25 @@ The loader should capture the library status immediately after the dot command, 
 
 The current runtime library root is `m_LIB_DIR`. `core.lib.sh` also already defines an unused `validlib()` helper that appears related to library resolution/validation, so implementation must reconcile that existing responsibility instead of duplicating it.
 
-A concrete local implementation candidate is now established for evaluation:
+The current `rumiai-os` branch now contains a concrete local implementation candidate in `core.lib.sh`:
 
 ```sh
 loadsyslib()
 {
-  [ "$#" -ge 1 ] || return 2
-
-  _loadsyslib_lib="$1"
-  shift
-
-  loadlib "sys/sh/$_loadsyslib_lib" "$@"
+  loadlib "sys/sh/$@"
 }
 
 loadlib()
 {
-  [ "$#" -ge 1 ] || return 2
+  [ "$#" -ge 1 ] || return 1
 
-  _loadlib_lib="$1"
-  shift
+  [ -f "$m_LIB_DIR/${1}.lib.sh" ] && [ -r "$m_LIB_DIR/${1}.lib.sh" ] || return 2
 
-  _loadlib_path="$m_LIB_DIR/$_loadlib_lib"
-
-  [ -f "$_loadlib_path" ] && [ -r "$_loadlib_path" ] || return 1
-
-  . "$_loadlib_path"
-  _loadlib_status="$?"
-
-  loadlib_args="$(quote "$@")" || return 3
-
-  return "$_loadlib_status"
+  eval 'shift; . "$m_LIB_DIR/'"${1}"'.lib.sh"'
 }
 ```
 
-This is still working design, not promoted implementation. A real implementation must use project-safe scratch-variable naming, decide whether argv serialization is unconditional or opt-in, and reconcile `validlib()`. Mechanical `sh` validation confirmed the intended boundary behavior: a loaded library can modify its own positional parameters with `set --`, return a non-zero status with top-level `return`, and `loadlib` can still observe both the modified argv and the library status while the caller's argv remains unchanged until explicitly restored.
+This implementation is now factual product state but its contract is not yet promoted. Mechanical `sh` validation confirmed that the embedded-prefix `"sys/sh/$@"` form preserves additional arguments, `eval` performs the `shift` before the dot load, and a top-level library `return` propagates its status through `loadlib`. Two open correctness points remain: `loadsyslib` needs an explicit zero-argument guard if invalid invocation must be distinguishable from a missing library, and the `eval` interpolation is acceptable only if the library reference is first constrained to the controlled internal library-reference grammar. File readability alone does not prove that constraint.
 
 ## Completed
 
@@ -107,7 +92,8 @@ This is still working design, not promoted implementation. A real implementation
 - Compared a runtime `loadsyslib` abstraction with source-level inline transformation; after further POSIX function-scope analysis, `loadsyslib` became the leading candidate because a deliberate function boundary can align local and injected semantics.
 - Defined and then superseded a first parser/in-place-inline proposal after identifying that a function-boundary loader can handle top-level `return` consistently without source inlining.
 - Removed automatic static dependency discovery from the injection design: the caller now owns the complete embedded library set, so injection requires no shell parser or dependency closure engine.
-- Refined the loader into a `loadsyslib` specialization over a lower-level `loadlib`, with optional capture of post-load positional parameters and preserved library status.
+- Refined the loader into a `loadsyslib` specialization over a lower-level `loadlib`.
+- Reconciled a concurrent `rumiai-os` advance: `core.lib.sh` now implements `loadsyslib`/`loadlib` using an embedded-prefix `"sys/sh/$@"` call and an `eval` that shifts before dot-loading the selected file.
 - Verified from POSIX.1-2024 that `.` is not a valid alias name, so portable alias substitution cannot shadow the canonical dot command.
 
 ## Current state
@@ -124,4 +110,5 @@ Define the minimal local/injected `loadsyslib` and explicit preload/bundle contr
 - Exact preload declaration surface for dynamically selected libraries.
 - Whether any current system library intentionally depends on mutating its caller's positional parameters.
 - Exact reversible representation, only if caller positional-parameter mutation ever becomes a real requirement.
-- Relationship between the new loader responsibility and the existing unused `validlib()` helper in `core.lib.sh`.
+- Exact validation grammar for the `loadlib` library reference before interpolation into `eval`.
+- Zero-argument status contract for `loadsyslib`.
