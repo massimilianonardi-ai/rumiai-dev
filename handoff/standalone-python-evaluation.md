@@ -85,6 +85,16 @@ Current evidence changes the working hypothesis materially:
 - This late-binding model is desirable because changing a Python consumer binding, facility default or unversioned provider package default can change the interpreter selected by a subsequently launched command without rewriting that command's shebang or package tree.
 - Ordinary `venv` is not a relocatable-runtime solution by itself: its standard model records a `home` relationship and standard installed scripts are designed around environment-specific interpreter paths.
 
+Reference-model evidence from Conda/micromamba:
+
+- `micromamba` itself is a statically linked C++ package manager and does not carry a default Python. When an environment requests Python, it installs the Python package supplied by the selected Conda channel into that environment prefix; with conda-forge this is a patched/package-managed CPython build rather than a distinct interpreter implementation.
+- A Conda environment is not a Python `venv`: the prefix is a complete package environment containing its own Python executable, native libraries, metadata and other packages. Activation mainly exposes that prefix through PATH/environment changes.
+- Conda deliberately makes packages installable into arbitrary prefixes by recording build-prefix occurrences and rewriting them to the chosen installation prefix, while also applying binary relocation such as ELF/Mach-O path fixups. This is relocation-at-materialization, not permanent path independence.
+- The resulting Conda environment is explicitly not freely movable after installation. `conda-pack` exists because simply moving the environment can break it; its `conda-unpack` phase performs prefix cleanup at the destination, after which the environment is again tied to that location.
+- The reusable ideas for RumiAI are therefore the prefix-oriented environment model, explicit package-level relocation metadata/scanning, and binary-relative-link fixups. The part not to copy is final absolute-prefix substitution as the durable runtime model.
+- Standard `venv` remains useful as a behavioral reference for separating `sys.prefix` / environment packages from `sys.base_prefix` / the base interpreter, but its absolute base-interpreter relationship and generated absolute script shebangs conflict with the current RumiAI relocatability/late-binding goal.
+- A new issue exposed by this comparison must be tested explicitly: changing the Python provider at runtime is safe only when the consumer's installed Python packages remain compatible with the selected interpreter/ABI. Pure-Python packages and native-extension packages have materially different compatibility constraints; provider late binding must not silently cross an incompatible Python ABI.
+
 Candidate-specific evidence:
 
 ### scc-tw/standalone-python
@@ -136,7 +146,9 @@ Create a focused PoC in `rumiai-dev-PoCs` that tests the materialization hypothe
 3. exercise both facility-default selection and a consumer-specific Python binding, verifying that the consumer binding wins through the package launcher's provider command projection;
 4. move the entire Python/package tree and verify imports plus every generated command;
 5. add a native wheel and a source-built-to-wheel case to expose loader/sysconfig boundaries;
-6. scan the moved tree for behaviorally significant references to the original root and classify each source.
+6. scan the moved tree for behaviorally significant references to the original root and classify each source;
+7. compare the result with Conda's prefix-rewrite metadata model and determine whether a generic relocation scanner/manifest is useful as validation evidence without making destination-prefix rewriting part of the runtime contract;
+8. verify provider rebinding separately for a pure-Python package and a native-extension package, so Python language-version compatibility is not mistaken for binary-ABI compatibility.
 
 Only after this experiment should the task decide whether the required behavior can be obtained by configuring/extending an existing installer, a narrow patch around pip/installer, or a RumiAI-owned materialization responsibility.
 
