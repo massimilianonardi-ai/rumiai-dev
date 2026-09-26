@@ -46,39 +46,33 @@ Candidate semantic model:
 
 This model deliberately changes one property of direct caller-level `.`: caller positional-parameter mutation is not preserved. That difference should be treated as part of the `loadsyslib` contract rather than hidden as an implementation accident.
 
-Dynamic loading remains the central bundle problem. Proposed bundle policy:
-
-- statically identifiable `loadsyslib` targets are included automatically with their recursively discoverable static dependencies;
-- dynamically computed library names are not guessed;
-- the injection caller may explicitly request additional libraries to preload into the stream for dynamic selection;
-- each explicitly preloaded library also pulls in its statically discoverable dependencies;
-- a runtime request for a library not embedded in the stream fails deterministically rather than falling back to a remote RumiAI filesystem.
+Injection dependency selection is intentionally explicit. The injector does not discover, parse or compute library dependencies, whether static or dynamic. The caller constructing the stream is responsible for naming every system library that must be embedded, including transitive dependencies and every runtime candidate that may be selected dynamically. A runtime `loadsyslib` request for a library not embedded in the stream fails deterministically rather than falling back to a remote RumiAI filesystem.
 
 Caller positional-parameter mutation is currently an extreme/unobserved case and should not complicate the normal loader path. A pattern such as `loadsyslib <lib> "$@"; set -- $loadsyslib_args` would require `loadsyslib_args` to use an explicitly reversible representation; a plain unquoted expansion is not lossless because field splitting, pathname expansion and empty-argument loss can change the argument vector. If this case ever becomes real, use an explicit shell-quoted/decoded handoff or another dedicated contract rather than silently approximating caller `set --` semantics.
 
-The exact library-name identity, preload syntax and static-dependency discovery mechanism remain open. Static discovery still needs syntax-aware parsing or another mechanism that cannot confuse comments/data with real `loadsyslib` invocations.
+The exact library-name identity and preload declaration surface remain open. No shell parser or static dependency-discovery mechanism is required by the injection design.
 
 ## Completed
 
 - Activated the previously deferred no-file remote-menu work.
 - Rejected the earlier temporary-file/materialized-runtime interpretation of injection.
 - Confirmed that current interactive `rsudo` consumes piped stdin into the remote command construction path before opening the interactive SSH PTY.
-- Compared a runtime `loadsyslib` abstraction with source-level inline transformation; after further POSIX function-scope analysis, `loadsyslib` has been reopened as the leading candidate because a deliberate function boundary can align local and injected semantics.
+- Compared a runtime `loadsyslib` abstraction with source-level inline transformation; after further POSIX function-scope analysis, `loadsyslib` became the leading candidate because a deliberate function boundary can align local and injected semantics.
 - Defined and then superseded a first parser/in-place-inline proposal after identifying that a function-boundary loader can handle top-level `return` consistently without source inlining.
+- Removed automatic static dependency discovery from the injection design: the caller now owns the complete embedded library set, so injection requires no shell parser or dependency closure engine.
 - Verified from POSIX.1-2024 that `.` is not a valid alias name, so portable alias substitution cannot shadow the canonical dot command.
 
 ## Current state
 
-No product/runtime code has been modified. The leading working design is now `loadsyslib` with a deliberate function-boundary contract plus static dependency closure and explicit preload declarations for dynamic library choices. The earlier parser/in-place-inline design is retained only as superseded exploration inside task history, not as the current candidate.
+No product/runtime code has been modified. The leading working design is now `loadsyslib` with a deliberate function-boundary contract and fully explicit caller-selected library embedding. The injector performs no dependency discovery or automatic closure. The earlier parser/in-place-inline and automatic-static-closure designs are superseded exploration, not current candidates.
 
 ## Next action
 
-Audit current system libraries for caller-positional-parameter dependence and dynamic source patterns, then define the minimal `loadsyslib` and preload/bundle contract before implementing a PoC for `menu`.
+Define the minimal local/injected `loadsyslib` and explicit preload/bundle contract, then implement the smallest PoC for `menu` using a caller-supplied complete library set.
 
 ## Blockers / open questions
 
 - Exact library identity accepted by `loadsyslib`.
 - Exact preload declaration surface for dynamically selected libraries.
 - Whether any current system library intentionally depends on mutating its caller's positional parameters.
-- Static dependency discovery mechanism for `loadsyslib` calls.
 - Exact reversible representation, only if caller positional-parameter mutation ever becomes a real requirement.
