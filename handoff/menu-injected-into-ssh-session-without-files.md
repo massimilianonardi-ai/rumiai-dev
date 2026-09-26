@@ -9,8 +9,8 @@ Define and validate a source-streaming mechanism that can inject the existing `m
 
 ## Current repository revisions
 
-- rumiai-dev: f1e06b50f99acada4bfb66503fc0ae0e8457cf90
-- rumiai-os: 4d55321e42167ec0fe8a6f6a449db2d1442ed3dd
+- rumiai-dev: 310d91de37e17784a148449a5742ccafd70ab179
+- rumiai-os: a084c418ba8417b7d548bed5f85b2cf464d6df6d
 - rumiai-tests: 4bad71ec5b75adfb5e6ee1c98d5256e356bef605
 
 ## Applicable canonical sources
@@ -35,22 +35,18 @@ Define and validate a source-streaming mechanism that can inject the existing `m
 
 The earlier parser/in-place-inline design is no longer the only preferred direction. A `loadsyslib` abstraction is being reconsidered because defining it deliberately as a shell-function boundary can make local and injected execution share the same semantics instead of trying to emulate raw caller-level dot sourcing.
 
-Candidate semantic model:
+Current semantic model:
 
-- local mode: `loadsyslib <library> [args...]` can remain a small resolver that dot-sources the resolved local system library as the final operation inside the `loadsyslib` function;
-- injected mode may override/redefine `loadsyslib` with an injection-specific implementation backed only by libraries embedded in the stream; the caller surface remains unchanged even though the backend is different;
-- optional caller positional parameters are forwarded explicitly with `"$@"` when a library needs them, e.g. `loadsyslib <library> "$@"`;
-- top-level `return` naturally terminates the current library load in both modes;
-- `set --` and `shift` affect the loader/library positional parameters only and do not mutate the caller's positional parameters after `loadsyslib` returns;
-- variable/function definitions and other current-shell effects remain visible because no subshell is introduced by the normal loader call.
-
-This model deliberately changes one property of direct caller-level `.`: caller positional-parameter mutation is not preserved. That difference should be treated as part of the `loadsyslib` contract rather than hidden as an implementation accident.
+- `loadsyslib` and `loadlib` are pure library-loading primitives; library positional parameters are not part of their contract.
+- local `loadlib` resolves one library reference below `m_LIB_DIR`, checks that the resulting file is readable, then dot-sources it in the current shell environment;
+- `loadsyslib` specializes `loadlib` for `sys/sh`;
+- injected execution may replace the `loadlib` backend while preserving the `loadsyslib` caller surface;
+- top-level `return`, function definitions, variable changes and ordinary current-shell side effects remain relevant; caller/library `$@` propagation does not.
 
 Injection dependency selection is intentionally explicit. The injector does not discover, parse or compute library dependencies, whether static or dynamic. The caller constructing the stream is responsible for naming every system library that must be embedded, including transitive dependencies and every runtime candidate that may be selected dynamically. A runtime `loadsyslib` request for a library not embedded in the stream fails deterministically rather than falling back to a remote RumiAI filesystem.
 
-Caller positional-parameter mutation is currently an extreme/unobserved case and should not complicate the normal loader path. A pattern such as `loadsyslib <lib> "$@"; set -- $loadsyslib_args` would require `loadsyslib_args` to use an explicitly reversible representation; a plain unquoted expansion is not lossless because field splitting, pathname expansion and empty-argument loss can change the argument vector. If this case ever becomes real, use an explicit shell-quoted/decoded handoff or another dedicated contract rather than silently approximating caller `set --` semantics.
-
 The exact library-name identity and preload declaration surface remain open. No shell parser or static dependency-discovery mechanism is required by the injection design.
+
 
 A further refinement is to layer the loader responsibility:
 
@@ -58,17 +54,15 @@ A further refinement is to layer the loader responsibility:
 - a lower-level `loadlib <library-reference> [args...]` owns resolution/checking and the actual local dot load;
 - injected execution may replace only the `loadlib` backend while preserving the `loadsyslib` caller surface.
 
-When local `loadlib` shifts its library operand and then dot-sources the resolved file, the library executes with the loader's remaining positional parameters. A top-level `set --` changes those loader positional parameters, and after the dot command returns the loader can serialize the resulting argument vector with the existing `quote` primitive before returning. A top-level library `return` returns control to the loader with that status. This behavior was mechanically checked with POSIX `sh`.
-
-The loader should capture the library status immediately after the dot command, serialize any resulting argument vector only when the contract requests it, and then return the preserved load status. Plain unquoted restoration from one string is not lossless; any future caller-positional-parameter propagation must use an explicitly reversible representation.
-
 The current runtime library root is `m_LIB_DIR`. `core.lib.sh` also already defines an unused `validlib()` helper that appears related to library resolution/validation, so implementation must reconcile that existing responsibility instead of duplicating it.
 
-The current `rumiai-os` branch now contains a concrete local implementation candidate in `core.lib.sh`:
+The current `rumiai-os` branch contains the simplified local implementation in `core.lib.sh`:
 
 ```sh
 loadsyslib()
 {
+  [ "$#" -ge 1 ] || return 1
+
   loadlib "sys/sh/$@"
 }
 
@@ -76,13 +70,15 @@ loadlib()
 {
   [ "$#" -ge 1 ] || return 1
 
-  [ -f "$m_LIB_DIR/${1}.lib.sh" ] && [ -r "$m_LIB_DIR/${1}.lib.sh" ] || return 2
+  set -- "$m_LIB_DIR/${1}.lib.sh"
+  [ -f "$1" ] && [ -r "$1" ] || return 2
 
-  eval 'shift; . "$m_LIB_DIR/'"${1}"'.lib.sh"'
+  . "$1"
 }
 ```
 
-This implementation is now factual product state but its contract is not yet promoted. Mechanical `sh` validation confirmed that the embedded-prefix `"sys/sh/$@"` form preserves additional arguments, `eval` performs the `shift` before the dot load, and a top-level library `return` propagates its status through `loadlib`. Two open correctness points remain: `loadsyslib` needs an explicit zero-argument guard if invalid invocation must be distinguishable from a missing library, and the `eval` interpolation is acceptable only if the library reference is first constrained to the controlled internal library-reference grammar. File readability alone does not prove that constraint.
+This deliberately drops positional-parameter forwarding semantics. The next refinement should make that contract explicit by rejecting extra operands rather than silently ignoring them if exact-one-operand loading is selected.
+
 
 ## Completed
 
@@ -102,13 +98,15 @@ No product/runtime code has been modified. The leading working design is now `lo
 
 ## Next action
 
-Define the minimal local/injected `loadsyslib` and explicit preload/bundle contract, then implement the smallest PoC for `menu` using a caller-supplied complete library set.
+1. Finalize the exact-one-library operand contract for `loadlib`/`loadsyslib`.
+2. Route the current menu dependency closure through `loadsyslib`: `bin/sys/menu` -> `menu`, then `menu.lib.sh` -> `array`, `map`, `term`.
+3. Implement the injected `loadlib` backend using only the caller-supplied embedded library set.
+4. Connect the generated stream to the existing `rsudo --interactive` stdin injection path and validate the real menu remotely.
+5. Promote the settled loader/injection contract, add permanent tests, and align mandatory manuals.
 
 ## Blockers / open questions
 
-- Exact library identity accepted by `loadsyslib`.
-- Exact preload declaration surface for dynamically selected libraries.
-- Whether any current system library intentionally depends on mutating its caller's positional parameters.
-- Exact reversible representation, only if caller positional-parameter mutation ever becomes a real requirement.
-- Exact validation grammar for the `loadlib` library reference before interpolation into `eval`.
-- Zero-argument status contract for `loadsyslib`.
+- Exact library reference/identity accepted by `loadlib`.
+- Exact preload declaration surface.
+- Final location/ownership of `loadlib` and `loadsyslib`: they currently live in `core.lib.sh`, but the injected backend must not be overwritten when core is loaded.
+- Core/library manual completeness remains to be aligned when the loader API is promoted.
