@@ -36,6 +36,7 @@ CONSISTENCY-GATE.md
 specifications/README.md
 specifications/rumiai-os/CURRENT-MODEL.md
 specifications/rumiai-os/POSIX-PORTABILITY-LAYER.md
+specifications/rumiai-os/BOOTSTRAP-ENVIRONMENT.md
 specifications/rumiai-os/PACKAGE-MODEL.md
 todo/README.md
 handoff/README.md
@@ -50,6 +51,7 @@ Additional specifications, implementation and permanent tests must be retrieved 
 - Compare both identified upstream projects before any adoption decision.
 - Do not change `rumiai-os` or `pkg-catalog` merely because an upstream project appears promising; product/catalog changes require a concrete adopted use established by the evaluation.
 - Use `rumiai-dev-PoCs` for hands-on experiments when documentation and source inspection are insufficient to establish real behavior.
+- For Python commands materialized inside RumiAI-managed package/runtime contexts, target `#!/usr/bin/env python` as the relocatable launcher form and let the existing `pkg` provider-selection/PATH machinery own the concrete Python version/provider selection.
 
 ## Working design
 
@@ -77,8 +79,9 @@ Current evidence changes the working hypothesis materially:
 - Python relocatability is not one `pip` bug. At least four independent surfaces matter: interpreter/loader/library paths, CPython build metadata such as `sysconfig`, installer-generated package entry points, and environment/native-extension/package-specific state.
 - `pip` is a major source of post-install non-relocatability for generated `console_scripts` / `gui_scripts`: its current wheel installer uses distlib's `ScriptMaker` and deliberately embeds the target environment interpreter in generated launchers. The internal wheel-install function already has a `script_executable` seam, but that is an internal implementation detail rather than a stable public relocatable-install contract.
 - The PyPA `installer` project confirms that wheel materialization is separable from dependency resolution/building: it is a low-level wheel installer with explicit destination and script-generation abstractions. This makes a relocatable-aware final wheel materialization path a plausible candidate without replacing the whole pip resolver/build frontend.
-- A likely architecture to test is therefore: resolve/download/build to wheels with an existing frontend; perform final wheel installation through a relocatability-aware materialization step; generate launchers that find the intended interpreter relative to the installation rather than through a recorded absolute prefix or ambient `PATH`; then validate the resulting tree after movement.
-- `#!/usr/bin/env python` is not assumed to be an acceptable solution because it trades absolute-path coupling for interpreter-identity ambiguity.
+- A likely architecture to test is therefore: resolve/download/build to wheels with an existing frontend; perform final wheel installation through a relocatability-aware materialization step; generate Python command launchers with `#!/usr/bin/env python`; then validate the resulting tree after movement and provider-selection changes.
+- For RumiAI-managed execution, `#!/usr/bin/env python` is the intended primary hypothesis rather than an interpreter-identity ambiguity. The current `pkg` runtime model already owns interpreter selection: a package consumer uses its explicit facility binding when present, otherwise the facility default, and the launcher prepends the selected provider's `facility-cmd` directory to the consumer PATH before exec. Therefore `env python` is expected to resolve the Python provider selected by `pkg`, not an arbitrary host Python. Global `m` execution analogously resolves facility-default commands through the controlled `bin/ext-osarch` / `bin/ext` PATH layers.
+- This late-binding model is desirable because changing a Python consumer binding, facility default or unversioned provider package default can change the interpreter selected by a subsequently launched command without rewriting that command's shebang or package tree.
 - Ordinary `venv` is not a relocatable-runtime solution by itself: its standard model records a `home` relationship and standard installed scripts are designed around environment-specific interpreter paths.
 
 Candidate-specific evidence:
@@ -112,27 +115,29 @@ These are evaluation findings and candidate design state, not adopted RumiAI sub
 - Inspected the current upstream HEADs, build logic and relocatability mechanisms of both identified standalone-Python projects.
 - Inspected current pip wheel-install behavior and confirmed the interpreter-embedding behavior of generated entry-point launchers.
 - Inspected PyPA's lower-level `installer` abstraction as evidence that wheel materialization can be separated from resolver/build responsibilities.
+- Rechecked the current `m` bootstrap and `pkg` runtime-provider contracts after the user correction: global facility commands are exposed through controlled external PATH layers, while a launched package consumer gets the selected provider's facility command directory prepended to PATH after resolving explicit binding before facility default.
 - Identified the main non-relocatability surfaces and narrowed the most promising intervention point to final package materialization rather than a wholesale pip replacement.
 
 ## Current state
 
 The source-level evaluation is sufficiently advanced to reject the simplistic model "pip is the entire relocatability problem", while confirming that pip-style entry-point generation is one major root cause of relocation breakage after additional packages are installed.
 
-No upstream candidate or package-installation design has been adopted yet. The strongest current hypothesis is to combine a relocatable base Python distribution with a controlled, relocatable-aware wheel materialization boundary instead of forking the complete pip dependency resolver/build frontend.
+No upstream base-runtime candidate has been adopted yet. The package-command direction is now fixed task-locally: combine a relocatable base Python distribution with a controlled wheel materialization boundary that emits `#!/usr/bin/env python`, while concrete interpreter selection remains dynamically owned by the existing `pkg` facility binding/default and PATH projection model. This further reduces the reason to fork the complete pip dependency resolver/build frontend.
 
 ## Next action
 
 Create a focused PoC in `rumiai-dev-PoCs` that tests the materialization hypothesis independently of product integration:
 
-1. install representative pure-Python wheels with console entry points using a minimal wheel-installer path;
-2. generate interpreter launchers without embedding the original absolute installation prefix;
-3. move the entire Python/package tree and verify imports plus every generated command;
-4. add a native wheel and a source-built-to-wheel case to expose loader/sysconfig boundaries;
-5. scan the moved tree for behaviorally significant references to the original root and classify each source.
+1. install representative pure-Python wheels with console entry points using a minimal wheel-installer path and emit `#!/usr/bin/env python`;
+2. run the generated commands under a controlled PATH and verify that changing the selected Python provider changes interpreter resolution without rewriting the scripts;
+3. exercise both facility-default selection and a consumer-specific Python binding, verifying that the consumer binding wins through the package launcher's provider command projection;
+4. move the entire Python/package tree and verify imports plus every generated command;
+5. add a native wheel and a source-built-to-wheel case to expose loader/sysconfig boundaries;
+6. scan the moved tree for behaviorally significant references to the original root and classify each source.
 
 Only after this experiment should the task decide whether the required behavior can be obtained by configuring/extending an existing installer, a narrow patch around pip/installer, or a RumiAI-owned materialization responsibility.
 
 ## Blockers / open questions
 
-- Exact cross-platform launcher form remains open; it must preserve interpreter identity and relocation without assuming ambient PATH or introducing a host-specific mechanism into the portable contract.
+- The POSIX-side Python command launcher form is no longer open for the PoC: test `#!/usr/bin/env python` against the controlled `pkg` PATH/provider-selection semantics. Any failure should be treated as evidence about package/provider projection or installer behavior, not replaced pre-emptively with a self-relative launcher.
 - The acceptable policy for source distributions and editable installs remains open. A likely test boundary is "sdist may be built to a wheel in a controlled build phase; final runtime materialization consumes wheels", while editable installs may be incompatible with an immutable relocatable runtime by construction.
