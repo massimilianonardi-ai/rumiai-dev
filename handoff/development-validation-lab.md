@@ -9,9 +9,9 @@ Design a developer-facing live experimentation and validation environment mechan
 
 ## Current repository revisions
 
-- rumiai-dev: b4a323c99245397f0ca8c855587c696a7a798b6d (pre-checkpoint HEAD)
-- rumiai-os: 7d71de0de59120fb85236f087f0298c6dc637d71
-- rumiai-tests: 17a0afde1fb1fcafb3dbc5f737ea74575d1bcc7c
+- rumiai-dev: 8e7f1c598a1fa66b2f437b400ee5fc550ed857a3 (pre-checkpoint HEAD)
+- rumiai-os: 51d0cba5696a94caaf5ae39e2e476a31598a0ae1
+- rumiai-tests: c5dbf627300d095215da21bc07362de03e09337f
 - historical/reference m: 2a57a29880c2d7a32e18782122062c695fcb1a3a (master)
 
 ## Applicable canonical sources
@@ -60,6 +60,31 @@ Design a developer-facing live experimentation and validation environment mechan
 - Do not import formal-validation constraints into ordinary lab use: normal testlab sessions should be able to exercise a dirty/uncommitted development checkout, should not require immutable publication, and need not produce PASS/FAIL when the experiment has no formal oracle. They should record enough target/Git/environment identity to explain what was exercised. A testlab run becomes formal validation evidence only through the existing validation contract, not merely because the live scenario was realistic.
 - For rsudo, a Podman-backed real SSH/sudo target could replace boundary fakes for live/validation scenarios and exercise real sshd, sudo policy, TTY, password-required/passwordless/root cases and a real remote filesystem. Random localhost port publication and tmpfs mounts make non-invasive parallel scenarios plausible; exact portability behavior across Podman hosts still requires a PoC.
 
+## Proposed minimal scenario model (under evaluation)
+
+- A scenario definition describes how to obtain one concrete runtime reality; a scenario instance is the live reality produced or attached by one execution. This distinction is needed for persistent lifecycle/recovery without making activities or assertions part of the scenario definition.
+- A scenario instance may contain multiple heterogeneous resources. Resource ownership is therefore per-resource, not a single scenario-wide flag:
+  - testlab-owned resources may be cleaned up by testlab;
+  - externally owned resources may be inspected/used according to the scenario but must never be destroyed by testlab merely because the scenario ends.
+- The minimal generic lifecycle is conceptual rather than provider-specific:
+  1. check host prerequisites before mutation;
+  2. allocate persistent scenario-instance identity/state;
+  3. create or bind resources while recording each resource immediately;
+  4. establish readiness;
+  5. publish the context/handles needed by activities;
+  6. keep the scenario available for one or more activities and interactive inspection;
+  7. close/release the instance, cleaning only owned resources;
+  8. retain enough state to diagnose failures and recover cleanup after interruption.
+- Scenario context should expose facts, not commands or assertions: paths, host/port, credentials created for the scenario, service endpoints, container/pod identities, or other concrete handles. The representation and naming are intentionally still open.
+- Activity is deliberately not a second framework in the first design. Once a scenario is ready, the consumer may be an interactive user, an arbitrary command/PoC, `rumiai-test`, or later formal validation. Assertions remain owned by the activity/test layer.
+- Interactive use must not be embedded in resource creation itself. Scenario creation/readiness must be separable from later interactive access so the same scenario implementation can also support unattended consumers.
+- Crash/interruption recovery is part of the lifecycle problem: relying only on shell traps is insufficient for long-lived interactive scenarios. Persistent resource inventory should make it possible to identify and clean owned orphan resources without touching external resources.
+- Candidate examples mapped to this model:
+  - real host/system: primarily external resources; readiness validates the requested host capabilities; no host destruction;
+  - local filesystem copy/snapshot: source external, derived copy owned/disposable, exported root pathname;
+  - existing pod/container: external identity is bound/validated and never destroyed by default;
+  - composed Podman scenario: network/containers/volumes created by testlab are owned, readiness waits for required services, context exposes endpoints/credentials, cleanup destroys only those owned resources.
+- The first implementation should stay imperative and minimal enough to learn from the rsudo Podman PoC. Do not create a generic declarative scenario language, resource graph, backend-neutral plugin system or activity DSL before multiple real scenarios demonstrate the need.
 ## Completed
 
 - Mandatory preflight completed for rumiai-dev, rumiai-os, rumiai-tests and the referenced historical m repository.
