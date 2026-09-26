@@ -121,7 +121,7 @@ Bare `osarch` reports only the currently selected normalized `osarch`. The activ
 
 `osarch update` detects the normalized operating system and architecture of the host on which it is executing and selects that identity. `osarch set <osarch>` selects an explicit supported normalized identity instead of using host detection. Both mutation forms ensure the corresponding `sys-<osarch>`, `ext-<osarch>` and `ai-<osarch>` directories exist and make all three selector symlinks relative to those roots.
 
-`osarch-set` and `osarch-update` remain compatibility commands for the previous command surface. Platform selection is never run implicitly by the bootstrap.
+Platform selection is never run implicitly by the bootstrap.
 
 Command-name collisions between `m` and RumiAI SHOULD be avoided. A real exception requires an explicit current contract.
 
@@ -433,7 +433,6 @@ CURRENT-25   osarch is the canonical executable-platform query/selection command
 CURRENT-26   bare osarch reports the active selection only when sys-osarch, ext-osarch and ai-osarch are valid and aligned
 CURRENT-27   osarch show reports selector targets and their resolved physical paths
 CURRENT-28   osarch update selects the detected host osarch and osarch set selects an explicit supported osarch
-CURRENT-29   osarch-set and osarch-update remain compatibility commands for the previous selector surface
 CURRENT-30   mk lifecycle operation names are extensible rather than a mandatory hard-coded global set
 CURRENT-31   mk supports both delegation to suitable external lifecycle/build engines and finer-grained direct orchestration
 CURRENT-32   mk lifecycle engine implementation language is JavaScript
