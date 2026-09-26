@@ -1,26 +1,26 @@
-# Podman static package feasibility
+# Podman package feasibility
 
 Status: Active
 Updated: 2026-09-26
 
 ## Goal
 
-Determine whether the current upstream `mgoltzsche/podman-static` Linux bundle can be used directly as the basis for a relocatable RumiAI `pkg podman`, especially for disposable service/interactions testing, and identify only the concrete host dependencies or incompatibilities that would require RumiAI-side adaptation or upstream reporting.
+Determine the correct RumiAI integration path for Podman without substituting a behaviorally reduced build for the normal official installation.
+
+The decision criterion is now stricter than simple relocatability: a RumiAI `pkg podman` is useful only when it preserves the materially relevant behavior of the official/native Podman distribution. Otherwise RumiAI should use the normal host installation path.
 
 ## Current repository revisions
 
-- rumiai-dev: 888eb8b6935360137288e72370e87b795e4f9256
-- rumiai-dev-PoCs: 8bec42ffa657d22aac4641af2bb2c98217625554
+- rumiai-dev: 284be9a8d895afaed2239e22c6be1eb5dfd8a525
+- rumiai-dev-PoCs: 948fd749f303aeaff2f7eb4d1fa6ecf181ef103f
 - pkg-catalog: da9b8989088c8b3f2d8201ad09e5f7180f334a16
-- rumiai-os: 3d1f687cc12bac0467d37def42169bd5dbfb9912
+- rumiai-os: 4f429c811f9c19889d0d8f6fa42b0423356beecd
 
 ## Applicable canonical sources
 
 - README.md
 - RULES.md
 - CONSISTENCY-GATE.md
-- TESTING.md
-- DEVELOPMENT.md
 - specifications/README.md
 - specifications/rumiai-os/PACKAGE-MODEL.md
 - specifications/rumiai-os/POSIX-PORTABILITY-LAYER.md
@@ -28,36 +28,76 @@ Determine whether the current upstream `mgoltzsche/podman-static` Linux bundle c
 
 ## Fixed task-local choices
 
-- Treat `mgoltzsche/podman-static` as the preferred upstream implementation to reuse directly.
-- Do not rebuild, fork or add RumiAI-specific patches unless an observed defect or contract mismatch requires it.
-- When a genuine upstream defect is found, prefer a minimal reproducible report/fix suitable for upstream before carrying a private RumiAI divergence.
-- Initial scope is Linux, with rootless service/test workloads as the primary use case.
-- This investigation does not yet authorize or imply a promoted `pkg-catalog` package definition; first establish empirical compatibility.
+- Do not create a Linux `pkg podman` from a Podman build that is materially different from the normal official/native installation merely to obtain relocatability.
+- On Linux, prefer the distribution/native Podman installation when the alternative bundle changes supported behavior.
+- `mgoltzsche/podman-static` remains useful experimental evidence and may still be useful for narrowly constrained environments, but it is no longer the preferred basis for a general RumiAI `pkg podman`.
+- Do not rebuild, fork or carry private Podman patches merely to force a package shape.
+- On macOS, investigate the official Podman installer as the preferred no-Homebrew path. A RumiAI package is interesting only if it can reuse the official artifacts without losing materially relevant installer/runtime behavior.
+- Do not change `pkg` or add a `pkg-catalog` Podman definition until that equivalence question is resolved empirically.
 
-## Working design
+## Experimental evidence completed
 
-- Experimental work belongs in `rumiai-dev-PoCs`.
-- The PoC should test the released binary bundle from an arbitrary relocated directory, isolate mutable Podman configuration/storage/runtime state, and distinguish bundled userland dependencies from unavoidable Linux host requirements.
-- Relevant behaviors include at least basic container execution, networking/port forwarding, a multi-container or pod interaction, and `podman play kube` when the execution environment permits them.
+PoC 036 in `rumiai-dev-PoCs/pocs/036-podman-static-relocatability` validated the current `mgoltzsche/podman-static` v6.1.2 Linux bundle.
 
-## Completed
+Observed positive behavior after physical relocation and isolated state/configuration:
 
-- Compared the historical `popsUlfr/podman-appimage`, current `mgoltzsche/podman-static`, and the upstream Podman container image.
-- Confirmed that current `podman-static` publishes Podman 6.1.2 static Linux bundles for amd64 and arm64 with the main Podman runtime/network/storage helpers.
-- Confirmed that the upstream static project already exercises rootless networking, UID mapping, image builds, port forwarding and `podman play kube` in its own tests.
+- shipped runtime/network helpers are static or static PIE;
+- relocated Podman uses relocated `conmon` and `crun`;
+- `podman info`, image pull and basic container execution pass on suitable hosts;
+- rootless networking passes;
+- multi-container pod communication passes;
+- host port forwarding passes;
+- `podman kube play/down --network=pasta` passes.
+
+Observed integration constraints:
+
+- strict Ubuntu 24.04 AppArmor unprivileged-user-namespace policy is pathname-sensitive and blocks rootless re-exec of an arbitrarily relocated Podman binary;
+- default Kube networking on the hosted test environment reached Netavark/Aardvark but failed when a systemd host had no user systemd bus; the explicit `pasta` path passed;
+- automatic Podman health-check scheduling remained in `starting`.
+
+The last point is material to the revised decision: the static project explicitly builds Podman without the `systemd` build tag. It is therefore not a behaviorally identical substitute for a normal feature-complete Podman installation.
+
+## macOS official installer findings
+
+Current official Podman installation guidance recommends the Podman installer on macOS and explicitly does not recommend Homebrew as the primary installation path.
+
+Podman v6.1.2 currently publishes the official asset:
+
+`podman-installer-macos-arm64.pkg`
+
+The upstream package build:
+
+- installs its payload under `/opt/podman`;
+- includes the official Podman client, `gvproxy`, `vfkit`, `krunkit`, `podman-mac-helper` and associated libraries/docs;
+- compiles Podman with additional helper binaries rooted at `/opt/podman/bin`;
+- runs pre/post-install scripts that manage `/opt/podman`, `/etc/paths.d`, the manpath and `podman-mac-helper install`;
+- documents that `helper_binaries_dir` can alternatively be overridden in `containers.conf`;
+- treats installation of `podman-mac-helper` as non-mandatory for basic Podman use, while that helper manages the default Docker socket integration.
+
+Current RumiAI `pkg` extraction supports `dmg-pkg`, but not a direct macOS flat `.pkg` artifact. More importantly, simply extracting the official payload into the relocatable package store would skip the official install scripts and move the payload away from the build-time `/opt/podman/bin` helper path.
+
+Therefore direct payload extraction cannot yet be called equivalent to the official installation.
 
 ## Current state
 
-The next step is empirical validation of the current `podman-static` release artifact itself, not redesign.
+Linux package promotion is stopped: no `pkg-catalog` Podman definition should be created from `podman-static`.
+
+The remaining useful question is macOS-specific: can the exact official Podman `.pkg` payload be used relocatably with only documented configuration overrides while preserving the Podman behavior RumiAI needs, or should RumiAI simply require/use the official system installer?
 
 ## Next action
 
-1. Create a focused PoC in `rumiai-dev-PoCs`.
-2. Inspect the release archive contents and binary linkage.
-3. Execute relocatability and isolated-state experiments in an available Linux environment.
-4. Record exact remaining host dependencies and classify any failures as environment limitation, upstream defect, or RumiAI integration mismatch.
+Run a macOS PoC against the official Podman v6.1.2 installer to:
 
-## Blockers / open questions
+1. verify and expand the exact signed release asset;
+2. inspect the installed payload and installer scripts as actually packaged;
+3. relocate the official payload without rebuilding any binary;
+4. override only documented helper lookup configuration;
+5. determine which Podman machine/client operations still work and which specifically depend on the system installer side effects.
 
-- Whether the available auxiliary Linux environment exposes the kernel/user-namespace/FUSE/network facilities required for full rootless execution.
-- Whether current hard-coded helper/configuration paths in the upstream bundle require only launch-time configuration or an actual upstream/RumiAI change.
+Only if that path remains materially equivalent should a RumiAI `pkg podman` for macOS be considered.
+
+## Open questions
+
+- Whether the official macOS Podman payload can operate fully enough from a relocated root with `helper_binaries_dir` redirected.
+- Whether `podman-mac-helper` / default Docker socket integration is required by the RumiAI test/runtime use case.
+- Whether macOS hosted CI permits enough virtualization to validate `podman machine` beyond payload/configuration inspection.
