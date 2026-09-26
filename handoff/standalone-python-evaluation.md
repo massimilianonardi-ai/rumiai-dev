@@ -19,6 +19,7 @@ rumiai-dev       8e60879fd765dc9da837ace3085c9a713e3baabb
 rumiai-os        b1ec3502b911c414945300df6165385ec0d196ef
 rumiai-dev-PoCs  94e2d6a385236a081815b0a700b7c2b2be0c92bd
 pkg-catalog      565adc534399e5d4759c8eae24fca197aa912ab9
+rumiai-tests      17f4c7fc18e079cde37c3dba70a2d5df578ba713
 
 upstream evidence inspected:
 scc-tw/standalone-python             3528f5677e7b6b70bd52c191dc1468a347025b68
@@ -116,6 +117,8 @@ These are evaluation findings and candidate design state, not adopted RumiAI sub
 - Inspected current pip wheel-install behavior and confirmed the interpreter-embedding behavior of generated entry-point launchers.
 - Inspected PyPA's lower-level `installer` abstraction as evidence that wheel materialization can be separated from resolver/build responsibilities.
 - Rechecked the current `m` bootstrap and `pkg` runtime-provider contracts after the user correction: global facility commands are exposed through controlled external PATH layers, while a launched package consumer gets the selected provider's facility command directory prepended to PATH after resolving explicit binding before facility default.
+- Verified the current `rumiai-os` implementation: `_pkg_launch_provider_apply` prepends the selected provider's `facility-cmd/<facility>` directory to `PATH`, and `_pkg_launch_dependencies_apply` resolves the effective provider at each launch before exec.
+- Verified permanent tests in `rumiai-tests`: `pkg-launch/contract.test` proves an unbound consumer follows the facility default, an explicit binding switches provider at runtime without reinstalling the consumer, removing the binding restores inheritance, and changing the facility default is observed by the same installed consumer. `pkg/dependency.test` separately proves late binding and provider-package-default changes.
 - Identified the main non-relocatability surfaces and narrowed the most promising intervention point to final package materialization rather than a wholesale pip replacement.
 
 ## Current state
