@@ -37,9 +37,9 @@ The earlier parser/in-place-inline design is no longer the only preferred direct
 
 Candidate semantic model:
 
-- local mode: `loadsyslib <library> [args...]` resolves the local system library and dot-sources it as the final operation inside the `loadsyslib` function;
-- injected mode: the generated stream contains only selected/preloaded system libraries and a runtime dispatcher that executes the selected embedded library inside the same `loadsyslib` function boundary;
-- optional caller positional parameters are forwarded explicitly with `"$@"` when a library needs them;
+- local mode: `loadsyslib <library> [args...]` can remain a small resolver that dot-sources the resolved local system library as the final operation inside the `loadsyslib` function;
+- injected mode may override/redefine `loadsyslib` with an injection-specific implementation backed only by libraries embedded in the stream; the caller surface remains unchanged even though the backend is different;
+- optional caller positional parameters are forwarded explicitly with `"$@"` when a library needs them, e.g. `loadsyslib <library> "$@"`;
 - top-level `return` naturally terminates the current library load in both modes;
 - `set --` and `shift` affect the loader/library positional parameters only and do not mutate the caller's positional parameters after `loadsyslib` returns;
 - variable/function definitions and other current-shell effects remain visible because no subshell is introduced by the normal loader call.
@@ -54,7 +54,7 @@ Dynamic loading remains the central bundle problem. Proposed bundle policy:
 - each explicitly preloaded library also pulls in its statically discoverable dependencies;
 - a runtime request for a library not embedded in the stream fails deterministically rather than falling back to a remote RumiAI filesystem.
 
-The suggested caller pattern `set -- $(loadsyslib <lib> "$@")` is not suitable for preserving caller positional parameters: command substitution executes in a subshell environment, so library side effects such as variable and function definitions are lost, and unquoted command-substitution output cannot losslessly represent arbitrary positional parameters because of field splitting, globbing and empty-argument loss. A general caller-argv propagation mechanism, if ever required, needs a separate explicit contract and should not complicate the ordinary loader path.
+Caller positional-parameter mutation is currently an extreme/unobserved case and should not complicate the normal loader path. A pattern such as `loadsyslib <lib> "$@"; set -- $loadsyslib_args` would require `loadsyslib_args` to use an explicitly reversible representation; a plain unquoted expansion is not lossless because field splitting, pathname expansion and empty-argument loss can change the argument vector. If this case ever becomes real, use an explicit shell-quoted/decoded handoff or another dedicated contract rather than silently approximating caller `set --` semantics.
 
 The exact library-name identity, preload syntax and static-dependency discovery mechanism remain open. Static discovery still needs syntax-aware parsing or another mechanism that cannot confuse comments/data with real `loadsyslib` invocations.
 
@@ -81,3 +81,4 @@ Audit current system libraries for caller-positional-parameter dependence and dy
 - Exact preload declaration surface for dynamically selected libraries.
 - Whether any current system library intentionally depends on mutating its caller's positional parameters.
 - Static dependency discovery mechanism for `loadsyslib` calls.
+- Exact reversible representation, only if caller positional-parameter mutation ever becomes a real requirement.
