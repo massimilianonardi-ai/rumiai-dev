@@ -128,6 +128,7 @@ The parser resolves explicit system-library dot imports only. It does not infer 
 - Confirmed that current interactive `rsudo` consumes piped stdin into the remote command construction path before opening the interactive SSH PTY.
 - Compared a runtime `loadsyslib` abstraction with source-level inline transformation and selected source-level parsing/inlining for this workstream.
 - Defined a first fail-closed parser/transformer contract proposal around parsed canonical POSIX dot imports, recursive in-place brace expansion, cycle detection and explicit rejection of dot-boundary `return`.
+- Verified from POSIX.1-2024 that `.` is not a valid alias name, so portable alias substitution cannot shadow the canonical dot command.
 
 ## Current state
 
@@ -140,5 +141,4 @@ Review/fix the proposed parser contract, then implement the smallest PoC able to
 ## Blockers / open questions
 
 - Confirm whether direct `LINENO` use should be a hard inline-safety error or an explicitly documented non-preserved source-location observable.
-- Decide whether alias-affecting commands need to be rejected in the first inline-safe subset.
 - Parser implementation choice remains open; it must satisfy this contract rather than define it.
