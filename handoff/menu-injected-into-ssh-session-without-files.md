@@ -9,9 +9,9 @@ Define and validate source streaming that can inject an existing `m` command plu
 
 ## Current repository revisions at this checkpoint
 
-- rumiai-dev: 6adbae0d87a9bc2484067eea3e9e4201d7f0dff9
-- rumiai-os: c3343b98813164f77a6b84af4f28012acdfec569
-- rumiai-tests: 68516b27b2d3a3cd20d96092269be3d3b079421a
+- rumiai-dev: b065844c8a419067fa5a15023268e24c22140c3a
+- rumiai-os: 51d0cba5696a94caaf5ae39e2e476a31598a0ae1
+- rumiai-tests: c5dbf627300d095215da21bc07362de03e09337f
 
 Always re-read remote HEADs before resuming; these values are checkpoint evidence, not authoritative future HEADs.
 
@@ -114,23 +114,37 @@ The first post-migration full health run exposed real migration/test-consistency
 
 ## Validation state
 
-Initial health run 82 for rumiai-tests `17f4c7fc18e079cde37c3dba70a2d5df578ba713` failed. Its migration-relevant failures were analyzed and drove the corrections above; it is not completion evidence.
+The complete current product migration is structurally protected by `tests/rumiai-os/bootstrap/library-loading.test`, including a recursive scan that rejects any owned `lib/sys/sh` direct dot import. On the current migrated product this test passes.
 
-Health run 94:
+A full-product validation froze:
 
 ```text
-run id: 36267949391
-rumiai-tests: 68516b27b2d3a3cd20d96092269be3d3b079421a
-frozen rumiai-os: bdfe8d2aff94ccf7e162edd394be37dc3eb3e24c
+rumiai-os:    51d0cba5696a94caaf5ae39e2e476a31598a0ae1
+rumiai-tests: 1341e7790bb0e33f70fab915322ee75020ec9ec3
 ```
 
-has started full formal validation. Ubuntu is executing and macOS is queued at this checkpoint.
+On GitHub Ubuntu 24.04 x64 its baseline session produced 153 PASS, 1 FAIL, 13 SKIP, 0 ERROR; the only failure was the pre-existing `rumiai-os/rsudo/fs.test`. Published test evidence showed the first regular-file put failed because the runner's `/bin/sh` rejected POSIX.1-2024 `set -o pipefail`:
 
-The frozen product revision includes the complete migration plus the osarch and rsudo runtime corrections. Later current product commits `f82e8c7...` and `c3343b9...` only realign operational manuals and do not change runtime behavior, but the final work unit still needs revision-appropriate validation/evidence before closure.
+```text
+set: Illegal option -o pipefail
+```
+
+The same rsudo/fs test already failed on 2026-09-25 before this loadsyslib migration, so it is not a migration regression.
+
+External verification established that Ubuntu 24.04 ships dash 0.5.12-6ubuntu5, while pipefail support entered dash in 0.5.12-7. The current RumiAI stable Linux reference is Ubuntu 26.04 ARM64; GitHub now provides the production `ubuntu-26.04-arm` runner. The health workflow was therefore realigned from `ubuntu-latest` (still resolving to Ubuntu 24.04 during GitHub's staged migration) to `ubuntu-26.04-arm`.
+
+The workflow realignment is committed in rumiai-tests as:
+
+```text
+c5dbf627300d095215da21bc07362de03e09337f
+Validate health on Ubuntu 26.04 ARM64
+```
+
+A new full-product validation run is active against the same frozen current `rumiai-os` revision using the canonical Ubuntu 26.04 ARM64 host plus macOS. This run, not the incompatible Ubuntu 24.04 run, is the completion evidence required before the task moves into stream-generation/injection work.
 
 ## Next action
 
-Inspect health run 94 completely, resolve every migration-caused or current-contract product/test failure it exposes, and obtain a satisfactory full-product validation for the final applicable revisions.
+Inspect the new full-product health run triggered by rumiai-tests `c5dbf627300d095215da21bc07362de03e09337f` completely on Ubuntu 26.04 ARM64 and macOS. Resolve any remaining current-contract failures before continuing.
 
 Do not proceed to stream generation or rsudo injection integration until the global `loadsyslib` migration has passed this full-product validation milestone.
 
