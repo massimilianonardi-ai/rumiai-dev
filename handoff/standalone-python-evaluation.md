@@ -19,7 +19,7 @@ rumiai-dev       758db914093f6db53f3fcc905c6330ce80e3623e
 rumiai-os        b6f33c542155d58b770e5afabd460d116936318d
 rumiai-dev-PoCs  aeb15a20f711cdf28a240dedd4d38aa8d54220b8
 pkg-catalog      565adc534399e5d4759c8eae24fca197aa912ab9
-rumiai-tests      17a0afde1fb1fcafb3dbc5f737ea74575d1bcc7c
+rumiai-tests      9302b65fc9e386390695bb8161fe135b04e2155b
 
 upstream evidence inspected:
 scc-tw/standalone-python             3528f5677e7b6b70bd52c191dc1468a347025b68
