@@ -77,15 +77,17 @@ m_LANG_FALLBACK_DIR=$m_LANG_DIR/$m_LANGUAGE_FALLBACK
 
 `m_LOG_LEVEL` may be supplied/exported as runtime configuration and is not made readonly by the bootstrap.
 
-## Core library
+## Library loader and core library
 
-After establishing the technical roots/PATH, `m` sources:
+After establishing the technical roots/PATH, `m` defines the `loadlib` and `loadsyslib` primitives described by `LIBRARY-INTERFACES.md`.
+
+The bootstrap then loads the core library through:
 
 ```text
-$m_LIB_DIR/sys/sh/core.lib.sh
+loadsyslib core
 ```
 
-The bootstrap does not source arbitrary feature libraries pre-emptively. The package provider library is the explicit exception required by the facility-default global-environment contract described below.
+The bootstrap does not load arbitrary feature libraries pre-emptively. The package provider library is the explicit exception required by the facility-default global-environment contract described below.
 
 ## State roots
 
@@ -106,7 +108,7 @@ See `STATE-MODEL.md`.
 After the core library and semantic state roots exist, `m` loads the package provider library:
 
 ```text
-$m_LIB_DIR/sys/sh/pkg/pkg-provider.lib.sh
+loadsyslib pkg/pkg-provider
 ```
 
 and applies the environment projections of currently resolvable system facility defaults before command dispatch or technical-shell entry.
@@ -172,4 +174,5 @@ BOOT-11  facility-default environment uses a valid ext-osarch class when availab
 BOOT-12  facility defaults are applied in LC_ALL=C facility-name order and later assignments win on duplicate ordinary variables
 BOOT-13  facility-env cannot replace PATH; executable exposure remains owned by the technical command-path layers
 BOOT-14  a failed global provider-environment projection does not make the technical bootstrap unavailable or leave a partially applied provider environment
+BOOT-15  m defines loadlib/loadsyslib before loading core.lib.sh and uses loadsyslib for owned system shell libraries
 ```
