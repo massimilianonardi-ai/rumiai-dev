@@ -9,8 +9,8 @@ Define and validate a source-streaming mechanism that can inject the existing `m
 
 ## Current repository revisions
 
-- rumiai-dev: 310d91de37e17784a148449a5742ccafd70ab179
-- rumiai-os: a084c418ba8417b7d548bed5f85b2cf464d6df6d
+- rumiai-dev: c3f343c933ea0a54b62bd6481379003f2d52b3bf
+- rumiai-os: 477199783c05b22e7588c11f07861b905116c5e4
 - rumiai-tests: 4bad71ec5b75adfb5e6ee1c98d5256e356bef605
 
 ## Applicable canonical sources
@@ -89,20 +89,22 @@ This deliberately drops positional-parameter forwarding semantics. The next refi
 - Defined and then superseded a first parser/in-place-inline proposal after identifying that a function-boundary loader can handle top-level `return` consistently without source inlining.
 - Removed automatic static dependency discovery from the injection design: the caller now owns the complete embedded library set, so injection requires no shell parser or dependency closure engine.
 - Refined the loader into a `loadsyslib` specialization over a lower-level `loadlib`.
+- Added `lib/sys/sh/loadlib-inject.lib.sh` as the streaming/in-memory `loadlib` backend. It exposes only `loadlib`; the stream-specific preload set must redefine the internal `_loadlib_inject_dispatch` function, which maps embedded library references to generated wrappers. Missing embedded libraries fail deterministically with status 2.
+- Added the mandatory `res/sys/manual/loadlib-inject.lib.sh` operational manual.
+- Auxiliary POSIX `sh` checks passed for syntax, invalid-call status 1, default missing-library status 2, and propagation of a generated dispatcher status.
 - Reconciled a concurrent `rumiai-os` advance: `core.lib.sh` now implements `loadsyslib`/`loadlib` using an embedded-prefix `"sys/sh/$@"` call and an `eval` that shifts before dot-loading the selected file.
 - Verified from POSIX.1-2024 that `.` is not a valid alias name, so portable alias substitution cannot shadow the canonical dot command.
 
 ## Current state
 
-No product/runtime code has been modified. The leading working design is now `loadsyslib` with a deliberate function-boundary contract and fully explicit caller-selected library embedding. The injector performs no dependency discovery or automatic closure. The earlier parser/in-place-inline and automatic-static-closure designs are superseded exploration, not current candidates.
+Product/runtime code has now been modified: the local `loadlib`/`loadsyslib` implementation exists in `core.lib.sh`, and the separate streaming backend `loadlib-inject.lib.sh` now exists with its manual. The injector performs no dependency discovery or automatic closure; the caller remains responsible for the complete embedded library set. The next required milestone is full-product migration to `loadsyslib` followed by complete-suite validation before further injection work.
 
 ## Next action
 
-1. Finalize the exact-one-library operand contract for `loadlib`/`loadsyslib`.
-2. Route the current menu dependency closure through `loadsyslib`: `bin/sys/menu` -> `menu`, then `menu.lib.sh` -> `array`, `map`, `term`.
-3. Implement the injected `loadlib` backend using only the caller-supplied embedded library set.
-4. Connect the generated stream to the existing `rsudo --interactive` stdin injection path and validate the real menu remotely.
-5. Promote the settled loader/injection contract, add permanent tests, and align mandatory manuals.
+1. Migrate the complete current rumiai-os shell-library call surface from direct system-library dot imports to `loadsyslib`, not only the menu path.
+2. Run the complete permanent product test suite after that migration and resolve any regressions before continuing the injection implementation.
+3. Only after the global migration is validated, build the stream generator/dispatcher around `loadlib-inject.lib.sh` and connect it to `rsudo --interactive`.
+4. Promote the settled loader/injection contract and align remaining manuals/tests as part of the same completed workstream.
 
 ## Blockers / open questions
 
