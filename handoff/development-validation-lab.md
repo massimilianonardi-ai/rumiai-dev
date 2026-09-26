@@ -30,7 +30,7 @@ Design a developer-facing live experimentation and validation environment mechan
 
 ## Fixed task-local choices
 
-- The command/product name is intentionally unresolved.
+- The working command identity is `testlab`.
 - The historical massimilianonardi-ai/m repository is reference material only, not current authority.
 - The new mechanism must not turn rumiai-test into an environment preparer or assertion-aware orchestrator.
 - Permanent test assertions remain in normal .test files; environment/lab orchestration must not become an alternative implementation of target behavior.
@@ -54,7 +54,7 @@ Design a developer-facing live experimentation and validation environment mechan
 
 ## Current state
 
-The architectural gap is now identified: RumiAI has a strict permanent-test runner and a strict formal-validation launcher, but no explicit developer lab/scenario surface for real disposable exploratory environments. The command name, repository placement, scenario format and validation-integration contract remain open.
+The architectural gap is now identified: RumiAI has a strict permanent-test runner and a strict formal-validation launcher, but no explicit developer lab/scenario surface for real disposable exploratory environments. The working command identity is now `testlab`; repository placement, scenario format and validation-integration contract remain open.
 
 ## Next action
 
@@ -62,7 +62,7 @@ Define the minimal first scenario around rsudo + real sshd/sudo in Podman, use i
 
 ## Blockers / open questions
 
-- Final command name and repository/ownership.
+- Final repository/ownership.
 - Scenario representation and lifecycle verbs.
 - Whether Podman is the only initial backend or one provider behind a backend-neutral scenario contract.
 - Exact boundary for reusing mature scenarios inside rumiai-validate execution requirements.
