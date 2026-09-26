@@ -151,11 +151,20 @@ Integrated command files therefore use:
 
 when directly executable.
 
+The two branded root entrypoints are an explicit bootstrap exception to the shebang-based integrated-command recognition. They remain directly bootstrappable `#!/bin/sh` root entrypoints, but when `m` receives either exact root pathname as its command body:
+
+```text
+$m_ROOT/rumiai-os
+$m_ROOT/rumiai-os-sh
+```
+
+it sources that body in the initialized `m` runtime rather than executing it as an external child. This gives the branded body access to `m_COMMAND_BIN`, the initialized runtime functions and the technical PATH exactly once, avoiding recursive bootstrap and duplicate technical PATH prefixes.
+
 ## Branded entrypoints
 
-`rumiai-os-sh` resolves its product root, invokes `m` with itself as the command body, prepends the `ai` executable layer and enters the shell.
+`rumiai-os-sh` resolves its product root and, when invoked directly, invokes `m` with itself as the command body. `m` recognizes that branded root pathname explicitly and sources the body in the initialized runtime. The body then prepends the `ai` executable layer and enters the shell.
 
-The current `rumiai-os` entrypoint follows the same shell-oriented implementation baseline. This equivalence is not a permanent GUI contract.
+The current `rumiai-os` entrypoint follows the same shell-oriented bootstrap/source/activation model using its own root pathname. This equivalence is not a permanent GUI contract.
 
 ## Invariants
 
@@ -175,4 +184,5 @@ BOOT-12  facility defaults are applied in LC_ALL=C facility-name order and later
 BOOT-13  facility-env cannot replace PATH; executable exposure remains owned by the technical command-path layers
 BOOT-14  a failed global provider-environment projection does not make the technical bootstrap unavailable or leave a partially applied provider environment
 BOOT-15  m defines loadlib/loadsyslib before loading core.lib.sh and uses loadsyslib for owned system shell libraries
+BOOT-16  branded root entrypoints remain #!/bin/sh direct bootstraps but are sourced by m when passed back as exact root command bodies
 ```

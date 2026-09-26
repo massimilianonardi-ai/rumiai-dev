@@ -102,9 +102,13 @@ $m_ROOT/rumiai-os
 $m_ROOT/rumiai-os-sh
 ```
 
-They are product entrypoints rather than technical-runtime identity. They bootstrap/delegate to `m` and activate the RumiAI executable layer.
+They are product entrypoints rather than technical-runtime identity. They use `#!/bin/sh` so direct invocation can resolve the product root and delegate to the exact root `m` bootstrap without depending on an already-prepared PATH.
 
-Their current shared shell-oriented implementation baseline does not establish the eventual GUI architecture of `rumiai-os`.
+After that direct bootstrap handoff, `m` treats the exact branded root pathname as a special command body and sources it in the initialized runtime. Each branded body recognizes its own `m_COMMAND_BIN`, prepends the RumiAI `ai-osarch` and `ai` executable layers exactly once, and enters the managed shell facility.
+
+This branded-root sourcing rule is specific to these two product entrypoints. It does not reclassify arbitrary `#!/bin/sh` utilities as bootstrap-integrated commands and does not change the normal `#!/usr/bin/env m` contract for integrated commands.
+
+Their current shared shell-oriented behavior does not establish the eventual GUI architecture of `rumiai-os`.
 
 ## Public command naming
 
@@ -155,4 +159,5 @@ ENTRY-06  public command names do not expose implementation-language suffixes
 ENTRY-07  internal libraries are not executable entrypoints
 ENTRY-08  every `m`- or RumiAI-owned directly executable command identity has an operational manual topic
 ENTRY-09  shell command entrypoints should normally define functions before a final main "$@" call; simple commands may omit that structure when direct top-level code is clearer
+ENTRY-10  rumiai-os and rumiai-os-sh use #!/bin/sh for direct root bootstrap and are explicitly sourced by m when re-entered as exact branded root command bodies
 ```
