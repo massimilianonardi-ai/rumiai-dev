@@ -35,7 +35,35 @@ The `.lib.<runtime>` components are part of the library identity. They are not d
 
 Package-owned external libraries are outside this `m`- or RumiAI-owned library contract unless another current specification explicitly adopts them.
 
-## 2. Public and internal function visibility
+## 2. System shell library loading
+
+The technical `m` bootstrap provides these POSIX-shell loading primitives before it loads `core.lib.sh`:
+
+```text
+loadlib <library-reference>
+loadsyslib <system-shell-library-reference>
+```
+
+`loadlib` accepts exactly one library reference, resolves it below `m_LIB_DIR` by appending `.lib.sh`, requires the resulting pathname to be a readable regular file, and dot-sources that file in the current shell environment.
+
+`loadsyslib` accepts exactly one reference relative to `lib/sys/sh/` and delegates it to `loadlib` with the `sys/sh/` owner/runtime prefix.
+
+Every `m`- or RumiAI-owned shell source that loads an `m` system shell library under `lib/sys/sh/` MUST use `loadsyslib`. This includes both statically spelled and runtime-selected owned system-library references. Direct dot-sourcing through `m_LIB_DIR/sys/sh/...lib.sh` is reserved to the bootstrap implementation of the loader itself and is not a caller mechanism.
+
+This rule does not replace ordinary POSIX dot-sourcing for pathnames that are runtime data rather than owned system-library references, such as package adapters or other explicitly external/runtime-selected source files.
+
+The library reference used by `loadsyslib` is the physical path below `lib/sys/sh/` without the final `.lib.sh`, for example:
+
+```text
+array
+pkg/pkg-install
+pkg/facility/pkg-dependency
+rsudo/rsudo-mod-fs
+```
+
+The loading primitive intentionally carries no positional-parameter forwarding contract: one library reference is the complete call interface.
+
+## 3. Public and internal function visibility
 
 Every function defined as part of a `m`- or RumiAI-owned library must be classified as either:
 
@@ -60,7 +88,7 @@ A runtime-specific specification may impose stricter valid-function-name syntax,
 
 A function changing from public to internal or internal to public is an interface change and therefore requires the corresponding rename plus caller, test and manual realignment in the same authorized work unit.
 
-## 3. Library operational manual
+## 4. Library operational manual
 
 Every `m`- or RumiAI-owned library identity MUST have exactly one owner-local operational manual topic under the `manual` resource class defined by `DOCUMENTATION-MODEL.md`.
 
@@ -102,7 +130,7 @@ Internal function identifiers MUST NOT be listed or documented as part of the li
 
 A library with no public function interface still requires its library manual topic; the page states that it exposes no public callable functions rather than documenting internal helpers.
 
-## 4. Development lifecycle coupling
+## 5. Development lifecycle coupling
 
 Library implementation, public API naming and operational documentation are one consistency unit.
 
@@ -136,7 +164,7 @@ the manual advertises an internal function as API
 the implemented public interface and manual disagree
 ```
 
-## 5. Mechanical coverage
+## 6. Mechanical coverage
 
 Permanent structural coverage MUST recursively detect every `m`- or RumiAI-owned library below an owner/runtime library tree and detect every library identity that lacks its required owner-local manual topic. Physical subsystem grouping directories MUST NOT create nested manual-topic identities.
 
@@ -144,7 +172,7 @@ The current plain-text manual model does not by itself make prose a machine-read
 
 A future richer documentation source model may make stronger API/manual consistency checks possible without changing the visibility contract defined here.
 
-## 6. Invariants
+## 7. Invariants
 
 ```text
 LIB-01  every `m`- or RumiAI-owned library function is classified as public or internal
@@ -157,4 +185,8 @@ LIB-07  a library manual exposes all public functions and does not expose intern
 LIB-08  library/API/manual realignment occurs in the same work unit for interface-affecting changes
 LIB-09  structural permanent coverage recursively detects missing mandatory library manual topics across grouped library directories
 LIB-10  physical subsystem grouping directories are not part of library identity or manual topic identity
+LIB-11  m provides loadlib/loadsyslib before core.lib.sh is loaded
+LIB-12  every owned lib/sys/sh shell-library import uses loadsyslib
+LIB-13  loadsyslib/loadlib accept exactly one library reference and do not forward positional parameters
+LIB-14  runtime/external pathname sourcing remains ordinary POSIX dot-sourcing
 ```
