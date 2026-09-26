@@ -11,7 +11,7 @@ Align the current rsudo contract, command/library operational documentation and 
 
 - rumiai-dev: afa16ac4c2e130c8ee0494fdc10ad20b307b5050 (pre-checkpoint HEAD)
 - rumiai-os: 4f429c811f9c19889d0d8f6fa42b0423356beecd
-- rumiai-tests: e5515f55aad6d3de193e5472e630f7b56bed5031
+- rumiai-tests: e367d3bc82766a4aa529d1c31d033242fd4513ed
 
 ## Applicable canonical sources
 
@@ -60,8 +60,9 @@ Align the current rsudo contract, command/library operational documentation and 
 - The user advanced runtime behavior in `rumiai-os@571e0df39a103349eae78ba2d4d8161660f084e4`: rsudo now resets `RSUDO_NO_PRESERVE_QUOTES`, `RSUDO_INTERACTIVE`, `RSUDO_ASKPASS` and `RSUDO_AS_USER` on every invocation and removes the temporary short aliases.
 - `specifications/rumiai-os/RSUDO.md` now promotes the reusable-connection-state versus invocation-local-mode distinction and the resulting recursive-call rule.
 - `rumiai-os@4f429c811f9c19889d0d8f6fa42b0423356beecd` realigns `res/sys/manual/rsudo.lib.sh`, adds the previously missing command topics `res/sys/manual/rsudo` and `res/sys/manual/rsudo-askpass`, and removes the stale `rsudo-env.lib.sh` cross-reference.
-- `rumiai-tests@e5515f55aad6d3de193e5472e630f7b56bed5031` adds invocation-state regression coverage: ambient askpass/target-user/quote state is ignored, a real recursive `fs delete` call reuses credentials without inheriting outer modes, and ambient `RSUDO_INTERACTIVE=true` does not force a new invocation into interactive mode.
+- `rumiai-tests@e367d3bc82766a4aa529d1c31d033242fd4513ed` adds invocation-state regression coverage: ambient askpass/target-user/quote state is ignored, a real recursive `fs delete` call reuses credentials without inheriting outer modes, and ambient `RSUDO_INTERACTIVE=true` does not force a new invocation into interactive mode.
 - Added `validation/rsudo.conf` selecting the complete `rumiai-os/rsudo` permanent-test group for focused formal validation.
+- Final diff review caught a malformed temporary-directory identity introduced while editing `contract.test`; it was corrected forward-only in `rumiai-tests@e367d3bc82766a4aa529d1c31d033242fd4513ed` before accepting any validation evidence.
 
 ## Current state
 
@@ -69,7 +70,7 @@ The runtime, canonical rsudo contract, operational manuals and permanent test su
 
 The current product revision is `4f429c811f9c19889d0d8f6fa42b0423356beecd`; its parent `571e0df39a103349eae78ba2d4d8161660f084e4` contains the user-authored runtime change and `4f429c8` adds only the required operational documentation.
 
-The current suite revision is `e5515f55aad6d3de193e5472e630f7b56bed5031`.
+The current suite revision is `e367d3bc82766a4aa529d1c31d033242fd4513ed`.
 
 The previous full-product validation run `36144167133` remains evidence only for its older recorded product/suite revisions and does not validate this state.
 
