@@ -64,6 +64,41 @@ The loader should capture the library status immediately after the dot command, 
 
 The current runtime library root is `m_LIB_DIR`. `core.lib.sh` also already defines an unused `validlib()` helper that appears related to library resolution/validation, so implementation must reconcile that existing responsibility instead of duplicating it.
 
+A concrete local implementation candidate is now established for evaluation:
+
+```sh
+loadsyslib()
+{
+  [ "$#" -ge 1 ] || return 2
+
+  _loadsyslib_lib="$1"
+  shift
+
+  loadlib "sys/sh/$_loadsyslib_lib" "$@"
+}
+
+loadlib()
+{
+  [ "$#" -ge 1 ] || return 2
+
+  _loadlib_lib="$1"
+  shift
+
+  _loadlib_path="$m_LIB_DIR/$_loadlib_lib"
+
+  [ -f "$_loadlib_path" ] && [ -r "$_loadlib_path" ] || return 1
+
+  . "$_loadlib_path"
+  _loadlib_status="$?"
+
+  loadlib_args="$(quote "$@")" || return 3
+
+  return "$_loadlib_status"
+}
+```
+
+This is still working design, not promoted implementation. A real implementation must use project-safe scratch-variable naming, decide whether argv serialization is unconditional or opt-in, and reconcile `validlib()`. Mechanical `sh` validation confirmed the intended boundary behavior: a loaded library can modify its own positional parameters with `set --`, return a non-zero status with top-level `return`, and `loadlib` can still observe both the modified argv and the library status while the caller's argv remains unchanged until explicitly restored.
+
 ## Completed
 
 - Activated the previously deferred no-file remote-menu work.
