@@ -52,6 +52,18 @@ Caller positional-parameter mutation is currently an extreme/unobserved case and
 
 The exact library-name identity and preload declaration surface remain open. No shell parser or static dependency-discovery mechanism is required by the injection design.
 
+A further refinement is to layer the loader responsibility:
+
+- `loadsyslib <library> [args...]` specializes system-shell library loading;
+- a lower-level `loadlib <library-reference> [args...]` owns resolution/checking and the actual local dot load;
+- injected execution may replace only the `loadlib` backend while preserving the `loadsyslib` caller surface.
+
+When local `loadlib` shifts its library operand and then dot-sources the resolved file, the library executes with the loader's remaining positional parameters. A top-level `set --` changes those loader positional parameters, and after the dot command returns the loader can serialize the resulting argument vector with the existing `quote` primitive before returning. A top-level library `return` returns control to the loader with that status. This behavior was mechanically checked with POSIX `sh`.
+
+The loader should capture the library status immediately after the dot command, serialize any resulting argument vector only when the contract requests it, and then return the preserved load status. Plain unquoted restoration from one string is not lossless; any future caller-positional-parameter propagation must use an explicitly reversible representation.
+
+The current runtime library root is `m_LIB_DIR`. `core.lib.sh` also already defines an unused `validlib()` helper that appears related to library resolution/validation, so implementation must reconcile that existing responsibility instead of duplicating it.
+
 ## Completed
 
 - Activated the previously deferred no-file remote-menu work.
@@ -60,6 +72,7 @@ The exact library-name identity and preload declaration surface remain open. No 
 - Compared a runtime `loadsyslib` abstraction with source-level inline transformation; after further POSIX function-scope analysis, `loadsyslib` became the leading candidate because a deliberate function boundary can align local and injected semantics.
 - Defined and then superseded a first parser/in-place-inline proposal after identifying that a function-boundary loader can handle top-level `return` consistently without source inlining.
 - Removed automatic static dependency discovery from the injection design: the caller now owns the complete embedded library set, so injection requires no shell parser or dependency closure engine.
+- Refined the loader into a `loadsyslib` specialization over a lower-level `loadlib`, with optional capture of post-load positional parameters and preserved library status.
 - Verified from POSIX.1-2024 that `.` is not a valid alias name, so portable alias substitution cannot shadow the canonical dot command.
 
 ## Current state
@@ -76,3 +89,4 @@ Define the minimal local/injected `loadsyslib` and explicit preload/bundle contr
 - Exact preload declaration surface for dynamically selected libraries.
 - Whether any current system library intentionally depends on mutating its caller's positional parameters.
 - Exact reversible representation, only if caller positional-parameter mutation ever becomes a real requirement.
+- Relationship between the new loader responsibility and the existing unused `validlib()` helper in `core.lib.sh`.
