@@ -9,10 +9,10 @@ Align the current rsudo contract, command/library operational documentation and 
 
 ## Current repository revisions
 
-- rumiai-dev: ff38e84441567626368097d1cd31e188f1a7051d (pre-checkpoint HEAD)
-- rumiai-os: c33b39ded5020d85943ca826cedbe3ff6d2a4492
-- rumiai-tests: 287577204412cef46cae83157547dbe9ac28d2f8
-- rumiai-dev-PoCs: 6b9d193273c801657a1f873eef042156ccb617c0
+- rumiai-dev: 0c1385df93710ec5065ed9b011c5c6eba3bac173 (pre-checkpoint HEAD)
+- rumiai-os: c1aa711645b39f36850d35abc02c31d8db916120
+- rumiai-tests: a005991b9694eac988ce116e38b6e1a02c47feee
+- rumiai-dev-PoCs: 04b17182392c323f13a53b9fffa6917ff9823cec
 
 ## Applicable canonical sources
 
@@ -72,22 +72,26 @@ Align the current rsudo contract, command/library operational documentation and 
 - Current rsudo specification and operational manuals do not yet describe `--ssh-command` / `RSUDO_SSH_COMMAND`, and permanent tests do not yet protect the new surface. The user intends to extend credential groups with the SSH setting optionally; that realignment remains pending until the final SSH-command semantics are fixed.
 - The current implementation's missing-`--ssh-command` operand diagnostic still reports operand `user` and returns the same local status currently used for missing `--user`; this is an implementation/manual detail to realign when the option contract is finalized.
 
+- The `--ssh-command` experiment was explicitly abandoned after evaluating shell-command-string semantics. The user restored direct `ssh` invocation in `rumiai-os@9832b46080d66c3001bbace2ee82bede560981c0`.
+- Revision comparison confirms `9832b46` is the exact inverse of the earlier `c33b39d` SSH-command patch: it removes the default `RSUDO_SSH_COMMAND`, restores all three direct `ssh` calls, and removes the `--ssh-command` parser branch.
+- Current merged product HEAD `c1aa711645b39f36850d35abc02c31d8db916120` preserves that revert. The file is not byte-identical to the older pre-experiment revision because the independent interactive source-injection correction is also present; no SSH-command residue remains.
+- Current rsudo specification, command manual, library manual and permanent rsudo tests contain no `--ssh-command` / `RSUDO_SSH_COMMAND` surface.
+- PoC 050 remains evidence about the rejected experiment only. It is not current product behavior and does not create a pending rsudo contract.
+- SSH client configuration is left to SSH/the calling environment. Scenario-specific development/test environments may interpose a real-SSH wrapper through `PATH` without adding an rsudo option.
+
 ## Current state
 
-The prior invocation-state contract remains intact. The new `--ssh-command` mechanism is mechanically proven on real SSH/sudo paths for ordinary, ambient-state, recursive and interactive use, but its final public semantics are not yet promoted because command-string quoting for arguments containing whitespace is unresolved. Specification/manual/permanent-test realignment and optional credential-group integration remain pending.
+The rsudo SSH-command experiment is fully reverted. Current rsudo again invokes `ssh` directly and exposes no `--ssh-command` / `RSUDO_SSH_COMMAND` contract. The canonical specification and operational manuals already matched this state, so no canonical contract change was required for the revert.
 
-The unrelated `fs.test` failure on the auxiliary Ubuntu runner exposes an existing POSIX mismatch in `rsudo-mod-fs.lib.sh` (`set -o pipefail` under dash) and must not be attributed to the SSH-command commit.
+The current product also contains the later, independent interactive source-injection fix; therefore "restored as before" is true specifically for the SSH-command experiment, not as a byte-for-byte rollback of every later rsudo improvement.
+
+The unrelated `fs.test` failure previously observed on the auxiliary Ubuntu runner remains attributable to `set -o pipefail` under dash in `rsudo-mod-fs.lib.sh`, not to the SSH-command experiment or its revert.
 
 ## Next action
 
-1. Decide the final `--ssh-command` representation semantics, in particular whether it intentionally supports only whitespace-separated command words or needs a representation that preserves arbitrary SSH argument boundaries.
-2. Apply the user's planned optional SSH setting to credential groups without clearing an existing SSH command when a group omits it.
-3. Realign `RSUDO.md`, command/library manuals and permanent tests to the accepted behavior, including recursive reuse and interactive execution.
-4. Track/fix the independent POSIX `pipefail` problem in the rsudo filesystem module through the appropriate active/deferred work owner.
+Continue rsudo validation/documentation work from the direct-SSH implementation. No SSH-command or credential-group SSH field is pending. Focused formal validation remains appropriate once the independent filesystem-shell issue and any other current-suite changes are in a valid state.
 
 ## Blockers / open questions
 
-- Final semantics/representation of `RSUDO_SSH_COMMAND` when SSH command arguments contain whitespace or shell metacharacters.
-- Exact optional credential-group field name/selection semantics for the SSH command.
-- Documentation/permanent-test realignment for the new public option.
-- Formal validation remains pending after the SSH-command surface and the independent filesystem-shell issue are resolved/aligned.
+- The independent POSIX `pipefail` issue in the rsudo filesystem module remains outside the SSH-command revert.
+- Formal validation evidence for the current product/suite pair remains revision-specific and must not be inferred from older runs.
