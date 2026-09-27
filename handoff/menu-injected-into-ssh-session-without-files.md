@@ -9,10 +9,10 @@ Define and validate source streaming that can inject an existing `m` command plu
 
 ## Current repository revisions
 
-- rumiai-dev: f0910cb3d39a023b77c1c5a14b9d5cdbd70b7ba7
-- rumiai-os: c33b39ded5020d85943ca826cedbe3ff6d2a4492
-- rumiai-tests: 287577204412cef46cae83157547dbe9ac28d2f8
-- rumiai-dev-PoCs: 2dcdb127f4c0d049626257981809a987fad86cd7
+- rumiai-dev: 74d34b890601823ac6364c6d30aa934b9a1e23c9
+- rumiai-os: 1e2785f9d00ed536be610022e26f2ba7f8361108
+- rumiai-tests: 3c15db2ac7723f01fb377dc1d8ed6bdba49fa67e
+- rumiai-dev-PoCs: 04b17182392c323f13a53b9fffa6917ff9823cec
 
 ## Applicable canonical sources
 
@@ -160,13 +160,52 @@ For the menu proof the caller-selected set is exactly `core array map term menu`
 
 The first hand-written Expect harness failed only because its PTY exposed no usable terminal geometry. Replacing it with the same Linux `script(1)` PTY mechanism used by the permanent menu test made the unchanged stream succeed, confirming the failure was harness-only.
 
+
+## rsudo source-injection transport
+
+The rsudo transport defect identified after PoC 051 has been corrected and promoted into the current RSUDO contract.
+
+`rsudo_core` now consumes non-TTY stdin in interactive mode before deciding the ordinary no-command/default path. A non-empty source stream becomes a privileged remote shell program. When command operands are also present, their invocation is appended after the injected source in the same shell environment; normal quote-preserving mode preserves argv meaning and `--no-preserve-quotes` keeps its alternate command-passing behavior.
+
+Source capture preserves trailing newlines by appending/removing a sentinel around command substitution. A non-empty source with no command operands executes as the complete remote shell program.
+
+The canonical `RSUDO.md` contract now includes this behavior as RSUDO-22. Command and library manuals are aligned.
+
+Permanent `tests/rumiai-os/rsudo/interactive.test` now covers both:
+
+- injected source defining a function that is then invoked by command operands with an argument containing whitespace, including stdout/stderr and nonzero-status propagation;
+- source-only interactive execution with no command operands.
+
+The current full-product health run for this test revision froze runtime commit `3bc5ff3d06b457eb63b599f28b363f1876e930b0`; its Ubuntu/macOS jobs are still running at this checkpoint.
+
+## End-to-end remote-menu PoC
+
+PoC 052 under `rumiai-dev-PoCs/pocs/052-rsudo-menu-source-injection` validates the complete path against `rumiai-os@3bc5ff3d06b457eb63b599f28b363f1876e930b0`:
+
+```text
+explicit caller-selected libraries
+→ generated loadlib-inject stream
+→ rsudo --interactive stdin
+→ real OpenSSH client
+→ real Ubuntu 26.04 sshd
+→ real sudo
+→ privileged remote shell
+→ existing menu command body
+→ remote interactive PTY
+```
+
+The remote host contains no m runtime tree.
+
+For this form, command argv is emitted explicitly as `set -- ...` immediately before the raw integrated-command body. This reproduces the normal m bootstrap boundary (command name removed, remaining argv visible while the command file is sourced) without wrapping the command body in an extra function.
+
+The first PoC 052 runs reached the remote menu but inherited a 0x0 PTY geometry from CI. Setting the local controlling PTY to 24x80 before invoking rsudo allowed OpenSSH to propagate usable geometry. The final PoC run `36307771282` passed: the remote menu rendered, Enter selected the first item, the serialized result contained `enter one`, and rsudo returned status 0.
+
 ## Next action
 
-Exercise this stream through the real `rsudo --interactive` SSH/sudo path. Current inspection exposes one concrete transport defect to resolve first: interactive piped stdin is consumed only after the no-command/default decision and, when command operands are present, is inserted as a separate argv rather than composed as shell source. Source injection therefore needs to be normalized as a shell-source prefix before normal remote execution.
+Wait for the current full-product Ubuntu 26.04 ARM64/macOS validation to complete and inspect the new permanent rsudo source-injection scenarios. If they pass or only unrelated external-live checks fail, the transport/runtime phase is complete.
 
-After transport behavior is corrected and tested, validate the same menu stream through the real rsudo scenario and then decide/promote the smallest user-facing explicit preload/generator surface.
+Then define and implement the smallest user-facing explicit preload/generator surface that emits the already-proven stream representation. It must require the caller to name the complete embedded library set and must not introduce dependency parsing or automatic closure.
 
 ## Open questions
 
-- Exact user-facing preload declaration/generator surface. The internal wrapper+dispatcher representation is now mechanically proven by PoC 051 but is not yet a promoted public interface.
-- Final rsudo source-prefix composition contract when interactive stdin contains injected source and command operands are also supplied.
+- Exact user-facing preload declaration/generator surface. The internal wrapper+dispatcher representation and the rsudo transport semantics are now mechanically proven.
