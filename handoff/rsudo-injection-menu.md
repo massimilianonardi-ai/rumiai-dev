@@ -10,8 +10,8 @@ Run the existing `menu` filesystem browser remotely under privileged `rsudo` by 
 ## Current repository revisions
 
 ```text
-rumiai-dev   c36e1038244c4f242947727d6ffd592a5ffe6485
-rumiai-os    58cd122d1be431fffcf0e4444cbac5a3fe0fec22
+rumiai-dev   ac9b9229ab30be6749c564f452f14f9eb12bf24a
+rumiai-os    52068dcfc01409231c673c48291ff18147fc1056
 rumiai-tests a005991b9694eac988ce116e38b6e1a02c47feee
 ```
 
@@ -55,12 +55,12 @@ specifications/rumiai-os/COMMAND-ENTRYPOINTS.md
 
 The injection model is simplified and current implementation/spec/manual agree: one generator emits `loadsyslib`, embedded library wrappers, and the direct in-memory `loadlib` dispatcher. No separate injection-backend library remains.
 
-The composed remote menu path was physically successful before this loader-internal simplification. A revision-specific physical rerun on the new `rumiai-os` revision is still pending, as is execution of the permanent loader test against the actual checkout.
+The composed remote menu path was physically successful before this loader-internal simplification. The first post-simplification physical rerun produced an interactive `dash` prompt instead of the menu. Current code inspection and a direct POSIX-sh generator probe show the new generator emits a valid non-empty stream. The failure shape matches a stale already-sourced pre-simplification `loadlib_inject_stream` function: that old in-memory function still requires the now-removed `loadlib-inject.lib.sh`, returns status 2 before emitting source, and leaves `rsudo --askpass` with only the password record; rsudo then falls back to its empty-source `sh -s` behavior.
 
 ## Next action
 
-Run the permanent loader test against `rumiai-os` revision `58cd122d1be431fffcf0e4444cbac5a3fe0fec22`, then rerun the physical composed `menu -d /` path. If those remain successful, add proportional permanent coverage for the composed rsudo+injected-menu path.
+Reload the current `loadlib-inject-stream` library in the active m shell (or start a fresh m shell), verify that standalone stream generation returns status 0 and emits non-zero bytes, then rerun the physical composed `menu -d /` path against current `rumiai-os`. If that succeeds, run the permanent loader test and add proportional permanent coverage for the composed rsudo+injected-menu path.
 
 ## Blockers / open questions
 
-The assistant execution environment cannot currently reach GitHub to materialize the real checkout, so the permanent test and physical SSH/sudo/menu rerun require an environment with the repositories and target host available.
+The physical rerun is waiting for confirmation after reloading the current library definition in the active shell. The assistant execution environment cannot currently reach GitHub to materialize the real checkout for the permanent suite.
