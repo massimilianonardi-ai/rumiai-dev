@@ -116,6 +116,7 @@ Design a developer-facing live experimentation and validation environment mechan
 - After the PoC evidence documentation was synchronized, the exact current `rumiai-dev-PoCs@1b5de8c4b0a752ba8d4f8718718fa66eab16f954` was rerun automatically: PoC 047 run `36312663146` PASS and PoC 048 run `36312663141` PASS. These are the current-HEAD hosted checks.
 
 - Physical macOS preflight on 2026-09-27 established the operator host as macOS 27.0 arm64 with host Expect 5.45, OpenSSH client/keyscan and OpenSSL available. The canonical workspace layout places `rumiai-dev-PoCs` under `rumiai-os/src/`, so from the PoC checkout the product root is two levels up. The user explicitly does not want Homebrew or Podman installed on the macOS reference host. This is not treated as a failed prerequisite to remediate: Podman remains an optional scenario backend, so PoC 047 physical execution is scoped to Ubuntu 26.04 ARM64 while PoC 048 remains the macOS physical gate for the PTY/handoff boundary.
+- Physical macOS PoC 048 automated run on 2026-09-27 passed against `rumiai-dev-PoCs@1b5de8c4b0a752ba8d4f8718718fa66eab16f954` and `rumiai-os@c1aa711645b39f36850d35abc02c31d8db916120`. The observed terminal output included the expected synchronized dialogue, deliberate timeout-classification path, automated `interact` handoff harness, resumed automation and final `PASS expect PTY dialogue and interact handoff semantics`. The remaining macOS physical check is the direct operator handoff rather than the automated outer harness.
 
 ## Current state
 
