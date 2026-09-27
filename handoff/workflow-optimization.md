@@ -1,7 +1,7 @@
 # workflow-optimization
 
 Status: Active
-Updated: 2026-09-17
+Updated: 2026-09-28
 
 ## Goal
 
@@ -10,10 +10,10 @@ Maintain a long-lived meta-workstream for continuously evaluating and improving 
 ## Current repository revisions
 
 ```text
-rumiai-dev    af6e1a57bc59f45e85c310ee8c0383f2e74320f0  (pre-checkpoint HEAD after final consistency wording realignment)
-rumiai-os     14e413342261b23df840f40b355166c4d55f1b41  (current remote HEAD; manual inventory rechecked)
-rumiai-tests  ae0f41b23ae477bf2f1b13332b4c52bf2df16f2f  (current remote HEAD; active parallel suite work)
-pkg-catalog   94f58995cbd487b17f3b82bc2724c70540927b88  (last recorded; not involved in this correction)
+rumiai-dev    f3db23d1d5968293128563cca5a3a2799d19d666  (pre-checkpoint HEAD)
+rumiai-os     52068dcfc01409231c673c48291ff18147fc1056  (current remote HEAD; not modified by this checkpoint)
+rumiai-tests  3c89e92c2a3455dc3c1e68a383d1a73ed421dc73  (current remote HEAD; not modified by this checkpoint)
+pkg-catalog   d63f87d2be67288ef57f4a5812fabbc3f0b24a0d  (current remote HEAD; not modified by this checkpoint)
 ```
 
 Fresh remote HEAD retrieval remains mandatory before future analysis or writes.
@@ -50,6 +50,118 @@ Subsystem specifications are added only when a concrete workflow question reache
 - Library manuals expose the complete public function interface and do not expose internal functions as callable API.
 - Command/library lifecycle changes and manual realignment are one development consistency obligation.
 - Structural permanent coverage for both command→manual and library→manual completeness is mandatory; absent coverage keeps the corresponding completeness work open.
+
+
+## Working design
+
+### Adaptive human-AI cooperation model
+
+A new workflow-design line is retained here deliberately as working design rather than being compressed immediately into rigid project rules. It emerged from a concrete architecture regression in which a locally convenient implementation choice changed the foundational boundary between the root m bootstrap and core.lib.sh without explicit user approval. The important lesson is broader than that incident and is intended to become a general cooperation model that can later apply beyond RumiAI development, including advanced research work.
+
+The central hypothesis is:
+
+> The appropriate degree of assistant autonomy, rigidity, exploration and escalation should adapt to the semantic/architectural impact of the decision and to the context, not simply to the technical complexity of the work.
+
+High technical complexity does not imply that the user should be interrupted frequently. Once important boundaries are fixed, the assistant may be highly autonomous in carrying out very large, difficult or multi-step work. Conversely, a technically trivial change may require explicit user approval when it changes a foundational boundary, responsibility or model.
+
+A particularly important distinction is:
+
+    execution autonomy != decision autonomy
+
+The user may deliberately grant broad execution autonomy for a difficult task without thereby delegating authority to redefine the foundational architecture underneath that task. The assistant should use its capabilities aggressively inside established boundaries while keeping high-impact boundary decisions visible.
+
+The working model currently evaluates at least these dimensions:
+
+    decision impact
+        How widely does the choice change ownership, contracts, architecture,
+        shared mechanisms or future work?
+
+    foundationality in context
+        Is the affected element foundational to the whole system, foundational
+        to a subsystem, or merely internal to one component?
+
+    reversibility
+        Can the choice be tested or changed locally and cheaply, or does it
+        propagate into many dependent surfaces?
+
+    clarity of intent
+        Is the desired outcome already fixed while only the implementation path
+        is open, or is the underlying outcome/boundary itself still undecided?
+
+    cost of error
+        Would a wrong choice remain local and obvious, or could it contaminate
+        specifications, tests and dependent work before being detected?
+
+    value of exploration
+        Would autonomous investigation, experimentation or comparison materially
+        improve the solution before a decision is required?
+
+    context maturity
+        Is the work exploratory, where flexibility is valuable, or is it
+        operating inside a mature/foundational contract where uncontrolled
+        flexibility is dangerous?
+
+These dimensions are intentionally not yet a scoring algorithm. The goal is adaptive judgment, not bureaucracy.
+
+A useful provisional impact scale is:
+
+    local implementation, boundaries unchanged
+        strong autonomy is desirable
+
+    significant shared behavior, boundaries mostly unchanged
+        autonomous work remains useful, with careful propagation analysis
+
+    foundational mechanism of a subsystem
+        make the proposed change explicit, explain motive, benefit and material
+        consequences, and obtain explicit authorization before changing that
+        foundational model
+
+    foundational mechanism of m/RumiAI or an equivalent top-level architecture
+        analysis and proposals may be autonomous, but responsibility/architecture
+        changes require explicit authorization before implementation
+
+"Foundational" is contextual rather than global. Changing an internal implementation inside one rsudo module may be local; changing the routing model by which rsudo submodules are selected is foundational to rsudo even though it is not foundational to all of RumiAI; changing the root bootstrap/core responsibility boundary is foundational to m itself.
+
+Another important lesson is that an open question is not implicit decision authority. The assistant may resolve ordinary implementation questions autonomously when they remain inside fixed architecture. If an open question concerns ownership, layering, a foundational mechanism, a public contract or another high-impact boundary, it must be surfaced clearly rather than silently resolved for local convenience.
+
+Local convenience itself is a warning signal when it is purchased by changing surrounding architecture. Before adopting a solution because it makes the immediate task easier, the assistant should ask:
+
+> What complexity or responsibility am I pushing into the surrounding system in exchange for this local simplification?
+
+If the answer is that a foundational boundary must move, the convenience is not sufficient justification and the decision should be escalated.
+
+The desired collaboration is complementary rather than symmetric. The user preserves continuity of vision, meaning and high-impact architectural intent. The assistant can rapidly explore large technical spaces, connect dependencies, compare alternatives, detect consequences and execute substantial work. The workflow should therefore maximize assistant autonomy where that reduces execution cost and expands solution quality, while preserving explicit human control over high-impact decisions that define what is being built.
+
+This same model should remain useful outside software engineering. In research, design, analysis and other complex work, exploration, elaboration and execution may often be highly autonomous while decisions that materially determine objectives, irreversible commitments or foundational models remain explicit.
+
+The model should be refined empirically through real work rather than frozen prematurely. Future incidents should be used as evidence:
+
+    real episode
+        ↓
+    observed cooperation lesson
+        ↓
+    working design in workflow-optimization
+        ↓
+    repeated/contrasting real cases
+        ↓
+    stable principle
+        ↓
+    minimal canonical rule
+
+The aim is not to react to one case of excessive initiative by creating excessive caution. A successful model must prevent silent high-impact decisions without turning routine work into repeated permission requests.
+
+### Promotable core — not yet canonical
+
+The following principles appear mature enough to be candidates for later promotion into RULES.md, but remain here until they are jointly reviewed in concise canonical wording:
+
+1. Assistant autonomy is governed primarily by the impact of the decision, not by the technical complexity or amount of work.
+2. Inside already-approved boundaries, the assistant should normally exercise strong execution autonomy, including on complex and extensive work.
+3. A proposed change to a foundational mechanism of the overall architecture or of the affected subsystem must be made explicit before implementation, with its reason, expected improvement and material consequences, and requires explicit user authorization.
+4. An unresolved/open design question does not authorize the assistant to choose silently when the question affects a foundational boundary, ownership or high-impact contract.
+5. Local implementation convenience must not silently justify a larger architectural change; the assistant must consider the semantic/architectural blast radius of the decision.
+6. Execution autonomy and architectural decision authority are separate; granting the former does not implicitly grant the latter.
+
+These points should later be reviewed together and promoted only in the smallest wording that preserves the behavior. The richer model above should remain available as working-design rationale until enough real cases establish which dimensions are genuinely useful.
 
 ## Completed
 
@@ -126,6 +238,8 @@ Concurrent `rumiai-dev` movement occurred again during this correction. A write 
 
 `workflow-optimization` remains active.
 
+The workstream now also retains an adaptive cooperation model as working design. Its central distinction is execution autonomy versus decision autonomy, with escalation driven by semantic/architectural impact and contextual foundationality rather than raw technical complexity. A six-point promotable core has been isolated but intentionally not yet added to RULES.md.
+
 The workflow now has explicit consistency gates for both directly executable commands and libraries:
 
 ```text
@@ -145,8 +259,10 @@ Observe the TODO lifecycle, specification promotion gate and command/library man
 3. verify internal library helpers are not accidentally documented/promoted as public API;
 4. verify the active manual task closes command/library topic gaps and adds mandatory structural permanent coverage;
 5. verify the legacy visibility TODO is activated as a dedicated product/API migration rather than folded silently into unrelated work;
-6. watch for TODO/handoff/specification/manual duplication or taxonomy drift.
+6. watch for TODO/handoff/specification/manual duplication or taxonomy drift;
+7. exercise the adaptive cooperation model on real tasks and collect contrasting evidence about impact, foundationality, reversibility, intent clarity, error cost, exploration value and context maturity;
+8. jointly review the six-point promotable core after additional real use, then promote only the minimal stable rule set to RULES.md if the evidence supports it.
 
 ## Blockers / open questions
 
-None for the workflow rule itself. Current command/library manual backfill belongs to `handoff/rumiai-os-man-documentation.md`; legacy library API visibility realignment is represented by `todo/library-api-visibility-realignment.md`.
+None blocking current workflow use. The adaptive cooperation model remains deliberately non-canonical while it is exercised on real cases; the six-point core is the candidate for later joint review/promotion. Current command/library manual backfill belongs to `handoff/rumiai-os-man-documentation.md`; legacy library API visibility realignment is represented by `todo/library-api-visibility-realignment.md`.
