@@ -1,7 +1,7 @@
 # RumiAI OS — Package model
 
 Status: **Current / normative**  
-Updated: 2026-09-23
+Updated: 2026-09-27
 
 This document defines the current semantic contract of the `m` package subsystem without duplicating implementation internals that belong in `rumiai-os`.
 
@@ -633,7 +633,20 @@ facility-service/<facility>/start
 
 These paths describe how one provider realizes command, environment and service portions of a facility; they are not the provider-independent facility-contract definition itself.
 
-A `facility-cmd` entry is a scalar text file containing exactly one relative pathname, followed by newline, to an executable inside the provider useful root. The entry name is the command name exposed by that facility. Integration validates that the target remains inside the useful root and materializes a provider-private command projection for the facility. When a selected provider is applied to a consumer, that facility command directory is prepended to the consumer process PATH.
+A `facility-cmd` entry is a scalar text file whose entry name is the command name exposed by that facility. It has exactly one of these realization forms:
+
+```text
+<relative-useful-root-executable>
+package-command<TAB><ordinary-package-command>
+```
+
+The first form preserves the existing behavior: the relative pathname must resolve to an executable inside the provider useful root.
+
+The `package-command` form delegates the facility member to one validated ordinary package command of the **same provider concrete**. The named package command must exist in that provider definition and its own `link` target must resolve to an executable inside the provider useful root. Integration materializes the facility member as a provider-private projection to that concrete's integrated package command; runtime never re-resolves the command through global PATH or another provider/package default.
+
+This form is generic facility-command delegation. It does not make provider-specific wrapper semantics part of `pkg`: the ordinary package command remains responsible for adapting its concrete upstream software to the provider-independent facility command contract.
+
+When a selected provider is applied to a consumer, its materialized facility command directory is prepended to the consumer process PATH.
 
 A `facility-env/<facility>` entry is a text file containing one or more tab-separated records:
 
@@ -751,7 +764,7 @@ PKG-21  provider-selection configuration is system-scoped authoritative conf sta
 PKG-22  provider runtime projection is declarative facility metadata interpreted generically by launcher
 PKG-23  consumer bindings live in system package conf at binding/<facility> and contain one provider selector
 PKG-24  facility-cmd, facility-env and facility-service are declarative provider realization metadata, never provider shell code
-PKG-25  facility command targets remain inside the provider useful root and are projected through PATH
+PKG-25  facility commands are projected through PATH and each realization is either an executable inside the provider useful root or a validated ordinary package command of the same provider concrete
 PKG-26  facility environment metadata uses root, root-path or literal typed scalar values without shell evaluation
 PKG-27  a facility default publishes facility commands through existing bin/ext or bin/ext-<osarch> roots according to provider-selector intent
 PKG-28  global facility command publication never silently overwrites unrelated external-command paths and is reconciled on relevant facility/package-default transitions
@@ -808,4 +821,5 @@ PKG-78  component metadata is required only for flat-pkg and dmg-pkg and ordinar
 PKG-79  optional flat-pkg/dmg-pkg payload-root selects one validated relative subtree as the useful package tree without hardcoding provider paths in generic code
 PKG-80  dmg-pkg overlays add only explicitly selected component payloads at validated relative targets and reject overwrite collisions
 PKG-81  flat-pkg and dmg-pkg materialization never execute installer scripts or perform installer-owned system integration side effects
+PKG-82  package-command facility-cmd delegation resolves only to the ordinary package command of the exact same provider concrete and never re-resolves through global PATH or another selector
 ```

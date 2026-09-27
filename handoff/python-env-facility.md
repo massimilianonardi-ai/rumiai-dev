@@ -10,10 +10,10 @@ Define, validate and implement the provider-independent `python-env` facility, w
 ## Current repository revisions
 
 ```text
-rumiai-dev       8956979552f5fda2dd95cfa925f1d1742313f356
-rumiai-dev-PoCs  5bcaa1b6fe1f949b446a32d68d26e486a37c55c2
+rumiai-dev       c36e1038244c4f242947727d6ffd592a5ffe6485
+rumiai-dev-PoCs  8c0b66656c0ed8386bdefe3fd1bc45d5849e9976
 pkg-catalog      168d9bfc5ffebb4ea480a8a9f96c6e394d33fe17
-rumiai-os        c1aa711645b39f36850d35abc02c31d8db916120
+rumiai-os        8900544a720be8254214a13092f979f2da255662
 rumiai-tests     a005991b9694eac988ce116e38b6e1a02c47feee
 ```
 
@@ -45,17 +45,10 @@ specifications/rumiai-os/LIBRARY-INTERFACES.md
 
 ## Working design
 
-- Candidate compatibility level: `python-env 1`.
-- Candidate command syntax:
-  ```text
-  python-env create <environment> <python-version>
-  python-env run <environment> -- <command> [<arg>...]
-  python-env remove <environment>
-  ```
-- Prefer the existing `cmd` facility typed part over introducing a Python-specific typed part.
-- The provider must expose a provider-independent adapter rather than alias the public `python-env` command directly to raw micromamba CLI semantics.
-- Current `facility-cmd` realization points to executables inside provider useful root. Evaluate a small generic extension allowing a facility command realization to delegate to a validated ordinary command of the same provider package, analogous to the existing service-start delegation model.
-- Validate the adapter first with a focused PoC covering environment creation, `python -m pip`, argument preservation (including option-like arguments), stdin/stdout/stderr, child exit status, non-persistent shell behavior, remove/recreate, and Python-version replacement.
+- Implement the promoted generic `facility-cmd` `package-command<TAB><command>` realization without adding another typed part.
+- The micromamba provider-specific ordinary adapter command is `micromamba-python-env`; the facility-visible command remains `python-env`, avoiding package-default/facility-default command collision.
+- Publish the initial micromamba `python-env` provider only for Linux/macOS catalog streams until another platform has equivalent behavioral evidence.
+- Existing installed micromamba concretes created from an older catalog snapshot are not automatically reintegrated by the current package model; this task will not invent an unrelated package-metadata migration mechanism.
 
 ## Completed
 
@@ -63,16 +56,19 @@ specifications/rumiai-os/LIBRARY-INTERFACES.md
 - Confirmed current facility typed parts are `cmd`, `env`, and `service`.
 - Confirmed the current `cmd` part can publish a provider-independent public command name but its realization currently targets an executable under provider useful root.
 - Confirmed the service typed part already demonstrates same-provider delegation to an ordinary package command.
+- Added PoC 053 for a real micromamba 2.9.0-0 provider adapter.
+- GitHub Actions run 36350610261 passed on Ubuntu 24.04 and macOS 14. The PoC proved target protection, Python/pip creation, argv preservation, stdin/stdout/stderr and child-status propagation, caller-shell isolation, remove, and Python 3.12 -> 3.13 rebuild.
+- Promoted `python-env =1` and the generic same-concrete package-command facility-cmd realization into the current specifications.
 
 ## Current state
 
-The deferred TODO is activated. No product, catalog or permanent-test implementation has been changed yet.
+The behavioral contract is promoted and PoC-validated. Product, catalog and permanent-test implementation are the remaining active work.
 
 ## Next action
 
-Create and execute the focused `python-env` adapter PoC. If it validates the agreed command contract, promote the contract and implement the generic facility-command delegation plus micromamba provider/catalog and permanent tests.
+Implement the generic facility-command delegation in `rumiai-os`, publish the micromamba `python-env` provider in `pkg-catalog`, add permanent generic and live-provider tests, then run focused Linux/macOS validation.
 
 ## Blockers / open questions
 
-- Confirm the exact safe implementation of `run` without shell activation and with exact argv/status/stream behavior.
-- Confirm whether the generic package-command realization extension is sufficient without adding a new facility typed part.
+- Permanent Linux/macOS implementation validation remains.
+- Windows provider realization is outside the evidence established by PoC 053 and must not be claimed by this task without additional validation.

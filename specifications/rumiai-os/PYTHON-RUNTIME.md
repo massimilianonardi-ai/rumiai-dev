@@ -80,7 +80,7 @@ A package/provider facility may still be appropriate for another independently j
 
 No current contract requires a public shared Python/CPython facility for general external Python applications.
 
-## 5. `python-env` facility identity
+## 5. `python-env` facility contract
 
 The public facility identity for the application Python-environment-management capability is exactly:
 
@@ -88,15 +88,61 @@ The public facility identity for the application Python-environment-management c
 python-env
 ```
 
-`python-env` denotes the provider-independent capability to create, manage and rebuild an application-private Python environment at a caller-resolved managed-state location.
+`python-env` denotes the provider-independent capability to create, execute within and remove/rebuild an application-private Python environment at a caller-resolved managed-state location.
 
 It does **not** denote a Python interpreter and it is not a synonym for the Python standard-library `venv` mechanism.
 
+### Compatibility level 1
+
+The first public contract level is:
+
+```text
+python-env =1
+```
+
+Its required typed surface is one `cmd` member named exactly:
+
+```text
+python-env
+```
+
+The command syntax is:
+
+```text
+python-env create <environment> <python-version>
+python-env run <environment> -- <command> [<arg>...]
+python-env remove <environment>
+```
+
+`<environment>` is an absolute pathname supplied by the consumer. The consumer resolves its location through the applicable managed-state contract; `python-env` does not invent another state tree or select an application state location.
+
+For level 1:
+
+- `create` requires an absent target pathname, creates a private environment containing the requested Python version and a usable `python -m pip`, and must not perform persistent caller-shell activation or global environment mutation;
+- `run` requires a recognized environment, executes the requested command inside it without persistent caller-shell activation, preserves the argument vector and standard input/output/error streams, and returns the child execution status;
+- `remove` requires a recognized environment and removes that environment without deleting an unrelated caller-owned pathname;
+- a Python-version change is represented by removing/recreating the environment and reinstalling the consumer's Python packages rather than migrating populated `site-packages`;
+- invalid command syntax returns the normal command-usage error class, while invalid/missing environment state or provider execution failure is an operational failure.
+
+The facility contract deliberately does not define:
+
+```text
+requirements-file format
+dependency resolution policy
+plugin/update policy
+Conda channels as a consumer-facing interface
+GPU/CUDA/ROCm policy
+environment migration across Python versions
+provider-specific cache/root configuration
+```
+
+Those responsibilities remain with the consumer application or concrete provider implementation as applicable.
+
 The Python interpreter version and the Python/package set installed inside an application environment belong to that consumer environment definition. They are not the compatibility level of the `python-env` facility.
 
-The concrete provider selected for the current general Python-application model is the `micromamba` package. Provider selection therefore chooses the environment-management implementation, not the Python version used inside a populated application environment.
+The first concrete provider is the `micromamba` package. Its provider realization must expose the provider-independent `python-env` command through a provider-specific adapter rather than exposing raw micromamba CLI semantics as the facility contract. Provider selection therefore chooses the environment-management implementation, not the Python version used inside a populated application environment.
 
-The exact facility compatibility level and typed provider contract are owned by `pkg-catalog` and must satisfy the generic facility model in `PACKAGE-MODEL.md`. They are not inferred from micromamba's product-specific CLI.
+PoC 053 (`pocs/053-python-env-micromamba-adapter`) validated this level-1 behavioral shape with micromamba 2.9.0-0 on hosted Ubuntu 24.04 and macOS 14: create with Python/pip, target protection, argv preservation, stdin/stdout/stderr and child-status propagation, caller-shell isolation, remove and remove/recreate from Python 3.12 to 3.13 all passed. This is Linux/macOS evidence; it does not by itself establish a Windows provider realization.
 
 ## 6. Retained standalone-runtime engineering result
 
@@ -216,8 +262,11 @@ PY-05  The private environment is not guaranteed byte-for-byte relocatable acros
 PY-06  Changing the application's Python version rebuilds the application environment and reinstalls its Python packages.
 PY-07  The general external-application model does not use pkg provider default/binding as a live Python-version switch for a populated environment.
 PY-08  The public facility identity for application Python-environment management is exactly python-env.
-PY-09  python-env denotes environment management, not a Python interpreter and not the standard-library venv mechanism.
-PY-10  Python version/package selection belongs to the consumer environment definition, not the python-env facility compatibility level.
-PY-11  micromamba is the selected concrete provider for the current general python-env model.
-PY-12  The standalone/shared-interpreter PoCs remain engineering evidence, not adopted general Python architecture.
+PY-09  python-env compatibility level 1 exposes exactly one required command member named python-env with create/run/remove semantics defined in this specification.
+PY-10  python-env denotes environment management, not a Python interpreter and not the standard-library venv mechanism.
+PY-11  Python version/package selection belongs to the consumer environment definition, not the python-env facility compatibility level.
+PY-12  python-env consumes a caller-resolved absolute environment pathname and never creates a second state-location model.
+PY-13  micromamba is the selected first concrete provider and must adapt to the provider-independent command contract rather than expose raw micromamba CLI semantics as that contract.
+PY-14  requirements, plugin/update policy, channel policy and GPU policy are outside python-env level 1.
+PY-15  The standalone/shared-interpreter PoCs remain engineering evidence, not adopted general Python architecture.
 ```
