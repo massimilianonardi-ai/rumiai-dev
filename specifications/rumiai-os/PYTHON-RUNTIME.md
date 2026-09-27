@@ -80,7 +80,25 @@ A package/provider facility may still be appropriate for another independently j
 
 No current contract requires a public shared Python/CPython facility for general external Python applications.
 
-## 5. Retained standalone-runtime engineering result
+## 5. `python-env` facility identity
+
+The public facility identity for the application Python-environment-management capability is exactly:
+
+```text
+python-env
+```
+
+`python-env` denotes the provider-independent capability to create, manage and rebuild an application-private Python environment at a caller-resolved managed-state location.
+
+It does **not** denote a Python interpreter and it is not a synonym for the Python standard-library `venv` mechanism.
+
+The Python interpreter version and the Python/package set installed inside an application environment belong to that consumer environment definition. They are not the compatibility level of the `python-env` facility.
+
+The concrete provider selected for the current general Python-application model is the `micromamba` package. Provider selection therefore chooses the environment-management implementation, not the Python version used inside a populated application environment.
+
+The exact facility compatibility level and typed provider contract are owned by `pkg-catalog` and must satisfy the generic facility model in `PACKAGE-MODEL.md`. They are not inferred from micromamba's product-specific CLI.
+
+## 6. Retained standalone-runtime engineering result
 
 The standalone/shared-interpreter investigation produced useful technical results and is intentionally retained even though it is not the adopted general Python-application model.
 
@@ -169,7 +187,7 @@ A naive split into independent generic-Python and CPython facilities was rejecte
 
 A single CPython-runtime facility experiment showed that existing dotted `pkg` compatibility levels and exact/range constraints can model the tested pure/range, `abi3`/range and CPython-minor/exact cases and can reject an incompatible selected provider before target execution.
 
-## 6. Evaluation conclusion
+## 7. Evaluation conclusion
 
 The investigation demonstrated that a **controlled** relocatable CPython provider plus controlled consumer wheel materialization is technically viable for the tested Linux/macOS cases.
 
@@ -179,7 +197,7 @@ RumiAI therefore does not adopt the standalone/shared-interpreter design as its 
 
 The engineering result remains valid reference material for a future concrete, controlled requirement, but such reuse would require a new explicit task and must not be inferred as current architecture.
 
-## 7. Provenance and licensing note
+## 8. Provenance and licensing note
 
 If `python-build-standalone` is ever reused for a future controlled requirement, its produced Python distribution must be treated as a multi-component binary artifact rather than as merely MPL-2.0 because CPython and bundled libraries retain their own licenses.
 
@@ -187,7 +205,7 @@ Artifact version, digest, bundled-license inventory and included license texts m
 
 This licensing point did not block the evaluated standalone composition and is not a reason for the current micromamba application-environment choice.
 
-## 8. Current invariants
+## 9. Current invariants
 
 ```text
 PY-01  Python is governed by the project-wide implementation-language preference in RULES.md.
@@ -197,6 +215,9 @@ PY-04  Applications may manage their own requirements, optional packages and plu
 PY-05  The private environment is not guaranteed byte-for-byte relocatable across prefix changes; stale environments are rebuilt.
 PY-06  Changing the application's Python version rebuilds the application environment and reinstalls its Python packages.
 PY-07  The general external-application model does not use pkg provider default/binding as a live Python-version switch for a populated environment.
-PY-08  No current contract requires a shared public Python/CPython facility for general external Python applications.
-PY-09  The standalone/shared-interpreter PoCs remain engineering evidence, not adopted general Python architecture.
+PY-08  The public facility identity for application Python-environment management is exactly python-env.
+PY-09  python-env denotes environment management, not a Python interpreter and not the standard-library venv mechanism.
+PY-10  Python version/package selection belongs to the consumer environment definition, not the python-env facility compatibility level.
+PY-11  micromamba is the selected concrete provider for the current general python-env model.
+PY-12  The standalone/shared-interpreter PoCs remain engineering evidence, not adopted general Python architecture.
 ```
