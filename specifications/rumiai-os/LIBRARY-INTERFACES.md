@@ -1,7 +1,7 @@
 # RumiAI OS — Library interfaces
 
 Status: **Current / normative**  
-Updated: 2026-09-17
+Updated: 2026-09-27
 
 This specification defines the current interface-visibility and operational-documentation contract for `m`- or RumiAI-owned libraries.
 
@@ -81,9 +81,9 @@ for generating one POSIX-shell source program that embeds an explicitly selected
 
 The caller owns the complete selected library set. The generator MUST NOT parse the command or library sources to discover dependencies and MUST NOT compute or add transitive closure. `core` is required as an explicit selected reference because the generated program establishes the normal integrated-command core environment before appending the command body.
 
-The generated program installs the ordinary `loadsyslib` specialization, the in-memory `loadlib` backend, one wrapper for each explicitly selected library, and a dispatcher exposing exactly those selected references. It then loads `core`, reconstructs the supplied command positional parameters using the existing shell-safe quoting contract, and appends `command-source`.
+The generated program installs the ordinary `loadsyslib` specialization, one wrapper for each explicitly selected library, and an in-memory `loadlib` implementation whose direct case dispatch exposes exactly those selected references. It then loads `core`, reconstructs the supplied command positional parameters using the existing shell-safe quoting contract, and appends `command-source`.
 
-A library that was not explicitly selected remains unavailable in the generated environment. A runtime `loadsyslib` request for such a reference fails through the injected `loadlib` backend rather than falling back to a remote filesystem.
+A library that was not explicitly selected remains unavailable in the generated environment. A runtime `loadsyslib` request for such a reference fails through the generated in-memory `loadlib` implementation rather than falling back to a remote filesystem.
 
 Stream generation and stream transport are separate responsibilities. In particular, `rsudo --interactive` may transport a generated stream through its interactive source-injection contract, but `loadlib_inject_stream` itself does not perform remote execution.
 
