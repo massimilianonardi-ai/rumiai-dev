@@ -9,10 +9,10 @@ Design a developer-facing live experimentation and validation environment mechan
 
 ## Current repository revisions
 
-- rumiai-dev: 325348cdc3c0064ab700d4c06da1ee015fd6481a (pre-checkpoint HEAD)
-- rumiai-os: 51d0cba5696a94caaf5ae39e2e476a31598a0ae1
-- rumiai-tests: c5dbf627300d095215da21bc07362de03e09337f
-- rumiai-dev-PoCs: 36eae9b84708beba3fc314a3c4f144438f6263ce
+- rumiai-dev: 3043e6c4a4a899c32414af50d04577ee44ce8b04 (pre-checkpoint HEAD)
+- rumiai-os: c33b39ded5020d85943ca826cedbe3ff6d2a4492
+- rumiai-tests: 287577204412cef46cae83157547dbe9ac28d2f8
+- rumiai-dev-PoCs: 6b9d193273c801657a1f873eef042156ccb617c0
 - historical/reference m: 2a57a29880c2d7a32e18782122062c695fcb1a3a (master)
 
 ## Applicable canonical sources
@@ -104,9 +104,16 @@ Design a developer-facing live experimentation and validation environment mechan
 - GitHub Actions run `36302392760` passed on Ubuntu 24.04 amd64 with distro Expect 5.45.4 and on macOS 15 with host-provided Expect 5.45. The same driver exercised a TTY-required child, exact prompt-before-response synchronization, transcript capture, child exit-status propagation and timeout-as-driver-error semantics.
 - Current PoC 048 HEAD `36eae9b84708beba3fc314a3c4f144438f6263ce` was re-run by Actions run `36302442950`; both Ubuntu and macOS matrix jobs passed.
 
+- PoC 050 (`pocs/050-rsudo-ssh-command`) verifies the user-authored `rumiai-os@c33b39ded5020d85943ca826cedbe3ff6d2a4492` SSH-command hook against the same real Podman SSH/sudo scenario. `--ssh-command`, ambient `RSUDO_SSH_COMMAND`, recursive fs reuse and interactive PTY execution all passed on the auxiliary Ubuntu runner.
+- This means PoC 047's scenario-local PATH `ssh` shim is no longer intrinsically required when the scenario can expose an SSH command string compatible with rsudo's accepted representation; testlab can potentially publish the SSH connection adapter directly through scenario context.
+- PoC 050 also exposes a boundary that remains relevant to testlab: the current command-string implementation cannot preserve an SSH argument pathname containing whitespace merely by embedding shell quotes in `RSUDO_SSH_COMMAND`; both tested forms failed with SSH status 255. Final scenario-context representation must therefore not assume arbitrary shell-command quoting semantics until rsudo's SSH-command contract is settled.
+- The unrelated current `fs.test` failure on Ubuntu is caused by `set -o pipefail` under dash in the rsudo filesystem module and is not evidence about testlab/scenario lifecycle or the SSH-command hook.
+
 ## Current state
 
-The architectural gap and the two main supporting boundaries are now experimentally supported: PoC 047 validates the minimal real-scenario lifecycle on an auxiliary Ubuntu host, and PoC 048 validates strong Expect-backed PTY dialogue semantics on Ubuntu and macOS CI hosts. The working command identity is `testlab`, centered on real scenario creation/lifecycle; PTY dialogue remains a separate m-adapter responsibility. Repository placement, final scenario representation/CLI, exact human-handoff adapter surface and formal-validation integration remain open.
+The architectural gap and the two main supporting boundaries remain experimentally supported: PoC 047 validates the minimal real-scenario lifecycle, PoC 048 validates strong Expect-backed PTY dialogue semantics, and PoC 050 now demonstrates that current rsudo can consume scenario-specific SSH connection adaptation directly through `--ssh-command` / `RSUDO_SSH_COMMAND` for normal, recursive and interactive activity. The only new boundary exposed is command-string argument representation when paths contain whitespace.
+
+The working command identity remains `testlab`, centered on real scenario creation/lifecycle; PTY dialogue remains a separate m-adapter responsibility. Repository placement, final scenario representation/CLI, exact human-handoff adapter surface and formal-validation integration remain open.
 
 ## Next action
 
