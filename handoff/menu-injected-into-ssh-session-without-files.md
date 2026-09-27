@@ -9,10 +9,10 @@ Define and validate source streaming that can inject an existing `m` command plu
 
 ## Current repository revisions
 
-- rumiai-dev: 6a9fe351c73cfb8f7092beed02244bb5071e7b41
-- rumiai-os: 51d0cba5696a94caaf5ae39e2e476a31598a0ae1
+- rumiai-dev: f0910cb3d39a023b77c1c5a14b9d5cdbd70b7ba7
+- rumiai-os: c33b39ded5020d85943ca826cedbe3ff6d2a4492
 - rumiai-tests: 287577204412cef46cae83157547dbe9ac28d2f8
-- pkg-catalog: 168d9bfc5ffebb4ea480a8a9f96c6e394d33fe17
+- rumiai-dev-PoCs: 2dcdb127f4c0d049626257981809a987fad86cd7
 
 ## Applicable canonical sources
 
@@ -115,6 +115,8 @@ The first post-migration full health run exposed real migration/test-consistency
 
 The complete current product migration is structurally protected by `tests/rumiai-os/bootstrap/library-loading.test`, including a recursive scan that rejects any owned `lib/sys/sh` direct dot import. On the current migrated product this test passes.
 
+The migration milestone is now closed for this work unit. The later full-product health run at `rumiai-tests@287577204412cef46cae83157547dbe9ac28d2f8` froze the migrated `rumiai-os@51d0cba5696a94caaf5ae39e2e476a31598a0ae1`. Ubuntu 26.04 ARM64 completed successfully. On macOS all `rumiai-os/*` tests passed; the remaining five FAILs were external live-package tests (DBeaver, Electron macOS launch, GraalVM, jq and Keycloak) and produced no loader/injection regression evidence. The current product HEAD `c33b39ded5020d85943ca826cedbe3ff6d2a4492` differs from that migration revision only in `rsudo.lib.sh` for the separately developed `--ssh-command` behavior.
+
 A full-product validation froze:
 
 ```text
@@ -139,19 +141,32 @@ c5dbf627300d095215da21bc07362de03e09337f
 Validate health on Ubuntu 26.04 ARM64
 ```
 
-A new full-product validation run is active against the same frozen current `rumiai-os` revision using the canonical Ubuntu 26.04 ARM64 host plus macOS. This run, not the incompatible Ubuntu 24.04 run, is the completion evidence required before the task moves into stream-generation/injection work.
+The global migration validation no longer blocks stream-generation/injection work.
+
+## Stream-format PoC
+
+PoC 051 under `rumiai-dev-PoCs/pocs/051-loadlib-injection-stream` validates the first concrete explicit stream representation against `rumiai-os@c33b39ded5020d85943ca826cedbe3ff6d2a4492`.
+
+The stream contains:
+
+1. the ordinary `loadsyslib` specialization;
+2. `loadlib-inject.lib.sh`;
+3. one numbered function wrapper per caller-selected embedded library;
+4. a generated `_loadlib_inject_dispatch` case table mapping exact `sys/sh/<reference>` values to those wrappers;
+5. an explicit bootstrap `loadsyslib "core"`;
+6. the real selected command body.
+
+For the menu proof the caller-selected set is exactly `core array map term menu`. No dependency parser or closure logic participates. The generated stream passes `sh -n` and the real menu executes successfully in a Linux PTY, returning the expected serialized `enter one` result. The final passing PoC revision is `2dcdb127f4c0d049626257981809a987fad86cd7`.
+
+The first hand-written Expect harness failed only because its PTY exposed no usable terminal geometry. Replacing it with the same Linux `script(1)` PTY mechanism used by the permanent menu test made the unchanged stream succeed, confirming the failure was harness-only.
 
 ## Next action
 
-Inspect the new full-product health run triggered by rumiai-tests `c5dbf627300d095215da21bc07362de03e09337f` completely on Ubuntu 26.04 ARM64 and macOS. Resolve any remaining current-contract failures before continuing.
+Exercise this stream through the real `rsudo --interactive` SSH/sudo path. Current inspection exposes one concrete transport defect to resolve first: interactive piped stdin is consumed only after the no-command/default decision and, when command operands are present, is inserted as a separate argv rather than composed as shell source. Source injection therefore needs to be normalized as a shell-source prefix before normal remote execution.
 
-Do not proceed to stream generation or rsudo injection integration until the global `loadsyslib` migration has passed this full-product validation milestone.
-
-After that milestone, define the explicit preload declaration/stream format around `loadlib-inject.lib.sh` and connect it to the already-existing `rsudo --interactive` source-injection path.
+After transport behavior is corrected and tested, validate the same menu stream through the real rsudo scenario and then decide/promote the smallest user-facing explicit preload/generator surface.
 
 ## Open questions
 
-- Exact user-facing preload declaration surface / generated stream format.
-- Exact generated dispatcher/wrapper representation for the explicitly embedded libraries.
-
-These questions belong to the post-migration injection phase and must not be used to weaken or bypass the current full-product validation requirement.
+- Exact user-facing preload declaration/generator surface. The internal wrapper+dispatcher representation is now mechanically proven by PoC 051 but is not yet a promoted public interface.
+- Final rsudo source-prefix composition contract when interactive stdin contains injected source and command operands are also supplied.
