@@ -64,6 +64,20 @@ When valid credentials and a suitable remote system are supplied, rsudo must pro
 
 Authentication data must not be exposed as ordinary terminal output.
 
+### Interactive source injection
+
+When interactive mode is selected and rsudo receives non-TTY standard input, the remaining input after any `--askpass` password record is consumed locally as shell source for the remote privileged operation.
+
+A non-empty source stream is executed remotely under the selected sudo target in a shell environment attached to the interactive terminal path. It is not forwarded as ordinary target stdin.
+
+If command operands are also supplied, their invocation is appended after the injected source in the same shell program. The source can therefore define functions, variables or other shell state used by the requested command. In normal command-preservation mode the appended invocation preserves the caller-visible command/argument meaning. With `--no-preserve-quotes`, the appended invocation uses the documented alternate command-passing behavior.
+
+If no command operands are supplied, a non-empty source stream is itself the complete remote shell program.
+
+An empty source stream does not create a source-injection program and leaves the ordinary no-command/default behavior in effect.
+
+The resulting shell-program status is propagated as the remote operation status.
+
 ## Target user
 
 When `--user sudo_as_user` is supplied, the remote target must execute as the requested sudo target user, subject to the remote sudo policy.
@@ -226,4 +240,5 @@ RSUDO-18  fs put promotes an existing-destination replacement only after transfe
 RSUDO-19  fs get/put attempt rollback when staged replacement promotion fails after moving the previous destination aside
 RSUDO-20  each rsudo invocation resets invocation-local target-user, interactive, askpass and no-preserve-quotes mode state before parsing its own options
 RSUDO-21  recursive rsudo calls may reuse connection/credential state but do not inherit invocation modes from the outer call
+RSUDO-22  interactive non-TTY stdin is executed as a privileged shell-source prefix; optional command operands execute after it in the same shell environment
 ```
