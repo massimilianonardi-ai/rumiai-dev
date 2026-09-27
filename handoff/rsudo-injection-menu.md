@@ -10,7 +10,7 @@ Run the existing `menu` filesystem browser remotely under privileged `rsudo` by 
 ## Current repository revisions
 
 ```text
-rumiai-dev   3e6296e231e9e83e1cf895fe1b8b6d294cf32ae3
+rumiai-dev   e18c78e2b385f197ac674367e883cfcfc2ab4c52
 rumiai-os    c1aa711645b39f36850d35abc02c31d8db916120
 rumiai-tests a005991b9694eac988ce116e38b6e1a02c47feee
 ```
@@ -44,15 +44,17 @@ specifications/rumiai-os/COMMAND-ENTRYPOINTS.md
 - `loadlib-inject-stream.lib.sh` generates an explicit embedded-library stream and is covered by permanent tests.
 - `rsudo --interactive` consumes non-TTY stdin as source injection and is covered by permanent source-only and source-plus-command tests.
 - Current `menu` dependency chain needed for injection has been verified from implementation: `menu -> array, map, term`, with `core` supplied explicitly by the stream generator contract.
+- Physical composed execution reached the injected privileged `menu -d /` successfully using a pipeline whose first record is consumed by `--askpass` and whose remaining records are the generated source stream.
+- The post-menu source dump has been traced to `rsudo_core`'s final info log: after source injection rewrites the operation to `sh -c '<generated source>'`, the final `log info rsudo end ... command "$*"` serializes that internal rewritten command to stderr.
 
 ## Current state
 
-The implementation pieces required for the first real rsudo+menu composition are present. No permanent end-to-end test yet demonstrates the composed remote filesystem browser itself.
+The composed remote menu path is operational. The remaining immediate defect is output hygiene: injected source is exposed by rsudo's final informational command log after the interactive target exits. This is not terminal echo and is independent of menu rendering.
 
 ## Next action
 
-Run the composed stream on the physical Linux host against a real SSH/sudo target, starting with `menu -d /`. Capture the complete terminal result and final status. If the real composed path succeeds, add proportional permanent composed coverage; if it fails, fix the first real boundary exposed by that run before broadening the task.
+Realign rsudo logging so the final log does not serialize the internal source-injection `sh -c` payload. Preserve useful start/end operation logging without emitting generated source. Then add proportional regression coverage and rerun the composed physical menu path.
 
 ## Blockers / open questions
 
-None before the first physical composed execution.
+None.
