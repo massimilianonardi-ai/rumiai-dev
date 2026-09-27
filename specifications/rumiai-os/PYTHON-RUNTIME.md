@@ -114,6 +114,15 @@ python-env run <environment> -- <command> [<arg>...]
 python-env remove <environment>
 ```
 
+A `<python-version>` token has one of exactly these forms:
+
+```text
+<major>.<minor>
+<major>.<minor>.<patch>
+```
+
+Each component is canonical unsigned decimal (`0` or a non-zero digit followed by decimal digits; no leading zeroes). A major/minor request selects an available patch release in that Python major/minor family. Supplying the patch component selects that exact Python patch release; provider-specific build revisions remain outside this token.
+
 `<environment>` is an absolute pathname supplied by the consumer. The consumer resolves its location through the applicable managed-state contract; `python-env` does not invent another state tree or select an application state location.
 
 For level 1:
@@ -267,6 +276,7 @@ PY-10  python-env denotes environment management, not a Python interpreter and n
 PY-11  Python version/package selection belongs to the consumer environment definition, not the python-env facility compatibility level.
 PY-12  python-env consumes a caller-resolved absolute environment pathname and never creates a second state-location model.
 PY-13  micromamba is the selected first concrete provider and must adapt to the provider-independent command contract rather than expose raw micromamba CLI semantics as that contract.
-PY-14  requirements, plugin/update policy, channel policy and GPU policy are outside python-env level 1.
-PY-15  The standalone/shared-interpreter PoCs remain engineering evidence, not adopted general Python architecture.
+PY-14  python-env level 1 accepts canonical major.minor or major.minor.patch Python-version tokens with the semantics defined in this specification.
+PY-15  requirements, plugin/update policy, channel policy and GPU policy are outside python-env level 1.
+PY-16  The standalone/shared-interpreter PoCs remain engineering evidence, not adopted general Python architecture.
 ```
