@@ -121,7 +121,11 @@ Design a developer-facing live experimentation and validation environment mechan
 - Physical Ubuntu 26.04.1 ARM64 preflight on 2026-09-27 completed successfully against `rumiai-dev-PoCs@1b5de8c4b0a752ba8d4f8718718fa66eab16f954` and `rumiai-os@c1aa711645b39f36850d35abc02c31d8db916120`. The host reports `aarch64`; OpenSSH client/keyscan and OpenSSL are present; Expect 5.45.4 and Podman 5.7.0 were installed from Ubuntu packages; `podman info` succeeds.
 - Physical Ubuntu direct-operator PoC 048 initially failed on `rumiai-dev-PoCs@1b5de8c4b0a752ba8d4f8718718fa66eab16f954`: the automated `run.sh` path passed, but the direct handoff returned from `interact` before the operator could type at `human>`, then resumed automation and failed with `send: spawn id ... not open`. This exposed a PoC-driver defect that hosted nested PTY automation had not revealed.
 - The handoff driver was corrected in `rumiai-dev-PoCs@a6eb6773a4ca812509a1d79b66f05af31aa5bae3` to bind the operator side explicitly to Expect `tty_spawn_id` (`/dev/tty`) and the child side explicitly to the saved child spawn id, rather than relying on the default `user_spawn_id`/stdin mapping. Missing controlling TTY is now an infrastructure error. GitHub Actions run `36346422386` passed the corrected PoC on both Ubuntu 24.04 / Expect 5.45.4 and macOS 15 / Expect 5.45.
-- Because PoC 048 changed after the earlier macOS physical PASS, that prior macOS evidence remains valid only for `rumiai-dev-PoCs@1b5de8c4...`. The corrected `a6eb6773...` handoff must receive a fresh physical direct-operator confirmation on both Ubuntu 26.04 ARM64 and macOS before the current PoC physical gate is complete.
+- Because PoC 048 changed after the earlier macOS physical PASS, that prior macOS evidence remains valid only for `rumiai-dev-PoCs@1b5de8c4...`.
+- The first physical retry of `a6eb6773...` on Ubuntu still failed in the same visible way: the direct handoff returned before the operator could enter the child response, then automation resumed against a closed spawn. This disproved the hypothesis that selecting `tty_spawn_id` alone solved the problem.
+- The current working hypothesis is queued terminal input at the automation->operator boundary: the physical shell command is pasted as a multi-line block, and an empty/residual complete line can reach the child immediately when `interact` begins. The old fixture could not distinguish this from EOF because both paths used status 32.
+- PoC 048 revision `5bcaa1b6fe1f949b446a32d68d26e486a37c55c2` adds an explicit operator-acquisition barrier through `expect_tty`: before the child accepts human input, the driver ignores any non-matching complete lines and waits for the literal PoC-local word `takeover`; only then does it send a private `handoff-start` token, wait for the child `human>` prompt and enter `interact`. The fixture now uses distinct statuses for EOF versus mismatched input at each handoff stage. GitHub Actions run `36347213482` passes this revision on both Ubuntu 24.04 / Expect 5.45.4 and macOS 15 / Expect 5.45.
+- Physical direct-operator confirmation of `5bcaa1b6...` is still required on Ubuntu 26.04 ARM64 and macOS before the current PoC physical gate is complete.
 
 ## Current state
 
@@ -220,7 +224,7 @@ Expected final scenario status is `closed`. Preserve the complete terminal outpu
 
 ## Next action
 
-1. Pull `rumiai-dev-PoCs@a6eb6773a4ca812509a1d79b66f05af31aa5bae3` on Ubuntu 26.04 ARM64 and rerun the direct-operator PoC 048 handoff; then execute PoC 047 there.
+1. Pull `rumiai-dev-PoCs@5bcaa1b6fe1f949b446a32d68d26e486a37c55c2` on Ubuntu 26.04 ARM64 and rerun the direct-operator PoC 048 handoff using the new explicit `takeover` acquisition prompt; then execute PoC 047 there.
 2. After Ubuntu is clean, rerun the direct-operator PoC 048 handoff on physical macOS against the same corrected PoC revision; do not install Podman or Homebrew on macOS.
 3. Analyze any host divergence. If the property-scoped physical evidence confirms the current model, select the first real testlab repository/command surface, minimal lifecycle verbs and scenario representation before product implementation.
 4. Preserve Podman as an optional/provider-specific capability rather than a macOS-wide testlab prerequisite unless a later explicit contract changes that boundary.
