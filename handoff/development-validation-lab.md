@@ -120,6 +120,7 @@ Design a developer-facing live experimentation and validation environment mechan
 - GitHub Actions run `36312456161` passed PoC revision `81c514d31980e42a775ba929dc506ea848ca6189` on both Ubuntu 24.04 amd64 / Expect 5.45.4 and macOS 15 / Expect 5.45, including the reversible `interact` handoff and preserved fixture status 37.
 - PoC 047 was rerun after the rsudo SSH-command experiment was removed. GitHub Actions run `36312547115` passed PoC revision `8bb77b43f0afbfb45f03cdb6f1875b92cce0ffe0` against current `rumiai-os@c1aa711645b39f36850d35abc02c31d8db916120`: POSIX-shell syntax passed and the real Podman scenario again observed `PASS real rsudo -> real ssh -> real sshd -> real sudo`.
 - The hosted-CI stage is therefore complete for the current 047/048 design. Physical/reference-host execution is now the remaining evidence gate before selecting the first real testlab repository/CLI/scenario representation.
+- After the PoC evidence documentation was synchronized, the exact current `rumiai-dev-PoCs@1b5de8c4b0a752ba8d4f8718718fa66eab16f954` was rerun automatically: PoC 047 run `36312663146` PASS and PoC 048 run `36312663141` PASS. These are the current-HEAD hosted checks.
 
 ## Current state
 
