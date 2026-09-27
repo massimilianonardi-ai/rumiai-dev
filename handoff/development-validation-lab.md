@@ -9,10 +9,10 @@ Design a developer-facing live experimentation and validation environment mechan
 
 ## Current repository revisions
 
-- rumiai-dev: 3043e6c4a4a899c32414af50d04577ee44ce8b04 (pre-checkpoint HEAD)
-- rumiai-os: c33b39ded5020d85943ca826cedbe3ff6d2a4492
-- rumiai-tests: 287577204412cef46cae83157547dbe9ac28d2f8
-- rumiai-dev-PoCs: 6b9d193273c801657a1f873eef042156ccb617c0
+- rumiai-dev: 02b83e7233a0584712d3500fa6328ef5c8cff25e (pre-checkpoint HEAD)
+- rumiai-os: c1aa711645b39f36850d35abc02c31d8db916120
+- rumiai-tests: a005991b9694eac988ce116e38b6e1a02c47feee
+- rumiai-dev-PoCs: 04b17182392c323f13a53b9fffa6917ff9823cec
 - historical/reference m: 2a57a29880c2d7a32e18782122062c695fcb1a3a (master)
 
 ## Applicable canonical sources
@@ -109,9 +109,16 @@ Design a developer-facing live experimentation and validation environment mechan
 - PoC 050 also exposes a boundary that remains relevant to testlab: the current command-string implementation cannot preserve an SSH argument pathname containing whitespace merely by embedding shell quotes in `RSUDO_SSH_COMMAND`; both tested forms failed with SSH status 255. Final scenario-context representation must therefore not assume arbitrary shell-command quoting semantics until rsudo's SSH-command contract is settled.
 - The unrelated current `fs.test` failure on Ubuntu is caused by `set -o pipefail` under dash in the rsudo filesystem module and is not evidence about testlab/scenario lifecycle or the SSH-command hook.
 
+- The `--ssh-command` product direction was explicitly abandoned after PoC 050 exposed command-string representation complexity. The user restored direct `ssh` invocation in rsudo.
+- PoC 050 is retained only as evidence from a rejected experiment; it is not a current testlab integration direction.
+- PoC 047's scenario-local `PATH` adapter is again the intended rsudo activity adaptation for disposable scenarios: it delegates to the real host `ssh` with a scenario-local OpenSSH config, without changing rsudo or the operator's persistent SSH configuration.
+- Persistent per-host SSH behavior belongs to native OpenSSH host configuration or the caller environment rather than to testlab/rsudo credential-group state.
+
 ## Current state
 
-The architectural gap and the two main supporting boundaries remain experimentally supported: PoC 047 validates the minimal real-scenario lifecycle, PoC 048 validates strong Expect-backed PTY dialogue semantics, and PoC 050 now demonstrates that current rsudo can consume scenario-specific SSH connection adaptation directly through `--ssh-command` / `RSUDO_SSH_COMMAND` for normal, recursive and interactive activity. The only new boundary exposed is command-string argument representation when paths contain whitespace.
+The architectural gap and the two main supporting boundaries remain experimentally supported: PoC 047 validates the minimal real-scenario lifecycle and PoC 048 validates strong Expect-backed PTY dialogue semantics. The temporary PoC 050 path is no longer part of the working design because rsudo has returned to direct `ssh` invocation.
+
+For rsudo scenarios, the current adaptation boundary is therefore external to rsudo: testlab may prepend a scenario-owned wrapper named `ssh` to `PATH`, and that wrapper delegates to the real SSH client with scenario-local configuration. This keeps SSH connection detail in SSH/the execution environment while preserving a simple rsudo contract.
 
 The working command identity remains `testlab`, centered on real scenario creation/lifecycle; PTY dialogue remains a separate m-adapter responsibility. Repository placement, final scenario representation/CLI, exact human-handoff adapter surface and formal-validation integration remain open.
 
