@@ -22,6 +22,7 @@ The final `rumiai-dev` completion commit is the commit containing this snapshot.
 RULES.md
 CONSISTENCY-GATE.md
 specifications/rumiai-os/PACKAGE-MODEL.md
+specifications/rumiai-os/STATE-MODEL.md
 specifications/rumiai-os/PYTHON-RUNTIME.md
 ```
 

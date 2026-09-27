@@ -35,6 +35,12 @@ A Python `venv` is not required on top of the micromamba environment merely to s
 
 A Python application environment is **mutable, application-owned, reconstructible state**.
 
+It does not create a second Python-specific state tree. Its mutable paths must use the existing `STATE-MODEL.md` scopes, owners, identities and areas:
+
+- an upstream environment that is intentionally part of the application's compatibility HOME may live under package `home`;
+- an environment payload may use `cache` only when it is genuinely non-authoritative and can be deleted and recreated from authoritative information;
+- authoritative application choices needed to reconstruct runtime packages or plugins belong in the appropriate existing `conf` or `data` state rather than being recoverable only from a disposable environment.
+
 It is not part of the immutable package payload and is not required to remain byte-for-byte runnable after its installation prefix changes.
 
 This boundary is deliberate. Real Python/Conda environments may contain absolute installation prefixes in generated launchers, package metadata, native artifacts or other files. RumiAI therefore does not attempt to rewrite or normalize every arbitrary environment mutation in order to manufacture a stronger relocation property than the upstream ecosystem provides.
@@ -48,7 +54,7 @@ detect/reject stale environment
     -> continue from the reconstructed environment
 ```
 
-The precise state-path placement and lifecycle command used by an individual application remain owned by that package/application integration unless and until a generic current contract is promoted.
+The exact existing state area(s) and lifecycle command used by an individual application remain owned by that package/application integration unless and until a generic current contract is promoted. Consumers must use `state-path` and must not duplicate the physical state-tree layout.
 
 ## 3. Python-version changes
 
@@ -186,7 +192,7 @@ This licensing point did not block the evaluated standalone composition and is n
 ```text
 PY-01  Python is governed by the project-wide implementation-language preference in RULES.md.
 PY-02  General external Python applications use a private micromamba/Conda application environment.
-PY-03  That Python environment is mutable, application-owned and reconstructible state, not immutable package payload.
+PY-03  That Python environment is mutable, application-owned and reconstructible state under the existing state model, not immutable package payload.
 PY-04  Applications may manage their own requirements, optional packages and plugins inside that private environment.
 PY-05  The private environment is not guaranteed byte-for-byte relocatable across prefix changes; stale environments are rebuilt.
 PY-06  Changing the application's Python version rebuilds the application environment and reinstalls its Python packages.

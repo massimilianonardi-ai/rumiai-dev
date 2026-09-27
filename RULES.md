@@ -1,7 +1,7 @@
 # RumiAI Development Rules
 
 Status: **Current / canonical**  
-Updated: 2026-09-17
+Updated: 2026-09-27
 
 This document contains project-wide rules that apply across RumiAI subsystems. Subsystem details belong in current specifications; historical rationale belongs in Git history.
 
