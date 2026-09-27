@@ -9,10 +9,10 @@ Design a developer-facing live experimentation and validation environment mechan
 
 ## Current repository revisions
 
-- rumiai-dev: 65724e25ae107c2c7eb6dad72b534d760dde9304 (pre-checkpoint HEAD)
+- rumiai-dev: 325348cdc3c0064ab700d4c06da1ee015fd6481a (pre-checkpoint HEAD)
 - rumiai-os: 51d0cba5696a94caaf5ae39e2e476a31598a0ae1
 - rumiai-tests: c5dbf627300d095215da21bc07362de03e09337f
-- rumiai-dev-PoCs: 4b2619ce846b48c136dcbb44275c9854652dd1d6
+- rumiai-dev-PoCs: 36eae9b84708beba3fc314a3c4f144438f6263ce
 - historical/reference m: 2a57a29880c2d7a32e18782122062c695fcb1a3a (master)
 
 ## Applicable canonical sources
@@ -39,7 +39,7 @@ Design a developer-facing live experimentation and validation environment mechan
 - `testlab` is interactive-first as a strong design recommendation, not an absolute prohibition on unattended execution. Scenarios may deliberately mix automated setup/dialogue with direct human control when that gives better development evidence.
 - Real scenario creation/lifecycle is the center of `testlab`; terminal-dialogue automation is supporting infrastructure, not the product's defining responsibility.
 - The previous direction of creating a managed RumiAI Expect package is no longer preferred by default. Host tools required for testlab infrastructure may be explicit host prerequisites, like Podman, rather than `pkg`-managed content.
-- Expect may be made an explicit reference-host prerequisite for scripted PTY interaction. On Ubuntu 26.04 it is available as the `expect` package in the Ubuntu `universe` component; availability does not imply installation. If this prerequisite is accepted, a RumiAI PTY/dialogue adapter can use Expect as the common backend instead of weakening semantics to the intersection of Expect and `script(1)`.
+- Expect is the accepted task-local host prerequisite direction for scripted PTY/dialogue interaction; it is not planned as a RumiAI `pkg` dependency merely for testlab. Ubuntu availability does not imply installation, so reference-host preparation must verify/provide it explicitly. The stronger adapter semantics should be based on Expect rather than weakened to the intersection with `script(1)`.
 - The minimal scenario contract is fixed for this task: a scenario definition obtains a concrete runtime reality; each execution produces/binds a scenario instance; ownership is recorded per resource; prerequisites are checked before runtime mutation; every created/bound resource is persisted immediately; readiness is established before activities; context exposes facts/handles rather than commands or assertions; activities remain outside the scenario; interactive access is separable from preparation; cleanup may affect only owned resources; persistent inventory is the recovery authority after interruption.
 - The first implementation must remain imperative/minimal. No generic scenario DSL, resource graph, backend-neutral plugin framework or activity/assertion DSL is introduced until multiple real scenarios demonstrate a concrete need.
 
@@ -100,16 +100,19 @@ Design a developer-facing live experimentation and validation environment mechan
 - PoC 047 (`rumiai-dev-PoCs/pocs/047-testlab-rsudo-scenario-lifecycle`) implemented to exercise the accepted scenario lifecycle against a real Podman SSH/sudo target without changing rumiai-os.
 - GitHub Actions run `36302160822` passed on Ubuntu 24.04.5 amd64 against rumiai-os `51d0cba5696a94caaf5ae39e2e476a31598a0ae1`: POSIX-shell syntax passed; real rsudo traversed real SSH/sshd/sudo and observed UID 0; the owned container was present in the resource inventory while READY, absent after cleanup, repeated cleanup succeeded, and the external rumiai-os checkout remained clean.
 - The PoC exposed one current integration fact: rsudo has no SSH port/config operand. The scenario therefore uses a local PATH adapter that delegates to the real host ssh with a scenario-local `-F` config. This preserves a real SSH boundary while avoiding host port 22 and avoiding mutation of the operator SSH configuration; it is experimental activity adaptation, not yet a product-interface decision.
+- PoC 048 (`rumiai-dev-PoCs/pocs/048-expect-pty-dialogue-semantics`) implemented to test the PTY/dialogue boundary independently of testlab orchestration.
+- GitHub Actions run `36302392760` passed on Ubuntu 24.04 amd64 with distro Expect 5.45.4 and on macOS 15 with host-provided Expect 5.45. The same driver exercised a TTY-required child, exact prompt-before-response synchronization, transcript capture, child exit-status propagation and timeout-as-driver-error semantics.
+- Current PoC 048 HEAD `36eae9b84708beba3fc314a3c4f144438f6263ce` was re-run by Actions run `36302442950`; both Ubuntu and macOS matrix jobs passed.
 
 ## Current state
 
-The architectural gap and minimal scenario boundary are now identified and experimentally supported on an auxiliary Ubuntu host. The working command identity is `testlab`, with real scenario creation/lifecycle as its central responsibility and an interactive-first/hybrid usage direction. The accepted task-local scenario contract separates definition from live instance, records ownership per resource, separates readiness/context from activities, and makes persisted resource inventory the recovery authority. Repository placement, final scenario representation/CLI, PTY adapter surface and formal-validation integration remain open.
+The architectural gap and the two main supporting boundaries are now experimentally supported: PoC 047 validates the minimal real-scenario lifecycle on an auxiliary Ubuntu host, and PoC 048 validates strong Expect-backed PTY dialogue semantics on Ubuntu and macOS CI hosts. The working command identity is `testlab`, centered on real scenario creation/lifecycle; PTY dialogue remains a separate m-adapter responsibility. Repository placement, final scenario representation/CLI, exact human-handoff adapter surface and formal-validation integration remain open.
 
 ## Next action
 
 1. Exercise PoC 047 on the physical/reference macOS host and the Ubuntu 26.04 reference host to verify Podman port publication, real SSH/sudo behavior and cleanup with the same scenario model.
-2. In parallel, create a focused Expect-backed PTY/dialogue PoC that tests the stronger prompt-synchronized + optional-human-handoff semantics without making it part of testlab orchestration.
-3. Only after those results, decide the first real testlab repository/command surface and scenario representation.
+2. Exercise PoC 048 on the same reference hosts and then extend only the PoC as needed to validate the exact Expect `interact` human-handoff behavior.
+3. With those reference-host results, decide the first real testlab repository/command surface and scenario representation before any product implementation.
 
 ## Blockers / open questions
 
