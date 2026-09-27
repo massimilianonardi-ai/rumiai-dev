@@ -10,8 +10,8 @@ Run the existing `menu` filesystem browser remotely under privileged `rsudo` by 
 ## Current repository revisions
 
 ```text
-rumiai-dev   e18c78e2b385f197ac674367e883cfcfc2ab4c52
-rumiai-os    c1aa711645b39f36850d35abc02c31d8db916120
+rumiai-dev   c36e1038244c4f242947727d6ffd592a5ffe6485
+rumiai-os    58cd122d1be431fffcf0e4444cbac5a3fe0fec22
 rumiai-tests a005991b9694eac988ce116e38b6e1a02c47feee
 ```
 
@@ -33,28 +33,34 @@ specifications/rumiai-os/COMMAND-ENTRYPOINTS.md
 ## Fixed task-local choices
 
 - Use the existing explicit `loadlib_inject_stream` generator; dependency discovery is not added.
+- The generated stream owns its in-memory `loadlib` implementation directly. There is no separate `loadlib-inject.lib.sh` backend or `_loadlib_inject_dispatch` layer.
 - The menu stream explicitly embeds `core`, `array`, `map`, `term`, and `menu`.
 - Transport the generated source through the current `rsudo --interactive` source-injection path.
-- The immediate physical target is a Linux host with sshd already present; the first end-to-end check is the privileged remote filesystem browser.
+- The immediate physical target is a Linux host with sshd already present; the end-to-end target remains the privileged remote filesystem browser.
 
 ## Completed
 
 - RumiAI-owned system-shell-library consumers have been migrated to `loadsyslib`; permanent coverage scans for remaining direct m-owned system-library dot-sourcing.
-- `loadlib-inject.lib.sh` provides the in-memory load backend.
-- `loadlib-inject-stream.lib.sh` generates an explicit embedded-library stream and is covered by permanent tests.
+- `loadlib-inject-stream.lib.sh` generates an explicit embedded-library stream and is covered by the existing permanent behavioral loader test.
+- The former `loadlib-inject.lib.sh` backend and its operational manual were removed as redundant. The stream generator now emits `loadlib()` directly, with its `case` dispatching to the generated embedded-library wrappers.
+- `LIBRARY-INTERFACES.md` and the `loadlib-inject-stream.lib.sh` operational manual were realigned to the direct generated-`loadlib` model.
+- A local POSIX-sh harness validated the modified generator: library syntax, generated-stream syntax, direct embedded loading, argument preservation, execution with an unavailable remote `m_LIB_DIR`, and status 2 for an omitted library all passed.
+- The existing permanent `library-loading.test` requires no implementation-specific change because it already protects the observable injection contract rather than the removed backend structure. It was inspected but could not be executed in the assistant environment because the GitHub checkout is unavailable there and outbound GitHub network resolution is blocked.
 - `rsudo --interactive` consumes non-TTY stdin as source injection and is covered by permanent source-only and source-plus-command tests.
 - Current `menu` dependency chain needed for injection has been verified from implementation: `menu -> array, map, term`, with `core` supplied explicitly by the stream generator contract.
-- Physical composed execution reached the injected privileged `menu -d /` successfully using a pipeline whose first record is consumed by `--askpass` and whose remaining records are the generated source stream.
-- The post-menu source dump has been traced to `rsudo_core`'s final info log: after source injection rewrites the operation to `sh -c '<generated source>'`, the final `log info rsudo end ... command "$*"` serializes that internal rewritten command to stderr.
+- Physical composed execution reached the injected privileged `menu -d /` successfully before the loader simplification, using a pipeline whose first record is consumed by `--askpass` and whose remaining records are the generated source stream.
+- The source dump observed after leaving the menu was caused by the final rsudo command log. Current rsudo keeps a concise info-level end log and emits the full effective command only at trace level.
 
 ## Current state
 
-The composed remote menu path is operational. The remaining immediate defect is output hygiene: injected source is exposed by rsudo's final informational command log after the interactive target exits. This is not terminal echo and is independent of menu rendering.
+The injection model is simplified and current implementation/spec/manual agree: one generator emits `loadsyslib`, embedded library wrappers, and the direct in-memory `loadlib` dispatcher. No separate injection-backend library remains.
+
+The composed remote menu path was physically successful before this loader-internal simplification. A revision-specific physical rerun on the new `rumiai-os` revision is still pending, as is execution of the permanent loader test against the actual checkout.
 
 ## Next action
 
-Realign rsudo logging so the final log does not serialize the internal source-injection `sh -c` payload. Preserve useful start/end operation logging without emitting generated source. Then add proportional regression coverage and rerun the composed physical menu path.
+Run the permanent loader test against `rumiai-os` revision `58cd122d1be431fffcf0e4444cbac5a3fe0fec22`, then rerun the physical composed `menu -d /` path. If those remain successful, add proportional permanent coverage for the composed rsudo+injected-menu path.
 
 ## Blockers / open questions
 
-None.
+The assistant execution environment cannot currently reach GitHub to materialize the real checkout, so the permanent test and physical SSH/sudo/menu rerun require an environment with the repositories and target host available.
