@@ -125,7 +125,9 @@ Design a developer-facing live experimentation and validation environment mechan
 - The first physical retry of `a6eb6773...` on Ubuntu still failed in the same visible way: the direct handoff returned before the operator could enter the child response, then automation resumed against a closed spawn. This disproved the hypothesis that selecting `tty_spawn_id` alone solved the problem.
 - The current working hypothesis is queued terminal input at the automation->operator boundary: the physical shell command is pasted as a multi-line block, and an empty/residual complete line can reach the child immediately when `interact` begins. The old fixture could not distinguish this from EOF because both paths used status 32.
 - PoC 048 revision `5bcaa1b6fe1f949b446a32d68d26e486a37c55c2` adds an explicit operator-acquisition barrier through `expect_tty`: before the child accepts human input, the driver ignores any non-matching complete lines and waits for the literal PoC-local word `takeover`; only then does it send a private `handoff-start` token, wait for the child `human>` prompt and enter `interact`. The fixture now uses distinct statuses for EOF versus mismatched input at each handoff stage. GitHub Actions run `36347213482` passes this revision on both Ubuntu 24.04 / Expect 5.45.4 and macOS 15 / Expect 5.45.
-- Physical direct-operator confirmation of `5bcaa1b6...` is still required on Ubuntu 26.04 ARM64 and macOS before the current PoC physical gate is complete.
+- The physical diagnostic status record from the failed `5bcaa1b6...` run was `38`, not EOF: the fixture received a complete human-response line different from `operator`. The transcript showed no visible payload after `human>`, so the observed failure class is queued/spurious terminal input reaching the child at the instant `interact` begins, not loss of the controlling terminal.
+- PoC 048 revision `8c0b66656c0ed8386bdefe3fd1bc45d5849e9976` replaces the fixed takeover word with a runtime-only token `takeover-<driver-pid>`. `expect_tty` discards every complete line until that exact token is entered, making it impossible for stale pre-run input to satisfy the acquisition barrier. The automated harness discovers and echoes the generated token. GitHub Actions run `36351158040` passed this revision on both Ubuntu 24.04 / Expect 5.45.4 and macOS 15 / Expect 5.45.
+- Physical direct-operator confirmation of `8c0b6665...` is still required on Ubuntu 26.04 ARM64 and macOS before the current PoC physical gate is complete.
 
 ## Current state
 
@@ -224,7 +226,7 @@ Expected final scenario status is `closed`. Preserve the complete terminal outpu
 
 ## Next action
 
-1. Pull `rumiai-dev-PoCs@5bcaa1b6fe1f949b446a32d68d26e486a37c55c2` on Ubuntu 26.04 ARM64 and rerun the direct-operator PoC 048 handoff using the new explicit `takeover` acquisition prompt; then execute PoC 047 there.
+1. Pull `rumiai-dev-PoCs@8c0b66656c0ed8386bdefe3fd1bc45d5849e9976` on Ubuntu 26.04 ARM64 and rerun the direct-operator PoC 048 handoff using the displayed runtime `takeover-<pid>` acquisition token; then execute PoC 047 there.
 2. After Ubuntu is clean, rerun the direct-operator PoC 048 handoff on physical macOS against the same corrected PoC revision; do not install Podman or Homebrew on macOS.
 3. Analyze any host divergence. If the property-scoped physical evidence confirms the current model, select the first real testlab repository/command surface, minimal lifecycle verbs and scenario representation before product implementation.
 4. Preserve Podman as an optional/provider-specific capability rather than a macOS-wide testlab prerequisite unless a later explicit contract changes that boundary.
