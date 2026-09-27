@@ -10,9 +10,9 @@ Run the existing `menu` filesystem browser remotely under privileged `rsudo` by 
 ## Current repository revisions
 
 ```text
-rumiai-dev   ac9b9229ab30be6749c564f452f14f9eb12bf24a
+rumiai-dev   a0f8e388825b58e90169bb42a5804cf21ea018ec
 rumiai-os    52068dcfc01409231c673c48291ff18147fc1056
-rumiai-tests a005991b9694eac988ce116e38b6e1a02c47feee
+rumiai-tests 3c89e92c2a3455dc3c1e68a383d1a73ed421dc73
 ```
 
 ## Applicable canonical sources
@@ -32,6 +32,8 @@ specifications/rumiai-os/COMMAND-ENTRYPOINTS.md
 
 ## Fixed task-local choices
 
+- Explicit user architecture correction: the root `m` bootstrap is deliberately minimal. Its only approved helper functions are `readpathce` for the root-resolution chicken/egg boundary and `export_readonly` for fundamental variable definition. The bootstrap responsibilities are limited to root resolution, fundamental system-variable definition, loading `core.lib.sh`, and execution. No additional function or responsibility may be added to `m` without explicit user approval.
+- `loadlib` and `loadsyslib` belong to `core.lib.sh`, not to the root bootstrap. The bootstrap must load core through the minimal bootstrap path required before those functions exist.
 - Use the existing explicit `loadlib_inject_stream` generator; dependency discovery is not added.
 - The generated stream owns its in-memory `loadlib` implementation directly. There is no separate `loadlib-inject.lib.sh` backend or `_loadlib_inject_dispatch` layer.
 - The menu stream explicitly embeds `core`, `array`, `map`, `term`, and `menu`.
@@ -53,14 +55,18 @@ specifications/rumiai-os/COMMAND-ENTRYPOINTS.md
 
 ## Current state
 
-The injection model is simplified and current implementation/spec/manual agree: one generator emits `loadsyslib`, embedded library wrappers, and the direct in-memory `loadlib` dispatcher. No separate injection-backend library remains.
+A more fundamental architecture regression has been identified and takes precedence over the injection-local diagnosis.
 
-The composed remote menu path was physically successful before this loader-internal simplification. The first post-simplification physical rerun produced an interactive `dash` prompt instead of the menu. Current code inspection and a direct POSIX-sh generator probe show the new generator emits a valid non-empty stream. The failure shape matches a stale already-sourced pre-simplification `loadlib_inject_stream` function: that old in-memory function still requires the now-removed `loadlib-inject.lib.sh`, returns status 2 before emitting source, and leaves `rsudo --askpass` with only the password record; rsudo then falls back to its empty-source `sh -s` behavior.
+Current `rumiai-os/m` defines `loadlib` and `loadsyslib` itself and also performs package-provider/global-environment work. This violates the explicit bootstrap-minimality correction above. Current `BOOTSTRAP-ENVIRONMENT.md`, `LIBRARY-INTERFACES.md`, and package-model statements encode the same drift, so the problem is not limited to implementation.
+
+Repository history shows the regression path. `loadlib`/`loadsyslib` were originally implemented in `core.lib.sh`. The active injection work initially recorded final loader ownership as an open question. Commit `rumiai-os@7fa382d29f9c725bc098eda301c872e450fea663` then moved the loader from core into `m` while migrating callers to `loadsyslib`. Subsequent documentation commits promoted that implementation convenience into canonical contract instead of requiring explicit architectural approval.
+
+The physical `dash` symptom therefore must not be treated as an isolated stale-shell issue until the bootstrap/core regression is repaired and the normal RumiAI shell path is restored.
 
 ## Next action
 
-Reload the current `loadlib-inject-stream` library in the active m shell (or start a fresh m shell), verify that standalone stream generation returns status 0 and emits non-zero bytes, then rerun the physical composed `menu -d /` path against current `rumiai-os`. If that succeeds, run the permanent loader test and add proportional permanent coverage for the composed rsudo+injected-menu path.
+First realign the canonical bootstrap/library/package contracts with the explicit bootstrap-minimality rule and add mechanical protection for that structural boundary. Then, under explicit product authorization, restore `loadlib`/`loadsyslib` ownership to `core.lib.sh`, remove non-approved bootstrap responsibilities from `m`, and validate the normal RumiAI shell before resuming rsudo/menu injection work.
 
 ## Blockers / open questions
 
-The physical rerun is waiting for confirmation after reloading the current library definition in the active shell. The assistant execution environment cannot currently reach GitHub to materialize the real checkout for the permanent suite.
+Canonical sources and current implementation are presently inconsistent with the explicit user architecture correction. Product repair must not proceed silently; the next product modification requires explicit authorization for the repair work unit.
