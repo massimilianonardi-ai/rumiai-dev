@@ -246,6 +246,26 @@ If the user explicitly specifies a software product, interface or execution mode
 
 GUI/computer-use is one execution modality, not the universal interaction model.
 
+### Implementation-language preference
+
+RumiAI has strong implementation-language preferences for new RumiAI-owned development.
+
+Preferred languages are:
+
+```text
+POSIX shell
+C
+C++
+JavaScript
+Java
+```
+
+Python, PHP, Rust and Go are disfavored by default. This disfavored list is not exhaustive, and absence from either list does not imply an automatic preference or prohibition.
+
+This is a **selection preference, not a language ban**. External software, upstream toolchains or a concrete technical requirement may require a non-preferred language and remain valid RumiAI dependencies. Do not reject otherwise suitable external software merely because its implementation language is disfavored.
+
+For new RumiAI-owned code, choosing a disfavored language must be deliberate and justified by the concrete requirement rather than by incidental convenience. Prefer an appropriate language from the preferred set when it can satisfy the requirement without a material technical disadvantage.
+
 ## 16. Development workflow
 
 The normal sequence is:

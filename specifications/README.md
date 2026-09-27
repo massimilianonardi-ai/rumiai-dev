@@ -25,6 +25,7 @@ Read only the smallest complete set relevant to the task.
 | interactive local Git working-tree manager `gitman` | `rumiai-os/GITMAN.md` |
 | state scopes, selectors, owners, areas, `state-path`, package HOME/state | `rumiai-os/STATE-MODEL.md` |
 | package subsystem ownership, public surface and launch/integration invariants | `rumiai-os/PACKAGE-MODEL.md` |
+| Python integration, micromamba application-environment model and retained standalone-runtime engineering findings | `rumiai-os/PYTHON-RUNTIME.md` |
 | static/global resources | `rumiai-os/RESOURCE-MODEL.md` |
 | documentation ownership, mandatory command/library manual coverage, initial terminal-first operational model, long-term multi-channel target | `rumiai-os/DOCUMENTATION-MODEL.md` |
 | technical localization facility `lang` | `rumiai-os/LANG-BOOTSTRAP.md` |
