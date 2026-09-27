@@ -116,7 +116,8 @@ Design a developer-facing live experimentation and validation environment mechan
 - After the PoC evidence documentation was synchronized, the exact current `rumiai-dev-PoCs@1b5de8c4b0a752ba8d4f8718718fa66eab16f954` was rerun automatically: PoC 047 run `36312663146` PASS and PoC 048 run `36312663141` PASS. These are the current-HEAD hosted checks.
 
 - Physical macOS preflight on 2026-09-27 established the operator host as macOS 27.0 arm64 with host Expect 5.45, OpenSSH client/keyscan and OpenSSL available. The canonical workspace layout places `rumiai-dev-PoCs` under `rumiai-os/src/`, so from the PoC checkout the product root is two levels up. The user explicitly does not want Homebrew or Podman installed on the macOS reference host. This is not treated as a failed prerequisite to remediate: Podman remains an optional scenario backend, so PoC 047 physical execution is scoped to Ubuntu 26.04 ARM64 while PoC 048 remains the macOS physical gate for the PTY/handoff boundary.
-- Physical macOS PoC 048 automated run on 2026-09-27 passed against `rumiai-dev-PoCs@1b5de8c4b0a752ba8d4f8718718fa66eab16f954` and `rumiai-os@c1aa711645b39f36850d35abc02c31d8db916120`. The observed terminal output included the expected synchronized dialogue, deliberate timeout-classification path, automated `interact` handoff harness, resumed automation and final `PASS expect PTY dialogue and interact handoff semantics`. The remaining macOS physical check is the direct operator handoff rather than the automated outer harness.
+- Physical macOS PoC 048 automated run on 2026-09-27 passed against `rumiai-dev-PoCs@1b5de8c4b0a752ba8d4f8718718fa66eab16f954` and `rumiai-os@c1aa711645b39f36850d35abc02c31d8db916120`. The observed terminal output included the expected synchronized dialogue, deliberate timeout-classification path, automated `interact` handoff harness, resumed automation and final `PASS expect PTY dialogue and interact handoff semantics`.
+- Physical macOS direct-operator PoC 048 handoff on 2026-09-27 also passed on the same revision pair. The operator received the live `human>` prompt through Expect `interact`, entered `operator`, observed `human-seen:operator` and `resume>`, returned control with the experimental local `__TESTLAB_RETURN__` sequence, and the resumed automation completed. The launcher status and private recorded target status were both exactly `37`, followed by `PASS manual Expect interact handoff`. The macOS physical PoC 048 gate is therefore complete.
 
 ## Current state
 
@@ -215,7 +216,7 @@ Expected final scenario status is `closed`. Preserve the complete terminal outpu
 
 ## Next action
 
-1. Execute PoC 048 automated/manual handoff validation on physical macOS; do not install Podman or Homebrew for this task.
+1. macOS physical PoC 048 validation is complete; do not install Podman or Homebrew for this task.
 2. Execute PoC 048 and PoC 047 on physical Ubuntu 26.04 ARM64 with Podman available there.
 3. Analyze any host divergence. If the property-scoped physical evidence confirms the current model, select the first real testlab repository/command surface, minimal lifecycle verbs and scenario representation before product implementation.
 4. Preserve Podman as an optional/provider-specific capability rather than a macOS-wide testlab prerequisite unless a later explicit contract changes that boundary.
