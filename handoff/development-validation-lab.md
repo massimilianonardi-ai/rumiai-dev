@@ -115,6 +115,8 @@ Design a developer-facing live experimentation and validation environment mechan
 - The hosted-CI stage is therefore complete for the current 047/048 design. Physical/reference-host execution is now the remaining evidence gate before selecting the first real testlab repository/CLI/scenario representation.
 - After the PoC evidence documentation was synchronized, the exact current `rumiai-dev-PoCs@1b5de8c4b0a752ba8d4f8718718fa66eab16f954` was rerun automatically: PoC 047 run `36312663146` PASS and PoC 048 run `36312663141` PASS. These are the current-HEAD hosted checks.
 
+- Physical macOS preflight on 2026-09-27 established the operator host as macOS 27.0 arm64 with host Expect 5.45, OpenSSH client/keyscan and OpenSSL available. The canonical workspace layout places `rumiai-dev-PoCs` under `rumiai-os/src/`, so from the PoC checkout the product root is two levels up. Podman was not present in PATH, so PoC 047 physical execution is currently blocked on its declared host prerequisite; PoC 048 is not blocked.
+
 ## Current state
 
 The two supporting boundaries needed before the first real testlab implementation are now exercised in hosted CI:
