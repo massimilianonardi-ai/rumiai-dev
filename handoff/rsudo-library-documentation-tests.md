@@ -9,9 +9,10 @@ Align the current rsudo contract, command/library operational documentation and 
 
 ## Current repository revisions
 
-- rumiai-dev: afa16ac4c2e130c8ee0494fdc10ad20b307b5050 (pre-checkpoint HEAD)
-- rumiai-os: 4f429c811f9c19889d0d8f6fa42b0423356beecd
-- rumiai-tests: e30ef19cabe1d2c1511fe49db23c8d7b89feff11
+- rumiai-dev: ff38e84441567626368097d1cd31e188f1a7051d (pre-checkpoint HEAD)
+- rumiai-os: c33b39ded5020d85943ca826cedbe3ff6d2a4492
+- rumiai-tests: 287577204412cef46cae83157547dbe9ac28d2f8
+- rumiai-dev-PoCs: 6b9d193273c801657a1f873eef042156ccb617c0
 
 ## Applicable canonical sources
 
@@ -64,20 +65,29 @@ Align the current rsudo contract, command/library operational documentation and 
 - Added `validation/rsudo.conf` selecting the complete `rumiai-os/rsudo` permanent-test group for focused formal validation.
 - Final diff review caught a malformed temporary-directory identity introduced while editing `contract.test`. The first forward correction still serialized one dollar because JavaScript replacement-string `$` semantics collapsed it; the verified correction in `rumiai-tests@e30ef19cabe1d2c1511fe49db23c8d7b89feff11` uses a replacement callback and the remote file now contains the required PID suffix `$`. No validation evidence from the intermediate revisions is accepted.
 
+- The user advanced `rumiai-os@c33b39ded5020d85943ca826cedbe3ff6d2a4492` with `--ssh-command` / `RSUDO_SSH_COMMAND`, replacing the three direct SSH invocations through the configured command string and defaulting to `ssh` when empty.
+- PoC 050 (`rumiai-dev-PoCs/pocs/050-rsudo-ssh-command`) exercised that exact product revision against a real Podman Ubuntu 26.04 SSH/sudo target. Non-interactive use, ambient `RSUDO_SSH_COMMAND`, recursive `fs delete` reuse and interactive PTY execution all passed.
+- The same PoC observed a representation limit: when an SSH argument pathname contains spaces, both an unquoted pathname embedded in `RSUDO_SSH_COMMAND` and shell-quote characters embedded in the variable fail with SSH status 255. The current unquoted parameter expansion performs shell field splitting/pathname expansion but does not reparse quote characters as shell syntax.
+- The existing permanent `contract.test`, `interactive.test` and `load.test` pass against `c33b39d` on the auxiliary Ubuntu runner. `fs.test` fails independently at `set -o pipefail` in `rsudo-mod-fs.lib.sh` because Ubuntu `/bin/sh` is dash; that code path was not changed by `c33b39d` and is not evidence against the SSH-command change.
+- Current rsudo specification and operational manuals do not yet describe `--ssh-command` / `RSUDO_SSH_COMMAND`, and permanent tests do not yet protect the new surface. The user intends to extend credential groups with the SSH setting optionally; that realignment remains pending until the final SSH-command semantics are fixed.
+- The current implementation's missing-`--ssh-command` operand diagnostic still reports operand `user` and returns the same local status currently used for missing `--user`; this is an implementation/manual detail to realign when the option contract is finalized.
+
 ## Current state
 
-The runtime, canonical rsudo contract, operational manuals and permanent test suite are now aligned on the invocation-state model.
+The prior invocation-state contract remains intact. The new `--ssh-command` mechanism is mechanically proven on real SSH/sudo paths for ordinary, ambient-state, recursive and interactive use, but its final public semantics are not yet promoted because command-string quoting for arguments containing whitespace is unresolved. Specification/manual/permanent-test realignment and optional credential-group integration remain pending.
 
-The current product revision is `4f429c811f9c19889d0d8f6fa42b0423356beecd`; its parent `571e0df39a103349eae78ba2d4d8161660f084e4` contains the user-authored runtime change and `4f429c8` adds only the required operational documentation.
-
-The current suite revision is `e30ef19cabe1d2c1511fe49db23c8d7b89feff11`.
-
-The previous full-product validation run `36144167133` remains evidence only for its older recorded product/suite revisions and does not validate this state.
+The unrelated `fs.test` failure on the auxiliary Ubuntu runner exposes an existing POSIX mismatch in `rsudo-mod-fs.lib.sh` (`set -o pipefail` under dash) and must not be attributed to the SSH-command commit.
 
 ## Next action
 
-Run focused formal validation through `validation/rsudo.conf` against the current product and suite revisions. If the focused result is clean, inspect whether a broader current-product validation is already required by the surrounding suite work before completing this handoff.
+1. Decide the final `--ssh-command` representation semantics, in particular whether it intentionally supports only whitespace-separated command words or needs a representation that preserves arbitrary SSH argument boundaries.
+2. Apply the user's planned optional SSH setting to credential groups without clearing an existing SSH command when a group omits it.
+3. Realign `RSUDO.md`, command/library manuals and permanent tests to the accepted behavior, including recursive reuse and interactive execution.
+4. Track/fix the independent POSIX `pipefail` problem in the rsudo filesystem module through the appropriate active/deferred work owner.
 
 ## Blockers / open questions
 
-- Formal validation of the new rsudo product/suite pair is pending.
+- Final semantics/representation of `RSUDO_SSH_COMMAND` when SSH command arguments contain whitespace or shell metacharacters.
+- Exact optional credential-group field name/selection semantics for the SSH command.
+- Documentation/permanent-test realignment for the new public option.
+- Formal validation remains pending after the SSH-command surface and the independent filesystem-shell issue are resolved/aligned.
