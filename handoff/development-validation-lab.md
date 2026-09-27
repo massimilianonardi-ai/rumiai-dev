@@ -9,10 +9,10 @@ Design a developer-facing live experimentation and validation environment mechan
 
 ## Current repository revisions
 
-- rumiai-dev: 02b83e7233a0584712d3500fa6328ef5c8cff25e (pre-checkpoint HEAD)
+- rumiai-dev: 3f945dfaf92bafe9e4c56f0d03a09dd96707b066 (pre-checkpoint HEAD)
 - rumiai-os: c1aa711645b39f36850d35abc02c31d8db916120
 - rumiai-tests: a005991b9694eac988ce116e38b6e1a02c47feee
-- rumiai-dev-PoCs: 04b17182392c323f13a53b9fffa6917ff9823cec
+- rumiai-dev-PoCs: 1b5de8c4b0a752ba8d4f8718718fa66eab16f954
 - historical/reference m: 2a57a29880c2d7a32e18782122062c695fcb1a3a (master)
 
 ## Applicable canonical sources
@@ -114,19 +114,112 @@ Design a developer-facing live experimentation and validation environment mechan
 - PoC 047's scenario-local `PATH` adapter is again the intended rsudo activity adaptation for disposable scenarios: it delegates to the real host `ssh` with a scenario-local OpenSSH config, without changing rsudo or the operator's persistent SSH configuration.
 - Persistent per-host SSH behavior belongs to native OpenSSH host configuration or the caller environment rather than to testlab/rsudo credential-group state.
 
+- PoC 048 was extended from prompt-synchronized PTY driving to a real reversible Expect `interact` handoff. The experiment now proves automated setup -> operator PTY handoff -> operator input/output -> local return of control -> resumed automation on the same live child.
+- Intermediate PoC 048 runs exposed a real portability difference: after a spawn has passed through `interact`, Expect 5.45/macOS and Expect 5.45.4/Linux do not preserve the target exit status consistently through Expect's own post-`interact` process-status path. `close_on_eof 0` did not eliminate the divergence.
+- The final PoC 048 boundary therefore keeps PTY/dialogue/handoff responsibility in Expect while a minimal POSIX target wrapper records the target status and a minimal POSIX launcher propagates that status only after the Expect driver completed successfully. Driver/infrastructure errors remain distinct from target results.
+- GitHub Actions run `36312456161` passed PoC revision `81c514d31980e42a775ba929dc506ea848ca6189` on both Ubuntu 24.04 amd64 / Expect 5.45.4 and macOS 15 / Expect 5.45, including the reversible `interact` handoff and preserved fixture status 37.
+- PoC 047 was rerun after the rsudo SSH-command experiment was removed. GitHub Actions run `36312547115` passed PoC revision `8bb77b43f0afbfb45f03cdb6f1875b92cce0ffe0` against current `rumiai-os@c1aa711645b39f36850d35abc02c31d8db916120`: POSIX-shell syntax passed and the real Podman scenario again observed `PASS real rsudo -> real ssh -> real sshd -> real sudo`.
+- The hosted-CI stage is therefore complete for the current 047/048 design. Physical/reference-host execution is now the remaining evidence gate before selecting the first real testlab repository/CLI/scenario representation.
+
 ## Current state
 
-The architectural gap and the two main supporting boundaries remain experimentally supported: PoC 047 validates the minimal real-scenario lifecycle and PoC 048 validates strong Expect-backed PTY dialogue semantics. The temporary PoC 050 path is no longer part of the working design because rsudo has returned to direct `ssh` invocation.
+The two supporting boundaries needed before the first real testlab implementation are now exercised in hosted CI:
 
-For rsudo scenarios, the current adaptation boundary is therefore external to rsudo: testlab may prepend a scenario-owned wrapper named `ssh` to `PATH`, and that wrapper delegates to the real SSH client with scenario-local configuration. This keeps SSH connection detail in SSH/the execution environment while preserving a simple rsudo contract.
+- PoC 047 supports the accepted persistent real-scenario lifecycle with a current real rsudo -> SSH -> sshd -> sudo path and external SSH adaptation through a scenario-local PATH wrapper.
+- PoC 048 supports prompt-synchronized PTY automation plus reversible human handoff through Expect `interact`. The portable candidate boundary deliberately does not depend on Expect's post-`interact` child-status result; target status is preserved outside that divergent mechanism through minimal POSIX wrappers while Expect remains responsible for PTY/dialogue behavior.
 
-The working command identity remains `testlab`, centered on real scenario creation/lifecycle; PTY dialogue remains a separate m-adapter responsibility. Repository placement, final scenario representation/CLI, exact human-handoff adapter surface and formal-validation integration remain open.
+No public adapter command, public handoff escape sequence, scenario file format or testlab lifecycle CLI has been promoted yet. The experimental `__TESTLAB_RETURN__` sequence and private status file are PoC mechanics only.
+
+The next gate is physical execution on the stable reference host classes. If those results agree with hosted evidence, the task can move from PoCs to selecting the first real testlab repository/command surface and minimal scenario representation.
+
+## Reference-host execution procedure
+
+Run the following on both physical/reference host classes: macOS and Ubuntu 26.04 ARM64. Host-local checkout paths remain operator facts and are not hardcoded.
+
+First update and identify the exact revisions, then verify prerequisites:
+
+```sh
+cd <rumiai-dev-PoCs-root>
+git pull --ff-only
+POCS_ROOT=$PWD
+POCS_REV=$(git rev-parse HEAD)
+
+cd <rumiai-os-root>
+git pull --ff-only
+RUMIAI_OS_ROOT=$PWD
+RUMIAI_OS_REV=$(git rev-parse HEAD)
+
+printf 'rumiai-dev-PoCs=%s\nrumiai-os=%s\n' "$POCS_REV" "$RUMIAI_OS_REV"
+
+command -v podman
+command -v ssh
+command -v ssh-keyscan
+command -v openssl
+command -v expect
+expect -v
+podman info >/dev/null
+```
+
+Exercise the fully automated PoC 048 first:
+
+```sh
+cd "$POCS_ROOT/pocs/048-expect-pty-dialogue-semantics"
+./run.sh
+```
+
+Then exercise the same Expect `interact` boundary with the physical operator rather than the automated outer harness. This interactive command is the last command in its block:
+
+```sh
+cd "$POCS_ROOT/pocs/048-expect-pty-dialogue-semantics"
+EXPECT_REF_WORK=$(mktemp -d "${TMPDIR:-/tmp}/rumiai-expect-reference.XXXXXX")
+./handoff-launcher.sh ./handoff-driver.exp "$EXPECT_REF_WORK/transcript" "$EXPECT_REF_WORK/status" ./status-wrapper.sh -- ./fixtures/handoff-program.sh
+```
+
+At the `human>` prompt, type `operator` and press Enter. After `human-seen:operator` / `resume>`, type the literal experimental return sequence `__TESTLAB_RETURN__` without pressing Enter. After control returns and the command terminates, run a new block:
+
+```sh
+EXPECT_REF_STATUS=$?
+printf 'manual-handoff-status=%s\n' "$EXPECT_REF_STATUS"
+cat "$EXPECT_REF_WORK/status"
+[ "$EXPECT_REF_STATUS" -eq 37 ] && [ "$(cat "$EXPECT_REF_WORK/status")" -eq 37 ]
+rm -rf "$EXPECT_REF_WORK"
+```
+
+Then exercise PoC 047 up to the ready/probe state:
+
+```sh
+cd "$POCS_ROOT/pocs/047-testlab-rsudo-scenario-lifecycle"
+POC047=$PWD/run.sh
+TESTLAB_INSTANCE=$("$POC047" prepare "$RUMIAI_OS_ROOT")
+printf 'instance=%s\n' "$TESTLAB_INSTANCE"
+"$POC047" status "$TESTLAB_INSTANCE"
+"$POC047" probe "$TESTLAB_INSTANCE"
+```
+
+Attach to the same prepared scenario in a separate block; this interactive command is the last command in the block:
+
+```sh
+"$POC047" interactive "$TESTLAB_INSTANCE"
+```
+
+Inside the remote privileged shell, manually run `id -u`; the expected value is `0`. Then type `exit`. After the interactive activity terminates, perform cleanup in a new block:
+
+```sh
+TESTLAB_INTERACTIVE_STATUS=$?
+printf 'interactive-status=%s\n' "$TESTLAB_INTERACTIVE_STATUS"
+"$POC047" cleanup "$TESTLAB_INSTANCE"
+"$POC047" cleanup "$TESTLAB_INSTANCE"
+"$POC047" status "$TESTLAB_INSTANCE"
+```
+
+Expected final scenario status is `closed`. Preserve the complete terminal output together with the printed repository revisions and host/architecture identity; those observations are reference-host evidence for this task, not formal rumiai-validate evidence.
 
 ## Next action
 
-1. Exercise PoC 047 on the physical/reference macOS host and the Ubuntu 26.04 reference host to verify Podman port publication, real SSH/sudo behavior and cleanup with the same scenario model.
-2. Exercise PoC 048 on the same reference hosts and then extend only the PoC as needed to validate the exact Expect `interact` human-handoff behavior.
-3. With those reference-host results, decide the first real testlab repository/command surface and scenario representation before any product implementation.
+1. Execute the prepared reference-host procedure on physical macOS.
+2. Execute the same procedure on physical Ubuntu 26.04 ARM64.
+3. Analyze any host divergence. If both hosts confirm the current model, select the first real testlab repository/command surface, minimal lifecycle verbs and scenario representation before product implementation.
+4. Only after that selection decide whether the stable PTY/dialogue boundary should become an m adapter and how mature scenarios may be reused by rumiai-validate.
 
 ## Blockers / open questions
 
