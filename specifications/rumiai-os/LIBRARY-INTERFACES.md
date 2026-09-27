@@ -63,6 +63,30 @@ rsudo/rsudo-mod-fs
 
 The loading primitive intentionally carries no positional-parameter forwarding contract: one library reference is the complete call interface.
 
+### Explicit injection stream generation
+
+The system library:
+
+```text
+loadlib-inject-stream.lib.sh
+```
+
+provides:
+
+```text
+loadlib_inject_stream <command-source> <library-reference>... -- [<command-arg>...]
+```
+
+for generating one POSIX-shell source program that embeds an explicitly selected set of system shell libraries for execution without a remote `m` library tree.
+
+The caller owns the complete selected library set. The generator MUST NOT parse the command or library sources to discover dependencies and MUST NOT compute or add transitive closure. `core` is required as an explicit selected reference because the generated program establishes the normal integrated-command core environment before appending the command body.
+
+The generated program installs the ordinary `loadsyslib` specialization, the in-memory `loadlib` backend, one wrapper for each explicitly selected library, and a dispatcher exposing exactly those selected references. It then loads `core`, reconstructs the supplied command positional parameters using the existing shell-safe quoting contract, and appends `command-source`.
+
+A library that was not explicitly selected remains unavailable in the generated environment. A runtime `loadsyslib` request for such a reference fails through the injected `loadlib` backend rather than falling back to a remote filesystem.
+
+Stream generation and stream transport are separate responsibilities. In particular, `rsudo --interactive` may transport a generated stream through its interactive source-injection contract, but `loadlib_inject_stream` itself does not perform remote execution.
+
 ## 3. Public and internal function visibility
 
 Every function defined as part of a `m`- or RumiAI-owned library must be classified as either:
@@ -189,4 +213,5 @@ LIB-11  m provides loadlib/loadsyslib before core.lib.sh is loaded
 LIB-12  every owned lib/sys/sh shell-library import uses loadsyslib
 LIB-13  loadsyslib/loadlib accept exactly one library reference and do not forward positional parameters
 LIB-14  runtime/external pathname sourcing remains ordinary POSIX dot-sourcing
+LIB-15  loadlib_inject_stream embeds only caller-selected libraries and performs no dependency discovery or automatic closure
 ```
