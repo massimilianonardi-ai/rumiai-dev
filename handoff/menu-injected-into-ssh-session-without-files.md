@@ -7,13 +7,12 @@ Updated: 2026-09-26
 
 Define and validate source streaming that can inject an existing `m` command plus an explicitly selected set of required system shell libraries through `rsudo --interactive`, execute it on a remote host, and avoid creating or copying a RumiAI/m runtime tree there.
 
-## Current repository revisions at this checkpoint
+## Current repository revisions
 
-- rumiai-dev: b065844c8a419067fa5a15023268e24c22140c3a
+- rumiai-dev: 6a9fe351c73cfb8f7092beed02244bb5071e7b41
 - rumiai-os: 51d0cba5696a94caaf5ae39e2e476a31598a0ae1
-- rumiai-tests: c5dbf627300d095215da21bc07362de03e09337f
-
-Always re-read remote HEADs before resuming; these values are checkpoint evidence, not authoritative future HEADs.
+- rumiai-tests: 287577204412cef46cae83157547dbe9ac28d2f8
+- pkg-catalog: 168d9bfc5ffebb4ea480a8a9f96c6e394d33fe17
 
 ## Applicable canonical sources
 
