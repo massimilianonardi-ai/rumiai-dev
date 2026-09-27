@@ -9,9 +9,10 @@ Design a developer-facing live experimentation and validation environment mechan
 
 ## Current repository revisions
 
-- rumiai-dev: 8e7f1c598a1fa66b2f437b400ee5fc550ed857a3 (pre-checkpoint HEAD)
+- rumiai-dev: 65724e25ae107c2c7eb6dad72b534d760dde9304 (pre-checkpoint HEAD)
 - rumiai-os: 51d0cba5696a94caaf5ae39e2e476a31598a0ae1
 - rumiai-tests: c5dbf627300d095215da21bc07362de03e09337f
+- rumiai-dev-PoCs: 4b2619ce846b48c136dcbb44275c9854652dd1d6
 - historical/reference m: 2a57a29880c2d7a32e18782122062c695fcb1a3a (master)
 
 ## Applicable canonical sources
@@ -39,6 +40,8 @@ Design a developer-facing live experimentation and validation environment mechan
 - Real scenario creation/lifecycle is the center of `testlab`; terminal-dialogue automation is supporting infrastructure, not the product's defining responsibility.
 - The previous direction of creating a managed RumiAI Expect package is no longer preferred by default. Host tools required for testlab infrastructure may be explicit host prerequisites, like Podman, rather than `pkg`-managed content.
 - Expect may be made an explicit reference-host prerequisite for scripted PTY interaction. On Ubuntu 26.04 it is available as the `expect` package in the Ubuntu `universe` component; availability does not imply installation. If this prerequisite is accepted, a RumiAI PTY/dialogue adapter can use Expect as the common backend instead of weakening semantics to the intersection of Expect and `script(1)`.
+- The minimal scenario contract is fixed for this task: a scenario definition obtains a concrete runtime reality; each execution produces/binds a scenario instance; ownership is recorded per resource; prerequisites are checked before runtime mutation; every created/bound resource is persisted immediately; readiness is established before activities; context exposes facts/handles rather than commands or assertions; activities remain outside the scenario; interactive access is separable from preparation; cleanup may affect only owned resources; persistent inventory is the recovery authority after interruption.
+- The first implementation must remain imperative/minimal. No generic scenario DSL, resource graph, backend-neutral plugin framework or activity/assertion DSL is introduced until multiple real scenarios demonstrate a concrete need.
 
 ## Working design
 
@@ -60,7 +63,7 @@ Design a developer-facing live experimentation and validation environment mechan
 - Do not import formal-validation constraints into ordinary lab use: normal testlab sessions should be able to exercise a dirty/uncommitted development checkout, should not require immutable publication, and need not produce PASS/FAIL when the experiment has no formal oracle. They should record enough target/Git/environment identity to explain what was exercised. A testlab run becomes formal validation evidence only through the existing validation contract, not merely because the live scenario was realistic.
 - For rsudo, a Podman-backed real SSH/sudo target could replace boundary fakes for live/validation scenarios and exercise real sshd, sudo policy, TTY, password-required/passwordless/root cases and a real remote filesystem. Random localhost port publication and tmpfs mounts make non-invasive parallel scenarios plausible; exact portability behavior across Podman hosts still requires a PoC.
 
-## Proposed minimal scenario model (under evaluation)
+## Accepted task-local scenario contract
 
 - A scenario definition describes how to obtain one concrete runtime reality; a scenario instance is the live reality produced or attached by one execution. This distinction is needed for persistent lifecycle/recovery without making activities or assertions part of the scenario definition.
 - A scenario instance may contain multiple heterogeneous resources. Resource ownership is therefore per-resource, not a single scenario-wide flag:
@@ -84,7 +87,7 @@ Design a developer-facing live experimentation and validation environment mechan
   - local filesystem copy/snapshot: source external, derived copy owned/disposable, exported root pathname;
   - existing pod/container: external identity is bound/validated and never destroyed by default;
   - composed Podman scenario: network/containers/volumes created by testlab are owned, readiness waits for required services, context exposes endpoints/credentials, cleanup destroys only those owned resources.
-- The first implementation should stay imperative and minimal enough to learn from the rsudo Podman PoC. Do not create a generic declarative scenario language, resource graph, backend-neutral plugin system or activity DSL before multiple real scenarios demonstrate the need.
+- The accepted model remains task-local and is not yet a promoted product specification. Promotion waits until implementation ownership/API are selected and reference-host evidence is sufficient.
 ## Completed
 
 - Mandatory preflight completed for rumiai-dev, rumiai-os, rumiai-tests and the referenced historical m repository.
@@ -94,14 +97,19 @@ Design a developer-facing live experimentation and validation environment mechan
 - Expect packaging/portability was investigated, but the current design no longer requires a managed Expect package merely for testlab; prefer an adapter over already-available host PTY tools when its common semantics can be made real.
 - Current `rumiai-tests/lib/interactive.lib` reviewed: Darwin uses Expect with prompt-before-response synchronization; Linux uses util-linux `script` with prepared input and verifies prompts afterward.
 - Current `rumiai-validate` lifecycle/requirements model reviewed for reusable ideas and deliberate differences from testlab.
+- PoC 047 (`rumiai-dev-PoCs/pocs/047-testlab-rsudo-scenario-lifecycle`) implemented to exercise the accepted scenario lifecycle against a real Podman SSH/sudo target without changing rumiai-os.
+- GitHub Actions run `36302160822` passed on Ubuntu 24.04.5 amd64 against rumiai-os `51d0cba5696a94caaf5ae39e2e476a31598a0ae1`: POSIX-shell syntax passed; real rsudo traversed real SSH/sshd/sudo and observed UID 0; the owned container was present in the resource inventory while READY, absent after cleanup, repeated cleanup succeeded, and the external rumiai-os checkout remained clean.
+- The PoC exposed one current integration fact: rsudo has no SSH port/config operand. The scenario therefore uses a local PATH adapter that delegates to the real host ssh with a scenario-local `-F` config. This preserves a real SSH boundary while avoiding host port 22 and avoiding mutation of the operator SSH configuration; it is experimental activity adaptation, not yet a product-interface decision.
 
 ## Current state
 
-The architectural gap is now identified: RumiAI has a strict permanent-test runner and a strict formal-validation launcher, but no explicit developer lab/scenario surface for real disposable exploratory environments. The working command identity is `testlab`, with real scenario creation/lifecycle as its central responsibility and an interactive-first/hybrid usage direction. PTY normalization is a separate candidate `m` adapter responsibility. Repository placement, scenario format and validation-integration contract remain open.
+The architectural gap and minimal scenario boundary are now identified and experimentally supported on an auxiliary Ubuntu host. The working command identity is `testlab`, with real scenario creation/lifecycle as its central responsibility and an interactive-first/hybrid usage direction. The accepted task-local scenario contract separates definition from live instance, records ownership per resource, separates readiness/context from activities, and makes persisted resource inventory the recovery authority. Repository placement, final scenario representation/CLI, PTY adapter surface and formal-validation integration remain open.
 
 ## Next action
 
-Define the minimal scenario model along two independent dimensions: substrate/reality and ownership/lifecycle. In parallel, PoC an Expect-backed PTY/dialogue adapter under an explicit host-prerequisite model. Then use rsudo + real sshd/sudo in a testlab-owned Podman scenario as the first end-to-end validation of both boundaries.
+1. Exercise PoC 047 on the physical/reference macOS host and the Ubuntu 26.04 reference host to verify Podman port publication, real SSH/sudo behavior and cleanup with the same scenario model.
+2. In parallel, create a focused Expect-backed PTY/dialogue PoC that tests the stronger prompt-synchronized + optional-human-handoff semantics without making it part of testlab orchestration.
+3. Only after those results, decide the first real testlab repository/command surface and scenario representation.
 
 ## Blockers / open questions
 
