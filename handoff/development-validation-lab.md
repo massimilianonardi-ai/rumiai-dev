@@ -115,7 +115,7 @@ Design a developer-facing live experimentation and validation environment mechan
 - The hosted-CI stage is therefore complete for the current 047/048 design. Physical/reference-host execution is now the remaining evidence gate before selecting the first real testlab repository/CLI/scenario representation.
 - After the PoC evidence documentation was synchronized, the exact current `rumiai-dev-PoCs@1b5de8c4b0a752ba8d4f8718718fa66eab16f954` was rerun automatically: PoC 047 run `36312663146` PASS and PoC 048 run `36312663141` PASS. These are the current-HEAD hosted checks.
 
-- Physical macOS preflight on 2026-09-27 established the operator host as macOS 27.0 arm64 with host Expect 5.45, OpenSSH client/keyscan and OpenSSL available. The canonical workspace layout places `rumiai-dev-PoCs` under `rumiai-os/src/`, so from the PoC checkout the product root is two levels up. Podman was not present in PATH, so PoC 047 physical execution is currently blocked on its declared host prerequisite; PoC 048 is not blocked.
+- Physical macOS preflight on 2026-09-27 established the operator host as macOS 27.0 arm64 with host Expect 5.45, OpenSSH client/keyscan and OpenSSL available. The canonical workspace layout places `rumiai-dev-PoCs` under `rumiai-os/src/`, so from the PoC checkout the product root is two levels up. The user explicitly does not want Homebrew or Podman installed on the macOS reference host. This is not treated as a failed prerequisite to remediate: Podman remains an optional scenario backend, so PoC 047 physical execution is scoped to Ubuntu 26.04 ARM64 while PoC 048 remains the macOS physical gate for the PTY/handoff boundary.
 
 ## Current state
 
@@ -126,11 +126,11 @@ The two supporting boundaries needed before the first real testlab implementatio
 
 No public adapter command, public handoff escape sequence, scenario file format or testlab lifecycle CLI has been promoted yet. The experimental `__TESTLAB_RETURN__` sequence and private status file are PoC mechanics only.
 
-The next gate is physical execution on the stable reference host classes. If those results agree with hosted evidence, the task can move from PoCs to selecting the first real testlab repository/command surface and minimal scenario representation.
+The next gate is property-scoped physical execution on the stable reference host classes. macOS validates the portable PTY/handoff boundary through PoC 048 without installing Podman. Ubuntu 26.04 ARM64 validates PoC 048 and the Podman-backed scenario lifecycle through PoC 047. If those results agree with hosted evidence, the task can move from PoCs to selecting the first real testlab repository/command surface and minimal scenario representation.
 
 ## Reference-host execution procedure
 
-Run the following on both physical/reference host classes: macOS and Ubuntu 26.04 ARM64. Host-local checkout paths remain operator facts and are not hardcoded.
+Use property-scoped reference-host execution. On macOS, do not install or require Podman; run only the repository/revision checks plus PoC 048 automated/manual handoff validation. On Ubuntu 26.04 ARM64, run the same PoC 048 checks and additionally run PoC 047 with Podman. Host-local checkout paths remain operator facts and are not hardcoded.
 
 First update and identify the exact revisions, then verify prerequisites:
 
@@ -147,12 +147,14 @@ RUMIAI_OS_REV=$(git rev-parse HEAD)
 
 printf 'rumiai-dev-PoCs=%s\nrumiai-os=%s\n' "$POCS_REV" "$RUMIAI_OS_REV"
 
-command -v podman
 command -v ssh
 command -v ssh-keyscan
 command -v openssl
 command -v expect
 expect -v
+
+# Ubuntu 26.04 ARM64 only:
+command -v podman
 podman info >/dev/null
 ```
 
@@ -181,7 +183,7 @@ cat "$EXPECT_REF_WORK/status"
 rm -rf "$EXPECT_REF_WORK"
 ```
 
-Then exercise PoC 047 up to the ready/probe state:
+On Ubuntu 26.04 ARM64 only, exercise PoC 047 up to the ready/probe state:
 
 ```sh
 cd "$POCS_ROOT/pocs/047-testlab-rsudo-scenario-lifecycle"
@@ -212,10 +214,11 @@ Expected final scenario status is `closed`. Preserve the complete terminal outpu
 
 ## Next action
 
-1. Execute the prepared reference-host procedure on physical macOS.
-2. Execute the same procedure on physical Ubuntu 26.04 ARM64.
-3. Analyze any host divergence. If both hosts confirm the current model, select the first real testlab repository/command surface, minimal lifecycle verbs and scenario representation before product implementation.
-4. Only after that selection decide whether the stable PTY/dialogue boundary should become an m adapter and how mature scenarios may be reused by rumiai-validate.
+1. Execute PoC 048 automated/manual handoff validation on physical macOS; do not install Podman or Homebrew for this task.
+2. Execute PoC 048 and PoC 047 on physical Ubuntu 26.04 ARM64 with Podman available there.
+3. Analyze any host divergence. If the property-scoped physical evidence confirms the current model, select the first real testlab repository/command surface, minimal lifecycle verbs and scenario representation before product implementation.
+4. Preserve Podman as an optional/provider-specific capability rather than a macOS-wide testlab prerequisite unless a later explicit contract changes that boundary.
+5. Only after that selection decide whether the stable PTY/dialogue boundary should become an m adapter and how mature scenarios may be reused by rumiai-validate.
 
 ## Blockers / open questions
 
