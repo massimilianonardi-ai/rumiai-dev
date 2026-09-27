@@ -9,9 +9,9 @@ Define and validate source streaming that can inject an existing `m` command plu
 
 ## Current repository revisions
 
-- rumiai-dev: 74d34b890601823ac6364c6d30aa934b9a1e23c9
-- rumiai-os: 1e2785f9d00ed536be610022e26f2ba7f8361108
-- rumiai-tests: 3c15db2ac7723f01fb377dc1d8ed6bdba49fa67e
+- rumiai-dev: f4fac7e88d70a7b4238e8e7f509ab459ef3d8916
+- rumiai-os: ef93f108bbaf10333a7b550c1eabdcb72f0e973e
+- rumiai-tests: a7027d8f97ea4a60613c6a9c6e703a8362ac086c
 - rumiai-dev-PoCs: 04b17182392c323f13a53b9fffa6917ff9823cec
 
 ## Applicable canonical sources
@@ -200,12 +200,30 @@ For this form, command argv is emitted explicitly as `set -- ...` immediately be
 
 The first PoC 052 runs reached the remote menu but inherited a 0x0 PTY geometry from CI. Setting the local controlling PTY to 24x80 before invoking rsudo allowed OpenSSH to propagate usable geometry. The final PoC run `36307771282` passed: the remote menu rendered, Enter selected the first item, the serialized result contained `enter one`, and rsudo returned status 0.
 
+## Explicit stream generator
+
+The user-facing generator surface is now implemented as the public function:
+
+```text
+loadlib_inject_stream <command-source> <library-reference>... -- [<command-arg>...]
+```
+
+in `lib/sys/sh/loadlib-inject-stream.lib.sh`, with its mandatory operational manual.
+
+The generator validates the command source, the injection backend and every explicitly selected library before emitting source. The caller must explicitly include `core` and every other transitive/runtime candidate. No source parsing, dependency discovery or closure logic exists.
+
+The generated stream reproduces the proven PoC representation: ordinary `loadsyslib`, `loadlib-inject`, numbered embedded-library wrappers, exact dispatcher, explicit core bootstrap, shell-safe command argv reconstruction and the raw command body.
+
+The durable contract is promoted in `LIBRARY-INTERFACES.md` as LIB-15.
+
+Permanent `tests/rumiai-os/bootstrap/library-loading.test` now verifies successful generation/execution with preserved whitespace+empty argv, generation of an intentionally incomplete preload set, deterministic runtime status 2 for the omitted dependency, explicit-core enforcement and missing-library rejection.
+
+A full-product health run started from `rumiai-tests@a7027d8f97ea4a60613c6a9c6e703a8362ac086c` and froze `rumiai-os@ef93f108bbaf10333a7b550c1eabdcb72f0e973e`. It is in progress at this checkpoint.
+
 ## Next action
 
-Wait for the current full-product Ubuntu 26.04 ARM64/macOS validation to complete and inspect the new permanent rsudo source-injection scenarios. If they pass or only unrelated external-live checks fail, the transport/runtime phase is complete.
-
-Then define and implement the smallest user-facing explicit preload/generator surface that emits the already-proven stream representation. It must require the caller to name the complete embedded library set and must not introduce dependency parsing or automatic closure.
+Inspect the current full-product Ubuntu 26.04 ARM64/macOS validation. Correct any generator/runtime regression it exposes. If the new generator test passes and only already-classified external live-package failures remain on macOS, close this task by performing the final consistency gate and propagating/removing the active handoff according to the normal lifecycle.
 
 ## Open questions
 
-- Exact user-facing preload declaration/generator surface. The internal wrapper+dispatcher representation and the rsudo transport semantics are now mechanically proven.
+None in the loader/stream format itself. Validation outcome is the only remaining closure condition.
