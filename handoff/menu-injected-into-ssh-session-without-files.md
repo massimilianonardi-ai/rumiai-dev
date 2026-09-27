@@ -9,9 +9,9 @@ Define and validate source streaming that can inject an existing `m` command plu
 
 ## Current repository revisions
 
-- rumiai-dev: f4fac7e88d70a7b4238e8e7f509ab459ef3d8916
+- rumiai-dev: 0bd31aa065cdfaa902ebb952a3b5db7f6223c580
 - rumiai-os: ef93f108bbaf10333a7b550c1eabdcb72f0e973e
-- rumiai-tests: a7027d8f97ea4a60613c6a9c6e703a8362ac086c
+- rumiai-tests: a005991b9694eac988ce116e38b6e1a02c47feee
 - rumiai-dev-PoCs: 04b17182392c323f13a53b9fffa6917ff9823cec
 
 ## Applicable canonical sources
@@ -218,11 +218,13 @@ The durable contract is promoted in `LIBRARY-INTERFACES.md` as LIB-15.
 
 Permanent `tests/rumiai-os/bootstrap/library-loading.test` now verifies successful generation/execution with preserved whitespace+empty argv, generation of an intentionally incomplete preload set, deterministic runtime status 2 for the omitted dependency, explicit-core enforcement and missing-library rejection.
 
-A full-product health run started from `rumiai-tests@a7027d8f97ea4a60613c6a9c6e703a8362ac086c` and froze `rumiai-os@ef93f108bbaf10333a7b550c1eabdcb72f0e973e`. It is in progress at this checkpoint.
+The final corrected full-product health run started from `rumiai-tests@a005991b9694eac988ce116e38b6e1a02c47feee` and froze `rumiai-os@ef93f108bbaf10333a7b550c1eabdcb72f0e973e`. Ubuntu 26.04 ARM64 and macOS jobs are both still in progress at this checkpoint.
+
+An auxiliary POSIX-sh composition check also passed against the implemented generator structure: generated source parsed with `sh -n`, executed with a deliberately nonexistent remote `m_LIB_DIR`, resolved embedded libraries only through the injected dispatcher, and preserved three command arguments including whitespace and an empty operand. This is development evidence only and does not replace the formal health run.
 
 ## Next action
 
-Inspect the current full-product Ubuntu 26.04 ARM64/macOS validation. Correct any generator/runtime regression it exposes. If the new generator test passes and only already-classified external live-package failures remain on macOS, close this task by performing the final consistency gate and propagating/removing the active handoff according to the normal lifecycle.
+Inspect full-product run 36308440753 on Ubuntu 26.04 ARM64/macOS. Correct any generator/runtime regression it exposes. If the new generator test passes and only already-classified external live-package failures remain on macOS, close this task by performing the final consistency gate and propagating/removing the active handoff according to the normal lifecycle.
 
 ## Open questions
 
