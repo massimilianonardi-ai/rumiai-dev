@@ -1,7 +1,7 @@
 # RumiAI OS — Library interfaces
 
 Status: **Current / normative**  
-Updated: 2026-09-27
+Updated: 2026-09-28
 
 This specification defines the current interface-visibility and operational-documentation contract for `m`- or RumiAI-owned libraries.
 
@@ -37,18 +37,27 @@ Package-owned external libraries are outside this `m`- or RumiAI-owned library c
 
 ## 2. System shell library loading
 
-The technical `m` bootstrap provides these POSIX-shell loading primitives before it loads `core.lib.sh`:
+`core.lib.sh` provides these POSIX-shell loading primitives after the root
+bootstrap directly loads core:
 
 ```text
 loadlib <library-reference>
 loadsyslib <system-shell-library-reference>
 ```
 
+The bootstrap's direct dot-source of `$m_LIB_DIR/sys/sh/core.lib.sh` is the
+deliberate chicken/egg exception because these primitives do not yet exist.
+
 `loadlib` accepts exactly one library reference, resolves it below `m_LIB_DIR` by appending `.lib.sh`, requires the resulting pathname to be a readable regular file, and dot-sources that file in the current shell environment.
 
 `loadsyslib` accepts exactly one reference relative to `lib/sys/sh/` and delegates it to `loadlib` with the `sys/sh/` owner/runtime prefix.
 
-Every `m`- or RumiAI-owned shell source that loads an `m` system shell library under `lib/sys/sh/` MUST use `loadsyslib`. This includes both statically spelled and runtime-selected owned system-library references. Direct dot-sourcing through `m_LIB_DIR/sys/sh/...lib.sh` is reserved to the bootstrap implementation of the loader itself and is not a caller mechanism.
+After core has been loaded, every `m`- or RumiAI-owned shell source that loads
+an `m` system shell library under `lib/sys/sh/` MUST use `loadsyslib`.
+This includes both statically spelled and runtime-selected owned system-library
+references. The root bootstrap's direct dot-source of `core.lib.sh` is the
+single bootstrap exception; direct dot-sourcing of other owned system shell
+libraries is not a caller mechanism.
 
 This rule does not replace ordinary POSIX dot-sourcing for pathnames that are runtime data rather than owned system-library references, such as package adapters or other explicitly external/runtime-selected source files.
 
@@ -81,9 +90,17 @@ for generating one POSIX-shell source program that embeds an explicitly selected
 
 The caller owns the complete selected library set. The generator MUST NOT parse the command or library sources to discover dependencies and MUST NOT compute or add transitive closure. `core` is required as an explicit selected reference because the generated program establishes the normal integrated-command core environment before appending the command body.
 
-The generated program installs the ordinary `loadsyslib` specialization, one wrapper for each explicitly selected library, and an in-memory `loadlib` implementation whose direct case dispatch exposes exactly those selected references. It then loads `core`, reconstructs the supplied command positional parameters using the existing shell-safe quoting contract, and appends `command-source`.
+The generated program must provide an in-memory loading environment for exactly
+the explicitly selected references, establish the normal core runtime needed by
+the injected command, reconstruct the supplied command positional parameters
+using the existing shell-safe quoting contract, and append `command-source`.
 
-A library that was not explicitly selected remains unavailable in the generated environment. A runtime `loadsyslib` request for such a reference fails through the generated in-memory `loadlib` implementation rather than falling back to a remote filesystem.
+The exact internal ordering/override mechanism by which the injected loader and
+the core-owned local loader coexist is not fixed by this specification while
+the active injection task realigns that mechanism with core ownership.
+
+A library that was not explicitly selected remains unavailable in the generated
+environment rather than falling back to a remote filesystem.
 
 Stream generation and stream transport are separate responsibilities. In particular, `rsudo --interactive` may transport a generated stream through its interactive source-injection contract, but `loadlib_inject_stream` itself does not perform remote execution.
 
@@ -209,8 +226,8 @@ LIB-07  a library manual exposes all public functions and does not expose intern
 LIB-08  library/API/manual realignment occurs in the same work unit for interface-affecting changes
 LIB-09  structural permanent coverage recursively detects missing mandatory library manual topics across grouped library directories
 LIB-10  physical subsystem grouping directories are not part of library identity or manual topic identity
-LIB-11  m provides loadlib/loadsyslib before core.lib.sh is loaded
-LIB-12  every owned lib/sys/sh shell-library import uses loadsyslib
+LIB-11  core.lib.sh provides loadlib/loadsyslib after the bootstrap directly loads core
+LIB-12  after core loading, every owned lib/sys/sh shell-library import uses loadsyslib; the bootstrap direct-load of core is the single exception
 LIB-13  loadsyslib/loadlib accept exactly one library reference and do not forward positional parameters
 LIB-14  runtime/external pathname sourcing remains ordinary POSIX dot-sourcing
 LIB-15  loadlib_inject_stream embeds only caller-selected libraries and performs no dependency discovery or automatic closure

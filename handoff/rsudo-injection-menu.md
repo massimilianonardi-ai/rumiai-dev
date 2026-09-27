@@ -1,7 +1,7 @@
 # rsudo injection menu
 
 Status: Active
-Updated: 2026-09-27
+Updated: 2026-09-28
 
 ## Goal
 
@@ -10,8 +10,8 @@ Run the existing `menu` filesystem browser remotely under privileged `rsudo` by 
 ## Current repository revisions
 
 ```text
-rumiai-dev   a0f8e388825b58e90169bb42a5804cf21ea018ec
-rumiai-os    52068dcfc01409231c673c48291ff18147fc1056
+rumiai-dev   856acfb385999fcc9db2423928549363431ad5eb
+rumiai-os    77ad04472e510f51d295f73abc8ea45e055a0ddf
 rumiai-tests 3c89e92c2a3455dc3c1e68a383d1a73ed421dc73
 ```
 
@@ -57,16 +57,16 @@ specifications/rumiai-os/COMMAND-ENTRYPOINTS.md
 
 A more fundamental architecture regression has been identified and takes precedence over the injection-local diagnosis.
 
-Current `rumiai-os/m` defines `loadlib` and `loadsyslib` itself and also performs package-provider/global-environment work. This violates the explicit bootstrap-minimality correction above. Current `BOOTSTRAP-ENVIRONMENT.md`, `LIBRARY-INTERFACES.md`, and package-model statements encode the same drift, so the problem is not limited to implementation.
+The bootstrap/core regression has been repaired in `rumiai-os@77ad04472e510f51d295f73abc8ea45e055a0ddf`: the root `m` bootstrap again directly loads `core.lib.sh`, `loadlib`/`loadsyslib` are owned by core, and the entire current `pkg/pkg-provider` plus `pkg_provider_global_environment_apply` block has been moved temporarily to the end of core pending the user's later dedicated package-role review.
 
-Repository history shows the regression path. `loadlib`/`loadsyslib` were originally implemented in `core.lib.sh`. The active injection work initially recorded final loader ownership as an open question. Commit `rumiai-os@7fa382d29f9c725bc098eda301c872e450fea663` then moved the loader from core into `m` while migrating callers to `loadsyslib`. Subsequent documentation commits promoted that implementation convenience into canonical contract instead of requiring explicit architectural approval.
+This exposes the next injection-specific design issue clearly. The current stream generator installs an injected `loadlib`/`loadsyslib` before loading embedded core. With loader ownership restored, embedded `core.lib.sh` now defines the normal filesystem-backed loader itself and therefore overwrites that injected loader. In addition, the temporary package block at the end of core immediately requests `pkg/pkg-provider`. The previous generated-stream ordering is therefore no longer compatible with the restored core architecture.
 
-The physical `dash` symptom therefore must not be treated as an isolated stale-shell issue until the bootstrap/core regression is repaired and the normal RumiAI shell path is restored.
+This is now a subsystem-foundational injection decision and must not be solved by silently transforming or bypassing core. The stable injection contract remains explicit caller-selected embedding with no dependency discovery and no remote m library tree; the exact loader/core coexistence mechanism is again working design.
 
 ## Next action
 
-First realign the canonical bootstrap/library/package contracts with the explicit bootstrap-minimality rule and add mechanical protection for that structural boundary. Then, under explicit product authorization, restore `loadlib`/`loadsyslib` ownership to `core.lib.sh`, remove non-approved bootstrap responsibilities from `m`, and validate the normal RumiAI shell before resuming rsudo/menu injection work.
+Realign the permanent loader test with the intentional direct bootstrap load of core and validate the restored normal m runtime. Then present the injection loader/core coexistence alternatives explicitly before changing `loadlib_inject_stream`.
 
 ## Blockers / open questions
 
-Canonical sources and current implementation are presently inconsistent with the explicit user architecture correction. Product repair must not proceed silently; the next product modification requires explicit authorization for the repair work unit.
+The remaining blocker is injection design, not bootstrap ownership: core now correctly owns the local loader, while the current injected-loader ordering assumes that loading core will not replace it. The temporary package initialization at the end of core is an additional injected-core dependency that must be accounted for without pre-empting the user's later package architecture review.
