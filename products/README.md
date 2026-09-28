@@ -98,6 +98,7 @@ ai/
     paperclip.md
     sglang.md
     univer.md
+    voicestudio.md
 ```
 
 Add a category only when it creates a useful retrieval boundary. Do not duplicate one product record across categories merely because a product spans multiple topics.
