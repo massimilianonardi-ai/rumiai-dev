@@ -12,9 +12,9 @@ requiring a remote m/RumiAI library tree.
 ## Current repository revisions
 
 ```text
-rumiai-dev   1999e3be35e3e33feeea71500e40d52561eb811b  (pre-checkpoint HEAD)
-rumiai-os    4654d858701e84fca0ce3a4fd3210a16f4275c7a
-rumiai-tests 134e3c189265f2b13ac9487b522baf53bc51137e
+rumiai-dev   336e293c88d146ecf22be674b82c4e36c3bb3e5e  (pre-checkpoint HEAD)
+rumiai-os    156d64819a43b4e5611c764cb36fc0dba19ba3ba
+rumiai-tests 476e0e9737e79282f9e857a093ff3d9cc6ef23c9
 ```
 
 Fresh remote HEAD retrieval remains mandatory before future writes.
@@ -189,7 +189,10 @@ Permanent coverage includes:
 
 The permanent tests have been updated in `rumiai-tests` but have not been
 executed by the assistant against a materialized current checkout in this work
-unit. A fresh physical `rsudo exec inject` rerun is also still pending.
+unit. A Linux-laboratory execution attempt was made, but the environment could
+not resolve `github.com` and therefore could not materialize the exact current
+checkouts; this is an infrastructure limitation, not product validation
+evidence. A fresh physical `rsudo exec inject` rerun is also still pending.
 
 ## Blockers / open questions
 
