@@ -123,6 +123,50 @@ loadlib_inject_stream base array map term menu -- "$m_BIN_SYS_DIR/menu" -d /
 The previous composed PASS remains historical evidence for the architecture; the
 new syntax/library-only behavior still needs current-revision validation.
 
+## Working design — rsudo injection wrapper
+
+The physical menu pattern suggests a reusable rsudo-level wrapper around
+`loadlib_inject_stream`. No product change is authorized yet.
+
+The leading direction is an rsudo module family rather than a global
+`--inject` option:
+
+```text
+rsudo ... exec inject [LIB...] [-- COMMAND_SOURCE [ARG...]]
+```
+
+Rationale: injection constructs a source program and has variable-arity library
+and source semantics; it is more than a boolean transport mode. Keeping it in an
+`exec` module avoids expanding the global rsudo option parser and follows the
+existing submodule delegation/recursive-rsudo model.
+
+Proposed behavior:
+
+- global rsudo options such as `--connect`, `--user` and `--askpass` are
+  processed by the outer rsudo invocation before module dispatch;
+- `exec inject` reuses the already-acquired connection/credential state and
+  delegates actual privileged transport to a recursive rsudo invocation;
+- with `-- COMMAND_SOURCE [ARG...]`, module arguments are forwarded to
+  `loadlib_inject_stream` command mode and the resulting generated source is
+  transported through the existing interactive source-injection path;
+- without `--`, the module generates the library-only stream and appends any
+  remaining standard-input source after it before transport. This permits a
+  sequence of ordinary POSIX shell statements and calls to functions established
+  by the injected libraries, without requiring a saved command source;
+- literal library-only execution with no appended source is valid but its shell
+  state lasts only for that one remote rsudo operation; it does not create a
+  persistent remotely injectable session;
+- the `--` separator remains important between the variable-length library list
+  and command-source mode. The module should not guess the boundary by checking
+  whether an operand happens to name an existing library or command;
+- the first design should preserve `COMMAND_SOURCE` semantics rather than
+  silently resolving an arbitrary command name to a local source file.
+
+A global `--inject` option remains a possible alternative but is not leading:
+it would make a variable-arity source-construction operation part of rsudo's
+global option grammar, couple the core parser directly to library injection, and
+make stdin/source ownership harder to reason about.
+
 ## Blockers / open questions
 
 No remaining loader-architecture design blocker. Current-revision permanent and
