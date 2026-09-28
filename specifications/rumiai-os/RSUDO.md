@@ -82,26 +82,41 @@ The resulting shell-program status is propagated as the remote operation status.
 
 When `--user sudo_as_user` is supplied, the remote target must execute as the requested sudo target user, subject to the remote sudo policy.
 
-## Invocation-local mode state
+## Reusable and invocation-local mode state
 
-`rsudo` distinguishes reusable connection/credential state from modes that belong only to one invocation.
+`rsudo` distinguishes reusable caller state from modes that belong only to one
+invocation.
 
-Connection state may remain in the current shell and be reused by a submodule and by recursive `rsudo` calls. This includes the current `RSUDO_HOST`, `RSUDO_USER`, `RSUDO_PASSWORD` values and credential groups loaded into shell memory.
+Connection/credential state may remain in the current shell and be reused by a
+submodule and by recursive `rsudo` calls. This includes current
+`RSUDO_HOST`, `RSUDO_USER`, `RSUDO_PASSWORD` values and credential groups
+loaded into shell memory.
 
-At the start of every `rsudo` invocation, these invocation modes are inactive regardless of values left by an outer call or supplied as ambient shell variables:
+These execution-mode values are also reusable caller state:
 
 ```text
-sudo target user
-interactive mode
-askpass mode
-no-preserve-quotes mode
+RSUDO_AS_USER
+RSUDO_INTERACTIVE
 ```
 
-Only options parsed from the current invocation may enable those modes.
+A current `--user` option replaces `RSUDO_AS_USER`; `--interactive` sets
+`RSUDO_INTERACTIVE=true`. Recursive rsudo calls inherit the resulting values.
 
-Therefore, when a submodule calls `rsudo` recursively, the nested call reuses connection/credential state but does not implicitly inherit `--user`, `--interactive`, `--askpass` or `--no-preserve-quotes` from the outer call.
+These modes remain invocation-local and are cleared at the start of every
+`rsudo` call before current options are parsed:
 
-The lower-level public `rsudo_core` function has a separate caller-state boundary: direct callers may provide `RSUDO_AS_USER`, `RSUDO_INTERACTIVE` and `RSUDO_NO_PRESERVE_QUOTES` as documented operational caller state. `RSUDO_ASKPASS` is not an `rsudo_core` input; password acquisition is performed by `rsudo` before delegation.
+```text
+RSUDO_ASKPASS
+RSUDO_NO_PRESERVE_QUOTES
+```
+
+Therefore recursive calls reuse connection/credential, target-user and
+interactive state, but do not implicitly inherit `--askpass` or
+`--no-preserve-quotes`.
+
+The lower-level public `rsudo_core` function consumes the resolved caller
+state directly. `RSUDO_ASKPASS` is not an `rsudo_core` input; password
+acquisition is performed by `rsudo` before delegation.
 
 ## Argument and command handling
 
@@ -238,7 +253,7 @@ RSUDO-16  fs get/put never perform an implicit destructive fallback when staged 
 RSUDO-17  fs get/put report when explicit deletion would make the estimated transfer fit, and fail until that deletion is explicitly requested
 RSUDO-18  fs put promotes an existing-destination replacement only after transfer and requested metadata application succeed
 RSUDO-19  fs get/put attempt rollback when staged replacement promotion fails after moving the previous destination aside
-RSUDO-20  each rsudo invocation resets invocation-local target-user, interactive, askpass and no-preserve-quotes mode state before parsing its own options
-RSUDO-21  recursive rsudo calls may reuse connection/credential state but do not inherit invocation modes from the outer call
+RSUDO-20  each rsudo invocation preserves target-user and interactive caller state while resetting askpass and no-preserve-quotes before parsing current options
+RSUDO-21  recursive rsudo calls reuse connection/credential, target-user and interactive state but do not implicitly inherit askpass or no-preserve-quotes
 RSUDO-22  interactive non-TTY stdin is executed as a privileged shell-source prefix; optional command operands execute after it in the same shell environment
 ```

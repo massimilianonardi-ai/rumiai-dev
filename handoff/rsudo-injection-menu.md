@@ -123,121 +123,54 @@ loadlib_inject_stream base array map term menu -- "$m_BIN_SYS_DIR/menu" -d /
 The previous composed PASS remains historical evidence for the architecture; the
 new syntax/library-only behavior still needs current-revision validation.
 
-## Working design — rsudo injection wrapper
+## Accepted rsudo exec injection design
 
-The physical menu pattern suggests a reusable rsudo-level wrapper around
-`loadlib_inject_stream`. No product change is authorized yet.
+The user implemented the rsudo `exec inject` module and then refined its
+composition with the generator.
 
-The leading direction is an rsudo module family rather than a global
-`--inject` option:
+Current accepted form:
 
 ```text
-rsudo ... exec inject [LIB...] [-- COMMAND_SOURCE [ARG...]]
+[ shell-source | ] rsudo [options...] exec inject [LIB...]
+                         [-- COMMAND_SOURCE [ARG...]]
 ```
 
-Rationale: injection constructs a source program and has variable-arity library
-and source semantics; it is more than a boolean transport mode. Keeping it in an
-`exec` module avoids expanding the global rsudo option parser and follows the
-existing submodule delegation/recursive-rsudo model.
+`loadlib_inject_stream` retains its existing argv grammar for selected
+libraries and optional command-source. Independently, non-TTY stdin is appended
+as shell source after the generated libraries and optional command-source.
 
-Proposed behavior:
+The resulting source order is:
 
-- global rsudo options such as `--connect`, `--user` and `--askpass` are
-  processed by the outer rsudo invocation before module dispatch;
-- `exec inject` reuses the already-acquired connection/credential state and
-  delegates actual privileged transport to a recursive rsudo invocation;
-- with `-- COMMAND_SOURCE [ARG...]`, module arguments are forwarded to
-  `loadlib_inject_stream` command mode and the resulting generated source is
-  transported through the existing interactive source-injection path;
-- without `--`, the module generates the library-only stream and appends any
-  remaining standard-input source after it before transport. This permits a
-  sequence of ordinary POSIX shell statements and calls to functions established
-  by the injected libraries, without requiring a saved command source;
-- literal library-only execution with no appended source is valid but its shell
-  state lasts only for that one remote rsudo operation; it does not create a
-  persistent remotely injectable session;
-- the `--` separator remains important between the variable-length library list
-  and command-source mode. The module should not guess the boundary by checking
-  whether an operand happens to name an existing library or command;
-- the first design should preserve `COMMAND_SOURCE` semantics rather than
-  silently resolving an arbitrary command name to a local source file.
+```text
+generated in-memory loadlib
+selected library loads
+optional command argv setup
+optional command source
+optional stdin shell source
+```
 
-A global `--inject` option remains a possible alternative but is not leading:
-it would make a variable-arity source-construction operation part of rsudo's
-global option grammar, couple the core parser directly to library injection, and
-make stdin/source ownership harder to reason about.
+The stdin source is not runtime stdin for the command source.
 
-## Current user implementation and grammar refinement
-
-The user committed `rumiai-os@35d7aabf5ea8f90f060440c49b9f567f10c254cd`
-with a first `rsudo exec inject` implementation:
+The rsudo module is intentionally minimal:
 
 ```sh
 rsudo_mod_exec_inject()
 (
-  { loadlib_inject_stream "$@"; if [ ! -t 0 ]; then cat; fi; } | rsudo
+  set -o pipefail
+
+  loadlib_inject_stream "$@" | rsudo
 )
 ```
 
-The same commit intentionally stops resetting `RSUDO_INTERACTIVE` and
-`RSUDO_AS_USER` at the start of recursive `rsudo()` calls. This makes those
-two modes sticky/inherited across recursive calls and materially changes the
-current RSUDO-20/RSUDO-21 contract and operational manual, which still say they
-are reset. That normative/test realignment is pending and must not be silently
-ignored.
+The user also changed rsudo state semantics: `RSUDO_AS_USER` and
+`RSUDO_INTERACTIVE` are no longer reset by recursive calls and are reusable
+caller state; `RSUDO_ASKPASS` and `RSUDO_NO_PRESERVE_QUOTES` remain
+invocation-local and are reset. Canonical RSUDO contract and manuals are
+realigned accordingly.
 
-The user also proposed evolving the generator grammar toward three ordered
-segments:
-
-```text
-libraries
-[--command command-source command-args...]
-[-- shell-source...]
-```
-
-The intent is clear: allow libraries only, libraries plus a saved command
-source, shell source after the injected environment, or a saved command followed
-by further shell source. Before promoting this grammar, one ambiguity must be
-resolved: if the second literal `--` terminates command arguments, a command
-source can no longer receive a literal `--` as an ordinary argument. The
-existing rsudo wrapper already has a natural non-argv shell-source channel via
-its residual stdin, which avoids this collision.
-
-The simple pipeline implementation also does not independently propagate a
-`loadlib_inject_stream` failure because POSIX pipeline status comes from the
-rightmost `rsudo`; a generator failure may therefore be masked unless the
-remote side also fails. This is a robustness question to settle before the
-wrapper is treated as complete.
-
-## Later user commit — pipefail and source-oriented generator proposal
-
-The user committed `rumiai-os@02f7d410c62ee603d61395c540ae3c48c33c061a`
-adding `set -o pipefail` inside `rsudo_mod_exec_inject`. This option is part
-of the current POSIX.1-2024 baseline. The current left pipeline group still runs
-`cat` after `loadlib_inject_stream`; therefore a generator failure can be
-masked inside the left group before pipeline status is computed. A future
-implementation should short-circuit the left group on generator failure if
-failure propagation is required.
-
-The user then proposed simplifying `loadlib_inject_stream` further so that it
-has no command-source concept at all:
-
-```text
-loadlib_inject_stream LIB... -- SHELL-SOURCE
-```
-
-The architectural direction is attractive: the generator becomes purely
-"embedded libraries + arbitrary subsequent POSIX shell source", and execution
-of a saved command is merely one possible shell-source composition.
-
-The representation of SHELL-SOURCE is still open. Arbitrary shell source is a
-text stream rather than an argv list; reconstructing it from ordinary operands
-would lose or ambiguously reinterpret quoting, operators, redirections and
-separators. A strong candidate is therefore to make `--` mean "append source
-from stdin verbatim" rather than trying to encode arbitrary shell syntax in the
-remaining argv. Under that model local saved command content can be composed
-with `cat` and a preceding generated `set -- ...` statement, without
-requiring the command file to exist remotely.
+Product revision `rumiai-os@156d64819a43b4e5611c764cb36fc0dba19ba3ba`
+implements stdin-source composition, simplifies `rsudo-mod-exec.lib.sh`, and
+adds its required operational manual.
 
 ## Blockers / open questions
 

@@ -110,14 +110,19 @@ caller-supplied order. Zero selected libraries are valid; in that case the
 generated `loadlib` recognizes no embedded references and returns status 2 for
 all library lookups.
 
-When `--` is absent, generation ends after the in-memory loader and selected
-library loads. No command body is appended and the generated program does not
-modify the receiving shell's positional parameters.
+When `--` is absent, no command body is appended and the generated program
+does not modify positional parameters merely as a consequence of command setup.
 
 When `--` is present, it MUST be followed by one readable command source.
 After the selected libraries have been loaded, the generated program
 reconstructs the supplied command positional parameters using the existing
 shell-safe quoting contract and appends the command source unchanged.
+
+Independently of command mode, non-TTY standard input is appended after the
+selected libraries and optional command source as POSIX shell source. It is
+source to be included in the generated program, not runtime stdin for the
+command source. A source-separating newline MUST prevent accidental lexical
+merging when the command source lacks a final newline.
 
 The generator contains no semantic dependency on `base.lib.sh`,
 `core.lib.sh`, or another particular library identity. Callers that need the
@@ -255,5 +260,5 @@ LIB-12  after base loading, every owned lib/sys/sh shell-library import uses loa
 LIB-13  loadsyslib/loadlib accept exactly one library reference and do not forward positional parameters
 LIB-14  runtime/external pathname sourcing remains ordinary POSIX dot-sourcing
 LIB-15  loadlib_inject_stream embeds only caller-selected libraries and performs no dependency discovery or automatic closure
-LIB-16  loadlib_inject_stream permits zero or more selected libraries, treats no library identity as special, loads selected libraries in caller-supplied order, and supports optional command mode after --
+LIB-16  loadlib_inject_stream permits zero or more selected libraries, treats no library identity as special, loads selected libraries in caller-supplied order, supports optional command mode after --, and appends non-TTY stdin as subsequent shell source
 ```
