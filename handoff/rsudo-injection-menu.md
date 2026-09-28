@@ -172,7 +172,26 @@ Product revision `rumiai-os@156d64819a43b4e5611c764cb36fc0dba19ba3ba`
 implements stdin-source composition, simplifies `rsudo-mod-exec.lib.sh`, and
 adds its required operational manual.
 
+## Current validation state
+
+Product, canonical specifications, manuals and permanent tests are now aligned
+to the accepted stdin-source composition and reusable rsudo target-user /
+interactive state.
+
+Permanent coverage includes:
+
+- generator command-source followed by stdin-source in one shell state;
+- exec-inject generator-to-rsudo composition;
+- generator failure propagation through pipefail;
+- recursive rsudo status propagation;
+- reusable RSUDO_AS_USER and RSUDO_INTERACTIVE behavior;
+- invocation-local reset of askpass and no-preserve-quotes.
+
+The permanent tests have been updated in `rumiai-tests` but have not been
+executed by the assistant against a materialized current checkout in this work
+unit. A fresh physical `rsudo exec inject` rerun is also still pending.
+
 ## Blockers / open questions
 
-No remaining loader-architecture design blocker. Current-revision permanent and
+No remaining architecture blocker. Current-revision permanent-test execution and
 physical validation are pending.
