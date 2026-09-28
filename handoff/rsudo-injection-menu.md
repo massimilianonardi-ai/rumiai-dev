@@ -167,6 +167,48 @@ it would make a variable-arity source-construction operation part of rsudo's
 global option grammar, couple the core parser directly to library injection, and
 make stdin/source ownership harder to reason about.
 
+## Current user implementation and grammar refinement
+
+The user committed `rumiai-os@35d7aabf5ea8f90f060440c49b9f567f10c254cd`
+with a first `rsudo exec inject` implementation:
+
+```sh
+rsudo_mod_exec_inject()
+(
+  { loadlib_inject_stream "$@"; if [ ! -t 0 ]; then cat; fi; } | rsudo
+)
+```
+
+The same commit intentionally stops resetting `RSUDO_INTERACTIVE` and
+`RSUDO_AS_USER` at the start of recursive `rsudo()` calls. This makes those
+two modes sticky/inherited across recursive calls and materially changes the
+current RSUDO-20/RSUDO-21 contract and operational manual, which still say they
+are reset. That normative/test realignment is pending and must not be silently
+ignored.
+
+The user also proposed evolving the generator grammar toward three ordered
+segments:
+
+```text
+libraries
+[--command command-source command-args...]
+[-- shell-source...]
+```
+
+The intent is clear: allow libraries only, libraries plus a saved command
+source, shell source after the injected environment, or a saved command followed
+by further shell source. Before promoting this grammar, one ambiguity must be
+resolved: if the second literal `--` terminates command arguments, a command
+source can no longer receive a literal `--` as an ordinary argument. The
+existing rsudo wrapper already has a natural non-argv shell-source channel via
+its residual stdin, which avoids this collision.
+
+The simple pipeline implementation also does not independently propagate a
+`loadlib_inject_stream` failure because POSIX pipeline status comes from the
+rightmost `rsudo`; a generator failure may therefore be masked unless the
+remote side also fails. This is a robustness question to settle before the
+wrapper is treated as complete.
+
 ## Blockers / open questions
 
 No remaining loader-architecture design blocker. Current-revision permanent and
