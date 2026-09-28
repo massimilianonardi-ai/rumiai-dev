@@ -1,6 +1,6 @@
 # AI product evaluation expansion
 
-Status: Active
+Status: Complete
 Updated: 2026-09-28
 
 ## Goal
@@ -9,7 +9,7 @@ Create current non-normative product evaluation records under `products/ai/` for
 
 ## Current repository revisions
 
-`rumiai-dev`: `94edd3fefe38294d65fd5e74f378bf963566b658`
+`rumiai-dev`: `85bf4daef482342e383a492f9ecad458351d7c48`
 
 ## Applicable canonical sources
 
@@ -22,25 +22,26 @@ Create current non-normative product evaluation records under `products/ai/` for
 
 ## Fixed task-local choices
 
-Create separate records for Letta, LocalAI, LangGraph, A2A, AG-UI, OpenHands, E2B, Browser Use, LiteLLM, llama.cpp, SGLang and OpenLLMetry.
+The records cover Letta, LocalAI, LangGraph, A2A, AG-UI, OpenHands, E2B, Browser Use, LiteLLM, llama.cpp, SGLang and OpenLLMetry.
 
-Use the current active Letta source repository `letta-ai/letta-code`; `letta-ai/letta` now routes readers to that repository and retains historical V1 source separately.
-
-Each record remains revision-specific non-normative reference material and separates upstream facts from RumiAI-oriented reuse, integration and reference analysis.
+Letta uses the active `letta-ai/letta-code` source rather than the retired V1 source location.
 
 ## Completed
 
-- Mandatory RumiAI preflight completed.
-- Current `products/` evaluation contract retrieved.
-- Current upstream repositories/READMEs and exact revisions retrieved for the selected projects.
+- Mandatory preflight and upstream revision retrieval completed.
+- Twelve revision-specific evaluation records created under `products/ai/`.
+- `products/README.md` index updated.
+- Each record explicitly remains non-normative and contains reuse, integration, reference, risks/current assessment and verification boundaries.
+- Documentation consistency gate completed against commit `85bf4daef482342e383a492f9ecad458351d7c48`.
+- No runtime or executable contract changed; no behavioral tests were applicable.
 
 ## Current state
 
-Research is complete enough to draft the twelve product records. No RumiAI architecture or specification change is implied.
+The requested evaluations are complete and routed from `products/README.md`. No RumiAI architecture/specification was promoted or modified.
 
 ## Next action
 
-Create the twelve records, update the `products/README.md` category index, then run the documentation consistency gate.
+None.
 
 ## Blockers / open questions
 
