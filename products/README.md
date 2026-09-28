@@ -78,8 +78,20 @@ Current categories:
 
 ```text
 ai/
+    a2a.md
+    ag-ui.md
+    browser-use.md
+    e2b.md
     hindsight.md
+    langgraph.md
+    letta.md
+    litellm.md
+    llama-cpp.md
+    localai.md
+    openhands.md
+    openllmetry.md
     paperclip.md
+    sglang.md
 ```
 
 Add a category only when it creates a useful retrieval boundary. Do not duplicate one product record across categories merely because a product spans multiple topics.
