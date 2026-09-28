@@ -669,7 +669,7 @@ literal <value>
 
 Every facility referenced by `facility-cmd`, `facility-env` or `facility-service` must also be declared by the package's `facility` metadata. Provider realization metadata is validated through the trusted facility-part semantics; provider-specific shell code is not a facility-contract mechanism.
 
-For `cmd`/`env`, facility-specific consumer runtime projection and facility-default global publication are two consumers of the same declarative provider metadata. Consumer launch applies only the facilities required by that consumer; bootstrap/global publication follows configured system facility defaults. The `service` realization is not part of this PATH/environment projection path.
+For `cmd`/`env`, facility-specific consumer runtime projection and facility-default command publication consume the same declarative provider metadata. Consumer launch applies only the facilities required by that consumer. Configured system facility defaults currently publish `facility-cmd` globally; there is no current bootstrap-global application of `facility-env`. The `service` realization is not part of this PATH/environment projection path.
 
 A configured facility default publishes that facility's commands through the existing technical external-command roots:
 
@@ -692,25 +692,7 @@ The set of public command names is derived from the selected concrete's material
 
 Global publication must not overwrite an unrelated pathname in an external-command root. An existing pathname may be replaced or removed as part of a facility-default transition only when it is the exact projection owned by that same facility. A collision causes the selecting mutation to fail rather than silently stealing another package/facility command name.
 
-Consumer-specific bindings never alter global facility command publication or the bootstrap/global facility environment.
-
-A configured facility default also contributes its selected provider's `facility-env/<facility>` projection to every **new** `m` bootstrap. This global environment is derived at bootstrap time from authoritative facility-default selector intent; it is not persisted as a second generated configuration authority.
-
-Global environment resolution uses the active technical external-platform selector when it is valid:
-
-```text
-bin/ext-osarch -> ext-<osarch>
-```
-
-Global environment uses the same **globally publishable package-class semantics** as global facility command publication, not consumer-binding resolution. With a valid active osarch, an unqualified selector first considers that osarch-specific provider package class only when the class has a current package default, then may fall back to the generic provider package class when that class has a current package default. Inside an eligible class, an unversioned selector follows the class default and a versioned selector pins the requested concrete. An explicitly osarch-qualified selector applies only when it names the active class; when it is version-pinned it may resolve directly to that concrete without requiring a package default, matching explicit-osarch command publication. If no valid active external-platform selector exists, bootstrap does not select a platform implicitly and only a globally publishable generic provider class can contribute environment.
-
-This keeps global command and environment exposure on the same class boundary: bootstrap must not select an osarch-specific provider environment from a package class whose commands are not globally published for that class.
-
-A syntactically valid facility default whose provider is not currently resolvable contributes no global environment. This preserves selector intent independently of provider installation and keeps configuration of a future provider valid. Invalid/corrupt default or projection data is an environment-projection error, not a reason to invent another provider.
-
-When more than one facility default exports the same ordinary variable, facilities are applied in ascending `LC_ALL=C` facility-name order and the later facility assignment wins. This matches the deterministic facility ordering already used by sorted consumer dependency declarations. Global facility environment assignments override inherited values for the new bootstrap. `PATH` is excluded from `facility-env`; global command availability continues to come from the existing `bin/ext-osarch` and `bin/ext` PATH layers.
-
-Changing a facility default or changing a provider package default therefore requires no persistent environment rewrite: subsequent `m` bootstraps re-resolve selector intent and observe the new selected provider. Already-running parent processes and already-running managed shells are not mutated retroactively. A later integrated command starts a new `m` bootstrap and therefore observes the then-current facility-default environment.
+Consumer-specific bindings never alter global facility command publication.
 
 When a package consumes a facility, the package launcher continues to apply the selected provider environment according to the runtime precedence defined above.
 
@@ -769,9 +751,7 @@ PKG-26  facility environment metadata uses root, root-path or literal typed scal
 PKG-27  a facility default publishes facility commands through existing bin/ext or bin/ext-<osarch> roots according to provider-selector intent
 PKG-28  global facility command publication never silently overwrites unrelated external-command paths and is reconciled on relevant facility/package-default transitions
 PKG-29  consumer-specific bindings do not alter global facility command publication
-PKG-30  every new m bootstrap derives global facility environment from currently resolvable system facility defaults; already-running processes are not mutated retroactively
-PKG-31  global facility environment uses the valid active ext-osarch class when available and otherwise only a resolvable generic provider class
-PKG-32  global facility environment processes facility defaults in LC_ALL=C facility-name order and later facilities win on duplicate ordinary variables
+PKG-30  facility-default environment projection is not currently integrated into the m bootstrap
 PKG-33  PATH is reserved to facility command projection and is not a valid facility-env variable
 PKG-34  a facility is a provider-independent substitutable capability contract owned by pkg
 PKG-35  consumers depend on facility identity/compatibility rather than concrete provider identity

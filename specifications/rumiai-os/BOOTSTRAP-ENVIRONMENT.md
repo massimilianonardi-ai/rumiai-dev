@@ -104,8 +104,7 @@ library-loading functions do not exist until `core.lib.sh` has been loaded.
 All subsequent owned system-shell-library loading follows
 `LIBRARY-INTERFACES.md`.
 
-Package/provider initialization is not a responsibility of the root bootstrap.
-Its package-subsystem role is defined outside this bootstrap contract.
+The current root bootstrap performs no package/provider initialization.
 
 ## State roots
 
@@ -171,7 +170,7 @@ BOOT-09  m_COMMAND_BIN identifies the integrated command being sourced
 BOOT-10  before core is loaded, m defines only readpathce and export_readonly as bootstrap helper functions
 BOOT-11  m directly dot-sources core.lib.sh as the library-loading chicken/egg exception
 BOOT-12  loadlib/loadsyslib are provided by core.lib.sh rather than by the root bootstrap
-BOOT-13  package/provider initialization is not a root-bootstrap responsibility
+BOOT-13  the current root bootstrap performs no package/provider initialization
 BOOT-14  the root bootstrap is limited to root resolution, fundamental system-variable initialization, core loading and execution
 BOOT-16  branded root entrypoints remain #!/bin/sh direct bootstraps but are sourced by m when passed back as exact root command bodies
 ```

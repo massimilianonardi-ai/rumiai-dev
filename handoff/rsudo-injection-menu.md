@@ -11,7 +11,7 @@ Run the existing `menu` filesystem browser remotely under privileged `rsudo` by 
 
 ```text
 rumiai-dev   bb07b58d95a109a3412120ec58312817d5545bb3
-rumiai-os    b22040b6d57f07c6b4f4dd3ec1129780c5f1d0ad
+rumiai-os    5373b280f7da9fe159666012f6de25da47cb0ccd
 rumiai-tests ec7eaba3af7b41cf256712ace9587d0291279bf1
 ```
 
@@ -58,9 +58,9 @@ specifications/rumiai-os/COMMAND-ENTRYPOINTS.md
 
 A more fundamental architecture regression has been identified and takes precedence over the injection-local diagnosis.
 
-The bootstrap/core regression has been repaired in `rumiai-os@77ad04472e510f51d295f73abc8ea45e055a0ddf` and formatting-cleaned at `rumiai-os@b22040b6d57f07c6b4f4dd3ec1129780c5f1d0ad`: the root `m` bootstrap again directly loads `core.lib.sh`, `loadlib`/`loadsyslib` are owned by core, and the entire current `pkg/pkg-provider` plus `pkg_provider_global_environment_apply` block has been moved temporarily to the end of core pending the user's later dedicated package-role review. `BOOTSTRAP-ENVIRONMENT.md` and `LIBRARY-INTERFACES.md` now encode that restored ownership without reopening the broader package-role question.
+The bootstrap/core regression has been repaired: the root `m` bootstrap directly loads `core.lib.sh`, and `loadlib`/`loadsyslib` are owned by core. The temporary package-default initialization that had then been placed at the end of core has now also been removed completely in `rumiai-os@5373b280f7da9fe159666012f6de25da47cb0ccd`. No current bootstrap/core path loads `pkg/pkg-provider` for global defaults or calls `pkg_provider_global_environment_apply`.
 
-This exposes the next injection-specific design issue clearly. The current stream generator installs an injected `loadlib`/`loadsyslib` before loading embedded core. With loader ownership restored, embedded `core.lib.sh` now defines the normal filesystem-backed loader itself and therefore overwrites that injected loader. In addition, the temporary package block at the end of core immediately requests `pkg/pkg-provider`. The previous generated-stream ordering is therefore no longer compatible with the restored core architecture.
+This exposes the next injection-specific design issue clearly. The current stream generator installs an injected `loadlib`/`loadsyslib` before loading embedded core. With loader ownership restored, embedded `core.lib.sh` now defines the normal filesystem-backed loader itself and therefore overwrites that injected loader. The previous generated-stream ordering is therefore no longer compatible with the restored core architecture.
 
 This is now a subsystem-foundational injection decision and must not be solved by silently transforming or bypassing core. The stable injection contract remains explicit caller-selected embedding with no dependency discovery and no remote m library tree; the exact loader/core coexistence mechanism is again working design.
 
@@ -70,8 +70,8 @@ The assistant environment cannot execute the real checkout because outbound GitH
 
 ## Next action
 
-Validate the restored normal m runtime on a real checkout, then select the injection loader/core coexistence mechanism explicitly before changing `loadlib_inject_stream`. The leading architecture-preserving direction is to treat core as the same bootstrap special case in the generated stream: execute embedded core first, then install the in-memory loader for subsequent selected libraries. The temporary package block at the end of core must be handled explicitly rather than silently bypassed.
+Validate the restored normal m runtime on a real checkout, then select the injection loader/core coexistence mechanism explicitly before changing `loadlib_inject_stream`. The leading architecture-preserving direction is to treat core as the same bootstrap special case in the generated stream: execute embedded core first, then install the in-memory loader for subsequent selected libraries.
 
 ## Blockers / open questions
 
-The remaining blocker is injection design, not bootstrap ownership: core now correctly owns the local loader, while the current injected-loader ordering assumes that loading core will not replace it. The temporary package initialization at the end of core is an additional issue: in a remote source-only environment it attempts to use the filesystem-backed core loader before the injected backend is installed and the usual m state/path roots are not established. This must be handled without pre-empting the user's later package architecture review.
+The remaining blocker is injection design, not bootstrap ownership: core now correctly owns the local loader, while the current injected-loader ordering assumes that loading core will not replace it. Package-default bootstrap integration is no longer part of this active task and is tracked separately as deferred work.
