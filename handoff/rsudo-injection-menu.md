@@ -97,8 +97,14 @@ injected:
     generated in-memory loadlib -> base -> loadsyslib -> embedded libraries
 ```
 
-The new product/test revisions have not yet received a physical composed
-`rsudo + menu` rerun. No physical PASS is claimed yet.
+The new product/test revisions have not yet received a valid physical composed
+`rsudo + menu` rerun. Two attempted reruns on 2026-09-28 did not exercise the
+generated stream because the local shell did not have `loadlib_inject_stream`
+loaded. The attempted preload used `loadsyslib loadlib_inject_stream`, but the
+library reference is `loadlib-inject-stream` (hyphenated). That preload therefore
+failed and the subsequent pipeline sent only the askpass password record; rsudo
+entered an ordinary privileged remote shell. No injection behavior can be
+inferred from those two attempts, and no physical PASS is claimed yet.
 
 The new `base.lib.sh` library identity and the changed `core.lib.sh` public
 surface require operational-manual follow-up under the active
@@ -107,8 +113,11 @@ block functional injection validation.
 
 ## Next action
 
-Run the permanent loader/injection test against the current product checkout,
-then rerun the physical command with the explicit set:
+Load the generator library locally with
+`loadsyslib "loadlib-inject-stream"`, verify that
+`command -v loadlib_inject_stream` succeeds, then run the permanent
+loader/injection test against the current product checkout and rerun the
+physical command with the explicit set:
 
 ```sh
 loadlib_inject_stream "$m_BIN_SYS_DIR/menu" base array map term menu -- -d /
