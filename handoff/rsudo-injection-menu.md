@@ -97,14 +97,12 @@ injected:
     generated in-memory loadlib -> base -> loadsyslib -> embedded libraries
 ```
 
-The new product/test revisions have not yet received a valid physical composed
-`rsudo + menu` rerun. Two attempted reruns on 2026-09-28 did not exercise the
-generated stream because the local shell did not have `loadlib_inject_stream`
-loaded. The attempted preload used `loadsyslib loadlib_inject_stream`, but the
-library reference is `loadlib-inject-stream` (hyphenated). That preload therefore
-failed and the subsequent pipeline sent only the askpass password record; rsudo
-entered an ordinary privileged remote shell. No injection behavior can be
-inferred from those two attempts, and no physical PASS is claimed yet.
+A valid physical composed `rsudo + menu` rerun on 2026-09-28 passed after the
+generator library was loaded locally through `loadsyslib "loadlib-inject-stream"`
+and the stream was generated with the explicit set `base array map term menu`.
+The privileged remote menu behaved correctly. This physically validates the
+current `generated in-memory loadlib -> base -> loadsyslib -> embedded libraries`
+composition on the exercised Linux target.
 
 The new `base.lib.sh` library identity and the changed `core.lib.sh` public
 surface require operational-manual follow-up under the active
@@ -113,19 +111,11 @@ block functional injection validation.
 
 ## Next action
 
-Load the generator library locally with
-`loadsyslib "loadlib-inject-stream"`, verify that
-`command -v loadlib_inject_stream` succeeds, then run the permanent
-loader/injection test against the current product checkout and rerun the
-physical command with the explicit set:
-
-```sh
-loadlib_inject_stream "$m_BIN_SYS_DIR/menu" base array map term menu -- -d /
-```
-
-through the existing `rsudo --interactive --askpass` pipeline.
+Run the permanent loader/injection test against the current product checkout to
+add formal mechanical coverage to the now-passing physical composed path.
 
 ## Blockers / open questions
 
-No remaining loader-architecture design blocker. Physical validation of the
-current composed path is pending.
+No remaining loader-architecture design blocker. The composed physical path has
+passed; permanent test execution against the current checkout remains the next
+validation step.
