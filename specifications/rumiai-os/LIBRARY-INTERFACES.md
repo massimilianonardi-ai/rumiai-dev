@@ -101,20 +101,27 @@ for generating one POSIX-shell source program that embeds an explicitly selected
 
 The caller owns the complete selected library set. The generator MUST NOT parse
 the command or library sources to discover dependencies and MUST NOT compute or
-add transitive closure. `base` is required as an explicit selected reference
-because it is the common runtime payload shared by normal and injected
-execution.
+add transitive closure. No library identity is intrinsically mandatory or
+special.
 
 The generated program installs an in-memory `loadlib` for exactly the selected
-references and then loads the embedded `base` through that loader.
-`base.lib.sh` establishes the same common runtime used by the normal bootstrap,
-including `loadsyslib`, without replacing the injected `loadlib`.
-The generated program then reconstructs the supplied command positional
-parameters using the existing shell-safe quoting contract and appends
-`command-source`.
+references and then loads every selected library through that loader in
+caller-supplied order. Zero selected libraries are valid; in that case the
+generated `loadlib` recognizes no embedded references and returns status 2 for
+all library lookups.
 
-`core.lib.sh` is the normal filesystem-loader bootstrap entry and is not the
-runtime foundation loaded by the injection stream.
+When `--` is absent, generation ends after the in-memory loader and selected
+library loads. No command body is appended and the generated program does not
+modify the receiving shell's positional parameters.
+
+When `--` is present, it MUST be followed by one readable command source.
+After the selected libraries have been loaded, the generated program
+reconstructs the supplied command positional parameters using the existing
+shell-safe quoting contract and appends the command source unchanged.
+
+The generator contains no semantic dependency on `base.lib.sh`,
+`core.lib.sh`, or another particular library identity. Callers that need the
+common m runtime select `base` explicitly like any other library.
 
 A library that was not explicitly selected remains unavailable in the generated
 environment rather than falling back to a remote filesystem.
@@ -248,5 +255,5 @@ LIB-12  after base loading, every owned lib/sys/sh shell-library import uses loa
 LIB-13  loadsyslib/loadlib accept exactly one library reference and do not forward positional parameters
 LIB-14  runtime/external pathname sourcing remains ordinary POSIX dot-sourcing
 LIB-15  loadlib_inject_stream embeds only caller-selected libraries and performs no dependency discovery or automatic closure
-LIB-16  base is an explicit mandatory injected reference; the stream installs in-memory loadlib before loading base
+LIB-16  loadlib_inject_stream permits zero or more selected libraries, treats no library identity as special, loads selected libraries in caller-supplied order, and supports optional command mode after --
 ```
