@@ -97,6 +97,8 @@ All current command identities, including `editor`, `readpass`, `readpassv`, `rs
 
 Library documentation is only partially complete. The current product contains compliant manuals for `array.lib.sh`, `enc.lib.sh`, `ipc.lib.sh`, `map.lib.sh`, `mk-materialize.lib.sh`, `mk-materialize-copy.lib.sh`, `osarch.lib.sh`, `pkg-install.lib.sh`, `rand.lib.sh` and `term.lib.sh`. The remaining legacy libraries cannot safely receive final public-API manuals until their intended public/internal function sets are classified and, where necessary, renamed with callers/tests realigned. That work is already represented by `todo/library-api-visibility-realignment.md` and is deliberately not guessed inside this documentation work unit.
 
+A later runtime-layer split at `rumiai-os@0ac81dc2c1f3d792b9050782367e26d684306e48` created the new `base.lib.sh` identity and reduced `core.lib.sh` to the normal filesystem `loadlib` plus base loading. Neither identity currently has its required operational manual topic. `core.lib.sh` now has the narrow public `loadlib` surface; `base.lib.sh` inherits the former core runtime surface and must be documented consistently with the library visibility contract. This is current manual-backfill work owned by this handoff and does not alter the active rsudo injection task.
+
 The existing permanent manual tests are not closure evidence for the whole documentation task. Pager-specific coverage has been realigned to the new wrapper contract; the active parallel suite-realignment task still owns broader trustworthy coverage, including substring fallback and command/library-to-manual structural completeness.
 
 Targeted formal cross-host validation has been performed for the `readpass`/`readpassv` work unit on hosted Linux/x86_64 and Darwin/arm64, with both required tests passing and audit status `CLEAN`. No full documentation-surface physical/stable-host validation is claimed by that targeted result.
@@ -110,7 +112,7 @@ Targeted permanent tests for `srv`, `pkg-extract`, `gitman`, `readpass` and `sta
 ## Next action
 
 1. Activate and complete `todo/library-api-visibility-realignment.md` as its own product/API work unit, including caller/test realignment where legacy names must change.
-2. From the resulting aligned APIs, add the remaining mandatory library manual topics.
+2. Add the required `core.lib.sh` and `base.lib.sh` manual topics for the accepted loader/base split, and from the resulting aligned legacy APIs add the remaining mandatory library manual topics.
 3. Let the active test-suite task provide trustworthy permanent coverage for substring fallback and command/library manual completeness.
 4. Run proportional real validation of the complete manual surface.
 5. Perform the final consistency gate, write a Complete handoff snapshot, then remove this handoff in a later forward commit.
