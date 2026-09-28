@@ -10,8 +10,8 @@ Run the existing `menu` filesystem browser remotely under privileged `rsudo` by 
 ## Current repository revisions
 
 ```text
-rumiai-dev   4679046827fbbe6f2e8fc8bac9c77e1ab67b9fa7
-rumiai-os    5373b280f7da9fe159666012f6de25da47cb0ccd
+rumiai-dev   1385c8ea8c33a722a8f32f319f19d6040fd7262f
+rumiai-os    d436a60235bf0887e1d5678674c5417c720ed303
 rumiai-tests 1c19cb7148aceed4796b7ddcc8fb30192093a0c4
 ```
 
@@ -52,6 +52,7 @@ specifications/rumiai-os/COMMAND-ENTRYPOINTS.md
 - `rsudo --interactive` consumes non-TTY stdin as source injection and is covered by permanent source-only and source-plus-command tests.
 - Current `menu` dependency chain needed for injection has been verified from implementation: `menu -> array, map, term`, with `core` supplied explicitly by the stream generator contract.
 - Physical composed execution reached the injected privileged `menu -d /` successfully before the loader simplification, using a pipeline whose first record is consumed by `--askpass` and whose remaining records are the generated source stream.
+- Physical Linux rerun on 2026-09-28 after restoring core loader ownership reached the injected command body but failed at `menu_reset` with `sh: menu_reset: not found`; rsudo transport, askpass and privileged source execution all completed far enough to execute `bin/sys/menu`.
 - The source dump observed after leaving the menu was caused by the final rsudo command log. Current rsudo keeps a concise info-level end log and emits the full effective command only at trace level.
 
 ## Current state
@@ -62,6 +63,8 @@ The bootstrap/core regression has been repaired: the root `m` bootstrap directly
 
 This exposes the next injection-specific design issue clearly. The current stream generator installs an injected `loadlib`/`loadsyslib` before loading embedded core. With loader ownership restored, embedded `core.lib.sh` now defines the normal filesystem-backed loader itself and therefore overwrites that injected loader. The previous generated-stream ordering is therefore no longer compatible with the restored core architecture.
 
+The 2026-09-28 physical failure confirms this mechanism directly rather than indicating a missing menu dependency. `menu_reset` is defined by `menu.lib.sh`. After injected core runs, its normal filesystem-backed `loadlib`/`loadsyslib` replace the generated in-memory versions; the command body's initial `loadsyslib "menu"` therefore cannot load the embedded menu library on the remote host. `bin/sys/menu` does not stop at that load result and subsequently reaches `menu_reset`, producing the observed command-not-found failure. The explicit set `core array map term menu` remains the expected source-level dependency set.
+
 This is now a subsystem-foundational injection decision and must not be solved by silently transforming or bypassing core. The stable injection contract remains explicit caller-selected embedding with no dependency discovery and no remote m library tree; the exact loader/core coexistence mechanism is again working design.
 
 Permanent test structure is realigned through `rumiai-tests@1c19cb7148aceed4796b7ddcc8fb30192093a0c4`: it requires the root bootstrap function surface to contain only `readpathce` and `export_readonly`, requires exactly one direct bootstrap source of `core.lib.sh`, rejects package-default initialization from both `m` and `core.lib.sh`, and treats only that exact core source as the allowed direct-owned-library exception. Existing injection behavior assertions remain unchanged so the loader/core incompatibility is not hidden by weakening tests.
@@ -70,7 +73,7 @@ The assistant environment cannot execute the real checkout because outbound GitH
 
 ## Next action
 
-Validate the restored normal m runtime on a real checkout, then select the injection loader/core coexistence mechanism explicitly before changing `loadlib_inject_stream`. The leading architecture-preserving direction is to treat core as the same bootstrap special case in the generated stream: execute embedded core first, then install the in-memory loader for subsequent selected libraries.
+Select the injection loader/core coexistence mechanism explicitly before changing `loadlib_inject_stream`. Physical evidence now confirms the overwrite failure. The leading architecture-preserving direction is to treat core as a bootstrap-special payload: define the embedded wrappers, execute embedded core directly, then install the in-memory `loadlib`/`loadsyslib` for subsequent selected libraries before appending the command body.
 
 ## Blockers / open questions
 
