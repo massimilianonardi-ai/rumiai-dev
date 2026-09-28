@@ -1,15 +1,15 @@
 # AI acceleration product evaluations
 
-Status: Active
+Status: Complete
 Updated: 2026-09-28
 
 ## Goal
 
-Evaluate the most technically interesting AI repositories emerging from current GitHub 7-day and 30-day star acceleration signals, add durable non-normative product records for the candidates that survive technical review, and preserve enough state for later refreshes.
+Evaluate the most technically interesting AI repositories emerging from current GitHub 7-day and 30-day star acceleration signals and add durable non-normative product records for candidates that survive technical review.
 
 ## Current repository revisions
 
-- `rumiai-dev`: `5ebe9a9620be74286da824d2874331b6c1dac52f` at task start.
+- `rumiai-dev`: product content completed at `336e293c88d146ecf22be674b82c4e36c3bb3e5e`.
 
 ## Applicable canonical sources
 
@@ -22,22 +22,26 @@ Evaluate the most technically interesting AI repositories emerging from current 
 
 ## Fixed task-local choices
 
-- Product records remain non-normative reference material.
-- Selection is based on technical relevance to RumiAI after upstream verification, not star growth alone.
+- Product records are non-normative reference material.
+- Selection is based on technical relevance after upstream verification, not star growth alone.
 - 7-day and 30-day acceleration are discovery signals, not adoption evidence.
 
 ## Completed
 
-- Mandatory preflight completed at the revision above.
-- Current external-product evaluation contract and handoff lifecycle retrieved.
+- Added evaluations for DeepSeek Harness, Orca, Google AX, ECC, Univer and HydraDB.
+- Recorded exact upstream revisions and current license/deployment observations.
+- Updated the AI product index.
+- Final consistency check confirmed all six records include the non-normative boundary, reuse/integration/reference analysis and verification notes.
+- Compare against the handoff-start revision showed one forward content commit, ahead 1 / behind 0.
+- No runtime behavior changed; executable tests were not applicable.
 
 ## Current state
 
-Candidate set is being verified against current upstream repositories and documentation before product records are written.
+Product research is complete and persisted. Ongoing GitHub acceleration monitoring is handled separately as a scheduled task rather than as repository task state.
 
 ## Next action
 
-Verify candidate identities, current revisions, capabilities, licensing/deployment characteristics, then select and document the strongest candidates.
+None.
 
 ## Blockers / open questions
 
