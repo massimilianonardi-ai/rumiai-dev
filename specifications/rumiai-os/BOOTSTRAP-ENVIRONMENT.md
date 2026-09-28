@@ -99,10 +99,21 @@ loads the core shell library directly:
 . "$m_LIB_DIR/sys/sh/core.lib.sh"
 ```
 
-This direct dot-source is the deliberate chicken/egg exception: the ordinary
-library-loading functions do not exist until `core.lib.sh` has been loaded.
-All subsequent owned system-shell-library loading follows
-`LIBRARY-INTERFACES.md`.
+This direct dot-source is the deliberate chicken/egg exception. `core.lib.sh`
+defines the filesystem-backed `loadlib` primitive and immediately uses it to
+load:
+
+```text
+sys/sh/base
+```
+
+`base.lib.sh` establishes the common runtime, including `loadsyslib` and the
+runtime facilities that historically lived in core. Therefore the source of
+`core.lib.sh` does not return to the root bootstrap until the common base
+runtime has been established.
+
+The root bootstrap still knows only the single `core.lib.sh` entry library;
+it does not load `base.lib.sh` separately.
 
 The current root bootstrap performs no package/provider initialization.
 
@@ -163,13 +174,13 @@ BOOT-02  m uses #!/bin/sh
 BOOT-03  m_BOOTSTRAP_BIN and m_ROOT are physical validated roots
 BOOT-04  m PATH contains sys/ext layers, not ai
 BOOT-05  branded activation prepends ai-osarch and ai
-BOOT-06  core.lib.sh is the bootstrap core library
+BOOT-06  core.lib.sh is the bootstrap entry library that defines filesystem loadlib and loads base.lib.sh
 BOOT-07  state roots are semantic pathnames, not eagerly resolved selectors
 BOOT-08  bootstrap does not derive user identity from host-id/UID
 BOOT-09  m_COMMAND_BIN identifies the integrated command being sourced
 BOOT-10  before core is loaded, m defines only readpathce and export_readonly as bootstrap helper functions
 BOOT-11  m directly dot-sources core.lib.sh as the library-loading chicken/egg exception
-BOOT-12  loadlib/loadsyslib are provided by core.lib.sh rather than by the root bootstrap
+BOOT-12  loadlib is provided by core.lib.sh; base.lib.sh provides loadsyslib and the common base runtime
 BOOT-13  the current root bootstrap performs no package/provider initialization
 BOOT-14  the root bootstrap is limited to root resolution, fundamental system-variable initialization, core loading and execution
 BOOT-16  branded root entrypoints remain #!/bin/sh direct bootstraps but are sourced by m when passed back as exact root command bodies

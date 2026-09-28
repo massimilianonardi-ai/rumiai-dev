@@ -37,27 +37,38 @@ Package-owned external libraries are outside this `m`- or RumiAI-owned library c
 
 ## 2. System shell library loading
 
-`core.lib.sh` provides these POSIX-shell loading primitives after the root
-bootstrap directly loads core:
+`core.lib.sh` provides the lowest shell-library loading primitive:
 
 ```text
 loadlib <library-reference>
+```
+
+The root bootstrap directly dot-sources `$m_LIB_DIR/sys/sh/core.lib.sh` because
+no owned library loader exists before that point. `core.lib.sh` defines the
+normal filesystem-backed `loadlib`, then immediately loads
+`sys/sh/base` through that primitive.
+
+`loadlib` accepts exactly one library reference, resolves it below `m_LIB_DIR`
+by appending `.lib.sh`, requires the resulting pathname to be a readable
+regular file, and dot-sources that file in the current shell environment.
+
+`base.lib.sh` establishes the common runtime and provides:
+
+```text
 loadsyslib <system-shell-library-reference>
 ```
 
-The bootstrap's direct dot-source of `$m_LIB_DIR/sys/sh/core.lib.sh` is the
-deliberate chicken/egg exception because these primitives do not yet exist.
+`loadsyslib` accepts exactly one reference relative to `lib/sys/sh/` and
+delegates it to the already-installed `loadlib` with the `sys/sh/`
+owner/runtime prefix. This lets the same base runtime operate over the normal
+filesystem loader or another explicitly established loader such as the
+in-memory injection loader.
 
-`loadlib` accepts exactly one library reference, resolves it below `m_LIB_DIR` by appending `.lib.sh`, requires the resulting pathname to be a readable regular file, and dot-sources that file in the current shell environment.
-
-`loadsyslib` accepts exactly one reference relative to `lib/sys/sh/` and delegates it to `loadlib` with the `sys/sh/` owner/runtime prefix.
-
-After core has been loaded, every `m`- or RumiAI-owned shell source that loads
+After base has been loaded, every `m`- or RumiAI-owned shell source that loads
 an `m` system shell library under `lib/sys/sh/` MUST use `loadsyslib`.
-This includes both statically spelled and runtime-selected owned system-library
-references. The root bootstrap's direct dot-source of `core.lib.sh` is the
-single bootstrap exception; direct dot-sourcing of other owned system shell
-libraries is not a caller mechanism.
+The two bootstrap-level exceptions are the root bootstrap's direct dot-source of
+`core.lib.sh` and core's initial `loadlib "sys/sh/base"` call. Direct
+dot-sourcing of other owned system shell libraries is not a caller mechanism.
 
 This rule does not replace ordinary POSIX dot-sourcing for pathnames that are runtime data rather than owned system-library references, such as package adapters or other explicitly external/runtime-selected source files.
 
@@ -88,16 +99,22 @@ loadlib_inject_stream <command-source> <library-reference>... -- [<command-arg>.
 
 for generating one POSIX-shell source program that embeds an explicitly selected set of system shell libraries for execution without a remote `m` library tree.
 
-The caller owns the complete selected library set. The generator MUST NOT parse the command or library sources to discover dependencies and MUST NOT compute or add transitive closure. `core` is required as an explicit selected reference because the generated program establishes the normal integrated-command core environment before appending the command body.
+The caller owns the complete selected library set. The generator MUST NOT parse
+the command or library sources to discover dependencies and MUST NOT compute or
+add transitive closure. `base` is required as an explicit selected reference
+because it is the common runtime payload shared by normal and injected
+execution.
 
-The generated program must provide an in-memory loading environment for exactly
-the explicitly selected references, establish the normal core runtime needed by
-the injected command, reconstruct the supplied command positional parameters
-using the existing shell-safe quoting contract, and append `command-source`.
+The generated program installs an in-memory `loadlib` for exactly the selected
+references and then loads the embedded `base` through that loader.
+`base.lib.sh` establishes the same common runtime used by the normal bootstrap,
+including `loadsyslib`, without replacing the injected `loadlib`.
+The generated program then reconstructs the supplied command positional
+parameters using the existing shell-safe quoting contract and appends
+`command-source`.
 
-The exact internal ordering/override mechanism by which the injected loader and
-the core-owned local loader coexist is not fixed by this specification while
-the active injection task realigns that mechanism with core ownership.
+`core.lib.sh` is the normal filesystem-loader bootstrap entry and is not the
+runtime foundation loaded by the injection stream.
 
 A library that was not explicitly selected remains unavailable in the generated
 environment rather than falling back to a remote filesystem.
@@ -226,9 +243,10 @@ LIB-07  a library manual exposes all public functions and does not expose intern
 LIB-08  library/API/manual realignment occurs in the same work unit for interface-affecting changes
 LIB-09  structural permanent coverage recursively detects missing mandatory library manual topics across grouped library directories
 LIB-10  physical subsystem grouping directories are not part of library identity or manual topic identity
-LIB-11  core.lib.sh provides loadlib/loadsyslib after the bootstrap directly loads core
-LIB-12  after core loading, every owned lib/sys/sh shell-library import uses loadsyslib; the bootstrap direct-load of core is the single exception
+LIB-11  core.lib.sh provides filesystem loadlib and loads base.lib.sh; base.lib.sh provides loadsyslib and the common runtime
+LIB-12  after base loading, every owned lib/sys/sh shell-library import uses loadsyslib; bootstrap direct-load of core and core's initial loadlib of base are the two bootstrap-level exceptions
 LIB-13  loadsyslib/loadlib accept exactly one library reference and do not forward positional parameters
 LIB-14  runtime/external pathname sourcing remains ordinary POSIX dot-sourcing
 LIB-15  loadlib_inject_stream embeds only caller-selected libraries and performs no dependency discovery or automatic closure
+LIB-16  base is an explicit mandatory injected reference; the stream installs in-memory loadlib before loading base
 ```

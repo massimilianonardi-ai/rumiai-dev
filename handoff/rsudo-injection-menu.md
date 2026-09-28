@@ -10,8 +10,8 @@ Run the existing `menu` filesystem browser remotely under privileged `rsudo` by 
 ## Current repository revisions
 
 ```text
-rumiai-dev   1385c8ea8c33a722a8f32f319f19d6040fd7262f
-rumiai-os    d436a60235bf0887e1d5678674c5417c720ed303
+rumiai-dev   ab9381fbcdc1db09b997b91fd1346464d0a14891
+rumiai-os    a72f26850d421b0746521a6b25021dcbd7e2dc4c
 rumiai-tests 1c19cb7148aceed4796b7ddcc8fb30192093a0c4
 ```
 
@@ -34,10 +34,10 @@ specifications/rumiai-os/COMMAND-ENTRYPOINTS.md
 ## Fixed task-local choices
 
 - Explicit user architecture correction: the root `m` bootstrap is deliberately minimal. Its only approved helper functions are `readpathce` for the root-resolution chicken/egg boundary and `export_readonly` for fundamental variable definition. The bootstrap responsibilities are limited to root resolution, fundamental system-variable definition, loading `core.lib.sh`, and execution. No additional function or responsibility may be added to `m` without explicit user approval.
-- `loadlib` and `loadsyslib` belong to `core.lib.sh`, not to the root bootstrap. The bootstrap must load core through the minimal bootstrap path required before those functions exist.
+- The accepted split implemented by the user at `rumiai-os@0ac81dc2c1f3d792b9050782367e26d684306e48` keeps the root bootstrap unchanged: it directly sources `core.lib.sh`; core defines the normal filesystem `loadlib` and loads `base.lib.sh`; base defines `loadsyslib` and contains the former core runtime.
 - Use the existing explicit `loadlib_inject_stream` generator; dependency discovery is not added.
 - The generated stream owns its in-memory `loadlib` implementation directly. There is no separate `loadlib-inject.lib.sh` backend or `_loadlib_inject_dispatch` layer.
-- The menu stream explicitly embeds `core`, `array`, `map`, `term`, and `menu`.
+- The menu stream explicitly embeds `base`, `array`, `map`, `term`, and `menu`.
 - Transport the generated source through the current `rsudo --interactive` source-injection path.
 - The immediate physical target is a Linux host with sshd already present; the end-to-end target remains the privileged remote filesystem browser.
 
@@ -57,6 +57,8 @@ specifications/rumiai-os/COMMAND-ENTRYPOINTS.md
 
 ## Current state
 
+The user implemented the accepted split at `rumiai-os@0ac81dc2c1f3d792b9050782367e26d684306e48`: `core.lib.sh` now contains the normal filesystem `loadlib` plus `loadlib "sys/sh/base"`, while `base.lib.sh` contains `loadsyslib` and the former core runtime. The assistant then adapted `loadlib-inject-stream.lib.sh` at `rumiai-os@a72f26850d421b0746521a6b25021dcbd7e2dc4c`: `base` replaces `core` as the mandatory explicit runtime reference, the generated stream installs only its in-memory `loadlib`, and it loads `base` through that loader so base establishes `loadsyslib` and the common runtime.
+
 A more fundamental architecture regression has been identified and takes precedence over the injection-local diagnosis.
 
 The bootstrap/core regression has been repaired: the root `m` bootstrap directly loads `core.lib.sh`, and `loadlib`/`loadsyslib` are owned by core. The temporary package-default initialization that had then been placed at the end of core has now also been removed completely in `rumiai-os@5373b280f7da9fe159666012f6de25da47cb0ccd`. No current bootstrap/core path loads `pkg/pkg-provider` for global defaults or calls `pkg_provider_global_environment_apply`.
@@ -75,7 +77,7 @@ The assistant environment cannot execute the real checkout because outbound GitH
 
 ## Next action
 
-First use the recovered working-vs-current causal model as the baseline: the direct-dispatch simplification is not yet established as the cause of failure, while current core-owned loader overwrite is established mechanically. Before optimization, reconstruct the smallest change needed to preserve the old working injection semantics under restored core ownership.
+Rerun the permanent loader/injection test and the physical composed rsudo menu using the new explicit set `base array map term menu`. The generator has been adapted to install its in-memory `loadlib` first and load the common base through it; no injected `core.lib.sh` execution remains.
 
 ## Working design alternatives under evaluation
 
