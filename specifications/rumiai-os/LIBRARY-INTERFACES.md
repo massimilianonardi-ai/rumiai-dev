@@ -94,7 +94,7 @@ loadlib-inject-stream.lib.sh
 provides:
 
 ```text
-loadlib_inject_stream <command-source> <library-reference>... -- [<command-arg>...]
+loadlib_inject_stream [<library-reference>...] [-- <command-source> [<command-arg>...]]
 ```
 
 for generating one POSIX-shell source program that embeds an explicitly selected set of system shell libraries for execution without a remote `m` library tree.
