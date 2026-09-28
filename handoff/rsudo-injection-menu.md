@@ -77,6 +77,18 @@ The assistant environment cannot execute the real checkout because outbound GitH
 
 First use the recovered working-vs-current causal model as the baseline: the direct-dispatch simplification is not yet established as the cause of failure, while current core-owned loader overwrite is established mechanically. Before optimization, reconstruct the smallest change needed to preserve the old working injection semantics under restored core ownership.
 
+## Working design alternatives under evaluation
+
+No loader architecture change is authorized yet. The current decision space includes:
+
+- injection-local core bootstrap: embedded core is executed directly first, then the stream installs an in-memory `loadlib` (while core's `loadsyslib` can remain unchanged). This requires the top-level execution of `core.lib.sh` to remain self-contained and not load other libraries while core itself is being sourced;
+- core mode switch through an explicit streaming/injection variable, with either two loader implementations or suppression of the filesystem loader. This keeps stream ordering simple but couples foundational core behavior to an injection-specific mode;
+- ambient predefinition detection such as `command -v loadlib`, allowing a preinstalled loader to survive core loading. This avoids an injection-specific variable but makes core initialization depend on ambient shell command/function namespace and is therefore risky for deterministic bootstrap behavior;
+- loader as a bootstrap-level primitive. One form would put loader functions back directly in `m`; a cleaner form would put the normal loader in a dedicated library loaded before core, allowing normal and injected loader implementations to be peers. Either form changes the foundational bootstrap/core boundary and requires explicit architectural approval;
+- stable core-owned public `loadlib` plus a replaceable loader backend. Core always owns the public API, while filesystem-backed and injected-memory behavior are backend strategies. This deliberately reintroduces one dispatch layer but avoids two competing public `loadlib` definitions. It still requires deciding whether core's own top-level sourcing must remain dependency-free or whether backend selection exists before core runs.
+
+Evaluation should distinguish the smallest repair from the longer-term architectural model. Criteria include bootstrap minimality, deterministic shell initialization, whether core may have top-level library dependencies, injection coupling, public API ownership, extensibility beyond streaming, and failure/isolation behavior.
+
 ## Blockers / open questions
 
 The remaining blocker is injection design, not bootstrap ownership: core now correctly owns the local loader, while the current injected-loader ordering assumes that loading core will not replace it. Package-default bootstrap integration is no longer part of this active task and is tracked separately in `todo/pkg-default-bootstrap-integration.md`.
