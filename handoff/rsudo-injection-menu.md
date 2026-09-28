@@ -89,6 +89,51 @@ No loader architecture change is authorized yet. The current decision space incl
 
 Evaluation should distinguish the smallest repair from the longer-term architectural model. Criteria include bootstrap minimality, deterministic shell initialization, whether core may have top-level library dependencies, injection coupling, public API ownership, extensibility beyond streaming, and failure/isolation behavior.
 
+## Leading working design — split bootstrap loader from runtime base
+
+The user proposed a refinement that preserves the external bootstrap/shell contract while separating the loader primitive from the former core runtime.
+
+Conceptually:
+
+```text
+normal runtime
+
+m
+  -> direct source core.lib.sh
+       -> define filesystem loadlib
+       -> loadlib common-base
+            -> define loadsyslib
+            -> establish the former core runtime
+  -> execution / shell / integrated command
+```
+
+```text
+injected runtime
+
+generated injected loadlib
+  -> loadlib common-base from embedded source
+       -> define the same loadsyslib
+       -> establish the same former core runtime
+  -> embedded command libraries
+  -> command body
+```
+
+The eventual common-base library name is intentionally unresolved.
+
+This design keeps the root bootstrap unchanged: it still directly sources only `core.lib.sh`. Shell and integrated-command behavior remain transparent because the common base is fully established before the source of `core.lib.sh` returns. Components therefore do not need to load two libraries.
+
+The important semantic split is:
+
+- `core.lib.sh` becomes the minimum normal-runtime loader/bootstrap library: define the filesystem `loadlib` primitive and immediately load the common base;
+- the common base contains the former core runtime and can define `loadsyslib` as the system-library specialization built on whichever `loadlib` is already installed;
+- the injected environment does not execute the normal filesystem-loader core; it installs its injected `loadlib` first and then loads the same common base;
+- because a loader already exists before the common base is entered in both modes, the common base is not required to remain forever dependency-free: any deliberate top-level library loads can use the active loader implementation;
+- no streaming flag, ambient `command -v loadlib` detection, dual public loader definition, or backend-dispatch layer is required.
+
+This also clarifies that the current injection requirement to embed/load `core` would need to be revisited. Under this model the shared runtime payload is the common base, while `core.lib.sh` is the normal filesystem-loader bootstrap adapter. Whether the generator includes the common base implicitly as infrastructure or requires it explicitly in the selected set remains a working-design choice.
+
+One compatibility point requires explicit protection: `core.lib.sh` should become bootstrap-initialization surface rather than an ordinary re-loadable library in injected execution, because reloading the normal core there would intentionally replace the injected `loadlib` with the filesystem implementation.
+
 ## Blockers / open questions
 
 The remaining blocker is injection design, not bootstrap ownership: core now correctly owns the local loader, while the current injected-loader ordering assumes that loading core will not replace it. Package-default bootstrap integration is no longer part of this active task and is tracked separately in `todo/pkg-default-bootstrap-integration.md`.
