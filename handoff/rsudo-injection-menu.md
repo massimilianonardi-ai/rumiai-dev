@@ -12,9 +12,9 @@ requiring a remote m/RumiAI library tree.
 ## Current repository revisions
 
 ```text
-rumiai-dev   86688abee8419dbd099b9c0dde26f01827b96ec7  (pre-checkpoint HEAD)
-rumiai-os    e0874d7e09995b28cdd729684a85f0ea99994c77
-rumiai-tests 44d2e74fda81e800e0c429a56b6446b5fcda21c5
+rumiai-dev   1999e3be35e3e33feeea71500e40d52561eb811b  (pre-checkpoint HEAD)
+rumiai-os    4654d858701e84fca0ce3a4fd3210a16f4275c7a
+rumiai-tests 134e3c189265f2b13ac9487b522baf53bc51137e
 ```
 
 Fresh remote HEAD retrieval remains mandatory before future writes.
@@ -85,6 +85,12 @@ specifications/rumiai-os/COMMAND-ENTRYPOINTS.md
   selected libraries in caller order, and supports library-only streams.
 - Canonical library-interface contract is realigned to this neutral generator
   semantics while the normal bootstrap remains `core -> base`.
+- A local synthetic POSIX-sh harness exercised the exact generalized generator
+  implementation with representative stub libraries. It passed generation and
+  execution for libraries+command, library-only with receiving positional
+  parameters preserved, zero-library empty-loader generation, and command-only
+  mode. This is development evidence for generator mechanics, not a substitute
+  for the permanent checkout test or the physical rsudo/menu rerun.
 
 ## Current state
 
