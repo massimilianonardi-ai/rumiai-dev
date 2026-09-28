@@ -149,6 +149,10 @@ specifications/
     README.md              subsystem/topic routing index
     rumiai-os/             current RumiAI OS / m specifications only
 
+products/
+    README.md              external-product evaluation model and routing
+    ai/                    evaluations of external AI products
+
 todo/
     README.md              deferred-work lifecycle and minimal item contract
     <topic>.md             known work intentionally deferred and not yet active
@@ -239,6 +243,8 @@ The exact current HEAD of each repository must always be retrieved; no SHA writt
 For product/runtime questions, start with `specifications/README.md` and follow the smallest applicable set of current specifications.
 
 For testing questions, start with `TESTING.md`; add `RUNNER.md`, `PHYSICAL-TESTING.md` or `TEST-PATTERNS.md` only when the topic requires them.
+
+For external-product evaluation, reuse/integration analysis or comparison with an already evaluated product, start with `products/README.md` and then only the relevant product records. `products/` is reference material and is not part of the mandatory read order.
 
 For deferred-work discovery, review or activation, start with `todo/README.md` and then only the relevant TODO items.
 
