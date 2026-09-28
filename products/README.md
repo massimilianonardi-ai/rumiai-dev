@@ -81,8 +81,12 @@ ai/
     a2a.md
     ag-ui.md
     browser-use.md
+    deepseek-harness.md
     e2b.md
+    ecc.md
+    google-ax.md
     hindsight.md
+    hydradb.md
     langgraph.md
     letta.md
     litellm.md
@@ -90,8 +94,10 @@ ai/
     localai.md
     openhands.md
     openllmetry.md
+    orca.md
     paperclip.md
     sglang.md
+    univer.md
 ```
 
 Add a category only when it creates a useful retrieval boundary. Do not duplicate one product record across categories merely because a product spans multiple topics.
