@@ -10,9 +10,9 @@ Run the existing `menu` filesystem browser remotely under privileged `rsudo` by 
 ## Current repository revisions
 
 ```text
-rumiai-dev   bb07b58d95a109a3412120ec58312817d5545bb3
+rumiai-dev   9e430add9be51c6a774100108b9762aea4c4daff
 rumiai-os    5373b280f7da9fe159666012f6de25da47cb0ccd
-rumiai-tests ec7eaba3af7b41cf256712ace9587d0291279bf1
+rumiai-tests c1dc66dfccac39b09b9290132d50da2a55d95cbb
 ```
 
 ## Applicable canonical sources
@@ -64,7 +64,7 @@ This exposes the next injection-specific design issue clearly. The current strea
 
 This is now a subsystem-foundational injection decision and must not be solved by silently transforming or bypassing core. The stable injection contract remains explicit caller-selected embedding with no dependency discovery and no remote m library tree; the exact loader/core coexistence mechanism is again working design.
 
-Permanent test structure was realigned in `rumiai-tests@ec7eaba3af7b41cf256712ace9587d0291279bf1`: it now requires the root bootstrap function surface to contain only `readpathce` and `export_readonly`, requires exactly one direct bootstrap source of `core.lib.sh`, rejects package-provider initialization in `m`, and treats only that exact core source as the allowed direct-owned-library exception. Existing injection behavior assertions remain unchanged so the loader/core incompatibility is not hidden by weakening tests.
+Permanent test structure is realigned through `rumiai-tests@c1dc66dfccac39b09b9290132d50da2a55d95cbb`: it requires the root bootstrap function surface to contain only `readpathce` and `export_readonly`, requires exactly one direct bootstrap source of `core.lib.sh`, rejects package-default initialization from both `m` and `core.lib.sh`, and treats only that exact core source as the allowed direct-owned-library exception. Existing injection behavior assertions remain unchanged so the loader/core incompatibility is not hidden by weakening tests.
 
 The assistant environment cannot execute the real checkout because outbound GitHub DNS is unavailable. No runtime PASS is claimed for these revisions.
 
@@ -74,4 +74,4 @@ Validate the restored normal m runtime on a real checkout, then select the injec
 
 ## Blockers / open questions
 
-The remaining blocker is injection design, not bootstrap ownership: core now correctly owns the local loader, while the current injected-loader ordering assumes that loading core will not replace it. Package-default bootstrap integration is no longer part of this active task and is tracked separately as deferred work.
+The remaining blocker is injection design, not bootstrap ownership: core now correctly owns the local loader, while the current injected-loader ordering assumes that loading core will not replace it. Package-default bootstrap integration is no longer part of this active task and is tracked separately in `todo/pkg-default-bootstrap-integration.md`.
