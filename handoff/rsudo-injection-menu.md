@@ -209,6 +209,36 @@ rightmost `rsudo`; a generator failure may therefore be masked unless the
 remote side also fails. This is a robustness question to settle before the
 wrapper is treated as complete.
 
+## Later user commit — pipefail and source-oriented generator proposal
+
+The user committed `rumiai-os@02f7d410c62ee603d61395c540ae3c48c33c061a`
+adding `set -o pipefail` inside `rsudo_mod_exec_inject`. This option is part
+of the current POSIX.1-2024 baseline. The current left pipeline group still runs
+`cat` after `loadlib_inject_stream`; therefore a generator failure can be
+masked inside the left group before pipeline status is computed. A future
+implementation should short-circuit the left group on generator failure if
+failure propagation is required.
+
+The user then proposed simplifying `loadlib_inject_stream` further so that it
+has no command-source concept at all:
+
+```text
+loadlib_inject_stream LIB... -- SHELL-SOURCE
+```
+
+The architectural direction is attractive: the generator becomes purely
+"embedded libraries + arbitrary subsequent POSIX shell source", and execution
+of a saved command is merely one possible shell-source composition.
+
+The representation of SHELL-SOURCE is still open. Arbitrary shell source is a
+text stream rather than an argv list; reconstructing it from ordinary operands
+would lose or ambiguously reinterpret quoting, operators, redirections and
+separators. A strong candidate is therefore to make `--` mean "append source
+from stdin verbatim" rather than trying to encode arbitrary shell syntax in the
+remaining argv. Under that model local saved command content can be composed
+with `cat` and a preceding generated `set -- ...` statement, without
+requiring the command file to exist remotely.
+
 ## Blockers / open questions
 
 No remaining loader-architecture design blocker. Current-revision permanent and
