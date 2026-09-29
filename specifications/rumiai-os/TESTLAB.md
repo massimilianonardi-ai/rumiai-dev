@@ -44,7 +44,7 @@ The first baseline deliberately introduces no scenario DSL, resource graph, prov
 
 ### Current rumiai-os project scenarios
 
-The current `rumiai-os` project ships two project-local baseline scenarios under its own `testlab/scenarios/` directory:
+The current `rumiai-os` project ships these project-local scenarios under its own `testlab/scenarios/` directory:
 
 ```text
 host
@@ -54,7 +54,17 @@ host
 scratch
     creates an instance-owned disposable working directory below the persistent
     instance record and removes that owned directory during cleanup
+
+rsudo
+    creates one owned disposable Podman container with a real OpenSSH server,
+    a password-authenticated unprivileged account and real sudo policy;
+    the current project checkout and the selected container image are external
+    resources and are not destroyed by cleanup
 ```
+
+The `rsudo` scenario treats Podman, the host OpenSSH client/keyscan utility and OpenSSL as scenario-specific prerequisites. Their absence must fail that scenario's `check` before instance allocation; they are not global `testlab` prerequisites and in particular do not make Podman a macOS requirement.
+
+After readiness, the `rsudo` scenario publishes factual handles including the target root, owned container identity, SSH host/port/user/password/configuration and an activity PATH prefix. Its `enter` phase invokes the current project's real `rsudo` in interactive mode using direct inherited terminal streams. Random-port SSH adaptation remains private to the scenario execution environment and does not change the public `rsudo` interface.
 
 These are not global built-in scenario identities. They are ordinary project scenario definitions and are discovered only when present under the selected project's `testlab/scenarios/` directory.
 
@@ -247,4 +257,6 @@ TESTLAB-11  failed/interrupted preparation remains recoverable through close
 TESTLAB-12  testlab is not rumiai-test, rumiai-validate or an assertion framework
 TESTLAB-13  the first baseline has no scenario DSL, generic resource graph or provider/plugin framework
 TESTLAB-14  ordinary testlab execution is development activity and is not formal validation evidence
+TESTLAB-15  the rumiai-os rsudo scenario keeps Podman and SSH tooling scenario-specific rather than global testlab prerequisites
+TESTLAB-16  the rumiai-os rsudo scenario owns only its created disposable container; target checkout and image remain external
 ```
