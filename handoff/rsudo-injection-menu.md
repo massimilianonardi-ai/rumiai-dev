@@ -309,77 +309,75 @@ The audit supports strengthening the generic command standard around non-trivial
 continuation compatibility as an additional composability property rather than
 a universal requirement. No canonical entrypoint invariant has been changed yet.
 
-## Working design — isolated injected command wrapper
+## Working design — named injected command sources
 
-A new candidate design is under review for command-source mode in
-`loadlib_inject_stream`: instead of appending command-source inline, embed it
-inside one generated shell function whose body is a subshell compound command,
-then invoke that wrapper with the requested command arguments before any
-subsequent stdin source.
+A newer candidate supersedes the automatic basename/purification/alias design.
 
-Conceptually:
+Proposed grammar:
+
+```text
+loadlib_inject_stream [LIBRARY_REFERENCE...]
+                      [--command COMMAND_NAME LOCAL_SOURCE]...
+                      [-- COMMAND_SOURCE [COMMAND_ARG...]]
+```
+
+`--command` is repeatable. `COMMAND_NAME` is supplied explicitly by the
+caller and MUST already be a valid POSIX shell function identifier. No automatic
+basename derivation, lossy purification or alias mapping is required.
+`LOCAL_SOURCE` is one readable local POSIX-shell source file.
+
+Each registered command source is emitted as a named function whose body is a
+subshell compound command:
 
 ```sh
-_loadlib_inject_stream_command()
+COMMAND_NAME()
 (
-  <command-source>
+  <LOCAL_SOURCE>
 )
-
-_loadlib_inject_stream_command <args...>
-<optional subsequent stdin source>
 ```
 
-This would isolate command-local positional parameters, variables/functions,
-traps, cwd, umask, file descriptors, shell options and explicit `exit` /
-`exec` effects from the continuation shell. Injected libraries remain visible
-inside the subshell. The command status remains the wrapper status, so subsequent
-source can observe it through ordinary `$?` semantics.
+The subshell intentionally isolates command-local positional parameters,
+variables/functions, traps, cwd, umask, file descriptors, shell options and
+explicit `exit` / `exec` effects from the containing generated program while
+retaining access to the already-injected library functions.
 
-The wrapper MUST NOT use the command basename (even purified) as its actual
-function name. Current commands such as `log`, `lang`, `shell` and
-`rsudo` intentionally call same-named library functions; defining a wrapper
-under that name would overwrite the dependency the command body needs. A
-generator-owned private wrapper identity avoids this collision and also avoids
-lossy filename-to-function-name purification.
+Duplicate `--command` names MUST be rejected by the generator. Generator-owned
+private function identities are reserved and cannot be selected as command
+names. Collisions with functions supplied by injected libraries or by the
+command sources themselves remain an explicit caller-composition concern unless
+a portable stronger collision check is later defined.
 
-An optional public alias is feasible for command identities that are valid POSIX
-alias names. POSIX alias names permit alphabetics, digits and `! % , - @ _`,
-while POSIX function names are shell Names (alphabetics/digits/underscore, not
-starting with a digit). This makes current lowercase hyphen-separated m command
-names naturally aliasable even though many are not valid function names.
+The existing non-repeatable `-- COMMAND_SOURCE [ARG...]` form remains
+source-compatible and retains its current public meaning. Its command source is
+implemented internally as one generator-owned anonymous/private subshell wrapper
+that is invoked once with the supplied arguments. This preserves the current
+caller syntax while gaining the same isolation properties as named
+`--command` sources.
 
-Candidate mapping:
+Conceptually the generated order is:
 
 ```text
-public command basename  state-path
-private wrapper          _loadlib_inject_stream_command
-optional alias           state-path -> _loadlib_inject_stream_command
+generated library wrappers and in-memory loadlib
+selected library loads
+named --command function definitions
+optional private one-shot -- command definition
+optional private one-shot -- command invocation
+optional stdin continuation source
 ```
 
-The alias would be defined only after the wrapper function has been parsed so it
-does not rewrite literal same-named calls inside the embedded command body at
-definition time. The wrapper can additionally remove that alias inside its own
-subshell if runtime-evaluated shell text must not see the public bridge.
+Named commands are therefore available both to the one-shot command and to
+subsequent stdin source. A one-shot command can call registered named commands,
+and continuation source can invoke them repeatedly.
 
-Automatic lossy "purification" of arbitrary command filenames into a public
-alias is not favored because distinct names can collide and POSIX aliases cannot
-represent every valid filename (notably names containing `.` or `/`). The
-current leading option is therefore:
+If the one-shot command is the last generated operation, its status remains the
+generated program status. If stdin continuation follows, ordinary shell
+semantics apply: the first continuation command may observe the one-shot command
+status through `$?`, and the continuation determines the eventual status unless
+it explicitly preserves/returns the earlier status.
 
-```text
-internal wrapper name: fixed/generator-owned, always available
-public alias: derived automatically from basename only when it is a valid,
-              non-reserved POSIX alias identity
-explicit caller-supplied command name: defer unless a real requirement appears
-```
-
-The alias is a convenience bridge, not complete command-namespace virtualization:
-`command name` suppresses alias substitution, aliases are not inherited by
-separate shell invocations, and dynamic source/eval behavior requires explicit
-consideration.
-
-This design is not yet promoted to the canonical library-interface contract and
-has not been implemented or tested.
+This design avoids both automatic command-name purification and alias semantics.
+It is not yet promoted to the canonical library-interface contract and has not
+been implemented or tested.
 
 ## Blockers / open questions
 
