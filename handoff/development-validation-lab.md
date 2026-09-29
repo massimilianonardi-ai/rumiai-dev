@@ -15,6 +15,7 @@ Design a developer-facing live experimentation and validation environment mechan
 - real `testlab -> rsudo -> ssh -> sshd -> sudo` task validation passed at `rumiai-tests@25fbd5320ecbe5b724e656f6426605bb36e4e33e`, GitHub Actions run `36542681411`, against `rumiai-os@89e215c43d57fd96e8557799b764fff4f5bed7e3`
 - the `testlab-rsudo` task scope was then returned to normal current-product semantics by removing its historical `rumiai-os-commit` pin; GitHub Actions run `36579379290` passed against current `rumiai-os@b1a785cad13ae11bf85f2626f470a2c2c32bab82` with `rumiai-tests@c8510ea893d7da8bada593ac2bfb7c51a8b961fd`
 - the same persistent `rsudo` scenario was then reused for a second activity in the same instance: real `rsudo exec inject` with an injected library, repeatable named command, one-shot command, stdin continuation and privileged UID observation; run `36584756699` returned `VALIDATED` against `rumiai-os@e31d930534e6536c62d7953fca9398f9006eee28` / `rumiai-tests@12a22021fadf49250464f053700e48bcec9ad012`
+- after the user identified the unauthorized project-root `testlab/` directory, the scenario layout was realigned to the existing resource model at `res/sys/testlab/scenarios/`; baseline run `36630967752` returned `VALIDATED` on Linux and macOS (2 PASS each), and real rsudo run `36630967796` returned `VALIDATED` (1 PASS) against `rumiai-os@e2ec05dd33cf167d0d07136d73e2e123d17ba27d` / `rumiai-tests@d04246cf97806be66afe89feabccca71d3b2c000`
 - rumiai-dev-PoCs is retained only as historical experimental evidence for this task; it is no longer an implementation gate
 
 Exact current remote HEADs must still be rechecked at the start of every resumed work unit; this handoff records task/evidence identity rather than pretending that unrelated concurrent repository development is frozen.
@@ -130,6 +131,7 @@ The corrected placement is:
 - PoC 050 explored and rejected moving scenario-specific SSH command selection into rsudo; no product contract was promoted from that path.
 - Ownership is closed: `testlab` belongs to technical `m` and is implemented in `rumiai-os`.
 - The initially introduced top-level `rumiai-os/testlab/` layout was identified as unauthorized filesystem-model drift and corrected forward: scenarios now live under `rumiai-os/res/sys/testlab/scenarios/`, with `testlab` explicitly promoted as a technical resource class.
+- The corrected layout is permanently protected by `TESTLAB-17` and `rumiai-os/testlab/contract.test`, which rejects any reappearance of a project-root `testlab` namespace. Formal validation run `36630967752` passed both contract/lifecycle tests on Linux and macOS; run `36630967796` passed the real Podman/OpenSSH/sudo scenario on the same corrected product revision.
 - The current product contract was promoted in `specifications/rumiai-os/TESTLAB.md`.
 - The first product implementation added `bin/sys/testlab`, its mandatory operational manual, and project-local `host` and `scratch` scenarios.
 - Permanent contract/lifecycle tests and a dedicated Linux/macOS formal-validation workflow were added in `rumiai-tests`.
