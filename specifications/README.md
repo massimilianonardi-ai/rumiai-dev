@@ -34,7 +34,7 @@ Read only the smallest complete set relevant to the task.
 | developer-facing live scenario environments through `testlab` | `rumiai-os/TESTLAB.md` |
 | standalone terminal key input | `rumiai-os/READ-KEY.md` |
 | secret-line terminal input and verification | `rumiai-os/READPASS.md` |
-| password-authenticated OpenSSH invocation and stream transparency | `rumiai-os/SSH.md` |
+| OpenSSH authentication secret delivery, password-only invocation and stream transparency | `rumiai-os/SSH.md` |
 | remote SSH/sudo authentication, stdin separation and execution invariants | `rumiai-os/RSUDO.md` |
 
 ## Testing and development
