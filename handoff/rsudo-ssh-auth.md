@@ -10,9 +10,9 @@ rsudo to it and add the explicit interactive authentication-check path.
 
 ## Current repository revisions
 
-- rumiai-dev: `b2c8f582017e5b45e3d7c55b07c695f5601512a6` before this checkpoint
-- rumiai-os: `559ee49d915fbc7292e114bb4f4de375b617230f`
-- rumiai-tests: `9b300faa238b340d0569d425dc59b8408d4d217f`
+- rumiai-dev: `381120ffd7a2cad8b3d7eab4a04b00f8fdd5c00a` before this checkpoint
+- rumiai-os: `34c158e95bf5f73525cf42653026431b0c5d5551`
+- rumiai-tests: `348a6441991fbd655d7f1559ff64151f808938ca`
 
 Fresh remote HEAD retrieval remains mandatory before future writes.
 
@@ -93,9 +93,11 @@ A concurrent cleanup removed the obsolete `bin/sys/rsudo-askpass`; its orphan
 manual and obsolete contract-test expectations have now also been removed.
 Current rsudo SSH authentication uses only `ssh_auth` / `ssh-askpass`.
 
-A repository-triggered `rumiai-os-health` workflow is running against the
-current test-suite commit. It is useful broader evidence but does not replace
-the dedicated revision-specific `rsudo` validation requirement.
+Repository-triggered health run `36582351794` is running with the exact
+current test-suite revision `348a6441991fbd655d7f1559ff64151f808938ca` and froze product revision
+`34c158e95bf5f73525cf42653026431b0c5d5551`. The Ubuntu 26.04 ARM job has started and the macOS job is queued.
+This is broader supplemental evidence and does not replace the dedicated
+revision-specific `rsudo` validation requirement.
 
 ## Next action
 
