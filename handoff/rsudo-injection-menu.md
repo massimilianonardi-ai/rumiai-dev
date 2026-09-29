@@ -183,10 +183,10 @@ rsudo_mod_exec_inject()
 The actual implementation uses private module-local variable names. The
 sentinel prevents command substitution from stripping source trailing newlines.
 
-Current product revision
-`rumiai-os@a015fb27cd5862808bef3f7fe8b92b2b8e8e8169` implements this
-contract and operational documentation, including portable generator-status
-propagation without requiring pipefail.
+The user subsequently simplified the same buffered-generation implementation at
+`rumiai-os@36d6b53b461c91db790873625f2f5349972768fb`. The current implementation
+does not itself require pipefail; this is independent from the open global
+runtime-policy question above.
 
 ## Current validation state
 
@@ -209,21 +209,45 @@ Permanent coverage now includes:
 - exec-inject generator-to-rsudo composition, generator failure propagation
   without invoking recursive rsudo, and recursive rsudo status propagation.
 
-GitHub Actions validation against the previous product revision
-`rumiai-os@94cb0620f62a481c8300432bb642367e81c11432` and frozen suite
-`rumiai-tests@25fbd5320ecbe5b724e656f6426605bb36e4e33e` produced:
+A later exhaustive pipefail review corrected the interpretation of the earlier
+Ubuntu failure.
 
-- macOS: both permanent tests PASS;
-- Ubuntu: library-loading PASS, exec-inject FAIL because the host `/bin/sh`
-  rejects `set -o pipefail`.
+The project platform baseline is POSIX.1-2024 / Issue 8, where `set -o
+pipefail` is required. The temporary validation that first failed used
+`ubuntu-latest`, which resolved to Ubuntu 24.04.5 rather than the canonical
+formal-validation Linux target `ubuntu-26.04-arm`.
 
-This exposed a real portability defect in the module rather than a test or
-orchestration failure. Product revision
-`rumiai-os@a015fb27cd5862808bef3f7fe8b92b2b8e8e8169` removes the pipefail
-dependency and `rumiai-tests@ce64eab23d03fefc3b93eb2d6baf57d0e5ccd013`
-strengthens regression coverage so generator failure must not invoke recursive
-rsudo. GitHub Actions run 36543617957 is revision-specific evidence for the
-pre-fix behavior and must not be relabelled as validation of the fixed revision.
+GitHub Actions diagnostic runs established:
+
+- Ubuntu 22.04.5: `/bin/sh -> dash`,
+  `dash 0.5.11+git20210903+057cd650a4ed-3build1`; pipefail unsupported;
+- Ubuntu 24.04.5: `/bin/sh -> dash`, `dash 0.5.12-6ubuntu5`; pipefail
+  unsupported;
+- Ubuntu 26.04.1: `/bin/sh -> dash`, `dash 0.5.12-12ubuntu3`; pipefail
+  supported with the required pipeline-status behavior;
+- current macOS hosted validation: `/bin/sh` supports pipefail.
+
+Debian added the upstream dash pipefail implementation in package revision
+`0.5.12-7`; Ubuntu 24.04's `0.5.12-6ubuntu5` predates that backport, while
+Ubuntu 26.04's `0.5.12-12ubuntu3` includes it.
+
+GitHub Actions run 36547637504 reproduced the exact pre-change
+`rumiai-os/rsudo/exec-inject.test` against
+`rumiai-os@94cb0620f62a481c8300432bb642367e81c11432`:
+
+- PASS on Ubuntu 26.04 ARM and macOS;
+- FAIL at `set -o pipefail` on Ubuntu 22.04 and 24.04.
+
+Therefore the earlier characterization of this as a product portability defect
+was incorrect relative to the current POSIX.1-2024 baseline. It is evidence
+that the older Ubuntu `/bin/sh` implementations do not implement this Issue 8
+requirement. Distribution-diversity testing remains valuable, but such an older
+host must not silently redefine the current POSIX baseline.
+
+No global RumiAI decision has yet been promoted about where pipefail should be
+enabled. The design question remains whether the `m` bootstrap should establish
+pipefail once as a runtime invariant, with separate handling for standalone
+`#!/bin/sh` utilities and generated/injected shell programs.
 
 A local synthetic POSIX-sh harness exercising the current generator mechanics
 passed generation/syntax/execution, repeated named-command invocation,
