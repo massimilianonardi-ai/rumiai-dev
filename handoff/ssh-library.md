@@ -59,9 +59,11 @@ OpenSSH option/askpass semantics were cross-checked against current OpenSSH docu
 
 - Physical Linux run returned fixture status 86 at the ssh-askpass invocation. Verify local rumiai-os and rumiai-tests revisions before attributing this to product behavior; the current suite now prints captured fixture stderr for this case.
 
+- The latest physical rerun exposed a syntax error in the permanent test itself: the temporary ControlPath diagnostic edit had split the final assertion and caused `/bin/sh` status 2, which the runner classified as SKIP. The test was corrected forward-only at rumiai-tests commit `fe5d6fd0320c71e9e20bfeb429033f423f60beab`; no product source changed for this correction.
+
 ## Next action
 
-Inspect the persisted `.runs/<latest>/logs/rumiai-os/ssh/contract.test.log` from the failed Linux development run, correct the test or target only according to that evidence, then rerun the same test. If it passes, perform the final validation checkpoint and then evaluate the proposed rsudo_core migration in chat without modifying rsudo.
+Fast-forward the physical rumiai-tests checkout to the corrected test, rerun `rumiai-os/ssh/contract.test`, and inspect the emitted effective ControlPath/OpenSSH version only if the ControlPath assertion still fails. Then correct either the assertion or product strictly from that evidence.
 
 ## Blockers / open questions
 
