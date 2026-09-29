@@ -118,9 +118,10 @@ Zero selected libraries are valid; in that case generated `loadlib` returns
 status 2 for every library lookup.
 
 `--command <command-name> <local-source>` registers one reusable injected
-command. `command-name` MUST already be a valid POSIX shell identifier:
+command. `command-name` MUST already be a portable POSIX shell function identifier:
 alphabetic or underscore first character, followed only by alphabetic
-characters, digits or underscore. Duplicate command names are invalid.
+characters, digits or underscore, and not a POSIX shell reserved word.
+Duplicate command names are invalid.
 `loadlib` and names beginning `_loadlib_inject_stream_` are reserved by the
 generated runtime.
 
@@ -300,5 +301,5 @@ LIB-14  runtime/external pathname sourcing remains ordinary POSIX dot-sourcing
 LIB-15  loadlib_inject_stream embeds only caller-selected libraries and performs no dependency discovery or automatic closure
 LIB-16  loadlib_inject_stream permits zero or more selected libraries, repeatable explicitly named isolated --command sources, one optional isolated one-shot command after --, and subsequent non-TTY stdin shell source
 LIB-17  injected named and one-shot command bodies execute in subshells that isolate command-local process state while retaining access to the explicitly injected library environment
-LIB-18  --command names are caller-selected valid POSIX shell identifiers; duplicate names and generator-reserved identities are rejected without filename derivation, sanitization or aliasing
+LIB-18  --command names are caller-selected portable POSIX shell function identifiers; reserved words, duplicate names and generator-reserved identities are rejected without filename derivation, sanitization or aliasing
 ```
