@@ -28,7 +28,7 @@ No TODO represents this work. It is active now.
 
 ```text
 rumiai-dev    022b37697ba6c8fbeb39e9f58d1df214d76a36ca  (pre-checkpoint HEAD)
-rumiai-os     bc4fd2f1ac0f2169c725a6dd2b97edd71f17a63b
+rumiai-os     62a91eb3c18ebcd2595fe646b2f14170eea74126
 rumiai-tests  71b6523b93d64a48e45f3f713306f6d59fb2f401
 ```
 
@@ -304,6 +304,10 @@ first experiment.
   producer status and unnecessary pipefail dependence.
 - No hosted workflow automatically executed for these new commits; their focused
   validation remains pending and must not be inferred from prior sessions.
+- A concurrent product advance to
+  `rumiai-os@62a91eb3c18ebcd2595fe646b2f14170eea74126` added only
+  `res/sys/manual/rssh`; it does not alter any pipefail target or this
+  checkpoint's implementation.
 - Dedicated Linux/aarch64 `rsudo` validation passed all six tests against
   `rumiai-tests@348a6441991fbd655d7f1559ff64151f808938ca` and
   `rumiai-os@34c158e95bf5f73525cf42653026431b0c5d5551`, with zero failures,
