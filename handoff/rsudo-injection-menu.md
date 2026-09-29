@@ -12,9 +12,9 @@ requiring a remote m/RumiAI library tree.
 ## Current repository revisions
 
 ```text
-rumiai-dev   aa44bb667599b1962da73dc542f636778241bdde  (pre-checkpoint HEAD)
-rumiai-os    45c1cf174c0b51540ce6903ca37a7eb4f58f5260
-rumiai-tests d588378dee5c3fa492460016b2d3ed606e41b6ac
+rumiai-dev   fd834b5d9e67834c1d112751fab7aa625865a2eb  (pre-checkpoint HEAD)
+rumiai-os    e31d930534e6536c62d7953fca9398f9006eee28
+rumiai-tests 12a22021fadf49250464f053700e48bcec9ad012
 ```
 
 Fresh remote HEAD retrieval remains mandatory before future writes.
@@ -95,6 +95,10 @@ specifications/rumiai-os/COMMAND-ENTRYPOINTS.md
   parameters preserved, zero-library empty-loader generation, and command-only
   mode. This is development evidence for generator mechanics, not a substitute
   for the permanent checkout test or the physical rsudo/menu rerun.
+
+- Concurrent cleanup removed obsolete `bin/sys/#_readc` and
+  `bin/sys/rsudo-askpass`; the current-tree entrypoint audit above no longer
+  treats either as a current helper.
 
 ## Current state
 
@@ -374,10 +378,8 @@ special-purpose helpers / process-bound utilities
     editor          standalone; execs selected editor by design
     pager           standalone; execs selected pager by design
     read-key        standalone TTY reader with traps/exits
-    #_readc         standalone/internal TTY reader with traps/exits
     readpass        standalone and already main-structured, but deliberately
                     installs process-exit/signal cleanup traps
-    rsudo-askpass   security helper; set +x plus process-style exit contract
     ssh-askpass     security helper; set +x plus process-style exit contract
 ```
 
@@ -488,6 +490,9 @@ macOS              PASS contract.test
 ```
 
 This validates the local rsudo-admin/SSH-channel regression through the real
-current product path with the permitted external SSH fixture. A fresh physical
-post-fix rsudo/menu run against a real remote host is still pending and must not
-be inferred from the hosted PASS.
+product path with the permitted external SSH fixture. The user subsequently
+physically confirmed the corrected `rsudo-admin -> Browse host` path on a real
+remote host after the PTY-routing fix at
+`rumiai-os@45c1cf174c0b51540ce6903ca37a7eb4f58f5260`: the remote filesystem
+menu was visible and interactive. That physical observation applies to that
+revision and is not relabelled as evidence for later revisions.

@@ -27,7 +27,7 @@ No TODO represents this work. It is active now.
 ## Current repository revisions
 
 ```text
-rumiai-dev    7e1f74e96cd8c3b8e691d0465dc440934d151995
+rumiai-dev    fd834b5d9e67834c1d112751fab7aa625865a2eb  (pre-checkpoint HEAD)
 rumiai-os     e31d930534e6536c62d7953fca9398f9006eee28
 rumiai-tests  12a22021fadf49250464f053700e48bcec9ad012
 ```
@@ -106,10 +106,6 @@ specifications/rumiai-os/SSH.md
   `ls | awk` should not treat a parser success as proof that the producer
   succeeded.
 
-`lib/sys/sh/host-id.lib.sh`
-: macOS `ioreg | awk` should propagate ioreg failure after its successful
-  early-exit parser is hardened.
-
 `lib/sys/sh/term.lib.sh`
 : terminal capability/byte conversion pipelines such as
   `tput | od | tr` and `dd | od` should surface failures in any required
@@ -153,10 +149,6 @@ uniformity.
 `lib/sys/sh/menu.lib.sh`
 : `_menu_safe_item_text` should preserve first-record output semantics while
   draining remaining input rather than exiting successfully early.
-
-`lib/sys/sh/host-id.lib.sh`
-: retain the first matching UUID but drain the finite ioreg stream rather than
-  exiting the parser immediately after success.
 
 Other successful early-exit consumers should be reviewed during each target
 change. Early exit used to report validation failure is not the same hazard.
@@ -293,6 +285,9 @@ first experiment.
 - The private FIFO/producer lifecycle now has completion and handled-termination
   cleanup; permanent fs coverage also checks that invocation-owned stream
   resources do not remain after the scenario.
+- Concurrent cleanup removed the obsolete `lib/sys/sh/host-id.lib.sh`; its
+  stale Priority A and early-consumer-hardening entries were removed from the
+  current implementation target list.
 - Dedicated Linux/aarch64 `rsudo` validation passed all six tests against
   `rumiai-tests@348a6441991fbd655d7f1559ff64151f808938ca` and
   `rumiai-os@34c158e95bf5f73525cf42653026431b0c5d5551`, with zero failures,

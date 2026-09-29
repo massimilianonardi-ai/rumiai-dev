@@ -9,9 +9,9 @@ Align the current rsudo contract, command/library operational documentation and 
 
 ## Current repository revisions
 
-- rumiai-dev: 0c1385df93710ec5065ed9b011c5c6eba3bac173 (pre-checkpoint HEAD)
-- rumiai-os: c1aa711645b39f36850d35abc02c31d8db916120
-- rumiai-tests: a005991b9694eac988ce116e38b6e1a02c47feee
+- rumiai-dev: fd834b5d9e67834c1d112751fab7aa625865a2eb (pre-checkpoint HEAD)
+- rumiai-os: e31d930534e6536c62d7953fca9398f9006eee28
+- rumiai-tests: 12a22021fadf49250464f053700e48bcec9ad012
 - rumiai-dev-PoCs: 04b17182392c323f13a53b9fffa6917ff9823cec
 
 ## Applicable canonical sources
@@ -60,7 +60,7 @@ Align the current rsudo contract, command/library operational documentation and 
 - Diff review confirmed the correction touched only the rsudo specification/manual/tests, task-state correction and specification-index metadata.
 - The user advanced runtime behavior in `rumiai-os@571e0df39a103349eae78ba2d4d8161660f084e4`: rsudo now resets `RSUDO_NO_PRESERVE_QUOTES`, `RSUDO_INTERACTIVE`, `RSUDO_ASKPASS` and `RSUDO_AS_USER` on every invocation and removes the temporary short aliases.
 - `specifications/rumiai-os/RSUDO.md` now promotes the reusable-connection-state versus invocation-local-mode distinction and the resulting recursive-call rule.
-- `rumiai-os@4f429c811f9c19889d0d8f6fa42b0423356beecd` realigns `res/sys/manual/rsudo.lib.sh`, adds the previously missing command topics `res/sys/manual/rsudo` and `res/sys/manual/rsudo-askpass`, and removes the stale `rsudo-env.lib.sh` cross-reference.
+- `rumiai-os@4f429c811f9c19889d0d8f6fa42b0423356beecd` realigned `res/sys/manual/rsudo.lib.sh`, added the then-current command topics `res/sys/manual/rsudo` and `res/sys/manual/rsudo-askpass`, and removed the stale `rsudo-env.lib.sh` cross-reference. A later cleanup removed the obsolete `rsudo-askpass` command and its manual topic.
 - `rumiai-tests@e30ef19cabe1d2c1511fe49db23c8d7b89feff11` adds invocation-state regression coverage: ambient askpass/target-user/quote state is ignored, a real recursive `fs delete` call reuses credentials without inheriting outer modes, and ambient `RSUDO_INTERACTIVE=true` does not force a new invocation into interactive mode.
 - Added `validation/rsudo.conf` selecting the complete `rumiai-os/rsudo` permanent-test group for focused formal validation.
 - Final diff review caught a malformed temporary-directory identity introduced while editing `contract.test`. The first forward correction still serialized one dollar because JavaScript replacement-string `$` semantics collapsed it; the verified correction in `rumiai-tests@e30ef19cabe1d2c1511fe49db23c8d7b89feff11` uses a replacement callback and the remote file now contains the required PID suffix `$`. No validation evidence from the intermediate revisions is accepted.
@@ -85,7 +85,9 @@ The rsudo SSH-command experiment is fully reverted. Current rsudo again invokes 
 
 The current product also contains the later, independent interactive source-injection fix; therefore "restored as before" is true specifically for the SSH-command experiment, not as a byte-for-byte rollback of every later rsudo improvement.
 
-The unrelated `fs.test` failure previously observed on the auxiliary Ubuntu runner remains attributable to `set -o pipefail` under dash in `rsudo-mod-fs.lib.sh`, not to the SSH-command experiment or its revert.
+The unrelated `fs.test` failure previously observed on the auxiliary Ubuntu runner was later resolved in the active pipefail workstream by replacing the transfer pipeline dependency with explicit producer/consumer status collection. It is no longer a blocker for this documentation/test workstream.
+
+The obsolete `rsudo-askpass` command, its orphan manual topic and the corresponding permanent-test existence checks have been removed; current rsudo SSH authentication uses `ssh_auth` / `ssh-askpass`.
 
 ## Next action
 
@@ -93,5 +95,4 @@ Continue rsudo validation/documentation work from the direct-SSH implementation.
 
 ## Blockers / open questions
 
-- The independent POSIX `pipefail` issue in the rsudo filesystem module remains outside the SSH-command revert.
 - Formal validation evidence for the current product/suite pair remains revision-specific and must not be inferred from older runs.
