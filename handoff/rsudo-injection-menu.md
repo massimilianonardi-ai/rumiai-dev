@@ -210,6 +210,105 @@ source with later shell source own that compatibility.
 
 No command-entrypoint contract change has been promoted yet.
 
+## Command-entrypoint audit against stream composition
+
+A current-tree audit of every executable body under `bin/sys` was performed
+against the proposed command-structure / continuation criteria. Current
+`bin/ai` has no independent executable command bodies; `bin/ai-osarch`,
+`bin/ext-osarch` and `bin/sys-osarch` are selector symlinks, while
+`bin/sys/m` exposes the root `m` bootstrap rather than defining another
+command body.
+
+The audit separates three different migration concerns:
+
+```text
+structural isolation
+    move non-trivial top-level operational code behind main "$@"
+    so command parsing/shift/set -- do not directly mutate the containing
+    source program's positional parameters
+
+normal termination
+    avoid exit used merely to report ordinary command completion when a return
+    or fall-through can preserve the same status
+
+lifecycle isolation
+    commands that install traps, change umask/shell options, retain file
+    descriptors or otherwise rely on immediate process exit require explicit
+    cleanup/restoration before they can safely permit continuation
+```
+
+Observed command groups:
+
+```text
+already structurally clean / trivial wrappers
+    lang
+    log
+    shell
+    rsudo
+    mk              (main exists; intentionally execs node)
+    readpassv       (main exists; requires m_BIN_SYS_DIR/readpass)
+    state-path      (small direct body; no normal exit but not main-isolated)
+    rssh            (small session wrapper; deliberately mutates exported state)
+
+high-value simple main/termination refactor candidates
+    digest          top-level parsing/shift, normal exit 0, optional stdin data
+    extract         top-level dispatch, normal exit 0
+    http-fetch      top-level parsing/set --, explicit success/failure exits
+    lang-set        top-level operation, no-arg normal exit, m resource-tree dependency
+    manual          top-level parsing/shift, several ordinary exit paths
+    menu            top-level getopts/shift, ordinary exit paths; otherwise a
+                    strong injection candidate because it has no direct m path
+                    dependency beyond explicitly injected libraries
+    osarch          top-level dispatch and no-arg normal exit; selector filesystem dependency
+    pkg             tiny top-level dispatcher/shift; dynamic library dependency
+
+requires lifecycle work, not just main/return conversion
+    pkg-analyze     owns fd 3, cleanup/signal traps and umask; normal exit drives cleanup
+    srv             lock cleanup/signal traps and umask persist until process exit;
+                    some internal run modes intentionally exec m
+    vsed            changes xtrace/verbose options, installs exit/signal traps,
+                    uses process-exit cleanup and explicit normal exits
+    gitman          long-running top-level interactive loop with ordinary exit
+                    paths; some operations alter umask and it relies on other
+                    m commands being installed
+
+special-purpose helpers / process-bound utilities
+    editor          standalone; execs selected editor by design
+    pager           standalone; execs selected pager by design
+    read-key        standalone TTY reader with traps/exits
+    #_readc         standalone/internal TTY reader with traps/exits
+    readpass        standalone and already main-structured, but deliberately
+                    installs process-exit/signal cleanup traps
+    rsudo-askpass   security helper; set +x plus process-style exit contract
+    ssh-askpass     security helper; set +x plus process-style exit contract
+```
+
+Additional stream-injection dependency findings:
+
+- `menu`, `digest` and `http-fetch` have no direct `m_*` filesystem-root
+  dependency in their command bodies; they are the clearest candidates for
+  source portability once their libraries/external tools are available.
+- `lang-set`, `manual`, `mk`, `osarch`, `readpassv`, `rssh`,
+  `srv` and `state-path` directly depend on `m` filesystem/runtime state;
+  injecting their source does not reproduce those resources.
+- `gitman`, `manual`, `mk`, `pkg-analyze` and other commands invoke
+  additional command identities by name/path; source injection of one command
+  does not automatically inject those executable dependencies.
+- `pkg` dynamically selects a library with
+  `loadsyslib "pkg/pkg-${pkg_command}"`; explicit injection therefore requires
+  the selected library and its complete runtime dependency set.
+- stdin-as-data modes are distinct from injection-source stdin. In the current
+  `rsudo --interactive` path the generated source is collected locally and
+  executed remotely through `sh -c`, while the remote command receives the
+  terminal as stdin. Commands such as `digest`, `pkg-analyze` and `vsed`
+  therefore need their stdin semantics considered explicitly when used through
+  this transport.
+
+The audit supports strengthening the generic command standard around non-trivial
+`main "$@"` structure and normal return/fall-through semantics, while treating
+continuation compatibility as an additional composability property rather than
+a universal requirement. No canonical entrypoint invariant has been changed yet.
+
 ## Blockers / open questions
 
 No remaining architecture blocker. Current-revision permanent-test execution and
