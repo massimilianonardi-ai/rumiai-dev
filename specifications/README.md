@@ -31,6 +31,7 @@ Read only the smallest complete set relevant to the task.
 | technical localization facility `lang` | `rumiai-os/LANG-BOOTSTRAP.md` |
 | promoted current `mk` development-lifecycle contract | `rumiai-os/MK.md` |
 | portable local service lifecycle through `srv` | `rumiai-os/SERVICE-LIFECYCLE.md` |
+| developer-facing live scenario environments through `testlab` | `rumiai-os/TESTLAB.md` |
 | standalone terminal key input | `rumiai-os/READ-KEY.md` |
 | secret-line terminal input and verification | `rumiai-os/READPASS.md` |
 | password-authenticated OpenSSH invocation and stream transparency | `rumiai-os/SSH.md` |

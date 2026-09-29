@@ -379,6 +379,10 @@ See `SERVICE-LIFECYCLE.md`.
 
 Operational nested repositories below it are not product/runtime dependencies and are ignored by the product repository.
 
+`testlab` belongs to `m` and provides developer-facing live scenario environments. Project scenario definitions remain project-owned executable development content; persistent scenario-instance lifecycle/recovery state is resolved through the `m` state model. `testlab` does not replace `rumiai-test` or `rumiai-validate`.
+
+See `TESTLAB.md`.
+
 ## 14. Portability boundary
 
 The system targets POSIX.1-2024 Issue 8. Host differences required by real functionality are isolated behind explicit facilities/adapters and must not leak into the general semantic contract.
@@ -483,4 +487,6 @@ CURRENT-76   mk privately performs opportunistic structural hygiene in shared-ar
 CURRENT-77   transactional artifact restoration needs no reader lease; quarantine of an unselected source candidate either permits completion or degrades safely to ordinary execution before project destinations are committed
 CURRENT-78   publication and structural hygiene use crash-released POSIX FIFO activity tokens so stale ownership is detectable without PID inspection or age-based timeout; unknown ownership remains conservative
 CURRENT-79   structural hygiene is not a cache-retention policy and defines no TTL/LRU, cache-size limit, whole-fingerprint eviction, global sweep guarantee or public cache-management command
+CURRENT-80   testlab belongs to m and manages developer-facing live scenario environments without becoming a test runner or formal-validation launcher
+CURRENT-81   testlab scenario definitions are project-owned executable development content while persistent instance lifecycle/recovery state uses user-scoped sys testlab state
 ```
