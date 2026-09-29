@@ -52,7 +52,7 @@ Develop and stabilize a reusable m SSH password-authentication library and askpa
 
 Implementation, canonical specification, manuals and permanent test are aligned for the password-only API.
 
-A physical Linux development run was attempted on host `PRTL-GS-01` with `./rumiai-test rumiai-os/ssh/contract.test`. The runner classified the test as `ERROR` (status 3); the persisted test log has not yet been inspected, so this is currently an infrastructure/test-execution error, not evidence of a product failure. The preceding `cd rumiai-tests` shell error was incidental because the shell was already inside the rumiai-tests repository.
+A physical Linux development run on host `PRTL-GS-01` initially produced `ERROR` because the SSH fixture could not complete the askpass call against the older local target. After the user fast-forwarded the local rumiai-os checkout to the current SSH implementation, the same test progressed to `FAIL` with no test `ERROR`. The exact failing assertion from the latest persisted log is still pending inspection, so no further product or test change is justified yet.
 
 OpenSSH option/askpass semantics were cross-checked against current OpenSSH documentation/source, including the upstream password regression pattern.
 
