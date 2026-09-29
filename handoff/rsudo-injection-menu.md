@@ -12,9 +12,9 @@ requiring a remote m/RumiAI library tree.
 ## Current repository revisions
 
 ```text
-rumiai-dev   2e500f7815a46ef25510c94288f264369c3f38f8  (pre-checkpoint HEAD)
-rumiai-os    94cb0620f62a481c8300432bb642367e81c11432
-rumiai-tests e07254309a6363e74e6209fdbab465b5f23490d1
+rumiai-dev   ed89b23add36cba2984ab82d1ae90039efb07e5c  (pre-checkpoint HEAD)
+rumiai-os    a015fb27cd5862808bef3f7fe8b92b2b8e8e8169
+rumiai-tests ce64eab23d03fefc3b93eb2d6baf57d0e5ccd013
 ```
 
 Fresh remote HEAD retrieval remains mandatory before future writes.
@@ -161,22 +161,32 @@ Libraries and `--command` registrations may be interleaved before the final
 `_loadlib_inject_stream_` are rejected. Other namespace collisions remain a
 caller-composition responsibility.
 
-The rsudo module remains intentionally minimal:
+The rsudo module remains a transport adapter, but it now completes generation
+before recursive transport so generator failure is portable across current
+shells:
 
 ```sh
 rsudo_mod_exec_inject()
 (
-  set -o pipefail
+  source_with_sentinel=$(
+    loadlib_inject_stream "$@"
+    status=$?
+    [ "$status" -eq 0 ] || exit "$status"
+    printf x
+  ) || return "$?"
 
-  loadlib_inject_stream "$@" | rsudo
+  source=${source_with_sentinel%x}
+  printf '%s' "$source" | rsudo
 )
 ```
 
+The actual implementation uses private module-local variable names. The
+sentinel prevents command substitution from stripping source trailing newlines.
+
 Current product revision
-`rumiai-os@94cb0620f62a481c8300432bb642367e81c11432` implements this
-contract and operational documentation, including rejection of shell words that
-POSIX requires or permits implementations to recognize as reserved and POSIX
-special built-in utility names.
+`rumiai-os@a015fb27cd5862808bef3f7fe8b92b2b8e8e8169` implements this
+contract and operational documentation, including portable generator-status
+propagation without requiring pipefail.
 
 ## Current validation state
 
@@ -196,7 +206,24 @@ Permanent coverage now includes:
 - invalid, POSIX-reserved/optionally-reserved, POSIX special-built-in,
   duplicate and generator-reserved command-name rejection;
 - missing named-source failure;
-- exec-inject generator-to-rsudo composition and pipefail propagation.
+- exec-inject generator-to-rsudo composition, generator failure propagation
+  without invoking recursive rsudo, and recursive rsudo status propagation.
+
+GitHub Actions validation against the previous product revision
+`rumiai-os@94cb0620f62a481c8300432bb642367e81c11432` and frozen suite
+`rumiai-tests@25fbd5320ecbe5b724e656f6426605bb36e4e33e` produced:
+
+- macOS: both permanent tests PASS;
+- Ubuntu: library-loading PASS, exec-inject FAIL because the host `/bin/sh`
+  rejects `set -o pipefail`.
+
+This exposed a real portability defect in the module rather than a test or
+orchestration failure. Product revision
+`rumiai-os@a015fb27cd5862808bef3f7fe8b92b2b8e8e8169` removes the pipefail
+dependency and `rumiai-tests@ce64eab23d03fefc3b93eb2d6baf57d0e5ccd013`
+strengthens regression coverage so generator failure must not invoke recursive
+rsudo. GitHub Actions run 36543617957 is revision-specific evidence for the
+pre-fix behavior and must not be relabelled as validation of the fixed revision.
 
 A local synthetic POSIX-sh harness exercising the current generator mechanics
 passed generation/syntax/execution, repeated named-command invocation,
@@ -204,15 +231,9 @@ one-shot/named status isolation, cwd/umask/variable/function isolation and
 required/optionally-recognized reserved-name and special-built-in-name
 rejection.
 
-The permanent tests have not yet been executed for the current revisions in
-this work unit. Lack of outbound GitHub access from the ChatGPT/Linux auxiliary
-host is not a validation blocker: current TESTING.md requires using an
-appropriate Internet-enabled path such as GitHub Actions, and TEST-PATTERNS.md
-defines the outbound-network bridge when captured material must be transferred
-back to an isolated auxiliary host. Future validation work must follow those
-paths rather than stopping at auxiliary-host DNS failure.
-
-Fresh physical `rsudo exec inject` validation remains pending.
+The permanent tests still require a fresh GitHub Actions rerun against the
+fixed current revisions above. Fresh physical `rsudo exec inject` validation
+also remains pending.
 
 ## Next design review
 

@@ -165,9 +165,10 @@ The recursive call reuses current connection/credential, target-user and
 interactive state according to the reusable-state contract above. Askpass and
 no-preserve-quotes remain invocation-local to each rsudo call.
 
-The module uses the POSIX pipefail option for the generator-to-rsudo pipeline so
-a non-zero generator or recursive rsudo status cannot be hidden by an unrelated
-successful pipeline component.
+Source generation completes before recursive rsudo execution begins. If
+loadlib_inject_stream fails, exec inject returns that failure without invoking
+recursive rsudo. After successful generation, the complete source is supplied to
+recursive rsudo and the recursive rsudo result is returned.
 
 ## Filesystem submodule
 
@@ -297,5 +298,5 @@ RSUDO-19  fs get/put attempt rollback when staged replacement promotion fails af
 RSUDO-20  each rsudo invocation preserves target-user and interactive caller state while resetting askpass and no-preserve-quotes before parsing current options
 RSUDO-21  recursive rsudo calls reuse connection/credential, target-user and interactive state but do not implicitly inherit askpass or no-preserve-quotes
 RSUDO-22  interactive non-TTY stdin is executed as a privileged shell-source prefix; optional command operands execute after it in the same shell environment
-RSUDO-23  exec inject composes loadlib_inject_stream with recursive rsudo, including named/one-shot isolated command injection, while preserving generator status through POSIX pipefail and inheriting reusable target-user/interactive state
+RSUDO-23  exec inject composes loadlib_inject_stream with recursive rsudo, including named/one-shot isolated command injection; generator failure is returned before recursive execution, otherwise the recursive rsudo status is returned, with reusable target-user/interactive state inherited
 ```
