@@ -10,9 +10,9 @@ rsudo to it and add the explicit interactive authentication-check path.
 
 ## Current repository revisions
 
-- rumiai-dev: 2e95aedaa15763fecfa55d56fb5ae91bc48cf505 before this checkpoint
-- rumiai-os: `0c56665c5be7b6aac4c097dad1b000ce97bb6ac7`
-- rumiai-tests: `238ab53839814579ed0ed49400ae59864028a405`
+- rumiai-dev: `7bd754c91c4b5bd20388cd8bdfc05e0d208ed65f` before this checkpoint
+- rumiai-os: `249c91cad0e3dd8d5ecb4af712fd4db78b8c6ab9`
+- rumiai-tests: `26dca8f1aca780722ccb5e2ad9bd83991edc674d`
 
 Fresh remote HEAD retrieval remains mandatory before future writes.
 
@@ -70,56 +70,41 @@ Fresh remote HEAD retrieval remains mandatory before future writes.
 
 ## Current state
 
-- User commit `rumiai-os@6e46247a2f8c095fddeabe00d943763e6f1ac174` now resets `RSUDO_SSH_AUTH_CHECK` at `rsudo()` entry, completing the invocation-local state correction.
-- The previous double-shift defect is fixed, leftover operands are rejected in check mode, and the check is terminal on success/failure.
-- Current `rsudo.lib.sh` uses `ssh_auth` for normal SSH transport and retains the existing remote sudo password-broker topology for interactive mode.
-- Code review of the rsudo-library migration is complete. Specification, operational manual and permanent tests still need to be aligned and validated against the new behavior.
-
-Formal Linux/x86_64 validation now passes on the current reconciled revisions:
-`rumiai-tests@238ab53839814579ed0ed49400ae59864028a405` and
-`rumiai-os@0c56665c5be7b6aac4c097dad1b000ce97bb6ac7`.
-
-Validation scope `ssh` discovered exactly:
-
-```text
-rumiai-os/ssh/auth.test
-rumiai-os/ssh/contract.test
-```
-
-Both tests passed, the aggregate status was 0 and the disposable validation
-environment audit was CLEAN. Published validation:
-`validation/20260929T124853+0200-59016`, with execution session
-`20260929T124855+0200-60832`.
-
-The `ssh_auth` implementation phase is therefore complete for its current
-contract.
-
-
-A concurrent-state reconciliation was required during the latest implementation
-turn: an assistant replacement temporarily overwrote the already-implemented and
-validated ssh_auth files from rumiai-os@4e6d33f. The affected SSH product files,
-SSH specification and split permanent tests were restored forward-only. Their
-current blobs are byte-identical to the validated 4e6d33f / b1c3fb58 baseline
-content; only commit identities advanced. Historical validation remains
-revision-specific and is not relabelled as evidence for the new forward commits.
-
-
-The `ssh_auth` implementation, canonical contract, manuals and permanent tests
-are aligned. macOS formal validation is PASS on the current product revision.
-
-A frozen multi-host validation run using the same current product revision has
-been launched with macOS and the suite's current Linux ARM runner. The Linux ARM
-job is queued at this checkpoint.
-
-No rsudo runtime source has been modified in this implementation work unit.
+- The rsudo runtime migration to `ssh_auth` is present in
+  `rumiai-os@6e46247a2f8c095fddeabe00d943763e6f1ac174` and remains unchanged by
+  the documentation/test work.
+- `RSUDO.md` now defines normal ssh_auth-backed transport and the terminal
+  two-phase `--ssh-auth-check` contract, including invocation-local state.
+- The rsudo command/library manuals are aligned; the existing
+  `rsudo-askpass` manual now identifies that helper as legacy and outside the
+  current rsudo authentication path.
+- Existing rsudo SSH external-boundary fixtures were updated to accept normal
+  OpenSSH option ordering introduced by ssh_auth without prescribing internal
+  authentication mechanics.
+- New executable permanent coverage
+  `tests/rumiai-os/rsudo/auth-check.test` protects interactive preparation,
+  fresh ssh_auth verification, disabled multiplexed reuse, no sudo execution,
+  local rejection paths and invocation-local reset after an early return.
+- `validation/rsudo.conf` already selects the complete `rumiai-os/rsudo`
+  group, so the new test is automatically part of formal rsudo validation.
+- Final consistency review found no remaining `--ssh-auth-test` terminology or
+  direct ipc dependency in current rsudo runtime/manual surfaces.
+- Formal validation of the current rsudo product/test revisions is still
+  pending.
 
 ## Next action
 
-Align `specifications/rumiai-os/RSUDO.md`, the rsudo operational manual and
-permanent rsudo tests with the migrated `ssh_auth` behavior and
-`--ssh-auth-check`, then run formal rsudo validation.
+Run formal task validation:
+
+```text
+./rumiai-validate rsudo
+```
+
+against the current committed product/test revisions. If the complete scope is
+VALIDATED with a CLEAN environment, record the revision-specific evidence and
+then evaluate removal of the now-unused legacy `rsudo-askpass` command/manual
+as a separate cleanup step.
 
 ## Blockers / open questions
 
-- `--ssh-auth-check` exact `AddKeysToAgent` behavior remains to be fixed
-  during the rsudo migration phase.
+None before formal validation.
