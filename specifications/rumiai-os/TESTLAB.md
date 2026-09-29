@@ -42,6 +42,22 @@ Scenario definitions are executed as child programs. They are never sourced into
 
 The first baseline deliberately introduces no scenario DSL, resource graph, provider/plugin framework or activity/assertion language.
 
+### Current rumiai-os project scenarios
+
+The current `rumiai-os` project ships two project-local baseline scenarios under its own `testlab/scenarios/` directory:
+
+```text
+host
+    binds the instance to the current project/host reality;
+    the bound host/project is externally owned and cleanup does not destroy it
+
+scratch
+    creates an instance-owned disposable working directory below the persistent
+    instance record and removes that owned directory during cleanup
+```
+
+These are not global built-in scenario identities. They are ordinary project scenario definitions and are discovered only when present under the selected project's `testlab/scenarios/` directory.
+
 ## 3. Scenario phase interface
 
 A scenario executable accepts one of these phase operands:

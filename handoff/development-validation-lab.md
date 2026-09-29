@@ -1,7 +1,7 @@
 # development-validation-lab
 
 Status: Active
-Updated: 2026-09-26
+Updated: 2026-09-29
 
 ## Goal
 
@@ -9,11 +9,10 @@ Design a developer-facing live experimentation and validation environment mechan
 
 ## Current repository revisions
 
-- rumiai-dev: 3f945dfaf92bafe9e4c56f0d03a09dd96707b066 (pre-checkpoint HEAD)
-- rumiai-os: c1aa711645b39f36850d35abc02c31d8db916120
-- rumiai-tests: a005991b9694eac988ce116e38b6e1a02c47feee
-- rumiai-dev-PoCs: 1b5de8c4b0a752ba8d4f8718718fa66eab16f954
-- historical/reference m: 2a57a29880c2d7a32e18782122062c695fcb1a3a (master)
+- rumiai-dev: 6759114ac5d5365b5b44a5f2b37d0a080ca67324 (pre-checkpoint HEAD)
+- rumiai-os: 5e4d66d9c67248409f165e80542d8c39bf70b957
+- rumiai-tests: e5c2a70fe58ad9cb6ae7ccd1025d0015b42bc278
+- rumiai-dev-PoCs: retained only as historical experimental evidence for this task; no longer an implementation gate
 
 ## Applicable canonical sources
 
@@ -28,6 +27,18 @@ Design a developer-facing live experimentation and validation environment mechan
 - handoff/workflow-optimization.md
 - handoff/rsudo-library-documentation-tests.md
 - rumiai-tests/VALIDATION.md
+
+## Superseding direction — 2026-09-29
+
+The user explicitly stopped further PoC 047/048 debugging after repeated physical-Linux failures consumed excessive development time. This supersedes every older task-local statement that makes PoC 047/048, Expect/PTy handoff work or additional physical confirmation a gate for `testlab`.
+
+Current direction:
+
+- `testlab` is a tool of the technical `m` system and its product implementation lives in `rumiai-os`;
+- proceed with the real minimal product rather than spending additional time stabilizing the old PoCs;
+- the first baseline uses direct inherited terminal/standard streams for interactive `enter`; no Expect/PTy handoff adapter is part of the current `testlab` contract;
+- PoC 047/048/050 results remain historical engineering evidence only and do not block product development;
+- future PTY/dialogue automation requires a new concrete product need and is not inherited automatically from those experiments.
 
 ## Fixed task-local choices
 
@@ -138,111 +149,73 @@ Design a developer-facing live experimentation and validation environment mechan
 
 ## Current state
 
-The two supporting boundaries needed before the first real testlab implementation are now exercised in hosted CI:
+The first real `testlab` baseline is promoted and implemented.
 
-- PoC 047 supports the accepted persistent real-scenario lifecycle with a current real rsudo -> SSH -> sshd -> sudo path and external SSH adaptation through a scenario-local PATH wrapper.
-- PoC 048 supports prompt-synchronized PTY automation plus reversible human handoff through Expect `interact`. The portable candidate boundary deliberately does not depend on Expect's post-`interact` child-status result; target status is preserved outside that divergent mechanism through minimal POSIX wrappers while Expect remains responsible for PTY/dialogue behavior.
+Canonical contract:
 
-No public adapter command, public handoff escape sequence, scenario file format or testlab lifecycle CLI has been promoted yet. The experimental `__TESTLAB_RETURN__` sequence and private status file are PoC mechanics only.
+- `specifications/rumiai-os/TESTLAB.md` owns the current semantics;
+- `testlab` belongs to `m`;
+- project scenarios are executable child programs under `<project-root>/testlab/scenarios/`, never sourced;
+- lifecycle phases are `check`, `prepare`, `enter`, `cleanup`;
+- persistent instance state is user-scoped technical state resolved through `state-path user sys testlab data`;
+- each allocated instance freezes its scenario executable so later enter/cleanup behavior does not drift when the project source changes;
+- context exposes factual handles; scenario-specific persistent resource inventory is the cleanup/recovery authority;
+- lifecycle states are `preparing`, `ready`, `failed`, `closed`;
+- the baseline introduces no scenario DSL, generic resource graph, provider/plugin framework, Expect/PTy adapter or assertion language.
 
-The next gate is property-scoped physical execution on the stable reference host classes. macOS validates the portable PTY/handoff boundary through PoC 048 without installing Podman. Ubuntu 26.04 ARM64 validates PoC 048 and the Podman-backed scenario lifecycle through PoC 047. If those results agree with hosted evidence, the task can move from PoCs to selecting the first real testlab repository/command surface and minimal scenario representation.
+Current product implementation:
 
-## Reference-host execution procedure
-
-Use property-scoped reference-host execution. On macOS, do not install or require Podman; run only the repository/revision checks plus PoC 048 automated/manual handoff validation. On Ubuntu 26.04 ARM64, run the same PoC 048 checks and additionally run PoC 047 with Podman. Host-local checkout paths remain operator facts and are not hardcoded.
-
-First update and identify the exact revisions, then verify prerequisites:
-
-```sh
-cd <rumiai-dev-PoCs-root>
-git pull --ff-only
-POCS_ROOT=$PWD
-POCS_REV=$(git rev-parse HEAD)
-
-cd <rumiai-os-root>
-git pull --ff-only
-RUMIAI_OS_ROOT=$PWD
-RUMIAI_OS_REV=$(git rev-parse HEAD)
-
-printf 'rumiai-dev-PoCs=%s\nrumiai-os=%s\n' "$POCS_REV" "$RUMIAI_OS_REV"
-
-command -v ssh
-command -v ssh-keyscan
-command -v openssl
-command -v expect
-expect -v
-
-# Ubuntu 26.04 ARM64 only:
-command -v podman
-podman info >/dev/null
+```text
+rumiai-os/bin/sys/testlab
+rumiai-os/res/sys/manual/testlab
+rumiai-os/testlab/scenarios/host
+rumiai-os/testlab/scenarios/scratch
 ```
 
-Exercise the fully automated PoC 048 first:
+Public forms:
 
-```sh
-cd "$POCS_ROOT/pocs/048-expect-pty-dialogue-semantics"
-./run.sh
+```text
+testlab
+testlab scenarios
+testlab prepare <scenario> [<scenario-arg> ...]
+testlab status [<instance-id>]
+testlab context <instance-id> [<key>]
+testlab enter <instance-id>
+testlab close <instance-id>
 ```
 
-Then exercise the same Expect `interact` boundary with the physical operator rather than the automated outer harness. This interactive command is the last command in its block:
+The shipped `rumiai-os` project scenarios are deliberately small:
 
-```sh
-cd "$POCS_ROOT/pocs/048-expect-pty-dialogue-semantics"
-EXPECT_REF_WORK=$(mktemp -d "${TMPDIR:-/tmp}/rumiai-expect-reference.XXXXXX")
-./handoff-launcher.sh ./handoff-driver.exp "$EXPECT_REF_WORK/transcript" "$EXPECT_REF_WORK/status" ./status-wrapper.sh -- ./fixtures/handoff-program.sh
-```
+- `host` binds to the current project/host as an externally owned reality;
+- `scratch` creates an instance-owned disposable work directory.
 
-At the `human>` prompt, type `operator` and press Enter. After `human-seen:operator` / `resume>`, type the literal experimental return sequence `__TESTLAB_RETURN__` without pressing Enter. After control returns and the command terminates, run a new block:
+Permanent coverage lives under `rumiai-tests/tests/rumiai-os/testlab/`, with task scope `validation/testlab.conf` and Linux/macOS workflow `.github/workflows/testlab.yml`.
 
-```sh
-EXPECT_REF_STATUS=$?
-printf 'manual-handoff-status=%s\n' "$EXPECT_REF_STATUS"
-cat "$EXPECT_REF_WORK/status"
-[ "$EXPECT_REF_STATUS" -eq 37 ] && [ "$(cat "$EXPECT_REF_WORK/status")" -eq 37 ]
-rm -rf "$EXPECT_REF_WORK"
-```
+Formal validation run `36537384660` passed on both `ubuntu-latest` and `macos-latest` against product revision `5e4d66d9c67248409f165e80542d8c39bf70b957` and test-suite revision `c236f7497da0c468605078a9960f988af7e97534`. The validation exercises real product lifecycle behavior including prerequisite rejection before instance allocation, persistent preparation, context publication, frozen-scenario re-entry, owned-resource cleanup, repeated close, failed-prepare recovery and status reporting.
 
-On Ubuntu 26.04 ARM64 only, exercise PoC 047 up to the ready/probe state:
-
-```sh
-cd "$POCS_ROOT/pocs/047-testlab-rsudo-scenario-lifecycle"
-POC047=$PWD/run.sh
-TESTLAB_INSTANCE=$("$POC047" prepare "$RUMIAI_OS_ROOT")
-printf 'instance=%s\n' "$TESTLAB_INSTANCE"
-"$POC047" status "$TESTLAB_INSTANCE"
-"$POC047" probe "$TESTLAB_INSTANCE"
-```
-
-Attach to the same prepared scenario in a separate block; this interactive command is the last command in the block:
-
-```sh
-"$POC047" interactive "$TESTLAB_INSTANCE"
-```
-
-Inside the remote privileged shell, manually run `id -u`; the expected value is `0`. Then type `exit`. After the interactive activity terminates, perform cleanup in a new block:
-
-```sh
-TESTLAB_INTERACTIVE_STATUS=$?
-printf 'interactive-status=%s\n' "$TESTLAB_INTERACTIVE_STATUS"
-"$POC047" cleanup "$TESTLAB_INSTANCE"
-"$POC047" cleanup "$TESTLAB_INSTANCE"
-"$POC047" status "$TESTLAB_INSTANCE"
-```
-
-Expected final scenario status is `closed`. Preserve the complete terminal output together with the printed repository revisions and host/architecture identity; those observations are reference-host evidence for this task, not formal rumiai-validate evidence.
+The first macOS validation attempt also exposed a real GNU/BSD portability defect: the new code/tests passed `--` to utilities whose current host implementation does not accept that terminator. The product and tests were corrected to follow the current `POSIX-PORTABILITY-LAYER.md` rule that `--` is used only where the invoked utility actually supports it.
 
 ## Next action
 
-1. On Ubuntu 26.04 ARM64, pull `rumiai-dev-PoCs@9f9ae728a89250c9ca9a888483c958e6f98ae03a` and rerun the direct-operator PoC 048 handoff. Enter the displayed runtime `takeover-<pid>` token without pressing Enter; then use `operator` + Enter at `human>` and the experimental return sequence at `resume>`. If it passes, execute PoC 047 there.
-2. After Ubuntu is clean, rerun the direct-operator PoC 048 handoff on physical macOS against the same corrected PoC revision; do not install Podman or Homebrew on macOS.
-3. Analyze any host divergence. If the property-scoped physical evidence confirms the current model, select the first real testlab repository/command surface, minimal lifecycle verbs and scenario representation before product implementation.
-4. Preserve Podman as an optional/provider-specific capability rather than a macOS-wide testlab prerequisite unless a later explicit contract changes that boundary.
-5. Only after that selection decide whether the stable PTY/dialogue boundary should become an m adapter and how mature scenarios may be reused by rumiai-validate.
+The basic lifecycle is now implemented and validated. Development should continue by adding **real useful project scenarios** one at a time and extracting common machinery only when repeated concrete scenarios demonstrate it.
+
+The next product-design work should therefore focus on:
+
+1. exercise the current interactive-first `testlab` against normal development use and refine the bare-menu workflow where concrete friction appears;
+2. select the first substantial real scenario beyond `host`/`scratch` from an actual RumiAI development need;
+3. keep backend-specific mechanics inside that scenario until at least a second real scenario demonstrates a common abstraction;
+4. consider reuse by `rumiai-validate` only after a mature scenario has a stable execution-environment contract;
+5. do not reopen PTY/Expect handoff work unless a concrete scenario cannot be served by direct inherited terminal interaction.
 
 ## Blockers / open questions
 
-- Final repository/ownership.
-- Scenario representation and lifecycle verbs.
-- Exact initial scenario substrate set and whether Podman is only one scenario provider behind a backend-neutral scenario contract.
-- Exact boundary for reusing mature scenarios inside rumiai-validate execution requirements.
-- Exact PTY/dialogue adapter surface if Expect is accepted as a host prerequisite; `script(1)` should remain separate unless it can satisfy a concrete additional responsibility without weakening Expect semantics.
+No blocker remains for continued `testlab` development.
+
+Still intentionally open:
+
+- which substantial real scenario should be promoted next;
+- which, if any, repeated scenario mechanics deserve a shared `m` abstraction after multiple real uses;
+- the exact future boundary for mature scenario reuse by `rumiai-validate`;
+- whether a future concrete need justifies any PTY/dialogue adapter.
+
+Podman remains an optional scenario-specific implementation choice rather than a global `testlab` or macOS prerequisite.
