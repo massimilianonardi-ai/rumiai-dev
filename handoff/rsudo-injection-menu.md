@@ -265,7 +265,32 @@ GitHub Actions run 36548443993 validates the user's current simplified
 - Ubuntu 24.04 diversity check: both tests PASS because the current
   implementation does not itself request pipefail.
 
-Fresh physical `rsudo exec inject` validation remains pending.
+A later real-hosted transport validation reused the shipped `testlab`
+`rsudo` scenario instead of an SSH boundary fixture. GitHub Actions run
+`36584756699`, with `rumiai-os@e31d930534e6536c62d7953fca9398f9006eee28`
+and `rumiai-tests@12a22021fadf49250464f053700e48bcec9ad012`, exercised:
+
+```text
+testlab rsudo scenario
+  -> real Podman container
+  -> real OpenSSH client/server
+  -> real sudo
+  -> current rsudo exec inject
+  -> injected array library
+  -> repeatable named command
+  -> one-shot command
+  -> continuation stdin source
+```
+
+The remote one-shot and continuation source both observed privileged UID 0;
+named-command status 7 and one-shot status 6 remained observable across the
+generated stream, and the task scope returned `VALIDATED` with one PASS and
+zero FAIL/SKIP/ERROR.
+
+This is real SSH/sudo transport evidence, not a physical operator-host/TUI run.
+Fresh physical validation remains relevant only for the interactive privileged
+menu/TTY path and other operator-terminal properties that hosted non-TTY
+execution does not prove.
 
 ## Next design review
 
