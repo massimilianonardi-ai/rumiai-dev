@@ -28,7 +28,7 @@ No TODO represents this work. It is active now.
 
 ```text
 rumiai-dev    cd8caf62340b05e09e47c3e8c870475beeae231d
-rumiai-os     095482fba7ed7ff1ca267a4b6b8c5ad8f4b7774d
+rumiai-os     249c91cad0e3dd8d5ecb4af712fd4db78b8c6ab9
 rumiai-tests  c076980f20e496cdc740b03ff82ed276fcd49325
 ```
 
@@ -273,6 +273,10 @@ first experiment.
 - Concurrent rsudo permanent-test updates through
   `rumiai-tests@c076980f20e496cdc740b03ff82ed276fcd49325` were reconciled;
   current contract/fs coverage remains compatible with this plan.
+- A concurrent product advance to
+  `rumiai-os@249c91cad0e3dd8d5ecb4af712fd4db78b8c6ab9` changed only rsudo
+  operational manuals; no audited shell implementation or pipeline target
+  changed.
 
 ## Current state
 
