@@ -10,9 +10,9 @@ rsudo to it and add the explicit interactive authentication-check path.
 
 ## Current repository revisions
 
-- rumiai-dev: 06efb90ae4eda6d35a8d3364c5a3069859fb01e7 before this checkpoint
-- rumiai-os: `4e6d33f224bcba77a4e553b1e4bd5299a57d555c`
-- rumiai-tests: `b1c3fb58ae9306392c34e10800b963f025b0e452`
+- rumiai-dev: 6f2aa21ae9bee8f818b374940c97b2c06232616c before this checkpoint
+- rumiai-os: `0c56665c5be7b6aac4c097dad1b000ce97bb6ac7`
+- rumiai-tests: `238ab53839814579ed0ed49400ae59864028a405`
 
 Fresh remote HEAD retrieval remains mandatory before future writes.
 
@@ -69,6 +69,15 @@ Fresh remote HEAD retrieval remains mandatory before future writes.
   environment.
 
 ## Current state
+
+A concurrent-state reconciliation was required during the latest implementation
+turn: an assistant replacement temporarily overwrote the already-implemented and
+validated ssh_auth files from rumiai-os@4e6d33f. The affected SSH product files,
+SSH specification and split permanent tests were restored forward-only. Their
+current blobs are byte-identical to the validated 4e6d33f / b1c3fb58 baseline
+content; only commit identities advanced. Historical validation remains
+revision-specific and is not relabelled as evidence for the new forward commits.
+
 
 The `ssh_auth` implementation, canonical contract, manuals and permanent tests
 are aligned. macOS formal validation is PASS on the current product revision.
