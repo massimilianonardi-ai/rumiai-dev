@@ -194,7 +194,24 @@ not resolve `github.com` and therefore could not materialize the exact current
 checkouts; this is an infrastructure limitation, not product validation
 evidence. A fresh physical `rsudo exec inject` rerun is also still pending.
 
+## Next design review
+
+Review the current shell-command entrypoint standards against source/stream
+injection compatibility. In particular, determine whether the existing
+`main "$@"` structural guidance and command termination/status conventions
+should be formalized more explicitly for commands that may be sourced as part of
+a larger generated shell program.
+
+This review must distinguish ordinary command-entrypoint correctness from
+optional composability with subsequent injected source. Stream injection remains
+a general facility: arbitrary external or user-supplied command sources are not
+required to be continuation-compatible, and callers that compose a command
+source with later shell source own that compatibility.
+
+No command-entrypoint contract change has been promoted yet.
+
 ## Blockers / open questions
 
 No remaining architecture blocker. Current-revision permanent-test execution and
-physical validation are pending.
+physical validation are pending. The command-entrypoint compatibility review
+above remains a follow-up design task.
