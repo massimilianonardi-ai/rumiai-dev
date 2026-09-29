@@ -10,7 +10,7 @@ rsudo to it and add the explicit interactive authentication-check path.
 
 ## Current repository revisions
 
-- rumiai-dev: 6f2aa21ae9bee8f818b374940c97b2c06232616c before this checkpoint
+- rumiai-dev: 2e95aedaa15763fecfa55d56fb5ae91bc48cf505 before this checkpoint
 - rumiai-os: `0c56665c5be7b6aac4c097dad1b000ce97bb6ac7`
 - rumiai-tests: `238ab53839814579ed0ed49400ae59864028a405`
 
@@ -70,6 +70,26 @@ Fresh remote HEAD retrieval remains mandatory before future writes.
 
 ## Current state
 
+Formal Linux/x86_64 validation now passes on the current reconciled revisions:
+`rumiai-tests@238ab53839814579ed0ed49400ae59864028a405` and
+`rumiai-os@0c56665c5be7b6aac4c097dad1b000ce97bb6ac7`.
+
+Validation scope `ssh` discovered exactly:
+
+```text
+rumiai-os/ssh/auth.test
+rumiai-os/ssh/contract.test
+```
+
+Both tests passed, the aggregate status was 0 and the disposable validation
+environment audit was CLEAN. Published validation:
+`validation/20260929T124853+0200-59016`, with execution session
+`20260929T124855+0200-60832`.
+
+The `ssh_auth` implementation phase is therefore complete for its current
+contract.
+
+
 A concurrent-state reconciliation was required during the latest implementation
 turn: an assistant replacement temporarily overwrote the already-implemented and
 validated ssh_auth files from rumiai-os@4e6d33f. The affected SSH product files,
@@ -90,9 +110,10 @@ No rsudo runtime source has been modified in this implementation work unit.
 
 ## Next action
 
-Close `ssh_auth` validation on Linux for the same frozen suite/product pair.
-Then migrate rsudo's normal SSH calls to `ssh_auth` and separately design and
-implement `--ssh-auth-check`.
+Migrate normal rsudo SSH invocations to `ssh_auth` while preserving current
+sudo, stream and interactive semantics. Design and implement
+`rsudo --ssh-auth-check` as the separate interactive host/credential
+preparation path.
 
 ## Blockers / open questions
 
