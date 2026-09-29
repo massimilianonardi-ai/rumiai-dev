@@ -9,9 +9,9 @@ Develop and stabilize a reusable m SSH password-authentication library and askpa
 
 ## Current repository revisions
 
-- rumiai-dev: 0263f4d6704d930ce5d4f7d7ef647301a391312e plus this checkpoint
-- rumiai-os: b37d3b17fcb95183b6ceac12e946a7878a81b6bb
-- rumiai-tests: a96776f871f3717758268a19b74023e20d921582
+- rumiai-dev: 7eb5458b6ce3da364956d537abc5684c766f84b8 plus this checkpoint
+- rumiai-os: 94cb0620f62a481c8300432bb642367e81c11432
+- rumiai-tests: 46567974b8cedd00f2d558f44398a468a9c1bdba
 
 ## Applicable canonical sources
 
@@ -52,6 +52,8 @@ Develop and stabilize a reusable m SSH password-authentication library and askpa
 
 Implementation, canonical specification, manuals and permanent test are aligned for the password-only API.
 
+A physical Linux development run on `PRTL-GS-01` passed `rumiai-os/ssh/contract.test` with PASS 1 / FAIL 0 / SKIP 0 / ERROR 0 after the OpenSSH 9.6p1 ControlPath representation assertion was corrected. This is a real development-run result, not formal validation evidence under current TESTING.md.
+
 A physical Linux development run on host `PRTL-GS-01` initially produced `ERROR` because the SSH fixture could not complete the askpass call against the older local target. After the user fast-forwarded the local rumiai-os checkout to the current SSH implementation, the same test progressed to `FAIL` with no test `ERROR`. The latest physical assertion failure was isolated to the test's representation check for disabled ControlPath. OpenSSH 9.6p1 normalizes `ControlPath none` to an unset internal `control_path`, so `ssh -G` legitimately omits the `controlpath` line while connection sharing remains disabled. The permanent test was corrected to accept either omission or literal `controlpath none`, while still rejecting any real path.
 
 OpenSSH option/askpass semantics were cross-checked against current OpenSSH documentation/source, including the upstream password regression pattern.
@@ -63,9 +65,8 @@ OpenSSH option/askpass semantics were cross-checked against current OpenSSH docu
 
 ## Next action
 
-Fast-forward the physical rumiai-tests checkout to the corrected ControlPath assertion and rerun `rumiai-os/ssh/contract.test`. If it passes, perform the final validation checkpoint; no product change is currently indicated by the ControlPath evidence.
+Run formal task validation through `./rumiai-validate ssh`. The new `validation/ssh.conf` scope selects only `rumiai-os/ssh/contract.test` and intentionally uses the current committed rumiai-os revision rather than a historical pin. If the required test passes in the disposable validation environment, complete the final task handoff lifecycle and only then move on to the rsudo_core migration discussion.
 
 ## Blockers / open questions
 
-- Behavioral validation is pending solely because the available auxiliary execution environment cannot provide the required real target/OpenSSH environment.
 - Caller use of direct OpenSSH -S remains outside the supported password-only contract because it can replace the facility-owned ControlPath setting.
