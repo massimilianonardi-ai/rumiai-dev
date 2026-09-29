@@ -14,7 +14,7 @@ The public interface is:
 ssh_password password ssh-argument...
 ```
 
-`password` is required and must be non-empty.
+`password` is required, must be non-empty and must not contain a newline. The newline restriction follows the current one-record `ipc_once` transport.
 
 After the password operand, caller SSH arguments are passed to OpenSSH unchanged
 and in the same order. The facility does not reinterpret destination syntax,
