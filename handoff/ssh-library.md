@@ -52,13 +52,13 @@ Develop and stabilize a reusable m SSH password-authentication library and askpa
 
 Implementation, canonical specification, manuals and permanent test are aligned for the password-only API.
 
-The permanent test has not yet been executed against a real target checkout in this response. The auxiliary container cannot clone the repositories because outbound DNS is unavailable and it also has no OpenSSH ssh client, so it cannot provide the required behavioral validation.
+A physical Linux development run was attempted on host `PRTL-GS-01` with `./rumiai-test rumiai-os/ssh/contract.test`. The runner classified the test as `ERROR` (status 3); the persisted test log has not yet been inspected, so this is currently an infrastructure/test-execution error, not evidence of a product failure. The preceding `cd rumiai-tests` shell error was incidental because the shell was already inside the rumiai-tests repository.
 
 OpenSSH option/askpass semantics were cross-checked against current OpenSSH documentation/source, including the upstream password regression pattern.
 
 ## Next action
 
-Execute tests/rumiai-os/ssh/contract.test through the real rumiai-test target path on a host with OpenSSH. If it passes, perform the final validation checkpoint and then evaluate the proposed rsudo_core migration in chat without modifying rsudo.
+Inspect the persisted `.runs/<latest>/logs/rumiai-os/ssh/contract.test.log` from the failed Linux development run, correct the test or target only according to that evidence, then rerun the same test. If it passes, perform the final validation checkpoint and then evaluate the proposed rsudo_core migration in chat without modifying rsudo.
 
 ## Blockers / open questions
 
