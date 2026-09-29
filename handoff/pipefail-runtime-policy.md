@@ -27,9 +27,9 @@ No TODO represents this work. It is active now.
 ## Current repository revisions
 
 ```text
-rumiai-dev    cd8caf62340b05e09e47c3e8c870475beeae231d
-rumiai-os     249c91cad0e3dd8d5ecb4af712fd4db78b8c6ab9
-rumiai-tests  6fe262459033327a14065ebf50dd0382affe4d50
+rumiai-dev    df415f983462da1be01bd6670dfd4fa23f97e160
+rumiai-os     559ee49d915fbc7292e114bb4f4de375b617230f
+rumiai-tests  9b300faa238b340d0569d425dc59b8408d4d217f
 ```
 
 These revisions are resumption markers only. Fresh HEAD retrieval remains
@@ -281,12 +281,25 @@ first experiment.
   `rumiai-tests@6fe262459033327a14065ebf50dd0382affe4d50` changed only
   `tests/rumiai-os/rsudo/auth-check.test`; it does not alter the pipeline
   targets or planned pipefail coverage.
+- Linux rsudo validation exposed that requiring `set -o pipefail` in
+  `rsudo-mod-fs.lib.sh` aborts on Ubuntu dash.
+- `rsudo-mod-fs.lib.sh` now uses an explicit private-FIFO producer/consumer
+  topology for tar transfers and captures both statuses without depending on
+  pipefail. du/df producer status is observed before parsing. This preserves the
+  stronger streaming/staging/rollback contract and resolves the rsudo-fs
+  portability blocker.
+- Permanent rsudo-fs coverage now includes an independently successful consumer
+  paired with a forced local producer failure.
 
 ## Current state
 
-The task is active in staged-adoption mode. No product implementation has yet
-been changed by this task. Global bootstrap enablement is intentionally deferred
-until local semantics have been hardened and validated.
+The task remains active in staged-adoption mode. Product work has now begun on
+selected Priority A/related targets through concurrent forward commits.
+The rsudo-fs target no longer depends on host pipefail support because its
+required all-stage transfer status is preserved explicitly.
+
+Global bootstrap enablement remains intentionally deferred until the local
+changes are broadly validated.
 
 ## Next action
 
