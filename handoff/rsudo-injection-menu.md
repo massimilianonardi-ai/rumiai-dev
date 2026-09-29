@@ -1,7 +1,7 @@
 # rsudo injection menu
 
 Status: Active
-Updated: 2026-09-28
+Updated: 2026-09-29
 
 ## Goal
 
