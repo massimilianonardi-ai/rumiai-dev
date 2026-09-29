@@ -12,8 +12,8 @@ requiring a remote m/RumiAI library tree.
 ## Current repository revisions
 
 ```text
-rumiai-dev   54b6b5e6788e71ad4fa3c3fbc151c60cbc358c79  (pre-checkpoint HEAD)
-rumiai-os    a015fb27cd5862808bef3f7fe8b92b2b8e8e8169
+rumiai-dev   f49f291e24ae67962634e5fe7584cb9e90da8183  (pre-checkpoint HEAD)
+rumiai-os    36d6b53b461c91db790873625f2f5349972768fb
 rumiai-tests ce64eab23d03fefc3b93eb2d6baf57d0e5ccd013
 ```
 
@@ -255,9 +255,17 @@ one-shot/named status isolation, cwd/umask/variable/function isolation and
 required/optionally-recognized reserved-name and special-built-in-name
 rejection.
 
-The permanent tests still require a fresh GitHub Actions rerun against the
-fixed current revisions above. Fresh physical `rsudo exec inject` validation
-also remains pending.
+GitHub Actions run 36548443993 validates the user's current simplified
+`rsudo_mod_exec_inject` at
+`rumiai-os@36d6b53b461c91db790873625f2f5349972768fb` with
+`rumiai-tests@ce64eab23d03fefc3b93eb2d6baf57d0e5ccd013`:
+
+- Ubuntu 26.04 ARM: library-loading PASS, exec-inject PASS;
+- macOS: library-loading PASS, exec-inject PASS;
+- Ubuntu 24.04 diversity check: both tests PASS because the current
+  implementation does not itself request pipefail.
+
+Fresh physical `rsudo exec inject` validation remains pending.
 
 ## Next design review
 
