@@ -52,7 +52,7 @@ Develop and stabilize a reusable m SSH password-authentication library and askpa
 
 Implementation, canonical specification, manuals and permanent test are aligned for the password-only API.
 
-A physical Linux development run on host `PRTL-GS-01` initially produced `ERROR` because the SSH fixture could not complete the askpass call against the older local target. After the user fast-forwarded the local rumiai-os checkout to the current SSH implementation, the same test progressed to `FAIL` with no test `ERROR`. The exact failing assertion from the latest persisted log is still pending inspection, so no further product or test change is justified yet.
+A physical Linux development run on host `PRTL-GS-01` initially produced `ERROR` because the SSH fixture could not complete the askpass call against the older local target. After the user fast-forwarded the local rumiai-os checkout to the current SSH implementation, the same test progressed to `FAIL` with no test `ERROR`. The latest physical assertion failure was isolated to the test's representation check for disabled ControlPath. OpenSSH 9.6p1 normalizes `ControlPath none` to an unset internal `control_path`, so `ssh -G` legitimately omits the `controlpath` line while connection sharing remains disabled. The permanent test was corrected to accept either omission or literal `controlpath none`, while still rejecting any real path.
 
 OpenSSH option/askpass semantics were cross-checked against current OpenSSH documentation/source, including the upstream password regression pattern.
 
@@ -63,7 +63,7 @@ OpenSSH option/askpass semantics were cross-checked against current OpenSSH docu
 
 ## Next action
 
-Fast-forward the physical rumiai-tests checkout to the corrected test, rerun `rumiai-os/ssh/contract.test`, and inspect the emitted effective ControlPath/OpenSSH version only if the ControlPath assertion still fails. Then correct either the assertion or product strictly from that evidence.
+Fast-forward the physical rumiai-tests checkout to the corrected ControlPath assertion and rerun `rumiai-os/ssh/contract.test`. If it passes, perform the final validation checkpoint; no product change is currently indicated by the ControlPath evidence.
 
 ## Blockers / open questions
 
