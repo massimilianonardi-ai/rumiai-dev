@@ -599,7 +599,7 @@ pkg requirement resolve <facility> <constraint>...
 
 `pkg requirement list` resolves the requested package/version/platform definition from the current catalog and prints its declared dependency lines without downloading or extracting the package artifact. An empty successful result means that the selected definition declares no facility dependencies.
 
-`pkg requirement resolve` is the global/non-package requirement query. It resolves only the configured **system facility default** through the normal global package-class/osarch semantics, validates that the selected installed concrete declares the requested facility and satisfies every supplied compatibility constraint, and prints that concrete provider identity on success. It deliberately does not use package-consumer implicit fallback because a non-package caller has no consumer-specific runtime projection path.
+`pkg requirement resolve` is the global/non-package requirement query. It resolves only the configured **system facility default** through the normal global package-class/osarch semantics, validates that the selected installed concrete declares the requested facility and satisfies every supplied compatibility constraint, and prints that concrete provider identity on success. It deliberately does not use package-consumer implicit fallback because a non-package caller has no consumer-specific runtime projection path. A status-1 failure reports whether the facility default is unconfigured, configured but unresolvable, or resolves to an incompatible provider, together with the facility and requested constraints.
 
 Neither query installs packages or mutates provider configuration. Status 1 means the requested catalog/requirement state cannot currently be resolved; status 2 means invalid invocation or syntax.
 
@@ -817,5 +817,6 @@ PKG-83  implicit package-consumer provider resolution selects a single compatibl
 PKG-84  installed provider discovery is derived from managed concrete facility metadata and no separate mutable provider index is authoritative
 PKG-85  package integration materializes validated dependency declarations without resolving mutable runtime provider state
 PKG-86  pkg requirement list resolves and prints catalog dependency declarations without downloading the package artifact
+PKG-87  pkg requirement resolve status-1 diagnostics distinguish unconfigured, unresolvable and incompatible global facility-default states
 
 ```
