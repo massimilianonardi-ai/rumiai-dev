@@ -1,7 +1,7 @@
 # python-env facility
 
-Status: Active
-Updated: 2026-09-27
+Status: Complete
+Updated: 2026-09-29
 
 ## Goal
 
@@ -10,12 +10,14 @@ Define, validate and implement the provider-independent `python-env` facility, w
 ## Current repository revisions
 
 ```text
-rumiai-dev       c36e1038244c4f242947727d6ffd592a5ffe6485
-rumiai-dev-PoCs  8c0b66656c0ed8386bdefe3fd1bc45d5849e9976
-pkg-catalog      168d9bfc5ffebb4ea480a8a9f96c6e394d33fe17
-rumiai-os        8900544a720be8254214a13092f979f2da255662
-rumiai-tests     a005991b9694eac988ce116e38b6e1a02c47feee
+rumiai-dev       fce8f9ea3ae9ba473f62d5f6e103d7c693498904
+rumiai-dev-PoCs  9f9ae728a89250c9ca9a888483c958e6f98ae03a
+pkg-catalog      d63f87d2be67288ef57f4a5812fabbc3f0b24a0d
+rumiai-os        bc4fd2f1ac0f2169c725a6dd2b97edd71f17a63b
+rumiai-tests     12a22021fadf49250464f053700e48bcec9ad012
 ```
+
+The task implementation revisions are recorded below; later unrelated/concurrent revisions do not relabel earlier validation evidence.
 
 ## Applicable canonical sources
 
@@ -34,41 +36,43 @@ specifications/rumiai-os/LIBRARY-INTERFACES.md
 
 ## Fixed task-local choices
 
-- Facility identity is exactly `python-env`.
-- `python-env` is environment management, not a Python interpreter and not Python stdlib `venv`.
-- `micromamba` is the first concrete provider.
-- Python version/package selection belongs to the consumer environment definition, not the facility compatibility level.
-- Initial public command contract is intentionally minimal: `create`, `run`, and `remove`.
-- The consumer supplies the environment pathname; the facility does not invent state placement.
-- Requirements/plugin/package policy stays with the consumer application.
-- A Python-version change rebuilds the environment rather than migrating populated site-packages.
-
-## Working design
-
-- Implement the promoted generic `facility-cmd` `package-command<TAB><command>` realization without adding another typed part.
-- The micromamba provider-specific ordinary adapter command is `micromamba-python-env`; the facility-visible command remains `python-env`, avoiding package-default/facility-default command collision.
-- Publish the initial micromamba `python-env` provider only for Linux/macOS catalog streams until another platform has equivalent behavioral evidence.
-- Existing installed micromamba concretes created from an older catalog snapshot are not automatically reintegrated by the current package model; this task will not invent an unrelated package-metadata migration mechanism.
+No task-local design choice remains authoritative only through this handoff. The durable `python-env =1` contract and generic same-provider facility-command delegation rules are promoted to the current specifications.
 
 ## Completed
 
-- Performed fresh preflight for all involved repositories.
-- Confirmed current facility typed parts are `cmd`, `env`, and `service`.
-- Confirmed the current `cmd` part can publish a provider-independent public command name but its realization currently targets an executable under provider useful root.
-- Confirmed the service typed part already demonstrates same-provider delegation to an ordinary package command.
+- Activated the former `todo/python-env-facility.md` item into this task.
 - Added PoC 053 for a real micromamba 2.9.0-0 provider adapter.
-- GitHub Actions run 36350610261 passed on Ubuntu 24.04 and macOS 14. The PoC proved target protection, Python/pip creation, argv preservation, stdin/stdout/stderr and child-status propagation, caller-shell isolation, remove, and Python 3.12 -> 3.13 rebuild.
-- Promoted `python-env =1` and the generic same-concrete package-command facility-cmd realization into the current specifications.
+- PoC run `36350610261` passed on Ubuntu 24.04 and macOS 14, proving target protection, Python/pip creation, argv preservation, stdin/stdout/stderr and child-status propagation, caller-shell isolation, remove, and Python 3.12 -> 3.13 rebuild.
+- Promoted the provider-independent `python-env =1` create/run/remove contract and canonical Python-version grammar to `PYTHON-RUNTIME.md`.
+- Promoted generic `facility-cmd` same-provider ordinary-package-command delegation to `PACKAGE-MODEL.md`.
+- Implemented the generic delegation in `rumiai-os` commit `52068dcfc01409231c673c48291ff18147fc1056`, with affected library manuals realigned in the same commit.
+- Added `facility/python-env/1` and micromamba provider realizations for Linux arm64/x86_64 and macOS arm64/x86_64 in `pkg-catalog` commits `7dcf90f1ac685e0d66d760a0c63d33f7e160ed78` and `d63f87d2be67288ef57f4a5812fabbc3f0b24a0d`.
+- Added the provider-specific ordinary adapter command `micromamba-python-env`; only the facility exposes the provider-independent command `python-env`.
+- Added permanent conformance, integration and live-provider tests plus focused validation scopes/workflow in `rumiai-tests` through commit `3c89e92c2a3455dc3c1e68a383d1a73ed421dc73`.
+- Formal workflow run `36352268420` validated generic contract behavior on Linux x86_64, Linux arm64 and macOS and validated the real micromamba provider end-to-end on Linux x86_64.
+- Final workflow run `36352612365`, attempt 2, completed successfully with the canonical Python-version grammar: all three generic contract hosts passed and the Linux x86_64 live-provider test passed against `rumiai-tests` `3c89e92c2a3455dc3c1e68a383d1a73ed421dc73` and `rumiai-os` `52068dcfc01409231c673c48291ff18147fc1056`.
+- Earlier live attempts exposed HTTP 403 during unauthenticated GitHub-backed package preparation before the test ran. This is the already-known repository-authentication limitation tracked separately by `todo/github-package-repository-authentication.md`, not a `python-env` failure.
+- Rechecked later `rumiai-os` provider changes through current revision: the subsequent provider modification concerns global facility-environment enumeration/status preservation and does not alter the `facility-cmd` same-concrete path validated by this task.
+- Recorded the pre-existing installed-concrete metadata refresh limitation as separate deferred generic package work.
 
 ## Current state
 
-The behavioral contract is promoted and PoC-validated. Product, catalog and permanent-test implementation are the remaining active work.
+`python-env =1` is a current provider-independent facility contract.
+
+Its public command surface is:
+
+```text
+python-env create <environment> <python-version>
+python-env run <environment> -- <command> [<arg>...]
+python-env remove <environment>
+```
+
+The first provider is micromamba on the four currently published POSIX catalog streams (Linux arm64/x86_64 and macOS arm64/x86_64). Windows provider realization was not added or claimed by this task.
 
 ## Next action
 
-Implement the generic facility-command delegation in `rumiai-os`, publish the micromamba `python-env` provider in `pkg-catalog`, add permanent generic and live-provider tests, then run focused Linux/macOS validation.
+None for this task.
 
 ## Blockers / open questions
 
-- Permanent Linux/macOS implementation validation remains.
-- Windows provider realization is outside the evidence established by PoC 053 and must not be claimed by this task without additional validation.
+None.
