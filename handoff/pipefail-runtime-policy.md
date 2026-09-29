@@ -27,9 +27,9 @@ No TODO represents this work. It is active now.
 ## Current repository revisions
 
 ```text
-rumiai-dev    fd834b5d9e67834c1d112751fab7aa625865a2eb  (pre-checkpoint HEAD)
-rumiai-os     e31d930534e6536c62d7953fca9398f9006eee28
-rumiai-tests  12a22021fadf49250464f053700e48bcec9ad012
+rumiai-dev    022b37697ba6c8fbeb39e9f58d1df214d76a36ca  (pre-checkpoint HEAD)
+rumiai-os     bc4fd2f1ac0f2169c725a6dd2b97edd71f17a63b
+rumiai-tests  71b6523b93d64a48e45f3f713306f6d59fb2f401
 ```
 
 These revisions are resumption markers only. Fresh HEAD retrieval remains
@@ -76,13 +76,15 @@ specifications/rumiai-os/SSH.md
 ### Priority A — correctness depends materially on upstream failure visibility
 
 `lib/sys/sh/enc.lib.sh`
-: The `decode | vsed | encode` edit path must not promote output when decode
-  or editor processing failed. Existing atomic temp/checksum/rename behavior
-  remains mandatory.
+: **Local adoption complete; focused validation pending.** The
+  `decode | vsed | encode` edit path now establishes pipefail in a private
+  capability-checked subshell and refuses the edit if that capability is not
+  available. Existing atomic temp/checksum/rename behavior remains mandatory.
 
 `lib/sys/sh/pkg/pkg-extract.lib.sh`
-: `cpio -it | awk` validation must observe `cpio` failure as well as parser
-  failure.
+: The `cpio -it | awk` validator already establishes local pipefail. Permanent
+  focused coverage now requires producer failure to be observed even after cpio
+  emits syntactically valid paths. Focused validation is pending.
 
 `lib/sys/sh/rsudo/rsudo-mod-fs.lib.sh`
 : **Local adoption complete and validated.** get/put preserve producer and
@@ -91,15 +93,19 @@ specifications/rumiai-os/SSH.md
   remain mandatory; du/df producer status is observed before finite parsing.
 
 `bin/sys/manual`
-: Producer groups feeding `sort` already attempt to abort on output failure,
-  but without pipefail that producer failure can be masked by successful sort.
+: **Local adoption complete; focused validation pending.** Discovery/search and
+  ambiguity candidate production now completes and has its status checked before
+  sorting. No pipefail dependency is required for this finite enumeration.
 
 `bin/sys/testlab`
-: Same grouped-producer-to-`sort` failure-propagation issue as `manual`.
+: **Local adoption complete; focused validation pending.** Scenario/context
+  enumeration now completes and is status-checked before sorting, preserving
+  compatibility with shells that do not provide pipefail.
 
 `lib/sys/sh/pkg/pkg-provider.lib.sh`
-: Environment-file enumeration feeds `sort`; producer-side failure must remain
-  observable.
+: **Local adoption complete; focused validation pending.** Global environment
+  file enumeration now completes and is status-checked before sorting. The
+  earlier local pipefail dependency for this finite enumeration was removed.
 
 `bin/sys/srv`
 : Host/account discovery pipelines such as `getent | awk`, `dscl | sed` and
@@ -288,6 +294,16 @@ first experiment.
 - Concurrent cleanup removed the obsolete `lib/sys/sh/host-id.lib.sh`; its
   stale Priority A and early-consumer-hardening entries were removed from the
   current implementation target list.
+- `enc.lib.sh` now establishes pipefail only inside the encoded-edit pipeline
+  subshell; unsupported shells reject that sensitive edit path instead of
+  accepting weaker failure propagation.
+- Added `tests/rumiai-os/pkg-extract/pipeline-status.test`, covering a cpio
+  producer that emits a valid path and then fails.
+- `manual`, `testlab` and `pkg-provider` finite enumeration pipelines were
+  refactored to complete/check production before sorting, avoiding both masked
+  producer status and unnecessary pipefail dependence.
+- No hosted workflow automatically executed for these new commits; their focused
+  validation remains pending and must not be inferred from prior sessions.
 - Dedicated Linux/aarch64 `rsudo` validation passed all six tests against
   `rumiai-tests@348a6441991fbd655d7f1559ff64151f808938ca` and
   `rumiai-os@34c158e95bf5f73525cf42653026431b0c5d5551`, with zero failures,
@@ -305,15 +321,20 @@ status is preserved explicitly without host pipefail support, permanent coverage
 protects producer/consumer failure and cleanup semantics, and the complete rsudo
 scope has passed dedicated Linux/aarch64 validation.
 
+The enc/manual/testlab/pkg-provider changes and the new pkg-extract focused test
+are committed but have not yet received a new formal validation session. Term
+already has dedicated pipeline-status coverage in the current suite; srv remains
+the main unresolved Priority A implementation target.
+
 Global bootstrap enablement remains intentionally deferred until the remaining
 local targets and broader host coverage are complete.
 
 ## Next action
 
-Continue the remaining Priority A targets from the current tree, reconciling
-their already-advanced implementations/tests before further edits. The rsudo-fs
-unit requires no additional local pipefail work unless new regression evidence
-appears.
+Run focused validation for enc, pkg-extract, manual, testlab, pkg/provider and
+term against the current revisions. Then continue the remaining Priority A
+review with srv and the explicit rsudo rightmost-status regression before
+considering bootstrap promotion.
 
 ## Blockers / open questions
 
