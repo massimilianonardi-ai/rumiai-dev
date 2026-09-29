@@ -12,9 +12,9 @@ The long-term multi-channel documentation source/rendering architecture remains 
 ## Current repository revisions
 
 ```text
-rumiai-dev   fd834b5d9e67834c1d112751fab7aa625865a2eb  (pre-checkpoint HEAD)
-rumiai-os    e31d930534e6536c62d7953fca9398f9006eee28
-rumiai-tests 12a22021fadf49250464f053700e48bcec9ad012
+rumiai-dev   022b37697ba6c8fbeb39e9f58d1df214d76a36ca  (pre-checkpoint HEAD)
+rumiai-os    62a91eb3c18ebcd2595fe646b2f14170eea74126
+rumiai-tests 71b6523b93d64a48e45f3f713306f6d59fb2f401
 ```
 
 Fresh remote HEAD retrieval remains mandatory before future writes.
@@ -76,6 +76,17 @@ Fresh remote HEAD retrieval remains mandatory before future writes.
 - `specifications/rumiai-os/READPASS.md` now owns the promoted secret-line input contract and is routed directly from `specifications/README.md`.
 - Formal `readpass` task validation at `rumiai-tests@8a78802f536ca65052ddb3a3bc4d152fb361ebf1` against `rumiai-os@826da364cd9aaaed05b30f2c4cdbe0c47c730782` passed on hosted Linux/x86_64 and Darwin/arm64 with filesystem audit `CLEAN`; both `contract.test` and `pty.test` passed on both hosts.
 - The rsudo alignment work added the then-required command topics `res/sys/manual/rsudo` and `res/sys/manual/rsudo-askpass` at `rumiai-os@4f429c811f9c19889d0d8f6fa42b0423356beecd`, and realigned the existing `rsudo.lib.sh` topic to the invocation-local state contract. The later cleanup removed the obsolete `rsudo-askpass` command and its topic.
+- Concurrent cleanup removed obsolete `bin/sys/#_readc`,
+  `bin/sys/rsudo-askpass` and `lib/sys/sh/host-id.lib.sh`. The orphan
+  `readc` and `rsudo-askpass` manual topics were removed, and the current
+  rsudo contract test no longer requires the removed helper.
+- The consistency gate then found one pre-existing command-manual gap:
+  `bin/sys/rssh`. `rumiai-os@62a91eb3c18ebcd2595fe646b2f14170eea74126`
+  adds `res/sys/manual/rssh`, documenting its current rsudo shell extension,
+  RSSH prompt and delegation to `shell` without changing runtime behavior.
+- A mechanical comparison of current executable `bin/sys` command identities
+  against non-library `res/sys/manual` topics found no missing command manual
+  and no orphan non-library topic after that correction.
 - No unrelated concurrent product or test-suite work was overwritten; Git history remained forward-only.
 
 ## Current state
@@ -93,7 +104,11 @@ manual <topic>
         -> empty: status 2
 ```
 
-All current command identities represented by this workstream, including `editor`, `readpass`, `readpassv`, `rsudo` and the unified `osarch` command, have manual topics. Concurrent cleanup removed the obsolete internal `bin/sys/#_readc` and `bin/sys/rsudo-askpass` command identities; their orphan `readc` and `rsudo-askpass` manual topics have also been removed.
+All current executable `bin/sys` command identities have corresponding
+non-library operational topics, including `rssh`. Concurrent cleanup removed
+the obsolete internal `bin/sys/#_readc` and `bin/sys/rsudo-askpass` command
+identities; their orphan `readc` and `rsudo-askpass` manual topics have also
+been removed.
 
 Library documentation is only partially complete. The current product contains compliant manuals for `array.lib.sh`, `enc.lib.sh`, `ipc.lib.sh`, `map.lib.sh`, `mk-materialize.lib.sh`, `mk-materialize-copy.lib.sh`, `osarch.lib.sh`, `pkg-install.lib.sh`, `rand.lib.sh` and `term.lib.sh`. The remaining legacy libraries cannot safely receive final public-API manuals until their intended public/internal function sets are classified and, where necessary, renamed with callers/tests realigned. That work is already represented by `todo/library-api-visibility-realignment.md` and is deliberately not guessed inside this documentation work unit.
 
