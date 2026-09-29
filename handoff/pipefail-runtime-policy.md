@@ -29,7 +29,7 @@ No TODO represents this work. It is active now.
 ```text
 rumiai-dev    cd8caf62340b05e09e47c3e8c870475beeae231d
 rumiai-os     249c91cad0e3dd8d5ecb4af712fd4db78b8c6ab9
-rumiai-tests  c076980f20e496cdc740b03ff82ed276fcd49325
+rumiai-tests  6fe262459033327a14065ebf50dd0382affe4d50
 ```
 
 These revisions are resumption markers only. Fresh HEAD retrieval remains
@@ -277,6 +277,10 @@ first experiment.
   `rumiai-os@249c91cad0e3dd8d5ecb4af712fd4db78b8c6ab9` changed only rsudo
   operational manuals; no audited shell implementation or pipeline target
   changed.
+- A later test advance to
+  `rumiai-tests@6fe262459033327a14065ebf50dd0382affe4d50` changed only
+  `tests/rumiai-os/rsudo/auth-check.test`; it does not alter the pipeline
+  targets or planned pipefail coverage.
 
 ## Current state
 
