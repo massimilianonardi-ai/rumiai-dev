@@ -1,6 +1,6 @@
 # rsudo admin console
 
-Status: Active
+Status: Complete
 Updated: 2026-09-29
 
 ## Goal
@@ -11,11 +11,11 @@ load/edit/new workflows.
 
 ## Current repository revisions
 
-- rumiai-dev: 0aeff0ea730d52abcf3079086900f7e7adbcb23c
-- rumiai-os: 0c56665c5be7b6aac4c097dad1b000ce97bb6ac7
-- rumiai-tests: 238ab53839814579ed0ed49400ae59864028a405
+- rumiai-dev: d39aa5896910b16383f62e7acae66d215ee93edf before this final handoff snapshot
+- rumiai-os: 584e49172e7adf613992f59d67fc3705cea96540
+- rumiai-tests: 9df329a363696de6f7fba83f7c103381539699a5
 
-Fresh remote HEAD retrieval remains mandatory before future writes.
+Fresh remote HEAD retrieval remains mandatory before any later work.
 
 ## Applicable canonical sources
 
@@ -34,47 +34,67 @@ Fresh remote HEAD retrieval remains mandatory before future writes.
 - specifications/rumiai-os/SSH.md
 - TESTING.md
 - TEST-PATTERNS.md
-- handoff/rsudo-injection-menu.md
-- handoff/rsudo-ssh-auth.md
 
 ## Fixed task-local choices
 
-- Public command identity is `rsudo-admin`; `console` is presentation rather
-  than command-function identity.
-- The command belongs to m and is bootstrap-integrated.
-- The main menu entries are Connect to host, Browse host, rsudo jobs, and
-  Encrypted file load/edit/new.
-- Host discovery uses in-memory
-  `RSUDO_CREDENTIALS_GROUP_<group>_HOST` variables and selects the
-  corresponding group through current rsudo state.
-- Remote browsing reuses the accepted explicit injection composition
-  `base array map term menu` and the current `menu -d /` command source.
-- Jobs modernize the tracked `lib/sys/sh/rsudo/rsudo-jobs-template` workflow:
-  select and source one local job library, copy one selected template to a
-  private temporary file, edit through the m `editor` command, execute the
-  edited copy as local shell source, and always remove the temporary copy.
-- Job execution occurs in a subshell so job-local shell state cannot pollute
-  the admin console, while inherited rsudo credential state remains available.
-- Encrypted-file editing reuses `encoded_file_edit`; loading reuses the
-  current public `encoded_file_eval` semantics. This task does not silently
-  implement the separately discussed future restriction of rsudo --load.
-- New encrypted files are created without plaintext temporary files.
+None remain. Durable rsudo-admin behavior is promoted into
+`specifications/rumiai-os/RSUDO.md`; revision-coupled operational detail lives
+in `res/sys/manual/rsudo-admin`.
 
 ## Completed
 
-- Mandatory preflight completed.
-- Existing rsudo/menu/editor/vsed/encryption/injection surfaces inspected.
-- Existing `rsudo-jobs-template` identified as the predecessor of the requested
-  jobs workflow.
+- Added executable `bin/sys/rsudo-admin` as a bootstrap-integrated m command.
+- Added the requested top-level actions: Connect to host, Browse host,
+  rsudo jobs, and Encrypted file load/edit/new.
+- Host selectors discover non-empty
+  `RSUDO_CREDENTIALS_GROUP_<group>_HOST` state and use the corresponding
+  credential group without displaying passwords.
+- Connect starts an action-local interactive rsudo session.
+- Browse composes the accepted `base array map term menu` injection and opens
+  the privileged remote filesystem browser at `/`.
+- Jobs select an explicit local library and template, source the library inside
+  job-local execution state, create a private temporary template copy, edit it
+  through `editor`, validate it with POSIX `sh -n`, execute it in an
+  additional subshell, and clean up the temporary copy.
+- Encrypted-file load/edit/new reuses `encoded_file_eval`,
+  `encoded_file_edit`, and memory-only `vsed`; new-file creation publishes
+  ciphertext without creating a plaintext temporary file.
+- The separately discussed future data-only restriction for rsudo `--load`
+  was deliberately not folded into this work unit.
+- Removed the superseded
+  `lib/sys/sh/rsudo/rsudo-jobs-template`.
+- Added `res/sys/manual/rsudo-admin`.
+- Promoted the public command contract into
+  `specifications/rumiai-os/RSUDO.md`.
+- Added permanent tests:
+  `tests/rumiai-os/rsudo-admin/contract.test` and
+  `tests/rumiai-os/rsudo-admin/interactive.test`.
+- Added task validation scope `validation/rsudo-admin.conf` and formal
+  multi-host workflow `.github/workflows/rsudo-admin.yml`.
+- Formal validation run 36560721878 froze
+  `rumiai-os@584e49172e7adf613992f59d67fc3705cea96540` and
+  `rumiai-tests@9df329a363696de6f7fba83f7c103381539699a5`.
+  Ubuntu 26.04 ARM and macOS both executed the two rsudo-admin tests with:
+  PASS 2, FAIL 0, SKIP 0, ERROR 0.
+- Final diff/manual/specification scan found no current product references to
+  the superseded `rsudoenv`, `waituser`, or `rsudo-jobs-template`
+  mechanisms.
+- An auxiliary container checkout could not be run because that environment
+  could not resolve github.com; formal hosted validation supplied the real
+  revision-pinned execution evidence instead.
 
 ## Current state
 
-Implementation, manual and permanent tests are not yet written.
+The requested command, operational manual, canonical rsudo contract, permanent
+tests and task-validation path are aligned at the revisions above.
+
+An automatically triggered full-product health run from the earlier test commit
+was still in progress when task validation completed; it is additional evidence
+and is not required by the rsudo-admin task scope.
 
 ## Next action
 
-Implement `bin/sys/rsudo-admin` and its operational manual, then add
-proportional permanent coverage and validate the resulting revisions.
+None.
 
 ## Blockers / open questions
 
