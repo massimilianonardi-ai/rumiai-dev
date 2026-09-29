@@ -100,7 +100,7 @@ failure is non-zero.
 ## Invariants
 
 ```text
-SSH-01  ssh_password requires a non-empty remote-account password
+SSH-01  ssh_password requires a non-empty newline-free remote-account password
 SSH-02  ssh_password constrains OpenSSH authentication to password
 SSH-03  ssh_password permits exactly one OpenSSH password prompt
 SSH-04  configured SSH connection sharing is disabled for ssh_password
