@@ -94,35 +94,70 @@ loadlib-inject-stream.lib.sh
 provides:
 
 ```text
-loadlib_inject_stream [<library-reference>...] [-- <command-source> [<command-arg>...]]
+loadlib_inject_stream
+    [<library-reference> | --command <command-name> <local-source>]...
+    [-- <command-source> [<command-arg>...]]
 ```
 
-for generating one POSIX-shell source program that embeds an explicitly selected set of system shell libraries for execution without a remote `m` library tree.
+for generating one POSIX-shell source program that embeds an explicitly selected
+set of system shell libraries and local command sources for execution without a
+remote `m` library tree.
 
-The caller owns the complete selected library set. The generator MUST NOT parse
-the command or library sources to discover dependencies and MUST NOT compute or
-add transitive closure. No library identity is intrinsically mandatory or
-special.
+The caller owns the complete selected library and command-source set. The
+generator MUST NOT parse command or library sources to discover dependencies and
+MUST NOT compute or add transitive closure. No library identity is intrinsically
+mandatory or special.
 
-The generated program installs an in-memory `loadlib` for exactly the selected
-references and then loads every selected library through that loader in
-caller-supplied order. Zero selected libraries are valid; in that case the
-generated `loadlib` recognizes no embedded references and returns status 2 for
-all library lookups.
+Before the final `--`, library references and repeatable `--command`
+registrations may be interleaved.
 
-When `--` is absent, no command body is appended and the generated program
-does not modify positional parameters merely as a consequence of command setup.
+For each selected library, the generated program installs one private wrapper
+and an in-memory `loadlib` dispatch for exactly the selected references. It
+then loads every selected library through that loader in caller-supplied order.
+Zero selected libraries are valid; in that case generated `loadlib` returns
+status 2 for every library lookup.
 
-When `--` is present, it MUST be followed by one readable command source.
-After the selected libraries have been loaded, the generated program
-reconstructs the supplied command positional parameters using the existing
-shell-safe quoting contract and appends the command source unchanged.
+`--command <command-name> <local-source>` registers one reusable injected
+command. `command-name` MUST already be a valid POSIX shell identifier:
+alphabetic or underscore first character, followed only by alphabetic
+characters, digits or underscore. Duplicate command names are invalid.
+`loadlib` and names beginning `_loadlib_inject_stream_` are reserved by the
+generated runtime.
 
-Independently of command mode, non-TTY standard input is appended after the
-selected libraries and optional command source as POSIX shell source. It is
-source to be included in the generated program, not runtime stdin for the
-command source. A source-separating newline MUST prevent accidental lexical
-merging when the command source lacks a final newline.
+Each registered command is generated as a function with exactly the
+caller-selected name and with a subshell compound command as its body. Each
+invocation therefore receives its own positional parameters and isolates
+command-local variable/function definitions, traps, current directory, umask,
+additional file descriptors, shell-option changes and `exit`/`exec` effects
+from the containing generated shell. Injected library functions and inherited
+environment remain available inside that subshell.
+
+The generator does not inspect injected library or command contents for
+non-reserved namespace collisions. Compatibility between caller-selected
+command names and library/source-defined names remains a caller responsibility.
+
+The final literal `--` is optional and non-repeatable. When present it MUST be
+followed by one readable `command-source`; remaining operands are its command
+arguments. The public calling syntax remains the existing one-shot command mode,
+but the generated program now places that source in one private subshell wrapper
+and invokes it once with the supplied arguments. This gives the one-shot source
+the same process-state isolation as named commands without changing the caller
+syntax.
+
+If the one-shot invocation is the final generated operation, its status is the
+generated program status. If later stdin source exists, ordinary shell
+sequencing applies and the first subsequent command may observe the one-shot
+status through `$?`.
+
+Independently of command mode, non-TTY standard input is appended verbatim after
+library loading, named-command definitions and the optional one-shot invocation
+as POSIX shell source. It is source to be included in the generated program, not
+runtime stdin for an injected command. A source-separating newline MUST prevent
+accidental lexical merging.
+
+Named commands remain available in the containing generated shell and may be
+called repeatedly by the one-shot command or by subsequent stdin source. Each
+invocation remains isolated in its own subshell.
 
 The generator contains no semantic dependency on `base.lib.sh`,
 `core.lib.sh`, or another particular library identity. Callers that need the
@@ -131,7 +166,10 @@ common m runtime select `base` explicitly like any other library.
 A library that was not explicitly selected remains unavailable in the generated
 environment rather than falling back to a remote filesystem.
 
-Stream generation and stream transport are separate responsibilities. In particular, `rsudo --interactive` may transport a generated stream through its interactive source-injection contract, but `loadlib_inject_stream` itself does not perform remote execution.
+Stream generation and stream transport are separate responsibilities. In
+particular, `rsudo --interactive` may transport a generated stream through its
+interactive source-injection contract, but `loadlib_inject_stream` itself does
+not perform remote execution.
 
 ## 3. Public and internal function visibility
 
@@ -260,5 +298,7 @@ LIB-12  after base loading, every owned lib/sys/sh shell-library import uses loa
 LIB-13  loadsyslib/loadlib accept exactly one library reference and do not forward positional parameters
 LIB-14  runtime/external pathname sourcing remains ordinary POSIX dot-sourcing
 LIB-15  loadlib_inject_stream embeds only caller-selected libraries and performs no dependency discovery or automatic closure
-LIB-16  loadlib_inject_stream permits zero or more selected libraries, treats no library identity as special, loads selected libraries in caller-supplied order, supports optional command mode after --, and appends non-TTY stdin as subsequent shell source
+LIB-16  loadlib_inject_stream permits zero or more selected libraries, repeatable explicitly named isolated --command sources, one optional isolated one-shot command after --, and subsequent non-TTY stdin shell source
+LIB-17  injected named and one-shot command bodies execute in subshells that isolate command-local process state while retaining access to the explicitly injected library environment
+LIB-18  --command names are caller-selected valid POSIX shell identifiers; duplicate names and generator-reserved identities are rejected without filename derivation, sanitization or aliasing
 ```

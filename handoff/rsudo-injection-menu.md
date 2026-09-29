@@ -125,33 +125,35 @@ new syntax/library-only behavior still needs current-revision validation.
 
 ## Accepted rsudo exec injection design
 
-The user implemented the rsudo `exec inject` module and then refined its
-composition with the generator.
-
-Current accepted form:
+The accepted generator surface is now:
 
 ```text
-[ shell-source | ] rsudo [options...] exec inject [LIB...]
-                         [-- COMMAND_SOURCE [ARG...]]
+[ shell-source | ] rsudo [options...] exec inject
+    [LIB | --command COMMAND_NAME LOCAL_SOURCE]...
+    [-- COMMAND_SOURCE [ARG...]]
 ```
 
-`loadlib_inject_stream` retains its existing argv grammar for selected
-libraries and optional command-source. Independently, non-TTY stdin is appended
-as shell source after the generated libraries and optional command-source.
+`--command` is repeatable. The caller supplies an already-valid POSIX shell
+identifier and one readable local source file; no basename derivation,
+purification or alias is performed. Each named command is generated as a
+function whose body is a subshell and can be invoked repeatedly by the one-shot
+command or subsequent stdin source.
 
-The resulting source order is:
+The final `-- COMMAND_SOURCE [ARG...]` form remains source-compatible for the
+caller and non-repeatable. Internally the source is placed in one private
+subshell wrapper and invoked once with its supplied arguments.
 
-```text
-generated in-memory loadlib
-selected library loads
-optional command argv setup
-optional command source
-optional stdin shell source
-```
+This isolates command-local positional parameters, variables/functions, traps,
+cwd, umask, additional file descriptors, shell options and explicit
+`exit`/`exec` effects from subsequent generated source while keeping injected
+library functions available.
 
-The stdin source is not runtime stdin for the command source.
+Libraries and `--command` registrations may be interleaved before the final
+`--`. Duplicate named-command identities, `loadlib`, and names beginning
+`_loadlib_inject_stream_` are rejected. Other namespace collisions remain a
+caller-composition responsibility.
 
-The rsudo module is intentionally minimal:
+The rsudo module remains intentionally minimal:
 
 ```sh
 rsudo_mod_exec_inject()
@@ -162,15 +164,9 @@ rsudo_mod_exec_inject()
 )
 ```
 
-The user also changed rsudo state semantics: `RSUDO_AS_USER` and
-`RSUDO_INTERACTIVE` are no longer reset by recursive calls and are reusable
-caller state; `RSUDO_ASKPASS` and `RSUDO_NO_PRESERVE_QUOTES` remain
-invocation-local and are reset. Canonical RSUDO contract and manuals are
-realigned accordingly.
-
-Product revision `rumiai-os@156d64819a43b4e5611c764cb36fc0dba19ba3ba`
-implements stdin-source composition, simplifies `rsudo-mod-exec.lib.sh`, and
-adds its required operational manual.
+Product revision
+`rumiai-os@500e5362741b5a5844c6f7f2524dc9a5b4d3a85d` implements this
+contract and realigns the operational manuals.
 
 ## Current validation state
 
@@ -309,75 +305,18 @@ The audit supports strengthening the generic command standard around non-trivial
 continuation compatibility as an additional composability property rather than
 a universal requirement. No canonical entrypoint invariant has been changed yet.
 
-## Working design — named injected command sources
+## Command-entrypoint consequence of isolated injection
 
-A newer candidate supersedes the automatic basename/purification/alias design.
+The previous command-entrypoint audit remains useful as a general shell-quality
+review, but stream continuation no longer requires modifying every command to
+replace ordinary `exit`, `exec`, traps, cwd, umask or file-descriptor
+lifecycle. Named and one-shot injected command bodies now execute behind a
+subshell boundary that isolates those effects.
 
-Proposed grammar:
-
-```text
-loadlib_inject_stream [LIBRARY_REFERENCE...]
-                      [--command COMMAND_NAME LOCAL_SOURCE]...
-                      [-- COMMAND_SOURCE [COMMAND_ARG...]]
-```
-
-`--command` is repeatable. `COMMAND_NAME` is supplied explicitly by the
-caller and MUST already be a valid POSIX shell function identifier. No automatic
-basename derivation, lossy purification or alias mapping is required.
-`LOCAL_SOURCE` is one readable local POSIX-shell source file.
-
-Each registered command source is emitted as a named function whose body is a
-subshell compound command:
-
-```sh
-COMMAND_NAME()
-(
-  <LOCAL_SOURCE>
-)
-```
-
-The subshell intentionally isolates command-local positional parameters,
-variables/functions, traps, cwd, umask, file descriptors, shell options and
-explicit `exit` / `exec` effects from the containing generated program while
-retaining access to the already-injected library functions.
-
-Duplicate `--command` names MUST be rejected by the generator. Generator-owned
-private function identities are reserved and cannot be selected as command
-names. Collisions with functions supplied by injected libraries or by the
-command sources themselves remain an explicit caller-composition concern unless
-a portable stronger collision check is later defined.
-
-The existing non-repeatable `-- COMMAND_SOURCE [ARG...]` form remains
-source-compatible and retains its current public meaning. Its command source is
-implemented internally as one generator-owned anonymous/private subshell wrapper
-that is invoked once with the supplied arguments. This preserves the current
-caller syntax while gaining the same isolation properties as named
-`--command` sources.
-
-Conceptually the generated order is:
-
-```text
-generated library wrappers and in-memory loadlib
-selected library loads
-named --command function definitions
-optional private one-shot -- command definition
-optional private one-shot -- command invocation
-optional stdin continuation source
-```
-
-Named commands are therefore available both to the one-shot command and to
-subsequent stdin source. A one-shot command can call registered named commands,
-and continuation source can invoke them repeatedly.
-
-If the one-shot command is the last generated operation, its status remains the
-generated program status. If stdin continuation follows, ordinary shell
-semantics apply: the first continuation command may observe the one-shot command
-status through `$?`, and the continuation determines the eventual status unless
-it explicitly preserves/returns the earlier status.
-
-This design avoids both automatic command-name purification and alias semantics.
-It is not yet promoted to the canonical library-interface contract and has not
-been implemented or tested.
+Command-entrypoint standards may still be strengthened independently for
+readability, invocation robustness and ordinary sourced-command hygiene; that
+review is no longer a prerequisite for safe continuation after an injected
+command.
 
 ## Blockers / open questions
 

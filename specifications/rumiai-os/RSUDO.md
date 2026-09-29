@@ -135,21 +135,29 @@ The `exec inject` submodule operation provides composition between
 
 ```text
 [ shell-source | ] rsudo [options...] exec inject
-                     [library-reference...]
-                     [-- command-source [command-arg...]]
+    [library-reference | --command command-name local-source]...
+    [-- command-source [command-arg...]]
 ```
 
 The module does not implement a second injection format. It delegates source
 construction to `loadlib_inject_stream` and pipes the resulting program into
 a recursive `rsudo` call.
 
-The generator therefore owns:
+The generator owns:
 
 ```text
 selected embedded libraries
-optional command-source and command argv
+repeatable named command-source definitions
+optional isolated one-shot command-source invocation
 optional non-TTY stdin source appended after them
 ```
+
+Each named or one-shot injected command body executes in its own subshell
+according to the library-interface contract. Command-local positional
+parameters, variable/function definitions, traps, current directory, umask,
+additional file descriptors, shell options and `exit`/`exec` effects do not
+mutate or terminate the containing continuation shell. Named commands remain
+available for repeated invocation by the one-shot command or later stdin source.
 
 The exec module owns only generator-to-rsudo composition.
 
@@ -289,5 +297,5 @@ RSUDO-19  fs get/put attempt rollback when staged replacement promotion fails af
 RSUDO-20  each rsudo invocation preserves target-user and interactive caller state while resetting askpass and no-preserve-quotes before parsing current options
 RSUDO-21  recursive rsudo calls reuse connection/credential, target-user and interactive state but do not implicitly inherit askpass or no-preserve-quotes
 RSUDO-22  interactive non-TTY stdin is executed as a privileged shell-source prefix; optional command operands execute after it in the same shell environment
-RSUDO-23  exec inject composes loadlib_inject_stream with recursive rsudo, preserving generator status through POSIX pipefail and inheriting reusable target-user/interactive state
+RSUDO-23  exec inject composes loadlib_inject_stream with recursive rsudo, including named/one-shot isolated command injection, while preserving generator status through POSIX pipefail and inheriting reusable target-user/interactive state
 ```
