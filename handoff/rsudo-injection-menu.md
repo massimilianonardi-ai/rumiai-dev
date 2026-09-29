@@ -663,3 +663,276 @@ No remaining injection-architecture blocker. Current-revision permanent-test
 execution and physical validation are pending. The command-entrypoint standards
 review remains an independent follow-up design task rather than an injection
 prerequisite.
+
+## Pipefail current-tree audit checkpoint — 2026-09-29
+
+This checkpoint completes the requested pre-implementation audit. No
+`rumiai-os` product change and no permanent-test change was made.
+
+### Reconciled repository state
+
+The audit began against:
+
+```text
+rumiai-dev    01a3cc2d0ec7eead3fbccc7919727a6eaef3d159
+rumiai-os     4e6d33f224bcba77a4e553b1e4bd5299a57d555c
+rumiai-tests  b1c3fb58ae9306392c34e10800b963f025b0e452
+```
+
+The remote HEADs advanced during the audit. Forward reconciliation established:
+
+```text
+rumiai-dev    1e132c822e213c0e7ac33eac996cd84da4306682
+rumiai-os     0c56665c5be7b6aac4c097dad1b000ce97bb6ac7
+rumiai-tests  238ab53839814579ed0ed49400ae59864028a405
+```
+
+The `rumiai-os` and `rumiai-tests` compare ranges contain no net file
+changes, so the audited implementation/test trees remain exact. The only
+`rumiai-dev` file changed in the compare range is
+`specifications/rumiai-os/SSH.md`; it was reread at the new HEAD. Its status
+contract says that, when local setup/cleanup succeed, the SSH facility returns
+the OpenSSH invocation status. That is consistent with the pipeline-status
+exception identified below.
+
+### Exhaustive pipeline inventory result
+
+Actual shell pipelines, excluding case-pattern alternation and literal text,
+occur in the following current-tree files:
+
+```text
+bin/sys/#_readc
+bin/sys/digest
+bin/sys/gitman
+bin/sys/http-fetch
+bin/sys/manual
+bin/sys/menu
+bin/sys/pkg-analyze
+bin/sys/read-key
+bin/sys/srv
+bin/sys/testlab
+
+lib/sys/sh/enc.lib.sh
+lib/sys/sh/env.lib.sh
+lib/sys/sh/host-id.lib.sh
+lib/sys/sh/menu.lib.sh
+lib/sys/sh/rand.lib.sh
+lib/sys/sh/term.lib.sh
+lib/sys/sh/pkg/pkg-download.lib.sh
+lib/sys/sh/pkg/pkg-extract.lib.sh
+lib/sys/sh/pkg/pkg-provider.lib.sh
+lib/sys/sh/pkg/repository/pkg-repository-apache-maven.lib.sh
+lib/sys/sh/pkg/repository/pkg-repository-artifact.lib.sh
+lib/sys/sh/pkg/repository/pkg-repository-chrome.lib.sh
+lib/sys/sh/pkg/repository/pkg-repository-geoserver.lib.sh
+lib/sys/sh/pkg/repository/pkg-repository-github.lib.sh
+lib/sys/sh/pkg/repository/pkg-repository-gpgtools.lib.sh
+lib/sys/sh/pkg/repository/pkg-repository-graalvm.lib.sh
+lib/sys/sh/pkg/repository/pkg-repository-podman.lib.sh
+lib/sys/sh/pkg/repository/pkg-repository-temurin.lib.sh
+lib/sys/sh/rsudo/rsudo-mod-apisix.lib.sh
+lib/sys/sh/rsudo/rsudo-mod-exec.lib.sh
+lib/sys/sh/rsudo/rsudo-mod-fs.lib.sh
+lib/sys/sh/rsudo/rsudo-mod-keycloak.lib.sh
+lib/sys/sh/rsudo/rsudo.lib.sh
+```
+
+The root `m` bootstrap and the branded root entrypoints contain no actual
+pipeline. Several other files contain `|` only as shell case alternation,
+regular-expression/data syntax or documentation text.
+
+The dominant pipeline families are pure in-memory filters
+(`printf | awk/sed/tr`), sorted enumerations, terminal-byte conversion,
+package/repository metadata parsing, and rsudo/transfer stream boundaries.
+
+### Classification of current anti-pipefail-looking patterns
+
+The audit found three distinct classes.
+
+**Status propagation only / potentially simplifiable**
+
+- The clearest example is `digest`: the hashing backend is first captured and
+  checked, then its already-complete textual output is parsed through
+  `printf | awk`. Once pipefail is a reliable runtime invariant, a direct
+  backend-to-parser pipeline could preserve upstream failure status. This is a
+  possible simplification, not a required one; retaining the two-stage form is
+  low risk and keeps backend completion explicit.
+- Many existing `... | parser || return/fatal` forms are not workarounds to
+  remove. Under global pipefail their existing status check simply becomes a
+  full-pipeline check instead of a last-stage-only check.
+
+**Stronger sequencing / atomicity / lifecycle properties — retain**
+
+- `rsudo_mod_exec_inject` complete-source buffering MUST remain. It protects
+  RSUDO-23: generator failure is resolved before recursive rsudo can start.
+  Pipefail cannot provide that sequencing property.
+- `encoded_file_edit` temporary-file staging, source checksum recheck and
+  final rename MUST remain. Pipefail can expose `decode` or `vsed` failure,
+  but cannot replace the atomicity/race protections.
+- `rsudo fs get/put` extraction/staging/promotion/rollback structure MUST
+  remain. Pipefail improves transfer-pipeline failure visibility but does not
+  replace the destination-preservation guarantees protected by RSUDO-15..19.
+- Producer loops feeding `sort` in `manual`, `testlab` and
+  `pkg-provider` contain explicit output-failure termination. Those checks
+  must remain: pipefail sees only the final status of each pipeline component;
+  without terminating the producer component, a later successful loop
+  iteration could overwrite an earlier emission failure.
+- Sentinel suffix patterns such as `; printf x` followed by `${value%x}`
+  are newline/empty-output preservation mechanisms, not pipefail workarounds.
+  They must not be removed on pipefail grounds.
+
+**Pipeline-status authority exceptions**
+
+The non-interactive rsudo transport is semantically different:
+
+```sh
+(printf password; cat payload) | ssh ...
+```
+
+The current rsudo contract requires the remote/OpenSSH result to be authoritative.
+A remote target may legitimately terminate successfully without consuming all
+stdin. In that case the local feeder can receive SIGPIPE while SSH still
+returns success. Global pipefail would incorrectly turn that successful remote
+result into a local feeder failure.
+
+Therefore the future global policy needs a narrowly scoped exception around
+this transport boundary: execute that specific pipeline with ordinary
+rightmost-command status semantics while leaving pipefail enabled in the
+surrounding m runtime. On an old shell the opt-out itself must also be guarded
+by the safe capability probe; an unconditional `set +o pipefail` is not safe
+on a shell that does not recognize the option.
+
+The final `printf complete_source | rsudo` in `exec inject` does not have the
+same practical early-close shape: recursive interactive rsudo buffers the
+injected source before remote execution. If recursive rsudo is non-zero it
+remains the rightmost non-zero stage; if it succeeds it has consumed the source.
+The complete-source pre-buffer remains required independently.
+
+### Early-success consumer hazard
+
+Pipefail is not semantically monotonic for pipelines whose right-hand consumer
+intentionally succeeds before draining input. A successful early exit can close
+the pipe and cause an upstream producer to fail with SIGPIPE.
+
+A current auxiliary Linux `/bin/sh` (dash with Issue 8 pipefail support)
+demonstrated:
+
+```text
+large producer | awk 'NR==1 { ...; exit }'  -> status 141 under pipefail
+large producer | grep -q early-match        -> status 141 under pipefail
+```
+
+Current-tree cases that need hardening before global enablement include:
+
+- `enc.lib.sh`: `printf ... | grep -q` capability checks. Replace the
+  early-success `-q` form with a draining match check (for example normal
+  grep with output redirected) so a match does not intentionally close input.
+- `menu.lib.sh::_menu_safe_item_text`: its awk exits after the first record.
+  It should preserve first-record output semantics while continuing to drain
+  the supplied input.
+- `host-id.lib.sh`: the macOS ioreg parser exits after the UUID match. It
+  should retain the first match while draining the finite ioreg output.
+
+Several other parsers use early `exit` only with contractually tiny/bounded
+one-record producers (digest text, one-path du/df/ls probes, one-line
+name-validation inputs). They are lower risk, but the implementation work unit
+should remove unnecessary successful early exits where this can be done without
+changing semantics. Early exit on an already-failing validation path is not the
+same problem: the pipeline is supposed to fail.
+
+### Concrete effect of global pipefail
+
+The m runtime does not globally enable `errexit`. Enabling pipefail therefore
+does not itself make every non-zero pipeline terminate the shell. It changes the
+status observed by existing callers, predicates, command substitutions,
+functions and `&&`/`||` handling.
+
+Expected desirable changes include:
+
+- `enc` edit detects upstream decode/editor failure before promotion;
+- `pkg-extract` detects `cpio` listing failure even if its awk parser would
+  otherwise succeed;
+- host/account and metadata parsers with existing `|| return/fatal` checks can
+  see producer failure;
+- rsudo filesystem transfer pipelines can see either producer or consumer
+  failure;
+- grouped enumeration pipelines can propagate producer emission failure.
+
+The early-success/SIGPIPE cases and the rsudo rightmost-status boundary above are
+the material exceptions that prevent treating global pipefail as a mechanical
+toggle.
+
+### Proposed precise runtime contract
+
+**Normal m bootstrap**
+
+- Establish pipefail in root `m`, not `base.lib.sh`.
+- Probe in a subshell before ordinary runtime library/command execution:
+  `if (set -o pipefail) 2>/dev/null; then set -o pipefail; ...`.
+- Keep only a private bootstrap-local degraded-mode flag long enough to defer
+  diagnostics until `core -> base` has installed `log`; do not export or
+  publish `m_PIPEFAIL`.
+- On an unsupported shell, continue in compatibility mode and emit one warning
+  through the normal logging surface after core/base becomes available.
+  Proposed message identity: `system/pipefail-unavailable`.
+- RumiAI-owned integrated commands and sourced libraries inherit the established
+  option and must not globally disable it. A narrowly scoped subshell may
+  deliberately disable it when another current contract requires different
+  pipeline-status authority.
+
+**Generated `loadlib_inject_stream` programs**
+
+- Emit an unconditional generated preamble before library wrappers/loading.
+- The preamble performs the same safe subshell capability probe and enables
+  pipefail in the containing generated shell when supported.
+- If unsupported, emit one minimal generator-owned stderr warning and continue;
+  the warning cannot depend on `base` or `log` because zero-library
+  generation is valid.
+- The established option remains active for selected library loading, later
+  continuation source and the containing generated program. Named and one-shot
+  command subshells inherit it; their command-local shell-option changes remain
+  isolated by the existing subshell contract.
+- If a generated stream is dot-sourced, establishing pipefail in that containing
+  shell is an intentional runtime effect, not state that is restored afterward.
+
+**Standalone `#!/bin/sh` utilities**
+
+- They are not implicitly covered by the m-bootstrap invariant.
+- They must not assume pipefail merely because they are m-owned.
+- Review them independently. If a standalone utility requires all-stage
+  pipeline status for correctness, it must establish the capability safely in
+  its own process or use an equivalent explicit structure.
+- Current standalone pipeline users `read-key` and internal `#_readc` do
+  not justify scattering a global policy into every standalone utility as part
+  of this work unit.
+
+**Other explicit new-shell boundaries**
+
+A direct `sh -c`, remote shell, or other newly invoked shell does not inherit
+the m shell option contract automatically. The owner of that boundary must
+establish pipefail explicitly when its semantics require it. The existing
+`rsudo-mod-fs` remote preflight already does this for its
+`du -sk | awk` check and must retain that local policy unless that whole child
+shell boundary is later generalized.
+
+### Implementation order implied by the audit
+
+Before enabling pipefail globally:
+
+1. harden the identified successful early-exit pipelines;
+2. preserve ordinary rightmost-status semantics around the non-interactive
+   rsudo stdin-to-SSH transport boundary;
+3. add bootstrap capability establishment and degraded warning;
+4. add the generated-stream preamble/warning;
+5. keep sequencing/atomicity/staging/sentinel mechanisms;
+6. add permanent coverage for supported bootstrap semantics, degraded probe,
+   generated streams, the rsudo early-close status case and the hardened
+   early-success consumers;
+7. only then consider optional low-value cleanup such as collapsing digest's
+   two-stage status parsing.
+
+This audit does not promote the working design into canonical specifications and
+does not authorize a product modification by itself. The next step is to present
+the audit/conclusions and, after acceptance, promote the settled runtime policy
+to the applicable canonical specifications before product implementation.
+
