@@ -204,10 +204,13 @@ one-shot/named status isolation, cwd/umask/variable/function isolation and
 required/optionally-recognized reserved-name and special-built-in-name
 rejection.
 
-The permanent tests have not been executed against materialized current
-checkouts in this work unit because the available Linux environment cannot
-resolve `github.com`; a checkout attempt failed before test execution. This is
-an infrastructure limitation, not product PASS evidence.
+The permanent tests have not yet been executed for the current revisions in
+this work unit. Lack of outbound GitHub access from the ChatGPT/Linux auxiliary
+host is not a validation blocker: current TESTING.md requires using an
+appropriate Internet-enabled path such as GitHub Actions, and TEST-PATTERNS.md
+defines the outbound-network bridge when captured material must be transferred
+back to an isolated auxiliary host. Future validation work must follow those
+paths rather than stopping at auxiliary-host DNS failure.
 
 Fresh physical `rsudo exec inject` validation remains pending.
 
