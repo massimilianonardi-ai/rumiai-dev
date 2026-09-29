@@ -350,6 +350,8 @@ Package identity and facility identity are distinct contracts:
 
 Provider multiplicity therefore belongs to the normal installed state.
 
+Installed concrete package metadata is the source of truth for provider discovery: a concrete that materializes a valid `facility` declaration is discoverable directly from the managed package store. `pkg` does not require a second mutable provider-index registry to determine installed providers. Derived caches may be introduced only as non-authoritative acceleration and must never make stale index state block otherwise valid install, resolution or uninstall operations.
+
 ### Facility contract
 
 A facility is a **provider-independent, substitutable capability contract** owned by the `pkg` subsystem.
@@ -469,7 +471,7 @@ Service conformance validates the declarative shape, the package-command mapping
 
 Runtime execution of the service part remains owned by `srv`. A global provider-backed `srv start <facility>` uses the configured system facility default; consumer bindings do not participate because there is no package consumer identity for that global lifecycle operation. After provider selection, `srv` must launch the start command belonging to that exact provider concrete rather than performing an unrelated PATH lookup. The normal package launcher remains responsible for package HOME, environment and dependency preparation.
 
-Facility and provider definitions are **inert declarations**. Validating or reading them does not create a facility default, create a consumer binding, publish commands, export environment variables or otherwise select/apply a provider. Provider selection and runtime application happen only through separate explicit operations owned by their respective subsystems.
+Facility and provider definitions are **inert declarations**. Validating or reading them does not create a facility default, create a consumer binding, publish commands or export environment variables. Package-consumer runtime resolution may derive an unambiguous provider from installed validated declarations, but that read-only derivation creates no persistent selection state. Runtime application happens only when a consumer or owning subsystem actually uses the facility.
 
 The `service` part uses the same trusted contract/realization/conformance boundary as `cmd` and `env`, while process execution remains owned by `srv`. Endpoint, readiness and health are not implied by service capability and are not fields of the baseline service part. A later provider-independent contract for one of those responsibilities must use its own explicit semantics rather than extending `service` into an arbitrary property bag.
 
@@ -501,22 +503,26 @@ Mechanical conformance validation proves only properties that can actually be es
 
 ### Provider selection
 
-Provider installation and provider selection are separate responsibilities.
+Provider installation and explicit provider configuration are separate responsibilities.
 
-For each facility required by a consumer, the effective provider selector is determined in this order:
+For each facility required by a **package consumer**, runtime dependency resolution uses this precedence:
 
 1. an explicit binding for that consumer and facility, when present;
-2. otherwise the default provider selector for that facility;
-3. otherwise no provider is selected and dependency resolution fails.
+2. otherwise the configured system facility default, when present;
+3. otherwise deterministic implicit resolution from installed compatible provider concretes.
 
-There is no implicit fallback to "the only installed provider". Installing or removing an unrelated additional provider must not silently change a consumer's provider-selection semantics.
+Implicit resolution is deliberately narrow. If exactly one compatible installed concrete exists for the consumer's applicable platform class, it is selected. If multiple compatible concretes all belong to the same provider package, that package's normal package default may disambiguate them when it resolves to one of those compatible concretes. Otherwise the requirement is ambiguous and resolution fails with the compatible candidates reported.
 
-A consumer binding is mutable independently of package installation and may be changed later. Removing a binding restores inheritance from the facility default.
+An explicit binding or facility default is authoritative intent. If it exists but is unavailable, invalid or incompatible, resolution fails rather than silently falling back to another installed provider.
+
+This fallback does not install packages and does not establish persistent provider configuration. Adding another distinct compatible provider may therefore turn an otherwise implicit resolution into an explicit ambiguity instead of silently changing the selected provider.
+
+A consumer binding is mutable independently of package installation and may be changed later. Removing a binding restores the facility default when one is configured, otherwise the deterministic implicit package-consumer rule applies.
 
 Package default and facility default are distinct selections:
 
-- a package default selects the current concrete version within one package/platform class;
-- a facility default selects which provider selector supplies that facility globally.
+- a package default selects the current concrete version within one package/platform class and may disambiguate installed versions of that same provider package during implicit package-consumer resolution;
+- a facility default explicitly selects which provider selector supplies that facility globally and remains required for global/non-package projection semantics.
 
 ### Provider selectors
 
@@ -556,11 +562,13 @@ A resolved concrete may be cached as derived state, but such a cache is not auth
 
 ### Dependency installation policy
 
-The baseline package-install contract does not automatically install missing dependency providers and does not silently choose a provider from the catalog.
+The baseline package-install contract does not automatically install missing dependency providers and does not choose a provider from the catalog.
 
-When installing a package with facility dependencies, every dependency must already have an effective provider selector that resolves to an installed compatible provider. Otherwise installation fails.
+Installation validates the package's dependency declarations as catalog metadata before artifact download, but current runtime satisfiability is **not** an installation precondition. A package may therefore be installed while one or more declared facilities are currently unavailable or ambiguous. The dependency declaration is materialized with the concrete and is resolved again when the consumer is actually launched.
 
-Automatic provider discovery, preference policy and transitive dependency installation may be added later as a separate resolution capability; their absence does not weaken the baseline dependency contract.
+After successful installation, `pkg install` may report currently unsatisfied dependencies as warnings so the operator can see the facility, compatibility constraints and resolution reason without turning mutable runtime/provider state into an artifact-install gate.
+
+Automatic transitive dependency installation remains outside the baseline. Explicit provider bindings/defaults remain available when stable policy is desired, while deterministic implicit resolution handles the non-ambiguous installed-provider case without requiring redundant setup.
 
 ### Runtime provider application
 
@@ -582,15 +590,18 @@ pkg provider bind <consumer> <facility> <provider-selector>
 pkg provider bind -u [--] <consumer> <facility>
 ```
 
-The public read-only requirement query surface is:
+The public read-only requirement query surfaces are:
 
 ```text
+pkg requirement list <package-spec>
 pkg requirement resolve <facility> <constraint>...
 ```
 
-This query resolves only the configured **system facility default** through the normal global package-class/osarch semantics, validates that the selected installed concrete declares the requested facility and satisfies every supplied compatibility constraint, and prints that concrete provider identity on success.
+`pkg requirement list` resolves the requested package/version/platform definition from the current catalog and prints its declared dependency lines without downloading or extracting the package artifact. An empty successful result means that the selected definition declares no facility dependencies.
 
-It does not install packages, choose a provider implicitly, create/change a facility default or create a package-consumer binding. Status 1 means the requested facility requirement is not currently satisfiable; status 2 means invalid invocation or constraint/facility syntax.
+`pkg requirement resolve` is the global/non-package requirement query. It resolves only the configured **system facility default** through the normal global package-class/osarch semantics, validates that the selected installed concrete declares the requested facility and satisfies every supplied compatibility constraint, and prints that concrete provider identity on success. It deliberately does not use package-consumer implicit fallback because a non-package caller has no consumer-specific runtime projection path.
+
+Neither query installs packages or mutates provider configuration. Status 1 means the requested catalog/requirement state cannot currently be resolved; status 2 means invalid invocation or syntax.
 
 The query forms print the configured selector. The set forms replace the configured selector. The unset forms remove it; unsetting a consumer binding restores inheritance from the facility default.
 
@@ -602,13 +613,13 @@ A consumer binding is stored directly in that consumer package's system `conf` a
 <consumer-package-conf>/binding/<facility>
 ```
 
-The binding file contains exactly one provider selector followed by newline. If the binding file is absent, the consumer inherits the system facility default. Binding files are configuration, not installed-package material, and changing or removing one does not reinstall or rewrite the consumer package.
+The binding file contains exactly one provider selector followed by newline. If the binding file is absent, a package consumer uses the system facility default when configured and otherwise falls through to deterministic implicit installed-provider resolution. Binding files are configuration, not installed-package material, and changing or removing one does not reinstall or rewrite the consumer package.
 
 Facility defaults belong to the package subsystem's system `conf` area. Their concrete pathname layout is owned by the package subsystem and must not be reconstructed by consumers.
 
 Provider runtime application is owned generically by the launcher. Package command wrappers and package environment scripts must not contain provider-specific dependency logic such as Java-provider lookup, concrete binding reads or hardcoded `JAVA_HOME` construction.
 
-For the currently supported command/environment parts of a facility realization, provider packages describe the concrete commands and environment values through declarative package metadata. The launcher resolves the effective provider selector, validates the selected concrete against the consumer dependency and facility contract, interprets the applicable realization metadata and applies the resulting command-path and environment projection before launching the consumer.
+For the currently supported command/environment parts of a facility realization, provider packages describe the concrete commands and environment values through declarative package metadata. The launcher resolves the effective provider using explicit binding/default precedence and the deterministic implicit fallback when neither is configured, validates the selected concrete against the consumer dependency, interprets the applicable realization metadata and applies the resulting command-path and environment projection before launching the consumer.
 
 Launch-time environment precedence is:
 
@@ -737,9 +748,9 @@ PKG-12  mk lifecycle orchestration does not replace package-management, provider
 PKG-13  concrete package identity names the installed distribution/provider, not a generic facility
 PKG-14  facility declarations are independent of package identity
 PKG-15  multiple installed providers of the same facility/compatibility are valid
-PKG-16  explicit consumer binding overrides facility default; absent both, dependency resolution fails
+PKG-16  package-consumer resolution uses explicit binding, then facility default, then deterministic implicit installed-provider resolution; explicit configured intent never silently falls back
 PKG-17  provider selectors use package-spec grammar; omitted version follows package default and explicit version pins
-PKG-18  pkg install does not auto-install or silently choose missing dependency providers
+PKG-18  pkg install validates dependency declarations but does not auto-install providers or require current runtime dependency satisfiability
 PKG-19  runtime re-resolves and validates mutable provider selection before provider use
 PKG-20  pkg provider configures facility defaults and per-consumer bindings
 PKG-21  provider-selection configuration is system-scoped authoritative conf state
@@ -802,4 +813,9 @@ PKG-79  optional flat-pkg/dmg-pkg payload-root selects one validated relative su
 PKG-80  dmg-pkg overlays add only explicitly selected component payloads at validated relative targets and reject overwrite collisions
 PKG-81  flat-pkg and dmg-pkg materialization never execute installer scripts or perform installer-owned system integration side effects
 PKG-82  package-command facility-cmd delegation resolves only to the ordinary package command of the exact same provider concrete and never re-resolves through global PATH or another selector
+PKG-83  implicit package-consumer provider resolution selects a single compatible concrete, or the compatible package default when all candidates belong to one provider package; otherwise multiple compatible candidates are an error
+PKG-84  installed provider discovery is derived from managed concrete facility metadata and no separate mutable provider index is authoritative
+PKG-85  package integration materializes validated dependency declarations without resolving mutable runtime provider state
+PKG-86  pkg requirement list resolves and prints catalog dependency declarations without downloading the package artifact
+
 ```
