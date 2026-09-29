@@ -35,11 +35,24 @@ remote login user
 non-empty password value
 ```
 
-The password is available to rsudo for the remote authentication steps that actually require it.
+The password is the candidate authentication secret owned by rsudo.
 
-If the remote SSH/sudo environment does not require the password for a particular step, rsudo must still complete the operation correctly.
+Normal rsudo SSH transport uses the current `ssh_auth` contract: OpenSSH keeps
+its configured authentication-method selection and ordering, and the rsudo
+password is supplied whenever OpenSSH requests secret-entry input. The candidate
+may therefore be tried as a private-key passphrase, account password or another
+OpenSSH secret-entry value.
 
-The password must not become ordinary target-command input or ordinary command output merely because an authentication step did not consume it.
+Normal rsudo execution does not perform host enrollment. Its `ssh_auth`
+transport requires pre-established host trust according to the SSH facility
+contract.
+
+The same password remains available for remote sudo authentication when sudo
+requires it. If SSH or sudo does not require the value for a particular step,
+rsudo must still complete the operation correctly.
+
+The password must not become ordinary target-command input or ordinary command
+output merely because an authentication step did not consume it.
 
 ## Non-interactive execution
 
@@ -114,11 +127,12 @@ These modes remain invocation-local and are cleared at the start of every
 ```text
 RSUDO_ASKPASS
 RSUDO_NO_PRESERVE_QUOTES
+RSUDO_SSH_AUTH_CHECK
 ```
 
 Therefore recursive calls reuse connection/credential, target-user and
-interactive state, but do not implicitly inherit `--askpass` or
-`--no-preserve-quotes`.
+interactive state, but do not implicitly inherit `--askpass`,
+`--no-preserve-quotes` or `--ssh-auth-check`.
 
 The lower-level public `rsudo_core` function consumes the resolved caller
 state directly. `RSUDO_ASKPASS` is not an `rsudo_core` input; password
@@ -302,6 +316,43 @@ When the password is absent and interactive acquisition is applicable, rsudo may
 
 A failed required password acquisition prevents remote execution.
 
+## SSH authentication check
+
+`--ssh-auth-check` is an explicit interactive preparation and verification
+operation. It is invocation-local and terminal: after the check completes,
+rsudo does not execute a sudo target or delegate to a submodule.
+
+The check requires a TTY and accepts no remaining command/submodule operands.
+Host, user and password state are resolved through the normal rsudo option,
+credential-loading, defaulting and password-acquisition paths before the check
+runs.
+
+The check performs two sequential SSH verifications.
+
+The first is an ordinary interactive OpenSSH connection with:
+
+```text
+BatchMode=no
+StrictHostKeyChecking=ask
+AddKeysToAgent=yes
+ControlPath=none
+SSH_ASKPASS_REQUIRE=never
+```
+
+This phase may interactively enroll an unknown host key and may request
+OpenSSH-managed authentication input such as a private-key passphrase or account
+password. When OpenSSH successfully reads a file-backed identity,
+`AddKeysToAgent=yes` permits it to add that identity to the current agent.
+
+If the interactive phase succeeds, rsudo then performs a fresh `ssh_auth`
+verification using the resolved rsudo password, with `ControlPath=none`, so the
+result demonstrates that the normal non-interactive rsudo authentication path
+can establish a new connection without relying on an already-open multiplexed
+connection.
+
+A successful authentication check returns success without invoking sudo. Failure
+of either SSH phase is an authentication-check failure.
+
 ## Errors and status
 
 Invalid local invocation is rejected before remote execution.
@@ -353,12 +404,14 @@ RSUDO-16  fs get/put never perform an implicit destructive fallback when staged 
 RSUDO-17  fs get/put report when explicit deletion would make the estimated transfer fit, and fail until that deletion is explicitly requested
 RSUDO-18  fs put promotes an existing-destination replacement only after transfer and requested metadata application succeed
 RSUDO-19  fs get/put attempt rollback when staged replacement promotion fails after moving the previous destination aside
-RSUDO-20  each rsudo invocation preserves target-user and interactive caller state while resetting askpass and no-preserve-quotes before parsing current options
-RSUDO-21  recursive rsudo calls reuse connection/credential, target-user and interactive state but do not implicitly inherit askpass or no-preserve-quotes
+RSUDO-20  each rsudo invocation preserves target-user and interactive caller state while resetting askpass, no-preserve-quotes and ssh-auth-check before parsing current options
+RSUDO-21  recursive rsudo calls reuse connection/credential, target-user and interactive state but do not implicitly inherit askpass, no-preserve-quotes or ssh-auth-check
 RSUDO-22  interactive non-TTY stdin is executed as a privileged shell-source prefix; optional command operands execute after it in the same shell environment
 RSUDO-23  exec inject composes loadlib_inject_stream with recursive rsudo, including named/one-shot isolated command injection; generator failure is returned before recursive execution, otherwise the recursive rsudo status is returned, with reusable target-user/interactive state inherited
 RSUDO-24  rsudo-admin exposes Connect to host, Browse host, rsudo jobs, and Encrypted file load/edit/new as its top-level administrative actions
 RSUDO-25  rsudo-admin host actions discover non-empty in-memory RSUDO_CREDENTIALS_GROUP_<group>_HOST groups without exposing group passwords and use the selected group for interactive connect or injected privileged browsing
 RSUDO-26  rsudo-admin jobs load an explicit local library, edit and execute a private temporary copy of an explicit template in job-local execution state, and remove that temporary copy when the job action ends
 RSUDO-27  rsudo-admin encrypted-file actions provide load/edit/new through the existing encryption contracts, and new-file creation does not create a plaintext temporary file
+RSUDO-28  normal rsudo SSH transport uses ssh_auth with the resolved rsudo password as the repeatable candidate secret and does not perform host enrollment
+RSUDO-29  --ssh-auth-check is a terminal TTY-only two-phase check: interactive OpenSSH preparation with host enrollment/agent loading enabled, followed by a fresh ssh_auth verification without multiplexed-connection reuse
 ```
