@@ -9,9 +9,10 @@ Design a developer-facing live experimentation and validation environment mechan
 
 ## Repository / validation evidence revisions
 
-- rumiai-os testlab baseline formally validated at: `5e4d66d9c67248409f165e80542d8c39bf70b957`
-- rumiai-tests revision used by the successful cross-host testlab validation: `c236f7497da0c468605078a9960f988af7e97534`
-- later observed rumiai-tests commits through `3c9d0e35b0f5b32f305b8fb36abee1b16f15ce26` affect only the concurrent SSH test work and do not modify testlab files or its validation scope
+- baseline cross-host lifecycle validation remains recorded at `rumiai-os@5e4d66d9c67248409f165e80542d8c39bf70b957` / `rumiai-tests@c236f7497da0c468605078a9960f988af7e97534`, GitHub Actions run `36537384660`
+- first substantial real scenario product revision: `rumiai-os@89e215c43d57fd96e8557799b764fff4f5bed7e3`
+- updated base `testlab` validation with the shipped `rsudo` scenario present passed on Ubuntu and macOS in run `36541262130`
+- real `testlab -> rsudo -> ssh -> sshd -> sudo` task validation passed at `rumiai-tests@25fbd5320ecbe5b724e656f6426605bb36e4e33e`, GitHub Actions run `36542681411`, against `rumiai-os@89e215c43d57fd96e8557799b764fff4f5bed7e3`
 - rumiai-dev-PoCs is retained only as historical experimental evidence for this task; it is no longer an implementation gate
 
 Exact current remote HEADs must still be rechecked at the start of every resumed work unit; this handoff records task/evidence identity rather than pretending that unrelated concurrent repository development is frozen.
@@ -55,7 +56,7 @@ Current direction:
 - The historical massimilianonardi-ai/m repository is reference material only, not current authority.
 - The new mechanism must not turn rumiai-test into an environment preparer or assertion-aware orchestrator.
 - Permanent test assertions remain in normal .test files; environment/lab orchestration must not become an alternative implementation of target behavior.
-- Podman is a strong candidate backend for disposable real environments, not yet a mandatory architecture choice.
+- Podman is an optional scenario-specific implementation choice. The current `rsudo` scenario uses host Podman, but Podman is not a global `testlab` prerequisite and remains explicitly outside the macOS baseline.
 - `testlab` is interactive-first as a strong design recommendation, not an absolute prohibition on unattended execution. Scenarios may deliberately mix automated setup/dialogue with direct human control when that gives better development evidence.
 - Real scenario creation/lifecycle is the center of `testlab`; terminal-dialogue automation is supporting infrastructure, not the product's defining responsibility.
 - No PTY/dialogue tool is a current `testlab` prerequisite. Expect, `script(1)` and the previous managed-Expect/package direction are outside the baseline; they may be reconsidered only for a future concrete scenario need.
@@ -78,7 +79,7 @@ Current direction:
 - Scenario substrate and scenario ownership should remain separate dimensions. An existing host/pod is externally owned and testlab must not destroy it; a copied filesystem or provisioned container topology can be testlab-owned and disposable. This separation prevents cleanup semantics from being inferred merely from whether the substrate is a host, filesystem or container.
 - A scenario therefore needs to expose at least readiness plus the concrete handles needed by activities (for example paths, host/port, user/credentials, container/pod identity or service endpoints), while cleanup may affect only resources owned by that scenario.
 - Do not import formal-validation constraints into ordinary lab use: normal testlab sessions should be able to exercise a dirty/uncommitted development checkout, should not require immutable publication, and need not produce PASS/FAIL when the experiment has no formal oracle. They should record enough target/Git/environment identity to explain what was exercised. A testlab run becomes formal validation evidence only through the existing validation contract, not merely because the live scenario was realistic.
-- For rsudo, a Podman-backed real SSH/sudo target could replace boundary fakes for live/validation scenarios and exercise real sshd, sudo policy, TTY, password-required/passwordless/root cases and a real remote filesystem. Random localhost port publication and tmpfs mounts make non-invasive parallel scenarios plausible; exact portability behavior across Podman hosts still requires a PoC.
+- For `rsudo`, the Podman-backed real SSH/sudo target is now a shipped project scenario. It creates one owned disposable container, uses a random localhost SSH port, exposes SSH/sudo handles through scenario context, and keeps the project checkout plus base image external. Random-port adaptation remains scenario-local through a PATH `ssh` wrapper and does not change the public `rsudo` interface.
 
 ## Accepted task-local scenario contract
 
@@ -119,6 +120,11 @@ Current direction:
 - The first validation attempt exposed only a test-suite root-resolution defect; evidence from both hosts identified the same harness error and it was corrected.
 - The next macOS run exposed a real portability defect: passing `--` to a utility that did not support it. Product and tests were corrected according to `POSIX-PORTABILITY-LAYER.md`.
 - Formal validation run `36537384660` then passed on both Ubuntu and macOS for the current baseline, against `rumiai-os@5e4d66d9c67248409f165e80542d8c39bf70b957` and `rumiai-tests@c236f7497da0c468605078a9960f988af7e97534`.
+- The first substantial real scenario `rumiai-os/testlab/scenarios/rsudo` was promoted. It prepares a real password-authenticated OpenSSH/sudo target in one owned Podman container, records target/image as external resources, exposes connection facts in context, and uses direct inherited terminal streams for interactive `enter`.
+- `TESTLAB-15` and `TESTLAB-16` were added to the canonical specification to keep Podman/SSH tooling scenario-specific and to constrain cleanup to the created container.
+- Base `testlab` validation run `36541262130` passed on Ubuntu and macOS with the new scenario shipped, confirming that Podman did not become a global prerequisite.
+- Initial `testlab-rsudo` validation attempts exposed test-harness issues rather than product failures: the disposable target was incorrectly compared with an empty Git status instead of its post-preparation baseline, and rootless Podman storage initially leaked into the validator's isolated `HOME`. The permanent test now compares target before/after state and the workflow supplies the already-prepared host Podman environment explicitly.
+- Formal task validation run `36542681411` passed the real `testlab -> rsudo -> ssh -> sshd -> sudo` path with UID 0 observed, scenario cleanup completed, and scope result `VALIDATED` against `rumiai-os@89e215c43d57fd96e8557799b764fff4f5bed7e3` / `rumiai-tests@25fbd5320ecbe5b724e656f6426605bb36e4e33e`.
 
 ## Current state
 
@@ -143,6 +149,7 @@ rumiai-os/bin/sys/testlab
 rumiai-os/res/sys/manual/testlab
 rumiai-os/testlab/scenarios/host
 rumiai-os/testlab/scenarios/scratch
+rumiai-os/testlab/scenarios/rsudo
 ```
 
 Public forms:
@@ -160,9 +167,10 @@ testlab close <instance-id>
 The shipped `rumiai-os` project scenarios are deliberately small:
 
 - `host` binds to the current project/host as an externally owned reality;
-- `scratch` creates an instance-owned disposable work directory.
+- `scratch` creates an instance-owned disposable work directory;
+- `rsudo` creates one owned disposable Podman SSH/sudo target while keeping the project checkout and image external.
 
-Permanent coverage lives under `rumiai-tests/tests/rumiai-os/testlab/`, with task scope `validation/testlab.conf` and Linux/macOS workflow `.github/workflows/testlab.yml`.
+Permanent baseline coverage lives under `rumiai-tests/tests/rumiai-os/testlab/`, with task scope `validation/testlab.conf` and Linux/macOS workflow `.github/workflows/testlab.yml`. The real `rsudo` scenario is additionally protected by `tests/rumiai-os/testlab-rsudo/real.test`, `validation/testlab-rsudo.conf` and the Ubuntu host-prepared workflow `.github/workflows/testlab-rsudo-scenario.yml`.
 
 Formal validation run `36537384660` passed on both `ubuntu-latest` and `macos-latest` against product revision `5e4d66d9c67248409f165e80542d8c39bf70b957` and test-suite revision `c236f7497da0c468605078a9960f988af7e97534`. The validation exercises real product lifecycle behavior including prerequisite rejection before instance allocation, persistent preparation, context publication, frozen-scenario re-entry, owned-resource cleanup, repeated close, failed-prepare recovery and status reporting.
 
@@ -170,15 +178,17 @@ The first macOS validation attempt also exposed a real GNU/BSD portability defec
 
 ## Next action
 
-The basic lifecycle is now implemented and validated. Development should continue by adding **real useful project scenarios** one at a time and extracting common machinery only when repeated concrete scenarios demonstrate it.
+The first substantial real scenario is now implemented and formally exercised. Do not extract a generic Podman/provider layer from a single scenario.
 
-The next product-design work should therefore focus on:
+Continue from concrete development needs:
 
-1. exercise the current interactive-first `testlab` against normal development use and refine the bare-menu workflow where concrete friction appears;
-2. select the first substantial real scenario beyond `host`/`scratch` from an actual RumiAI development need;
-3. keep backend-specific mechanics inside that scenario until at least a second real scenario demonstrates a common abstraction;
-4. consider reuse by `rumiai-validate` only after a mature scenario has a stable execution-environment contract;
+1. use the shipped `rsudo` scenario as the disposable real SSH/sudo environment for rsudo/SSH development activities when that reality is useful;
+2. exercise the normal interactive-first `testlab` menu/enter flow during real development and refine it only when concrete friction is observed;
+3. add a second substantial scenario only when a distinct RumiAI development need requires one;
+4. after at least two real scenarios share the same non-trivial mechanics, evaluate whether those repeated mechanics deserve a common `m` abstraction;
 5. do not reopen PTY/Expect handoff work unless a concrete scenario cannot be served by direct inherited terminal interaction.
+
+The current `rsudo` validation deliberately uses an explicitly prepared host Podman environment. Generic `rumiai-validate` host-prerequisite preparation has not been introduced; that larger validation concern remains separate from `testlab`.
 
 ## Blockers / open questions
 
@@ -186,7 +196,7 @@ No blocker remains for continued `testlab` development.
 
 Still intentionally open:
 
-- which substantial real scenario should be promoted next;
+- which distinct substantial scenario, if any, is justified next by a concrete development need;
 - which, if any, repeated scenario mechanics deserve a shared `m` abstraction after multiple real uses;
 - the exact future boundary for mature scenario reuse by `rumiai-validate`;
 - whether a future concrete need justifies any PTY/dialogue adapter.
