@@ -48,13 +48,13 @@ Realign the package dependency/provider model so manual configuration remains av
 
 ## Current state
 
-Core rumiai-os implementation is realigned. Canonical package model is being updated in this work unit; manuals and permanent tests still need realignment and validation.
+Core rumiai-os implementation, canonical package model, manuals and permanent regression tests are realigned. Final hosted validation is in progress against the pinned current product revision.
 
 The global/non-package `pkg requirement resolve` query intentionally remains facility-default-only because it has no package-consumer runtime projection path. Implicit fallback applies to package consumers.
 
 ## Next action
 
-Align rumiai-os manuals and rumiai-tests, validate the public composed paths, then run the final consistency gate.
+Finish hosted package/provider, GeoServer and proportional health validation; perform the final consistency gate and close the handoff.
 
 ## Blockers / open questions
 

@@ -572,9 +572,9 @@ Automatic transitive dependency installation remains outside the baseline. Expli
 
 ### Runtime provider application
 
-A consumer with no explicit binding inherits the facility default at runtime. A consumer with an explicit binding uses that selector instead.
+A package consumer with an explicit binding uses that selector. Without a binding it uses the configured system facility default when one exists; when neither explicit surface exists it uses deterministic implicit installed-provider resolution according to the provider-selection rules above.
 
-Runtime launch must resolve and validate the effective selector before using the provider so that mutable bindings, mutable facility defaults and package-default changes are observed according to selector semantics.
+Runtime launch must resolve and validate the effective provider before using it so that mutable bindings, mutable facility defaults, package-default changes and changes to the installed compatible-provider set are observed according to their respective semantics.
 
 A facility provider may require a facility-specific runtime projection, including commands and environment needed to consume that facility. The facility default owns global command publication for that facility. A consumer-specific binding may override provider selection for a launched consumer through the package launcher without changing the global facility command publication.
 
