@@ -144,21 +144,6 @@ A standalone utility must not depend on `m_*`, `log`, `lang`, `m_COMMAND_BIN`, `
 
 Do not accidentally depend on Bash syntax or unapproved GNU/vendor extensions.
 
-When writing or modifying POSIX shell code that uses a pipeline, explicitly
-reason about the failure semantics of every stage. Do not rely on the default
-rightmost-command pipeline status when failure of an earlier stage matters. If
-the current shell scope has not already established `pipefail`, either
-establish POSIX.1-2024 `pipefail` safely for the applicable scope or structure
-the code so the required statuses are preserved explicitly.
-
-Do not enable `pipefail` mechanically around a pipeline whose consumer may
-legitimately succeed before draining its input, or where a current contract
-deliberately makes the rightmost stage authoritative. Account for possible
-upstream `SIGPIPE` in those cases. Availability of `pipefail` also does not
-justify removing buffering, staging, rollback, sequencing, atomicity or
-newline-preservation mechanisms that protect stronger properties than pipeline
-status.
-
 ## 9. Defensive shell quoting
 
 In `m` or RumiAI `sh` code, quote variable expansions, substitutions and value operands with double quotes whenever doing so preserves the intended shell semantics.
