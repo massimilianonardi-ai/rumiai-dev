@@ -12,7 +12,7 @@ requiring a remote m/RumiAI library tree.
 ## Current repository revisions
 
 ```text
-rumiai-dev   ed89b23add36cba2984ab82d1ae90039efb07e5c  (pre-checkpoint HEAD)
+rumiai-dev   54b6b5e6788e71ad4fa3c3fbc151c60cbc358c79  (pre-checkpoint HEAD)
 rumiai-os    a015fb27cd5862808bef3f7fe8b92b2b8e8e8169
 rumiai-tests ce64eab23d03fefc3b93eb2d6baf57d0e5ccd013
 ```
