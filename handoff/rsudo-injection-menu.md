@@ -12,9 +12,9 @@ requiring a remote m/RumiAI library tree.
 ## Current repository revisions
 
 ```text
-rumiai-dev   2c95f96e4026338610fdc8fc25ef2ac3c336d361  (pre-checkpoint HEAD)
-rumiai-os    4e6d33f224bcba77a4e553b1e4bd5299a57d555c
-rumiai-tests b1c3fb58ae9306392c34e10800b963f025b0e452
+rumiai-dev   451b253c1d595a77b58d52c40456b52e883a4fe3  (pre-checkpoint HEAD)
+rumiai-os    ecfe8197085be8f2af4c72813ea18e00a9ba778f
+rumiai-tests d588378dee5c3fa492460016b2d3ed606e41b6ac
 ```
 
 Fresh remote HEAD retrieval remains mandatory before future writes.
@@ -936,3 +936,62 @@ does not authorize a product modification by itself. The next step is to present
 the audit/conclusions and, after acceptance, promote the settled runtime policy
 to the applicable canonical specifications before product implementation.
 
+
+
+## rsudo-admin Browse host PTY regression checkpoint — 2026-09-29
+
+A physical user run of `rsudo-admin -> Browse host` exposed a regression that
+the original permanent test did not exercise: after selecting a host the local
+terminal showed only the rsudo startup log and then appeared to hang.
+
+The cause was the local redirection around the complete browse action:
+
+```sh
+( rsudo ... ) >/dev/null
+```
+
+The remote `menu` correctly writes its terminal UI to its remote `/dev/tty`,
+but OpenSSH transports that PTY output back through the local SSH stdout
+channel. Redirecting the complete local rsudo action therefore discarded the
+interactive screen itself while leaving the remote menu waiting for terminal
+input.
+
+The product fix at
+`rumiai-os@ecfe8197085be8f2af4c72813ea18e00a9ba778f` removes the local
+session redirect. The menu source is injected as named command
+`_rsudo_admin_remote_menu`; continuation source invokes that command remotely
+as:
+
+```sh
+_rsudo_admin_remote_menu -d / >/dev/null
+```
+
+This discards only the serialized menu command result on the remote side.
+Writes to remote `/dev/tty` remain on the SSH PTY channel and are visible to
+the operator. The operational manual was realigned to this routing.
+
+Permanent regression coverage was extended at
+`rumiai-tests@d588378dee5c3fa492460016b2d3ed606e41b6ac`. Its allowed external
+SSH-boundary fixture emits a marker on the SSH output channel; the interactive
+test now actually selects the Browse host entry and requires that marker to be
+visible before control returns to the main menu. The pre-fix local redirect
+would suppress this observation.
+
+Focused workflow run `36573594068` froze exactly
+`rumiai-os@ecfe8197085be8f2af4c72813ea18e00a9ba778f` with
+`rumiai-tests@d588378dee5c3fa492460016b2d3ed606e41b6ac`:
+
+```text
+Ubuntu 26.04 ARM   PASS contract.test
+                   PASS interactive.test
+                   PASS 2 / FAIL 0 / SKIP 0 / ERROR 0
+
+macOS              PASS contract.test
+                   PASS interactive.test
+                   PASS 2 / FAIL 0 / SKIP 0 / ERROR 0
+```
+
+This validates the local rsudo-admin/SSH-channel regression through the real
+product path with the permitted external SSH fixture. A fresh physical
+post-fix rsudo/menu run against a real remote host is still pending and must not
+be inferred from the hosted PASS.
