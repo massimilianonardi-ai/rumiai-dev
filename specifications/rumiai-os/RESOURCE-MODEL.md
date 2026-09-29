@@ -1,6 +1,6 @@
 # RumiAI OS — Resource model
 
-Date: 2026-09-17  
+Date: 2026-09-29  
 Status: **Current / normative**
 
 ## 1. Scope
@@ -69,6 +69,7 @@ The currently fixed global resource classes are:
 ```text
 lang
 manual
+testlab
 ```
 
 They have independent semantics:
@@ -79,6 +80,9 @@ lang
 
 manual
     revision-coupled operational documentation pages under DOCUMENTATION-MODEL.md
+
+testlab
+    technical m development-scenario definitions under the TESTLAB.md contract
 ```
 
 No additional generic namespace is introduced in anticipation of future content. Directories such as `icons`, `themes`, `templates`, `models` or equivalents require a concrete future contract before materialization.
@@ -281,7 +285,7 @@ RES-02  global resources are ownership-qualified; current owners are sys and ai
 RES-03  sys belongs to the technical m substrate; ai belongs to the branded RumiAI layer
 RES-04  resource payloads and mutable state remain distinct concepts
 RES-05  a co-located selector does not turn a resource tree into state
-RES-06  the currently fixed global resource classes are lang and manual
+RES-06  the currently fixed global resource classes are lang, manual and testlab
 RES-07  m_LANG_DIR remains the technical lang interface and equals $m_RES_DIR/sys/lang
 RES-08  the technical lang facility resolves only sys resources and does not depend on ai
 RES-09  res/*/lang/current selects the same locale in every materialized global language tree
@@ -295,4 +299,5 @@ RES-16  en_US is the distributed initial global language selection and remains t
 RES-17  global operational documentation uses res/<owner>/manual/<topic>
 RES-18  manual topics are extensionless and their content/access semantics belong to DOCUMENTATION-MODEL.md
 RES-19  the manual resource class has no lang-style selector or fallback unless a later explicit contract introduces one
+RES-20  technical testlab scenario resources live under res/sys/testlab/scenarios and their execution semantics belong to TESTLAB.md
 ```

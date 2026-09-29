@@ -26,10 +26,10 @@ A testlab scenario may later be consumed by a manual activity, a development com
 The first baseline discovers scenarios from the current project root:
 
 ```text
-<project-root>/testlab/scenarios/<scenario>
+<project-root>/res/sys/testlab/scenarios/<scenario>
 ```
 
-The project root is the physical current working directory at `testlab` invocation. The baseline does not search parent directories, a global registry or `res/` for scenarios.
+The project root is the physical current working directory at `testlab` invocation. Scenario definitions use the existing technical resource root and the `testlab` resource class defined by `RESOURCE-MODEL.md`; the baseline does not create a new project-root namespace, search parent directories or use a global registry.
 
 A scenario leaf:
 
@@ -44,7 +44,7 @@ The first baseline deliberately introduces no scenario DSL, resource graph, prov
 
 ### Current rumiai-os project scenarios
 
-The current `rumiai-os` project ships these project-local scenarios under its own `testlab/scenarios/` directory:
+The current `rumiai-os` project ships these project-local scenarios under its own `res/sys/testlab/scenarios/` directory:
 
 ```text
 host
@@ -66,7 +66,7 @@ The `rsudo` scenario treats Podman, the host OpenSSH client/keyscan utility and 
 
 After readiness, the `rsudo` scenario publishes factual handles including the target root, owned container identity, SSH host/port/user/password/configuration and an activity PATH prefix. Its `enter` phase invokes the current project's real `rsudo` in interactive mode using direct inherited terminal streams. Random-port SSH adaptation remains private to the scenario execution environment and does not change the public `rsudo` interface.
 
-These are not global built-in scenario identities. They are ordinary project scenario definitions and are discovered only when present under the selected project's `testlab/scenarios/` directory.
+These are not global built-in scenario identities. They are ordinary project-owned `sys` resource payloads and are discovered only when present under the selected project's `res/sys/testlab/scenarios/` directory.
 
 ## 3. Scenario phase interface
 
@@ -244,7 +244,7 @@ A future formal-validation integration may reuse a mature scenario environment o
 
 ```text
 TESTLAB-01  testlab belongs to m and is a bootstrap-integrated command
-TESTLAB-02  project scenarios are regular executable child programs under testlab/scenarios and are never sourced
+TESTLAB-02  project scenarios are regular executable child programs under res/sys/testlab/scenarios and are never sourced
 TESTLAB-03  check precedes persistent instance allocation and scenario runtime mutation
 TESTLAB-04  each allocated instance freezes the selected scenario executable
 TESTLAB-05  persistent instance state is user-scoped sys testlab data resolved through state-path
@@ -259,4 +259,5 @@ TESTLAB-13  the first baseline has no scenario DSL, generic resource graph or pr
 TESTLAB-14  ordinary testlab execution is development activity and is not formal validation evidence
 TESTLAB-15  the rumiai-os rsudo scenario keeps Podman and SSH tooling scenario-specific rather than global testlab prerequisites
 TESTLAB-16  the rumiai-os rsudo scenario owns only its created disposable container; target checkout and image remain external
+TESTLAB-17  scenario definitions use the existing sys resource hierarchy and do not introduce a project-root testlab directory
 ```

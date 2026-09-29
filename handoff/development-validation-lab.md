@@ -52,9 +52,22 @@ Current direction:
 - PoC 047/048/050 results remain historical engineering evidence only and do not block product development;
 - future PTY/dialogue automation requires a new concrete product need and is not inherited automatically from those experiments.
 
+## User correction — 2026-09-29
+
+The original implementation created a new project-root `testlab/` directory. That placement was not explicitly authorized and conflicted with the existing filesystem/resource model: controlled top-level roots already exist, and naming rules do not independently create architectural roots.
+
+The corrected placement is:
+
+```text
+<project-root>/res/sys/testlab/scenarios/<scenario>
+```
+
+`testlab` is therefore a concrete technical `sys` resource class under the existing `res/` root. No project-root `testlab/` namespace remains part of the current contract.
+
 ## Fixed task-local choices
 
 - The working command identity is `testlab`.
+- Scenario definitions use the existing `res/sys/testlab/scenarios/` resource hierarchy; `testlab` does not create a new project-root directory.
 - The historical massimilianonardi-ai/m repository is reference material only, not current authority.
 - The new mechanism must not turn rumiai-test into an environment preparer or assertion-aware orchestrator.
 - Permanent test assertions remain in normal .test files; environment/lab orchestration must not become an alternative implementation of target behavior.
@@ -116,13 +129,14 @@ Current direction:
 - PoC 048 investigated prompt-synchronized PTY automation and reversible operator handoff. Hosted/macOS evidence was useful, but repeated physical Linux failures made this line of investigation disproportionately expensive. On 2026-09-29 the user explicitly stopped further PoC 047/048 debugging and removed all such physical/PTY work as a gate for `testlab`.
 - PoC 050 explored and rejected moving scenario-specific SSH command selection into rsudo; no product contract was promoted from that path.
 - Ownership is closed: `testlab` belongs to technical `m` and is implemented in `rumiai-os`.
+- The initially introduced top-level `rumiai-os/testlab/` layout was identified as unauthorized filesystem-model drift and corrected forward: scenarios now live under `rumiai-os/res/sys/testlab/scenarios/`, with `testlab` explicitly promoted as a technical resource class.
 - The current product contract was promoted in `specifications/rumiai-os/TESTLAB.md`.
 - The first product implementation added `bin/sys/testlab`, its mandatory operational manual, and project-local `host` and `scratch` scenarios.
 - Permanent contract/lifecycle tests and a dedicated Linux/macOS formal-validation workflow were added in `rumiai-tests`.
 - The first validation attempt exposed only a test-suite root-resolution defect; evidence from both hosts identified the same harness error and it was corrected.
 - The next macOS run exposed a real portability defect: passing `--` to a utility that did not support it. Product and tests were corrected according to `POSIX-PORTABILITY-LAYER.md`.
 - Formal validation run `36537384660` then passed on both Ubuntu and macOS for the current baseline, against `rumiai-os@5e4d66d9c67248409f165e80542d8c39bf70b957` and `rumiai-tests@c236f7497da0c468605078a9960f988af7e97534`.
-- The first substantial real scenario `rumiai-os/testlab/scenarios/rsudo` was promoted. It prepares a real password-authenticated OpenSSH/sudo target in one owned Podman container, records target/image as external resources, exposes connection facts in context, and uses direct inherited terminal streams for interactive `enter`.
+- The first substantial real scenario `rumiai-os/res/sys/testlab/scenarios/rsudo` was promoted. It prepares a real password-authenticated OpenSSH/sudo target in one owned Podman container, records target/image as external resources, exposes connection facts in context, and uses direct inherited terminal streams for interactive `enter`.
 - `TESTLAB-15` and `TESTLAB-16` were added to the canonical specification to keep Podman/SSH tooling scenario-specific and to constrain cleanup to the created container.
 - Base `testlab` validation run `36541262130` passed on Ubuntu and macOS with the new scenario shipped, confirming that Podman did not become a global prerequisite.
 - Initial `testlab-rsudo` validation attempts exposed test-harness issues rather than product failures: the disposable target was incorrectly compared with an empty Git status instead of its post-preparation baseline, and rootless Podman storage initially leaked into the validator's isolated `HOME`. The permanent test now compares target before/after state and the workflow supplies the already-prepared host Podman environment explicitly.
@@ -138,7 +152,7 @@ Canonical contract:
 
 - `specifications/rumiai-os/TESTLAB.md` owns the current semantics;
 - `testlab` belongs to `m`;
-- project scenarios are executable child programs under `<project-root>/testlab/scenarios/`, never sourced;
+- project scenarios are executable child programs under `<project-root>/res/sys/testlab/scenarios/`, never sourced;
 - lifecycle phases are `check`, `prepare`, `enter`, `cleanup`;
 - persistent instance state is user-scoped technical state resolved through `state-path user sys testlab data`;
 - each allocated instance freezes its scenario executable so later enter/cleanup behavior does not drift when the project source changes;
@@ -151,9 +165,9 @@ Current product implementation:
 ```text
 rumiai-os/bin/sys/testlab
 rumiai-os/res/sys/manual/testlab
-rumiai-os/testlab/scenarios/host
-rumiai-os/testlab/scenarios/scratch
-rumiai-os/testlab/scenarios/rsudo
+rumiai-os/res/sys/testlab/scenarios/host
+rumiai-os/res/sys/testlab/scenarios/scratch
+rumiai-os/res/sys/testlab/scenarios/rsudo
 ```
 
 Public forms:
