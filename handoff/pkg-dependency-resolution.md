@@ -10,7 +10,7 @@ Realign the package dependency/provider model so manual configuration remains av
 ## Current repository revisions
 
 - rumiai-dev: 17193959db406db95ed2af9aed097e5e13d068ae (pre-change base)
-- rumiai-os: 4241dbe2a55ab62aa1e56e6ab1da9e99f72451a5
+- rumiai-os: 2b642baa35f70a2ea81bdcad174b3f839efa8942
 - pkg-catalog: d63f87d2be67288ef57f4a5812fabbc3f0b24a0d
 - rumiai-tests: d04246cf97806be66afe89feabccca71d3b2c000
 
@@ -39,6 +39,7 @@ Realign the package dependency/provider model so manual configuration remains av
 - Removed provider-index mutation from integration/deintegration; installed concrete facility metadata now drives provider discovery, so stale legacy index markers are inert.
 - Added internal support for public `pkg requirement list <package-spec>` catalog queries without artifact download.
 - Global `pkg requirement resolve` now reports unconfigured, unresolvable and incompatible facility-default failure reasons instead of failing silently.
+- `pkg install` now emits unresolved dependency warnings before artifact transfer rather than after integration, while continuing the install.
 
 - Reproduced that Keycloak declares only `java =25`.
 - Confirmed current tests deliberately require failure when a compatible provider is installed but no binding/default exists.

@@ -566,7 +566,7 @@ The baseline package-install contract does not automatically install missing dep
 
 Installation validates the package's dependency declarations as catalog metadata before artifact download, but current runtime satisfiability is **not** an installation precondition. A package may therefore be installed while one or more declared facilities are currently unavailable or ambiguous. The dependency declaration is materialized with the concrete and is resolved again when the consumer is actually launched.
 
-After successful installation, `pkg install` may report currently unsatisfied dependencies as warnings so the operator can see the facility, compatibility constraints and resolution reason without turning mutable runtime/provider state into an artifact-install gate.
+After resolving the artifact descriptor but before artifact transfer, `pkg install` reports currently unsatisfied dependencies as warnings so the operator sees the facility, compatibility constraints and resolution reason before a potentially large download begins. The warning is informational: mutable runtime/provider state remains outside the artifact-install gate and is resolved again when the consumer is actually launched.
 
 Automatic transitive dependency installation remains outside the baseline. Explicit provider bindings/defaults remain available when stable policy is desired, while deterministic implicit resolution handles the non-ambiguous installed-provider case without requiring redundant setup.
 
@@ -818,5 +818,6 @@ PKG-84  installed provider discovery is derived from managed concrete facility m
 PKG-85  package integration materializes validated dependency declarations without resolving mutable runtime provider state
 PKG-86  pkg requirement list resolves and prints catalog dependency declarations without downloading the package artifact
 PKG-87  pkg requirement resolve status-1 diagnostics distinguish unconfigured, unresolvable and incompatible global facility-default states
+PKG-88  pkg install reports currently unsatisfied runtime dependencies before artifact transfer without treating them as an installation failure
 
 ```
