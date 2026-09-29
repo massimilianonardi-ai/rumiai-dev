@@ -12,9 +12,9 @@ requiring a remote m/RumiAI library tree.
 ## Current repository revisions
 
 ```text
-rumiai-dev   336e293c88d146ecf22be674b82c4e36c3bb3e5e  (pre-checkpoint HEAD)
-rumiai-os    156d64819a43b4e5611c764cb36fc0dba19ba3ba
-rumiai-tests 476e0e9737e79282f9e857a093ff3d9cc6ef23c9
+rumiai-dev   df77013796fd65ebb69faaa36f2098934f03ecf1  (pre-checkpoint HEAD)
+rumiai-os    199c5f4bdcef79b6e8384bdac4d5ea3beaed7568
+rumiai-tests 4f3cd3b2e3495e88a8b72aa75f36bb55b804fe94
 ```
 
 Fresh remote HEAD retrieval remains mandatory before future writes.
@@ -51,10 +51,14 @@ specifications/rumiai-os/COMMAND-ENTRYPOINTS.md
   automatic transitive closure is added.
 - Zero selected libraries are valid. Every selected library is embedded and
   loaded through the generated `loadlib` in caller-supplied order.
-- The `--` separator is optional. Without it, the stream contains only the
-  injected loader plus selected library loads and does not modify positional
-  parameters. With it, one command source is mandatory and remaining operands
-  become that command's positional parameters.
+- Before the optional final `--`, callers may interleave explicit library
+  references with repeatable `--command COMMAND_NAME LOCAL_SOURCE`
+  registrations. Each named command is a reusable shell function backed by a
+  subshell-isolated local source file.
+- The final `-- COMMAND_SOURCE [ARG...]` form remains optional and
+  non-repeatable. It preserves the caller-facing one-shot syntax while executing
+  the source through a private subshell wrapper, so its positional/process state
+  does not leak into subsequent source.
 - The menu case continues to select `base array map term menu`, but `base` is
   now ordinary caller-selected data rather than generator policy.
 - The generated stream owns its in-memory `loadlib` implementation directly;
@@ -113,15 +117,19 @@ block functional injection validation.
 
 ## Next action
 
-Run the permanent loader/injection test against the generalized interface, then
-physically rerun the menu case using:
+Run the permanent loader/injection and rsudo exec-inject tests against the
+current product revision, then physically rerun the privileged menu case:
 
 ```sh
-loadlib_inject_stream base array map term menu -- "$m_BIN_SYS_DIR/menu" -d /
+rsudo --interactive --connect "$USER@127.0.0.1" \
+  exec inject \
+  base array map term menu \
+  -- "$m_BIN_SYS_DIR/menu" -d /
 ```
 
-The previous composed PASS remains historical evidence for the architecture; the
-new syntax/library-only behavior still needs current-revision validation.
+A follow-up physical case should also exercise one repeatable `--command`
+registration plus stdin continuation to validate the complete composed transport,
+not only generator mechanics.
 
 ## Accepted rsudo exec injection design
 
@@ -164,31 +172,42 @@ rsudo_mod_exec_inject()
 )
 ```
 
-Product revision
-`rumiai-os@500e5362741b5a5844c6f7f2524dc9a5b4d3a85d` implements this
-contract and realigns the operational manuals.
+Current product revision
+`rumiai-os@199c5f4bdcef79b6e8384bdac4d5ea3beaed7568` implements this
+contract and operational documentation, including rejection of shell words that
+POSIX requires or permits implementations to recognize as reserved.
 
 ## Current validation state
 
-Product, canonical specifications, manuals and permanent tests are now aligned
-to the accepted stdin-source composition and reusable rsudo target-user /
-interactive state.
+Product, canonical specifications, operational manuals and permanent tests are
+aligned to named/one-shot subshell-isolated command injection.
 
-Permanent coverage includes:
+Permanent coverage now includes:
 
-- generator command-source followed by stdin-source in one shell state;
-- exec-inject generator-to-rsudo composition;
-- generator failure propagation through pipefail;
-- recursive rsudo status propagation;
-- reusable RSUDO_AS_USER and RSUDO_INTERACTIVE behavior;
-- invocation-local reset of askpass and no-preserve-quotes.
+- existing explicit-library and incomplete-dependency behavior;
+- repeatable `--command` registration interleaved with libraries;
+- one-shot argv preservation behind its private subshell wrapper;
+- named command invocation from both the one-shot command and stdin
+  continuation;
+- `exit` status isolation (named status 7 and one-shot status 6);
+- no leakage of command-local positional parameters, variables/functions, cwd
+  and umask into continuation source;
+- invalid, POSIX-reserved/optionally-reserved, duplicate and generator-reserved
+  command-name rejection;
+- missing named-source failure;
+- exec-inject generator-to-rsudo composition and pipefail propagation.
 
-The permanent tests have been updated in `rumiai-tests` but have not been
-executed by the assistant against a materialized current checkout in this work
-unit. A Linux-laboratory execution attempt was made, but the environment could
-not resolve `github.com` and therefore could not materialize the exact current
-checkouts; this is an infrastructure limitation, not product validation
-evidence. A fresh physical `rsudo exec inject` rerun is also still pending.
+A local synthetic POSIX-sh harness exercising the current generator mechanics
+passed generation/syntax/execution, repeated named-command invocation,
+one-shot/named status isolation, cwd/umask/variable/function isolation and
+required/optionally-recognized reserved-name rejection.
+
+The permanent tests have not been executed against materialized current
+checkouts in this work unit because the available Linux environment cannot
+resolve `github.com`; a checkout attempt failed before test execution. This is
+an infrastructure limitation, not product PASS evidence.
+
+Fresh physical `rsudo exec inject` validation remains pending.
 
 ## Next design review
 
@@ -320,6 +339,7 @@ command.
 
 ## Blockers / open questions
 
-No remaining architecture blocker. Current-revision permanent-test execution and
-physical validation are pending. The command-entrypoint compatibility review
-above remains a follow-up design task.
+No remaining injection-architecture blocker. Current-revision permanent-test
+execution and physical validation are pending. The command-entrypoint standards
+review remains an independent follow-up design task rather than an injection
+prerequisite.
