@@ -56,6 +56,9 @@ A physical Linux development run was attempted on host `PRTL-GS-01` with `./rumi
 
 OpenSSH option/askpass semantics were cross-checked against current OpenSSH documentation/source, including the upstream password regression pattern.
 
+
+- Physical Linux run returned fixture status 86 at the ssh-askpass invocation. Verify local rumiai-os and rumiai-tests revisions before attributing this to product behavior; the current suite now prints captured fixture stderr for this case.
+
 ## Next action
 
 Inspect the persisted `.runs/<latest>/logs/rumiai-os/ssh/contract.test.log` from the failed Linux development run, correct the test or target only according to that evidence, then rerun the same test. If it passes, perform the final validation checkpoint and then evaluate the proposed rsudo_core migration in chat without modifying rsudo.
