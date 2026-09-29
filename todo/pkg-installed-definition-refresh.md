@@ -23,5 +23,4 @@ rumiai-tests
 specifications/rumiai-os/PACKAGE-MODEL.md
 rumiai-os/lib/sys/sh/pkg/pkg-install.lib.sh
 pkg-catalog/pkg/micromamba/
-handoff/python-env-facility.md (final historical task snapshot)
 ```
