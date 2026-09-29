@@ -10,9 +10,9 @@ rsudo to it and add the explicit interactive authentication-check path.
 
 ## Current repository revisions
 
-- rumiai-dev: `2a330af2ba162bc242e54dbc29dcaacb55bfcd2f` before this checkpoint
-- rumiai-os: `b900747fa05e8ccc7d9b6d2c65d16ed5fb2b18bc`
-- rumiai-tests: `edd273ccd8c4e725d4f67aaf46e8cc22dcc6fe37`
+- rumiai-dev: `b2c8f582017e5b45e3d7c55b07c695f5601512a6` before this checkpoint
+- rumiai-os: `559ee49d915fbc7292e114bb4f4de375b617230f`
+- rumiai-tests: `9b300faa238b340d0569d425dc59b8408d4d217f`
 
 Fresh remote HEAD retrieval remains mandatory before future writes.
 
@@ -70,62 +70,44 @@ Fresh remote HEAD retrieval remains mandatory before future writes.
 
 ## Current state
 
-Formal rsudo validation was executed on Linux/x86_64 against:
+The failed Linux validation from session
+`20260929T154338+0200-198891` was fully triaged.
 
-```text
-rumiai-tests  26dca8f1aca780722ccb5e2ad9bd83991edc674d
-rumiai-os     b900747fa05e8ccc7d9b6d2c65d16ed5fb2b18bc
-session       20260929T154338+0200-198891
-aggregate     validation/20260929T154337+0200-197084
-```
+The two suite defects have been corrected:
 
-The environment audit was CLEAN, but the scope result was TEST ERROR:
+- `auth-check.test` now forces `/dev/null` for its non-TTY case;
+- `load.test` prepares encrypted input through the real m bootstrap and uses a
+  unique PID-qualified workspace.
 
-```text
-FAIL   rumiai-os/rsudo/auth-check.test
-PASS   rumiai-os/rsudo/contract.test
-PASS   rumiai-os/rsudo/exec-inject.test
-FAIL   rumiai-os/rsudo/fs.test
-PASS   rumiai-os/rsudo/interactive.test
-ERROR  rumiai-os/rsudo/load.test
-```
+The rsudo-fs blocker has also been removed. `rsudo-mod-fs.lib.sh` no longer
+requires host-shell pipefail support for correctness. Its tar transfers use a
+private invocation-owned FIFO with explicit producer and consumer status
+collection, preserving streaming, staging and rollback behavior on shells such
+as Ubuntu dash. du/df producer status is observed before finite parsing.
 
-The published logs established three independent causes:
+Permanent fs coverage now forces a local producer failure while making the
+modeled remote tar consumer succeed, so producer-status propagation is protected
+independently rather than accidentally relying on consumer failure.
 
-1. `auth-check.test` called its intended non-TTY scenario without redirecting
-   stdin; the runner stdin could therefore still be a TTY. The test now uses
-   `</dev/null`.
-2. `load.test` sourced `core.lib.sh` directly outside the m bootstrap, so
-   `m_LIB_DIR` was unavailable. Fixture encryption now executes through a
-   temporary `#!/usr/bin/env m` helper and the real target bootstrap.
-3. `fs.test` exposed an unrelated current product defect in
-   `rsudo-mod-fs.lib.sh`: unconditional `set -o pipefail` aborts under
-   Ubuntu 24.04 `/bin/sh` (dash). This belongs to the active
-   `handoff/pipefail-runtime-policy.md` workstream, whose fixed design already
-   requires capability-safe adoption or an explicit status-preserving fallback.
+A concurrent cleanup removed the obsolete `bin/sys/rsudo-askpass`; its orphan
+manual and obsolete contract-test expectations have now also been removed.
+Current rsudo SSH authentication uses only `ssh_auth` / `ssh-askpass`.
 
-The first two suite defects are fixed in
-`rumiai-tests@edd273ccd8c4e725d4f67aaf46e8cc22dcc6fe37`.
-No rsudo product behavior was changed in response to this failed validation.
-
-The rsudo SSH migration itself remains aligned across specification, runtime,
-manuals and permanent tests. Formal VALIDATED evidence is blocked only by the
-current rsudo-fs pipefail defect.
+A repository-triggered `rumiai-os-health` workflow is running against the
+current test-suite commit. It is useful broader evidence but does not replace
+the dedicated revision-specific `rsudo` validation requirement.
 
 ## Next action
 
-Allow the active pipefail task to realign `rsudo-mod-fs.lib.sh` with its
-capability-safe contract, then rerun the complete formal scope:
+Inspect the automatic health workflow result. If it exposes no new rsudo
+regression, run exactly one final dedicated validation:
 
 ```text
 ./rumiai-validate rsudo
 ```
 
-Do not exclude `fs.test`; the complete rsudo scope must pass on one exact
-current suite/product pair before this task can complete.
+The complete scope must pass without exclusions before this task is complete.
 
 ## Blockers / open questions
 
-- Formal rsudo validation is blocked by the current unconditional pipefail use
-  in `rsudo-mod-fs.lib.sh` on Ubuntu dash. Ownership remains with the active
-  `pipefail-runtime-policy` task.
+No known rsudo-specific blocker remains before final validation.
