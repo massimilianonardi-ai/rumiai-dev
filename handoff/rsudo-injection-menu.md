@@ -12,9 +12,9 @@ requiring a remote m/RumiAI library tree.
 ## Current repository revisions
 
 ```text
-rumiai-dev   df77013796fd65ebb69faaa36f2098934f03ecf1  (pre-checkpoint HEAD)
-rumiai-os    199c5f4bdcef79b6e8384bdac4d5ea3beaed7568
-rumiai-tests 4f3cd3b2e3495e88a8b72aa75f36bb55b804fe94
+rumiai-dev   2e500f7815a46ef25510c94288f264369c3f38f8  (pre-checkpoint HEAD)
+rumiai-os    94cb0620f62a481c8300432bb642367e81c11432
+rumiai-tests e07254309a6363e74e6209fdbab465b5f23490d1
 ```
 
 Fresh remote HEAD retrieval remains mandatory before future writes.
@@ -141,8 +141,8 @@ The accepted generator surface is now:
     [-- COMMAND_SOURCE [ARG...]]
 ```
 
-`--command` is repeatable. The caller supplies an already-valid POSIX shell
-identifier and one readable local source file; no basename derivation,
+`--command` is repeatable. The caller supplies an already-valid portable POSIX shell
+function identifier and one readable local source file; no basename derivation,
 purification or alias is performed. Each named command is generated as a
 function whose body is a subshell and can be invoked repeatedly by the one-shot
 command or subsequent stdin source.
@@ -173,9 +173,10 @@ rsudo_mod_exec_inject()
 ```
 
 Current product revision
-`rumiai-os@199c5f4bdcef79b6e8384bdac4d5ea3beaed7568` implements this
+`rumiai-os@94cb0620f62a481c8300432bb642367e81c11432` implements this
 contract and operational documentation, including rejection of shell words that
-POSIX requires or permits implementations to recognize as reserved.
+POSIX requires or permits implementations to recognize as reserved and POSIX
+special built-in utility names.
 
 ## Current validation state
 
@@ -192,15 +193,16 @@ Permanent coverage now includes:
 - `exit` status isolation (named status 7 and one-shot status 6);
 - no leakage of command-local positional parameters, variables/functions, cwd
   and umask into continuation source;
-- invalid, POSIX-reserved/optionally-reserved, duplicate and generator-reserved
-  command-name rejection;
+- invalid, POSIX-reserved/optionally-reserved, POSIX special-built-in,
+  duplicate and generator-reserved command-name rejection;
 - missing named-source failure;
 - exec-inject generator-to-rsudo composition and pipefail propagation.
 
 A local synthetic POSIX-sh harness exercising the current generator mechanics
 passed generation/syntax/execution, repeated named-command invocation,
 one-shot/named status isolation, cwd/umask/variable/function isolation and
-required/optionally-recognized reserved-name rejection.
+required/optionally-recognized reserved-name and special-built-in-name
+rejection.
 
 The permanent tests have not been executed against materialized current
 checkouts in this work unit because the available Linux environment cannot
