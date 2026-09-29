@@ -27,9 +27,9 @@ No TODO represents this work. It is active now.
 ## Current repository revisions
 
 ```text
-rumiai-dev    f506ab34776d6cae586308c7d2aa93fffbbfdeaa
+rumiai-dev    cd8caf62340b05e09e47c3e8c870475beeae231d
 rumiai-os     095482fba7ed7ff1ca267a4b6b8c5ad8f4b7774d
-rumiai-tests  d588378dee5c3fa492460016b2d3ed606e41b6ac
+rumiai-tests  c076980f20e496cdc740b03ff82ed276fcd49325
 ```
 
 These revisions are resumption markers only. Fresh HEAD retrieval remains
@@ -267,6 +267,12 @@ first experiment.
 - SIGPIPE hazard from successful early-closing consumers identified.
 - rsudo rightmost-status exception identified.
 - This workstream activated directly without a TODO.
+- Project-wide pipeline failure-semantics rule added to `RULES.md`.
+- Pipefail task state removed from `handoff/rsudo-injection-menu.md`; this file
+  is now the sole active owner of the pipefail workstream.
+- Concurrent rsudo permanent-test updates through
+  `rumiai-tests@c076980f20e496cdc740b03ff82ed276fcd49325` were reconciled;
+  current contract/fs coverage remains compatible with this plan.
 
 ## Current state
 
@@ -276,9 +282,9 @@ until local semantics have been hardened and validated.
 
 ## Next action
 
-Add the project-wide pipeline-development rule, remove duplicated pipefail task
-state from `handoff/rsudo-injection-menu.md`, then begin permanent-test design
-for Priority A before changing product behavior.
+Design the permanent-test additions for Priority A before changing product
+behavior, starting with upstream-failure propagation, early-consumer SIGPIPE
+behavior and the rsudo rightmost-status exception.
 
 ## Blockers / open questions
 
