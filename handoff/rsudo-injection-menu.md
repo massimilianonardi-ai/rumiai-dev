@@ -12,8 +12,8 @@ requiring a remote m/RumiAI library tree.
 ## Current repository revisions
 
 ```text
-rumiai-dev   451b253c1d595a77b58d52c40456b52e883a4fe3  (pre-checkpoint HEAD)
-rumiai-os    ecfe8197085be8f2af4c72813ea18e00a9ba778f
+rumiai-dev   aa44bb667599b1962da73dc542f636778241bdde  (pre-checkpoint HEAD)
+rumiai-os    45c1cf174c0b51540ce6903ca37a7eb4f58f5260
 rumiai-tests d588378dee5c3fa492460016b2d3ed606e41b6ac
 ```
 
@@ -977,9 +977,13 @@ test now actually selects the Browse host entry and requires that marker to be
 visible before control returns to the main menu. The pre-fix local redirect
 would suppress this observation.
 
-Focused workflow run `36573594068` froze exactly
-`rumiai-os@ecfe8197085be8f2af4c72813ea18e00a9ba778f` with
-`rumiai-tests@d588378dee5c3fa492460016b2d3ed606e41b6ac`:
+Focused workflow run `36573594068` first validated the fix revision
+and was then rerun after a concurrent product merge advanced `rumiai-os`.
+Attempt 2 froze the reconciled current product exactly at
+`rumiai-os@45c1cf174c0b51540ce6903ca37a7eb4f58f5260` with
+`rumiai-tests@d588378dee5c3fa492460016b2d3ed606e41b6ac`. The concurrent
+product delta touched only `rsudo.lib.sh`; the browser fix and manual remained
+unchanged.
 
 ```text
 Ubuntu 26.04 ARM   PASS contract.test
@@ -992,6 +996,6 @@ macOS              PASS contract.test
 ```
 
 This validates the local rsudo-admin/SSH-channel regression through the real
-product path with the permitted external SSH fixture. A fresh physical
+current product path with the permitted external SSH fixture. A fresh physical
 post-fix rsudo/menu run against a real remote host is still pending and must not
 be inferred from the hosted PASS.
