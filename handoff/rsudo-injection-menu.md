@@ -12,9 +12,9 @@ requiring a remote m/RumiAI library tree.
 ## Current repository revisions
 
 ```text
-rumiai-dev   f49f291e24ae67962634e5fe7584cb9e90da8183  (pre-checkpoint HEAD)
-rumiai-os    36d6b53b461c91db790873625f2f5349972768fb
-rumiai-tests ce64eab23d03fefc3b93eb2d6baf57d0e5ccd013
+rumiai-dev   2c95f96e4026338610fdc8fc25ef2ac3c336d361  (pre-checkpoint HEAD)
+rumiai-os    4e6d33f224bcba77a4e553b1e4bd5299a57d555c
+rumiai-tests b1c3fb58ae9306392c34e10800b963f025b0e452
 ```
 
 Fresh remote HEAD retrieval remains mandatory before future writes.
@@ -394,6 +394,268 @@ Command-entrypoint standards may still be strengthened independently for
 readability, invocation robustness and ordinary sourced-command hygiene; that
 review is no longer a prerequisite for safe continuation after an injected
 command.
+
+## Working design — pipefail runtime policy with graceful degradation
+
+The user agrees with establishing `pipefail` broadly across the `m` shell
+runtime, while retaining best-effort execution on older `/bin/sh`
+implementations that do not yet implement the POSIX.1-2024 Issue 8 requirement.
+
+### Verified baseline and host evidence
+
+The current canonical platform baseline remains POSIX.1-2024 / Issue 8.
+`set -o pipefail` is therefore a baseline shell feature, not a non-portable
+extension relative to the RumiAI contract.
+
+Exhaustive hosted diagnostics established the current host split:
+
+```text
+Ubuntu 22.04.5
+    /bin/sh -> dash
+    dash 0.5.11+git20210903+057cd650a4ed-3build1
+    set -o pipefail: unsupported
+
+Ubuntu 24.04.5
+    /bin/sh -> dash
+    dash 0.5.12-6ubuntu5
+    set -o pipefail: unsupported
+
+Ubuntu 26.04.1
+    /bin/sh -> dash
+    dash 0.5.12-12ubuntu3
+    set -o pipefail: supported
+    false | true under pipefail -> status 1
+
+current macOS hosted runner
+    /bin/sh supports pipefail
+    false | true under pipefail -> status 1
+```
+
+Debian incorporated dash pipefail support beginning with package revision
+`0.5.12-7`. Ubuntu 24.04's `0.5.12-6ubuntu5` predates that revision, while
+Ubuntu 26.04's `0.5.12-12ubuntu3` includes it.
+
+The exact pre-change rsudo exec-inject permanent test was reproduced across
+these hosts: it passed on Ubuntu 26.04 and macOS and failed at
+`set -o pipefail` on Ubuntu 22.04/24.04. This is evidence that those older
+shell packages do not fully implement the selected Issue 8 baseline; it is not
+evidence that pipefail is non-POSIX for the project.
+
+### Accepted direction
+
+The preferred runtime policy is graceful capability establishment:
+
+```sh
+if (set -o pipefail) 2>/dev/null
+then
+  set -o pipefail
+else
+  # emit one warning after the normal logging runtime is available
+  :
+fi
+```
+
+The capability probe MUST run in a subshell. On older dash implementations an
+unsupported `set -o pipefail` is fatal to that probing shell; the subshell
+boundary prevents the capability check from terminating the bootstrap itself.
+
+The intended semantics are:
+
+```text
+Issue 8 shell with pipefail
+    -> enable pipefail
+    -> m/runtime pipelines use Issue 8 pipeline-status semantics
+
+older shell without pipefail
+    -> continue running in best-effort compatibility mode
+    -> emit a warning
+    -> pipeline behavior falls back to that shell's ordinary last-command status
+```
+
+This is deliberately a warning/degradation model, not an emulation layer. If no
+pipeline component fails, supported and unsupported hosts normally behave the
+same. The semantic difference appears when an earlier pipeline component fails
+while a later component succeeds; without pipefail that failure can remain
+masked.
+
+### Preferred ownership: bootstrap, not base.lib.sh
+
+For the normal integrated `m` runtime, the preferred owner is the root
+bootstrap `m`, not `base.lib.sh`.
+
+Reasons:
+
+1. Pipefail is shell execution state for the entire runtime, not a library
+   service.
+2. It should be established before ordinary runtime code begins to rely on
+   pipeline status.
+3. A library should not repeatedly mutate global shell options merely because it
+   is sourced.
+4. Enabling it in `base.lib.sh` would be later than necessary and would couple
+   an execution invariant to one library identity.
+5. Injection deliberately permits zero selected libraries and does not require
+   `base`; therefore `base.lib.sh` cannot be the general owner of the
+   injection/runtime policy.
+
+The likely normal-bootstrap shape is therefore:
+
+```sh
+_m_pipefail=false
+
+if (set -o pipefail) 2>/dev/null
+then
+  set -o pipefail
+  _m_pipefail=true
+fi
+
+... normal bootstrap ...
+. "$m_LIB_DIR/sys/sh/core.lib.sh"
+
+if [ "$_m_pipefail" != "true" ]
+then
+  log warn ...pipefail unsupported...
+fi
+
+unset _m_pipefail
+```
+
+The exact warning domain/message identity is not fixed yet and MUST be derived
+from current logging/localization conventions rather than invented casually.
+
+The probe should occur early enough that the bootstrap establishes the runtime
+state before normal library/command execution. The warning can be deferred until
+after `core -> base` has installed the normal `log` facility. If a warning
+must be available even when core/base fails to load, a bootstrap-level
+`printf` fallback may be appropriate, but that is a separate failure-reporting
+choice.
+
+No exported/public `m_PIPEFAIL` variable has been accepted. A private
+bootstrap-local flag is sufficient unless a concrete runtime introspection
+requirement appears.
+
+### Generated/injected source is a separate shell boundary
+
+Setting pipefail in the local `m` bootstrap does not propagate into a remote or
+otherwise separately invoked `sh` that executes source generated by
+`loadlib_inject_stream`.
+
+Therefore, if pipefail becomes an `m` runtime invariant, generated/injected
+programs should establish the same capability policy explicitly in their
+generated preamble, independently of whether the caller selected `base`.
+
+Conceptually:
+
+```text
+normal m execution
+    m bootstrap establishes pipefail policy
+
+loadlib_inject_stream output
+    generated program establishes pipefail policy
+    generated loader/libraries/commands execute afterward
+
+standalone #!/bin/sh utility
+    does not inherit m bootstrap state
+    must be reviewed separately if the invariant is intended to apply there
+```
+
+The generator warning path cannot assume the ordinary localized `log` facility
+exists, because zero-library injection is valid. If generated source warns on an
+unsupported shell, that warning should use a minimal generator-owned stderr
+message unless/until a more general runtime diagnostic primitive is adopted.
+
+### Why graceful degradation is useful
+
+The proposed probe allows RumiAI to use the selected Issue 8 semantics where the
+host implements them without unnecessarily refusing to run on older hosts such
+as Ubuntu 22.04/24.04.
+
+On an older host, code can still behave correctly whenever the semantic
+difference is irrelevant to the executed path. The warning makes the weaker
+failure-propagation guarantee visible rather than silently pretending the host
+fully satisfies the selected baseline.
+
+This gives a useful compatibility envelope:
+
+```text
+conforming/current host
+    full RumiAI pipeline semantics
+
+older partially conforming host
+    best-effort execution + explicit warning
+    no guarantee that earlier pipeline failures are reflected in pipeline status
+```
+
+The project baseline itself remains Issue 8; graceful degradation does not
+redefine older shells as fully conforming.
+
+### Audit required before global enablement
+
+Global pipefail changes the status of existing pipelines, intentionally exposing
+failures that were previously masked by a successful final pipeline component.
+Before promotion/implementation, audit all current pipelines and the many
+existing patterns that were written to avoid dependence on pipefail.
+
+The audit MUST distinguish at least two categories:
+
+```text
+status-propagation workaround
+    exists only because pipeline status otherwise reports the last command
+    candidate for simplification/removal after pipefail becomes invariant
+
+behavioral / atomicity / sequencing workaround
+    guarantees something stronger than final pipeline status
+    MUST NOT be removed merely because pipefail exists
+```
+
+A concrete example of the second category is the current
+`rsudo_mod_exec_inject` buffering pattern:
+
+```sh
+_rsudo_mod_exec_inject_source="$(loadlib_inject_stream "$@" || exit "$?"; printf x)" || exit "$?"
+_rsudo_mod_exec_inject_source=${_rsudo_mod_exec_inject_source%x}
+printf '%s' "$_rsudo_mod_exec_inject_source" | rsudo
+```
+
+Even with pipefail, replacing this mechanically with:
+
+```sh
+loadlib_inject_stream "$@" | rsudo
+```
+
+would change behavior: the right-hand `rsudo` process can start and consume
+partial source before the generator eventually fails. Pipefail would preserve
+the final failure status, but it would not provide the current
+generate-completely-before-transport guarantee. Therefore this buffering is not
+merely an anti-pipefail workaround.
+
+The next audit should locate every pipeline and every apparent anti-pipefail
+pattern in `m`, `bin/` and shell libraries, then classify each by the
+stronger property it protects.
+
+### Proposed promotion path for the next chat
+
+Do not immediately scatter `set -o pipefail` across libraries.
+
+Resume with:
+
+1. fresh mandatory preflight and current HEAD retrieval;
+2. exhaustive inventory of shell pipelines and anti-pipefail workarounds in the
+   current `rumiai-os` tree;
+3. classify each workaround as status-only vs stronger sequencing/atomicity;
+4. decide the exact bootstrap warning behavior and whether standalone utilities
+   participate in the invariant;
+5. decide the generated-stream preamble/warning behavior;
+6. promote the accepted runtime rule into
+   `POSIX-PORTABILITY-LAYER.md` and `BOOTSTRAP-ENVIRONMENT.md`;
+7. implement the bootstrap and generated-stream policy only after that audit;
+8. update permanent tests, including:
+   - Ubuntu 26.04/macOS: pipefail enabled and effective;
+   - an older-shell diversity case: safe probe, warning, continued execution;
+   - generated injection stream establishes the same policy;
+   - existing pipeline semantics remain correct;
+9. run the normal consistency gate and hosted validation.
+
+No product change implementing this policy has been made in this checkpoint.
 
 ## Blockers / open questions
 
