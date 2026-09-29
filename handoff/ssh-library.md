@@ -5,45 +5,53 @@ Updated: 2026-09-29
 
 ## Goal
 
-Develop and stabilize a reusable m SSH library and SSH helper before considering any rsudo migration.
+Develop and stabilize a reusable m SSH password-authentication library and askpass helper before considering any rsudo migration.
 
 ## Current repository revisions
 
-- rumiai-os: ace7d8a5269c72fa7814ca290c3c21894aba50ad
-- rumiai-tests: 476e0e9737e79282f9e857a093ff3d9cc6ef23c9
+- rumiai-dev: 16479b5b4de5ac688db29ad623c8a9ace166ad53 plus this checkpoint
+- rumiai-os: bd8a1a2dcdc5035873c9e4c1ae65349e270253d8
+- rumiai-tests: f1669c1ba53a90a2c34ddda34d1337907e547211
+
+## Applicable canonical sources
+
+- RULES.md
+- CONSISTENCY-GATE.md
+- TESTING.md
+- TEST-PATTERNS.md
+- specifications/rumiai-os/SSH.md
+- specifications/rumiai-os/COMMAND-ENTRYPOINTS.md
+- specifications/rumiai-os/FILESYSTEM-NAMING.md
+- specifications/rumiai-os/LIBRARY-INTERFACES.md
+- specifications/rumiai-os/DOCUMENTATION-MODEL.md
 
 ## Fixed task-local choices
 
 - Existing rsudo.lib.sh, rsudo command, and rsudo-askpass are stable baselines and must not be modified.
-- Implement ssh.lib.sh and ssh-askpass independently first.
+- Implement and stabilize ssh.lib.sh and ssh-askpass independently first.
 - Any rsudo_core migration remains discussion-only until the SSH facility is stable.
-- Current candidate API is ssh_password followed by native ssh arguments.
+- ssh_password is the only active public API in this task.
+- ssh_password requires a non-empty remote-account password and constrains OpenSSH to password authentication, one password prompt, and no configured connection sharing.
+- General OpenSSH authentication through a future ssh_auth API is deferred to todo/ssh-auth.md.
 
 ## Completed
 
-- Preflight completed.
-- Added ssh.lib.sh, ssh-askpass, and the ssh.lib.sh manual.
-- Verified the product diff touches no rsudo path.
-
-## Working design
-
-The public API is being split by authentication semantics:
-
-- `ssh_password` is intended to require a non-empty remote-account password and to force a fresh OpenSSH password-authentication attempt rather than merely making a secret available to OpenSSH.
-- a separate `ssh_auth` API is under evaluation for normal OpenSSH authentication selection with an optional/empty generic askpass response.
-- the two APIs should use separate askpass helpers because the password-only path can be one-shot and deterministic, while the general path may require repeated and prompt-aware responses.
-- OpenSSH current behavior exposes confirmation prompts to askpass using `SSH_ASKPASS_PROMPT=confirm`, which can be used to prevent a generic secret from being mistaken for confirmation input.
-- exact reusable-secret transport for the general `ssh_auth` path remains unresolved; current `ipc_once` is deliberately one-shot.
+- Added lib/sys/sh/ssh.lib.sh.
+- Added executable bin/sys/ssh-askpass.
+- Added both required operational manuals.
+- Promoted and routed specifications/rumiai-os/SSH.md.
+- Corrected ssh-askpass to accept the OpenSSH prompt operand and reject confirmation prompts without consuming the password.
+- Updated ssh_password to force BatchMode=no, PasswordAuthentication=yes, PreferredAuthentications=password, NumberOfPasswordPrompts=1, and ControlPath=none.
+- Verified the task does not modify rsudo.lib.sh, rsudo, or rsudo-askpass.
 
 ## Current state
 
-The facility is not yet stable. ssh-askpass is executable and its command manual exists. The current implementation/specification still reflect the earlier single `ssh_password` design and must not be treated as final until the split above is resolved and realigned.
+Implementation and contract are aligned for the password-only API. Permanent mechanical/behavioral coverage and real validation are still pending.
 
 ## Next action
 
-Finalize the two authentication contracts, then realign SSH.md, ssh.lib.sh and manuals before adding permanent coverage.
+Add proportional permanent SSH coverage, run targeted validation, perform the final consistency gate, and only then decide whether the SSH facility is stable enough to discuss an rsudo_core migration.
 
 ## Blockers / open questions
 
-- Define the exact forced OpenSSH options for `ssh_password`, including prevention of connection multiplexing that could bypass fresh authentication.
-- Define a secure repeatable secret-provider mechanism for `ssh_auth`; `ipc_once` cannot serve multiple askpass invocations.
+None for the active ssh_password scope. Caller use of direct OpenSSH -S is explicitly outside the supported password-only contract because it can replace the facility-owned ControlPath setting.
