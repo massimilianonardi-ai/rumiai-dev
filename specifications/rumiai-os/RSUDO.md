@@ -1,7 +1,7 @@
 # RumiAI OS — rsudo remote privilege execution
 
 Status: **Current / normative**  
-Updated: 2026-09-26
+Updated: 2026-09-29
 
 This specification defines the observable contract of the `rsudo` subsystem implemented by `lib/sys/sh/rsudo/rsudo.lib.sh`.
 
@@ -11,10 +11,16 @@ Implementation choices used to satisfy this contract are not part of the contrac
 
 `rsudo` executes a command on a remote host through SSH and requests remote privilege elevation through `sudo`.
 
-The operational public API is documented in:
+The library operational public API is documented in:
 
 ```text
 res/sys/manual/rsudo.lib.sh
+```
+
+The interactive administrative command is documented in:
+
+```text
+res/sys/manual/rsudo-admin
 ```
 
 Permanent tests protect the observable properties below through the real RumiAI entrypoint. External SSH/sudo behavior may be represented by scenario-specific external-boundary fixtures when allowed by `TESTING.md`.
@@ -236,6 +242,58 @@ A non-empty file may populate one or more such groups and other authenticated sh
 
 The operand must contain the separator `:`; omitting the separator is invalid.
 
+## Administrative console
+
+`rsudo-admin` is the m-owned interactive administrative command for recurring
+rsudo workflows. It accepts no operands or options and presents these top-level
+actions:
+
+```text
+Connect to host
+Browse host
+rsudo jobs
+Encrypted file load/edit/new
+```
+
+The host-oriented actions discover current in-memory credential groups from
+non-empty variables matching:
+
+```text
+RSUDO_CREDENTIALS_GROUP_<group>_HOST
+```
+
+where `<group>` is a valid shell identifier. Host selection identifies the
+corresponding credential group without exposing its password in the menu.
+
+`Connect to host` selects the chosen group and starts an interactive rsudo
+session.
+
+`Browse host` selects the chosen group and opens the existing filesystem menu
+inside a privileged remote rsudo session through the exec-injection facility.
+The remote operation must not require an installed remote m/RumiAI library tree
+merely to provide that injected browser.
+
+`rsudo jobs` is an explicit local shell-code workflow. It selects one readable
+job library and one readable template, loads the library in a job-local
+execution context, copies the template to a private temporary file, edits the
+temporary copy through the existing editor facility, validates and executes the
+edited shell source, and removes the temporary copy when the job action ends.
+Job-local shell/process state must not become persistent console state merely
+because the job source changed it.
+
+`Encrypted file load/edit/new` uses the existing filesystem browser and
+encryption facilities. Load follows the current authenticated
+`encoded_file_eval` shell-source semantics; edit follows
+`encoded_file_edit`; new edits plaintext in memory and publishes encrypted
+output without creating a plaintext temporary file. This console contract does
+not redefine the underlying encrypted-source format or the `rsudo --load`
+contract.
+
+Failure or cancellation of one administrative action returns control to the
+console when the console can continue safely; it does not silently convert a
+failed remote/job/encryption operation into a successful execution result for
+that operation.
+
 ## Password acquisition
 
 When `--askpass` is selected and stdin is not a TTY, rsudo consumes the password record designated by that mode before forwarding the operation's remaining input.
@@ -299,4 +357,8 @@ RSUDO-20  each rsudo invocation preserves target-user and interactive caller sta
 RSUDO-21  recursive rsudo calls reuse connection/credential, target-user and interactive state but do not implicitly inherit askpass or no-preserve-quotes
 RSUDO-22  interactive non-TTY stdin is executed as a privileged shell-source prefix; optional command operands execute after it in the same shell environment
 RSUDO-23  exec inject composes loadlib_inject_stream with recursive rsudo, including named/one-shot isolated command injection; generator failure is returned before recursive execution, otherwise the recursive rsudo status is returned, with reusable target-user/interactive state inherited
+RSUDO-24  rsudo-admin exposes Connect to host, Browse host, rsudo jobs, and Encrypted file load/edit/new as its top-level administrative actions
+RSUDO-25  rsudo-admin host actions discover non-empty in-memory RSUDO_CREDENTIALS_GROUP_<group>_HOST groups without exposing group passwords and use the selected group for interactive connect or injected privileged browsing
+RSUDO-26  rsudo-admin jobs load an explicit local library, edit and execute a private temporary copy of an explicit template in job-local execution state, and remove that temporary copy when the job action ends
+RSUDO-27  rsudo-admin encrypted-file actions provide load/edit/new through the existing encryption contracts, and new-file creation does not create a plaintext temporary file
 ```
