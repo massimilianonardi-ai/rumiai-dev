@@ -9,9 +9,9 @@ Develop and stabilize a reusable m SSH password-authentication library and askpa
 
 ## Current repository revisions
 
-- rumiai-dev: 16479b5b4de5ac688db29ad623c8a9ace166ad53 plus this checkpoint
-- rumiai-os: bd8a1a2dcdc5035873c9e4c1ae65349e270253d8
-- rumiai-tests: f1669c1ba53a90a2c34ddda34d1337907e547211
+- rumiai-dev: 0263f4d6704d930ce5d4f7d7ef647301a391312e plus this checkpoint
+- rumiai-os: b37d3b17fcb95183b6ceac12e946a7878a81b6bb
+- rumiai-tests: a96776f871f3717758268a19b74023e20d921582
 
 ## Applicable canonical sources
 
@@ -31,27 +31,36 @@ Develop and stabilize a reusable m SSH password-authentication library and askpa
 - Implement and stabilize ssh.lib.sh and ssh-askpass independently first.
 - Any rsudo_core migration remains discussion-only until the SSH facility is stable.
 - ssh_password is the only active public API in this task.
-- ssh_password requires a non-empty remote-account password and constrains OpenSSH to password authentication, one password prompt, and no configured connection sharing.
+- ssh_password requires a non-empty newline-free remote-account password.
+- ssh_password constrains OpenSSH to password authentication, one password prompt, and no configured connection sharing.
 - General OpenSSH authentication through a future ssh_auth API is deferred to todo/ssh-auth.md.
 
 ## Completed
 
 - Added lib/sys/sh/ssh.lib.sh.
 - Added executable bin/sys/ssh-askpass.
-- Added both required operational manuals.
+- Added and aligned both required operational manuals.
 - Promoted and routed specifications/rumiai-os/SSH.md.
 - Corrected ssh-askpass to accept the OpenSSH prompt operand and reject confirmation prompts without consuming the password.
 - Updated ssh_password to force BatchMode=no, PasswordAuthentication=yes, PreferredAuthentications=password, NumberOfPasswordPrompts=1, and ControlPath=none.
-- Verified the task does not modify rsudo.lib.sh, rsudo, or rsudo-askpass.
+- Added executable permanent coverage at tests/rumiai-os/ssh/contract.test.
+- Added explicit coverage for empty/newline passwords, forced OpenSSH settings, askpass confirmation refusal, stream transparency, argv secrecy and status propagation.
+- Verified task diffs contain no change to rsudo.lib.sh, rsudo or rsudo-askpass.
+- POSIX shell syntax for the current ssh.lib.sh and ssh-askpass source was checked successfully in the auxiliary shell.
 
 ## Current state
 
-Implementation and contract are aligned for the password-only API. Permanent mechanical/behavioral coverage and real validation are still pending.
+Implementation, canonical specification, manuals and permanent test are aligned for the password-only API.
+
+The permanent test has not yet been executed against a real target checkout in this response. The auxiliary container cannot clone the repositories because outbound DNS is unavailable and it also has no OpenSSH ssh client, so it cannot provide the required behavioral validation.
+
+OpenSSH option/askpass semantics were cross-checked against current OpenSSH documentation/source, including the upstream password regression pattern.
 
 ## Next action
 
-Add proportional permanent SSH coverage, run targeted validation, perform the final consistency gate, and only then decide whether the SSH facility is stable enough to discuss an rsudo_core migration.
+Execute tests/rumiai-os/ssh/contract.test through the real rumiai-test target path on a host with OpenSSH. If it passes, perform the final validation checkpoint and then evaluate the proposed rsudo_core migration in chat without modifying rsudo.
 
 ## Blockers / open questions
 
-None for the active ssh_password scope. Caller use of direct OpenSSH -S is explicitly outside the supported password-only contract because it can replace the facility-owned ControlPath setting.
+- Behavioral validation is pending solely because the available auxiliary execution environment cannot provide the required real target/OpenSSH environment.
+- Caller use of direct OpenSSH -S remains outside the supported password-only contract because it can replace the facility-owned ControlPath setting.
