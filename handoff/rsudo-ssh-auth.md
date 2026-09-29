@@ -70,6 +70,10 @@ Fresh remote HEAD retrieval remains mandatory before future writes.
 
 ## Current state
 
+- User committed the rsudo migration and ssh-auth-check implementation on rumiai-os@2924c24a540c567b09a6f1477cb7bb79391f0e83.
+- Review found one parser defect: the --ssh-auth-check case performs an internal shift and the option loop shifts again, so the following operand/option can be skipped. The flag should also be reset at rsudo() entry and terminal check mode should reject leftover operands explicitly.
+
+
 Formal Linux/x86_64 validation now passes on the current reconciled revisions:
 `rumiai-tests@238ab53839814579ed0ed49400ae59864028a405` and
 `rumiai-os@0c56665c5be7b6aac4c097dad1b000ce97bb6ac7`.
