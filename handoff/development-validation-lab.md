@@ -7,12 +7,14 @@ Updated: 2026-09-29
 
 Design a developer-facing live experimentation and validation environment mechanism that can run real, disposable scenarios during RumiAI design/development, preserve the useful exploratory workflow of the historical m test-command, and provide a path for mature scenarios to support formal validation without duplicating rumiai-test or rumiai-validate responsibilities.
 
-## Current repository revisions
+## Repository / validation evidence revisions
 
-- rumiai-dev: 6759114ac5d5365b5b44a5f2b37d0a080ca67324 (pre-checkpoint HEAD)
-- rumiai-os: 5e4d66d9c67248409f165e80542d8c39bf70b957
-- rumiai-tests: e5c2a70fe58ad9cb6ae7ccd1025d0015b42bc278
-- rumiai-dev-PoCs: retained only as historical experimental evidence for this task; no longer an implementation gate
+- rumiai-os testlab baseline formally validated at: `5e4d66d9c67248409f165e80542d8c39bf70b957`
+- rumiai-tests revision used by the successful cross-host testlab validation: `c236f7497da0c468605078a9960f988af7e97534`
+- later observed rumiai-tests commits through `3c9d0e35b0f5b32f305b8fb36abee1b16f15ce26` affect only the concurrent SSH test work and do not modify testlab files or its validation scope
+- rumiai-dev-PoCs is retained only as historical experimental evidence for this task; it is no longer an implementation gate
+
+Exact current remote HEADs must still be rechecked at the start of every resumed work unit; this handoff records task/evidence identity rather than pretending that unrelated concurrent repository development is frozen.
 
 ## Applicable canonical sources
 
