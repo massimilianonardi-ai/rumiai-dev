@@ -70,6 +70,10 @@ Fresh remote HEAD retrieval remains mandatory before future writes.
 
 ## Current state
 
+- User commit rumiai-os@45c1cf174c0b51540ce6903ca37a7eb4f58f5260 fixes the ssh-auth-check double-shift and rejects leftover operands.
+- One invocation-state issue remains: `RSUDO_SSH_AUTH_CHECK` is not reset at `rsudo()` entry. An early return before the check branch can therefore leave the flag set for a later recursive/reused invocation. It should be cleared beside `RSUDO_ASKPASS` and `RSUDO_NO_PRESERVE_QUOTES`.
+
+
 - User committed the rsudo migration and ssh-auth-check implementation on rumiai-os@2924c24a540c567b09a6f1477cb7bb79391f0e83.
 - Review found one parser defect: the --ssh-auth-check case performs an internal shift and the option loop shifts again, so the following operand/option can be skipped. The flag should also be reset at rsudo() entry and terminal check mode should reject leftover operands explicitly.
 
