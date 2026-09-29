@@ -27,9 +27,9 @@ No TODO represents this work. It is active now.
 ## Current repository revisions
 
 ```text
-rumiai-dev    5df7e2e529280cdaa6cbc169e52c2870c7da137f
-rumiai-os     34c158e95bf5f73525cf42653026431b0c5d5551
-rumiai-tests  348a6441991fbd655d7f1559ff64151f808938ca
+rumiai-dev    7e1f74e96cd8c3b8e691d0465dc440934d151995
+rumiai-os     e31d930534e6536c62d7953fca9398f9006eee28
+rumiai-tests  12a22021fadf49250464f053700e48bcec9ad012
 ```
 
 These revisions are resumption markers only. Fresh HEAD retrieval remains
@@ -85,10 +85,10 @@ specifications/rumiai-os/SSH.md
   failure.
 
 `lib/sys/sh/rsudo/rsudo-mod-fs.lib.sh`
-: Local get/put tar transfer pipelines must observe producer and consumer
-  failure. Existing staging/promotion/rollback remains mandatory. The current
-  remote `du | awk` preflight already establishes pipefail explicitly in its
-  separate remote shell and should retain equivalent semantics.
+: **Local adoption complete and validated.** get/put preserve producer and
+  consumer status explicitly through private FIFO streaming rather than
+  depending on host-shell pipefail. Staging/promotion/rollback and cleanup
+  remain mandatory; du/df producer status is observed before finite parsing.
 
 `bin/sys/manual`
 : Producer groups feeding `sort` already attempt to abort on output failure,
@@ -293,22 +293,32 @@ first experiment.
 - The private FIFO/producer lifecycle now has completion and handled-termination
   cleanup; permanent fs coverage also checks that invocation-owned stream
   resources do not remain after the scenario.
+- Dedicated Linux/aarch64 `rsudo` validation passed all six tests against
+  `rumiai-tests@348a6441991fbd655d7f1559ff64151f808938ca` and
+  `rumiai-os@34c158e95bf5f73525cf42653026431b0c5d5551`, with zero failures,
+  skips or errors, a CLEAN validation environment and
+  `Scope result: VALIDATED` (session
+  `20260929T164234+0200-38746`).
 
 ## Current state
 
-The task remains active in staged-adoption mode. Product work has now begun on
+The task remains active in staged-adoption mode. Product work has begun on
 selected Priority A/related targets through concurrent forward commits.
-The rsudo-fs target no longer depends on host pipefail support because its
-required all-stage transfer status is preserved explicitly.
 
-Global bootstrap enablement remains intentionally deferred until the local
-changes are broadly validated.
+The rsudo-fs local-adoption unit is complete: its required all-stage transfer
+status is preserved explicitly without host pipefail support, permanent coverage
+protects producer/consumer failure and cleanup semantics, and the complete rsudo
+scope has passed dedicated Linux/aarch64 validation.
+
+Global bootstrap enablement remains intentionally deferred until the remaining
+local targets and broader host coverage are complete.
 
 ## Next action
 
-Design the permanent-test additions for Priority A before changing product
-behavior, starting with upstream-failure propagation, early-consumer SIGPIPE
-behavior and the rsudo rightmost-status exception.
+Continue the remaining Priority A targets from the current tree, reconciling
+their already-advanced implementations/tests before further edits. The rsudo-fs
+unit requires no additional local pipefail work unless new regression evidence
+appears.
 
 ## Blockers / open questions
 
