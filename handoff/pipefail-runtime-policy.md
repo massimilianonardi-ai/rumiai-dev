@@ -27,9 +27,9 @@ No TODO represents this work. It is active now.
 ## Current repository revisions
 
 ```text
-rumiai-dev    df415f983462da1be01bd6670dfd4fa23f97e160
-rumiai-os     559ee49d915fbc7292e114bb4f4de375b617230f
-rumiai-tests  9b300faa238b340d0569d425dc59b8408d4d217f
+rumiai-dev    5df7e2e529280cdaa6cbc169e52c2870c7da137f
+rumiai-os     34c158e95bf5f73525cf42653026431b0c5d5551
+rumiai-tests  348a6441991fbd655d7f1559ff64151f808938ca
 ```
 
 These revisions are resumption markers only. Fresh HEAD retrieval remains
@@ -290,6 +290,9 @@ first experiment.
   portability blocker.
 - Permanent rsudo-fs coverage now includes an independently successful consumer
   paired with a forced local producer failure.
+- The private FIFO/producer lifecycle now has completion and handled-termination
+  cleanup; permanent fs coverage also checks that invocation-owned stream
+  resources do not remain after the scenario.
 
 ## Current state
 
