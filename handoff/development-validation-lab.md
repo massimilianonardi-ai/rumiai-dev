@@ -13,6 +13,7 @@ Design a developer-facing live experimentation and validation environment mechan
 - first substantial real scenario product revision: `rumiai-os@89e215c43d57fd96e8557799b764fff4f5bed7e3`
 - updated base `testlab` validation with the shipped `rsudo` scenario present passed on Ubuntu and macOS in run `36541262130`
 - real `testlab -> rsudo -> ssh -> sshd -> sudo` task validation passed at `rumiai-tests@25fbd5320ecbe5b724e656f6426605bb36e4e33e`, GitHub Actions run `36542681411`, against `rumiai-os@89e215c43d57fd96e8557799b764fff4f5bed7e3`
+- the `testlab-rsudo` task scope was then returned to normal current-product semantics by removing its historical `rumiai-os-commit` pin; GitHub Actions run `36579379290` passed against current `rumiai-os@b1a785cad13ae11bf85f2626f470a2c2c32bab82` with `rumiai-tests@c8510ea893d7da8bada593ac2bfb7c51a8b961fd`
 - rumiai-dev-PoCs is retained only as historical experimental evidence for this task; it is no longer an implementation gate
 
 Exact current remote HEADs must still be rechecked at the start of every resumed work unit; this handoff records task/evidence identity rather than pretending that unrelated concurrent repository development is frozen.
@@ -125,6 +126,7 @@ Current direction:
 - Base `testlab` validation run `36541262130` passed on Ubuntu and macOS with the new scenario shipped, confirming that Podman did not become a global prerequisite.
 - Initial `testlab-rsudo` validation attempts exposed test-harness issues rather than product failures: the disposable target was incorrectly compared with an empty Git status instead of its post-preparation baseline, and rootless Podman storage initially leaked into the validator's isolated `HOME`. The permanent test now compares target before/after state and the workflow supplies the already-prepared host Podman environment explicitly.
 - Formal task validation run `36542681411` passed the real `testlab -> rsudo -> ssh -> sshd -> sudo` path with UID 0 observed, scenario cleanup completed, and scope result `VALIDATED` against `rumiai-os@89e215c43d57fd96e8557799b764fff4f5bed7e3` / `rumiai-tests@25fbd5320ecbe5b724e656f6426605bb36e4e33e`.
+- `validation/testlab-rsudo.conf` no longer pins the original product revision. It now follows the normal current-product path of `rumiai-validate`; run `36579379290` returned `VALIDATED` with one PASS and zero FAIL/SKIP/ERROR against `rumiai-os@b1a785cad13ae11bf85f2626f470a2c2c32bab82` / `rumiai-tests@c8510ea893d7da8bada593ac2bfb7c51a8b961fd`. This confirms the shipped scenario remains usable across subsequent rsudo evolution for the protected real `id -u` path; it does not by itself validate rsudo injection/admin behavior.
 
 ## Current state
 
@@ -170,7 +172,7 @@ The shipped `rumiai-os` project scenarios are deliberately small:
 - `scratch` creates an instance-owned disposable work directory;
 - `rsudo` creates one owned disposable Podman SSH/sudo target while keeping the project checkout and image external.
 
-Permanent baseline coverage lives under `rumiai-tests/tests/rumiai-os/testlab/`, with task scope `validation/testlab.conf` and Linux/macOS workflow `.github/workflows/testlab.yml`. The real `rsudo` scenario is additionally protected by `tests/rumiai-os/testlab-rsudo/real.test`, `validation/testlab-rsudo.conf` and the Ubuntu host-prepared workflow `.github/workflows/testlab-rsudo-scenario.yml`.
+Permanent baseline coverage lives under `rumiai-tests/tests/rumiai-os/testlab/`, with task scope `validation/testlab.conf` and Linux/macOS workflow `.github/workflows/testlab.yml`. The real `rsudo` scenario is additionally protected by `tests/rumiai-os/testlab-rsudo/real.test`, `validation/testlab-rsudo.conf` and the Ubuntu host-prepared workflow `.github/workflows/testlab-rsudo-scenario.yml`. The `testlab-rsudo` task scope intentionally has no persistent product revision pin; revision freezing belongs to the individual validation invocation/evidence when needed.
 
 Formal validation run `36537384660` passed on both `ubuntu-latest` and `macos-latest` against product revision `5e4d66d9c67248409f165e80542d8c39bf70b957` and test-suite revision `c236f7497da0c468605078a9960f988af7e97534`. The validation exercises real product lifecycle behavior including prerequisite rejection before instance allocation, persistent preparation, context publication, frozen-scenario re-entry, owned-resource cleanup, repeated close, failed-prepare recovery and status reporting.
 
