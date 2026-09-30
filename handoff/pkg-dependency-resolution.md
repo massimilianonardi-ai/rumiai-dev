@@ -9,10 +9,10 @@ Realign the package dependency/provider model and reconstruct the install orches
 
 ## Current repository revisions
 
-- rumiai-dev: 1668e21010f12c11f09b6f2dd0fb64c5e7d7622b (pre-checkpoint HEAD)
-- rumiai-os: 64d7d30af1d5918fbb3095fc3cab75e46204b319
+- rumiai-dev: 3b8fe5233a9ca7b835e3ff99887ce54d2cfa62ec (pre-checkpoint HEAD)
+- rumiai-os: 63bf5d913ebdda6479c5b3bea0e751ff9b5004c7
 - pkg-catalog: d63f87d2be67288ef57f4a5812fabbc3f0b24a0d
-- rumiai-tests: 7d1f4ca42a770b522710a5e44de77bd29f69a246
+- rumiai-tests: 408a7e79c9de6506d6002b365e439ae42f091e33
 
 ## Applicable canonical sources
 
@@ -98,6 +98,12 @@ The current scaffold intentionally contains placeholders. Invocation initializat
 
 Package request/concrete parsing is now centralized in `pkg-common.lib.sh`. Public `pkg_request_read <name-variable> <version-variable> <osarch-variable> <request>` parses `<package>[@<version>][!<osarch>]`, while `pkg_concrete_read <name-variable> <version-variable> <osarch-variable> <concrete>` requires `<package>@<version>[!<osarch>]`. Both validate caller-selected destination names through the existing `valid_shell_identifier` primitive and assign outputs only after the whole input has been validated. The shared internal parser uses a non-whitespace field separator so omitted request version/osarch fields remain distinguishable. `pkg_install_validate`, `pkg_install_resolve_one`, `pkg_install_one` and the provider concrete parser reuse these shared primitives instead of maintaining local parsing logic. Revision-coupled manuals are aligned and permanent coverage protects both request and concrete parsing. A direct POSIX-shell syntax/behavior check passed for unversioned requests, platform requests, concrete identities, invalid concrete syntax, invalid destination identifiers and duplicate destination names.
 
+The install2 extraction boundary has now been split explicitly. Experimental `extract2 <format> <artifact> <destination>` keeps the same invocation shape as `extract` and owns only raw physical-format extraction/materialization. It supports the legacy physical formats plus `appimage`, `executable` and raw Apple `pkg`; it deliberately does not recognize the package-semantic pseudoformats `flat-pkg` or `dmg-pkg`. `dmg` extracts image contents without interpreting contained objects, and `pkg` expands the installer structure without selecting components or Payloads.
+
+Experimental public `pkg_extract2 <artifact> <range-dir> <staging-dir>` owns package-specific interpretation and normalization. Ordinary package formats delegate once to `extract2`; `flat-pkg` composes `extract2 pkg`; `dmg-pkg` composes `extract2 dmg`, selects the single top-level installer package, then calls `extract2 pkg`. Only `pkg_extract2` interprets `component`, `payload-root` and `overlay`, and only it normalizes the useful root. `pkg_install_one` no longer branches on extraction format or reads those metadata fields and delegates the whole materialization step to `pkg_extract2`. The legacy `extract`, `pkg_extract` and canonical `pkg install` paths remain unchanged.
+
+Permanent tests were added for the new boundary: `rumiai-os/extract2/contract.test` protects raw `pkg`/DMG behavior, opaque AppImage/executable handling, ordinary tar extraction and rejection of `flat-pkg`/`dmg-pkg`; `rumiai-os/pkg-extract2/contract.test` protects ordinary normalization plus `flat-pkg` and `dmg-pkg` composition, including the required `dmg -> pkg` sequence and overlay application. The current environment could not execute these repository tests and no GitHub workflow runs are configured for the commits, so they are committed coverage rather than executed validation evidence.
+
 Several mechanical/design points still remain before the scaffold becomes executable design:
 - stage outputs are shell-safe quoted argument lists produced through `quote`; callers reconstruct them only with deliberate `eval "set -- $result"`, never by ordinary unquoted expansion;
 - internal stage helpers must use private leading-underscore names unless they are deliberately promoted as public library API;
@@ -111,7 +117,7 @@ The global/non-package `pkg requirement resolve` query intentionally remains fac
 
 ## Next action
 
-Implement the shared concrete-to-catalog-range resolver, then redesign dependency closure so facility constraints are collected/unified before provider selection is finalized. After that, complete `pkg_install_one` integration and exercise the experimental pipeline while preserving the current `pkg install` path.
+Implement the shared concrete-to-catalog-range resolver, then redesign dependency closure so facility constraints are collected/unified before provider selection is finalized. Once dependency resolution is executable, exercise the install2 pipeline end to end using the new extract2/pkg_extract2 boundary while preserving the current `pkg install` path.
 
 ## Blockers / open questions
 
