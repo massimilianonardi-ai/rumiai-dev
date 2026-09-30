@@ -9,8 +9,8 @@ Realign the package dependency/provider model and reconstruct the install orches
 
 ## Current repository revisions
 
-- rumiai-dev: bfddf98f69ef455daa511b97f66f66abd174a245 (pre-checkpoint HEAD)
-- rumiai-os: 63bf5d913ebdda6479c5b3bea0e751ff9b5004c7
+- rumiai-dev: 2156994d56c07f51648d9fcd9038ebd163dadcc9 (pre-checkpoint HEAD)
+- rumiai-os: c1aba422759d052c1165bdae378bd48ed8bc13ae
 - pkg-catalog: d63f87d2be67288ef57f4a5812fabbc3f0b24a0d
 - rumiai-tests: 5318cd1010f677f295f82af9344b094399d3d192
 
