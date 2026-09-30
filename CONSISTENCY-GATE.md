@@ -267,7 +267,9 @@ An active handoff exists only to preserve task continuity across chats/sessions.
 
 Working design in a handoff is persistent task memory, not authority. It must be promoted, deferred or discarded before the task handoff is removed.
 
-For a substantial, parallel or multi-chat task, create the handoff after preflight and before the first material task change when the need is already known.
+For a substantial, parallel or multi-chat task, determine handoff ownership after preflight and before the first material task change when the need is already known. Before creating a new handoff, inspect the existing active handoffs and apply the ownership rule in `handoff/README.md`: reuse the existing owner when the work shares the same resumable responsibility and lacks a materially independent lifecycle; create a separate handoff only when independent goal/state/blocker/validation/completion ownership is concrete.
+
+A narrower task label is not sufficient reason to split an existing workstream. Long-lived handoffs are preferred owners within their standing responsibility, but they must not absorb work that has a genuinely independent lifecycle. When a specialized child handoff is justified, parent and child must not duplicate active operational state.
 
 When a response materially advances an active handoff task, required synchronization must complete **before** the user-visible final response.
 
@@ -312,6 +314,9 @@ A RumiAI task is ready to report as complete only when every applicable item is 
 [ ] proportional tests were run or correctly classified as unnecessary
 [ ] concrete intentionally deferred work is represented once under todo/ when applicable
 [ ] no current TODO duplicates an active handoff for the same work
+[ ] before creating a new handoff, existing active handoff ownership was checked by resumable responsibility
+[ ] no parallel handoff duplicates an existing task lifecycle merely under a narrower or different label
+[ ] parent/child handoffs, when justified, do not duplicate active operational state
 [ ] active handoff was synchronized for every material checkpoint before the final response
 [ ] physical-validation status is stated accurately
 [ ] Git changes are forward-only
