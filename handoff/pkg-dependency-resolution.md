@@ -9,9 +9,9 @@ Complete and validate the promoted recursive `pkg install` model built around th
 
 ## Current repository revisions
 
-- rumiai-dev: ab7d2f7c10b62adfe27c19887e5a0ed8f7d1cfd8 (pre-checkpoint HEAD)
-- rumiai-os: 736489eb5d431dd21e4befd7ed1220f12354478d
-- rumiai-tests: 7e11b8c00329f4ff8fbc1f6f0fa87bb905beeef6
+- rumiai-dev: b2287177c5e6297527b8f0f7555fe777e2d5c453 (pre-checkpoint HEAD)
+- rumiai-os: d98615a4b9b1d6008c23c2c8edb1f973ebf7103e
+- rumiai-tests: 4ddfd7f2d3939081d18b217c8dbb200318ed357b
 - pkg-catalog: d63f87d2be67288ef57f4a5812fabbc3f0b24a0d
 
 ## Applicable canonical sources
@@ -72,13 +72,21 @@ save original request argv
 Permanent coverage added/updated:
 - `tests/rumiai-os/pkg/depend.test` now expects dependency-only output, including dependency-free roots and the root-also-dependency case.
 - `tests/rumiai-os/pkg/catalog.test` covers `pkg_catalog_request_resolve`.
-- `tests/rumiai-os/pkg/install-dependency-order.test` verifies that dependency concretes are passed to installation before untouched original requests.
+- `tests/rumiai-os/pkg/install-dependency-order.test` verifies that dependency concretes are passed to installation before untouched original requests and that an already-installed exact dependency concrete is reused without catalog resolution.
+- `tests/external/geoserver/install-dependency-live.test` explicitly verifies that `pkg depend geoserver@3.0.1` includes Temurin but excludes the GeoServer root, then verifies that `pkg install geoserver@3.0.1` installs both packages.
 
-The assistant execution environment has no mounted local RumiAI checkout, so checkout-level test execution must use repository workflows or a user/local checkout. No pass claim is recorded yet for the new revisions.
+Revision-coupled validation evidence:
+- GeoServer workflow run 36768364000 tested rumiai-os 736489eb5d431dd21e4befd7ed1220f12354478d.
+- `external/geoserver/install-dependency-live.test` PASS on Ubuntu.
+- `external/geoserver/install-dependency-live.test` PASS on macOS.
+- The later `external/geoserver/service-live.test` failed in that workflow, so the overall GeoServer scope is NOT VALIDATED; that failure occurred after the dedicated recursive-install test had passed and is not evidence against the install result.
+- rumiai-os d98615a4b9b1d6008c23c2c8edb1f973ebf7103 adds only the early reuse path for an already-installed exact dependency concrete; permanent coverage exists for that delta, while the full health workflow is still running at this checkpoint.
+
+The assistant execution environment has no mounted local RumiAI checkout, so checkout-level execution uses repository workflows rather than a local checkout.
 
 ## Next action
 
-Run the permanent package tests against rumiai-os 736489eb5d431dd21e4befd7ed1220f12354478d, fix any runtime defects, then reproduce `pkg install geoserver` end to end and confirm that GeoServer itself is installed after its Java dependency.
+Investigate the separate GeoServer `service-live` failure only if it remains relevant after the package-install work unit; the reported recursive-install defect itself is reproduced and fixed. Continue package cleanup from the current promoted `pkg install` implementation when the user resumes review.
 
 ## Deferred
 
