@@ -33,6 +33,18 @@ If a task starts small and later crosses this threshold, create the handoff as s
 
 Short, self-contained tasks do not need a handoff merely for bookkeeping.
 
+### Ownership before creating a handoff
+
+Before creating a new active handoff, inspect the existing active handoffs and determine whether one already owns the new work by **resumable responsibility**, not by topic wording or a narrower label.
+
+Reuse an existing handoff when the new work advances the same standing goal/responsibility and does not require a materially independent lifecycle. Create a separate handoff only when the work has a materially independent goal, active state, blockers, validation path or completion boundary that must be resumable on its own.
+
+Long-lived handoffs with a standing responsibility are the preferred owners of recurring observations, decisions and improvements inside that responsibility. A more specific topic name alone does not justify a parallel handoff.
+
+When independence is uncertain, keep the work in the existing owning handoff until an independently resumable lifecycle becomes concrete. If that happens later, split the task explicitly at that point.
+
+When a broader handoff legitimately spawns a separate specialized task, do not duplicate active state between parent and child. The specialized handoff owns its operational progress, task-local decisions, blockers, validation and completion state; the broader handoff retains only the relationship, any reusable lesson and any broader state that remains its own responsibility.
+
 Known work that is intentionally deferred and not yet active belongs under `todo/`, not `handoff/`. See `todo/README.md`.
 
 ## 3. Activation from deferred TODO work
@@ -74,7 +86,7 @@ Do not create chains such as:
 
 for successive moments of one task.
 
-A task should have exactly one active handoff unless the task itself has been deliberately split into independently resumable workstreams.
+A task should have exactly one active handoff unless the task itself has been deliberately split into independently resumable workstreams under the ownership rule above. Topic similarity does not require merging independent lifecycles, and topic specificity does not justify splitting one lifecycle.
 
 ## 5. Required shape
 
