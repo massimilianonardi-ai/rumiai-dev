@@ -204,18 +204,19 @@ The first substantial real scenario is now implemented and formally exercised. D
 
 Continue from concrete development needs:
 
-1. correct scenario SSH-config generation so `UserKnownHostsFile` remains one pathname when the project/state path contains spaces, add proportional permanent coverage for this case, then rerun the real-host `testlab enter` path;
-2. use the shipped `rsudo` scenario as the disposable real SSH/sudo environment for rsudo/SSH development activities when that reality is useful;
-3. exercise the normal interactive-first `testlab` menu/enter flow during real development and refine it only when concrete friction is observed;
-4. add a second substantial scenario only when a distinct RumiAI development need requires one;
-5. after at least two real scenarios share the same non-trivial mechanics, evaluate whether those repeated mechanics deserve a common `m` abstraction;
-6. do not reopen PTY/Expect handoff work unless a concrete scenario cannot be served by direct inherited terminal interaction.
+1. continue the current live PostgreSQL/db-pg experiment on the successfully entered instance;
+2. correct scenario SSH-config generation so `UserKnownHostsFile` remains one pathname when the project/state path contains spaces, add proportional permanent coverage for this case, then rerun the real-host `testlab enter` path;
+3. use the shipped `rsudo` scenario as the disposable real SSH/sudo environment for rsudo/SSH development activities when that reality is useful;
+4. exercise the normal interactive-first `testlab` menu/enter flow during real development and refine it only when concrete friction is observed;
+5. add a second substantial scenario only when a distinct RumiAI development need requires one;
+6. after at least two real scenarios share the same non-trivial mechanics, evaluate whether those repeated mechanics deserve a common `m` abstraction;
+7. do not reopen PTY/Expect handoff work unless a concrete scenario cannot be served by direct inherited terminal interaction.
 
 The current `rsudo` validation deliberately uses an explicitly prepared host Podman environment. Generic `rumiai-validate` host-prerequisite preparation has not been introduced; that larger validation concern remains separate from `testlab`.
 
 ## Blockers / open questions
 
-Current blocker on `PRTL-GS-01`: the shipped `rsudo` scenario emits an unquoted `UserKnownHostsFile` into its generated SSH config. A project/state pathname containing spaces is split by OpenSSH, so `enter` cannot find the otherwise-correct trust file. PostgreSQL/db-pg activity is blocked until that generated config is corrected or locally patched.
+Observed workaround result on `PRTL-GS-01`: quoting the generated `UserKnownHostsFile` pathname in the persisted instance SSH config allowed `testlab enter` to succeed on the same instance. PostgreSQL/db-pg activity is therefore unblocked for the current live experiment. The shipped scenario still requires a product fix plus proportional permanent coverage for project/state paths containing spaces.
 
 Still intentionally open:
 
