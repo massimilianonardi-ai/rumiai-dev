@@ -1,7 +1,7 @@
 # Active task handoffs
 
 Status: **Current**  
-Updated: 2026-09-17
+Updated: 2026-09-30
 
 This directory contains only handoffs for **currently active work that must survive chat/session boundaries**.
 
@@ -94,6 +94,8 @@ Updated: <date/time when useful>
 
 ## Fixed task-local choices
 
+## Acceptance scenarios        # required when the task materially changes user-visible behavior
+
 ## Working design              # optional; use only when active design is not yet promotable
 
 ## Completed
@@ -122,6 +124,14 @@ List paths, not copied rule text.
 ### Fixed task-local choices
 
 Record only choices that are fixed for this workstream but have not become a general canonical contract. If a choice becomes durable project/subsystem policy, propagate it to the canonical current source and remove the duplicated rule from the handoff.
+
+### Acceptance scenarios
+
+For a task that materially changes a public, operator-facing or otherwise user-visible workflow, record a small set of normal scenarios before implementation. Each scenario should state the goal and the public interaction using only information the caller can reasonably know or deliberately choose.
+
+Keep this section short and implementation-independent. Its purpose is to prevent a resumable task from preserving sophisticated internal design while losing the normal product outcome. Provider-specific, revision-specific or internal details that the system can reliably discover should not appear as caller prerequisites unless the scenario is explicitly about exact pinning, overriding or another advanced choice.
+
+These scenarios are task state while behavior remains unsettled. Once the behavior is promoted, the durable contract belongs in the applicable current specification and duplicated scenario text should be removed from the handoff.
 
 ### Working design
 
