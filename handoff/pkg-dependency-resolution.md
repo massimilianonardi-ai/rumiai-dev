@@ -9,8 +9,8 @@ Complete and validate the promoted recursive `pkg install` model built around th
 
 ## Current repository revisions
 
-- rumiai-dev: 7d7d4a44eb4fd80e9c37949c53d09b15743d8a27 (pre-checkpoint HEAD)
-- rumiai-os: 649d92806f4886443806bb7b4563ef56285c0185
+- rumiai-dev: 8f79e4d62e3c4f7a256befe49a93b20b7eb92775 (pre-checkpoint HEAD)
+- rumiai-os: fc2f17aa0608ff1998d7de1a55f8420ae654bf72
 - rumiai-tests: a150d7d020602068b4af809bb440864766a03fe6
 - pkg-catalog: d63f87d2be67288ef57f4a5812fabbc3f0b24a0d
 
@@ -70,7 +70,7 @@ validate complete original request argv
 → resolve/install each resulting operand in order
 ```
 
-The validation step is owned explicitly by `pkg install`; it does not rely on the independent public `pkg depend` command to reject malformed requests.
+The validation step is owned explicitly by `pkg install`; it does not rely on the independent public `pkg depend` command to reject malformed requests. The private validator records the offending request so the status-2 fatal diagnostic identifies that package specification.
 
 `pkg_install_one` accepts a normal package-spec and resolves it through `pkg_catalog_request_resolve` before concrete installation. This lets dependency concretes and original unresolved roots share one install path.
 
