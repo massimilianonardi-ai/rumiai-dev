@@ -1,7 +1,7 @@
 # development-validation-lab
 
 Status: Active
-Updated: 2026-09-29
+Updated: 2026-09-30
 
 ## Goal
 
@@ -148,6 +148,8 @@ The corrected placement is:
 
 ## Current state
 
+A real operator run on host `PRTL-GS-01` exposed a current `rsudo` scenario defect before PostgreSQL activity began: `testlab prepare rsudo` succeeded and persisted a ready instance, but `testlab enter <instance>` failed in OpenSSH host-key verification with `No ED25519 host key is known for [127.0.0.1]:<port> and you have requested strict checking.` Regenerating the instance `known-hosts` file explicitly with `ssh-keyscan -t ed25519 -p <port> 127.0.0.1` did not change the failure. This means scenario readiness currently does not prove that the generated trust configuration is actually usable by the OpenSSH client path on this host. Root cause is still under diagnosis; current focus is the effective host-key identity/configuration seen by the scenario SSH adapter, not rsudo database behavior.
+
 The first real `testlab` baseline is promoted and implemented.
 
 Canonical contract:
@@ -202,17 +204,18 @@ The first substantial real scenario is now implemented and formally exercised. D
 
 Continue from concrete development needs:
 
-1. use the shipped `rsudo` scenario as the disposable real SSH/sudo environment for rsudo/SSH development activities when that reality is useful;
-2. exercise the normal interactive-first `testlab` menu/enter flow during real development and refine it only when concrete friction is observed;
-3. add a second substantial scenario only when a distinct RumiAI development need requires one;
-4. after at least two real scenarios share the same non-trivial mechanics, evaluate whether those repeated mechanics deserve a common `m` abstraction;
-5. do not reopen PTY/Expect handoff work unless a concrete scenario cannot be served by direct inherited terminal interaction.
+1. diagnose and correct the real-host OpenSSH trust failure observed on `PRTL-GS-01`, then rerun `testlab enter` against the same scenario behavior;
+2. use the shipped `rsudo` scenario as the disposable real SSH/sudo environment for rsudo/SSH development activities when that reality is useful;
+3. exercise the normal interactive-first `testlab` menu/enter flow during real development and refine it only when concrete friction is observed;
+4. add a second substantial scenario only when a distinct RumiAI development need requires one;
+5. after at least two real scenarios share the same non-trivial mechanics, evaluate whether those repeated mechanics deserve a common `m` abstraction;
+6. do not reopen PTY/Expect handoff work unless a concrete scenario cannot be served by direct inherited terminal interaction.
 
 The current `rsudo` validation deliberately uses an explicitly prepared host Podman environment. Generic `rumiai-validate` host-prerequisite preparation has not been introduced; that larger validation concern remains separate from `testlab`.
 
 ## Blockers / open questions
 
-No blocker remains for continued `testlab` development.
+Current blocker on `PRTL-GS-01`: the shipped `rsudo` scenario reaches `ready` but `enter` fails strict OpenSSH host-key verification even after an explicit ED25519 `ssh-keyscan` refresh of the instance trust file. PostgreSQL/db-pg activity is therefore blocked until the scenario trust path is corrected on this host.
 
 Still intentionally open:
 
