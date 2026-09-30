@@ -1,7 +1,7 @@
 # RumiAI Development Rules
 
 Status: **Current / canonical**  
-Updated: 2026-09-27
+Updated: 2026-09-30
 
 This document contains project-wide rules that apply across RumiAI subsystems. Subsystem details belong in current specifications; historical rationale belongs in Git history.
 
@@ -268,11 +268,30 @@ For new RumiAI-owned code, choosing a disfavored language must be deliberate and
 
 ## 16. Development workflow
 
+### Product intent and operability
+
+For public, operator-facing or otherwise user-visible behavior, internal consistency is necessary but not sufficient. The normal product workflow must remain usable from the user's actual goal rather than from knowledge of the implementation.
+
+Before designing or materially changing such behavior:
+
+- state the primary user/operator goal in implementation-independent terms;
+- identify a small set of realistic normal-path interactions that must make that goal straightforward;
+- distinguish information the caller reasonably knows or deliberately chooses from provider-specific, revision-specific or internal information the system can reliably discover or derive;
+- surface any semantic delta that adds required knowledge, makes the normal path less discoverable, adds an avoidable step, changes a default or introduces a surprising restriction.
+
+A user-visible restriction or extra knowledge requirement must be an explicit design decision supported by the current contract; it must not enter the product as an incidental consequence of an implementation detail. When the system can reliably discover or derive an internal/provider-specific detail, the normal path must not require the caller to supply it unless supplying that detail is itself the deliberate user choice, such as an exact pin or explicit override.
+
+A technically coherent implementation that makes the primary intended goal impractical, unnatural or dependent on hidden implementation knowledge is defective. Correct the design/specification rather than treating internal consistency or passing lower-level tests as sufficient evidence of completion.
+
+For substantial user-facing work, record the normal acceptance scenarios before implementation. Unsettled scenarios belong in the active handoff; once their behavior is promoted, the applicable current specification owns the contract.
+
 The normal sequence is:
 
 ```text
 retrieve current authority
 → extract applicable invariants
+→ identify primary user goals, normal paths and knowledge boundaries when behavior is user-facing
+→ surface surprising semantic deltas before implementation
 → keep unresolved active design in the task handoff
 → experiment only if a question is genuinely open
 → promote only settled contract into current specifications
@@ -281,6 +300,7 @@ retrieve current authority
 → verify public/internal library function naming when libraries are affected
 → add/realign proportional permanent tests
 → execute real development tests
+→ exercise the normal public workflow from the user/operator perspective when applicable
 → use broader/hosted testing when it adds evidence
 → perform physical validation last when required
 → reread the diff and scan for stale mechanisms/terminology
