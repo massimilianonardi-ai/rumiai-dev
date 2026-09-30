@@ -1,7 +1,7 @@
 # RumiAI development knowledge base
 
 Status: **Current**  
-Updated: 2026-09-17
+Updated: 2026-09-30
 
 `rumiai-dev` is the authoritative semantic knowledge base for RumiAI development.
 
@@ -73,7 +73,9 @@ handoff/<stable-task-name>.md
 
 The handoff is the persistent boundary between volatile chat context and durable task state. A clean chat resumes a task by performing the normal mandatory read order and then reading that task's active handoff.
 
-A task should acquire an active handoff before its first material change when it is already expected to span multiple meaningful steps, repositories or chats. If a task starts small but later crosses that threshold, create the handoff at that point.
+A task should acquire an active handoff before its first material change when it is already expected to span multiple meaningful steps, repositories or chats. If a task starts small but later crosses that threshold, establish handoff ownership at that point.
+
+Before creating a new handoff, inspect the existing active handoffs. Ownership is determined by resumable responsibility rather than by topic label: reuse an existing handoff when the work advances the same responsibility without a materially independent lifecycle; create a separate handoff only when the work must be resumed, validated and completed independently. Long-lived handoffs preferentially own recurring work inside their standing responsibility. The full ownership and parent/child state rules are defined in `handoff/README.md`.
 
 During active work, the handoff is synchronized automatically at meaningful checkpoints. Before sending a final response that materially advances the task, update the handoff when any of the following changed:
 
