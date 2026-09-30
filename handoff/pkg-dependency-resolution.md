@@ -9,10 +9,10 @@ Realign the package dependency/provider model and reconstruct the install orches
 
 ## Current repository revisions
 
-- rumiai-dev: 267d70498863341ccaca72813c22661825fce4cd (pre-checkpoint HEAD)
-- rumiai-os: 654508a13ccf85fe97c710b53260502a7a6418f7
+- rumiai-dev: b37337c73e1d89a97fdbee06b5ff9aea722b1c57 (pre-checkpoint HEAD)
+- rumiai-os: 1e0f7fb56b488de4d5d5d97d0e824ebf92484bb1
 - pkg-catalog: d63f87d2be67288ef57f4a5812fabbc3f0b24a0d
-- rumiai-tests: d31534be8bde20b3b950d116200484abcc090f0f
+- rumiai-tests: 72ed95b574a7fdc897627ab1b0ea60b38ea2d472
 
 ## Applicable canonical sources
 
@@ -120,6 +120,10 @@ Catalog mechanics have now been separated from install orchestration into public
 
 The dependency planner is now separated into public `pkg-depend.lib.sh`. The public command `pkg depend <package-spec>...` owns invocation-private snapshot acquisition and prints one exact concrete identity per line. The internal planner helper is private; there is no second public same-snapshot planning API. Experimental `install2` now calls `pkg_depend "$@"` itself, captures the raw concrete list, then initializes its install workspace and installs those exact identities. The old `pkg_install_resolve_one`, `pkg_install_resolve`, `pkg_install_dependency_resolve`, `_pkg_install_dependency_visit` and nonexistent `_pkg_install_dependency_resolve_one` path have been removed from `pkg-install2.lib.sh`.
 
+The public composition boundary is now explicit: `pkg install $(pkg depend ...)` is a supported shape because `pkg depend` emits only exact concrete identities valid as package operands. The snapshot used while planning is intentionally not shared with installation. If catalog state advances before installation, the installer still attempts the exact returned concretes and must not silently select different versions. `pkg-install2` follows the same model internally by calling `pkg_depend` before its own install initialization. The former public `pkg_depend_resolve` surface has been removed; the underlying planner helper is private.
+
+Because `pkg depend` stdout is machine-consumable, catalog refresh chatter is now kept off stdout. `pkg_catalog_init` redirects normal `git clone` / `git pull` output to stderr, and permanent `rumiai-os/pkg/depend.test` injects deliberate clone/pull stdout noise while testing the public `pkg_depend` entrypoint so any leakage corrupting the concrete list is detected.
+
 Planning now performs fixed-point dependency discovery. Dependency declarations are parsed through public `pkg_dependency_read` / `pkg_dependency_validate`; compatibility evaluation uses public `pkg_dependency_satisfied`; provider definition lookup uses public `pkg_facility_compatibility_read`; and catalog request version resolution uses public `pkg_catalog_version_resolve`. This keeps `pkg-depend.lib.sh` from depending on private cross-library helpers. Requirements are grouped by effective selector/facility/target bucket before provider selection, so constraints such as `java >=21` and `java =25` from different implicit consumers are evaluated together rather than choosing a provider during first DFS discovery.
 
 Permanent coverage `rumiai-os/pkg/catalog.test` now exercises catalog snapshot initialization with a controlled Git fixture, platform and `all` stream resolution, exact/middle range selection, malformed range numbering, missing streams and invalid output identifiers. A real checkout test run was attempted from the execution environment but GitHub DNS resolution is unavailable there, so this commit has permanent test coverage but no executed checkout-level validation evidence from this session.
@@ -140,4 +144,4 @@ Validate the public compositional path, especially `pkg install $(pkg depend ...
 
 ## Blockers / open questions
 
-No dependency-planner design blocker remains. The current blocker is validation access: this assistant runtime has no local RumiAI checkout mounted, so repository-level execution must use an existing external/local checkout rather than cloning through unavailable GitHub DNS. Canonical `pkg install` promotion remains deliberately separate from the experimental install2 work.
+No dependency-planner design blocker remains. This assistant runtime has no local RumiAI checkout mounted; permanent validation therefore uses repository workflows rather than a local checkout. The latest `rumiai-os-health` run for rumiai-tests 72ed95b574a7fdc897627ab1b0ea60b38ea2d472 is currently in progress, so no pass claim is recorded yet. Canonical `pkg install` promotion remains deliberately separate from the experimental install2 work.
