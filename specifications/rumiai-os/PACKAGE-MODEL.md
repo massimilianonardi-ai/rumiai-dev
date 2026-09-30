@@ -38,9 +38,10 @@ pkg
 Current public subcommands include:
 
 ```text
-pkg install <package>...
-pkg uninstall <package>...
+pkg install <package-spec>...
+pkg uninstall <package-spec>...
 pkg versions [args...]
+pkg depend <package-spec>...
 pkg default [args...]
 pkg provider default [args...]
 pkg provider bind [args...]
@@ -777,7 +778,7 @@ PKG-14  facility declarations are independent of package identity
 PKG-15  multiple installed providers of the same facility/compatibility are valid
 PKG-16  package-consumer resolution uses explicit binding, then facility default, then deterministic implicit installed-provider resolution; explicit configured intent never silently falls back
 PKG-17  provider selectors use package-spec grammar; omitted version follows package default and explicit version pins
-PKG-18  pkg install validates dependency declarations but does not auto-install providers or require current runtime dependency satisfiability
+PKG-18  pkg install discovers recursive dependency providers through pkg depend, prepends their exact concrete identities to the original request list and installs dependencies before requested roots
 PKG-19  runtime re-resolves and validates mutable provider selection before provider use
 PKG-20  pkg provider configures facility defaults and per-consumer bindings
 PKG-21  provider-selection configuration is system-scoped authoritative conf state
