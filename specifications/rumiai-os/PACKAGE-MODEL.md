@@ -613,15 +613,22 @@ pkg depend <package-spec>...
 
 Catalog fallback is planning only: it may add a concrete provider identity to the returned plan when no compatible planned or installed provider exists and exactly one provider package can satisfy the requirement. It does not download, extract, integrate or install that provider. When the repository-selected current/latest version of the unique provider package satisfies the complete constraint set, that concrete is selected; otherwise the newest compatible catalog range anchor is used as the concrete version.
 
-The returned plan is deduplicated and dependency-first. Provider dependencies are themselves discovered recursively until the selected-provider set and requirement graph stabilize; cycles or a non-stabilizing/unsatisfiable plan fail rather than producing a partial order. Every emitted item is an exact concrete package identity and therefore a valid package operand. The output is intentionally composable with installation, for example:
+The returned dependency plan is deduplicated and dependency-first. Provider dependencies are themselves discovered recursively until the selected-provider set and requirement graph stabilize; cycles or a non-stabilizing/unsatisfiable plan fail rather than producing a partial order.
 
-```sh
-pkg install $(pkg depend keycloak)
+`pkg depend` prints only dependency concrete identities. The explicit requested roots are not part of its output unless the same concrete is also selected as a dependency node of another requested root. Every emitted dependency is an exact concrete package identity and therefore a valid install operand.
+
+The public `pkg install <package-spec>...` command composes the two responsibilities directly:
+
+```text
+dependencies = pkg depend <original requests>
+install sequence = dependencies + original requests
 ```
 
-`pkg depend` owns the catalog snapshot used to produce its plan, but that snapshot is not part of the output contract and is not shared with a later installer. A later `pkg install` or experimental `install2` invocation may observe a newer catalog snapshot; it must nevertheless attempt the exact concrete identities returned by `pkg depend`, not reinterpret them as unresolved requests or silently choose another version. If an exact concrete can no longer be installed from the later catalog state, installation fails for that concrete.
+Dependency concretes are prepended to the untouched original request list. The dependency operands are therefore installed first, while requested roots retain their original package-spec form and are resolved by installation when reached. This keeps dependency discovery independent from requested-root installation and prevents a root package from disappearing merely because dependency planning changes.
 
-`pkg depend` does not mutate package/provider state. Catalog cache refresh and invocation-private snapshot materialization are permitted operational side effects. This planning surface does not change the canonical `pkg install` baseline: automatic transitive dependency installation remains outside the canonical install contract until deliberately promoted. Experimental `install2` reuses the same public `pkg depend` entrypoint and then installs the returned concrete identities.
+`pkg depend` owns the catalog snapshot used to discover dependencies. Its snapshot is not shared state with installation. `pkg install` resolves each operand against its own installation snapshot; exact dependency concretes remain exact requests, while original non-concrete roots are resolved normally by the installer.
+
+`pkg depend` does not mutate package/provider state. Catalog cache refresh and invocation-private snapshot materialization are permitted operational side effects. Recursive dependency installation is now part of the canonical `pkg install` pipeline.
 
 The query forms print the configured selector. The set forms replace the configured selector. The unset forms remove it; unsetting a consumer binding restores inheritance from the facility default.
 
@@ -839,14 +846,15 @@ PKG-85  package integration materializes validated dependency declarations witho
 PKG-86  pkg requirement list resolves and prints catalog dependency declarations without downloading the package artifact
 PKG-87  pkg requirement resolve status-1 diagnostics distinguish unconfigured, unresolvable and incompatible global facility-default states
 PKG-88  pkg install reports currently unsatisfied runtime dependencies before artifact transfer without treating them as an installation failure
-PKG-89  pkg depend is a read-only package/dependency planning query that prints a deduplicated dependency-first concrete plan and performs no package installation
-PKG-90  one pkg depend plan resolves explicit requests, dependency declarations, provider candidates and provider compatibility against one exact pkg-catalog snapshot
+PKG-89  pkg depend is a read-only dependency-planning query that prints a deduplicated dependency-first list of dependency concrete identities and performs no package installation
+PKG-90  one pkg depend plan resolves explicit roots only for dependency discovery, then recursively resolves dependency declarations, provider candidates and provider compatibility against one exact pkg-catalog snapshot
 PKG-91  pkg depend collects all constraints belonging to the same effective provider-selection bucket before selecting its concrete provider
 PKG-92  pkg depend preserves consumer binding then facility-default precedence; without either selector it prefers compatible planned providers, then unambiguous compatible installed providers, then a catalog provider only when the compatible provider package is unambiguous
 PKG-93  pkg depend treats multiple compatible provider packages as ambiguity and never silently ranks them
-PKG-94  pkg depend output consists only of exact concrete package identities valid as direct pkg install operands
-PKG-95  the catalog snapshot used internally by pkg depend is not part of its output contract and need not be shared with a later installer
-PKG-96  a later installer consumes pkg depend concrete identities as exact requests and does not silently re-resolve them to different versions if catalog state has advanced
-PKG-97  experimental install2 reuses the public pkg depend entrypoint and installs the returned concrete identities; automatic transitive dependency installation remains outside canonical pkg install until deliberate promotion
+PKG-94  pkg depend omits requested root nodes from output unless the same concrete is also selected as a dependency node
+PKG-95  every pkg depend output item is an exact concrete package identity valid as a direct install operand
+PKG-96  pkg install prepends pkg depend output to the untouched original request list so dependency concretes are installed before requested roots
+PKG-97  pkg install resolves original package-spec roots when reached while preserving exact dependency concretes as exact requests
+PKG-98  recursive dependency installation is part of the canonical pkg install pipeline
 
 ```
