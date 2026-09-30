@@ -9,10 +9,10 @@ Realign the package dependency/provider model and reconstruct the install orches
 
 ## Current repository revisions
 
-- rumiai-dev: 46d9d7dd958d446b57ea0e4b015c12a60f55a97f (pre-checkpoint HEAD)
-- rumiai-os: 8048b1685aa05d84b0a3af7fb9d50e648eea0618
+- rumiai-dev: dd1e74edaa7e2dc83fa4d3554b82b3f84609006c (pre-checkpoint HEAD)
+- rumiai-os: d13dd507747855a4b4dd58d5aa4dbafc9907ea93
 - pkg-catalog: d63f87d2be67288ef57f4a5812fabbc3f0b24a0d
-- rumiai-tests: 099e8ab29e79a089cbca524d5cc649a74ec2ddea
+- rumiai-tests: 962986266f0c660561c70390a1d83ebc64b58016
 
 ## Applicable canonical sources
 
@@ -96,19 +96,22 @@ The new design has not been promoted into `PACKAGE-MODEL.md`; in particular, rec
 
 The current scaffold intentionally contains placeholders. Invocation initialization now creates a private work directory and persistent catalog cache, while catalog initialization reads its repository URL from `state-path system sys pkg conf`/`catalog`, updates the cached Git repository, records one exact HEAD and exports that revision into the invocation-private catalog work directory with `git archive`. The main system profile now supplies that configuration with the canonical HTTPS URL for `massimilianonardi-ai/pkg-catalog`.
 
-Several mechanical points still remain before the scaffold becomes executable design:
+Concrete identity parsing is now centralized in public `pkg_concrete_read <name-variable> <version-variable> <osarch-variable> <concrete>` from `pkg-common.lib.sh`. It validates the complete `<package>@<version>[!<osarch>]` identity before assigning caller-selected output variables. `pkg_install_one` and the provider subsystem now reuse that primitive instead of maintaining separate concrete parsers. Revision-coupled manuals for `pkg-common.lib.sh` and the experimental `pkg-install2.lib.sh` were added, and permanent coverage for the concrete parser is in `rumiai-tests`.
+
+Several mechanical/design points still remain before the scaffold becomes executable design:
 - stage outputs are shell-safe quoted argument lists produced through `quote`; callers reconstruct them only with deliberate `eval "set -- $result"`, never by ordinary unquoted expansion;
 - internal stage helpers must use private leading-underscore names unless they are deliberately promoted as public library API;
-- per-package installation must receive the resolved concrete explicitly rather than being called with no operand;
 - the repository dispatcher does not yet expose `install2`, so the committed library is not yet a public subcommand path;
 - the exit trap is currently installed before `pkg_install_work` is assigned, so early initialization failure reaches cleanup before that variable has been established;
-- changing `conf/catalog` after a cache has already been cloned does not yet reconcile the cache's existing `origin` URL with the new configured URL.
+- dependency traversal currently references `_pkg_install_dependency_range_resolve` and `_pkg_install_dependency_resolve_one`, which are not yet implemented;
+- the range lookup responsibility should be generalized as concrete-to-catalog-range resolution rather than remain dependency-specific;
+- dependency provider choice must not be finalized during first DFS discovery when later consumers may add constraints for the same facility; constraint collection/unification and provider selection therefore still require redesign before the dependency stage is executable.
 
 The global/non-package `pkg requirement resolve` query intentionally remains facility-default-only because it has no package-consumer runtime projection path. Implicit fallback applies to package consumers.
 
 ## Next action
 
-Define the intermediate data model and dependency-unification/provider-selection policies for `install2`, then implement the stages incrementally while preserving the current `pkg install` path. Hosted closure of the old path remains validation evidence to retain, but this handoff stays active because the installation redesign is now its current work.
+Implement the shared concrete-to-catalog-range resolver, then redesign dependency closure so facility constraints are collected/unified before provider selection is finalized. After that, complete `pkg_install_one` integration and exercise the experimental pipeline while preserving the current `pkg install` path.
 
 ## Blockers / open questions
 
