@@ -618,9 +618,12 @@ The returned dependency plan is deduplicated and dependency-first. Provider depe
 
 `pkg depend` prints only dependency concrete identities. The explicit requested roots are not part of its output unless the same concrete is also selected as a dependency node of another requested root. Every emitted dependency is an exact concrete package identity and therefore a valid install operand.
 
-The public `pkg install <package-spec>...` command composes the two responsibilities directly:
+The public `pkg install <package-spec>...` command first validates the complete original request list syntactically. If any request is invalid, installation fails before dependency planning, catalog resolution or package-store mutation.
+
+After successful validation, `pkg install` composes the two responsibilities directly:
 
 ```text
+validate original requests
 dependencies = pkg depend <original requests>
 install sequence = dependencies + original requests
 ```
@@ -857,5 +860,6 @@ PKG-95  every pkg depend output item is an exact concrete package identity valid
 PKG-96  pkg install prepends pkg depend output to the untouched original request list so dependency concretes are installed before requested roots
 PKG-97  pkg install resolves original package-spec roots when reached while preserving exact dependency concretes as exact requests
 PKG-98  recursive dependency installation is part of the canonical pkg install pipeline
+PKG-99  pkg install validates the complete original request list before dependency planning, catalog resolution or package-store mutation; any syntactically invalid request aborts the whole invocation
 
 ```
