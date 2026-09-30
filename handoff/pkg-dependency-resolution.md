@@ -9,10 +9,10 @@ Realign the package dependency/provider model and reconstruct the install orches
 
 ## Current repository revisions
 
-- rumiai-dev: 5f7a2be7faa71d73d6767692d4cce7f4056f4cd1 (pre-checkpoint HEAD)
-- rumiai-os: 93e9251201ddf4fdf8c77cbe4ea91cc0c7f48028
+- rumiai-dev: be1758ff3f9869c9be349560dd336b7d26f5ca6f (pre-checkpoint HEAD)
+- rumiai-os: 191264d6c170564f2209b61e366456435780b6fa
 - pkg-catalog: d63f87d2be67288ef57f4a5812fabbc3f0b24a0d
-- rumiai-tests: 701215edabaef8926235fa39adfd86d786e44ccb
+- rumiai-tests: e19d1b8350e7ed20a881d1a9a22565525acc0ffa
 
 ## Applicable canonical sources
 
@@ -28,11 +28,13 @@ Realign the package dependency/provider model and reconstruct the install orches
 ## Fixed task-local choices
 
 - Current canonical `pkg install` does not auto-install missing dependency providers and remains unchanged while `install2` is experimental.
-- The experimental `install2` design is evaluating recursive dependency closure that may add missing dependencies to the install set; this is working design, not yet promoted package contract.
-- Do not silently choose among multiple compatible installed providers.
+- Public `pkg depend <package-spec>...` is now the read-only dependency planner. It resolves explicit requests and recursive facility dependencies against one catalog snapshot and prints a deduplicated dependency-first concrete plan.
+- Experimental `install2` reuses the same `pkg_depend_resolve` planner against the exact snapshot already owned by the install invocation instead of maintaining separate explicit/dependency resolvers.
+- Do not silently choose among multiple compatible provider packages.
 - An explicit consumer binding remains highest precedence.
 - A configured facility default remains explicit preference.
-- Without binding/default, package consumers resolve an unambiguous compatible installed provider; multiple compatible versions of one provider package may be disambiguated by that package's default, while multiple provider packages remain ambiguous.
+- Without binding/default, planning first reuses a compatible provider already present in the plan, then an unambiguous compatible installed provider, and only then an unambiguous compatible catalog provider package. Multiple compatible versions of one installed provider package may be disambiguated by that package's normal provider/default selection; multiple compatible provider packages remain ambiguous.
+- Missing dependency providers may enter a `pkg depend` plan only as concrete identities; planning performs no download, extraction, integration or package-store mutation.
 - Installation must not require runtime provider selection to already be configured or currently satisfiable.
 - Dependency/provider diagnostics must expose the facility, constraints and resolution reason rather than only a generic failure code.
 
@@ -50,25 +52,32 @@ The current experimental flow is:
 
 ```text
 validation
-    → explicit-request resolution
-    → recursive dependency closure / constraint unification / concrete resolution
-    → deduplicated full install graph
-    → topological order
-    → install remaining concretes
+    → one catalog snapshot
+    → pkg_depend_resolve(snapshot, explicit requests)
+        → explicit concrete resolution
+        → recursive dependency discovery
+        → constraint collection by effective provider-selection bucket
+        → provider concretization
+        → repeat until closure stabilizes
+        → concrete graph cycle check / topological order
+    → install returned concretes dependency-first
 ```
 
-`validation` is syntax-only. Explicit-request resolution considers installed state and catalog availability but does not yet resolve dependencies. Dependency resolution operates recursively from the resolved explicit requests.
+`validation` is syntax-only and remains before catalog initialization in `install2`. The shared planner owns explicit request resolution and dependency closure. Explicit requests are graph nodes too: one explicit request may satisfy or depend on another explicit request, and the same concrete may be reached through both explicit and dependency paths.
 
-The dependency stage should produce the ordered **full closure**, not merely a dependency list that is later concatenated with the explicit request list. Explicit requests are graph nodes too: one explicit request may satisfy or depend on another explicit request, and the same concrete may be reached through both explicit and dependency paths. One graph and one deduplication/order step avoids duplicate or incorrectly ordered installation.
+Requirements sharing the same effective implicit or selector bucket are accumulated before provider selection. Different consumer bindings may therefore intentionally create different buckets for the same facility. The planner rebuilds the active concrete contexts from roots plus current provider decisions until the decision set stabilizes, then derives one deduplicated concrete graph and dependency-first order.
 
 No permanent package-store mutation should occur until the complete explicit-request/dependency graph has been proven satisfiable and ordered. Exact staging/download timing remains open, but permanent installation belongs after full resolution.
 
-Still-open policy includes:
-- how constraints on the same facility/package are unified;
-- how an installed compatible concrete competes with a newer/different catalog concrete;
-- how provider-package ambiguity is resolved when multiple providers can satisfy one facility;
-- the exact auto-install policy for missing dependency providers under `install2`;
-- cycle handling beyond baseline failure.
+The following planning policy is now fixed for `pkg depend`:
+- all constraints in one effective provider-selection bucket must be satisfied by the selected concrete;
+- compatible planned providers precede installed providers, which precede catalog fallback;
+- catalog fallback is allowed only when the compatible provider package is unambiguous;
+- multiple compatible provider packages are an error rather than a ranking opportunity;
+- configured binding/default intent remains authoritative and does not silently fall through to another provider package;
+- graph cycles fail rather than producing a partial order.
+
+Still-open install2 policy is limited to promotion/operational questions rather than dependency-discovery mechanics: the canonical `pkg install` path still does not automatically install the transitive plan until deliberate promotion.
 
 Each install2 stage communicates through a shell-safe quoted argument list written to standard output. Every element is emitted with the existing `quote` contract and elements are separated by spaces, so the caller may capture the result and reconstruct the exact positional arguments with `eval "set -- $result"`. This makes each stage a simple argv→quoted-argv transformation, preserves spaces and literal metacharacters in elements, and allows stage functions to remain subshell-isolated. Arrays/maps may still be used internally by a resolver when useful, but they are not the inter-stage contract. No temporary files are used for intermediate lists.
 
@@ -104,24 +113,26 @@ The experimental file `pkg-extract2.lib.sh` owns package-specific interpretation
 
 Catalog mechanics have now been separated from install orchestration into public `pkg-catalog.lib.sh`. `pkg_catalog_init <catalog-variable> <head-variable> <work-root> <cache-root>` owns configured Git cache/update plus one immutable exported snapshot; `pkg_catalog_stream_resolve <stream-variable> <identity-osarch-variable> <catalog> <package> <target-osarch>` owns target-stream versus `all` fallback; and `pkg_catalog_range_resolve <range-variable> <catalog> <concrete>` owns concrete-to-range lookup, including contiguous range numbering and adapter-defined anchor ordering. `pkg-common.lib.sh` remains limited to package grammar/identity. `pkg-install2.lib.sh` no longer contains `_pkg_install_catalog_init`, direct stream-selection filesystem logic or the nonexistent `_pkg_install_dependency_range_resolve`; both dependency-source discovery and `pkg_install_one` reuse `pkg_catalog_range_resolve` against the same invocation snapshot.
 
+The dependency planner is now separated into public `pkg-depend.lib.sh`. The public command `pkg depend <package-spec>...` owns invocation-private snapshot acquisition and prints one concrete identity per line. Public `pkg_depend_resolve <catalog> <package-spec>...` is the reusable same-snapshot planner API and emits the shell-safe quoted concrete argv list consumed by `install2`. The old `pkg_install_resolve_one`, `pkg_install_resolve`, `pkg_install_dependency_resolve`, `_pkg_install_dependency_visit` and nonexistent `_pkg_install_dependency_resolve_one` path have been removed from `pkg-install2.lib.sh`.
+
+Planning now performs fixed-point dependency discovery. Dependency declarations are parsed through public `pkg_dependency_read` / `pkg_dependency_validate`; compatibility evaluation uses public `pkg_dependency_satisfied`; provider definition lookup uses public `pkg_facility_compatibility_read`; and catalog request version resolution uses public `pkg_catalog_version_resolve`. This keeps `pkg-depend.lib.sh` from depending on private cross-library helpers. Requirements are grouped by effective selector/facility/target bucket before provider selection, so constraints such as `java >=21` and `java =25` from different implicit consumers are evaluated together rather than choosing a provider during first DFS discovery.
+
 Permanent coverage `rumiai-os/pkg/catalog.test` now exercises catalog snapshot initialization with a controlled Git fixture, platform and `all` stream resolution, exact/middle range selection, malformed range numbering, missing streams and invalid output identifiers. A real checkout test run was attempted from the execution environment but GitHub DNS resolution is unavailable there, so this commit has permanent test coverage but no executed checkout-level validation evidence from this session.
 
 Permanent tests were added for the new boundary: `rumiai-os/extract2/contract.test` protects raw `pkg`/DMG behavior, opaque AppImage/executable handling, ordinary tar extraction and rejection of `flat-pkg`/`dmg-pkg`; `rumiai-os/pkg-extract2/contract.test` protects ordinary normalization plus `flat-pkg` and `dmg-pkg` composition, including the required `dmg -> pkg` sequence and overlay application. The current environment could not execute these repository tests and no GitHub workflow runs are configured for the commits, so they are committed coverage rather than executed validation evidence.
 
 Several mechanical/design points still remain before the scaffold becomes executable design:
 - stage outputs are shell-safe quoted argument lists produced through `quote`; callers reconstruct them only with deliberate `eval "set -- $result"`, never by ordinary unquoted expansion;
-- internal stage helpers must use private leading-underscore names unless they are deliberately promoted as public library API;
-- the repository dispatcher does not yet expose `install2`, so the committed library is not yet a public subcommand path;
-- the exit trap is currently installed before `pkg_install_work` is assigned, so early initialization failure reaches cleanup before that variable has been established;
-- dependency traversal still references `_pkg_install_dependency_resolve_one`, whose current DFS position would finalize provider choice before all facility constraints are known;
-- dependency provider choice must not be finalized during first DFS discovery when later consumers may add constraints for the same facility; constraint collection/unification and provider selection therefore still require redesign before the dependency stage is executable.
+- the repository dispatcher still does not expose `install2`, so the experimental installer library is not yet a public subcommand path;
+- the exit trap in `pkg-install2.lib.sh` is still installed before `pkg_install_work` is assigned, so early initialization failure can reach cleanup before that variable has been established;
+- `pkg_install_one` still contains further orchestration/API cleanup opportunities unrelated to dependency planning.
 
 The global/non-package `pkg requirement resolve` query intentionally remains facility-default-only because it has no package-consumer runtime projection path. Implicit fallback applies to package consumers.
 
 ## Next action
 
-Redesign dependency closure so facility constraints are collected/unified before provider selection is finalized, replacing the current premature `_pkg_install_dependency_resolve_one` DFS decision. Once dependency resolution is executable, exercise the install2 pipeline end to end using the pkg-catalog and extract2/pkg-extract2 boundaries while preserving the current `pkg install` path.
+Execute the new `pkg depend` permanent coverage and the experimental `install2` pipeline on an existing local `rumiai-tests` / pinned `rumiai-os` checkout, then fix any planner/runtime defects exposed by that real-system validation. After that, continue the remaining `pkg_install_one` orchestration cleanup while preserving canonical `pkg install`.
 
 ## Blockers / open questions
 
-The dependency-unification/provider-selection policy and the exact `install2` missing-dependency auto-install policy are intentionally unresolved.
+No dependency-planner design blocker remains. The current blocker is validation access: this assistant runtime has no local RumiAI checkout mounted, so repository-level execution must use an existing external/local checkout rather than cloning through unavailable GitHub DNS. Canonical `pkg install` promotion remains deliberately separate from the experimental install2 work.
