@@ -1,7 +1,7 @@
 # workflow-optimization
 
 Status: Active
-Updated: 2026-09-28
+Updated: 2026-09-30
 
 ## Goal
 
@@ -10,10 +10,10 @@ Maintain a long-lived meta-workstream for continuously evaluating and improving 
 ## Current repository revisions
 
 ```text
-rumiai-dev    f3db23d1d5968293128563cca5a3a2799d19d666  (pre-checkpoint HEAD)
-rumiai-os     52068dcfc01409231c673c48291ff18147fc1056  (current remote HEAD; not modified by this checkpoint)
-rumiai-tests  3c89e92c2a3455dc3c1e68a383d1a73ed421dc73  (current remote HEAD; not modified by this checkpoint)
-pkg-catalog   d63f87d2be67288ef57f4a5812fabbc3f0b24a0d  (current remote HEAD; not modified by this checkpoint)
+rumiai-dev    fa9c60b315316ac988f1d70cbb80a3cac54b8ed7  (pre-checkpoint HEAD)
+rumiai-os     0966ba9cb55dc7014ede2d726849fe83ed5cb757  (observed current remote HEAD; not modified by this checkpoint)
+rumiai-tests  099e8ab29e79a089cbca524d5cc649a74ec2ddea  (observed current remote HEAD; not modified by this checkpoint)
+pkg-catalog   d63f87d2be67288ef57f4a5812fabbc3f0b24a0d  (observed current remote HEAD; not modified by this checkpoint)
 ```
 
 Fresh remote HEAD retrieval remains mandatory before future analysis or writes.
@@ -163,6 +163,14 @@ The following principles appear mature enough to be candidates for later promoti
 
 These points should later be reviewed together and promoted only in the smallest wording that preserves the behavior. The richer model above should remain available as working-design rationale until enough real cases establish which dimensions are genuinely useful.
 
+### Active-handoff ownership before task creation
+
+A workflow-correction episode on 2026-09-30 exposed a routing failure in the workflow itself. A separate short-lived `handoff/workflow-operability.md` was created for product-intent/operability work even though this long-lived `workflow-optimization` handoff already owned workflow-health and reusable workflow lessons.
+
+The separate handoff was completed and removed forward-only, so no duplicate active handoff remains. The incident should be retained as evidence for a possible workflow rule: before creating a new handoff, identify whether an existing active handoff already owns the same resumable responsibility. The purpose is not to forbid dedicated subprojects, but to avoid fragmenting one workstream merely because a new symptom or lesson has a narrower label.
+
+This remains working design until repeated use establishes whether the existing one-task/one-stable-identity rule and retrieval process are sufficient or need an explicit pre-creation ownership check.
+
 ## Completed
 
 ### Current-only documentation and retrieval model
@@ -234,6 +242,32 @@ The final consistency pass also eliminated an obligation-level mismatch: `LIBRAR
 
 Concurrent `rumiai-dev` movement occurred again during this correction. A write to the active manual handoff was rejected because another chat had changed the same file; the new state was fetched and the library/manual delta was reapplied forward. No concurrent change was overwritten. A later product revision movement was also reconciled into the manual handoff before this checkpoint.
 
+### Product intent and operability
+
+A concrete review of `pkg` exposed a workflow failure: the subsystem could be internally coherent and mechanically tested while still making an elementary user goal impractical by requiring knowledge of provider-specific exact revisions.
+
+The correction was promoted into the canonical workflow rather than retained as package-specific advice:
+
+```text
+RULES.md
+    product intent and operability are completion constraints for user-visible work
+
+CONSISTENCY-GATE.md
+    mandatory primary-goal, normal-path, caller/system knowledge-boundary and
+    semantic-delta checks before implementation and after changes
+
+TESTING.md
+    representative normal public-path coverage for materially user-facing behavior
+
+handoff/README.md
+    concise acceptance scenarios for active tasks that materially change
+    user-visible workflows
+```
+
+The core lesson is that passing internal/component tests cannot establish product correctness when the normal public workflow does not let a caller achieve the intended goal naturally with information they can reasonably know or deliberately choose.
+
+During this correction, a dedicated `workflow-operability` handoff was created, completed and removed. That routing was unnecessary because `workflow-optimization` already owns this class of reusable workflow lesson; the forward-only history is retained and this handoff now owns the continuing workflow state.
+
 ## Current state
 
 `workflow-optimization` remains active.
@@ -250,6 +284,8 @@ library function  → explicit public/internal visibility by leading underscore
 
 The legacy library visibility migration is not hidden as current compliance: it is explicit deferred work, while documentation backfill remains owned by the active manual task.
 
+The workflow now also treats primary user goals, normal public paths and caller/system knowledge boundaries as explicit design and completion constraints. The 2026-09-30 pkg episode is the first concrete evidence behind this gate. A separate workflow-operability handoff was briefly created and then removed; the reusable state is now correctly consolidated here.
+
 ## Next action
 
 Observe the TODO lifecycle, specification promotion gate and command/library manual gates in normal use. In particular:
@@ -261,7 +297,9 @@ Observe the TODO lifecycle, specification promotion gate and command/library man
 5. verify the legacy visibility TODO is activated as a dedicated product/API migration rather than folded silently into unrelated work;
 6. watch for TODO/handoff/specification/manual duplication or taxonomy drift;
 7. exercise the adaptive cooperation model on real tasks and collect contrasting evidence about impact, foundationality, reversibility, intent clarity, error cost, exploration value and context maturity;
-8. jointly review the six-point promotable core after additional real use, then promote only the minimal stable rule set to RULES.md if the evidence supports it.
+8. exercise the product-intent/operability gate on real public workflows, beginning with the pkg review, and verify that normal-path acceptance tests expose unusable but internally coherent designs;
+9. before creating a new workflow-related handoff, check whether an existing active handoff already owns the same resumable responsibility and collect evidence on whether this needs an explicit canonical pre-creation rule;
+10. jointly review the six-point promotable core after additional real use, then promote only the minimal stable rule set to RULES.md if the evidence supports it.
 
 ## Blockers / open questions
 
