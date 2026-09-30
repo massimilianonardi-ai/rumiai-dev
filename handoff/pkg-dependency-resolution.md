@@ -9,10 +9,10 @@ Realign the package dependency/provider model and reconstruct the install orches
 
 ## Current repository revisions
 
-- rumiai-dev: dd1e74edaa7e2dc83fa4d3554b82b3f84609006c (pre-checkpoint HEAD)
-- rumiai-os: d13dd507747855a4b4dd58d5aa4dbafc9907ea93
+- rumiai-dev: efc06f30cda2524a950fb2bf9d5b5af7edef4831 (pre-checkpoint HEAD)
+- rumiai-os: ea646afe220c58e711637e86e115b1ba4b327a77
 - pkg-catalog: d63f87d2be67288ef57f4a5812fabbc3f0b24a0d
-- rumiai-tests: 962986266f0c660561c70390a1d83ebc64b58016
+- rumiai-tests: 7d1f4ca42a770b522710a5e44de77bd29f69a246
 
 ## Applicable canonical sources
 
@@ -96,7 +96,7 @@ The new design has not been promoted into `PACKAGE-MODEL.md`; in particular, rec
 
 The current scaffold intentionally contains placeholders. Invocation initialization now creates a private work directory and persistent catalog cache, while catalog initialization reads its repository URL from `state-path system sys pkg conf`/`catalog`, updates the cached Git repository, records one exact HEAD and exports that revision into the invocation-private catalog work directory with `git archive`. The main system profile now supplies that configuration with the canonical HTTPS URL for `massimilianonardi-ai/pkg-catalog`.
 
-Concrete identity parsing is now centralized in public `pkg_concrete_read <name-variable> <version-variable> <osarch-variable> <concrete>` from `pkg-common.lib.sh`. It validates the complete `<package>@<version>[!<osarch>]` identity before assigning caller-selected output variables. `pkg_install_one` and the provider subsystem now reuse that primitive instead of maintaining separate concrete parsers. Revision-coupled manuals for `pkg-common.lib.sh` and the experimental `pkg-install2.lib.sh` were added, and permanent coverage for the concrete parser is in `rumiai-tests`.
+Package request/concrete parsing is now centralized in `pkg-common.lib.sh`. Public `pkg_request_read <name-variable> <version-variable> <osarch-variable> <request>` parses `<package>[@<version>][!<osarch>]`, while `pkg_concrete_read <name-variable> <version-variable> <osarch-variable> <concrete>` requires `<package>@<version>[!<osarch>]`. Both validate caller-selected destination names through the existing `valid_shell_identifier` primitive and assign outputs only after the whole input has been validated. `pkg_install_validate`, `pkg_install_resolve_one`, `pkg_install_one` and the provider concrete parser reuse these shared primitives instead of maintaining local parsing logic. Revision-coupled manuals are aligned and permanent coverage protects both request and concrete parsing.
 
 Several mechanical/design points still remain before the scaffold becomes executable design:
 - stage outputs are shell-safe quoted argument lists produced through `quote`; callers reconstruct them only with deliberate `eval "set -- $result"`, never by ordinary unquoted expansion;
