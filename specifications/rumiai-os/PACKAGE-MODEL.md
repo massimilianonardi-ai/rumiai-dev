@@ -603,6 +603,20 @@ pkg requirement resolve <facility> <constraint>...
 
 Neither query installs packages or mutates provider configuration. Status 1 means the requested catalog/requirement state cannot currently be resolved; status 2 means invalid invocation or syntax.
 
+The public read-only dependency-planning surface is:
+
+```text
+pkg depend <package-spec>...
+```
+
+`pkg depend` resolves every explicit request and recursively discovers facility dependencies against one exact catalog snapshot. Requirements that share the same effective provider-selection bucket are collected before provider concretization so every constraint in that bucket must be satisfied by the selected provider. Consumer binding remains highest precedence, followed by the system facility default. Without either selector, the planner prefers a compatible provider already present in the current plan, then an unambiguous compatible installed provider, and only then an unambiguous compatible provider package from the same catalog snapshot. Multiple compatible provider packages are an ambiguity and are never silently ranked.
+
+Catalog fallback is planning only: it may add a concrete provider identity to the returned plan when no compatible planned or installed provider exists and exactly one provider package can satisfy the requirement. It does not download, extract, integrate or install that provider. When the repository-selected current/latest version of the unique provider package satisfies the complete constraint set, that concrete is selected; otherwise the newest compatible catalog range anchor is used as the concrete version.
+
+The returned plan is deduplicated and dependency-first. Provider dependencies are themselves discovered recursively until the selected-provider set and requirement graph stabilize; cycles or a non-stabilizing/unsatisfiable plan fail rather than producing a partial order. `pkg depend` does not mutate package/provider state. Catalog cache refresh and invocation-private snapshot materialization are permitted operational side effects.
+
+This planning surface does not change the canonical `pkg install` baseline: automatic transitive dependency installation remains outside the canonical install contract until deliberately promoted. Experimental `install2` may reuse the same planner against the exact snapshot it already owns.
+
 The query forms print the configured selector. The set forms replace the configured selector. The unset forms remove it; unsetting a consumer binding restores inheritance from the facility default.
 
 Provider-selection configuration is system-scoped authoritative configuration.
@@ -819,5 +833,11 @@ PKG-85  package integration materializes validated dependency declarations witho
 PKG-86  pkg requirement list resolves and prints catalog dependency declarations without downloading the package artifact
 PKG-87  pkg requirement resolve status-1 diagnostics distinguish unconfigured, unresolvable and incompatible global facility-default states
 PKG-88  pkg install reports currently unsatisfied runtime dependencies before artifact transfer without treating them as an installation failure
+PKG-89  pkg depend is a read-only package/dependency planning query that prints a deduplicated dependency-first concrete plan and performs no package installation
+PKG-90  one pkg depend plan resolves explicit requests, dependency declarations, provider candidates and provider compatibility against one exact pkg-catalog snapshot
+PKG-91  pkg depend collects all constraints belonging to the same effective provider-selection bucket before selecting its concrete provider
+PKG-92  pkg depend preserves consumer binding then facility-default precedence; without either selector it prefers compatible planned providers, then unambiguous compatible installed providers, then a catalog provider only when the compatible provider package is unambiguous
+PKG-93  pkg depend treats multiple compatible provider packages as ambiguity and never silently ranks them
+PKG-94  experimental install2 may reuse pkg depend planning against its existing snapshot, while automatic transitive dependency installation remains outside canonical pkg install until deliberate promotion
 
 ```
