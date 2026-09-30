@@ -9,7 +9,7 @@ Complete and validate the promoted recursive `pkg install` model built around th
 
 ## Current repository revisions
 
-- rumiai-dev: ed214bb65cbad8bdd766ba5fc086fe250b1749f6 (pre-checkpoint HEAD)
+- rumiai-dev: 2934d680bca8fb941d8c1e71fbff9ecaa582560a (pre-checkpoint HEAD)
 - rumiai-os: c7e337dd2703a5334e56d83470f0bce727872799
 - rumiai-tests: a150d7d020602068b4af809bb440864766a03fe6
 - pkg-catalog: d63f87d2be67288ef57f4a5812fabbc3f0b24a0d
@@ -90,15 +90,15 @@ Revision-coupled validation evidence:
 
 The assistant execution environment has no mounted local RumiAI checkout, so checkout-level execution uses repository workflows rather than a local checkout.
 
-## Current blocker
+## Current implementation note
 
-User commit `c7e337dd2703a5334e56d83470f0bce727872799` removes the call to `_pkg_install_init` from `pkg_install` but leaves both request resolution and `pkg_install_one` dependent on `pkg_install_catalog_work`, while per-package staging still depends on `pkg_install_work`. As a result, current `pkg_install_resolve` attempts to resolve requests before any catalog snapshot/workspace has been initialized, and non-installed operands cannot follow the normal install path. This is an implementation regression unless catalog/workspace initialization is moved elsewhere in the same control path.
+Current rumiai-os `c7e337dd2703a5334e56d83470f0bce727872799` still calls `_pkg_install_init` before request resolution. The previous handoff note claiming that initialization had been removed was incorrect and has been withdrawn.
 
-The permanent orchestration test does not protect this lifecycle because it stubs `_pkg_install_init` and `pkg_install_one`; the live install path is the relevant validation surface.
+The current install flow resolves the validated original requests to concrete identities first, replaces argv with those concrete roots, then calls `pkg depend` on that concrete root list. Dependency planning therefore operates on the same exact root identities that installation will later receive, after which dependency concretes are prepended to the already concrete roots.
 
 ## Next action
 
-Decide whether to restore the current `_pkg_install_init` call or complete the previously discussed lifecycle refactor by moving catalog/workspace ownership to their final responsibilities. Do not leave the call removed while the existing variables remain required. Then rerun the public live install path, including GeoServer recursive installation.
+Validate the current concrete-root flow end to end, especially `pkg install geoserver`, and then decide whether the remaining duplicated/private resolution helpers in `pkg-install.lib.sh` should be consolidated behind public catalog/local APIs.
 
 ## Deferred
 
