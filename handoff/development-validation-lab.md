@@ -148,7 +148,7 @@ The corrected placement is:
 
 ## Current state
 
-A real operator run on host `PRTL-GS-01` exposed a current `rsudo` scenario defect before PostgreSQL activity began: `testlab prepare rsudo` succeeded and persisted a ready instance, but `testlab enter <instance>` failed in OpenSSH host-key verification with `No ED25519 host key is known for [127.0.0.1]:<port> and you have requested strict checking.` Regenerating the instance `known-hosts` file explicitly with `ssh-keyscan -t ed25519 -p <port> 127.0.0.1` did not change the failure. This means scenario readiness currently does not prove that the generated trust configuration is actually usable by the OpenSSH client path on this host. Root cause is still under diagnosis; current focus is the effective host-key identity/configuration seen by the scenario SSH adapter, not rsudo database behavior.
+A real operator run on host `PRTL-GS-01` exposed a current `rsudo` scenario defect before PostgreSQL activity began: `testlab prepare rsudo` succeeded and persisted a ready instance, but `testlab enter <instance>` failed in OpenSSH host-key verification. The root cause is now identified: the checkout/project path contains a space (`/m/src/git/rumiai-os TEST`), while the generated scenario SSH config writes `UserKnownHostsFile $path` without quoting. OpenSSH therefore tokenizes that pathname as multiple known-host files; verbose client output showed it attempting to open the split relative component `TEST/state/.../known-hosts`. The generated trust file itself contains the expected ED25519 key and `ssh-keygen -F` finds it, so the defect is path quoting in the scenario-generated SSH config, not key generation or rsudo/db-pg.
 
 The first real `testlab` baseline is promoted and implemented.
 
@@ -204,7 +204,7 @@ The first substantial real scenario is now implemented and formally exercised. D
 
 Continue from concrete development needs:
 
-1. diagnose and correct the real-host OpenSSH trust failure observed on `PRTL-GS-01`, then rerun `testlab enter` against the same scenario behavior;
+1. correct scenario SSH-config generation so `UserKnownHostsFile` remains one pathname when the project/state path contains spaces, add proportional permanent coverage for this case, then rerun the real-host `testlab enter` path;
 2. use the shipped `rsudo` scenario as the disposable real SSH/sudo environment for rsudo/SSH development activities when that reality is useful;
 3. exercise the normal interactive-first `testlab` menu/enter flow during real development and refine it only when concrete friction is observed;
 4. add a second substantial scenario only when a distinct RumiAI development need requires one;
@@ -215,7 +215,7 @@ The current `rsudo` validation deliberately uses an explicitly prepared host Pod
 
 ## Blockers / open questions
 
-Current blocker on `PRTL-GS-01`: the shipped `rsudo` scenario reaches `ready` but `enter` fails strict OpenSSH host-key verification even after an explicit ED25519 `ssh-keyscan` refresh of the instance trust file. PostgreSQL/db-pg activity is therefore blocked until the scenario trust path is corrected on this host.
+Current blocker on `PRTL-GS-01`: the shipped `rsudo` scenario emits an unquoted `UserKnownHostsFile` into its generated SSH config. A project/state pathname containing spaces is split by OpenSSH, so `enter` cannot find the otherwise-correct trust file. PostgreSQL/db-pg activity is blocked until that generated config is corrected or locally patched.
 
 Still intentionally open:
 
