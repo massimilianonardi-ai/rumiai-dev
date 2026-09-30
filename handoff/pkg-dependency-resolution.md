@@ -9,10 +9,10 @@ Realign the package dependency/provider model and reconstruct the install orches
 
 ## Current repository revisions
 
-- rumiai-dev: be1758ff3f9869c9be349560dd336b7d26f5ca6f (pre-checkpoint HEAD)
-- rumiai-os: 191264d6c170564f2209b61e366456435780b6fa
+- rumiai-dev: 267d70498863341ccaca72813c22661825fce4cd (pre-checkpoint HEAD)
+- rumiai-os: 654508a13ccf85fe97c710b53260502a7a6418f7
 - pkg-catalog: d63f87d2be67288ef57f4a5812fabbc3f0b24a0d
-- rumiai-tests: e19d1b8350e7ed20a881d1a9a22565525acc0ffa
+- rumiai-tests: d31534be8bde20b3b950d116200484abcc090f0f
 
 ## Applicable canonical sources
 
@@ -29,7 +29,7 @@ Realign the package dependency/provider model and reconstruct the install orches
 
 - Current canonical `pkg install` does not auto-install missing dependency providers and remains unchanged while `install2` is experimental.
 - Public `pkg depend <package-spec>...` is now the read-only dependency planner. It resolves explicit requests and recursive facility dependencies against one catalog snapshot and prints a deduplicated dependency-first concrete plan.
-- Experimental `install2` reuses the same `pkg_depend_resolve` planner against the exact snapshot already owned by the install invocation instead of maintaining separate explicit/dependency resolvers.
+- Experimental `install2` reuses the public `pkg_depend` entry function itself, captures its concrete output, and installs those exact concrete identities. It does not call a separate public planning API or share hidden snapshot state with `pkg depend`.
 - Do not silently choose among multiple compatible provider packages.
 - An explicit consumer binding remains highest precedence.
 - A configured facility default remains explicit preference.
@@ -51,23 +51,28 @@ Realign the package dependency/provider model and reconstruct the install orches
 The current experimental flow is:
 
 ```text
-validation
-    → one catalog snapshot
-    → pkg_depend_resolve(snapshot, explicit requests)
-        → explicit concrete resolution
-        → recursive dependency discovery
-        → constraint collection by effective provider-selection bucket
-        → provider concretization
-        → repeat until closure stabilizes
-        → concrete graph cycle check / topological order
-    → install returned concretes dependency-first
+pkg_depend(explicit requests)
+    → its own catalog snapshot
+    → explicit concrete resolution
+    → recursive dependency discovery
+    → constraint collection by effective provider-selection bucket
+    → provider concretization
+    → repeat until closure stabilizes
+    → concrete graph cycle check / topological order
+    → exact concrete list
+
+install2
+    → call pkg_depend
+    → capture exact concrete list
+    → initialize install workspace/catalog as needed
+    → install those exact concretes dependency-first
 ```
 
-`validation` is syntax-only and remains before catalog initialization in `install2`. The shared planner owns explicit request resolution and dependency closure. Explicit requests are graph nodes too: one explicit request may satisfy or depend on another explicit request, and the same concrete may be reached through both explicit and dependency paths.
+`pkg_depend` validates request syntax before its own catalog initialization and owns explicit request resolution plus dependency closure. `install2` relies on that public boundary instead of duplicating validation or calling an alternate resolver. Explicit requests are graph nodes too: one explicit request may satisfy or depend on another explicit request, and the same concrete may be reached through both explicit and dependency paths.
 
 Requirements sharing the same effective implicit or selector bucket are accumulated before provider selection. Different consumer bindings may therefore intentionally create different buckets for the same facility. The planner rebuilds the active concrete contexts from roots plus current provider decisions until the decision set stabilizes, then derives one deduplicated concrete graph and dependency-first order.
 
-No permanent package-store mutation should occur until the complete explicit-request/dependency graph has been proven satisfiable and ordered. Exact staging/download timing remains open, but permanent installation belongs after full resolution.
+No permanent package-store mutation should occur until `pkg depend` has produced the complete satisfiable ordered concrete list. That list, not a shared snapshot object, is the boundary between planning and installation. A later install snapshot may differ if the catalog advances; the installer must still attempt the exact concretes from the list rather than re-resolving them to different versions.
 
 The following planning policy is now fixed for `pkg depend`:
 - all constraints in one effective provider-selection bucket must be satisfied by the selected concrete;
@@ -113,7 +118,7 @@ The experimental file `pkg-extract2.lib.sh` owns package-specific interpretation
 
 Catalog mechanics have now been separated from install orchestration into public `pkg-catalog.lib.sh`. `pkg_catalog_init <catalog-variable> <head-variable> <work-root> <cache-root>` owns configured Git cache/update plus one immutable exported snapshot; `pkg_catalog_stream_resolve <stream-variable> <identity-osarch-variable> <catalog> <package> <target-osarch>` owns target-stream versus `all` fallback; and `pkg_catalog_range_resolve <range-variable> <catalog> <concrete>` owns concrete-to-range lookup, including contiguous range numbering and adapter-defined anchor ordering. `pkg-common.lib.sh` remains limited to package grammar/identity. `pkg-install2.lib.sh` no longer contains `_pkg_install_catalog_init`, direct stream-selection filesystem logic or the nonexistent `_pkg_install_dependency_range_resolve`; both dependency-source discovery and `pkg_install_one` reuse `pkg_catalog_range_resolve` against the same invocation snapshot.
 
-The dependency planner is now separated into public `pkg-depend.lib.sh`. The public command `pkg depend <package-spec>...` owns invocation-private snapshot acquisition and prints one concrete identity per line. Public `pkg_depend_resolve <catalog> <package-spec>...` is the reusable same-snapshot planner API and emits the shell-safe quoted concrete argv list consumed by `install2`. The old `pkg_install_resolve_one`, `pkg_install_resolve`, `pkg_install_dependency_resolve`, `_pkg_install_dependency_visit` and nonexistent `_pkg_install_dependency_resolve_one` path have been removed from `pkg-install2.lib.sh`.
+The dependency planner is now separated into public `pkg-depend.lib.sh`. The public command `pkg depend <package-spec>...` owns invocation-private snapshot acquisition and prints one exact concrete identity per line. The internal planner helper is private; there is no second public same-snapshot planning API. Experimental `install2` now calls `pkg_depend "$@"` itself, captures the raw concrete list, then initializes its install workspace and installs those exact identities. The old `pkg_install_resolve_one`, `pkg_install_resolve`, `pkg_install_dependency_resolve`, `_pkg_install_dependency_visit` and nonexistent `_pkg_install_dependency_resolve_one` path have been removed from `pkg-install2.lib.sh`.
 
 Planning now performs fixed-point dependency discovery. Dependency declarations are parsed through public `pkg_dependency_read` / `pkg_dependency_validate`; compatibility evaluation uses public `pkg_dependency_satisfied`; provider definition lookup uses public `pkg_facility_compatibility_read`; and catalog request version resolution uses public `pkg_catalog_version_resolve`. This keeps `pkg-depend.lib.sh` from depending on private cross-library helpers. Requirements are grouped by effective selector/facility/target bucket before provider selection, so constraints such as `java >=21` and `java =25` from different implicit consumers are evaluated together rather than choosing a provider during first DFS discovery.
 
@@ -131,7 +136,7 @@ The global/non-package `pkg requirement resolve` query intentionally remains fac
 
 ## Next action
 
-Execute the new `pkg depend` permanent coverage and the experimental `install2` pipeline on an existing local `rumiai-tests` / pinned `rumiai-os` checkout, then fix any planner/runtime defects exposed by that real-system validation. After that, continue the remaining `pkg_install_one` orchestration cleanup while preserving canonical `pkg install`.
+Validate the public compositional path, especially `pkg install $(pkg depend ...)`, and the experimental `install2` path that now invokes the same `pkg_depend` entry function. Fix any runtime defects exposed by that validation, then continue the remaining `pkg_install_one` orchestration cleanup while preserving canonical `pkg install`.
 
 ## Blockers / open questions
 
