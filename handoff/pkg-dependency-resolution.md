@@ -9,8 +9,8 @@ Realign the package dependency/provider model and reconstruct the install orches
 
 ## Current repository revisions
 
-- rumiai-dev: 3ac1a6029810a80da5cabc1c8cbc80f3576d8458 (pre-checkpoint HEAD)
-- rumiai-os: 835aeaae9150dad734b1544f21ebd655357fdb61
+- rumiai-dev: 46d9d7dd958d446b57ea0e4b015c12a60f55a97f (pre-checkpoint HEAD)
+- rumiai-os: 8048b1685aa05d84b0a3af7fb9d50e648eea0618
 - pkg-catalog: d63f87d2be67288ef57f4a5812fabbc3f0b24a0d
 - rumiai-tests: 099e8ab29e79a089cbca524d5cc649a74ec2ddea
 
@@ -94,11 +94,15 @@ The previous dependency/provider realignment remains implemented on the canonica
 
 The new design has not been promoted into `PACKAGE-MODEL.md`; in particular, recursive dependency auto-installation would intentionally differ from current PKG-18 and must remain isolated in `install2` until its policies and acceptance behavior are settled.
 
-The current scaffold intentionally contains placeholders, but several mechanical points must be corrected before it becomes executable design:
+The current scaffold intentionally contains placeholders. Invocation initialization now creates a private work directory and persistent catalog cache, while catalog initialization reads its repository URL from `state-path system sys pkg conf`/`catalog`, updates the cached Git repository, records one exact HEAD and exports that revision into the invocation-private catalog work directory with `git archive`. The main system profile now supplies that configuration with the canonical HTTPS URL for `massimilianonardi-ai/pkg-catalog`.
+
+Several mechanical points still remain before the scaffold becomes executable design:
 - stage outputs are shell-safe quoted argument lists produced through `quote`; callers reconstruct them only with deliberate `eval "set -- $result"`, never by ordinary unquoted expansion;
 - internal stage helpers must use private leading-underscore names unless they are deliberately promoted as public library API;
 - per-package installation must receive the resolved concrete explicitly rather than being called with no operand;
-- the repository dispatcher does not yet expose `install2`, so the committed library is not yet a public subcommand path.
+- the repository dispatcher does not yet expose `install2`, so the committed library is not yet a public subcommand path;
+- the exit trap is currently installed before `pkg_install_work` is assigned, so early initialization failure reaches cleanup before that variable has been established;
+- changing `conf/catalog` after a cache has already been cloned does not yet reconcile the cache's existing `origin` URL with the new configured URL.
 
 The global/non-package `pkg requirement resolve` query intentionally remains facility-default-only because it has no package-consumer runtime projection path. Implicit fallback applies to package consumers.
 
