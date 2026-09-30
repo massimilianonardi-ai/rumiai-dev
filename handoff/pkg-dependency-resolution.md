@@ -9,8 +9,8 @@ Complete and validate the promoted recursive `pkg install` model built around th
 
 ## Current repository revisions
 
-- rumiai-dev: 8f79e4d62e3c4f7a256befe49a93b20b7eb92775 (pre-checkpoint HEAD)
-- rumiai-os: fc2f17aa0608ff1998d7de1a55f8420ae654bf72
+- rumiai-dev: ed214bb65cbad8bdd766ba5fc086fe250b1749f6 (pre-checkpoint HEAD)
+- rumiai-os: c7e337dd2703a5334e56d83470f0bce727872799
 - rumiai-tests: a150d7d020602068b4af809bb440864766a03fe6
 - pkg-catalog: d63f87d2be67288ef57f4a5812fabbc3f0b24a0d
 
@@ -90,9 +90,15 @@ Revision-coupled validation evidence:
 
 The assistant execution environment has no mounted local RumiAI checkout, so checkout-level execution uses repository workflows rather than a local checkout.
 
+## Current blocker
+
+User commit `c7e337dd2703a5334e56d83470f0bce727872799` removes the call to `_pkg_install_init` from `pkg_install` but leaves both request resolution and `pkg_install_one` dependent on `pkg_install_catalog_work`, while per-package staging still depends on `pkg_install_work`. As a result, current `pkg_install_resolve` attempts to resolve requests before any catalog snapshot/workspace has been initialized, and non-installed operands cannot follow the normal install path. This is an implementation regression unless catalog/workspace initialization is moved elsewhere in the same control path.
+
+The permanent orchestration test does not protect this lifecycle because it stubs `_pkg_install_init` and `pkg_install_one`; the live install path is the relevant validation surface.
+
 ## Next action
 
-Investigate the separate GeoServer `service-live` failure only if it remains relevant after the package-install work unit; the reported recursive-install defect itself is reproduced and fixed. Continue package cleanup from the current promoted `pkg install` implementation when the user resumes review.
+Decide whether to restore the current `_pkg_install_init` call or complete the previously discussed lifecycle refactor by moving catalog/workspace ownership to their final responsibilities. Do not leave the call removed while the existing variables remain required. Then rerun the public live install path, including GeoServer recursive installation.
 
 ## Deferred
 
