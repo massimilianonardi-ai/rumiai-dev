@@ -216,7 +216,7 @@ The current `rsudo` validation deliberately uses an explicitly prepared host Pod
 
 ## Blockers / open questions
 
-Observed workaround result on `PRTL-GS-01`: quoting the generated `UserKnownHostsFile` pathname in the persisted instance SSH config allowed `testlab enter` to succeed on the same instance. PostgreSQL/db-pg activity is therefore unblocked for the current live experiment. The shipped scenario still requires a product fix plus proportional permanent coverage for project/state paths containing spaces.
+Observed workaround result on `PRTL-GS-01`: quoting the generated `UserKnownHostsFile` pathname in the persisted instance SSH config allowed `testlab enter` to succeed on the same instance. PostgreSQL was then installed and started successfully inside that disposable target, so the live experiment is now ready for direct `rsudo db-pg` activities. The shipped scenario still requires a product fix plus proportional permanent coverage for project/state paths containing spaces.
 
 Still intentionally open:
 
