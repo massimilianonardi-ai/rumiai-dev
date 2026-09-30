@@ -93,6 +93,12 @@ The previous dependency/provider realignment remains implemented on the canonica
 
 The new design has not been promoted into `PACKAGE-MODEL.md`; in particular, recursive dependency auto-installation would intentionally differ from current PKG-18 and must remain isolated in `install2` until its policies and acceptance behavior are settled.
 
+The current scaffold intentionally contains placeholders, but several mechanical points must be corrected before it becomes executable design:
+- stage outputs must not be stored and re-expanded as an unquoted whitespace-separated scalar list; that would lose argument boundaries and would pathname-expand selectors such as a future `@21*`;
+- internal stage helpers must use private leading-underscore names unless they are deliberately promoted as public library API;
+- per-package installation must receive the resolved concrete explicitly rather than being called with no operand;
+- the repository dispatcher does not yet expose `install2`, so the committed library is not yet a public subcommand path.
+
 The global/non-package `pkg requirement resolve` query intentionally remains facility-default-only because it has no package-consumer runtime projection path. Implicit fallback applies to package consumers.
 
 ## Next action
