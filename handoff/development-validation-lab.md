@@ -216,7 +216,7 @@ The current `rsudo` validation deliberately uses an explicitly prepared host Pod
 
 ## Blockers / open questions
 
-Observed workaround result on `PRTL-GS-01`: quoting the generated `UserKnownHostsFile` pathname in the persisted instance SSH config allowed `testlab enter` to succeed on the same instance. PostgreSQL was then installed and started successfully inside that disposable target, so the live experiment is now ready for direct `rsudo db-pg` activities. The shipped scenario still requires a product fix plus proportional permanent coverage for project/state paths containing spaces.
+Observed workaround result on `PRTL-GS-01`: quoting the generated `UserKnownHostsFile` pathname in the persisted instance SSH config allowed `testlab enter` to succeed on the same instance. PostgreSQL 18 was installed inside that disposable target, but package installation did not start the cluster (`policy-rc.d denied execution of start`). A subsequent real `rsudo db-pg psql ...` reached the target successfully and failed only because `/var/run/postgresql/.s.PGSQL.5432` did not exist, confirming the rsudo transport path works while PostgreSQL itself still needs to be started. The shipped scenario still requires a product fix plus proportional permanent coverage for project/state paths containing spaces.
 
 Still intentionally open:
 
