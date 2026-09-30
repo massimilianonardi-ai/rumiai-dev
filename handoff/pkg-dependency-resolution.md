@@ -9,10 +9,10 @@ Realign the package dependency/provider model and reconstruct the install orches
 
 ## Current repository revisions
 
-- rumiai-dev: 2156994d56c07f51648d9fcd9038ebd163dadcc9 (pre-checkpoint HEAD)
-- rumiai-os: c1aba422759d052c1165bdae378bd48ed8bc13ae
+- rumiai-dev: e8b016a6565c4d533cbe243290d507e8ceb2a2c2 (pre-checkpoint HEAD)
+- rumiai-os: f4a34e902217295d1b3557006884ac42e344fcb1
 - pkg-catalog: d63f87d2be67288ef57f4a5812fabbc3f0b24a0d
-- rumiai-tests: 5318cd1010f677f295f82af9344b094399d3d192
+- rumiai-tests: f40bfca6fa6bbb416f8033eae5dda00fa3ca17d0
 
 ## Applicable canonical sources
 
@@ -100,7 +100,7 @@ Package request/concrete parsing is now centralized in `pkg-common.lib.sh`. Publ
 
 The install2 extraction boundary has now been split explicitly. Experimental `extract2 <format> <artifact> <destination>` keeps the same invocation shape as `extract` and owns only raw physical-format extraction/materialization. It supports the legacy physical formats plus `appimage`, `executable` and raw Apple `pkg`; it deliberately does not recognize the package-semantic pseudoformats `flat-pkg` or `dmg-pkg`. `dmg` extracts image contents without interpreting contained objects, and `pkg` expands the installer structure without selecting components or Payloads. `extract2` is only the temporary command filename during evaluation: its internal functions, variables, diagnostic operation identity, state path and temporary names already use the `extract` namespace so validated promotion can replace the current `extract` without an internal rename pass. The command intentionally has no redundant final `exit 0`; the terminal format-dispatch command determines successful completion.
 
-Experimental public `pkg_extract2 <artifact> <range-dir> <staging-dir>` owns package-specific interpretation and normalization. Ordinary package formats delegate once to `extract2`; `flat-pkg` composes `extract2 pkg`; `dmg-pkg` composes `extract2 dmg`, selects the single top-level installer package, then calls `extract2 pkg`. Only `pkg_extract2` interprets `component`, `payload-root` and `overlay`, and only it normalizes the useful root. `pkg_install_one` no longer branches on extraction format or reads those metadata fields and delegates the whole materialization step to `pkg_extract2`. The legacy `extract`, `pkg_extract` and canonical `pkg install` paths remain unchanged.
+The experimental file `pkg-extract2.lib.sh` owns package-specific interpretation and normalization but already exposes the future public entrypoint `pkg_extract <artifact> <range-dir> <staging-dir>` and uses the `pkg_extract_*` internal namespace throughout. Ordinary package formats delegate once to `extract2`; `flat-pkg` composes `extract2 pkg`; `dmg-pkg` composes `extract2 dmg`, selects the single top-level installer package, then calls `extract2 pkg`. Only `pkg_extract` interprets `component`, `payload-root` and `overlay`, and only it normalizes the useful root. `pkg_install_one` imports the temporary `pkg/pkg-extract2` library but already calls `pkg_extract`; validated promotion therefore requires changing the imported library identity/file rather than renaming the function/API. The legacy `extract`, `pkg_extract` and canonical `pkg install` paths remain unchanged.
 
 Permanent tests were added for the new boundary: `rumiai-os/extract2/contract.test` protects raw `pkg`/DMG behavior, opaque AppImage/executable handling, ordinary tar extraction and rejection of `flat-pkg`/`dmg-pkg`; `rumiai-os/pkg-extract2/contract.test` protects ordinary normalization plus `flat-pkg` and `dmg-pkg` composition, including the required `dmg -> pkg` sequence and overlay application. The current environment could not execute these repository tests and no GitHub workflow runs are configured for the commits, so they are committed coverage rather than executed validation evidence.
 
