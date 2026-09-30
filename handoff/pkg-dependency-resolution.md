@@ -9,10 +9,10 @@ Realign the package dependency/provider model and reconstruct the install orches
 
 ## Current repository revisions
 
-- rumiai-dev: ba7b507521acb7223dadc8955fd9bce904e0e017 (pre-checkpoint HEAD)
-- rumiai-os: 1057aad415fcb13d3b955b923e64450c5f533c80
+- rumiai-dev: 5f7a2be7faa71d73d6767692d4cce7f4056f4cd1 (pre-checkpoint HEAD)
+- rumiai-os: 93e9251201ddf4fdf8c77cbe4ea91cc0c7f48028
 - pkg-catalog: d63f87d2be67288ef57f4a5812fabbc3f0b24a0d
-- rumiai-tests: f40bfca6fa6bbb416f8033eae5dda00fa3ca17d0
+- rumiai-tests: 701215edabaef8926235fa39adfd86d786e44ccb
 
 ## Applicable canonical sources
 
@@ -102,6 +102,10 @@ The install2 extraction boundary has now been split explicitly. Experimental `ex
 
 The experimental file `pkg-extract2.lib.sh` owns package-specific interpretation and normalization but is already internally the future `pkg-extract`: its sole public entrypoint is `pkg_extract <artifact> <range-dir> <staging-dir>`, all helpers/variables/work names use the `pkg_extract` / `pkg-extract` namespace, and its terminal normalization command determines success without a redundant final `return 0`. Ordinary package formats delegate once to `extract2`; `flat-pkg` composes `extract2 pkg`; `dmg-pkg` composes `extract2 dmg`, selects the single top-level installer package, then calls `extract2 pkg`. Only `pkg_extract` interprets `component`, `payload-root` and `overlay`, and only it normalizes the useful root. `pkg_install_one` imports the temporary `pkg/pkg-extract2` library but already calls `pkg_extract`; validated promotion therefore requires changing the imported library identity/file rather than renaming the function/API. The legacy `extract`, `pkg_extract` and canonical `pkg install` paths remain unchanged.
 
+Catalog mechanics have now been separated from install orchestration into public `pkg-catalog.lib.sh`. `pkg_catalog_init <catalog-variable> <head-variable> <work-root> <cache-root>` owns configured Git cache/update plus one immutable exported snapshot; `pkg_catalog_stream_resolve <stream-variable> <identity-osarch-variable> <catalog> <package> <target-osarch>` owns target-stream versus `all` fallback; and `pkg_catalog_range_resolve <range-variable> <catalog> <concrete>` owns concrete-to-range lookup, including contiguous range numbering and adapter-defined anchor ordering. `pkg-common.lib.sh` remains limited to package grammar/identity. `pkg-install2.lib.sh` no longer contains `_pkg_install_catalog_init`, direct stream-selection filesystem logic or the nonexistent `_pkg_install_dependency_range_resolve`; both dependency-source discovery and `pkg_install_one` reuse `pkg_catalog_range_resolve` against the same invocation snapshot.
+
+Permanent coverage `rumiai-os/pkg/catalog.test` now exercises catalog snapshot initialization with a controlled Git fixture, platform and `all` stream resolution, exact/middle range selection, malformed range numbering, missing streams and invalid output identifiers. A real checkout test run was attempted from the execution environment but GitHub DNS resolution is unavailable there, so this commit has permanent test coverage but no executed checkout-level validation evidence from this session.
+
 Permanent tests were added for the new boundary: `rumiai-os/extract2/contract.test` protects raw `pkg`/DMG behavior, opaque AppImage/executable handling, ordinary tar extraction and rejection of `flat-pkg`/`dmg-pkg`; `rumiai-os/pkg-extract2/contract.test` protects ordinary normalization plus `flat-pkg` and `dmg-pkg` composition, including the required `dmg -> pkg` sequence and overlay application. The current environment could not execute these repository tests and no GitHub workflow runs are configured for the commits, so they are committed coverage rather than executed validation evidence.
 
 Several mechanical/design points still remain before the scaffold becomes executable design:
@@ -109,15 +113,14 @@ Several mechanical/design points still remain before the scaffold becomes execut
 - internal stage helpers must use private leading-underscore names unless they are deliberately promoted as public library API;
 - the repository dispatcher does not yet expose `install2`, so the committed library is not yet a public subcommand path;
 - the exit trap is currently installed before `pkg_install_work` is assigned, so early initialization failure reaches cleanup before that variable has been established;
-- dependency traversal currently references `_pkg_install_dependency_range_resolve` and `_pkg_install_dependency_resolve_one`, which are not yet implemented;
-- the range lookup responsibility should be generalized as concrete-to-catalog-range resolution rather than remain dependency-specific;
+- dependency traversal still references `_pkg_install_dependency_resolve_one`, whose current DFS position would finalize provider choice before all facility constraints are known;
 - dependency provider choice must not be finalized during first DFS discovery when later consumers may add constraints for the same facility; constraint collection/unification and provider selection therefore still require redesign before the dependency stage is executable.
 
 The global/non-package `pkg requirement resolve` query intentionally remains facility-default-only because it has no package-consumer runtime projection path. Implicit fallback applies to package consumers.
 
 ## Next action
 
-Implement the shared concrete-to-catalog-range resolver, then redesign dependency closure so facility constraints are collected/unified before provider selection is finalized. Once dependency resolution is executable, exercise the install2 pipeline end to end using the new extract2/pkg_extract2 boundary while preserving the current `pkg install` path.
+Redesign dependency closure so facility constraints are collected/unified before provider selection is finalized, replacing the current premature `_pkg_install_dependency_resolve_one` DFS decision. Once dependency resolution is executable, exercise the install2 pipeline end to end using the pkg-catalog and extract2/pkg-extract2 boundaries while preserving the current `pkg install` path.
 
 ## Blockers / open questions
 
