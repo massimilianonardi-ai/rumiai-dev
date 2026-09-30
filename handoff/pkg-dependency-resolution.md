@@ -68,8 +68,9 @@ Still-open policy includes:
 - how an installed compatible concrete competes with a newer/different catalog concrete;
 - how provider-package ambiguity is resolved when multiple providers can satisfy one facility;
 - the exact auto-install policy for missing dependency providers under `install2`;
-- cycle handling beyond baseline failure;
-- the concrete intermediate representation used between stages.
+- cycle handling beyond baseline failure.
+
+Intermediate install2 state should remain in memory using the existing `array`, `map` and `quote` primitives rather than temporary files or ad-hoc whitespace-separated scalar lists. The top-level `pkg_install2` subshell provides invocation-wide isolation. Stage helpers that mutate caller-owned arrays/maps must therefore execute in that same shell environment (brace-body functions), not in their own `()` subshells, otherwise the opaque variable-backed structures would be lost on return. Structure names can be passed between stages; indexed `array ... get ... <destination>` and keyed `map ... get ... <destination>` avoid unnecessary serialization, while `quote` remains available where positional-argument serialization is actually needed.
 
 The first `install2` scaffold is present in rumiai-os `835aeaae9150dad734b1544f21ebd655357fdb61` with separate validation, explicit resolution, dependency resolution and per-package installation functions. It is scaffolding only; current repository dispatch still exposes the canonical `pkg install` surface unless/until `install2` is deliberately wired and documented.
 
@@ -94,7 +95,7 @@ The previous dependency/provider realignment remains implemented on the canonica
 The new design has not been promoted into `PACKAGE-MODEL.md`; in particular, recursive dependency auto-installation would intentionally differ from current PKG-18 and must remain isolated in `install2` until its policies and acceptance behavior are settled.
 
 The current scaffold intentionally contains placeholders, but several mechanical points must be corrected before it becomes executable design:
-- stage outputs must not be stored and re-expanded as an unquoted whitespace-separated scalar list; that would lose argument boundaries and would pathname-expand selectors such as a future `@21*`;
+- stage outputs must not be stored and re-expanded as an unquoted whitespace-separated scalar list; use the existing in-memory array/map primitives (and quote only for deliberate shell-safe serialization) so argument boundaries and literal selectors are preserved;
 - internal stage helpers must use private leading-underscore names unless they are deliberately promoted as public library API;
 - per-package installation must receive the resolved concrete explicitly rather than being called with no operand;
 - the repository dispatcher does not yet expose `install2`, so the committed library is not yet a public subcommand path.
