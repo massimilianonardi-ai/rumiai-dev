@@ -10,7 +10,7 @@ Maintain a long-lived meta-workstream for continuously evaluating and improving 
 ## Current repository revisions
 
 ```text
-rumiai-dev    fa9c60b315316ac988f1d70cbb80a3cac54b8ed7  (pre-checkpoint HEAD)
+rumiai-dev    bff6bbe937fd0077a0f2ba36e69ea032fecad235  (pre-checkpoint HEAD)
 rumiai-os     0966ba9cb55dc7014ede2d726849fe83ed5cb757  (observed current remote HEAD; not modified by this checkpoint)
 rumiai-tests  099e8ab29e79a089cbca524d5cc649a74ec2ddea  (observed current remote HEAD; not modified by this checkpoint)
 pkg-catalog   d63f87d2be67288ef57f4a5812fabbc3f0b24a0d  (observed current remote HEAD; not modified by this checkpoint)
@@ -163,14 +163,6 @@ The following principles appear mature enough to be candidates for later promoti
 
 These points should later be reviewed together and promoted only in the smallest wording that preserves the behavior. The richer model above should remain available as working-design rationale until enough real cases establish which dimensions are genuinely useful.
 
-### Active-handoff ownership before task creation
-
-A workflow-correction episode on 2026-09-30 exposed a routing failure in the workflow itself. A separate short-lived `handoff/workflow-operability.md` was created for product-intent/operability work even though this long-lived `workflow-optimization` handoff already owned workflow-health and reusable workflow lessons.
-
-The separate handoff was completed and removed forward-only, so no duplicate active handoff remains. The incident should be retained as evidence for a possible workflow rule: before creating a new handoff, identify whether an existing active handoff already owns the same resumable responsibility. The purpose is not to forbid dedicated subprojects, but to avoid fragmenting one workstream merely because a new symptom or lesson has a narrower label.
-
-This remains working design until repeated use establishes whether the existing one-task/one-stable-identity rule and retrieval process are sufficient or need an explicit pre-creation ownership check.
-
 ## Completed
 
 ### Current-only documentation and retrieval model
@@ -268,6 +260,28 @@ The core lesson is that passing internal/component tests cannot establish produc
 
 During this correction, a dedicated `workflow-operability` handoff was created, completed and removed. That routing was unnecessary because `workflow-optimization` already owns this class of reusable workflow lesson; the forward-only history is retained and this handoff now owns the continuing workflow state.
 
+### Active handoff ownership
+
+The routing error above was reviewed and promoted into the canonical handoff workflow.
+
+Current rule:
+
+```text
+ownership is determined by resumable responsibility, not topic wording
+
+same responsibility + no materially independent lifecycle
+    → reuse the existing active handoff
+
+materially independent goal/state/blockers/validation/completion
+    → create a separate handoff
+```
+
+Long-lived handoffs are the preferred owners of recurring observations, decisions and improvements within their standing responsibility. A narrower label alone never justifies a parallel task. When independence is unclear, work stays with the existing owner until an autonomous lifecycle becomes concrete.
+
+When a broader handoff legitimately spawns a specialized child task, the child owns operational progress and completion state while the parent keeps only the relationship and reusable broader lesson; active state is not duplicated.
+
+The rule is now canonical in `handoff/README.md`, routed from the root `README.md`, and enforced by `CONSISTENCY-GATE.md`.
+
 ## Current state
 
 `workflow-optimization` remains active.
@@ -284,7 +298,9 @@ library function  → explicit public/internal visibility by leading underscore
 
 The legacy library visibility migration is not hidden as current compliance: it is explicit deferred work, while documentation backfill remains owned by the active manual task.
 
-The workflow now also treats primary user goals, normal public paths and caller/system knowledge boundaries as explicit design and completion constraints. The 2026-09-30 pkg episode is the first concrete evidence behind this gate. A separate workflow-operability handoff was briefly created and then removed; the reusable state is now correctly consolidated here.
+The workflow now also treats primary user goals, normal public paths and caller/system knowledge boundaries as explicit design and completion constraints. The 2026-09-30 pkg episode is the first concrete evidence behind this gate.
+
+Active task routing now uses resumable responsibility rather than topic labels. Existing long-lived owners are reused for work inside their standing responsibility unless a materially independent lifecycle exists; justified parent/child task splits keep operational state single-owned.
 
 ## Next action
 
@@ -298,7 +314,7 @@ Observe the TODO lifecycle, specification promotion gate and command/library man
 6. watch for TODO/handoff/specification/manual duplication or taxonomy drift;
 7. exercise the adaptive cooperation model on real tasks and collect contrasting evidence about impact, foundationality, reversibility, intent clarity, error cost, exploration value and context maturity;
 8. exercise the product-intent/operability gate on real public workflows, beginning with the pkg review, and verify that normal-path acceptance tests expose unusable but internally coherent designs;
-9. before creating a new workflow-related handoff, check whether an existing active handoff already owns the same resumable responsibility and collect evidence on whether this needs an explicit canonical pre-creation rule;
+9. exercise the new handoff-ownership rule in normal work and watch specifically for false merges into long-lived tasks, unnecessary parallel handoffs and duplicated parent/child state;
 10. jointly review the six-point promotable core after additional real use, then promote only the minimal stable rule set to RULES.md if the evidence supports it.
 
 ## Blockers / open questions
