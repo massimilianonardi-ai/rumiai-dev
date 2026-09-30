@@ -9,9 +9,9 @@ Complete and validate the promoted recursive `pkg install` model built around th
 
 ## Current repository revisions
 
-- rumiai-dev: b2287177c5e6297527b8f0f7555fe777e2d5c453 (pre-checkpoint HEAD)
-- rumiai-os: d98615a4b9b1d6008c23c2c8edb1f973ebf7103e
-- rumiai-tests: 4ddfd7f2d3939081d18b217c8dbb200318ed357b
+- rumiai-dev: 7d7d4a44eb4fd80e9c37949c53d09b15743d8a27 (pre-checkpoint HEAD)
+- rumiai-os: 649d92806f4886443806bb7b4563ef56285c0185
+- rumiai-tests: a150d7d020602068b4af809bb440864766a03fe6
 - pkg-catalog: d63f87d2be67288ef57f4a5812fabbc3f0b24a0d
 
 ## Applicable canonical sources
@@ -28,7 +28,8 @@ Complete and validate the promoted recursive `pkg install` model built around th
 
 - `pkg depend <package-spec>...` is read-only and returns only recursive dependency concrete identities, in dependency-first order.
 - Explicit requested roots are omitted from `pkg depend` output unless the same concrete is also selected as a dependency node of another request.
-- `pkg install <package-spec>...` calls `pkg depend` for the original requests, prepends the returned dependency concretes to the untouched original request list, then installs the resulting sequence.
+- `pkg install <package-spec>...` validates the complete original request list first. Any syntactically invalid request aborts the whole invocation before dependency planning, catalog resolution or installation.
+- After successful validation, `pkg install` calls `pkg depend` for the original requests, prepends the returned dependency concretes to the untouched original request list, then installs the resulting sequence.
 - Dependency operands are exact concrete identities; original roots retain their original package-spec form and are resolved by installation when reached.
 - Dependency/provider planning still collects constraints by effective provider-selection bucket before provider concretization.
 - Consumer binding precedes facility default. Without either selector, compatible planned providers precede compatible installed providers; catalog fallback is allowed only when the compatible provider package is unambiguous.
@@ -45,6 +46,7 @@ Complete and validate the promoted recursive `pkg install` model built around th
 - `pkg depend geoserver` returns only the concrete Java provider dependency (plus any recursive provider dependencies), not the GeoServer root.
 - A dependency-free requested root produces empty successful `pkg depend` output.
 - If one explicit root is also selected as a dependency of another root, that concrete still appears in `pkg depend` output.
+- Any syntactically invalid request in a `pkg install` batch fails before `pkg depend` is called and prevents all installation.
 - `pkg install geoserver` installs dependency concretes first and then installs the original GeoServer request.
 - Multiple original requests preserve their original order after all dependency concretes are prepended.
 - `pkg install` does not duplicate dependency-resolution logic internally; it consumes `pkg depend`.
@@ -60,19 +62,23 @@ Complete and validate the promoted recursive `pkg install` model built around th
 `pkg-install.lib.sh` now:
 
 ```text
-save original request argv
+validate complete original request argv
+→ save original request argv
 → pkg_depend(original requests)
 → prepend returned dependency concretes
 → initialize install workspace/catalog
 → resolve/install each resulting operand in order
 ```
 
+The validation step is owned explicitly by `pkg install`; it does not rely on the independent public `pkg depend` command to reject malformed requests.
+
 `pkg_install_one` accepts a normal package-spec and resolves it through `pkg_catalog_request_resolve` before concrete installation. This lets dependency concretes and original unresolved roots share one install path.
 
 Permanent coverage added/updated:
 - `tests/rumiai-os/pkg/depend.test` now expects dependency-only output, including dependency-free roots and the root-also-dependency case.
 - `tests/rumiai-os/pkg/catalog.test` covers `pkg_catalog_request_resolve`.
-- `tests/rumiai-os/pkg/install-dependency-order.test` verifies that dependency concretes are passed to installation before untouched original requests and that an already-installed exact dependency concrete is reused without catalog resolution.
+- `tests/rumiai-os/pkg/install-dependency-order.test` verifies that invalid requests fail before `pkg_depend` is called, dependency concretes are passed to installation before untouched original requests, and an already-installed exact dependency concrete is reused without catalog resolution.
+- `tests/rumiai-os/pkg/install-live.test` now requires invalid-only and mixed invalid/valid request lists to fail as invalid invocations without installing later valid operands.
 - `tests/external/geoserver/install-dependency-live.test` explicitly verifies that `pkg depend geoserver@3.0.1` includes Temurin but excludes the GeoServer root, then verifies that `pkg install geoserver@3.0.1` installs both packages.
 
 Revision-coupled validation evidence:
