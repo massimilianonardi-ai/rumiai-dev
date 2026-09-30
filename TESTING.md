@@ -1,7 +1,7 @@
 # RumiAI Testing Rules
 
 Status: **Current / canonical**  
-Updated: 2026-09-18
+Updated: 2026-09-30
 
 This document defines the canonical rules for authoring, executing and preserving RumiAI tests.
 
@@ -107,6 +107,16 @@ Unless explicitly required, do not use the following as proxies for behavior:
 - line numbers;
 - accidental spelling of equivalent pathnames;
 - implementation details that may change without changing the contract.
+
+### Normal user-path coverage
+
+When a materially user-facing or operator-facing capability has a normal public workflow, permanent coverage must protect at least one representative normal-path scenario through that public surface whenever the scenario is deterministic and maintainable.
+
+The test input should reflect information a normal caller can reasonably know or deliberately choose. It must not pre-resolve provider-specific, revision-specific or internal values merely to make the implementation easy to test, unless supplying that exact value is itself the behavior being tested, such as explicit pinning.
+
+Lower-level resolver, parser, adapter or component tests do not substitute for this coverage. A public workflow may pass all internal tests and still be defective if the caller cannot accomplish the intended goal naturally through the supported interface.
+
+When a task materially changes a primary public workflow, the required task-validation scope must include the applicable normal-path acceptance coverage. This coverage should remain small and goal-oriented; it is not a requirement to duplicate every lower-level case end to end.
 
 ### Authenticity of the system under test
 
