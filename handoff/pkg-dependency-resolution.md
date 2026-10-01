@@ -1,16 +1,16 @@
 # pkg dependency resolution and recursive install
 
 Status: Active
-Updated: 2026-09-30
+Updated: 2026-10-01
 
 ## Goal
 
-Complete and validate the promoted recursive `pkg install` model built around the public read-only `pkg depend` dependency planner, while continuing the extraction/catalog cleanup already in progress.
+Complete and validate the promoted recursive `pkg install` model built around the public read-only `pkg depend` dependency planner, while continuing the catalog/install resolver cleanup in progress.
 
 ## Current repository revisions
 
-- rumiai-dev: bb08542b36eb31d530b6d49bab9ad0d386deaa0e (pre-checkpoint HEAD)
-- rumiai-os: 3ba008134c1b554847b27d9f928de9d57833af74
+- rumiai-dev: e386bd48be6dc1dc839bed8081232471938d971b (pre-checkpoint HEAD)
+- rumiai-os: c2f7c739b2ded45eeab6d0027aa2f99cf85d343e
 - rumiai-tests: a150d7d020602068b4af809bb440864766a03fe6
 - pkg-catalog: d63f87d2be67288ef57f4a5812fabbc3f0b24a0d
 
@@ -21,95 +21,97 @@ Complete and validate the promoted recursive `pkg install` model built around th
 - TESTING.md
 - TEST-PATTERNS.md
 - specifications/rumiai-os/PACKAGE-MODEL.md
+- specifications/rumiai-os/FILESYSTEM-NAMING.md
 - specifications/rumiai-os/LIBRARY-INTERFACES.md
 - specifications/rumiai-os/DOCUMENTATION-MODEL.md
 
 ## Fixed task-local choices
 
-- `pkg depend <package-spec>...` is read-only and returns only recursive dependency concrete identities, in dependency-first order.
+- `pkg depend <package-spec>...` is read-only and returns recursive dependency concrete identities only, in dependency-first order.
 - Explicit requested roots are omitted from `pkg depend` output unless the same concrete is also selected as a dependency node of another request.
-- `pkg install <package-spec>...` validates the complete original request list first. Any syntactically invalid request aborts the whole invocation before dependency planning, catalog resolution or installation.
-- After successful validation, `pkg install` calls `pkg depend` for the original requests, prepends the returned dependency concretes to the untouched original request list, then installs the resulting sequence.
-- Dependency operands are exact concrete identities; original roots retain their original package-spec form and are resolved by installation when reached.
-- Dependency/provider planning still collects constraints by effective provider-selection bucket before provider concretization.
-- Consumer binding precedes facility default. Without either selector, compatible planned providers precede compatible installed providers; catalog fallback is allowed only when the compatible provider package is unambiguous.
-- Multiple compatible provider packages remain an error rather than a ranking opportunity.
-- `pkg-common.lib.sh` owns package identity grammar only.
-- `pkg-catalog.lib.sh` owns catalog snapshot/navigation/request/concrete resolution.
-- `pkg-depend.lib.sh` owns dependency discovery/planning.
-- `pkg-install.lib.sh` owns installation orchestration only.
-- The user has deliberately deferred further cleanup of `_pkg_install_init` / `_pkg_install_end` and catalog/workspace lifecycle until a later review of `pkg`.
+- `pkg install <package-spec>...` validates the complete original request list before catalog initialization, dependency planning or installation.
+- After validation, `pkg install` initializes one catalog snapshot, resolves every requested root to an exact concrete identity, calls `pkg depend` on those exact concrete roots, prepends the returned dependency concretes, then installs the resulting dependency-first concrete sequence.
+- Dependency planning and root installation therefore operate on the same exact root identities selected from the same catalog snapshot.
+- No new public `pkg_local_current` API is being introduced at this stage. Per the user's current direction, the simplified install resolver temporarily reuses the existing private `_pkg_local_class_scan` behavior directly.
+- The direct cross-library private call is a task-local implementation choice, not a promoted library-interface contract and must not be generalized as public API.
+- Further cleanup of `_pkg_install_init` / `_pkg_install_end` and catalog/workspace lifecycle remains deferred until the user's later review of `pkg`.
 - `extract2` and `pkg-extract2.lib.sh` remain temporary filenames; their internal namespaces already match the future promoted `extract` / `pkg-extract` identities.
 
 ## Acceptance scenarios
 
-- `pkg depend geoserver` returns only the concrete Java provider dependency (plus any recursive provider dependencies), not the GeoServer root.
+- `pkg depend geoserver` returns only the concrete Java provider dependency (plus recursive provider dependencies), not the GeoServer root.
 - A dependency-free requested root produces empty successful `pkg depend` output.
 - If one explicit root is also selected as a dependency of another root, that concrete still appears in `pkg depend` output.
-- Any syntactically invalid request in a `pkg install` batch fails before `pkg depend` is called and prevents all installation.
-- `pkg install geoserver` installs dependency concretes first and then installs the original GeoServer request.
-- Multiple original requests preserve their original order after all dependency concretes are prepended.
-- `pkg install` does not duplicate dependency-resolution logic internally; it consumes `pkg depend`.
-- Invalid dependency/provider closure fails before permanent requested-root installation.
+- Any syntactically invalid request in a `pkg install` batch fails before catalog initialization or dependency planning and prevents all installation.
+- `pkg install geoserver` resolves GeoServer to an exact concrete root, plans dependencies from that concrete root, installs dependency concretes first and then installs the GeoServer concrete.
+- Multiple requested roots preserve their request order after root concretization and after all dependency concretes are prepended.
 - Already-installed compatible dependency concretes may satisfy dependency nodes without reinstallation.
+- An unversioned root may reuse the valid installed current/default concrete for the selected package/platform class.
+- Malformed managed-store entries must not be accepted as valid already-installed concretes.
 
 ## Current implementation state
 
-`pkg_catalog_request_resolve <concrete-variable> <target-variable> <catalog> <package-spec> <default-target>` now centralizes package-spec to concrete resolution for catalog-backed callers.
-
-`pkg-depend.lib.sh` still builds the full internal concrete graph so roots can contribute dependency declarations and provider constraints, but final output is filtered to concretes present in provider selections. This preserves recursive ordering while omitting pure requested roots.
-
-`pkg-install.lib.sh` now:
+Current rumiai-os `c2f7c739b2ded45eeab6d0027aa2f99cf85d343e` keeps `_pkg_install_init` before request resolution and implements this flow:
 
 ```text
 validate complete original request argv
-→ save original request argv
-→ pkg_depend(original requests)
-→ prepend returned dependency concretes
 → initialize install workspace/catalog
-→ resolve/install each resulting operand in order
+→ resolve original requests to exact concrete roots
+→ pkg depend(exact concrete roots)
+→ prepend dependency concretes to concrete roots
+→ pkg_install_one for each concrete
 ```
 
-The validation step is owned explicitly by `pkg install`; it does not rely on the independent public `pkg depend` command to reject malformed requests. The private validator records the offending request so the status-2 fatal diagnostic identifies that package specification.
+The simplified `pkg_install_resolve_one` delegates package-stream selection to `pkg_catalog_stream_resolve` and version selection to `pkg_catalog_version_resolve`, removing duplicated repository-adapter/version-resolution logic.
 
-`pkg_install_one` accepts a normal package-spec and resolves it through `pkg_catalog_request_resolve` before concrete installation. This lets dependency concretes and original unresolved roots share one install path.
+The previously proposed `pkg_local_current` function does not exist and is no longer assumed. The unversioned-local reuse path now calls:
 
-Permanent coverage added/updated:
-- `tests/rumiai-os/pkg/depend.test` now expects dependency-only output, including dependency-free roots and the root-also-dependency case.
-- `tests/rumiai-os/pkg/catalog.test` covers `pkg_catalog_request_resolve`.
-- `tests/rumiai-os/pkg/install-dependency-order.test` verifies that invalid requests fail before `pkg_depend` is called, dependency concretes are passed to installation before untouched original requests, and an already-installed exact dependency concrete is reused without catalog resolution.
-- `tests/rumiai-os/pkg/install-live.test` now requires invalid-only and mixed invalid/valid request lists to fail as invalid invocations without installing later valid operands.
-- `tests/external/geoserver/install-dependency-live.test` explicitly verifies that `pkg depend geoserver@3.0.1` includes Temurin but excludes the GeoServer root, then verifies that `pkg install geoserver@3.0.1` installs both packages.
+```sh
+_pkg_local_class_scan "$pkg_install_pkg" "$pkg_install_identity_osarch" || exit 5
 
-Revision-coupled validation evidence:
-- GeoServer workflow run 36768364000 tested rumiai-os 736489eb5d431dd21e4befd7ed1220f12354478d.
-- `external/geoserver/install-dependency-live.test` PASS on Ubuntu.
-- `external/geoserver/install-dependency-live.test` PASS on macOS.
-- The later `external/geoserver/service-live.test` failed in that workflow, so the overall GeoServer scope is NOT VALIDATED; that failure occurred after the dedicated recursive-install test had passed and is not evidence against the install result.
-- rumiai-os d98615a4b9b1d6008c23c2c8edb1f973ebf7103 adds only the early reuse path for an already-installed exact dependency concrete; permanent coverage exists for that delta, while the full health workflow is still running at this checkpoint.
+if [ -n "$pkg_local_class_current_name" ]
+then
+  printf -- '%s\n' "$pkg_local_class_current_name"
+  exit 0
+fi
+```
 
-The assistant execution environment has no mounted local RumiAI checkout, so checkout-level execution uses repository workflows rather than a local checkout.
+This preserves the prior distinction between a valid class with no current concrete and an invalid/corrupt local class state.
 
-## Current implementation note
+The exact-version already-installed shortcut in the simplified resolver still uses only:
 
-Current rumiai-os `c7e337dd2703a5334e56d83470f0bce727872799` still calls `_pkg_install_init` before request resolution. The previous handoff note claiming that initialization had been removed was incorrect and has been withdrawn.
+```sh
+[ -d "$m_PKG_DIR/$pkg_install_concrete" ]
+```
 
-The current install flow resolves the validated original requests to concrete identities first, replaces argv with those concrete roots, then calls `pkg depend` on that concrete root list. Dependency planning therefore operates on the same exact root identities that installation will later receive, after which dependency concretes are prepended to the already concrete roots.
+and therefore still differs from the previous implementation's explicit `-e/-L` plus real-directory validation for malformed or symlinked managed-store entries. This remains open.
 
-## Current implementation note: resolve-one simplification
+The previous implementation remains temporarily present as `___pkg_install_resolve_one` for comparison and must be removed once equivalence is restored.
 
-rumiai-os `3ba008134c1b554847b27d9f928de9d57833af74` adds a new `pkg_install_resolve_one` implementation that correctly delegates stream selection to `pkg_catalog_stream_resolve` and catalog version selection to `pkg_catalog_version_resolve`, removing duplicated repository-adapter/version logic.
+The operational manual `res/sys/manual/pkg-install.lib.sh` was realigned in rumiai-os `c2f7c739b2ded45eeab6d0027aa2f99cf85d343e` to describe the current concrete-root-before-dependency-planning flow.
 
-Two issues remain before the new implementation is equivalent to the previous behavior:
-- it calls `pkg_local_current`, but no such public function currently exists in `pkg-local.lib.sh`; unversioned resolution therefore cannot currently reuse the installed current/default concrete as intended;
-- its exact-installed check uses only `[ -d "$m_PKG_DIR/$pkg_install_concrete" ]`, which follows directory symlinks and no longer rejects malformed/non-directory managed-store entries the way the previous `-e/-L` plus real-directory check did.
+## Permanent-test state
 
-The previous implementation remains temporarily present as `___pkg_install_resolve_one`; once equivalence is established it should be removed rather than retained as a second current implementation.
+Current rumiai-tests HEAD is `a150d7d020602068b4af809bb440864766a03fe6`.
+
+Relevant existing coverage includes:
+- `tests/rumiai-os/pkg/depend.test`
+- `tests/rumiai-os/pkg/catalog.test`
+- `tests/rumiai-os/pkg/install-dependency-order.test`
+- `tests/rumiai-os/pkg/install-live.test`
+- `tests/external/geoserver/install-dependency-live.test`
+
+`install-dependency-order.test` still encodes the earlier orchestration shape in which untouched original roots reach the install loop, so it requires realignment to the current concrete-root flow before it can be treated as coverage of the current implementation.
+
+No executable validation was run against rumiai-os `c2f7c739b2ded45eeab6d0027aa2f99cf85d343e` in the assistant environment. The environment has no mounted RumiAI checkout; an attempted fresh Git clone could not resolve github.com, and the available GitHub connector exposes repository reads/writes but no workflow-dispatch action. Older PASS results remain revision-specific evidence only and are not evidence for this revision.
 
 ## Next action
 
-Define the missing public local-current lookup (or otherwise expose the required local-state query without cross-library private calls), restore managed-store entry validation for exact installed concretes, then remove the temporary old `___pkg_install_resolve_one` implementation and validate the simplified resolver through the public install path.
+1. Restore strict managed-store entry validation in the exact-version shortcut of `pkg_install_resolve_one`.
+2. Realign permanent install-order coverage to the concrete-root flow.
+3. Remove `___pkg_install_resolve_one` once the simplified implementation is behaviorally equivalent.
+4. Run proportional real validation, including the public GeoServer dependency-install path.
 
 ## Deferred
 
-Further simplification of package/catalog temporary-directory lifecycle, including whether `pkg_catalog_init` should own its cleanup trap and whether `_pkg_install_init` / `_pkg_install_end` should disappear, is intentionally deferred until the user's next review of `pkg`.
+Further simplification of package/catalog temporary-directory lifecycle, including whether `pkg_catalog_init` should own its cleanup trap and whether `_pkg_install_init` / `_pkg_install_end` should disappear, remains intentionally deferred until the user's next review of `pkg`.
