@@ -9,7 +9,7 @@ Complete and validate the promoted recursive `pkg install` model built around th
 
 ## Current repository revisions
 
-- rumiai-dev: e386bd48be6dc1dc839bed8081232471938d971b (pre-checkpoint HEAD)
+- rumiai-dev: e47aa907bdcd4706760a6b418628f73722345166 (pre-checkpoint HEAD)
 - rumiai-os: c2f7c739b2ded45eeab6d0027aa2f99cf85d343e
 - rumiai-tests: a150d7d020602068b4af809bb440864766a03fe6
 - pkg-catalog: d63f87d2be67288ef57f4a5812fabbc3f0b24a0d
@@ -88,6 +88,8 @@ and therefore still differs from the previous implementation's explicit `-e/-L` 
 
 The previous implementation remains temporarily present as `___pkg_install_resolve_one` for comparison and must be removed once equivalence is restored.
 
+A library-interface consistency mismatch remains open: `pkg_install_resolve_one`, `pkg_install_resolve`, and `pkg_install_validate` are currently non-underscore function names and therefore public by the current library-interface contract, but `res/sys/manual/pkg-install.lib.sh` does not expose them. Do not silently resolve this by documenting accidental helpers or renaming callable API without checking intended ownership and consumers; this requires explicit realignment in the continuing pkg work.
+
 The operational manual `res/sys/manual/pkg-install.lib.sh` was realigned in rumiai-os `c2f7c739b2ded45eeab6d0027aa2f99cf85d343e` to describe the current concrete-root-before-dependency-planning flow.
 
 ## Permanent-test state
@@ -108,9 +110,10 @@ No executable validation was run against rumiai-os `c2f7c739b2ded45eeab6d0027aa2
 ## Next action
 
 1. Restore strict managed-store entry validation in the exact-version shortcut of `pkg_install_resolve_one`.
-2. Realign permanent install-order coverage to the concrete-root flow.
-3. Remove `___pkg_install_resolve_one` once the simplified implementation is behaviorally equivalent.
-4. Run proportional real validation, including the public GeoServer dependency-install path.
+2. Resolve the public/internal naming mismatch for the resolver/validator helper functions and realign the library manual accordingly.
+3. Realign permanent install-order coverage to the concrete-root flow.
+4. Remove `___pkg_install_resolve_one` once the simplified implementation is behaviorally equivalent.
+5. Run proportional real validation, including the public GeoServer dependency-install path.
 
 ## Deferred
 
