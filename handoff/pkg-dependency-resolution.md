@@ -9,8 +9,8 @@ Complete and validate the promoted recursive `pkg install` model built around th
 
 ## Current repository revisions
 
-- rumiai-dev: e47aa907bdcd4706760a6b418628f73722345166 (pre-checkpoint HEAD)
-- rumiai-os: c2f7c739b2ded45eeab6d0027aa2f99cf85d343e
+- rumiai-dev: 4e0cae49864a9dd5d5972eb776937f5aa9e82368 (pre-checkpoint HEAD)
+- rumiai-os: 6ce4fde2ee2a06091b56a7374f2a119cac6a2c57
 - rumiai-tests: a150d7d020602068b4af809bb440864766a03fe6
 - pkg-catalog: d63f87d2be67288ef57f4a5812fabbc3f0b24a0d
 
@@ -35,7 +35,7 @@ Complete and validate the promoted recursive `pkg install` model built around th
 - No new public `pkg_local_current` API is being introduced at this stage. Per the user's current direction, the simplified install resolver temporarily reuses the existing private `_pkg_local_class_scan` behavior directly.
 - The direct cross-library private call is a task-local implementation choice, not a promoted library-interface contract and must not be generalized as public API.
 - Further cleanup of `_pkg_install_init` / `_pkg_install_end` and catalog/workspace lifecycle remains deferred until the user's later review of `pkg`.
-- `extract2` and `pkg-extract2.lib.sh` remain temporary filenames; their internal namespaces already match the future promoted `extract` / `pkg-extract` identities.
+- The user has promoted the temporary `extract2` / `pkg-extract2.lib.sh` implementation identities to the canonical `extract` / `pkg-extract.lib.sh` names. The old `*2` identities are no longer part of the intended current surface.
 
 ## Acceptance scenarios
 
@@ -92,6 +92,21 @@ A library-interface consistency mismatch remains open: `pkg_install_resolve_one`
 
 The operational manual `res/sys/manual/pkg-install.lib.sh` was realigned in rumiai-os `c2f7c739b2ded45eeab6d0027aa2f99cf85d343e` to describe the current concrete-root-before-dependency-planning flow.
 
+The user commit rumiai-os `6ce4fde2ee2a06091b56a7374f2a119cac6a2c57` performs the intended extractor identity promotion:
+- `bin/sys/extract` is byte-identical to the previous `bin/sys/extract2`;
+- `lib/sys/sh/pkg/pkg-extract.lib.sh` is the previous `pkg-extract2.lib.sh` with only its four `extract2` delegations changed to `extract`;
+- `pkg-install.lib.sh` now loads `pkg/pkg-extract` and already calls `pkg_extract "$pkg_install_artifact" "$pkg_install_range" "$pkg_install_extract_dir"`, matching the promoted range-directory API.
+
+That commit is not yet a consistent completed rename. It leaves `bin/sys/extract_OLD` and `lib/sys/sh/pkg/pkg-extract_OLD.lib.sh` in the current tree. These are superseded implementation copies; their uppercase controlled names also violate the current filesystem naming contract, and the executable `extract_OLD` would additionally create an undocumented owned command identity if retained.
+
+Operational documentation is stale after the promotion:
+- `res/sys/manual/extract` still documents the old extractor and omits the promoted `pkg`, `appimage` and `executable` behavior;
+- `res/sys/manual/extract2` still documents the now-removed temporary command;
+- `res/sys/manual/pkg-extract.lib.sh` still documents the superseded direct-format API instead of the promoted range-directory API;
+- `res/sys/manual/pkg-extract2.lib.sh` still documents the now-removed temporary library.
+
+The intended correction is to move/realign the temporary manuals into the canonical topic identities and remove the stale temporary topics rather than keep parallel current documentation.
+
 ## Permanent-test state
 
 Current rumiai-tests HEAD is `a150d7d020602068b4af809bb440864766a03fe6`.
@@ -105,15 +120,23 @@ Relevant existing coverage includes:
 
 `install-dependency-order.test` still encodes the earlier orchestration shape in which untouched original roots reach the install loop, so it requires realignment to the current concrete-root flow before it can be treated as coverage of the current implementation.
 
-No executable validation was run against rumiai-os `c2f7c739b2ded45eeab6d0027aa2f99cf85d343e` in the assistant environment. The environment has no mounted RumiAI checkout; an attempted fresh Git clone could not resolve github.com, and the available GitHub connector exposes repository reads/writes but no workflow-dispatch action. Older PASS results remain revision-specific evidence only and are not evidence for this revision.
+The extractor rename also leaves the permanent suite stale against rumiai-os `6ce4fde2ee2a06091b56a7374f2a119cac6a2c57`:
+- `tests/rumiai-os/extract2/contract.test` still requires the removed `bin/sys/extract2`;
+- `tests/rumiai-os/pkg-extract2/contract.test` still targets the removed temporary library/command identities;
+- existing `tests/rumiai-os/pkg-extract/contract.test`, `flat-pkg.test` and `dmg-pkg.test` still exercise the superseded direct-format `pkg_extract` calling shape and therefore do not match the promoted `pkg_extract <artifact> <range-dir> <staging-dir>` API.
+
+These tests require identity/API realignment before they can be treated as coverage of the promoted extractor implementation.
+
+No executable validation was run against rumiai-os `6ce4fde2ee2a06091b56a7374f2a119cac6a2c57` in the assistant environment. The environment has no mounted RumiAI checkout; a fresh Git access attempt could not resolve github.com. The repository's available Actions do not provide a current automatic validation run for this HEAD. The findings above are repository/tree/manual/test consistency findings, not claimed runtime PASS evidence. Older PASS results remain revision-specific evidence only and are not evidence for this revision.
 
 ## Next action
 
-1. Restore strict managed-store entry validation in the exact-version shortcut of `pkg_install_resolve_one`.
-2. Resolve the public/internal naming mismatch for the resolver/validator helper functions and realign the library manual accordingly.
-3. Realign permanent install-order coverage to the concrete-root flow.
-4. Remove `___pkg_install_resolve_one` once the simplified implementation is behaviorally equivalent.
-5. Run proportional real validation, including the public GeoServer dependency-install path.
+1. Complete the extractor promotion by removing the `_OLD` implementation copies, realigning the canonical `extract` / `pkg-extract.lib.sh` manuals from the temporary `*2` manuals, removing stale `*2` manual topics, and realigning extractor permanent tests to the promoted identities/API.
+2. Restore strict managed-store entry validation in the exact-version shortcut of `pkg_install_resolve_one`.
+3. Resolve the public/internal naming mismatch for the resolver/validator helper functions and realign the library manual accordingly.
+4. Realign permanent install-order coverage to the concrete-root flow.
+5. Remove `___pkg_install_resolve_one` once the simplified implementation is behaviorally equivalent.
+6. Run proportional real validation, including the promoted extractor paths and the public GeoServer dependency-install path.
 
 ## Deferred
 
