@@ -9,8 +9,8 @@ Complete and validate the promoted recursive `pkg install` model built around th
 
 ## Current repository revisions
 
-- rumiai-dev: 2934d680bca8fb941d8c1e71fbff9ecaa582560a (pre-checkpoint HEAD)
-- rumiai-os: c7e337dd2703a5334e56d83470f0bce727872799
+- rumiai-dev: bb08542b36eb31d530b6d49bab9ad0d386deaa0e (pre-checkpoint HEAD)
+- rumiai-os: 3ba008134c1b554847b27d9f928de9d57833af74
 - rumiai-tests: a150d7d020602068b4af809bb440864766a03fe6
 - pkg-catalog: d63f87d2be67288ef57f4a5812fabbc3f0b24a0d
 
@@ -96,9 +96,19 @@ Current rumiai-os `c7e337dd2703a5334e56d83470f0bce727872799` still calls `_pkg_i
 
 The current install flow resolves the validated original requests to concrete identities first, replaces argv with those concrete roots, then calls `pkg depend` on that concrete root list. Dependency planning therefore operates on the same exact root identities that installation will later receive, after which dependency concretes are prepended to the already concrete roots.
 
+## Current implementation note: resolve-one simplification
+
+rumiai-os `3ba008134c1b554847b27d9f928de9d57833af74` adds a new `pkg_install_resolve_one` implementation that correctly delegates stream selection to `pkg_catalog_stream_resolve` and catalog version selection to `pkg_catalog_version_resolve`, removing duplicated repository-adapter/version logic.
+
+Two issues remain before the new implementation is equivalent to the previous behavior:
+- it calls `pkg_local_current`, but no such public function currently exists in `pkg-local.lib.sh`; unversioned resolution therefore cannot currently reuse the installed current/default concrete as intended;
+- its exact-installed check uses only `[ -d "$m_PKG_DIR/$pkg_install_concrete" ]`, which follows directory symlinks and no longer rejects malformed/non-directory managed-store entries the way the previous `-e/-L` plus real-directory check did.
+
+The previous implementation remains temporarily present as `___pkg_install_resolve_one`; once equivalence is established it should be removed rather than retained as a second current implementation.
+
 ## Next action
 
-Validate the current concrete-root flow end to end, especially `pkg install geoserver`, and then decide whether the remaining duplicated/private resolution helpers in `pkg-install.lib.sh` should be consolidated behind public catalog/local APIs.
+Define the missing public local-current lookup (or otherwise expose the required local-state query without cross-library private calls), restore managed-store entry validation for exact installed concretes, then remove the temporary old `___pkg_install_resolve_one` implementation and validate the simplified resolver through the public install path.
 
 ## Deferred
 
