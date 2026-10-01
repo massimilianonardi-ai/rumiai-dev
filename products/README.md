@@ -1,7 +1,7 @@
 # External product evaluations
 
 Status: **Current reference material**  
-Updated: 2026-09-28
+Updated: 2026-10-01
 
 This directory records evaluations of external software that may be useful to RumiAI through reuse, integration or technical study.
 
@@ -81,6 +81,7 @@ ai/
     a2a.md
     ag-ui.md
     browser-use.md
+    chatgpt.md
     deepseek-harness.md
     e2b.md
     ecc.md
