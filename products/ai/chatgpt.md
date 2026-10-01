@@ -68,7 +68,7 @@ The useful reference distinction is:
 - per-task isolated execution instance;
 - task state that outlives the initiating client session.
 
-This is particularly relevant to RumiAI because current m facilities already separate lifecycle orchestration, persistent state, package/runtime resolution and live scenario instances, but none of those current contracts should be reclassified as an AI-agent runtime by analogy alone.
+This is particularly relevant to RumiAI because the project already has substantial standalone Computer Use and Computer Control implementations, while current m facilities separate lifecycle orchestration, persistent state, package/runtime resolution and live scenario instances. The remaining problem is not absence of computer-use capability; it is how mature standalone capabilities are reworked behind stable modular boundaries and supported by the portable substrate without reclassifying unrelated m contracts as an AI-agent runtime.
 
 ### Dots
 
@@ -152,11 +152,42 @@ Current RumiAI authority defines:
 - srv for portable service lifecycle;
 - testlab for developer-facing live scenario environments.
 
-These mechanisms already demonstrate useful separation of responsibilities such as selection versus realization, declarative intent versus execution, persistent lifecycle state versus transient process state and scenario definition versus scenario instance.
+Those current rumiai-os contracts are only part of the comparison baseline. RumiAI also already has two substantial standalone projects that predate the broader modular integration work:
 
-However, the current specifications do not promote ChatGPT-like concepts such as always-on AI agents, AI-task identity, conversational memory, agent authorization, AI capability composition or collaborative AI workspaces as RumiAI contracts.
+- `rumiai-computer-control` owns backend-neutral desktop observation and action semantics behind a versioned external boundary;
+- `rumiai-computer-use` owns semantic task planning/orchestration, capability/provider/skill selection, context sessions, recovery, perception policy and task-success verification.
 
-That absence is important. The correct use of ChatGPT here is as an external reference for discovering responsibilities and failure modes, not as a vocabulary source from which to copy product concepts into RumiAI.
+The current Computer Use implementation is not merely a prototype. Its recorded validation lineage includes a semantic-first visual fallback, explicit separation between event delivery and verified task success, provider-neutral visual interpretation, deterministic target resolution, explicit fallback authorization, independent post-action verification and trusted resource provenance through the product task-invocation boundary. The current active program moves outward toward higher-level invocation/integration.
+
+This existing work materially changes the ChatGPT comparison: RumiAI does not need to discover computer use from zero. It already has a strong implementation and evidence base for one of the hardest agentic capabilities.
+
+At the same time, the current standalone Computer Use and Computer Control products were not originally designed as modules inside a larger RumiAI composition model. Their absence from the current rumiai-os specification index is therefore not evidence that the capability was forgotten or that the documentation router is defective. It reflects the current integration boundary: these projects are valuable standalone implementations but are not yet promoted as integrated rumiai-os/RumiAI modules.
+
+Computer Control is already comparatively close to a reusable external component because its repository exposes a backend-neutral contract, runtime, SDKs and adapters. It may therefore be reusable with relatively limited adaptation.
+
+Computer Use needs more architectural work before it can serve the wider system. The intended direction is that higher-level RumiAI modules should be able to consume a compatible external Computer Use capability rather than being coupled to this implementation, while the current Computer Use implementation itself must expose a stable boundary suitable for use by other modules. Its current internal composition and standalone assumptions must not become the general RumiAI architecture merely because the implementation performs well.
+
+This is also part of the motivation for the current rumiai-os/m work: mature AI modules need a stable substrate for portable, relocatable and isolated component installation, runtime/provider selection, state, services and lifecycle mechanics. The substrate is being generalized underneath those capabilities rather than embedding their one-off runtime assumptions into every module.
+
+The architectural lesson from the existing RumiAI work therefore differs from a greenfield reading of ChatGPT:
+
+```text
+m / rumiai-os
+    stable portable substrate
+
+compatible external capabilities
+    Computer Control
+    Computer Use
+    other future modules/providers
+
+higher-level RumiAI composition
+    consumes capabilities through stable boundaries
+    without hard-coding one standalone implementation
+```
+
+This is a direction of integration, not a promoted API or namespace. The exact modular contracts, provider semantics and component identities still require their normal RumiAI design process before becoming current specification.
+
+ChatGPT remains useful here because it exposes many of the same system-level pressures from another direction: persistent work, computer execution, tool composition, authorization, events, artifacts and human review. RumiAI can compare those pressures against capabilities it has already implemented and against the infrastructure now being generalized beneath them, rather than treating ChatGPT as a starting blueprint.
 
 ## RumiAI evaluation
 
@@ -221,7 +252,7 @@ ChatGPT should be treated as a **high-value reference architecture under active 
 
 The most important signal from the September 2026 changes is the convergence of persistent intent, asynchronous execution, isolated computers, reusable capabilities, connected data/actions, event sources, artifacts and human approval into one product ecosystem while still keeping several of those responsibilities separately controllable.
 
-For RumiAI, the immediate value is to use these observations when identifying future upper-layer responsibilities while preserving the existing m/RumiAI boundary and avoiding premature naming or architecture.
+For RumiAI, the immediate value is to compare these observations with capabilities that already exist in standalone form, especially Computer Use and Computer Control, and to use the comparison while modularizing them over the stable m substrate. The goal is not to reproduce ChatGPT's product structure, but to preserve the strong existing behavior while making capabilities replaceable and consumable by other RumiAI modules through contracts that are deliberately designed rather than inherited from the standalone implementations.
 
 ## Open verification work
 
@@ -247,8 +278,18 @@ Future refreshes should pay particular attention to:
 - Projects in ChatGPT: https://help.openai.com/en/articles/10169521-projects-in-chatgpt
 - Developer mode and MCP apps in ChatGPT: https://help.openai.com/en/articles/12584461-developer-mode-and-full-mcp-connectors-in-chatgpt
 
+## RumiAI comparison snapshot
+
+RumiAI-side observations in this revision were checked against:
+
+- `rumiai-dev` at `512d9e1cb3c1021e03118f61a059f8d26d2ebe23` before this update;
+- `rumiai-computer-use` at `cd1d189776e96d7f8625b367eaa76a2572de394a`;
+- `rumiai-computer-control` at `e3a3f13d66546cf8f0fca50075bd4607c2c3d003`.
+
+The modular-integration assessment also incorporates the current project direction that the standalone Computer Use and Computer Control results are strong but are not yet the integrated modular form intended for the broader RumiAI system. In particular, future higher-level composition should be able to consume a compatible Computer Use capability through an explicit boundary rather than depending intrinsically on the present standalone implementation.
+
 ## Verification notes
 
 This evaluation is based on OpenAI's official public product documentation and release notes as observed on 2026-10-01. Product availability, pricing, model access, rollout status and region restrictions are intentionally treated as time-sensitive upstream facts rather than RumiAI contracts.
 
-No ChatGPT runtime behavior, security property or operational guarantee was independently validated by RumiAI testing in this work unit.
+No ChatGPT runtime behavior, security property or operational guarantee was independently validated by RumiAI testing in this work unit. RumiAI Computer Use/Computer Control claims are bounded to the current repository documentation and recorded validation state inspected for this comparison; this documentation update did not execute new physical validation.
