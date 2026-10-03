@@ -12,8 +12,8 @@ The long-term multi-channel documentation source/rendering architecture remains 
 ## Current repository revisions
 
 ```text
-rumiai-dev   984871093f242de0458855ff9e7e223b0b8f6701  (pre-checkpoint HEAD)
-rumiai-os    395865b7fd02b13f8c3bc92c37eab6d663739404
+rumiai-dev   8c0f700d427bb45f7a6dd52effc9c2ac8b9e6398  (pre-checkpoint HEAD)
+rumiai-os    6dbcd44419bdffdcf54580c9875b449764e7c116
 rumiai-tests 28714862afea52e06a2623996e7135ef281ccb85
 ```
 
@@ -93,6 +93,7 @@ Fresh remote HEAD retrieval remains mandatory before future writes.
   - `res/sys/manual/pkg-default.lib.sh` documents public `pkg_default`;
   - `res/sys/manual/pkg-uninstall.lib.sh` documents public `pkg_uninstall`.
   The pre-existing `pkg-integration.lib.sh` manual remains accurate.
+- `rumiai-os@6dbcd44419bdffdcf54580c9875b449764e7c116` removes the superseded pkg library backups `pkg-install_OLD.lib.sh` and `pkg-extract_OLD.lib.sh`. This removes two non-current library identities from structural/manual scope and eliminates the only residual calls to the validator helpers deleted by the pkg integration refactor. The same commit corrects the pkg-install manual dependency from stale `pkg-extract2.lib.sh` to current `pkg-extract.lib.sh`.
 - No unrelated concurrent product or test-suite work was overwritten; Git history remained forward-only.
 
 ## Current state
@@ -110,11 +111,7 @@ manual <topic>
         -> empty: status 2
 ```
 
-All current executable `bin/sys` command identities have corresponding
-non-library operational topics, including `rssh`. Concurrent cleanup removed
-the obsolete internal `bin/sys/#_readc` and `bin/sys/rsudo-askpass` command
-identities; their orphan `readc` and `rsudo-askpass` manual topics have also
-been removed.
+Current command-manual completeness has one newly discovered exception: `bin/sys/extract_OLD` remains executable and has no intentional current command contract recorded by this handoff. It was discovered during the pkg-library cleanup and is now tracked separately by `todo/extract-old-command-cleanup.md`. Other previously checked current executable `bin/sys` identities retain their corresponding non-library operational topics, including `rssh`.
 
 Library documentation is only partially complete. Known compliant manuals recorded by this handoff include `array.lib.sh`, `enc.lib.sh`, `ipc.lib.sh`, `map.lib.sh`, `mk-materialize.lib.sh`, `mk-materialize-copy.lib.sh`, `osarch.lib.sh`, `pkg-common.lib.sh`, `pkg-default.lib.sh`, `pkg-install.lib.sh`, `pkg-integration.lib.sh`, `pkg-local.lib.sh`, `pkg-uninstall.lib.sh`, `rand.lib.sh` and `term.lib.sh`. The remaining legacy libraries cannot safely receive final public-API manuals until their intended public/internal function sets are classified and, where necessary, renamed with callers/tests realigned. That work is already represented by `todo/library-api-visibility-realignment.md` and is deliberately not guessed inside this documentation work unit.
 
@@ -132,14 +129,16 @@ Targeted permanent tests for `srv`, `pkg-extract`, `gitman`, `readpass` and `sta
 
 ## Next action
 
-1. Activate and complete `todo/library-api-visibility-realignment.md` as its own product/API work unit, including caller/test realignment where legacy names must change.
-2. Add the required `core.lib.sh` and `base.lib.sh` manual topics for the accepted loader/base split, and from the resulting aligned legacy APIs add the remaining mandatory library manual topics.
-3. Let the active test-suite task provide trustworthy permanent coverage for substring fallback and command/library manual completeness.
-4. Run proportional real validation of the complete manual surface.
-5. Perform the final consistency gate, write a Complete handoff snapshot, then remove this handoff in a later forward commit.
+1. Resolve `todo/extract-old-command-cleanup.md`, then re-run command/manual structural completeness.
+2. Activate and complete `todo/library-api-visibility-realignment.md` as its own product/API work unit, including caller/test realignment where legacy names must change.
+3. Add the required `core.lib.sh` and `base.lib.sh` manual topics for the accepted loader/base split, and from the resulting aligned legacy APIs add the remaining mandatory library manual topics.
+4. Let the active test-suite task provide trustworthy permanent coverage for substring fallback and command/library manual completeness.
+5. Run proportional real validation of the complete manual surface.
+6. Perform the final consistency gate, write a Complete handoff snapshot, then remove this handoff in a later forward commit.
 
 ## Blockers / open questions
 
+- `bin/sys/extract_OLD` is an executable superseded-looking command identity that still needs explicit cleanup/classification under `todo/extract-old-command-cleanup.md`.
 - Remaining library manuals depend on the explicit legacy library API-visibility realignment already captured in `todo/library-api-visibility-realignment.md`.
 - Trustworthy permanent structural/behavioral coverage is pending the active test-suite reimplementation/realignment task.
 - Formal multi-host/stable-host validation remains pending.

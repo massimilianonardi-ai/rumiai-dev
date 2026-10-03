@@ -9,8 +9,8 @@ Review and optimize the current `pkg_integrate` implementation while preserving 
 
 ## Current repository revisions
 
-- rumiai-dev: 984871093f242de0458855ff9e7e223b0b8f6701 (pre-checkpoint HEAD)
-- rumiai-os main: 395865b7fd02b13f8c3bc92c37eab6d663739404
+- rumiai-dev: 8c0f700d427bb45f7a6dd52effc9c2ac8b9e6398 (pre-checkpoint HEAD)
+- rumiai-os main: 6dbcd44419bdffdcf54580c9875b449764e7c116
 - rumiai-os work branch `pkg-integrate-optimization`: 527687b57d94dfde06e0a59d1a556b5fce20c930
 - rumiai-tests: 28714862afea52e06a2623996e7135ef281ccb85
 
@@ -91,7 +91,9 @@ Product commits:
 
 Permanent test commit `rumiai-tests@28714862afea52e06a2623996e7135ef281ccb85` adds direct coverage for simple-validator statuses and the composite 1/2/3/4 statuses, plus integration/deintegration/default rejection of unsupported osarch values.
 
-Static final checks confirm that no references to the removed `_pkg_integration_name_valid`, `_pkg_integration_version_valid` or `_pkg_integration_osarch_valid` remain; `pkg-local` has no public callable functions, and the new/updated manuals match the public functions of the changed libraries.
+Static final checks confirm that no active-library references to the removed `_pkg_integration_name_valid`, `_pkg_integration_version_valid` or `_pkg_integration_osarch_valid` remain; `pkg-local` has no public callable functions, and the new/updated manuals match the public functions of the changed libraries.
+
+A follow-up complete pkg-library scan found the only residual eliminated-validator references in superseded `pkg-install_OLD.lib.sh`. `rumiai-os@6dbcd44419bdffdcf54580c9875b449764e7c116` removes both `pkg-install_OLD.lib.sh` and `pkg-extract_OLD.lib.sh`; a post-change scan of all 31 remaining pkg libraries finds zero references to all four eliminated helpers, including `_pkg_integration_command_name_valid`. The same commit fixes the stale `pkg-extract2.lib.sh` dependency name in the pkg-install operational manual.
 
 ## Review findings deliberately not changed in this checkpoint
 
@@ -127,10 +129,10 @@ Static final checks confirm that no references to the removed `_pkg_integration_
 
 ## Next action
 
-1. Run proportional permanent package common/local/integration/default/uninstall/state/environment validation against final `rumiai-os@395865b7fd02b13f8c3bc92c37eab6d663739404` and `rumiai-tests@28714862afea52e06a2623996e7135ef281ccb85`.
+1. Run proportional permanent package common/local/integration/default/uninstall/state/environment validation against final `rumiai-os@6dbcd44419bdffdcf54580c9875b449764e7c116` and `rumiai-tests@28714862afea52e06a2623996e7135ef281ccb85`.
 2. Continue optimization only with contract-preserving changes; route the remaining cross-library private-helper visibility migration through `todo/library-api-visibility-realignment.md`.
 3. Perform the final consistency gate after the next material optimization/validation checkpoint.
 
 ## Blockers / open questions
 
-- Full runtime validation of final current `main` remains pending; no final runtime PASS is claimed.
+- Full runtime validation of final current `main` remains pending; the available auxiliary environment still cannot resolve `github.com`, so no final runtime PASS is claimed.
