@@ -1,7 +1,7 @@
 # rumiai-os-man-documentation
 
 Status: Active
-Updated: 2026-09-23
+Updated: 2026-10-03
 
 ## Goal
 
@@ -12,9 +12,9 @@ The long-term multi-channel documentation source/rendering architecture remains 
 ## Current repository revisions
 
 ```text
-rumiai-dev   022b37697ba6c8fbeb39e9f58d1df214d76a36ca  (pre-checkpoint HEAD)
-rumiai-os    62a91eb3c18ebcd2595fe646b2f14170eea74126
-rumiai-tests 71b6523b93d64a48e45f3f713306f6d59fb2f401
+rumiai-dev   984871093f242de0458855ff9e7e223b0b8f6701  (pre-checkpoint HEAD)
+rumiai-os    395865b7fd02b13f8c3bc92c37eab6d663739404
+rumiai-tests 28714862afea52e06a2623996e7135ef281ccb85
 ```
 
 Fresh remote HEAD retrieval remains mandatory before future writes.
@@ -87,6 +87,12 @@ Fresh remote HEAD retrieval remains mandatory before future writes.
 - A mechanical comparison of current executable `bin/sys` command identities
   against non-library `res/sys/manual` topics found no missing command manual
   and no orphan non-library topic after that correction.
+- The package-integration optimization work realigned the current package-library manual surface:
+  - `res/sys/manual/pkg-common.lib.sh` now documents the implemented validator status convention, including public `pkg_name_version_osarch_valid`;
+  - `res/sys/manual/pkg-local.lib.sh` now exists and correctly exposes no public callable functions;
+  - `res/sys/manual/pkg-default.lib.sh` documents public `pkg_default`;
+  - `res/sys/manual/pkg-uninstall.lib.sh` documents public `pkg_uninstall`.
+  The pre-existing `pkg-integration.lib.sh` manual remains accurate.
 - No unrelated concurrent product or test-suite work was overwritten; Git history remained forward-only.
 
 ## Current state
@@ -110,7 +116,7 @@ the obsolete internal `bin/sys/#_readc` and `bin/sys/rsudo-askpass` command
 identities; their orphan `readc` and `rsudo-askpass` manual topics have also
 been removed.
 
-Library documentation is only partially complete. The current product contains compliant manuals for `array.lib.sh`, `enc.lib.sh`, `ipc.lib.sh`, `map.lib.sh`, `mk-materialize.lib.sh`, `mk-materialize-copy.lib.sh`, `osarch.lib.sh`, `pkg-install.lib.sh`, `rand.lib.sh` and `term.lib.sh`. The remaining legacy libraries cannot safely receive final public-API manuals until their intended public/internal function sets are classified and, where necessary, renamed with callers/tests realigned. That work is already represented by `todo/library-api-visibility-realignment.md` and is deliberately not guessed inside this documentation work unit.
+Library documentation is only partially complete. Known compliant manuals recorded by this handoff include `array.lib.sh`, `enc.lib.sh`, `ipc.lib.sh`, `map.lib.sh`, `mk-materialize.lib.sh`, `mk-materialize-copy.lib.sh`, `osarch.lib.sh`, `pkg-common.lib.sh`, `pkg-default.lib.sh`, `pkg-install.lib.sh`, `pkg-integration.lib.sh`, `pkg-local.lib.sh`, `pkg-uninstall.lib.sh`, `rand.lib.sh` and `term.lib.sh`. The remaining legacy libraries cannot safely receive final public-API manuals until their intended public/internal function sets are classified and, where necessary, renamed with callers/tests realigned. That work is already represented by `todo/library-api-visibility-realignment.md` and is deliberately not guessed inside this documentation work unit.
 
 A later runtime-layer split at `rumiai-os@0ac81dc2c1f3d792b9050782367e26d684306e48` created the new `base.lib.sh` identity and reduced `core.lib.sh` to the normal filesystem `loadlib` plus base loading. Neither identity currently has its required operational manual topic. `core.lib.sh` now has the narrow public `loadlib` surface; `base.lib.sh` inherits the former core runtime surface and must be documented consistently with the library visibility contract. This is current manual-backfill work owned by this handoff and does not alter the active rsudo injection task.
 
