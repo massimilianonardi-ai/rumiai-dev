@@ -9,8 +9,8 @@ Review and optimize the current `pkg_integrate` implementation while preserving 
 
 ## Current repository revisions
 
-- rumiai-dev: ec9d4ad3d10d2afc81ac36bc53a7702d12aee7b5 (pre-checkpoint HEAD)
-- rumiai-os main: c4a9a503da44ffed15f4a33112b2f229fefda3c7
+- rumiai-dev: 4dbae5b04ce13706a441eb38b634d1154261f827 (pre-checkpoint HEAD)
+- rumiai-os main: 14ca5027a4b285ff7fcb9ce3b5bd8d390c5ffa57
 - rumiai-os work branch `pkg-integrate-optimization`: 527687b57d94dfde06e0a59d1a556b5fce20c930
 - rumiai-tests: b0715c677c428af68ea507983db5443a89428f8f
 
@@ -75,6 +75,19 @@ The existing phase-specific diagnostics and return statuses remain unchanged. St
 
 This is documentation-only source annotation: comparison with the previous revision confirms that the non-comment body of `pkg_integrate` is unchanged. The operational manual remains accurate and therefore required no textual change.
 
+### User refactor review at 14ca5027
+
+The user committed `rumiai-os@14ca5027a4b285ff7fcb9ce3b5bd8d390c5ffa57` to simplify package identity validation. The direction is consistent with removing integration-local validator wrappers, but the current revision has blocking defects:
+
+- `pkg_name_version_osarch_valid` validates its optional osarch operand with `pkg_version_valid` instead of `pkg_osarch_valid`.
+- `pkg_deintegrate` and `pkg_default_apply` likewise validate osarch with `pkg_version_valid`, so unsupported identities such as `banana` or `linux-sparc64` are accepted because they satisfy the version grammar.
+- The removed `_pkg_integration_name_valid`, `_pkg_integration_version_valid` and `_pkg_integration_osarch_valid` functions are still called eight times by current `pkg-local.lib.sh`. Normal consumers including `pkg-versions.lib.sh`, `pkg-default.lib.sh` and `pkg-uninstall.lib.sh` depend on `pkg-local`, so the migration is incomplete and leaves undefined-function paths.
+- The new `pkg_name_version_osarch_valid` function is public by naming but is absent from `res/sys/manual/pkg-common.lib.sh`, conflicting with the current library/manual contract.
+- Its invocation/status behavior is also inconsistent with the existing pkg-common public validator convention: it accepts extra operands, returns 1 for too few operands, 2 for invalid name, 3 for invalid version and 4 for invalid osarch, whereas the current pkg-common manual defines 1 as invalid value and 2 as invalid invocation.
+- Current permanent `pkg/common.test` has no direct coverage for the new helper, and the integration contract has no explicit osarch case. The existing integration contract does exercise `pkg versions`, so a real run should expose the broken pkg-local dependency path.
+
+Positive part of the refactor: replacing the integration-local command-name/overlay/version wrapper calls with the canonical `pkg_name_valid` / `pkg_version_valid` functions removes unnecessary indirection and is consistent with the current shared-validator responsibility.
+
 ## Review findings deliberately not changed in this checkpoint
 
 - Current package libraries contain pre-existing cross-library calls to underscore-prefixed `pkg-integration` helpers:
@@ -107,10 +120,14 @@ This is documentation-only source annotation: comparison with the previous revis
 
 ## Next action
 
-1. Run the proportional permanent package integration/common/state/environment validation against current `main`.
-2. Continue the optimization review only for changes that preserve the current integration contract; route legacy API-visibility/manual cleanup through its existing owners rather than duplicating it here.
-3. Perform the final consistency gate after the next material optimization/validation checkpoint.
+1. Repair the validation refactor before treating current `main` as a validated optimization checkpoint:
+   - use `pkg_osarch_valid` for every osarch validation;
+   - complete migration of current `pkg-local.lib.sh` callers away from removed integration-private validator functions;
+   - avoid introducing `pkg_name_version_osarch_valid` as a new public API unless it has a real shared responsibility; if retained, define exact arity/status semantics, document it and add proportional permanent coverage.
+2. Run proportional permanent package common/local/integration/default/uninstall/state/environment validation against the repaired current revision.
+3. Continue optimization only with contract-preserving changes and perform the final consistency gate after the next material checkpoint.
 
 ## Blockers / open questions
 
+- Current `rumiai-os@14ca5027a4b285ff7fcb9ce3b5bd8d390c5ffa57` contains the blocking validator/migration defects recorded above and should not be treated as a validated optimization checkpoint.
 - Full runtime validation of current `main` is not available in the current execution environment.
