@@ -9,7 +9,7 @@ Review and optimize the current `pkg_integrate` implementation while preserving 
 
 ## Current repository revisions
 
-- rumiai-dev: 3a8e21a1f844de80c773e1d2b709ee11a8fbf1bb (pre-checkpoint HEAD)
+- rumiai-dev: ca756c9bf08526e6defcd19cb25d09dbd7dc0210 (pre-checkpoint HEAD)
 - rumiai-os main: 527687b57d94dfde06e0a59d1a556b5fce20c930
 - rumiai-os work branch `pkg-integrate-optimization`: 527687b57d94dfde06e0a59d1a556b5fce20c930
 - rumiai-tests: b0715c677c428af68ea507983db5443a89428f8f
@@ -45,7 +45,7 @@ The Git tag `2.0.1` now exists remotely and resolves directly to commit `f2c3c0a
 - Preserve package-definition envelope validation in `pkg_integrate`, including the existing flat-pkg/dmg-pkg component, payload-root and overlay checks. Although extraction owns physical materialization, this validation is current documented and permanently tested integration behavior and is not removed as an implementation shortcut.
 - Preserve pre-consumption validation of state/setuid metadata so invalid definitions do not consume caller-owned staging.
 - Preserve the specialized rollback order for a failed setuid materialization: setuid rollback, then state rollback, then package-local concrete cleanup/root restoration only when both specialized rollbacks succeeded.
-- Treat the exact main commit above as the stable comparison baseline until the requested `2.0.1` tag can be created.
+- Treat Git tag `2.0.1`, resolving to `f2c3c0ae02258cc80d81f6e1be1ad2cee338d702`, as the stable comparison baseline.
 
 ## Completed in the work branch
 
@@ -96,7 +96,7 @@ The existing phase-specific diagnostics and return statuses remain unchanged. St
 - A mechanical extraction of the major validation/materialization/diagnostic sequence from stable and optimized `pkg_integrate` reports the same sequence.
 - The newly introduced helper and validator-delegation function bodies pass a local POSIX `sh -n` syntax check.
 - The current permanent integration/state/environment/common tests were inspected and remain semantically applicable; no test expectation was changed by this behavior-preserving refactor.
-- Full executable checkout validation has not been run: the available execution environment cannot obtain the GitHub checkout, and the available GitHub connector exposes no workflow-dispatch action. No runtime PASS is claimed.
+- Full executable checkout validation of current `main` has not been run: the available execution environment cannot obtain the GitHub checkout, and the available GitHub connector exposes no workflow-dispatch action. No runtime PASS is claimed.
 
 ## Next action
 
@@ -106,4 +106,4 @@ The existing phase-specific diagnostics and return statuses remain unchanged. St
 
 ## Blockers / open questions
 
-- Full runtime validation of the work branch is not available in the current execution environment.
+- Full runtime validation of current `main` is not available in the current execution environment.
