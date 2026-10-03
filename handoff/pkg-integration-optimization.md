@@ -9,8 +9,8 @@ Review and optimize the current `pkg_integrate` implementation while preserving 
 
 ## Current repository revisions
 
-- rumiai-dev: ca756c9bf08526e6defcd19cb25d09dbd7dc0210 (pre-checkpoint HEAD)
-- rumiai-os main: 527687b57d94dfde06e0a59d1a556b5fce20c930
+- rumiai-dev: ec9d4ad3d10d2afc81ac36bc53a7702d12aee7b5 (pre-checkpoint HEAD)
+- rumiai-os main: c4a9a503da44ffed15f4a33112b2f229fefda3c7
 - rumiai-os work branch `pkg-integrate-optimization`: 527687b57d94dfde06e0a59d1a556b5fce20c930
 - rumiai-tests: b0715c677c428af68ea507983db5443a89428f8f
 
@@ -69,6 +69,12 @@ The existing phase-specific diagnostics and return statuses remain unchanged. St
 
 `rumiai-os@527687b57d94dfde06e0a59d1a556b5fce20c930` realigns `res/sys/manual/pkg-integration.lib.sh` to record the new explicit `pkg-common.lib.sh` dependency. The public integration API text did not otherwise change.
 
+### Phase comments in pkg_integrate
+
+`rumiai-os@c4a9a503da44ffed15f4a33112b2f229fefda3c7` adds structural comments inside `pkg_integrate` that identify the seven existing stages: invocation/package identity validation, input/concrete derivation, complete pre-consumption validation, concrete/root creation, runtime metadata materialization, state/setuid materialization with specialized rollback, and final setuid commit.
+
+This is documentation-only source annotation: comparison with the previous revision confirms that the non-comment body of `pkg_integrate` is unchanged. The operational manual remains accurate and therefore required no textual change.
+
 ## Review findings deliberately not changed in this checkpoint
 
 - Current package libraries contain pre-existing cross-library calls to underscore-prefixed `pkg-integration` helpers:
@@ -83,9 +89,10 @@ The existing phase-specific diagnostics and return statuses remain unchanged. St
 ## Validation performed
 
 - The complete branch diff against stable `f2c3c0ae02258cc80d81f6e1be1ad2cee338d702` was reread.
-- Current diff scope is exactly:
+- The optimization diff through `527687b57d94dfde06e0a59d1a556b5fce20c930` changed:
   - `lib/sys/sh/pkg/pkg-integration.lib.sh`;
   - `res/sys/manual/pkg-integration.lib.sh`.
+- The subsequent phase-comment commit `c4a9a503da44ffed15f4a33112b2f229fefda3c7` changes only `lib/sys/sh/pkg/pkg-integration.lib.sh`, with 13 comment-line additions and no executable-code changes.
 - Before promotion, the branch was three commits ahead and zero behind the stable baseline.
 - After explicit user authorization, `main` was fast-forwarded to the branch tip `527687b57d94dfde06e0a59d1a556b5fce20c930`.
 - Post-promotion verification confirms `main` and `pkg-integrate-optimization` resolve to the same commit, while Git tag `2.0.1` resolves to the stable baseline `f2c3c0ae02258cc80d81f6e1be1ad2cee338d702`.
