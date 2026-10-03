@@ -9,8 +9,8 @@ Review and optimize the current `pkg_integrate` implementation while preserving 
 
 ## Current repository revisions
 
-- rumiai-dev: 4dbae5b04ce13706a441eb38b634d1154261f827 (pre-checkpoint HEAD)
-- rumiai-os main: 14ca5027a4b285ff7fcb9ce3b5bd8d390c5ffa57
+- rumiai-dev: 7bbd40c99dcbdd1e6b44fabf147da7f6c7a1345d (pre-checkpoint HEAD)
+- rumiai-os main: bee47839fa1b6c1865ddffcde25063380705d695
 - rumiai-os work branch `pkg-integrate-optimization`: 527687b57d94dfde06e0a59d1a556b5fce20c930
 - rumiai-tests: b0715c677c428af68ea507983db5443a89428f8f
 
@@ -79,8 +79,8 @@ This is documentation-only source annotation: comparison with the previous revis
 
 The user committed `rumiai-os@14ca5027a4b285ff7fcb9ce3b5bd8d390c5ffa57` to simplify package identity validation. The direction is consistent with removing integration-local validator wrappers, but the current revision has blocking defects:
 
-- `pkg_name_version_osarch_valid` validates its optional osarch operand with `pkg_version_valid` instead of `pkg_osarch_valid`.
-- `pkg_deintegrate` and `pkg_default_apply` likewise validate osarch with `pkg_version_valid`, so unsupported identities such as `banana` or `linux-sparc64` are accepted because they satisfy the version grammar.
+- The initial `14ca5027` version of `pkg_name_version_osarch_valid` validated its optional osarch operand with `pkg_version_valid`; follow-up commit `bee47839fa1b6c1865ddffcde25063380705d695` corrected that helper to call `pkg_osarch_valid`.
+- `pkg_deintegrate` and `pkg_default_apply` still validate osarch with `pkg_version_valid`, so unsupported identities such as `banana` or `linux-sparc64` remain accepted because they satisfy the version grammar.
 - The removed `_pkg_integration_name_valid`, `_pkg_integration_version_valid` and `_pkg_integration_osarch_valid` functions are still called eight times by current `pkg-local.lib.sh`. Normal consumers including `pkg-versions.lib.sh`, `pkg-default.lib.sh` and `pkg-uninstall.lib.sh` depend on `pkg-local`, so the migration is incomplete and leaves undefined-function paths.
 - The new `pkg_name_version_osarch_valid` function is public by naming but is absent from `res/sys/manual/pkg-common.lib.sh`, conflicting with the current library/manual contract.
 - Its invocation/status behavior is also inconsistent with the existing pkg-common public validator convention: it accepts extra operands, returns 1 for too few operands, 2 for invalid name, 3 for invalid version and 4 for invalid osarch, whereas the current pkg-common manual defines 1 as invalid value and 2 as invalid invocation.
@@ -129,5 +129,5 @@ Positive part of the refactor: replacing the integration-local command-name/over
 
 ## Blockers / open questions
 
-- Current `rumiai-os@14ca5027a4b285ff7fcb9ce3b5bd8d390c5ffa57` contains the blocking validator/migration defects recorded above and should not be treated as a validated optimization checkpoint.
+- Current `rumiai-os@bee47839fa1b6c1865ddffcde25063380705d695` fixes the composite helper's osarch validator, but still contains the remaining blocking validator/migration defects recorded above and should not be treated as a validated optimization checkpoint.
 - Full runtime validation of current `main` is not available in the current execution environment.
