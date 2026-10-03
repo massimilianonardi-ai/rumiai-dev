@@ -26,7 +26,7 @@ f2c3c0ae02258cc80d81f6e1be1ad2cee338d702
 
 as version `2.0.1` and as the stable reference before optimization.
 
-The available GitHub connector does not expose tag creation and the execution environment cannot reach github.com directly, so the requested Git tag `2.0.1` has not yet been created. The stable commit remains the exact historical baseline by SHA. On 2026-10-02 the user explicitly authorized promotion of the reviewed optimization branch, and `main` was fast-forwarded to `527687b57d94dfde06e0a59d1a556b5fce20c930` without rewriting history.
+The Git tag `2.0.1` now exists remotely and resolves directly to commit `f2c3c0ae02258cc80d81f6e1be1ad2cee338d702`, matching the stable reference selected before optimization. On 2026-10-02 the user explicitly authorized promotion of the reviewed optimization branch, and `main` was fast-forwarded to `527687b57d94dfde06e0a59d1a556b5fce20c930` without rewriting history.
 
 ## Applicable canonical sources
 
@@ -88,7 +88,7 @@ The existing phase-specific diagnostics and return statuses remain unchanged. St
   - `res/sys/manual/pkg-integration.lib.sh`.
 - Before promotion, the branch was three commits ahead and zero behind the stable baseline.
 - After explicit user authorization, `main` was fast-forwarded to the branch tip `527687b57d94dfde06e0a59d1a556b5fce20c930`.
-- Post-promotion verification confirms `main` and `pkg-integrate-optimization` resolve to the same commit, while the stable 2.0.1 reference remains `f2c3c0ae02258cc80d81f6e1be1ad2cee338d702`.
+- Post-promotion verification confirms `main` and `pkg-integrate-optimization` resolve to the same commit, while Git tag `2.0.1` resolves to the stable baseline `f2c3c0ae02258cc80d81f6e1be1ad2cee338d702`.
 - Public function discovery on the modified integration library still yields exactly:
   - `pkg_integrate`
   - `pkg_deintegrate`
@@ -100,12 +100,10 @@ The existing phase-specific diagnostics and return statuses remain unchanged. St
 
 ## Next action
 
-1. Materialize the requested Git tag `2.0.1` on stable commit `f2c3c0ae02258cc80d81f6e1be1ad2cee338d702` when a tag-capable Git interface is available.
-2. Run the proportional permanent package integration/common/state/environment validation against current `main`.
-3. Continue the optimization review only for changes that preserve the current integration contract; route legacy API-visibility/manual cleanup through its existing owners rather than duplicating it here.
-4. Perform the final consistency gate after the next material optimization/validation checkpoint.
+1. Run the proportional permanent package integration/common/state/environment validation against current `main`.
+2. Continue the optimization review only for changes that preserve the current integration contract; route legacy API-visibility/manual cleanup through its existing owners rather than duplicating it here.
+3. Perform the final consistency gate after the next material optimization/validation checkpoint.
 
 ## Blockers / open questions
 
-- The Git tag `2.0.1` cannot currently be created through the available connector.
 - Full runtime validation of the work branch is not available in the current execution environment.
