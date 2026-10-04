@@ -9,10 +9,10 @@ Review and optimize the current `pkg_integrate` implementation while preserving 
 
 ## Current repository revisions
 
-- rumiai-dev: 8c0f700d427bb45f7a6dd52effc9c2ac8b9e6398 (pre-checkpoint HEAD)
-- rumiai-os main: 6dbcd44419bdffdcf54580c9875b449764e7c116
+- rumiai-dev: 6ee2c5423907c2c5187ec7c411f1bef84caedac2 (pre-checkpoint HEAD)
+- rumiai-os main: ea2eb22917edca77a44566ee415301f69ca61ad8
 - rumiai-os work branch `pkg-integrate-optimization`: 527687b57d94dfde06e0a59d1a556b5fce20c930
-- rumiai-tests: 28714862afea52e06a2623996e7135ef281ccb85
+- rumiai-tests: 95f2a8568433fa88b7da4e627842b2f3d426d08d
 
 Fresh remote HEAD retrieval remains mandatory before future writes.
 
@@ -95,6 +95,20 @@ Static final checks confirm that no active-library references to the removed `_p
 
 A follow-up complete pkg-library scan found the only residual eliminated-validator references in superseded `pkg-install_OLD.lib.sh`. `rumiai-os@6dbcd44419bdffdcf54580c9875b449764e7c116` removes both `pkg-install_OLD.lib.sh` and `pkg-extract_OLD.lib.sh`; a post-change scan of all 31 remaining pkg libraries finds zero references to all four eliminated helpers, including `_pkg_integration_command_name_valid`. The same commit fixes the stale `pkg-extract2.lib.sh` dependency name in the pkg-install operational manual.
 
+### valid_dir adoption and explicit integration statuses
+
+The user commit `rumiai-os@866df64a5f62e0e1813d0bd84c28022a6cb65e0e` adds public `valid_dir` to `base.lib.sh` for the recurring real-directory/non-symlink check and starts using it in `pkg_integrate`. The same commit makes `pkg_integrate` stage failures use explicit status values through 20 and changes `pkg_deintegrate` invalid arity to status 1.
+
+Follow-up commits:
+
+- `rumiai-os@d02d945047dc9cc358bca523e0107e3dbba41bba` replaces all 19 remaining exact `[ -d ... ] && [ ! -L ... ]` forms in `pkg-integration.lib.sh` with `valid_dir`. Eight simpler `[ -d ... ]` checks remain because they have different semantics and were deliberately not strengthened.
+- `rumiai-os@0dd1efc0bd7ea360d75a08205804b2f2a5800aa7` adds the required `base.lib.sh` manual and documents the current `pkg_integrate` status map.
+- `rumiai-os@ea2eb22917edca77a44566ee415301f69ca61ad8` clarifies the distinct `pkg_deintegrate` / `pkg_default_apply` status conventions.
+- `rumiai-tests@824f8feaa7e4f4d8936f4abaccc772da17f6a21a` adds direct `valid_dir` coverage and updates duplicate-concrete integration to expect status 9.
+- `rumiai-tests@95f2a8568433fa88b7da4e627842b2f3d426d08d` adds direct `pkg_integrate` invalid-arity coverage at status 1 and updates `pkg_deintegrate` invalid arity from 2 to 1.
+
+Final static verification finds zero remaining duplicated real-directory/non-symlink expressions in `pkg-integration.lib.sh`, 22 `valid_dir` calls total, complete public-name coverage in the new base manual, and aligned explicit status expectations in the integration contract test.
+
 ## Review findings deliberately not changed in this checkpoint
 
 - Current package libraries still contain pre-existing cross-library calls to underscore-prefixed `pkg-integration` helpers:
@@ -135,4 +149,4 @@ A follow-up complete pkg-library scan found the only residual eliminated-validat
 
 ## Blockers / open questions
 
-- Full runtime validation of final current `main` remains pending; the available auxiliary environment still cannot resolve `github.com`, so no final runtime PASS is claimed.
+- Full runtime validation of final current `main` remains pending. GitHub Actions for `rumiai-tests@95f2a8568433fa88b7da4e627842b2f3d426d08d` were still queued/in progress at the final checkpoint; no runtime PASS is claimed.

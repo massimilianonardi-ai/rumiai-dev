@@ -12,9 +12,9 @@ The long-term multi-channel documentation source/rendering architecture remains 
 ## Current repository revisions
 
 ```text
-rumiai-dev   8c0f700d427bb45f7a6dd52effc9c2ac8b9e6398  (pre-checkpoint HEAD)
-rumiai-os    6dbcd44419bdffdcf54580c9875b449764e7c116
-rumiai-tests 28714862afea52e06a2623996e7135ef281ccb85
+rumiai-dev   6ee2c5423907c2c5187ec7c411f1bef84caedac2  (pre-checkpoint HEAD)
+rumiai-os    ea2eb22917edca77a44566ee415301f69ca61ad8
+rumiai-tests 95f2a8568433fa88b7da4e627842b2f3d426d08d
 ```
 
 Fresh remote HEAD retrieval remains mandatory before future writes.
@@ -94,6 +94,8 @@ Fresh remote HEAD retrieval remains mandatory before future writes.
   - `res/sys/manual/pkg-uninstall.lib.sh` documents public `pkg_uninstall`.
   The pre-existing `pkg-integration.lib.sh` manual remains accurate.
 - `rumiai-os@6dbcd44419bdffdcf54580c9875b449764e7c116` removes the superseded pkg library backups `pkg-install_OLD.lib.sh` and `pkg-extract_OLD.lib.sh`. This removes two non-current library identities from structural/manual scope and eliminates the only residual calls to the validator helpers deleted by the pkg integration refactor. The same commit corrects the pkg-install manual dependency from stale `pkg-extract2.lib.sh` to current `pkg-extract.lib.sh`.
+- `rumiai-os@0dd1efc0bd7ea360d75a08205804b2f2a5800aa7` adds the previously missing `res/sys/manual/base.lib.sh` topic. It covers the complete current public function surface, including the newly introduced `valid_dir`, plus the exported logging state.
+- `res/sys/manual/pkg-integration.lib.sh` now records the explicit current `pkg_integrate` stage-status map and the distinct status conventions of `pkg_deintegrate` and `pkg_default_apply`.
 - No unrelated concurrent product or test-suite work was overwritten; Git history remained forward-only.
 
 ## Current state
@@ -113,7 +115,7 @@ manual <topic>
 
 Current command-manual completeness has one newly discovered exception: `bin/sys/extract_OLD` remains executable and has no intentional current command contract recorded by this handoff. It was discovered during the pkg-library cleanup and is now tracked separately by `todo/extract-old-command-cleanup.md`. Other previously checked current executable `bin/sys` identities retain their corresponding non-library operational topics, including `rssh`.
 
-Library documentation is only partially complete. Known compliant manuals recorded by this handoff include `array.lib.sh`, `enc.lib.sh`, `ipc.lib.sh`, `map.lib.sh`, `mk-materialize.lib.sh`, `mk-materialize-copy.lib.sh`, `osarch.lib.sh`, `pkg-common.lib.sh`, `pkg-default.lib.sh`, `pkg-install.lib.sh`, `pkg-integration.lib.sh`, `pkg-local.lib.sh`, `pkg-uninstall.lib.sh`, `rand.lib.sh` and `term.lib.sh`. The remaining legacy libraries cannot safely receive final public-API manuals until their intended public/internal function sets are classified and, where necessary, renamed with callers/tests realigned. That work is already represented by `todo/library-api-visibility-realignment.md` and is deliberately not guessed inside this documentation work unit.
+Library documentation is only partially complete. Known compliant manuals recorded by this handoff include `array.lib.sh`, `base.lib.sh`, `enc.lib.sh`, `ipc.lib.sh`, `map.lib.sh`, `mk-materialize.lib.sh`, `mk-materialize-copy.lib.sh`, `osarch.lib.sh`, `pkg-common.lib.sh`, `pkg-default.lib.sh`, `pkg-install.lib.sh`, `pkg-integration.lib.sh`, `pkg-local.lib.sh`, `pkg-uninstall.lib.sh`, `rand.lib.sh` and `term.lib.sh`. The remaining legacy libraries cannot safely receive final public-API manuals until their intended public/internal function sets are classified and, where necessary, renamed with callers/tests realigned. That work is already represented by `todo/library-api-visibility-realignment.md` and is deliberately not guessed inside this documentation work unit.
 
 A later runtime-layer split at `rumiai-os@0ac81dc2c1f3d792b9050782367e26d684306e48` created the new `base.lib.sh` identity and reduced `core.lib.sh` to the normal filesystem `loadlib` plus base loading. Neither identity currently has its required operational manual topic. `core.lib.sh` now has the narrow public `loadlib` surface; `base.lib.sh` inherits the former core runtime surface and must be documented consistently with the library visibility contract. This is current manual-backfill work owned by this handoff and does not alter the active rsudo injection task.
 
@@ -131,7 +133,7 @@ Targeted permanent tests for `srv`, `pkg-extract`, `gitman`, `readpass` and `sta
 
 1. Resolve `todo/extract-old-command-cleanup.md`, then re-run command/manual structural completeness.
 2. Activate and complete `todo/library-api-visibility-realignment.md` as its own product/API work unit, including caller/test realignment where legacy names must change.
-3. Add the required `core.lib.sh` and `base.lib.sh` manual topics for the accepted loader/base split, and from the resulting aligned legacy APIs add the remaining mandatory library manual topics.
+3. Add the required `core.lib.sh` manual topic for the accepted loader/base split, and from the resulting aligned legacy APIs add the remaining mandatory library manual topics.
 4. Let the active test-suite task provide trustworthy permanent coverage for substring fallback and command/library manual completeness.
 5. Run proportional real validation of the complete manual surface.
 6. Perform the final consistency gate, write a Complete handoff snapshot, then remove this handoff in a later forward commit.
