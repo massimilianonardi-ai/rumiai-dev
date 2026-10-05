@@ -437,7 +437,7 @@ facility-cmd/<facility>/...
 facility-env/<facility>
 ```
 
-They are not renamed merely for symmetry. The `cmd` handler owns command-name and executable-target conformance. The `env` handler owns environment-name and `root | root-path | literal` descriptor conformance. `PATH` is a special environment projection name: it may use only `root` or `root-path` descriptors and represents ordered PATH contributions rather than literal replacement.
+They are not renamed merely for symmetry. The `cmd` handler owns command-name and executable-target conformance. The `env` handler owns environment-name and `root | root-path | literal` descriptor conformance. `PATH` is a valid special env contract member and provider projection name: it may use only `root` or `root-path` descriptors and represents ordered PATH contributions rather than literal replacement.
 
 The `service` part marks a facility as portable-service-capable under `srv`. Baseline service identity is exactly facility identity; no second service registry or service-provider namespace is introduced.
 
@@ -696,7 +696,7 @@ A `facility-env/<facility>` entry is a text file containing one or more tab-sepa
 <variable><TAB><descriptor>
 ```
 
-Records are sorted lexically by variable name and descriptor. Ordinary variables appear at most once. `PATH` may appear more than once and is the only repeated environment name permitted. `<variable>` is otherwise a valid POSIX environment-variable name. The descriptor uses one of these forms:
+Records are sorted lexically by variable name and descriptor. Ordinary variables appear at most once in one provider realization. `PATH` may appear more than once in the realization and is the only repeated environment name permitted. The facility contract still represents `PATH` with one empty `env/PATH` marker, exactly like other required env members. `<variable>` is otherwise a valid POSIX environment-variable name. The descriptor uses one of these forms:
 
 ```text
 root
@@ -827,7 +827,7 @@ PKG-54  supported facility part types are implemented by trusted `m` package-sub
 PKG-55  the generic facility layer orchestrates contract/provider conformance but defines no universal runtime apply operation
 PKG-56  cmd, env and service are supported facility contract part types; cmd/env retain facility-cmd/facility-env and service uses facility-service/<facility>/start as its provider realization
 PKG-57  facility/provider definitions and conformance validation are inert: they do not create defaults/bindings or apply commands/environment/services merely by existing or being validated
-PKG-58  env contract marker leaves preserve environment-variable identifiers and use the env-name grammar as an explicit exception to general controlled-path lowercase naming
+PKG-58  env contract marker leaves preserve environment-variable identifiers and use the env-name grammar as an explicit exception to general controlled-path lowercase naming; PATH is a valid special marker whose realization may contain multiple root/root-path contributions
 PKG-59  baseline service identity is facility identity; a service-capable facility is identified by a service typed part and no second service registry/provider graph exists
 PKG-60  baseline service contract semantics are start=package-command, process=foreground and stop=sigterm
 PKG-61  a provider service start realization names one ordinary command of that same provider package and does not by itself add that command to the consumer-visible cmd facility surface
