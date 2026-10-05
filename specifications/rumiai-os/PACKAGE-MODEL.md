@@ -742,7 +742,7 @@ PATH is normalized as one ordered resolved contribution sequence per osarch. Tha
 
 The generated environment and global facility command publication are derived views of the same authoritative facility-default/package-default intent and must reconcile within one rollback boundary. A failed selecting mutation must preserve the previous coherent selector/default state, command projection and generated environment.
 
-The `osarch` command owns `env-osarch` together with the existing sys/ext/ai osarch selectors. Changing osarch updates only selector state and does not resolve package/provider intent. Existing provider-environment apply APIs remain available unless explicitly retired after the materialized path is proven complete.
+The `osarch` command owns `env-osarch` together with the existing sys/ext/ai osarch selectors. Changing osarch updates only selector state and does not resolve package/provider intent. `pkg_provider_environment_apply` and `pkg_provider_global_environment_apply` remain supported explicit live-application APIs for applying resolved provider environment to the current process; the bootstrap does not call them and uses only the materialized snapshots.
 
 When a package consumes a facility, the package launcher continues to apply the selected provider environment according to the runtime precedence defined above.
 

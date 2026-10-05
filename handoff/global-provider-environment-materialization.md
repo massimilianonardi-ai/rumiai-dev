@@ -1,6 +1,6 @@
 # Global provider environment materialization
 
-Status: Active
+Status: Complete
 Updated: 2026-10-05
 
 ## Goal
@@ -9,9 +9,11 @@ Move system facility-default environment resolution out of the high-frequency m 
 
 ## Current repository revisions
 
-- rumiai-dev: 7e8db7a31c5b634bf852615a87bcaf2c50d0779f (pre-checkpoint HEAD)
-- rumiai-os: 2693e5695e7b75c45b1cda0a490435480960534d
-- rumiai-tests: d50c2ef0f4c3a02dbcfad645ff2900c51ab1655c
+- rumiai-dev: c955783c85d73f1547271b39442c2e8fc5bfbdba (pre-completion HEAD)
+- rumiai-os: f39d986e5d4269f742d138eb3ebf9092d1e3345c
+- rumiai-tests: 4a7a6af5a42a68070873e736994897142dcc051a
+
+Revision-specific hosted validation for the global-environment implementation exercised `rumiai-os@2693e5695e7b75c45b1cda0a490435480960534d`. Current `rumiai-os/main` is six forward commits ahead; the comparison changes only pkg dependency/install diagnostics and their manuals, not m, osarch, pkg-provider, facility-env or the global-environment manuals.
 
 Fresh remote HEAD retrieval remains mandatory before future writes.
 
@@ -38,7 +40,7 @@ Fresh remote HEAD retrieval remains mandatory before future writes.
 - The osarch command owns and maintains the environment-osarch selector together with the existing sys/ext/ai osarch selectors.
 - Global provider environment materialization includes PATH contributions as well as ordinary exported variables. A Java provider therefore may set JAVA_HOME and contribute its selected root/bin to PATH.
 - Consumer-specific provider bindings do not affect global environment materialization.
-- Existing functions such as pkg_provider_global_environment_apply remain in place during development and may be reused. Removal or API retirement is deferred until the new mechanism is complete and their future usefulness has been explicitly reassessed.
+- `pkg_provider_environment_apply` and `pkg_provider_global_environment_apply` are retained deliberately as explicit live-application APIs for the current process. The bootstrap does not use them; it consumes only materialized snapshots.
 
 ## Acceptance scenarios
 
@@ -99,19 +101,28 @@ The environment snapshots and global command projections represent two derived v
 
 ## Current state
 
-The promoted design is implemented. The osarch-specific materialization path is proven by the focused Ubuntu test: switching linux-x86_64 to linux-arm64 changes env-osarch, produces the correct ordinary variable and PATH-selected runtime, and does not rewrite the precomputed platform snapshots.
+The materialized global provider environment design is implemented and validated for the task scope.
 
-One directly relevant focused test still fails: pkg/facility-default-global.test returns pkg_integrate status 2 while preparing its generic provider fixture. Since the dedicated osarch-specific fixture integrates equivalent facility-env PATH metadata successfully, the failure is narrowed to the generic fixture/definition path rather than the global environment materializer itself. Extra non-contract diagnostic output is temporarily present in that test to distinguish package-identity versus range-envelope causes on the next focused run.
+The generic fixture defect was test-only: a malformed temporary package suffix produced an invalid package identity before the materializer was reached. `rumiai-tests@4a7a6af5a42a68070873e736994897142dcc051a` corrects the fixture to use the process PID.
 
-The latest focused bridge is running against the pinned current product revision.
+Hosted validation with that test revision records PASS on both Ubuntu and macOS for the directly relevant surfaces:
+
+- `rumiai-os/osarch/update.test`
+- `rumiai-os/pkg/provider.test`
+- `rumiai-os/pkg/facility-contract.test`
+- `rumiai-os/pkg/facility-default-global.test`
+- `rumiai-os/pkg/facility-default-osarch-env.test`
+
+The generic global test confirms unversioned package-default following, command-set reconciliation, pinned selectors, collision rollback, binding independence, class-presence reconciliation, global facility environment, provider PATH publication and unchanged already-running processes. The osarch-specific test confirms selector switching, use of precomputed environment and provider PATH.
+
+The broader package-provider-facility workflow remains red because of separate dependency/install/external-test failures outside this task. Those failures do not occur in the global-environment acceptance tests and are not attributed as validation of this work.
+
+The final API decision is to retain `pkg_provider_global_environment_apply` (and the concrete-provider apply API) as explicit live current-process facilities. The canonical PACKAGE-MODEL now states that the bootstrap does not call them.
 
 ## Next action
 
-1. Read the next focused facility-default-global diagnostic and repair the generic fixture or product path according to the observed cause.
-2. Re-run the focused provider/facility validation on both Ubuntu and macOS.
-3. Remove temporary diagnostic-only test output when no longer needed, perform the final consistency gate, then decide explicitly whether pkg_provider_global_environment_apply has any remaining useful role. Do not remove it without that decision.
+None.
 
 ## Blockers / open questions
 
-- Generic facility-default test fixture still fails integration with status 2; root cause is being diagnosed.
-- Explicit end-of-task decision on retention/removal of pkg_provider_global_environment_apply remains pending by user instruction.
+None.
