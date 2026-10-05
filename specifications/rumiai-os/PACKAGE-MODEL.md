@@ -869,5 +869,6 @@ PKG-96  pkg install prepends pkg depend output to the untouched original request
 PKG-97  pkg install resolves original package-spec roots when reached while preserving exact dependency concretes as exact requests
 PKG-98  recursive dependency installation is part of the canonical pkg install pipeline
 PKG-99  pkg install validates the complete original request list before dependency planning, catalog resolution or package-store mutation; any syntactically invalid request aborts the whole invocation
+PKG-100 pkg depend reports provider ambiguity with structured diagnostics identifying the facility, combined constraints, target osarch and exact compatible provider candidates; pkg install preserves that diagnostic and classifies the valid-request failure as execution failure rather than invalid arguments
 
 ```
