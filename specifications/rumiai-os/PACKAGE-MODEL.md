@@ -437,7 +437,7 @@ facility-cmd/<facility>/...
 facility-env/<facility>
 ```
 
-They are not renamed merely for symmetry. The `cmd` handler owns command-name and executable-target conformance. The `env` handler owns environment-name and `root | root-path | literal` descriptor conformance; `PATH` remains invalid environment metadata.
+They are not renamed merely for symmetry. The `cmd` handler owns command-name and executable-target conformance. The `env` handler owns environment-name and `root | root-path | literal` descriptor conformance. `PATH` is a special environment projection name: it may use only `root` or `root-path` descriptors and represents ordered PATH contributions rather than literal replacement.
 
 The `service` part marks a facility as portable-service-capable under `srv`. Baseline service identity is exactly facility identity; no second service registry or service-provider namespace is introduced.
 
@@ -696,7 +696,7 @@ A `facility-env/<facility>` entry is a text file containing one or more tab-sepa
 <variable><TAB><descriptor>
 ```
 
-Records are sorted by variable name and each variable appears at most once. `<variable>` is a valid POSIX environment-variable name. The descriptor uses one of these forms:
+Records are sorted lexically by variable name and descriptor. Ordinary variables appear at most once. `PATH` may appear more than once and is the only repeated environment name permitted. `<variable>` is otherwise a valid POSIX environment-variable name. The descriptor uses one of these forms:
 
 ```text
 root
@@ -705,13 +705,13 @@ literal
 literal <value>
 ```
 
-`root` sets the variable to the provider useful-root pathname. `root-path` sets it to a pathname below that root after containment validation. `literal` sets an ordinary literal value; the form without a value denotes the empty string. No shell expansion or evaluation is performed on projection metadata.
+`root` sets an ordinary variable to the provider useful-root pathname. `root-path` sets it to a pathname below that root after containment validation. `literal` sets an ordinary literal value; the form without a value denotes the empty string. No shell expansion or evaluation is performed on projection metadata.
 
-`PATH` is reserved to facility command projection and MUST NOT be declared by `facility-env`. Provider command availability is expressed through `facility-cmd` and the package subsystem's PATH projection rather than by replacing PATH from environment metadata.
+For `PATH`, only `root` and `root-path` are valid. Each PATH record contributes one managed provider directory; it never supplies a literal complete PATH. PATH contributions follow the same deterministic precedence principle as ordinary facility environment projection: later records/facilities have higher precedence. At technical bootstrap, selected-osarch contributions precede osarch-independent provider contributions, and all provider contributions follow the technical m command roots while preceding inherited host PATH.
 
 Every facility referenced by `facility-cmd`, `facility-env` or `facility-service` must also be declared by the package's `facility` metadata. Provider realization metadata is validated through the trusted facility-part semantics; provider-specific shell code is not a facility-contract mechanism.
 
-For `cmd`/`env`, facility-specific consumer runtime projection and facility-default command publication consume the same declarative provider metadata. Consumer launch applies only the facilities required by that consumer. Configured system facility defaults currently publish `facility-cmd` globally; there is no current bootstrap-global application of `facility-env`. The `service` realization is not part of this PATH/environment projection path.
+For `cmd`/`env`, facility-specific consumer runtime projection and facility-default global projection consume the same declarative provider metadata. Consumer launch applies only the facilities required by that consumer. Configured system facility defaults publish `facility-cmd` globally and contribute `facility-env` to generated global execution-environment snapshots. The `service` realization is not part of this PATH/environment projection path.
 
 A configured facility default publishes that facility's commands through the existing technical external-command roots:
 
@@ -734,7 +734,15 @@ The set of public command names is derived from the selected concrete's material
 
 Global publication must not overwrite an unrelated pathname in an external-command root. An existing pathname may be replaced or removed as part of a facility-default transition only when it is the exact projection owned by that same facility. A collision causes the selecting mutation to fail rather than silently stealing another package/facility command name.
 
-Consumer-specific bindings never alter global facility command publication.
+Consumer-specific bindings never alter global facility command publication or generated global environment.
+
+Global facility environment is not resolved by every bootstrap. Relevant facility-default and provider-package-default mutations recompute the complete resolved environment for every supported osarch, then materialize derived snapshots under the system `sys/environment` cache. Ordinary assignments that have the same final value in every supported osarch are materialized in the osarch-independent `env` snapshot. Remaining assignments are materialized only in the relevant `env-<osarch>` snapshot.
+
+PATH is normalized as one ordered resolved contribution sequence per osarch. That complete sequence is placed in `env` only when it is identical for every supported osarch; otherwise each `env-<osarch>` carries its complete platform sequence. This avoids simultaneously exposing generic and platform-specific versions of one provider runtime.
+
+The generated environment and global facility command publication are derived views of the same authoritative facility-default/package-default intent and must reconcile within one rollback boundary. A failed selecting mutation must preserve the previous coherent selector/default state, command projection and generated environment.
+
+The `osarch` command owns `env-osarch` together with the existing sys/ext/ai osarch selectors. Changing osarch updates only selector state and does not resolve package/provider intent. Existing provider-environment apply APIs remain available unless explicitly retired after the materialized path is proven complete.
 
 When a package consumes a facility, the package launcher continues to apply the selected provider environment according to the runtime precedence defined above.
 
@@ -792,9 +800,9 @@ PKG-25  facility commands are projected through PATH and each realization is eit
 PKG-26  facility environment metadata uses root, root-path or literal typed scalar values without shell evaluation
 PKG-27  a facility default publishes facility commands through existing bin/ext or bin/ext-<osarch> roots according to provider-selector intent
 PKG-28  global facility command publication never silently overwrites unrelated external-command paths and is reconciled on relevant facility/package-default transitions
-PKG-29  consumer-specific bindings do not alter global facility command publication
-PKG-30  facility-default environment projection is not currently integrated into the m bootstrap
-PKG-33  PATH is reserved to facility command projection and is not a valid facility-env variable
+PKG-29  consumer-specific bindings do not alter global facility command publication or generated global environment
+PKG-30  facility-default environment is precomputed on relevant default mutations and sourced by new m executions without bootstrap provider resolution
+PKG-33  PATH is a special facility-env projection name using only root/root-path descriptors and contributes managed provider directories rather than replacing PATH
 PKG-34  a facility is a provider-independent substitutable capability contract owned by pkg
 PKG-35  consumers depend on facility identity/compatibility rather than concrete provider identity
 PKG-36  a provider declaration claims conformance and supplies the concrete realization required by the facility contract
