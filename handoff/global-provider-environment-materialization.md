@@ -75,9 +75,11 @@ m execution phase
 
 The two bootstrap source points imply one generic regular file plus an osarch selector symlink. The selector necessarily targets a precomputed per-osarch regular file; those target files are generated artifacts but are not additional bootstrap source identities.
 
-Generated environment is derived/regenerable state rather than authoritative configuration, so the state-model cache area is the likely owner. Exact canonical pathnames remain to be selected against the filesystem/state naming contracts.
+Generated environment is derived/regenerable state under `state-path system sys environment cache`, physically `$m_STATE_SYS_DIR/sys/environment/cache`. The source identities are `env` and selector `env-osarch`; generated targets are `env-<osarch>`.
 
-PATH must be modeled as an ordered path contribution, not as an ordinary literal overwrite of the caller's PATH. The exact metadata syntax and deterministic ordering/precedence between multiple facility contributions remain open. The resulting bootstrap order must preserve the m technical command prefixes while allowing selected provider runtime directories such as JAVA_HOME/bin to precede the inherited host PATH.
+`PATH` is a special `facility-env` variable. It accepts only `root` and `root-path` descriptors, may repeat, and each record contributes one provider directory rather than replacing PATH. Later records/facilities have higher precedence. Final bootstrap order is technical m roots, selected-osarch provider PATH, osarch-independent provider PATH, inherited host PATH.
+
+Materialization computes the normalized final environment for every supported osarch. Ordinary assignments identical in all supported osarch contexts are emitted in `env`; the rest are emitted only in platform snapshots. PATH is treated as one complete ordered sequence: it is generic only when the whole sequence is identical across all supported osarchs, otherwise each platform snapshot carries its full sequence.
 
 The environment snapshots and global command projections represent two derived views of the same facility-default/package-default transition and should participate in one rollback boundary.
 
@@ -91,15 +93,12 @@ The environment snapshots and global command projections represent two derived v
 
 ## Current state
 
-No product behavior has been changed yet. The accepted direction is precomputed global provider environment plus bootstrap source, with osarch selection handled by a dedicated symlink maintained by osarch.
+The pathname and PATH semantics are now promoted into BOOTSTRAP-ENVIRONMENT.md, PACKAGE-MODEL.md and STATE-MODEL.md. Product behavior has not yet been changed; implementation is the next step.
 
 ## Next action
 
-Resolve the remaining canonical pathname and PATH-contribution semantics, then promote the settled contract into BOOTSTRAP-ENVIRONMENT.md, PACKAGE-MODEL.md and STATE-MODEL.md before implementation.
+Implement the promoted materialization/bootstrap/osarch contract, including transactional reconciliation and permanent coverage.
 
 ## Blockers / open questions
 
-- Exact state/cache pathnames and environment selector filenames.
-- Exact facility metadata representation for PATH contributions.
-- Deterministic PATH contribution ordering and collision/duplication policy.
 - Exact multi-selector rollback strategy for osarch when adding the environment selector.
