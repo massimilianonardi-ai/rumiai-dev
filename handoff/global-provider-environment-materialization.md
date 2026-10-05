@@ -1,7 +1,7 @@
 # Global provider environment materialization
 
 Status: Active
-Updated: 2026-10-04
+Updated: 2026-10-05
 
 ## Goal
 
@@ -9,9 +9,9 @@ Move system facility-default environment resolution out of the high-frequency m 
 
 ## Current repository revisions
 
-- rumiai-dev: 12d7994e4e08415140aaebb3f7adb9a391227312 (pre-activation HEAD)
-- rumiai-os: ea2eb22917edca77a44566ee415301f69ca61ad8
-- rumiai-tests: 95f2a8568433fa88b7da4e627842b2f3d426d08d
+- rumiai-dev: 7e8db7a31c5b634bf852615a87bcaf2c50d0779f (pre-checkpoint HEAD)
+- rumiai-os: 2693e5695e7b75c45b1cda0a490435480960534d
+- rumiai-tests: d50c2ef0f4c3a02dbcfad645ff2900c51ab1655c
 
 Fresh remote HEAD retrieval remains mandatory before future writes.
 
@@ -85,20 +85,33 @@ The environment snapshots and global command projections represent two derived v
 
 ## Completed
 
-- Verified current bootstrap performs no package/provider initialization.
-- Verified current pkg-provider global environment implementation resolves facility defaults dynamically and exports a validated environment plan.
-- Verified current package-default transitions already call pkg_provider_package_default_reconcile for affected global command projections.
-- Verified current osarch command atomically replaces individual sys/ext/ai selector links but does not yet own an environment selector.
-- Verified permanent facility-default-global coverage already exercises most required observable behavior: new-process visibility, running-process stability, pinned/unversioned selectors, package-default following, unset and rollback.
+- Promoted the materialized environment contract into BOOTSTRAP-ENVIRONMENT.md, PACKAGE-MODEL.md and STATE-MODEL.md.
+- pkg-provider now builds normalized final environment plans for every supported osarch, extracts assignments common to all platforms into env, emits platform deltas into env-<osarch>, safely serializes them, and publishes the generated snapshot set with rollback.
+- pkg-provider default and provider-package-default reconciliation now regenerate the environment snapshots as part of the same logical transition as global command publication. Existing pkg_provider_environment_apply and pkg_provider_global_environment_apply remain available.
+- facility-env now accepts PATH as a special repeatable member with root/root-path descriptors only; root-path PATH contributions must resolve to directories inside the provider root.
+- m now sources env then env-osarch immediately before command execution and only afterward prepends the technical sys/ext command roots. It performs no provider/package resolution.
+- osarch now owns env-osarch in addition to sys/ext/ai selectors, validates consistency across all four and performs best-effort rollback of the whole selector transition. If a materialized env exists, a missing selected platform snapshot is treated as cache corruption rather than silently synthesized.
+- Operational manuals for m, osarch, pkg-provider and pkg-facility-env were realigned.
+- Permanent coverage now includes PATH facility conformance, env-osarch selection, global provider PATH behavior and a dedicated osarch-specific precomputed-environment scenario.
+- Focused validation on Ubuntu against rumiai-os@2693e5695e7b75c45b1cda0a490435480960534d confirms PASS for osarch/update, pkg/provider, pkg/env, pkg/facility-contract, the new pkg/facility-default-osarch-env scenario, pkg-integration/contract, pkg-launch, pkg-download, srv and the selected repository/external paths reached so far.
+- Earlier full-health evidence also confirms the bootstrap test surface remains passing on Linux ARM and macOS. Several unrelated/stale package-suite failures remain outside this task.
+- The focused provider/facility validation scope was realigned from historical rumiai-os@0966ba9... to current rumiai-os@2693e569... and obsolete install-stream.test was replaced by current selections.
 
 ## Current state
 
-The pathname and PATH semantics are now promoted into BOOTSTRAP-ENVIRONMENT.md, PACKAGE-MODEL.md and STATE-MODEL.md. Product behavior has not yet been changed; implementation is the next step.
+The promoted design is implemented. The osarch-specific materialization path is proven by the focused Ubuntu test: switching linux-x86_64 to linux-arm64 changes env-osarch, produces the correct ordinary variable and PATH-selected runtime, and does not rewrite the precomputed platform snapshots.
+
+One directly relevant focused test still fails: pkg/facility-default-global.test returns pkg_integrate status 2 while preparing its generic provider fixture. Since the dedicated osarch-specific fixture integrates equivalent facility-env PATH metadata successfully, the failure is narrowed to the generic fixture/definition path rather than the global environment materializer itself. Extra non-contract diagnostic output is temporarily present in that test to distinguish package-identity versus range-envelope causes on the next focused run.
+
+The latest focused bridge is running against the pinned current product revision.
 
 ## Next action
 
-Implement the promoted materialization/bootstrap/osarch contract, including transactional reconciliation and permanent coverage.
+1. Read the next focused facility-default-global diagnostic and repair the generic fixture or product path according to the observed cause.
+2. Re-run the focused provider/facility validation on both Ubuntu and macOS.
+3. Remove temporary diagnostic-only test output when no longer needed, perform the final consistency gate, then decide explicitly whether pkg_provider_global_environment_apply has any remaining useful role. Do not remove it without that decision.
 
 ## Blockers / open questions
 
-- Exact multi-selector rollback strategy for osarch when adding the environment selector.
+- Generic facility-default test fixture still fails integration with status 2; root cause is being diagnosed.
+- Explicit end-of-task decision on retention/removal of pkg_provider_global_environment_apply remains pending by user instruction.
