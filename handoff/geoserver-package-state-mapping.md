@@ -1,6 +1,6 @@
 # GeoServer package state mapping
 
-Status: Active
+Status: Complete
 Updated: 2026-10-05
 
 ## Goal
@@ -108,12 +108,21 @@ Current revision: `9a3d0fb9a7fb2b6c61fed1966586319cf71c0691`.
 - PoC 056 direct upstream state probe including external data/log/tmp/cache relocation: passed on Linux in run `37293536922`.
 - Existing composed pre-mapping probe confirmed that the un-routed package modified only `root/data_dir/**` and that `geoserver@3.0.1` is an all-stream concrete.
 - Permanent GeoServer validation at rumiai-tests `f92a64ea13c9a8c034221f8701dfef532285cb2e` passed on macOS, including the new install-time data-state assertions and the complete `service-live.test`; scope result was VALIDATED.
-- The corresponding Linux workflow remains useful independently: full service validation can be host-supervisor-dependent, while the install/repository checks and PoC provide Linux package/state evidence. Do not relabel a host-prerequisite SKIP as PASS.
+- Current rumiai-tests revision `9a3d0fb9a7fb2b6c61fed1966586319cf71c0691` passed the complete `geoserver-service` validation on Linux in run `37294447444`, including repository, recursive dependency install, managed `data_dir`, portable service, user-host service and system-host service; scope result was VALIDATED.
+- An earlier workflow demonstrated that host-supervisor prerequisites can legitimately cause `service-live.test` to SKIP on some GitHub-hosted instances; that result was not relabelled as PASS.
+
+## Final consistency result
+
+The current catalog contains only the platform-independent `pkg/geoserver/all` stream and exactly one GeoServer `var/` declaration: `var/data -> data_dir`. No stale osarch-qualified synthetic GeoServer selector remains in the permanent tests. The mapping matches the observed direct and composed runtime behavior and the current package/state specifications.
+
+Validation evidence is proportional and real:
+
+- direct upstream execution and relocation probes on Linux: PASS;
+- current full permanent GeoServer validation on Linux: VALIDATED;
+- permanent GeoServer validation with the new data-state assertions on macOS: VALIDATED.
+
+No physical-host validation claim is made beyond those executed GitHub Actions environments.
 
 ## Current state
 
-The GeoServer package state mapping is implemented. The final consistency check must verify the current heads and the latest focused validation results before task closure.
-
-## Next action
-
-Complete the final consistency gate, record the latest workflow outcomes, then close the handoff if no current mismatch remains.
+Complete. Durable state is carried by pkg-catalog and permanent tests; this handoff can be removed from the current tree after this completion snapshot.
