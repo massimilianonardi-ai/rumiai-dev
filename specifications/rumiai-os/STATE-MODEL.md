@@ -1,7 +1,7 @@
 # RumiAI OS — State model
 
 Status: **Current / normative**  
-Updated: 2026-09-17
+Updated: 2026-10-05
 
 This document defines the current mutable-state contract.
 
@@ -111,6 +111,22 @@ tmp    transient scratch/intermediate state
 ```
 
 Directories are created lazily when needed, not as a full Cartesian product.
+
+The technical global execution-environment cache is the derived system state:
+
+```text
+state-path system sys environment cache
+```
+
+which resolves under the semantic current system profile to:
+
+```text
+$m_STATE_SYS_DIR/sys/environment/cache
+```
+
+It contains regenerable environment snapshots such as `env`, `env-<osarch>` and
+the `env-osarch` selector. Authoritative provider/package selector intent does
+not live there; it remains in the package subsystem's configuration state.
 
 ## `state-path`
 
@@ -249,4 +265,5 @@ STATE-14  consumers do not duplicate deep state layout knowledge
 STATE-15  an explicitly declared absent var leaf denotes an initially empty directory only when its parent hierarchy is valid
 STATE-16  system package provider bindings live at <package-conf>/binding/<facility>, not under .m
 STATE-17  system-hosted package services use system package State Instance equal to service identity rather than mapping POSIX accounts into state/user
+STATE-18  system sys/environment cache owns regenerable global execution-environment snapshots and is never authoritative provider configuration
 ```
