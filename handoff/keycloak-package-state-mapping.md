@@ -9,11 +9,11 @@ Determine which Keycloak installation-root paths are genuinely mutable state und
 
 ## Current repository revisions
 
-- rumiai-dev: be6cfd7487e5a76de9c674f1763cf2c0ca65dccb before this handoff synchronization
-- rumiai-os: afd4cf7c84096e3d55cf753ff9bf4807e5033493
-- rumiai-tests: 1b1833ffb04719648a93a5394b8ea39ac4d5b4e6
-- pkg-catalog: b8fb0ec8f4022b99f805a3bbaf93c2f328213780
-- rumiai-dev-PoCs: 5296ae5ed6a5bcac3ae63e252275e5df00cd3241
+- rumiai-dev: 0ad97b917375246d5f6a22943b4f0dc5b2c91df2 before this handoff synchronization
+- rumiai-os: 2693e5695e7b75c45b1cda0a490435480960534d
+- rumiai-tests: b1fb39a774bdd317730da69c9a34e6ed8368d33f
+- pkg-catalog: f97a989d795192f8b2acb72a9b658817184633ab
+- rumiai-dev-PoCs: efdec306d2765c193e4261e3d576b7ae58ce021a
 
 Fresh remote HEAD retrieval remains mandatory before future writes.
 
@@ -30,6 +30,7 @@ Fresh remote HEAD retrieval remains mandatory before future writes.
 ## Fixed task-local choices
 
 - Use Keycloak `start-dev` for runtime probes; production `start` is out of scope for this investigation because it requires unrelated production hostname/TLS setup.
+- Treat Keycloak as a platform-independent `all` package. Its concrete identity must therefore be `keycloak@<version>` without an `!<osarch>` suffix; its Java dependency still resolves against the applicable target osarch.
 - Use the cataloged 26.7.3 range anchor as the direct upstream probe target while separately validating the current catalog-selected release through the real package path.
 - Use `rumiai-dev-PoCs` for dynamic state-mapping experiments.
 - Keep the existing `var/conf -> conf` mapping.
@@ -78,7 +79,7 @@ pkg install keycloak
 keycloak start-dev --db=dev-mem
 ```
 
-The catalog range resolved Keycloak 26.8.0 on linux-x86_64, confirming that `n0001=26.7.3` is an ordering/range anchor rather than an exact package pin.
+The catalog range resolved Keycloak 26.8.0, confirming that `n0001=26.7.3` is an ordering/range anchor rather than an exact package pin. After the user's platform-independence correction, the catalog was migrated to the `all` stream and the real composed path resolves the concrete as `keycloak@26.8.0`, with no osarch suffix.
 
 After the catalog change the installed concrete had:
 
@@ -94,17 +95,18 @@ The `start-dev` execution modified the three Quarkus artifacts in managed cache 
 
 ### pkg-catalog
 
-Added `var/cache` containing `lib/quarkus` to all four Keycloak osarch definitions:
-
-- linux-arm64
-- linux-x86_64
-- macos-arm64
-- macos-x86_64
-
-Final catalog revision after these forward-only commits:
+Keycloak is now represented by one platform-independent `pkg/keycloak/all` stream. The former four osarch-specific duplicate definitions were removed forward-only. The `all` range retains:
 
 ```text
-b8fb0ec8f4022b99f805a3bbaf93c2f328213780
+var/conf  -> conf
+var/data  -> data
+var/cache -> lib/quarkus
+```
+
+Final catalog revision after these forward-only changes:
+
+```text
+f97a989d795192f8b2acb72a9b658817184633ab
 ```
 
 ### rumiai-tests
@@ -113,12 +115,15 @@ The existing permanent `tests/external/keycloak/install-live.test` now also chec
 
 - Keycloak cache state initializes `lib/quarkus`;
 - the package root routes `lib/quarkus` through a symlink;
-- factory Quarkus cache content is present.
+- factory Quarkus cache content is present;
+- the installed Keycloak concrete is platform-independent and carries no `!<osarch>` suffix.
 
-Revision:
+A focused PKG-86 regression check was also added to `tests/rumiai-os/pkg/catalog.test`.
+
+Current test-suite revision:
 
 ```text
-1b1833ffb04719648a93a5394b8ea39ac4d5b4e6
+b1fb39a774bdd317730da69c9a34e6ed8368d33f
 ```
 
 ### rumiai-dev-PoCs
@@ -134,10 +139,10 @@ PoC 055 contains:
 Current revision:
 
 ```text
-5296ae5ed6a5bcac3ae63e252275e5df00cd3241
+efdec306d2765c193e4261e3d576b7ae58ce021a
 ```
 
-The latest workflow run 37273219143 has a successful composed integration job; its repeated direct-upstream probe was still running at the last checkpoint. Earlier run 37271810703 already provides successful direct-upstream evidence for all six cases.
+Workflow run 37282725049 passed both direct upstream and composed jobs. The composed result installed `keycloak@26.8.0` without an osarch suffix, preserved the three state links, and successfully started Keycloak in development mode.
 
 ## Validation status
 
@@ -147,24 +152,21 @@ The focused Keycloak state-mapping evidence is successful:
 - real composed package routing on current catalog-selected Keycloak 26.8.0: passed;
 - composed routing recheck against rumiai-os afd4cf7c84096e3d55cf753ff9bf4807e5033493: passed.
 
-The broader permanent-test validation path is currently blocked before reaching the newly added Keycloak cache assertions by pre-existing/current test-infrastructure mismatches:
+The previous direct Keycloak permanent-test blocker `pkg_install_requirement_list: not found` was traced to a real product mismatch: current `pkg-requirement.lib.sh` still called a removed `pkg-install` helper even though PKG-86 requires catalog-backed read-only requirement listing. The product now implements requirement listing directly through `pkg-catalog` and `pkg-dependency`, and its manual has been realigned at rumiai-os revision `2693e5695e7b75c45b1cda0a490435480960534d`.
 
-1. the formal `package-provider-facility-final` workflow fails while expanding its validation selection with `rumiai-test: selection does not exist`;
-2. a direct execution of the permanent Keycloak live test gets through target discovery and Temurin installation but then fails while querying current package requirements because the current product/test combination reports `pkg_install_requirement_list: not found`.
-
-These failures are not evidence against the Keycloak cache mapping and must not be reported as successful Keycloak permanent validation. They require separate realignment of the current package-requirement/testing surfaces.
+The broad `package-provider-facility-final` workflow still has an independent historical selection/configuration problem and is not treated as Keycloak evidence.
 
 Physical validation has not been performed; current evidence is GitHub Actions execution.
 
 ## Current state
 
-The runtime state classification and catalog mapping for the observed Keycloak `start-dev` path are implemented and empirically validated.
+The runtime state classification, `all` stream correction and catalog mapping for the observed Keycloak `start-dev` path are implemented and empirically validated through the composed PoC.
 
-The task remains Active because the permanent Keycloak test cannot currently reach its new cache assertions through the existing broader package-requirement/test path.
+The task remains Active pending completion of the current permanent-suite validation run against the repaired PKG-86 requirement-list path.
 
 ## Next action
 
-Realign or unblock the current permanent package-requirement validation path, then execute `tests/external/keycloak/install-live.test` through the supported runner and close this task if the cache assertions pass.
+Review the current `rumiai-os-health` result for rumiai-os `2693e5695e7b75c45b1cda0a490435480960534d` and current tests. If the focused catalog/Keycloak assertions pass, perform the final consistency gate and close the task; otherwise correct only the observed remaining mismatch.
 
 ## Separate question not blocking this mapping
 
