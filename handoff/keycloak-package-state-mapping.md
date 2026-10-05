@@ -9,11 +9,11 @@ Determine which Keycloak installation-root paths are genuinely mutable state und
 
 ## Current repository revisions
 
-- rumiai-dev: 94516378d8303683cfa7c33cbe884a35e6800cf8
-- rumiai-os: ea2eb22917edca77a44566ee415301f69ca61ad8
-- rumiai-tests: 95f2a8568433fa88b7da4e627842b2f3d426d08d
-- pkg-catalog: d63f87d2be67288ef57f4a5812fabbc3f0b24a0d
-- rumiai-dev-PoCs: e7166a6b69039ab446afbad8a1d81bb276587c80
+- rumiai-dev: be6cfd7487e5a76de9c674f1763cf2c0ca65dccb before this handoff synchronization
+- rumiai-os: afd4cf7c84096e3d55cf753ff9bf4807e5033493
+- rumiai-tests: 1b1833ffb04719648a93a5394b8ea39ac4d5b4e6
+- pkg-catalog: b8fb0ec8f4022b99f805a3bbaf93c2f328213780
+- rumiai-dev-PoCs: 5296ae5ed6a5bcac3ae63e252275e5df00cd3241
 
 Fresh remote HEAD retrieval remains mandatory before future writes.
 
@@ -30,35 +30,142 @@ Fresh remote HEAD retrieval remains mandatory before future writes.
 ## Fixed task-local choices
 
 - Use Keycloak `start-dev` for runtime probes; production `start` is out of scope for this investigation because it requires unrelated production hostname/TLS setup.
-- Use the cataloged Keycloak 26.7.3 distribution as the primary probe target.
-- Treat unresolved state-location conclusions as experimental until dynamic evidence is collected.
-- Use `rumiai-dev-PoCs` for the dynamic state-mapping experiment rather than adding a premature permanent test.
+- Use the cataloged 26.7.3 range anchor as the direct upstream probe target while separately validating the current catalog-selected release through the real package path.
+- Use `rumiai-dev-PoCs` for dynamic state-mapping experiments.
+- Keep the existing `var/conf -> conf` mapping.
+- Keep the existing `var/data -> data` mapping.
+- Route `lib/quarkus` through package `cache`: `var/cache -> lib/quarkus`.
+- Do not add a separate `log` mapping: observed/default Keycloak file logging is under `data/log`, already covered by the `data` mapping, and explicit file-log paths are configurable.
+- Do not map `providers/` or `themes/` as part of this runtime-state work. They are operator-supplied customization surfaces, not state created by the observed `start-dev` path, and persistence across package upgrades is a separate design question.
 
-## Working design
+## Empirical findings
 
-- Run current `pkg-analyze` against the real upstream Keycloak distribution on an Internet-enabled GitHub Actions runner.
-- Supplement pkg-analyze path deltas with content hashes because an implicit Keycloak build may modify existing files without adding/removing pathnames.
-- Compare baseline `start-dev` with targeted configuration variants that can materially affect root-local state, especially database persistence and file logging.
-- Distinguish runtime-created state from operator-supplied extension/customization directories such as `providers/` and `themes/`.
+### Direct upstream Keycloak 26.7.3 probes
 
-## Completed
+PoC 055 ran real Keycloak 26.7.3 `start-dev` executions on GitHub Actions using current `pkg-analyze` plus SHA-256 tree manifests so modifications to existing files were visible.
 
-- Confirmed current catalog Keycloak 26.7.3 definitions for all four supported osarch classes.
-- Confirmed current catalog mapping: `var/conf -> conf` and `var/data -> data`.
-- Confirmed current live test already exercises real Keycloak installation and initializes system conf/data state.
-- Confirmed Keycloak supports equivalent CLI and `KC_*` environment forms, with CLI higher precedence.
-- Confirmed the auxiliary ChatGPT host is Debian 13 x86_64 without direct Internet/DNS, and current testing guidance explicitly provides GitHub Actions / HTTPS bridge patterns for this case.
+Baseline `start-dev` created:
+
+```text
+data/h2/keycloakdb.mv.db
+data/h2/keycloakdb.trace.db
+data/transaction-logs/...
+```
+
+and modified:
+
+```text
+lib/quarkus/generated-bytecode.jar
+lib/quarkus/quarkus-application.dat
+lib/quarkus/transformed-bytecode.jar
+```
+
+With `--db=dev-mem`, the H2 database files disappeared but `data/transaction-logs/...` remained and the same three `lib/quarkus` files changed.
+
+An external H2 file URL supplied through CLI relocated the database files outside the package root while `data/transaction-logs/...` and the three Quarkus build-artifact modifications remained. The equivalent `KC_DB` / `KC_DB_URL` environment case produced the same state-location behavior.
+
+File logging redirected through CLI created the requested external log file while package-root state remained `data/transaction-logs/...` plus the three Quarkus modifications. The equivalent `KC_LOG` / `KC_LOG_FILE` environment case produced the same state-location behavior.
+
+The direct upstream probe succeeded in GitHub Actions run 37271810703.
+
+### Real composed package path
+
+PoC 055 then executed the real RumiAI path:
+
+```text
+pkg install temurin
+pkg install keycloak
+keycloak start-dev --db=dev-mem
+```
+
+The catalog range resolved Keycloak 26.8.0 on linux-x86_64, confirming that `n0001=26.7.3` is an ordering/range anchor rather than an exact package pin.
+
+After the catalog change the installed concrete had:
+
+```text
+root/conf        -> ../var/conf/conf
+root/data        -> ../var/data/data
+root/lib/quarkus -> ../../var/cache/lib/quarkus
+```
+
+The `start-dev` execution modified the three Quarkus artifacts in managed cache state and started Keycloak successfully. The composed PoC succeeded in run 37272718345. A later composed validation against current rumiai-os revision afd4cf7c84096e3d55cf753ff9bf4807e5033493 also completed successfully in run 37273219143.
+
+## Implemented changes
+
+### pkg-catalog
+
+Added `var/cache` containing `lib/quarkus` to all four Keycloak osarch definitions:
+
+- linux-arm64
+- linux-x86_64
+- macos-arm64
+- macos-x86_64
+
+Final catalog revision after these forward-only commits:
+
+```text
+b8fb0ec8f4022b99f805a3bbaf93c2f328213780
+```
+
+### rumiai-tests
+
+The existing permanent `tests/external/keycloak/install-live.test` now also checks that:
+
+- Keycloak cache state initializes `lib/quarkus`;
+- the package root routes `lib/quarkus` through a symlink;
+- factory Quarkus cache content is present.
+
+Revision:
+
+```text
+1b1833ffb04719648a93a5394b8ea39ac4d5b4e6
+```
+
+### rumiai-dev-PoCs
+
+PoC 055 contains:
+
+- direct upstream `pkg-analyze` probes;
+- SHA-256 content-delta detection;
+- CLI/environment DB relocation cases;
+- CLI/environment file-log relocation cases;
+- real composed package installation/start-dev validation.
+
+Current revision:
+
+```text
+5296ae5ed6a5bcac3ae63e252275e5df00cd3241
+```
+
+The latest workflow run 37273219143 has a successful composed integration job; its repeated direct-upstream probe was still running at the last checkpoint. Earlier run 37271810703 already provides successful direct-upstream evidence for all six cases.
+
+## Validation status
+
+The focused Keycloak state-mapping evidence is successful:
+
+- direct upstream 26.7.3 state probes: passed;
+- real composed package routing on current catalog-selected Keycloak 26.8.0: passed;
+- composed routing recheck against rumiai-os afd4cf7c84096e3d55cf753ff9bf4807e5033493: passed.
+
+The broader permanent-test validation path is currently blocked before reaching the newly added Keycloak cache assertions by pre-existing/current test-infrastructure mismatches:
+
+1. the formal `package-provider-facility-final` workflow fails while expanding its validation selection with `rumiai-test: selection does not exist`;
+2. a direct execution of the permanent Keycloak live test gets through target discovery and Temurin installation but then fails while querying current package requirements because the current product/test combination reports `pkg_install_requirement_list: not found`.
+
+These failures are not evidence against the Keycloak cache mapping and must not be reported as successful Keycloak permanent validation. They require separate realignment of the current package-requirement/testing surfaces.
+
+Physical validation has not been performed; current evidence is GitHub Actions execution.
 
 ## Current state
 
-The dynamic `start-dev` root-mutation experiment is ready to be implemented in `rumiai-dev-PoCs`.
+The runtime state classification and catalog mapping for the observed Keycloak `start-dev` path are implemented and empirically validated.
+
+The task remains Active because the permanent Keycloak test cannot currently reach its new cache assertions through the existing broader package-requirement/test path.
 
 ## Next action
 
-Create and run the Keycloak 26.7.3 state-mapping PoC on GitHub Actions, collect root path/hash deltas, then classify candidate `var/<area>` mappings before changing pkg-catalog.
+Realign or unblock the current permanent package-requirement validation path, then execute `tests/external/keycloak/install-live.test` through the supported runner and close this task if the cache assertions pass.
 
-## Blockers / open questions
+## Separate question not blocking this mapping
 
-- Whether `start-dev` mutates paths outside `conf/` and `data/`, especially through its implicit build.
-- Whether root-local writes can/should be redirected by supported Keycloak options rather than represented through additional `var/` mappings.
-- Whether operator-managed `providers/` or `themes/` require package-state treatment independently from runtime writes.
+Whether operator-managed `providers/` and `themes/` should persist across Keycloak package upgrades remains a distinct customization/persistence design question. It is deliberately not inferred from runtime `start-dev` mutation evidence.
