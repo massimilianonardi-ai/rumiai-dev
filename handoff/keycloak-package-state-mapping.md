@@ -158,6 +158,28 @@ The broad `package-provider-facility-final` workflow still has an independent hi
 
 Physical validation has not been performed; current evidence is GitHub Actions execution.
 
+## Dependency ambiguity diagnostic realignment
+
+A direct operator attempt to run `pkg install keycloak` with no configured Java provider exposed a separate dependency-planning UX issue. The failure is semantically correct: current catalog data offers both Temurin 25 and GraalVM 25 as compatible providers for Keycloak's `java =25` requirement, so PKG-93 requires ambiguity rather than silent ranking.
+
+The diagnostic path has now been realigned without changing provider-selection semantics:
+
+- `pkg depend` reports `reason=provider-ambiguous` with facility, combined constraints, target osarch and exact compatible provider candidates;
+- `pkg install` preserves that planner diagnostic and classifies the valid-request failure as `execution-failed`, not `invalid-arguments`;
+- PACKAGE-MODEL now records this as PKG-100;
+- `depend.test` protects the structured ambiguity detail;
+- `install-dependency-order.test` protects propagation/classification through `pkg install`.
+
+Current revisions for this diagnostic work:
+
+```text
+rumiai-dev   643bc6f536f0af39e5ae33aea7027e8e6962652d
+rumiai-os    f39d986e5d4269f742d138eb3ebf9092d1e3345c
+rumiai-tests 654c02991b3e9e6ad7b2f1e3d69be1a5fd189bcf
+```
+
+The automatically triggered hosted validation runs were still queued at the last checkpoint, so they are not yet PASS evidence.
+
 ## Current state
 
 The runtime state classification, `all` stream correction and catalog mapping for the observed Keycloak `start-dev` path are implemented and empirically validated through the composed PoC.
