@@ -232,6 +232,6 @@ BOOT-12  loadlib is provided by core.lib.sh; base.lib.sh provides loadsyslib and
 BOOT-13  the root bootstrap performs no package/provider resolution or initialization
 BOOT-14  the root bootstrap is limited to root resolution, fundamental system-variable initialization, core loading, generated global-environment sourcing and execution
 BOOT-15  generated global environment is sourced from system sys/environment cache as env then env-osarch
-BOOT-17  technical m PATH roots precede provider PATH contributions, which precede inherited host PATH
 BOOT-16  branded root entrypoints remain #!/bin/sh direct bootstraps but are sourced by m when passed back as exact root command bodies
+BOOT-17  technical m PATH roots precede provider PATH contributions, which precede inherited host PATH
 ```
