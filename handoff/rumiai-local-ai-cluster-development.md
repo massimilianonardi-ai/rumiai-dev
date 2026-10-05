@@ -10,7 +10,7 @@ Develop and validate a practical local AI cluster for RumiAI using the available
 ## Current repository revisions
 
 ```text
-rumiai-dev  ec65039e73509ab961f65c57b83c47c5485ed7e4  (pre-checkpoint HEAD)
+rumiai-dev  438966a8114a98c5f31917d7e9f69606a94ec269  (pre-checkpoint HEAD)
 rumiai-os   f39d986e5d4269f742d138eb3ebf9092d1e3345c  (observed current remote HEAD; not modified by this checkpoint)
 ```
 
@@ -48,6 +48,8 @@ Additional package, service, state or container specifications must be retrieved
 - Exact model families, quantization levels, context sizes, thread counts and concurrency remain benchmark-dependent.
 - Shared model storage protocol/export mechanism is not yet selected.
 - Podman is not currently installed on the surveyed hosts; deployment mechanism and local writable storage placement remain to be designed after benchmarking.
+- Synthetic CPU results are useful only as relative evidence. OpenSSL versions differ across some hosts, so cross-host comparisons must not substitute for a real `llama.cpp` benchmark.
+- The `/dev/shm` test is a lightweight comparative memory-path proxy, not a calibrated DRAM-bandwidth benchmark.
 
 ## Completed
 
@@ -57,21 +59,32 @@ Additional package, service, state or container specifications must be retrieved
 - The three 16 GiB PSN hosts expose 8 vCPU and approximately 12-13 GiB available memory with materially more free root filesystem space.
 - `gis` exposes 8 vCPU, approximately 29 GiB available memory and a large `/m` filesystem with hundreds of GiB free.
 - `webgisrpr` exposes 8 vCPU, approximately 17 GiB available memory and a large `/m` filesystem.
-- A second, deeper benchmark job has been prepared conceptually to compare sustained CPU scaling, memory behavior, storage and network characteristics without installing benchmark packages.
+- Deeper benchmark run `ai-benchmark-30624` completed successfully on all eight hosts.
+- The three 4-vCPU local hosts scale almost linearly on the synthetic all-core SHA-256 workload (~3.98-4.00x over single-process).
+- The 8-vCPU hosts show materially non-uniform effective scaling (~4.67-6.05x), confirming that nominally identical vCPU counts do not imply identical effective capacity.
+- At the 16 KiB SHA-256 result, the local 4-vCPU hosts are tightly clustered around ~341 MB/s single-process and ~1.36 GB/s aggregate. The 8-vCPU hosts range roughly ~360-444 MB/s single-process and ~1.96-2.18 GB/s aggregate.
+- `keycloak_psn` and `webgisrpr` are among the strongest single-process results; `apps_psn` is notably weaker single-process despite the same nominal Xeon Gold / 8-vCPU presentation.
+- The lightweight `/dev/shm` read proxy is broadly similar across hosts (~6.6-7.7 GB/s), suggesting that the real LLM benchmark will be necessary to expose useful memory-bound differences.
+- Virtual NICs report 10 Gb/s full duplex, but actual TCP throughput has not yet been measured.
+- Measured latency is very low inside the 10.100 site (~0.03-0.14 ms to `apisix`) and generally low inside the 10.200 site to `gis` (~0.6-1.5 ms for other remote nodes). Cross-site 10.100 <-> 10.200 latency is roughly ~8-12 ms in this run.
+- One `apps_psn` -> `apisix` ping sample showed 10% packet loss; this must be repeated before treating it as a persistent network property.
+- `nc` is available on all surveyed nodes; iperf availability is inconsistent.
+- The benchmark's `MODEL-STORAGE-M` check used any existing writable `/m` directory, so on hosts where `/m` is not a dedicated mount it actually measured the root filesystem. Only dedicated `/m` mount results, notably `gis` and `webgisrpr`, are relevant to shared model-storage evaluation. Temporary files were removed by the benchmark cleanup.
 
 ## Current state
 
-The cluster topology and first inventory are known well enough to proceed to performance characterization. Architecture remains intentionally biased toward autonomous workers because network bandwidth/latency is a constraint and the nodes are heterogeneous.
+The cluster topology and synthetic performance classes are now characterized well enough to proceed to two decisive measurements: real TCP throughput to the proposed model store and real LLM inference throughput.
 
-The shared-storage idea based on `gis:/m` is accepted as the preferred direction for model files, subject to selecting and validating the concrete sharing mechanism.
+The existing evidence continues to favor autonomous model workers. The remote 10.200 site has low intra-site latency to `gis`, which makes `gis:/m` especially promising as a central model repository for those workers. Cross-site loading from 10.100 remains plausible for startup-time model access but requires throughput measurement.
 
 ## Next action
 
-Run the deeper rsudo benchmark across all eight hosts, collect its unified log, then use the measured CPU scaling, memory throughput, storage and network results to select the first representative GGUF model(s) and build a real `llama.cpp` benchmark matrix.
+1. Measure TCP throughput to/from `gis` using the already available `nc`, with representative 10.100 and 10.200 peers and explicit run IDs/status collection.
+2. Run a representative `llama.cpp` / GGUF benchmark matrix on each hardware class, separating prompt-processing and token-generation throughput and testing thread counts rather than assuming all-vCPU is optimal.
 
 ## Blockers / open questions
 
 - Select and validate the shared model-storage mechanism rooted on `gis:/m`.
 - Determine suitable local storage for Podman writable layers on the three small-root local VMs.
-- Measure actual network throughput, not only latency, before deciding whether any cross-host inference mechanism deserves experimentation.
-- Model placement and concurrency remain open until real inference benchmarks are available.
+- Measure actual network throughput before deciding whether any cross-host inference mechanism deserves experimentation.
+- Model placement, quantization, context size and concurrency remain open until real inference benchmarks are available.
