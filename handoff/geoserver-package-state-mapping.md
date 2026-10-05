@@ -9,11 +9,11 @@ Apply the same package-state analysis used for Keycloak to GeoServer: verify pac
 
 ## Current repository revisions
 
-- rumiai-dev: 222e8a1a665f26bbd281d600d77c6c7a97d0a7ec before this handoff creation
+- rumiai-dev: 226208cfbbbe677347261084cf0f7d614c650dbd before this handoff synchronization
 - rumiai-os: 2693e5695e7b75c45b1cda0a490435480960534d
-- rumiai-tests: 790831c6bffadfe1efbb130fbdb0518c55dc2935
-- pkg-catalog: f97a989d795192f8b2acb72a9b658817184633ab
-- rumiai-dev-PoCs: efdec306d2765c193e4261e3d576b7ae58ce021a
+- rumiai-tests: 9a3d0fb9a7fb2b6c61fed1966586319cf71c0691
+- pkg-catalog: c1425bd5097bd18526a42da866ea98906a3325a4
+- rumiai-dev-PoCs: 71f47e5f2f3b26ff7d6a0e2d335a85459b669088
 
 Fresh remote HEAD retrieval remains mandatory before future writes.
 
@@ -34,18 +34,19 @@ Fresh remote HEAD retrieval remains mandatory before future writes.
 - Current dependency is `java >=17 <22`.
 - Current ordinary command is `geoserver-start -> bin/startup.sh`.
 - Current package environment computes `GEOSERVER_HOME` from the installed concrete root.
-- Current package definition has no `var/` state routing.
+- Current package definition now routes the official factory `data_dir` through `var/data`.
 
-## Upstream configuration candidates
+## Verified upstream controls
 
-Current GeoServer documentation identifies at least:
+The 3.0.1 binary and current documentation support the relevant state-location controls:
 
-- `GEOSERVER_DATA_DIR`: relocates the authoritative GeoServer data/configuration directory; default platform-independent binary location is `<installation-root>/data_dir`.
-- `GEOSERVER_LOG_LOCATION`: relocates the GeoServer log file and may be supplied as environment variable or system property.
-- `JETTY_OPTS`: configures the bundled Jetty runtime, including HTTP port and JVM/Jetty properties.
-- Java system-property forms such as `-DGEOSERVER_DATA_DIR=...` are equivalent supported configuration surfaces for relevant application properties.
+- `GEOSERVER_DATA_DIR`: relocates the complete GeoServer data/configuration directory. The bundled startup script defaults it to `$GEOSERVER_HOME/data_dir` and then passes it as `-DGEOSERVER_DATA_DIR=...`.
+- `GEOSERVER_LOG_LOCATION`: relocates the active GeoServer log file independently of the data directory.
+- `GEOWEBCACHE_CACHE_DIR`: relocates GeoWebCache cache state independently of the data directory.
+- `JAVA_OPTS=-Djava.io.tmpdir=...`: relocates JVM/GeoTools temporary state; the probe observed the GeoTools EPSG HSQL database there.
+- `JETTY_OPTS`: configures the bundled Jetty runtime, including the HTTP port used by the probes.
 
-These are candidates only until the exact probed distribution and runtime footprint are inspected.
+The bundled `startup.sh` itself supplies `-DGEOSERVER_DATA_DIR` after `JAVA_OPTS`, so `GEOSERVER_DATA_DIR` is the practical supported control for the binary wrapper's data directory.
 
 ## Working plan
 
@@ -64,3 +65,55 @@ These are candidates only until the exact probed distribution and runtime footpr
 - Whether `data_dir` should be routed wholesale through managed package state or explicitly relocated by generated environment.
 - Whether log state should remain inside managed data state or receive a separate `log` area when `GEOSERVER_LOG_LOCATION` is controlled.
 - Whether any runtime-generated Jetty caches are regenerable and should map to package `cache`.
+
+## Empirical findings
+
+PoC 056 ran the real GeoServer 3.0.1 binary on Java 21 through current `pkg-analyze`, supplemented by SHA-256 before/after manifests.
+
+Baseline startup changed only paths below `data_dir/`. Observed changes included GeoPackage WAL/SHM files, GeoWebCache configuration/layer metadata, logging material, security keystore/version state, and modifications to existing configuration files such as `global.xml`, `security/config.xml` and the NaturalEarth datastore definition. No package-root path outside `data_dir` changed in the observed startup/shutdown cycle.
+
+With an external `GEOSERVER_DATA_DIR`, the package-root delta was empty and the same writes moved under the external data directory. Adding `GEOSERVER_LOG_LOCATION` moved the active `geoserver.log` out of that directory. Adding `JAVA_OPTS=-Djava.io.tmpdir=...` moved the GeoTools EPSG HSQL temporary database. Adding `GEOWEBCACHE_CACHE_DIR` moved GeoWebCache `geowebcache.xml`, metadata and temporary/cache state into the external cache directory. With all relocation controls active, the package root remained unchanged.
+
+The successful direct-probe evidence is GitHub Actions run `37293536922` (probe job). Earlier run `37293028983` also passed the four-case probe before the GeoWebCache-specific case was added.
+
+## Mapping decision
+
+Map the complete official factory `data_dir` as package `data`:
+
+```text
+pkg/geoserver/all/n0001=3.0.1/var/data
+    data_dir
+```
+
+This is deliberately one mapping. Current package-state validation rejects overlapping/nested `var/` paths, so `data_dir` cannot simultaneously be mapped as `data` while nested `data_dir/gwc` or `data_dir/logs` are mapped to other areas. Splitting the upstream data directory into a large set of non-overlapping internal paths would be brittle and would lose the factory-directory abstraction supplied by GeoServer itself.
+
+The finer runtime controls for log/cache/tmp remain available to consumers and service configuration, but are not additional static `var/` mappings required to keep the package root immutable.
+
+## Implemented changes
+
+### pkg-catalog
+
+Added `var/data` with `data_dir` to the existing platform-independent GeoServer range. Revision: `c1425bd5097bd18526a42da866ea98906a3325a4`.
+
+### rumiai-tests
+
+`external/geoserver/install-dependency-live.test` now verifies that installation initializes managed `data/data_dir`, routes `root/data_dir` through a symlink, retains factory `global.xml`, and keeps the concrete platform-independent.
+
+`external/geoserver/service-live.test` carries the same data-state/all-stream checks and no longer contains the stale package-osarch whitelist or an osarch-qualified synthetic GeoServer selector.
+
+Current revision: `9a3d0fb9a7fb2b6c61fed1966586319cf71c0691`.
+
+## Validation status
+
+- PoC 056 direct upstream state probe including external data/log/tmp/cache relocation: passed on Linux in run `37293536922`.
+- Existing composed pre-mapping probe confirmed that the un-routed package modified only `root/data_dir/**` and that `geoserver@3.0.1` is an all-stream concrete.
+- Permanent GeoServer validation at rumiai-tests `f92a64ea13c9a8c034221f8701dfef532285cb2e` passed on macOS, including the new install-time data-state assertions and the complete `service-live.test`; scope result was VALIDATED.
+- The corresponding Linux workflow remains useful independently: full service validation can be host-supervisor-dependent, while the install/repository checks and PoC provide Linux package/state evidence. Do not relabel a host-prerequisite SKIP as PASS.
+
+## Current state
+
+The GeoServer package state mapping is implemented. The final consistency check must verify the current heads and the latest focused validation results before task closure.
+
+## Next action
+
+Complete the final consistency gate, record the latest workflow outcomes, then close the handoff if no current mismatch remains.
