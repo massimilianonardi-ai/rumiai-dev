@@ -1,7 +1,7 @@
 # RumiAI OS — Bootstrap environment
 
 Status: **Current / normative**  
-Updated: 2026-09-28
+Updated: 2026-10-05
 
 This specification defines the environment established by the technical root runtime `$m_ROOT/m`.
 
@@ -44,7 +44,11 @@ It must not introduce derived convenience variables merely to abbreviate deeper 
 
 ## PATH
 
-`m` prepends:
+Before command execution, `m` sources the current generated global environment
+described below. Provider PATH contributions from those files are therefore applied
+to the inherited host PATH first.
+
+The technical bootstrap then prepends:
 
 ```text
 $m_BIN_SYS_OSARCH_DIR
@@ -53,7 +57,14 @@ $m_BIN_EXT_OSARCH_DIR
 $m_BIN_EXT_DIR
 ```
 
-before the inherited host PATH.
+so the resulting technical order is:
+
+```text
+m sys/ext command roots
+global provider osarch PATH contributions
+global provider osarch-independent PATH contributions
+inherited host PATH
+```
 
 RumiAI branded activation is separate and prepends:
 
@@ -115,7 +126,44 @@ runtime has been established.
 The root bootstrap still knows only the single `core.lib.sh` entry library;
 it does not load `base.lib.sh` separately.
 
-The current root bootstrap performs no package/provider initialization.
+The root bootstrap performs no package/provider resolution or initialization.
+
+## Generated global execution environment
+
+The execution phase consumes derived global environment state rooted at:
+
+```text
+$m_STATE_SYS_DIR/sys/environment/cache
+```
+
+The package/provider subsystem may materialize:
+
+```text
+env
+env-linux-x86_64
+env-linux-arm64
+env-macos-x86_64
+env-macos-arm64
+env-windows-x86_64
+env-windows-arm64
+env-osarch -> env-<selected-osarch>
+```
+
+`env` is the osarch-independent generated environment. `env-osarch` is a
+relative selector owned by the `osarch` command and points to the generated
+environment for the currently selected osarch.
+
+After `core.lib.sh` has established the common runtime and before command
+execution, `m` sources `env` when present and then sources the selected
+`env-osarch` target when present. These files contain only generated shell
+assignments/exports from trusted subsystem materialization; the bootstrap does
+not resolve facility defaults, package defaults, provider selectors or package
+concretes.
+
+A missing generated environment is valid and contributes nothing. Existing
+environment objects with invalid type, invalid selector shape or source failure
+are runtime-state errors rather than a request for the bootstrap to regenerate
+them.
 
 ## State roots
 
@@ -181,7 +229,9 @@ BOOT-09  m_COMMAND_BIN identifies the integrated command being sourced
 BOOT-10  before core is loaded, m defines only readpathce and export_readonly as bootstrap helper functions
 BOOT-11  m directly dot-sources core.lib.sh as the library-loading chicken/egg exception
 BOOT-12  loadlib is provided by core.lib.sh; base.lib.sh provides loadsyslib and the common base runtime
-BOOT-13  the current root bootstrap performs no package/provider initialization
-BOOT-14  the root bootstrap is limited to root resolution, fundamental system-variable initialization, core loading and execution
+BOOT-13  the root bootstrap performs no package/provider resolution or initialization
+BOOT-14  the root bootstrap is limited to root resolution, fundamental system-variable initialization, core loading, generated global-environment sourcing and execution
+BOOT-15  generated global environment is sourced from system sys/environment cache as env then env-osarch
+BOOT-17  technical m PATH roots precede provider PATH contributions, which precede inherited host PATH
 BOOT-16  branded root entrypoints remain #!/bin/sh direct bootstraps but are sourced by m when passed back as exact root command bodies
 ```
