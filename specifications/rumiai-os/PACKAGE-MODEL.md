@@ -1,7 +1,7 @@
 # RumiAI OS — Package model
 
 Status: **Current / normative**  
-Updated: 2026-09-27
+Updated: 2026-10-05
 
 This document defines the current semantic contract of the `m` package subsystem without duplicating implementation internals that belong in `rumiai-os`.
 
@@ -707,7 +707,7 @@ literal <value>
 
 `root` sets an ordinary variable to the provider useful-root pathname. `root-path` sets it to a pathname below that root after containment validation. `literal` sets an ordinary literal value; the form without a value denotes the empty string. No shell expansion or evaluation is performed on projection metadata.
 
-For `PATH`, only `root` and `root-path` are valid. Each PATH record contributes one managed provider directory; it never supplies a literal complete PATH. PATH contributions follow the same deterministic precedence principle as ordinary facility environment projection: later records/facilities have higher precedence. At technical bootstrap, selected-osarch contributions precede osarch-independent provider contributions, and all provider contributions follow the technical m command roots while preceding inherited host PATH.
+For `PATH`, only `root` and `root-path` are valid. Each PATH record contributes one managed provider directory; a `root-path` contribution must resolve to a directory contained by the provider useful root. It never supplies a literal complete PATH. PATH contributions follow the same deterministic precedence principle as ordinary facility environment projection: later records/facilities have higher precedence. At technical bootstrap, selected-osarch contributions precede osarch-independent provider contributions, and all provider contributions follow the technical m command roots while preceding inherited host PATH.
 
 Every facility referenced by `facility-cmd`, `facility-env` or `facility-service` must also be declared by the package's `facility` metadata. Provider realization metadata is validated through the trusted facility-part semantics; provider-specific shell code is not a facility-contract mechanism.
 
