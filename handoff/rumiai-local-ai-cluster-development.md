@@ -10,7 +10,7 @@ Develop and validate a practical local AI cluster for RumiAI using the available
 ## Current repository revisions
 
 ```text
-rumiai-dev   cda5857c90c27fed2b7ceec5fb14a935f84c2c64  (pre-checkpoint HEAD)
+rumiai-dev   e5a33a5cc3b76075be21205682b22b0bc98355a3  (pre-checkpoint HEAD)
 rumiai-os    f4d28822c4a2a875bd816ec3b15477dcfa905706  (current fleet rollout target)
 pkg-catalog  86f668dab8fe71b656176c0fe2b86d402e872bf9  (Ollama archive regex portability fix on current package/service definition)
 ```
