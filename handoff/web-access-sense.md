@@ -9,7 +9,7 @@ Define a general-purpose RumiAI web-access sense that lets RumiAI observe and in
 
 ## Current repository revisions
 
-- rumiai-dev: c5514ead3073b2aafcddcf8521a33f38db0201f5
+- rumiai-dev: 4ba4645abc1faf09fc751e1088d9b98824ffa5ee
 
 ## Applicable canonical sources
 
@@ -22,15 +22,16 @@ Define a general-purpose RumiAI web-access sense that lets RumiAI observe and in
 
 ## Fixed task-local choices
 
-- The public sense name is fixed as `web-sense`.
+- The AI-level Web sense is fixed as `web-sense`.
+- The deterministic Web control/access substrate is fixed as `web-control` for the current task design.
 - Treat this as a general RumiAI capability, not an Amazon-specific scraper.
 - The design must support dynamic JavaScript-driven sites and must permit site-specific helpers or specialist external tools where a generic browser is not the best provider.
 - Avoid third-party scraping services such as ZenRows as a required architectural dependency.
 - A user-owned machine/browser is an acceptable and likely necessary execution locus for the general capability.
 - ChatGPT interoperability is a first-class usability requirement; the design must cover both API-based and non-API interaction paths.
 - The capability must not be coupled to ChatGPT: ChatGPT is one possible client/integration surface.
-- `web-sense` must support authenticated user sessions through a dedicated persistent browser profile and may interact with sites through generic browser capabilities or site-specific adapters/helpers.
-- The first implementation/design baseline is intentionally small: navigate a page, preserve/export/save page evidence, and expose controlled debugger/introspection access. Higher-level site semantics come later.
+- `web-control` must support authenticated user sessions through a dedicated persistent browser profile and may interact with sites through generic browser capabilities or deterministic site-specific adapters/helpers.
+- The first deterministic implementation/design baseline is intentionally small: navigate a page, preserve/export/save page evidence, and expose controlled debugger/introspection access. Higher-level AI semantics belong to `web-sense` and come later.
 
 ## Acceptance scenarios
 
@@ -46,9 +47,9 @@ Define a general-purpose RumiAI web-access sense that lets RumiAI observe and in
 
 The task-local public sense identity is fixed as `web-sense`. It keeps the broad Web domain while making the architectural role explicit and avoiding ambiguity with generic `web` terminology. This remains task-local design state until the subsystem contract is promoted into a canonical specification.
 
-### Initial baseline
+### Initial deterministic baseline
 
-Start from a deliberately small browser-backed baseline before designing site-specific semantics:
+Start from a deliberately small `web-control` browser-backed baseline before designing AI-level Web semantics:
 - open/navigate a URL in a real browser session;
 - retain authenticated session state in a dedicated persistent profile;
 - export/save the observed page in useful forms (at minimum rendered/current document evidence, with exact formats still to be designed);
@@ -58,19 +59,42 @@ Start from a deliberately small browser-backed baseline before designing site-sp
 This baseline should be sufficient to reproduce the earlier class of workflows such as saving complete ChatGPT conversations, while allowing later site adapters to build higher-level semantic operations.
 
 
-### Deterministic / AI boundary
+### Sense / control boundary
 
-Preferred working boundary: `web-sense` is deterministic. It exposes observable web/browser operations and returns evidence; it does not interpret user goals, choose autonomous plans, judge business meaning, or own scheduling policy.
+Current preferred architecture:
 
-AI reasoning stays above `web-sense` in the RumiAI layer. The AI layer interprets page evidence, chooses subsequent operations, composes workflows and decides when or why work should be scheduled or notifications emitted.
+```text
+RumiAI / AI
+    |
+    v
+web-sense
+    |
+    v
+web-control
+    |
+    +-- browser/CDP/Playwright
+    +-- HTTP
+    +-- deterministic site adapters/helpers
+    +-- specialist deterministic tools
+```
 
-Site-specific adapters may still belong inside `web-sense` when they implement deterministic semantic operations. For example, an Amazon wishlist extractor or ChatGPT conversation exporter can be deterministic even though it is site-specific. AI belongs above the boundary only when interpretation or planning is required.
+`web-control` is the deterministic substrate. It owns concrete Web/browser state and operations: profiles, sessions, pages, navigation, capture/export, inspection, interaction primitives, downloads/uploads where applicable, network/runtime evidence and controlled debugger access. It performs explicitly requested operations and returns observable evidence; it does not infer user intent or autonomously plan a workflow.
 
-This remains working design until promoted to a canonical specification.
+`web-sense` is the AI/cognitive Web capability. It interprets evidence returned by `web-control`, understands page meaning in relation to the user's goal, chooses which deterministic operation or adapter to invoke next, and composes multi-step Web behavior. It may use generic browser interaction or deterministic site-specific helpers without exposing those implementation choices to the user.
+
+This makes `sense` a higher-level perceptive/interactive modality rather than a raw sensor or control surface. The model parallels the earlier Computer Use / Computer Control separation: deterministic control below, AI-mediated use/perception above.
+
+Generic scheduling remains outside the sense/control pair. RumiAI may schedule repeated use of `web-sense`, but neither `web-sense` nor `web-control` should own the general scheduling mechanism.
+
+Site-specific adapters are classified by semantics rather than specificity: a deterministic Amazon wishlist extractor, ChatGPT conversation exporter or yt-dlp-backed metadata helper belongs below the AI boundary and may be exposed through `web-control`; an adapter that requires interpretation/planning belongs in or above `web-sense`.
+
+The public AI-level name `browser-use` is rejected for this architecture because it is narrower than the Web domain and conflates one interaction mechanism with the broader sense. It remains a useful descriptive phrase for one behavior implemented by `web-sense` over `web-control`.
+
+This remains task-local design until promoted to a canonical specification.
 
 ### Capability/provider separation
 
-The public capability should describe web observation/interaction. Provider selection remains an internal concern. Candidate provider classes include:
+`web-control` should provide the deterministic provider-independent Web access/control surface. `web-sense` consumes that surface and keeps provider selection and low-level mechanics out of the user's intent. Candidate provider classes include:
 - real browser via Chrome/Chromium + CDP/Playwright;
 - raw HTTP for simple resources;
 - site-native structured tools/protocols when available (including WebMCP-like capabilities);
@@ -81,7 +105,7 @@ The real browser should use a dedicated persistent RumiAI-controlled profile rat
 
 ### ChatGPT integration model
 
-Keep the web sense contract independent from ChatGPT and add bridges/adapters around it.
+Keep both `web-sense` and `web-control` independent from ChatGPT and add bridges/adapters around the AI-level capability as appropriate.
 
 Candidate interaction paths:
 1. OpenAI API client -> RumiAI capability.
@@ -114,23 +138,23 @@ This is still working design and requires explicit contract design before promot
 - Confirmed no current canonical browser/web-agent/sense responsibility exists in rumiai-dev.
 - Established ChatGPT interoperability as a first-class design dimension before implementation design starts.
 - Verified current OpenAI support for custom MCP plugins, Secure MCP Tunnel for private/local MCP reachability, scheduled tasks using supported apps/plugins, desktop site tools backed by WebMCP, and the built-in ChatGPT desktop browser. Corrected the earlier provisional assumption that ChatGPT could directly attach to an arbitrary localhost MCP server.
-- User approved `web-sense` as the task-local public identity and fixed the initial browser baseline around navigation, page export/save and debugger/introspection access.
+- User approved `web-sense` as the AI-level Web sense. After re-evaluating the meaning of "sense" against the Computer Use / Computer Control separation, the task design now uses `web-control` for the deterministic substrate and `web-sense` for the AI/cognitive layer. The initial deterministic browser baseline remains navigation, page export/save and controlled debugger/introspection access.
 
 ## Current state
 
 The task is in architecture/naming exploration. No product/runtime implementation or canonical specification has been created or modified.
 
-The task-local name is now fixed as `web-sense`; canonical specification promotion has not happened yet.
+The task-local names are now fixed as `web-sense` for the AI/cognitive layer and `web-control` for the deterministic layer; canonical specification promotion has not happened yet.
 
 The most important architectural boundary is one provider-independent local RumiAI web capability with multiple integration bridges, rather than separate Amazon/ChatGPT/browser subsystems.
 
 ## Next action
 
-Design the smallest provider-independent baseline contract for page navigation, export/save and layered introspection/debug access, then validate it with a browser-backed PoC before adding site-specific adapters.
+Design the smallest provider-independent `web-control` contract for page navigation, export/save, interaction primitives and layered introspection/debug access; then define the minimal `web-sense` contract that composes those deterministic capabilities before validating the split with a browser-backed PoC.
 
 ## Blockers / open questions
 
-- Confirm and promote the preferred deterministic `web-sense` boundary, with planning/interpretation/scheduling remaining above it.
+- Promote the `web-sense` (AI) / `web-control` (deterministic) boundary once the two minimal contracts are sufficiently settled.
 - Determine which ChatGPT integration paths are baseline versus optional compatibility bridges.
 - Decide the exact export artifacts and introspection/debug privilege boundaries.
 - Decide the minimal provider interface and provider-resolution semantics only after the public capability contract is clear.
