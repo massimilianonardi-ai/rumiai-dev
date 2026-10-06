@@ -9,11 +9,11 @@ Define a general-purpose RumiAI web-access sense that lets RumiAI observe and in
 
 ## Current repository revisions
 
-- rumiai-dev: 58b5f56ea14abcab28777bcca5bc546f7c2aefbb
+- rumiai-dev: d93e2b0afb53f8be0fc956fc0e9fbe24d9593dad
 - rumiai-os: f4d28822c4a2a875bd816ec3b15477dcfa905706
 - rumiai-tests: 80176d5e8cef61d5bc792555a9b957c0f3600044
 - rumiai-dev-PoCs: 3c00148a4800cb8556be1f8856546d529001c6cb
-- pkg-catalog: c1425bd5097bd18526a42da866ea98906a3325a4
+- pkg-catalog: 8d28fde9cb5e058b1d9b20006960d57059a14a71
 
 ## Applicable canonical sources
 
@@ -23,6 +23,10 @@ Define a general-purpose RumiAI web-access sense that lets RumiAI observe and in
 - specifications/README.md
 - specifications/rumiai-os/CURRENT-MODEL.md
 - specifications/rumiai-os/SENSE-MODEL.md
+- specifications/rumiai-os/WEB-CONTROL.md
+- specifications/rumiai-os/PACKAGE-MODEL.md
+- specifications/rumiai-os/MK.md
+- specifications/rumiai-os/SERVICE-LIFECYCLE.md
 - handoff/README.md
 
 ## Fixed task-local choices
@@ -48,87 +52,20 @@ Define a general-purpose RumiAI web-access sense that lets RumiAI observe and in
 
 ## Working design
 
-### Naming
+### Remaining implementation design
 
-The task-local public sense identity is fixed as `web-sense`. It keeps the broad Web domain while making the architectural role explicit and avoiding ambiguity with generic `web` terminology. This remains task-local design state until the subsystem contract is promoted into a canonical specification.
+The canonical `web-sense` / `web-control` boundary, `web-control` ownership, independent-project placement, package/facility identity and baseline deterministic contract now live in `specifications/rumiai-os/WEB-CONTROL.md` and are no longer duplicated here.
 
-### Initial deterministic baseline
+The first concrete provider is still planned around Node.js + Playwright + a Chromium-class browser, using PoC 057 as implementation evidence. Playwright/CDP/Chromium remain provider details rather than canonical API.
 
-Start from a deliberately small `web-control` browser-backed baseline before designing AI-level Web semantics:
-- open/navigate a URL in a real browser session;
-- retain authenticated session state in a dedicated persistent profile;
-- export/save the observed page in useful forms (at minimum rendered/current document evidence, with exact formats still to be designed);
-- expose layered introspection suitable for agents, from safe page/source/DOM/network/runtime inspection up to an explicitly privileged debugger attachment;
-- keep raw debugger access local/controlled rather than making an unrestricted browser-debug endpoint the ordinary public interface.
+The next project promotion should create the independent `rumiai-web-control` repository with a current `mk.json`, promote the validated controller mechanics into project source/tests, and produce a release artifact consumable by `pkg`. Runtime package metadata must be added only after a real release artifact exists.
 
-This baseline should be sufficient to reproduce the earlier class of workflows such as saving complete ChatGPT conversations, while allowing later site adapters to build higher-level semantic operations.
+Open packaging questions that remain implementation-specific:
 
-
-### Sense / control boundary
-
-The general meaning of `sense` is now canonical in `specifications/rumiai-os/SENSE-MODEL.md`. The task-specific Web mapping currently under design is:
-
-```text
-RumiAI / AI
-    |
-    v
-web-sense
-    |
-    v
-web-control
-    |
-    +-- browser/CDP/Playwright
-    +-- HTTP
-    +-- deterministic site adapters/helpers
-    +-- specialist deterministic tools
-```
-
-`web-control` is the deterministic substrate. It owns concrete Web/browser state and operations: profiles, sessions, pages, navigation, capture/export, inspection, interaction primitives, downloads/uploads where applicable, network/runtime evidence and controlled debugger access. It performs explicitly requested operations and returns observable evidence; it does not infer user intent or autonomously plan a workflow.
-
-`web-sense` is the AI/cognitive Web capability. It interprets evidence returned by `web-control`, understands page meaning in relation to the user's goal, chooses which deterministic operation or adapter to invoke next, and composes multi-step Web behavior. It may use generic browser interaction or deterministic site-specific helpers without exposing those implementation choices to the user.
-
-The Web mapping applies the canonical sense model: deterministic control below, AI-mediated perception/interpretation/interactions above.
-
-Generic scheduling remains outside the sense/control pair. RumiAI may schedule repeated use of `web-sense`, but neither `web-sense` nor `web-control` should own the general scheduling mechanism.
-
-Site-specific adapters are classified by semantics rather than specificity: a deterministic Amazon wishlist extractor, ChatGPT conversation exporter or yt-dlp-backed metadata helper belongs below the AI boundary and may be exposed through `web-control`; an adapter that requires interpretation/planning belongs in or above `web-sense`.
-
-The public AI-level name `browser-use` is rejected for this architecture because it is narrower than the Web domain and conflates one interaction mechanism with the broader sense. It remains a useful descriptive phrase for one behavior implemented by `web-sense` over `web-control`.
-
-The general `sense` definition is canonical. The specific `web-sense` / `web-control` names and contracts remain task-local design until separately promoted.
-
-### Capability/provider separation
-
-`web-control` should provide the deterministic provider-independent Web access/control surface. `web-sense` consumes that surface and keeps provider selection and low-level mechanics out of the user's intent. Candidate provider classes include:
-- real browser via Chrome/Chromium + CDP/Playwright;
-- raw HTTP for simple resources;
-- site-native structured tools/protocols when available (including WebMCP-like capabilities);
-- site-specific adapters/helpers for stable semantic extraction;
-- specialist tools such as yt-dlp where they provide materially better domain behavior.
-
-The real browser should use a dedicated persistent RumiAI-controlled profile rather than the user's ordinary browser profile. Human-interaction-required states (login, consent, CAPTCHA/challenge) should be surfaced rather than bypassed.
-
-### Web-control development proposal
-
-Preferred first implementation direction, still working design:
-
-- `web-control` is likely an `m`-owned technical capability because it is deterministic, general-purpose and independent from RumiAI cognition; this ownership must be promoted explicitly before product implementation.
-- validate the design first in `rumiai-dev-PoCs`, then promote only settled contract into `rumiai-dev` and implement in `rumiai-os`;
-- use Node.js for the PoC/controller implementation and Playwright as the first browser-control provider, without making Playwright part of the public `web-control` contract;
-- start with Chromium and a dedicated persistent user-data/profile directory; do not reuse the user's ordinary browser profile as the default;
-- reuse the existing `pkg-catalog` Node.js/Chromium package capabilities rather than introducing an Electron core;
-- maintain browser/context/page state in one controller process and expose stable `web-control` identities to clients rather than leaking Playwright objects;
-- keep the low-level controller local. Prefer a local IPC/API boundary and do not expose an unrestricted remote-debugging port as the ordinary public interface;
-- provide controlled CDP/debug access through `web-control` for advanced inspection; raw debugger endpoint publication, if needed, is a separately privileged operation;
-- initial capture/export should validate rendered DOM/HTML, readable text, screenshot and a self-contained page snapshot such as MHTML where the browser supports it;
-- the first PoC should prove navigation, persistent authenticated session reuse, multiple page identity/lifecycle, capture/export, basic deterministic interaction and controlled CDP inspection on ordinary JavaScript-heavy pages;
-- Amazon should be a later acceptance/adapter test, not the mechanism that defines the baseline contract.
-
-Current implementation evidence:
-- `pkg-catalog` already contains Node.js, Chromium, Chrome and Electron packages;
-- PoC 054 already uses Node.js + Playwright + Chromium to navigate an Amazon wishlist and export rendered HTML, screenshot and JSON evidence;
-- current Chrome requires a non-default user-data directory for command-line remote debugging, reinforcing the dedicated-profile design;
-- Playwright supports persistent browser contexts and CDP sessions, while direct `connectOverCDP` is documented as lower fidelity than Playwright's native control path.
+- exact Node.js facility compatibility range for the first provider;
+- whether the first provider consumes an explicit Chromium-class browser facility or temporarily owns a concrete browser package dependency until such a facility contract is justified;
+- release artifact construction for vendored/bundled Playwright runtime dependencies without requiring network package installation at runtime;
+- exact private local IPC transport, while preserving the canonical requirement that raw debugger exposure is not the ordinary interface.
 
 ### ChatGPT integration model
 
@@ -167,24 +104,24 @@ This is still working design and requires explicit contract design before promot
 - Verified current OpenAI support for custom MCP plugins, Secure MCP Tunnel for private/local MCP reachability, scheduled tasks using supported apps/plugins, desktop site tools backed by WebMCP, and the built-in ChatGPT desktop browser. Corrected the earlier provisional assumption that ChatGPT could directly attach to an arbitrary localhost MCP server.
 - User approved `web-sense` as the AI-level Web sense. After re-evaluating the meaning of "sense" against the Computer Use / Computer Control separation, the task design now uses `web-control` for the deterministic substrate and `web-sense` for the AI/cognitive layer. The initial deterministic browser baseline remains navigation, page export/save and controlled debugger/introspection access.
 - The project-wide definition of `sense` has been promoted to `specifications/rumiai-os/SENSE-MODEL.md` and referenced by the high-level current model.
+- The general first-party source/distribution placement rule has been promoted into `CURRENT-MODEL.md`: semantic ownership is independent from repository/release placement; coherent independently releasable capabilities may live in separate projects even when semantically owned by `m` or RumiAI.
+- `specifications/rumiai-os/WEB-CONTROL.md` now canonically defines `web-control` as the deterministic `m` capability, `web-sense` above it, independent project/package identity `rumiai-web-control`, facility identity `web-control`, persistent profile/page semantics, deterministic inspect/capture/interaction baseline, privileged debug boundary and `srv` lifecycle.
+- `pkg-catalog` now defines facility `web-control` compatibility 1 with public command `web-control` and provider-backed foreground service semantics. No concrete provider is declared until a real release artifact exists.
 - PoC 057 (`rumiai-dev-PoCs/pocs/057-web-control-browser-controller`) implements the proposed controller boundary with Node.js + Playwright + persistent Chromium behind a local Unix-domain socket. GitHub Actions run 37440924848 completed successfully on Ubuntu 24.04 / Node 22. The experiment mechanically validated dynamic post-fetch DOM observation, deterministic fill/click, popup page registration, HTML/text/PNG/MHTML capture, page-scoped raw CDP `Runtime.evaluate`, and cookie/localStorage persistence across controller/browser restart using the same dedicated profile.
 - Local syntax checks for the PoC JavaScript passed. Local runtime execution was not obtained because dependency installation could not complete in the local tool environment; the successful GitHub Actions run is the runtime validation evidence.
 
 ## Current state
 
-The task has completed its first `web-control` mechanics experiment. No `rumiai-os` product/runtime implementation or Web-specific canonical specification has been created yet.
+The Web control contract is now canonical in `specifications/rumiai-os/WEB-CONTROL.md`. `web-control` is semantically `m`-owned but source/distribution-independent as project `rumiai-web-control`; `mk` owns project development lifecycle and `pkg` owns runtime installation/integration. `pkg-catalog` now contains provider-independent facility `web-control` compatibility 1 with command and foreground service parts, but intentionally contains no concrete provider package yet.
 
-The general sense semantics are canonical. The task-local names remain fixed as `web-sense` for the AI/cognitive Web capability and `web-control` for the deterministic Web substrate. PoC 057 now provides positive implementation evidence for a persistent browser controller boundary without promoting its JSON protocol, socket transport, Playwright provider, CSS-selector surface, capture formats or process model.
-
-The most important architectural boundary is one provider-independent local RumiAI web capability with multiple integration bridges, rather than separate Amazon/ChatGPT/browser subsystems.
+PoC 057 remains the positive implementation evidence for the first provider mechanics. No `rumiai-os` runtime code is required for the `web-control` implementation itself beyond the existing generic `mk`/`pkg`/`srv` machinery. The source implementation is blocked only on creation of the new GitHub repository, an operation not exposed by the currently available GitHub connector.
 
 ## Next action
 
-Use the validated PoC 057 results to define the smallest provider-independent `web-control` contract: ownership, browser/profile/session/page identities, deterministic observation/interaction surface, capture semantics, privileged debug boundary and lifecycle. Promote only settled semantics before any `rumiai-os` implementation.
+Create the independent `rumiai-web-control` repository, add `mk.json`, promote the validated PoC 057 controller mechanics into real project source/tests, and produce the first versioned release artifact. Then add the concrete `rumiai-web-control` provider package metadata to `pkg-catalog`, validate `pkg install` + facility/service integration, and only after that start the `web-sense` consumer/integration layer.
 
 ## Blockers / open questions
 
-- Promote the `web-sense` (AI) / `web-control` (deterministic) boundary once the two minimal contracts are sufficiently settled.
 - Determine which ChatGPT integration paths are baseline versus optional compatibility bridges.
-- Decide the exact export artifacts and introspection/debug privilege boundaries.
-- Decide the minimal provider interface and provider-resolution semantics only after the public capability contract is clear.
+- Create the independent `rumiai-web-control` repository; the currently available GitHub connector can modify existing repositories but cannot create a new repository, so repository creation is the only external setup step blocking source promotion from PoC 057.
+- Settle the first provider's Node/browser dependency packaging and release-artifact shape before adding the concrete `rumiai-web-control` package definition/provider realization to `pkg-catalog`.
