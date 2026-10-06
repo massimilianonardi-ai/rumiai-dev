@@ -31,6 +31,30 @@ Terminology follows that layer boundary. In current development contracts, imple
 
 `pkg`, package runtime infrastructure and `pkg-catalog` belong to `m`.
 
+### First-party project and distribution boundary
+
+Semantic ownership (`m` or RumiAI) and source/distribution placement are independent dimensions.
+
+A first-party responsibility remains source-distributed inside `rumiai-os` when it is structurally part of the product runtime and one or more of these properties materially apply:
+
+- it is required by bootstrap or by core runtime operation before managed packages can be relied on;
+- it intentionally shares private `rumiai-os` implementation contracts and must evolve in lockstep with them;
+- it is a small/core command or library whose independent release/version lifecycle would create an artificial boundary rather than a coherent product.
+
+A first-party responsibility SHOULD instead be an independent project/release unit when it has a coherent public contract and lifecycle of its own and one or more of these properties materially apply:
+
+- it is useful independently of the rest of `rumiai-os` or may have multiple clients;
+- it can be versioned, tested and released independently behind a stable boundary;
+- it has substantial optional/provider/platform-specific dependencies or backends that should not become product-root implementation dependencies;
+- it is naturally substitutable through a package/facility boundary;
+- its update cadence or operational lifecycle is meaningfully independent from the `rumiai-os` core.
+
+An independent project may still be semantically owned by `m` or by RumiAI. Repository separation does not reclassify semantic ownership.
+
+For an independent runtime project, `mk` owns development-lifecycle orchestration through the project's `mk.json`, while `pkg` owns installation, dependency/provider resolution and runtime integration of released artifacts. `mk` MUST NOT become a second installer and `pkg` MUST NOT become the project's build engine.
+
+`rumiai-os` may contain the core integration/consumer side of an independently distributed first-party capability, but MUST NOT duplicate that project's implementation merely to keep semantic ownership inside one repository.
+
 
 ### RumiAI senses
 
@@ -492,4 +516,8 @@ CURRENT-79   structural hygiene is not a cache-retention policy and defines no T
 CURRENT-80   testlab belongs to m and manages developer-facing live scenario environments without becoming a test runner or formal-validation launcher
 CURRENT-81   testlab scenario definitions are project-owned sys resource payloads under res/sys/testlab/scenarios while persistent instance lifecycle/recovery state uses user-scoped sys testlab state
 CURRENT-82   a RumiAI sense is a specialized AI capability for perceiving, interpreting and interacting with a domain through separate deterministic observation/control mechanisms
+CURRENT-83   semantic ownership and source/distribution placement are independent dimensions for first-party capabilities
+CURRENT-84   core/bootstrap or lockstep-private responsibilities remain distributed inside rumiai-os while coherent independently releasable capabilities may use independent projects
+CURRENT-85   independent first-party runtime projects use mk for project development lifecycle and pkg for released runtime installation/integration
+CURRENT-86   repository separation does not reclassify a capability from m to RumiAI or vice versa
 ```
