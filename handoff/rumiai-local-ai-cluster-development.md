@@ -1,17 +1,18 @@
 # RumiAI local AI cluster development
 
 Status: Active
-Updated: 2026-10-05
+Updated: 2026-10-06
 
 ## Goal
 
-Develop and validate a practical local AI cluster for RumiAI using the available Ubuntu VMware servers, with CPU-only inference, containerized deployment and workload distribution that remains effective despite relatively slow inter-host networking.
+Develop and validate a practical local AI cluster for RumiAI using the available Ubuntu VMware servers, with CPU-only inference and workload distribution that remains effective despite relatively slow inter-host networking and severe local-disk constraints on part of the fleet.
 
 ## Current repository revisions
 
 ```text
-rumiai-dev  43a2368bcff4b8a2b602724672a47b2d8dab030c  (pre-checkpoint HEAD)
-rumiai-os   f39d986e5d4269f742d138eb3ebf9092d1e3345c  (observed current remote HEAD; not modified by this checkpoint)
+rumiai-dev   a895ce779ff51e75ac22660bb338df08c228dd7e  (pre-checkpoint HEAD)
+rumiai-os    f4d28822c4a2a875bd816ec3b15477dcfa905706  (observed current remote HEAD; not modified by this checkpoint)
+pkg-catalog  c1425bd5097bd18526a42da866ea98906a3325a4  (observed current remote HEAD; no llama.cpp package/facility found)
 ```
 
 Fresh remote HEAD retrieval remains mandatory before future analysis or writes.
@@ -23,9 +24,12 @@ README.md
 RULES.md
 CONSISTENCY-GATE.md
 specifications/README.md
+specifications/rumiai-os/PACKAGE-MODEL.md
+specifications/rumiai-os/SERVICE-LIFECYCLE.md
 specifications/rumiai-os/RSUDO.md
 handoff/README.md
 products/README.md
+products/ai/llama-cpp.md
 ```
 
 Additional package, service, state or container specifications must be retrieved only when implementation reaches those responsibilities.
@@ -39,23 +43,25 @@ Additional package, service, state or container specifications must be retrieved
 - `gis` and `webgisrpr` may be used without a task-level CPU cap; the user will manage production contention when necessary.
 - Credentials are not exposed to the assistant. Operations use `rsudo` / `rsudo-admin` from an environment where the user has already loaded credentials, or an explicitly available ChatGPT Work/Codex execution session.
 - Do not rely on host wall clocks for distributed correlation. Prefer run identifiers, operation identifiers and explicit command/result state.
-- No further synthetic/network benchmarking is required before proceeding. The current hardware evidence is sufficient for the next design/deployment phase.
+- No further synthetic/network benchmarking is required before proceeding. The current hardware evidence is sufficient for deployment design.
 - The large `/m` storage on `gis` is the shared-storage basis for the cluster because the VM disks cannot currently be enlarged.
-- Models, datasets, application caches and persistent AI data may use the shared `gis:/m` storage.
-- A normal rootless Podman graphroot must not simply be placed on an NFS/distributed mount: current Podman documentation does not support that configuration. Container/image storage on the shared filesystem therefore requires an explicitly compatible storage approach rather than assuming ordinary local OverlayFS semantics.
+- The first shared export should be read-only on worker nodes and should contain model/runtime artifacts. Persistent writable AI services such as Hindsight remain local to `gis` storage rather than writing through the worker share.
+- The three small-root local VMs should not depend on Podman for the first llama.cpp deployment. Their first worker path is native execution of a shared llama.cpp runtime plus shared GGUF models.
+- Do not place a normal rootless Podman graphroot on NFS/distributed storage. Podman may still be used later on nodes where local writable storage is sufficient or where a deliberately compatible storage layout is established.
 - The intended workload model is hybrid: strong external reasoning (for example ChatGPT/Work) remains available as coordinator/reviewer, while local workers provide persistent, private and parallel inference capacity.
 
 ## Working design
 
-- Initial worker runtime direction: CPU-optimized `llama.cpp` / GGUF behind a simple service boundary.
+- Initial worker runtime direction: CPU-only `llama-server` / GGUF behind its existing HTTP service boundary.
+- Prefer one centrally staged x86_64 Ubuntu CPU runtime under `gis:/m/ai/runtime/llama.cpp/<revision>` and models under `gis:/m/ai/models`.
+- Prefer a read-only NFS export of the shared runtime/model tree to workers. The concrete export/mount configuration still requires physical deployment validation.
+- Current upstream llama.cpp stable release is v0.6.0 (2026-10-05). The release points to nightly build `b11429`; its official Ubuntu x64 CPU binary archive is about 17.7 MB and therefore makes direct shared execution practical without local compilation or container images.
+- Before accepting direct execution from the NFS mount, physically verify the official archive's runtime dependencies and that `llama-server` runs correctly on both Ubuntu/kernel classes present in the fleet.
 - Do not introduce Paperclip or CrewAI merely to distribute inference across the hosts. Multi-agent frameworks solve orchestration/state/control-plane problems, not the core CPU-inference bottleneck.
 - Prefer the smallest orchestration layer that can dispatch independent jobs to model workers. RumiAI/its higher-level orchestration may own this directly unless concrete workflow requirements justify an external framework.
 - Hindsight is a comparatively strong near-term experiment for persistent AI memory because it exposes a service/API boundary and can use an external local llama.cpp/OpenAI-compatible server; it is not itself an inference accelerator.
-- Paperclip remains primarily a reference or later control-plane candidate for long-running autonomous multi-agent work with approvals, lifecycle, task ownership and governance.
-- CrewAI remains mainly a PoC/reference candidate for agent workflows; it is not the preferred first dependency for this cluster, especially because it adds an agent framework where simple dispatch may suffice.
 - LocalAI remains a plausible optional unifying runtime/API layer if multiple model backends/modalities are needed; it is not required for the first CPU-only LLM worker deployment.
 - The cluster should be optimized for aggregate useful work and parallel task throughput, not for making one serial model response faster through cross-node cooperation.
-- Local models are expected to be materially weaker and generally slower per difficult interactive response than current frontier ChatGPT models, but can still provide real value for bounded, repetitive, parallel, private or background development tasks.
 - Exact model families and quantizations remain to be selected by practical fit rather than additional synthetic benchmarking.
 
 ## Completed
@@ -67,36 +73,52 @@ Additional package, service, state or container specifications must be retrieved
 - `gis` exposes 8 vCPU, approximately 29 GiB available memory and a large `/m` filesystem with hundreds of GiB free.
 - `webgisrpr` exposes 8 vCPU, approximately 17 GiB available memory and a large `/m` filesystem.
 - Synthetic results established enough differentiation between the VM classes to stop hardware benchmarking and move to workload architecture/deployment.
-- Current external-product evaluations for Paperclip, Hindsight, llama.cpp, LocalAI and LangGraph were re-read; current upstream information for CrewAI and Hindsight was checked before this checkpoint.
+- Current product/catalog state was checked: no current `llama.cpp` package/facility exists in `pkg-catalog`.
+- Current upstream llama.cpp deployment surface was refreshed. The project still provides `llama-server`, supports CMake builds including static builds, and publishes an Ubuntu x64 CPU archive suitable for a first physical shared-runtime test.
 
 ## Current state
 
-The task has moved from infrastructure characterization to workload architecture.
+The task is now in deployment design.
 
-The main question is no longer whether the servers are fast enough to run local AI at all. They are expected to be useful as a pool of independent specialist/background workers, while not competing with frontier hosted models on single-request reasoning quality or latency.
+The first deployment should deliberately avoid solving the container-storage problem on the smallest VMs. Instead, `gis` acts as the central artifact host and the workers execute the same native llama.cpp distribution and read the same GGUF artifacts through a read-only shared filesystem.
 
-The preferred initial shape is:
+Conceptual layout:
 
 ```text
-ChatGPT / RumiAI high-level reasoning
-             |
-      dispatch / review
-             |
-   independent local workers
-      llama.cpp / GGUF
-             |
-   shared models/data on gis:/m
+gis local storage
+/m/ai/
+    runtime/llama.cpp/<revision>/
+    models/
+    data/
+    hindsight/
+
+read-only worker share
+/m/ai/
+    runtime/llama.cpp/<revision>/
+    models/
+
+worker
+    shared llama-server
+        + shared GGUF
+        -> model resident in worker RAM
 ```
 
-Optional services such as Hindsight should be introduced only when they solve a specific higher-level responsibility.
+Podman remains available as a later tool for services that actually benefit from containerization, not as a prerequisite for every LLM worker.
 
 ## Next action
 
-Design the first useful worker topology and workload catalog: choose a small set of local model roles, decide which hosts carry each role, define the minimal service/dispatch boundary, and define the compatible Podman/shared-storage layout.
+Perform the first physical deployment preflight and shared-runtime validation:
+
+1. verify NFS server/client tooling already present on `gis` and workers and inspect any existing exports/mount policy;
+2. create the shared `/m/ai` layout on `gis`;
+3. stage one official Ubuntu x64 CPU llama.cpp distribution on `gis`;
+4. export the runtime/model tree read-only to the seven worker hosts;
+5. mount it on one representative 10.100 worker and one representative 10.200 worker;
+6. run `llama-server --version` / dependency checks directly from the share before selecting/downloading the first GGUF.
 
 ## Blockers / open questions
 
-- Select the concrete shared-filesystem export/mount mechanism for `gis:/m`.
-- Select a Podman image/container-storage arrangement compatible with the shared filesystem and the very small local root filesystems.
-- Select the first local model set by role (coding/review, extraction/classification, embeddings/reranking, general assistant, memory-support LLM).
+- Physical NFS package/tool availability and enterprise firewall/export-policy compatibility are not yet verified.
+- Direct execution of the official llama.cpp Ubuntu x64 archive from NFS has not yet been validated on the two Ubuntu/kernel classes in the fleet.
+- Select the first local model set by role after the shared runtime path works.
 - Decide whether Hindsight should be part of the first deployment or introduced after the basic local worker pool is operational.
