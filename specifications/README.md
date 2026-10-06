@@ -12,6 +12,7 @@ Read only the smallest complete set relevant to the task.
 | Topic | Canonical current source |
 |---|---|
 | overall `m` / RumiAI architecture, layer ownership, top-level layout | `rumiai-os/CURRENT-MODEL.md` |
+| RumiAI sense definition, AI/control separation and sense invariants | `rumiai-os/SENSE-MODEL.md` |
 | root bootstrap, environment, PATH, branded activation | `rumiai-os/BOOTSTRAP-ENVIRONMENT.md` |
 | physical bootstrap/command root resolution | `rumiai-os/ENTRYPOINT-ROOT-RESOLUTION.md` |
 | command/runtime classification, shebangs and command identity | `rumiai-os/COMMAND-ENTRYPOINTS.md` |
