@@ -9,7 +9,7 @@ Define a general-purpose RumiAI web-access sense that lets RumiAI observe and in
 
 ## Current repository revisions
 
-- rumiai-dev: 3f2f5209f2bb27915f36ddc1318f1cc059e0cee5
+- rumiai-dev: c5514ead3073b2aafcddcf8521a33f38db0201f5
 
 ## Applicable canonical sources
 
@@ -22,12 +22,15 @@ Define a general-purpose RumiAI web-access sense that lets RumiAI observe and in
 
 ## Fixed task-local choices
 
+- The public sense name is fixed as `web-sense`.
 - Treat this as a general RumiAI capability, not an Amazon-specific scraper.
 - The design must support dynamic JavaScript-driven sites and must permit site-specific helpers or specialist external tools where a generic browser is not the best provider.
 - Avoid third-party scraping services such as ZenRows as a required architectural dependency.
 - A user-owned machine/browser is an acceptable and likely necessary execution locus for the general capability.
 - ChatGPT interoperability is a first-class usability requirement; the design must cover both API-based and non-API interaction paths.
 - The capability must not be coupled to ChatGPT: ChatGPT is one possible client/integration surface.
+- `web-sense` must support authenticated user sessions through a dedicated persistent browser profile and may interact with sites through generic browser capabilities or site-specific adapters/helpers.
+- The first implementation/design baseline is intentionally small: navigate a page, preserve/export/save page evidence, and expose controlled debugger/introspection access. Higher-level site semantics come later.
 
 ## Acceptance scenarios
 
@@ -39,20 +42,20 @@ Define a general-purpose RumiAI web-access sense that lets RumiAI observe and in
 
 ## Working design
 
-### Naming under evaluation
+### Naming
 
-Candidate public sense identity: `web-sense`.
+The task-local public sense identity is fixed as `web-sense`. It keeps the broad Web domain while making the architectural role explicit and avoiding ambiguity with generic `web` terminology. This remains task-local design state until the subsystem contract is promoted into a canonical specification.
 
-Current naming assessment:
-- `web-sense` is the leading candidate because it keeps the broad `web` domain while making the architectural role explicit and reducing ambiguity with generic web concepts;
-- `web` remains attractive semantically but is probably too generic as a public identity;
-- `webi` (web interaction) is compact and distinctive but less self-explanatory and would need project-specific interpretation;
-- `web-ai` risks implying that intelligence/agency belongs inside the capability rather than in RumiAI;
-- `browser-use` is implementation-oriented and collides conceptually with existing product/project naming;
-- `web-agent` suggests ownership of agency/planning rather than a sense/capability;
-- `browser` is too narrow for non-browser providers such as specialist extractors.
+### Initial baseline
 
-No public name is promoted yet.
+Start from a deliberately small browser-backed baseline before designing site-specific semantics:
+- open/navigate a URL in a real browser session;
+- retain authenticated session state in a dedicated persistent profile;
+- export/save the observed page in useful forms (at minimum rendered/current document evidence, with exact formats still to be designed);
+- expose layered introspection suitable for agents, from safe page/source/DOM/network/runtime inspection up to an explicitly privileged debugger attachment;
+- keep raw debugger access local/controlled rather than making an unrestricted browser-debug endpoint the ordinary public interface.
+
+This baseline should be sufficient to reproduce the earlier class of workflows such as saving complete ChatGPT conversations, while allowing later site adapters to build higher-level semantic operations.
 
 ### Capability/provider separation
 
@@ -100,22 +103,23 @@ This is still working design and requires explicit contract design before promot
 - Confirmed no current canonical browser/web-agent/sense responsibility exists in rumiai-dev.
 - Established ChatGPT interoperability as a first-class design dimension before implementation design starts.
 - Verified current OpenAI support for custom MCP plugins, Secure MCP Tunnel for private/local MCP reachability, scheduled tasks using supported apps/plugins, desktop site tools backed by WebMCP, and the built-in ChatGPT desktop browser. Corrected the earlier provisional assumption that ChatGPT could directly attach to an arbitrary localhost MCP server.
+- User approved `web-sense` as the task-local public identity and fixed the initial browser baseline around navigation, page export/save and debugger/introspection access.
 
 ## Current state
 
 The task is in architecture/naming exploration. No product/runtime implementation or canonical specification has been created or modified.
 
-The strongest current naming candidate is `web-sense`, but it is not yet promoted.
+The task-local name is now fixed as `web-sense`; canonical specification promotion has not happened yet.
 
 The most important architectural boundary is one provider-independent local RumiAI web capability with multiple integration bridges, rather than separate Amazon/ChatGPT/browser subsystems.
 
 ## Next action
 
-Settle the public identity and the capability boundary first; then design the smallest provider-independent contract and the ChatGPT bridge behavior before choosing implementation details.
+Design the smallest provider-independent baseline contract for page navigation, export/save and layered introspection/debug access, then validate it with a browser-backed PoC before adding site-specific adapters.
 
 ## Blockers / open questions
 
-- Confirm the public sense name (`web-sense` is the current leading candidate; `webi` remains the strongest compact alternative).
 - Define the exact boundary between sense/capability, planning/agent behavior and scheduling.
 - Determine which ChatGPT integration paths are baseline versus optional compatibility bridges.
+- Decide the exact export artifacts and introspection/debug privilege boundaries.
 - Decide the minimal provider interface and provider-resolution semantics only after the public capability contract is clear.
