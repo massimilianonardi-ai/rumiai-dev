@@ -70,6 +70,7 @@ Additional package, service, state or container specifications must be retrieved
 - Real inference with `qwen3:4b` on `gis` is now validated through the CPU-only Ollama runtime. The model occupies about 2.4 GiB in the central model store and appears as about 3.2 GB loaded by Ollama at 4096 context; the llama runner RSS was about 3.1 GiB and total host memory used about 4.6 GiB during the request.
 - The first request generated 1492 output tokens because Qwen3 thinking was enabled by default. Measured prompt processing was about 50.6 tokens/s and generation about 7.2 tokens/s by the end of the request, with model startup about 5.3 s. For bounded worker tasks, prefer explicit non-thinking mode unless reasoning is actually useful; current Ollama APIs support `"think": false` for Qwen3-class thinking models.
 - The successful real inference makes CPU-only Ollama the preferred initial managed worker runtime candidate across the fleet; direct llama.cpp remains the lower-level fallback/reference until worker-side shared-mount validation is complete.
+- The `think:false` worker profile has now been physically validated on `gis`: the same qwen3:4b request completed in about 17.4 s total generation time with 256 output tokens, prompt processing about 63.7 tokens/s and average generation about 15.0 tokens/s. The response hit the 256-token ceiling and was truncated, so worker contracts must combine non-thinking mode with task-appropriate output limits rather than assuming a single low global cap.
 - LocalAI remains a plausible optional unifying runtime/API layer if multiple model backends/modalities are needed; it is not required for the first CPU-only LLM worker deployment.
 - The cluster should be optimized for aggregate useful work and parallel task throughput, not for making one serial model response faster through cross-node cooperation.
 - Exact model families and quantizations remain to be selected by practical fit rather than additional synthetic benchmarking.
@@ -89,6 +90,7 @@ Additional package, service, state or container specifications must be retrieved
 - Official Ollama Linux amd64 runtime was staged physically on `gis`. Download size was about 1.4 GiB, extracted footprint 2.2 GiB, and `/m/ai/runtime/ollama/current/bin/ollama --version` executed successfully from `/m` reporting client version 0.35.1. The distribution includes CPU variants, its own `libgomp`, Vulkan support and large CUDA 12/13 runtime trees.
 - Temporary server validation completed for both the full and pruned CPU-only Ollama runtimes. Both returned version `0.35.1`, an empty model list, and HTTP 200 responses on loopback. The CPU-only runtime footprint is 60 MiB and Ollama correctly selected CPU compute with about 31.3 GiB total memory visible on `gis`.
 - `qwen3:4b` was pulled into `/m/ai/ollama/models` and a real `/api/chat` inference completed successfully on CPU. The central model store consumed about 2.4 GiB. Ollama reported the loaded model at about 3.2 GB, context 4096, 100% CPU. The host still showed about 26 GiB available memory. The request's 3m32s wall time was dominated by 1492 generated thinking/output tokens, not model loading.
+- A second real request with `think:false` and `num_predict:256` completed successfully. Ollama kept the same ~3.2 GB loaded model footprint, host memory remained ~26 GiB available, and generation throughput improved materially to ~15 tokens/s average; the response was truncated exactly because the imposed 256-token limit was too low for the requested five-point explanation.
 
 ## Current state
 
@@ -123,10 +125,10 @@ Podman remains available as a later tool for services that actually benefit from
 
 Perform the first physical deployment preflight and shared-runtime validation:
 
-1. repeat the same small `qwen3:4b` request on `gis` with Ollama API `"think": false` and a modest output-token limit to validate the normal fast-worker profile;
-2. verify the persistent Ollama HOME/model-store layout is clean and remove/ignore the one test identity created earlier under `/root/.ollama` only if safe and explicitly part of the physical cleanup step;
-3. prepare a read-only export containing the versioned 60 MiB CPU-only Ollama runtime and central model store, while keeping worker-local Ollama HOME/state writable and separate;
-4. validate shared execution on one 10.100 worker and one 10.200 worker before rolling the same worker pattern across the fleet.
+1. verify the persistent Ollama HOME/model-store layout is clean and remove/ignore the one test identity created earlier under `/root/.ollama` only if safe and explicitly part of the physical cleanup step;
+2. prepare a read-only export containing the versioned 60 MiB CPU-only Ollama runtime and central model store, while keeping worker-local Ollama HOME/state writable and separate;
+3. validate shared execution on one 10.100 worker and one 10.200 worker, including one bounded `think:false` request with a task-appropriate output limit;
+4. only after those two nodes pass, roll the same worker pattern across the remaining fleet.
 
 ## Blockers / open questions
 
