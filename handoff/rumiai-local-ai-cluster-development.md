@@ -56,7 +56,8 @@ Additional package, service, state or container specifications must be retrieved
 - Prefer one centrally staged x86_64 Ubuntu CPU runtime under `gis:/m/ai/runtime/llama.cpp/<revision>` and models under `gis:/m/ai/models`.
 - Prefer a read-only NFS export of the shared runtime/model tree to workers. The concrete export/mount configuration still requires physical deployment validation.
 - Current upstream llama.cpp stable release is v0.6.0 (2026-10-05). The release points to nightly build `b11429`; its official Ubuntu x64 CPU binary archive is about 17.7 MB and therefore makes direct shared execution practical without local compilation or container images.
-- Before accepting direct execution from the NFS mount, physically verify the official archive's runtime dependencies and that `llama-server` runs correctly on both Ubuntu/kernel classes present in the fleet.
+- The first physical staging of official build `b11429` on `gis` verified the archive and ELF layout but `llama-server --version` failed because `libgomp.so.1` is absent on `gis`. Keep OpenMP enabled; prefer satisfying the standard OpenMP runtime dependency on worker hosts rather than maintaining a custom OpenMP-disabled build unless a later constraint requires it.
+- Before accepting direct execution from the NFS mount, physically verify all remaining official-archive runtime dependencies and that `llama-server` runs correctly on both Ubuntu/kernel classes present in the fleet.
 - Do not introduce Paperclip or CrewAI merely to distribute inference across the hosts. Multi-agent frameworks solve orchestration/state/control-plane problems, not the core CPU-inference bottleneck.
 - Prefer the smallest orchestration layer that can dispatch independent jobs to model workers. RumiAI/its higher-level orchestration may own this directly unless concrete workflow requirements justify an external framework.
 - Hindsight is a comparatively strong near-term experiment for persistent AI memory because it exposes a service/API boundary and can use an external local llama.cpp/OpenAI-compatible server; it is not itself an inference accelerator.
@@ -75,6 +76,7 @@ Additional package, service, state or container specifications must be retrieved
 - Synthetic results established enough differentiation between the VM classes to stop hardware benchmarking and move to workload architecture/deployment.
 - Current product/catalog state was checked: no current `llama.cpp` package/facility exists in `pkg-catalog`.
 - Current upstream llama.cpp deployment surface was refreshed. The project still provides `llama-server`, supports CMake builds including static builds, and publishes an Ubuntu x64 CPU archive suitable for a first physical shared-runtime test.
+- Official `b11429` Ubuntu x64 CPU archive was downloaded and SHA-256 verified on `gis`; extraction succeeded. `ldd` showed bundled llama/ggml shared libraries resolving from the staged directory and normal system libraries resolving from Ubuntu, with only `libgomp.so.1` unresolved. `llama-server --version` therefore exited 127. No NFS export or worker-side change has been made yet.
 
 ## Current state
 
@@ -109,16 +111,16 @@ Podman remains available as a later tool for services that actually benefit from
 
 Perform the first physical deployment preflight and shared-runtime validation:
 
-1. verify NFS server/client tooling already present on `gis` and workers and inspect any existing exports/mount policy;
-2. create the shared `/m/ai` layout on `gis`;
-3. stage one official Ubuntu x64 CPU llama.cpp distribution on `gis`;
+1. inspect all eight hosts for `libgomp.so.1`, its owning package when installed, and package-manager availability without making changes;
+2. install/provide the minimal OpenMP runtime where absent, starting with `gis`, then re-run `llama-server --version` from the staged runtime;
+3. verify NFS server/client tooling and existing export/mount policy;
 4. export the runtime/model tree read-only to the seven worker hosts;
-5. mount it on one representative 10.100 worker and one representative 10.200 worker;
-6. run `llama-server --version` / dependency checks directly from the share before selecting/downloading the first GGUF.
+5. mount it on one representative 10.100 worker and one representative 10.200 worker and repeat dependency/version checks before selecting the first GGUF.
 
 ## Blockers / open questions
 
 - Physical NFS package/tool availability and enterprise firewall/export-policy compatibility are not yet verified.
+- `libgomp.so.1` is currently missing on `gis`; fleet-wide availability has not yet been checked.
 - Direct execution of the official llama.cpp Ubuntu x64 archive from NFS has not yet been validated on the two Ubuntu/kernel classes in the fleet.
 - Select the first local model set by role after the shared runtime path works.
 - Decide whether Hindsight should be part of the first deployment or introduced after the basic local worker pool is operational.
