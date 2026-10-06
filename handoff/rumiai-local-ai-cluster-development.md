@@ -72,6 +72,7 @@ Additional package, service, state or container specifications must be retrieved
 - The successful real inference makes CPU-only Ollama the preferred initial managed worker runtime candidate across the fleet; direct llama.cpp remains the lower-level fallback/reference until worker-side shared-mount validation is complete.
 - The `think:false` worker profile has now been physically validated on `gis`: the same qwen3:4b request completed in about 17.4 s total generation time with 256 output tokens, prompt processing about 63.7 tokens/s and average generation about 15.0 tokens/s. The response hit the 256-token ceiling and was truncated, so worker contracts must combine non-thinking mode with task-appropriate output limits rather than assuming a single low global cap.
 - For read-only shared Ollama model stores, set `OLLAMA_NOPRUNE=true` on workers so startup/runtime does not try to prune shared blobs. Keep worker `HOME` writable and local; the first trial uses a tiny local state directory under `/var/lib/ollama-worker`, while runtime and models remain on the read-only NFS mount.
+- The first NFS attempt exposed two setup defects before any distributed inference ran: the Ollama model tree contains metadata files that are not world-readable, so the intended `root_squash` export cannot expose them until the share tree is made read/execute accessible; and the `apisix_psn` worker job reached `mount` without a surviving mount-point directory. These are deployment-script issues, not evidence against the NFS design.
 - LocalAI remains a plausible optional unifying runtime/API layer if multiple model backends/modalities are needed; it is not required for the first CPU-only LLM worker deployment.
 - The cluster should be optimized for aggregate useful work and parallel task throughput, not for making one serial model response faster through cross-node cooperation.
 - Exact model families and quantizations remain to be selected by practical fit rather than additional synthetic benchmarking.
@@ -92,6 +93,7 @@ Additional package, service, state or container specifications must be retrieved
 - Temporary server validation completed for both the full and pruned CPU-only Ollama runtimes. Both returned version `0.35.1`, an empty model list, and HTTP 200 responses on loopback. The CPU-only runtime footprint is 60 MiB and Ollama correctly selected CPU compute with about 31.3 GiB total memory visible on `gis`.
 - `qwen3:4b` was pulled into `/m/ai/ollama/models` and a real `/api/chat` inference completed successfully on CPU. The central model store consumed about 2.4 GiB. Ollama reported the loaded model at about 3.2 GB, context 4096, 100% CPU. The host still showed about 26 GiB available memory. The request's 3m32s wall time was dominated by 1492 generated thinking/output tokens, not model loading.
 - A second real request with `think:false` and `num_predict:256` completed successfully. Ollama kept the same ~3.2 GB loaded model footprint, host memory remained ~26 GiB available, and generation throughput improved materially to ~15 tokens/s average; the response was truncated exactly because the imposed 256-token limit was too low for the requested five-point explanation.
+- First NFS rollout attempt did not reach a mounted worker. On `gis`, the preflight correctly rejected `/m/ai/ollama/models/metadata/...json` as unreadable under `root_squash`, so the server export was never activated. `apps` and `apisix_psn` then installed `nfs-common`; `apps` saw `Connection refused` because no NFS server/export was active, while `apisix_psn` additionally exposed a job defect where the expected mount directory was absent at mount time.
 
 ## Current state
 
@@ -126,10 +128,10 @@ Podman remains available as a later tool for services that actually benefit from
 
 Perform the first physical deployment preflight and shared-runtime validation:
 
-1. configure `gis` NFS export for `/m/ai/runtime/ollama/0.35.1-cpu` and `/m/ai/ollama/models`, read-only and restricted initially to `apps` (`10.100.0.34`) and `apisix_psn` (`10.200.0.13`);
-2. install/check NFS client support on those two workers, mount the two exports read-only under a dedicated mount root, and keep worker-local Ollama HOME/state writable under `/var/lib/ollama-worker`;
-3. start the shared CPU-only Ollama runtime on each worker with `OLLAMA_NOPRUNE=true`, verify API/model visibility and one bounded `think:false` qwen3:4b request;
-4. only after both network classes pass, roll the same worker pattern across the remaining fleet.
+1. make only the shared Ollama runtime/model artifact trees read/execute accessible to anonymous/root-squashed NFS readers, without changing the separate Ollama HOME/state tree;
+2. configure `gis` NFS exports read-only and restricted to `apps` (`10.100.0.34`) and `apisix_psn` (`10.200.0.13`), then verify the server is actually listening before any worker mount attempt;
+3. recreate and verify each worker mount point immediately before mounting, mount both exports read-only, and keep worker-local Ollama HOME/state writable under `/var/lib/ollama-worker`;
+4. start the shared CPU-only Ollama runtime on each worker with `OLLAMA_NOPRUNE=true`, verify API/model visibility and one bounded `think:false` qwen3:4b request; only after both network classes pass, roll out further.
 
 ## Blockers / open questions
 
