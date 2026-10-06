@@ -10,9 +10,9 @@ Develop and validate a practical local AI cluster for RumiAI using the available
 ## Current repository revisions
 
 ```text
-rumiai-dev   a895ce779ff51e75ac22660bb338df08c228dd7e  (pre-checkpoint HEAD)
-rumiai-os    f4d28822c4a2a875bd816ec3b15477dcfa905706  (observed current remote HEAD; not modified by this checkpoint)
-pkg-catalog  7e42e1d9fd6d986eba5fc8ac671641ac3b99f1b3  (Ollama package/service facility added in this work unit; no llama.cpp package/facility)
+rumiai-dev   cda5857c90c27fed2b7ceec5fb14a935f84c2c64  (pre-checkpoint HEAD)
+rumiai-os    f4d28822c4a2a875bd816ec3b15477dcfa905706  (current fleet rollout target)
+pkg-catalog  63e1fb572e08eb2d3106a4fa809de9073edf272a  (current remote HEAD; Ollama package/service definition present)
 ```
 
 Fresh remote HEAD retrieval remains mandatory before future analysis or writes.
@@ -42,7 +42,7 @@ Additional package, service, state or container specifications must be retrieved
 - Prefer independent model workers and request/workload parallelism over tensor/model parallelism that requires frequent cross-host synchronization.
 - `gis` and `webgisrpr` may be used without a task-level CPU cap; the user will manage production contention when necessary.
 - Credentials are not exposed to the assistant. Operations use `rsudo` / `rsudo-admin` from an environment where the user has already loaded credentials, or an explicitly available ChatGPT Work/Codex execution session.
-- All eight servers currently have an older `m` installation and do not yet have the current `rumiai-os` runtime. The user has fixed that the current RumiAI/m runtime must be installed on every server at `/m/src/git/rumiai-os`. Deployment must preserve the old `m` until the new runtime is physically validated.
+- All eight servers currently have an older `m` installation and do not yet have the current `rumiai-os` runtime. The user has fixed that the current RumiAI/m runtime must be installed on every server at `/m/src/git/rumiai-os`. Deployment must preserve the old `m` until the new runtime is physically validated. Fleet rollout is pinned to the current `rumiai-os` revision `f4d28822c4a2a875bd816ec3b15477dcfa905706`; an existing target checkout may be advanced only when it has the expected origin and a clean working tree.
 - Do not rely on host wall clocks for distributed correlation. Prefer run identifiers, operation identifiers and explicit command/result state.
 - No further synthetic/network benchmarking is required before proceeding. The current hardware evidence is sufficient for deployment design.
 - The large `/m` storage on `gis` is the shared-storage basis for the cluster because the VM disks cannot currently be enlarged.
