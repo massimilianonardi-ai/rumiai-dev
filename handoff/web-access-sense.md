@@ -41,18 +41,16 @@ Define a general-purpose RumiAI web-access sense that lets RumiAI observe and in
 
 ### Naming under evaluation
 
-Candidate public sense identity: `web`.
+Candidate public sense identity: `web-sense`.
 
-Reasons currently favoring `web`:
-- names the domain/capability rather than one implementation;
-- does not conflate the capability with an autonomous agent;
-- does not bind the contract to browser automation;
-- can encompass a real browser, raw HTTP, site-native protocols, site-specific adapters and specialist extractors.
-
-Names currently considered weaker:
-- `browser-use`: implementation-oriented and collides conceptually with existing product/project naming;
-- `web-agent`: suggests ownership of agency/planning rather than a sense/capability;
-- `browser`: too narrow for non-browser providers such as specialist extractors.
+Current naming assessment:
+- `web-sense` is the leading candidate because it keeps the broad `web` domain while making the architectural role explicit and reducing ambiguity with generic web concepts;
+- `web` remains attractive semantically but is probably too generic as a public identity;
+- `webi` (web interaction) is compact and distinctive but less self-explanatory and would need project-specific interpretation;
+- `web-ai` risks implying that intelligence/agency belongs inside the capability rather than in RumiAI;
+- `browser-use` is implementation-oriented and collides conceptually with existing product/project naming;
+- `web-agent` suggests ownership of agency/planning rather than a sense/capability;
+- `browser` is too narrow for non-browser providers such as specialist extractors.
 
 No public name is promoted yet.
 
@@ -73,15 +71,17 @@ Keep the web sense contract independent from ChatGPT and add bridges/adapters ar
 
 Candidate interaction paths:
 1. OpenAI API client -> RumiAI capability.
-2. ChatGPT Desktop local MCP/plugin -> local RumiAI capability, where supported.
-3. ChatGPT cloud/web scheduled task -> secure tunnel/remote MCP bridge to the local capability while the user-owned machine is online, where supported.
+2. ChatGPT plugin/custom MCP -> RumiAI MCP capability. ChatGPT itself connects to remote MCP endpoints; a server that remains local/private is reached through Secure MCP Tunnel where the user's plan/workspace supports it.
+3. ChatGPT cloud/web scheduled task -> the same plugin/MCP surface only when the task runtime supports that plugin and the tunnel/private endpoint is reachable while the user-owned machine is online.
 4. Browser/UI automation of ChatGPT itself -> compatibility fallback for environments where no programmatic/plugin bridge is available; this should not become the primary contract.
 
 Current OpenAI product evidence indicates:
-- ChatGPT plugins may contain local MCP apps that run on the user's computer in ChatGPT Desktop; those local tools are not automatically available on web/mobile.
-- ChatGPT can connect to private/local MCP servers via Secure MCP Tunnel on supported product surfaces.
-- scheduled tasks run in ChatGPT cloud and can use supported connected apps/plugins, but a local-only tool cannot be assumed reachable when the user's machine/bridge is unavailable.
+- ChatGPT custom MCP connections target remote MCP servers; OpenAI explicitly documents that a localhost/private/on-prem server is not connected directly and should use Secure MCP Tunnel when supported.
+- Plugins can include local app components on ChatGPT Desktop, but that is distinct from ChatGPT directly attaching to an arbitrary localhost MCP server; local plugin tools are not automatically available on web/mobile.
+- Full custom MCP read/write support is currently plan/workspace dependent; OpenAI documents full MCP for Business/Enterprise/Edu and more limited developer-mode access for Pro, so RumiAI must not make current ChatGPT plan entitlements part of its own core contract.
+- scheduled tasks can use supported plugin/connected-app capabilities, but a private RumiAI capability remains dependent on the supported plugin/tunnel path and on the user's machine being online/reachable.
 - ChatGPT Desktop site tools use WebMCP when a website exposes them, making site-native structured interaction relevant to provider selection.
+- ChatGPT's built-in desktop browser has its own browser state and can share a live page with ChatGPT; this is a separate integration surface from RumiAI controlling its own browser.
 
 ### Scheduling ownership
 
@@ -99,13 +99,13 @@ This is still working design and requires explicit contract design before promot
 - Performed mandatory RumiAI preflight against current rumiai-dev main.
 - Confirmed no current canonical browser/web-agent/sense responsibility exists in rumiai-dev.
 - Established ChatGPT interoperability as a first-class design dimension before implementation design starts.
-- Verified current OpenAI support for local MCP apps in ChatGPT Desktop, remote/private MCP access through Secure MCP Tunnel, scheduled tasks using supported apps/plugins, and WebMCP-backed site tools.
+- Verified current OpenAI support for custom MCP plugins, Secure MCP Tunnel for private/local MCP reachability, scheduled tasks using supported apps/plugins, desktop site tools backed by WebMCP, and the built-in ChatGPT desktop browser. Corrected the earlier provisional assumption that ChatGPT could directly attach to an arbitrary localhost MCP server.
 
 ## Current state
 
 The task is in architecture/naming exploration. No product/runtime implementation or canonical specification has been created or modified.
 
-The strongest current naming candidate is `web`, but it is not yet promoted.
+The strongest current naming candidate is `web-sense`, but it is not yet promoted.
 
 The most important architectural boundary is one provider-independent local RumiAI web capability with multiple integration bridges, rather than separate Amazon/ChatGPT/browser subsystems.
 
@@ -115,7 +115,7 @@ Settle the public identity and the capability boundary first; then design the sm
 
 ## Blockers / open questions
 
-- Confirm the public sense name (`web` is the current leading candidate).
+- Confirm the public sense name (`web-sense` is the current leading candidate; `webi` remains the strongest compact alternative).
 - Define the exact boundary between sense/capability, planning/agent behavior and scheduling.
 - Determine which ChatGPT integration paths are baseline versus optional compatibility bridges.
 - Decide the minimal provider interface and provider-resolution semantics only after the public capability contract is clear.
