@@ -42,7 +42,7 @@ Additional package, service, state or container specifications must be retrieved
 - Prefer independent model workers and request/workload parallelism over tensor/model parallelism that requires frequent cross-host synchronization.
 - `gis` and `webgisrpr` may be used without a task-level CPU cap; the user will manage production contention when necessary.
 - Credentials are not exposed to the assistant. Operations use `rsudo` / `rsudo-admin` from an environment where the user has already loaded credentials, or an explicitly available ChatGPT Work/Codex execution session.
-- All eight servers currently have an older `m` installation and do not yet have the current `rumiai-os` runtime. The user has fixed that the current RumiAI/m runtime must be installed on every server. Deployment must preserve the old `m` until the new runtime is physically validated.
+- All eight servers currently have an older `m` installation and do not yet have the current `rumiai-os` runtime. The user has fixed that the current RumiAI/m runtime must be installed on every server at `/m/src/git/rumiai-os`. Deployment must preserve the old `m` until the new runtime is physically validated.
 - Do not rely on host wall clocks for distributed correlation. Prefer run identifiers, operation identifiers and explicit command/result state.
 - No further synthetic/network benchmarking is required before proceeding. The current hardware evidence is sufficient for deployment design.
 - The large `/m` storage on `gis` is the shared-storage basis for the cluster because the VM disks cannot currently be enlarged.
@@ -136,7 +136,7 @@ Podman remains available as a later tool for services that actually benefit from
 
 Perform the first physical deployment preflight and shared-runtime validation:
 
-1. deploy the current `rumiai-os` runtime to all eight servers in a separate installation root without replacing the pre-existing old `m`; pin and verify the same `rumiai-os` revision on every node, run the new runtime's own `osarch update`, and smoke-test `m`, `osarch`, `pkg`, `srv`, and `state-path` through absolute entrypoints;
+1. deploy the current `rumiai-os` runtime to `/m/src/git/rumiai-os` on all eight servers without replacing the pre-existing old `m`; pin and verify the same `rumiai-os` revision on every node, run the new runtime's own `osarch update`, and smoke-test `m`, `osarch`, `pkg`, `srv`, and `state-path` through absolute entrypoints;
 2. after the new runtime passes on `gis`, physically validate the new Ollama catalog definition there: `pkg install ollama`, command/default identity, `ollama --version`, provider/facility discovery, and a foreground `srv` start path with service-instance environment configured away from the default model store;
 3. decide how the production worker deployment reconciles the official 2.2 GiB package root with the already-validated 60 MiB CPU-only shared runtime on small-root nodes; do not introduce package-specific pruning into generic `pkg` without an explicit reusable contract;
 4. once package/service ownership and worker artifact layout are aligned, make NFS mounts and worker endpoints persistent and validate restart/reboot behavior;
