@@ -62,8 +62,10 @@ Additional package, service, state or container specifications must be retrieved
 - Prefer the smallest orchestration layer that can dispatch independent jobs to model workers. RumiAI/its higher-level orchestration may own this directly unless concrete workflow requirements justify an external framework.
 - Hindsight is a comparatively strong near-term experiment for persistent AI memory because it exposes a service/API boundary and can use an external local llama.cpp/OpenAI-compatible server; it is not itself an inference accelerator.
 - Ollama is now an explicit parallel runtime experiment on `gis`: evaluate it as a managed model/API layer while keeping direct `llama.cpp` for lean workers. Do not assume it replaces llama.cpp until the physical trial proves its storage, CPU and lifecycle tradeoffs.
-- Prefer staging the official Ollama Linux distribution under `gis:/m/ai/runtime/ollama` first, rather than immediately running the installer into `/usr`; this keeps the trial reversible and measures whether the distribution is usable from shared storage.
+- The official Ollama Linux distribution has now been staged successfully under `gis:/m/ai/runtime/ollama/current` and executes directly from `/m`; system-wide installation is not required for the current trial.
 - Set any Ollama model store used in this experiment under `gis:/m/ai/ollama/models` through `OLLAMA_MODELS`; do not consume small worker root filesystems with Ollama model blobs.
+- The staged Ollama distribution is 2.2 GiB extracted, but logged file sizes show approximately 2.15 GB in bundled CUDA 12/13 libraries and about 44 MB in Vulkan support; the remaining listed CPU/core runtime is only about 62 MB. A separate CPU-only copy is therefore worth validating after the unmodified runtime passes `ollama serve`/API checks.
+- Ollama bundles its own `libgomp.so.1`, avoiding the system OpenMP-runtime dependency encountered by the standalone llama.cpp release.
 - LocalAI remains a plausible optional unifying runtime/API layer if multiple model backends/modalities are needed; it is not required for the first CPU-only LLM worker deployment.
 - The cluster should be optimized for aggregate useful work and parallel task throughput, not for making one serial model response faster through cross-node cooperation.
 - Exact model families and quantizations remain to be selected by practical fit rather than additional synthetic benchmarking.
@@ -80,6 +82,7 @@ Additional package, service, state or container specifications must be retrieved
 - Current product/catalog state was checked: no current `llama.cpp` package/facility exists in `pkg-catalog`.
 - Current upstream llama.cpp deployment surface was refreshed. The project still provides `llama-server`, supports CMake builds including static builds, and publishes an Ubuntu x64 CPU archive suitable for a first physical shared-runtime test.
 - Official `b11429` Ubuntu x64 CPU archive was downloaded and SHA-256 verified on `gis`; extraction succeeded. `ldd` showed bundled llama/ggml shared libraries resolving from the staged directory and normal system libraries resolving from Ubuntu, with only `libgomp.so.1` unresolved. `llama-server --version` therefore exited 127. No NFS export or worker-side change has been made yet.
+- Official Ollama Linux amd64 runtime was staged physically on `gis`. Download size was about 1.4 GiB, extracted footprint 2.2 GiB, and `/m/ai/runtime/ollama/current/bin/ollama --version` executed successfully from `/m` reporting client version 0.35.1. The distribution includes CPU variants, its own `libgomp`, Vulkan support and large CUDA 12/13 runtime trees.
 
 ## Current state
 
@@ -114,10 +117,10 @@ Podman remains available as a later tool for services that actually benefit from
 
 Perform the first physical deployment preflight and shared-runtime validation:
 
-1. stage the current official Ollama Linux x86_64 distribution under `gis:/m/ai/runtime/ollama` without installing it system-wide; inspect archive footprint, extracted footprint, dependencies and direct execution from `/m`;
-2. if that succeeds, run one temporary `ollama serve` on `gis` with `OLLAMA_MODELS=/m/ai/ollama/models`, verify the local HTTP API and lifecycle without pulling a large model;
-3. in parallel, install/provide the minimal OpenMP runtime needed by the staged llama.cpp runtime and re-run `llama-server --version` on `gis`;
-4. after comparing both runtime paths, proceed with the read-only shared-runtime/model export for lean llama.cpp workers and keep Ollama only where its management layer adds value.
+1. run one temporary `ollama serve` from `/m/ai/runtime/ollama/current` on `gis` with `OLLAMA_MODELS=/m/ai/ollama/models`, bound to loopback, and verify `/api/version`, `/api/tags`, process lifecycle and logs without pulling a model;
+2. create a separate experimental CPU-only Ollama runtime by removing only the CUDA 12/13 and Vulkan payloads, then repeat the same server/API checks; retain the untouched staged runtime as control;
+3. install/provide the minimal OpenMP runtime needed by the standalone llama.cpp runtime and re-run `llama-server --version` on `gis`;
+4. compare the validated Ollama CPU-only runtime with direct llama.cpp, then proceed with the read-only shared-runtime/model export for lean workers.
 
 ## Blockers / open questions
 
