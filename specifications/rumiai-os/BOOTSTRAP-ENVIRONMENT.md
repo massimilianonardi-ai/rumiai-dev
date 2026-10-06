@@ -1,7 +1,7 @@
 # RumiAI OS — Bootstrap environment
 
 Status: **Current / normative**  
-Updated: 2026-10-05
+Updated: 2026-10-06
 
 This specification defines the environment established by the technical root runtime `$m_ROOT/m`.
 
@@ -66,14 +66,7 @@ global provider osarch-independent PATH contributions
 inherited host PATH
 ```
 
-RumiAI branded activation is separate and prepends:
-
-```text
-$m_BIN_DIR/ai-osarch
-$m_BIN_DIR/ai
-```
-
-The technical `m` bootstrap does not add the `ai` layer by itself.
+The technical `m` bootstrap does not add the RumiAI `ai` executable layer. Any upper-layer activation is outside this bootstrap contract.
 
 ## Localization environment
 
@@ -160,10 +153,11 @@ assignments/exports from trusted subsystem materialization; the bootstrap does
 not resolve facility defaults, package defaults, provider selectors or package
 concretes.
 
-A missing generated environment is valid and contributes nothing. Existing
-environment objects with invalid type, invalid selector shape or source failure
-are runtime-state errors rather than a request for the bootstrap to regenerate
-them.
+A missing generated environment is valid and contributes nothing. For each of
+the two expected pathnames, `m` tests `-f` and sources the pathname when that
+test succeeds. The bootstrap does not validate or regenerate selector structure
+for `env-osarch`; ownership of materializing that state remains outside the
+bootstrap. A source failure is a runtime execution error.
 
 ## State roots
 
@@ -183,7 +177,19 @@ See `STATE-MODEL.md`.
 
 When invoked without command operands, `m` enters the technical shell facility.
 
-For an integrated command, `m` resolves the supplied command pathname, rejects self-recursion to the bootstrap, exports readonly:
+For a command operand, `m` first resolves the first operand when possible and
+canonicalizes that resolved pathname. Resolution back to the bootstrap itself is
+rejected.
+
+A resolved command is treated as bootstrap-integrated only when its first line
+is exactly:
+
+```sh
+#!/usr/bin/env m
+```
+
+For that case, `m` removes the command operand from the argument vector,
+exports readonly:
 
 ```text
 m_COMMAND_BIN
@@ -191,28 +197,11 @@ m_COMMAND_BIN
 
 sources the command body in the initialized runtime and returns its status.
 
-Integrated command files therefore use:
-
-```sh
-#!/usr/bin/env m
-```
-
-when directly executable.
-
-The two branded root entrypoints are an explicit bootstrap exception to the shebang-based integrated-command recognition. They remain directly bootstrappable `#!/bin/sh` root entrypoints, but when `m` receives either exact root pathname as its command body:
-
-```text
-$m_ROOT/rumiai-os
-$m_ROOT/rumiai-os-sh
-```
-
-it sources that body in the initialized `m` runtime rather than executing it as an external child. This gives the branded body access to `m_COMMAND_BIN`, the initialized runtime functions and the technical PATH exactly once, avoiding recursive bootstrap and duplicate technical PATH prefixes.
-
-## Branded entrypoints
-
-`rumiai-os-sh` resolves its product root and, when invoked directly, invokes `m` with itself as the command body. `m` recognizes that branded root pathname explicitly and sources the body in the initialized runtime. The body then prepends the `ai` executable layer and enters the shell.
-
-The current `rumiai-os` entrypoint follows the same shell-oriented bootstrap/source/activation model using its own root pathname. This equivalence is not a permanent GUI contract.
+If the first operand is not recognized as an integrated command, `m` clears
+`m_COMMAND_BIN` and executes the original command vector externally in the
+initialized environment. Failed command resolution is therefore handled by the
+normal external command execution path rather than by inventing a separate
+bootstrap command class.
 
 ## Invariants
 
@@ -221,7 +210,7 @@ BOOT-01  m is the technical root bootstrap
 BOOT-02  m uses #!/bin/sh
 BOOT-03  m_BOOTSTRAP_BIN and m_ROOT are physical validated roots
 BOOT-04  m PATH contains sys/ext layers, not ai
-BOOT-05  branded activation prepends ai-osarch and ai
+BOOT-05  the technical m bootstrap does not add the RumiAI ai executable layer
 BOOT-06  core.lib.sh is the bootstrap entry library that defines filesystem loadlib and loads base.lib.sh
 BOOT-07  state roots are semantic pathnames, not eagerly resolved selectors
 BOOT-08  bootstrap does not derive user identity from host-id/UID
@@ -232,6 +221,7 @@ BOOT-12  loadlib is provided by core.lib.sh; base.lib.sh provides loadsyslib and
 BOOT-13  the root bootstrap performs no package/provider resolution or initialization
 BOOT-14  the root bootstrap is limited to root resolution, fundamental system-variable initialization, core loading, generated global-environment sourcing and execution
 BOOT-15  generated global environment is sourced from system sys/environment cache as env then env-osarch
-BOOT-16  branded root entrypoints remain #!/bin/sh direct bootstraps but are sourced by m when passed back as exact root command bodies
+BOOT-16  integrated-command recognition requires the exact first line #!/usr/bin/env m
 BOOT-17  technical m PATH roots precede provider PATH contributions, which precede inherited host PATH
+BOOT-18  a non-integrated command operand is executed externally with the original command vector
 ```

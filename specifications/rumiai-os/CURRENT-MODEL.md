@@ -1,7 +1,7 @@
 # RumiAI OS — Current model
 
 Status: **Current / normative**  
-Updated: 2026-09-22
+Updated: 2026-10-06
 
 This document is the canonical high-level architecture contract for the current `rumiai-os` mainline.
 
@@ -51,14 +51,7 @@ Its runtime exposure is:
 bin/sys/m -> ../../m
 ```
 
-The branded root entrypoints are:
-
-```text
-$m_ROOT/rumiai-os
-$m_ROOT/rumiai-os-sh
-```
-
-The current implementation of both branded entrypoints follows the shell-oriented baseline and delegates into `m`; this does not establish a permanent GUI architecture contract for `rumiai-os`.
+Root-level product placeholders outside `m` are not part of the current promoted entrypoint contract. The technical bootstrap must therefore remain independent of any such upper-layer entrypoint.
 
 ## 3. Executable ownership and PATH
 

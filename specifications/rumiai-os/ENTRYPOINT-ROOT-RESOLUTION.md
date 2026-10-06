@@ -1,7 +1,7 @@
 # RumiAI OS — Entrypoint and root resolution
 
 Status: **Current / normative**  
-Updated: 2026-09-17
+Updated: 2026-10-06
 
 This specification defines physical root resolution for the technical bootstrap `m`.
 
@@ -51,17 +51,22 @@ Moving the complete RumiAI OS tree to another path must not require source modif
 
 ## Command resolution after bootstrap
 
-For an integrated command, `m` resolves the requested command to a physical readable regular file, rejects resolution back to the bootstrap itself, exports readonly:
+For a command operand, `m` attempts to resolve the first operand and
+canonicalize the selected pathname. Resolution back to the bootstrap itself is
+rejected.
+
+When the resolved command's first line is exactly `#!/usr/bin/env m`, `m`
+exports its canonical pathname readonly as:
 
 ```text
 m_COMMAND_BIN
 ```
 
-and sources the command body in the initialized runtime.
+and sources that command body in the initialized runtime after removing the
+command operand from the argument vector.
 
-## Branded entrypoints
-
-`rumiai-os` and `rumiai-os-sh` resolve their own product root and delegate to the root `m` bootstrap. They do not become the technical root identity themselves.
+Otherwise `m` clears `m_COMMAND_BIN` and executes the original command vector
+externally.
 
 ## Invariants
 
@@ -71,5 +76,5 @@ ROOT-02  m_ROOT is derived from the canonical m bootstrap location
 ROOT-03  root resolution is independent of a fixed installation path
 ROOT-04  supported symlink/PATH invocation resolves to the physical bootstrap
 ROOT-05  m_COMMAND_BIN identifies the resolved integrated command
-ROOT-06  branded entrypoints delegate to m and are not the technical runtime identity
+ROOT-06  command operands not recognized as integrated commands fall through to external execution
 ```

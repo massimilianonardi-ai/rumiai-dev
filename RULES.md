@@ -1,7 +1,7 @@
 # RumiAI Development Rules
 
 Status: **Current / canonical**  
-Updated: 2026-09-30
+Updated: 2026-10-06
 
 This document contains project-wide rules that apply across RumiAI subsystems. Subsystem details belong in current specifications; historical rationale belongs in Git history.
 
@@ -104,7 +104,7 @@ RumiAI
 
 `pkg` and `pkg-catalog` belong to `m`.
 
-The current technical runtime entrypoint is `$m_ROOT/m`. The branded entrypoints are `$m_ROOT/rumiai-os` and `$m_ROOT/rumiai-os-sh`.
+The current technical runtime entrypoint is `$m_ROOT/m`.
 
 Do not infer new layers, namespaces or components from conversational shorthand.
 

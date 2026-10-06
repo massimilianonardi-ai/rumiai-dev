@@ -1,7 +1,7 @@
 # RumiAI OS — Command entrypoints
 
 Status: **Current / normative**  
-Updated: 2026-09-17
+Updated: 2026-10-06
 
 This specification defines directly executable command/runtime classes in the current `m` + RumiAI model.
 
@@ -30,6 +30,10 @@ A command that belongs to `m` or RumiAI and depends on runtime facilities initia
 This includes commands that consume `m_*` environment roots, `log`, `lang`, internal libraries, `m_COMMAND_BIN`, `state-path` context or other bootstrap facilities.
 
 The command body remains subject to POSIX-shell rules when implemented in shell.
+
+At dispatch time, `m` recognizes this class by the exact first line
+`#!/usr/bin/env m`. A resolved file with any other first line is not sourced
+as an integrated command.
 
 The classification follows runtime dependency, not physical directory alone.
 
@@ -93,22 +97,15 @@ This is not a general hot-update atomicity guarantee. In particular:
 
 The intent is invocation robustness and a clear command structure, not live code reloading.
 
-## Branded root entrypoints
+## External command fallback
 
-The branded root entrypoints are:
+When the first command operand does not resolve to a bootstrap-integrated command
+with the exact `#!/usr/bin/env m` first line, `m` executes the original
+command vector externally after initializing the technical environment.
 
-```text
-$m_ROOT/rumiai-os
-$m_ROOT/rumiai-os-sh
-```
-
-They are product entrypoints rather than technical-runtime identity. They use `#!/bin/sh` so direct invocation can resolve the product root and delegate to the exact root `m` bootstrap without depending on an already-prepared PATH.
-
-After that direct bootstrap handoff, `m` treats the exact branded root pathname as a special command body and sources it in the initialized runtime. Each branded body recognizes its own `m_COMMAND_BIN`, prepends the RumiAI `ai-osarch` and `ai` executable layers exactly once, and enters the managed shell facility.
-
-This branded-root sourcing rule is specific to these two product entrypoints. It does not reclassify arbitrary `#!/bin/sh` utilities as bootstrap-integrated commands and does not change the normal `#!/usr/bin/env m` contract for integrated commands.
-
-Their current shared shell-oriented behavior does not establish the eventual GUI architecture of `rumiai-os`.
+This fallback does not turn the external executable into an `m`-owned command
+identity and does not grant it the sourced integrated-command interface such as
+readonly `m_COMMAND_BIN`.
 
 ## Public command naming
 
@@ -127,7 +124,6 @@ the technical root command m
 bootstrap-integrated m commands
 bootstrap-integrated RumiAI commands
 standalone `m`- or RumiAI-owned command utilities
-branded root entrypoints
 ```
 
 The requirement follows semantic command identity, not the number of physical executable paths. An exposure/symlink of the same command identity does not require a duplicate manual topic. For example, `$m_ROOT/m` and its `bin/sys/m` exposure are one command identity and therefore one manual topic.
@@ -154,10 +150,10 @@ ENTRY-01  m is the technical bootstrap identity
 ENTRY-02  root m uses #!/bin/sh
 ENTRY-03  bootstrap-integrated commands use #!/usr/bin/env m
 ENTRY-04  standalone #!/bin/sh utilities require a deliberate current contract
-ENTRY-05  rumiai-os and rumiai-os-sh are branded entrypoints, not the m runtime
+ENTRY-05  integrated-command dispatch requires the exact first line #!/usr/bin/env m
 ENTRY-06  public command names do not expose implementation-language suffixes
 ENTRY-07  internal libraries are not executable entrypoints
 ENTRY-08  every `m`- or RumiAI-owned directly executable command identity has an operational manual topic
 ENTRY-09  shell command entrypoints should normally define functions before a final main "$@" call; simple commands may omit that structure when direct top-level code is clearer
-ENTRY-10  rumiai-os and rumiai-os-sh use #!/bin/sh for direct root bootstrap and are explicitly sourced by m when re-entered as exact branded root command bodies
+ENTRY-10  non-integrated command operands are executed externally with their original command vector
 ```
