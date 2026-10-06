@@ -9,11 +9,12 @@ Define a general-purpose RumiAI web-access sense that lets RumiAI observe and in
 
 ## Current repository revisions
 
-- rumiai-dev: d93e2b0afb53f8be0fc956fc0e9fbe24d9593dad
+- rumiai-dev: 5ecf510b1fc8c232bf902e3820a00c94ebe4b9cc
 - rumiai-os: f4d28822c4a2a875bd816ec3b15477dcfa905706
 - rumiai-tests: 80176d5e8cef61d5bc792555a9b957c0f3600044
 - rumiai-dev-PoCs: 3c00148a4800cb8556be1f8856546d529001c6cb
-- pkg-catalog: 8d28fde9cb5e058b1d9b20006960d57059a14a71
+- rumiai-web-control: 92f9e377c10ef3bc9dc8bba31648da273bd5f0e0
+- pkg-catalog: 86f668dab8fe71b656176c0fe2b86d402e872bf9
 
 ## Applicable canonical sources
 
@@ -58,7 +59,7 @@ The canonical `web-sense` / `web-control` boundary, `web-control` ownership, ind
 
 The first concrete provider is still planned around Node.js + Playwright + a Chromium-class browser, using PoC 057 as implementation evidence. Playwright/CDP/Chromium remain provider details rather than canonical API.
 
-The next project promotion should create the independent `rumiai-web-control` repository with a current `mk.json`, promote the validated controller mechanics into project source/tests, and produce a release artifact consumable by `pkg`. Runtime package metadata must be added only after a real release artifact exists.
+The independent `rumiai-web-control` repository now exists and contains the promoted controller implementation, client/service commands, `mk.json`, end-to-end tests and release build workflow. The current remaining promotion step is to obtain a successful multi-platform build/release artifact and then add the concrete runtime package/provider metadata to `pkg-catalog`.
 
 Open packaging questions that remain implementation-specific:
 
@@ -112,16 +113,17 @@ This is still working design and requires explicit contract design before promot
 
 ## Current state
 
-The Web control contract is now canonical in `specifications/rumiai-os/WEB-CONTROL.md`. `web-control` is semantically `m`-owned but source/distribution-independent as project `rumiai-web-control`; `mk` owns project development lifecycle and `pkg` owns runtime installation/integration. `pkg-catalog` now contains provider-independent facility `web-control` compatibility 1 with command and foreground service parts, but intentionally contains no concrete provider package yet.
+The Web control contract is canonical in `specifications/rumiai-os/WEB-CONTROL.md`. `web-control` is semantically `m`-owned but source/distribution-independent as project `rumiai-web-control`; `mk` owns project development lifecycle and `pkg` owns runtime installation/integration. `pkg-catalog` contains provider-independent facility `web-control` compatibility 1 but still intentionally has no concrete `rumiai-web-control` provider package until a real release artifact exists.
 
-PoC 057 remains the positive implementation evidence for the first provider mechanics. No `rumiai-os` runtime code is required for the `web-control` implementation itself beyond the existing generic `mk`/`pkg`/`srv` machinery. The source implementation is blocked only on creation of the new GitHub repository, an operation not exposed by the currently available GitHub connector.
+`rumiai-web-control` now contains the first real provider implementation derived from PoC 057: Node.js + Playwright + persistent Chromium, public `web-control` client, foreground `web-control-service`, local private socket, persistent profile, navigation/inspection/capture/interactions, page-scoped CDP extension, end-to-end tests and release-build automation. Current CI run 37452061908 is still in progress for Linux and macOS; both jobs have completed Node/dependency setup and are currently installing Playwright Chromium before runtime/build validation. No GitHub release has been published yet.
 
 ## Next action
 
-Create the independent `rumiai-web-control` repository, add `mk.json`, promote the validated PoC 057 controller mechanics into real project source/tests, and produce the first versioned release artifact. Then add the concrete `rumiai-web-control` provider package metadata to `pkg-catalog`, validate `pkg install` + facility/service integration, and only after that start the `web-sense` consumer/integration layer.
+Complete current Linux/macOS validation and publish the first versioned `rumiai-web-control` release artifact. Then add the concrete `rumiai-web-control` provider package metadata to `pkg-catalog`, validate `pkg install` + facility selection + `srv start/stop web-control`, and only after that start the `web-sense` consumer/integration layer.
 
 ## Blockers / open questions
 
+Current CI has already exposed and resolved several integration mismatches: package-default Node.js versus facility projection, explicit `osarch update` on clean `rumiai-os` checkouts, and a macOS CI-only fallback for obtaining Node.js 26 when the managed package download path receives HTTP 403. The latter is validation-environment handling, not a change to the runtime package contract.
+
 - Determine which ChatGPT integration paths are baseline versus optional compatibility bridges.
-- Create the independent `rumiai-web-control` repository; the currently available GitHub connector can modify existing repositories but cannot create a new repository, so repository creation is the only external setup step blocking source promotion from PoC 057.
 - Settle the first provider's Node/browser dependency packaging and release-artifact shape before adding the concrete `rumiai-web-control` package definition/provider realization to `pkg-catalog`.
