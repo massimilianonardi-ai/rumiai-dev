@@ -9,7 +9,7 @@ Define a general-purpose RumiAI web-access sense that lets RumiAI observe and in
 
 ## Current repository revisions
 
-- rumiai-dev: 4ba4645abc1faf09fc751e1088d9b98824ffa5ee
+- rumiai-dev: 1e738872196e0f66bd4191189b9864c6ecd94cfe
 
 ## Applicable canonical sources
 
@@ -18,6 +18,7 @@ Define a general-purpose RumiAI web-access sense that lets RumiAI observe and in
 - CONSISTENCY-GATE.md
 - specifications/README.md
 - specifications/rumiai-os/CURRENT-MODEL.md
+- specifications/rumiai-os/SENSE-MODEL.md
 - handoff/README.md
 
 ## Fixed task-local choices
@@ -61,7 +62,7 @@ This baseline should be sufficient to reproduce the earlier class of workflows s
 
 ### Sense / control boundary
 
-Current preferred architecture:
+The general meaning of `sense` is now canonical in `specifications/rumiai-os/SENSE-MODEL.md`. The task-specific Web mapping currently under design is:
 
 ```text
 RumiAI / AI
@@ -82,7 +83,7 @@ web-control
 
 `web-sense` is the AI/cognitive Web capability. It interprets evidence returned by `web-control`, understands page meaning in relation to the user's goal, chooses which deterministic operation or adapter to invoke next, and composes multi-step Web behavior. It may use generic browser interaction or deterministic site-specific helpers without exposing those implementation choices to the user.
 
-This makes `sense` a higher-level perceptive/interactive modality rather than a raw sensor or control surface. The model parallels the earlier Computer Use / Computer Control separation: deterministic control below, AI-mediated use/perception above.
+The Web mapping applies the canonical sense model: deterministic control below, AI-mediated perception/interpretation/interactions above.
 
 Generic scheduling remains outside the sense/control pair. RumiAI may schedule repeated use of `web-sense`, but neither `web-sense` nor `web-control` should own the general scheduling mechanism.
 
@@ -90,7 +91,7 @@ Site-specific adapters are classified by semantics rather than specificity: a de
 
 The public AI-level name `browser-use` is rejected for this architecture because it is narrower than the Web domain and conflates one interaction mechanism with the broader sense. It remains a useful descriptive phrase for one behavior implemented by `web-sense` over `web-control`.
 
-This remains task-local design until promoted to a canonical specification.
+The general `sense` definition is canonical. The specific `web-sense` / `web-control` names and contracts remain task-local design until separately promoted.
 
 ### Capability/provider separation
 
@@ -139,12 +140,13 @@ This is still working design and requires explicit contract design before promot
 - Established ChatGPT interoperability as a first-class design dimension before implementation design starts.
 - Verified current OpenAI support for custom MCP plugins, Secure MCP Tunnel for private/local MCP reachability, scheduled tasks using supported apps/plugins, desktop site tools backed by WebMCP, and the built-in ChatGPT desktop browser. Corrected the earlier provisional assumption that ChatGPT could directly attach to an arbitrary localhost MCP server.
 - User approved `web-sense` as the AI-level Web sense. After re-evaluating the meaning of "sense" against the Computer Use / Computer Control separation, the task design now uses `web-control` for the deterministic substrate and `web-sense` for the AI/cognitive layer. The initial deterministic browser baseline remains navigation, page export/save and controlled debugger/introspection access.
+- The project-wide definition of `sense` has been promoted to `specifications/rumiai-os/SENSE-MODEL.md` and referenced by the high-level current model.
 
 ## Current state
 
 The task is in architecture/naming exploration. No product/runtime implementation or canonical specification has been created or modified.
 
-The task-local names are now fixed as `web-sense` for the AI/cognitive layer and `web-control` for the deterministic layer; canonical specification promotion has not happened yet.
+The general sense semantics are now canonical. The task-local names remain fixed as `web-sense` for the AI/cognitive Web capability and `web-control` for the deterministic Web substrate; their Web-specific contracts have not yet been promoted.
 
 The most important architectural boundary is one provider-independent local RumiAI web capability with multiple integration bridges, rather than separate Amazon/ChatGPT/browser subsystems.
 
