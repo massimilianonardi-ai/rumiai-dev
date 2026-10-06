@@ -9,7 +9,11 @@ Define a general-purpose RumiAI web-access sense that lets RumiAI observe and in
 
 ## Current repository revisions
 
-- rumiai-dev: 1e738872196e0f66bd4191189b9864c6ecd94cfe
+- rumiai-dev: f68ba8058cd4d7927709aac31a57d549b9396d1d
+- rumiai-os: f4d28822c4a2a875bd816ec3b15477dcfa905706
+- rumiai-tests: 80176d5e8cef61d5bc792555a9b957c0f3600044
+- rumiai-dev-PoCs: 71f47e5f2f3b26ff7d6a0e2d335a85459b669088
+- pkg-catalog: c1425bd5097bd18526a42da866ea98906a3325a4
 
 ## Applicable canonical sources
 
@@ -104,6 +108,28 @@ The general `sense` definition is canonical. The specific `web-sense` / `web-con
 
 The real browser should use a dedicated persistent RumiAI-controlled profile rather than the user's ordinary browser profile. Human-interaction-required states (login, consent, CAPTCHA/challenge) should be surfaced rather than bypassed.
 
+### Web-control development proposal
+
+Preferred first implementation direction, still working design:
+
+- `web-control` is likely an `m`-owned technical capability because it is deterministic, general-purpose and independent from RumiAI cognition; this ownership must be promoted explicitly before product implementation.
+- validate the design first in `rumiai-dev-PoCs`, then promote only settled contract into `rumiai-dev` and implement in `rumiai-os`;
+- use Node.js for the PoC/controller implementation and Playwright as the first browser-control provider, without making Playwright part of the public `web-control` contract;
+- start with Chromium and a dedicated persistent user-data/profile directory; do not reuse the user's ordinary browser profile as the default;
+- reuse the existing `pkg-catalog` Node.js/Chromium package capabilities rather than introducing an Electron core;
+- maintain browser/context/page state in one controller process and expose stable `web-control` identities to clients rather than leaking Playwright objects;
+- keep the low-level controller local. Prefer a local IPC/API boundary and do not expose an unrestricted remote-debugging port as the ordinary public interface;
+- provide controlled CDP/debug access through `web-control` for advanced inspection; raw debugger endpoint publication, if needed, is a separately privileged operation;
+- initial capture/export should validate rendered DOM/HTML, readable text, screenshot and a self-contained page snapshot such as MHTML where the browser supports it;
+- the first PoC should prove navigation, persistent authenticated session reuse, multiple page identity/lifecycle, capture/export, basic deterministic interaction and controlled CDP inspection on ordinary JavaScript-heavy pages;
+- Amazon should be a later acceptance/adapter test, not the mechanism that defines the baseline contract.
+
+Current implementation evidence:
+- `pkg-catalog` already contains Node.js, Chromium, Chrome and Electron packages;
+- PoC 054 already uses Node.js + Playwright + Chromium to navigate an Amazon wishlist and export rendered HTML, screenshot and JSON evidence;
+- current Chrome requires a non-default user-data directory for command-line remote debugging, reinforcing the dedicated-profile design;
+- Playwright supports persistent browser contexts and CDP sessions, while direct `connectOverCDP` is documented as lower fidelity than Playwright's native control path.
+
 ### ChatGPT integration model
 
 Keep both `web-sense` and `web-control` independent from ChatGPT and add bridges/adapters around the AI-level capability as appropriate.
@@ -152,7 +178,7 @@ The most important architectural boundary is one provider-independent local Rumi
 
 ## Next action
 
-Design the smallest provider-independent `web-control` contract for page navigation, export/save, interaction primitives and layered introspection/debug access; then define the minimal `web-sense` contract that composes those deterministic capabilities before validating the split with a browser-backed PoC.
+Create a focused `rumiai-dev-PoCs` experiment for the proposed `web-control` controller boundary: persistent Chromium profile, stable page identities, navigation, capture/export, deterministic interaction and controlled CDP inspection. Use the results to settle the provider-independent contract before product implementation.
 
 ## Blockers / open questions
 
