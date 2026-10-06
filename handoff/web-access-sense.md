@@ -9,10 +9,10 @@ Define a general-purpose RumiAI web-access sense that lets RumiAI observe and in
 
 ## Current repository revisions
 
-- rumiai-dev: f68ba8058cd4d7927709aac31a57d549b9396d1d
+- rumiai-dev: 58b5f56ea14abcab28777bcca5bc546f7c2aefbb
 - rumiai-os: f4d28822c4a2a875bd816ec3b15477dcfa905706
 - rumiai-tests: 80176d5e8cef61d5bc792555a9b957c0f3600044
-- rumiai-dev-PoCs: 71f47e5f2f3b26ff7d6a0e2d335a85459b669088
+- rumiai-dev-PoCs: 3c00148a4800cb8556be1f8856546d529001c6cb
 - pkg-catalog: c1425bd5097bd18526a42da866ea98906a3325a4
 
 ## Applicable canonical sources
@@ -167,18 +167,20 @@ This is still working design and requires explicit contract design before promot
 - Verified current OpenAI support for custom MCP plugins, Secure MCP Tunnel for private/local MCP reachability, scheduled tasks using supported apps/plugins, desktop site tools backed by WebMCP, and the built-in ChatGPT desktop browser. Corrected the earlier provisional assumption that ChatGPT could directly attach to an arbitrary localhost MCP server.
 - User approved `web-sense` as the AI-level Web sense. After re-evaluating the meaning of "sense" against the Computer Use / Computer Control separation, the task design now uses `web-control` for the deterministic substrate and `web-sense` for the AI/cognitive layer. The initial deterministic browser baseline remains navigation, page export/save and controlled debugger/introspection access.
 - The project-wide definition of `sense` has been promoted to `specifications/rumiai-os/SENSE-MODEL.md` and referenced by the high-level current model.
+- PoC 057 (`rumiai-dev-PoCs/pocs/057-web-control-browser-controller`) implements the proposed controller boundary with Node.js + Playwright + persistent Chromium behind a local Unix-domain socket. GitHub Actions run 37440924848 completed successfully on Ubuntu 24.04 / Node 22. The experiment mechanically validated dynamic post-fetch DOM observation, deterministic fill/click, popup page registration, HTML/text/PNG/MHTML capture, page-scoped raw CDP `Runtime.evaluate`, and cookie/localStorage persistence across controller/browser restart using the same dedicated profile.
+- Local syntax checks for the PoC JavaScript passed. Local runtime execution was not obtained because dependency installation could not complete in the local tool environment; the successful GitHub Actions run is the runtime validation evidence.
 
 ## Current state
 
-The task is in architecture/naming exploration. No product/runtime implementation or canonical specification has been created or modified.
+The task has completed its first `web-control` mechanics experiment. No `rumiai-os` product/runtime implementation or Web-specific canonical specification has been created yet.
 
-The general sense semantics are now canonical. The task-local names remain fixed as `web-sense` for the AI/cognitive Web capability and `web-control` for the deterministic Web substrate; their Web-specific contracts have not yet been promoted.
+The general sense semantics are canonical. The task-local names remain fixed as `web-sense` for the AI/cognitive Web capability and `web-control` for the deterministic Web substrate. PoC 057 now provides positive implementation evidence for a persistent browser controller boundary without promoting its JSON protocol, socket transport, Playwright provider, CSS-selector surface, capture formats or process model.
 
 The most important architectural boundary is one provider-independent local RumiAI web capability with multiple integration bridges, rather than separate Amazon/ChatGPT/browser subsystems.
 
 ## Next action
 
-Create a focused `rumiai-dev-PoCs` experiment for the proposed `web-control` controller boundary: persistent Chromium profile, stable page identities, navigation, capture/export, deterministic interaction and controlled CDP inspection. Use the results to settle the provider-independent contract before product implementation.
+Use the validated PoC 057 results to define the smallest provider-independent `web-control` contract: ownership, browser/profile/session/page identities, deterministic observation/interaction surface, capture semantics, privileged debug boundary and lifecycle. Promote only settled semantics before any `rumiai-os` implementation.
 
 ## Blockers / open questions
 
