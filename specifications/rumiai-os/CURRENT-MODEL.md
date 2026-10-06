@@ -31,6 +31,15 @@ Terminology follows that layer boundary. In current development contracts, imple
 
 `pkg`, package runtime infrastructure and `pkg-catalog` belong to `m`.
 
+
+### RumiAI senses
+
+A RumiAI **sense** is a specialized AI capability through which RumiAI perceives, interprets and interacts with a specific domain, using one or more deterministic mechanisms of observation and control beneath it.
+
+A sense therefore belongs to the branded RumiAI AI/cognitive layer; it is not the deterministic control mechanism itself. Deterministic mechanisms used by a sense retain the ownership defined by their own contracts.
+
+The canonical sense/control boundary and invariants are defined in `SENSE-MODEL.md`.
+
 ## 2. Root entrypoints
 
 The technical root runtime is:
@@ -482,4 +491,5 @@ CURRENT-78   publication and structural hygiene use crash-released POSIX FIFO ac
 CURRENT-79   structural hygiene is not a cache-retention policy and defines no TTL/LRU, cache-size limit, whole-fingerprint eviction, global sweep guarantee or public cache-management command
 CURRENT-80   testlab belongs to m and manages developer-facing live scenario environments without becoming a test runner or formal-validation launcher
 CURRENT-81   testlab scenario definitions are project-owned sys resource payloads under res/sys/testlab/scenarios while persistent instance lifecycle/recovery state uses user-scoped sys testlab state
+CURRENT-82   a RumiAI sense is a specialized AI capability for perceiving, interpreting and interacting with a domain through separate deterministic observation/control mechanisms
 ```
