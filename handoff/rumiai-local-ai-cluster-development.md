@@ -12,7 +12,7 @@ Develop and validate a practical local AI cluster for RumiAI using the available
 ```text
 rumiai-dev   a895ce779ff51e75ac22660bb338df08c228dd7e  (pre-checkpoint HEAD)
 rumiai-os    f4d28822c4a2a875bd816ec3b15477dcfa905706  (observed current remote HEAD; not modified by this checkpoint)
-pkg-catalog  c1425bd5097bd18526a42da866ea98906a3325a4  (observed current remote HEAD; no llama.cpp package/facility found)
+pkg-catalog  7e42e1d9fd6d986eba5fc8ac671641ac3b99f1b3  (Ollama package/service facility added in this work unit; no llama.cpp package/facility)
 ```
 
 Fresh remote HEAD retrieval remains mandatory before future analysis or writes.
@@ -77,6 +77,9 @@ Additional package, service, state or container specifications must be retrieved
 - LocalAI remains a plausible optional unifying runtime/API layer if multiple model backends/modalities are needed; it is not required for the first CPU-only LLM worker deployment.
 - The cluster should be optimized for aggregate useful work and parallel task throughput, not for making one serial model response faster through cross-node cooperation.
 - Exact model families and quantizations remain to be selected by practical fit rather than additional synthetic benchmarking.
+- The catalog package uses the official `ollama/ollama` GitHub release stream for `linux-x86_64`, current anchor/tag `v0.35.1`, exact asset `ollama-linux-amd64.tar.zst`, SHA-256 metadata from GitHub release assets, and `tar.zst` extraction. It exposes ordinary package commands `ollama` and `ollama-serve`; `ollama-serve` launches `ollama serve` and is the foreground start realization for service facility `ollama` compatibility level `1`.
+- Cluster-specific service settings remain mutable service-instance configuration rather than package metadata. In particular `OLLAMA_MODELS`, `OLLAMA_HOST`, and `OLLAMA_NOPRUNE` should be supplied through the system package State Instance configuration used by `srv`.
+- The official upstream Linux amd64 package is still the full distribution (~1.44 GB compressed / ~2.2 GiB extracted) including CUDA/Vulkan payloads. The catalog package intentionally follows the official artifact and does not silently encode the experimental 60 MiB CPU-only pruning. This footprint remains a deployment concern for the smallest worker roots.
 
 ## Completed
 
@@ -131,9 +134,9 @@ Podman remains available as a later tool for services that actually benefit from
 
 Perform the first physical deployment preflight and shared-runtime validation:
 
-1. choose the production ownership boundary for persistence: either keep Ollama workers as explicitly external infrastructure managed outside `m`, or promote Ollama into the `pkg`/`srv` model before RumiAI owns their lifecycle; do not create an ad-hoc RumiAI systemd service that bypasses the current service contract;
-2. make NFS mounts persistent only after that ownership decision, preserving read-only runtime/model artifacts and writable worker-local state;
-3. establish persistent worker endpoints with controlled bind addresses and lifecycle, then validate restart/reboot behavior;
+1. physically validate the new catalog definition on `gis`: `pkg install ollama`, command/default identity, `ollama --version`, provider/facility discovery, and a foreground `srv` start path with service-instance environment configured away from the default model store;
+2. decide how the production worker deployment reconciles the official 2.2 GiB package root with the already-validated 60 MiB CPU-only shared runtime on small-root nodes; do not introduce package-specific pruning into generic `pkg` without an explicit reusable contract;
+3. once package/service ownership and worker artifact layout are aligned, make NFS mounts and worker endpoints persistent and validate restart/reboot behavior;
 4. introduce the first dispatcher/orchestrator boundary over the validated worker pool and select model/role profiles, including at least one non-thinking model/profile for terse deterministic worker tasks.
 
 ## Blockers / open questions
@@ -142,5 +145,5 @@ Perform the first physical deployment preflight and shared-runtime validation:
 - `libgomp.so.1` is missing on seven of the eight surveyed hosts; `webgisrpr` already has it. This remains relevant only for the standalone llama.cpp runtime because the validated Ollama CPU runtime bundles its own OpenMP library.
 - Direct execution of the official llama.cpp Ubuntu x64 archive from NFS has not yet been validated on the two Ubuntu/kernel classes in the fleet.
 - Select the first local model set by role after the shared runtime path works.
-- Ollama is physically useful on every current worker class; the remaining decision is not node eligibility but whether persistent lifecycle is external infrastructure or promoted into `pkg`/`srv` ownership.
+- Ollama is physically useful on every current worker class. The user has now selected the `pkg`/`srv` ownership direction: an `ollama` package and `ollama` service facility were added to `pkg-catalog` at commit `7e42e1d9fd6d986eba5fc8ac671641ac3b99f1b3`. Physical `pkg install`/`srv` validation is still pending.
 - Decide whether Hindsight should be part of the first deployment or introduced after the basic local worker pool is operational.
