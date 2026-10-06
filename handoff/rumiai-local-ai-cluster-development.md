@@ -42,6 +42,7 @@ Additional package, service, state or container specifications must be retrieved
 - Prefer independent model workers and request/workload parallelism over tensor/model parallelism that requires frequent cross-host synchronization.
 - `gis` and `webgisrpr` may be used without a task-level CPU cap; the user will manage production contention when necessary.
 - Credentials are not exposed to the assistant. Operations use `rsudo` / `rsudo-admin` from an environment where the user has already loaded credentials, or an explicitly available ChatGPT Work/Codex execution session.
+- All eight servers currently have an older `m` installation and do not yet have the current `rumiai-os` runtime. The user has fixed that the current RumiAI/m runtime must be installed on every server. Deployment must preserve the old `m` until the new runtime is physically validated.
 - Do not rely on host wall clocks for distributed correlation. Prefer run identifiers, operation identifiers and explicit command/result state.
 - No further synthetic/network benchmarking is required before proceeding. The current hardware evidence is sufficient for deployment design.
 - The large `/m` storage on `gis` is the shared-storage basis for the cluster because the VM disks cannot currently be enlarged.
@@ -135,10 +136,11 @@ Podman remains available as a later tool for services that actually benefit from
 
 Perform the first physical deployment preflight and shared-runtime validation:
 
-1. establish the canonical RumiAI command entrypoint available to privileged `rsudo` jobs on `gis` (or confirm that no target-side RumiAI runtime is installed yet); then physically validate the new catalog definition on `gis`: `pkg install ollama`, command/default identity, `ollama --version`, provider/facility discovery, and a foreground `srv` start path with service-instance environment configured away from the default model store;
-2. decide how the production worker deployment reconciles the official 2.2 GiB package root with the already-validated 60 MiB CPU-only shared runtime on small-root nodes; do not introduce package-specific pruning into generic `pkg` without an explicit reusable contract;
-3. once package/service ownership and worker artifact layout are aligned, make NFS mounts and worker endpoints persistent and validate restart/reboot behavior;
-4. introduce the first dispatcher/orchestrator boundary over the validated worker pool and select model/role profiles, including at least one non-thinking model/profile for terse deterministic worker tasks.
+1. deploy the current `rumiai-os` runtime to all eight servers in a separate installation root without replacing the pre-existing old `m`; pin and verify the same `rumiai-os` revision on every node, run the new runtime's own `osarch update`, and smoke-test `m`, `osarch`, `pkg`, `srv`, and `state-path` through absolute entrypoints;
+2. after the new runtime passes on `gis`, physically validate the new Ollama catalog definition there: `pkg install ollama`, command/default identity, `ollama --version`, provider/facility discovery, and a foreground `srv` start path with service-instance environment configured away from the default model store;
+3. decide how the production worker deployment reconciles the official 2.2 GiB package root with the already-validated 60 MiB CPU-only shared runtime on small-root nodes; do not introduce package-specific pruning into generic `pkg` without an explicit reusable contract;
+4. once package/service ownership and worker artifact layout are aligned, make NFS mounts and worker endpoints persistent and validate restart/reboot behavior;
+5. introduce the first dispatcher/orchestrator boundary over the validated worker pool and select model/role profiles, including at least one non-thinking model/profile for terse deterministic worker tasks.
 
 ## Blockers / open questions
 
@@ -146,5 +148,5 @@ Perform the first physical deployment preflight and shared-runtime validation:
 - `libgomp.so.1` is missing on seven of the eight surveyed hosts; `webgisrpr` already has it. This remains relevant only for the standalone llama.cpp runtime because the validated Ollama CPU runtime bundles its own OpenMP library.
 - Direct execution of the official llama.cpp Ubuntu x64 archive from NFS has not yet been validated on the two Ubuntu/kernel classes in the fleet.
 - Select the first local model set by role after the shared runtime path works.
-- Ollama is physically useful on every current worker class. The user has selected the `pkg`/`srv` ownership direction. The current `pkg-catalog` HEAD is `8d28fde9cb5e058b1d9b20006960d57059a14a71`; the Ollama package/service definition remains present there. The first physical validation attempt on `gis` stopped before package resolution because `pkg` was not available in the privileged remote shell PATH.
+- Ollama is physically useful on every current worker class. The user has selected the `pkg`/`srv` ownership direction. The current `pkg-catalog` HEAD is `8d28fde9cb5e058b1d9b20006960d57059a14a71`; the Ollama package/service definition remains present there. The first physical validation attempt on `gis` stopped before package resolution because only the legacy `m` is installed there; current `rumiai-os` must first be deployed across the fleet.
 - Decide whether Hindsight should be part of the first deployment or introduced after the basic local worker pool is operational.
