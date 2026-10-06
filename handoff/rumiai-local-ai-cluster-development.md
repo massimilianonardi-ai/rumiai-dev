@@ -61,6 +61,9 @@ Additional package, service, state or container specifications must be retrieved
 - Do not introduce Paperclip or CrewAI merely to distribute inference across the hosts. Multi-agent frameworks solve orchestration/state/control-plane problems, not the core CPU-inference bottleneck.
 - Prefer the smallest orchestration layer that can dispatch independent jobs to model workers. RumiAI/its higher-level orchestration may own this directly unless concrete workflow requirements justify an external framework.
 - Hindsight is a comparatively strong near-term experiment for persistent AI memory because it exposes a service/API boundary and can use an external local llama.cpp/OpenAI-compatible server; it is not itself an inference accelerator.
+- Ollama is now an explicit parallel runtime experiment on `gis`: evaluate it as a managed model/API layer while keeping direct `llama.cpp` for lean workers. Do not assume it replaces llama.cpp until the physical trial proves its storage, CPU and lifecycle tradeoffs.
+- Prefer staging the official Ollama Linux distribution under `gis:/m/ai/runtime/ollama` first, rather than immediately running the installer into `/usr`; this keeps the trial reversible and measures whether the distribution is usable from shared storage.
+- Set any Ollama model store used in this experiment under `gis:/m/ai/ollama/models` through `OLLAMA_MODELS`; do not consume small worker root filesystems with Ollama model blobs.
 - LocalAI remains a plausible optional unifying runtime/API layer if multiple model backends/modalities are needed; it is not required for the first CPU-only LLM worker deployment.
 - The cluster should be optimized for aggregate useful work and parallel task throughput, not for making one serial model response faster through cross-node cooperation.
 - Exact model families and quantizations remain to be selected by practical fit rather than additional synthetic benchmarking.
@@ -111,11 +114,10 @@ Podman remains available as a later tool for services that actually benefit from
 
 Perform the first physical deployment preflight and shared-runtime validation:
 
-1. inspect all eight hosts for `libgomp.so.1`, its owning package when installed, and package-manager availability without making changes;
-2. install/provide the minimal OpenMP runtime where absent, starting with `gis`, then re-run `llama-server --version` from the staged runtime;
-3. verify NFS server/client tooling and existing export/mount policy;
-4. export the runtime/model tree read-only to the seven worker hosts;
-5. mount it on one representative 10.100 worker and one representative 10.200 worker and repeat dependency/version checks before selecting the first GGUF.
+1. stage the current official Ollama Linux x86_64 distribution under `gis:/m/ai/runtime/ollama` without installing it system-wide; inspect archive footprint, extracted footprint, dependencies and direct execution from `/m`;
+2. if that succeeds, run one temporary `ollama serve` on `gis` with `OLLAMA_MODELS=/m/ai/ollama/models`, verify the local HTTP API and lifecycle without pulling a large model;
+3. in parallel, install/provide the minimal OpenMP runtime needed by the staged llama.cpp runtime and re-run `llama-server --version` on `gis`;
+4. after comparing both runtime paths, proceed with the read-only shared-runtime/model export for lean llama.cpp workers and keep Ollama only where its management layer adds value.
 
 ## Blockers / open questions
 
@@ -123,4 +125,5 @@ Perform the first physical deployment preflight and shared-runtime validation:
 - `libgomp.so.1` is currently missing on `gis`; fleet-wide availability has not yet been checked.
 - Direct execution of the official llama.cpp Ubuntu x64 archive from NFS has not yet been validated on the two Ubuntu/kernel classes in the fleet.
 - Select the first local model set by role after the shared runtime path works.
+- Decide whether Ollama remains only on `gis`/larger managed nodes or is useful on additional nodes after the physical trial.
 - Decide whether Hindsight should be part of the first deployment or introduced after the basic local worker pool is operational.
