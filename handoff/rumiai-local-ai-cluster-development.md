@@ -64,8 +64,9 @@ Additional package, service, state or container specifications must be retrieved
 - Ollama is now an explicit parallel runtime experiment on `gis`: evaluate it as a managed model/API layer while keeping direct `llama.cpp` for lean workers. Do not assume it replaces llama.cpp until the physical trial proves its storage, CPU and lifecycle tradeoffs.
 - The official Ollama Linux distribution has now been staged successfully under `gis:/m/ai/runtime/ollama/current` and executes directly from `/m`; system-wide installation is not required for the current trial.
 - Set any Ollama model store used in this experiment under `gis:/m/ai/ollama/models` through `OLLAMA_MODELS`; do not consume small worker root filesystems with Ollama model blobs.
-- The staged Ollama distribution is 2.2 GiB extracted, but logged file sizes show approximately 2.15 GB in bundled CUDA 12/13 libraries and about 44 MB in Vulkan support; the remaining listed CPU/core runtime is only about 62 MB. A separate CPU-only copy is therefore worth validating after the unmodified runtime passes `ollama serve`/API checks.
+- The staged Ollama distribution is 2.2 GiB extracted, but physical validation showed that removing only the bundled CUDA 12/13 and Vulkan payloads yields a 60 MiB CPU-only runtime. Both the untouched and CPU-only runtimes start `ollama serve`, expose `/api/version` and `/api/tags`, bind successfully to loopback, and detect CPU inference on `gis`.
 - Ollama bundles its own `libgomp.so.1`, avoiding the system OpenMP-runtime dependency encountered by the standalone llama.cpp release.
+- The temporary `ollama serve` test generated an SSH identity below the effective root home (`/root/.ollama`). Future managed execution should redirect process HOME/state to `/m/ai/ollama/home` (or another explicit persistent Ollama state directory) so cluster state does not leak into the small root filesystem.
 - LocalAI remains a plausible optional unifying runtime/API layer if multiple model backends/modalities are needed; it is not required for the first CPU-only LLM worker deployment.
 - The cluster should be optimized for aggregate useful work and parallel task throughput, not for making one serial model response faster through cross-node cooperation.
 - Exact model families and quantizations remain to be selected by practical fit rather than additional synthetic benchmarking.
@@ -83,6 +84,7 @@ Additional package, service, state or container specifications must be retrieved
 - Current upstream llama.cpp deployment surface was refreshed. The project still provides `llama-server`, supports CMake builds including static builds, and publishes an Ubuntu x64 CPU archive suitable for a first physical shared-runtime test.
 - Official `b11429` Ubuntu x64 CPU archive was downloaded and SHA-256 verified on `gis`; extraction succeeded. `ldd` showed bundled llama/ggml shared libraries resolving from the staged directory and normal system libraries resolving from Ubuntu, with only `libgomp.so.1` unresolved. `llama-server --version` therefore exited 127. No NFS export or worker-side change has been made yet.
 - Official Ollama Linux amd64 runtime was staged physically on `gis`. Download size was about 1.4 GiB, extracted footprint 2.2 GiB, and `/m/ai/runtime/ollama/current/bin/ollama --version` executed successfully from `/m` reporting client version 0.35.1. The distribution includes CPU variants, its own `libgomp`, Vulkan support and large CUDA 12/13 runtime trees.
+- Temporary server validation completed for both the full and pruned CPU-only Ollama runtimes. Both returned version `0.35.1`, an empty model list, and HTTP 200 responses on loopback. The CPU-only runtime footprint is 60 MiB and Ollama correctly selected CPU compute with about 31.3 GiB total memory visible on `gis`.
 
 ## Current state
 
@@ -117,15 +119,15 @@ Podman remains available as a later tool for services that actually benefit from
 
 Perform the first physical deployment preflight and shared-runtime validation:
 
-1. run one temporary `ollama serve` from `/m/ai/runtime/ollama/current` on `gis` with `OLLAMA_MODELS=/m/ai/ollama/models`, bound to loopback, and verify `/api/version`, `/api/tags`, process lifecycle and logs without pulling a model;
-2. create a separate experimental CPU-only Ollama runtime by removing only the CUDA 12/13 and Vulkan payloads, then repeat the same server/API checks; retain the untouched staged runtime as control;
-3. install/provide the minimal OpenMP runtime needed by the standalone llama.cpp runtime and re-run `llama-server --version` on `gis`;
-4. compare the validated Ollama CPU-only runtime with direct llama.cpp, then proceed with the read-only shared-runtime/model export for lean workers.
+1. promote the validated 60 MiB CPU-only Ollama tree from experimental `cpu-test` naming to a versioned runtime path while retaining the untouched full distribution as control/source material;
+2. run Ollama on `gis` with explicit persistent state under `/m/ai/ollama/home` and models under `/m/ai/ollama/models`, so no meaningful runtime state depends on `/root`;
+3. select and pull one small representative model on `gis`, verify one real CPU inference request and record memory/model footprint and qualitative latency only as deployment evidence, not as another infrastructure benchmark;
+4. decide whether the first worker export should expose the CPU-only Ollama runtime, direct llama.cpp runtime, or both; then validate one 10.100 and one 10.200 worker from the read-only share.
 
 ## Blockers / open questions
 
 - Physical NFS package/tool availability and enterprise firewall/export-policy compatibility are not yet verified.
-- `libgomp.so.1` is currently missing on `gis`; fleet-wide availability has not yet been checked.
+- `libgomp.so.1` is missing on seven of the eight surveyed hosts; `webgisrpr` already has it. This remains relevant only for the standalone llama.cpp runtime because the validated Ollama CPU runtime bundles its own OpenMP library.
 - Direct execution of the official llama.cpp Ubuntu x64 archive from NFS has not yet been validated on the two Ubuntu/kernel classes in the fleet.
 - Select the first local model set by role after the shared runtime path works.
 - Decide whether Ollama remains only on `gis`/larger managed nodes or is useful on additional nodes after the physical trial.
