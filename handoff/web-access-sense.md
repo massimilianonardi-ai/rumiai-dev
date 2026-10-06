@@ -57,6 +57,17 @@ Start from a deliberately small browser-backed baseline before designing site-sp
 
 This baseline should be sufficient to reproduce the earlier class of workflows such as saving complete ChatGPT conversations, while allowing later site adapters to build higher-level semantic operations.
 
+
+### Deterministic / AI boundary
+
+Preferred working boundary: `web-sense` is deterministic. It exposes observable web/browser operations and returns evidence; it does not interpret user goals, choose autonomous plans, judge business meaning, or own scheduling policy.
+
+AI reasoning stays above `web-sense` in the RumiAI layer. The AI layer interprets page evidence, chooses subsequent operations, composes workflows and decides when or why work should be scheduled or notifications emitted.
+
+Site-specific adapters may still belong inside `web-sense` when they implement deterministic semantic operations. For example, an Amazon wishlist extractor or ChatGPT conversation exporter can be deterministic even though it is site-specific. AI belongs above the boundary only when interpretation or planning is required.
+
+This remains working design until promoted to a canonical specification.
+
 ### Capability/provider separation
 
 The public capability should describe web observation/interaction. Provider selection remains an internal concern. Candidate provider classes include:
@@ -119,7 +130,7 @@ Design the smallest provider-independent baseline contract for page navigation, 
 
 ## Blockers / open questions
 
-- Define the exact boundary between sense/capability, planning/agent behavior and scheduling.
+- Confirm and promote the preferred deterministic `web-sense` boundary, with planning/interpretation/scheduling remaining above it.
 - Determine which ChatGPT integration paths are baseline versus optional compatibility bridges.
 - Decide the exact export artifacts and introspection/debug privilege boundaries.
 - Decide the minimal provider interface and provider-resolution semantics only after the public capability contract is clear.
