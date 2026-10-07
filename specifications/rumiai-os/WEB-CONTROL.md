@@ -1,7 +1,7 @@
 # RumiAI OS — Web control
 
 Status: **Current / normative**  
-Updated: 2026-10-06
+Updated: 2026-10-07
 
 This document defines the deterministic Web observation/control capability used beneath RumiAI Web cognition.
 
@@ -94,7 +94,7 @@ srv stop web-control
 
 The provider service process MUST remain foreground from its own perspective and obey the baseline `srv` SIGTERM lifecycle.
 
-For a browser-backed provider, the controlled browser runtime is part of the service realization. If that browser application terminates externally or crashes, the provider foreground process MUST also terminate instead of remaining an apparently live service with no controllable browser. Closing an individual `web-control` page does not by itself stop the service.
+For a browser-backed provider, the long-running provider service is the controller lifecycle; the controlled browser runtime is a managed subordinate resource. If that browser application terminates externally or crashes, the provider foreground process MUST remain available, detect that the browser is absent and recreate it when a later operation requires a browser. Browser recreation MUST use the same logical profile and MUST NOT imply persistence of prior live page identities. Closing an individual `web-control` page does not stop the service.
 
 The public client command and the service implementation may be different ordinary package commands inside a concrete provider. Facility service realization chooses the provider-owned foreground start command without making that internal command a provider-independent public command.
 
@@ -262,5 +262,5 @@ WEBCTRL-12  unrestricted browser remote-debugging endpoints are not published by
 WEBCTRL-13  Playwright/CDP/Chromium are initial implementation choices and do not define the public contract
 WEBCTRL-14  generic scheduling is outside web-control
 WEBCTRL-15  browser-backed providers preserve browser sandboxing by default; unsandboxed mode is explicit provider-specific opt-in only
-WEBCTRL-16  external browser-runtime termination also terminates the provider foreground service; page closure alone does not
+WEBCTRL-16  browser-backed provider services outlive browser-runtime termination, detect browser absence and recreate the browser on demand without preserving prior live page identities
 ```
