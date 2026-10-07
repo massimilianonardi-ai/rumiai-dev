@@ -88,6 +88,8 @@ Additional package, service, state or container specifications must be retrieved
 
 ## Completed
 
+- Persistent Ollama system-host deployment is now physically validated on `gis` at `rumiai-os` revision `1f6476f6c1ebc50b5135adab8cd790be63133f61`. The deployment preserved operational untracked state, reapplied `linux-x86_64`, reconciled `srv host system install ollama ollama`, verified provider runtime access as the non-root `ollama` account, started the native systemd unit, exposed Ollama 0.35.1 at `127.0.0.1:11435`, exposed the shared `qwen3:4b` model, ran `ollama serve` as user `ollama`, and ended with the unit both enabled and active. This physically validates the generic concrete-package runtime-access fix for this real package/service path. Evidence is revision-specific: current `rumiai-os` HEAD has since advanced to `504b7ec7541f6e1f67db9b335a767691480b3b13`, which retains the runtime-access preparation logic but has not yet received the same physical deployment validation.
+
 - First inventory and deeper synthetic benchmark passes completed successfully across all eight hosts.
 - The surveyed VMs expose x86_64, AVX2/FMA and VMware virtualization; AVX-512 was not visible to the guests.
 - The three local 8 GiB hosts expose 4 vCPU and approximately 6-7 GiB available memory, but have very limited free root filesystem space.
@@ -145,7 +147,7 @@ Podman remains available as a later tool for services that actually benefit from
 
 Perform the first physical deployment preflight and shared-runtime validation:
 
-1. update `/m/src/git/rumiai-os` on `gis` to `1f6476f6c1ebc50b5135adab8cd790be63133f61` while preserving untracked operational state and allowing only the three expected tracked `osarch` selector mutations; re-run `osarch update`, reconcile `srv host system install ollama ollama`, then validate systemd-backed start/stop plus API readiness under account `ollama`; if successful, roll the corrected runtime forward to the remaining fleet nodes;
+1. bring `gis` forward from the physically validated `1f6476f6c1ebc50b5135adab8cd790be63133f61` to current `rumiai-os` HEAD `504b7ec7541f6e1f67db9b335a767691480b3b13`, preserving operational state and revalidating the persistent Ollama system service; if that current revision passes, roll the same exact revision to the remaining fleet nodes;
 2. adjust the fleet update procedure so the three expected `osarch` selector mutations do not masquerade as user changes while unrelated working-tree changes still fail closed;
 3. decide how the production worker deployment reconciles the official 2.2 GiB package root with the already-validated 60 MiB CPU-only shared runtime on small-root nodes; do not introduce package-specific pruning into generic `pkg` without an explicit reusable contract;
 4. once package/service ownership and worker artifact layout are aligned, make NFS mounts and worker endpoints persistent and validate restart/reboot behavior;
@@ -157,5 +159,5 @@ Perform the first physical deployment preflight and shared-runtime validation:
 - `libgomp.so.1` is missing on seven of the eight surveyed hosts; `webgisrpr` already has it. This remains relevant only for the standalone llama.cpp runtime because the validated Ollama CPU runtime bundles its own OpenMP library.
 - Direct execution of the official llama.cpp Ubuntu x64 archive from NFS has not yet been validated on the two Ubuntu/kernel classes in the fleet.
 - Select the first local model set by role after the shared runtime path works.
-- Ollama is physically useful on every current worker class. The user has selected the `pkg`/`srv` ownership direction. Package installation and the portable `srv start/stop` lifecycle are physically validated on `gis`. Persistent `srv host system` deployment reached native systemd registration but exposed the generic concrete-package runtime-access defect; the fix is committed in `rumiai-os` `1f6476f6c1ebc50b5135adab8cd790be63133f61` and awaits physical revalidation.
+- Ollama is physically useful on every current worker class. The user has selected the `pkg`/`srv` ownership direction. Package installation, portable `srv start/stop`, and persistent `srv host system` deployment are physically validated on `gis` at `rumiai-os` revision `1f6476f6c1ebc50b5135adab8cd790be63133f61`. Current `rumiai-os` HEAD is later (`504b7ec7541f6e1f67db9b335a767691480b3b13`) and retains the fix, but current-HEAD physical revalidation is still pending before fleet rollout.
 - Decide whether Hindsight should be part of the first deployment or introduced after the basic local worker pool is operational.
