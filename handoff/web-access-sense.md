@@ -9,12 +9,12 @@ Define a general-purpose RumiAI web-access sense that lets RumiAI observe and in
 
 ## Current repository revisions
 
-- rumiai-dev: b26e379a3f26b50d79c0639d16edef5e2097db53
-- rumiai-os: f4d28822c4a2a875bd816ec3b15477dcfa905706
-- rumiai-tests: 80176d5e8cef61d5bc792555a9b957c0f3600044
+- rumiai-dev: 795bd16230a5b223e27698603f49359feac58597
+- rumiai-os: 6a964ba3f5c8acf462737e3b92daaf1af32de57e
+- rumiai-tests: b8eb4633287958c73c16d369b240cd56eae3d060
 - rumiai-dev-PoCs: 3c00148a4800cb8556be1f8856546d529001c6cb
 - rumiai-web-control: 5af708cb2626a9766a27158c2e0af34f13181a10
-- pkg-catalog: d4613410af2ad78dc2fb874281a472ccc1628df0
+- pkg-catalog: 407cde8654004c79dc91a81e0e6e5584279f25d2
 
 ## Applicable canonical sources
 
@@ -61,12 +61,7 @@ The first concrete provider is still planned around Node.js + Playwright + a Chr
 
 The independent `rumiai-web-control` repository now contains the promoted controller implementation, client/service commands, `mk.json`, end-to-end tests and release build workflow. CI run 37461046399 completed successfully on Linux and macOS, and release `v0.1.0` was published with artifact `rumiai-web-control-v0.1.0-all.tar.gz`. `pkg-catalog` now contains the concrete `rumiai-web-control@v0.1.0` provider metadata.
 
-Open packaging questions that remain implementation-specific:
-
-- exact Node.js facility compatibility range for the first provider;
-- whether the first provider consumes an explicit Chromium-class browser facility or temporarily owns a concrete browser package dependency until such a facility contract is justified;
-- release artifact construction for vendored/bundled Playwright runtime dependencies without requiring network package installation at runtime;
-- exact private local IPC transport, while preserving the canonical requirement that raw debugger exposure is not the ordinary interface.
+The first provider packaging choices are now mechanically settled for `v0.1.0`: the package depends on facilities `chromium =1` and `nodejs =26`, the release artifact is `all`, and the extracted artifact is normalized by `pkg-extract` before package link validation.
 
 ### ChatGPT integration model
 
@@ -110,20 +105,20 @@ This is still working design and requires explicit contract design before promot
 - `pkg-catalog` now defines facility `web-control` compatibility 1 with public command `web-control` and provider-backed foreground service semantics. No concrete provider is declared until a real release artifact exists.
 - PoC 057 (`rumiai-dev-PoCs/pocs/057-web-control-browser-controller`) implements the proposed controller boundary with Node.js + Playwright + persistent Chromium behind a local Unix-domain socket. GitHub Actions run 37440924848 completed successfully on Ubuntu 24.04 / Node 22. The experiment mechanically validated dynamic post-fetch DOM observation, deterministic fill/click, popup page registration, HTML/text/PNG/MHTML capture, page-scoped raw CDP `Runtime.evaluate`, and cookie/localStorage persistence across controller/browser restart using the same dedicated profile.
 - Local syntax checks for the PoC JavaScript passed. Local runtime execution was not obtained because dependency installation could not complete in the local tool environment; the successful GitHub Actions run is the runtime validation evidence.
+- Physical install attempt on 2026-10-07 progressed through current Chromium acquisition and setuid-root preparation, then failed at `rumiai-web-control@v0.1.0` provider validation with status 17. Inspection showed that `pkg-extract` correctly removes a single top-level archive wrapper, while the package `link` metadata still targeted `rumiai-web-control/bin/...`. `pkg-catalog` was corrected forward so the ordinary package commands now target normalized-root paths `bin/web-control` and `bin/web-control-service`.
 
 ## Current state
 
 The Web control contract is canonical in `specifications/rumiai-os/WEB-CONTROL.md`. `web-control` is semantically `m`-owned but source/distribution-independent as project `rumiai-web-control`; `mk` owns project development lifecycle and `pkg` owns runtime installation/integration. `pkg-catalog` contains provider-independent facility `web-control` compatibility 1 and the concrete first-party provider package `rumiai-web-control@v0.1.0`.
 
-`rumiai-web-control` now contains the first real provider implementation derived from PoC 057: Node.js + Playwright + persistent Chromium, public `web-control` client, foreground `web-control-service`, local private socket, persistent profile, navigation/inspection/capture/interactions, page-scoped CDP extension, end-to-end tests and release-build automation. CI run 37461046399 succeeded on Linux and macOS; Linux completed the canonical `mk` lifecycle and release artifact upload, macOS completed equivalent source/runtime validation, and release `v0.1.0` was published. `pkg-catalog` contains provider package `rumiai-web-control@v0.1.0` with dependencies `chromium =1` and `nodejs =26`, facility `web-control 1`, public `web-control` command and `web-control-service` service realization.
+`rumiai-web-control` contains the first real provider implementation derived from PoC 057: Node.js + Playwright + persistent Chromium, public `web-control` client, foreground `web-control-service`, local private socket, persistent profile, navigation/inspection/capture/interactions, page-scoped CDP extension, end-to-end tests and release-build automation. CI run 37461046399 succeeded on Linux and macOS; Linux completed the canonical `mk` lifecycle and release artifact upload, macOS completed equivalent source/runtime validation, and release `v0.1.0` was published. `pkg-catalog` contains provider package `rumiai-web-control@v0.1.0` with dependencies `chromium =1` and `nodejs =26`, facility `web-control 1`, public `web-control` command and `web-control-service` service realization. The latest physical install reached provider validation; the discovered archive-normalization/link mismatch is fixed in current `pkg-catalog`, but the corrected install has not yet been physically re-run.
 
 ## Next action
 
-Validate the concrete package end-to-end through `pkg install rumiai-web-control`, provider/facility resolution and `srv start/stop web-control`, including at least one real `web-control` client operation against the installed service. Once that passes, record permanent validation evidence and start the `web-sense` consumer/integration layer.
+Re-run the physical `pkg install rumiai-web-control` against current `pkg-catalog`. If installation succeeds, validate provider selection, `srv start/stop web-control` and at least one installed `web-control` client operation. Then rerun/record permanent package validation evidence and start the `web-sense` consumer/integration layer.
 
 ## Blockers / open questions
 
-Current CI exposed and resolved several integration mismatches before the successful release: package-default Node.js versus facility projection, explicit `osarch update` on clean `rumiai-os` checkouts, browser acquisition/runtime selection, portable persistent authentication state, and controller/browser signal lifecycle. The remaining blocker is end-to-end package/service validation of the published provider.
+Current CI exposed and resolved several integration mismatches before the successful release: package-default Node.js versus facility projection, explicit `osarch update` on clean `rumiai-os` checkouts, browser acquisition/runtime selection, portable persistent authentication state, and controller/browser signal lifecycle. Physical package installation then exposed one additional catalog-only mismatch between normalized archive root and package link targets; current `pkg-catalog` fixes it. The remaining blocker is re-validating end-to-end package/service behavior with that corrected catalog.
 
 - Determine which ChatGPT integration paths are baseline versus optional compatibility bridges.
-- Settle the first provider's Node/browser dependency packaging and release-artifact shape before adding the concrete `rumiai-web-control` package definition/provider realization to `pkg-catalog`.
