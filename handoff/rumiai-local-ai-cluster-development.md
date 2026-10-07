@@ -95,6 +95,8 @@ Additional package, service, state or container specifications must be retrieved
 
 ## Completed
 
+- The reboot-safety pre-canary on `apps` is successful. The live validated model mount was persisted into `/etc/fstab`, the `m-srv-ollama.service` systemd drop-in now declares `RequiresMountsFor=/mnt/rumiai-ai/models` with network/remote-fs ordering, and the cold dependency test passed: after stopping Ollama and unmounting the model store, starting the service caused systemd to remount the NFS model store automatically before Ollama became ready; Ollama 0.35.1 then exposed `qwen3:4b`. The remaining canary is an actual reboot of `apps`.
+
 - Persistent pruned-package rollout is now complete on all seven worker hosts. After the successful `apps` canary, `apisix`, `keycloak`, `apisix_psn`, `apps_psn`, `keycloak_psn`, and `webgisrpr` each integrated the same 60 MiB CPU-only root as the normal concrete `ollama@v0.35.1!linux-x86_64`, selected the package/facility defaults, created/used a non-login `ollama` account, installed/enabled the native system service, started Ollama 0.35.1 from the pruned concrete root, exposed the shared `qwen3:4b` model, and completed validation with the service running persistently. This closes worker persistence validation for 7/7 workers.
 
 - The corrected pruned-package canary on `apps` is now fully successful. The normal concrete `ollama@v0.35.1!linux-x86_64` remains only 60 MiB, the system service State Instance exports `OLLAMA_HOST=127.0.0.1:11435`, `OLLAMA_MODELS=/mnt/rumiai-ai/models`, and `OLLAMA_NOPRUNE=true`, `srv host system restart ollama` starts Ollama 0.35.1 from the pruned concrete root under account `ollama`, the shared `qwen3:4b` model is visible, the effective runtime environment matches the intended values, and the service is enabled/active. This validates the full worker deployment chain from pruned root through normal `pkg` integration and persistent `srv host system` lifecycle.
@@ -174,7 +176,7 @@ Podman remains available as a later tool for services that actually benefit from
 
 Perform the first physical deployment preflight and shared-runtime validation:
 
-1. on `apps`, persist the exact currently validated `/mnt/rumiai-ai/models` NFS source/type/options into a managed `/etc/fstab` entry, add the systemd `RequiresMountsFor=/mnt/rumiai-ai/models` service drop-in, then validate a cold remount/service start followed by a reboot canary; if successful, apply the same per-host captured-mount procedure to the remaining six workers and verify automatic service recovery;
+1. reboot `apps` and verify that `/mnt/rumiai-ai/models` is mounted automatically, `m-srv-ollama.service` is enabled/active without manual intervention, Ollama answers on `127.0.0.1:11435`, and `qwen3:4b` is visible; if that reboot canary passes, apply the same per-host captured-mount/drop-in procedure to the remaining six workers and validate cold dependency recovery there;
 2. convert the now-proven fleet update/deployment procedure into the normal operational path: allow only the three managed tracked `osarch` selector mutations, preserve untracked runtime/state material, pin exact runtime/catalog/artifact revisions, and canary before fleet rollout;
 3. introduce the first dispatcher/orchestrator boundary over the validated persistent worker pool and select model/role profiles, including at least one non-thinking model/profile for terse deterministic worker tasks.
 
