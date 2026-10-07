@@ -147,7 +147,7 @@ Podman remains available as a later tool for services that actually benefit from
 
 Perform the first physical deployment preflight and shared-runtime validation:
 
-1. bring `gis` forward from the physically validated `1f6476f6c1ebc50b5135adab8cd790be63133f61` to current `rumiai-os` HEAD `504b7ec7541f6e1f67db9b335a767691480b3b13`, preserving operational state and revalidating the persistent Ollama system service; if that current revision passes, roll the same exact revision to the remaining fleet nodes;
+1. bring `gis` forward from the physically validated `1f6476f6c1ebc50b5135adab8cd790be63133f61` to current `rumiai-os` HEAD `6a964ba3f5c8acf462737e3b92daaf1af32de57e`, preserving operational state and revalidating the persistent Ollama system service; if that exact current revision passes, roll the same exact revision to the remaining fleet nodes;
 2. adjust the fleet update procedure so the three expected `osarch` selector mutations do not masquerade as user changes while unrelated working-tree changes still fail closed;
 3. decide how the production worker deployment reconciles the official 2.2 GiB package root with the already-validated 60 MiB CPU-only shared runtime on small-root nodes; do not introduce package-specific pruning into generic `pkg` without an explicit reusable contract;
 4. once package/service ownership and worker artifact layout are aligned, make NFS mounts and worker endpoints persistent and validate restart/reboot behavior;
@@ -159,5 +159,5 @@ Perform the first physical deployment preflight and shared-runtime validation:
 - `libgomp.so.1` is missing on seven of the eight surveyed hosts; `webgisrpr` already has it. This remains relevant only for the standalone llama.cpp runtime because the validated Ollama CPU runtime bundles its own OpenMP library.
 - Direct execution of the official llama.cpp Ubuntu x64 archive from NFS has not yet been validated on the two Ubuntu/kernel classes in the fleet.
 - Select the first local model set by role after the shared runtime path works.
-- Ollama is physically useful on every current worker class. The user has selected the `pkg`/`srv` ownership direction. Package installation, portable `srv start/stop`, and persistent `srv host system` deployment are physically validated on `gis` at `rumiai-os` revision `1f6476f6c1ebc50b5135adab8cd790be63133f61`. Current `rumiai-os` HEAD is later (`504b7ec7541f6e1f67db9b335a767691480b3b13`) and retains the fix, but current-HEAD physical revalidation is still pending before fleet rollout.
+- Ollama is physically useful on every current worker class. The user has selected the `pkg`/`srv` ownership direction. Package installation, portable `srv start/stop`, and persistent `srv host system` deployment are physically validated on `gis` at `rumiai-os` revision `1f6476f6c1ebc50b5135adab8cd790be63133f61`. Current `rumiai-os` HEAD is later (`6a964ba3f5c8acf462737e3b92daaf1af32de57e`) and retains the fix, but current-HEAD physical revalidation is still pending before fleet rollout.
 - Decide whether Hindsight should be part of the first deployment or introduced after the basic local worker pool is operational.
