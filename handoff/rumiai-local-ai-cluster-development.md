@@ -91,6 +91,8 @@ Additional package, service, state or container specifications must be retrieved
 
 ## Completed
 
+- Local-copy CPU runtime canaries are now physically successful on both representative workers. On `apps` and `apisix_psn`, the adopted 60 MiB artifact was copied locally, every payload file passed `MANIFEST.sha256`, local `ollama --version` reported 0.35.1, `ollama serve` started from the local runtime, the shared NFS model store exposed `qwen3:4b`, and a real `/api/chat` inference completed. The job returned status 1 only because the validation additionally required exact assistant content `worker-ok`; Qwen3 instead emitted ordinary explanatory text and stopped at the imposed `num_predict=16` limit. Exact-string compliance is not a runtime/deployment criterion and must not invalidate these canaries.
+
 - The published CPU-only artifact is now formally adopted. Re-derivation from the official concrete package produced a 60 MiB tree that was byte-for-byte identical to the previously validated published runtime; its deterministic payload manifest verifies successfully and has digest `f181030a940abc79aa98797c6ac13bd149d6d1cba545f1111886eea8c3445cfd`.
 - The corrected local-copy canary reached the copy step on both `apps` and `apisix_psn`, then failed before runtime validation because `cp -a` attempted to preserve permissions/attributes unsupported by the destination filesystem under `/var/lib/ollama-worker`. This does not indicate artifact corruption. Worker deployment should copy payload structure/content without archive-level ownership/timestamp preservation, then apply deterministic local modes and verify the manifest before execution.
 
@@ -158,7 +160,7 @@ Podman remains available as a later tool for services that actually benefit from
 
 Perform the first physical deployment preflight and shared-runtime validation:
 
-1. copy the adopted CPU-only artifact from `/mnt/rumiai-ai/runtime` to the representative pair `apps` and `apisix_psn` without archive-level metadata preservation, apply deterministic local runtime modes, verify the payload manifest, and validate local-runtime/NFS-model inference; if both canaries pass, roll the same digest-identical artifact to the remaining workers;
+1. roll the adopted CPU-only artifact with manifest digest `f181030a940abc79aa98797c6ac13bd149d6d1cba545f1111886eea8c3445cfd` from `/mnt/rumiai-ai/runtime` to the remaining workers (`apisix`, `keycloak`, `apps_psn`, `keycloak_psn`, `webgisrpr`), using the same deterministic local-copy/mode normalization and manifest verification already proven on `apps` and `apisix_psn`;
 2. convert the now-proven fleet update procedure into the normal operational path: allow only the three managed tracked `osarch` selector mutations, preserve untracked runtime/state material, canary `gis` first when a persistent system service is involved, and pin one exact `rumiai-os` revision across the fleet;
 3. after worker artifact layout is physically validated, make NFS model mounts and worker endpoints persistent and validate restart/reboot behavior;
 4. introduce the first dispatcher/orchestrator boundary over the validated worker pool and select model/role profiles, including at least one non-thinking model/profile for terse deterministic worker tasks.
