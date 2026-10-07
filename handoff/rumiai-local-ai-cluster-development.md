@@ -95,6 +95,8 @@ Additional package, service, state or container specifications must be retrieved
 
 ## Completed
 
+- NFS/service persistence is now uniform and physically validated across all seven Ollama workers. The final normalization on `apps` and `apisix` replaced their earlier verbatim-runtime fstab entries with the same declarative NFSv4.2 options used elsewhere, and both passed the cold dependency test. Together with the five recovered workers and the earlier real reboot canary on `apps`, the worker pool is now reboot-safe at the infrastructure level: persistent model mount, persistent `srv host system` service, local pruned package root, and shared read-only model store are all validated.
+
 - Recovery after the PATH-collision fix is successful on all five affected workers. `keycloak`, `apisix_psn`, `apps_psn`, `keycloak_psn`, and `webgisrpr` now each contain the normalized declarative NFSv4.2 fstab entry (`ro,vers=4.2,hard,proto=tcp,timeo=600,retrans=2,sec=sys,_netdev`), remount the shared model store successfully, pass the cold dependency test in which starting `m-srv-ollama.service` remounts `/mnt/rumiai-ai/models` automatically, expose Ollama 0.35.1 and `qwen3:4b`, and end with the expected `RequiresMountsFor` dependency active. This validates the corrected persistence procedure on both Ubuntu 24.04 and 26.04 worker classes.
 
 - The representative repair on `keycloak` and `apisix_psn` exposed the exact cause of the previous persistence failure: the deployment job used bare `install -m 644` to replace `/etc/fstab`, but on these hosts `install` is shadowed by another command in the inherited PATH (the run emitted `ENV_PATH=...` instead of replacing the file). Consequently the managed NFS entry was absent and `mount /mnt/rumiai-ai/models` failed with “can't find in /etc/fstab”. This is a job-path bug, not an NFS or systemd dependency failure. Repair must use path-stable system utilities (for example `command -p cp` plus `command -p chmod`) rather than bare `install`.
@@ -153,40 +155,28 @@ Additional package, service, state or container specifications must be retrieved
 
 ## Current state
 
-The task is now in deployment design.
+The initial local AI worker pool is now physically deployed and persistent.
 
-The first deployment should deliberately avoid solving the container-storage problem on the smallest VMs. Instead, `gis` acts as the central artifact host and the workers execute the same native llama.cpp distribution and read the same GGUF artifacts through a read-only shared filesystem.
+`gis` is the authoritative central model/artifact host. Each of the seven worker hosts runs the normal concrete package identity `ollama@v0.35.1!linux-x86_64`, whose package root is the validated 60 MiB CPU-only pruned runtime. Worker services run persistently through `srv host system` under the dedicated non-login `ollama` account and use the shared read-only NFS model store at `/mnt/rumiai-ai/models`.
 
-Conceptual layout:
+Worker model mounts use the normalized declarative NFSv4.2 configuration:
 
 ```text
-gis local storage
-/m/ai/
-    runtime/llama.cpp/<revision>/
-    models/
-    data/
-    hindsight/
-
-read-only worker share
-/m/ai/
-    runtime/llama.cpp/<revision>/
-    models/
-
-worker
-    shared llama-server
-        + shared GGUF
-        -> model resident in worker RAM
+10.200.0.19:/m/ai/ollama/models
+    -> /mnt/rumiai-ai/models
+    nfs4
+    ro,vers=4.2,hard,proto=tcp,timeo=600,retrans=2,sec=sys,_netdev
 ```
 
-Podman remains available as a later tool for services that actually benefit from containerization, not as a prerequisite for every LLM worker.
+On every worker, `m-srv-ollama.service` has a deployment-level systemd dependency on `/mnt/rumiai-ai/models` through `RequiresMountsFor`, so service startup causes the model mount to be satisfied first. Cold unmount/service-start recovery is validated on all seven workers; an actual reboot is validated on `apps`.
+
+The previous shared-runtime llama.cpp direction is no longer the current worker deployment. Direct llama.cpp remains only a lower-level fallback/reference experiment.
 
 ## Next action
 
-Perform the first physical deployment preflight and shared-runtime validation:
-
-1. normalize the already-working `apisix` and `apps` fstab entries to the same declarative NFSv4.2 option set using the path-stable write method, then re-run the cold dependency validation on both; after that, the NFS/service persistence design is uniform and physically validated across all seven workers, with a real reboot already validated on `apps`;
-2. convert the now-proven fleet update/deployment procedure into the normal operational path: allow only the three managed tracked `osarch` selector mutations, preserve untracked runtime/state material, pin exact runtime/catalog/artifact revisions, and canary before fleet rollout;
-3. introduce the first dispatcher/orchestrator boundary over the validated persistent worker pool and select model/role profiles, including at least one non-thinking model/profile for terse deterministic worker tasks.
+1. convert the now-proven fleet update/deployment procedure into the normal operational path: allow only the three managed tracked `osarch` selector mutations, preserve untracked runtime/state material, pin exact runtime/catalog/artifact revisions, and canary before fleet rollout;
+2. introduce the first dispatcher/orchestrator boundary over the validated persistent worker pool and select model/role profiles, including at least one non-thinking model/profile for terse deterministic worker tasks;
+3. decide whether Hindsight belongs in the first orchestrated deployment or should follow after the dispatcher/model-role boundary is established.
 
 ## Blockers / open questions
 
@@ -194,5 +184,5 @@ Perform the first physical deployment preflight and shared-runtime validation:
 - `libgomp.so.1` is missing on seven of the eight surveyed hosts; `webgisrpr` already has it. This remains relevant only for the standalone llama.cpp runtime because the validated Ollama CPU runtime bundles its own OpenMP library.
 - Direct execution of the official llama.cpp Ubuntu x64 archive from NFS has not yet been validated on the two Ubuntu/kernel classes in the fleet.
 - Select the first local model set by role after the shared runtime path works.
-- Ollama is physically useful on every current worker class. The user has selected the `pkg`/`srv` ownership direction. Package installation, portable `srv start/stop`, and persistent `srv host system` deployment are physically validated on `gis`; the persistent path is also revalidated at fleet revision `6a964ba3f5c8acf462737e3b92daaf1af32de57e`. All seven workers now run the same digest-derived 60 MiB CPU-only root as the normal concrete package `ollama@v0.35.1!linux-x86_64` under persistent `srv host system`, using the shared NFS model store. Remaining persistence work is the model mount/reboot dependency rather than the Ollama service itself.
+- Ollama is physically useful on every current worker class. The user selected the `pkg`/`srv` ownership direction. All seven workers now run the same digest-derived 60 MiB CPU-only root as the normal concrete package `ollama@v0.35.1!linux-x86_64` under persistent `srv host system`, use the shared read-only NFS model store, pass cold mount/service dependency recovery, and are configured uniformly for reboot-safe startup; an actual reboot is physically validated on `apps`.
 - Decide whether Hindsight should be part of the first deployment or introduced after the basic local worker pool is operational.
