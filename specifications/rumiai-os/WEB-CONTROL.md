@@ -94,6 +94,8 @@ srv stop web-control
 
 The provider service process MUST remain foreground from its own perspective and obey the baseline `srv` SIGTERM lifecycle.
 
+For a browser-backed provider, the controlled browser runtime is part of the service realization. If that browser application terminates externally or crashes, the provider foreground process MUST also terminate instead of remaining an apparently live service with no controllable browser. Closing an individual `web-control` page does not by itself stop the service.
+
 The public client command and the service implementation may be different ordinary package commands inside a concrete provider. Facility service realization chooses the provider-owned foreground start command without making that internal command a provider-independent public command.
 
 ## 4. Browser/session model
@@ -215,6 +217,7 @@ The controller boundary is local by default.
 Security-sensitive browser state includes authenticated cookies, local storage, active sessions and debugger capabilities. Implementations MUST therefore:
 
 - keep controller IPC local by default;
+- preserve the browser's sandbox/isolation mechanisms by default; an unsandboxed browser mode may exist only as an explicit provider-specific opt-in and MUST NOT be the normal package default;
 - use restrictive local permissions for private control endpoints;
 - avoid exposing raw browser debugging interfaces as the normal public API;
 - preserve explicit human intervention for login, consent or challenge flows rather than implementing CAPTCHA/anti-bot bypass behavior.
@@ -258,4 +261,6 @@ WEBCTRL-11  raw debugger protocols are provider-specific privileged extensions, 
 WEBCTRL-12  unrestricted browser remote-debugging endpoints are not published by default
 WEBCTRL-13  Playwright/CDP/Chromium are initial implementation choices and do not define the public contract
 WEBCTRL-14  generic scheduling is outside web-control
+WEBCTRL-15  browser-backed providers preserve browser sandboxing by default; unsandboxed mode is explicit provider-specific opt-in only
+WEBCTRL-16  external browser-runtime termination also terminates the provider foreground service; page closure alone does not
 ```
