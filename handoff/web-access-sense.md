@@ -1,7 +1,7 @@
 # Web access sense
 
 Status: Active
-Updated: 2026-10-06
+Updated: 2026-10-07
 
 ## Goal
 
@@ -9,7 +9,7 @@ Define a general-purpose RumiAI web-access sense that lets RumiAI observe and in
 
 ## Current repository revisions
 
-- rumiai-dev: 864b55bb78cb132ddf614d4e559f7d9e8c9d83d2
+- rumiai-dev: 7f5312fefb4c8dd5cd2ac2ec04743496d9ed24d8
 - rumiai-os: 6a964ba3f5c8acf462737e3b92daaf1af32de57e
 - rumiai-tests: b8eb4633287958c73c16d369b240cd56eae3d060
 - rumiai-dev-PoCs: 3c00148a4800cb8556be1f8856546d529001c6cb
@@ -107,19 +107,20 @@ This is still working design and requires explicit contract design before promot
 - Local syntax checks for the PoC JavaScript passed. Local runtime execution was not obtained because dependency installation could not complete in the local tool environment; the successful GitHub Actions run is the runtime validation evidence.
 - Physical install attempt on 2026-10-07 initially failed at `rumiai-web-control@v0.1.0` provider validation because package link metadata targeted paths before archive-root normalization. `pkg-catalog` was corrected forward so ordinary package commands target normalized-root paths `bin/web-control` and `bin/web-control-service`.
 - A subsequent physical install succeeded and the `web-control` facility provider could be selected. `srv start web-control` started the provider process, but an immediate `web-control status` failed with `ENOENT` on the local socket. Inspection showed this was not a user/service HOME mismatch: both commands launch the same package identity. The failure was the documented `srv` readiness gap—`srv start` proves initial process survival but not application readiness, while the controller binds its socket only after Chromium startup. `rumiai-web-control v0.1.1` fixes the client side by performing bounded retries for startup-compatible local-socket errors, and CI run 37604677458 passed on Linux/macOS with the revised implementation.
+- The permanent `web-control-package` validation was re-run after `v0.1.1` was published and added to current `pkg-catalog`. GitHub Actions run 37602432475 attempt 2 completed successfully on 2026-10-07. Aggregate validation `validation/20261007T101704+0000-2437` recorded `aggregate-status 0`; live session `validation/20261007T101722+0000-6758` recorded `PASS external/rumiai-web-control/install-live.test` and `web-control-package-live=ok`. The live test starts `web-control` through `srv` and invokes `web-control status` immediately before page create/navigate/inspect, so the hosted composed path now protects the startup-readiness regression. This is hosted Linux validation, not physical validation of the user's host.
 
 ## Current state
 
 The Web control contract is canonical in `specifications/rumiai-os/WEB-CONTROL.md`. `web-control` is semantically `m`-owned but source/distribution-independent as project `rumiai-web-control`; `mk` owns project development lifecycle and `pkg` owns runtime installation/integration. `pkg-catalog` contains provider-independent facility `web-control` compatibility 1 and first-party provider concretes `rumiai-web-control@v0.1.0` and current `rumiai-web-control@v0.1.1`.
 
-`rumiai-web-control v0.1.1` contains the current first provider implementation: Node.js + Playwright + managed Chromium, public `web-control` client, foreground `web-control-service`, local private socket, persistent profile, navigation/inspection/capture/interactions, page-scoped CDP extension, end-to-end tests and release-build automation. CI run 37604677458 succeeded on Linux and macOS and published the release artifact. Physical `v0.1.0` installation and provider selection succeeded after the catalog link correction; the only observed failure was immediate client connection before the controller socket became ready. That startup-readiness race is fixed in `v0.1.1`, but `v0.1.1` has not yet been physically re-installed and exercised on the user's host.
+`rumiai-web-control v0.1.1` contains the current first provider implementation and the bounded local-socket readiness retry for `ENOENT`/`ECONNREFUSED`. The project's own Linux/macOS CI is green. The permanent composed `web-control-package` validation also now passes on hosted Linux: run 37602432475 attempt 2 succeeded, aggregate evidence is `validation/20261007T101704+0000-2437`, and the live web-control session is `validation/20261007T101722+0000-6758`. The earlier failed attempt installed `v0.1.0` because it ran before `v0.1.1` was published and before `pkg-catalog` added `n0002=v0.1.1`; it is not evidence against the current package state.
 
+Physical `v0.1.1` installation and immediate post-`srv start` execution have still not been repeated on the user's host. Hosted validation therefore closes the permanent automated regression path but does not replace the remaining physical end-to-end check.
 ## Next action
 
-On the physical host, update/install current `rumiai-web-control` so `pkg` selects `v0.1.1`, configure the `web-control` provider if needed, and re-run `srv start web-control` followed immediately by `web-control status`, then one page create/navigate/inspect operation and `srv stop web-control`. If that passes, record the physical result and run/record the permanent `web-control-package` validation scope before starting the `web-sense` consumer/integration layer.
-
+On the physical host, update/install current `rumiai-web-control` so `pkg` selects `v0.1.1`, configure the `web-control` provider if needed, and re-run `srv start web-control` followed immediately by `web-control status`, then one page create/navigate/inspect operation and `srv stop web-control`. If that passes, record the physical result; the permanent hosted `web-control-package` validation is already green, so the Web-control provider readiness issue can then be closed before starting the `web-sense` consumer/integration layer.
 ## Blockers / open questions
 
-Current CI and physical installation have resolved package-default/facility projection, explicit `osarch update`, browser acquisition/runtime selection, portable persistent authentication state, controller/browser signal lifecycle, normalized archive link targets and the immediate post-`srv start` readiness race. The remaining blocker is physical end-to-end validation of current `v0.1.1` followed by permanent validation evidence.
+Current CI and hosted permanent validation have resolved package-default/facility projection, explicit `osarch update`, browser acquisition/runtime selection, portable persistent authentication state, controller/browser signal lifecycle, normalized archive link targets and the immediate post-`srv start` readiness race. The remaining blocker for this provider-readiness work is physical end-to-end validation of current `v0.1.1` on the user's host; permanent hosted validation evidence is already complete.
 
 - Determine which ChatGPT integration paths are baseline versus optional compatibility bridges.
