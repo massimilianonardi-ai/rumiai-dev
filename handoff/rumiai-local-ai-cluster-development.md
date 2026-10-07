@@ -10,9 +10,10 @@ Develop and validate a practical local AI cluster for RumiAI using the available
 ## Current repository revisions
 
 ```text
-rumiai-dev   e5a33a5cc3b76075be21205682b22b0bc98355a3  (pre-checkpoint HEAD)
-rumiai-os    f4d28822c4a2a875bd816ec3b15477dcfa905706  (current fleet rollout target)
-pkg-catalog  86f668dab8fe71b656176c0fe2b86d402e872bf9  (Ollama archive regex portability fix on current package/service definition)
+rumiai-dev   3714aaf1dd7b48ded1793e9bff19766952722377  (pre-checkpoint HEAD)
+rumiai-os    6a964ba3f5c8acf462737e3b92daaf1af32de57e  (physically deployed fleet revision)
+rumiai-tests 96b0e9520a8fbbc34cbdb0f072bbfdd06c091103  (current remote HEAD)
+pkg-catalog  bed62549c43d70d57e36b2364ccbd1c59cb5c037  (current remote HEAD)
 ```
 
 Fresh remote HEAD retrieval remains mandatory before future analysis or writes.
@@ -90,7 +91,7 @@ Additional package, service, state or container specifications must be retrieved
 
 - Current-head fleet rollout is complete at `rumiai-os` revision `6a964ba3f5c8acf462737e3b92daaf1af32de57e`. `gis` first passed the current-head canary with the persistent Ollama system service: account/provider/state configuration were preserved, concrete runtime access succeeded, Ollama 0.35.1 started under account `ollama`, the shared `qwen3:4b` model was visible, and `m-srv-ollama.service` remained enabled and active. Only after that canary passed, the exact same `rumiai-os` revision was rolled to `apisix`, `apisix_psn`, `apps`, `apps_psn`, `keycloak`, `keycloak_psn`, and `webgisrpr`; every node selected `linux-x86_64`, passed the runtime smoke check, and reported `RUMIAI UPDATE SUCCESS`. The fleet job ended with `RUMIAI FLEET ROLLOUT SUCCESS` for the exact target revision.
 
-- Persistent Ollama system-host deployment is now physically validated on `gis` at `rumiai-os` revision `1f6476f6c1ebc50b5135adab8cd790be63133f61`. The deployment preserved operational untracked state, reapplied `linux-x86_64`, reconciled `srv host system install ollama ollama`, verified provider runtime access as the non-root `ollama` account, started the native systemd unit, exposed Ollama 0.35.1 at `127.0.0.1:11435`, exposed the shared `qwen3:4b` model, ran `ollama serve` as user `ollama`, and ended with the unit both enabled and active. This physically validates the generic concrete-package runtime-access fix for this real package/service path. Evidence is revision-specific: current `rumiai-os` HEAD has since advanced to `504b7ec7541f6e1f67db9b335a767691480b3b13`, which retains the runtime-access preparation logic but has not yet received the same physical deployment validation.
+- Persistent Ollama system-host deployment is now physically validated on `gis` at `rumiai-os` revision `1f6476f6c1ebc50b5135adab8cd790be63133f61`. The deployment preserved operational untracked state, reapplied `linux-x86_64`, reconciled `srv host system install ollama ollama`, verified provider runtime access as the non-root `ollama` account, started the native systemd unit, exposed Ollama 0.35.1 at `127.0.0.1:11435`, exposed the shared `qwen3:4b` model, ran `ollama serve` as user `ollama`, and ended with the unit both enabled and active. This physically validates the generic concrete-package runtime-access fix for this real package/service path. Evidence for this earlier milestone is revision-specific to `1f6476f6c1ebc50b5135adab8cd790be63133f61`; the later fleet milestone above supersedes the need to treat that earlier revision as the deployment target.
 
 - First inventory and deeper synthetic benchmark passes completed successfully across all eight hosts.
 - The surveyed VMs expose x86_64, AVX2/FMA and VMware virtualization; AVX-512 was not visible to the guests.
