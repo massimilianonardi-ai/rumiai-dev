@@ -91,6 +91,9 @@ Additional package, service, state or container specifications must be retrieved
 
 ## Completed
 
+- The published CPU-only artifact is now formally adopted. Re-derivation from the official concrete package produced a 60 MiB tree that was byte-for-byte identical to the previously validated published runtime; its deterministic payload manifest verifies successfully and has digest `f181030a940abc79aa98797c6ac13bd149d6d1cba545f1111886eea8c3445cfd`.
+- The corrected local-copy canary reached the copy step on both `apps` and `apisix_psn`, then failed before runtime validation because `cp -a` attempted to preserve permissions/attributes unsupported by the destination filesystem under `/var/lib/ollama-worker`. This does not indicate artifact corruption. Worker deployment should copy payload structure/content without archive-level ownership/timestamp preservation, then apply deterministic local modes and verify the manifest before execution.
+
 - First CPU-artifact formalization run on `gis` successfully re-derived the official Ollama runtime from 2.2 GiB to 60 MiB by removing only `cuda_v12`, `cuda_v13`, and `vulkan`, and produced manifest digest `c3d7f446c8050d9b8dff8167c615bb9ac5c8583558184a11baf5ed6a06e14d6a`. Publication stopped safely because `/m/ai/runtime/ollama/0.35.1-cpu` already exists from the earlier validated deployment; do not overwrite that proven runtime blindly. The next step is to re-derive into a temporary tree, compare a payload manifest with the existing published runtime, and only adopt it as the immutable artifact if the manifests are identical.
 - The first local-copy canary job on `apps` and `apisix_psn` exited before copying because it used the wrong shared path. The worker NFS mount `/mnt/rumiai-ai/runtime` already points directly at the exported `gis:/m/ai/runtime/ollama/0.35.1-cpu`; workers must copy from that mount root, not from a nested `/mnt/rumiai-ai/runtime/ollama/0.35.1-cpu` path.
 
@@ -155,7 +158,7 @@ Podman remains available as a later tool for services that actually benefit from
 
 Perform the first physical deployment preflight and shared-runtime validation:
 
-1. adopt the already-published `/m/ai/runtime/ollama/0.35.1-cpu` as the immutable artifact only after re-deriving the CPU payload from the official concrete package and proving payload-manifest equality; then copy from the actual worker mount root `/mnt/rumiai-ai/runtime` to the representative pair `apps` and `apisix_psn` and validate local-runtime/NFS-model execution there; if both canaries pass, roll the same digest-identical artifact to the remaining workers;
+1. copy the adopted CPU-only artifact from `/mnt/rumiai-ai/runtime` to the representative pair `apps` and `apisix_psn` without archive-level metadata preservation, apply deterministic local runtime modes, verify the payload manifest, and validate local-runtime/NFS-model inference; if both canaries pass, roll the same digest-identical artifact to the remaining workers;
 2. convert the now-proven fleet update procedure into the normal operational path: allow only the three managed tracked `osarch` selector mutations, preserve untracked runtime/state material, canary `gis` first when a persistent system service is involved, and pin one exact `rumiai-os` revision across the fleet;
 3. after worker artifact layout is physically validated, make NFS model mounts and worker endpoints persistent and validate restart/reboot behavior;
 4. introduce the first dispatcher/orchestrator boundary over the validated worker pool and select model/role profiles, including at least one non-thinking model/profile for terse deterministic worker tasks.
