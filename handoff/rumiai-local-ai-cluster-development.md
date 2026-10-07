@@ -57,6 +57,8 @@ Additional package, service, state or container specifications must be retrieved
 
 ## Working design
 
+- Worker Ollama deployment now uses a derived CPU-only runtime artifact rather than installing the full official package on every worker. `gis` remains the authoritative build/staging host: derive from the already-validated official concrete package, remove only the validated CUDA 12, CUDA 13 and Vulkan payloads, verify the resulting runtime, record a deterministic manifest/digest, publish the immutable versioned CPU artifact on the shared runtime tree, and copy that small artifact locally to workers. Models remain on the read-only shared NFS store and worker HOME/state remains local. This is a cluster deployment procedure, not a new generic `pkg` primitive or package-specific pruning rule in `pkg`.
+
 - Initial worker runtime direction: CPU-only `llama-server` / GGUF behind its existing HTTP service boundary.
 - Prefer one centrally staged x86_64 Ubuntu CPU runtime under `gis:/m/ai/runtime/llama.cpp/<revision>` and models under `gis:/m/ai/models`.
 - Prefer a read-only NFS export of the shared runtime/model tree to workers. The first physical worker pair is fixed as `apps` (`10.100.0.34`) and `apisix_psn` (`10.200.0.13`), representing the two network classes. Export only the versioned CPU-only Ollama runtime and central Ollama model store from `gis` (`10.200.0.19`) to those exact client IPs for the first trial.
@@ -150,9 +152,9 @@ Podman remains available as a later tool for services that actually benefit from
 
 Perform the first physical deployment preflight and shared-runtime validation:
 
-1. decide how the production worker deployment reconciles the official 2.2 GiB package root with the already-validated 60 MiB CPU-only shared runtime on small-root nodes; do not introduce package-specific pruning into generic `pkg` without an explicit reusable contract;
+1. derive and verify the immutable Ollama 0.35.1 CPU-only runtime artifact on `gis`, then copy it locally to the representative worker pair `apps` and `apisix_psn` and validate local-runtime/NFS-model execution there; if both canaries pass, roll the same digest-identical artifact to the remaining workers;
 2. convert the now-proven fleet update procedure into the normal operational path: allow only the three managed tracked `osarch` selector mutations, preserve untracked runtime/state material, canary `gis` first when a persistent system service is involved, and pin one exact `rumiai-os` revision across the fleet;
-3. once package/service ownership and worker artifact layout are aligned, make NFS mounts and worker endpoints persistent and validate restart/reboot behavior;
+3. after worker artifact layout is physically validated, make NFS model mounts and worker endpoints persistent and validate restart/reboot behavior;
 4. introduce the first dispatcher/orchestrator boundary over the validated worker pool and select model/role profiles, including at least one non-thinking model/profile for terse deterministic worker tasks.
 
 ## Blockers / open questions
