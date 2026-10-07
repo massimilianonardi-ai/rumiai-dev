@@ -22,7 +22,7 @@ The 2026-10-07 user request expands this workstream to feasibility and design of
 Most recently relied upon for the current research checkpoint:
 
 ```text
-rumiai-dev  611479a153b93e1baeeb2d45864432ed8c0ee5e5
+rumiai-dev  315e053ba6928216a4b1b2099a98adbbdf772f28
 ```
 
 This is the source revision before the 2026-10-07 research checkpoint update. Only rumiai-dev was involved in that checkpoint; no rumiai-os implementation or permanent test behavior was inspected or changed. Resume work with the normal fresh preflight and current remote HEAD verification.
@@ -2586,7 +2586,7 @@ The user now explicitly wants an inexpensive home-built physical prototype explo
 
 #### Candidate route and open hypothesis
 
-The assistant recommends an electronic mixed analog/digital bench as the first candidate: begin with eight heterogeneous resistor-capacitor branches driven by PWM, a microcontroller with adequate acquisition channels, and a software-trained readout. Treat this as a reproducibility and measurement baseline, not an original invention. A later candidate is a small network of nonlinear cells with several timescales and sparse adjustable coupling; choose its circuit only after the baseline and numerical comparison establish a concrete experimental question.
+The assistant recommends an electronic mixed analog/digital bench as the first hardware candidate after simulation screening: eight heterogeneous resistor-capacitor branches driven by PWM, a microcontroller with adequate acquisition channels, and a software-trained readout. Treat this as a reproducibility and measurement baseline, not an original invention. A later candidate is a small network of nonlinear cells with several timescales and sparse adjustable coupling; choose its circuit only after the baseline and numerical comparison establish a concrete experimental question.
 
 A falsifiable research hypothesis is whether adjustable sparse coupling between heterogeneous physical modules improves hidden-state reconstruction or temporal recognition under changed signal timescales and missing/noisy observations, compared with uncoupled and fixed-coupling reservoirs at matched observable-state and resource budgets. Heterogeneity, multiscale reservoirs and synchronization are established research topics; novelty of the exact mechanism remains unestablished. Adaptive coupling is a candidate requiring an ablation against fixed optimized coupling, not a requirement.
 
@@ -2614,6 +2614,29 @@ A reservoir's fading state is temporary working memory. Learned parameters need 
 
 Validation at this checkpoint: literature and feasibility reasoning only. No simulation, schematic validation, firmware execution, physical construction or performance measurement was performed. No claim-level patent review was performed; the earlier patent landscape remains its dated snapshot.
 
+### 28. Simulation before construction: working recommendation
+
+The user asks whether existing or purpose-built simulators should be used to evaluate ideas before physical construction. The assistant recommends simulation as the next experiment, with progressively more realistic models. This is a proposed workflow; no simulator implementation or hardware benefit has been demonstrated.
+
+Use a small experiment harness for the candidate equations, topology, inputs, training, parameter sweeps and comparable results. Reuse established numerical solvers and physical simulation engines. Add custom behavioral models only for missing dynamics; a general-purpose new solver or universal simulation platform is not justified by the current question.
+
+Proposed sequence:
+1. Compare mathematical models on one fixed task with identical information, held-out data and comparable tuning budgets. Begin with a delayed-input linear baseline, a conventional reservoir and a heterogeneous coupled candidate.
+2. Add implementation constraints: finite precision, noise with stated assumptions, parameter mismatch, saturation, finite bandwidth, delays, sampling and readout limits. Check robustness across parameter distributions and initial conditions.
+3. Map only a surviving candidate to components. Use circuit simulation for the electronics; use optical component/propagation models first and detailed electromagnetic simulation only where field behavior determines feasibility.
+4. Build the smallest physical cell or network needed to calibrate uncertain parameters and compare its measured response with the model before scaling.
+
+Current tool candidates, inspected in official documentation on 2026-10-07:
+- SUNDIALS provides ODE/DAE solvers and is a candidate for continuous mathematical models: https://sundials.readthedocs.io/en/latest/ . Models with delay or stochastic terms need appropriate numerical methods; an ODE solver alone does not cover them automatically.
+- ngspice, optionally through KiCad, is the circuit-simulation candidate. Its shared-library API supports experiment control and parameter changes: https://ngspice.sourceforge.io/shared.html . XSPICE supports custom behavioral models: https://ngspice.sourceforge.io/xspice.html .
+- Meep is a candidate for selected optical field problems, not for simulating an entire long fiber at optical spatial/time resolution: https://meep.readthedocs.io/en/latest/Introduction/ .
+
+Numerical credibility matters especially for chaos: check timestep/tolerance convergence, compare independent methods where conclusions are sensitive, and distinguish short-horizon trajectory agreement from long-run statistical/dynamical agreement. Record seeds, equations, solver settings and data splits. Do not select hyperparameters on the final test set. Training-time physical variation and post-training drift answer different questions and must not be conflated.
+
+Decision gate: advance when an advantage survives realistic uncertainty and fair simpler baselines, and there is a plausible component-level implementation. A simulation can support a model-level advantage and conditional engineering estimates; simulation runtime does not measure target-hardware speed, and predicted energy/latency must include encoding, acquisition, controller, readout and calibration. Hardware measurements remain necessary.
+
+Immediate candidate micro-PoC: compare uncoupled, fixed-coupling and adjustable-coupling multiscale reservoirs for reconstruction from partial/noisy dynamical observations, beginning with the same underlying task and observable-state budget. The first numerical experiment can proceed without a finalized electronics shopping list. No experiment was run during this feasibility discussion.
+
 ## Completed
 
 - Performed current RumiAI preflight and confirmed that this material is not appropriate for current specifications.
@@ -2633,7 +2656,7 @@ Validation at this checkpoint: literature and feasibility reasoning only. No sim
 
 ## Current state
 
-The 2026-10-07 request activates concrete exploration of inexpensive physical AI hardware. Section 27 owns the current candidate route, experimental hypothesis, feasibility estimates and evidence boundaries. The eight-branch electronic baseline is an assistant recommendation, not a user-approved component list or a demonstrated accelerator.
+The 2026-10-07 request activates concrete exploration of inexpensive physical AI hardware. Sections 27 and 28 own the hardware candidates, simulation-first working recommendation, experimental hypothesis, feasibility estimates and evidence boundaries. The eight-branch electronic baseline is an assistant recommendation, not a user-approved component list or a demonstrated accelerator.
 
 This is an active research/watch workstream and is intentionally kept open across future RumiAI development so that relevant dynamical-systems opportunities and patent risks can be recognized when they emerge.
 
@@ -2669,7 +2692,7 @@ No implementation should be inferred from this state.
 
 ## Next action
 
-For the newly active home-hardware goal, turn the section 27 baseline into a bounded experiment: establish the available budget/tools, select one temporal task and the matched digital baselines, then prepare the reproducible circuit/acquisition design. Retrieve any build-specific sources before choosing components. Keep new prototype code/artifacts in rumiai-dev-PoCs when experimental implementation begins. No runtime integration is planned.
+For the home-hardware goal, the recommended next step is the bounded numerical comparison in section 28, before component selection or construction. Reuse existing solvers, fix one task and its baselines, then test implementation uncertainty. Establish budget/tools when translating a surviving candidate into a physical experiment. Keep prototype code/artifacts in rumiai-dev-PoCs when implementation begins; no runtime integration is planned.
 
 For the broader standing research watch, resume deeper work when one of the following occurs:
 
@@ -2684,7 +2707,7 @@ At that time, perform a fresh RumiAI preflight and re-check patent status/curren
 
 ## Blockers / open questions
 
-- The home-hardware task still needs a confirmed budget/tool inventory, an exact task and a measured baseline; none of the candidate architectures has demonstrated a benefit in this workstream.
+- The home-hardware task needs an exact numerical task and matched baselines first. Budget/tool inventory is needed before physical construction, not before the first numerical comparison. No candidate has demonstrated a benefit in this workstream.
 - Current RumiAI runtime chaos-control integration still lacks a concrete state/intervention model; this is separate from the newly requested hardware exploration.
 - No claim-level freedom-to-operate analysis has been performed.
 - Patent screening is intentionally preliminary and non-exhaustive.
