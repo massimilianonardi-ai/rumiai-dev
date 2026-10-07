@@ -42,7 +42,7 @@ Additional package, service, state or container specifications must be retrieved
 - Prefer independent model workers and request/workload parallelism over tensor/model parallelism that requires frequent cross-host synchronization.
 - `gis` and `webgisrpr` may be used without a task-level CPU cap; the user will manage production contention when necessary.
 - Credentials are not exposed to the assistant. Operations use `rsudo` / `rsudo-admin` from an environment where the user has already loaded credentials, or an explicitly available ChatGPT Work/Codex execution session.
-- All eight servers keep their older `m` installation, and the current `rumiai-os` runtime is now also installed on every server at `/m/src/git/rumiai-os`. The rollout is pinned to `f4d28822c4a2a875bd816ec3b15477dcfa905706`; all eight nodes physically reported RumiAI 2.0.0 and `linux-x86_64`, with `pkg`, `srv`, and `state-path` smoke tests succeeding.
+- All eight servers keep their older `m` installation, and the current `rumiai-os` runtime is installed on every server at `/m/src/git/rumiai-os`. The fleet is now physically aligned to exact revision `6a964ba3f5c8acf462737e3b92daaf1af32de57e`; all nodes selected `linux-x86_64` and passed the runtime smoke check. `gis` additionally passed the persistent Ollama current-head canary before the remaining seven nodes were updated.
 - Do not rely on host wall clocks for distributed correlation. Prefer run identifiers, operation identifiers and explicit command/result state.
 - No further synthetic/network benchmarking is required before proceeding. The current hardware evidence is sufficient for deployment design.
 - The large `/m` storage on `gis` is the shared-storage basis for the cluster because the VM disks cannot currently be enlarged.
@@ -87,6 +87,8 @@ Additional package, service, state or container specifications must be retrieved
 - `osarch update` is an expected runtime mutation of the tracked selectors `bin/sys-osarch`, `bin/ext-osarch`, and `bin/ai-osarch`: the repository revision currently carries `linux-arm64` selector targets while the Ubuntu fleet correctly selects `linux-x86_64`. Therefore deployed runtime checkouts become Git-dirty in exactly those three paths after platform activation. Future rollout/update logic must treat those selector mutations as managed runtime state while still rejecting unrelated local changes.
 
 ## Completed
+
+- Current-head fleet rollout is complete at `rumiai-os` revision `6a964ba3f5c8acf462737e3b92daaf1af32de57e`. `gis` first passed the current-head canary with the persistent Ollama system service: account/provider/state configuration were preserved, concrete runtime access succeeded, Ollama 0.35.1 started under account `ollama`, the shared `qwen3:4b` model was visible, and `m-srv-ollama.service` remained enabled and active. Only after that canary passed, the exact same `rumiai-os` revision was rolled to `apisix`, `apisix_psn`, `apps`, `apps_psn`, `keycloak`, `keycloak_psn`, and `webgisrpr`; every node selected `linux-x86_64`, passed the runtime smoke check, and reported `RUMIAI UPDATE SUCCESS`. The fleet job ended with `RUMIAI FLEET ROLLOUT SUCCESS` for the exact target revision.
 
 - Persistent Ollama system-host deployment is now physically validated on `gis` at `rumiai-os` revision `1f6476f6c1ebc50b5135adab8cd790be63133f61`. The deployment preserved operational untracked state, reapplied `linux-x86_64`, reconciled `srv host system install ollama ollama`, verified provider runtime access as the non-root `ollama` account, started the native systemd unit, exposed Ollama 0.35.1 at `127.0.0.1:11435`, exposed the shared `qwen3:4b` model, ran `ollama serve` as user `ollama`, and ended with the unit both enabled and active. This physically validates the generic concrete-package runtime-access fix for this real package/service path. Evidence is revision-specific: current `rumiai-os` HEAD has since advanced to `504b7ec7541f6e1f67db9b335a767691480b3b13`, which retains the runtime-access preparation logic but has not yet received the same physical deployment validation.
 
@@ -147,11 +149,10 @@ Podman remains available as a later tool for services that actually benefit from
 
 Perform the first physical deployment preflight and shared-runtime validation:
 
-1. bring `gis` forward from the physically validated `1f6476f6c1ebc50b5135adab8cd790be63133f61` to current `rumiai-os` HEAD `6a964ba3f5c8acf462737e3b92daaf1af32de57e`, preserving operational state and revalidating the persistent Ollama system service; if that exact current revision passes, roll the same exact revision to the remaining fleet nodes;
-2. adjust the fleet update procedure so the three expected `osarch` selector mutations do not masquerade as user changes while unrelated working-tree changes still fail closed;
-3. decide how the production worker deployment reconciles the official 2.2 GiB package root with the already-validated 60 MiB CPU-only shared runtime on small-root nodes; do not introduce package-specific pruning into generic `pkg` without an explicit reusable contract;
-4. once package/service ownership and worker artifact layout are aligned, make NFS mounts and worker endpoints persistent and validate restart/reboot behavior;
-5. introduce the first dispatcher/orchestrator boundary over the validated worker pool and select model/role profiles, including at least one non-thinking model/profile for terse deterministic worker tasks.
+1. decide how the production worker deployment reconciles the official 2.2 GiB package root with the already-validated 60 MiB CPU-only shared runtime on small-root nodes; do not introduce package-specific pruning into generic `pkg` without an explicit reusable contract;
+2. convert the now-proven fleet update procedure into the normal operational path: allow only the three managed tracked `osarch` selector mutations, preserve untracked runtime/state material, canary `gis` first when a persistent system service is involved, and pin one exact `rumiai-os` revision across the fleet;
+3. once package/service ownership and worker artifact layout are aligned, make NFS mounts and worker endpoints persistent and validate restart/reboot behavior;
+4. introduce the first dispatcher/orchestrator boundary over the validated worker pool and select model/role profiles, including at least one non-thinking model/profile for terse deterministic worker tasks.
 
 ## Blockers / open questions
 
@@ -159,5 +160,5 @@ Perform the first physical deployment preflight and shared-runtime validation:
 - `libgomp.so.1` is missing on seven of the eight surveyed hosts; `webgisrpr` already has it. This remains relevant only for the standalone llama.cpp runtime because the validated Ollama CPU runtime bundles its own OpenMP library.
 - Direct execution of the official llama.cpp Ubuntu x64 archive from NFS has not yet been validated on the two Ubuntu/kernel classes in the fleet.
 - Select the first local model set by role after the shared runtime path works.
-- Ollama is physically useful on every current worker class. The user has selected the `pkg`/`srv` ownership direction. Package installation, portable `srv start/stop`, and persistent `srv host system` deployment are physically validated on `gis` at `rumiai-os` revision `1f6476f6c1ebc50b5135adab8cd790be63133f61`. Current `rumiai-os` HEAD is later (`6a964ba3f5c8acf462737e3b92daaf1af32de57e`) and retains the fix, but current-HEAD physical revalidation is still pending before fleet rollout.
+- Ollama is physically useful on every current worker class. The user has selected the `pkg`/`srv` ownership direction. Package installation, portable `srv start/stop`, and persistent `srv host system` deployment are physically validated on `gis`; the persistent path is now also revalidated at fleet revision `6a964ba3f5c8acf462737e3b92daaf1af32de57e`. The exact same runtime revision is deployed across all eight nodes.
 - Decide whether Hindsight should be part of the first deployment or introduced after the basic local worker pool is operational.
