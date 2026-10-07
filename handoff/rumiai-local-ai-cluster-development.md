@@ -57,6 +57,8 @@ Additional package, service, state or container specifications must be retrieved
 
 ## Working design
 
+- Worker package realization is now fixed: each worker will materialize a normal concrete package identity `ollama@v0.35.1!linux-x86_64` through the existing `pkg_integrate` path, but the integration input root will be the already validated 60 MiB CPU-only pruned runtime instead of the full upstream 2.2 GiB extracted root. Package-local metadata/projections (`cmd`, `link`, `facility`, `facility-service`, dependencies/state) and package default/public bindings remain produced by normal `pkg` integration. This deliberately makes the pruned root the package root on worker hosts rather than introducing a separate runtime abstraction.
+
 - Worker Ollama deployment now uses a derived CPU-only runtime artifact rather than installing the full official package on every worker. `gis` remains the authoritative build/staging host: derive from the already-validated official concrete package, remove only the validated CUDA 12, CUDA 13 and Vulkan payloads, verify the resulting runtime, record a deterministic manifest/digest, publish the immutable versioned CPU artifact on the shared runtime tree, and copy that small artifact locally to workers. Models remain on the read-only shared NFS store and worker HOME/state remains local. This is a cluster deployment procedure, not a new generic `pkg` primitive or package-specific pruning rule in `pkg`.
 
 - Initial worker runtime direction: CPU-only `llama-server` / GGUF behind its existing HTTP service boundary.
@@ -162,7 +164,7 @@ Podman remains available as a later tool for services that actually benefit from
 
 Perform the first physical deployment preflight and shared-runtime validation:
 
-1. make the worker model mounts and Ollama endpoints persistent: create/use a dedicated non-login `ollama` service account per worker, keep the local CPU runtime root-owned/read-only, keep worker HOME/state local and writable by `ollama`, configure each persistent endpoint against `/mnt/rumiai-ai/models`, and validate `srv host system` plus restart/reboot behavior without installing the full package payload locally;
+1. on one representative worker, integrate the validated 60 MiB CPU-only root as the normal concrete `ollama@v0.35.1!linux-x86_64` package using the existing `pkg_integrate` machinery and current pinned catalog definition, select it as package/facility default, create/use the dedicated non-login `ollama` account, configure the system service instance against `/mnt/rumiai-ai/models`, and validate `srv host system`; if successful, repeat identically across the remaining six workers;
 2. convert the now-proven fleet update procedure into the normal operational path: allow only the three managed tracked `osarch` selector mutations, preserve untracked runtime/state material, canary `gis` first when a persistent system service is involved, and pin one exact `rumiai-os` revision across the fleet;
 3. introduce the first dispatcher/orchestrator boundary over the validated worker pool and select model/role profiles, including at least one non-thinking model/profile for terse deterministic worker tasks.
 
