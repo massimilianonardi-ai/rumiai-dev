@@ -91,6 +91,8 @@ Additional package, service, state or container specifications must be retrieved
 
 ## Completed
 
+- CPU-only local runtime rollout is now complete on all seven worker hosts. The remaining five workers (`apisix`, `keycloak`, `apps_psn`, `keycloak_psn`, and `webgisrpr`) each verified shared artifact digest `f181030a940abc79aa98797c6ac13bd149d6d1cba545f1111886eea8c3445cfd`, copied the 60 MiB runtime locally to `/var/lib/ollama-worker/runtime/0.35.1-cpu`, passed the full payload manifest, started Ollama 0.35.1 from the local runtime, exposed the shared `qwen3:4b` model over NFS, and completed a real `/api/chat` inference. Together with the earlier `apps` and `apisix_psn` canaries, this closes local-runtime deployment validation for 7/7 workers.
+
 - Local-copy CPU runtime canaries are now physically successful on both representative workers. On `apps` and `apisix_psn`, the adopted 60 MiB artifact was copied locally, every payload file passed `MANIFEST.sha256`, local `ollama --version` reported 0.35.1, `ollama serve` started from the local runtime, the shared NFS model store exposed `qwen3:4b`, and a real `/api/chat` inference completed. The job returned status 1 only because the validation additionally required exact assistant content `worker-ok`; Qwen3 instead emitted ordinary explanatory text and stopped at the imposed `num_predict=16` limit. Exact-string compliance is not a runtime/deployment criterion and must not invalidate these canaries.
 
 - The published CPU-only artifact is now formally adopted. Re-derivation from the official concrete package produced a 60 MiB tree that was byte-for-byte identical to the previously validated published runtime; its deterministic payload manifest verifies successfully and has digest `f181030a940abc79aa98797c6ac13bd149d6d1cba545f1111886eea8c3445cfd`.
@@ -160,10 +162,9 @@ Podman remains available as a later tool for services that actually benefit from
 
 Perform the first physical deployment preflight and shared-runtime validation:
 
-1. roll the adopted CPU-only artifact with manifest digest `f181030a940abc79aa98797c6ac13bd149d6d1cba545f1111886eea8c3445cfd` from `/mnt/rumiai-ai/runtime` to the remaining workers (`apisix`, `keycloak`, `apps_psn`, `keycloak_psn`, `webgisrpr`), using the same deterministic local-copy/mode normalization and manifest verification already proven on `apps` and `apisix_psn`;
+1. make the worker model mounts and Ollama endpoints persistent: create/use a dedicated non-login `ollama` service account per worker, keep the local CPU runtime root-owned/read-only, keep worker HOME/state local and writable by `ollama`, configure each persistent endpoint against `/mnt/rumiai-ai/models`, and validate `srv host system` plus restart/reboot behavior without installing the full package payload locally;
 2. convert the now-proven fleet update procedure into the normal operational path: allow only the three managed tracked `osarch` selector mutations, preserve untracked runtime/state material, canary `gis` first when a persistent system service is involved, and pin one exact `rumiai-os` revision across the fleet;
-3. after worker artifact layout is physically validated, make NFS model mounts and worker endpoints persistent and validate restart/reboot behavior;
-4. introduce the first dispatcher/orchestrator boundary over the validated worker pool and select model/role profiles, including at least one non-thinking model/profile for terse deterministic worker tasks.
+3. introduce the first dispatcher/orchestrator boundary over the validated worker pool and select model/role profiles, including at least one non-thinking model/profile for terse deterministic worker tasks.
 
 ## Blockers / open questions
 
@@ -171,5 +172,5 @@ Perform the first physical deployment preflight and shared-runtime validation:
 - `libgomp.so.1` is missing on seven of the eight surveyed hosts; `webgisrpr` already has it. This remains relevant only for the standalone llama.cpp runtime because the validated Ollama CPU runtime bundles its own OpenMP library.
 - Direct execution of the official llama.cpp Ubuntu x64 archive from NFS has not yet been validated on the two Ubuntu/kernel classes in the fleet.
 - Select the first local model set by role after the shared runtime path works.
-- Ollama is physically useful on every current worker class. The user has selected the `pkg`/`srv` ownership direction. Package installation, portable `srv start/stop`, and persistent `srv host system` deployment are physically validated on `gis`; the persistent path is now also revalidated at fleet revision `6a964ba3f5c8acf462737e3b92daaf1af32de57e`. The exact same runtime revision is deployed across all eight nodes.
+- Ollama is physically useful on every current worker class. The user has selected the `pkg`/`srv` ownership direction. Package installation, portable `srv start/stop`, and persistent `srv host system` deployment are physically validated on `gis`; the persistent path is also revalidated at fleet revision `6a964ba3f5c8acf462737e3b92daaf1af32de57e`. All seven workers now have the same digest-verified 60 MiB CPU-only runtime copied locally and have completed real inference against the shared NFS model store. Worker persistence under `srv host system` remains the next deployment step.
 - Decide whether Hindsight should be part of the first deployment or introduced after the basic local worker pool is operational.
