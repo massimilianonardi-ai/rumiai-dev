@@ -1,7 +1,7 @@
 # Chaotic dynamics and nonlinear-control research for RumiAI
 
 Status: Active
-Updated: 2026-09-23
+Updated: 2026-10-07
 
 ## Goal
 
@@ -15,18 +15,17 @@ The purpose is deliberately broader than "introduce chaos into RumiAI". The imme
 - distinguish deterministic chaos, stochasticity, hybrid dynamics and ordinary distributed-system behavior before choosing methods;
 - maintain awareness of the current commercial and patent landscape so future experiments can avoid obvious active-claim risk and so freedom-to-operate work can begin early when a concrete implementation direction emerges.
 
-No PoC, runtime implementation or architectural promotion is currently authorized or justified by this research alone.
+The 2026-10-07 user request expands this workstream to feasibility and design of a low-cost home-built physical AI prototype. The previously deferred hardware-prototype question is now active. No runtime integration or architectural promotion follows from this research; no hardware performance has yet been validated.
 
 ## Current repository revisions
 
 Most recently relied upon for the current research checkpoint:
 
 ```text
-rumiai-dev  5bc837948d662de0750661d21bbf8773ec42540d
-rumiai-os   5f01f0bccef37020057195c98809ba492f02443c
+rumiai-dev  611479a153b93e1baeeb2d45864432ed8c0ee5e5
 ```
 
-These SHAs are task state only. Resume work with the normal fresh preflight and current remote HEAD verification.
+This is the source revision before the 2026-10-07 research checkpoint update. Only rumiai-dev was involved in that checkpoint; no rumiai-os implementation or permanent test behavior was inspected or changed. Resume work with the normal fresh preflight and current remote HEAD verification.
 
 ## Applicable canonical sources
 
@@ -44,7 +43,7 @@ The current architecture remains authoritative. This research does not create a 
 ## Fixed task-local choices
 
 1. Do not introduce chaos, chaos-control logic or a dynamical-control subsystem into current RumiAI merely because the mathematics is attractive.
-2. Do not create a PoC yet. A PoC becomes justified only when a concrete RumiAI behavior/problem provides observable state, an intervention surface and a falsifiable advantage over simpler approaches.
+2. For current runtime chaos-control integration, require a concrete observable problem and a falsifiable advantage before a PoC. Separately, the explicit 2026-10-07 request activates home-built physical hardware feasibility/design. Select a bounded task and measurement baseline before hardware construction; the candidate mechanism remains working design until supported by evidence.
 3. Treat nonlinear dynamics and synchronization as a **design/research lens**, not as a product requirement.
 4. When future RumiAI work involves feedback, distributed coordination, repeated adaptation, oscillation, convergence, instability, partial observation, mode switching, delayed coupling or emergent collective behavior, explicitly consider whether a dynamical-systems formulation could reveal structure missed by ordinary software abstractions.
 5. Never assume that apparent unpredictability implies deterministic chaos. LLM sampling, asynchronous scheduling, external events and noisy observations can produce stochastic or hybrid dynamics.
@@ -1264,7 +1263,7 @@ Before treating any such idea as patentable, perform a dedicated novelty/prior-a
 
 ### 17. Criteria that would justify a future PoC
 
-A PoC should start only when there is a concrete RumiAI behavior with all or most of:
+For a future RumiAI runtime chaos-control PoC, require a concrete behavior with all or most of:
 
 ```text
 observable repeated dynamics
@@ -1278,7 +1277,7 @@ a plausible benefit from sparse/minimum intervention
 a patent-screenable concrete mechanism
 ```
 
-A valid PoC should compare at least:
+A runtime chaos-control PoC should compare at least:
 
 ```text
 baseline/no special control
@@ -2581,11 +2580,45 @@ but no mature unified framework combining them in the Pecora-style way relevant 
 
 That gap should remain a standing research opportunity, without being interpreted as evidence that a future RumiAI implementation will necessarily benefit from chaos control.
 
+### 27. Home-built physical AI hardware: 2026-10-07 scope update
+
+The user now explicitly wants an inexpensive home-built physical prototype exploring silicon/electronics, optics/fibers or other media, parallel computation, distributed memory, chaos, synchronization and reservoir computing. The ambition is a demonstrable improvement in AI performance or capability through a different computational model. This expands the earlier research-only scope toward concrete hardware feasibility and experimental design; it does not establish a product architecture or demonstrate a benefit.
+
+#### Candidate route and open hypothesis
+
+The assistant recommends an electronic mixed analog/digital bench as the first candidate: begin with eight heterogeneous resistor-capacitor branches driven by PWM, a microcontroller with adequate acquisition channels, and a software-trained readout. Treat this as a reproducibility and measurement baseline, not an original invention. A later candidate is a small network of nonlinear cells with several timescales and sparse adjustable coupling; choose its circuit only after the baseline and numerical comparison establish a concrete experimental question.
+
+A falsifiable research hypothesis is whether adjustable sparse coupling between heterogeneous physical modules improves hidden-state reconstruction or temporal recognition under changed signal timescales and missing/noisy observations, compared with uncoupled and fixed-coupling reservoirs at matched observable-state and resource budgets. Heterogeneity, multiscale reservoirs and synchronization are established research topics; novelty of the exact mechanism remains unestablished. Adaptive coupling is a candidate requiring an ablation against fixed optimized coupling, not a requirement.
+
+The alternative with stronger emphasis on distributed learning is a nonlinear transistor network using local contrastive/coupled learning. Physics-aware training is another candidate for tuning a physical substrate. These are distinct learning approaches and should not be casually combined with a reservoir or chaotic circuit. FPGA experiments and probabilistic bits remain accessible alternatives for local parallel state and optimization, respectively. Optical speckle/random-feature or delay reservoirs become appropriate only if the selected workload benefits from optical mixing or bandwidth.
+
+#### Evidence checked and boundaries
+
+- Ma et al., Advanced Science (2025), DOI 10.1002/advs.202416413: eight physical R-C branches with PWM encoding and a software readout. Forty reported states in one experiment include five time samples per branch, not forty independent simultaneous physical cells. The R-C circuits remain linear; the encoding/sampling relation provides nonlinearity. Autonomous Mackey-Glass/Henon prediction in the cited study is simulated, as the paper states, so do not label all prediction figures as physical closed-loop evidence. Source: https://pmc.ncbi.nlm.nih.gov/articles/PMC12362817/ ; author code/data: https://github.com/ZeLinM/RC-circuit-reservoir .
+- Dillavou et al., PNAS (2024), DOI 10.1073/pnas.2319718121: 32 paired transistor edges demonstrate nonlinear local learning. Low inference energy attributed to the resistive network does not include the complete I/O/supervision system; learning circuitry has additional consumption. Source: https://pmc.ncbi.nlm.nih.gov/articles/PMC11252732/ ; full preprint/appendices: https://arxiv.org/html/2311.00537v2 .
+- Wright et al., Nature (2022), DOI 10.1038/s41586-021-04223-6: physics-aware training uses physical forward evaluation with a digital differentiable model for training. Source: https://www.nature.com/articles/s41586-021-04223-6 .
+- Paquot et al., Scientific Reports (2012), DOI 10.1038/srep00287: optoelectronic nonlinear node with fiber delay demonstrates temporal tasks. Source: https://arxiv.org/abs/1111.7219 . Fiber propagation alone gives about 5 microseconds/km for assumed group index 1.5; short fiber is not millisecond persistent memory. Detection, modulation, losses, feedback and readout remain system costs.
+- Pervaiz et al. (2017), DOI 10.1038/s41598-017-11011-8: microcontroller-emulated p-bits demonstrate invertible logic; this does not establish a physical probabilistic device's speed/energy benefit. Source: https://arxiv.org/abs/1705.01943 .
+- Pecora/Carroll source checks: https://arxiv.org/abs/1903.12487 and https://arxiv.org/abs/2409.04571 . Network structure, effective state rank and drive-response embedding provide concrete diagnostics. Full synchronization can discard useful state diversity; autonomous chaos is not itself a performance objective.
+
+#### Proposed experiment and decision gates
+
+1. Reproduce a small temporal task and characterize acquisition, noise, saturation, reproducibility after reset, and fading memory. Use a generated dynamical signal with known hidden variables as a diagnostic; keep simulation, hardware-in-the-loop and fully physical observations explicitly separate.
+2. Test a practical stream such as vibration or motion, including changed speeds and corrupted/missing observations. Keep held-out sessions/conditions separate from training and tuning.
+3. Compare against a linear delayed-input predictor, a digital echo-state reservoir, the digital implementation of the same proposed dynamics, and a suitably small trained temporal model. Match information availability and tuning effort; distinguish model gains from physical implementation gains.
+4. Add one mechanism at a time. Measure error, end-to-end latency, energy per decision, useful state dimension, adaptation cost and drift across power cycles. Count encoding, ADC/DAC, buffering, readout, controller, host work and calibration. A toy benchmark or a fast analog core alone cannot establish superiority over current AI.
+
+Candidate planning envelopes, not vendor quotes or an approved BOM: EUR 50-100 for the simple first board; EUR 200-500 for a small configurable nonlinear bench, excluding an existing PC and laboratory instruments. Instrumentation must be budgeted separately. Budget ceiling, available tools/electronics experience, exact task, sampling rate and component selection remain open.
+
+A reservoir's fading state is temporary working memory. Learned parameters need their own retention mechanism; persistent arbitrary data or LLM weights still require explicit memory. This research does not establish a replacement for LLM attention, KV cache or large-model training.
+
+Validation at this checkpoint: literature and feasibility reasoning only. No simulation, schematic validation, firmware execution, physical construction or performance measurement was performed. No claim-level patent review was performed; the earlier patent landscape remains its dated snapshot.
+
 ## Completed
 
 - Performed current RumiAI preflight and confirmed that this material is not appropriate for current specifications.
 - Confirmed that no existing `rumiai-dev` content was found under the keywords `chaos`, `chaotic` or `synchronization` before creation of this workstream.
-- Established the explicit boundary: no current PoC and no current architecture change.
+- Maintained the boundary against premature runtime integration or architectural promotion; the 2026-10-07 request separately activates home-hardware exploration.
 - Preserved the main candidate RumiAI application areas and the diagnostic conditions that should trigger future dynamical-systems analysis.
 - Performed an initial market/technology scan across optical chaos, chaotic RNG/security IP, distributed synchronization/control and physical reservoir computing.
 - Performed an initial patent-family screening and identified several active or pending families that deserve future claim-level review if RumiAI enters their concrete mechanism areas.
@@ -2599,6 +2632,8 @@ That gap should remain a standing research opportunity, without being interprete
 - Identified the main current gap: classical/generalized synchronization and chaos-control mathematics are not yet a mature method for coordinating or steering modern LLM systems.
 
 ## Current state
+
+The 2026-10-07 request activates concrete exploration of inexpensive physical AI hardware. Section 27 owns the current candidate route, experimental hypothesis, feasibility estimates and evidence boundaries. The eight-branch electronic baseline is an assistant recommendation, not a user-approved component list or a demonstrated accelerator.
 
 This is an active research/watch workstream and is intentionally kept open across future RumiAI development so that relevant dynamical-systems opportunities and patent risks can be recognized when they emerge.
 
@@ -2634,7 +2669,9 @@ No implementation should be inferred from this state.
 
 ## Next action
 
-Continue this research only when one of the following occurs:
+For the newly active home-hardware goal, turn the section 27 baseline into a bounded experiment: establish the available budget/tools, select one temporal task and the matched digital baselines, then prepare the reproducible circuit/acquisition design. Retrieve any build-specific sources before choosing components. Keep new prototype code/artifacts in rumiai-dev-PoCs when experimental implementation begins. No runtime integration is planned.
+
+For the broader standing research watch, resume deeper work when one of the following occurs:
 
 1. a concrete RumiAI design problem matches the diagnostic lens above;
 2. the user requests deeper market, literature or patent analysis;
@@ -2643,11 +2680,12 @@ Continue this research only when one of the following occurs:
 5. new Pecora/Carroll or closely related work changes the state of reservoir-computing, embedding, synchronization or network-dynamics techniques relevant to RumiAI;
 6. the user's original Pecora documentation/notes become available for direct analysis.
 
-At that time, perform a fresh RumiAI preflight and re-check patent status/current research rather than relying on this 2026-09-23 snapshot.
+At that time, perform a fresh RumiAI preflight and re-check patent status/current research rather than relying on dated snapshots in this handoff.
 
 ## Blockers / open questions
 
-- No current RumiAI subsystem yet provides the concrete state/intervention model needed to justify a chaos-control PoC.
+- The home-hardware task still needs a confirmed budget/tool inventory, an exact task and a measured baseline; none of the candidate architectures has demonstrated a benefit in this workstream.
+- Current RumiAI runtime chaos-control integration still lacks a concrete state/intervention model; this is separate from the newly requested hardware exploration.
 - No claim-level freedom-to-operate analysis has been performed.
 - Patent screening is intentionally preliminary and non-exhaustive.
 - The relevant commercial jurisdictions for a future implementation are not yet defined because no concrete product mechanism has been selected.
