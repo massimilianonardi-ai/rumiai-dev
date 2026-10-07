@@ -9,7 +9,7 @@ Define a general-purpose RumiAI web-access sense that lets RumiAI observe and in
 
 ## Current repository revisions
 
-- rumiai-dev: 49c74ce780a14ac4e6f05596227dbbe4fc178352
+- rumiai-dev: e6e2ca70f8607b92af6705942282c3baefbf549a
 - rumiai-os: 6a964ba3f5c8acf462737e3b92daaf1af32de57e
 - rumiai-tests: 89cd8308ba6a5272e7d4163864f5f28c1de88e66
 - rumiai-dev-PoCs: 3c00148a4800cb8556be1f8856546d529001c6cb
@@ -116,6 +116,7 @@ This is still working design and requires explicit contract design before promot
 - `pkg-catalog` contains `n0004=v0.1.3`. A concurrent catalog correction also projects `CHROME_DEVEL_SANDBOX` through facility `chromium =1` so Linux facility consumers receive the prepared `chrome_sandbox` helper rather than falling back to an unsandboxed Chromium launch.
 - Permanent test `external/rumiai-web-control/install-live.test` now protects the composed lifecycle through public surfaces: after browser closure it requires `web-control status` to report `browserRunning: false`, requires `srv start web-control` to report the controller is already running, then requires `page new` to relaunch the browser and normal navigation/inspection to work.
 - Hosted composed validation run 37612915808 attempts 1 and 2 did not reach service startup. Both failed during `pkg install rumiai-web-control` with an external GitHub HTTP 403 reported as dependency-unresolvable. Those attempts provide no evidence for or against the current `v0.1.3` lifecycle; project-level Linux/macOS validation remains green.
+- During physical refresh, `pkg uninstall rumiai-web-control` returned only `reason="package-failed"`. Current `pkg-uninstall.lib.sh` checks `_pkg_dependency_provider_unreferenced` before clearing a package default, and the current `web-control` provider selector still references the installed `rumiai-web-control` concrete. The required operator sequence is therefore: stop the service, inspect/clear the `web-control` provider default, then uninstall the package. The generic uninstall diagnostic does not expose this provider-reference cause.
 ## Current state
 
 The original physical ENOENT/readiness issue is closed. The current first-provider release is `rumiai-web-control v0.1.3`, with catalog concrete `n0004=v0.1.3`.
@@ -125,7 +126,7 @@ The current lifecycle is intentionally asymmetric: `web-control-service` remains
 Project-level runtime validation is green on Linux and macOS in run 37612637545. The current permanent composed package test is aligned to the same semantics, but its hosted execution is presently blocked before runtime by repeatable HTTP 403 responses during live GitHub dependency resolution in `pkg install`. Physical validation of `v0.1.3` through the current package/catalog path is therefore still required.
 ## Next action
 
-On the physical Linux host, refresh/install the current Chromium and `rumiai-web-control@v0.1.3` from current `pkg-catalog`, keep `web-control` selected as the facility provider, and start the service. Verify Chromium is not launched with `--no-sandbox`; close the Chromium application manually; verify `web-control status` still works and reports `browserRunning: false`; then run `web-control page new` and confirm Chromium is relaunched without restarting the service, followed by one navigate/inspect operation. If that passes, record the physical composed result and rerun hosted `web-control-package` validation when GitHub live dependency access is available.
+On the physical Linux host, first detach the currently installed provider before replacing it: `srv stop -f web-control`, inspect `pkg provider default web-control`, clear it with `pkg provider default -u -- web-control`, then `pkg uninstall rumiai-web-control`. Continue by refreshing/reintegrating the current Chromium package so its installed concrete contains the current `facility-env` sandbox projection, install current `rumiai-web-control@v0.1.3`, select it again as the `web-control` provider, and start the service. Verify Chromium is not launched with `--no-sandbox`; close the Chromium application manually; verify `web-control status` still works and reports `browserRunning: false`; then run `web-control page new` and confirm Chromium is relaunched without restarting the service, followed by one navigate/inspect operation. If that passes, record the physical composed result and rerun hosted `web-control-package` validation when GitHub live dependency access is available.
 ## Blockers / open questions
 
 The original ENOENT readiness blocker is closed. The active provider blocker is physical composed validation of `v0.1.3` with the current Chromium sandbox facility projection. Hosted composed validation is additionally blocked before service execution by HTTP 403 from the live GitHub dependency boundary; this is currently validation/external-access evidence, not a `web-control` runtime failure.
