@@ -50,6 +50,7 @@ Additional package, service, state or container specifications must be retrieved
 - The three small-root local VMs should not depend on Podman for the first llama.cpp deployment. Their first worker path is native execution of a shared llama.cpp runtime plus shared GGUF models.
 - Do not place a normal rootless Podman graphroot on NFS/distributed storage. Podman may still be used later on nodes where local writable storage is sufficient or where a deliberately compatible storage layout is established.
 - The intended workload model is hybrid: strong external reasoning (for example ChatGPT/Work) remains available as coordinator/reviewer, while local workers provide persistent, private and parallel inference capacity.
+- Persistent Ollama system-host deployment uses a dedicated pre-existing POSIX service account named `ollama`. The account is system/non-login and is not managed by `srv`; deployment creates it administratively before `srv host system install`. Ownership remains least-privilege: package/runtime roots and the shared model store remain root-owned/read-only to the service, while `srv host system install` owns only the service State Instance HOME as `ollama`; configuration remains administrator-owned but readable by the service account.
 
 ## Working design
 
@@ -140,7 +141,7 @@ Podman remains available as a later tool for services that actually benefit from
 
 Perform the first physical deployment preflight and shared-runtime validation:
 
-1. validate persistent system-host supervision for Ollama on `gis`: use the existing installed provider `ollama@v0.35.1!linux-x86_64`, configure the service State Instance under `state-path system pkg ollama conf ollama`, install the host service against one explicit pre-existing non-root account, and validate `srv host system start/stop` plus API readiness;
+1. validate persistent system-host supervision for Ollama on `gis`: create the dedicated non-login system account `ollama`, configure the service State Instance under `state-path system pkg ollama conf ollama`, keep runtime/model artifacts root-owned/read-only, let `srv host system install ollama ollama` prepare and own only the mutable service HOME, and validate systemd-backed start/stop plus API readiness;
 2. adjust the fleet update procedure so the three expected `osarch` selector mutations do not masquerade as user changes while unrelated working-tree changes still fail closed;
 3. decide how the production worker deployment reconciles the official 2.2 GiB package root with the already-validated 60 MiB CPU-only shared runtime on small-root nodes; do not introduce package-specific pruning into generic `pkg` without an explicit reusable contract;
 4. once package/service ownership and worker artifact layout are aligned, make NFS mounts and worker endpoints persistent and validate restart/reboot behavior;
