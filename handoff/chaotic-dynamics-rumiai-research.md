@@ -22,7 +22,7 @@ The 2026-10-07 user request expands this workstream to feasibility and design of
 Most recently relied upon for the current research checkpoint:
 
 ```text
-rumiai-dev  315e053ba6928216a4b1b2099a98adbbdf772f28
+rumiai-dev  48445b6baf7158dc9d0209a402af5ba1fd1011e1
 ```
 
 This is the source revision before the 2026-10-07 research checkpoint update. Only rumiai-dev was involved in that checkpoint; no rumiai-os implementation or permanent test behavior was inspected or changed. Resume work with the normal fresh preflight and current remote HEAD verification.
@@ -2637,6 +2637,30 @@ Decision gate: advance when an advantage survives realistic uncertainty and fair
 
 Immediate candidate micro-PoC: compare uncoupled, fixed-coupling and adjustable-coupling multiscale reservoirs for reconstruction from partial/noisy dynamical observations, beginning with the same underlying task and observable-state budget. The first numerical experiment can proceed without a finalized electronics shopping list. No experiment was run during this feasibility discussion.
 
+### 29. Analog neuromorphic dynamics as an explicit candidate
+
+The user explicitly wants to evaluate analog computation inspired by the brain, using a faster physical substrate to reproduce useful neural organization. This expands the candidate beyond a fixed reservoir with a trained readout. The user has not selected a neuron model, learning rule, substrate or construction plan.
+
+Scientific framing:
+- Neural tissue combines continuous electrochemical dynamics with spike events; describing the brain as purely analog misses important event-based information processing. Spikes are physical waveforms, not ordinary computer bits.
+- Faster physical implementations of selected neural models exist. Heidelberg's BrainScaleS-2 combines an analog neural core with digital event routing and plasticity processing; its reported roughly 1000-fold acceleration concerns neural dynamics relative to biological time. It is not evidence of human-equivalent intelligence or a 1000-fold advantage over a GPU.
+- Compact biological intelligence establishes physical feasibility, but does not identify the sufficient circuit, connectivity, developmental history or learning mechanisms. Signal speed, useful state capacity, learning quality and complete-system efficiency are separate properties.
+- Uniformly rescaling a deterministic model's time constants, delays, inputs and learning dynamics preserves the corresponding trajectories under time rescaling. Faster neurons alone can instead alter the behavior. Physical noise, bandwidth and energy need separate treatment. Memory relevant to slow external inputs requires appropriate slower states or buffering.
+- Local state, recurrent connections, plasticity and multiple timescales are candidate mechanisms to test. Chaotic dynamics or complete synchronization are not objectives by themselves.
+
+Working experiment recommendation: retain the simulation-first workflow in section 28 and compare a continuous-state analog candidate with an event-based neuron candidate on one bounded temporal task. An initial 32–64-cell model is a proposed screening scale, not a claim about intelligence or brain replication. Use fixed versus plastic couplings and uniform versus heterogeneous timescales as controlled comparisons. If chaos/synchronization is explored, sweep coupling/regimes and measure the resulting task performance instead of selecting a chaotic regime in advance. Match input information and account for all state, trainable parameters and tuning effort; include a simple predictor and a conventional digital recurrent/reservoir baseline.
+
+A candidate task is prediction from noisy partial observations with a controlled change of dynamical regime, measuring prediction error, adaptation samples, retained performance and robustness. The exact task and learning rule remain open. For home construction, electronic integrators, nonlinear cells and adjustable synaptic couplings are a plausible first engineering candidate; component feasibility and the cost of storing/updating each coupling must be established. A controller may handle acquisition/calibration or learning, with its work included in performance claims.
+
+Primary sources inspected on 2026-10-07:
+- Alle and Geiger (2006), Combined Analog and Action Potential Coding in Hippocampal Mossy Fibers: https://pubmed.ncbi.nlm.nih.gov/16513983/ .
+- Shu et al. (2006), Modulation of intracortical synaptic potentials by presynaptic somatic membrane potential: https://www.nature.com/articles/nature04720 .
+- Mead (1990), Neuromorphic electronic systems: https://authors.library.caltech.edu/records/j6gtc-ptx47 .
+- Heidelberg BrainScaleS-2 architecture and acceleration: https://www.kip.uni-heidelberg.de/vision/research/hardware/ .
+- Schemmel et al. (2020), Accelerated Analog Neuromorphic Computing: https://www.kip.uni-heidelberg.de/Veroeffentlichungen/details.php?id=4053 .
+
+This checkpoint is literature-based discussion only. No numerical experiment, circuit, hardware measurement, new learning capability or novel architecture has been demonstrated.
+
 ## Completed
 
 - Performed current RumiAI preflight and confirmed that this material is not appropriate for current specifications.
@@ -2656,7 +2680,7 @@ Immediate candidate micro-PoC: compare uncoupled, fixed-coupling and adjustable-
 
 ## Current state
 
-The 2026-10-07 request activates concrete exploration of inexpensive physical AI hardware. Sections 27 and 28 own the hardware candidates, simulation-first working recommendation, experimental hypothesis, feasibility estimates and evidence boundaries. The eight-branch electronic baseline is an assistant recommendation, not a user-approved component list or a demonstrated accelerator.
+The 2026-10-07 request activates concrete exploration of inexpensive physical AI hardware. Sections 27–29 own the hardware candidates, simulation-first working recommendation, explicit analog neuromorphic direction, experimental hypotheses, feasibility estimates and evidence boundaries. The eight-branch electronic baseline is an assistant recommendation, not a user-approved component list or a demonstrated accelerator.
 
 This is an active research/watch workstream and is intentionally kept open across future RumiAI development so that relevant dynamical-systems opportunities and patent risks can be recognized when they emerge.
 
@@ -2692,7 +2716,7 @@ No implementation should be inferred from this state.
 
 ## Next action
 
-For the home-hardware goal, the recommended next step is the bounded numerical comparison in section 28, before component selection or construction. Reuse existing solvers, fix one task and its baselines, then test implementation uncertainty. Establish budget/tools when translating a surviving candidate into a physical experiment. Keep prototype code/artifacts in rumiai-dev-PoCs when implementation begins; no runtime integration is planned.
+For the home-hardware goal, the recommended next step is the bounded numerical comparison in section 28, before component selection or construction. Reuse existing solvers, fix one task and its baselines, then test implementation uncertainty. Section 29 adds continuous-state/event-based candidates, local plasticity and multiple timescales as working comparison dimensions. Establish budget/tools when translating a surviving candidate into a physical experiment. Keep prototype code/artifacts in rumiai-dev-PoCs when implementation begins; no runtime integration is planned.
 
 For the broader standing research watch, resume deeper work when one of the following occurs:
 
