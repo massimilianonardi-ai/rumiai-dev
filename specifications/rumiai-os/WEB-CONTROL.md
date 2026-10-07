@@ -94,7 +94,7 @@ srv stop web-control
 
 The provider service process MUST remain foreground from its own perspective and obey the baseline `srv` SIGTERM lifecycle.
 
-For a browser-backed provider, the long-running provider service is the controller lifecycle; the controlled browser runtime is a managed subordinate resource. If that browser application terminates externally or crashes, the provider foreground process MUST remain available, detect that the browser is absent and recreate it when a later operation requires a browser. Browser recreation MUST use the same logical profile and MUST NOT imply persistence of prior live page identities. Closing an individual `web-control` page does not stop the service.
+For a browser-backed provider, the long-running provider service is the controller lifecycle; the controlled browser runtime is a managed subordinate resource. If that browser application terminates externally or crashes, the provider foreground process MUST remain available, detect that the browser is absent and recreate it when a later operation requires a browser. Browser recreation MUST use the same logical profile and MUST NOT imply persistence of prior live page identities. A status/observation request MUST be able to report that the browser is absent without implicitly recreating it; an operation that requires a live browser, such as creating a new page, triggers recreation. Closing an individual `web-control` page does not stop the service.
 
 The public client command and the service implementation may be different ordinary package commands inside a concrete provider. Facility service realization chooses the provider-owned foreground start command without making that internal command a provider-independent public command.
 
@@ -122,7 +122,7 @@ The baseline capability covers these semantic operations.
 
 ### Lifecycle/observation
 
-- report controller/capability status;
+- report controller/capability status, including browser-runtime availability for browser-backed providers without implicitly starting an absent browser;
 - enumerate live pages;
 - create and close a page;
 - navigate a page to an explicit URL;
@@ -263,4 +263,5 @@ WEBCTRL-13  Playwright/CDP/Chromium are initial implementation choices and do no
 WEBCTRL-14  generic scheduling is outside web-control
 WEBCTRL-15  browser-backed providers preserve browser sandboxing by default; unsandboxed mode is explicit provider-specific opt-in only
 WEBCTRL-16  browser-backed provider services outlive browser-runtime termination, detect browser absence and recreate the browser on demand without preserving prior live page identities
+WEBCTRL-17  browser-backed status reports browser-runtime absence without starting it; browser-required operations recreate it on demand
 ```
