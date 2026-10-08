@@ -9,7 +9,7 @@ Define a general-purpose RumiAI web-access sense that lets RumiAI observe and in
 
 ## Current repository revisions
 
-- rumiai-dev: e6e2ca70f8607b92af6705942282c3baefbf549a
+- rumiai-dev: 5e2b1c8fa47d30a2013c070cf89a8078d3888c85
 - rumiai-os: 6a964ba3f5c8acf462737e3b92daaf1af32de57e
 - rumiai-tests: 89cd8308ba6a5272e7d4163864f5f28c1de88e66
 - rumiai-dev-PoCs: 3c00148a4800cb8556be1f8856546d529001c6cb
@@ -85,12 +85,19 @@ Current OpenAI product evidence indicates:
 
 Do not assume scheduling belongs to one product.
 
-Candidate policy:
-- if the initiating client has a scheduler capable of reaching the sense at run time, it may own the schedule;
-- otherwise RumiAI owns the local schedule and may use ChatGPT as a reasoning/interface client at execution time;
-- the user intent should remain the same regardless of which scheduler ultimately owns execution.
+Current preferred direction for Amazon Price Watch, pending user acceptance:
+- frequent monitoring is local and deterministic: the online RumiAI host owns the schedule, drives the Web capability and compares current observations with local prior state;
+- ChatGPT is invoked only after a locally detected meaningful change, rather than on every polling interval;
+- Google Drive is suitable as optional event/evidence storage but not as the primary trigger, because current ChatGPT event-triggered tasks expose Gmail, Slack and GitHub events rather than Drive file-change events;
+- a practical current bridge is therefore: local deterministic monitor -> compact event artifact (local and optionally Drive) -> Gmail event signal -> ChatGPT Work event-triggered task for interpretation/notification;
+- for small events, the compact structured diff can be carried directly in the Gmail signal and Drive can be omitted;
+- Secure MCP Tunnel remains the preferred direct interactive bridge when the user's ChatGPT plan/workspace supports custom MCP access: the tunnel should terminate on a RumiAI/web-sense MCP boundary, not expose raw web-control/browser debugging; web-control remains a local deterministic implementation detail;
+- keeping a persistent Work/Codex reasoning session on the monitoring host is not a baseline because it couples monitoring to model execution and spends model work even when no semantic interpretation is needed;
+- direct OpenAI API invocation from the local host is an optional event-driven bridge, not a mandatory RumiAI dependency.
 
-This is still working design and requires explicit contract design before promotion.
+The browser application itself need not remain continuously open: the current web-control lifecycle permits the controller service to stay available while Chromium is absent and to recreate it on the next browser-required operation.
+
+This is still working design and requires explicit user acceptance before promotion.
 
 ## Completed
 
@@ -119,6 +126,7 @@ This is still working design and requires explicit contract design before promot
 - During physical refresh, `pkg uninstall rumiai-web-control` returned only `reason="package-failed"`. Current `pkg-uninstall.lib.sh` checks `_pkg_dependency_provider_unreferenced` before clearing a package default, and the current `web-control` provider selector still references the installed `rumiai-web-control` concrete. The required operator sequence is therefore: stop the service, inspect/clear the `web-control` provider default, then uninstall the package. The generic uninstall diagnostic does not expose this provider-reference cause.
 - The user then completed the physical cleanup successfully: the `web-control` provider was detached and the old `rumiai-web-control`/related test install state was removed. The physical host is ready for a clean install of current `rumiai-web-control@v0.1.3` through the normal dependency path.
 - The clean physical install then failed at dependency planning with `reason="dependency-unresolvable"`. Direct `pkg depend rumiai-web-control@v0.1.3` confirmed the same HTTP 403 from GitHub already observed in hosted composed validation. Current catalog data itself is sufficient (`chromium =1` -> `chromium@1697793!linux-x86_64`; `nodejs =26` -> `nodejs@v26.8.2!linux-x86_64`); the blocker is the current GitHub repository adapter's unauthenticated REST access during current/latest/exact-release resolution.
+- Re-evaluated ChatGPT integration/scheduling against current OpenAI product capabilities on 2026-10-08. Secure MCP Tunnel provides an outbound-only path from a private/local MCP server to supported OpenAI products; local MCP apps remain desktop-local, while cloud scheduled/event-triggered tasks use supported plugins/apps. Current event-triggered task sources explicitly include Gmail, Slack and GitHub, not Google Drive. This supports local deterministic polling plus an event bridge to ChatGPT instead of model-driven polling.
 ## Current state
 
 The original physical ENOENT/readiness issue is closed. The current first-provider release is `rumiai-web-control v0.1.3`, with catalog concrete `n0004=v0.1.3`.
