@@ -9,8 +9,8 @@ Replace the fragile model-driven Amazon Price Watch polling path with a determin
 
 ## Current repository revisions
 
-- rumiai-dev: 23be3c39ddae8a4c069698639d2d151674597717
-- rumiai-dev-PoCs: 394e8d5831e63be7e529db617c3c49328da9bbcd
+- rumiai-dev: 810ceb9f742190c4d09e4312d084fffd4d53b009
+- rumiai-dev-PoCs: 98b872fe6b73a688536596dceddb2a97e9ada256
 - rumiai-web-control: 8ed3ab888ecdc4970d90a6f14f0d7b7b93fce122
 - rumiai-os: 6a964ba3f5c8acf462737e3b92daaf1af32de57e
 - rumiai-tests: 89cd8308ba6a5272e7d4163864f5f28c1de88e66
@@ -64,14 +64,15 @@ Once Amazon observation itself is validated, the existing ChatGPT task logic is 
 - Inspected the current `Amazon Price Monitor` spreadsheet read-only and confirmed the shared operative schema of `Watch` and `Star Wars`.
 - Inspected current `web-control` implementation and verified the primitives needed for a deterministic Amazon product-page probe.
 - Recovered PoC 054 as prior evidence and a source of Amazon block-detection logic.
+- Created PoC 059 (`pocs/059-amazon-price-web-control`) with a dependency-free JavaScript probe that drives the public `web-control` CLI, verifies ASIN identity/access health, extracts prioritized visible EUR price candidates, rejects ambiguity, and optionally captures HTML/text/screenshot evidence. The script passed local `node --check` and invalid-argument behavior; no live Amazon/web-control runtime validation has yet been performed.
 
 ## Current state
 
-The deterministic translation appears feasible. The only materially uncertain part that needs physical validation is reliable Amazon product-price extraction through the user's persistent `web-control` browser session. Sheets/Gmail/ChatGPT triggering are intentionally not part of the present experiment.
+The deterministic translation is now represented by PoC 059. The only materially uncertain part that needs physical validation is reliable Amazon product-price extraction through the user's persistent `web-control` browser session. Sheets/Gmail/ChatGPT triggering are intentionally not part of the present experiment.
 
 ## Next action
 
-Create a new PoC that drives current `web-control` against Amazon.it `/dp/<ASIN>` pages and emits verified/unverified JSON price observations. Validate it first on a small sample of real ASINs from the existing monitor before adding any spreadsheet or notification integration.
+Run PoC 059 on the user's machine against a small representative sample of real ASINs from the existing monitor, with evidence capture enabled. Inspect verified/unverified results and captured DOM. Adjust only the Amazon-specific extraction evidence policy if real pages expose additional legitimate price layouts; do not add Sheets/Gmail integration until this observation layer is physically reliable.
 
 ## Blockers / open questions
 
