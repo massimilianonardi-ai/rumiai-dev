@@ -19,14 +19,14 @@ The 2026-10-07 user request expands this workstream to feasibility and design of
 
 ## Current repository revisions
 
-Most recently relied upon for this 2026-10-08 evidence/retention checkpoint:
+Most recently relied upon for this 2026-10-08 handoff split:
 
 ```text
-rumiai-dev      017355db14aabc6ab48df36ffca8dfecb9df8257  (pre-checkpoint main)
-rumiai-dev-PoCs 0a9663f75862f59728445c201fa1c4274f1f4a37  (poc/058-physical-reservoir-simulation)
+rumiai-dev      d4fd11cabce7c659641153738380c11847502c6b  (main before this handoff split)
+rumiai-dev-PoCs 394e8d5831e63be7e529db617c3c49328da9bbcd  (main after PoC 058 merge)
 ```
 
-The experimental PoC remains on a separate draft branch; its main branch has not been changed for this work unit. Resume with fresh remote HEAD checks, not these stored revision pointers.
+The active follow-on simulation work on analog noise, synchronization and chaotic neurons is owned by [handoff/analog-noise-chaotic-neuromorphic-experiments.md](analog-noise-chaotic-neuromorphic-experiments.md). This handoff retains the broader nonlinear-dynamics research, RumiAI relevance and technology/patent watch. Resume with fresh remote HEAD checks, not these stored revision pointers.
 
 ## Applicable canonical sources
 
@@ -2685,9 +2685,9 @@ This 2026-10-07 checkpoint was literature-based only; the later PoC 058 numerica
 
 ## Current state
 
-As of 2026-10-08 the simulation-first work has a bounded executable reference: [PoC 058 draft PR](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/pull/1) at branch commit `0a9663f75862f59728445c201fa1c4274f1f4a37`. Original ngspice numeric evidence is permanently tracked, while high-volume raw trajectories from the historical run remain in its expiring GitHub artifact (expiry 2026-11-07). The revised hosted workflow was exercised successfully with compact evidence (3,185,885 bytes); optional full diagnostics remain configured but untested. No speed, energy, hardware fidelity or superiority claim has been established.
+As of 2026-10-08 PoC 058 has been merged into `rumiai-dev-PoCs/main` (merge commit `394e8d5831e63be7e529db617c3c49328da9bbcd`). Original ngspice numeric evidence is permanently tracked, while high-volume raw trajectories from the historical run remain in its expiring GitHub artifact (expiry 2026-11-07). The revised hosted workflow was exercised successfully with compact evidence (3,185,885 bytes); optional full diagnostics remain configured but untested. No speed, energy, hardware fidelity or superiority claim has been established.
 
-The 2026-10-07 request activates concrete exploration of inexpensive physical AI hardware. Sections 27–29 own the hardware candidates, simulation-first working recommendation, explicit analog neuromorphic direction, experimental hypotheses, feasibility estimates and evidence boundaries. The eight-branch electronic baseline is an assistant recommendation, not a user-approved component list or a demonstrated accelerator.
+The 2026-10-07 request activates concrete exploration of inexpensive physical AI hardware. Sections 27–29 retain the broad candidate map, simulation-first rationale and evidence boundaries. The separate active handoff `handoff/analog-noise-chaotic-neuromorphic-experiments.md` owns the operational follow-on experiments on analog noise, synchronization and chaotic neurons. The eight-branch electronic baseline remains a recommendation, not an approved component list or a demonstrated accelerator.
 
 This is an active research/watch workstream and is intentionally kept open across future RumiAI development so that relevant dynamical-systems opportunities and patent risks can be recognized when they emerge.
 
@@ -2723,7 +2723,7 @@ No implementation should be inferred from this state.
 
 ## Next action
 
-For the home-hardware goal, PoC 058 completed the initial bounded simulation comparison but showed no advantage over simple digital baselines. The next research step is a separately scoped, preregistered task with stronger matched-resource digital baselines and sensitivity/robustness gates, then selective exploration of continuous versus spiking dynamics, local plasticity and multiple timescales from section 29. No physical build or runtime integration is justified by the present evidence. Preserve revision-specific experimental results in rumiai-dev-PoCs.
+For the home-hardware goal, PoC 058 completed the initial bounded simulation comparison but showed no advantage over simple digital baselines. Its follow-on experiments on noise channels, coupling and chaotic-neuron regimes are now owned by `handoff/analog-noise-chaotic-neuromorphic-experiments.md`; this broader handoff retains research-watch responsibility and no longer owns that experiment's operational state. No physical build or runtime integration is justified by the present evidence. Preserve revision-specific results in rumiai-dev-PoCs.
 
 For the broader standing research watch, resume deeper work when one of the following occurs:
 
@@ -2738,7 +2738,7 @@ At that time, perform a fresh RumiAI preflight and re-check patent status/curren
 
 ## Blockers / open questions
 
-- PoC 058 has completed a first synthetic numerical comparison, but its model/resource comparisons are not matched engineering budgets and the readout is fragile. A next experimental question, matched baselines and hardware-uncertainty assumptions must be fixed before spending on components. Budget/tools inventory is needed for physical construction. No hardware advantage has been demonstrated.
+- PoC 058 has completed a first synthetic numerical comparison, but its model/resource comparisons are not matched engineering budgets and the readout is fragile. The active follow-on experiment is tracked in `handoff/analog-noise-chaotic-neuromorphic-experiments.md`. Budget/tools inventory is still needed before physical construction. No hardware advantage has been demonstrated.
 - Current RumiAI runtime chaos-control integration still lacks a concrete state/intervention model; this is separate from the newly requested hardware exploration.
 - No claim-level freedom-to-operate analysis has been performed.
 - Patent screening is intentionally preliminary and non-exhaustive.
