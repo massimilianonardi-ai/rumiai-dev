@@ -71,7 +71,7 @@ The dedicated research/experiment lifecycle is now separate from the broad chaos
 
 ## Next action
 
-Create a preregistered PoC 059 in `rumiai-dev-dev-PoCs`: select and cite a model/parameterization, define the task and matched baselines, implement independent/common/readout noise plus mismatch probes, and run the minimal coupling/regime matrix. Record raw and summarized results in a new PoC session and update this handoff at each material checkpoint.
+Create a preregistered PoC 059 in `rumiai-dev-PoCs`: select and cite a model/parameterization, define the task and matched baselines, implement independent/common/readout noise plus mismatch probes, and run the minimal coupling/regime matrix. Record raw and summarized results in a new PoC session and update this handoff at each material checkpoint.
 
 ## Blockers / open questions
 
