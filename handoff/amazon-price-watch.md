@@ -30,29 +30,36 @@ Replace the fragile model-driven Amazon Price Watch polling path with a determin
 - The general Web architecture work and the Amazon application may proceed in parallel. Reusable requirements discovered while solving Amazon may inform the general Web work, but Amazon-specific operational state remains here.
 - The current ChatGPT scheduled task is the behavioral source to translate, not the intended runtime architecture.
 - Current scheduled cadence is six checks per day (00:00, 04:00, 08:00, 12:00, 16:00, 20:00 Europe/Rome); the task is currently disabled while the replacement path is investigated.
-- The existing spreadsheet has two monitored tabs, `Watch` and `Star Wars`, with the same operative first twelve columns: ASIN, description, current price, previous-price difference, monitored minimum, target, target distance, status, Amazon note, Amazon URL, last check, notified target.
+- The user owns and maintains the monitored product sets directly as Amazon wishlists. The deterministic monitor must consume wishlist identity/URL and discover products itself; the user must not maintain a parallel ASIN list merely for the monitor.
+- The existing spreadsheet is legacy/current task state rather than the desired source of monitored-product membership. Its historical price/target fields may still inform later migration/state design, but wishlist membership belongs to Amazon.
 - For the current phase, Google Sheets and Gmail are explicitly outside the experiment. The first question is only whether Amazon.it price observation can be made deterministic through `web-control`.
 - Unverified or ambiguous prices must never be treated as verified prices. Access blocks, CAPTCHA/challenge pages, ASIN mismatch and ambiguous price candidates must produce an explicit failure result rather than a guess.
 
 ## Acceptance scenarios
 
-1. Given one Amazon.it ASIN, a deterministic program invokes only public/current `web-control` operations and returns either a verified EUR price with page evidence or an explicit unverified reason.
-2. Given several ASINs, one blocked/unavailable/ambiguous product does not cause a price guess and does not invalidate verified results for the other products.
-3. The probe detects common Amazon access failures such as CAPTCHA, Robot Check, HTTP errors and equivalent challenge pages.
-4. No model, ChatGPT session, Google Sheet write or Gmail action is required for the Amazon observation probe.
+1. Given an Amazon.it wishlist URL/identity, a deterministic program invokes `web-control`, discovers every currently listed product and returns a complete set of product observations without requiring user-supplied ASINs.
+2. Wishlist lazy-loading/pagination is driven until completeness can be established deterministically; a partial list must not be silently accepted as complete.
+3. For each discovered product, the program returns either the wishlist-visible price with sufficient evidence or an explicit unverified/unavailable reason. One bad item does not invalidate verified observations for other items.
+4. The probe detects common Amazon access failures such as CAPTCHA, Robot Check, HTTP errors and equivalent challenge pages.
+5. No model, ChatGPT session, Google Sheet write or Gmail action is required for wishlist observation.
 
 ## Working design
 
 The existing PoC 054 (`amazon-wishlist-browser-probe`) already contains useful deterministic Amazon diagnostics: final URL/status, CAPTCHA/Robot Check/service-error detection and ASIN extraction from rendered DOM. The next experiment should reuse those observations through the current `web-control` command surface instead of launching Playwright directly.
 
-The first deterministic extractor should:
-- open `https://www.amazon.it/dp/<ASIN>` through `web-control`;
-- inspect the rendered page after bounded polling;
-- verify navigation/access health and requested-ASIN identity;
-- collect a deliberately small prioritized set of current-price DOM candidates from the product/buy-box price areas;
-- parse EUR values deterministically;
-- accept a price only when the evidence is non-blocked, ASIN-consistent and non-ambiguous;
-- emit machine-readable JSON including evidence/reason even when unverified.
+The desired baseline is wishlist-first, not product-page-first. The monitor should:
+- open the user-maintained Amazon.it wishlist through `web-control`;
+- discover product identity (normally ASIN), description, product URL and wishlist-visible price directly from each rendered wishlist item;
+- drive Amazon's lazy-loading/pagination until a deterministic completeness condition is reached;
+- detect access/challenge/error pages and never treat a partial/blocked list as a complete successful observation;
+- emit machine-readable JSON for the whole wishlist, including explicit unavailable/unverified item state.
+
+Two retrieval mechanisms should be investigated in this order:
+
+1. **Rendered-page baseline:** drive scrolling/lazy loading through the browser until no additional wishlist items appear and the page reaches a stable completion condition. This is the correctness/reference path because it uses the same browser behavior a user sees and does not depend on undocumented Amazon endpoints.
+2. **Observed internal request optimization:** while exercising the rendered-page baseline, inspect the actual resource/XHR/fetch behavior used by Amazon to load subsequent wishlist chunks. If the browser session exposes a stable, deterministic request contract that can be replayed without bypassing authentication/challenge controls, a site-specific helper may use it to avoid physically scrolling the whole page. It remains an Amazon-specific implementation optimization, not a public `web-control` contract.
+
+Do not assume a remembered or web-documented Amazon private endpoint. The request shape, continuation state and required cookies/tokens must be learned from the current page behavior in the user's real browser session.
 
 The current `web-control` baseline is sufficient for this experiment: page creation/navigation, rendered text/HTML inspection, capture, and the current CDP extension for deterministic DOM evaluation are available. This experiment does not promote Amazon-specific selectors or CDP use into the provider-independent `web-control` contract.
 
@@ -68,13 +75,13 @@ Once Amazon observation itself is validated, the existing ChatGPT task logic is 
 
 ## Current state
 
-The deterministic translation is now represented by PoC 059. The only materially uncertain part that needs physical validation is reliable Amazon product-price extraction through the user's persistent `web-control` browser session. Sheets/Gmail/ChatGPT triggering are intentionally not part of the present experiment.
+PoC 059 proves useful product-page extraction mechanics but is no longer the intended monitor entrypoint: the user corrected the application contract to wishlist-first operation. The next uncertainty is complete deterministic enumeration of an Amazon wishlist, including lazy-loaded items, and reliable extraction of wishlist-visible prices through the user's persistent `web-control` session. Sheets/Gmail/ChatGPT triggering remain intentionally outside the present experiment.
 
 ## Next action
 
-Run PoC 059 on the user's machine against a small representative sample of real ASINs from the existing monitor, with evidence capture enabled. Inspect verified/unverified results and captured DOM. Adjust only the Amazon-specific extraction evidence policy if real pages expose additional legitimate price layouts; do not add Sheets/Gmail integration until this observation layer is physically reliable.
+Build the next Amazon-specific PoC around a real wishlist URL. First establish a reference implementation that scrolls/drives lazy loading until the discovered-item set is stably complete, extracting identity/description/URL/price from wishlist items. During the same run, record the page's resource/XHR/fetch activity sufficiently to determine whether Amazon uses a stable continuation endpoint that can safely replace physical scrolling as an internal optimization. Do not add Sheets/Gmail integration until complete wishlist observation is physically reliable.
 
 ## Blockers / open questions
 
-- Real Amazon.it DOM/price variants must be observed on the user's browser session before the selector/evidence policy can be considered reliable.
+- Real Amazon.it wishlist DOM, lazy-loading completion behavior and any internal continuation request must be observed on the user's browser session before the extraction/completeness policy can be considered reliable.
 - The separate Google Sheets persistence and Gmail notification problems remain outside the current experiment.
