@@ -22,8 +22,8 @@ The 2026-10-07 user request expands this workstream to feasibility and design of
 Most recently relied upon for this 2026-10-08 handoff split:
 
 ```text
-rumiai-dev      d4fd11cabce7c659641153738380c11847502c6b  (main before this handoff split)
-rumiai-dev-PoCs 394e8d5831e63be7e529db617c3c49328da9bbcd  (main after PoC 058 merge)
+rumiai-dev      66bb775e2b115558ea468bff379ad40fe92304ab  (main before this research-choice checkpoint)
+rumiai-dev-PoCs 98b872fe6b73a688536596dceddb2a97e9ada256  (main; no changes in this checkpoint)
 ```
 
 The active follow-on simulation work on analog noise, synchronization and chaotic neurons is owned by [handoff/analog-noise-chaotic-neuromorphic-experiments.md](analog-noise-chaotic-neuromorphic-experiments.md). This handoff retains the broader nonlinear-dynamics research, RumiAI relevance and technology/patent watch. Resume with fresh remote HEAD checks, not these stored revision pointers.
@@ -57,6 +57,7 @@ The current architecture remains authoritative. This research does not create a 
 12. Treat the scientific trajectory of Louis M. Pecora and Thomas L. Carroll as a standing research signal for this workstream. Future work by Pecora/Carroll on nonlinear dynamics, synchronization, complex networks, attractor reconstruction, reservoir computing and dynamical AI should be checked when a RumiAI problem touches those areas.
 13. The user's personal historical relationship with Pecora is research provenance, not a RumiAI architectural authority: the user reports that Pecora personally introduced him to this mathematics and supplied documentation and notes from that period. If those materials are later supplied, analyze them as primary historical/research evidence, distinguish unpublished notes from peer-reviewed/public material, and do not infer their content before inspection.
 14. Preserve the user's assessment that Pecora's intuition and research direction are unusually valuable and often anticipate difficult mathematical/computational problems by decades as the user's explicit evaluation. Do not silently promote that evaluative judgment into an objective scientific ranking; instead test concrete instances against the publication record.
+15. For experimental physical AI hardware, the user's current priority is **B**: explore different computing/cognitive models based on physical network dynamics, local state and learning, rather than simply accelerating present Transformers. **A** (acceleration of existing open model families) remains a conditional secondary path: investigate open-source/open-weight architectures and attempt a focused physical-acceleration PoC only after identifying a concrete, measurable hardware opportunity. This is a task-local research priority, not a promoted RumiAI runtime architecture.
 
 ## Working design
 
@@ -2662,6 +2663,18 @@ Primary sources inspected on 2026-10-07:
 
 This 2026-10-07 checkpoint was literature-based only; the later PoC 058 numerical work is recorded below. Neither a physical circuit nor measured hardware performance, local learning, brain-like intelligence or a novel AI architecture has been demonstrated.
 
+### 30. Two-track physical AI research: B prioritized, A conditional (2026-10-08)
+
+The user prioritizes B: search for computing systems with distributed, dynamically evolving state and potentially local learning. Do not silently equate recurrent language models with neuromorphic brains; they provide specific, testable state-update mechanisms, not brain equivalence. Existing active mechanism-level experimentation on chaotic neurons, analog noise and coupling remains owned solely by `handoff/analog-noise-chaotic-neuromorphic-experiments.md`.
+
+A remains an optional engineering route, not a competing mandate. A focused open-model source survey (2026-10-08, not a full performance ranking) identified these candidates:
+- RWKV-7 recurrent language models provide constant-size recurrent state with an attention-free update; official Apache-2.0 model example: https://huggingface.co/RWKV/RWKV7-G1k-13.3B-20260930 . Its state-update equations may inform B's mathematical study; the checkpoint itself is not an analog circuit.
+- Qwen3.5 alternates three Gated DeltaNet/linear-attention blocks with one full-attention block; the 4B release uses Apache-2.0: https://huggingface.co/Qwen/Qwen3.5-4B . Study recurrence, state lifetimes, and the linear projection suboperations, not a claim of guaranteed hardware benefit.
+- DeepSeek-V4 provides compressed/hybrid attention, low-rank output projections and sparse expert routing: https://huggingface.co/docs/transformers/model_doc/deepseek_v4 . These expose bounded suboperations to screen for A; the complete model is not proposed as a hardware target.
+- Existing non-normative RumiAI reference evaluations `products/ai/llama-cpp.md` and `products/ai/sglang.md` can inform replaceable inference backend integration and exact operation profiling. Verify current upstream revisions before relying on those snapshots.
+
+Suggested **A decision gate**, not yet a completed PoC: select one actual model and a real operation trace (e.g. a projection/matrix-vector multiplication), then compare an analog/mixed-signal approximation with an equally quantized digital baseline for output/next-token fidelity. Sweep limited precision, readout noise, device drift, saturation, programmed-weight errors and recalibration. Count state/memory storage and movement, DAC/ADC, control, buffering and readout. Do not infer hardware throughput or energy savings from software simulator runtime. Advance to component/circuit simulation only if measured model-level usefulness and a physically defensible complete-system cost estimate justify it. Hardware evaluation remains open; no analog Transformer speedup, digital model inference comparison or B brain-equivalence result has been demonstrated.
+
 ## Completed
 
 - On 2026-10-08, PoC 058 ran eight electronic/optoelectronic/digital configurations across three seeds on auxiliary Linux SciPy and independently through real ngspice in GitHub Actions [run 37754200236](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/37754200236), source commit `b9d371e33f52f28c40ccf5dee2b5c48ad56231bf`. Checks passed; small nonlinear diode features emerged, but no physical candidate beat the simpler digital temporal predictors. Readout noise and component perturbations exposed fragility. This is model/simulation evidence only.
@@ -2684,6 +2697,8 @@ This 2026-10-07 checkpoint was literature-based only; the later PoC 058 numerica
 - Identified the main current gap: classical/generalized synchronization and chaos-control mathematics are not yet a mature method for coordinating or steering modern LLM systems.
 
 ## Current state
+
+The 2026-10-08 user direction prioritizes B (alternative physical computing with evolving local state/learning); A is conditional on a source-grounded, experimentally measurable opportunity in open model architectures. The working shortlist and evidence gates are in section 30; no A-specific PoC has yet been run. Operational B experiments remain with the separate dedicated handoff.
 
 As of 2026-10-08 PoC 058 has been merged into `rumiai-dev-PoCs/main` (merge commit `394e8d5831e63be7e529db617c3c49328da9bbcd`). Original ngspice numeric evidence is permanently tracked, while high-volume raw trajectories from the historical run remain in its expiring GitHub artifact (expiry 2026-11-07). The revised hosted workflow was exercised successfully with compact evidence (3,185,885 bytes); optional full diagnostics remain configured but untested. No speed, energy, hardware fidelity or superiority claim has been established.
 
@@ -2725,6 +2740,8 @@ No implementation should be inferred from this state.
 
 For the home-hardware goal, PoC 058 completed the initial bounded simulation comparison but showed no advantage over simple digital baselines. Its follow-on experiments on noise channels, coupling and chaotic-neuron regimes are now owned by `handoff/analog-noise-chaotic-neuromorphic-experiments.md`; this broader handoff retains research-watch responsibility and no longer owns that experiment's operational state. No physical build or runtime integration is justified by the present evidence. Preserve revision-specific results in rumiai-dev-PoCs.
 
+For optional A exploration, first inspect source-level kernels and model-weight licenses for a bounded open-model operation and establish the digital/analog comparison protocol in section 30. Do not begin a large analog accelerator implementation without a positive feasibility screen.
+
 For the broader standing research watch, resume deeper work when one of the following occurs:
 
 1. a concrete RumiAI design problem matches the diagnostic lens above;
@@ -2738,6 +2755,7 @@ At that time, perform a fresh RumiAI preflight and re-check patent status/curren
 
 ## Blockers / open questions
 
+- A has no selected exact model revision, profiled kernel, target analog hardware topology or complete-system cost model. The initial open-model survey is architectural screening only, not a performance ranking or accelerator demonstration.
 - PoC 058 has completed a first synthetic numerical comparison, but its model/resource comparisons are not matched engineering budgets and the readout is fragile. The active follow-on experiment is tracked in `handoff/analog-noise-chaotic-neuromorphic-experiments.md`. Budget/tools inventory is still needed before physical construction. No hardware advantage has been demonstrated.
 - Current RumiAI runtime chaos-control integration still lacks a concrete state/intervention model; this is separate from the newly requested hardware exploration.
 - No claim-level freedom-to-operate analysis has been performed.
