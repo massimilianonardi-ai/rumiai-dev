@@ -1,7 +1,7 @@
 # Chaotic dynamics and nonlinear-control research for RumiAI
 
 Status: Active
-Updated: 2026-10-07
+Updated: 2026-10-08
 
 ## Goal
 
@@ -19,13 +19,14 @@ The 2026-10-07 user request expands this workstream to feasibility and design of
 
 ## Current repository revisions
 
-Most recently relied upon for the current research checkpoint:
+Most recently relied upon for this 2026-10-08 evidence/retention checkpoint:
 
 ```text
-rumiai-dev  48445b6baf7158dc9d0209a402af5ba1fd1011e1
+rumiai-dev      017355db14aabc6ab48df36ffca8dfecb9df8257  (pre-checkpoint main)
+rumiai-dev-PoCs 0a9663f75862f59728445c201fa1c4274f1f4a37  (poc/058-physical-reservoir-simulation)
 ```
 
-This is the source revision before the 2026-10-07 research checkpoint update. Only rumiai-dev was involved in that checkpoint; no rumiai-os implementation or permanent test behavior was inspected or changed. Resume work with the normal fresh preflight and current remote HEAD verification.
+The experimental PoC remains on a separate draft branch; its main branch has not been changed for this work unit. Resume with fresh remote HEAD checks, not these stored revision pointers.
 
 ## Applicable canonical sources
 
@@ -2612,7 +2613,7 @@ Candidate planning envelopes, not vendor quotes or an approved BOM: EUR 50-100 f
 
 A reservoir's fading state is temporary working memory. Learned parameters need their own retention mechanism; persistent arbitrary data or LLM weights still require explicit memory. This research does not establish a replacement for LLM attention, KV cache or large-model training.
 
-Validation at this checkpoint: literature and feasibility reasoning only. No simulation, schematic validation, firmware execution, physical construction or performance measurement was performed. No claim-level patent review was performed; the earlier patent landscape remains its dated snapshot.
+Validation at this 2026-10-07 feasibility checkpoint was literature-based only; PoC 058 was executed later, on 2026-10-08. No physical construction, firmware execution or measured hardware performance has occurred. No claim-level patent review was performed; the earlier patent landscape remains its dated snapshot.
 
 ### 28. Simulation before construction: working recommendation
 
@@ -2635,7 +2636,7 @@ Numerical credibility matters especially for chaos: check timestep/tolerance con
 
 Decision gate: advance when an advantage survives realistic uncertainty and fair simpler baselines, and there is a plausible component-level implementation. A simulation can support a model-level advantage and conditional engineering estimates; simulation runtime does not measure target-hardware speed, and predicted energy/latency must include encoding, acquisition, controller, readout and calibration. Hardware measurements remain necessary.
 
-Immediate candidate micro-PoC: compare uncoupled, fixed-coupling and adjustable-coupling multiscale reservoirs for reconstruction from partial/noisy dynamical observations, beginning with the same underlying task and observable-state budget. The first numerical experiment can proceed without a finalized electronics shopping list. No experiment was run during this feasibility discussion.
+Immediate candidate micro-PoC: compare uncoupled, fixed-coupling and adjustable-coupling multiscale reservoirs for reconstruction from partial/noisy dynamical observations, beginning with the same underlying task and observable-state budget. The first numerical experiment can proceed without a finalized electronics shopping list. No experiment had been run at this feasibility checkpoint; the later PoC 058 execution is recorded in the current state below.
 
 ### 29. Analog neuromorphic dynamics as an explicit candidate
 
@@ -2659,9 +2660,13 @@ Primary sources inspected on 2026-10-07:
 - Heidelberg BrainScaleS-2 architecture and acceleration: https://www.kip.uni-heidelberg.de/vision/research/hardware/ .
 - Schemmel et al. (2020), Accelerated Analog Neuromorphic Computing: https://www.kip.uni-heidelberg.de/Veroeffentlichungen/details.php?id=4053 .
 
-This checkpoint is literature-based discussion only. No numerical experiment, circuit, hardware measurement, new learning capability or novel architecture has been demonstrated.
+This 2026-10-07 checkpoint was literature-based only; the later PoC 058 numerical work is recorded below. Neither a physical circuit nor measured hardware performance, local learning, brain-like intelligence or a novel AI architecture has been demonstrated.
 
 ## Completed
+
+- On 2026-10-08, PoC 058 ran eight electronic/optoelectronic/digital configurations across three seeds on auxiliary Linux SciPy and independently through real ngspice in GitHub Actions [run 37754200236](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/37754200236), source commit `b9d371e33f52f28c40ccf5dee2b5c48ad56231bf`. Checks passed; small nonlinear diode features emerged, but no physical candidate beat the simpler digital temporal predictors. Readout noise and component perturbations exposed fragility. This is model/simulation evidence only.
+- Preserved the **unaltered original** hosted ngspice `results.json` (SHA-256 `319e4c1df7f23cb1f34c51b7a97d8f7ecb3d2d4a3326a4275c33f7bdecc74908`) and its report in `rumiai-dev-PoCs/pocs/058-physical-reservoir-simulation/sessions/2026-10-08-github-ngspice/`. Adjusted the experimental GitHub workflow to upload compact evidence normally, keeping full-size traces in a separately requested 30-day artifact and recording per-run provenance. This did not alter model dynamics or promote any RumiAI runtime contract.
+- Verified the updated upload policy with real ngspice on GitHub Actions [run 37783273338](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/37783273338), commit `0a9663f75862f59728445c201fa1c4274f1f4a37`: success; compact artifact 3,185,885 bytes (previous complete artifact 738,061,516 bytes). The opt-in full diagnostic upload path was skipped and has not been separately exercised.
 
 - Performed current RumiAI preflight and confirmed that this material is not appropriate for current specifications.
 - Confirmed that no existing `rumiai-dev` content was found under the keywords `chaos`, `chaotic` or `synchronization` before creation of this workstream.
@@ -2679,6 +2684,8 @@ This checkpoint is literature-based discussion only. No numerical experiment, ci
 - Identified the main current gap: classical/generalized synchronization and chaos-control mathematics are not yet a mature method for coordinating or steering modern LLM systems.
 
 ## Current state
+
+As of 2026-10-08 the simulation-first work has a bounded executable reference: [PoC 058 draft PR](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/pull/1) at branch commit `0a9663f75862f59728445c201fa1c4274f1f4a37`. Original ngspice numeric evidence is permanently tracked, while high-volume raw trajectories from the historical run remain in its expiring GitHub artifact (expiry 2026-11-07). The revised hosted workflow was exercised successfully with compact evidence (3,185,885 bytes); optional full diagnostics remain configured but untested. No speed, energy, hardware fidelity or superiority claim has been established.
 
 The 2026-10-07 request activates concrete exploration of inexpensive physical AI hardware. Sections 27–29 own the hardware candidates, simulation-first working recommendation, explicit analog neuromorphic direction, experimental hypotheses, feasibility estimates and evidence boundaries. The eight-branch electronic baseline is an assistant recommendation, not a user-approved component list or a demonstrated accelerator.
 
@@ -2716,7 +2723,7 @@ No implementation should be inferred from this state.
 
 ## Next action
 
-For the home-hardware goal, the recommended next step is the bounded numerical comparison in section 28, before component selection or construction. Reuse existing solvers, fix one task and its baselines, then test implementation uncertainty. Section 29 adds continuous-state/event-based candidates, local plasticity and multiple timescales as working comparison dimensions. Establish budget/tools when translating a surviving candidate into a physical experiment. Keep prototype code/artifacts in rumiai-dev-PoCs when implementation begins; no runtime integration is planned.
+For the home-hardware goal, PoC 058 completed the initial bounded simulation comparison but showed no advantage over simple digital baselines. The next research step is a separately scoped, preregistered task with stronger matched-resource digital baselines and sensitivity/robustness gates, then selective exploration of continuous versus spiking dynamics, local plasticity and multiple timescales from section 29. No physical build or runtime integration is justified by the present evidence. Preserve revision-specific experimental results in rumiai-dev-PoCs.
 
 For the broader standing research watch, resume deeper work when one of the following occurs:
 
@@ -2731,7 +2738,7 @@ At that time, perform a fresh RumiAI preflight and re-check patent status/curren
 
 ## Blockers / open questions
 
-- The home-hardware task needs an exact numerical task and matched baselines first. Budget/tool inventory is needed before physical construction, not before the first numerical comparison. No candidate has demonstrated a benefit in this workstream.
+- PoC 058 has completed a first synthetic numerical comparison, but its model/resource comparisons are not matched engineering budgets and the readout is fragile. A next experimental question, matched baselines and hardware-uncertainty assumptions must be fixed before spending on components. Budget/tools inventory is needed for physical construction. No hardware advantage has been demonstrated.
 - Current RumiAI runtime chaos-control integration still lacks a concrete state/intervention model; this is separate from the newly requested hardware exploration.
 - No claim-level freedom-to-operate analysis has been performed.
 - Patent screening is intentionally preliminary and non-exhaustive.
