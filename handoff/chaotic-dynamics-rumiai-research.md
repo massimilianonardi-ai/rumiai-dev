@@ -1,7 +1,7 @@
 # Chaotic dynamics and nonlinear-control research for RumiAI
 
 Status: Active
-Updated: 2026-10-07
+Updated: 2026-10-08
 
 ## Goal
 
@@ -22,10 +22,12 @@ The 2026-10-07 user request expands this workstream to feasibility and design of
 Most recently relied upon for the current research checkpoint:
 
 ```text
-rumiai-dev  48445b6baf7158dc9d0209a402af5ba1fd1011e1
+rumiai-dev       017355db14aabc6ab48df36ffca8dfecb9df8257
+rumiai-dev-PoCs  b9d371e33f52f28c40ccf5dee2b5c48ad56231bf (tested experiment source)
+rumiai-dev-PoCs  0a9663f75862f59728445c201fa1c4274f1f4a37 (preserved original JSON / compact future artifacts)
 ```
 
-This is the source revision before the 2026-10-07 research checkpoint update. Only rumiai-dev was involved in that checkpoint; no rumiai-os implementation or permanent test behavior was inspected or changed. Resume work with the normal fresh preflight and current remote HEAD verification.
+These are the authoritative preflight and tested experiment revisions for the 2026-10-08 checkpoint. Subsequent PoC evidence/documentation commits do not change the tested experiment source. No rumiai-os implementation or permanent test behavior was changed. Resume with fresh remote HEAD and draft-branch verification; the publication state is recorded below.
 
 ## Applicable canonical sources
 
@@ -33,8 +35,11 @@ This is the source revision before the 2026-10-07 research checkpoint update. On
 README.md
 RULES.md
 CONSISTENCY-GATE.md
+TESTING.md
 specifications/README.md
 specifications/rumiai-os/CURRENT-MODEL.md
+specifications/rumiai-os/COMMAND-ENTRYPOINTS.md
+specifications/rumiai-os/DOCUMENTATION-MODEL.md
 handoff/README.md
 ```
 
@@ -58,6 +63,22 @@ The current architecture remains authoritative. This research does not create a 
 14. Preserve the user's assessment that Pecora's intuition and research direction are unusually valuable and often anticipate difficult mathematical/computational problems by decades as the user's explicit evaluation. Do not silently promote that evaluative judgment into an objective scientific ranking; instead test concrete instances against the publication record.
 
 ## Working design
+
+### Active simulation PoC — 2026-10-08
+
+The user authorizes implementing and running a Linux PoC using open-source simulators/libraries for electrical, electronic and optical/fiber dynamics useful to AI. Implementation belongs in `rumiai-dev-PoCs/pocs/058-physical-reservoir-simulation`, with this standing handoff retaining ownership. Preflight revisions: rumiai-dev `017355db14aabc6ab48df36ffca8dfecb9df8257`; rumiai-dev-PoCs `3c00148a4800cb8556be1f8856546d529001c6cb`.
+
+Acceptance scenarios: install documented Linux dependencies and run the experiment without external datasets or accounts; obtain held-out metrics, generated circuit netlists, machine-readable parameters/results and a readable report; repeat with fixed seeds; execute the same experiment on a GitHub-hosted Linux runner. A missing circuit simulator must be reported, never silently replaced while claiming SPICE evidence.
+
+Working scope: compare linear R-C branches, diode-loaded R-C cells with passive coupling, and a reduced optoelectronic delayed-feedback model against delayed linear/quadratic predictors and a digital reservoir. Measure fading memory and a specified nonlinear delayed-input task. Keep training/validation/test streams separate. Check numerical refinement and parameter/readout perturbations. No energy, hardware acceleration, brain equivalence, novel learning rule or physical validation is claimed. Plasticity and spiking remain candidates for later experiments, not obligations of this first substrate comparison.
+
+Python is deliberately selected for this numerical experiment because NumPy/SciPy provide vetted matrix decomposition, filtering and ODE solvers shared by the model comparison and independent circuit checks; reimplementing that numerical stack in a preferred language would materially increase validation burden. This is an experimental harness, not a new m/RumiAI runtime command, library, namespace or public interface. ngspice provides the real component-level electronic path. The optical path is explicitly a reduced component model, not an electromagnetic or fabricated-device simulator.
+
+Execution completed: full auxiliary Linux SciPy run (about 107 seconds) and GitHub-hosted Ubuntu 24.04 ngspice run 37754200236 both passed on identical experiment source, remote commit `b9d371e33f52f28c40ccf5dee2b5c48ad56231bf`. Three seeds, eight variants and independent train/validation/test streams were exercised. The retained PoC sessions own detailed numerical evidence; this is simulation validation only. SPICE/ODE short-probe agreement was within 41.3 microvolts for RC and 25.7 microvolts for coupled diodes.
+
+Findings: diode cells provide a useful static nonlinear representation (square-target NMSE about 0.148 versus 1.002 for linear RC); none of these physical candidates beats simple lag-based digital predictors on the temporal target. Frozen readouts can amplify 1% readout noise or 5% component perturbations severely. The tested optical encoding/operating point does not demonstrate an advantage. These results do not support a build/performance claim. Local learning, spiking and chaos/synchronization diagnosis were not implemented. The final consistency review checked the experimental boundary, data-split/metric semantics, readme/workflow agreement, preserved local changes, exact source identity, revision-specific evidence and temporary-versus-retained archive scope; no product command/library contract or permanent test was introduced.
+
+Publication: code and evidence are on `poc/058-physical-reservoir-simulation` in rumiai-dev-PoCs, draft PR 1, checkpoint `0a9663f75862f59728445c201fa1c4274f1f4a37`. The original 53,626-byte ngspice `results.json` was recovered from the original 738 MB ZIP, integrity-checked, and permanently added to the session directory; its SHA-256 is `319e4c1df7f23cb1f34c51b7a97d8f7ecb3d2d4a3326a4275c33f7bdecc74908`. The workflow now uploads this JSON, source/run provenance, deterministic inputs, predictions and short circuit probes by default; full-length traces require an explicit `full_diagnostics` choice and remain a temporary 30-day artifact. The follow-up workflow run 37783273338 completed successfully. Direct publication to main was rejected by automatic approval review because default-branch publication had not been explicitly authorized; an isolated research branch was used instead. No merge or main-branch mutation was performed. This handoff update is on `research/physical-reservoir-poc` in rumiai-dev, pending review/merge. Existing dirty changes in the older local checkout remain untouched. The auxiliary environment could not install ngspice, so circuit execution used the explicitly requested GitHub VM route.
 
 ### 1. Core hypothesis
 
@@ -2680,7 +2701,7 @@ This checkpoint is literature-based discussion only. No numerical experiment, ci
 
 ## Current state
 
-The 2026-10-07 request activates concrete exploration of inexpensive physical AI hardware. Sections 27–29 own the hardware candidates, simulation-first working recommendation, explicit analog neuromorphic direction, experimental hypotheses, feasibility estimates and evidence boundaries. The eight-branch electronic baseline is an assistant recommendation, not a user-approved component list or a demonstrated accelerator.
+The 2026-10-08 request produced the first executable simulation PoC; the active simulation subsection above owns its current checkpoint and repository/evidence pointers. Sections 27–29 retain the earlier hardware candidates and evidence boundaries as working research context. The eight-branch electronic baseline is an assistant recommendation, not a user-approved component list or a demonstrated accelerator.
 
 This is an active research/watch workstream and is intentionally kept open across future RumiAI development so that relevant dynamical-systems opportunities and patent risks can be recognized when they emerge.
 
@@ -2712,11 +2733,11 @@ hardware chaotic RNG / memristor / FPGA implementations
 broader risk-bounded dynamical-control methods when their specific claimed construction is reused
 ```
 
-No implementation should be inferred from this state.
+No product/runtime implementation should be inferred from this research state; the separately identified PoC is experimental only.
 
 ## Next action
 
-For the home-hardware goal, the recommended next step is the bounded numerical comparison in section 28, before component selection or construction. Reuse existing solvers, fix one task and its baselines, then test implementation uncertainty. Section 29 adds continuous-state/event-based candidates, local plasticity and multiple timescales as working comparison dimensions. Establish budget/tools when translating a surviving candidate into a physical experiment. Keep prototype code/artifacts in rumiai-dev-PoCs when implementation begins; no runtime integration is planned.
+The first numerical comparison is implemented and validated as PoC 058, with code/evidence available on its draft branch. Next, evaluate whether input encoding, coupling or noise-aware readout selection improves the accuracy–robustness tradeoff using validation-only selection and fresh held-out data. Avoid construction until a robust candidate and measurable physical question emerge. Sections 28–29 retain broader research candidates; no runtime integration is planned. Default-branch acceptance remains a separate pending action.
 
 For the broader standing research watch, resume deeper work when one of the following occurs:
 
@@ -2731,7 +2752,7 @@ At that time, perform a fresh RumiAI preflight and re-check patent status/curren
 
 ## Blockers / open questions
 
-- The home-hardware task needs an exact numerical task and matched baselines first. Budget/tool inventory is needed before physical construction, not before the first numerical comparison. No candidate has demonstrated a benefit in this workstream.
+- PoC 058 provides exact synthetic tasks and explicit digital baselines. It demonstrates simulated fading memory and nonlinear representation, but no hardware advantage and insufficient robustness. Budget/tool inventory is needed before physical construction; physical calibration remains absent. Draft-branch acceptance into main remains pending.
 - Current RumiAI runtime chaos-control integration still lacks a concrete state/intervention model; this is separate from the newly requested hardware exploration.
 - No claim-level freedom-to-operate analysis has been performed.
 - Patent screening is intentionally preliminary and non-exhaustive.
