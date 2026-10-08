@@ -9,8 +9,8 @@ Replace the fragile model-driven Amazon Price Watch polling path with a determin
 
 ## Current repository revisions
 
-- rumiai-dev: 810ceb9f742190c4d09e4312d084fffd4d53b009
-- rumiai-dev-PoCs: 98b872fe6b73a688536596dceddb2a97e9ada256
+- rumiai-dev: 6f22b79ae32e8645bc1f8454e08f949a7104bc77
+- rumiai-dev-PoCs: 87508593ce64626e7ca82c4fa9d1d0c6db4a5a46
 - rumiai-web-control: 8ed3ab888ecdc4970d90a6f14f0d7b7b93fce122
 - rumiai-os: 6a964ba3f5c8acf462737e3b92daaf1af32de57e
 - rumiai-tests: 89cd8308ba6a5272e7d4163864f5f28c1de88e66
@@ -72,14 +72,15 @@ Once Amazon observation itself is validated, the existing ChatGPT task logic is 
 - Inspected current `web-control` implementation and verified the primitives needed for a deterministic Amazon product-page probe.
 - Recovered PoC 054 as prior evidence and a source of Amazon block-detection logic.
 - Created PoC 059 (`pocs/059-amazon-price-web-control`) with a dependency-free JavaScript probe that drives the public `web-control` CLI, verifies ASIN identity/access health, extracts prioritized visible EUR price candidates, rejects ambiguity, and optionally captures HTML/text/screenshot evidence. The script passed local `node --check` and invalid-argument behavior; no live Amazon/web-control runtime validation has yet been performed.
+- Created PoC 060 (`pocs/060-amazon-wishlist-web-control`) as the wishlist-first experiment. It drives current `web-control`, accumulates ASINs across scroll rounds, records wishlist-visible price candidates, uses conservative stable-bottom completeness criteria, instruments future in-page `fetch`/XHR calls to expose lazy-load request candidates, and optionally captures HTML/text/screenshot evidence. The PoC source has not yet been physically executed against Amazon.it; no completeness or extraction claim is made yet.
 
 ## Current state
 
-PoC 059 proves useful product-page extraction mechanics but is no longer the intended monitor entrypoint: the user corrected the application contract to wishlist-first operation. The next uncertainty is complete deterministic enumeration of an Amazon wishlist, including lazy-loaded items, and reliable extraction of wishlist-visible prices through the user's persistent `web-control` session. Sheets/Gmail/ChatGPT triggering remain intentionally outside the present experiment.
+PoC 060 now represents the wishlist-first experiment. Its source is ready for a physical run on the user's machine, but Amazon.it enumeration/completeness and the usefulness of the captured lazy-load request trace remain unvalidated. PoC 059 remains diagnostic/fallback evidence for individual product pages rather than the normal monitor entrypoint. Sheets/Gmail/ChatGPT triggering remain intentionally outside the present experiment.
 
 ## Next action
 
-Build the next Amazon-specific PoC around a real wishlist URL. First establish a reference implementation that scrolls/drives lazy loading until the discovered-item set is stably complete, extracting identity/description/URL/price from wishlist items. During the same run, record the page's resource/XHR/fetch activity sufficiently to determine whether Amazon uses a stable continuation endpoint that can safely replace physical scrolling as an internal optimization. Do not add Sheets/Gmail integration until complete wishlist observation is physically reliable.
+Run PoC 060 physically against the known Amazon.it wishlist `33ZKBWLPZJJVO`, preferably with evidence capture enabled. Review the JSON `complete` flag, item count, per-item price evidence, scroll-round progression and `networkTrace`. If the run is incomplete or extraction misses legitimate items/prices, use the captured rendered evidence to refine only the Amazon-specific probe. Do not add Sheets/Gmail integration until complete wishlist observation is physically reliable.
 
 ## Blockers / open questions
 
