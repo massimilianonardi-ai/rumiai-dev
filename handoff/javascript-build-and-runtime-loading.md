@@ -48,6 +48,10 @@ Always recheck remote HEADs on resumption and before writes.
 - Avoid duplicate hand-written module manifests where ESM static/dynamic imports already describe the necessary dependency graph; an explicit manifest is only potentially justified for product-specific selection/publishing rules that cannot be derived.
 - The initial editor PoC 061 proved a single 305.2 KB minified JS in headless Chromium via file:// with zero HTTP requests. It did not validate the `mk` invocation, general-purpose hot loading, lazy loading, lifecycle replacement or the compiler design.
 - Candidate development and distribution strategies remain under evaluation; do not promote them as `mk` specification.
+- Fresh comparison of reference `m/js/lib/js/m/Class.js` (39 KB) with ECMAScript 2026: legacy `m.Class` supplies multiple base constructor calls/behavior copying or getter-links, per-instance composed defaults (shallow copying), shared prototype state, fluent properties with getter/setter/listener/validator, before/after triggers, event bindings, singleton/call-mode choices, method aliasing and runtime changes. Standard `class` does not directly supply the combined metaobject model, although modern prototypes/accessors/Proxy/Reflect can implement many pieces. Legacy multi-base support is not native multiple prototype inheritance/automatic multiple `instanceof` identity.
+- Hard interoperability mismatches from current source: `Class.prototype.inherit` enumerates prototype members using `for...in` (native `class` methods are nonenumerable), while `Class.prototype._construct` invokes base constructors via `.apply` (native class constructors reject function-call invocation). The `_inherit.length___` check in the first-base branch appears erroneous and needs specific tests; do not assert runtime failure without authentic execution.
+- ES module syntax and ES class syntax are independent. A legacy function-constructor-based `m.Class` can be exported/imported as ESM without redesigning its inheritance model, provided legacy global coupling is adapted explicitly. ESM static exports are live read-only imported bindings and ESM caching has no standard unload/reset API, so module HMR requires explicit lifecycle indirection. Native `import()` supplies loading on demand; experimental `import defer` (TC39 Stage 3 in 2026, limited browser support) separates eager fetching/linking from deferred evaluation.
+- Modern `#private` fields are not dynamically injected through prototype copying, and standard `super`/class-field initialization semantics differ from legacy constructor chaining. Stage 2.7 decorators are not a stable cross-browser replacement for `m.Class` listeners/triggers. Types (e.g. TypeScript interfaces) do not add runtime multiple inheritance or HMR functionality.
 
 ## Completed
 
@@ -55,6 +59,7 @@ Always recheck remote HEADs on resumption and before writes.
 - Inspected current `mk` process-action implementation and reference `m` compilation/dynamic-loading code.
 - Established upstream capability baselines from standards and upstream docs for native `import()`, import maps, Vite HMR, webpack HMR, esbuild splitting, Rollup inline dynamic imports, SystemJS loader/registry, JSPM import map tooling.
 - Split task responsibility from the editor investigation after the user clarified the independent goals.
+- Retrieved and inspected the full reference `m.Class` implementation; checked selected interoperability properties against Node.js 22 and consulted up-to-date ECMAScript/MDN/TC39 sources. This is a static/mechanical assessment, not full execution of the legacy `m.Class` implementation.
 
 ## Current state
 
@@ -62,7 +67,7 @@ Investigation and working design only. No JS compiler or runtime-loader implemen
 
 ## Next action
 
-Design minimal contrasting experiments for native ESM + dynamic import, esbuild/Rollup output, and SystemJS or Vite development-time replacement using the same small source graph. Measure actual fetch, execution, re-evaluation/state cleanup, local-file/browser compatibility, output count, CSP constraints and integration through real `mk`. Promote a `mk` extension only if a concrete uncovered lifecycle responsibility is demonstrated.
+First devise a focused compatibility matrix and real PoC for legacy `m.Class` capabilities versus current ECMAScript classes/prototypes, with old constructors packaged inside ESM modules, including multiple inheritance, observable properties and hot method replacement. Then compare native ESM + dynamic import, esbuild/Rollup output and SystemJS or Vite development-time replacement using the same small source graph. Measure actual fetch, execution, re-evaluation/state cleanup, local-file/browser compatibility, output count, CSP constraints and integration through real `mk`. Promote a `mk` extension only if a concrete uncovered lifecycle responsibility is demonstrated.
 
 ## Blockers / open questions
 
