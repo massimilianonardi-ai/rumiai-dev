@@ -10,7 +10,7 @@ Investigate and prototype an advanced JavaScript text editor with first-class re
 ## Current repository revisions
 
 - `rumiai-dev` main: `a56180ed515add7e4a395700e68c4d212429750d` (last inspected before checkpoint).
-- `rumiai-dev-PoCs` main: `070076170dea9e3c60da50f6dfb19584359d26ed` (PoC implementation and minification).
+- `rumiai-dev-PoCs` main: `0f9c5b7fd78f22716cdd1be4423fda91b557eb78` (PoC including downloadable workflow artifact).
 - `rumiai-os` main: `6a964ba3f5c8acf462737e3b92daaf1af32de57e`.
 - Reference repository `m` master: `2a57a29880c2d7a32e18782122062c695fcb1a3a`.
 
@@ -56,10 +56,11 @@ Fresh remote HEAD verification is still required before every resumed task and b
 - Created `rumiai-dev-PoCs/pocs/061-web-editor-column-bundle/` with modular ES source, `mk.json`, single-IIFE build, local-file demo, Playwright Chromium interaction test, and GitHub Actions workflow.
 - Hosted run `37973245759` at `1d523b9...` passed with initial 681.3 KB unminified bundle.
 - Hosted run `37973599869` at `070076170dea9e3c60da50f6dfb19584359d26ed` passed with a single 305.2 KB minified `dist/editor.js`: real headless Chromium loaded via `file://`, mouse rectangle produced multiple selections, typing and undo worked, independent editor instances worked and zero HTTP(S) requests were observed. Logs/steps report PASS; no test substitution for the browser interaction.
+- Workflow-only follow-up `0f9c5b7fd78f22716cdd1be4423fda91b557eb78` run `37973843577` passed build/browser tests and published downloadable Actions artifact `editor-single-js` (ID `11638197519`, compressed upload 101637 bytes, expires 2027-01-07). This is an ephemeral CI artifact, not a formal release.
 
 ## Current state
 
-GitHub Actions real hosted Ubuntu/Chromium validation passed (run `37973599869`); local container still lacks npm registry access, but hosted dependency resolution and build succeeded. The browser test checks a representative real rectangle interaction and offline loading, not comprehensive column semantics. The current `mk.json` is declarative and its real `mk` invocation has not been exercised. Electron host, physical macOS, large files, clipboard, tabs/virtual columns, Unicode and CRLF remain unvalidated.
+GitHub Actions real hosted Ubuntu/Chromium validation passed (runs `37973599869` and `37973843577`); latest run also published the built JS artifact; local container still lacks npm registry access, but hosted dependency resolution and build succeeded. The browser test checks a representative real rectangle interaction and offline loading, not comprehensive column semantics. The current `mk.json` is declarative and its real `mk` invocation has not been exercised. Electron host, physical macOS, large files, clipboard, tabs/virtual columns, Unicode and CRLF remain unvalidated.
 
 ## Next action
 
