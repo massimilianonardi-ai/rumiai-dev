@@ -1,73 +1,67 @@
-# Browser/Electron text editor and JavaScript bundling
+# Advanced browser/Electron text editor
 
-Status: Active
+Status: Active — paused while independent JavaScript toolchain work is examined
 Updated: 2026-10-09
 
 ## Goal
 
-Investigate and prototype an advanced JavaScript text editor with first-class rectangular/column editing, able to run offline in a browser, embed as a single-file library in websites, and reuse the same browser engine under a secure Electron host. Establish a build path compatible with the existing `m`/`mk` responsibilities rather than inventing a parallel lifecycle engine.
+Design and eventually build an advanced JavaScript text editor whose column-editing usability is informed by the specific behavior of the Windows MadEdit editor, rather than assuming that conventional multicursor or rectangular selection implementations cover the user's actual needs. Target reusable browser/library and optional Electron hosts.
+
+The JavaScript compilation, module loading and distribution concern has **independent ownership** at `handoff/javascript-build-and-runtime-loading.md`. This handoff must not make bundler/loader decisions.
 
 ## Current repository revisions
 
-- `rumiai-dev` main: `a56180ed515add7e4a395700e68c4d212429750d` (last inspected before checkpoint).
-- `rumiai-dev-PoCs` main: `0f9c5b7fd78f22716cdd1be4423fda91b557eb78` (PoC including downloadable workflow artifact).
+- `rumiai-dev` main: `f25e6e5f9ba1a7cf47dab76bc52a333af9a18d6f` (before this checkpoint).
+- `rumiai-dev-PoCs` main: `0f9c5b7fd78f22716cdd1be4423fda91b557eb78`.
+- Reference `m` master: `2a57a29880c2d7a32e18782122062c695fcb1a3a`.
 - `rumiai-os` main: `6a964ba3f5c8acf462737e3b92daaf1af32de57e`.
-- Reference repository `m` master: `2a57a29880c2d7a32e18782122062c695fcb1a3a`.
 
-Fresh remote HEAD verification is still required before every resumed task and before repository writes.
+Always recheck current remote HEADs before resuming or changing files.
 
 ## Applicable canonical sources
 
-- `README.md`, `RULES.md`, `CONSISTENCY-GATE.md`, `specifications/README.md`.
-- `specifications/rumiai-os/CURRENT-MODEL.md`, `specifications/rumiai-os/MK.md`.
-- If core `m` commands/libraries are touched: `COMMAND-ENTRYPOINTS.md`, `DOCUMENTATION-MODEL.md`, `FILESYSTEM-NAMING.md`, `LIBRARY-INTERFACES.md`, operational manuals.
-- Independent terminal-editor TODO `todo/vsed-advanced-editor-evaluation.md` is not activated by this browser-editor task.
+- `README.md`, `RULES.md`, `CONSISTENCY-GATE.md`, `specifications/README.md`, `specifications/rumiai-os/CURRENT-MODEL.md`.
+- Reference `m/js/lib/ui-text-edit/m/text/TextEdit.js`, `m/js/lib/ui-text-edit/m/ui/`, `m/js/electron-app-editor/`.
+- The separately deferred terminal `vsed` advanced-editor work is `todo/vsed-advanced-editor-evaluation.md` and is not this editor.
+- The JavaScript toolchain is owned by `handoff/javascript-build-and-runtime-loading.md`.
 
 ## Fixed task-local choices
 
-- Browser functionality cannot require Electron, Node.js, online APIs or a runtime service.
-- Keep modular JavaScript development sources; evaluate a self-contained single JavaScript browser distribution. Electron is an optional separate host.
-- Reuse current `mk` for project lifecycle orchestration and external bundler delegation first; do not silently extend `mk` or promote a new general-purpose builder from an experiment.
-- No product/runtime changes are authorized merely by this PoC; code experiments belong in `rumiai-dev-PoCs`.
+- This editor is an independently useful product, not a test fixture for a bundler or an extension of the terminal `vsed`.
+- Column editing is a primary functional requirement; MadEdit for Windows is the user's benchmark for useful behavior, even when other editors offer more overall features.
+- Browser-embeddable JavaScript is desirable for reuse across browser, local and Electron contexts.
+- The core editor architecture must be evaluated **before** adopting a renderer or editing engine. The early CodeMirror PoC does not settle the choice of editor engine.
 
 ## Acceptance scenarios
 
-1. An operator opens a local HTML page referencing the built JS artifact, without a server, account, or network, and can edit ordinary text.
-2. A website embeds the same JS artifact, instantiates independent editor instances, reads/sets text and destroys the instance without requiring a framework.
-3. A user switches column mode, makes a rectangular mouse selection across uneven lines, edits/pastes columns, uses undo/redo and sees correct cursor/selection behavior.
-4. The same editor engine runs under Electron without exposing Node APIs or disabling browser isolation in its renderer.
-5. From a modular source tree, a declared `mk` goal invokes an appropriate bundler and emits one browser JS artifact without unexpected chunks, CSS files, fetched runtime modules or worker assets.
+1. The user can reproduce the actual useful MadEdit column-editing workflows, which first need specific characterization; mere support for rectangular selection and multiple cursors is not enough.
+2. Text, cursor, selection, character alignment and line numbering remain correct under realistic long lines, fonts, tabs, line wraps and scrolling.
+3. The same editor logic can be embedded into an ordinary browser page and wrapped by a secure Electron application without imposing an unrelated web framework.
+4. Large documents and repeated editing operations remain responsive and correct without losing undo/redo, clipboard or textual fidelity.
 
 ## Working design (not normative)
 
-- Browser editor candidates: CodeMirror 6 (rectangularSelection and multiple ranges), Monaco (columnSelection option), Ace (multiselection), versus adapting legacy `m/js/lib/ui-text-edit`.
-- Bundlers: start with esbuild as a delegated engine; compare Rollup, Vite library mode and the older `m/cmd/jsc` + `jsc.js` approach before selecting long-term packaging.
-- Legacy `m/js/lib/ui-text-edit/m/text/TextEdit.js` already has multirange selections and `insertText(text, columnMode)`, but no evidence yet of reliable screen-rectangular geometry, large-document rendering, arbitrary Unicode/tab/line-ending correctness or undo/redo.
-- Legacy `m/cmd/jsc.js` implements JSON-ordered source concatenation/namespace export and contains Java runtime references plus dynamic `eval` patterns; not suitable for direct production adoption.
-- Legacy Electron editor disables context isolation/sandbox/web security and enables Node integration; it is research input, not a secure host implementation.
-- A browser-only prototype should prove column interaction and single-asset packaging before any permanent `mk` adapter is considered.
+- Compare two main rendering approaches: separate text and left-gutter DOM regions whose alignment is coordinated via CSS/layout/scroll calculations, versus a coordinated DOM structure that gives gutters and editable lines shared layout geometry. Evaluate performance, virtualization, line wrap, scrolling and hit testing before selecting either.
+- Compare underlying data and rendering ownership: native DOM/contenteditable versus a controlled document model and separate view/input projection; the tradeoffs influence column geometry, selection, IME, accessibility and performance.
+- Reference `m` TextEdit already has multirange operations and a `columnMode` insertion switch; it does not prove full MadEdit-like column semantics. The old Electron host is not a secure integration baseline.
+- CodeMirror, Monaco, Ace and first-party editing/rendering remain candidates, not approved architecture.
+- A prior exploratory PoC 061 demonstrated CodeMirror rectangular mouse selection, typing, undo, separate instances and offline single-JS inclusion. It was a narrow feasibility check and does not validate the user benchmark or fix the editor architecture. Bundling-related research belongs to the separate JavaScript toolchain handoff.
 
 ## Completed
 
-- Verified relevant remote HEADs and completed the canonical read order.
-- Retrieved current `mk` contract, existing handoff ownership and the separate deferred terminal-editor TODO.
-- Inspected legacy `m` bundler, editor text engine and Electron host, and compared public editor and bundler APIs.
-- Identified a first experimental path based on CodeMirror 6 + esbuild delegated through `mk`.
-- Created `rumiai-dev-PoCs/pocs/061-web-editor-column-bundle/` with modular ES source, `mk.json`, single-IIFE build, local-file demo, Playwright Chromium interaction test, and GitHub Actions workflow.
-- Hosted run `37973245759` at `1d523b9...` passed with initial 681.3 KB unminified bundle.
-- Hosted run `37973599869` at `070076170dea9e3c60da50f6dfb19584359d26ed` passed with a single 305.2 KB minified `dist/editor.js`: real headless Chromium loaded via `file://`, mouse rectangle produced multiple selections, typing and undo worked, independent editor instances worked and zero HTTP(S) requests were observed. Logs/steps report PASS; no test substitution for the browser interaction.
-- Workflow-only follow-up `0f9c5b7fd78f22716cdd1be4423fda91b557eb78` run `37973843577` passed build/browser tests and published downloadable Actions artifact `editor-single-js` (ID `11638197519`, compressed upload 101637 bytes, expires 2027-01-07). This is an ephemeral CI artifact, not a formal release.
+- An initial feasibility PoC was created in `rumiai-dev-PoCs/pocs/061-web-editor-column-bundle/`; hosted runs `37973245759`, `37973599869` and `37973843577` passed the narrow browser interaction/build checks.
+- The last hosted PoC published an ephemeral `editor-single-js` artefact (ID `11638197519`, expires 2027-01-07). This is not a formal product release.
+- Re-scoped this handoff to editor semantics and foundational architecture after the user's explicit separation of the independent JavaScript compilation/deployment problem.
 
 ## Current state
 
-GitHub Actions real hosted Ubuntu/Chromium validation passed (runs `37973599869` and `37973843577`); latest run also published the built JS artifact; local container still lacks npm registry access, but hosted dependency resolution and build succeeded. The browser test checks a representative real rectangle interaction and offline loading, not comprehensive column semantics. The current `mk.json` is declarative and its real `mk` invocation has not been exercised. Electron host, physical macOS, large files, clipboard, tabs/virtual columns, Unicode and CRLF remain unvalidated.
+Editor architecture is not yet selected. Functional benchmark definition and foundational rendering/model comparison remain outstanding. Work on this editor is paused while the independent JavaScript toolchain question is examined; the initial PoC remains experimental evidence only.
 
 ## Next action
 
-Extend the real-browser acceptance tests to rectangle pasting and deletion across uneven/short lines, tabs, Unicode/graphemes, CRLF and clipboard. Validate real `mk --plan build`, `mk build` and `mk check` through the managed runtime when available; evaluate a secure Electron host and alternative engines as warranted. Keep provider/compiler changes out of `mk` until demonstrated necessary.
+When editor work resumes, first characterize MadEdit's distinctive column-editing workflows and compare foundational document/rendering choices. Do not treat the earlier CodeMirror feasibility prototype as an approved engine or develop more editor features before the architecture analysis.
 
 ## Blockers / open questions
 
-- The current core CodeMirror build demonstrably produces one JS file with no observed browser HTTP(S) requests. Whether optional themes, language modes, workers and future features can retain single-file distribution remains open.
-- The actual managed `mk` lifecycle and Electron shell are not yet validated.
-- Decide if a separately releasable first-party editor project is warranted after the PoC; no product placement is promoted yet.
+- Which exact MadEdit column-editing interactions distinguish it from competitors, and how do they behave for short lines, virtual columns, tabs, Unicode and clipboard?
+- Which text model, selection representation, editable/input approach and gutter/line geometry strategy can support those interactions robustly?
