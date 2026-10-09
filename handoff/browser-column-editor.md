@@ -9,8 +9,8 @@ Investigate and prototype an advanced JavaScript text editor with first-class re
 
 ## Current repository revisions
 
-- `rumiai-dev` main: `846fdbb84888cd14b5cdd0007075a34d0b5d2593` (before this handoff).
-- `rumiai-dev-PoCs` main: `87508593ce64626e7ca82c4fa9d1d0c6db4a5a46` (before experiment).
+- `rumiai-dev` main: `a56180ed515add7e4a395700e68c4d212429750d` (last inspected before checkpoint).
+- `rumiai-dev-PoCs` main: `070076170dea9e3c60da50f6dfb19584359d26ed` (PoC implementation and minification).
 - `rumiai-os` main: `6a964ba3f5c8acf462737e3b92daaf1af32de57e`.
 - Reference repository `m` master: `2a57a29880c2d7a32e18782122062c695fcb1a3a`.
 
@@ -53,17 +53,20 @@ Fresh remote HEAD verification is still required before every resumed task and b
 - Retrieved current `mk` contract, existing handoff ownership and the separate deferred terminal-editor TODO.
 - Inspected legacy `m` bundler, editor text engine and Electron host, and compared public editor and bundler APIs.
 - Identified a first experimental path based on CodeMirror 6 + esbuild delegated through `mk`.
+- Created `rumiai-dev-PoCs/pocs/061-web-editor-column-bundle/` with modular ES source, `mk.json`, single-IIFE build, local-file demo, Playwright Chromium interaction test, and GitHub Actions workflow.
+- Hosted run `37973245759` at `1d523b9...` passed with initial 681.3 KB unminified bundle.
+- Hosted run `37973599869` at `070076170dea9e3c60da50f6dfb19584359d26ed` passed with a single 305.2 KB minified `dist/editor.js`: real headless Chromium loaded via `file://`, mouse rectangle produced multiple selections, typing and undo worked, independent editor instances worked and zero HTTP(S) requests were observed. Logs/steps report PASS; no test substitution for the browser interaction.
 
 ## Current state
 
-External package installation cannot currently be verified in the assistant's local container because npm registry DNS access failed. This is not evidence of a flaw in CodeMirror or esbuild. No browser behavior, build success, Electron integration or `mk` execution is yet validated.
+GitHub Actions real hosted Ubuntu/Chromium validation passed (run `37973599869`); local container still lacks npm registry access, but hosted dependency resolution and build succeeded. The browser test checks a representative real rectangle interaction and offline loading, not comprehensive column semantics. The current `mk.json` is declarative and its real `mk` invocation has not been exercised. Electron host, physical macOS, large files, clipboard, tabs/virtual columns, Unicode and CRLF remain unvalidated.
 
 ## Next action
 
-Create a minimal PoC under `rumiai-dev-PoCs/pocs/061-web-editor-column-bundle/`; validate the single-JS build with real dependency resolution in an available hosted environment and then validate actual rectangular editing in a browser. Revisit the legacy text engine only against concrete test failures/differences. Promote decisions and modify `mk` only if evidence justifies it.
+Extend the real-browser acceptance tests to rectangle pasting and deletion across uneven/short lines, tabs, Unicode/graphemes, CRLF and clipboard. Validate real `mk --plan build`, `mk build` and `mk check` through the managed runtime when available; evaluate a secure Electron host and alternative engines as warranted. Keep provider/compiler changes out of `mk` until demonstrated necessary.
 
 ## Blockers / open questions
 
-- Prove the bundler path and column editing in a real browser; initial tool comparison alone is insufficient.
-- Determine whether strict single-file distribution also includes themes/language assets/workers, or only the core editor JS, by empirical build inspection.
+- The current core CodeMirror build demonstrably produces one JS file with no observed browser HTTP(S) requests. Whether optional themes, language modes, workers and future features can retain single-file distribution remains open.
+- The actual managed `mk` lifecycle and Electron shell are not yet validated.
 - Decide if a separately releasable first-party editor project is warranted after the PoC; no product placement is promoted yet.
