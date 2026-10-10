@@ -12,7 +12,7 @@ This is an experimental workstream only. It does not alter RumiAI architecture o
 ## Current repository revisions
 
 ```text
-rumiai-dev      e77414507435def79aa9a4086ca07127e72ea806 (main; latest handoff checkpoint)
+rumiai-dev      dd762bae858a90d8b8a7fbbbdd758fed49e18c3b (main; latest handoff checkpoint)
 rumiai-dev-PoCs 888aa6d4c520fdc6266c37b505ba3b938a8a6135 (main at latest compare)
 rumiai-dev-PoCs da0d5c8de0975872f4efa2f416fd9de857fa1fa1 (poc/059-chaotic-neuron-noise-screening; corrected code, protocol, and rerun evidence)
 rumiai-dev-PoCs 7c89467332db536d8250c0234463a87576a0fca7 (same branch; task protocol v2)
@@ -76,12 +76,12 @@ This screen is intentionally not an AI task or readout benchmark. It checks one 
 
 ## Current state
 
-PR 2 remains draft. Its original mechanism screen is exploratory and has no task metric. A separate task-level protocol v2 is preregistered in `pocs/059-chaotic-neuron-noise-screening/TASK-PREREGISTRATION.md` at commit `7c89467332db536d8250c0234463a87576a0fca7`; no task-level outcomes have been inspected. It fixes the synthetic regression, two candidate HR regimes, coherent Lyapunov protocol, coupling sweep, data splits, exact 16-state ESN baseline, perturbation channels and reporting rules before implementation. PoC 058 remains the electrical/optoelectronic task benchmark and is on main. At the latest compare, PoC 059 branch `da0d5c8de0975872f4efa2f416fd9de857fa1fa1` diverged from main `888aa6d4c520fdc6266c37b505ba3b938a8a6135` (13 commits ahead, 19 behind); PR 2 remains draft and now reports `mergeable=false`. The PR metadata still reports its old base SHA `394e8d5831e63be7e529db617c3c49328da9bbcd`. Keep it draft; synchronize with current main through a forward-only merge commit, inspect the resulting tree and diff, and confirm checks before considering it ready.
+PR 2 remains draft. Its original mechanism screen is exploratory and has no task metric. A separate task-level protocol v2 is preregistered in `pocs/059-chaotic-neuron-noise-screening/TASK-PREREGISTRATION.md` at commit `7c89467332db536d8250c0234463a87576a0fca7`; no task-level outcomes have been inspected. It fixes the synthetic regression, two candidate HR regimes, coherent Lyapunov protocol, coupling sweep, data splits, exact 16-state ESN baseline, perturbation channels and reporting rules before implementation. PoC 058 remains the electrical/optoelectronic task benchmark and is on main. At the latest compare, PoC 059 branch `da0d5c8de0975872f4efa2f416fd9de857fa1fa1` diverged from main `888aa6d4c520fdc6266c37b505ba3b938a8a6135` (13 commits ahead, 19 behind); PR 2 remains draft and now reports `mergeable=false`. The PR metadata still reports its old base SHA `394e8d5831e63be7e529db617c3c49328da9bbcd`. Keep it draft. The branch compares as 13 commits ahead and 19 behind current main, but PR metadata currently reports `mergeable=true`; its recorded base SHA remains the old merge base. Confirm the actual base and hosted workflow status before considering it ready.
 
 ## Next action
 
 1. Verify the newly triggered Ubuntu workflow for PR 2 using a run listing that includes `push` events; the currently available connector cannot establish its outcome. Keep the PR draft until hosted execution and review are complete.
-2. Reconcile PoC 059 with current `main` using a forward-only update, inspect the resulting diff, and confirm required checks. The branch is 13 ahead/19 behind and the PR reports `mergeable=false`.
+2. Confirm PR 2's recorded base against current `main`; its compare is 13 ahead/19 behind from the old merge base while GitHub currently reports `mergeable=true`. Keep draft status until the current base and required checks are clear.
 3. Rerun the full PoC 059 mechanism screen with the corrected RK4 Lyapunov estimator and preserve a new session; do not overwrite the original evidence. Then implement protocol v2 exactly as preregistered at `pocs/059-chaotic-neuron-noise-screening/TASK-PREREGISTRATION.md`. First evaluate only the isolated-cell Lyapunov regime gates. If either I candidate fails its preregistered gate, record comparison as inconclusive; do not tune I against task results. Then run the frozen train/validation/test and separate perturbation conditions, retaining all per-seed results.
 4. Report accuracy together with state diversity, synchrony and channel-specific robustness. Do not promote an architecture or infer hardware benefit from this model-level task.
 
