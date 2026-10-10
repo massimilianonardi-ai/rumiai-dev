@@ -1,6 +1,6 @@
 # Advanced browser/Electron text editor
 
-Status: Active — user-fixed performance, editing and portability requirements; design comparison pending
+Status: Active — first headless text-core comparison recorded; architecture still under evaluation
 Updated: 2026-10-10
 
 ## Goal
@@ -11,8 +11,8 @@ The JavaScript compilation, module loading and distribution concern has **indepe
 
 ## Current repository revisions
 
-- `rumiai-dev` main: `e266250d911759015fb621c746b8a2ab487d2406` (before this checkpoint).
-- `rumiai-dev-PoCs` main: `66efd4e361cfb33cf6601e562cea1ec243c1c9e3`.
+- `rumiai-dev` main: `31a917c853a14c7dbd23ef9e38851c5b17eaaa20` (before this checkpoint).
+- `rumiai-dev-PoCs` main: `c70b385a48b93955a6f6492bd28108267de4f701` (PoC 063).
 - Reference `m` master: `2a57a29880c2d7a32e18782122062c695fcb1a3a`.
 - `rumiai-os` main: `382369cfde55b158bdf9bb8c7c7ba352fb00ca5e`.
 
@@ -63,6 +63,8 @@ Always recheck current remote HEADs before resuming or changing files.
 - Upstream MadEdit-Mod documents column-mode switching, column alignment and optional paste autofill across selected rows (the Mod explicitly extends original MadEdit). Treat these as benchmark candidates to reproduce/verify against the user's Windows MadEdit workflow, not as already adopted editor requirements.
 - CodeMirror, Monaco and Ace are technique/reference sources only, not engine candidates. The first-party core and view must be validated with targeted, real benchmarks rather than presumed faster merely because it is custom.
 - A prior exploratory PoC 061 demonstrated CodeMirror rectangular mouse selection, typing, undo, separate instances and offline single-JS inclusion. It was a narrow feasibility check and does not validate the user benchmark or fix the editor architecture. Bundling-related research belongs to the separate JavaScript toolchain handoff.
+- PoC 063 source/reference findings: upstream `MadEdit.cpp::GetColumnDataFromClipboard()` optionally cycles clipboard lines across selected destination rows; `InsertColumnString()` materializes virtual spaces and groups primitive changes under one undo record. This is source evidence, not an exhaustive GUI acceptance corpus or proof of complete selection-state restoration in upstream MadEdit-Mod. Its README acknowledges incomplete partial loading of huge files.
+- PoC 063 compares a flat JS string to a reference-chunk indexed treap, plus renderer-free sorted batch edits, selection snapshots, and provisional column-paste mapping. The treap, clipboard mapping policies and undo storage are still candidate experiments, not selected contracts.
 
 ## Completed
 
@@ -70,15 +72,17 @@ Always recheck current remote HEADs before resuming or changing files.
 - The last hosted PoC published an ephemeral `editor-single-js` artefact (ID `11638197519`, expires 2027-01-07). This is not a formal product release.
 - Re-scoped this handoff to editor semantics and foundational architecture after the user's explicit separation of the independent JavaScript compilation/deployment problem.
 - Inspected current reference `m` text model, module manifests, experimental UI and old Electron pages/host, and re-read PoC 061 source/browser-test coverage (static review only in this checkpoint; no new runtime test or editor implementation).
-- Recorded the user's newly fixed high-performance, memory, MadEdit-Mod, non-linear-editing, undo/redo and replaceable-core requirements (2026-10-10). No editor implementation or performance tests were added in this checkpoint.
+- Recorded the user's newly fixed high-performance, memory, MadEdit-Mod, non-linear-editing, undo/redo and replaceable-core requirements (2026-10-10).
+- Added experimental `rumiai-dev-PoCs/pocs/063-large-text-engine/` plus a GitHub Actions workflow at commit `c70b385a48b93955a6f6492bd28108267de4f701`. Preserved five concurrent upstream commits before the forward-only update. Source fixtures distinguish verified upstream behavior from hypotheses; no product implementation changed.
+- Local Linux Node v22.16.0 experimental scripts passed 4,000 seeded parity edits and transaction/selection undo checks. A local 500-insertion comparison on 1/8/32 MiB showed whole-string editing time rising steeply with document size versus small local piece edits; single-process timings and V8 memory deltas are not production benchmarks. A separate local 128 MiB, 5,000-insertion/1,000-undo+redo stress exercise completed in about 92 ms editing and 39 ms history replay, with no reliable retained-memory conclusion. GitHub-hosted execution of the exact published revision has not been confirmed.
 
 ## Current state
 
-Editor architecture remains unselected, but the decision space is narrower: a first-party, performance-oriented text core decoupled from a lightweight GUI is required; mainstream embedded editor engines are not candidates. Historical `m` is experimental reference evidence rather than a product to repair; PoC 061 is only narrow browser feasibility. Data representation, input/view rendering, history storage and exact MadEdit-Mod paste behavior remain unvalidated. No new execution/benchmark evidence exists at this checkpoint; the JavaScript toolchain remains a separate workstream.
+Editor architecture remains unselected. PoC 063 now provides a reproducible experimental source tree and initial local evidence that full-string editing scales poorly for dispersed modifications compared with an indexed piece representation; it does not resolve end-to-end memory limits, giant-file I/O, GUI geometry, realistic multi-column semantic parity or unlimited retained undo history. Its GitHub Actions workflow exists, but a workflow-run result is not yet verified. The exact MadEdit-Mod behavior outside the source-confirmed auto-fill case remains open. Toolchain ownership remains separate.
 
 ## Next action
 
-Build a small behavior-first MadEdit-Mod acceptance corpus centered on multiline/tabular paste, multi-cursor/non-linear editing and complete undo/redo state. In parallel design small independent core benchmarks for very large documents and memory/history growth, then evaluate storage/selection structures and viewport-only DOM rendering with targeted experiments. Select concrete representations only after measured tradeoffs; do not revive CodeMirror/Monaco/Ace as engine options or conflate this work with the JavaScript toolchain.
+Next: verify the hosted execution (if available) for PoC 063 and characterize exact MadEdit-Mod clipboard/selection semantics, particularly source rows exceeding targets, empty/trailing rows, virtual spaces, TSV/CSV parsing and undo grouping. Then instrument sustained history retention, deletion/edit fragmentation, indexing and peak process memory under comparable input sequences, considering larger-file partial loading. Evaluate additional data structures before selection; DOM rendering comes after a solid core/geometry contract.
 
 ## Blockers / open questions
 
