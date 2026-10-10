@@ -84,6 +84,16 @@ Those responsibilities are implemented by `m`; they are not independent fakeable
 
 A behavioral test of `pkg install` must execute the real public command against the real components/pipeline required by the property claimed, under `TESTING.md`.
 
+## Version knowledge and live discovery
+
+Package version history and discovery are separate responsibilities. The selected immutable `pkg-catalog` snapshot is the local source of known version-ordering information for each package stream. Existing range anchors remain ordering metadata; a version-history index may extend that knowledge without making a historical release's present upstream availability a prerequisite for comparison.
+
+For versions covered by sufficient catalog ordering data, range selection and historical comparisons must be local and must not issue redundant upstream requests. When ordering information is genuinely absent, the repository adapter may discover only the missing information, preserving its provider-specific ordering semantics; numeric or semantic-version sorting must not silently replace an adapter's authoritative ordering.
+
+The current/latest version is a live upstream assertion, not a synonym for the highest catalog-known version. Requests that require current/latest discovery must attempt it against the appropriate repository adapter. If that discovery fails, package resolution fails explicitly: the catalog-known version must not be silently substituted as latest. Diagnostics must identify the failing upstream operation and, when a last verified/catalog-known candidate exists, suggest its concrete version as an **explicit alternative install request**. Such a suggestion does not assert that the artifact is still available or that its download will succeed. A caller deliberately requesting an exact version remains subject to the normal concrete artifact and integrity checks; it need not prove that the version is upstream latest.
+
+Periodic catalog synchronization is distinct from runtime installation. It incrementally discovers upstream version information, reconciles gaps and changed ordering with sufficient pagination, and publishes updates through normal forward Git commits. No-change runs do not produce commits. Routine package installation does not mutate or commit the shared catalog snapshot. Failure of periodic synchronization must not falsify locally known ordering or suppress an explicit live-discovery failure.
+
 ## Package store
 
 The package store root is:
