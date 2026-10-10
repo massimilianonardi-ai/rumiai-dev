@@ -124,3 +124,7 @@ PoC 060 has a wishlist-first, deterministic scroll/ASIN/price/network-probe impl
 - The older REST HTTP 403 was precisely at a GitHub release-tag comparison endpoint. Indexed known versions now avoid redundant history comparisons; upstream availability, `latest`, artifact metadata and transfers can still fail independently, with explicit errors/hints rather than silent fallback.
 - The remaining primary application evidence gap is real Amazon.it wishlist DOM, scrolling/completeness and any continuation calls on the user's own browser profile.
 - Google Sheets persistence and Gmail notifications remain outside scope.
+
+## Physical validation — 2026-10-10
+
+User executed PoC 060 on Linux ARM64 after the current-price DOM fix. Synthetic command-boundary scenarios: PASS. Real wishlist run: `complete: true`, `blocked: false`, 54 items, 44 verified prices, 10 without verified prices. Reference ASIN B0DPHTGJ4B: verified current price 495.47 EUR, matching wishlist DOM. Result file `private-poc060/result-new.json` (83 KB); stderr file empty. No product-detail navigation was required. This validates current-price extraction for 44/54 items, not availability classification for the other 10. Next: inspect only sanitized reasons/availability indicators for the remaining 10; do not claim they are unavailable without evidence. The user's terminal unexpectedly closed during execution, but the result JSON was subsequently read successfully.
