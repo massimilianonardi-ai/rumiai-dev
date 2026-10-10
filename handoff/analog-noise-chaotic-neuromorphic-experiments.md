@@ -1,7 +1,7 @@
 # Analog noise, synchronization and chaotic-neuron experiments
 
 Status: Active
-Updated: 2026-10-08
+Updated: 2026-10-10
 
 ## Goal
 
@@ -12,9 +12,9 @@ This is an experimental workstream only. It does not alter RumiAI architecture o
 ## Current repository revisions
 
 ```text
-rumiai-dev      a18e845f49c0399ae7e79d395d9d2f76e66aa300
-rumiai-dev-PoCs 394e8d5831e63be7e529db617c3c49328da9bbcd (main; PoC 058 merge)
-rumiai-dev-PoCs 1530d3646b75099c4d9b10854a8679e4dc2a07d9 (poc/059-chaotic-neuron-noise-screening)
+rumiai-dev      98ec0dd88b466e7f92df3cff31dc8f4dee31c772 (main at preflight)
+rumiai-dev-PoCs 6cdcc65b098e7a22f7ce94920ad12fbabdf00a22 (main at preflight)
+rumiai-dev-PoCs 6de0c10ed9e1385ee741ed8b69ada69d4b0631a6 (poc/059-chaotic-neuron-noise-screening; preregistration commit)
 ```
 
 Resume with fresh remote HEAD checks.
@@ -71,15 +71,18 @@ This screen is intentionally not an AI task or readout benchmark. It checks one 
 - Isolated-cell finite-time largest-Lyapunov estimates were positive at both step sizes: 0.01879 at dt=0.02 and 0.02397 at dt=0.01 per model time unit.
 - At k=0.5, independent process noise reduced normalized pair disagreement to 0.480 ± 0.024 from 0.777 ± 0.025 at k=0, but increased total trajectory shift to 1.312 ± 0.096 from 1.059 ± 0.035. Clean effective rank fell to 2.24 ± 0.21 from 3.63 ± 0.47. Under common-mode noise at k=0.5, collective shift was 1.075 ± 0.238.
 - This supports only a limited mechanism-level conclusion: coupling can reduce relative disagreement while the collective trajectory remains noisy or diverges from its clean counterpart, and stronger coupling can reduce state diversity. No AI utility, physical noise tolerance, hardware performance, energy or speed advantage is established.
-- The GitHub Actions workflow is included in PR 2, but hosted workflow execution is not yet verified. Local Linux execution is the validated run.
+- The GitHub Actions workflow is included in PR 2. The existing hosted execution status is still unverified: commit status checks were empty, and the available workflow-run connector returns only pull-request-triggered runs, not the `push` run configured here. Those empty responses are not evidence of a pass. Local Linux execution is the validated run.
 
 ## Current state
 
-PR 2 remains draft. PoC 059 is exploratory rather than preregistered; its fixed protocol and revision-specific evidence are recorded in the PoC. This first screen had no readout or task metric. PoC 058 remains the task-level electrical/optoelectronic benchmark and is on main.
+PR 2 remains draft. Its original mechanism screen is exploratory and has no task metric. A separate task-level protocol is now preregistered in `pocs/059-chaotic-neuron-noise-screening/TASK-PREREGISTRATION.md` at commit `6de0c10ed9e1385ee741ed8b69ada69d4b0631a6`; no task-level outcomes have been inspected. It fixes the synthetic regression, two candidate HR regimes, coupling sweep, data splits, baselines, perturbation channels and reporting rules before implementation. PoC 058 remains the electrical/optoelectronic task benchmark and is on main. At the latest preflight, PoC 059's PR metadata still reported base SHA `394e8d5831e63be7e529db617c3c49328da9bbcd`; comparing branch to current main `6cdcc65b098e7a22f7ce94920ad12fbabdf00a22` showed it diverged (6 commits ahead, 12 behind), while the PR endpoint reported `mergeable=true`. Recheck and reconcile this before considering the PR ready.
 
 ## Next action
 
-Verify the hosted Linux workflow for PR 2 and correct any failure. Then preregister a separate task-level experiment before evaluating AI usefulness: compare regular and verified chaotic neuron regimes over a selected coupling range, include matched non-chaotic and digital baselines, separate noise/mismatch channels, and measure task performance alongside synchrony and state diversity. Do not select thresholds using test outcomes.
+1. Verify the newly triggered Ubuntu workflow for PR 2 using a run listing that includes `push` events; the currently available connector cannot establish its outcome. Keep the PR draft until hosted execution and review are complete.
+2. Reconcile PoC 059 with current `main` using a forward-only update, inspect the resulting diff, and confirm required checks. Its current divergence and inconsistent base metadata need resolution before it is ready.
+3. Implement protocol v1 exactly as preregistered at `pocs/059-chaotic-neuron-noise-screening/TASK-PREREGISTRATION.md`. First evaluate only the isolated-cell Lyapunov regime gates. If either I candidate fails its preregistered gate, record comparison as inconclusive; do not tune I against task results. Then run the frozen train/validation/test and separate perturbation conditions, retaining all per-seed results.
+4. Report accuracy together with state diversity, synchrony and channel-specific robustness. Do not promote an architecture or infer hardware benefit from this model-level task.
 
 ## Blockers / open questions
 
