@@ -9,12 +9,12 @@ Retain the released Playwright/Chrome implementation `pwc-web-control` and devel
 
 ## Current repository revisions
 
-- `rumiai-dev`: `f35960f73c23a8b719d5b115a0b324a0682cf82a` (current HEAD observed for this checkpoint; refresh on resume).
-- `electron-web-control`: `425c2fd42d7e9c43fc8403fc7c2cb460ea00950b` (current README/source; v0.1.1 release was built from `11c7a69`).
+- `rumiai-dev`: `972f9542db3c0dde4a4ac0423c8931055d1c9ed7` (pre-handoff-sync HEAD; refresh on resume).
+- `electron-web-control`: `71f23bc2beab120a79f186b7b5f9f2ec7b7f6d22` (released v0.1.2 source).
 - `pwc-web-control`: `0e7cf38e72145e5e7c85ea7312e30622b73e0baf`.
-- `pkg-catalog`: `cd4dfb8aaa21b6c25ab0f00c95fa1c9834d02783`.
-- `rumiai-tests`: `f3063b6d7adc0184147111eb83265504799d8c1a` (current HEAD; Electron regression change `d71be125`).
-- `rumiai-os`: `e5e773c14f19ac1b29d007ae93e76b3b13031a2b` (current HEAD; latest Electron regression jobs recorded `43c3ebf420edb7a005f3d7e1bb96552234762f0e` as their checked-out product revision).
+- `pkg-catalog`: `32e2428e1b95c9ea5adecd76a40404eadf3d5117` (v0.1.2 added; old ranges unchanged).
+- `rumiai-tests`: `92fc8065eb8436484eecf03b0e778a42e2dee5c8` (Electron v0.1.2 upgrade regression).
+- `rumiai-os`: `95c8e54ecc697027e9a857ba638321ce76bbe147` (v0.1.2 package validation target revision).
 
 ## Applicable canonical sources
 
@@ -25,7 +25,7 @@ Retain the released Playwright/Chrome implementation `pwc-web-control` and devel
 
 - Portable command, service and facility remain `web-control`, with compatibility level 1. Playwright concrete identity stays `pwc-web-control`. The prior `rumiai-web-control` package and authenticated profiles remain untouched.
 - Electron provider source and local standalone HOME are separate, under `electron-web-control`. No automatic cross-provider cookie/session migration.
-- Electron v0.1.1 is published with a provider-specific ordinary service command. Preserve the earlier v0.1.0 range/release as an immutable checkpoint; do not silently rename its installed concrete or profile state.
+- Electron v0.1.1 introduced the provider-specific ordinary service command. The new v0.1.2 adds a visible, opaque start page and native navigation menu without changing the facility interface or the previously published v0.1.0/v0.1.1 ranges; installed concretes and profiles must remain untouched.
 - Preserve browser sandboxing; no unrestricted CDP listener, CAPTCHA bypass or assertion that Electron is accepted by Google without an actual login trial.
 
 ## Acceptance scenarios
@@ -52,6 +52,9 @@ Retain the released Playwright/Chrome implementation `pwc-web-control` and devel
 - `pkg-catalog@cd4dfb8` defines a new `n0002=v0.1.1` range whose ordinary service command is `electron-web-control-service`, with `facility-service/web-control/start` pointing to it. The old `v0.1.0` range remains untouched.
 - `rumiai-tests@8ad2f14` added a real regression path installing/selecting Playwright, reproducing a v0.1.0 default-selection conflict, then installing v0.1.1, switching the `web-control` facility and exercising `srv` without overwriting the old provider's service command. Formal Linux x86_64 and ARM64 task validations both PASSED with `Scope result: VALIDATED` (Actions `38088010462`).
 - `rumiai-tests@d71be125` made the v0.1.0 collision reproduction mandatory: it now asserts `default-selection` failure, retained v0.1.0 materialization without its package default, and preservation of the Playwright command projection before testing v0.1.1 recovery. Actions `38088704041` completed **VALIDATED** on Linux x86_64 and ARM64 (five PASS, zero FAIL/SKIP/ERROR in each job). Both jobs checked out `rumiai-os@43c3ebf420edb7a005f3d7e1bb96552234762f0e`; this evidence is revision-specific and does not validate subsequent unrelated HEADs. macOS ARM64 was queued at this checkpoint.
+- A physical Ubuntu ARM64 VM report after the prior release described an apparently transparent/unusable Electron window. Inspection of the then-current provider source found that it created a visible BrowserWindow but loaded no URL and offered no in-window navigation. A separate GPU/compositor issue is still possible; the symptom itself has not yet been reproduced on that physical VM.
+- `electron-web-control@71f23bc` released **v0.1.2**: a non-privileged opaque data-URL start page with address form, desktop Navigate menu (open URL, new window, back/forward/reload), colored window background, and preserved sandbox/profile/service contracts. Real Electron GUI fixture test exercises URL entry + click to navigate without the CLI `page navigate` path, plus screenshot and existing session/lifecycle tests. GitHub Actions `38089866140`: Linux standalone and canonical `mk check test build` PASS and v0.1.2 GitHub release asset published; macOS job still queued at this checkpoint.
+- `pkg-catalog@32e2428` added the versioned `n0003=v0.1.2` definition with the unchanged distinct Electron service command. `rumiai-tests@92fc806` extended the permanent real public `pkg`/`srv` regression through v0.1.0 conflict, v0.1.1 recovery and v0.1.2 upgrade. Actions `38089980871` **Linux x86_64** job reports five PASS, zero FAIL/SKIP/ERROR and Scope result VALIDATED using `rumiai-os@95c8e54`; Linux ARM64 still executing and macOS ARM64 queued at checkpoint.
 - `rumiai-tests@1d0c876` added `external/electron-web-control/install-live.test`, its formal task scope and a multi-platform GitHub Actions runner. Run `38086638206` proved five PASS, zero FAIL, zero SKIP and `Scope result: VALIDATED` independently on Linux x86_64 and ARM64. Its macOS ARM64 job was still queued at the last check; this does not establish macOS package conformance.
 
 ## Working design / known limitations
@@ -62,6 +65,8 @@ Retain the released Playwright/Chrome implementation `pwc-web-control` and devel
 
 ## Current state
 
+The subsequent physical VM symptom is an unusable/transparent initial Electron window. The previous Electron code started a visible but un-navigated BrowserWindow with no address UI; v0.1.2 corrects that definite usability defect and provides the desktop navigation entry without altering the provider-independent facility. Hardware/compositor transparency on the user's actual VM remains unverified. Release v0.1.2 has passed real Linux standalone tests and canonical mk, and its artifact is published. The new package regression was VALIDATED on Linux x86_64; ARM64 and macOS were not complete at this checkpoint. No VM process, package or browser profile was modified remotely.
+
 The v0.1.1 portable release and corrected `pkg-catalog` metadata eliminate the ordinary-service-command collision with Playwright. The stronger real package/recovery test passed on Linux x86_64 and ARM64 at `rumiai-tests@d71be125` in Actions `38088704041`. It proves failure of v0.1.0 at `default-selection`, materialization of that old concrete without a package default, preservation of Playwright's ordinary service command, and successful installation/selection/public `srv` operation with v0.1.1. The prior run `38088010462` also validated both Linux architectures at `rumiai-tests@8ad2f14` but must not be attributed to d71. The old run `38087870211` had successful Linux jobs but was not the final test revision. macOS ARM64 package validation remains queued.
 
 Current `rumiai-os` implementation has a separate, more general issue: `pkg_install_one` returns success immediately for an already materialized concrete without rerunning `pkg_default_apply`; thus retrying the exact partially materialized v0.1.0 is not a repair operation. This also differs from the current `PACKAGE-MODEL.md` already-installed failure contract and the existing `pkg/install-live.test` expectation. It was identified by current source/test comparison, not proven by a new complete generic package-install test here. Do not silently treat a retry as repaired or change the general multi-operand/dependency semantics inside the Electron catalog fix; the broader `pkg install` behavior requires its own targeted realignment and coverage.
@@ -70,12 +75,12 @@ The user's running Playwright service and existing package/profile state remain 
 
 ## Next action
 
-1. On the user's Linux ARM64 VM, first inspect the existing `pkg provider default web-control`, package defaults and `srv` state, then run only `pkg install electron-web-control@v0.1.1`; verify `pkg default electron-web-control` and the preserved Playwright service command. Do not reinstall v0.1.0, remove package/profile data or change the already-running service implicitly.
-2. At a deliberate service handover, stop the existing `web-control` service through the normal `srv stop web-control` path, change the global facility default with `pkg provider default web-control electron-web-control`, and `srv start web-control`; confirm `web-control status`. If stop reports an ownership refusal or setuid preparation requires authorization, handle that explicitly rather than forcing or disabling sandbox by default.
+1. Once the strengthened v0.1.2 package regression completes on Linux ARM64, on the user's VM inspect current provider and running service, then run `pkg install electron-web-control@v0.1.2` without deleting any existing package/state. Confirm the Electron package default and Playwright projection remain correct.
+2. At a deliberate service handover use normal `srv stop web-control`, `pkg provider default web-control electron-web-control`, `srv start web-control`; check `web-control status` has `headless: false`, the initial visible start page can navigate to a public site, and native mouse/keyboard work. If the real window is still visually transparent, investigate compositor/GPU and only then try the existing explicit `ELECTRON_WEB_CONTROL_SOFTWARE_RENDERING=1` host opt-in; do not disable sandbox or silently force-stop the service.
 3. Obtain macOS ARM64 formal package evidence when its runner executes; independently test Electron event delivery and manual Google authentication on real desktop hosts. Track the generic `pkg install` partial-install/retry contract mismatch separately from the fixed Electron command collision.
 
 ## Blockers / open questions
 
-- macOS ARM64 package validation for the current strengthened test in `38088704041` remains queued; earlier `38088010462` also has a queued macOS job. Neither is a PASS. The provider is not physically validated on the user's Mac.
-- User VM/desktop not connected to this execution environment; no physical browser-login validation.
+- v0.1.2 package validation `38089980871` was completed on Linux x86_64 but remained in progress on Linux ARM64; macOS ARM64 hosted source/package validations remained queued at this checkpoint. Neither queued nor in-progress work is a PASS. The provider is not physically validated on the user's Mac.
+- User VM/desktop not connected to this execution environment; no physical verification of the reported transparent window, native pointer/keyboard usability or browser-login success after v0.1.2.
 - Electron's DOM synthetic interaction fallback is potentially detectable; native input equivalence remains unresolved.
