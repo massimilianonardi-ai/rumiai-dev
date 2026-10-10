@@ -5,59 +5,61 @@ Updated: 2026-10-10
 
 ## Goal
 
-Maintain the validated Playwright/Chrome provider under the concrete project/package identity `pwc-web-control`, then develop an independent `electron-web-control` provider behind the same provider-neutral `web-control` facility contract. Firefox plus an extension remains a later possible experiment.
+Retain the released Playwright/Chrome implementation `pwc-web-control` and develop `electron-web-control` as a separate implementation of the same provider-neutral `web-control` facility. Firefox plus extension remains a possible later experiment.
 
 ## Current repository revisions
 
-- `rumiai-dev`: 958c3b26bb1664bd2e22f2ce5e301980f3c08838 (before this handoff commit; refresh remote HEAD on resume).
+- `rumiai-dev`: `7dce477b7a14630df0a2d7e1aad6b782f9242eb2` (before this handoff update; verify new remote HEAD on resume).
+- `electron-web-control`: `bddc834c621e48dbbfdb6817ec0b5dffec3dc143`.
 - `pwc-web-control`: `0e7cf38e72145e5e7c85ea7312e30622b73e0baf`.
 - `pkg-catalog`: `dc2b47a8f39f2b5130199f8b983e2535a3e5af22`.
 - `rumiai-tests`: `5a76290934563224286eea2b14eaca94aeced63e`.
 - `rumiai-os`: `382369cfde55b158bdf9bb8c7c7ba352fb00ca5e`.
-- `electron-web-control`: created, empty; no Git HEAD as of verification.
 
 ## Applicable canonical sources
 
 - `README.md`, `RULES.md`, `CONSISTENCY-GATE.md`, `specifications/README.md`, `handoff/README.md`, `TESTING.md`, `PHYSICAL-TESTING.md`
-- `specifications/rumiai-os/WEB-CONTROL.md`, `specifications/rumiai-os/PACKAGE-MODEL.md`, `specifications/rumiai-os/SERVICE-LIFECYCLE.md`, `specifications/rumiai-os/STATE-MODEL.md`, `specifications/rumiai-os/COMMAND-ENTRYPOINTS.md`, `specifications/rumiai-os/DOCUMENTATION-MODEL.md`
+- `specifications/rumiai-os/WEB-CONTROL.md`, `specifications/rumiai-os/PACKAGE-MODEL.md`, `specifications/rumiai-os/SERVICE-LIFECYCLE.md`, `specifications/rumiai-os/STATE-MODEL.md`, `specifications/rumiai-os/COMMAND-ENTRYPOINTS.md`, `specifications/rumiai-os/DOCUMENTATION-MODEL.md`, `specifications/rumiai-os/DIAGNOSTICS.md`, `specifications/rumiai-os/MK.md`
 
 ## Fixed task-local choices
 
-- The provider-neutral facility, public command and service remain `web-control`; `srv start web-control` is unaffected.
-- Playwright/Chrome provider project/package: `pwc-web-control`. A real renamed release starts at `v0.1.4`; older published artifacts keep the original archive names.
-- Preserve the installable legacy `rumiai-web-control` package and its managed package HOME; do not automatically migrate authenticated profiles.
-- Direct standalone Playwright runtime keeps its former `~/.rumiai-web-control` HOME fallback and derived Unix socket name to avoid obscuring prior standalone sessions.
-- `electron-web-control` is independent and has no installable package until an implemented, released, validated provider exists.
+- Portable command, service and facility remain `web-control`, with compatibility level 1. Playwright concrete identity stays `pwc-web-control`. The prior `rumiai-web-control` package and authenticated profiles remain untouched.
+- Electron provider source and local standalone HOME are separate, under `electron-web-control`. No automatic cross-provider cookie/session migration.
+- A `pkg-catalog` Electron package is not created before compatible released artifacts and actual installation/facility tests.
+- Preserve browser sandboxing; no unrestricted CDP listener, CAPTCHA bypass or assertion that Electron is accepted by Google without an actual login trial.
 
 ## Acceptance scenarios
 
-1. A previous `rumiai-web-control` installation retains its state and can still resolve original historical release assets.
-2. A new `pkg install pwc-web-control` resolves the actual published release, a caller selects it through `pkg provider default web-control`, and `web-control` page/status operations and `srv` service lifecycle work.
-3. The Electron provider can be implemented/tested separately against the shared compatibility-level-1 contract.
+1. Old `rumiai-web-control` installs continue working; new `pwc-web-control` release resolves the unchanged `web-control` facility.
+2. Standalone Electron controller allows `web-control status`, page navigation/inspection, capture and explicit interactions, preserves authenticated local test-fixture storage across restart, and survives all-window closure.
+3. Future Electron package integrates through real `pkg install electron-web-control`, provider selection, `srv start web-control`, with sandbox and isolated state, before being advertised as installable.
 
 ## Completed
 
-- User renamed the original GitHub repository to `pwc-web-control` and created `electron-web-control`.
-- `pwc-web-control@1462d76`: source package identity updated, version advanced to 0.1.4, README/build archive/staging paths/Actions and source test temp directory aligned. Existing standalone profile/socket fallback deliberately preserved.
-- `pwc-web-control@0e7cf38`: refreshed Linux validation target to current `rumiai-os`; Actions workflow `38074326700` passed Linux `mk check/test/build`, macOS runtime checks and tests, and published `v0.1.4` with actual asset `pwc-web-control-v0.1.4-all.tar.gz`. Previous `v0.1.0`–`v0.1.3` assets retained original names.
-- `pkg-catalog@7b52152`: created the new package family, preserved legacy family and provider-neutral facility contract.
-- `pkg-catalog@dc2b47a`: added published v0.1.4 metadata and actual new archive regex to both new and legacy package streams (legacy remains installable even as upstream release versions advance).
-- `rumiai-tests@5a76290`: renamed the external public-path integration test to `external/pwc-web-control/install-live.test`, updated package/conf references, validation selection and workflow path filter.
-- GitHub Actions formal validation `38074484807` passed on Ubuntu x86_64 and ARM64 with `Scope result: VALIDATED`, including PASS of the real `external/pwc-web-control/install-live.test` on each host (no FAIL/SKIP for that test).
-- Re-read the resulting diffs, GitHub release list, catalog range metadata and applicable canonical specifications. No public `web-control` command/service semantic change.
+- Playwright repo/package rename, `pwc-web-control` v0.1.4 release, catalog mapping and permanent RumiAI OS integration tests. GitHub Actions `38074484807` validated public package/service path on Ubuntu x86_64 and ARM64.
+- Initialized `electron-web-control` with Node CLI, an actual Electron 44.3.0 `BrowserWindow` controller/service, Unix-domain socket 0600, persistent isolated Electron partition, sandboxed renderers (`nodeIntegration:false`, `contextIsolation:true`, `sandbox:true`), separate HOME, page/popup tracking, navigation, DOM inspection, cookie/local/session storage, HTML/text/PNG capture, `click`, `fill`, and `press`. No Playwright dependency.
+- Fixed Electron ESM startup deadlock (top-level `app.whenReady()` await), Linux GitHub runner SUID sandbox helper configuration (root-owned mode 4755), and Xvfb Viz screenshot failure via an explicit software-rendering option. Default browser sandbox remains active.
+- Real Electron tests passed on **Linux (Xvfb/Openbox) and macOS GitHub Actions**, run `38079356546` at `electron-web-control@bddc834`: CLI/status, window lifecycle, popup, dynamic DOM, click/fill/press, HTML/text/PNG capture, cookie/localStorage across service restart, controller remaining available when no browser windows remain, browser window recreated on demand.
+- Test fixture observed `navigator.webdriver === false` with Electron on those CI hosts and no renderer `process`/`require`; this is an observation, **not evidence that Google permits authentication**.
+- Removed Playwright-only `debug cdp` and MHTML from Electron client usage; project README identifies current limitations.
+
+## Working design / known limitations
+
+- Electron `sendInputEvent` keyboard/mouse events can be accepted by the main process but not reach DOM listeners on tested hosts. Current `press`/`click` detect delivery and use an explicitly logged DOM synthetic fallback (`isTrusted=false`) when needed. `fill` uses the DOM native value setter and synthetic input/change events. This can be fingerprinted/rejected by some sites; no stealth guarantee, and it is not equivalent to physical input. Evaluate native alternatives separately before treating the provider as viable for resistant sites.
+- `ELECTRON_WEB_CONTROL_SOFTWARE_RENDERING=1` is only an explicit opt-in for virtual-display Viz errors. The normal desktop default remains hardware rendering.
+- The current provider is an **experimental standalone runtime**, not yet a `pkg` distributable; no release artifact, package registration, `srv` integration or `mk build` release pipeline yet.
 
 ## Current state
 
-Playwright provider rename and released package/catalog integration are complete; GitHub Actions cross-architecture validation passed. User-owned physical VM validation **has not** been executed in this chat and must not be described as physically validated. The new concrete package has its own HOME; legacy authenticated sessions remain untouched and are not automatically available from the new package.
-
-The Electron repository remains empty and no Electron runtime/provider has been implemented. This is the next independent development responsibility.
+The Electron independent smoke-test baseline works on the two tested GitHub-hosted systems. The comparison with Playwright has one concrete measured signal (`navigator.webdriver=false`) but no Google authentication evidence. The earlier Playwright provider remains unchanged. GitHub-hosted tests are not physical validation on the user's machines.
 
 ## Next action
 
-1. Initialize and validate an independent `electron-web-control` PoC/provider using the current `WEB-CONTROL.md` contract; do not infer that Electron eliminates Google authentication restrictions without physical evidence.
-2. When the user's reference VM is available, perform physical `pkg install pwc-web-control` / provider / `srv` verification there, with deliberate profile-state separation and no automatic migration of old sessions.
-3. Only publish/add an Electron catalog package after it has a real compatible release and suitable conformance evidence.
+1. Design and implement platform-appropriate Electron release packaging through `mk`; use existing `pkg`/facility semantics rather than inventing a new provider mechanism, and validate real `pkg install` + `srv` integration before adding an installable `electron-web-control` catalog definition.
+2. Evaluate native/DOM event delivery under physical desktop/browser sessions and test manual Google login compatibility without bypassing security challenges.
+3. Perform user reference-host physical testing when accessible; separately retain the earlier pending physical check of `pwc-web-control` on the user's VM.
 
 ## Blockers / open questions
 
-- User VM is not directly accessible from the current execution environment; GitHub Actions validation is strong automated evidence, not physical user-host evidence.
+- User VM/desktop not connected to this execution environment; no physical browser-login validation.
+- Electron's DOM synthetic interaction fallback is potentially detectable; native input equivalence remains unresolved.
