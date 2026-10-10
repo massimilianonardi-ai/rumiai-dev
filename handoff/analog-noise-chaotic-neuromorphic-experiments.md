@@ -86,13 +86,6 @@ PoC 058 remains on main as the electrical/optoelectronic task benchmark. Neither
 
 ## Next action
 
-1. Verify the newly triggered Ubuntu workflow for PR 2 using a run listing that includes `push` events; the currently available connector cannot establish its outcome. Keep the PR draft until hosted execution and review are complete.
-2. Confirm PR 2's recorded base against current `main`; its compare is 13 ahead/19 behind from the old merge base while GitHub currently reports `mergeable=true`. Keep draft status until the current base and required checks are clear.
-3. Rerun the full PoC 059 mechanism screen with the corrected RK4 Lyapunov estimator and preserve a new session; do not overwrite the original evidence. Then implement protocol v2 exactly as preregistered at `pocs/059-chaotic-neuron-noise-screening/TASK-PREREGISTRATION.md`. First evaluate only the isolated-cell Lyapunov regime gates. If either I candidate fails its preregistered gate, record comparison as inconclusive; do not tune I against task results. Then run the frozen train/validation/test and separate perturbation conditions, retaining all per-seed results.
-4. Report accuracy together with state diversity, synchrony and channel-specific robustness. Do not promote an architecture or infer hardware benefit from this model-level task.
-
-## Next action
-
 1. Keep protocol v2 closed as inconclusive. Do not run its task benchmark or select another current under that version.
 2. If the work continues, create protocol v3 before any task-level run: justify a genuinely regular comparison regime independently, validate its Lyapunov gate on fixed seeds, then freeze all conditions and only afterwards run the task benchmark. Do not use held-out task scores to choose the regime.
 3. Verify the Ubuntu hosted workflow using a run listing that includes `push` events. The current connector cannot establish this result.
