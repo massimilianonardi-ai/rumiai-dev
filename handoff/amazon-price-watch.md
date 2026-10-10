@@ -160,3 +160,7 @@ User explicitly requires the separate monitor to reproduce **exactly** the exist
 ## Monitoring decision PoC checkpoint (2026-10-10)
 
 User authorized implementation. Added pure `price-monitor.mjs` under PoC 060 with `evaluate` for verified-price updates, per-list coverage, target rearming and acknowledgement-dependent notification state, threshold alerts and mandatory error-notification decisions. Added synthetic test file and README. Commits: f61891d, db35e24, cce30a8. No sheet writes, emails, automation changes or real monitoring run occurred. Tests authored but not executed yet. Important pending: run tests; reconcile exact automation behavior in edge cases (including no-verified-list, conflicting ASIN observations, partial failure, email acknowledgement and derived sheet columns); add report formatting and coordinator only after isolated decisions are validated.
+
+## VM test checkpoint (2026-10-10)
+
+User fast-forwarded PoC checkout to `cce30a8` and ran `./m node .../test-price-monitor.mjs` on Linux ARM64 VM. Result: `PoC 060 price monitor decision tests: PASS`. This validates the authored synthetic decision tests only; no live monitoring, Google Sheet mutation, email delivery, or end-to-end coordinator validation has occurred. Next: complete spreadsheet row compatibility and delivery acknowledgement orchestration, with isolated tests before real integration.
