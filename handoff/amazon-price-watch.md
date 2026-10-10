@@ -9,12 +9,12 @@ Replace the fragile model-driven Amazon Price Watch polling path with a determin
 
 ## Current repository revisions
 
-- rumiai-dev: 261ec225b7945eacd11b0c02ea895f0446c2050c
-- rumiai-dev-PoCs: 66efd4e361cfb33cf6601e562cea1ec243c1c9e3
+- rumiai-dev: 72242272f04c32d47272f708a28010f14efd8997
+- rumiai-dev-PoCs: 133553ad879043c4095e72bb030712d1cdfe8954
 - rumiai-web-control: 8ed3ab888ecdc4970d90a6f14f0d7b7b93fce122
 - rumiai-os: 382369cfde55b158bdf9bb8c7c7ba352fb00ca5e
 - rumiai-tests: 345ef3837e3184058453789e78b46344b2a665b9
-- pkg-catalog: d3a2607d016a645c62652bff9be2444996286106
+- pkg-catalog: 9e1a24277de4f203c9796c50c04d2ad73395b0fa
 
 ## Applicable canonical sources
 
@@ -88,19 +88,18 @@ The catalog's immutable version history is separate from live upstream `latest`;
 - **Real hosted validation:** `web-control-package` GitHub Actions run `38043194476` completed **VALIDATED on both Linux x86_64 and Ubuntu 26.04 ARM64** (both jobs success), including `pkg/catalog.test`, `pkg/depend.test`, GitHub adapters, real Chromium installation and the `rumiai-web-control` install/start/inspect/relaunch path. This result used the catalog snapshot before automatic population of the other 36 streams.
 - `pkg-catalog` `d3a2607` is a real successful, bot-authored forward-only commit from GitHub Actions run `38043558949` (success). The job queried 10 GitHub release repositories and populated **36** stream-local `repository/versions` histories (164 indexed lines). The script now stops scanning at the most recent known release during incremental refresh; on first discovery and weekly reconciliation, it stops at the earliest supported range/history anchor rather than enumerating unrelated pre-catalog releases. This change resolved an observed GitHub HTTP 422 for Electron after REST pagination exceeded the relevant range. The workflow runs daily and invokes its full reconciliation mode on Sundays. Authentication uses the ephemeral workflow token.
 - The first hosted sync attempt `38043468377` had discovered 36 streams but lost its publication race against a concurrent forward commit (`git push` correctly refused a non-fast-forward); the succeeding run `38043558949` published against a fresh HEAD with no history rewrite.
-- A targeted repeat of the Ubuntu ARM64 `web-control-package` job was requested to validate package composition against the new populated catalog snapshot; its hosted run was still in progress at the latest checkpoint. The earlier full-scope PASS remains revision-specific.
-- A separate idempotence-verification change to the catalog GitHub Actions workflow was attempted but not published because the GitHub modification operation was blocked. An actual no-change scheduler run has not been validated and should not be assumed.
+- A targeted repeat of both Ubuntu 26.04 ARM64 and Ubuntu x86_64 `web-control-package` jobs against the newly populated catalog completed with success and `Scope result: VALIDATED` for the ARM64 run. The original two-platform validation remains recorded in run `38043194476`; reruns belong to its later attempts and must not be attributed to the original snapshot.
+- `pkg-catalog` later commit `9e1a242` adds safe bounded full reconciliation when incremental scanning observes a new historically earlier release. GitHub Actions `38043914285` had correctly refused a nonconforming incremental observation for DBeaver; the follow-up live job `38043975075` finished successfully, verified 10 repositories and reported **histories updated: 0**, with no generated data commit. This is real no-change/idempotence evidence, not a unit proof of every edge case. A separate workflow-only idempotence check was attempted but blocked and is unnecessary to claim the observed no-change result.
 
 ### Current boundaries
 
-PoC 060 has a wishlist-first, deterministic scroll/ASIN/price/network-probe implementation in `rumiai-dev-PoCs`, but has **not yet been exercised on the user's Ubuntu ARM64 VM against the real Amazon.it wishlist**. Existing hosted package/live-browser validation proves the runtime path, not correctness of Amazon wishlist extraction. On the user's VM the mounted filesystem and browser profile matter; a GitHub runner does not have access to that authenticated session. Do not publish private wishlist observations or cookies in public workflow logs.
+PoC 060 has a wishlist-first, deterministic scroll/ASIN/price/network-probe implementation in `rumiai-dev-PoCs`, but has **not yet been exercised on the user's Ubuntu ARM64 VM against the real Amazon.it wishlist**. Commits `875620a` and `133553a` added rejection of HTTP 4xx/5xx and redirects outside the Amazon.it wishlist path (including login), plus an isolated mock CLI test for a valid wishlist, HTTP 503 and login redirect. PoC workflow `38044257053` passed syntax and synthetic command-boundary scenarios without contacting Amazon or publishing real wishlist data. These tests do not prove real Amazon DOM selector or scrolling behavior. Existing hosted package/live-browser validation proves the runtime path, not correctness of Amazon wishlist extraction. On the user's VM the mounted filesystem and browser profile matter; a GitHub runner does not have access to that authenticated session. Do not publish private wishlist observations or cookies in public workflow logs.
 
 ### Next action
 
-1. Check the targeted ARM64 rerun against the newly indexed `pkg-catalog` and record its precise evidence; rerun x86_64 against the same catalog where feasible.
-2. Check an unchanged catalog sync run for idempotence and add permanent bounded-history reconciliation tests (no-change, new release, chronology ambiguity, pagination boundary, upstream failure with no partial write). Do not mislabel the existing successful live sync as this extra coverage.
-3. On the user's Ubuntu ARM64 VM run normal `pkg install rumiai-web-control`, `srv start web-control`, `web-control status` and the actual `pocs/060-amazon-wishlist-web-control/probe.mjs`. Capture only appropriately private evidence; measure completeness/access challenges and compare observed browser-driven lazy loading with any candidate internal API.
-4. Only after real wishlist observation passes, decide how to integrate deterministic price state and separate notifications. Google Sheets and Gmail are not part of the present experiment.
+1. Add bounded-history reconciliation edge-case tests (new release, chronology ambiguity, pagination boundary and upstream failure without partial writes) if advancing the package subsystem further; record the observed no-change scheduler validation `38043975075` separately.
+2. On the user's Ubuntu ARM64 VM run normal `pkg install rumiai-web-control`, `srv start web-control`, `web-control status` and the actual `pocs/060-amazon-wishlist-web-control/probe.mjs`. Capture only appropriately private evidence; measure completeness/access challenges and compare observed browser-driven lazy loading with any candidate internal API.
+3. Only after real wishlist observation passes, decide how to integrate deterministic price state and separate notifications. Google Sheets and Gmail are not part of the present experiment.
 
 ## Blockers / open questions
 
