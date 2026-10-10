@@ -33,6 +33,7 @@ Retain the released Playwright/Chrome implementation `pwc-web-control` and devel
 1. Old `rumiai-web-control` installs continue working; new `pwc-web-control` release resolves the unchanged `web-control` facility.
 2. Standalone Electron controller allows `web-control status`, page navigation/inspection, capture and explicit interactions, preserves authenticated local test-fixture storage across restart, and survives all-window closure.
 3. With Playwright already installed/selected and v0.1.0 partially integrated, `pkg install electron-web-control@v0.1.1` succeeds, the provider switches through `pkg provider default web-control electron-web-control`, and `srv` starts the Electron controller without clobbering the Playwright service command.
+4. On a physical graphical desktop, starting the Electron provider opens an **opaque, usable browser window** with an obvious way to enter a URL and navigate without first knowing a page ID or running a CLI command. A manual login remains possible through ordinary mouse/keyboard interaction and retains the provider-owned profile.
 
 ## Completed
 
