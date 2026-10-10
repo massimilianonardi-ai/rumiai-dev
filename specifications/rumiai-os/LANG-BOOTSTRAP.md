@@ -1,6 +1,6 @@
 # RumiAI OS — Language bootstrap (`lang`)
 
-Date: 2026-09-14  
+Date: 2026-10-10  
 Status: **Current**
 
 ## 1. Scope
@@ -238,12 +238,11 @@ No universal package-language API is introduced.
 
 ## 10. Error handling
 
-Behavior remains consistent with the current logging/fatal model:
+Diagnostic identity, status allocation and observability follow `DIAGNOSTICS.md`.
 
-- invalid argument count: fatal `execution.invalid-arguments`;
-- requested locale unavailable in all participating trees: fatal `execution.invalid-arguments`, with the requested locale as a field when applicable;
-- structurally invalid selector or path: fatal `filesystem.path-invalid`;
-- operational error during preparation, update or rollback: fatal `execution.execution-failed` when the normal logging path is available.
+The language subsystem MUST NOT collapse distinct failure branches into generic identities such as `execution.invalid-arguments` or `execution.execution-failed` when doing so makes the emitting branch ambiguous. Argument-count failure, unavailable requested locale, structurally invalid selector/path, preparation failure, update failure and rollback failure are distinct diagnostic branches when they are handled separately by the implementation.
+
+Diagnostics include the relevant non-sensitive context, such as the requested locale, affected owner/tree/path, update phase and child/cause status when useful. Public statuses and operational documentation are realigned whenever their observable contract changes.
 
 The command must not overwrite non-symlink objects located at the `current` pathname.
 
