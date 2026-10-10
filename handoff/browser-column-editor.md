@@ -1,6 +1,6 @@
 # Advanced browser/Electron text editor
 
-Status: Active — PoC 063 retained-memory and clipboard-path characterization complete; architecture under evaluation
+Status: Active — incremental piece coalescing and compact undo compared; architecture still under evaluation
 Updated: 2026-10-10
 
 ## Goal
@@ -11,8 +11,8 @@ The JavaScript compilation, module loading and distribution concern has **indepe
 
 ## Current repository revisions
 
-- `rumiai-dev` main: `1a9d87eca6882f914755314eb6772d017a854a84` (before this checkpoint).
-- `rumiai-dev-PoCs` main: `5bbfa233d601e8af02724fd534b6d8ec21f12a49` (PoC 063 memory/clipboard checkpoint).
+- `rumiai-dev` main: `f1db90dbf12eaed98042c31971c9672120a2e5d9` (before this checkpoint).
+- `rumiai-dev-PoCs` main: `3aabdeea22c496def0d18ca0968d4847fb7c631f` (PoC 063 incremental-storage/compact-history checkpoint).
 - Reference `m` master: `2a57a29880c2d7a32e18782122062c695fcb1a3a`.
 - `rumiai-os` main: `382369cfde55b158bdf9bb8c7c7ba352fb00ca5e`.
 
@@ -67,6 +67,7 @@ Always recheck current remote HEADs before resuming or changing files.
 - PoC 063 compares a flat JS string to a reference-chunk indexed treap, plus renderer-free sorted batch edits, selection snapshots, and provisional column-paste mapping. The treap, clipboard mapping policies and undo storage are still candidate experiments, not selected contracts.
 - Memory-focused PoC 063 evidence (local Node v22.16 Linux, separate processes, post-GC heap): 12k dispersed edits retained 12.919 MiB without history versus 24.445 MiB with history; 36k append edits retained 17.973 versus 45.611 MiB. Even append-only editing created a node/source per insertion. Full-document rebuilding after 16k dispersed edits reduced heap from 15.165 to 6.201 MiB without history, and from 27.818 to 18.842 MiB with history. It retained history functionality (300 undo/redo verified), but full materialization is unacceptable as a huge-file production compactor. Process RSS did not decrease proportionally. All measurements are revision-/scenario-specific and are not cross-browser or physical-host validation.
 - Additional MadEdit-Mod source-path distinctions: ordinary text clipboard counts trailing newlines as extra empty rows and appends a newline before column insertion; native MadEdit column clipboard uses a dedicated row-count format; auto-fill requires selection, enabled option and more target rows; source may extend beyond selected target rows. PoC 063 columnPastePlan clips excess source rows and is explicitly *not* MadEdit-Mod-compatible in that case. Source-model tests do not substitute for native MadEdit GUI verification.
+- New candidate-only experiment: `ChunkedPieceDocument` reuses bounded insertion sources (4,096 UTF-16 units) and locally merges adjacent pieces referencing contiguous source segments; `CompactHistory` stores one edit triple and one selection after-snapshot per transaction, deriving inverse offsets during undo. No general scattered-fragment compaction, disk history, bounded lifetime memory, DOM rendering or native MadEdit paste parity is implied. Neither candidate is an approved engine.
 
 ## Completed
 
@@ -77,15 +78,16 @@ Always recheck current remote HEADs before resuming or changing files.
 - Recorded the user's newly fixed high-performance, memory, MadEdit-Mod, non-linear-editing, undo/redo and replaceable-core requirements (2026-10-10).
 - Added experimental `rumiai-dev-PoCs/pocs/063-large-text-engine/` plus a GitHub Actions workflow at commit `c70b385a48b93955a6f6492bd28108267de4f701`. Preserved five concurrent upstream commits before the forward-only update. Source fixtures distinguish verified upstream behavior from hypotheses; no product implementation changed.
 - Local Linux Node v22.16.0 experimental scripts passed 4,000 seeded parity edits and transaction/selection undo checks. A local 500-insertion comparison on 1/8/32 MiB showed whole-string editing time rising steeply with document size versus small local piece edits; single-process timings and V8 memory deltas are not production benchmarks. A separate local 128 MiB, 5,000-insertion/1,000-undo+redo stress exercise completed in about 92 ms editing and 39 ms history replay, with no reliable retained-memory conclusion. GitHub-hosted execution of the exact published revision has not been confirmed.
-- Extended PoC 063 with long-session memory sampling, whole-document-rebuild diagnostic, upstream clipboard counting/auto-fill tests, documentation, and bounded GitHub Actions smoke-test steps; latest PoC commit `5bbfa233d601e8af02724fd534b6d8ec21f12a49`. Local memory, replay, compaction and clipboard-model runs passed. Corrected the rebuild timing to include source materialization (separate forward commit); remote GitHub-hosted run outcome remains unverified.
+- Extended PoC 063 with long-session memory sampling, whole-document-rebuild diagnostic, upstream clipboard counting/auto-fill tests, documentation, and bounded GitHub Actions smoke-test steps at PoC commit `5bbfa233d601e8af02724fd534b6d8ec21f12a49`. Local memory, replay, compaction and clipboard-model runs passed. Corrected the rebuild timing to include source materialization (separate forward commit); remote GitHub-hosted run outcome remains unverified.
+- Committed PoC 063 incremental chunks/local piece joining, compact undo journal, deterministic differential and complete multi-range undo/redo tests, isolated-process memory comparison and workflow extension at `12a7033de693d448356ff0385b720f2a289dd948`; repeated memory samples documented in forward commit `3aabdeea22c496def0d18ca0968d4847fb7c631f`. Local Node v22.16: 6,000 random document edits per each of three document variants; 500 grouped multi-range transactions plus undo/redo per each of six document/history combinations PASS. Three independent 36k-append samples per pair: retained heap medians 45.670 MiB original/original versus 20.402 MiB chunked/compact; live nodes 36,001 versus 15. For 36k dispersed edits with compact history, 41.865 MiB original pieces versus 34.332 MiB chunked, but both retain 71,308 nodes and edit timing varies. These are local single-machine Node/V8 measurements, not browser or physical validation.
 
 ## Current state
 
-Editor architecture remains unselected. PoC 063 now demonstrates the tested candidate's per-edit node/source growth and separately measurable history retention (including the cost of full selection snapshots). Whole-document rebuild can remove fragmentation but violates huge-file constraints; neither compact transaction storage nor incremental piece consolidation is implemented. Current columnPastePlan differs from observed MadEdit source behavior for extra pasted rows and requires a revised behavioral corpus before any adoption. No native GUI, long-running browser memory, disk history, or giant-file partial loading has been validated. Toolchain ownership remains separate.
+Editor architecture remains unselected. A bounded insertion-chunk candidate plus localized coalescing and a single-record-per-edit compact journal have been implemented and tested in PoC 063. They materially reduce retained V8 heap for the specified append workload but **do not** bound history growth or reduce node count under distributed edits. No native GUI, browser session, disk history, giant-file partial I/O or complete MadEdit column-paste parity has been validated. The provisional columnPastePlan still mismatches source behavior for excess clipboard rows. Toolchain ownership remains separate.
 
 ## Next action
 
-Next: test a genuinely incremental/coalescing storage candidate and a compact undo journal against the same long-session workloads, reporting operation latency, post-GC heap, peak RSS, source retention and complete selection/caret restoration. Keep alternative structures and lazy file access under comparison. Separately verify MadEdit-Mod clipboard behavior against its native GUI (particularly custom column clipboard, excess source rows, trailing blanks, TSV/CSV and virtual-space geometry); do not promote the provisional columnPastePlan. Verify hosted workflow result if accessible. DOM rendering follows a stable text/geometry experiment, not a prior editor library decision.
+Next: investigate a genuinely effective *distributed-edit* fragmentation strategy (indexed run/chunk coalescing beyond same-source adjacency or alternative tree topology) and a history representation with bounded RAM through external spill/checkpointing, while preserving full cursor/selection snapshots and performance. Benchmark at large file sizes and varied edits with repeated runs and memory pressure. Independently verify MadEdit-Mod column paste through a real GUI, specifically custom clipboard, excess rows, CSV/TSV and virtual geometry; repair only the candidate planner after behavior is verified. Check hosted workflow evidence if accessible; preserve separation from DOM and JavaScript toolchain.
 
 ## Blockers / open questions
 
