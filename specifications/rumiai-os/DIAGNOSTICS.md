@@ -101,7 +101,7 @@ execution.execution-failed
 
 MUST NOT be reused for multiple semantically distinct failure branches merely by varying a generic field such as `reason` when that reuse prevents the emitting branch from being identified directly.
 
-The diagnostic identity SHOULD describe the semantic operation and exact failure condition at the level that owns the diagnostic. For example:
+The diagnostic identity MUST describe the semantic operation and exact failure condition precisely enough to locate the owning failure branch. For example:
 
 ```text
 srv.start.state-publish-failed
@@ -183,7 +183,7 @@ Severity is not a substitute for diagnostic identity. Different branches remain 
 
 Logging is part of the implementation contract for non-trivial operational flows; it is not optional instrumentation added only after a failure becomes difficult to reproduce.
 
-A non-trivial flow SHOULD provide enough proportional `info`, `debug` and `trace` events that, at the appropriate enabled log level, a developer can reconstruct the significant lifecycle transitions, decisions, fallback/degradation choices and failure propagation that led to an outcome.
+A non-trivial flow MUST provide enough proportional `info`, `debug` and `trace` events that, at the appropriate enabled log level, a developer can reconstruct the significant lifecycle transitions, decisions, fallback/degradation choices and failure propagation that led to an outcome, unless a concrete omission allowed by section 7 applies.
 
 This does not require logging every statement or every function call. Logging volume must remain proportional and useful.
 
@@ -208,7 +208,7 @@ Valid reasons can include:
 - a protocol/output boundary whose correctness would be violated by the emission;
 - a security/privacy boundary that prevents safe diagnostic disclosure.
 
-The omission must be deliberate and reviewable. A local implementation-specific exception SHOULD be explained near the affected code when the reason is not self-evident. A durable subsystem-wide omission belongs in the applicable current specification.
+The omission MUST be deliberate, explicit and reviewable. Its concrete reason MUST be recorded near the affected code when it is implementation-specific, or in the applicable current specification when it is a durable subsystem-wide constraint.
 
 Implementation convenience, generic fear of verbosity, or the existence of an error return by itself is not sufficient justification.
 
@@ -216,7 +216,7 @@ Where the normal `log` facility is unavailable, a bootstrap/fallback diagnostic 
 
 ## 8. Logging ownership and failure propagation
 
-One underlying failure SHOULD NOT produce redundant equivalent `error`/`fatal` messages at every stack or call layer.
+One underlying failure MUST NOT produce redundant equivalent `error`/`fatal` messages at every stack or call layer.
 
 The preferred model is:
 
