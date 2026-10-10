@@ -9,12 +9,12 @@ Replace the fragile model-driven Amazon Price Watch polling path with a determin
 
 ## Current repository revisions
 
-- rumiai-dev: a56180ed515add7e4a395700e68c4d212429750d
-- rumiai-dev-PoCs: 070076170dea9e3c60da50f6dfb19584359d26ed
+- rumiai-dev: bfae9567dab92671d0711cd2a2d1f3686d052e1f
+- rumiai-dev-PoCs: 0f9c5b7fd78f22716cdd1be4423fda91b557eb78
 - rumiai-web-control: 8ed3ab888ecdc4970d90a6f14f0d7b7b93fce122
-- rumiai-os: 6a964ba3f5c8acf462737e3b92daaf1af32de57e
-- rumiai-tests: 89cd8308ba6a5272e7d4163864f5f28c1de88e66
-- pkg-catalog: 7d63806188414d5e872c7802bc59209375db9fa6
+- rumiai-os: 1c03cb644bd5b9cf1c728964487541ab00db3cd1
+- rumiai-tests: f8c7e590130a5a1353d79f9dc6f5068e5c132525
+- pkg-catalog: f0cdadb09ced5ca26c7745b5996de89cab24f7c1
 
 ## Applicable canonical sources
 
@@ -78,14 +78,14 @@ Once Amazon observation itself is validated, the existing ChatGPT task logic is 
 
 ## Current state
 
-PoC 060 now represents the wishlist-first experiment and passes Node syntax checking on the user's Linux test host. Amazon.it enumeration/completeness remains unvalidated because `rumiai-web-control` now resolves but dependency resolution fails before the `web-control` service can start. PoC 059 remains diagnostic/fallback evidence for individual product pages rather than the normal monitor entrypoint. Sheets/Gmail/ChatGPT triggering remain intentionally outside the present experiment.
+PoC 060 remains the wishlist-first experiment and passes Node syntax checking on the user's Linux test host. The earlier Linux ARM64 package blocker has now been implemented in the current repositories: `rumiai-os` contains the `chrome-for-testing` repository adapter, `pkg-catalog` contains `pkg/chromium/linux-arm64` using the Stable Chrome for Testing stream with the proven SUID sandbox environment, and `rumiai-tests` contains both the adapter contract test and a composed `external/rumiai-web-control/install-live.test` selected by the `web-control-package` validation scope on x86_64 and ARM64 GitHub runners. Current-source review confirms those surfaces are aligned with the physical sandbox PoC and with the package/web-control contracts. A fresh physical run through the real `pkg install rumiai-web-control -> srv start web-control -> web-control status` path on the user's ARM64 VM is still required before Amazon.it PoC 060 is executed. PoC 059 remains diagnostic/fallback evidence for individual product pages. Sheets/Gmail/ChatGPT triggering remain intentionally outside the present experiment.
 
 ## Next action
 
-Implement a proper `pkg/chromium/linux-arm64` provider/range through the current package model, preserving the sandbox mechanism already proven physically: a SUID-capable installed location, `setuid_root` for `chrome_sandbox`, and the corresponding package environment exporting `CHROME_DEVEL_SANDBOX`. Before choosing the repository/download mechanism, inspect the current catalog and repository adapters and reuse an existing mechanism when it fully covers the Chrome-for-Testing ARM64 artifact and integrity requirements. Then validate the real path with `pkg install rumiai-web-control`, `srv start web-control`, `web-control status`, and only after that run PoC 060 against the wishlist.
+On the user's Linux ARM64 VM, update the real checkouts/catalog snapshot and validate the implemented package path directly: `pkg install rumiai-web-control`, select/start the `web-control` provider through the normal service path when required by current state, and confirm `web-control status` reports `browserRunning: true`. This validation must use the installed Chrome for Testing package and its package-managed `chrome_sandbox`; no manual browser tree, copied SUID helper or `--no-sandbox` diagnostic is part of the normal path. If that succeeds, run PoC 060 against the wishlist and evaluate deterministic enumeration/completeness and price extraction.
 
 ## Blockers / open questions
 
-- Physical `rumiai-web-control` package request resolution now succeeds, but dependency planning fails because direct `pkg install chromium` on Linux x86_64 fails at package request/version resolution with `request-unresolvable`. The actual VM target is `linux-arm64`, and current `pkg-catalog` provides no Chromium or Chrome stream for that target. Therefore `pkg install chromium` fails correctly at stream resolution; network, Google Storage, local package state and the Linux x86_64 adapter path are not the current blocker. A separate historical-anchor comparison contract mismatch remains real but unrelated to this installation. The Playwright 1.63.0 Linux ARM64 Chromium/Chrome-for-Testing artifact is confirmed to download and execute on this VM. The complete `setuid_root + CHROME_DEVEL_SANDBOX` path reaches the SUID helper, but that helper does not acquire effective UID 0. The failed SUID-helper run was explained by `/tmp` being mounted `nosuid`. The same ARM64 helper on the package-store filesystem works correctly with `root:root`, mode `4755`, and `CHROME_DEVEL_SANDBOX`; sandboxed `web-control` reaches `browserRunning: true`. The compatibility question is resolved. The remaining blocker is purely package/catalog integration: current `pkg-catalog` still lacks a `linux-arm64` provider stream satisfying facility `chromium =1`.
+- The Linux ARM64 browser compatibility and sandbox mechanism are resolved, and the corresponding package/catalog/test integration exists in current HEADs. The remaining gate is physical validation of that integrated package path on the user's VM; do not treat the earlier manual sandbox PoC as evidence that the later package revisions themselves have passed end-to-end.
 - Real Amazon.it wishlist DOM, lazy-loading completion behavior and any internal continuation request must be observed on the user's browser session before the extraction/completeness policy can be considered reliable.
 - The separate Google Sheets persistence and Gmail notification problems remain outside the current experiment.
