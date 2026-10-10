@@ -1,7 +1,7 @@
 # RumiAI Development Consistency Gate
 
 Status: **Current / canonical**  
-Updated: 2026-09-30
+Updated: 2026-10-10
 
 This document defines the mandatory consistency process for RumiAI work. Its purpose is to prevent drift between current rules, current specifications, implementation, tests, operational documentation, deferred work and active task state.
 
@@ -25,6 +25,8 @@ For any task that creates, renames, removes or modifies a `m`- or RumiAI-owned d
 
 For any task that creates, renames, removes or modifies a `m`- or RumiAI-owned library or one of its functions, `specifications/rumiai-os/FILESYSTEM-NAMING.md`, `specifications/rumiai-os/LIBRARY-INTERFACES.md` and `specifications/rumiai-os/DOCUMENTATION-MODEL.md` are part of the smallest complete source set, and the affected library manual topic must be inspected together with the library.
 
+For any task that creates or changes handled failure branches, return/exit statuses, diagnostics, log severity/level behavior or significant runtime observability, `specifications/rumiai-os/DIAGNOSTICS.md` is part of the smallest complete source set.
+
 `todo/` is not part of the mandatory preflight for unrelated tasks. Read `todo/README.md` and the relevant TODO item when choosing deferred work, checking whether a newly discovered deferred issue is already known, activating a TODO or maintaining the pending-work inventory.
 
 ## 2. Extract the applicable invariants
@@ -44,6 +46,7 @@ POSIX/platform contract
 shell/interpreter rules
 serialization/data formats
 exit statuses and error classes
+diagnostic identity, context and observability
 permissions/security boundary
 transaction/concurrency semantics
 testing and evidence requirements
@@ -154,6 +157,28 @@ If a design choice remains unresolved inside the active task, keep it in the han
 
 Do not rewrite historical commits or historical validation evidence.
 
+### Diagnostics and observability gate
+
+For every created or modified failure-handling path, apply `DIAGNOSTICS.md` before considering the code complete.
+
+Verify, as applicable:
+
+```text
+each distinct handled failure branch has a distinct local non-zero status
+new local statuses were allocated incrementally without renumbering established codes
+child failures are mapped to the caller's local branch unless exact pass-through is intentional
+each logged failure branch has a distinguishable semantic diagnostic identity
+the diagnostic includes the non-sensitive context needed to investigate that occurrence
+significant lifecycle/decision/propagation state is visible at proportional info/debug/trace levels
+logging omissions have a concrete bootstrap, recursion, performance, protocol/output or security reason
+one underlying failure is not redundantly emitted as equivalent error/fatal messages at every layer
+secrets and protected values are not exposed by diagnostic fields
+```
+
+A generic diagnostic identity reused across different branches with only a varying `reason` field fails this gate when the emitting branch cannot be located directly from the diagnostic identity and context.
+
+For established code, do not mechanically renumber public or consumed statuses merely to make legacy code look sequential. Such realignment requires an explicit audit of callers, tests and manuals.
+
 ## 8. Command/library manual consistency gate
 
 Every `m`- or RumiAI-owned directly executable command identity is coupled to an owner-local operational manual topic under `DOCUMENTATION-MODEL.md`.
@@ -218,15 +243,16 @@ After every modification:
 2. re-evaluate it against `RULES.md` and the applicable current specifications;
 3. for user-visible behavior, rerun the intent and operability gate against the resulting interface and primary normal paths;
 4. when a specification was changed, reclassify every added design statement through the specification promotion gate;
-5. when a `m`- or RumiAI-owned command was created, renamed, removed or modified, perform the command/manual consistency gate;
-6. when a `m`- or RumiAI-owned library or function was created, renamed, removed or modified, verify library visibility naming and perform the library/manual consistency gate;
-7. scan the touched subsystem for superseded terminology/mechanisms;
-8. verify no unrelated user/repository changes were overwritten;
-9. run only tests proportional to the change under `TESTING.md`;
-10. state physical-validation status accurately and revision-specifically;
-11. verify Git history remains forward-only;
-12. if concrete unfinished work was discovered but intentionally deferred, ensure it is either already represented by an active task or captured once under `todo/`;
-13. when the task has an active handoff, determine whether the resulting state is a meaningful checkpoint and synchronize it before the final response when required.
+5. when failure/status/logging/observability behavior was created or changed, perform the diagnostics and observability gate;
+6. when a `m`- or RumiAI-owned command was created, renamed, removed or modified, perform the command/manual consistency gate;
+7. when a `m`- or RumiAI-owned library or function was created, renamed, removed or modified, verify library visibility naming and perform the library/manual consistency gate;
+8. scan the touched subsystem for superseded terminology/mechanisms;
+9. verify no unrelated user/repository changes were overwritten;
+10. run only tests proportional to the change under `TESTING.md`;
+11. state physical-validation status accurately and revision-specifically;
+12. verify Git history remains forward-only;
+13. if concrete unfinished work was discovered but intentionally deferred, ensure it is either already represented by an active task or captured once under `todo/`;
+14. when the task has an active handoff, determine whether the resulting state is a meaningful checkpoint and synchronize it before the final response when required.
 
 ## 12. Documentation consistency checks
 
@@ -245,6 +271,7 @@ When documentation is touched, additionally verify:
 - mandatory library manual topics are present for every `m`- or RumiAI-owned library identity;
 - library manuals expose the complete public function API and do not expose underscore-prefixed internal functions as callable API;
 - public/internal library function naming follows `LIBRARY-INTERFACES.md`;
+- diagnostic identities, statuses and observability follow `DIAGNOSTICS.md`; branch-specific failures are not flattened into generic messages;
 - TODO files contain only deferred-work planning state and do not become substitute specifications or task handoffs;
 - the same work is not represented simultaneously by a current TODO and an active handoff.
 
@@ -302,6 +329,11 @@ A RumiAI task is ready to report as complete only when every applicable item is 
 [ ] no existing responsibility was duplicated under a new name
 [ ] no contract was changed silently
 [ ] every statement added to a current specification passed the specification promotion gate
+[ ] every affected failure branch has a distinguishable local status unless an explicit pass-through/external-status contract applies
+[ ] established status codes were not renumbered merely to preserve source order
+[ ] every logged failure branch has a branch-specific diagnostic identity and sufficient non-sensitive context
+[ ] significant flows have proportional info/debug/trace observability or a concrete justified logging omission
+[ ] failure propagation does not create redundant equivalent error/fatal logs or leak secrets
 [ ] every affected command has its required manual and passed a manual-consistency check
 [ ] every affected library has its required manual and passed a manual-consistency check
 [ ] every affected library function follows the public/internal leading-underscore contract
