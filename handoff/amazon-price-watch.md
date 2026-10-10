@@ -9,12 +9,12 @@ Replace the fragile model-driven Amazon Price Watch polling path with a determin
 
 ## Current repository revisions
 
-- rumiai-dev: 1d6cbfbafa25913d7379ba273a318b595c60a0d1
-- rumiai-dev-PoCs: 61a509c35906e5a53adf9470053bcc45dd70ca50
+- rumiai-dev: abe4f0e67a44e181f9241ec5b6b68ce75d2eab7f
+- rumiai-dev-PoCs: 12c2f061aae5561663f62ce52723a294a73b4918
 - rumiai-web-control: 8ed3ab888ecdc4970d90a6f14f0d7b7b93fce122
-- rumiai-os: 99ff4358104c2abf934a22d0bc186ec72dc43a7d
-- rumiai-tests: 8a3c840dce33627cea622f1d147cef97a301bc57
-- pkg-catalog: f0cdadb09ced5ca26c7745b5996de89cab24f7c1
+- rumiai-os: 382369cfde55b158bdf9bb8c7c7ba352fb00ca5e
+- rumiai-tests: 5b78b7d8fd43ceddfff1b347731bedc255d221d1
+- pkg-catalog: 31a58cbccb56bd087b615c0ed948e22f25343406
 
 ## Applicable canonical sources
 
@@ -79,24 +79,34 @@ Once Amazon observation itself is validated, the existing ChatGPT task logic is 
 
 ## Package discovery workstream (active)
 
-The user approved a local historical version index in `pkg-catalog`, incremental upstream discovery for genuinely new versions, and periodic Git synchronization. A failed `latest` discovery must be an explicit error with the upstream failure detail and a suggested last verified/catalog-known exact-version install, never silent fallback. The catalog index/schema, adapter implementation, scheduler and permanent tests are not yet implemented; existing `nNNNN` anchors must be reused where applicable, without conflating chronological GitHub releases with SemVer. The recent hosted validation remains failed for catalog/depend/live install, and PoC 060 has not been exercised end to end.
+The user approved Git-backed historical version ordering, live upstream checks for latest and absent versions, daily catalog Git reconciliation, and **error rather than fallback** on a failed latest discovery. If a valid historical index is available, the runtime logs an explicit pinned-version suggestion without claiming the artifact is presently available.
+
+Current implementation checkpoints:
+- `rumiai-os` `0cc8ac2`: the real GitHub repository adapter reads optional `repository/versions` ordered tags. Both-known chronology comparison and exact known-version resolution now avoid GitHub REST; unknown versions still use live REST. Invalid history fails closed.
+- `rumiai-os` `ae180f5` and `382369c`: version-resolution latest failure logs a concrete pinned-version hint from the index; both library manuals have been realigned.
+- `pkg-catalog` `2485340`: the real release chronology `v0.1.0` → `v0.1.3` for `rumiai-web-control` is stored in its stream, verified from the current GitHub Releases metadata.
+- `pkg-catalog` `4a5f995` and `31a58cb`: a Node.js catalog reconciliation script and a daily GitHub Actions workflow were committed. It paginates the upstream release listing, caches duplicate repository queries per run, rejects ambiguous/reordered/deleted history, writes only after all discoveries succeed, and commits changes only when Git detects a change. A scheduled run is not yet independently validated. The reconciler currently performs **full pagination** per upstream repository; incremental early-stop scanning is still pending.
+- `rumiai-tests` `346ebb4`: permanent adapter tests assert indexed comparison and exact-version resolution use no HTTP, and invalid history fails closed. Both x86_64 and ARM64 hosted adapter tests passed.
+- `rumiai-tests` `5b78b7d`: permanent failed-latest diagnostic regression test added, awaiting published hosted evidence.
+- `rumiai-tests` `26f4a5f` and `a9401b9`: the pre-existing catalog test was changed to exercise the real GitHub adapter with a history fixture, removing the prohibited `m_LIB_DIR` override and invalid POSIX `state-path()` function. Hosted validation of its current form remains pending.
+- `rumiai-tests` `e9fa258`: hosted live-browser testing uses short writable `$HOME/.rv` for its isolated validation root instead of a `nosuid` /tmp mount or an overly long workspace pathname. The web-control live test passed on x86_64 and ARM64 in the hosted run based on this revision, while the broader validation scope still failed because the catalog and depend fixture tests failed.
 
 ## Current state
 
-PoC 060 remains the wishlist-first experiment and passes Node syntax checking on the user's Linux test host. The Linux ARM64 browser/package path has advanced materially: the current Chrome-for-Testing adapter and `pkg/chromium/linux-arm64` stream pass their permanent adapter tests, and hosted ARM64 validation successfully installed current Chromium through the real `pkg` path, including the SUID-root authorization/integration step, before the later `rumiai-web-control` root installation failed. The user's VM first confirmed one GitHub failure as unauthenticated REST core rate-limit exhaustion (`limit=60`, `remaining=0`, `used=60`). After the reset, a later run started with `x-ratelimit-remaining: 60` yet `pkg install rumiai-web-control` still failed inside dependency planning with an HTTP 403. This disproves primary GitHub quota exhaustion as the complete explanation. Current planner inspection shows the first external repository lookup for this request is the GitHub `/releases/latest` lookup for the `rumiai-web-control` root itself, before catalog fallback needs to resolve Chromium, so the next physical diagnostic must capture the exact response class for that GitHub endpoint and separately probe the Chrome-for-Testing endpoints before repository logic is changed.
+The former HTTP 403 at GitHub `/releases/tags/v0.1.3` was observed during unnecessary historical comparison. The indexed adapter now avoids those calls for known tags. No evidence yet establishes that every unrelated upstream 403 has disappeared. An unpinned `latest` intentionally still makes a live request.
 
-Source review also confirmed a separate implementation/specification mismatch in `pkg install`: the implementation pre-resolved original roots before invoking `pkg depend`, while current `PACKAGE-MODEL.md` requires `pkg depend <original requests>` followed by dependency concretes plus the untouched original request list. That mismatch is now corrected in `rumiai-os` commit `016c95dbfa384d5259a6200498c905b9bb8b61e0`; `rumiai-tests` commit `fdc257ba99e2e4bc779541abd64515fdb41fb1aa` adds a regression assertion that dependency planning receives the untouched roots and that orchestration does not call the pre-resolver. The targeted permanent test passes in hosted x86_64 and ARM64 validation. Full `web-control-package` validation remains NOT VALIDATED because the live `rumiai-web-control` install still encountered GitHub HTTP 403: on x86_64 it failed in dependency planning; on ARM64 Chromium installed successfully first and the root later failed during installation/range resolution. PoC 059 remains diagnostic/fallback evidence for individual product pages. Sheets/Gmail/ChatGPT triggering remain intentionally outside the present experiment.
+The hosted `web-control-package` run `38041684763` confirmed both platform live-browser tests without a reported per-test failure, including ARM64 Chromium SUID sandboxing on a suitable filesystem, but scope status was **NOT VALIDATED** due to the pre-existing `pkg/catalog.test` and `pkg/depend.test` fixture failures. On earlier runs, their causes were respectively an invalid POSIX function name and a forbidden readonly `m_LIB_DIR` assignment. The catalog fixture has since been revised and further runs are pending. `depend.test` still needs a proper real-target test redesign, without writing into a user's live package store. The scheduled catalog synchronizer and PoC 060 remain unvalidated.
 
 ## Next action
 
-Implement and test the local version-order index plus GitHub-adapter historical comparison without live calls; add live-latest failure diagnostics with explicit exact-version suggestion, then incremental scheduled catalog reconciliation. Repair the existing catalog/depend permanent-test failures and rerun hosted validation before attempting PoC 060.
-
-
-On the user's ARM64 VM, capture the exact HTTP response for the same unauthenticated GitHub release endpoints used by the current adapter (`/releases/latest` and `/releases/tags/v0.1.3`) while the primary quota remains non-exhausted. In the same diagnostic, probe Chrome-for-Testing Stable discovery, its Google Cloud Storage JSON metadata endpoint, and the direct public artifact HEAD response. Do not change repository logic until the failing endpoint and response class are known. Then correct the smallest responsible adapter/transport path, rerun the targeted permanent tests, and return to the normal `pkg install rumiai-web-control` → `srv start web-control` → PoC 060 sequence.
+1. Review the latest validation evidence for the catalog and latest-failure tests, fix defects against current normative contracts, and complete the real-target replacement of the outdated `pkg/depend.test` fixture.
+2. Validate catalog GitHub Actions reconciliation on a real hosted run; implement incremental discovery early stopping with periodic full reconciliation as needed without losing version history or silencing upstream failures.
+3. Re-run hosted x86_64 and ARM64 package validation and confirm the public unpinned and explicitly pinned install paths, including clear error/hint behavior.
+4. Return to the user's ARM64 VM and complete `pkg install rumiai-web-control`, `srv start web-control`, and the actual wishlist-first PoC 060 on Amazon.it.
 
 ## Blockers / open questions
 
-- The remaining immediate end-to-end blocker is an unresolved HTTP 403 during dependency planning. Primary GitHub quota exhaustion explained one earlier occurrence but not the latest run, which began at `remaining=60`. Because the root package itself is GitHub-backed and planner resolution consults that repository before Chromium fallback, the exact failing endpoint must be identified before attributing the new 403 to GitHub secondary limits or to the Chrome-for-Testing Google metadata path. The current release v0.1.3 exposes its artifact size and SHA-256 through GitHub release API metadata but does not publish a separate checksum sidecar; eliminating GitHub REST entirely would therefore be a separate deliberate release/publication or repository-adapter change, not an assumed fix.
+- The remaining immediate blocker is completing real-target regression coverage and validating the daily reconciler. Earlier REST HTTP 403 was located at a release-tag comparison endpoint; known historical comparisons now avoid that endpoint. Exact artifact GitHub metadata downloads may still be subject to upstream failures, and no automatic latest fallback is permitted.
 - The canonical `pkg install` composition mismatch is resolved and regression-tested; do not reintroduce pre-resolution of original roots before `pkg depend`.
 - Real Amazon.it wishlist DOM, lazy-loading completion behavior and any internal continuation request must be observed on the user's browser session before the extraction/completeness policy can be considered reliable.
 - The separate Google Sheets persistence and Gmail notification problems remain outside the current experiment.
