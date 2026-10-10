@@ -1,7 +1,7 @@
 # Web-control provider split
 
 Status: Active
-Updated: 2026-10-10
+Updated: 2026-10-11
 
 ## Goal
 
@@ -9,7 +9,7 @@ Retain the released Playwright/Chrome implementation `pwc-web-control` and devel
 
 ## Current repository revisions
 
-- `rumiai-dev`: `972f9542db3c0dde4a4ac0423c8931055d1c9ed7` (pre-handoff-sync HEAD; refresh on resume).
+- `rumiai-dev`: `8053df81c9fcd9a14d85f867943eee0077869ecc` (pre-checkpoint HEAD; refresh on resume).
 - `electron-web-control`: `71f23bc2beab120a79f186b7b5f9f2ec7b7f6d22` (released v0.1.2 source).
 - `pwc-web-control`: `0e7cf38e72145e5e7c85ea7312e30622b73e0baf`.
 - `pkg-catalog`: `32e2428e1b95c9ea5adecd76a40404eadf3d5117` (v0.1.2 added; old ranges unchanged).
@@ -26,7 +26,7 @@ Retain the released Playwright/Chrome implementation `pwc-web-control` and devel
 - Portable command, service and facility remain `web-control`, with compatibility level 1. Playwright concrete identity stays `pwc-web-control`. The prior `rumiai-web-control` package and authenticated profiles remain untouched.
 - Electron provider source and local standalone HOME are separate, under `electron-web-control`. No automatic cross-provider cookie/session migration.
 - Electron v0.1.1 introduced the provider-specific ordinary service command. The new v0.1.2 adds a visible, opaque start page and native navigation menu without changing the facility interface or the previously published v0.1.0/v0.1.1 ranges; installed concretes and profiles must remain untouched.
-- Preserve browser sandboxing; no unrestricted CDP listener, CAPTCHA bypass or assertion that Electron is accepted by Google without an actual login trial.
+- Preserve browser sandboxing; no unrestricted CDP listener or CAPTCHA bypass. A successful manual Gmail authentication on one user-operated Linux ARM64 VM is direct site-acceptance evidence for that setup, not a universal compatibility or anti-detection guarantee.
 
 ## Acceptance scenarios
 
@@ -55,6 +55,7 @@ Retain the released Playwright/Chrome implementation `pwc-web-control` and devel
 - A physical Ubuntu ARM64 VM report after the prior release described an apparently transparent/unusable Electron window. Inspection of the then-current provider source found that it created a visible BrowserWindow but loaded no URL and offered no in-window navigation. A separate GPU/compositor issue is still possible; the symptom itself has not yet been reproduced on that physical VM.
 - `electron-web-control@71f23bc` released **v0.1.2**: a non-privileged opaque data-URL start page with address form, desktop Navigate menu (open URL, new window, back/forward/reload), colored window background, and preserved sandbox/profile/service contracts. Real Electron GUI fixture test exercises URL entry + click to navigate without the CLI `page navigate` path, plus screenshot and existing session/lifecycle tests. GitHub Actions `38089866140`: Linux standalone and canonical `mk check test build` PASS and v0.1.2 GitHub release asset published; macOS job still queued at this checkpoint.
 - `pkg-catalog@32e2428` added the versioned `n0003=v0.1.2` definition with the unchanged distinct Electron service command. `rumiai-tests@92fc806` extended the permanent real public `pkg`/`srv` regression through v0.1.0 conflict, v0.1.1 recovery and v0.1.2 upgrade. Actions `38089980871` completed **Scope result: VALIDATED** on both Linux x86_64 and ARM64 using `rumiai-tests@92fc806` and `rumiai-os@95c8e54` (five PASS, zero FAIL/SKIP/ERROR on each). The macOS ARM64 package job remained queued at checkpoint.
+- On 2026-10-11 the user reported that the corrected Electron desktop **works** on their physical Linux ARM64 VM and that they **successfully authenticated to Gmail without problems**. This closes the originally reported unusable/transparent-window symptom and supplies a successful manual real-site login trial for that setup. The session was operated by the user, not inspected by this assistant; the exact on-host installed revision, logged results and post-restart persistence were not independently verified.
 - `rumiai-tests@1d0c876` added `external/electron-web-control/install-live.test`, its formal task scope and a multi-platform GitHub Actions runner. Run `38086638206` proved five PASS, zero FAIL, zero SKIP and `Scope result: VALIDATED` independently on Linux x86_64 and ARM64. Its macOS ARM64 job was still queued at the last check; this does not establish macOS package conformance.
 
 ## Working design / known limitations
@@ -65,22 +66,22 @@ Retain the released Playwright/Chrome implementation `pwc-web-control` and devel
 
 ## Current state
 
-The subsequent physical VM symptom is an unusable/transparent initial Electron window. The previous Electron code started a visible but un-navigated BrowserWindow with no address UI; v0.1.2 corrects that definite usability defect and provides the desktop navigation entry without altering the provider-independent facility. Hardware/compositor transparency on the user's actual VM remains unverified. Release v0.1.2 has passed real Linux standalone tests and canonical mk, and its artifact is published. The new package regression was VALIDATED on Linux x86_64 and Ubuntu 26.04 ARM64 (`38089980871`). macOS ARM64 remained queued at this checkpoint. No VM process, package or browser profile was modified remotely.
+The user has now confirmed that the corrected Electron GUI works on their physical Linux ARM64 VM and that manual Gmail sign-in completed without problems (reported 2026-10-11, after v0.1.2 instructions). This resolves the reported transparent/unusable-window symptom for the tested configuration; the deployed concrete revision and authenticated profile persistence after restart remain unverified independently. Release v0.1.2 has passed real Linux standalone tests and canonical mk, and its artifact is published. The new package regression was VALIDATED on Linux x86_64 and Ubuntu 26.04 ARM64 (`38089980871`). macOS ARM64 remained queued at this checkpoint. No VM process, package or browser profile was modified remotely.
 
 The v0.1.1 portable release and corrected `pkg-catalog` metadata eliminate the ordinary-service-command collision with Playwright. The stronger real package/recovery test passed on Linux x86_64 and ARM64 at `rumiai-tests@d71be125` in Actions `38088704041`. It proves failure of v0.1.0 at `default-selection`, materialization of that old concrete without a package default, preservation of Playwright's ordinary service command, and successful installation/selection/public `srv` operation with v0.1.1. The prior run `38088010462` also validated both Linux architectures at `rumiai-tests@8ad2f14` but must not be attributed to d71. The old run `38087870211` had successful Linux jobs but was not the final test revision. macOS ARM64 package validation remains queued.
 
 Current `rumiai-os` implementation has a separate, more general issue: `pkg_install_one` returns success immediately for an already materialized concrete without rerunning `pkg_default_apply`; thus retrying the exact partially materialized v0.1.0 is not a repair operation. This also differs from the current `PACKAGE-MODEL.md` already-installed failure contract and the existing `pkg/install-live.test` expectation. It was identified by current source/test comparison, not proven by a new complete generic package-install test here. Do not silently treat a retry as repaired or change the general multi-operand/dependency semantics inside the Electron catalog fix; the broader `pkg install` behavior requires its own targeted realignment and coverage.
 
-The user's running Playwright service and existing package/profile state remain untouched. Physical VM recovery and manual Google login are still untested. The Linux Electron dependency's root-owned setuid helper is a separate sandbox installation prerequisite (the VM previously emitted an authorization warning), not the cause of the default-selection collision.
+This assistant has not changed or inspected the user's VM, Playwright installation or browser profiles. The user-reported desktop and Gmail authentication check succeeded; it does not demonstrate persistence after restart or equivalence of automated native and synthetic input. The Linux Electron dependency's root-owned setuid helper remains a separate sandbox installation prerequisite, not the cause of the earlier default-selection collision.
 
 ## Next action
 
-1. On the user's physical Ubuntu ARM64 VM, inspect current facility provider and running service, then run `pkg install electron-web-control@v0.1.2` without deleting any existing package/state. Confirm the Electron package default and Playwright projection remain correct. Both formal Linux package regressions have passed.
-2. At a deliberate service handover use normal `srv stop web-control`, `pkg provider default web-control electron-web-control`, `srv start web-control`; check `web-control status` has `headless: false`, the initial visible start page can navigate to a public site, and native mouse/keyboard work. If the real window is still visually transparent, investigate compositor/GPU and only then try the existing explicit `ELECTRON_WEB_CONTROL_SOFTWARE_RENDERING=1` host opt-in; do not disable sandbox or silently force-stop the service.
-3. Obtain macOS ARM64 formal package evidence when its runner executes; independently test Electron event delivery and manual Google authentication on real desktop hosts. Track the generic `pkg install` partial-install/retry contract mismatch separately from the fixed Electron command collision.
+1. Treat user-reported physical Electron GUI usability and Gmail manual sign-in as successful for that Linux ARM64 VM. Only if further physical validation is required, record the concrete package/default/service revision and confirm the authenticated profile survives normal service restart without exposing private account data.
+2. Obtain macOS ARM64 formal package evidence when its runner executes, and assess native versus synthetic automated input separately from the now-successful manual Gmail login.
+3. Track the generic `pkg install` partial-install/retry contract mismatch separately from the fixed Electron command collision.
 
 ## Blockers / open questions
 
 - v0.1.2 package validation `38089980871` passed on Linux x86_64 and ARM64; macOS ARM64 hosted source/package validations remained queued at this checkpoint. Queued work is not a PASS. The provider is not physically validated on the user's Mac.
-- User VM/desktop not connected to this execution environment; no physical verification of the reported transparent window, native pointer/keyboard usability or browser-login success after v0.1.2.
+- User-operated Linux ARM64 VM GUI and Gmail login are reported successful; no VM connection, transcript, independently checked exact revision, restart-persistence check, or verified provider-command input equivalence is available to this assistant.
 - Electron's DOM synthetic interaction fallback is potentially detectable; native input equivalence remains unresolved.
