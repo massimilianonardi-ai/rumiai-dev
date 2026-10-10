@@ -12,7 +12,7 @@ Independently investigate a general-purpose JavaScript development/distribution 
 - `rumiai-dev` main: `c690b28cee803a34483edc19a6e29863ade1f9c6` (pre-checkpoint; re-verify remotely).
 - `rumiai-os` main: `99ff4358104c2abf934a22d0bc186ec72dc43a7d`.
 - Reference repository `m` master: `2a57a29880c2d7a32e18782122062c695fcb1a3a`.
-- `rumiai-dev-PoCs` main: `d7add954e6558eecefd6f05d995766d38c2bda79` (PoC 062 browser lifecycle and release tests).
+- `rumiai-dev-PoCs` main: `61a509c35906e5a53adf9470053bcc45dd70ca50` (PoC 062 two-tab and explicit state-migration tests; hosted browser validation pending).
 
 Always recheck remote HEADs on resumption and before writes.
 
