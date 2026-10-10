@@ -1,7 +1,7 @@
 # RumiAI OS — Web control
 
 Status: **Current / normative**  
-Updated: 2026-10-07
+Updated: 2026-10-10
 
 This document defines the deterministic Web observation/control capability used beneath RumiAI Web cognition.
 
@@ -36,13 +36,14 @@ Web/browser/provider mechanics
 
 Semantic ownership and source/distribution ownership are separate dimensions.
 
-A concrete `web-control` provider is a first-party **independent project/release unit**, not source distributed inside `rumiai-os`. The current Playwright/Chrome provider project identity is:
+A concrete `web-control` provider is a first-party **independent project/release unit**, not source distributed inside `rumiai-os`. The current released concrete provider projects are:
 
 ```text
-pwc-web-control
+pwc-web-control       Playwright / Chrome
+electron-web-control  Electron
 ```
 
-The separate `electron-web-control` repository is a prospective alternative provider; repository existence alone does not establish compatibility or a distributable package.
+The project identities are distinct; neither changes the provider-independent `web-control` contract.
 
 The project development lifecycle is managed through the normal `mk` project model. Runtime installation/distribution is managed through `pkg`.
 
@@ -64,10 +65,11 @@ The runtime artifact MUST consume only explicit public `m`/package/facility cont
 
 ## 3. Package and facility identity
 
-The current installable Playwright/Chrome provider package identity is:
+The current installable provider package identities are:
 
 ```text
 pwc-web-control
+electron-web-control
 ```
 
 Previously published `rumiai-web-control` package definitions remain compatible with their original release artifacts. Changing concrete package identity does not rename or migrate existing package-owned state.
@@ -253,9 +255,9 @@ Examples:
 ```text
 WEBCTRL-01  web-control belongs semantically to m and is deterministic
 WEBCTRL-02  web-sense is the AI layer above web-control
-WEBCTRL-03  pwc-web-control is the independent first-party Playwright/Chrome project/release unit
+WEBCTRL-03  pwc-web-control and electron-web-control are separate first-party provider project/release units
 WEBCTRL-04  mk owns project development lifecycle while pkg owns runtime installation/integration
-WEBCTRL-05  Playwright/Chrome package identity is pwc-web-control; provider-independent facility identity is web-control
+WEBCTRL-05  concrete provider package identities are pwc-web-control and electron-web-control; provider-independent facility identity is web-control
 WEBCTRL-06  compatibility level 1 exposes the web-control command and provider-backed web-control service
 WEBCTRL-07  persistent authenticated browser state uses dedicated web-control profiles rather than silently reusing an ordinary personal browser profile
 WEBCTRL-08  live page identities are opaque web-control runtime identities
