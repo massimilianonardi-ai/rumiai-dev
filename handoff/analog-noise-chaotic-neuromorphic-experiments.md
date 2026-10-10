@@ -12,7 +12,7 @@ This is an experimental workstream only. It does not alter RumiAI architecture o
 ## Current repository revisions
 
 ```text
-rumiai-dev      6605c2e9a6928a69912056981ca1aa1ee8cd2476 (main; latest checked handoff commit)
+rumiai-dev      e77414507435def79aa9a4086ca07127e72ea806 (main; latest handoff checkpoint)
 rumiai-dev-PoCs 888aa6d4c520fdc6266c37b505ba3b938a8a6135 (main at latest compare)
 rumiai-dev-PoCs da0d5c8de0975872f4efa2f416fd9de857fa1fa1 (poc/059-chaotic-neuron-noise-screening; corrected code, protocol, and rerun evidence)
 rumiai-dev-PoCs 7c89467332db536d8250c0234463a87576a0fca7 (same branch; task protocol v2)
