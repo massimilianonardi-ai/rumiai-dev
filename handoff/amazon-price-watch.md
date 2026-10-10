@@ -9,8 +9,8 @@ Replace the fragile model-driven Amazon Price Watch polling path with a determin
 
 ## Current repository revisions
 
-- rumiai-dev: 72242272f04c32d47272f708a28010f14efd8997
-- rumiai-dev-PoCs: 133553ad879043c4095e72bb030712d1cdfe8954
+- rumiai-dev: a26e3b089c58665be244cd778974d7155929b55b
+- rumiai-dev-PoCs: 3dc9480baf4b112c263935a9e52cc1104c981936
 - rumiai-web-control: 8ed3ab888ecdc4970d90a6f14f0d7b7b93fce122
 - rumiai-os: 382369cfde55b158bdf9bb8c7c7ba352fb00ca5e
 - rumiai-tests: 345ef3837e3184058453789e78b46344b2a665b9
@@ -103,7 +103,7 @@ PoC 060 has a wishlist-first, deterministic scroll/ASIN/price/network-probe impl
 
 ## Blockers / open questions
 
-- No outstanding failure in the **validated hosted web-control package scope** at `rumiai-tests@345ef38` with its frozen catalog evidence. New catalog population requires checking its own additional hosted rerun.
+- No outstanding failure in the **validated hosted web-control package scope** at `rumiai-tests@345ef38`. The first full x86_64/ARM64 run and the two targeted reruns against the newly populated catalog both completed successfully; the final Amazon application remains a separate physical acceptance target.
 - The older REST HTTP 403 was precisely at a GitHub release-tag comparison endpoint. Indexed known versions now avoid redundant history comparisons; upstream availability, `latest`, artifact metadata and transfers can still fail independently, with explicit errors/hints rather than silent fallback.
 - The remaining primary application evidence gap is real Amazon.it wishlist DOM, scrolling/completeness and any continuation calls on the user's own browser profile.
 - Google Sheets persistence and Gmail notifications remain outside scope.
