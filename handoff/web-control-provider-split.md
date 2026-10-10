@@ -5,57 +5,59 @@ Updated: 2026-10-10
 
 ## Goal
 
-Maintain the verified Playwright/Chrome browser provider, with the concrete project/package identity `pwc-web-control`, and develop `electron-web-control` independently behind the same provider-neutral `web-control` facility. Firefox with an extension remains a possible later experiment.
+Maintain the validated Playwright/Chrome provider under the concrete project/package identity `pwc-web-control`, then develop an independent `electron-web-control` provider behind the same provider-neutral `web-control` facility contract. Firefox plus an extension remains a later possible experiment.
 
 ## Current repository revisions
 
-- `rumiai-dev`: 87d6cbac57b0d0163fc6265837a00281e71ebcf5 (before this handoff update; verify HEAD on resume).
-- `pkg-catalog`: 7b52152dfcf68856acd5ed914092f956bc88fb17.
-- `pwc-web-control`: 8ed3ab888ecdc4970d90a6f14f0d7b7b93fce122.
-- `electron-web-control`: repository created, empty at verification (no commit HEAD).
-- `rumiai-os`: 382369cfde55b158bdf9bb8c7c7ba352fb00ca5e.
-- `rumiai-tests`: 345ef3837e3184058453789e78b46344b2a665b9.
+- `rumiai-dev`: 958c3b26bb1664bd2e22f2ce5e301980f3c08838 (before this handoff commit; refresh remote HEAD on resume).
+- `pwc-web-control`: `0e7cf38e72145e5e7c85ea7312e30622b73e0baf`.
+- `pkg-catalog`: `dc2b47a8f39f2b5130199f8b983e2535a3e5af22`.
+- `rumiai-tests`: `5a76290934563224286eea2b14eaca94aeced63e`.
+- `rumiai-os`: `382369cfde55b158bdf9bb8c7c7ba352fb00ca5e`.
+- `electron-web-control`: created, empty; no Git HEAD as of verification.
 
 ## Applicable canonical sources
 
-- `README.md`, `RULES.md`, `CONSISTENCY-GATE.md`, `specifications/README.md`, `handoff/README.md`
-- `specifications/rumiai-os/WEB-CONTROL.md`, `specifications/rumiai-os/PACKAGE-MODEL.md`, `specifications/rumiai-os/SERVICE-LIFECYCLE.md`, `specifications/rumiai-os/STATE-MODEL.md`
-- Read further current command, package, test and manual contracts as required by each implementation step.
+- `README.md`, `RULES.md`, `CONSISTENCY-GATE.md`, `specifications/README.md`, `handoff/README.md`, `TESTING.md`, `PHYSICAL-TESTING.md`
+- `specifications/rumiai-os/WEB-CONTROL.md`, `specifications/rumiai-os/PACKAGE-MODEL.md`, `specifications/rumiai-os/SERVICE-LIFECYCLE.md`, `specifications/rumiai-os/STATE-MODEL.md`, `specifications/rumiai-os/COMMAND-ENTRYPOINTS.md`, `specifications/rumiai-os/DOCUMENTATION-MODEL.md`
 
 ## Fixed task-local choices
 
-- Playwright/Chrome provider project and concrete package: `pwc-web-control`.
-- Alternative Electron project: `electron-web-control`. No Electron package until a real suitable release and conformance evidence exist.
-- Portable command, service and facility: `web-control`.
-- Preserve earlier `rumiai-web-control` package data for installed old versions and original named release artifacts; changing package identity must not silently repoint or mutate authenticated profile state.
+- The provider-neutral facility, public command and service remain `web-control`; `srv start web-control` is unaffected.
+- Playwright/Chrome provider project/package: `pwc-web-control`. A real renamed release starts at `v0.1.4`; older published artifacts keep the original archive names.
+- Preserve the installable legacy `rumiai-web-control` package and its managed package HOME; do not automatically migrate authenticated profiles.
+- Direct standalone Playwright runtime keeps its former `~/.rumiai-web-control` HOME fallback and derived Unix socket name to avoid obscuring prior standalone sessions.
+- `electron-web-control` is independent and has no installable package until an implemented, released, validated provider exists.
 
 ## Acceptance scenarios
 
-1. A legacy installation of `rumiai-web-control` retains access to its original package-owned profile and published release artifact.
-2. A new `pkg install pwc-web-control` installation can use the `web-control` facility after an explicit provider selection and exercise `web-control status` / `srv start web-control` unchanged. New package-owned state is separate unless explicitly migrated.
-3. The Electron project can evolve and be validated independently, without prematurely advertising a working package.
+1. A previous `rumiai-web-control` installation retains its state and can still resolve original historical release assets.
+2. A new `pkg install pwc-web-control` resolves the actual published release, a caller selects it through `pkg provider default web-control`, and `web-control` page/status operations and `srv` service lifecycle work.
+3. The Electron provider can be implemented/tested separately against the shared compatibility-level-1 contract.
 
 ## Completed
 
-- User renamed the GitHub repository `rumiai-web-control` to `pwc-web-control` and created `electron-web-control`; both repository identities verified through GitHub. The Electron repository was empty.
-- GitHub releases `v0.1.0`–`v0.1.3` verified on the renamed Playwright repository, with original `rumiai-web-control-v…-all.tar.gz` artifact names.
-- `pkg-catalog@7b52152`: added the `pwc-web-control/all` package with matching release range metadata, dependency and `web-control` command/service facility realization. Kept `pkg/rumiai-web-control` for legacy installs and pointed its upstream repository descriptor at the renamed GitHub repository. Provider-neutral `facility/web-control` untouched.
-- `rumiai-dev@87d6cba`: updated canonical `WEB-CONTROL.md` current concrete provider identities.
-- Structural catalog/metadata and remote GitHub release checks completed, and committed diff reviewed. Physical `pkg install pwc-web-control` / service execution is **not yet validated**.
+- User renamed the original GitHub repository to `pwc-web-control` and created `electron-web-control`.
+- `pwc-web-control@1462d76`: source package identity updated, version advanced to 0.1.4, README/build archive/staging paths/Actions and source test temp directory aligned. Existing standalone profile/socket fallback deliberately preserved.
+- `pwc-web-control@0e7cf38`: refreshed Linux validation target to current `rumiai-os`; Actions workflow `38074326700` passed Linux `mk check/test/build`, macOS runtime checks and tests, and published `v0.1.4` with actual asset `pwc-web-control-v0.1.4-all.tar.gz`. Previous `v0.1.0`–`v0.1.3` assets retained original names.
+- `pkg-catalog@7b52152`: created the new package family, preserved legacy family and provider-neutral facility contract.
+- `pkg-catalog@dc2b47a`: added published v0.1.4 metadata and actual new archive regex to both new and legacy package streams (legacy remains installable even as upstream release versions advance).
+- `rumiai-tests@5a76290`: renamed the external public-path integration test to `external/pwc-web-control/install-live.test`, updated package/conf references, validation selection and workflow path filter.
+- GitHub Actions formal validation `38074484807` passed on Ubuntu x86_64 and ARM64 with `Scope result: VALIDATED`, including PASS of the real `external/pwc-web-control/install-live.test` on each host (no FAIL/SKIP for that test).
+- Re-read the resulting diffs, GitHub release list, catalog range metadata and applicable canonical specifications. No public `web-control` command/service semantic change.
 
 ## Current state
 
-Catalog alignment and canonical specification naming are complete. The existing Playwright provider source under its renamed repository still uses the old `rumiai-web-control` package.json, release/archive directory naming and README; existing test files and workflows still refer to the legacy package. These are an explicit **pending realignment**, not evidence that a new-named release has been built.
+Playwright provider rename and released package/catalog integration are complete; GitHub Actions cross-architecture validation passed. User-owned physical VM validation **has not** been executed in this chat and must not be described as physically validated. The new concrete package has its own HOME; legacy authenticated sessions remain untouched and are not automatically available from the new package.
 
-Changing the package name changes its managed package HOME/state identity. The catalog retains the old package; it does not migrate sessions automatically.
+The Electron repository remains empty and no Electron runtime/provider has been implemented. This is the next independent development responsibility.
 
 ## Next action
 
-1. Within a separately authorized provider-source phase, align Playwright source/release/test/documentation naming with `pwc-web-control`; use new artifact patterns only for actually published future releases.
-2. Validate the newly declared catalog package via the public `pkg install pwc-web-control` path on a real RumiAI OS host, then verify facility binding, `srv` lifecycle and provider state preservation/migration options before retiring any legacy path.
-3. Initialize `electron-web-control` with an independent implementation and conformance tests; publish a package only once it has actual compatible artifacts.
+1. Initialize and validate an independent `electron-web-control` PoC/provider using the current `WEB-CONTROL.md` contract; do not infer that Electron eliminates Google authentication restrictions without physical evidence.
+2. When the user's reference VM is available, perform physical `pkg install pwc-web-control` / provider / `srv` verification there, with deliberate profile-state separation and no automatic migration of old sessions.
+3. Only publish/add an Electron catalog package after it has a real compatible release and suitable conformance evidence.
 
 ## Blockers / open questions
 
-- Public-path install/service validation has not been run from this chat (no local RumiAI OS checkout / VM process access).
-- The Playwright source/tests still contain old provider naming; this is outside the catalog-only work unit and requires forward realignment.
+- User VM is not directly accessible from the current execution environment; GitHub Actions validation is strong automated evidence, not physical user-host evidence.
