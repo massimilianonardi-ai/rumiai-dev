@@ -45,6 +45,13 @@ Replace the fragile model-driven Amazon Price Watch polling path with a determin
 4. The probe detects common Amazon access failures such as CAPTCHA, Robot Check, HTTP errors and equivalent challenge pages.
 5. No model, ChatGPT session, Google Sheet write or Gmail action is required for wishlist observation.
 
+## Physical wishlist-price evidence (2026-10-10)
+
+- User-run Linux ARM64 PoC 060 completed wishlist enumeration: 54 unique ASINs, 20 rounds, 14 observed network requests, no detected challenge. Initial price verification was 0/54; 44 items yielded a container candidate and 10 none. This is user-reported physical evidence, not a fresh execution by the assistant.
+- All 44 candidates were from the generic `[id^="itemPrice_"]` container and contained two euro values. The user supplied actual wishlist DOM for ASIN B0DPHTGJ4B: `span[id^="itemPrice_"].a-price > span.a-offscreen` carries current 495,47 EUR, with an aria-hidden sibling repeating its visual representation. A separate neighboring `.wl-deal-price-and-striked-price` section contains a labeled 30-day-low reference of 521,55 EUR.
+- PoC 060 now selects the accessible current-price text within the price widget and checks the widget's visibility instead of excluding the intentionally offscreen child. No individual product-page navigation is introduced. Synthetic fixture selector was aligned. Commits in rumiai-dev-PoCs: 489f383, c3b300d.
+- **Pending:** run synthetic test and fresh physical PoC 060 on the user's VM; verify current-price count and reference ASIN. Confirm whether the 10 products with no price are actually unavailable rather than assuming so. Preserve explicit unverified results where evidence is insufficient.
+
 ## Working design
 
 The existing PoC 054 (`amazon-wishlist-browser-probe`) already contains useful deterministic Amazon diagnostics: final URL/status, CAPTCHA/Robot Check/service-error detection and ASIN extraction from rendered DOM. The next experiment should reuse those observations through the current `web-control` command surface instead of launching Playwright directly.
