@@ -10,7 +10,7 @@ Maintain a long-lived meta-workstream for continuously evaluating and improving 
 ## Current repository revisions
 
 ```text
-rumiai-dev    08059aa366adb401341ff453f2379bf2cc0caae4  (pre-correction-gate HEAD after diagnostics contract, TODOs and workflow checkpoint)
+rumiai-dev    1fab16b70e5c1e18085b21e63c2488eb457d7960  (pre-checkpoint HEAD after final diagnostics-contract tightening)
 rumiai-os     99ff4358104c2abf934a22d0bc186ec72dc43a7d  (current implementation inspected for diagnostic behavior; not modified)
 rumiai-tests  8a3c840dce33627cea622f1d147cef97a301bc57  (current log tests inspected; not modified)
 pkg-catalog   f0cdadb09ced5ca26c7745b5996de89cab24f7c1  (current remote HEAD; not involved in this correction)
