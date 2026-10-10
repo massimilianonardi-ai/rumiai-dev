@@ -51,7 +51,11 @@ jsc <modules.json> [output]
 
 With no output operand, generated source goes to standard output without
 status prose contaminating it. With an output operand, the compiled file
-is written there. Source file paths are resolved relative to the manifest
+is written there. The original file-output release workflow also provides a
+gzip artifact. An already-installed compatible minifier may additionally
+produce a minified sibling and gzip of that sibling. Missing minifiers must
+not trigger implicit network installation and must not prevent generation
+of the usable original bundle and its gzip. Source file paths are resolved relative to the manifest
 directory. The compatibility model retains the original `name`/`modules`
 nesting and `file`/`symbols` records, in their authored order. Filesystem
 containment, syntax, identifier validation, contextual errors and safe
