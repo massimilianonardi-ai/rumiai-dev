@@ -1,7 +1,7 @@
 # JavaScript development, module loading and distribution
 
 Status: Active
-Updated: 2026-10-09
+Updated: 2026-10-10
 
 ## Goal
 
@@ -9,8 +9,8 @@ Independently investigate a general-purpose JavaScript development/distribution 
 
 ## Current repository revisions
 
-- `rumiai-dev` main: `de82b9c5d2044d81615f2339406d2aa7d68ff463` (preflight).
-- `rumiai-os` main: `6a964ba3f5c8acf462737e3b92daaf1af32de57e`.
+- `rumiai-dev` main: `ab92c612038e0718781cf922deb98fbe89161ae1` (pre-checkpoint; re-verify remotely).
+- `rumiai-os` main: `1c03cb644bd5b9cf1c728964487541ab00db3cd1`.
 - Reference repository `m` master: `2a57a29880c2d7a32e18782122062c695fcb1a3a`.
 - `rumiai-dev-PoCs` main: `0f9c5b7fd78f22716cdd1be4423fda91b557eb78`.
 
@@ -29,7 +29,7 @@ Always recheck remote HEADs on resumption and before writes.
 - JavaScript build/distribution is an independent objective, not a hidden editor subsystem.
 - The user wants to preserve the useful capability of changing/loading libraries dynamically during development and testing, and loading modules only when needed, while still being able to ship a simple distribution (possibly one file).
 - Prefer existing standards and tools when they satisfy the requirements, but compare them against the reference `m` behavior rather than treating bundle size/speed alone as success.
-- The current `mk` owns lifecycle orchestration and may delegate to third-party bundlers. There is no accepted need yet for a new native compiler, loader, provider or command.
+- The user favors a new first-party `jsc` implementation and a dynamic-loader library as independent evaluable candidates, not immediate default compiler promotion. External engines such as esbuild and webpack are intended future candidates for `mk` tool orchestration and `pkg` package/provider integration; actual product contracts/installation remain to be evaluated separately. The current `mk` owns lifecycle orchestration and may delegate to third-party bundlers. No production change is implied by an exploratory PoC.
 - **User-mandated memory constraint (2026-10-09): unbounded retention of old module versions or unbounded cache growth during repeated dynamic reloads is unacceptable.** Do not use native browser ESM imports with ever-changing URLs as the hot-reload mechanism: the native module map cannot be selectively cleared in the same realm. ESM source/build input is not automatically excluded, but no runtime strategy may rely on ever-growing cached module identities.
 
 ## Acceptance scenarios
@@ -40,6 +40,7 @@ Always recheck remote HEADs on resumption and before writes.
 3a. Repeatedly replace the same module across many development iterations, release obsolete references and resources, and show by real long-running heap/resource measurements that stale module versions do not accumulate without bound (account for garbage-collector variance rather than equating temporary heap growth with a leak).
 4. Distribute one self-contained JavaScript file for use in a regular page (including file:// when possible), and optionally use a multi-file on-demand distribution without accidentally promising both physical properties simultaneously.
 5. Reuse existing `mk` project declarations and generic process boundary where sufficient; any proposed extension must show an actual unmet general responsibility first.
+6. After a web app deploy, a browser must not accidentally use incompatible old/new HTML, JS or manifest assets. Demonstrate coherent release/version resolution, proper HTTP response cache policy, and long-lived open-client migration, including when a service worker is installed; do not treat HTTP POST as a mandatory cache workaround.
 
 ## Working design (not normative)
 
@@ -51,6 +52,7 @@ Always recheck remote HEADs on resumption and before writes.
 - The initial editor PoC 061 proved a single 305.2 KB minified JS in headless Chromium via file:// with zero HTTP requests. It did not validate the `mk` invocation, general-purpose hot loading, lazy loading, lifecycle replacement or the compiler design.
 - Native ESM caching is intentional module-identity behavior, not a general JavaScript-engine defect; legacy dynamically inserted scripts likewise do not automatically dispose previously created objects, timers, event listeners or captured references. A replaceable runtime requires explicit lifecycle semantics regardless of source format.
 - User rejected unbounded cache growth as a hard requirement. Native ESM repeated import with query/hash/Blob URL cache-busting in one long-lived realm is disqualified as the hot-replacement solution. Candidate implementations may use a managed registry with disposable factories/closures, or disposable execution realms such as a dedicated Worker/iframe where suitable, but must prove resource reclamation and handle DOM access limitations, CSP/security, and state transfer; deleting a registry entry alone is insufficient.
+- HTTP freshness is separate from native ESM module identity: classic `<script>` requests honor server HTTP caching, `fetch(url, {cache:'no-store'})` bypasses the HTTP cache when fetching text, and a classic `<script src>` has no direct JS `fetch` cache-mode option. Historical reference loader used POST as a pragmatic cache workaround; a modern deployment also needs version-coherent HTML/JS/CSS and deployment activation. Cache-Control `no-cache` for mutable HTML/manifests, immutable content-addressed JS/CSS, retention of referenced old release assets, and explicit service-worker update policy are viable research paths rather than a completed deployment contract. `POST` is not categorically non-cacheable when explicitly configured.
 - Candidate development and distribution strategies remain under evaluation; do not promote them as `mk` specification.
 - Fresh comparison of reference `m/js/lib/js/m/Class.js` (39 KB) with ECMAScript 2026: legacy `m.Class` supplies multiple base constructor calls/behavior copying or getter-links, per-instance composed defaults (shallow copying), shared prototype state, fluent properties with getter/setter/listener/validator, before/after triggers, event bindings, singleton/call-mode choices, method aliasing and runtime changes. Standard `class` does not directly supply the combined metaobject model, although modern prototypes/accessors/Proxy/Reflect can implement many pieces. Legacy multi-base support is not native multiple prototype inheritance/automatic multiple `instanceof` identity.
 - Hard interoperability mismatches from current source: `Class.prototype.inherit` enumerates prototype members using `for...in` (native `class` methods are nonenumerable), while `Class.prototype._construct` invokes base constructors via `.apply` (native class constructors reject function-call invocation). The `_inherit.length___` check in the first-base branch appears erroneous and needs specific tests; do not assert runtime failure without authentic execution.
@@ -65,15 +67,18 @@ Always recheck remote HEADs on resumption and before writes.
 - Split task responsibility from the editor investigation after the user clarified the independent goals.
 - Retrieved and inspected the full reference `m.Class` implementation; checked selected interoperability properties against Node.js 22 and consulted up-to-date ECMAScript/MDN/TC39 sources. This is a static/mechanical assessment, not full execution of the legacy `m.Class` implementation.
 - Reassessed the earlier ESM recommendation against the user's hot-loading priority. Standards-first is not established as a requirement; an explicitly managed runtime registry and a classic-JS/bundler-compatible authoring path are first-class candidates.
-- User explicitly rejected unbounded module cache accumulation; verified the native `import()` module namespace cache limitation against current MDN documentation and made bounded old-version retention a hard acceptance requirement. No memory PoC has yet been executed.
+- User explicitly rejected unbounded module cache accumulation; verified the native `import()` module namespace cache limitation against current MDN documentation and made bounded old-version retention a hard acceptance requirement. No browser memory PoC has yet been executed.
+- Built a **local-only experimental PoC** (conversation attachment `jsc-dynamic-loader-poc.zip`, contains `062-jsc-dynamic-loader/`) with classic JS source factories, module manifest, standalone Node `jsc.mjs` assembler, classic-script registry/loader, and unit + browser harnesses. No source files have yet been committed to `rumiai-dev-PoCs` and the archive must be preserved/recovered from this conversation before formal repository promotion.
+- Local tests on Node 22 passed: one standalone browser script, lazy module evaluation, transitive invalidation and disposal, 2,000 repeated replacements with bounded **registry entry counts** (not browser memory), source-path and dependency checks, direct HTTP GET response bearing `Cache-Control: no-store`. `node --check` of compiled bundle passed. Generated demo bundle 6,156 bytes (unminified, 2 example modules).
+- Browser test harness attempts real two-revision reload of the **same** script URL under restrictive CSP (no `unsafe-eval`); local `/usr/bin/chromium` hangs even with trivial headless `data:` document, so browser behavior and memory remain unvalidated. Report the infrastructure failure, not a browser PASS.
 
 ## Current state
 
-Investigation and working design only. No JS compiler or runtime-loader implementation was created or modified in this work unit; no hosted/browser runtime comparisons of hot swap/lazy loading have been run. The earlier PoC 061 is a separate editor-driven bundling feasibility experiment, not proof of a complete general JavaScript toolchain.
+A new experimental assembler/runtime PoC exists as a ZIP conversation artifact only, not as tracked source in `rumiai-dev-PoCs` or as promoted `m` product code. The Node tests passed; real browser checks are blocked locally due to Chromium hanging. No native `mk`/`pkg` integration was changed or exercised. The earlier PoC 061 is a separate editor bundling feasibility experiment, not a general compiler contract.
 
 ## Next action
 
-First compare a small, representative first-party module descriptor/registry, native ESM and a loader such as SystemJS against concrete hot-replacement/lifecycle scenarios, while ensuring that ESM is not imposed as a source-format prerequisite. Independently test existing `m.Class` capability and compatibility with modern ES class semantics. Require a repeated-replacement memory/reclamation test for each viable runtime before selection. Then compare how esbuild/Rollup can produce the desired classic one-file output from each source model. Measure actual fetch, execution, re-evaluation/state cleanup, local-file/browser compatibility, output count, CSP constraints and integration through real `mk`. Promote a `mk` extension only if a concrete uncovered lifecycle responsibility is demonstrated.
+First preserve the locally generated ZIP PoC as versioned source in `rumiai-dev-PoCs` when transferred into a writable GitHub worktree or connector-mediated per-file upload; then run its real Chromium test on a functioning hosted browser environment. Test repeatedly replacing a module while observing actual JavaScript heap/resource reclamation and its effect on extant references. Independently verify coherent multi-release browser deployment, including HTTP caches and service workers. Compare the first-party module descriptor/registry, native ESM and a loader such as SystemJS against concrete hot-replacement/lifecycle scenarios, without imposing ESM as source or runtime prerequisite. Independently test existing `m.Class` capability and compatibility with modern ES class semantics. Require a repeated-replacement memory/reclamation test for each viable runtime before selection. Then compare how esbuild/Rollup can produce the desired classic one-file output from each source model. Measure actual fetch, execution, re-evaluation/state cleanup, local-file/browser compatibility, output count, CSP constraints and integration through real `mk`. Promote a `mk` extension only if a concrete uncovered lifecycle responsibility is demonstrated.
 
 ## Blockers / open questions
 
