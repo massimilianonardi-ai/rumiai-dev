@@ -30,28 +30,48 @@ mandatory public `m` command or integrated service.
 
 ## 2. Compiler format and semantics
 
-The command takes exactly:
+The **primary `jsc` contract** preserves the original `m/jsc`
+authoring model: an ordered, nested `modules` tree whose namespace nodes
+use `name` and source nodes use `file` plus optional comma-separated
+`symbols`. Source files are concatenated in descriptor order; namespace
+wrappers assemble scope and expose declared symbols into their namespace.
+Already declared symbols remain usable unqualified within their namespace,
+and already opened descendant namespace objects remain usable by their
+short names in their ancestor scope. Qualified paths such as
+`m.srv.data.MyClass` are provided by the same assembled tree.
+The manifest must not require the author to repeat those lexical relations
+in `id/deps` declarations. Nested source assembly executes as an ordinary
+classic script, without a runtime registry requirement.
+
+The primary public invocation is:
 
 ```text
-jsc <manifest.json> <output.js>
+jsc <modules.json> [output]
 ```
 
-The manifest is JSON with `version: 1` and a `modules` array. Each entry has
-an `id`, a source `file` relative to the manifest directory, a `deps` array of
-module IDs, and optional `format: "classic"`. Source files must resolve
-inside the manifest directory. A source is a classic factory body receiving
-`require`, `module` and `exports` when evaluated by the loader.
+With no output operand, generated source goes to standard output without
+status prose contaminating it. With an output operand, the compiled file
+is written there. Source file paths are resolved relative to the manifest
+directory. The compatibility model retains the original `name`/`modules`
+nesting and `file`/`symbols` records, in their authored order. Filesystem
+containment, syntax, identifier validation, contextual errors and safe
+failure semantics must be improved without changing normal program meaning.
+CSS manifests consisting of ordered CSS source files are also accepted as
+raw concatenated CSS; CSS is not evaluated as JavaScript.
 
-Compilation validates manifest metadata, source syntax, complete dependency
-references and acyclicity before writing output. Output is one classic script
-that calls `globalThis.JscRuntime.installBatch` with all factories. A failed
-validation must not replace a pre-existing compiled output. This does not
-guarantee atomic overwrite after a filesystem write failure.
+The previously promoted explicit `version:1` `{id,file,deps,format?}`
+format remains a distinct compatibility mode for experiments/consumers that
+use the independent runtime module registry. That format generates
+`globalThis.JscRuntime.installBatch` registrations, validates its declared
+graph, and does not embed a loader. It is **not** a requirement for authoring
+the original nested namespace assembly. The two modes are selected by the
+manifest's data shape; there is no automatic ESM translation or implicit
+mixed graph.
 
-This is **not** an ESM compiler: it must not reinterpret, translate, partially
-accept or emulate static ES `import`/`export` or `import.meta`. Native ESM
-projects remain independent. A native `import()` expression within an otherwise
-classic script is not managed by the `jsc` module registry.
+The classic compiler does not reinterpret static native ESM
+`import`/`export` or `import.meta`. A native `import()` expression
+inside otherwise classic code remains outside `jsc`'s control.
+`mk` remains separate orchestration, not a second compiler.
 
 ## 3. Loader registry and lifecycle
 
@@ -94,8 +114,10 @@ registration exposed within each factory.
 
 ## 4. Distribution and portability
 
-A single physically bundled classic script may contain the loader plus
-compiled registrations through a separate packaging step. That bundle can
+In explicit registry mode, a single physically bundled classic script may contain the loader plus
+compiled registrations through a separate packaging step. Legacy namespace
+assembly instead produces a standalone classic script; it does not require
+the registry loader. That bundle can
 defer **evaluation**, but cannot avoid downloading embedded module bytes.
 A multi-file layout can instead defer network transfer of optional modules.
 
@@ -111,8 +133,9 @@ revision.
 
 ## 5. Boundaries
 
-This current contract promotes only the proven `jsc` and loader source
-model. It does not promote PoC 062's operator/supervisor/file-lock experiments,
+This current contract promotes the original nested namespace source assembly as
+`jsc`'s primary workflow while retaining the separately declared module-registry
+mode and independent loader. It does not promote PoC 062's operator/supervisor/file-lock experiments,
 HMR state migration for arbitrary applications, ESM transpilation,
 esbuild/webpack replacement, or a new package integration contract.
 
@@ -120,13 +143,15 @@ esbuild/webpack replacement, or a new package integration contract.
 
 ```text
 JSC-01  jsc command and jsc.lib.js engine belong to m; the loader is an independent m classic library
-JSC-02  compiler output consists of classic registrations and never embeds the loader
+JSC-02  primary jsc mode assembles ordered nested name/modules/file/symbols sources and namespaces without a runtime loader
 JSC-03  static ESM import/export and import.meta are rejected rather than translated
-JSC-04  sources and dependencies are validated before writing compiled output
+JSC-04  source paths, descriptors and source syntax are validated before writing output; explicit registry graphs additionally validate dependencies
 JSC-05  loader supports manually authored registrations, independent of jsc
 JSC-06  loader registration is lazy and replacement disposes affected instantiated consumers
 JSC-07  invalid graph/stale revision update leaves active instances unchanged
 JSC-08  application effects and stale exports are not transactionally rolled back by replacement
 JSC-09  single-file packaging defers execution, not physical transfer
 JSC-10  controlled loader registry versions do not grow without bound merely from replacement
+JSC-11  original nested JS and ordered CSS source manifests remain primary jsc inputs; output can go to stdout
+JSC-12  experimental explicit id/deps registration is a separate optional manifest shape, not mandatory namespace metadata
 ```
