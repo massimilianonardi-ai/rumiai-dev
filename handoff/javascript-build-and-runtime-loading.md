@@ -5,11 +5,11 @@ Updated: 2026-10-10
 
 ## Goal
 
-Independently investigate a general-purpose JavaScript development/distribution workflow that retains the useful behavior of the reference `m/jsc` and `m.js` dynamic loader, compares current standards and upstream tools critically, and integrates with current `mk` only at its established lifecycle boundary. This work is NOT editor architecture or column editing.
+Deliver and validate a **usable independent `jsc` compiler and classic JavaScript dynamic-loader library**, preserving useful behavior of the reference `m/jsc` and `m.js` loader, with optional single-file packaging and a practical development/distribution workflow. `mk` remains a separate lifecycle orchestrator; native ESM is an independent path. This task is **not** editor architecture, application/service supervision or external-effect coordination.
 
 ## Current repository revisions
 
-- `rumiai-dev` main: `e996e846982109b5ec6309787f061eaea061a5ee` (pre-checkpoint; re-verify remotely).
+- `rumiai-dev` main: `8d3a98dd863859938fe111c671fe857056a6dd21` (pre-checkpoint; re-verify remotely).
 - `rumiai-os` main: `382369cfde55b158bdf9bb8c7c7ba352fb00ca5e`.
 - Reference repository `m` master: `2a57a29880c2d7a32e18782122062c695fcb1a3a`.
 - `rumiai-dev-PoCs` main: `634095efdfa0b64378351e92a9fb41bc9b8bde17` (PoC 062 code/test fully hosted validated at `565ac3a25db94148ed4fa28c82c1a118fc2a4661` in Actions 38072866512, followed by README-only checkpoint; re-verify current HEAD).
@@ -26,6 +26,7 @@ Always recheck remote HEADs on resumption and before writes.
 
 ## Fixed task-local choices
 
+- **Explicit user scope correction (2026-10-10):** The user's deliverables are `jsc` and the independent dynamic loader. The previously pursued external HTTP effects, supervision, operator takeover, process recovery, `flock`/`fcntl` and FIFO investigations were **off-scope drift** and are **not prerequisites, dependencies or future work for these two deliverables**. Do not resume, expand, integrate or promote those topics under this handoff. Their historical experiments may remain in PoC source/Git as separate evidence; they must not drive JavaScript compiler/loader architecture or priority. Focus on tangible compiler output, module loading/reloading, bounded lifecycle, clear integration/usage and distribution.
 - JavaScript build/distribution is an independent objective, not a hidden editor subsystem.
 - The user wants to preserve the useful capability of changing/loading libraries dynamically during development and testing, and loading modules only when needed, while still being able to ship a simple distribution (possibly one file).
 - Prefer existing standards and tools when they satisfy the requirements, but compare them against the reference `m` behavior rather than treating bundle size/speed alone as success.
@@ -141,15 +142,18 @@ Always recheck remote HEADs on resumption and before writes.
 
 ## Current state
 
-PoC 062 latest **fully hosted-tested code/test revision**: rumiai-dev-PoCs 565ac3a25db94148ed4fa28c82c1a118fc2a4661; README-only checkpoint 634095efdfa0b64378351e92a9fb41bc9b8bde17 followed. Full [GitHub Actions run 38072866512](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/38072866512) **succeeded** for the Node 22 compiler, independent loader and fault/lock experiments, the new compiled POSIX record-lock/FIFO test, all prior real Chrome browser scenarios, classic bundle build/syntax and artifact upload. No macOS/other POSIX host or real-device/power-failure validation for these mechanisms.
+**User's active goal is a working jsc + independent dynamic loader, not supervisor/lock research.** Current PoC 062 contains:
 
-**Experimental distinctions:** a shared flock lock inode prevents simultaneous cooperating Linux state writers only when lock identity and inherited descriptors remain correctly controlled. Unlink/recreation admits different owners; inherited descriptors can prolong a flock lock after nominal owner termination; uncooperative writers and direct HTTP callers bypass advisory locks. Process-associated POSIX fcntl record locks avoid the exact **fork-retained-open-description** behavior but are sensitive to closing *any* matching file descriptor in the owner process; they also do not protect replaceable inode identities and do not enforce authorization. mk's per-fingerprint FIFO reader tokens express observed activity and a symmetric publication/maintenance exclusion policy, not a global supervisor mutex. No mechanism establishes atomic local receipt + external effect, authenticated operator ownership, directory durability or distributed exactly-once. None is promoted as a product contract.
+- src/jsc.mjs: a Node-invoked, manifest-based compiler emitting classic JavaScript module registrations without embedding runtime code, validating source/dependency graphs and rejecting ESM rather than translating it.
+- src/loader.js: an independent classic JavaScript loader (JscRuntime is a PoC API) with module registry, lazy evaluation, dependency invalidation, batch installation, explicit cleanup and browser script transport. It accepts manually authored registrations as well as compiler output.
+- src/assemble.mjs: a separate optional packaging step combining runtime and compiled registrations in one classic file. Compiler-only output requires the independent loader first.
+- Real Node and Chrome experiments have covered the basic module path, hot replacement, selected lifecycle/memory cases and browser release/update behavior. The latest prior full PoC Actions evidence at code/test revision 565ac3a25db94148ed4fa28c82c1a118fc2a4661 is [run 38072866512](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/38072866512); this also includes unrelated exploratory tests and is not evidence of a released compiler/loader.
 
-**Boundary unchanged:** src/jsc.mjs is the classic module compiler, independent src/loader.js owns classic dynamic loading, src/assemble.mjs optional packaging; native ESM is separate. Supervisor ownership, state journaling, effect gateway, audit and operator authorization are application/service concerns, not jsc, loader, mk or pkg APIs. No product/runtime change.
+**Scope correction:** previous external-effect journaling, operator repair, supervisor, file-lock and FIFO experiments are neither compiler/loader requirements nor active next steps. Preserve past Git evidence forward-only; do not spend further work on them in this task. No product implementation, mk or pkg modification is authorized or implied by this correction.
 
 ## Next action
 
-Before selecting or integrating any synchronization primitive, identify the actual application/service consumer and its needs: exclusivity among cooperative local processes, pathname/inode stability, fork/exec/close behavior, hostility of same-user writers, non-Linux portability, or remote hosts. For a confirmed cooperative POSIX-local consumer, validate host diversity (at least an appropriate non-Linux POSIX host) and compare real adapter behavior against the required lifecycle; do not accidentally use fcntl locks in a shared process where unrelated libraries may close descriptors on the same file. If the requirement is to fence noncooperating writers or effects, explore permissions/private IPC and authority at the effect destination instead: advisory locks and mk FIFO liveness are insufficient. Keep crash/power loss, directory fsync, network filesystems, cryptographic identity and distributed agreement separately scoped. Return attention to the core JavaScript build/loader questions when no real application requires further supervisor locking; do not let a tangential experiment become implicit runtime architecture.
+Work **directly on the compiler and dynamic-loader deliverables**. Exercise the real user/developer path: compile an ordinary multi-module classic-JS project with jsc, load registrations through the separately supplied loader, load an optional module when requested, replace a changed module safely in a running browser with explicit dispose/accept/full-reload behavior, and build a usable single-file distribution with the separate assembler. Use existing PoC code and real Node/browser tests to find and fix concrete gaps in command usability, loader API, error diagnostics, dependencies, packaging and practical documentation. Keep long-run module-memory/resource behavior bounded and preserve the no-ESM-reinterpretation boundary. Prioritize finishing a reusable jsc + loader workflow over infrastructure, recovery or security hypotheticals. Any mk/pkg integration requires a demonstrated need and separately authorized scope.
 
 ## Blockers / open questions
 
