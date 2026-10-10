@@ -148,3 +148,7 @@ The user wants the physically validated wishlist extractor made reusable through
 ## Experimental API checkpoint (2026-10-10)
 
 User approved the extraction API work. PoC 060 now includes amazon-wishlist-extract.mjs exporting extract(wishlistUrl, options), delegating to the existing probe without duplicating DOM logic. Experimental only, not a promoted product library. API argument tests and README added. Repository commits: 803f841, 0308fb3, 28ec066. Tests and physical API execution are pending; keep reporting, monitoring, and delivery separate.
+
+## Extraction API physical validation (2026-10-10)
+
+User updated the VM PoC checkout to `rumiai-dev-PoCs@21251ef` and executed `test-api.mjs` (PASS), `test-probe.mjs` (PASS), then imported `extract()` from `amazon-wishlist-extract.mjs` and invoked it against the authenticated Amazon.it wishlist via the existing web-control adapter. Result: `complete: true`, `blocked: false`, 54 items, 44 verified prices, 44 add-to-cart, 10 view-all-options, 0 unknown. This physically validates the experimental JavaScript API in that environment and preserves the prior price/action observation. It does not yet establish a promoted public RumiAI package/API or portability beyond the tested environment. Next: define a stable consumer-facing extraction observation contract, test its edge cases, and implement a separate monitoring PoC consuming it; report generation and delivery remain downstream.
