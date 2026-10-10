@@ -10,10 +10,10 @@ Maintain a long-lived meta-workstream for continuously evaluating and improving 
 ## Current repository revisions
 
 ```text
-rumiai-dev    bff6bbe937fd0077a0f2ba36e69ea032fecad235  (pre-checkpoint HEAD)
-rumiai-os     0966ba9cb55dc7014ede2d726849fe83ed5cb757  (observed current remote HEAD; not modified by this checkpoint)
-rumiai-tests  099e8ab29e79a089cbca524d5cc649a74ec2ddea  (observed current remote HEAD; not modified by this checkpoint)
-pkg-catalog   d63f87d2be67288ef57f4a5812fabbc3f0b24a0d  (observed current remote HEAD; not modified by this checkpoint)
+rumiai-dev    08059aa366adb401341ff453f2379bf2cc0caae4  (pre-correction-gate HEAD after diagnostics contract, TODOs and workflow checkpoint)
+rumiai-os     99ff4358104c2abf934a22d0bc186ec72dc43a7d  (current implementation inspected for diagnostic behavior; not modified)
+rumiai-tests  8a3c840dce33627cea622f1d147cef97a301bc57  (current log tests inspected; not modified)
+pkg-catalog   f0cdadb09ced5ca26c7745b5996de89cab24f7c1  (current remote HEAD; not involved in this correction)
 ```
 
 Fresh remote HEAD retrieval remains mandatory before future analysis or writes.
