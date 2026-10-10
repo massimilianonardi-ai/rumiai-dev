@@ -1,7 +1,7 @@
 # RumiAI Development Rules
 
 Status: **Current / canonical**  
-Updated: 2026-10-06
+Updated: 2026-10-10
 
 This document contains project-wide rules that apply across RumiAI subsystems. Subsystem details belong in current specifications; historical rationale belongs in Git history.
 
@@ -152,6 +152,22 @@ Protection must derive from code shape, not assumptions about current data.
 
 The pattern positions of `case` branches are syntax and need not be quoted. `fatal`/`log` call style may omit cosmetic quotes only where argument structure remains unambiguous; expansions still require quoting whenever needed to prevent word splitting or pathname expansion.
 
+### Diagnostics and observability
+
+Failure handling and logging are part of implementation quality, not incidental cleanup. The complete contract is defined by `specifications/rumiai-os/DIAGNOSTICS.md`.
+
+For `m`- and RumiAI-owned code:
+
+- distinct handled failure branches within one callable use distinct local non-zero status codes unless an explicit pass-through/external-status contract applies;
+- new local failure codes are allocated incrementally from `1`, and established codes are not later renumbered merely to preserve source-order contiguity;
+- distinct logged failure branches use distinguishable, branch-specific diagnostic identities rather than one generic message plus a varying reason field;
+- diagnostics contain the non-sensitive context needed to locate and investigate the specific failure;
+- proportional `info`, `debug` and `trace` observability is designed with non-trivial flows, not added only after a failure becomes difficult to reproduce;
+- significant logging omissions require a concrete bootstrap, recursion-safety, performance, protocol/output or security reason;
+- one underlying failure is not redundantly emitted as the same error at every propagation layer.
+
+A failure that is detected but cannot be located from its status and diagnostics is not adequately handled.
+
 ## 10. Naming and libraries
 
 Public executable names describe function, not implementation language; do not add `.sh`, `.py`, `.js` and similar suffixes merely to reveal the interpreter.
@@ -296,6 +312,8 @@ retrieve current authority
 → experiment only if a question is genuinely open
 → promote only settled contract into current specifications
 → implement in the proper repository
+→ assign distinct failure-branch statuses and branch-specific diagnostics where applicable
+→ add proportional info/debug/trace observability or record a concrete justified omission
 → create/realign operational manual content for every affected command or library
 → verify public/internal library function naming when libraries are affected
 → add/realign proportional permanent tests
