@@ -1,7 +1,7 @@
 # RumiAI current specification index
 
 Status: **Current**  
-Updated: 2026-09-27
+Updated: 2026-10-10
 
 This directory contains **current contracts only**. Historical specifications and superseded decisions are intentionally absent from the current tree and remain available through Git history.
 
@@ -19,6 +19,7 @@ Read only the smallest complete set relevant to the task.
 | command/runtime classification, shebangs and command identity | `rumiai-os/COMMAND-ENTRYPOINTS.md` |
 | controlled filesystem naming and library file naming | `rumiai-os/FILESYSTEM-NAMING.md` |
 | library API visibility, public/internal function naming and mandatory library manual identity | `rumiai-os/LIBRARY-INTERFACES.md` |
+| failure-branch status identity, diagnostic messages, severity semantics and runtime observability | `rumiai-os/DIAGNOSTICS.md` |
 | POSIX portability and host-specific abstraction boundary | `rumiai-os/POSIX-PORTABILITY-LAYER.md` |
 | terminal paging abstraction and host backend policy | `rumiai-os/PAGER.md` |
 | terminal editor abstraction and host backend policy | `rumiai-os/EDITOR.md` |
@@ -63,6 +64,7 @@ setup-dev.sh
 - Files under `specifications/` contain promoted current contract only; active candidates, provisional assumptions, unresolved comparisons and postponed design choices belong in the applicable active handoff until they pass the specification promotion gate.
 - Any task that creates, renames, removes or modifies a directly executable command owned by `m` or RumiAI must retrieve both `COMMAND-ENTRYPOINTS.md` and `DOCUMENTATION-MODEL.md`.
 - Any task that creates, renames, removes or modifies a library owned by `m` or RumiAI or one of its functions must retrieve `FILESYSTEM-NAMING.md`, `LIBRARY-INTERFACES.md` and `DOCUMENTATION-MODEL.md`.
+- Any task that creates or modifies failure branches, return/exit statuses, diagnostics, log severity/level behavior or significant runtime observability must retrieve `DIAGNOSTICS.md`.
 - Do not search Git history unless historical rationale/evidence is specifically needed.
 - If a current specification conflicts with the current implementation, surface the mismatch; do not silently treat the old implementation as a new contract.
 - If a current contract changes, update the canonical file listed here rather than adding a parallel decision document that readers must merge mentally.
