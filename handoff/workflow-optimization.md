@@ -1,7 +1,7 @@
 # workflow-optimization
 
 Status: Active
-Updated: 2026-09-30
+Updated: 2026-10-10
 
 ## Goal
 
@@ -29,6 +29,8 @@ specifications/rumiai-os/COMMAND-ENTRYPOINTS.md
 specifications/rumiai-os/FILESYSTEM-NAMING.md
 specifications/rumiai-os/LIBRARY-INTERFACES.md
 specifications/rumiai-os/DOCUMENTATION-MODEL.md
+specifications/rumiai-os/DIAGNOSTICS.md
+specifications/rumiai-os/LANG-BOOTSTRAP.md
 todo/README.md
 handoff/README.md
 ```
@@ -50,6 +52,8 @@ Subsystem specifications are added only when a concrete workflow question reache
 - Library manuals expose the complete public function interface and do not expose internal functions as callable API.
 - Command/library lifecycle changes and manual realignment are one development consistency obligation.
 - Structural permanent coverage for both command→manual and library→manual completeness is mandatory; absent coverage keeps the corresponding completeness work open.
+- Distinct handled failure branches must remain diagnostically distinguishable through local status codes and branch-specific diagnostic identities; logging/observability is part of implementation quality rather than optional after-the-fact instrumentation.
+- Significant non-trivial flows require proportional info/debug/trace observability unless a concrete bootstrap, recursion, performance, protocol/output or security constraint justifies omission.
 
 
 ## Working design
@@ -282,6 +286,16 @@ When a broader handoff legitimately spawns a specialized child task, the child o
 
 The rule is now canonical in `handoff/README.md`, routed from the root `README.md`, and enforced by `CONSISTENCY-GATE.md`.
 
+### Diagnostics and observability
+
+A recurring implementation defect was confirmed in which extensive defensive checks were flattened onto the same return/exit codes and generic log identities, making failures detectable but difficult to locate. The user explicitly established diagnosability and logging as foundational implementation concerns.
+
+The correction is now canonical in `specifications/rumiai-os/DIAGNOSTICS.md`, routed from `specifications/README.md`, summarized in `RULES.md` and enforced by `CONSISTENCY-GATE.md`. `LANG-BOOTSTRAP.md` was also realigned so language-selection failures no longer normatively collapse distinct branches into generic `execution.invalid-arguments` / `execution.execution-failed` identities.
+
+Current implementation was inspected rather than assumed compliant. Existing primitives such as `pathsearch` and `log` already show distinct local status allocation, while larger legacy flows contain reused statuses and generic diagnostic identities. Product migration is therefore deferred explicitly to `todo/diagnostic-observability-realignment.md` rather than being hidden as current compliance or changed mechanically.
+
+The user also requested recovery of an older `m` logging idea for study. Deliberate historical retrieval found the concrete mechanism in `massimilianonardi-ai/m@2a57a29880c2d7a32e18782122062c695fcb1a3a`, especially `var/#_os/m/bin/m-log.lib` and `var/#_os/m/bin/log`. It tracked subprocess depth and exposed `LOG_SUBPROCESS_LEVEL`, `LOG_SUBPROCESS_LEVEL_STEP`, `LOG_SUBPROCESS_LEVEL_MAX` and `LOG_LEVEL_FORCE`, with depth-dependent effective log-level behavior and switch/restore diagnostics. This remains historical design evidence only; current analysis is captured by `todo/log-level-child-propagation-analysis.md` and automatic child-process log-level transformation is deliberately not specified by the current diagnostics contract.
+
 ## Current state
 
 `workflow-optimization` remains active.
@@ -300,6 +314,8 @@ The legacy library visibility migration is not hidden as current compliance: it 
 
 The workflow now also treats primary user goals, normal public paths and caller/system knowledge boundaries as explicit design and completion constraints. The 2026-09-30 pkg episode is the first concrete evidence behind this gate.
 
+Failure handling now has its own current consistency surface: distinct local failure statuses, branch-specific diagnostic identity, useful structured context and proportional info/debug/trace observability are required by the canonical diagnostics contract. Legacy product realignment and child-process log-level policy analysis remain separate deferred work rather than implicit current behavior.
+
 Active task routing now uses resumable responsibility rather than topic labels. Existing long-lived owners are reused for work inside their standing responsibility unless a materially independent lifecycle exists; justified parent/child task splits keep operational state single-owned.
 
 ## Next action
@@ -315,8 +331,11 @@ Observe the TODO lifecycle, specification promotion gate and command/library man
 7. exercise the adaptive cooperation model on real tasks and collect contrasting evidence about impact, foundationality, reversibility, intent clarity, error cost, exploration value and context maturity;
 8. exercise the product-intent/operability gate on real public workflows, beginning with the pkg review, and verify that normal-path acceptance tests expose unusable but internally coherent designs;
 9. exercise the new handoff-ownership rule in normal work and watch specifically for false merges into long-lived tasks, unnecessary parallel handoffs and duplicated parent/child state;
-10. jointly review the six-point promotable core after additional real use, then promote only the minimal stable rule set to RULES.md if the evidence supports it.
+10. jointly review the six-point promotable core after additional real use, then promote only the minimal stable rule set to RULES.md if the evidence supports it;
+11. exercise the diagnostics gate on new code and verify that distinct failure branches are not flattened back onto shared statuses/generic message identities;
+12. activate `todo/diagnostic-observability-realignment.md` as a dedicated product/test audit when that migration is scheduled;
+13. analyze the historical subprocess log-level mechanism through `todo/log-level-child-propagation-analysis.md` before deciding whether a modern equivalent belongs in current `m`.
 
 ## Blockers / open questions
 
-None blocking current workflow use. The adaptive cooperation model remains deliberately non-canonical while it is exercised on real cases; the six-point core is the candidate for later joint review/promotion. Current command/library manual backfill belongs to `handoff/rumiai-os-man-documentation.md`; legacy library API visibility realignment is represented by `todo/library-api-visibility-realignment.md`.
+None blocking current workflow use. The adaptive cooperation model remains deliberately non-canonical while it is exercised on real cases; the six-point core is the candidate for later joint review/promotion. Current command/library manual backfill belongs to `handoff/rumiai-os-man-documentation.md`; legacy library API visibility realignment is represented by `todo/library-api-visibility-realignment.md`. Diagnostic legacy migration is represented by `todo/diagnostic-observability-realignment.md`; subprocess log-level propagation/reduction remains an analysis item in `todo/log-level-child-propagation-analysis.md`.
