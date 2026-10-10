@@ -9,12 +9,12 @@ Retain the released Playwright/Chrome implementation `pwc-web-control` and devel
 
 ## Current repository revisions
 
-- `rumiai-dev`: `115895b191377b0939a253a90e88b52272eac53e` (pre-handoff-update checkpoint; verify current remote HEAD on resume).
+- `rumiai-dev`: `f35960f73c23a8b719d5b115a0b324a0682cf82a` (current HEAD observed for this checkpoint; refresh on resume).
 - `electron-web-control`: `425c2fd42d7e9c43fc8403fc7c2cb460ea00950b` (current README/source; v0.1.1 release was built from `11c7a69`).
 - `pwc-web-control`: `0e7cf38e72145e5e7c85ea7312e30622b73e0baf`.
 - `pkg-catalog`: `cd4dfb8aaa21b6c25ab0f00c95fa1c9834d02783`.
-- `rumiai-tests`: `8ad2f147846154dc81edb5dd71c58f8c2951c3ba`.
-- `rumiai-os`: `9b0a88bbee43b4dee02b403b5f22b56bac76de71` (reference for the mk build; refresh before further integration).
+- `rumiai-tests`: `f3063b6d7adc0184147111eb83265504799d8c1a` (current HEAD; Electron regression change `d71be125`).
+- `rumiai-os`: `e5e773c14f19ac1b29d007ae93e76b3b13031a2b` (current HEAD; latest Electron regression jobs recorded `43c3ebf420edb7a005f3d7e1bb96552234762f0e` as their checked-out product revision).
 
 ## Applicable canonical sources
 
@@ -50,6 +50,7 @@ Retain the released Playwright/Chrome implementation `pwc-web-control` and devel
 - `electron-web-control@11c7a69` published `v0.1.1`, with Linux `mk` build plus Linux/macOS standalone test PASS (Actions `38087565410`).
 - `pkg-catalog@cd4dfb8` defines a new `n0002=v0.1.1` range whose ordinary service command is `electron-web-control-service`, with `facility-service/web-control/start` pointing to it. The old `v0.1.0` range remains untouched.
 - `rumiai-tests@8ad2f14` added a real regression path installing/selecting Playwright, reproducing a v0.1.0 default-selection conflict, then installing v0.1.1, switching the `web-control` facility and exercising `srv` without overwriting the old provider's service command. Formal Linux x86_64 and ARM64 task validations both PASSED with `Scope result: VALIDATED` (Actions `38088010462`).
+- `rumiai-tests@d71be125` made the v0.1.0 collision reproduction mandatory: it now asserts `default-selection` failure, retained v0.1.0 materialization without its package default, and preservation of the Playwright command projection before testing v0.1.1 recovery. Actions `38088704041` completed **VALIDATED** on Linux x86_64 and ARM64 (five PASS, zero FAIL/SKIP/ERROR in each job). Both jobs checked out `rumiai-os@43c3ebf420edb7a005f3d7e1bb96552234762f0e`; this evidence is revision-specific and does not validate subsequent unrelated HEADs. macOS ARM64 was queued at this checkpoint.
 - `rumiai-tests@1d0c876` added `external/electron-web-control/install-live.test`, its formal task scope and a multi-platform GitHub Actions runner. Run `38086638206` proved five PASS, zero FAIL, zero SKIP and `Scope result: VALIDATED` independently on Linux x86_64 and ARM64. Its macOS ARM64 job was still queued at the last check; this does not establish macOS package conformance.
 
 ## Working design / known limitations
@@ -60,16 +61,20 @@ Retain the released Playwright/Chrome implementation `pwc-web-control` and devel
 
 ## Current state
 
-The v0.1.1 portable release and corrected `pkg-catalog` metadata resolve the ordinary-command collision that caused physical VM install failure for v0.1.0. Formal package/recovery scopes passed on Linux x86_64 and ARM64 (`38088010462`), including a real prior Playwright provider default and a failed v0.1.0 default selection. Existing user-managed VM state remains untouched; its recovery requires an explicit physical retry and controlled service restart. Mac ARM64 package validation was still queued at the last check, and manual Google login remains untested. Hosted validation is not evidence of physical reference-host validation.
+The v0.1.1 portable release and corrected `pkg-catalog` metadata eliminate the ordinary-service-command collision with Playwright. The stronger real package/recovery test passed on Linux x86_64 and ARM64 at `rumiai-tests@d71be125` in Actions `38088704041`. It proves failure of v0.1.0 at `default-selection`, materialization of that old concrete without a package default, preservation of Playwright's ordinary service command, and successful installation/selection/public `srv` operation with v0.1.1. The prior run `38088010462` also validated both Linux architectures at `rumiai-tests@8ad2f14` but must not be attributed to d71. The old run `38087870211` had successful Linux jobs but was not the final test revision. macOS ARM64 package validation remains queued.
+
+Current `rumiai-os` implementation has a separate, more general issue: `pkg_install_one` returns success immediately for an already materialized concrete without rerunning `pkg_default_apply`; thus retrying the exact partially materialized v0.1.0 is not a repair operation. This also differs from the current `PACKAGE-MODEL.md` already-installed failure contract and the existing `pkg/install-live.test` expectation. It was identified by current source/test comparison, not proven by a new complete generic package-install test here. Do not silently treat a retry as repaired or change the general multi-operand/dependency semantics inside the Electron catalog fix; the broader `pkg install` behavior requires its own targeted realignment and coverage.
+
+The user's running Playwright service and existing package/profile state remain untouched. Physical VM recovery and manual Google login are still untested. The Linux Electron dependency's root-owned setuid helper is a separate sandbox installation prerequisite (the VM previously emitted an authorization warning), not the cause of the default-selection collision.
 
 ## Next action
 
-1. Run the precise v0.1.1 install/stop/switch/start sequence on the user's physical Linux ARM64 VM without deleting installed browser state, and observe real status and Google login separately. The formal Linux recovery tests already passed.
-2. Evaluate native/DOM event delivery under physical desktop/browser sessions and test manual Google login compatibility without bypassing security challenges.
-3. Perform user reference-host physical testing when accessible; separately retain the earlier pending physical check of `pwc-web-control` on the user's VM.
+1. On the user's Linux ARM64 VM, first inspect the existing `pkg provider default web-control`, package defaults and `srv` state, then run only `pkg install electron-web-control@v0.1.1`; verify `pkg default electron-web-control` and the preserved Playwright service command. Do not reinstall v0.1.0, remove package/profile data or change the already-running service implicitly.
+2. At a deliberate service handover, stop the existing `web-control` service through the normal `srv stop web-control` path, change the global facility default with `pkg provider default web-control electron-web-control`, and `srv start web-control`; confirm `web-control status`. If stop reports an ownership refusal or setuid preparation requires authorization, handle that explicitly rather than forcing or disabling sandbox by default.
+3. Obtain macOS ARM64 formal package evidence when its runner executes; independently test Electron event delivery and manual Google authentication on real desktop hosts. Track the generic `pkg install` partial-install/retry contract mismatch separately from the fixed Electron command collision.
 
 ## Blockers / open questions
 
-- macOS ARM64 formal package validation (latest active run `38088010462`) remains queued/pending; the v0.1.1 Linux x86_64/ARM64 formal recovery scenario passed. The provider is not physically validated on the user's Mac.
+- macOS ARM64 package validation for the current strengthened test in `38088704041` remains queued; earlier `38088010462` also has a queued macOS job. Neither is a PASS. The provider is not physically validated on the user's Mac.
 - User VM/desktop not connected to this execution environment; no physical browser-login validation.
 - Electron's DOM synthetic interaction fallback is potentially detectable; native input equivalence remains unresolved.
