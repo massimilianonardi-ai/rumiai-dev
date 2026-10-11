@@ -82,12 +82,9 @@ web-control
 
 Consumers depend on the `web-control` facility rather than on the concrete package when provider substitution is relevant.
 
-Compatibility level `1` requires:
+Compatibility level `1` is the existing immutable published baseline: command `web-control` and service `web-control` expose the lifecycle, rendered inspection/capture and deterministic click/fill/press semantics defined in this document, without any requirement to support document scrolling.
 
-```text
-command: web-control
-service: web-control
-```
+Compatibility level `2` is a separate complete, self-contained contract. It requires the same command/service identities and all level-1 operation semantics **plus** the portable `page scroll` operation below. It is not inferred to be automatically compatible with level `1` by the package resolver: consumers must state which exact compatibility they accept, and providers must declare their supported level exactly. Historic level-1 provider releases and contracts remain unchanged.
 
 The public command is the ordinary deterministic client/control surface. The service is the long-running local controller runtime and follows the existing `srv` provider-backed service lifecycle.
 
@@ -183,7 +180,7 @@ press
 
 The caller supplies the target/operand. Deciding which page element satisfies a natural-language goal belongs to `web-sense`, not `web-control`.
 
-The portable deterministic operation `page scroll` accepts a page identity and a finite signed vertical CSS-pixel delta (`0` means observe without moving). It reports the resulting document-level `scrollY`, `documentHeight`, `viewportHeight` and `atBottom` flag. Scrolling runs in the actual page context so application-driven lazy loading can observe it. The returned geometry is an instantaneous observation; a caller must allow page loading to settle and confirm stable results before asserting enumeration completeness. The command performs no site interpretation and exposes no general script evaluation, debugger or network instrumentation.
+The compatibility-level-2 deterministic operation `page scroll` accepts a page identity and a finite signed vertical CSS-pixel delta (`0` means observe without moving). It reports the resulting document-level `scrollY`, `documentHeight`, `viewportHeight` and `atBottom` flag. Scrolling runs in the actual page context so application-driven lazy loading can observe it. The returned geometry is an instantaneous observation; a caller must allow page loading to settle and confirm stable results before asserting enumeration completeness. The command performs no site interpretation and exposes no general script evaluation, debugger or network instrumentation.
 
 The exact selector representation is not fixed by this contract merely because the first implementation uses Playwright.
 
@@ -272,5 +269,5 @@ WEBCTRL-14  generic scheduling is outside web-control
 WEBCTRL-15  browser-backed providers preserve browser sandboxing by default; unsandboxed mode is explicit provider-specific opt-in only
 WEBCTRL-16  browser-backed provider services outlive browser-runtime termination, detect browser absence and recreate the browser on demand without preserving prior live page identities
 WEBCTRL-17  browser-backed status reports browser-runtime absence without starting it; browser-required operations recreate it on demand
-WEBCTRL-18  portable page scroll is vertical delta motion plus instantaneous post-scroll document geometry, not a debugger/script-evaluation primitive
+WEBCTRL-18  compatibility level 2 adds portable page scroll with vertical delta and post-scroll document geometry; level 1 remains semantically immutable
 ```
