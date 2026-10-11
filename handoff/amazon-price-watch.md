@@ -181,3 +181,13 @@ User fast-forwarded PoC checkout to `cce30a8` and ran `./m node .../test-price-m
 2. Implement the real Google Sheets and Gmail I/O adapters for the already-tested pure coordinator, with a dry-run/preview that does not change user data or send mail.
 3. Validate a controlled live execution including report delivery, acknowledgement and safe sheet write behavior; preserve the formulas and user fields.
 4. Integrate a secure supported trigger/bridge to the user-owned authenticated browser and only then activate the existing six-times-daily scheduled workflow without duplicate scheduling.
+
+## Amazon-owned membership reconciliation checkpoint (2026-10-11)
+
+- Read-only bounded snapshot of the connected Amazon Price Monitor Google Sheet: Watch has 46 rows with ASIN (42 with prior prices, 21 with targets), Star Wars has 210 rows with ASIN (185 with prior prices, 28 with targets). No invalid or duplicate ASIN was observed in the read window; neither sheet was mutated.
+- Compared with the previously user-reported complete Amazon Watch wishlist observation of 54 items. This shows why matching only the Sheet's legacy ASIN inventory is insufficient; the wishlist must be the membership authority.
+- rumiai-dev-PoCs@07b4c90ca26f7b393f7a11f86d60c9dd5d2b4f18 adds pure Amazon-owned membership reconciliation, keeps old Sheet rows as untouched historical state instead of monitoring them, plans appends for newly observed verified products, and requests G/H formula copies for new rows only. It preserves matching rows' prior prices, targets, notes and identity. Each observation is scoped by its list so a verified price in one list cannot falsely satisfy a missing price in another. GitHub Actions run 38124655653: synthetic suite PASS.
+- rumiai-dev-PoCs@3097ed2a18060ee5caad60674ccb207aa5a583da adds a direct cross-list duplicate-ASIN coverage regression; its hosted run 38124702028 was queued at this checkpoint. This is synthetic evidence, not a physical Amazon/Google write.
+- Reconciliation intentionally does not delete historical Sheet rows automatically; exact archival/removal presentation policy remains an integration choice. New unverified products are observed but never written to the Sheet. The downstream real I/O adapter must safely apply newly appended row data and G/H formula copies, with readback validation.
+- The user-operated authenticated Amazon test and both-list end-to-end run remain outstanding. The existing six-times-daily ChatGPT task remains disabled. The provider-split handoff was completed and archived; macOS verification is separately tracked under todo/electron-web-control-macos-validation.md.
+
