@@ -1,7 +1,7 @@
 # RumiAI OS — Web control
 
 Status: **Current / normative**  
-Updated: 2026-10-10
+Updated: 2026-10-11
 
 This document defines the deterministic Web observation/control capability used beneath RumiAI Web cognition.
 
@@ -183,6 +183,8 @@ press
 
 The caller supplies the target/operand. Deciding which page element satisfies a natural-language goal belongs to `web-sense`, not `web-control`.
 
+The portable deterministic operation `page scroll` accepts a page identity and a finite signed vertical CSS-pixel delta (`0` means observe without moving). It reports the resulting document-level `scrollY`, `documentHeight`, `viewportHeight` and `atBottom` flag. Scrolling runs in the actual page context so application-driven lazy loading can observe it. The returned geometry is an instantaneous observation; a caller must allow page loading to settle and confirm stable results before asserting enumeration completeness. The command performs no site interpretation and exposes no general script evaluation, debugger or network instrumentation.
+
 The exact selector representation is not fixed by this contract merely because the first implementation uses Playwright.
 
 ## 6. Debug/introspection boundary
@@ -270,4 +272,5 @@ WEBCTRL-14  generic scheduling is outside web-control
 WEBCTRL-15  browser-backed providers preserve browser sandboxing by default; unsandboxed mode is explicit provider-specific opt-in only
 WEBCTRL-16  browser-backed provider services outlive browser-runtime termination, detect browser absence and recreate the browser on demand without preserving prior live page identities
 WEBCTRL-17  browser-backed status reports browser-runtime absence without starting it; browser-required operations recreate it on demand
+WEBCTRL-18  portable page scroll is vertical delta motion plus instantaneous post-scroll document geometry, not a debugger/script-evaluation primitive
 ```
