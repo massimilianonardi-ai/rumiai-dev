@@ -73,6 +73,19 @@ Before reporting user-facing work complete, exercise the primary workflow throug
 
 While behavior remains unsettled, keep the acceptance scenarios in the active handoff. Once promoted, express the durable behavior in the applicable current specification rather than maintaining a shadow workflow contract.
 
+### Code maintainability and scope gate
+
+For work that creates, ports or changes code, apply the code-quality contract in `RULES.md` both before implementation and when reviewing the resulting diff:
+
+1. Confirm the design does only the authorized work; a port retains the original model unless a concrete change was explicitly authorized.
+2. Identify the responsibility and interface of each changed module/function; reject avoidable mixing of unrelated concerns, duplication and speculative abstraction.
+3. Read the code for clarity, not only for behavior: names, control flow and dependencies should be understandable without mentally untangling compressed or opaque constructions.
+4. Test changeability by considering one realistic small follow-up modification. A maintainer should be able to find the relevant code and change it without restructuring an unrelated part.
+5. If the structural review fails, revise the implementation even when all automated tests pass. Do not implement a deferred TODO as a side effect of the current task.
+
+This is a human design review. It must not be replaced by line-count thresholds or claims that automated checks prove readability.
+
+
 ## 3. Current source, not historical patch composition
 
 The current branch is expected to describe the current project directly.
@@ -240,19 +253,20 @@ GitHub required status checks are not part of the current RumiAI workflow and mu
 After every modification:
 
 1. reread the resulting diff;
-2. re-evaluate it against `RULES.md` and the applicable current specifications;
-3. for user-visible behavior, rerun the intent and operability gate against the resulting interface and primary normal paths;
-4. when a specification was changed, reclassify every added design statement through the specification promotion gate;
-5. when failure/status/logging/observability behavior was created or changed, perform the diagnostics and observability gate;
-6. when a `m`- or RumiAI-owned command was created, renamed, removed or modified, perform the command/manual consistency gate;
-7. when a `m`- or RumiAI-owned library or function was created, renamed, removed or modified, verify library visibility naming and perform the library/manual consistency gate;
-8. scan the touched subsystem for superseded terminology/mechanisms;
-9. verify no unrelated user/repository changes were overwritten;
-10. run only tests proportional to the change under `TESTING.md`;
-11. state physical-validation status accurately and revision-specifically;
-12. verify Git history remains forward-only;
-13. if concrete unfinished work was discovered but intentionally deferred, ensure it is either already represented by an active task or captured once under `todo/`;
-14. when the task has an active handoff, determine whether the resulting state is a meaningful checkpoint and synchronize it before the final response when required.
+2. review changed code for maintainability, clear responsibilities, authorized scope and ease of a realistic future modification;
+3. re-evaluate it against `RULES.md` and the applicable current specifications;
+4. for user-visible behavior, rerun the intent and operability gate against the resulting interface and primary normal paths;
+5. when a specification was changed, reclassify every added design statement through the specification promotion gate;
+6. when failure/status/logging/observability behavior was created or changed, perform the diagnostics and observability gate;
+7. when a `m`- or RumiAI-owned command was created, renamed, removed or modified, perform the command/manual consistency gate;
+8. when a `m`- or RumiAI-owned library or function was created, renamed, removed or modified, verify library visibility naming and perform the library/manual consistency gate;
+9. scan the touched subsystem for superseded terminology/mechanisms;
+10. verify no unrelated user/repository changes were overwritten;
+11. run only tests proportional to the change under `TESTING.md`;
+12. state physical-validation status accurately and revision-specifically;
+13. verify Git history remains forward-only;
+14. if concrete unfinished work was discovered but intentionally deferred, ensure it is either already represented by an active task or captured once under `todo/`;
+15. when the task has an active handoff, determine whether the resulting state is a meaningful checkpoint and synchronize it before the final response when required.
 
 ## 12. Documentation consistency checks
 
@@ -326,6 +340,8 @@ A RumiAI task is ready to report as complete only when every applicable item is 
 [ ] the caller/system knowledge boundary was checked and avoidable implementation knowledge was not pushed onto the caller
 [ ] surprising user-visible restrictions or added steps were treated as explicit semantic decisions rather than incidental implementation consequences
 [ ] the resulting primary public workflow was exercised from the user/operator perspective when applicable
+[ ] changed code was reviewed for clear, bounded module/function responsibilities, readable flow and a realistic small future modification
+[ ] code changes stayed within the authorized scope; deferred TODO work and speculative mechanisms were not implemented
 [ ] no existing responsibility was duplicated under a new name
 [ ] no contract was changed silently
 [ ] every statement added to a current specification passed the specification promotion gate
