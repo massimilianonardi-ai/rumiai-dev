@@ -9,11 +9,11 @@ Retain the released Playwright/Chrome implementation `pwc-web-control` and devel
 
 ## Current repository revisions
 
-- `rumiai-dev`: `22fc96c82f76359f3edc7c4130a10a3944969c01` (pre-checkpoint HEAD; refresh on resume).
-- `electron-web-control`: `71f23bc2beab120a79f186b7b5f9f2ec7b7f6d22` (released v0.1.2 source).
+- `rumiai-dev`: `12c4f4a7363809a3bcbe8ae9032854cd7ab2d0cc` (pre-checkpoint HEAD; refresh on resume).
+- `electron-web-control`: `b1833d8f8e29bf6e49b14e7737a2b69f37cb57d6` (released v0.1.3 source).
 - `pwc-web-control`: `0e7cf38e72145e5e7c85ea7312e30622b73e0baf`.
-- `pkg-catalog`: `32e2428e1b95c9ea5adecd76a40404eadf3d5117` (v0.1.2 added; old ranges unchanged).
-- `rumiai-tests`: `92fc8065eb8436484eecf03b0e778a42e2dee5c8` (Electron v0.1.2 upgrade regression).
+- `pkg-catalog`: `7c1e5937dbcf7c51b1fa48511f6576ef4068678e` (v0.1.3 added; old ranges unchanged).
+- `rumiai-tests`: `7666938131a8eeadd5fb9020d9cede42942e87ec` (v0.1.3 upgrade regression).
 - `rumiai-os`: `95c8e54ecc697027e9a857ba638321ce76bbe147` (v0.1.2 package validation target revision).
 
 ## Applicable canonical sources
@@ -25,7 +25,7 @@ Retain the released Playwright/Chrome implementation `pwc-web-control` and devel
 
 - Portable command, service and facility remain `web-control`, with compatibility level 1. Playwright concrete identity stays `pwc-web-control`. The prior `rumiai-web-control` package and authenticated profiles remain untouched.
 - Electron provider source and local standalone HOME are separate, under `electron-web-control`. No automatic cross-provider cookie/session migration.
-- Electron v0.1.1 introduced the provider-specific ordinary service command. The new v0.1.2 adds a visible, opaque start page and native navigation menu without changing the facility interface or the previously published v0.1.0/v0.1.1 ranges; installed concretes and profiles must remain untouched.
+- Electron v0.1.1 introduced the provider-specific ordinary service command. v0.1.2 added visible desktop navigation; v0.1.3 uses page-scoped Chromium input events internally, with explicit synthetic fallback only where delivery fails. None changes the public facility interface, prior release ranges or provider-owned profile locations.
 - Preserve browser sandboxing; no unrestricted CDP listener or CAPTCHA bypass. A successful manual Gmail authentication on one user-operated Linux ARM64 VM is direct site-acceptance evidence for that setup, not a universal compatibility or anti-detection guarantee.
 
 ## Acceptance scenarios
@@ -34,6 +34,7 @@ Retain the released Playwright/Chrome implementation `pwc-web-control` and devel
 2. Standalone Electron controller allows `web-control status`, page navigation/inspection, capture and explicit interactions, preserves authenticated local test-fixture storage across restart, and survives all-window closure.
 3. With Playwright already installed/selected and v0.1.0 partially integrated, `pkg install electron-web-control@v0.1.1` succeeds, the provider switches through `pkg provider default web-control electron-web-control`, and `srv` starts the Electron controller without clobbering the Playwright service command.
 4. On a physical graphical desktop, starting the Electron provider opens an **opaque, usable browser window** with an obvious way to enter a URL and navigate without first knowing a page ID or running a CLI command. A manual login remains possible through ordinary mouse/keyboard interaction and retains the provider-owned profile.
+5. Public `web-control page fill/press/click` on an isolated, real Electron browser can edit an input and a contenteditable draft and activate a local save action, with Chromium-delivered `isTrusted=true` events. This does not assert Gmail-specific automation.
 
 ## Completed
 
@@ -56,15 +57,19 @@ Retain the released Playwright/Chrome implementation `pwc-web-control` and devel
 - `electron-web-control@71f23bc` released **v0.1.2**: a non-privileged opaque data-URL start page with address form, desktop Navigate menu (open URL, new window, back/forward/reload), colored window background, and preserved sandbox/profile/service contracts. Real Electron GUI fixture test exercises URL entry + click to navigate without the CLI `page navigate` path, plus screenshot and existing session/lifecycle tests. GitHub Actions `38089866140`: Linux standalone and canonical `mk check test build` PASS and v0.1.2 GitHub release asset published; macOS job still queued at this checkpoint.
 - `pkg-catalog@32e2428` added the versioned `n0003=v0.1.2` definition with the unchanged distinct Electron service command. `rumiai-tests@92fc806` extended the permanent real public `pkg`/`srv` regression through v0.1.0 conflict, v0.1.1 recovery and v0.1.2 upgrade. Actions `38089980871` completed **Scope result: VALIDATED** on both Linux x86_64 and ARM64 using `rumiai-tests@92fc806` and `rumiai-os@95c8e54` (five PASS, zero FAIL/SKIP/ERROR on each). The macOS ARM64 package job remained queued at checkpoint.
 - On 2026-10-11 the user reported that the corrected Electron desktop **works** on their physical Linux ARM64 VM and that they **successfully authenticated to Gmail without problems**. This closes the originally reported unusable/transparent-window symptom and supplies a successful manual real-site login trial for that setup. The user then closed the browser, stopped and restarted the service, and reported remaining logged into Gmail. This adds a successful real-site authenticated-session persistence check across a normal service restart on the same VM. Both checks were performed by the user, not independently inspected by this assistant; the exact on-host installed revision and logs are not available.
+- `electron-web-control@56d899d` replaced unreliable `sendInputEvent` with internal page-scoped Chromium `Input.dispatchMouseEvent`, `Input.insertText` and `Input.dispatchKeyEvent`. Source commits `da8e24d` and release `b1833d8` additionally test trusted events on both ordinary inputs and `contenteditable` draft-like controls through the actual public CLI and Electron runtime, with no Gmail account or real email used. GitHub Actions `38119140913`, `38119223065` and release run `38119296425` report Linux and macOS standalone test PASS, Linux canonical `mk check test build` PASS; v0.1.3 release asset published. The existing synthetic DOM fallback is retained and warned, never represented as trusted input.
+- `pkg-catalog@7c1e593` added the versioned v0.1.3 range while preserving v0.1.0/v0.1.1/v0.1.2 and the Playwright service projection. `rumiai-tests@7666938` extended the real package install/recovery/service regression through v0.1.3. Actions `38119393873`: **VALIDATED** on both Linux x86_64 and Ubuntu 26.04 ARM64, using `rumiai-os@95c8e54` and `rumiai-tests@7666938`, five PASS and no FAIL/SKIP/ERROR on each; macOS ARM64 package job queued at checkpoint.
 - `rumiai-tests@1d0c876` added `external/electron-web-control/install-live.test`, its formal task scope and a multi-platform GitHub Actions runner. Run `38086638206` proved five PASS, zero FAIL, zero SKIP and `Scope result: VALIDATED` independently on Linux x86_64 and ARM64. Its macOS ARM64 job was still queued at the last check; this does not establish macOS package conformance.
 
 ## Working design / known limitations
 
-- Electron `sendInputEvent` keyboard/mouse events can be accepted by the main process but not reach DOM listeners on tested hosts. Current `press`/`click` detect delivery and use an explicitly logged DOM synthetic fallback (`isTrusted=false`) when needed. `fill` uses the DOM native value setter and synthetic input/change events. This can be fingerprinted/rejected by some sites; no stealth guarantee, and it is not equivalent to physical input. Evaluate native alternatives separately before treating the provider as viable for resistant sites.
+- The original `webContents.sendInputEvent` path could fail to deliver native keyboard/mouse events to DOM listeners. v0.1.3 instead uses Chromium's `Input` methods through a page-scoped internal Electron debugger. On tested Linux Xvfb/Openbox and macOS hosts, fixture inputs/clicks/keys are `isTrusted=true`. It retains explicitly logged DOM synthetic compatibility fallbacks if native delivery fails. This is not a stealth/anti-detection guarantee and native browser-generated events are not identical to physically generated desktop input; real Gmail automation remains untested.
 - `ELECTRON_WEB_CONTROL_SOFTWARE_RENDERING=1` is only an explicit opt-in for virtual-display Viz errors. The normal desktop default remains hardware rendering.
-- The v0.1.1 release and catalog now use distinct ordinary service command `electron-web-control-service`; facility/service identity remains `web-control`. Dual-provider installation, explicit provider selection, recovery after v0.1.0 failed default selection and `srv` passed real formal tests on Linux x86_64 and ARM64. macOS ARM64 package validation remains pending and the renderer interaction fallback may be synthetic.
+- Released ranges since v0.1.1 use distinct ordinary service command `electron-web-control-service`; facility/service identity remains `web-control`. Dual-provider installation and `srv` were validated through v0.1.3 on Linux x86_64 and ARM64. macOS ARM64 package validation remains pending; a synthetic fallback is still possible.
 
 ## Current state
+
+Version v0.1.3 is published and cataloged. Chromium-generated trusted `click`/`fill`/`press` events were proven through the real Electron runtime against local isolated input and rich-text fixtures on Linux and macOS. Public package/service upgrade through v0.1.3 is formally VALIDATED on Linux x86_64 and Ubuntu 26.04 ARM64; hosted macOS package validation is still queued. The user's authenticated Gmail profile was neither accessed nor changed, and **automation against live Gmail has not been verified**; user manual Gmail login/persistence evidence belongs to the earlier physical setup.
 
 The user has now confirmed that the corrected Electron GUI works on their physical Linux ARM64 VM and that manual Gmail sign-in completed without problems (reported 2026-10-11, after v0.1.2 instructions). This resolves the reported transparent/unusable-window symptom for the tested configuration; the deployed concrete revision remains unverified independently. The user also reported that Gmail remained authenticated after closing the browser, stopping the service and starting it again, establishing physical-session persistence on that host for the tested configuration. Release v0.1.2 has passed real Linux standalone tests and canonical mk, and its artifact is published. The new package regression was VALIDATED on Linux x86_64 and Ubuntu 26.04 ARM64 (`38089980871`). macOS ARM64 remained queued at this checkpoint. No VM process, package or browser profile was modified remotely.
 
@@ -76,12 +81,12 @@ This assistant has not changed or inspected the user's VM, Playwright installati
 
 ## Next action
 
-1. Treat user-reported physical Electron GUI usability, Gmail manual sign-in and authenticated-session persistence across browser closure and service stop/restart as successful for that Linux ARM64 VM. Only if formal on-host evidence is later required, capture the deployed concrete revision and non-sensitive test metadata without accessing private account data.
-2. Obtain macOS ARM64 formal package evidence when its runner executes, and assess native versus synthetic automated input separately from the now-successful manual Gmail login.
-3. Track the generic `pkg install` partial-install/retry contract mismatch separately from the fixed Electron command collision.
+1. On the user's Ubuntu ARM64 VM, when deliberately testing the new input path, install `electron-web-control@v0.1.3`, switch/restart the service normally if needed, and do a **read-only Gmail interaction smoke test** using the existing public `web-control` command (e.g. harmless search query, no message reading or sending, no private account data in logs). The user owns this physical session; it cannot be exercised from this repository/CI environment. Do not imply that the successful old manual login tested native automation.
+2. Resolve/record macOS ARM64 package validation separately if its queued runner eventually executes. Preserve physical profile state, sandboxing and prior concrete package versions.
+3. Track generic `pkg install` partial-install/retry contract mismatch separately from Electron input.
 
 ## Blockers / open questions
 
 - v0.1.2 package validation `38089980871` passed on Linux x86_64 and ARM64; macOS ARM64 hosted source/package validations remained queued at this checkpoint. Queued work is not a PASS. The provider is not physically validated on the user's Mac.
 - User-operated Linux ARM64 VM GUI, Gmail login and persistence across service restart are reported successful. This assistant has no VM connection, transcript, independently checked exact revision or verified provider-command input equivalence; do not relabel the user report as a formally recorded physical validation session.
-- Electron's DOM synthetic interaction fallback is potentially detectable; native input equivalence remains unresolved.
+- Browser-generated trusted events were validated on local fixtures, but Gmail-specific native interaction/detection behavior and physical input equivalence have not been verified. Synthetic fallback may remain detectable.
