@@ -1,6 +1,6 @@
 # Web-control provider split
 
-Status: Active
+Status: Complete
 Updated: 2026-10-11
 
 ## Goal
@@ -9,7 +9,7 @@ Retain the released Playwright/Chrome implementation `pwc-web-control` and devel
 
 ## Current repository revisions
 
-- `rumiai-dev`: `d9494c9961828ed93d990c474a4a082ecda9edb3` (pre-checkpoint HEAD; refresh on resume).
+- `rumiai-dev`: `6d3e89a83c7e9a0b0a4cba7319f3348e2fe76444` (pre-closure HEAD; refresh on resume).
 - `electron-web-control`: `b1833d8f8e29bf6e49b14e7737a2b69f37cb57d6` (released v0.1.3 source).
 - `pwc-web-control`: `0e7cf38e72145e5e7c85ea7312e30622b73e0baf`.
 - `pkg-catalog`: `7c1e5937dbcf7c51b1fa48511f6576ef4068678e` (v0.1.3 added; old ranges unchanged).
@@ -82,13 +82,7 @@ Current `rumiai-os` implementation has a separate, more general issue: `pkg_inst
 
 This assistant has not changed or inspected the user's VM, Playwright installation or browser profiles. The user-reported desktop and Gmail authentication check, including persistence after stopping/restarting the service, succeeded; this does not demonstrate equivalence of automated native and synthetic input. The Linux Electron dependency's root-owned setuid helper remains a separate sandbox installation prerequisite, not the cause of the earlier default-selection collision.
 
-## Next action
-
-1. Treat the user-reported live Gmail search, unsent compose, and Gmail draft surviving `srv stop`/`srv start` as successful narrow physical smoke scenarios; the user deleted the test draft afterward. No additional code change or physical test is necessary for these observations. Do not infer sending, independently verified event `isTrusted` or arbitrary-site compatibility from these tests; preserve the authenticated profile and do not send mail without a new explicit request.
-2. Resolve/record macOS ARM64 package validation separately if its queued runner eventually executes. Preserve physical profile state, sandboxing and prior concrete package versions.
-3. Track generic `pkg install` partial-install/retry contract mismatch separately from Electron input.
-
-## Blockers / open questions
+## Next action,,Provider-split implementation on Linux is complete. Pending macOS ARM64 package validation is owned only by todo/electron-web-control-macos-validation.md. The generic pkg install partial-retry mismatch belongs to the active pkg-dependency-resolution handoff and is not an Electron blocker. AI-level web-sense and Amazon-specific monitoring continue under their existing separate handoffs.,,## Final consistency audit (2026-10-11),,- Current provider contract, catalog versions, service projection, package integration tests and both provider source repositories were inspected. Public facility web-control remains provider neutral; Electron service command remains distinct from Playwright.,- Both independent providers are package-owned external commands. DOCUMENTATION-MODEL.md mandatory res/sys/manual/ coverage applies to integrated m/RumiAI command identities, not package-owned external executables. The two provider repositories document operational CLI, service, installation and security behavior in their README files. Core pkg and srv manuals remain present under rumiai-os/res/sys/manual/.,- Electron README was aligned to user-reported Ubuntu ARM64 Gmail physical smoke outcomes (manual login, session across restart, read-only search, unsent compose, Gmail-owned draft persistence); no universal acceptance/trusted-input guarantee or email-send validation is inferred. User deleted the test draft.,- Electron v0.1.3 standalone release tests passed Linux/macOS; real package/service validation passed on Linux x86_64 and ARM64. The macOS package job is still queued, not a pass, and is deferred in a separate TODO.,- No product code change or new release is required to close the tested Linux provider work. No user's browser session or other repository changes were altered.,## Blockers / open questions
 
 - v0.1.2 package validation `38089980871` passed on Linux x86_64 and ARM64; macOS ARM64 hosted source/package validations remained queued at this checkpoint. Queued work is not a PASS. The provider is not physically validated on the user's Mac.
 - User-operated Linux ARM64 VM GUI, Gmail login and persistence across service restart are reported successful. This assistant has no VM connection, transcript, independently checked exact revision or verified provider-command input equivalence; do not relabel the user report as a formally recorded physical validation session.
