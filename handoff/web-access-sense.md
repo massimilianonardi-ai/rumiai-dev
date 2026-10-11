@@ -59,15 +59,13 @@ The user explicitly wants future automation across Computer Use, Computer Contro
 
 Accessibility and independent use by people with disabilities are essential motivating scenarios: automation restrictions can impede assistive technology and force additional human dependence. Preserve the user's concern about advertising/business incentives as their perspective, not a verified motive for a specific Google restriction. Future evaluation must compare real-site acceptance, reliability, permissions, user agency and security without prematurely selecting a stealth technique or changing the current `WEB-CONTROL.md` safety boundary.
 
-### Remaining implementation design
+### Current deterministic provider baseline
 
-The canonical `web-sense` / `web-control` boundary, `web-control` ownership, independent-project placement, package/facility identity and baseline deterministic contract now live in `specifications/rumiai-os/WEB-CONTROL.md` and are no longer duplicated here.
+The provider-independent contract remains specifications/rumiai-os/WEB-CONTROL.md. Current independent concrete providers are pwc-web-control (Playwright/Chrome v0.1.4) and electron-web-control (Electron v0.1.3), realized through the web-control compatibility-1 facility. The earlier rumiai-web-control project remains only a legacy compatibility package and is not a current provider development plan.
 
-The first concrete provider is still planned around Node.js + Playwright + a Chromium-class browser, using PoC 057 as implementation evidence. Playwright/CDP/Chromium remain provider details rather than canonical API.
+Electron Linux ARM64 user-observed physical checks include Gmail login, authenticated restart, search and unsent composition with draft persistence; these do not prove universal site acceptance or live event trust flags. The separate provider-split handoff owns its final acceptance and Mac deferral.
 
-The independent `rumiai-web-control` repository contains the promoted controller implementation, client/service commands, `mk.json`, end-to-end tests and release build workflow. Current release `v0.1.3` is published and is represented in `pkg-catalog` as `n0004=v0.1.3`, preserving earlier immutable releases. Project CI run 37612637545 passed on Linux and macOS and mechanically verified the current lifecycle: Chromium sandboxing is enabled by default; external browser closure keeps the controller service alive; `status` detects browser absence without relaunching it; `page new` relaunches the browser on demand using the same persistent profile.
-
-The first provider packaging choices remain mechanically settled: the package depends on facilities `chromium =1` and `nodejs =26`, the release artifact is `all`, and the extracted artifact is normalized by `pkg-extract` before package link validation. `v0.1.1` introduced bounded client retries for startup-compatible local-socket `ENOENT`/`ECONNREFUSED`. `v0.1.2` was an immutable intermediate release that enabled Chromium sandboxing but briefly used the now-superseded browser-exit-means-service-exit behavior. `v0.1.3` preserves sandboxing while making the Node controller the durable service lifecycle and Chromium a subordinate managed runtime that can be absent and lazily recreated. Current `pkg-catalog` also projects `CHROME_DEVEL_SANDBOX` through facility `chromium =1`: Linux maps it to `root-path chrome_sandbox`, while non-Linux provider realizations project an empty value.
+Playwright-only debug cdp is a provider-specific extension, not a common Electron/web-control capability. The Amazon Wishlist extractor depends on that extension and belongs to the application handoff/amazon-price-watch.md; higher-level web-sense orchestration remains independent.
 
 ### ChatGPT integration model
 
@@ -124,16 +122,16 @@ This Web-access task keeps only reusable architectural consequences. Amazon Pric
 - The concrete Amazon Price Watch work has been split into `handoff/amazon-price-watch.md`. This handoff retains only reusable Web architecture work; Amazon-specific scheduling, extraction, persistence and notification state no longer belongs here.
 ## Current state
 
-The original physical ENOENT/readiness issue is closed. The current first-provider release is `rumiai-web-control v0.1.3`, with catalog concrete `n0004=v0.1.3`.
+Both current concrete providers are published and Linux package/service integration is validated for released revisions. The original first-provider ENOENT issue and the historical rumiai-web-control GitHub 403 physical-install blocker do not describe the current independent provider acceptance status. The Electron provider has a successful, user-reported Gmail smoke path; macOS package validation remains deferred separately.
 
-The current lifecycle is intentionally asymmetric: `web-control-service` remains the long-running controller even when Chromium is manually closed or crashes. `web-control status` remains available and reports browser absence without reopening it; the next `page new` recreates Chromium under the same logical persistent profile. Chromium sandboxing is explicitly enabled, and the current Linux Chromium facility projects `CHROME_DEVEL_SANDBOX` to the prepared sandbox helper.
+This handoff continues the RumiAI web-sense and ChatGPT/private-machine integration work, not provider-split implementation or Amazon-specific monitoring.
 
-Project-level runtime validation is green on Linux and macOS in run 37612637545. The current permanent composed package test is aligned to the same semantics, but its hosted execution is presently blocked before runtime by repeatable HTTP 403 responses during live GitHub dependency resolution in `pkg install`. Physical validation of `v0.1.3` through the current package/catalog path is therefore still required.
 ## Next action
 
-Resolve the package-subsystem GitHub HTTP 403 blocker before retrying physical `rumiai-web-control` installation. The current candidate fix is optional authenticated GitHub REST access in the GitHub repository adapter while preserving anonymous operation when no credential is supplied; this requires explicit authorization because it modifies `rumiai-os` package-subsystem product code. After that blocker is fixed and validated, rerun `pkg depend rumiai-web-control@v0.1.3`, then the clean install and the sandbox/browser-relaunch physical validation.
+Design and test a minimal web-sense orchestration/adaptation workflow over the existing web-control baseline. Retain human intervention for login/challenges and validate accessible user-side interaction empirically. Evaluate only currently supported secure local/remote ChatGPT integration paths; do not assume the cloud scheduler directly controls the user's local VM.
+
 ## Blockers / open questions
 
-The original ENOENT readiness blocker is closed. The active provider blocker is physical composed validation of `v0.1.3` with the current Chromium sandbox facility projection. Hosted composed validation and the current physical clean install are both blocked before service execution by the same HTTP 403 from the GitHub repository boundary. This is package-repository access behavior, not a `web-control` runtime failure.
-
-- Determine which ChatGPT integration paths are baseline versus optional compatibility bridges.
+- AI-level page interpretation and supported ChatGPT/private-browser bridge are not implemented.
+- Site-acceptance, accessibility and OS-native input equivalence beyond user-observed Gmail scenarios need targeted evidence, not stealth claims.
+- Electron macOS ARM64 package validation is deferred; the general pkg subsystem remains independently owned.
