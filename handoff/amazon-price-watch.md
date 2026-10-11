@@ -177,7 +177,7 @@ User fast-forwarded PoC checkout to `cce30a8` and ran `./m node .../test-price-m
 
 ## Pending end-to-end closure steps (2026-10-11)
 
-1. Obtain the current Star Wars wishlist URL through an authoritative user-controlled source and physically validate both wishlist extractions using Playwright.
+1. The user supplied the Star Wars wishlist URL in the 2026-10-11 conversation. Preserve that URL privately for runtime configuration; do not re-request it or publish its opaque list ID in a public repository. Before physical two-list validation, remove the extractor's direct dependency on Playwright/CDP and validate an actual provider-neutral execution path on both released web-control provider implementations.
 2. Implement the real Google Sheets and Gmail I/O adapters for the already-tested pure coordinator, with a dry-run/preview that does not change user data or send mail.
 3. Validate a controlled live execution including report delivery, acknowledgement and safe sheet write behavior; preserve the formulas and user fields.
 4. Integrate a secure supported trigger/bridge to the user-owned authenticated browser and only then activate the existing six-times-daily scheduled workflow without duplicate scheduling.
@@ -194,4 +194,16 @@ User fast-forwarded PoC checkout to `cce30a8` and ran `./m node .../test-price-m
 
 ## Wishlist URL lookup checkpoint (2026-10-11)
 
-The current Google Sheet Watch and Star Wars ranges were searched read-only for Amazon wishlist URLs. No wishlist URL appears in the searched rows/notes/product URLs. Watch's URL is known from the PoC default, but Star Wars remains an essential missing source identity for live two-list execution. Neither sheet was changed.
+The current Google Sheet Watch and Star Wars ranges were searched read-only for Amazon wishlist URLs. No wishlist URL appears in the searched rows/notes/product URLs. Both wishlist URLs are now known: Watch from PoC 060, Star Wars supplied directly by the user on 2026-10-11. The Star Wars opaque wishlist ID should not be copied into this public handoff; obtain the exact URL from that user message and store it only in private runtime configuration. Neither sheet was changed.
+
+## User correction: provider-neutral extraction required (2026-10-11)
+
+The user explicitly rejected the unannounced Playwright/CDP-specific dependency in the Amazon wishlist extractor. Existing standardization and provider interchangeability are intentional project requirements, not optional conveniences. The assistant acknowledged that the earlier PoC used `web-control debug cdp Runtime.evaluate` directly, contrary to the expected provider independence, and failed to disclose that limitation when presenting physical validation.
+
+**Current mismatch:** PoC 060 `probe.mjs` invokes a Playwright-only privileged debugger command for DOM snapshot, scrolling and passive request recording. The current `WEB-CONTROL.md` portable level-1 surface covers rendered HTML/text inspection and deterministic click/fill/press, but not generic page script evaluation. Electron does not provide `debug cdp`. Consequently the actual PoC is NOT provider-interchangeable despite its use of the `web-control` executable. Prior real wishlist results remain valid for the tested configuration but cannot be promoted to common-provider evidence.
+
+**Required correction before Amazon finalization:** choose and validate a provider-independent deterministic observation/scrolling contract sufficient for lazy-loaded wishlist completeness and price verification, or express a genuinely common privileged page-scoped operation with the same documented security boundary and semantics in both providers. Do not merely rename CDP or hide provider-specific calls behind a wrapper and claim portability. Update canonical specification, both implementations/operational references and proportional real fixture tests if a public common operation changes; then change PoC 060 to use only the supported common surface and validate the physical user flow on both provider types. Keep raw debugger capabilities optional/provider specific and never bypass login challenges.
+
+**Star Wars input:** The user provided the complete Amazon.it Star Wars wishlist URL in the 2026-10-11 conversation. It is no longer a missing user input. Its opaque list identifier must be kept out of public repo content; create private local configuration at deployment. The previous suggestion to proceed with a Playwright-only monitor is superseded by this explicit correction.
+
+**Scheduling:** The existing six-times-daily Amazon Price Watch task remains disabled until this provider-neutral issue, both-list real extraction, Sheets/Gmail delivery and secure execution bridge are validated. No automation or account change was made by this corrective checkpoint.
