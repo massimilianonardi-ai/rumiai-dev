@@ -1,7 +1,7 @@
 # workflow-optimization
 
 Status: Active
-Updated: 2026-10-10
+Updated: 2026-10-11
 
 ## Goal
 
@@ -10,7 +10,7 @@ Maintain a long-lived meta-workstream for continuously evaluating and improving 
 ## Current repository revisions
 
 ```text
-rumiai-dev    1fab16b70e5c1e18085b21e63c2488eb457d7960  (pre-checkpoint HEAD after final diagnostics-contract tightening)
+rumiai-dev    3ce3ddb53fec4c0bac726101ed5e95dd0979ae4e  (pre-handoff HEAD with code-maintainability rule and gate)
 rumiai-os     99ff4358104c2abf934a22d0bc186ec72dc43a7d  (current implementation inspected for diagnostic behavior; not modified)
 rumiai-tests  8a3c840dce33627cea622f1d147cef97a301bc57  (current log tests inspected; not modified)
 pkg-catalog   f0cdadb09ced5ca26c7745b5996de89cab24f7c1  (current remote HEAD; not involved in this correction)
@@ -169,6 +169,10 @@ These points should later be reviewed together and promoted only in the smallest
 
 ## Completed
 
+### Code maintainability and scope gate
+
+The explicit user correction that working code must also be readable, bounded in responsibility, easy to modify, extensible and reusable was promoted as a completion criterion into `RULES.md`. `CONSISTENCY-GATE.md` now requires pre-implementation and post-change human review of those properties and of strict adherence to the authorized scope. No product code or deferred bootstrap TODO was changed.
+
 ### Current-only documentation and retrieval model
 
 The documentation was reorganized around:
@@ -298,6 +302,8 @@ The user also requested recovery of an older `m` logging idea for study. Deliber
 
 ## Current state
 
+The new code-maintainability and scope gate is current canonical workflow; it must be exercised on future implementation tasks rather than treated as a claim that legacy code already complies.
+
 `workflow-optimization` remains active.
 
 The workstream now also retains an adaptive cooperation model as working design. Its central distinction is execution autonomy versus decision autonomy, with escalation driven by semantic/architectural impact and contextual foundationality rather than raw technical complexity. A six-point promotable core has been isolated but intentionally not yet added to RULES.md.
@@ -335,6 +341,7 @@ Observe the TODO lifecycle, specification promotion gate and command/library man
 11. exercise the diagnostics gate on new code and verify that distinct failure branches are not flattened back onto shared statuses/generic message identities;
 12. activate `todo/diagnostic-observability-realignment.md` as a dedicated product/test audit when that migration is scheduled;
 13. analyze the historical subprocess log-level mechanism through `todo/log-level-child-propagation-analysis.md` before deciding whether a modern equivalent belongs in current `m`.
+14. apply the code-maintainability and scope gate to upcoming implementation tasks and verify that ordinary small changes stay locally understandable.
 
 ## Blockers / open questions
 
