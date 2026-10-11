@@ -1,7 +1,7 @@
 # Web access sense
 
 Status: Active
-Updated: 2026-10-07
+Updated: 2026-10-11
 
 ## Goal
 
@@ -52,6 +52,12 @@ Define a general-purpose RumiAI web-access sense that lets RumiAI observe and in
 5. A site requiring human login, consent or challenge handling can hand control to the user and then continue using the same persistent browser profile/session rather than attempting to bypass the challenge.
 
 ## Working design
+
+### User agency, accessibility and site acceptance (open evaluation)
+
+The user explicitly wants future automation across Computer Use, Computer Control, browser use and Web control to be as unobtrusive and indistinguishable from ordinary user interaction as technically feasible. This request follows observed differences in Google sign-in acceptance between browser-control mechanisms; the exact detection causes are not established. Treat compatibility with the user's normal authenticated workflow, minimal unnecessary automation fingerprints, local OS accessibility/native controls and provider substitution as candidates to evaluate empirically, not as a guaranteed-undetectable implementation contract or permission to bypass login challenges.
+
+Accessibility and independent use by people with disabilities are essential motivating scenarios: automation restrictions can impede assistive technology and force additional human dependence. Preserve the user's concern about advertising/business incentives as their perspective, not a verified motive for a specific Google restriction. Future evaluation must compare real-site acceptance, reliability, permissions, user agency and security without prematurely selecting a stealth technique or changing the current `WEB-CONTROL.md` safety boundary.
 
 ### Remaining implementation design
 
