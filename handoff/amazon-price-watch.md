@@ -9,12 +9,13 @@ Replace the fragile model-driven Amazon Price Watch polling path with a determin
 
 ## Current repository revisions
 
-- rumiai-dev: a26e3b089c58665be244cd778974d7155929b55b
-- rumiai-dev-PoCs: 3dc9480baf4b112c263935a9e52cc1104c981936
-- rumiai-web-control: 8ed3ab888ecdc4970d90a6f14f0d7b7b93fce122
-- rumiai-os: 382369cfde55b158bdf9bb8c7c7ba352fb00ca5e
-- rumiai-tests: 345ef3837e3184058453789e78b46344b2a665b9
-- pkg-catalog: 9e1a24277de4f203c9796c50c04d2ad73395b0fa
+- rumiai-dev: db81b46a910c1b9fa4a147a85bcdcb64e98f330e (pre-handoff update; recheck HEAD on resume)
+- rumiai-dev-PoCs: eac13331d8cef9db4fa14b416fba1dbf3a6c1a3a (provider-neutral PoC 060 and hosted Electron fixture)
+- electron-web-control: 7012c364beb3d082754cd1eeb23f904750cde9c0 (v0.1.4 + README)
+- pwc-web-control: 5f3c8d298ac916be72ea59461a167ac31610ca61 (v0.1.5 + README)
+- rumiai-os: 95c8e54ecc697027e9a857ba638321ce76bbe147
+- rumiai-tests: 7666938131a8eeadd5fb9020d9cede42942e87ec
+- pkg-catalog: 133498e485b46c3b6a63c8a69f0a9ebf9a98881b (facility compatibility 2 and both new version ranges)
 
 ## Applicable canonical sources
 
@@ -177,7 +178,7 @@ User fast-forwarded PoC checkout to `cce30a8` and ran `./m node .../test-price-m
 
 ## Pending end-to-end closure steps (2026-10-11)
 
-1. The user supplied the Star Wars wishlist URL in the 2026-10-11 conversation. Preserve that URL privately for runtime configuration; do not re-request it or publish its opaque list ID in a public repository. Before physical two-list validation, remove the extractor's direct dependency on Playwright/CDP and validate an actual provider-neutral execution path on both released web-control provider implementations.
+1. Both wishlist URLs are known (Star Wars supplied 2026-10-11; keep its opaque ID outside the public repository). The Playwright/CDP dependency has been removed from the PoC 060 extraction engine and the new shared scrolling API has passed provider-specific tests and an actual Electron hosted fixture. Next: physically validate the updated extractor on both Amazon.it wishlist pages through the user's authenticated Electron provider v0.1.4, including price accuracy, lazy-load completion and blocked-page failure handling.
 2. Implement the real Google Sheets and Gmail I/O adapters for the already-tested pure coordinator, with a dry-run/preview that does not change user data or send mail.
 3. Validate a controlled live execution including report delivery, acknowledgement and safe sheet write behavior; preserve the formulas and user fields.
 4. Integrate a secure supported trigger/bridge to the user-owned authenticated browser and only then activate the existing six-times-daily scheduled workflow without duplicate scheduling.
@@ -200,10 +201,14 @@ The current Google Sheet Watch and Star Wars ranges were searched read-only for 
 
 The user explicitly rejected the unannounced Playwright/CDP-specific dependency in the Amazon wishlist extractor. Existing standardization and provider interchangeability are intentional project requirements, not optional conveniences. The assistant acknowledged that the earlier PoC used `web-control debug cdp Runtime.evaluate` directly, contrary to the expected provider independence, and failed to disclose that limitation when presenting physical validation.
 
-**Current mismatch:** PoC 060 `probe.mjs` invokes a Playwright-only privileged debugger command for DOM snapshot, scrolling and passive request recording. The current `WEB-CONTROL.md` portable level-1 surface covers rendered HTML/text inspection and deterministic click/fill/press, but not generic page script evaluation. Electron does not provide `debug cdp`. Consequently the actual PoC is NOT provider-interchangeable despite its use of the `web-control` executable. Prior real wishlist results remain valid for the tested configuration but cannot be promoted to common-provider evidence.
+**Correction implemented (2026-10-11):** The Amazon extractor now consumes only provider-neutral `web-control page new/navigate/inspect/scroll/capture/close`. It parses rendered HTML outside the browser using the PoC-only Cheerio dependency. `networkTrace: null` explicitly denotes unavailable portable network instrumentation rather than implying fetch/XHR was observed. The controller's new `page scroll <page> <delta-y>` operation returns instantaneous document geometry; completeness is asserted only after stable repeated bottom and item-count observations, not a single scroll.
 
-**Required correction before Amazon finalization:** choose and validate a provider-independent deterministic observation/scrolling contract sufficient for lazy-loaded wishlist completeness and price verification, or express a genuinely common privileged page-scoped operation with the same documented security boundary and semantics in both providers. Do not merely rename CDP or hide provider-specific calls behind a wrapper and claim portability. Update canonical specification, both implementations/operational references and proportional real fixture tests if a public common operation changes; then change PoC 060 to use only the supported common surface and validate the physical user flow on both provider types. Keep raw debugger capabilities optional/provider specific and never bypass login challenges.
+**Facility immutability:** Canonical `WEB-CONTROL.md` now defines a complete `web-control 2` contract for the extra scroll operation. The original `web-control 1` compatibility semantics are left unchanged. Released `electron-web-control@v0.1.4` and `pwc-web-control@v0.1.5` implement scrolling; `pkg-catalog@133498e` publishes new package version ranges realizing level 2 and a new immutable `facility/web-control/2` definition. Old package versions still realize level 1. Do not infer cross-level compatibility or silently run an old level-1 provider.
+
+**Validation:** Electron Actions run `38166001439` passed the real Electron source, fixture and release pipeline (Linux/macOS jobs; this is not physical user Mac testing); Playwright Actions `38166066137` passed. PoC 060 run `38166410339` passed five synthetic suites plus a real Electron hosted Linux x86_64 process/IPC/rendered-page integration: 3 unique lazy-loaded products, 2 verified prices, 1 `view-all-options`, scrolling observed and stable bottom reached. This is **not** evidence from live Amazon.it, the user's authenticated VM/profile, or the composed `pkg install` upgrade. The previous 54/44 Amazon physical observation applied to the earlier CDP implementation only and cannot be transferred automatically to the new HTML parser.
+
+**Remaining extractor acceptance:** install/select the released level-2 Electron provider in the user-controlled VM without destroying the existing authenticated profile; run the new extractor against Watch and Star Wars, validate ASIN completeness/current-price evidence against the rendered Amazon DOM, and preserve explicit blocked/partial failure statuses. No external email, Google Sheet write or scheduled monitor change was executed.
 
 **Star Wars input:** The user provided the complete Amazon.it Star Wars wishlist URL in the 2026-10-11 conversation. It is no longer a missing user input. Its opaque list identifier must be kept out of public repo content; create private local configuration at deployment. The previous suggestion to proceed with a Playwright-only monitor is superseded by this explicit correction.
 
-**Scheduling:** The existing six-times-daily Amazon Price Watch task remains disabled until this provider-neutral issue, both-list real extraction, Sheets/Gmail delivery and secure execution bridge are validated. No automation or account change was made by this corrective checkpoint.
+**Scheduling:** The existing six-times-daily Amazon Price Watch task remains disabled until real two-list Amazon extraction on the new provider, Sheets/Gmail delivery and secure execution bridge are validated. No automation or account change was made by this corrective checkpoint.
