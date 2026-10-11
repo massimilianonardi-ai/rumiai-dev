@@ -1,7 +1,7 @@
 # Amazon Price Watch
 
 Status: Active
-Updated: 2026-10-10
+Updated: 2026-10-11
 
 ## Goal
 
@@ -164,3 +164,20 @@ User authorized implementation. Added pure `price-monitor.mjs` under PoC 060 wit
 ## VM test checkpoint (2026-10-10)
 
 User fast-forwarded PoC checkout to `cce30a8` and ran `./m node .../test-price-monitor.mjs` on Linux ARM64 VM. Result: `PoC 060 price monitor decision tests: PASS`. This validates the authored synthetic decision tests only; no live monitoring, Google Sheet mutation, email delivery, or end-to-end coordinator validation has occurred. Next: complete spreadsheet row compatibility and delivery acknowledgement orchestration, with isolated tests before real integration.
+
+## Adapter and coordinator checkpoint (2026-10-11)
+
+- Read the connected Amazon Price Monitor spreadsheet metadata and bounded Watch/Star Wars ranges without changes. Both tabs have the established twelve-column schema. G/H (Scostamento/Stato) contain formulas and must never be overwritten; targets, notes, ASINs, description, URL are user-owned.
+- rumiai-dev-PoCs@4cf84459938f7257c09a4e8c5f5270c9f17bed44 added pure complete-wishlist/price-verification adapters and row-precise C/D/E/K plus conditional L planning, rejecting blocked/incomplete/duplicate lists. GitHub Actions 38124122419: all source checks and synthetic fixture, extraction, decisions and adapter tests PASS.
+- rumiai-dev-PoCs@6953dcb6bd44d793ca4d280a66a35c9c837d3796 added an injected-I/O coordinator and HTML notification formatting. It enforces all configured wishlist sources, separates mandatory error alerts from price alerts, requires explicit successful email acknowledgement before planning target-notified state, and preserves unverified item rows. GitHub Actions 38124261440: all five synthetic suites PASS.
+- These are experimental PoC modules, not yet a live packaged integration. No actual Google Sheet mutation, Gmail send or scheduled monitor run was performed in this work unit. A real end-to-end I/O adapter and controlled physical acceptance are still pending.
+- The Amazon extractor currently invokes the Playwright provider-specific command web-control debug cdp Runtime.evaluate. This is not a provider-independent operation; Electron intentionally does not publish it. Run the Amazon extractor through the validated Playwright provider or design and validate a deliberately scoped new interface in a separate work unit. Do not disturb the user-owned authenticated Electron/Gmail profile.
+- Known Watch wishlist URL: https://www.amazon.it/hz/wishlist/ls/33ZKBWLPZJJVO . The exact Star Wars Amazon wishlist URL has not been found in the current repository or sheet metadata. Do not replace it with a guessed link or re-create a manually maintained ASIN list.
+- The existing ChatGPT Amazon Price Watch automation is DISABLED and remains so. Its cadence is 00, 04, 08, 12, 16, 20 Europe/Rome. Do not enable until both wishlists can be extracted with verified coverage, the actual authenticated local runtime can be reached from the scheduler, sheet updates and Gmail acknowledgements have passed safe end-to-end testing. Cloud ChatGPT scheduling alone does not establish reachability to the private VM.
+
+## Pending end-to-end closure steps (2026-10-11)
+
+1. Obtain the current Star Wars wishlist URL through an authoritative user-controlled source and physically validate both wishlist extractions using Playwright.
+2. Implement the real Google Sheets and Gmail I/O adapters for the already-tested pure coordinator, with a dry-run/preview that does not change user data or send mail.
+3. Validate a controlled live execution including report delivery, acknowledgement and safe sheet write behavior; preserve the formulas and user fields.
+4. Integrate a secure supported trigger/bridge to the user-owned authenticated browser and only then activate the existing six-times-daily scheduled workflow without duplicate scheduling.
