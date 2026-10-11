@@ -284,6 +284,20 @@ For new RumiAI-owned code, choosing a disfavored language must be deliberate and
 
 ## 16. Development workflow
 
+### Code maintainability and disciplined scope
+
+Code quality is a delivery requirement, not merely passing tests or satisfying observable behavior. An implementation that the maintainer cannot reasonably understand, correct, extend or reuse is incomplete even when it works.
+
+For every new implementation, port or substantial modification:
+
+- **Honor the requested change boundary.** Preserve the current architecture, public model and working semantics. When adapting existing code to a new runtime or repository layout, use the original implementation as the starting point and change only what the new environment or a demonstrated defect requires. Do not replace the established model with a different design, introduce parallel compatibility models, or implement speculative functionality.
+- **Keep responsibilities cohesive and bounded.** Each module and function must have a clear, reasonably narrow purpose and an understandable interface. Separate unrelated responsibilities so that changes to one concern do not require deciphering or rewriting another. Prefer small, useful functions over monolithic flows, but do not fragment simple logic into gratuitous wrappers.
+- **Write for the next maintainer.** Use descriptive names, consistent formatting, explicit data flow and straightforward control structures. Avoid unnecessarily condensed statements, deeply nested logic, opaque indirection and clever shortcuts when clearer code is available. Comments should explain meaningful constraints and non-obvious reasoning.
+- **Make extension and reuse possible without building for imagined needs.** Prefer local, composable units, existing facilities and minimal coupling. Add abstractions or extension points only for a concrete current responsibility; future adaptability does not justify unrelated generic frameworks.
+- **Verify changeability before completion.** Review the code as someone who did not write it: can they locate the responsible function, follow its inputs and effects, and make a plausible small change without understanding the entire subsystem? If not, simplify or reorganize it before declaring the implementation complete. Passing tests never overrides this check.
+
+A TODO records intentionally deferred work; it does not authorize investigating, designing or implementing that work as part of an unrelated active task.
+
 ### Product intent and operability
 
 For public, operator-facing or otherwise user-visible behavior, internal consistency is necessary but not sufficient. The normal product workflow must remain usable from the user's actual goal rather than from knowledge of the implementation.
@@ -311,6 +325,7 @@ retrieve current authority
 → keep unresolved active design in the task handoff
 → experiment only if a question is genuinely open
 → promote only settled contract into current specifications
+→ plan cohesive module/function responsibilities and a straightforward change path
 → implement in the proper repository
 → assign distinct failure-branch statuses and branch-specific diagnostics where applicable
 → add proportional info/debug/trace observability or record a concrete justified omission
