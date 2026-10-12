@@ -1,6 +1,6 @@
 # TextEdit — current standalone text-engine contract
 
-Status: **Current — released v0.1.0 and accepted next TextEditBase contract (implementation pending)**  
+Status: **Current — TextEditBase v0.2.0 implemented; selection/representation realignment pending**  
 Updated: 2026-10-12
 
 ## Responsibility and ownership
@@ -8,11 +8,11 @@ Updated: 2026-10-12
 `TextEdit` is a standalone, GUI-independent JavaScript library distributed
 with `m` at `rumiai-os/lib/sys/js/text-edit.lib.js`. Its role is text storage,
 oriented multi-range editing, a source-mapped representation, and translation
-of advanced selections. Released v0.1.0 does not define a GUI, rendering backend, font/layout engine,
-IME adapter, event/listener bus or history system. The accepted next document
-contract below adds only direct mutation notifications, not a generic event bus. The separately versioned project/repository packaging boundary
-is not established by this release; product code is the authoritative source
-for its exact published public library.
+of advanced selections. The current v0.2.0 library defines no GUI, rendering
+backend, font/layout engine, IME adapter, generic event bus or history system.
+The base provides only direct committed-mutation notifications. No separate
+repository/packaging boundary for this library has been established; the
+product source owns the current JavaScript implementation.
 
 The public `TextEdit` library object exposes `VERSION`, `TextEdit`,
 `PieceDocument`, `FlatDocument`, `TextEditSelections`,
@@ -21,14 +21,15 @@ The public JS operational manual is `res/sys/manual/text-edit.lib.js`.
 JavaScript text positions and payload lengths are UTF-16 code units.
 No GUI-specific dependency or mandatory third-party runtime is permitted.
 
-## Accepted next TextEditBase contract — pending product realignment
+## TextEditBase contract — implemented in v0.2.0
 
-This section is the binding **next implementation contract**, not a description
-of the released v0.1.0 product. The source implementation, operational manual,
-selection/representation integration and permanent tests still implement and
-validate the v0.1.0 interface; they must be realigned together in a separately
-authorized product work unit. The next release must not be described as
-implemented or validated until that work succeeds.
+This section defines the implemented and validated public document-store
+contract for both `PieceDocument` and `FlatDocument` in the v0.2.0 product
+source. The operational manual and permanent store tests have been aligned.
+The older sequential selection-editing facade and explicit representation
+rebase path remain operational but have **not** been realigned to produce one
+store commit and one rebase per multi-caret user action. That separate
+integration remains pending and must not be reported as completed.
 
 `TextEditBase` remains a structural document interface, not a selectable
 editor, not an instantiable class, and not a view, rendering or history engine.
@@ -212,13 +213,12 @@ representations, and each should consume a committed source mutation
 same selection or representation a second time through the existing
 facade's returned change result.
 
-The next representation/selection integration must be adapted to rebase
+The pending representation/selection integration must be adapted to rebase
 from the committed original arguments and revision without requiring
-`removed` or other extra data from `TextEditBase` notifications. The
-released v0.1.0 `representation.rebase(changes)` currently requires
-old-text-containing results and is **not** yet compatible with this new
-notification contract. Its reconciliation is required before the target
-document contract can be called implemented.
+`removed` or other extra data from `TextEditBase` notifications. The current `representation.rebase(changes)` still requires old-text-containing
+results and does not yet consume the new document notification contract.
+Its reconciliation is required before the wider selection/representation
+integration can be called complete; it does not block the base-store contract.
 
 Notifications coordinate copies/consumers that already share the same
 ordered source revisions; the base does **not** resolve independent
@@ -228,12 +228,11 @@ this document-base responsibility.
 
 ## Document and selections
 
-In the released v0.1.0 implementation, the base document contract consists of
-one-interval `length`, `slice(start,end)` and `replace(start,end,text)`. `TextEditBase` is a
-structural contract, **not** an instantiable class. `PieceDocument` is the
-current indexed-piece-treap implementation; its `lineCount` and
-`lineStart(logicalLine)` index logical source rows. `FlatDocument`
-is a simple reference baseline.
+The v0.2.0 document stores implement the full `TextEditBase` interface above.
+It is a structural contract, **not** an instantiable class. `PieceDocument`
+uses a persistent indexed-piece treap with CR/LF/CRLF logical-line metadata
+(including piece-boundary pairs); `FlatDocument` is a flat-string reference
+baseline. Both preserve exact source UTF-16 units and atomic replacement.
 
 `TextEditSelections` owns oriented UTF-16 selections with zero-length caret
 ranges, preserves caller identity/order, and applies selections as primitive
@@ -282,12 +281,11 @@ annotation affinity is explicit (`before`/`after`); unknown affinity remains
 unresolved. Low-level text or selection stores have no history listeners or
 projection hooks.
 
-Released v0.1.0's minimal base interface does not provide monotonically
-increasing source revision IDs. An external edit that preserves both length and line count and
-is not supplied as a confirmed change cannot be detected. Callers must
-coordinate source edits through the public facade or explicitly rebase the
-representation; they must not rely on automatic observation of arbitrary
-changes outside that boundary.
+The current base exposes cyclic source revisions and direct committed-edit
+notifications. `TextEditRepresentation` still requires an explicit
+confirmed-change rebase through the existing facade; it does not subscribe
+to those notifications automatically. Callers must arrange consistent view
+updates without applying the same source edit twice.
 
 ## Advanced selections and deferred responsibilities
 
@@ -309,11 +307,13 @@ and GUI integration are outside this first core release.
 
 ## Validation and release boundary
 
-The initial library release is exercised against the actual product file
-by permanent Node tests in
-`rumiai-tests/tests/rumiai-os/text-edit/core.test.mjs`, with a pinned
-test revision in `rumiai-os/.github/workflows/text-edit.yml`.
-The workflow builds the standalone distribution archive. Passing a
-JavaScript/browser build smoke or an earlier PoC does not establish
-GUI/host parity or unconditional atomicity for arbitrary broken backends.
-Physical host GUI validation will be a separate work unit.
+The current v0.2.0 library is checked against the actual product source by
+permanent Node tests in `rumiai-tests/tests/rumiai-os/text-edit/core.test.mjs`
+and `base.test.mjs`, executed through their target-discovering test entrypoint
+and pinned by `rumiai-os/.github/workflows/text-edit.yml`. The workflow
+checks JavaScript syntax, executes the tests on Node 22, and builds a
+standalone source archive. These checks validate the store behavior,
+including error-atomic persistent staging and indexed line access, but do
+not establish GUI/host parity, the pending higher-layer integration or
+unconditional atomicity for arbitrary broken external backends. Physical
+GUI validation remains a separate work unit.
