@@ -39,6 +39,12 @@ Replace the fragile model-driven Amazon Price Watch polling path with a determin
 - For the current phase, Google Sheets and Gmail are explicitly outside the experiment. The first question is only whether Amazon.it price observation can be made deterministic through `web-control`.
 - Unverified or ambiguous prices must never be treated as verified prices. Access blocks, CAPTCHA/challenge pages, ASIN mismatch and ambiguous price candidates must produce an explicit failure result rather than a guess.
 
+## Active focused work: amazon-wishlist-monitor (2026-10-12)
+
+The user requested a **separate, deterministic wishlist-state updater**: given one Amazon.it wishlist URL and an optional JSON state pathname (initially absent), invoke the already released `amazon-wishlist-extract` and preserve chronological observations without destroying past price evidence. Timestamp each recorded observation; retain unverified prices as unverified and reject incomplete/blocked extractions without changing the state. State history belongs to one wishlist; changes of list identity must be rejected. Thresholds, notifications, email/Sheets delivery, scheduling and notification acknowledgment are **someone else's responsibility**, not this monitor. Do not port the earlier PoC 060 alert/coordinator behavior into the monitor.
+
+A dedicated `amazon-wishlist-monitor` repository is not yet present on GitHub, and the current GitHub connection has no repository-creation action. Develop the independent project source in a new `rumiai-dev-PoCs` work area and provide an exportable source artifact. It is not yet a released `pkg` product; promotion to its own repository/release/catalog range remains a separate deployment step.
+
 ## Acceptance scenarios
 
 1. Given an Amazon.it wishlist URL/identity, a deterministic program invokes `web-control`, discovers every currently listed product and returns a complete set of product observations without requiring user-supplied ASINs.
