@@ -1,6 +1,6 @@
 # TextEdit — current standalone text-engine contract
 
-Status: **Current — TextEditBase v0.2.0 implemented; selection/representation realignment pending**  
+Status: **Current — TextEditBase and TextEditSelections implemented; representation notification integration pending**  
 Updated: 2026-10-12
 
 ## Responsibility and ownership
@@ -26,10 +26,11 @@ No GUI-specific dependency or mandatory third-party runtime is permitted.
 This section defines the implemented and validated public document-store
 contract for both `PieceDocument` and `FlatDocument` in the v0.2.0 product
 source. The operational manual and permanent store tests have been aligned.
-The older sequential selection-editing facade and explicit representation
-rebase path remain operational but have **not** been realigned to produce one
-store commit and one rebase per multi-caret user action. That separate
-integration remains pending and must not be reported as completed.
+`TextEditSelections` now uses one atomic store commit per multicaret action
+and tracks committed edits in other views. `TextEdit` still adapts the
+selection result into the existing explicit `TextEditRepresentation.rebase`
+change-record API. Automatic notification-driven representation updates are
+not yet implemented and must not be reported as complete.
 
 `TextEditBase` remains a structural document interface, not a selectable
 editor, not an instantiable class, and not a view, rendering or history engine.
@@ -213,9 +214,9 @@ representations, and each should consume a committed source mutation
 same selection or representation a second time through the existing
 facade's returned change result.
 
-The pending representation/selection integration must be adapted to rebase
-from the committed original arguments and revision without requiring
-`removed` or other extra data from `TextEditBase` notifications. The current `representation.rebase(changes)` still requires old-text-containing
+The pending `TextEditRepresentation` integration must rebase directly from
+committed original arguments and revision, without requiring `removed`
+or other extra data from `TextEditBase` notifications. The current `representation.rebase(changes)` still requires old-text-containing
 results and does not yet consume the new document notification contract.
 Its reconciliation is required before the wider selection/representation
 integration can be called complete; it does not block the base-store contract.
@@ -238,7 +239,7 @@ baseline. Both preserve exact source UTF-16 units and atomic replacement.
 
 `TextEditSelections` is a view-local collection of selections over one shared
 `TextEditBase` document. It owns no source text, rendering, history or input
-interpretation. Its next independent implementation replaces the legacy
+interpretation. The v0.3.0 implementation replaces the legacy
 sequential/rollback implementation, with precisely these public operations:
 
 ```javascript
@@ -330,7 +331,10 @@ the new current revision becomes the checkpoint. No source-text history or
 replay mechanism exists to recover the original selection meaning.
 The same conservative invalidation applies when committed-notification
 processing cannot safely finish. `setSelections`/`addSelections` supplied
-against the current document can establish new valid selections.
+against the current document can establish new valid selections. Caller-owned
+selection records or payload arrays must not be able to publish old-source
+coordinates if evaluating their properties triggers a concurrent document
+commit; such operations fail instead of overriding already rebased state.
 
 `dispose()` is idempotent, unsubscribes from the document and clears the
 collection. Subsequently all operations other than repeated `dispose()`
@@ -340,10 +344,12 @@ subscribers observing the document during its synchronous notification;
 the document's own source commit is the atomic boundary.
 
 `TextEdit` composes the document, selections, representation and advanced
-selection resolver. Its `replace(textOrTexts)` executes selected editing and
-then explicitly rebases the representation from the confirmed change result.
-The constructor may accept a selection-compatible implementation for future
-transparent wrappers. Released v0.1.0 introduces no lower-layer listeners.
+selection resolver. Its `replace(textOrTexts)` executes one selected atomic
+source edit, then uses a temporary higher-layer compatibility adapter to
+build the legacy confirmed change records required for the explicit
+representation rebase. The adapter, not `TextEditSelections`, captures removed
+text for that still-unmigrated representation API. The constructor may accept
+a selection-compatible implementation for a future transparent history wrapper.
 
 ## Document representation and source mapping
 
@@ -398,20 +404,21 @@ crossing substitutions are rejected pending an explicit high-level policy.
 
 The future history feature will be a transparent wrapper containing
 `TextEditSelections`, substituting for it at the composition point without
-modifying lower layers or upper callers. It is not implemented in v0.1.0.
+modifying lower layers or upper callers. It is not implemented in v0.3.0.
 Rendering, true font metrics, wrapping, complex bidi shaping, IME,
 nested/syntactic folding, visual-row selection, incremental optimization
 and GUI integration are outside this first core release.
 
 ## Validation and release boundary
 
-The current v0.2.0 library is checked against the actual product source by
-permanent Node tests in `rumiai-tests/tests/rumiai-os/text-edit/core.test.mjs`
-and `base.test.mjs`, executed through their target-discovering test entrypoint
+The current v0.3.0 library is checked against the actual product source by
+permanent Node tests in `rumiai-tests/tests/rumiai-os/text-edit/core.test.mjs`,
+`base.test.mjs` and `selections.test.mjs`, executed through their target-discovering test entrypoint
 and pinned by `rumiai-os/.github/workflows/text-edit.yml`. The workflow
 checks JavaScript syntax, executes the tests on Node 22, and builds a
-standalone source archive. These checks validate the store behavior,
-including error-atomic persistent staging and indexed line access, but do
-not establish GUI/host parity, the pending higher-layer integration or
-unconditional atomicity for arbitrary broken external backends. Physical
+standalone source archive. These checks validate the store behavior and the completed selection layer,
+including atomic multicaret commits, document revision continuity, geometric
+cross-view rebasing and independent seeded reference tests. They do not
+establish GUI/host parity, pending representation notification integration
+or unconditional atomicity for arbitrary broken external backends. Physical
 GUI validation remains a separate work unit.
