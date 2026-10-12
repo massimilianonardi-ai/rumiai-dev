@@ -504,81 +504,129 @@ representation's most recent committed invalidation snapshot. The prior
 higher-layer old-text \`changes\` adapter and explicit representation
 \`rebase\` have been removed.
 
-## Advanced logical selections and deferred responsibilities
+## Advanced logical selection architecture — target contract
 
-The authoritative architecture for this layer separates **logical selection
-construction**, **representation translation**, and **physical source
-selections**. This is the required direction for realigning the current
-v0.5.0 advanced-selection implementation; the migration is not yet
-implemented or validated.
+The next-version architecture separates logical construction, coordinate
+representation and physical editing, with exactly one owner of the effective
+selection collection. This subsection defines the selected target semantics;
+it does **not** describe an already implemented public v0.5.0 API. Until
+the migration is delivered, the implemented v0.5.0 offset-based
+`TextEditSelections` API and its validated behavior above remain the
+current executable product contract.
 
-`TextEditAdvancedSelections` constructs and combines selections only in
-logical text-grid coordinates `{row,col}`, with no UTF-16 offsets, tab
-expansion, grapheme measurement, direct document edits or physical selection
-publication. `lineSelection(start,end)` and
-`rectangularSelection(start,end)` accept the same pair of logical endpoints.
-The first derives complete included rows; the second derives all included
-columns on every included row. The selected endpoints remain inclusive, and
-orientation is preserved. Higher-level methods must compose the shared
-elementary logical selection operations rather than each implementing a
-separate coordinate conversion path.
+### Responsibilities and coordinate systems
 
-**The representation is the selected integration gateway.**
-`TextEditAdvancedSelections` passes the *complete logical selections*
-to `TextEditRepresentation` using selection-management APIs analogous
-to `TextEditSelections`. `TextEditRepresentation` owns the translation,
-grapheme/tab-cell validation and presentation of the resulting logical
-selection state; it delegates only correctly representable real UTF-16
-selection batches to `TextEditSelections`. `TextEditSelections` remains
-the sole owner of actual source-coordinate selections. There must be no
-second owner of physical selection state, and no partial or silently clipped
-publication of a logical selection through physical offsets.
+`TextEditAdvancedSelections` constructs selections exclusively from logical
+text-grid `{row,col}` coordinates. Its elementary logical-selection
+operations are reused by `lineSelection(start,end)` and
+`rectangularSelection(start,end)`, which accept the same endpoint shape.
+A line selection means complete included source rows, including existing
+line terminators; a rectangular selection means the included text-grid cells
+on each included row. Higher-level endpoints are inclusive and their
+orientation is preserved. The advanced layer performs no source-coordinate
+translation, grapheme/tab measurement or source edits.
 
-### Virtual text-grid positions
+`TextEditRepresentation` is the integration gateway for these logical
+operations. It translates source-row and display-cell logical coordinates
+into physical `{row,col}` coordinates and back, including grapheme and tab
+geometry, and applies selection-interpretation policies. A logical column
+does not necessarily equal a physical column. The representation exposes
+logical selection-management operations analogous to those of
+`TextEditSelections` and forwards the resulting physical selections to
+that component. It must not independently materialize source padding,
+newlines or rows, nor become a competing owner of the effective selection
+collection. Representation-specific projection metadata may remain
+view-local without duplicating authoritative physical selection state.
 
-Logical row and column positions may lie beyond the currently materialized
-line contents **and beyond the document's final physical row**. Such a
-position is valid *logical selection or caret state*, not an invalid source
-offset and not a request to change the document. The representation must
-retain the full logical intent, including virtual row and column distance,
-even if it has no faithful real UTF-16 counterpart. Navigation, selecting,
-moving a virtual caret and changing its range must not create spaces,
-line separators or a `TextEditBase` revision.
+`TextEditSelections` is the **sole owner of effective physical selections**
+and caret state. Its selected next-version public selection coordinates are
+`{row,col}`, where `row` denotes a source row and `col` denotes a
+UTF-16 code-unit boundary relative to that row's content start. These are
+**physical row/column coordinates**, not rendered pixels or display-cell
+columns. They may refer to a column past source EOL or a row beyond source
+EOF: such positions are *virtual physical positions*, not invalid source
+offsets or materialized characters. Selection ranges remain ordered,
+oriented and may include multiple independent carets. Internal flat
+UTF-16 anchors are permitted where needed for exact source-edit/rebase
+semantics and performance; a flat offset alone cannot encode a virtual
+row or column.
 
-A subsequent user **editing** action may materialize only the required
-portion of the virtual grid: source-line padding, and, when needed, missing
-line separators and rows. This is a separate high-level source-edit planning
-responsibility, not the responsibility of advanced selection construction.
-One logical user edit must still resolve to one atomic `TextEditBase`
-source commit with all required padding/row creation grouped into it.
-Until such an edit commits, the source text remains byte-for-byte unchanged.
-No virtual location may be misrepresented as an exact physical selection
-merely because its nearest real UTF-16 offset is EOL or EOF.
+`TextEditBase` remains the exact text owner and accepts only existing
+linear UTF-16 source offsets for its unchanged atomic `replace`
+operations. Its existing `lineCount`, `lineStart`, `lineAt` and
+`lineInfo(row) -> {start,end,nextStart}` provide source-row geometry.
+Here `end` is the content boundary immediately *before* the actual
+CR/LF/CRLF terminator, and `nextStart` follows that terminator.
+The ordinary physical `{row,col}` selection interface need not expose
+a caret **inside** a CRLF pair. Exact arbitrary code-unit access, including
+the CRLF interior, remains available through `TextEditBase`; a
+transition from the current offset-selector API must account explicitly
+for this intentional representational difference.
 
-The reference behavior is MadEdit-Mod column editing. Source evidence shows
-an independent caret `extraspaces` count for positions beyond EOL and
-on-write insertion of missing spaces; its column insertion path can also
-append newlines as content extends beyond EOF. These observations justify
-the separate virtual-intent and deferred-materialization model; they do
-**not** establish all native MadEdit-Mod mouse-navigation, keyboard,
-selection, clipboard or arbitrary-beyond-EOF-row semantics as tested.
+### Virtual and clipped selection policies
 
-### Current product alignment status
+The representation must support both **virtual-retaining** selection
+semantics (keep the intended geometry beyond source EOL and EOF) and
+**clipped** selection semantics (take the geometrical intersection with
+existing text). Clipping is an explicit interpretation policy, never
+accidental loss of unsupported coordinates. A completely out-of-source
+selection must not silently become an ordinary caret at EOF.
 
-The v0.5.0 implementation still converts rectangles directly inside
-`TextEditAdvancedSelections`, assumes the two endpoint rows already
-exist, and rejects virtual columns when publishing physical selections.
-These behaviors are **known pending realignment** with the architectural
-contract above, not reasons to reject valid virtual text-grid intent.
-The elementary logical API shapes, storage/projection details for
-temporarily nonrepresentable selections, update affinities across
-external changes, and edit-materialization policies must be completed
-and tested before the new public behavior can be called implemented.
+Constructing or moving a selection, including one beyond EOL/EOF, must not
+modify source text, insert padding or increment `TextEditBase.revision`.
+An effective virtual physical selection is retained by
+`TextEditSelections` until an edit, external change or explicit selection
+operation affects it. The representation translates/selects; it does not
+hold a second independently authoritative copy of virtual physical state.
 
-History remains a separate transparent wrapper around
-`TextEditSelections`; GUI, IME, pixel hit testing, bidi, visual wrapping,
-clipboard distribution, and custom conflict reconciliation remain outside
-this work unit.
+### Deferred physical materialization
+
+`TextEditSelections` owns the **single materialization mechanism** for
+edits through its selections. On an editing action it determines the
+necessary physical padding and missing source lines from the physical
+selection coordinates and existing `TextEditBase` row information;
+`TextEditRepresentation` neither constructs that padding nor executes
+source commits. Materialization occurs only when the chosen edit semantics
+require it; in particular, selection navigation never writes to the source
+and deleting empty virtual space does not create it merely to delete it.
+
+All effects of **one** user editing action, including multiple carets,
+padding, new rows and inserted/replaced text, must be prepared against one
+source revision and sent as **one atomic** `TextEditBase.replace` commit.
+Several distinct virtual positions can collapse to the *same* original
+EOL/EOF source offset; `TextEditSelections` must coalesce their compatible
+physical insertions into a single valid source edit at that offset rather
+than submit duplicate insertions forbidden by the base contract. True
+conflicts at the same requested physical cell must not be resolved by
+silently dropping one input. No separate physical editing path may bypass
+the selection layer for a normal selection-initiated edit.
+
+Committed external source edits must continue to rebase or safely
+invalidate selections while preserving orientation, collection order
+and meaningful anchors. Virtual-row/column affinity when other views
+insert/delete lines or text still requires precise implementation
+semantics; the next-version representation must not mistake unchanged
+numeric `row,col` for a successfully rebased anchor.
+
+### Implementation alignment
+
+The v0.5.0 `TextEditSelections` public API still uses flat UTF-16
+`{start,end,forward}` records and rejects out-of-range offsets.
+The v0.5.0 `TextEditAdvancedSelections` still converts and publishes
+source offsets itself and refuses virtual rectangles. The new physical
+`{row,col}` selector contract, logical facade, virtual-selection
+ownership, clipping behavior and edit-time materialization are **not
+implemented**. They require coordinated updates to the product,
+operational manual and permanent tests. API record details and exact
+edge-case semantics for CRLF conversion compatibility, multi-caret
+conflicts, source-edit rebase affinity, tabs/graphemes and row creation
+must be validated before declaring the migration complete.
+
+History remains the separate transparent wrapper around
+`TextEditSelections` and must record one complete user action per
+undo/redo entry, including the corresponding selection state. GUI, IME,
+pixel hit-testing, bidi, wrapped visual rows and clipboard-distribution
+policies remain outside this coordinate-layer migration.
 
 ## Validation and release boundary
 
