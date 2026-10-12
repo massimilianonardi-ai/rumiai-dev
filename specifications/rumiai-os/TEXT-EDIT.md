@@ -517,19 +517,24 @@ current executable product contract.
 ### Responsibilities and coordinate systems
 
 `TextEditAdvancedSelections` constructs selections exclusively from logical
-text-grid `{row,col}` coordinates. Its elementary logical-selection
-operations are reused by `lineSelection(start,end)` and
-`rectangularSelection(start,end)`, which accept the same endpoint shape.
+text-grid `{row,col}` coordinates and **owns all selection-shape policies**,
+including virtual-retaining versus clipped selection behavior. These policies
+operate on complete **logical** coordinates before any physical conversion.
+Its elementary logical-selection operations are reused by
+`lineSelection(start,end)` and `rectangularSelection(start,end)`, which
+accept the same endpoint shape.
 A line selection means complete included source rows, including existing
 line terminators; a rectangular selection means the included text-grid cells
 on each included row. Higher-level endpoints are inclusive and their
 orientation is preserved. The advanced layer performs no source-coordinate
 translation, grapheme/tab measurement or source edits.
 
-`TextEditRepresentation` is the integration gateway for these logical
-operations. It translates source-row and display-cell logical coordinates
-into physical `{row,col}` coordinates and back, including grapheme and tab
-geometry, and applies selection-interpretation policies. A logical column
+`TextEditRepresentation` is the **policy-neutral coordinate
+translator** for these logical operations. It measures the logical content
+width of a source row (including grapheme and tab metrics), and translates
+source-row and display-cell logical coordinates into physical `{row,col}`
+coordinates and back. It does not decide selection shape or choose clipping
+versus virtual retention. A logical column
 does not necessarily equal a physical column. The representation exposes
 logical selection-management operations analogous to those of
 `TextEditSelections` and forwards the resulting physical selections to
@@ -565,19 +570,25 @@ for this intentional representational difference.
 
 ### Virtual and clipped selection policies
 
-The representation must support both **virtual-retaining** selection
-semantics (keep the intended geometry beyond source EOL and EOF) and
-**clipped** selection semantics (take the geometrical intersection with
-existing text). Clipping is an explicit interpretation policy, never
-accidental loss of unsupported coordinates. A completely out-of-source
-selection must not silently become an ordinary caret at EOF.
+`TextEditAdvancedSelections` must support both **virtual-retaining**
+selection semantics (keep the entire requested logical geometry beyond
+source EOL and EOF) and **clipped** selection semantics (take the
+geometrical intersection with existing logical text-grid content).
+It obtains the row's actual logical width from
+`TextEditRepresentation` rather than measuring graphemes or tab stops
+itself. Clipping occurs **before** translation to physical coordinates,
+not by clamping source offsets; an entirely out-of-source selection does
+not silently become a caret at EOF. Both policies feed complete,
+policy-resolved logical selections through the same neutral representation
+conversion into `TextEditSelections`.
 
 Constructing or moving a selection, including one beyond EOL/EOF, must not
 modify source text, insert padding or increment `TextEditBase.revision`.
 An effective virtual physical selection is retained by
 `TextEditSelections` until an edit, external change or explicit selection
-operation affects it. The representation translates/selects; it does not
-hold a second independently authoritative copy of virtual physical state.
+operation affects it. The advanced layer chooses the logical geometry; the representation
+translates it without introducing another policy or independently
+holding authoritative virtual physical selection state.
 
 ### Deferred physical materialization
 
