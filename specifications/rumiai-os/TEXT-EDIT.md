@@ -293,15 +293,6 @@ dependent physical state rather than invent a clipped source offset.
 Source notifications are consumed exactly once, including edits made
 through the same selector.
 
-**Transitional compatibility in v0.6.0:** the previous
-\`{start:number,end:number,forward:boolean}\` API remains usable as a
-separate offset-selection mode; it preserves the validated v0.5.0
-atomic edit, source-offset rebase and duplicate/conflict semantics.
-Legacy callers can supply just the old minimal source document
-interface without row methods. Offset and physical record shapes
-cannot be mixed in a nonempty selection collection. The new logical
-selection facade uses physical \`{row,col}\` records.
-
 \`dispose()\` unsubscribes, clears the collection and leaves the shared
 document intact. The future history wrapper, GUI, IME and clipboard
 distribution are outside this class.
@@ -493,8 +484,7 @@ higher-layer old-text \`changes\` adapter and explicit representation
 The implemented v0.6.0 architecture separates logical selection construction,
 policy-neutral coordinate translation and physical editing. Exactly one
 `TextEditSelections` instance owns the effective ordered selection
-collection, including nonmaterialized coordinates. The old offset-based
-selection interface remains available as documented transitional compatibility.
+collection, including nonmaterialized coordinates. Only physical row/UTF-16-column coordinates are valid public selection records; linear source offsets remain exclusively in `TextEditBase`.
 
 ### Responsibilities and coordinate systems
 
@@ -546,9 +536,7 @@ Here `end` is the content boundary immediately *before* the actual
 CR/LF/CRLF terminator, and `nextStart` follows that terminator.
 The ordinary physical `{row,col}` selection interface does not expose
 a caret **inside** a CRLF pair. Exact arbitrary code-unit access, including
-the CRLF interior, remains available through `TextEditBase`; a
-transition from the current offset-selector API must account explicitly
-for this intentional representational difference.
+the CRLF interior, remains available through `TextEditBase`; physical selection endpoints cannot refer to this interior position.
 
 ### Virtual and clipped selection policies
 
@@ -607,7 +595,7 @@ advanced logical selection policies and deferred materialization are
 implemented in v0.6.0. The v0.6.0 operational manual and permanent tests
 validate source rows, physical virtual coordinates, CRLF-safe padding,
 multicaret insertion grouping, logical clipping, Unicode/tab conversion,
-and continued offset-interface compatibility. Comprehensive distribution
+and rejection of numeric offset selection records. Comprehensive distribution
 of multiline clipboard, Excel and CSV payloads over different source and
 target geometries, full native MadEdit-Mod interaction parity and GUI/IME
 remain separate future editor work.
