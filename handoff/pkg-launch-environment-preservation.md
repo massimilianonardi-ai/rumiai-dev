@@ -8,8 +8,8 @@ Implement and validate `m_ENV_DO_NOT_OVERRIDE` for one managed package invocatio
 
 ## Current repository revisions
 - rumiai-dev: 239e6fe6afc4267f91f1874d80824079431dbbef (before this handoff)
-- rumiai-os: c267da7eaaa118290bf12484861edf2d232bbf5f
-- rumiai-tests: 28275694a24fc3a1bebd631d57f2610d4713e6af
+- rumiai-os: c3717a8eaab1cb122519156166ac71f47a30af7a
+- rumiai-tests: 2e198877323d124049685535ecc438f1ce2bd7ea
 - electron-web-control: 7012c364beb3d082754cd1eeb23f904750cde9c0
 Recheck remote HEADs at resumption.
 
@@ -38,12 +38,12 @@ Recheck remote HEADs at resumption.
 
 ## Completed
 - Launcher: rumiai-os 69f97b86e751214e723df35dd53139ec92739565.
-- Launcher manual: rumiai-os c267da7eaaa118290bf12484861edf2d232bbf5f.
+- Launcher manual: rumiai-os c3717a8eaab1cb122519156166ac71f47a30af7a.
 - Canonical contract: rumiai-dev 05e419a5ddbd194158622756a849b8d273c7cb9f.
 - Regression test added and made executable: rumiai-tests 23375546a9eae8148e255a808dab9544a410e5c5.
 
 ## Current state
-Commits are forward-only. A local POSIX shell sanity check verified indirect variable capture and byte-preserving env argv delivery; this was not a run of the actual RumiAI package launcher. The source changes still require a real composed runtime test on a host with managed Node, and the enterprise-VM Electron HTTPS scenario has not been rerun after the new launcher revision.
+Commits are forward-only. A local POSIX shell sanity check verified indirect variable capture and byte-preserving env argv delivery; this was not a run of the actual RumiAI package launcher. After final review, malformed and duplicate override requests use distinct statuses (3 and 7). The source changes still require a real composed runtime test on a host with managed Node, and the enterprise-VM Electron HTTPS scenario has not been rerun after the new launcher revision.
 
 ## Next action
 Execute `tests/rumiai-os/pkg-launch/environment-preservation.test` against the actual `rumiai-os` target, review failures, then verify the opt-in Electron browser scenario with the CA only in the consuming app HOME. Re-run consistency and report revision-specific validation. Align the released `electron-web-control` provider explicitly if this feature is needed in its default workflow.
