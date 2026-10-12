@@ -1,6 +1,6 @@
 # TextEdit — current standalone text-engine contract
 
-Status: **Current — TextEdit 0.6.0 document, physical selections, logical policies and deferred materialization implemented**  
+Status: **Current — TextEdit 0.7.0 document, physical selections, logical policies and deferred materialization implemented**  
 Updated: 2026-10-12
 
 ## Responsibility and ownership
@@ -8,7 +8,7 @@ Updated: 2026-10-12
 `TextEdit` is a standalone, GUI-independent JavaScript library distributed
 with `m` at `rumiai-os/lib/sys/js/text-edit.lib.js`. Its role is text storage,
 oriented multi-range editing, a source-mapped representation, and translation
-of advanced selections. The current v0.6.0 library defines no GUI, rendering
+of advanced selections. The current v0.7.0 library defines no GUI, rendering
 backend, font/layout engine, IME adapter, generic event bus or history system.
 The base provides only direct committed-mutation notifications. No separate
 repository/packaging boundary for this library has been established; the
@@ -229,7 +229,7 @@ baseline. Both preserve exact source UTF-16 units and atomic replacement.
 
 ### TextEditSelections public API and state contract
 
-In TextEdit 0.6.0, \`TextEditSelections\` is the view-local **sole owner**
+In TextEdit 0.7.0, \`TextEditSelections\` is the view-local **sole owner**
 of effective ordered physical selections, including virtual positions.
 It does not own source text, rendering, history or input interpretation.
 
@@ -248,7 +248,9 @@ cell column. Every input \`row\` and \`col\` must be a nonnegative safe
 integer. Selection endpoints are ordered \`start <= end\` by row then
 column; \`forward\` is boolean, retaining orientation even for carets.
 Selections can be overlapping, duplicated or in arbitrary collection
-order without automatic merging or sorting. Input and output snapshots
+order without automatic merging or sorting.
+Numeric flat-offset selection records are invalid; linear UTF-16 offsets
+remain solely in `TextEditBase` and internal translation/edit planning. Input and output snapshots
 are copied; \`setSelections([])\` clears, \`addSelections([])\` is a
 no-op, and both return the selection instance.
 
@@ -305,7 +307,7 @@ owns ordered, non-overlapping source-range substitution overlays, source
 annotations and the result of the most recent committed rebase. The base
 document is the only owner of editable source text.
 
-The representation v0.6.0 public surface is:
+The representation v0.7.0 public surface is:
 
 \`\`\`javascript
 new TextEditRepresentation(document, selections=null)
@@ -479,9 +481,9 @@ representation's most recent committed invalidation snapshot. The prior
 higher-layer old-text \`changes\` adapter and explicit representation
 \`rebase\` have been removed.
 
-## Advanced logical selection architecture — implemented in v0.6.0
+## Advanced logical selection architecture — implemented in v0.7.0
 
-The implemented v0.6.0 architecture separates logical selection construction,
+The implemented v0.7.0 architecture separates logical selection construction,
 policy-neutral coordinate translation and physical editing. Exactly one
 `TextEditSelections` instance owns the effective ordered selection
 collection, including nonmaterialized coordinates. Only physical row/UTF-16-column coordinates are valid public selection records; linear source offsets remain exclusively in `TextEditBase`.
@@ -592,7 +594,7 @@ has been correctly rebased after another view edits the text.
 
 The physical `{row,col}` selector, neutral representation gateway,
 advanced logical selection policies and deferred materialization are
-implemented in v0.6.0. The v0.6.0 operational manual and permanent tests
+implemented in v0.7.0. The v0.7.0 operational manual and permanent tests
 validate source rows, physical virtual coordinates, CRLF-safe padding,
 multicaret insertion grouping, logical clipping, Unicode/tab conversion,
 and rejection of numeric offset selection records. Comprehensive distribution
@@ -608,7 +610,7 @@ policies remain outside this library revision.
 
 ## Validation and release boundary
 
-The current v0.6.0 library is checked against the actual product source by
+The current v0.7.0 library is checked against the actual product source by
 permanent Node tests in `rumiai-tests/tests/rumiai-os/text-edit/core.test.mjs`,
 `base.test.mjs`, `selections.test.mjs`, `representation.test.mjs` and `advanced.test.mjs`, executed through their target-discovering test entrypoint
 and pinned by `rumiai-os/.github/workflows/text-edit.yml`. The workflow
