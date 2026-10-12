@@ -12,7 +12,7 @@ The JavaScript compilation, module loading and distribution concern has **indepe
 ## Current repository revisions
 
 - `rumiai-dev` main inspected: `a4f259922c0b98e1378c00b50383494bb45702b3` (TextEditSelections v0.3.0 promoted in canonical source; before this handoff sync).
-- `rumiai-os` main inspected: `23e6973aef132e32bf6dc931c66929ea099b76ba` (TextEditSelections v0.3.0 source, manual, pinned CI; earlier immutable v0.1.0 tag unchanged).
+- `rumiai-os` main inspected: `9960cd8e6bd3bbc9c849a91e80ef9c26feef8403` (TextEditSelections v0.3.0 source and comment/header consistency realignment; manual and pinned Node 22 CI validated functionality at `23e6973aef132e32bf6dc931c66929ea099b76ba`; earlier immutable v0.1.0 tag unchanged).
 - `rumiai-tests` main: `12102940e9aed68c014fca30d0b86fffe6a1399e` (permanent base, selection and legacy representation/facade regression suites).
 - `rumiai-dev-PoCs` main: `eb8c193c93e0fe63ee02c4c61f1d611729b034bb` (experimental reference; source copied from prior PoC code, but standalone product is now authoritative).
 - Reference `m` master: `2a57a29880c2d7a32e18782122062c695fcb1a3a`.
