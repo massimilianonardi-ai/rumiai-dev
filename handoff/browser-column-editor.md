@@ -1,7 +1,7 @@
 # Advanced browser/Electron text editor
 
 Status: Active — TextEdit v0.1.0 standalone core released as source and distribution artifact; next focus is GUI integration
-Updated: 2026-10-11
+Updated: 2026-10-12
 
 ## Goal
 
@@ -11,8 +11,8 @@ The JavaScript compilation, module loading and distribution concern has **indepe
 
 ## Current repository revisions
 
-- `rumiai-dev` main: `39dcdd033b165ab16f0ad7fd06ae162f351d371c` (before the final release-sync update).
-- `rumiai-os` main: `45a5dc2dde494ee1411b9da9d965707c68c7adbf` (TextEdit v0.1.0 complete released commit and immutable tag `text-edit-v0.1.0`).
+- `rumiai-dev` main inspected: `445c8152f56f0223e3958649fb1b3110ff8c9abb` (collaboration-design handoff checkpoint before this consistency update).
+- `rumiai-os` main inspected: `0c638074b0a031d7f75d62bf464faf2c0a272ef0` (released TextEdit v0.1.0 source remains unchanged; immutable release tag at `45a5dc2dde494ee1411b9da9d965707c68c7adbf`).
 - `rumiai-tests` main: `024f60b85fc94a49f5222cd1fac9f3e9a326f562` (permanent target-aware TextEdit test, used by the product workflow).
 - `rumiai-dev-PoCs` main: `eb8c193c93e0fe63ee02c4c61f1d611729b034bb` (experimental reference; source copied from prior PoC code, but standalone product is now authoritative).
 - Reference `m` master: `2a57a29880c2d7a32e18782122062c695fcb1a3a`.
@@ -34,7 +34,7 @@ Always recheck current remote HEADs before resuming or changing files.
 - Monaco, CodeMirror, Ace and comparable existing editor libraries are excluded as the new editor's engine: inspect their useful concepts/techniques, but do not select or embed them as the editor architecture. PoC 061 remains historical feasibility evidence only.
 - Generalize multiple cursors/selections as a foundation for several 2D/non-linear editing modes, rather than implementing only one rectangular-selection special case.
 - **User-fixed 2026-10-11, deferred transparent history wrapper:** History stays outside `TextEditBase` and `TextEditSelections`, among the last editor features. A transparent wrapper containing `TextEditSelections` replaces it at the caller-facing composition point and owns undo/redo of full user actions, including before/after selection state. The new document-mutation notifications required on 2026-10-12 are for collaboration/view synchronization, not history recording; they do not change the history-wrapper ownership.
-- **User-fixed 2026-10-10, selections and input scope (compatible with deferred 2026-10-11 wrapper):** the selection-editing layer owns all oriented selections and zero-length cursors; `TextEditBase` owns no selections. Input interpretation stays outside the selection core, and the future transparent history wrapper will delegate selection operations to its contained `TextEditSelections` and restore its before/after state for undo/redo, without becoming the canonical selection owner. Physical keyboards feed one unified ordered logical input stream. Collaboration/synchronization belong above the editor.
+- **User-fixed 2026-10-10, selections and input scope (compatible with deferred 2026-10-11 wrapper):** the selection-editing layer owns all oriented selections and zero-length cursors; `TextEditBase` owns no selections. Input interpretation stays outside the selection core, and the future transparent history wrapper will delegate selection operations to its contained `TextEditSelections` and restore its before/after state for undo/redo, without becoming the canonical selection owner. Physical keyboards feed one unified ordered logical input stream. Collaboration policies and remote conflict resolution stay above the source store; as revised on 2026-10-12, the store itself must emit committed-edit notifications for its consumers.
 - **User-fixed 2026-10-10, exact action granularity:** one undo/redo transaction is **exactly one user action**, not a time-coalesced run of actions. A typed character is its own undo entry; successive typed characters are not merged. One Backspace invocation is one action. A single paste (including multi-line/CSV/2D paste affecting multiple document ranges) is one atomic undo entry. A single input action applied through many carets is one entry covering every affected range. Restore full before/after caret and selection state. Input adapters must preserve semantic user-action boundaries; browser IME/composition behavior still needs concrete integration checks, without inventing timing-based grouping.
 - **User-fixed 2026-10-12, document collaboration (supersedes 2026-10-11 lower-layer no-listener prohibition):** `TextEditBase` must notify registered listeners after every successfully committed document modification, supplying the *exact corresponding public mutation API invocation* (operation and arguments), to synchronize independently owned views or other collaborators. The base remains independent of selections and presentation; notifications must not turn into a history/event framework. The concrete expanded base API and safe multi-edit notification/atomicity design are under discussion, not yet promoted or implemented. Existing TextEdit v0.1.0 has no listeners; its specification/manual/implementation/tests require coordinated realignment once the API is agreed.
 - **User-fixed 2026-10-10, deferred persistence:** Persistent history remains optional and outside lower document/selection engines. Its storage, asynchronous persistence and crash recovery remain postponed until the late history wrapper; collaboration notifications must not be repurposed as an implicit history journal.
