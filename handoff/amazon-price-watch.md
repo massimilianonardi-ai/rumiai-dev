@@ -53,6 +53,12 @@ The user created `massimilianonardi-ai/amazon-wishlist-monitor` directly. The in
 - `pkg-catalog` main `7b0bb881254620a31e6599591b2fba46c8bca23d` adds `amazon-wishlist-monitor@v0.1.0`, declaring supported `nodejs =26` and `web-control =2` facility requirements. `amazon-wishlist-extract` remains a separately installed command (not a false facility). GitHub Actions run `38286220356` has Linux check/test/build/release and real composed `pkg` installation/managed-launcher fixture integration all SUCCESS; macOS was still queued at the observed checkpoint. The composed test used a deterministic synthetic extractor response, not live authenticated Amazon.
 - Price Watch thresholds, notifications, scheduling, delivery acknowledgments, Google Sheets/Gmail integration, and any orchestration remain explicitly outside the new monitor. Do not port prior PoC 060 alert/coordinator code into it.
 
+## Monitor correction — product-level price analytics (2026-10-12)
+
+The user corrected v0.1.0: an append-only extractor-snapshot archive is not a sufficient **monitor**. The intended monitor is the Amazon Price Monitor table's product-centric analysis: current observed price, previous value and change, monitored minimum, user-owned target, target difference/status, Amazon note and last check, **extended** with detailed price trajectory and statistics. The actual Google Drive spreadsheet was inspected read-only: tabs Watch and Star Wars have 12 shared columns, with target in F, formula-derived target gap/status in G/H, notes in I, last check K, target-notified L. Source-of-truth membership remains Amazon; user-owned targets/notes must persist across observations and membership changes. This is a correction to the monitor's responsibility, not authorization to implement notifications or Sheets writes.
+
+Upgrade the independent `amazon-wishlist-monitor` to a v2 state schema, preserving existing v1 history and allowing persistent user target/notes; compute per-product price metrics and trends after each successful extraction, retain missing/unverified distinction, and publish a new immutable release and catalog range. Do not write the Google spreadsheet or import personal target data into a public repo. Target-notified/delivery acknowledgment stays external; price target itself is within monitor scope.
+
 ## Acceptance scenarios
 
 1. Given an Amazon.it wishlist URL/identity, a deterministic program invokes `web-control`, discovers every currently listed product and returns a complete set of product observations without requiring user-supplied ASINs.
