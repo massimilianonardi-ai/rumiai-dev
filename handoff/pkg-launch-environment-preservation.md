@@ -42,11 +42,13 @@ Recheck remote HEADs at resumption.
 - Canonical contract: rumiai-dev 05e419a5ddbd194158622756a849b8d273c7cb9f.
 - Regression test added and made executable: rumiai-tests 23375546a9eae8148e255a808dab9544a410e5c5.
 
+- Physical host report (2026-10-12, `admino@vmdev`, checkout `/m/src/git/rumiai-os_TEST` at `rumiai-os` `c3717a8`): after `git pull --ff-only`, `./m node -p 'process.env.HOME'` printed `/m/src/git/rumiai-os_TEST/state/user/default/pkg/nodejs/home`; `m_ENV_DO_NOT_OVERRIDE=HOME ./m node -p 'process.env.HOME'` printed `/home/admino`. This directly validates the baseline and explicit HOME override on that host only.
+
 ## Current state
-Commits are forward-only. A local POSIX shell sanity check verified indirect variable capture and byte-preserving env argv delivery; this was not a run of the actual RumiAI package launcher. After final review, malformed and duplicate override requests use distinct statuses (3 and 7). The source changes still require a real composed runtime test on a host with managed Node, and the enterprise-VM Electron HTTPS scenario has not been rerun after the new launcher revision.
+Commits are forward-only. A local POSIX shell sanity check verified indirect variable capture and byte-preserving env argv delivery; this was not a run of the actual RumiAI package launcher. After final review, malformed and duplicate override requests use distinct statuses (3 and 7). The baseline/override HOME pair was exercised through real `./m node` on `vmdev`, but the full permanent test suite, nested/invalid cases and the enterprise-VM Electron HTTPS scenario have not been executed against this revision.
 
 ## Next action
-Execute `tests/rumiai-os/pkg-launch/environment-preservation.test` against the actual `rumiai-os` target, review failures, then verify the opt-in Electron browser scenario with the CA only in the consuming app HOME. Re-run consistency and report revision-specific validation. Align the released `electron-web-control` provider explicitly if this feature is needed in its default workflow.
+Execute the remaining `tests/rumiai-os/pkg-launch/environment-preservation.test` scenarios against the actual `rumiai-os` target (the two HOME scenarios already passed on `vmdev`), review failures, then verify the opt-in Electron browser scenario with the CA only in the consuming app HOME. Re-run consistency and report revision-specific validation. Align the released `electron-web-control` provider explicitly if this feature is needed in its default workflow.
 
 ## Blockers / open questions
 Connected GitHub tools permit revisioned edits but do not execute on the user's corporate VM. Runtime/physical evidence is pending.
