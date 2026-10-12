@@ -74,23 +74,34 @@ policies and oriented selections.
 
 ### Source-line semantics
 
-Logical source lines are separated by LF (`\n`), including LF in CRLF.
-An empty document has one empty line; a trailing LF creates an additional
-empty final line. `lineCount` equals one plus the number of LF characters.
-Line indexes are zero-based and valid in `[0,lineCount)`.
+The base holds and exposes the exact source text, without line-ending
+configuration, normalization or automatic conversion. Text input and file
+output conventions belong to callers outside the base. `length` counts
+every actual source UTF-16 code unit, including both units of CRLF, and
+equals `toString().length` whenever the full text can be materialized.
+
+Logical source lines are separated by CR (`\r`), LF (`\n`), or an
+adjacent CRLF (`\r\n`) pair. CRLF is **one** logical separator occupying
+two source UTF-16 units; lone CR and lone LF each occupy one. All three forms
+may coexist in one document. The rule applies to the complete current source
+text, irrespective of internal piece boundaries or the edit operations that
+created or separated an adjacent CRLF pair. An empty document has one empty
+line; a trailing separator creates an additional empty last line.
+`lineCount` is one plus the number of recognized separators. Line indexes
+are zero-based and valid in `[0,lineCount)`.
 
 `lineStart(line)` returns the first offset of that line. `lineAt(offset)`
 accepts safe integer source positions `[0,length]`, including EOF, and
-returns the line containing that position; the LF separator itself belongs
-to the preceding line, while the offset immediately after it belongs to the
-next line. `lineInfo(line)` returns exactly
-`{start,end,nextStart}`: `start` is the first content position,
-`end` is the exclusive end of content without its LF or CRLF terminator,
-and `nextStart` is the position after that terminator, or `length` on the
-last line. In CRLF, both CR and LF are excluded from the content interval;
-a standalone CR is ordinary text. For the last line, `nextStart === length`.
-All three operations use source, not projected or wrapped, coordinates.
-Invalid indexes/ranges fail without mutating state.
+returns the logical line at that position. Offsets on any code unit of a
+separator (including either unit of CRLF) belong to the preceding line;
+the offset immediately after the complete separator belongs to the next
+line. `lineInfo(line)` returns exactly `{start,end,nextStart}`:
+`start` is the first content position, `end` is the exclusive end of
+content without its CR, LF or CRLF terminator, and `nextStart` is the
+position after that terminator, or `length` on the last line. For the
+last line, `nextStart === length`. All three operations use exact source,
+not projected or wrapped, coordinates. Invalid indexes/ranges fail without
+mutating state.
 
 ### Replace and atomicity
 
