@@ -51,7 +51,12 @@ subscribe(listener)           // unsubscribe function
 `length`, `lineCount` and `revision` are read-only properties; `slice` and
 `toString` return strings. A successful `replace` returns `undefined`,
 as the existing primitive implementation does; it does not return change
-records or a history entry. `subscribe` requires a function listener and
+records, a history entry or a success boolean. Failure is reported through
+exceptions, **never** by returning `false`. Invalid argument types raise
+`TypeError`; invalid positions, ranges or incompatible edit targets raise
+`RangeError`; resource and implementation failures raise appropriate errors.
+An exception must not be interpreted as a successful mutation or trigger
+committed-edit notifications. `subscribe` requires a function listener and
 returns its idempotent unsubscriber. Source text is modified only through
 `replace`; direct writing to implementation-internal storage does not form
 part of the public document API and must not bypass notifications.
