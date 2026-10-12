@@ -8,7 +8,7 @@ Updated: 2026-10-12
 `TextEdit` is a standalone, GUI-independent JavaScript library distributed
 with `m` at `rumiai-os/lib/sys/js/text-edit.lib.js`. Its role is text storage,
 oriented multi-range editing, a source-mapped representation, and translation
-of advanced selections. The current v0.4.0 library defines no GUI, rendering
+of advanced selections. The current v0.5.0 library defines no GUI, rendering
 backend, font/layout engine, IME adapter, generic event bus or history system.
 The base provides only direct committed-mutation notifications. No separate
 repository/packaging boundary for this library has been established; the
@@ -345,7 +345,7 @@ owns ordered, non-overlapping source-range substitution overlays, source
 annotations and the result of the most recent committed rebase. The base
 document is the only owner of editable source text.
 
-The v0.4.0 public surface is:
+The representation v0.5.0 public surface is:
 
 \`\`\`javascript
 new TextEditRepresentation(document)
@@ -361,6 +361,9 @@ representation.length        // projected UTF-16 text length
 representation.project(start=0,end=document.length,{maxSourceUnits=65536}={})
 representation.sourceToView(sourceOffset)
 representation.viewToSource(viewOffset)
+representation.setColumnMetrics({tabSize=4,widthOf}={})
+representation.columnToSource(row,col)
+representation.sourceToColumn(offset)
 representation.dispose()
 \`\`\`
 
@@ -406,6 +409,37 @@ only when the mapping is unique; otherwise they describe the full
 \`{kind:'replaced-region',source:{start,end},view:{start,end}}\`. A
 zero-length virtual substitution remains explicitly ambiguous in
 \`viewToSource\`.
+
+### Logical source-row column geometry
+
+`TextEditRepresentation` also owns source grapheme segmentation, logical display-cell
+widths and tab-stop expansion, not `TextEditAdvancedSelections`. The optional
+`setColumnMetrics({tabSize=4,widthOf}={})` sets a positive safe-integer tab
+stop and a `widthOf(grapheme,column,row)` callback for non-tab graphemes;
+omitting `widthOf` uses one logical cell per grapheme. Tabs advance to the
+next tab stop regardless of `widthOf`. Each callback result must be a
+positive safe integer. Metrics belong to a representation instance, not to
+each advanced-selection action. Host pixel measurements may inform the
+callback but no font or DOM dependency enters this library.
+
+`columnToSource(row,col)` accepts zero-based logical SOURCE rows and zero-based
+cell-boundary columns; it returns `{kind:'offset',offset}` for an exact
+grapheme boundary, `{kind:'inside-grapheme',cell,before,after}` inside
+a tab or other multi-cell grapheme, and `{kind:'virtual',offset,virtualSpaces}`
+for a column beyond the row's content. The virtual result retains the
+requested displacement beyond the original EOL and is **not** silently
+converted into a physical caret at the EOL. `sourceToColumn(offset)`
+returns `{kind:'column',row,col}` at a grapheme boundary, or an
+`inside-grapheme` result when the source offset splits a grapheme.
+The source offset at a line's content end is a valid column boundary,
+while an offset strictly inside its CRLF line terminator is not.
+Logical line contents are determined by `TextEditBase.lineInfo()` for
+all CR, LF and CRLF forms; neither line-ending units nor overlays are
+interpreted as source-line cells. These functions operate on **logical
+source rows**; folding, viewport wrapping, bidi, pixel hit-testing and
+post-overlay visual-row layout are distinct higher-layer policies.
+Column traversal uses bounded source reads; it need not materialize
+a multi-megabyte ASCII line to resolve an early column.
 
 ### Automatic source synchronization and invalidation
 
@@ -472,27 +506,60 @@ higher-layer old-text \`changes\` adapter and explicit representation
 
 ## Advanced selections and deferred responsibilities
 
-`TextEditAdvancedSelections` expresses logical-line and rectangular
-selection requests, translates them into ordinary UTF-16 selections, and
-delegates to `TextEditSelections`. Rectangular geometry uses explicit
-grapheme widths and tab stops supplied by the caller. Positions inside
-wide cells and overlapping selection targets are rejected rather than
-snapped silently. These first APIs operate on **logical source rows**,
-not wrapped GUI pixel rows or arbitrary post-fold visual rows. Rectangles
-crossing substitutions are rejected pending an explicit high-level policy.
+\`TextEditAdvancedSelections\` translates higher-level **logical SOURCE
+row/column endpoints** into ordinary \`TextEditSelections\` coordinates.
+The two selecting operations accept exactly the same endpoint shape:
+
+\`\`\`javascript
+advanced.lineSelection({row,col}, {row,col})
+advanced.rectangularSelection({row,col}, {row,col})
+advanced.resolveRectangles({row,col}, {row,col})
+\`\`\`
+
+\`row\` and \`col\` are zero-based, nonnegative safe integers; both rows
+must exist. The endpoints may be given in either direction. Row and
+column spans are **inclusive**; no extra endpoint is required for the
+last selected cell. \`lineSelection\` ignores the column magnitudes for
+source coverage and selects the complete content **and terminators** of
+all rows between the two endpoints as one ordinary source selection.
+It preserves orientation according to endpoint order.
+
+\`rectangularSelection\` instead selects the included columns on **every**
+included row, producing one ordinary source selection for each row.
+The per-row source ranges are half-open UTF-16 intervals translated by
+\`TextEditRepresentation.columnToSource\` from the inclusive cell interval
+\`[min(col),max(col)]\` to boundary positions
+\`min(col)\` and \`max(col)+1\`. The selected rows retain the requested
+row traversal order; each ordinary selection retains horizontal
+orientation. Advanced selections neither segment source graphemes
+themselves nor own tab stops, display widths, GUI coordinates or clipboard
+policies. They must not silently snap boundaries inside a tab or wide
+grapheme, or reinterpret hidden source through representation overlays.
+
+\`resolveRectangles\` is a non-mutating geometry check returning
+\`{targets,unresolved,requestedRows,forward}\`. Target entries retain the
+source row/range, inclusive column endpoints, and virtual offsets. Entries
+whose boundaries intersect a grapheme, require virtual columns past EOL
+or cross a representation replacement are reported as unresolved.
+\`rectangularSelection\` refuses to publish partial/misleading physical
+selections if any row is unresolved; otherwise it atomically replaces
+the ordinary selection collection. Retaining virtual space for a future
+column paste/materialization operation is **not** the same as fabricating
+a UTF-16 source offset for it; physical \`TextEditSelections\` has no
+virtual-column state.
 
 The future history feature will be a transparent wrapper containing
-`TextEditSelections`, substituting for it at the composition point without
-modifying lower layers or upper callers. It is not implemented in v0.4.0.
-Rendering, true font metrics, wrapping, complex bidi shaping, IME,
-nested/syntactic folding, visual-row selection, incremental optimization
-and GUI integration are outside this first core release.
+\`TextEditSelections\`, substituting for it at the composition point
+without modifying lower layers or upper callers. It is not implemented
+in v0.5.0. Rendering, font metrics, wrapping, bidi shaping, IME,
+nested folding, view-row selection and GUI integration are outside this
+source-row core.
 
 ## Validation and release boundary
 
-The current v0.4.0 library is checked against the actual product source by
+The current v0.5.0 library is checked against the actual product source by
 permanent Node tests in `rumiai-tests/tests/rumiai-os/text-edit/core.test.mjs`,
-`base.test.mjs`, `selections.test.mjs` and `representation.test.mjs`, executed through their target-discovering test entrypoint
+`base.test.mjs`, `selections.test.mjs`, `representation.test.mjs` and `advanced.test.mjs`, executed through their target-discovering test entrypoint
 and pinned by `rumiai-os/.github/workflows/text-edit.yml`. The workflow
 checks JavaScript syntax, executes the tests on Node 22, and builds a
 standalone source archive. These checks validate the store, selection and representation contracts,
