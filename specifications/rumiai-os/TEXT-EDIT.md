@@ -488,15 +488,13 @@ representation's most recent committed invalidation snapshot. The prior
 higher-layer old-text \`changes\` adapter and explicit representation
 \`rebase\` have been removed.
 
-## Advanced logical selection architecture — target contract
+## Advanced logical selection architecture — implemented in v0.6.0
 
-The next-version architecture separates logical construction, coordinate
-representation and physical editing, with exactly one owner of the effective
-selection collection. This subsection defines the selected target semantics;
-it does **not** describe an already implemented public v0.5.0 API. Until
-the migration is delivered, the implemented v0.5.0 offset-based
-`TextEditSelections` API and its validated behavior above remain the
-current executable product contract.
+The implemented v0.6.0 architecture separates logical selection construction,
+policy-neutral coordinate translation and physical editing. Exactly one
+`TextEditSelections` instance owns the effective ordered selection
+collection, including nonmaterialized coordinates. The old offset-based
+selection interface remains available as documented transitional compatibility.
 
 ### Responsibilities and coordinate systems
 
@@ -528,7 +526,7 @@ collection. Representation-specific projection metadata may remain
 view-local without duplicating authoritative physical selection state.
 
 `TextEditSelections` is the **sole owner of effective physical selections**
-and caret state. Its selected next-version public selection coordinates are
+and caret state. Its physical selection coordinates are
 `{row,col}`, where `row` denotes a source row and `col` denotes a
 UTF-16 code-unit boundary relative to that row's content start. These are
 **physical row/column coordinates**, not rendered pixels or display-cell
@@ -602,27 +600,27 @@ and meaningful anchors. A virtual-row/column selection cannot count
 unchanged numeric `row,col` as evidence that its source-relative anchor
 has been correctly rebased after another view edits the text.
 
-### Implementation alignment
+### Remaining scope
 
-The v0.5.0 `TextEditSelections` public API still uses flat UTF-16
-`{start,end,forward}` records and rejects out-of-range offsets.
-The v0.5.0 `TextEditAdvancedSelections` still converts and publishes
-source offsets itself and refuses virtual rectangles. The new physical
-`{row,col}` selector contract, logical facade, virtual-selection
-ownership, clipping behavior and edit-time materialization are **not
-implemented**. They require coordinated updates to the product,
-operational manual and permanent tests before the new contract can
-be described as implemented.
+The physical `{row,col}` selector, neutral representation gateway,
+advanced logical selection policies and deferred materialization are
+implemented in v0.6.0. The v0.6.0 operational manual and permanent tests
+validate source rows, physical virtual coordinates, CRLF-safe padding,
+multicaret insertion grouping, logical clipping, Unicode/tab conversion,
+and continued offset-interface compatibility. Comprehensive distribution
+of multiline clipboard, Excel and CSV payloads over different source and
+target geometries, full native MadEdit-Mod interaction parity and GUI/IME
+remain separate future editor work.
 
 History remains the separate transparent wrapper around
 `TextEditSelections` and must record one complete user action per
 undo/redo entry, including the corresponding selection state. GUI, IME,
 pixel hit-testing, bidi, wrapped visual rows and clipboard-distribution
-policies remain outside this coordinate-layer migration.
+policies remain outside this library revision.
 
 ## Validation and release boundary
 
-The current v0.5.0 library is checked against the actual product source by
+The current v0.6.0 library is checked against the actual product source by
 permanent Node tests in `rumiai-tests/tests/rumiai-os/text-edit/core.test.mjs`,
 `base.test.mjs`, `selections.test.mjs`, `representation.test.mjs` and `advanced.test.mjs`, executed through their target-discovering test entrypoint
 and pinned by `rumiai-os/.github/workflows/text-edit.yml`. The workflow
