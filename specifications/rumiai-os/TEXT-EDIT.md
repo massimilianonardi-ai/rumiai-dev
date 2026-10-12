@@ -48,6 +48,14 @@ replace([{start, end, text}, ...]) // one atomic multi-interval operation
 subscribe(listener)           // unsubscribe function
 ```
 
+`length`, `lineCount` and `revision` are read-only properties; `slice` and
+`toString` return strings. A successful `replace` returns `undefined`,
+as the existing primitive implementation does; it does not return change
+records or a history entry. `subscribe` requires a function listener and
+returns its idempotent unsubscriber. Source text is modified only through
+`replace`; direct writing to implementation-internal storage does not form
+part of the public document API and must not bypass notifications.
+
 There is one public mutation method, overloaded by argument shape.
 `replaceMany`, `chunks`, separate `insert`/`delete` and generic transaction
 lifecycle methods are not part of this interface. Repeated bounded `slice`
