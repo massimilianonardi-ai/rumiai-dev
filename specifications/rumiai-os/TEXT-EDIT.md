@@ -36,7 +36,7 @@ Its public document interface is precisely:
 
 ```javascript
 length                       // property: source UTF-16 length
-revision                     // property: committed mutation sequence
+revision                     // property: committed mutation counter (safe Number, cyclic)
 lineCount                    // property: logical source-line count
 slice(start, end)             // source substring
 lineStart(line)               // logical line -> start offset
@@ -138,11 +138,34 @@ but no intermediate write is observable as a committed document revision.
 
 ### Revision and mutation notification
 
-`revision` starts at zero for a newly initialized document. It increases
-**exactly once per successful public `replace` call**, for either overload,
-including committed no-effect calls; it does not change for reads, listener
-registration, or rejected/failed edits. Revision progression must remain
-represented exactly by a safe integer; exhaustion fails before a mutation.
+`revision` is a read-only JavaScript `Number` counter initialized to `0`.
+Each successful public `replace` call, including committed no-effect calls,
+updates it exactly once: increase it by one while it is less than
+`Number.MAX_SAFE_INTEGER`; if it already equals that limit, reset it to `0`
+on that successful commit. The new value is published after the atomic edit
+and before notifying listeners. Failed/rejected edits, reads and listener
+registration do not change it. Counter exhaustion must **never** reject an
+otherwise valid edit, and there are no timed or discretionary resets.
+
+A consumer that maintains an incremental representation or mirrored copy
+must track the revision of the document state it has actually processed.
+For every received post-commit notification, if the current
+`document.revision` is exactly its last successfully processed revision plus
+one, it may apply the notified edit incrementally; otherwise it must discard
+its incremental assumptions and rebuild/reload from the document's **current**
+source state, then record that current revision. This includes the
+`Number.MAX_SAFE_INTEGER` -> `0` transition, which deliberately forces a
+reload. A new consumer must first establish a consistent snapshot of the
+current document and its revision before relying on incremental updates.
+The base supplies no replay log or missed-edit recovery mechanism; a reload
+may read source in bounded slices rather than requiring full `toString()`.
+
+Because numbers are eventually reused after a wrap, `revision` is a local
+sequence/checkpoint, **not** a permanently unique document-state identity.
+Comparing arbitrary old and current values only for equality cannot prove
+that no edits occurred across an entire counter cycle; consumers relying on
+continuity must validate each received step. This extremely remote aliasing
+possibility does not justify failing document edits at the counter limit.
 
 `subscribe(listener)` registers a callback for committed source edits and
 returns an idempotent unsubscribe function. The callback receives **only the
@@ -168,7 +191,7 @@ of caller-owned objects or one listener's received values cannot change the
 committed command or what subsequent listeners observe. Snapshots are
 immutable; notifications preserve argument order and actual string content
 rather than retaining mutable caller references. Listeners run synchronously
-after the atomic commit and revision increment, in registration order; each
+after the atomic commit and revision update, in registration order; each
 sees the complete new document. Subscription changes during notification
 affect subsequent commits, not the current delivery snapshot.
 Mutations of the same document from within its notification callbacks are
