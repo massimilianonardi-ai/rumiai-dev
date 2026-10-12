@@ -11,7 +11,7 @@ The JavaScript compilation, module loading and distribution concern has **indepe
 
 ## Current repository revisions
 
-- `rumiai-dev` main inspected: `50c8df38432e61c770fa16ca4ac6fbdd55f53d09` (accepted next TextEditBase contract promoted to canonical specification; prior to this handoff update).
+- `rumiai-dev` main inspected: `6794501e9a8e7a8b4734521598177a9fd1d7c98e` (complete next TextEditBase document contract, before this handoff sync).
 - `rumiai-os` main inspected: `0c638074b0a031d7f75d62bf464faf2c0a272ef0` (released TextEdit v0.1.0 source remains unchanged; immutable release tag at `45a5dc2dde494ee1411b9da9d965707c68c7adbf`).
 - `rumiai-tests` main: `024f60b85fc94a49f5222cd1fac9f3e9a326f562` (permanent target-aware TextEdit test, used by the product workflow).
 - `rumiai-dev-PoCs` main: `eb8c193c93e0fe63ee02c4c61f1d611729b034bb` (experimental reference; source copied from prior PoC code, but standalone product is now authoritative).
