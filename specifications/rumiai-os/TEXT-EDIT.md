@@ -504,56 +504,81 @@ representation's most recent committed invalidation snapshot. The prior
 higher-layer old-text \`changes\` adapter and explicit representation
 \`rebase\` have been removed.
 
-## Advanced selections and deferred responsibilities
+## Advanced logical selections and deferred responsibilities
 
-\`TextEditAdvancedSelections\` translates higher-level **logical SOURCE
-row/column endpoints** into ordinary \`TextEditSelections\` coordinates.
-The two selecting operations accept exactly the same endpoint shape:
+The authoritative architecture for this layer separates **logical selection
+construction**, **representation translation**, and **physical source
+selections**. This is the required direction for realigning the current
+v0.5.0 advanced-selection implementation; the migration is not yet
+implemented or validated.
 
-\`\`\`javascript
-advanced.lineSelection({row,col}, {row,col})
-advanced.rectangularSelection({row,col}, {row,col})
-advanced.resolveRectangles({row,col}, {row,col})
-\`\`\`
+`TextEditAdvancedSelections` constructs and combines selections only in
+logical text-grid coordinates `{row,col}`, with no UTF-16 offsets, tab
+expansion, grapheme measurement, direct document edits or physical selection
+publication. `lineSelection(start,end)` and
+`rectangularSelection(start,end)` accept the same pair of logical endpoints.
+The first derives complete included rows; the second derives all included
+columns on every included row. The selected endpoints remain inclusive, and
+orientation is preserved. Higher-level methods must compose the shared
+elementary logical selection operations rather than each implementing a
+separate coordinate conversion path.
 
-\`row\` and \`col\` are zero-based, nonnegative safe integers; both rows
-must exist. The endpoints may be given in either direction. Row and
-column spans are **inclusive**; no extra endpoint is required for the
-last selected cell. \`lineSelection\` ignores the column magnitudes for
-source coverage and selects the complete content **and terminators** of
-all rows between the two endpoints as one ordinary source selection.
-It preserves orientation according to endpoint order.
+**The representation is the selected integration gateway.**
+`TextEditAdvancedSelections` passes the *complete logical selections*
+to `TextEditRepresentation` using selection-management APIs analogous
+to `TextEditSelections`. `TextEditRepresentation` owns the translation,
+grapheme/tab-cell validation and presentation of the resulting logical
+selection state; it delegates only correctly representable real UTF-16
+selection batches to `TextEditSelections`. `TextEditSelections` remains
+the sole owner of actual source-coordinate selections. There must be no
+second owner of physical selection state, and no partial or silently clipped
+publication of a logical selection through physical offsets.
 
-\`rectangularSelection\` instead selects the included columns on **every**
-included row, producing one ordinary source selection for each row.
-The per-row source ranges are half-open UTF-16 intervals translated by
-\`TextEditRepresentation.columnToSource\` from the inclusive cell interval
-\`[min(col),max(col)]\` to boundary positions
-\`min(col)\` and \`max(col)+1\`. The selected rows retain the requested
-row traversal order; each ordinary selection retains horizontal
-orientation. Advanced selections neither segment source graphemes
-themselves nor own tab stops, display widths, GUI coordinates or clipboard
-policies. They must not silently snap boundaries inside a tab or wide
-grapheme, or reinterpret hidden source through representation overlays.
+### Virtual text-grid positions
 
-\`resolveRectangles\` is a non-mutating geometry check returning
-\`{targets,unresolved,requestedRows,forward}\`. Target entries retain the
-source row/range, inclusive column endpoints, and virtual offsets. Entries
-whose boundaries intersect a grapheme, require virtual columns past EOL
-or cross a representation replacement are reported as unresolved.
-\`rectangularSelection\` refuses to publish partial/misleading physical
-selections if any row is unresolved; otherwise it atomically replaces
-the ordinary selection collection. Retaining virtual space for a future
-column paste/materialization operation is **not** the same as fabricating
-a UTF-16 source offset for it; physical \`TextEditSelections\` has no
-virtual-column state.
+Logical row and column positions may lie beyond the currently materialized
+line contents **and beyond the document's final physical row**. Such a
+position is valid *logical selection or caret state*, not an invalid source
+offset and not a request to change the document. The representation must
+retain the full logical intent, including virtual row and column distance,
+even if it has no faithful real UTF-16 counterpart. Navigation, selecting,
+moving a virtual caret and changing its range must not create spaces,
+line separators or a `TextEditBase` revision.
 
-The future history feature will be a transparent wrapper containing
-\`TextEditSelections\`, substituting for it at the composition point
-without modifying lower layers or upper callers. It is not implemented
-in v0.5.0. Rendering, font metrics, wrapping, bidi shaping, IME,
-nested folding, view-row selection and GUI integration are outside this
-source-row core.
+A subsequent user **editing** action may materialize only the required
+portion of the virtual grid: source-line padding, and, when needed, missing
+line separators and rows. This is a separate high-level source-edit planning
+responsibility, not the responsibility of advanced selection construction.
+One logical user edit must still resolve to one atomic `TextEditBase`
+source commit with all required padding/row creation grouped into it.
+Until such an edit commits, the source text remains byte-for-byte unchanged.
+No virtual location may be misrepresented as an exact physical selection
+merely because its nearest real UTF-16 offset is EOL or EOF.
+
+The reference behavior is MadEdit-Mod column editing. Source evidence shows
+an independent caret `extraspaces` count for positions beyond EOL and
+on-write insertion of missing spaces; its column insertion path can also
+append newlines as content extends beyond EOF. These observations justify
+the separate virtual-intent and deferred-materialization model; they do
+**not** establish all native MadEdit-Mod mouse-navigation, keyboard,
+selection, clipboard or arbitrary-beyond-EOF-row semantics as tested.
+
+### Current product alignment status
+
+The v0.5.0 implementation still converts rectangles directly inside
+`TextEditAdvancedSelections`, assumes the two endpoint rows already
+exist, and rejects virtual columns when publishing physical selections.
+These behaviors are **known pending realignment** with the architectural
+contract above, not reasons to reject valid virtual text-grid intent.
+The elementary logical API shapes, storage/projection details for
+temporarily nonrepresentable selections, update affinities across
+external changes, and edit-materialization policies must be completed
+and tested before the new public behavior can be called implemented.
+
+History remains a separate transparent wrapper around
+`TextEditSelections`; GUI, IME, pixel hit testing, bidi, visual wrapping,
+clipboard distribution, and custom conflict reconciliation remain outside
+this work unit.
 
 ## Validation and release boundary
 
