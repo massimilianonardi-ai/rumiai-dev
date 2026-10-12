@@ -1,6 +1,6 @@
 # TextEdit — current standalone text-engine contract
 
-Status: **Current — TextEditBase, TextEditSelections and TextEditRepresentation implemented**  
+Status: **Current — TextEdit 0.6.0 document, physical selections, logical policies and deferred materialization implemented**  
 Updated: 2026-10-12
 
 ## Responsibility and ownership
@@ -8,7 +8,7 @@ Updated: 2026-10-12
 `TextEdit` is a standalone, GUI-independent JavaScript library distributed
 with `m` at `rumiai-os/lib/sys/js/text-edit.lib.js`. Its role is text storage,
 oriented multi-range editing, a source-mapped representation, and translation
-of advanced selections. The current v0.5.0 library defines no GUI, rendering
+of advanced selections. The current v0.6.0 library defines no GUI, rendering
 backend, font/layout engine, IME adapter, generic event bus or history system.
 The base provides only direct committed-mutation notifications. No separate
 repository/packaging boundary for this library has been established; the
@@ -229,113 +229,82 @@ baseline. Both preserve exact source UTF-16 units and atomic replacement.
 
 ### TextEditSelections public API and state contract
 
-`TextEditSelections` is a view-local collection of selections over one shared
-`TextEditBase` document. It owns no source text, rendering, history or input
-interpretation. The v0.3.0 implementation replaces the legacy
-sequential/rollback implementation, with precisely these public operations:
+In TextEdit 0.6.0, \`TextEditSelections\` is the view-local **sole owner**
+of effective ordered physical selections, including virtual positions.
+It does not own source text, rendering, history or input interpretation.
 
-```javascript
+\`\`\`javascript
 new TextEditSelections(document)
 getSelections()
-setSelections(selections)
-addSelections(selections)
+setSelections([{start:{row,col},end:{row,col},forward}, ...])
+addSelections([{start:{row,col},end:{row,col},forward}, ...])
 replace(textOrTexts)
 dispose()
-```
+\`\`\`
 
-The constructor requires a document conforming to the structural
-`TextEditBase` interface, including `revision` and `subscribe`. It
-subscribes to committed document edits, starts with no selections, and
-establishes its initial revision checkpoint at construction. Multiple
-instances may independently subscribe to the same document. There are no
-`length`, `slice`, `onBackward`, mutation bus or generic event hooks on
-the selection layer: source reads use the document itself. Public selection
-records are precisely `{start,end,forward}`, where `start` and `end`
-are safe integer UTF-16 source positions with
-`0 <= start <= end <= document.length`, and `forward` is boolean.
-An empty interval represents a caret and retains its orientation. All
-selection input is copied, and `getSelections()` returns fresh mutable
-record copies; caller mutation must not change internal state.
+Physical \`row\` indexes source rows, while \`col\` is a zero-based UTF-16
+code-unit boundary from the content start of that row, **not** a visual
+cell column. Every input \`row\` and \`col\` must be a nonnegative safe
+integer. Selection endpoints are ordered \`start <= end\` by row then
+column; \`forward\` is boolean, retaining orientation even for carets.
+Selections can be overlapping, duplicated or in arbitrary collection
+order without automatic merging or sorting. Input and output snapshots
+are copied; \`setSelections([])\` clears, \`addSelections([])\` is a
+no-op, and both return the selection instance.
 
-`setSelections(array)` atomically replaces the collection;
-`addSelections(array)` atomically appends in caller order. An empty array
-is valid for either method; the former clears the collection and the latter
-is a no-op. Both return the selection object. Invalid records or coordinates
-throw `TypeError` or `RangeError` without partially changing the collection.
-Selections may overlap, touch, be identical or be in any order. Their
-identities are their ordered collection slots (not UUIDs); no implicit merge,
-deduplication or source-order sorting is observable.
+Rows beyond \`document.lineCount\` and columns beyond the source row's
+content end are valid **virtual physical coordinates**. They require
+the shared source document's \`lineCount\`, \`lineAt\` and \`lineInfo\`
+operations and carry no obligation to allocate text. Navigating or
+setting selections must neither alter source text nor advance revision.
+Physical selection coordinates cannot represent the position inside
+a CRLF pair; that exact code-unit position remains accessible through
+\`TextEditBase\`.
 
-`replace(textOrTexts)` accepts one string for every selection or an array
-containing exactly one string per selection, paired in **collection order**.
-An empty selection collection cannot be replaced. It plans each
-`{start,end,text}` in the same source-revision coordinate system; selection
-orientation does not reinterpret the payload or target interval. Incompatible
-targets (including duplicate caret insertions and interior overlaps) fail
-as in `TextEditBase`, before mutation. A successful operation calls
-`document.replace(edits)` **exactly once** (array form), producing exactly
-one source commit and its single notification, even for empty replacement
-strings or no-effect edits. The layer does not perform compensating writes,
-independent document rollback or history recording. Its return is precisely
-`{before,after}`, independent snapshots in original selection order.
-Every edited selection becomes a caret after its own inserted text, with
-its original `forward` value retained. Invalid or rejected operations
-leave selections and source unchanged.
+\`replace(textOrTexts)\` accepts either one string per selection or a
+shared string; array payloads pair with selections in their original
+collection order. It constructs compatible pre-edit source intervals and
+all needed virtual materialization in \`TextEditSelections\`, then calls
+\`TextEditBase.replace([...])\` **once** for one materializing editing
+action. Virtual EOL columns require space padding; future rows require
+line separators, using LF normally but CR after a trailing lone CR
+to avoid accidental CRLF fusion. When an inserted CR combines with a
+following existing LF, an inserted-text caret is placed after the
+resulting CRLF rather than inside its terminator.
 
-### Automatic selection rebasing on source notifications
+Several virtual positions may map to the same old physical EOL/EOF.
+The selection layer coalesces compatible payloads at that source
+offset, preserving their individual resulting carets. Physically
+conflicting edits fail rather than silently dropping user input.
+An edit consisting only of deleting nonexistent virtual space does
+not materialize or commit anything. A successful actual edit returns
+\`{before,after}\`, with independent snapshots and edited selections
+collapsed to oriented carets at the ends of their inserted text.
+Rejected edits do not publish partial changes.
 
-Every committed source edit is processed once, including edits initiated
-by the same selection instance; own successful edits use their prepared
-`after` positions and must not also apply the generic external transform.
-External edits are processed in the pre-commit coordinate system. Empty
-text-only no-effect commits still advance the checkpoint.
+The selector subscribes to committed source edits and tracks source
+revision. Ordinary real-source selection boundaries use the established
+right insertion affinity for starts and carets and left affinity for
+ends. Virtual columns retain their displacement from their original
+source EOL anchor as long as its new position can be determined;
+future rows follow materialized source-row growth where unambiguous.
+Ambiguous anchor changes and revision discontinuities invalidate the
+dependent physical state rather than invent a clipped source offset.
+Source notifications are consumed exactly once, including edits made
+through the same selector.
 
-For a nonempty selection `[start,end)`, treat the starting boundary with
-right insertion affinity and the ending boundary with left insertion
-affinity. A caret has right insertion affinity. The result is:
+**Transitional compatibility in v0.6.0:** the previous
+\`{start:number,end:number,forward:boolean}\` API remains usable as a
+separate offset-selection mode; it preserves the validated v0.5.0
+atomic edit, source-offset rebase and duplicate/conflict semantics.
+Legacy callers can supply just the old minimal source document
+interface without row methods. Offset and physical record shapes
+cannot be mixed in a nonempty selection collection. The new logical
+selection facade uses physical \`{row,col}\` records.
 
-- Edits strictly before or after a selection shift it or leave it unchanged.
-- An insertion at the selection start is excluded and shifts that start;
-  insertion inside the interval is included; insertion at its end is excluded.
-- Insertion at a caret moves it to the end of inserted text.
-- For a nonempty replacement `[a,b)`, a position at `a` attaches to
-  the **start** of replacement text, a position at `b` attaches to the
-  **end**, and an interior position has no natural old-source mapping:
-  a right-affinity endpoint attaches to the inserted-text end, and a
-  left-affinity endpoint attaches to its start.
-- If the resulting start would exceed the resulting end (both old
-  boundaries were consumed), collapse the selection to the rightmost
-  resulting position. Deletion therefore collapses to its removal point;
-  full replacement collapses after its inserted text.
-- Touching or multiple edits use the `TextEditBase` insertion-before-
-  replacement ordering; source offsets are mapped against the complete
-  old-coordinate batch, not serially transformed as if edits had separate
-  commits. A no-effect replacement still follows the same geometry.
-- Orientation, collection order, count, and distinct duplicate selections
-  are retained after rebase, even when multiple positions converge. Such
-  duplicates remain observable, but a later `replace` rejects incompatible
-  overlapping targets instead of merging them.
-
-If the received `document.revision` does not equal the last fully
-processed revision plus one (including the cyclic reset to zero), the
-collection must be cleared rather than reusing potentially obsolete offsets;
-the new current revision becomes the checkpoint. No source-text history or
-replay mechanism exists to recover the original selection meaning.
-The same conservative invalidation applies when committed-notification
-processing cannot safely finish. `setSelections`/`addSelections` supplied
-against the current document can establish new valid selections. Caller-owned
-selection records or payload arrays must not be able to publish old-source
-coordinates if evaluating their properties triggers a concurrent document
-commit; such operations fail instead of overriding already rebased state.
-
-`dispose()` is idempotent, unsubscribes from the document and clears the
-collection. Subsequently all operations other than repeated `dispose()`
-reject use of that disposed instance. It never disposes the shared document.
-This layer does not promise atomic snapshots jointly with unrelated external
-subscribers observing the document during its synchronous notification;
-the document's own source commit is the atomic boundary.
-
-
+\`dispose()\` unsubscribes, clears the collection and leaves the shared
+document intact. The future history wrapper, GUI, IME and clipboard
+distribution are outside this class.
 
 ## Document representation and source mapping
 
@@ -345,10 +314,10 @@ owns ordered, non-overlapping source-range substitution overlays, source
 annotations and the result of the most recent committed rebase. The base
 document is the only owner of editable source text.
 
-The representation v0.5.0 public surface is:
+The representation v0.6.0 public surface is:
 
 \`\`\`javascript
-new TextEditRepresentation(document)
+new TextEditRepresentation(document, selections=null)
 representation.setReplacements([{start,end,text}, ...])
 representation.replace(start,end,text)
 representation.remove(start,end)
@@ -364,8 +333,23 @@ representation.viewToSource(viewOffset)
 representation.setColumnMetrics({tabSize=4,widthOf}={})
 representation.columnToSource(row,col)
 representation.sourceToColumn(offset)
+representation.logicalRowWidth(row)
+representation.rowCount
+representation.getSelections()  // requires bound physical selections
+representation.setSelections(logicalSelections)
+representation.addSelections(logicalSelections)
 representation.dispose()
 \`\`\`
+
+The optional second constructor argument binds the representation to
+\`TextEditSelections\` for logical selection get/set/add operations. These
+operations convert logical grapheme/tab-based \`{row,col}\` positions to
+physical source \`{row,col}\` positions and back. \`logicalRowWidth(row)\`
+returns current source row width in logical display cells, or zero for a
+future row. This translation is **policy-neutral**: clipping and virtual
+retention are owned by \`TextEditAdvancedSelections\`, not the
+representation. No representation method constructs padding or modifies
+source text.
 
 The constructor requires a \`TextEditBase\` with source line access, a cyclic
 \`revision\` counter and \`subscribe\`. It automatically subscribes once; two
