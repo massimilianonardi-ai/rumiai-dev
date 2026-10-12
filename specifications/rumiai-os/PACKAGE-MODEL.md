@@ -297,6 +297,28 @@ For a launched package, the launcher:
 
 The launcher does not create a second package-state model.
 
+The optional environment request `m_ENV_DO_NOT_OVERRIDE` is a single-space-separated,
+nonempty list of POSIX variable identifiers. When present, the launcher requires
+each listed variable to exist in its incoming environment; an existing empty
+value is valid. Invalid lists, duplicate names or missing values fail the launch.
+The request may be used with a normal or nested package command. It preserves
+exactly the incoming values in the environment delivered to the final target,
+after ordinary package, dependency and user-environment preparation. It does
+not suppress or alter that preparation. The launcher consumes the request for
+one invocation and does not export it to the target.
+
+The launch-control variables `m_ENV_DO_NOT_OVERRIDE`,
+`m_PKG_LAUNCH_CONTEXT` and `m_PKG_LAUNCH_STATE_INSTANCE` cannot themselves
+be preserved through this mechanism; requesting them is an explicit failure.
+They are control-plane inputs and must not be reintroduced into the target's
+environment. No preservation request changes the selected package, service
+execution context, State Instance, computed `state-path`, managed package
+configuration, provider resolution or effective host execution identity.
+The package HOME remains resolved, created and owned through `pkg` even when
+the final process receives a preserved `HOME` value. When
+`m_ENV_DO_NOT_OVERRIDE` is absent, launch behavior is unchanged.
+
+
 ## Package state
 
 Mutable package state is resolved through:
