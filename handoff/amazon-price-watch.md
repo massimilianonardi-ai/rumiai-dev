@@ -30,6 +30,7 @@ Replace the fragile model-driven Amazon Price Watch polling path with a determin
 ## Fixed task-local choices
 
 - Amazon Price Watch is an application problem with its own lifecycle; it is not the design or implementation task for `web-sense`.
+- The independent extractor product promotion/release is owned by `handoff/amazon-wishlist-extract-release.md` until closed; this parent owns downstream monitoring and physical Amazon.it acceptance, not the extractor's standalone distribution details.
 - The general Web architecture work and the Amazon application may proceed in parallel. Reusable requirements discovered while solving Amazon may inform the general Web work, but Amazon-specific operational state remains here.
 - The current ChatGPT scheduled task is the behavioral source to translate, not the intended runtime architecture.
 - Current scheduled cadence is six checks per day (00:00, 04:00, 08:00, 12:00, 16:00, 20:00 Europe/Rome); the task is currently disabled while the replacement path is investigated.
