@@ -234,12 +234,110 @@ uses a persistent indexed-piece treap with CR/LF/CRLF logical-line metadata
 (including piece-boundary pairs); `FlatDocument` is a flat-string reference
 baseline. Both preserve exact source UTF-16 units and atomic replacement.
 
-`TextEditSelections` owns oriented UTF-16 selections with zero-length caret
-ranges, preserves caller identity/order, and applies selections as primitive
-document edits. It does not know folding, GUI geometry or clipboard semantics.
-A compound operation prepares its results and uses compensating restoration
-on identifiable synchronous underlying failures. Unrecoverable/uncertain
-backends must fail closed, never silently claim successful text restoration.
+### TextEditSelections public API and state contract
+
+`TextEditSelections` is a view-local collection of selections over one shared
+`TextEditBase` document. It owns no source text, rendering, history or input
+interpretation. Its next independent implementation replaces the legacy
+sequential/rollback implementation, with precisely these public operations:
+
+```javascript
+new TextEditSelections(document)
+getSelections()
+setSelections(selections)
+addSelections(selections)
+replace(textOrTexts)
+dispose()
+```
+
+The constructor requires a document conforming to the structural
+`TextEditBase` interface, including `revision` and `subscribe`. It
+subscribes to committed document edits, starts with no selections, and
+establishes its initial revision checkpoint at construction. Multiple
+instances may independently subscribe to the same document. There are no
+`length`, `slice`, `onBackward`, mutation bus or generic event hooks on
+the selection layer: source reads use the document itself. Public selection
+records are precisely `{start,end,forward}`, where `start` and `end`
+are safe integer UTF-16 source positions with
+`0 <= start <= end <= document.length`, and `forward` is boolean.
+An empty interval represents a caret and retains its orientation. All
+selection input is copied, and `getSelections()` returns fresh mutable
+record copies; caller mutation must not change internal state.
+
+`setSelections(array)` atomically replaces the collection;
+`addSelections(array)` atomically appends in caller order. An empty array
+is valid for either method; the former clears the collection and the latter
+is a no-op. Both return the selection object. Invalid records or coordinates
+throw `TypeError` or `RangeError` without partially changing the collection.
+Selections may overlap, touch, be identical or be in any order. Their
+identities are their ordered collection slots (not UUIDs); no implicit merge,
+deduplication or source-order sorting is observable.
+
+`replace(textOrTexts)` accepts one string for every selection or an array
+containing exactly one string per selection, paired in **collection order**.
+An empty selection collection cannot be replaced. It plans each
+`{start,end,text}` in the same source-revision coordinate system; selection
+orientation does not reinterpret the payload or target interval. Incompatible
+targets (including duplicate caret insertions and interior overlaps) fail
+as in `TextEditBase`, before mutation. A successful operation calls
+`document.replace(edits)` **exactly once** (array form), producing exactly
+one source commit and its single notification, even for empty replacement
+strings or no-effect edits. The layer does not perform compensating writes,
+independent document rollback or history recording. Its return is precisely
+`{before,after}`, independent snapshots in original selection order.
+Every edited selection becomes a caret after its own inserted text, with
+its original `forward` value retained. Invalid or rejected operations
+leave selections and source unchanged.
+
+### Automatic selection rebasing on source notifications
+
+Every committed source edit is processed once, including edits initiated
+by the same selection instance; own successful edits use their prepared
+`after` positions and must not also apply the generic external transform.
+External edits are processed in the pre-commit coordinate system. Empty
+text-only no-effect commits still advance the checkpoint.
+
+For a nonempty selection `[start,end)`, treat the starting boundary with
+right insertion affinity and the ending boundary with left insertion
+affinity. A caret has right insertion affinity. The result is:
+
+- Edits strictly before or after a selection shift it or leave it unchanged.
+- An insertion at the selection start is excluded and shifts that start;
+  insertion inside the interval is included; insertion at its end is excluded.
+- Insertion at a caret moves it to the end of inserted text.
+- For a nonempty replacement `[a,b)`, a position at `a` attaches to
+  the **start** of replacement text, a position at `b` attaches to the
+  **end**, and an interior position has no natural old-source mapping:
+  a right-affinity endpoint attaches to the inserted-text end, and a
+  left-affinity endpoint attaches to its start.
+- If the resulting start would exceed the resulting end (both old
+  boundaries were consumed), collapse the selection to the rightmost
+  resulting position. Deletion therefore collapses to its removal point;
+  full replacement collapses after its inserted text.
+- Touching or multiple edits use the `TextEditBase` insertion-before-
+  replacement ordering; source offsets are mapped against the complete
+  old-coordinate batch, not serially transformed as if edits had separate
+  commits. A no-effect replacement still follows the same geometry.
+- Orientation, collection order, count, and distinct duplicate selections
+  are retained after rebase, even when multiple positions converge. Such
+  duplicates remain observable, but a later `replace` rejects incompatible
+  overlapping targets instead of merging them.
+
+If the received `document.revision` does not equal the last fully
+processed revision plus one (including the cyclic reset to zero), the
+collection must be cleared rather than reusing potentially obsolete offsets;
+the new current revision becomes the checkpoint. No source-text history or
+replay mechanism exists to recover the original selection meaning.
+The same conservative invalidation applies when committed-notification
+processing cannot safely finish. `setSelections`/`addSelections` supplied
+against the current document can establish new valid selections.
+
+`dispose()` is idempotent, unsubscribes from the document and clears the
+collection. Subsequently all operations other than repeated `dispose()`
+reject use of that disposed instance. It never disposes the shared document.
+This layer does not promise atomic snapshots jointly with unrelated external
+subscribers observing the document during its synchronous notification;
+the document's own source commit is the atomic boundary.
 
 `TextEdit` composes the document, selections, representation and advanced
 selection resolver. Its `replace(textOrTexts)` executes selected editing and
