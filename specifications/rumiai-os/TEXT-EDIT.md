@@ -557,7 +557,7 @@ operations. Its existing `lineCount`, `lineStart`, `lineAt` and
 `lineInfo(row) -> {start,end,nextStart}` provide source-row geometry.
 Here `end` is the content boundary immediately *before* the actual
 CR/LF/CRLF terminator, and `nextStart` follows that terminator.
-The ordinary physical `{row,col}` selection interface need not expose
+The ordinary physical `{row,col}` selection interface does not expose
 a caret **inside** a CRLF pair. Exact arbitrary code-unit access, including
 the CRLF interior, remains available through `TextEditBase`; a
 transition from the current offset-selector API must account explicitly
@@ -603,10 +603,9 @@ the selection layer for a normal selection-initiated edit.
 
 Committed external source edits must continue to rebase or safely
 invalidate selections while preserving orientation, collection order
-and meaningful anchors. Virtual-row/column affinity when other views
-insert/delete lines or text still requires precise implementation
-semantics; the next-version representation must not mistake unchanged
-numeric `row,col` for a successfully rebased anchor.
+and meaningful anchors. A virtual-row/column selection cannot count
+unchanged numeric `row,col` as evidence that its source-relative anchor
+has been correctly rebased after another view edits the text.
 
 ### Implementation alignment
 
@@ -617,10 +616,8 @@ source offsets itself and refuses virtual rectangles. The new physical
 `{row,col}` selector contract, logical facade, virtual-selection
 ownership, clipping behavior and edit-time materialization are **not
 implemented**. They require coordinated updates to the product,
-operational manual and permanent tests. API record details and exact
-edge-case semantics for CRLF conversion compatibility, multi-caret
-conflicts, source-edit rebase affinity, tabs/graphemes and row creation
-must be validated before declaring the migration complete.
+operational manual and permanent tests before the new contract can
+be described as implemented.
 
 History remains the separate transparent wrapper around
 `TextEditSelections` and must record one complete user action per
