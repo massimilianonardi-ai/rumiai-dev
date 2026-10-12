@@ -207,17 +207,11 @@ The base owns raw source updates and their atomic publication only.
 cursor state and target planning, but delegates the final prepared set
 of replacements to one `document.replace(edits)` call. Different views
 may share the same document with independently owned selections and
-representations, and each should consume a committed source mutation
-**exactly once**. The source of an edit must not independently rebase the
-same selection or representation a second time through the existing
-facade's returned change result.
-
-The pending `TextEditRepresentation` integration must rebase directly from
-committed original arguments and revision, without requiring `removed`
-or other extra data from `TextEditBase` notifications. The current `representation.rebase(changes)` still requires old-text-containing
-results and does not yet consume the new document notification contract.
-Its reconciliation is required before the wider selection/representation
-integration can be called complete; it does not block the base-store contract.
+representations. Both view-local layers consume each committed mutation
+**exactly once** directly from the source subscription. The originating
+facade delegates one atomic edit; it never supplies duplicate manual rebases.
+No removed-text records or source history are needed to keep a shared view
+consistent with the confirmed source commit.
 
 Notifications coordinate copies/consumers that already share the same
 ordered source revisions; the base does **not** resolve independent
@@ -401,7 +395,11 @@ metadata is separate from text and does not contribute to projected length.
 \`readUnits\` counts source text units projected, and \`maxSourceUnits\` caps
 them; callers can request small windows instead of complete content.
 Common ASCII boundaries can be checked from adjacent source units without
-materializing large source lines. For general Unicode grapheme boundaries,
+materializing large source lines. Overlay geometry is indexed by cumulative
+UTF-16 displacement so source/view coordinate conversions do not scan all
+preceding overlays on every lookup. Source projection likewise seeks the
+requested window rather than scanning all preceding substitutions and
+annotations. For general Unicode grapheme boundaries,
 validation may require more source context; no false editable boundary is
 fabricated. \`sourceToView\` and \`viewToSource\` return \`{kind:'offset',offset}\`
 only when the mapping is unique; otherwise they describe the full
