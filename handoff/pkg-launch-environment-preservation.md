@@ -44,6 +44,8 @@ Recheck remote HEADs at resumption.
 
 - Physical host report (2026-10-12, `admino@vmdev`, checkout `/m/src/git/rumiai-os_TEST` at `rumiai-os` `c3717a8`): after `git pull --ff-only`, `./m node -p 'process.env.HOME'` printed `/m/src/git/rumiai-os_TEST/state/user/default/pkg/nodejs/home`; `m_ENV_DO_NOT_OVERRIDE=HOME ./m node -p 'process.env.HOME'` printed `/home/admino`. This directly validates the baseline and explicit HOME override on that host only.
 
+- User report (2026-10-12): after prior `srv start web-control` failed with `provider-resolution-failed` and `pkg default web-control` did not select the provider, the user reported that the operational workflow works following instructions to select the `web-control` facility provider (`pkg provider default web-control electron-web-control`) and run Amazon Watch wishlist extraction. No structured extractor output was supplied in this report, and the report is not evidence that Electron has integrated `m_ENV_DO_NOT_OVERRIDE` or that NSS certificates are isolated to the consumer HOME.
+
 ## Current state
 Commits are forward-only. A local POSIX shell sanity check verified indirect variable capture and byte-preserving env argv delivery; this was not a run of the actual RumiAI package launcher. After final review, malformed and duplicate override requests use distinct statuses (3 and 7). The baseline/override HOME pair was exercised through real `./m node` on `vmdev`, but the full permanent test suite, nested/invalid cases and the enterprise-VM Electron HTTPS scenario have not been executed against this revision.
 
