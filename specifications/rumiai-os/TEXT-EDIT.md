@@ -1,6 +1,6 @@
 # TextEdit — current standalone text-engine contract
 
-Status: **Current — TextEditBase and TextEditSelections implemented; representation notification integration pending**  
+Status: **Current — TextEditBase, TextEditSelections and TextEditRepresentation implemented**  
 Updated: 2026-10-12
 
 ## Responsibility and ownership
@@ -8,7 +8,7 @@ Updated: 2026-10-12
 `TextEdit` is a standalone, GUI-independent JavaScript library distributed
 with `m` at `rumiai-os/lib/sys/js/text-edit.lib.js`. Its role is text storage,
 oriented multi-range editing, a source-mapped representation, and translation
-of advanced selections. The current v0.3.0 library defines no GUI, rendering
+of advanced selections. The current v0.4.0 library defines no GUI, rendering
 backend, font/layout engine, IME adapter, generic event bus or history system.
 The base provides only direct committed-mutation notifications. No separate
 repository/packaging boundary for this library has been established; the
@@ -26,11 +26,9 @@ No GUI-specific dependency or mandatory third-party runtime is permitted.
 This section defines the implemented and validated public document-store
 contract for both `PieceDocument` and `FlatDocument` in the v0.2.0 product
 source. The operational manual and permanent store tests have been aligned.
-`TextEditSelections` now uses one atomic store commit per multicaret action
-and tracks committed edits in other views. `TextEdit` still adapts the
-selection result into the existing explicit `TextEditRepresentation.rebase`
-change-record API. Automatic notification-driven representation updates are
-not yet implemented and must not be reported as complete.
+`TextEditSelections` uses one atomic store commit per multicaret action,
+and both selections and representations observe committed edits from
+other views through the document's native notifications.
 
 `TextEditBase` remains a structural document interface, not a selectable
 editor, not an instantiable class, and not a view, rendering or history engine.
@@ -343,53 +341,136 @@ This layer does not promise atomic snapshots jointly with unrelated external
 subscribers observing the document during its synchronous notification;
 the document's own source commit is the atomic boundary.
 
-`TextEdit` composes the document, selections, representation and advanced
-selection resolver. Its `replace(textOrTexts)` executes one selected atomic
-source edit, then uses a temporary higher-layer compatibility adapter to
-build the legacy confirmed change records required for the explicit
-representation rebase. The adapter, not `TextEditSelections`, captures removed
-text for that still-unmigrated representation API. The constructor may accept
-a selection-compatible implementation for a future transparent history wrapper.
+
 
 ## Document representation and source mapping
 
-`TextEditRepresentation` is a view-independent **representation of source
-text**, not a second editable copy of that text and not the DOM.
-`replace(start,end,text)` modifies **only this representation** by replacing
-the source interval `[start,end)` with any user-provided JavaScript string,
-including empty strings, Unicode and newlines. The original document remains
-unchanged. The source coordinates are mandatory, even if that interval is
-not currently displayed one-to-one. A replacement requires nonempty source
-span with Unicode-grapheme-safe boundaries. A matching source span may be
-updated. Overlapping spans are rejected rather than implicitly nested.
+\`TextEditRepresentation\` is a GUI-independent, view-local **representation of
+one shared source document**, not a second editable copy and not the DOM. It
+owns ordered, non-overlapping source-range substitution overlays, source
+annotations and the result of the most recent committed rebase. The base
+document is the only owner of editable source text.
 
-`project(start,end)` emits bounded source-referenced text and substitution
-segments, with UTF-16 grapheme boundaries for fully projected text segments,
-plus separate annotation metadata. The caller may request windows rather
-than materializing all visible source text. Projection boundaries may not
-cut a grapheme or a substitution. Annotation anchors are source positions;
-annotation text is not counted in projected string coordinates.
+The v0.4.0 public surface is:
 
-`sourceToView` and `viewToSource` resolve exact UTF-16 locations outside
-substituted regions and describe the **entire replaced source/view region**
-for positions with no one-to-one mapping. In particular, empty substitution
-regions are not treated as a falsely unique original source position.
-Representation mapping never manufactures an editable original offset in
-a hidden or synthetically substituted segment.
+\`\`\`javascript
+new TextEditRepresentation(document)
+representation.setReplacements([{start,end,text}, ...])
+representation.replace(start,end,text)
+representation.remove(start,end)
+representation.clear()
+representation.setAnnotations([{id,at,text,affinity?}, ...])
+representation.replacements  // read-only snapshot property
+representation.annotations   // read-only snapshot property
+representation.unresolved    // latest committed invalidations, snapshot
+representation.length        // projected UTF-16 text length
+representation.project(start=0,end=document.length,{maxSourceUnits=65536}={})
+representation.sourceToView(sourceOffset)
+representation.viewToSource(viewOffset)
+representation.dispose()
+\`\`\`
 
-After a successful source edit, the caller uses confirmed change records to
-call `representation.rebase(changes)`. Source regions modified inside an
-existing substitution are invalidated, and ambiguous annotations are returned
-as unresolved, rather than silently re-anchored. At insertion points,
-annotation affinity is explicit (`before`/`after`); unknown affinity remains
-unresolved. Low-level text or selection stores have no history listeners or
-projection hooks.
+The constructor requires a \`TextEditBase\` with source line access, a cyclic
+\`revision\` counter and \`subscribe\`. It automatically subscribes once; two
+representations of the same document are independent and have their own
+overlays and metadata. Public snapshots are independent copies. Annotations
+have unique, nonempty string \`id\`, string \`text\`, source \`at\` in
+\`[0,document.length]\`, and optional \`affinity\` exactly \`before\` or
+\`after\`; additional metadata keys are preserved as data. Annotations are
+returned ordered by source offset and then ID. Invalid replacements,
+annotations, duplicate IDs or overlapping overlay spans are rejected without
+partial publication of representation state. An annotation-input getter that
+causes a committed source change cannot publish coordinates from the old
+revision. \`setReplacements\`, \`setAnnotations\`, \`remove\` and \`clear\`
+modify only the representation and never the underlying document or its
+revision.
 
-The current base exposes cyclic source revisions and direct committed-edit
-notifications. `TextEditRepresentation` still requires an explicit
-confirmed-change rebase through the existing facade; it does not subscribe
-to those notifications automatically. Callers must arrange consistent view
-updates without applying the same source edit twice.
+A substitution \`[start,end)\` requires \`start<end\` and source UTF-16
+grapheme boundaries. Its \`text\` is an arbitrary JavaScript string, including
+empty, Unicode, and newlines; overlay text does not imply a document edit.
+\`replace(start,end,text)\` adds or updates an exact existing source range;
+it does not silently merge overlapping ranges. \`remove\` removes only an
+exact range; \`clear\` removes all substitution overlays, not annotations.
+
+\`project(start,end,{maxSourceUnits})\` takes a SOURCE interval; it may not
+cut an existing substitution or a Unicode grapheme. It returns
+\`{source,segments,annotations,readUnits}\`. Each ordinary text segment
+includes its exact source range, text and UTF-16 grapheme boundaries; a
+substitution segment contains its source range and virtual text. Annotation
+metadata is separate from text and does not contribute to projected length.
+\`readUnits\` counts source text units projected, and \`maxSourceUnits\` caps
+them; callers can request small windows instead of complete content.
+Common ASCII boundaries can be checked from adjacent source units without
+materializing large source lines. For general Unicode grapheme boundaries,
+validation may require more source context; no false editable boundary is
+fabricated. \`sourceToView\` and \`viewToSource\` return \`{kind:'offset',offset}\`
+only when the mapping is unique; otherwise they describe the full
+\`{kind:'replaced-region',source:{start,end},view:{start,end}}\`. A
+zero-length virtual substitution remains explicitly ambiguous in
+\`viewToSource\`.
+
+### Automatic source synchronization and invalidation
+
+\`TextEditRepresentation\` consumes **exactly one** synchronous committed
+notification per source edit from \`TextEditBase\`; an explicit
+\`representation.rebase(changes)\` is no longer a public API. On each
+notification it checks that the current document revision equals the last
+successfully processed revision plus one, then interprets the original
+\`replace(start,end,text)\` or \`replace([{start,end,text},...])\` argument
+shape in old source coordinates. No removed-text payload, extra listener
+argument, history or source-text copy is required. Even an edit preserving
+length and line count must be processed; successful no-effect edits also
+advance the revision checkpoint.
+
+Every surviving substitution whose source interval lies strictly outside
+edited regions is moved by the total old-coordinate batch displacement.
+Insertions strictly inside an overlay invalidate that overlay; insertions
+at its start/end are excluded from the overlay (the start moves after the
+insertion, the end stays before it). Nonempty source replacements intersecting
+an overlay invalidate it; merely touching an endpoint is not an overlap.
+A surviving overlay whose new boundary is no longer a valid grapheme boundary
+is invalidated rather than silently snapped.
+
+Annotation anchors outside replaced source ranges shift with edits. If a
+nonempty replacement consumes an anchor at \`start <= at < end\`, that
+annotation is invalidated. At a pure insertion at the anchor's position,
+explicit \`before\` or \`after\` affinity positions the annotation on the
+corresponding side; without affinity the anchor is invalidated as ambiguous.
+For a batch containing an insertion and a replacement at the same position,
+the original anchor at that replaced position is invalid regardless of its
+insertion affinity. These rules apply to the complete old-coordinate batch;
+they are not separate replays or dependent on the input array order.
+
+Invalidated elements are removed from the active representation and appear
+in the read-only \`unresolved\` snapshot for the **most recent source
+notification**, with a source region or annotation ID and a reason. The next
+successful notification replaces that snapshot (including with \`[]\`).
+The source document is never rolled back because a view cannot rebase.
+
+A revision gap, including \`Number.MAX_SAFE_INTEGER\` wrapping to zero,
+or failure to process a committed notification reliably invalidates all
+current overlays and annotations. The representation clears its dependent
+state, records their invalidation reasons in \`unresolved\`, and adopts the
+current source revision and length. This is a conservative rebuild of the
+empty representation: recovering the meaning of an old overlay or annotation
+without edit history is not possible. New caller-supplied metadata can
+subsequently establish new state. Outside notification delivery, an observed
+revision mismatch rejects potentially stale reads or writes rather than
+silently presenting an obsolete mapping.
+
+\`dispose()\` is idempotent, unsubscribes and clears view-owned state;
+subsequent public operations other than \`dispose()\` reject use. The shared
+source document is not disposed. No representation-specific event bus,
+automatic repaint, history, clipboard or GUI policy is introduced.
+
+\`TextEdit\` composes the document, \`TextEditSelections\`, representation,
+and advanced selection interpreter. Its \`replace(textOrTexts)\` delegates
+the atomic edit **once** to \`TextEditSelections\`; both local and external
+representations update through their own document subscriptions. It returns
+\`{before,after,representation:{unresolved}}\`, where \`unresolved\` is the
+representation's most recent committed invalidation snapshot. The prior
+higher-layer old-text \`changes\` adapter and explicit representation
+\`rebase\` have been removed.
 
 ## Advanced selections and deferred responsibilities
 
@@ -404,21 +485,20 @@ crossing substitutions are rejected pending an explicit high-level policy.
 
 The future history feature will be a transparent wrapper containing
 `TextEditSelections`, substituting for it at the composition point without
-modifying lower layers or upper callers. It is not implemented in v0.3.0.
+modifying lower layers or upper callers. It is not implemented in v0.4.0.
 Rendering, true font metrics, wrapping, complex bidi shaping, IME,
 nested/syntactic folding, visual-row selection, incremental optimization
 and GUI integration are outside this first core release.
 
 ## Validation and release boundary
 
-The current v0.3.0 library is checked against the actual product source by
+The current v0.4.0 library is checked against the actual product source by
 permanent Node tests in `rumiai-tests/tests/rumiai-os/text-edit/core.test.mjs`,
-`base.test.mjs` and `selections.test.mjs`, executed through their target-discovering test entrypoint
+`base.test.mjs`, `selections.test.mjs` and `representation.test.mjs`, executed through their target-discovering test entrypoint
 and pinned by `rumiai-os/.github/workflows/text-edit.yml`. The workflow
 checks JavaScript syntax, executes the tests on Node 22, and builds a
-standalone source archive. These checks validate the store behavior and the completed selection layer,
+standalone source archive. These checks validate the store, selection and representation contracts,
 including atomic multicaret commits, document revision continuity, geometric
-cross-view rebasing and independent seeded reference tests. They do not
-establish GUI/host parity, pending representation notification integration
-or unconditional atomicity for arbitrary broken external backends. Physical
+cross-view rebasing and independent seeded reference tests. They do not establish GUI/host parity or unconditional atomicity for
+arbitrary broken external backends. Physical
 GUI validation remains a separate work unit.
