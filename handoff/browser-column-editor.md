@@ -1,7 +1,7 @@
 # Advanced browser/Electron text editor
 
 Status: Active — TextEdit 0.7.0 physical-only selections Node validated; clipboard geometry remains active
-Updated: 2026-10-12
+Updated: 2026-10-13
 
 ## Goal
 
@@ -11,7 +11,7 @@ The JavaScript compilation, module loading and distribution concern has **indepe
 
 ## Current repository revisions
 
-- `rumiai-dev` main inspected: `90b66572fe842469c85abda206bf745f58f2b17a` (current physical-only 0.7.0 contract, prior to this checkpoint).
+- `rumiai-dev` main preflight HEAD: `b4d355fb4815b90c183dc024f03b92c7da95e8ef` (current physical-only 0.7.0 contract, before this handoff update).
 - `rumiai-os` main inspected: `038ca42fdd22adbf0fda9a41ab17baa6cde5b948` (physical-only TextEdit 0.7.0 source, manual and pinned CI passed).
 - `rumiai-tests` main: `1830ce80f73b712f96dc6daa73e00a3109d235e7` (five permanent TextEdit suites migrated to physical selection coordinates).
 - `rumiai-dev-PoCs` main: `67eac275fc70840d6e8fb1d17514caf6ac18a7b5` (experimental source, not current product contract).
@@ -58,6 +58,7 @@ Always recheck current remote HEADs before resuming or changing files.
 ## Working design (not normative)
 
 - **2026-10-12 TextEdit 0.7.0 completed cleanup:** The user explicitly removed the transitional flat UTF-16 offset selector path introduced during 0.6.0. `TextEditSelections` is now a **single physical `{row,col}` selection implementation**, without `_OffsetSelections`, duplicate committed-notification subscriptions, mixed-mode input or public numeric offset records. `TextEditBase` still uses exact linear UTF-16 source offsets; conversion and physical edit planning can use offsets internally. `TextEditRepresentation` continues policy-neutral logical translation and `TextEditAdvancedSelections` owns virtual/clipped policies. The sole authoritative semantics are in the current `specifications/rumiai-os/TEXT-EDIT.md` and v0.7.0 operational manual; this checkpoint is not a parallel contract.
+- **2026-10-13 verified completion of offset-selection compatibility removal:** Fresh remote HEADs were `rumiai-dev` `b4d355fb4815b90c183dc024f03b92c7da95e8ef`, `rumiai-os` `038ca42fdd22adbf0fda9a41ab17baa6cde5b948`, `rumiai-tests` `1830ce80f73b712f96dc6daa73e00a3109d235e7`. The library has one physical-only `TextEditSelections` state/subscription/edit path; the facade, manual, canonical specification and all five permanent test suites are already migrated, with no `_OffsetSelections` or numeric public selection records. A fresh rerun of the pinned real-product Node.js 22.23.3 GitHub Actions run `38309073430`, job `115175166019`, completed **success** on both `FlatDocument` and `PieceDocument`: 3,800 differential base edits; 1,242 selection checks; 1,600 carets with 400 external edits; 352 representation assertions; 34 advanced-selection assertions. The `TextEdit-v0.7.0` distribution artifact ID is `11794373490`. The intentional listener-failure and ambiguous virtual-anchor logs are exercised negative tests, not CI failures. No product/test/specification changes were needed in this resumption; only this validation checkpoint was refreshed. GUI/host physical validation and the independently pending clipboard geometry work are outside this completed cleanup, and the broader editor handoff remains Active.
 - **Revision-specific Node 22 CI success:** At `rumiai-os` `038ca42fdd22adbf0fda9a41ab17baa6cde5b948`, using pinned `rumiai-tests` `1830ce80f73b712f96dc6daa73e00a3109d235e7`, GitHub Actions run `38309073430`, job `115010111483`, completed **success**. Syntax and five permanent suites passed: 3,800 differential base edits, 1,242 selection checks including physical rebasing randomized oracle, 1,600 multicarets / 400 external edit stress, 352 representation assertions, 34 advanced-selection assertions, CRLF/virtual padding/regressions. `TextEdit-v0.7.0` CI archive artifact ID `11773941957` uploaded successfully. This is an artifact, **not** a tagged immutable GitHub release; there is no host physical GUI validation. Earlier v0.6.0 results are superseded for the current product.
 - **Remaining work after API cleanup:** Investigate/characterize MadEdit-Mod-like multiline clipboard, CSV and Excel column paste across differently shaped source/target rectangles before implementing an input-distribution policy. Separate work includes GUI/IME, history wrapper, performance/resource ceilings and unusual external edit conflicts. No hexadecimal debugging/byte editing was requested or activated as a task.
 
