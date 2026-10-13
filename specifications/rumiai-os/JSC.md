@@ -33,10 +33,17 @@ Entries are:
   additions) and optional `imports` for explicit external symbols.
 
 Import declarations in the JSON are **supported, optional and recommended**
-to keep JavaScript source files decoupled from the build description. Source
-files may alternatively declare their imports; these two authoring locations
-have the same intended compiled semantics. Nothing in this choice mandates
-native ESM modules or a runtime dependency registry.
+to keep JavaScript source files decoupled from the build description. They
+describe **references to values exposed by already available namespace
+objects**, not file imports or dependency loading. For example, an optional
+JSON import of `A` from `m.data.A` generates an ordinary lexical binding
+equivalent to `const A = m.data.A;`. A developer may instead write that
+binding directly in JavaScript, without mentioning it in the JSON.
+`jsc` does **not** resolve and load source files, emit `require()`/`import`
+to fetch an external bundle, duplicate provider implementations, or change
+the authored source's namespace placement on account of these references.
+Provisioning the referenced provider namespace is the responsibility of
+the embedding/application environment, not an import declaration.
 
 Files are evaluated in the declared order. The compiler creates nested
 namespace objects, retains earlier declarations in the lexical scope of
@@ -115,7 +122,7 @@ The standalone browser library has no implicit runtime module registry,
 
 ```text
 JSC-01  jsc and its engine belong to m; independent JS/CSS source loader is an m library
-JSC-02  ordered modules/name/file/exports descriptors support optional JSON imports and source-declared imports
+JSC-02  ordered modules/name/file/exports descriptors support optional JSON reference imports or developer-written lexical bindings; neither loads files
 JSC-03  compilation preserves original namespace reopening, lexical visibility and authored source order
 JSC-04  jsc outputs standalone strict-capable browser/Node JavaScript with private internals and explicit public exports, or ordered CSS
 JSC-05  stdout-only and optional file-output plus offline gzip; minification/optimization are user-managed
