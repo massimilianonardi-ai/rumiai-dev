@@ -28,7 +28,7 @@ Entries are:
 
 - **Namespace node:** `name` (optional JavaScript identifier) and nested
   `modules` (ordered array).
-- **Source node:** `file` (relative source path), optional `exports` (the
+- **Source node:** `file` (relative source path), optional comma-separated `exports` (the
   former `symbols`, retaining its meaning and without type or metadata
   additions) and optional `imports` for explicit external symbols.
 
@@ -78,8 +78,7 @@ jsc <modules.json> [output]
   Existing source files must remain inside that directory when resolved.
 - Invalid descriptors, unsafe import/export identifiers and generated JS
   syntax errors fail before overwriting a previously valid output file.
-  Google Closure Compiler is the intended syntax verification engine;
-  optimization and minification remain developer-managed.
+  Google Closure Compiler is the intended syntax verification engine.
 - The internal `jsc.lib.js` exposes the public Node function
   `jscMain(args)`, returning a Promise of process-style status.
 - The launcher uses the existing `m` `log`/`fatal` facilities, and
@@ -121,8 +120,8 @@ JSC-03  compilation preserves original namespace reopening, lexical visibility a
 JSC-04  jsc outputs standalone strict-capable browser/Node JavaScript with private internals and explicit public exports, or ordered CSS
 JSC-05  stdout-only and optional file-output plus offline gzip; minification/optimization are user-managed
 JSC-06  invalid descriptors, sources, identifiers and generated JS syntax fail before writing output
-JSC-10  cross-bundle imports capture values on bundle initialization; qualified accesses remain dynamic; no eval
 JSC-07  dynamic loader accepts original JS and CSS source lists and preserves public function identities
 JSC-08  browser code is loaded as classic script/style; existing side effects are not undone by removal
-JSC-09  no ESM conversion, module IDs, explicit dependency graph or new bootstrap model is introduced
+JSC-09  source imports do not require a runtime module registry or alternative bootstrap model
+JSC-10  cross-bundle imports capture values on bundle initialization; qualified accesses remain dynamic; no eval
 ```
