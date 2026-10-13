@@ -5,7 +5,7 @@ Updated: 2026-10-13
 
 ## Goal
 
-Adapt the **original** `m/cmd/jsc.js` namespace/source compiler and the original `m` browser JavaScript/CSS source-list loader into the current first-party `m` repository layout. Preserve the original public developer model and correct concrete defects; do not create alternative module architectures or unrelated components.
+Evolve the original `m/jsc` into a standalone, strict-capable browser/Node JavaScript library compiler that preserves ordered source visibility, hierarchical reopenable namespaces and the original export role. Remove eval by introducing explicit external imports, maintain CSS assembly and independent dynamic loading, and keep undecided cross-bundle compatibility semantics under joint design review. The former narrow port/integration is historical task context, not a restriction on this approved evolution.
 
 ## Current references (verify HEADs remotely on resumption)
 
@@ -69,10 +69,10 @@ The explicit user placeholder `AAAAAAA` for **cross-bundle compatibility** leave
 
 Potential tradeoff to discuss with user: build-time explicit imports and generated validation against a provider export listing, with a provider-first load-order requirement and no registry; this is a proposal only, not an approved contract. The original captured-reference behavior for declared imports and deliberate live qualified access remain fixed.
 
-Canonical specification `specifications/rumiai-os/JSC.md` was updated on 2026-10-13 to express only approved directions; product `rumiai-os/bin/sys/jsc.js`, current operational manuals and permanent test fixtures still describe/use `symbols` and the old eval namespace mechanism and require a later **coordinated forward-only realignment**. No product or tests were modified by this design documentation work. Current PoCs 064 and 065 remain experimental evidence, not architecture.
+Canonical specification `specifications/rumiai-os/JSC.md` was updated on 2026-10-13 to express only approved directions (including unchanged comma-separated export syntax and no premature restriction on possible build-time dependency information); product `rumiai-os/bin/sys/jsc.js`, current operational manuals and permanent test fixtures still describe/use `symbols` and the old eval namespace mechanism and require a later **coordinated forward-only realignment**. No product or tests were modified by this design documentation work. Current PoCs 064 and 065 remain experimental evidence, not architecture.
 
 ## Validation boundary and next action
 
 The integration currently has **confirmed** mismatches at the CLI path split, runtime boundary, Java-specific auto-discovery branch, failure propagation, source validation/output integrity, product file ownership, and current tests/manuals. The first normal nested-manifest compilation path did work under real Node 22 using an exact byte-identical copy, but a successful invocation through the full m launcher on a host with managed Node was **not** demonstrated. No product edits, permanent test changes, or authoritative specification changes were made in this read-only analysis.
 
-When the user requests implementation, adapt the user's original code minimally to the current m runtime, preserve only ordered `modules/name/file/symbols` and original JS/CSS behavior, then realign product paths, first-party manuals and permanent tests on the same revision. Keep the bootstrap/shebang TODO deferred; do not use this integration task to redesign it.
+Next: resolve cross-bundle compatibility and the source-import syntax while preserving agreed `exports`, optional JSON/source import support, original within-bundle lexical semantics, original namespace reopening, strict eval-free encapsulation, syntax checking and CSS/dynamic-loader responsibilities. Only then authorize and execute the coordinated product/manual/permanent-test implementation realignment. Keep the separate bootstrap/shebang TODO deferred.
