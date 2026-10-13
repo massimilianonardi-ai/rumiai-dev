@@ -1,14 +1,14 @@
 # TextEdit — current standalone text-engine contract
 
-Status: **Current — TextEdit 0.7.0 document, physical selections, logical policies and deferred materialization implemented**  
-Updated: 2026-10-12
+Status: **Current — TextEdit 0.8.0 document, physical selections, logical policies and deferred materialization implemented**  
+Updated: 2026-10-13
 
 ## Responsibility and ownership
 
 `TextEdit` is a standalone, GUI-independent JavaScript library distributed
 with `m` at `rumiai-os/lib/sys/js/text-edit.lib.js`. Its role is text storage,
 oriented multi-range editing, a source-mapped representation, and translation
-of advanced selections. The current v0.7.0 library defines no GUI, rendering
+of advanced selections. The current v0.8.0 library defines no GUI, rendering
 backend, font/layout engine, IME adapter, generic event bus or history system.
 The base provides only direct committed-mutation notifications. No separate
 repository/packaging boundary for this library has been established; the
@@ -229,7 +229,7 @@ baseline. Both preserve exact source UTF-16 units and atomic replacement.
 
 ### TextEditSelections public API and state contract
 
-In TextEdit 0.7.0, \`TextEditSelections\` is the view-local **sole owner**
+In TextEdit 0.8.0, \`TextEditSelections\` is the view-local **sole owner**
 of effective ordered physical selections, including virtual positions.
 It does not own source text, rendering, history or input interpretation.
 
@@ -263,9 +263,22 @@ Physical selection coordinates cannot represent the position inside
 a CRLF pair; that exact code-unit position remains accessible through
 \`TextEditBase\`.
 
-\`replace(textOrTexts)\` accepts either one string per selection or a
-shared string; array payloads pair with selections in their original
-collection order. It constructs compatible pre-edit source intervals and
+\`replace(textOrTexts)\` accepts a shared scalar or an array assigning
+values to selections in their original collection order. Supported scalars
+and array entries are strings, numbers, booleans, \`null\` and \`undefined\`.
+Numbers and booleans are converted with standard JavaScript \`String(value)\`
+(not locale formatting): this includes \`NaN\`, \`Infinity\`, \`-Infinity\`,
+\`-0\` becoming \`"0"\`, and boolean \`"true"\`/\`"false"\`.
+An empty string, \`null\` or \`undefined\` means an empty replacement, deleting
+the selected source content. An array may contain fewer entries than
+selections; absent entries (including sparse array holes), \`null\` and
+\`undefined\` each mean empty replacement. An empty array therefore deletes
+all selected content. Arrays exceeding the number of selections, unsupported
+value types (including objects, nested arrays, symbols, functions and bigint),
+and an edit without selections are rejected before committing. No per-selection
+truncation or warning is owned by this library; an external paste/import adapter
+may truncate excess array elements with an appropriate user warning.
+All values are validated and normalized before planning source edits. It constructs compatible pre-edit source intervals and
 all needed virtual materialization in \`TextEditSelections\`, then calls
 \`TextEditBase.replace([...])\` **once** for one materializing editing
 action. Virtual EOL columns require space padding; future rows require
@@ -307,7 +320,7 @@ owns ordered, non-overlapping source-range substitution overlays, source
 annotations and the result of the most recent committed rebase. The base
 document is the only owner of editable source text.
 
-The representation v0.7.0 public surface is:
+The representation v0.8.0 public surface is:
 
 \`\`\`javascript
 new TextEditRepresentation(document, selections=null)
@@ -481,9 +494,9 @@ representation's most recent committed invalidation snapshot. The prior
 higher-layer old-text \`changes\` adapter and explicit representation
 \`rebase\` have been removed.
 
-## Advanced logical selection architecture — implemented in v0.7.0
+## Advanced logical selection architecture — implemented in v0.8.0
 
-The implemented v0.7.0 architecture separates logical selection construction,
+The implemented v0.8.0 architecture separates logical selection construction,
 policy-neutral coordinate translation and physical editing. Exactly one
 `TextEditSelections` instance owns the effective ordered selection
 collection, including nonmaterialized coordinates. Only physical row/UTF-16-column coordinates are valid public selection records; linear source offsets remain exclusively in `TextEditBase`.
@@ -594,7 +607,7 @@ has been correctly rebased after another view edits the text.
 
 The physical `{row,col}` selector, neutral representation gateway,
 advanced logical selection policies and deferred materialization are
-implemented in v0.7.0. The v0.7.0 operational manual and permanent tests
+implemented in v0.8.0. The v0.8.0 operational manual and permanent tests
 validate source rows, physical virtual coordinates, CRLF-safe padding,
 multicaret insertion grouping, logical clipping, Unicode/tab conversion,
 and rejection of numeric offset selection records. Comprehensive distribution
@@ -610,7 +623,7 @@ policies remain outside this library revision.
 
 ## Validation and release boundary
 
-The current v0.7.0 library is checked against the actual product source by
+The current v0.8.0 library is checked against the actual product source by
 permanent Node tests in `rumiai-tests/tests/rumiai-os/text-edit/core.test.mjs`,
 `base.test.mjs`, `selections.test.mjs`, `representation.test.mjs` and `advanced.test.mjs`, executed through their target-discovering test entrypoint
 and pinned by `rumiai-os/.github/workflows/text-edit.yml`. The workflow
