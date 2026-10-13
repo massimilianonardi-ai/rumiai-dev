@@ -71,6 +71,23 @@ Potential tradeoff to discuss with user: build-time explicit imports and generat
 
 Canonical specification `specifications/rumiai-os/JSC.md` was updated on 2026-10-13 to express only approved directions (including unchanged comma-separated export syntax and no premature restriction on possible build-time dependency information); product `rumiai-os/bin/sys/jsc.js`, current operational manuals and permanent test fixtures still describe/use `symbols` and the old eval namespace mechanism and require a later **coordinated forward-only realignment**. No product or tests were modified by this design documentation work. Current PoCs 064 and 065 remain experimental evidence, not architecture.
 
+
+## 2026-10-13 correction: namespace references, not import-based loading
+
+The user clarified explicitly: *imports in source* means only ordinary JavaScript references such as `var A = m.data.A` (or `const A = m.data.A`). These may be hand-written without any JSON entry; a JSON `imports` entry is optional and recommended to have jsc generate the equivalent lexical reference. Do **not** use import statements, require calls, source inclusion, bundled copies, file loading or a runtime module loader to implement this feature. The namespace structure and single shared provider object must remain intact. Canonical `JSC.md` now states this.
+
+### Comparison with current popular bundlers (research, not decisions)
+
+Official documentation consulted 2026-10-13:
+- [webpack externals](https://webpack.js.org/configuration/externals/) and [webpack library output](https://webpack.js.org/configuration/output): external dependencies can resolve to preexisting globals instead of being bundled; `output.library.type='assign-properties'` supports extension of an existing top-level library object; `umd` enables multiple hosts but is not by itself a deep namespace merger.
+- [Rollup configuration](https://rollupjs.org/configuration-options): `external` + `output.globals` for UMD/IIFE externals; `output.extend` prevents wholesale replacement of an existing named global but is not automatic deep merging.
+- [Vite library mode](https://vite.dev/guide/build): library output formats and Rolldown/Rollup-style externalization and `globals` mappings.
+- [esbuild API](https://esbuild.github.io/api/): `iife` + `globalName`, including dotted global paths; external module imports in IIFE/CJS may still yield `require` runtime instructions, which is **not** the desired jsc source-import behavior.
+- [Parcel targets](https://parceljs.org/features/targets/): normal library targets are ESM/CJS; `global` is for classic browser script output, not library targets.
+- [Node CommonJS caching](https://nodejs.org/api/modules.html): `require` caches for a resolved file, but distinct paths or versions can still instantiate separate copies. Node host-level module loading is not forbidden, but must not be emitted by jsc's source-level `imports` semantics.
+
+The mechanism in common is **externalization + single host-owned provider instance + consumer namespace lookup**. For a browser this can be a shared global namespace set by an independently loaded classic script. For Node, the established TextEdit CommonJS `module.exports` API does not automatically provide a global namespace; the host might supply the already-loaded provider object explicitly to a consumer, but the exact bridge is an **open design choice**, not a fixed new API. Resolve provider-first initialization, missing-provider diagnostic, namespace reopening/merge preserving object identity, and host ownership of single loading. Avoid promoting UMD/AMD/Module Federation, automatic file loading, deep merge or a separate registry without concrete need.
+
 ## Validation boundary and next action
 
 The integration currently has **confirmed** mismatches at the CLI path split, runtime boundary, Java-specific auto-discovery branch, failure propagation, source validation/output integrity, product file ownership, and current tests/manuals. The first normal nested-manifest compilation path did work under real Node 22 using an exact byte-identical copy, but a successful invocation through the full m launcher on a host with managed Node was **not** demonstrated. No product edits, permanent test changes, or authoritative specification changes were made in this read-only analysis.
