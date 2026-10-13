@@ -1,7 +1,7 @@
 # JavaScript source compilation and dynamic library loading
 
 Status: Active
-Updated: 2026-10-10
+Updated: 2026-10-13
 
 ## Goal
 
@@ -20,7 +20,9 @@ Follow `rumiai-dev/README.md` mandatory read order, `RULES.md`, `CONSISTENCY-GAT
 
 ## Fixed user direction
 
-**There is only one model.** Keep the original ordered nested `modules` / `name` / `file` / `symbols` manifest, lexical namespaces and source order, source-list CSS assembly, original command arguments/stdout and browser JS/CSS loader responsibilities. Do not retain alternative registration/graph systems, optional alternate formats, or a new runtime registry. Maintain the product paths `bin/sys/jsc`, `lib/sys/js/jsc.lib.js` and `lib/sys/js/dynamic-loader.lib.js`. `mk` is separate. No native ESM translation.
+**Current user correction, 2026-10-13 (architecture exploration):** The original manifest, contracts, namespace mechanism, product paths and implementation are **not immutable constraints** for the new evaluation. Alternatives may change the JSON, compiler architecture or completely rewrite jsc if doing so better meets the user-selected characteristics. First compare solutions and consequences, then jointly choose the final architecture; do not preselect the least disruptive port merely because earlier integration work scoped it that way. No architecture alternative is promoted by the PoC alone.
+
+**Previously fixed integration baseline, only for the original minimal port phase:** Preserve the original ordered nested `modules` / `name` / `file` / `symbols` behavior, CSS assembly, command/stdout and browser-loader responsibilities if carrying out the narrow original port rather than a newly authorized redesign. The original product paths are still the current JSC specification until an explicit new decision changes them. The user has not authorized implementing a new product architecture in this exploratory work unit.
 
 The shebang/bootstrap inquiry is **deferred work only**, recorded in `todo/javascript-command-bootstrap.md` under the normal TODO lifecycle. It is NOT an active task, not a dependency, and must not be analyzed or implemented in this compiler/loader work unit. No supervision, lock, FIFO or external-effect coordination work.
 
@@ -33,6 +35,16 @@ The shebang/bootstrap inquiry is **deferred work only**, recorded in `todo/javas
 **Cross-surface mismatch:** The current `rumiai-dev/specifications/rumiai-os/JSC.md`, product manuals `res/sys/manual/{jsc,jsc.lib.js,dynamic-loader.lib.js}`, and permanent `rumiai-tests/tests/rumiai-os/jsc` still describe/test the removed `lib/sys/js/jsc.lib.js` and `dynamic-loader.lib.js` layout; the manuals also claim validations, runtime selection and behavior not in the user's just-committed code. Exact product GitHub Actions [run 38208933554](https://github.com/massimilianonardi-ai/rumiai-os/actions/runs/38208933554) ended **failure** at the structural test `compiler engine file type/mode invalid`, before executing the current engine. The workflow pins `rumiai-tests@4e9e509f7d3d879cf9d59056e7a91aa2ba6eabec`, while the current tests main HEAD is different; no existing CI result proves the new product revision's functional paths. The prior handoff statement of a green hosted suite applies to an **older product revision only**.
 
 **Review-only scope:** Do not silently rewrite the user's committed engine or promote replacement module architecture. User has requested an integration analysis; the findings above are pending realignment, not implemented fixes. The separate `todo/javascript-command-bootstrap.md` is deferred and must not be analyzed or activated by this task.
+
+
+## 2026-10-13 architecture exploration and PoC 064 (working design, not normative)
+
+- User explicitly opened all `jsc` architecture options: old contracts, JSON and implementation are comparison baselines, not unchangeable requirements. The 12 desired properties discussed in this chat are the comparison criteria: split ordered sources, nested/reopenable namespaces, lexical visibility, symbol-based exports, one standalone artifact, private internals, full encapsulation, delimited public API, strict mode, browser + Node portability and no eval. No preferred final architecture or input schema is fixed yet.
+- A standalone experimental PoC was committed to `rumiai-dev-PoCs/pocs/064-jsc-no-eval-scope/` at `6d0faf93abb1eb9afb51ae2a265be0ddbe1a3c68`, without modifying `rumiai-os`, permanent tests or current canonical JSC specification.
+- Experiment ran actual generated classic JavaScript inside Node v22.16.0 V8 contexts: **16/16 targeted checks passed**, including both expected successes and deliberately asserted divergences. A real-Chromium probe attempt produced no usable DOM result; browser validation is **not established**. No claim of full product-path validation or complete semantic equivalence.
+- Candidate static lexical `let` aliases with values read from namespace properties at bundle initialization preserve the tested unqualified two-bundle access and strict compatibility without eval. The PoC supplies names explicitly in an **experimental** `imports` map; automatic identifier discovery / AST support is **not** implemented.
+- Evidence of limits: injected aliases can collide with lexical class names; non-existing imports can turn `ReferenceError` into `TypeError`; captured function references differ from dynamically qualified lookups under namespace updates. The modeled original eval wrapper can preserve an older `MyClass` export when a second bundle redeclares it, contrary to the current permanent test's intended new-export result. This is model evidence, not a certified reproduction through the actual product command.
+- Next design comparison: AST/free-variable inference vs explicit static external-name metadata vs full-program linking vs qualified references, including globals, reassignment, accessor evaluation, rebinding, private declarations, browser and Node actual runtime. Choose semantics and tradeoffs with user before altering authoritative specifications or product code.
 
 ## Validation boundary and next action
 
