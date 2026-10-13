@@ -1,13 +1,13 @@
 # m — JavaScript source compiler and dynamic JS/CSS library loading
 
-Status: **Current / normative**
-Updated: 2026-10-10
+Status: **Current / normative — approved redesign directions; product, manuals and permanent tests pending realignment**
+Updated: 2026-10-13
 
 ## Role and placement
 
-The first-party `m` implementation retains the original `m/jsc` compiler
-and browser JS/CSS dynamic source loader model, adapted to the current
-product tree:
+The first-party `m` design evolves the existing `m/jsc` source compiler
+and preserves the independent browser JS/CSS dynamic source loader
+responsibility. The established product locations remain:
 
 ```text
 bin/sys/jsc
@@ -23,25 +23,43 @@ No different command interpreter/entrypoint model is introduced here.
 
 ## Ordered source descriptor
 
-The single public source format is a JSON object with an ordered
-`modules` array. Entries are either:
+The ordered JSON `modules` descriptor remains the source-assembly model.
+Entries are:
 
 - **Namespace node:** `name` (optional JavaScript identifier) and nested
   `modules` (ordered array).
-- **Source node:** `file` (relative source path) and optional comma-separated
-  `symbols` (exported JavaScript identifiers).
+- **Source node:** `file` (relative source path), optional `exports` (the
+  former `symbols`, retaining its meaning and without type or metadata
+  additions) and optional `imports` for explicit external symbols.
+
+Import declarations in the JSON are **supported, optional and recommended**
+to keep JavaScript source files decoupled from the build description. Source
+files may alternatively declare their imports; these two authoring locations
+have the same intended compiled semantics. Nothing in this choice mandates
+native ESM modules or a runtime dependency registry.
 
 Files are evaluated in the declared order. The compiler creates nested
 namespace objects, retains earlier declarations in the lexical scope of
-later source files and exposes explicitly named symbols as namespace
+later source files and exposes explicitly named exports as namespace
 properties. A source in `m.srv.data` can refer directly to a prior
 `MyClass`; `m.srv` can use `data.MyClass`; the fully qualified
 `m.srv.data.MyClass` is available where `m` is visible. Namespace
-objects can be reopened by subsequent assemblies.
+objects can be reopened by subsequent assemblies, retaining the original
+namespace and lexical visibility goals.
 
-The descriptor itself supplies ordering and namespacing; **no additional
-dependency graph, module IDs or runtime registry is part of this system**.
-The compiler must not impose or translate native ESM syntax.
+Declared cross-bundle imports produce lexical bindings to the exported
+values when the consumer bundle initializes; later replacement of a
+namespace property does not automatically replace an already captured
+function reference. Source code that deliberately uses a qualified
+namespace property access instead obtains the property's current value
+when executed. These semantics do not freeze the properties of imported
+objects.
+
+The generated library encapsulates its internal declarations and publishes
+only the explicit public API, following the established standalone TextEdit
+model. Output is usable in both classic browser scripts and Node.js without
+`eval()`, `with`, a dynamic code generator, or a mandatory runtime registry.
+The existing CSS source-list model remains unchanged.
 
 JavaScript and CSS are assembled separately. CSS manifests list source
 files in order, without JavaScript namespaces or exports.
@@ -54,13 +72,14 @@ jsc <modules.json> [output]
 
 - Without `output`, emit only the compiled script or CSS to stdout.
 - With `output`, write the assembled file and create a gzip artifact.
-  When a compatible JS or CSS minifier is already installed, create its
-  normal minified sibling and compressed release artifact as well.
-  Minification is not an implicit software download or installation.
+  Optimization and minification are not automatic `jsc` responsibilities;
+  developers may perform them independently.
 - Source file names are resolved relative to the descriptor directory.
   Existing source files must remain inside that directory when resolved.
-- Invalid descriptors, unsafe symbol names and generated JS syntax errors
-  fail before overwriting a previously valid output file.
+- Invalid descriptors, unsafe import/export identifiers and generated JS
+  syntax errors fail before overwriting a previously valid output file.
+  Google Closure Compiler is the intended syntax verification engine;
+  optimization and minification remain developer-managed.
 - The internal `jsc.lib.js` exposes the public Node function
   `jscMain(args)`, returning a Promise of process-style status.
 - The launcher uses the existing `m` `log`/`fatal` facilities, and
@@ -97,11 +116,12 @@ The standalone browser library has no implicit runtime module registry,
 
 ```text
 JSC-01  jsc and its engine belong to m; independent JS/CSS source loader is an m library
-JSC-02  ordered modules/name/file/symbols descriptors are the only jsc input model
-JSC-03  compilation preserves namespace lexical visibility and authored source order
-JSC-04  jsc outputs standalone classic JavaScript or ordered CSS without a runtime registry
-JSC-05  stdout-only and optional file-output plus offline gzip follow the original command form
-JSC-06  invalid descriptors, sources, identifiers and generated JS fail before writing output
+JSC-02  ordered modules/name/file/exports descriptors support optional JSON imports and source-declared imports
+JSC-03  compilation preserves original namespace reopening, lexical visibility and authored source order
+JSC-04  jsc outputs standalone strict-capable browser/Node JavaScript with private internals and explicit public exports, or ordered CSS
+JSC-05  stdout-only and optional file-output plus offline gzip; minification/optimization are user-managed
+JSC-06  invalid descriptors, sources, identifiers and generated JS syntax fail before writing output
+JSC-10  cross-bundle imports capture values on bundle initialization; qualified accesses remain dynamic; no eval
 JSC-07  dynamic loader accepts original JS and CSS source lists and preserves public function identities
 JSC-08  browser code is loaded as classic script/style; existing side effects are not undone by removal
 JSC-09  no ESM conversion, module IDs, explicit dependency graph or new bootstrap model is introduced
