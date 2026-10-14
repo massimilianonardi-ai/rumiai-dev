@@ -115,6 +115,25 @@ Additional package, service, state or container specifications must be retrieved
 
 ## Completed
 
+- 2026-10-14 operator v2 (chat-inline, no downloadable-file dependency): after repeated
+  uploaded logs showed only a legacy `repair_ollama_nfs_worker: not found`
+  call, produced a visibly versioned **two-source** pair:
+  `cluster-ollama-v2.lib.sh` defines `cluster_ollama_remote`,
+  `cluster_ollama_call` and `cluster_ollama_run` including the complete
+  remote script; `cluster-ollama-v2.job` prints `CLUSTER JOB v2`, checks
+  the matching library version/function before any remote activity and calls
+  `cluster_ollama_run` once with three pinned SHAs. One invocation checks
+  all eight servers before mutations, tests gis/apps canaries, and advances
+  through six other workers with stop-on-failure. Local `sh -n`, source
+  execution, in-memory simulated rsudo/catalog controller tests (8+8,
+  early canary failure and mismatch rejection), remote script shell parsing,
+  and a disposable **real-Git** test of remote forward-only update,
+  untracked-state preservation, tracked-edit rejection and stale-HEAD
+  rejection passed. Remote systemd/API/provider responses were mocked;
+  no physically connected rsudo-host operation has passed, and the prior
+  legacy log is not physical evidence for this v2. This version is presented
+  explicitly as full code in chat; old job/library must both be replaced.
+
 - 2026-10-14 operator simplification for the first physical rollout:
   a single `rsudo-admin jobs` invocation now uses only two operator-facing
   files (`cluster.lib.sh` and `rollout.job`), supplied to the user directly
