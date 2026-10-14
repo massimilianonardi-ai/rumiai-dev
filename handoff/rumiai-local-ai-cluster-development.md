@@ -265,6 +265,8 @@ The previous shared-runtime llama.cpp direction is no longer the current worker 
 
 ## Blockers / open questions
 
+- The user's three rsudo-jobs attachments dated 06:58, 08:00 and 09:10 each contain the same old `repair_ollama_nfs_worker: not found` output and the same job token; none records `cluster_rollout`. The user additionally reports `): not found` on the terminal, but the attached log has no such line. The supplied two-file library parses and sources with local POSIX dash, including the function/subshell syntax. Without the exact terminal line or captured currently selected job text, the second error's origin is unverified. Do not claim a live fleet rollout or repair the wrong script from this evidence.
+
 - The new fleet operator PoC has no real-host evidence yet; this ChatGPT
   execution session has GitHub repository access but not the user's loaded
   remote rsudo credential/session boundary. Do not treat isolated fixture PASS
