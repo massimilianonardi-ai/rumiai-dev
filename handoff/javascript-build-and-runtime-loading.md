@@ -21,7 +21,7 @@ Keep the first-party `m/jsc` compiler, its classic-browser dynamic JS/CSS loader
 - Local dynamic-loader DOM simulator with stubbed HTTP and document boundary: pass, including insertion, callback and source-list behavior. Headless Chromium in this container timed out without usable DOM evidence; do not count it as a browser result.
 - Local public shell-path release orchestration using test executables standing in for minifiers: pass for check-only invocation, original bundle preservation, JS/CSS .min filenames and corresponding gzip decompression. This verifies the launcher orchestration only, **not** the real minifiers.
 - Real GitHub-hosted product-and-permanent-tests revision `rumiai-os@bbaaea5791765c0792a66dd6c0b0ba387686c4b3` with `rumiai-tests@f81ad51aa8d7bd0135819149910159f68f313aa5`: [run 38523562948](https://github.com/massimilianonardi-ai/rumiai-os/actions/runs/38523562948) SUCCESS. Real m launcher regression and artifact test passed; real headless Chrome JS/CSS loader and manual quickstart passed; Node/shell syntax passed.
-- Subsequent `rumiai-os@2c6be876be6edc113cbf2927d0f9ae6c3f2cd763` only adds CSS descriptor rejection in the loader, with current GitHub Actions [run 38523847097](https://github.com/massimilianonardi-ai/rumiai-os/actions/runs/38523847097). Check its final result before claiming hosted verification at that SHA.
+- Subsequent `rumiai-os@2c6be876be6edc113cbf2927d0f9ae6c3f2cd763` only adds CSS descriptor rejection in the loader, with current GitHub Actions [run 38523847097](https://github.com/massimilianonardi-ai/rumiai-os/actions/runs/38523847097). GitHub Actions [run 38523847097](https://github.com/massimilianonardi-ai/rumiai-os/actions/runs/38523847097) has now completed SUCCESS on that exact revision, including the real m launcher, real Chromium loader, manual quickstart and Node/shell syntax checks.
 
 ## Known pending realignments, outside the user-authorized two-line launcher change
 
@@ -33,4 +33,4 @@ The first two items are inherited integration defects, not reasons to redesign `
 
 ## Next action
 
-Complete revision-specific consistency verification of the new CI run, then decide whether the independent output-integrity/runtime-selection gap is a separate authorized work unit. No further bundle architecture redesign is pending.
+The user-authorized compiler/loader implementation and documented minifier behavior have passed hosted validation. The two inherited launcher integrity/runtime-selection gaps and real-installed-minifier branch remain explicit pending validation/realignment items; do not change the launcher beyond its two approved invocation lines without further authorization. No further bundle architecture redesign is pending.
