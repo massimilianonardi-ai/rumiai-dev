@@ -12,11 +12,11 @@ Develop and validate a practical local AI cluster for RumiAI using the available
 Last verified remote HEADs for the 2026-10-14 work unit:
 
 ```text
-rumiai-dev      72eec460a1c89bf63d4829400da65e40cb1dbd4e  (pre-checkpoint HEAD)
-rumiai-os       9f4524d9af44cc031ba039b88cfda8d2df0e1c65
-rumiai-tests    9da9700ef06ef99e5a05633fcf30c973f095994f
+rumiai-dev      1ed806a6bd89924d2fc1f0fb46dab5be19afe945  (pre-checkpoint HEAD)
+rumiai-os       e2e95b088f66144f4290f69a15018a55dbb13eb9
+rumiai-tests    f755e5639b51793d49b9b0a7cf936f3588e7cc96
 pkg-catalog     5f3edca59cdc2dd721c50856d99736392f0fff0b
-rumiai-dev-PoCs 6949e76af13f2c6836dd3c95a1c40eb007fc9b1b
+rumiai-dev-PoCs 7af19c24d0193fb9c8b5f51e42a711a528c63943
 ```
 
 Physically deployed fleet `rumiai-os` revision remains
@@ -132,7 +132,7 @@ Additional package, service, state or container specifications must be retrieved
   mutate checkouts/services but does fetch Git remote-tracking metadata.
 
 - 2026-10-14 operator-path PoC committed at `rumiai-dev-PoCs` revision
-  `6949e76af13f2c6836dd3c95a1c40eb007fc9b1b` under
+  `7af19c24d0193fb9c8b5f51e42a711a528c63943` under
   `pocs/067-ollama-cluster-rollout/`. It reuses the existing
   `rsudo-admin jobs` workflow and remote `rsudo`, not a new package manager
   or `srv` supervisor. The editable pinned job defaults to preflight-only
