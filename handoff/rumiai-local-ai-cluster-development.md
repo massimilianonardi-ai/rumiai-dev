@@ -115,6 +115,26 @@ Additional package, service, state or container specifications must be retrieved
 
 ## Completed
 
+- 2026-10-14 operator simplification for the first physical rollout:
+  a single `rsudo-admin jobs` invocation now uses only two operator-facing
+  files (`cluster.lib.sh` and `rollout.job`), supplied to the user directly
+  in the chat as runnable shell sources. The remote host program is embedded
+  inside the library instead of requiring a separately selected `host.sh`.
+  The job pins the previously prepared `rumiai-os` target
+  `9f4524d9af44cc031ba039b88cfda8d2df0e1c65`, catalog
+  `5f3edca59cdc2dd721c50856d99736392f0fff0b`, and CPU manifest
+  `f181030a940abc79aa98797c6ac13bd149d6d1cba545f1111886eea8c3445cfd`.
+  Its single execution globally preflights all eight nodes, applies and
+  checks gis/apps canaries, then the other six in sequence. This is a
+  site-specific operator program, not a new product interface.
+  Local POSIX syntax, controller sequencing and canary-stop tests passed,
+  and the embedded remote shell passed an isolated real-Git forward-only,
+  preservation and stale-head fixture with external service/API boundaries
+  simulated. It has not been executed over real rsudo/SSH on the fleet and
+  must not be reported as physically validated. The chat-supplied two-file
+  version is distinct from the earlier, committed three-source PoC.
+  No real fleet revisions or running services were changed in this work unit.
+
 - 2026-10-14 second independent execution of the exact published
   `host.sh`, `controller.lib.sh`, `test-controller.sh`, and
   `test-git-safety.sh` sources on an isolated Linux runtime:
@@ -226,8 +246,10 @@ The previous shared-runtime llama.cpp direction is no longer the current worker 
 
 ## Next action
 
-1. In an already credential-loaded `rsudo-admin` operator session, physically
-   exercise the committed PoC in `check` mode first. Resolve any real-host
+1. In an already credential-loaded `rsudo-admin` operator session, run
+   the chat-supplied two-file one-shot job (global preflight, automatic
+   gis/apps canaries and remaining worker rollout) once. The job stops
+   safely before mutation if preflight fails. Resolve any real-host
    mismatch (especially whether `MANIFEST.sha256` survived worker `pkg`
    integration and whether the checked catalog revision is reachable) without
    destructive fallback. Once the preflight passes, execute `canary` for
