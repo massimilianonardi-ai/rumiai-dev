@@ -1,6 +1,6 @@
 # TextEdit — current standalone text-engine contract
 
-Status: **Current — TextEdit 0.8.1 document, physical selections, logical policies and deferred materialization implemented**  
+Status: **Current — TextEdit 0.8.2 document, physical selections, logical policies and deferred materialization implemented**  
 Updated: 2026-10-13
 
 ## Responsibility and ownership
@@ -8,7 +8,7 @@ Updated: 2026-10-13
 `TextEdit` is a standalone, GUI-independent JavaScript library distributed
 with `m` at `rumiai-os/lib/sys/js/text-edit.lib.js`. Its role is text storage,
 oriented multi-range editing, a source-mapped representation, and translation
-of advanced selections. The current v0.8.1 library defines no GUI, rendering
+of advanced selections. The current v0.8.2 library defines no GUI, rendering
 backend, font/layout engine, IME adapter, generic event bus or history system.
 The base provides only direct committed-mutation notifications. No separate
 repository/packaging boundary for this library has been established; the
@@ -248,7 +248,7 @@ implement it.
 
 ### TextEditSelections public API and state contract
 
-In TextEdit 0.8.1, \`TextEditSelections\` is the view-local **sole owner**
+In TextEdit 0.8.2, \`TextEditSelections\` is the view-local **sole owner**
 of effective ordered physical selections, including virtual positions.
 It does not own source text, rendering, history or input interpretation.
 
@@ -313,7 +313,10 @@ conflicting edits fail rather than silently dropping user input.
 An edit consisting only of deleting nonexistent virtual space does
 not materialize or commit anything. A successful actual edit returns
 \`{before,after}\`, with independent snapshots and edited selections
-collapsed to oriented carets at the ends of their inserted text.
+collapsed to oriented carets. A forward selection places its caret after the
+inserted payload; a reverse selection places its caret at the payload start
+(after any required virtual padding). Each retained caret and its orientation
+can participate in subsequent edits, regardless of which API constructed it.
 Rejected edits do not publish partial changes.
 
 The selector subscribes to committed source edits and tracks source
@@ -339,7 +342,7 @@ owns ordered, non-overlapping source-range substitution overlays, source
 annotations and the result of the most recent committed rebase. The base
 document is the only owner of editable source text.
 
-The representation v0.8.1 public surface is:
+The representation v0.8.2 public surface is:
 
 \`\`\`javascript
 new TextEditRepresentation(document, selections=null)
@@ -513,9 +516,9 @@ representation's most recent committed invalidation snapshot. The prior
 higher-layer old-text \`changes\` adapter and explicit representation
 \`rebase\` have been removed.
 
-## Advanced logical selection architecture — implemented in v0.8.1
+## Advanced logical selection architecture — implemented in v0.8.2
 
-The implemented v0.8.1 architecture separates logical selection construction,
+The implemented v0.8.2 architecture separates logical selection construction,
 policy-neutral coordinate translation and physical editing. Exactly one
 `TextEditSelections` instance owns the effective ordered selection
 collection, including nonmaterialized coordinates. Only physical row/UTF-16-column coordinates are valid public selection records; linear source offsets remain exclusively in `TextEditBase`.
@@ -529,11 +532,15 @@ operate on complete **logical** coordinates before any physical conversion.
 Its elementary logical-selection operations are reused by
 `lineSelection(start,end)` and `rectangularSelection(start,end)`, which
 accept the same endpoint shape.
-A line selection means complete included source rows, including existing
-line terminators; a rectangular selection means the included text-grid cells
-on each included row. Higher-level endpoints are inclusive and their
-orientation is preserved. The advanced layer performs no source-coordinate
-translation, grapheme/tab measurement or source edits.
+A line selection always constructs one forward-oriented range covering
+complete included source rows, including existing line terminators, regardless
+of requested endpoint order. A rectangular selection constructs an ordered
+array of ordinary selections covering the included text-grid cells on each row:
+the requested vertical traversal controls array order, and horizontal direction
+controls each range's `forward`. Higher-level endpoints are inclusive.
+Neither constructor persists a special selection kind or input mode.
+The advanced layer performs no source-coordinate translation, grapheme/tab
+measurement or source edits.
 
 `TextEditRepresentation` is the **policy-neutral coordinate
 translator** for these logical operations. It measures the logical content
@@ -548,6 +555,13 @@ that component. It must not independently materialize source padding,
 newlines or rows, nor become a competing owner of the effective selection
 collection. Representation-specific projection metadata may remain
 view-local without duplicating authoritative physical selection state.
+
+The ordered collection of oriented selections is the only editable selection
+state; creation history, rectangle membership and line-selection kinds are not
+persisted or consulted for editing. Input adapters may apply configurable text
+transformations independently to each selected payload according to `forward`.
+The advanced layer's `virtual` and `clipped` options are construction-geometry
+policies, not replacement/input policies.
 
 `TextEditSelections` is the **sole owner of effective physical selections**
 and caret state. Its physical selection coordinates are
@@ -626,7 +640,7 @@ has been correctly rebased after another view edits the text.
 
 The physical `{row,col}` selector, neutral representation gateway,
 advanced logical selection policies and deferred materialization are
-implemented in v0.8.1. The v0.8.1 operational manual and permanent tests
+implemented in v0.8.2. The v0.8.2 operational manual and permanent tests
 validate source rows, physical virtual coordinates, CRLF-safe padding,
 multicaret insertion grouping, logical clipping, Unicode/tab conversion,
 and rejection of numeric offset selection records. Comprehensive distribution
@@ -642,7 +656,7 @@ policies remain outside this library revision.
 
 ## Validation and release boundary
 
-The current v0.8.1 library is checked against the actual product source by
+The current v0.8.2 library is checked against the actual product source by
 permanent Node tests in `rumiai-tests/tests/rumiai-os/text-edit/core.test.mjs`,
 `base.test.mjs`, `selections.test.mjs`, `representation.test.mjs` and `advanced.test.mjs`, executed through their target-discovering test entrypoint
 and pinned by `rumiai-os/.github/workflows/text-edit.yml`. The workflow
