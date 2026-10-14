@@ -23,6 +23,22 @@ Keep the first-party `m/jsc` compiler, its classic-browser dynamic JS/CSS loader
 - Real GitHub-hosted product-and-permanent-tests revision `rumiai-os@bbaaea5791765c0792a66dd6c0b0ba387686c4b3` with `rumiai-tests@f81ad51aa8d7bd0135819149910159f68f313aa5`: [run 38523562948](https://github.com/massimilianonardi-ai/rumiai-os/actions/runs/38523562948) SUCCESS. Real m launcher regression and artifact test passed; real headless Chrome JS/CSS loader and manual quickstart passed; Node/shell syntax passed.
 - Subsequent `rumiai-os@2c6be876be6edc113cbf2927d0f9ae6c3f2cd763` only adds CSS descriptor rejection in the loader, with current GitHub Actions [run 38523847097](https://github.com/massimilianonardi-ai/rumiai-os/actions/runs/38523847097). GitHub Actions [run 38523847097](https://github.com/massimilianonardi-ai/rumiai-os/actions/runs/38523847097) has now completed SUCCESS on that exact revision, including the real m launcher, real Chromium loader, manual quickstart and Node/shell syntax checks.
 
+## Final consistency and hosted regression — 2026-10-14
+
+Following the initial green run, the compiler's nonpublic functions and
+dynamic-loader's nonpublic functions were renamed with the mandatory `_`
+prefix. Only the five loader entrypoints and `jscMain` remain public.
+Both changed code blobs matched the locally syntax-checked and behaviorally
+tested copies exactly. Product `rumiai-os/main@0dc5678a1401c5a0a8786e739f237dc26dbfb8e7`
+passed the [real GitHub Actions run 38524337570](https://github.com/massimilianonardi-ai/rumiai-os/actions/runs/38524337570):
+real `m` launcher, permanent namespace/Node tests, JS/CSS artifact test,
+Chromium loader/reload and manual quickstart, Node/shell syntax all success.
+Permanent suite pinned at `rumiai-tests/main@f81ad51aa8d7bd0135819149910159f68f313aa5`.
+This is a hosted Linux runner test, **not** physical validation on the user's Ubuntu host.
+The final cross-surface review found no remaining public/internal function-naming
+or operational-manual identity mismatches; pending launcher/output gaps below
+remain explicitly outside this authorized work unit.
+
 ## Known pending realignments, outside the user-authorized two-line launcher change
 
 1. **Output safety mismatch:** the existing shell redirection `> "$output"` truncates a previously valid output before the child compilation succeeds. `JSC.md` currently requires rejecting malformed JS/descriptors before overwriting a valid output. The direct engine two-argument path validates first, but the public launcher does not. Correcting this requires modifying more than the two launcher invocation lines that the user explicitly asked to preserve. Do not silently claim this guarantee for the launcher.
