@@ -156,7 +156,7 @@ products/
     ai/                    evaluations of external AI products
 
 chats/
-    <conversation>/         opt-in chat mirror: one Markdown transcript and same-directory media (non-authoritative)
+    <conversation>/         legacy non-authoritative conversation archive; GitHub mirror is disabled
 
 todo/
     README.md              deferred-work lifecycle and minimal item contract
