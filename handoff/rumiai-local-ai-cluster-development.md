@@ -1,7 +1,7 @@
 # RumiAI local AI cluster development
 
 Status: Active
-Updated: 2026-10-06
+Updated: 2026-10-14
 
 ## Goal
 
@@ -9,14 +9,19 @@ Develop and validate a practical local AI cluster for RumiAI using the available
 
 ## Current repository revisions
 
+Last verified remote HEADs for the 2026-10-14 work unit:
+
 ```text
-rumiai-dev   3714aaf1dd7b48ded1793e9bff19766952722377  (pre-checkpoint HEAD)
-rumiai-os    6a964ba3f5c8acf462737e3b92daaf1af32de57e  (physically deployed fleet revision)
-rumiai-tests 96b0e9520a8fbbc34cbdb0f072bbfdd06c091103  (current remote HEAD)
-pkg-catalog  bed62549c43d70d57e36b2364ccbd1c59cb5c037  (current remote HEAD)
+rumiai-dev      d9701a20c9083940dd832bf054e9e383b206830d  (pre-handoff-update HEAD)
+rumiai-os       9f4524d9af44cc031ba039b88cfda8d2df0e1c65
+rumiai-tests    9da9700ef06ef99e5a05633fcf30c973f095994f
+pkg-catalog     5f3edca59cdc2dd721c50856d99736392f0fff0b
+rumiai-dev-PoCs 468e274185295f022893d596a9ff51ef49a60a0f
 ```
 
-Fresh remote HEAD retrieval remains mandatory before future analysis or writes.
+Physically deployed fleet `rumiai-os` revision remains
+`6a964ba3f5c8acf462737e3b92daaf1af32de57e`; the new operator job has
+not been run against the hosts. Fresh remote HEAD retrieval remains mandatory.
 
 ## Applicable canonical sources
 
@@ -54,6 +59,21 @@ Additional package, service, state or container specifications must be retrieved
 - Persistent Ollama system-host deployment uses a dedicated pre-existing POSIX service account named `ollama`. The account is system/non-login and is not managed by `srv`; deployment creates it administratively before `srv host system install`. Ownership remains least-privilege: package/runtime roots and the shared model store remain root-owned/read-only to the service, while `srv host system install` owns only the service State Instance HOME as `ollama`; configuration remains administrator-owned but readable by the service account.
 - Physical system-host validation exposed a generic runtime-access bug: `srv host system install` prepared provider/default/dependency configuration and service HOME but not read/traverse access to the selected concrete package tree. Real `pkg install` uses private creation modes, so the non-root service account could not read `facility`/`facility-service`/`cmd` metadata and `--host-system-run` failed with `service-realization-invalid`. This is not Ollama-specific.
 - `rumiai-os` commit `1f6476f6c1ebc50b5135adab8cd790be63133f61` fixes that by extending the existing recursive `pkg_dependency_runtime_access_prepare` path so each selected provider/dependency concrete becomes read/traverse/execute-accessible without changing ownership or granting write access. `rumiai-tests` commit `633e9207138c5eb4c44846765cc35bd6bc0cf8a8` removes the synthetic `umask 022` escape from `srv/host-system.test` and adds regression coverage for service-account access to private provider/dependency runtime metadata.
+
+## Acceptance scenarios (current operator-path work)
+
+- With already-loaded rsudo credential groups, an operator selects exact runtime,
+  catalog and CPU artifact pins; `check` inspects all eight deployed hosts without
+  changing service registration or the checked-out runtime.
+- Only managed tracked `osarch` selector changes are tolerated. Other tracked
+  edits fail safely; untracked package projections and state are retained.
+  Concurrent HEAD movement fails rather than being silently overwritten.
+- `canary` first preflights all hosts, then reconciles `gis` and `apps` only.
+  `rollout` performs the same canaries first, then the remaining six workers
+  sequentially, stopping immediately when a node fails.
+- Each successful updated node retains its installed exact Ollama provider and
+  CPU artifact, remains boot-persistent, answers its API and exposes the shared
+  model; a bounded real inference is required as a success check.
 
 ## Working design
 
@@ -94,6 +114,22 @@ Additional package, service, state or container specifications must be retrieved
 - `osarch update` is an expected runtime mutation of the tracked selectors `bin/sys-osarch`, `bin/ext-osarch`, and `bin/ai-osarch`: the repository revision currently carries `linux-arm64` selector targets while the Ubuntu fleet correctly selects `linux-x86_64`. Therefore deployed runtime checkouts become Git-dirty in exactly those three paths after platform activation. Future rollout/update logic must treat those selector mutations as managed runtime state while still rejecting unrelated local changes.
 
 ## Completed
+
+- 2026-10-14 operator-path PoC committed at `rumiai-dev-PoCs` revision
+  `468e274185295f022893d596a9ff51ef49a60a0f` under
+  `pocs/067-ollama-cluster-rollout/`. It reuses the existing
+  `rsudo-admin jobs` workflow and remote `rsudo`, not a new package manager
+  or `srv` supervisor. The editable pinned job defaults to preflight-only
+  `check` and supports `canary` (gis/apps) and `rollout` (remaining workers).
+  On remote hosts, it guards managed `osarch` changes and forward-only Git,
+  preserves untracked operational state, verifies the selected concrete Ollama
+  identity and artifact manifest, reconciles the host service, and verifies
+  API/model/inference after restart. POSIX shell syntax checks, an isolated
+  real-Git safety test, and a controller-sequencing test with simulated
+  SSH/Git boundaries passed. No real rsudo connection, NFS/systemd operation,
+  installed worker manifest, or physical service restart was exercised by
+  this new job. It is not yet validated as the normal production path.
+
 
 - NFS/service persistence is now uniform and physically validated across all seven Ollama workers. The final normalization on `apps` and `apisix` replaced their earlier verbatim-runtime fstab entries with the same declarative NFSv4.2 options used elsewhere, and both passed the cold dependency test. Together with the five recovered workers and the earlier real reboot canary on `apps`, the worker pool is now reboot-safe at the infrastructure level: persistent model mount, persistent `srv host system` service, local pruned package root, and shared read-only model store are all validated.
 
@@ -174,11 +210,30 @@ The previous shared-runtime llama.cpp direction is no longer the current worker 
 
 ## Next action
 
-1. convert the now-proven fleet update/deployment procedure into the normal operational path: allow only the three managed tracked `osarch` selector mutations, preserve untracked runtime/state material, pin exact runtime/catalog/artifact revisions, and canary before fleet rollout;
-2. introduce the first dispatcher/orchestrator boundary over the validated persistent worker pool and select model/role profiles, including at least one non-thinking model/profile for terse deterministic worker tasks;
-3. decide whether Hindsight belongs in the first orchestrated deployment or should follow after the dispatcher/model-role boundary is established.
+1. In an already credential-loaded `rsudo-admin` operator session, physically
+   exercise the committed PoC in `check` mode first. Resolve any real-host
+   mismatch (especially whether `MANIFEST.sha256` survived worker `pkg`
+   integration and whether the checked catalog revision is reachable) without
+   destructive fallback. Once the preflight passes, execute `canary` for
+   `gis`/`apps` and inspect exact revision/service/inference results; only
+   then advance the remaining six through `rollout`. Preserve revision-specific
+   host evidence, reconcile detected deployment defects and promote the
+   demonstrated job to the normal operational path. No live rollout has yet
+   been authorized by successful validation of this newly authored job.
+2. Introduce the first dispatcher/orchestrator boundary over the persistent
+   worker pool and select model/role profiles, including at least one
+   non-thinking model/profile for terse deterministic worker tasks.
+3. Decide whether Hindsight belongs in the first orchestrated deployment or
+   should follow after the dispatcher/model-role boundary is established.
 
 ## Blockers / open questions
+
+- The new fleet operator PoC has no real-host evidence yet; this ChatGPT
+  execution session has GitHub repository access but not the user's loaded
+  remote rsudo credential/session boundary. Do not treat isolated fixture PASS
+  results as deployment validation. The expected in-concrete
+  `MANIFEST.sha256` pathname and exact model/host readiness must be
+  confirmed on the deployed workers before any `apply` mutation.
 
 - NFSv4.2 server/client operation, read-only shared Ollama runtime/model access, and local CPU inference are physically validated across every worker host in the current fleet.
 - `libgomp.so.1` is missing on seven of the eight surveyed hosts; `webgisrpr` already has it. This remains relevant only for the standalone llama.cpp runtime because the validated Ollama CPU runtime bundles its own OpenMP library.
