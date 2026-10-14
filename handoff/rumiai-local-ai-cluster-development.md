@@ -9,19 +9,22 @@ Develop and validate a practical local AI cluster for RumiAI using the available
 
 ## Current repository revisions
 
-Last verified remote HEADs for the 2026-10-14 work unit:
+Remote HEADs verified at the start of the 2026-10-14 15:32+02:00 evidence work unit (refresh before future work):
 
 ```text
-rumiai-dev      1ed806a6bd89924d2fc1f0fb46dab5be19afe945  (pre-checkpoint HEAD)
-rumiai-os       e2e95b088f66144f4290f69a15018a55dbb13eb9
-rumiai-tests    f755e5639b51793d49b9b0a7cf936f3588e7cc96
-pkg-catalog     5f3edca59cdc2dd721c50856d99736392f0fff0b
-rumiai-dev-PoCs 7af19c24d0193fb9c8b5f51e42a711a528c63943
+rumiai-dev      857e9e1c61adaaa38d211a8a0146103ebd6d80b4  (pre-checkpoint)
+rumiai-os       ef466362e9630b86d81b07ca647c2f2fbfd97a22
+rumiai-tests    b8d5cbea34784d1a42af2b00bf22c09fec9d478c
+pkg-catalog     7f9aadbc80f5f4fc85dee456cdd796535b2c6158
+rumiai-dev-PoCs db0f647e64c81d9f1366adfe79da3393963bef1e
 ```
 
-Physically deployed fleet `rumiai-os` revision remains
-`6a964ba3f5c8acf462737e3b92daaf1af32de57e`; the new operator job has
-not been run against the hosts. Fresh remote HEAD retrieval remains mandatory.
+The **physically deployed fleet** is aligned to the exactly pinned
+`rumiai-os` revision `9f4524d9af44cc031ba039b88cfda8d2df0e1c65`
+as verified by the successful operator job on 2026-10-14 (15:24:38–15:27:56
+Europe/Rome). This is deliberately not the current GitHub `main` HEAD:
+at the time of this preflight, `rumiai-os/main` was 29 commits ahead
+of the deployed pin. Fresh remote HEAD retrieval remains mandatory.
 
 ## Applicable canonical sources
 
@@ -48,7 +51,7 @@ Additional package, service, state or container specifications must be retrieved
 - Prefer independent model workers and request/workload parallelism over tensor/model parallelism that requires frequent cross-host synchronization.
 - `gis` and `webgisrpr` may be used without a task-level CPU cap; the user will manage production contention when necessary.
 - Credentials are not exposed to the assistant. Operations use `rsudo` / `rsudo-admin` from an environment where the user has already loaded credentials, or an explicitly available ChatGPT Work/Codex execution session.
-- All eight servers keep their older `m` installation, and the current `rumiai-os` runtime is installed on every server at `/m/src/git/rumiai-os`. The fleet is now physically aligned to exact revision `6a964ba3f5c8acf462737e3b92daaf1af32de57e`; all nodes selected `linux-x86_64` and passed the runtime smoke check. `gis` additionally passed the persistent Ollama current-head canary before the remaining seven nodes were updated.
+- All eight servers keep their older `m` installation, and the current deployment of the `rumiai-os` runtime is installed on every server at `/m/src/git/rumiai-os`. The fleet physically completed a forward-only update from `6a964ba3f5c8acf462737e3b92daaf1af32de57e` to the exact operator-pinned revision `9f4524d9af44cc031ba039b88cfda8d2df0e1c65` on 2026-10-14. `gis` and `apps` both passed canary apply and service/inference verification before the other six were advanced. The earlier runtime-platform/bootstrap checks remain earlier milestone evidence; this rollout does not itself prove a fresh post-update reboot.
 - Do not rely on host wall clocks for distributed correlation. Prefer run identifiers, operation identifiers and explicit command/result state.
 - No further synthetic/network benchmarking is required before proceeding. The current hardware evidence is sufficient for deployment design.
 - The large `/m` storage on `gis` is the shared-storage basis for the cluster because the VM disks cannot currently be enlarged.
@@ -115,6 +118,8 @@ Additional package, service, state or container specifications must be retrieved
 - `osarch update` is an expected runtime mutation of the tracked selectors `bin/sys-osarch`, `bin/ext-osarch`, and `bin/ai-osarch`: the repository revision currently carries `linux-arm64` selector targets while the Ubuntu fleet correctly selects `linux-x86_64`. Therefore deployed runtime checkouts become Git-dirty in exactly those three paths after platform activation. Future rollout/update logic must treat those selector mutations as managed runtime state while still rejecting unrelated local changes.
 
 ## Completed
+
+- 2026-10-14 **physical one-shot operator rollout complete**. The uploaded `rsudo-jobs(20261014-133231).log` contains 736 lines of host-generated results for 15:24:38–15:27:56 Europe/Rome. All eight hosts passed global preflight at old HEAD `6a964ba3f5c8acf462737e3b92daaf1af32de57e`, artifact/content checksum validation and existing NFS/systemd model dependency checks without requiring NFS reconciliation. Canary `gis` then `apps` both passed. The remaining six worker applies (`apisix`, `keycloak`, `apisix_psn`, `apps_psn`, `keycloak_psn`, `webgisrpr`) all passed. The evidence contains eight `Fast-forward` updates, eight `CLUSTER APPLY OK` markers, sixteen `rsudo.end status=0` reports, no `CLUSTER ERROR` or `REMOTE ERROR`, and final `CLUSTER ROLLOUT OK (8/8) revision=9f4524d9af44cc031ba039b88cfda8d2df0e1c65`. The executed inline script's successful apply path requires service registration and active/enabled checks, Ollama 0.35.1 readiness/version, visibility of `qwen3:4b` and completed bounded `/api/chat` inference. The uploaded log reports aggregate success markers rather than raw per-host HTTP JSON; attribute that evidence accurately. Repeated `rsudo.env-file-fallback reason=not-provided` warnings did not prevent successful remote execution. No actual host reboot, repeat-run idempotence test, or new benchmark is established by this log. The two successful operator sources were supplied in chat, not committed in a repository. **Pending realignment:** current `rumiai-dev-PoCs/pocs/067-ollama-cluster-rollout/host.sh` still requires in-package `MANIFEST.sha256`; it is not identical to the physically successful inline version, which checks the pinned external manifest against the integrated CPU package root. Update the persistent PoC/operator path and corresponding tests/documentation before claiming a repository-backed repeatable implementation. The separate historical `rsudo-admin` terminal-close / `): not found` issue is not proven repaired by this rollout.
 
 - 2026-10-14 live operator preflight evidence: the uploaded `rsudo-jobs(20261014-124218).log` shows `gis` preflight OK at deployed `6a964ba3f5c8acf462737e3b92daaf1af32de57e` but `apps` exited `REMOTE ERROR [25]` because the attempted job assumes `/m/src/git/rumiai-os/pkg/ollama@v0.35.1!linux-x86_64/root/MANIFEST.sha256`. The integrated concrete root is not contractually required to retain the deployment artifact sidecar. No fleet mutation occurred in that run. An uncommitted two-file operator correction was composed for the chat: on workers, resolve a pinned `MANIFEST.sha256` from the concrete root when present, else the previously validated local artifact tree `/var/lib/ollama-worker/runtime/0.35.1-cpu/`, else `/mnt/rumiai-ai/runtime/`; hash the manifest against the immutable pinned SHA-256 and verify every listed payload file from within the concrete package root. `gis` continues verifying its central artifact tree. Isolated real-sha256 fixture checks passed for missing in-package manifest, local and NFS sidecars, absent sidecar, altered manifest and altered installed payload; simulated controller flow covered 8 preflights, 2 canaries and 6 remaining workers. POSIX parsing, selected-library function, exact fixed first-line log redirect passed. No physical `rsudo` execution of this correction, and no non-gis host physical checks beyond the recorded `apps` error, have occurred. This is chat-supplied operator code, not a deployed change.
 
@@ -253,7 +258,7 @@ Additional package, service, state or container specifications must be retrieved
 
 ## Current state
 
-The initial local AI worker pool is now physically deployed and persistent.
+The initial local AI worker pool is physically deployed and persistent. The 2026-10-14 operator run validated successful in-place updates across all eight hosts to the exact `rumiai-os` pin `9f4524d9af44cc031ba039b88cfda8d2df0e1c65`; the full 8/8 sequence returned success after HTTP readiness, shared-model visibility and real bounded inference on each host. This is physical deployment evidence for the exact pin, not for a later GitHub HEAD, another reboot, or repeat-run behavior.
 
 `gis` is the authoritative central model/artifact host. Each of the seven worker hosts runs the normal concrete package identity `ollama@v0.35.1!linux-x86_64`, whose package root is the validated 60 MiB CPU-only pruned runtime. Worker services run persistently through `srv host system` under the dedicated non-login `ollama` account and use the shared read-only NFS model store at `/mnt/rumiai-ai/models`.
 
@@ -272,17 +277,14 @@ The previous shared-runtime llama.cpp direction is no longer the current worker 
 
 ## Next action
 
-1. In an already credential-loaded `rsudo-admin` operator session, run
-   the chat-supplied two-file one-shot job (global preflight, automatic
-   gis/apps canaries and remaining worker rollout) once. The job stops
-   safely before mutation if preflight fails. Resolve any real-host
-   mismatch (especially whether `MANIFEST.sha256` survived worker `pkg`
-   integration and whether the checked catalog revision is reachable) without
-   destructive fallback. The same job automatically runs the gis/apps
-   canaries and only after both succeed visits the remaining six workers.
-   Preserve revision-specific host evidence, reconcile deployment defects
-   and promote the demonstrated job to the normal operational path only
-   after successful physical validation.
+1. Consolidate the physically successful two-file operator rollout in the
+   persistent operator PoC/path, explicitly reconciling the obsolete
+   in-package `MANIFEST.sha256` assumption and preserving the mandatory
+   first job line `exec > "/m/src/git/rsudo-jobs.log" 2>&1`. Add proportional
+   tests for external-manifest verification and repeat-run idempotence, keep
+   all Git updates forward-only and retain the revision-specific 8/8 log
+   evidence. A subsequent reboot check on the updated pin is separate from
+   the already completed fleet rollout; do not infer it from the log.
 2. Introduce the first dispatcher/orchestrator boundary over the persistent
    worker pool and select model/role profiles, including at least one
    non-thinking model/profile for terse deterministic worker tasks.
@@ -295,12 +297,12 @@ The previous shared-runtime llama.cpp direction is no longer the current worker 
 
 - The user's four rsudo-jobs attachments dated 06:58, 08:00, 09:10 and 09:36 have been read from mounted file bytes and are all exactly 264 bytes with identical SHA-256 `016ee951114b3758690f42238feab2b7bda88dd8076eeec3e2541235e348cdcb`; each contains the same old `repair_ollama_nfs_worker: not found` output and the same job token; none records `cluster_rollout`. The user clarified that `): not found` came from `rsudo-admin` itself, not from the cluster job or library, and disappeared after an execution of the scripts unexpectedly closed the entire terminal. The rsudo-admin implementation places sourced job effects in nested subshells and ordinarily returns to its menu; terminal closure is not established as a normal or repaired condition. Do not conflate the two defects or assume the rsudo-admin issue is resolved by a new session. None of the repeated 264-byte legacy logs establishes a new fleet rollout.
 
-- The new fleet operator PoC has no real-host evidence yet; this ChatGPT
-  execution session has GitHub repository access but not the user's loaded
-  remote rsudo credential/session boundary. Do not treat isolated fixture PASS
-  results as deployment validation. The expected in-concrete
-  `MANIFEST.sha256` pathname and exact model/host readiness must be
-  confirmed on the deployed workers before any `apply` mutation.
+- A complete real-host 8/8 operator rollout is now evidenced by the
+  2026-10-14 log and exact deployment SHA. The chat-inline successful job
+  is not yet the committed PoC; the latter retains the superseded
+  in-package manifest check. Repeat-run idempotence and post-update reboot
+  have not been newly demonstrated, and the assistant still has no access
+  to the operator's credential-loaded rsudo session.
 
 - NFSv4.2 server/client operation, read-only shared Ollama runtime/model access, and local CPU inference are physically validated across every worker host in the current fleet.
 - `libgomp.so.1` is missing on seven of the eight surveyed hosts; `webgisrpr` already has it. This remains relevant only for the standalone llama.cpp runtime because the validated Ollama CPU runtime bundles its own OpenMP library.
