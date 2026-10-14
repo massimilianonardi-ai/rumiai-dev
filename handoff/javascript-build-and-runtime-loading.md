@@ -39,6 +39,22 @@ The final cross-surface review found no remaining public/internal function-namin
 or operational-manual identity mismatches; environment-specific validation limits below
 remain distinct from the completed implementation.
 
+## JavaScript function formatting checkpoint — 2026-10-14
+
+The user mandated next-line opening braces for JavaScript `function`
+declarations and expressions. The canonical project-wide rule is maintained
+in `RULES.md`, not duplicated as a JSC-specific contract. Product
+`rumiai-os` revisions `07f6b39eb573de9a05bc57735fb50317687b0322`
+and `cd4e1db4ae6e5d72b9ec14867f5c572a0e4dd453` realigned all
+function signatures and generated wrappers in `jsc.lib.js` and
+`dynamic-loader.lib.js` by formatting only; developer-provided source
+files continue to be copied verbatim. No manuals or permanent tests changed
+because the public API and execution semantics remain unchanged.
+[Real GitHub Actions run 38529554026](https://github.com/massimilianonardi-ai/rumiai-os/actions/runs/38529554026)
+passed on the final product revision, including real Node compilation,
+real browser Chrome JS/CSS loader/reload and manual quickstart. This does
+not constitute physical host validation.
+
 ## Accepted output behavior and remaining environment checks
 
 The user explicitly accepts ordinary shell redirection `> "$output"`:
