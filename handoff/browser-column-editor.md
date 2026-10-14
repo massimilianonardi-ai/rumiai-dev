@@ -1,7 +1,7 @@
 # Advanced browser/Electron text editor
 
-Status: Active — TextEdit 0.8.1 stable; GUI browser viewport and keyboard/pointer work active, other adapters deferred
-Updated: 2026-10-13
+Status: Active — TextEdit 0.8.2 oriented selection realignment implemented; browser PoC 066 CI green, Ubuntu physical retest pending
+Updated: 2026-10-14
 
 ## Goal
 
@@ -11,13 +11,15 @@ The JavaScript compilation, module loading and distribution concern has **indepe
 
 ## Current repository revisions
 
-- `rumiai-dev` main task preflight HEAD: `7a1c7c126d972f9c5dcf70c5d748640b2b03e8b5`; canonical TextEdit 0.8.1 contract updated in `b88f7b31ef670460ad36558f4fa858e85db60e80` (this handoff is subsequently synchronized).
-- `rumiai-os` main verified: `9f4524d9af44cc031ba039b88cfda8d2df0e1c65` (TextEdit 0.8.1 source, manual and pinned CI passed).
-- `rumiai-tests` main verified: `9da9700ef06ef99e5a05633fcf30c973f095994f` (permanent tests including selected replacement, facade lifecycle, isolated exports and piece-store diagnostics).
-- `rumiai-dev-PoCs` main verified: `0c5d9eec9ca51937ee45db3c9d22177490e0c69b` (PoC 066 natural/cell-grid rendering comparison; hosted Chromium smoke test passed; experimental).
-- Reference `m` master: `2a57a29880c2d7a32e18782122062c695fcb1a3a`.
+Last verified remote main HEADs (2026-10-14; **recheck before any next task**):
 
-Always recheck current remote HEADs before resuming or changing files.
+- `rumiai-dev`: `04f50696342742461031d5df6ccfb9a823456bb6` (pre-handoff-sync snapshot; current v0.8.2 contract and active editor handoff).
+- `rumiai-os`: `ef466362e9630b86d81b07ca647c2f2fbfd97a22` (TextEdit v0.8.2 source, operational manual, workflow; pinned product CI passed).
+- `rumiai-tests`: `b8d5cbea34784d1a42af2b00bf22c09fec9d478c` (forward/reverse insertion and line-constructor permanent tests).
+- `rumiai-dev-PoCs`: `db0f647e64c81d9f1366adfe79da3393963bef1e` (PoC 066 GUI/2D CI passed).
+- Reference `m` master: not rechecked for this handoff-only consistency sync; no source change.
+
+These are revision-specific resumption evidence, not substitutes for the mandatory fresh preflight.
 
 ## Applicable canonical sources
 
