@@ -80,7 +80,7 @@ rumiai-dev/chats/<chat-directory>/
 
 The Markdown uses relative paths such as `![description](image-001.png)`. An image is an asset belonging to that chat, not a second transcript representation. File names and directory identity should be assigned without collisions when the pilot is implemented; do not invent a new required RumiAI identifier or API for this planning step.
 
-**Acceptance scenarios (not yet implemented):**
+**Acceptance scenarios (pilot validation):**
 
 1. The user explicitly activates mirroring in an individual chat; after each exchange the full user prompt and exact final assistant answer are committed to that chat's GitHub Markdown in order, and the assistant reports sync failures transparently.
 2. The user explicitly deactivates mirroring; subsequent exchanges are not mirrored, and a different chat stays off until activated.
@@ -92,10 +92,10 @@ The Markdown uses relative paths such as `![description](image-001.png)`. An ima
 
 - Check whether the available GitHub connection can commit each expected image type directly as binary assets (for example through Git blob/tree operations), as well as UTF-8 Markdown. Do not treat images from ChatGPT widgets as automatically exportable.
 - Define precise captured-turn boundaries and retries so the file stores the assistant answer actually shown, while making failed writes visible. No scheduled/background flush after the turn.
-- Check current `RULES.md` documentation lifecycle wording about removing chats from the current tree after durable content is propagated against the newly requested persistent `chats/` archive. Resolve any real policy mismatch before beginning writes to `chats/`; do not silently ignore it.
+- Current-tree retention is reconciled in `RULES.md`: explicitly opted-in chat mirrors under `chats/` are non-authoritative archival records, not competing development knowledge. Check whether continued retention causes real retrieval or performance issues during the pilot.
 - Establish realistic performance measures from active use; only then consider whether opt-in operation should change in the future.
 
-Keep the pilot planning in this existing workflow-optimization handoff. No transcript/image files are written or mirroring activated by this decision alone.
+The user has explicitly activated the first pilot conversation in the current chat. Its record begins with the activation exchange in `chats/2026-10-14-github-chat-mirror/chat.md`; earlier exchanges are not automatically backfilled. The transcript is written directly to GitHub at each answer boundary without intermediate files or buffering. Rich-media capture remains unvalidated.
 
 ### Adaptive human-AI cooperation model
 
@@ -341,7 +341,7 @@ The user also requested recovery of an older `m` logging idea for study. Deliber
 
 ## Current state
 
-The conversation-mirror pilot has fixed its storage and synchronization choice: direct GitHub updates per exchange; exactly one Markdown transcript plus colocated image assets per chat directory; no temporary/staging files, batching or PDF. Per-chat opt-in remains mandatory. The pilot is not yet active, and no transcript or image assets have been written.
+The first chat mirror is being activated by direct GitHub creation of `chats/2026-10-14-github-chat-mirror/chat.md`. It records the current activation request and final assistant response, not earlier discussion; no image assets are involved in the initial exchange. Direct GitHub updates per exchange, Markdown with colocated image assets, no staging/batching/PDF, and per-chat opt-in remain fixed. Evaluate future image turns and observed performance before making broader claims.
 
 The new code-maintainability and scope gate is current canonical workflow; it must be exercised on future implementation tasks rather than treated as a claim that legacy code already complies.
 
@@ -383,10 +383,10 @@ Observe the TODO lifecycle, specification promotion gate and command/library man
 12. activate `todo/diagnostic-observability-realignment.md` as a dedicated product/test audit when that migration is scheduled;
 13. analyze the historical subprocess log-level mechanism through `todo/log-level-child-propagation-analysis.md` before deciding whether a modern equivalent belongs in current `m`.
 14. apply the code-maintainability and scope gate to upcoming implementation tasks and verify that ordinary small changes stay locally understandable.
-15. when explicitly starting the conversation-mirror pilot, validate direct GitHub writes of Markdown and colocated image assets, per-turn ordering/retry semantics and performance; first reconcile the chat-retention policy if it conflicts with current canonical workflow rules, and do not consider always-on behavior without real observations.
+15. continue the now-active opt-in chat-mirror pilot, measuring direct GitHub updates of Markdown and available colocated image assets, turn ordering, retry semantics and performance; do not consider always-on behavior without real observations.
 
 ## Blockers / open questions
 
-The conversation-mirror pilot is inactive. Before first activation, verify binary image commits and visual-output capture, exact per-turn success/failure reporting and retry behavior, and reconcile the potential current-tree chat-retention policy mismatch. Temporary file persistence, periodic flushing and PDF are no longer candidate approaches.
+The opt-in text mirror starts with this exchange. Binary image uploads, image/widget fidelity, end-to-end turn retry behavior and latency measurements remain unvalidated. The current-tree retention policy has been reconciled in `RULES.md`. Temporary file persistence, periodic flushing and PDF remain out of scope.
 
 None blocking current workflow use. The adaptive cooperation model remains deliberately non-canonical while it is exercised on real cases; the six-point core is the candidate for later joint review/promotion. Current command/library manual backfill belongs to `handoff/rumiai-os-man-documentation.md`; legacy library API visibility realignment is represented by `todo/library-api-visibility-realignment.md`. Diagnostic legacy migration is represented by `todo/diagnostic-observability-realignment.md`; subprocess log-level propagation/reduction remains an analysis item in `todo/log-level-child-propagation-analysis.md`.

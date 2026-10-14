@@ -23,7 +23,8 @@ Therefore:
 - current specifications must state the rule that applies now;
 - a new decision must not become a permanent patch that readers have to apply mentally to an older specification;
 - when a contract changes, update the canonical current specification in the same work unit whenever possible;
-- superseded documents, completed plans, closed handoffs, chats and exploratory analysis are removed from the current tree once their durable content has been propagated;
+- superseded documents, completed plans, closed handoffs and exploratory analysis are removed from the current tree once their durable content has been propagated;
+- ordinary chat transcripts are not current project authority and should not be kept as normative documentation; an explicitly user-authorized conversation mirror under `chats/` is a non-authoritative archival artifact intentionally retained under that opt-in workflow, not a replacement for specifications, TODOs or handoffs;
 - Git history preserves those documents and their rationale forward-only;
 - historical evidence is never rewritten or relabelled as evidence for another revision.
 

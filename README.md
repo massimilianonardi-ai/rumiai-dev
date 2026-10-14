@@ -155,6 +155,9 @@ products/
     README.md              external-product evaluation model and routing
     ai/                    evaluations of external AI products
 
+chats/
+    <conversation>/         opt-in chat mirror: one Markdown transcript and same-directory media (non-authoritative)
+
 todo/
     README.md              deferred-work lifecycle and minimal item contract
     <topic>.md             known work intentionally deferred and not yet active
