@@ -36,17 +36,36 @@ Chromium loader/reload and manual quickstart, Node/shell syntax all success.
 Permanent suite pinned at `rumiai-tests/main@f81ad51aa8d7bd0135819149910159f68f313aa5`.
 This is a hosted Linux runner test, **not** physical validation on the user's Ubuntu host.
 The final cross-surface review found no remaining public/internal function-naming
-or operational-manual identity mismatches; pending launcher/output gaps below
-remain explicitly outside this authorized work unit.
+or operational-manual identity mismatches; environment-specific validation limits below
+remain distinct from the completed implementation.
 
-## Known pending realignments, outside the user-authorized two-line launcher change
+## Accepted output behavior and remaining environment checks
 
-1. **Output safety mismatch:** the existing shell redirection `> "$output"` truncates a previously valid output before the child compilation succeeds. `JSC.md` currently requires rejecting malformed JS/descriptors before overwriting a valid output. The direct engine two-argument path validates first, but the public launcher does not. Correcting this requires modifying more than the two launcher invocation lines that the user explicitly asked to preserve. Do not silently claim this guarantee for the launcher.
-2. **Runtime-selection evidence:** the launcher still directly invokes `node` and relies on the `m` bootstrap environment's `PATH`. The canonical specification describes an `m`-managed default Node runtime; hosted tests proved actual Node execution but did not demonstrate that managed-runtime selection path on all reference hosts.
-3. **Installed-tool branch:** no target-revision validation with a real installed `google-closure-compiler` and `uglifycss` was executed in this work unit; only the absent-tool fallback was exercised in CI and orchestration was exercised with test substitutes locally. The product's check-only and minification flags are supported by the upstream Closure documentation, but don't attribute a full real-tool pass.
+The user explicitly accepts ordinary shell redirection `> "$output"`:
+an unsuccessful compile may truncate/replace a previous output, and this
+is **not a product defect or a pending fix**. Canonical `JSC.md` now reflects
+that acceptance. Do not add atomic output protection.
 
-The first two items are inherited integration defects, not reasons to redesign `jsc` or add import registries. Preserve the current two-line launcher scope unless the user explicitly authorizes a follow-up change. Prior PoC evidence remains at `rumiai-dev-PoCs/pocs/064-jsc-no-eval-scope/` and `pocs/065-jsc-closure-imports/`; it is not product validation.
+The launcher invokes `node` through `PATH`. Current `rumiai-os/m`
+loads the generated global provider environment first, then prepends the
+managed sys/ext binary directories; the resulting lookup order follows the
+bootstrap contract in `BOOTSTRAP-ENVIRONMENT.md`. This is the intended
+resolution model, **not an established launcher defect**. Hosted tests
+proved Node 22 execution, but they do not separately validate a custom
+managed Node provider installation on the user's own hosts.
+
+Another testing limit remains: no run with real installed
+`google-closure-compiler` and `uglifycss` was executed in this work unit.
+The CI covers the no-minifier fallback and local test stubs covered launcher
+orchestration. Do not claim installed-minifier host validation.
+
+Prior PoC evidence remains at `rumiai-dev-PoCs/pocs/064-jsc-no-eval-scope/`
+and `pocs/065-jsc-closure-imports/`; it is not product validation.
 
 ## Next action
 
-The user-authorized compiler/loader implementation and documented minifier behavior have passed hosted validation. The two inherited launcher integrity/runtime-selection gaps and real-installed-minifier branch remain explicit pending validation/realignment items; do not change the launcher beyond its two approved invocation lines without further authorization. No further bundle architecture redesign is pending.
+The user-authorized compiler and browser-loader implementation has passed
+revision-specific hosted CI. No further launcher modification is required
+for the two previously flagged issues. An optional follow-up may validate
+the managed Node provider on a reference host and the real installed
+minifier paths; neither is presently an established jsc defect.
