@@ -106,14 +106,21 @@ jsc <modules.json> [output]
 ```
 
 - Without `output`, emit only the compiled script or CSS to stdout.
-- With `output`, write the assembled file and create a gzip artifact.
-  Optimization and minification are not automatic `jsc` responsibilities;
-  developers may perform them independently.
+- With `output`, write the assembled file without altering its source
+  content. When an appropriate installed minifier is available, additionally
+  create `<name>.min.js` using `google-closure-compiler` for JavaScript or
+  `<name>.min.css` using `uglifycss` for CSS, and gzip the minified artifact
+  as `<name>.min.js.gz` or `<name>.min.css.gz`. With no minifier installed,
+  create a gzip artifact of the unminified output instead. Never download or
+  install minification tools implicitly.
 - Source file names are resolved relative to the descriptor directory.
   Existing source files must remain inside that directory when resolved.
 - Invalid descriptors, unsafe import/export identifiers and generated JS
   syntax errors fail before overwriting a previously valid output file.
-  Google Closure Compiler is the intended syntax verification engine.
+  Always perform JavaScript syntax validation. When installed, run
+  `google-closure-compiler --checks_only` as a separate, non-mutating
+  syntax-check step before publishing the generated JavaScript; keep the
+  unminified output intact. CSS remains a distinct ordered assembly.
 - The internal `jsc.lib.js` exposes the public Node function
   `jscMain(args)`, returning a Promise of process-style status.
 - The launcher uses the existing `m` `log`/`fatal` facilities, and
@@ -153,7 +160,7 @@ JSC-01  jsc and its engine belong to m; independent JS/CSS source loader is an m
 JSC-02  ordered modules/name/file/exports descriptors support optional JSON reference imports or developer-written lexical bindings; neither loads files
 JSC-03  compilation preserves original namespace reopening, lexical visibility and authored source order
 JSC-04  jsc outputs standalone strict-capable browser/Node JavaScript with private internals and explicit public exports, or ordered CSS
-JSC-05  stdout-only and optional file-output plus offline gzip; minification/optimization are user-managed
+JSC-05  stdout-only or file output; if an installed minifier exists emit minified and gzipped siblings, else gzip the original; no implicit tool installation
 JSC-06  invalid descriptors, sources, identifiers and generated JS syntax fail before writing output
 JSC-07  dynamic loader accepts original JS and CSS source lists and preserves public function identities
 JSC-08  browser code is loaded as classic script/style; existing side effects are not undone by removal
