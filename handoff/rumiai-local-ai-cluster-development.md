@@ -252,12 +252,11 @@ The previous shared-runtime llama.cpp direction is no longer the current worker 
    safely before mutation if preflight fails. Resolve any real-host
    mismatch (especially whether `MANIFEST.sha256` survived worker `pkg`
    integration and whether the checked catalog revision is reachable) without
-   destructive fallback. Once the preflight passes, execute `canary` for
-   `gis`/`apps` and inspect exact revision/service/inference results; only
-   then advance the remaining six through `rollout`. Preserve revision-specific
-   host evidence, reconcile detected deployment defects and promote the
-   demonstrated job to the normal operational path. No live rollout has yet
-   been authorized by successful validation of this newly authored job.
+   destructive fallback. The same job automatically runs the gis/apps
+   canaries and only after both succeed visits the remaining six workers.
+   Preserve revision-specific host evidence, reconcile deployment defects
+   and promote the demonstrated job to the normal operational path only
+   after successful physical validation.
 2. Introduce the first dispatcher/orchestrator boundary over the persistent
    worker pool and select model/role profiles, including at least one
    non-thinking model/profile for terse deterministic worker tasks.
