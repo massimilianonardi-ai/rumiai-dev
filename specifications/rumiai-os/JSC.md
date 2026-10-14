@@ -24,6 +24,8 @@ No different command interpreter/entrypoint model is introduced here.
 ## Ordered source descriptor
 
 The ordered JSON `modules` descriptor remains the source-assembly model.
+The descriptor root may also contain the optional Boolean `nodeGlobal`
+(default `false`), controlling Node.js global publication as specified below.
 Entries are:
 
 - **Namespace node:** `name` (optional JavaScript identifier) and nested
@@ -66,10 +68,36 @@ The generated library encapsulates its internal declarations and publishes
 only the explicit public API, following the established standalone TextEdit
 model. Output is usable in both classic browser scripts and Node.js without
 `eval()`, `with`, a dynamic code generator, or a mandatory runtime registry.
-The existing CSS source-list model remains unchanged.
+
+### Generated library publication
+
+The single generated JavaScript uses an outer strict-mode closure around the
+nested namespace scopes. The descriptor-root `nodeGlobal` setting is a
+**compile-time choice**, not a runtime environment variable or CLI option:
+
+- **Browser classic script:** irrespective of `nodeGlobal`, publish and
+  reopen the public namespace roots on `globalThis`, as in the original jsc.
+- **Node.js CommonJS, `nodeGlobal` omitted or `false`:** expose the
+  public API through `module.exports` without reading or writing an
+  equally named namespace on `globalThis`; the bundle remains independent
+  even when a matching global namespace already exists.
+- **Node.js CommonJS, `nodeGlobal: true`:** reuse an already existing
+  namespace root on `globalThis`, or publish a new one when absent.
+  `module.exports` exposes the same public namespace object. Separately
+  generated bundles opting into this behavior can extend the shared
+  namespace without replacing it; their initialization order remains
+  controlled by the application.
+
+For example, a descriptor with root namespace `m` and `"nodeGlobal": true`
+allows two independently compiled CommonJS bundles to reopen
+`globalThis.m`. With `nodeGlobal` absent or `false`, the same library
+uses `module.exports` but does not create or reuse `globalThis.m`.
+This flag does not load another file, alter the `imports` reference model,
+freeze reopenable namespace objects, or introduce a runtime registry.
 
 JavaScript and CSS are assembled separately. CSS manifests list source
-files in order, without JavaScript namespaces or exports.
+files in order, without JavaScript namespaces or exports; CSS assembly and
+dynamic loading retain their established behavior.
 
 ## Public jsc command and engine
 
@@ -131,4 +159,5 @@ JSC-07  dynamic loader accepts original JS and CSS source lists and preserves pu
 JSC-08  browser code is loaded as classic script/style; existing side effects are not undone by removal
 JSC-09  source imports do not require a runtime module registry or alternative bootstrap model
 JSC-10  cross-bundle imports capture values on bundle initialization; qualified accesses remain dynamic; no eval
+JSC-11  descriptor-root nodeGlobal defaults false; browser publishes globals; CommonJS exports public API and only shares globals when opted in
 ```
