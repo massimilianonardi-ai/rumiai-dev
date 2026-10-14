@@ -136,3 +136,21 @@ Non sostituirò il file indicato con l'SVG ricostruito precedentemente, perché 
 Per eseguire la prova esatta, **allega direttamente qui il file originale scaricato da quel link**, anziché inviare soltanto l'URL. Potrò quindi verificarne il formato e tentare il caricamento dell'originale e della sua conversione PNG in due operazioni GitHub distinte, dichiarando separatamente l'esito di ciascuna.
 
 Ho registrato questo blocco e la correzione sull'accesso a GitHub nel [task `workflow-optimization`](https://github.com/massimilianonardi-ai/rumiai-dev/blob/main/handoff/workflow-optimization.md) e nel [mirror della chat](https://github.com/massimilianonardi-ai/rumiai-dev/blob/main/chats/2026-10-14-github-chat-mirror/chat.md).
+
+---
+
+### 👤 Utente — 14 ottobre 2026
+
+questi li abbiamo usati in passato per esportare delle chat. forse possiamo fare qualcosa di simile con web-control. oppure torniamo all'idea del markdown che aggiorni ad ogni passo e lo rendi scaricabile come documento della chat (ricordati di dargli ogni volta un progressivo aumentato, altrimenti il file non cambia). attiva contemporaneamente il markdown come documento allegato alla chat.
+
+*Allegati nel prompt: `chatgpt-export-v3(1).py`, `chatgpt-export-v3(1).sh`.*
+
+### ✨ ChatGPT — 14 ottobre 2026
+
+**Attivato anche il Markdown scaricabile.** [Scarica la versione 0001](sandbox:/mnt/data/rumiai-chat-20261014-0001.md). A ogni mia risposta in questa chat produrrò una nuova versione cumulativa con progressivo crescente (`0002`, `0003`...), senza sovrascrivere il file precedente. È uno snapshot consegnato nella risposta, non un aggiornamento autonomo in background. La prima versione parte da questo scambio; la [trascrizione già presente su GitHub](https://github.com/massimilianonardi-ai/rumiai-dev/blob/main/chats/2026-10-14-github-chat-mirror/chat.md) resta separata e consultabile.
+
+Ho esaminato i due script allegati: quello shell avvia l'app ChatGPT macOS con **Chrome DevTools Protocol** attivo; quello Python legge il catalogo locale delle conversazioni, intercetta uno **snapshot dal renderer Electron** e ne ricava Markdown, JSON e metadati di audit. È un esportatore *puntuale*, non un mirror incrementale; gli elementi multimediali non vengono automaticamente trasformati in file immagine autonomi.
+
+**Con `web-control` l'idea è plausibile, ma non già disponibile come funzione:** il contratto corrente permette di acquisire HTML renderizzato, testo e screenshot; non garantisce l'accesso agli snapshot interni di ChatGPT. Per riprodurre la tecnica degli script servirebbe valutare un adattatore specifico, probabilmente tramite un'estensione di debugging privilegiata del provider. Non lo confondo con le capacità già verificate di `web-control`.
+
+Il mirror GitHub già attivato resta distinto dal nuovo allegato progressivo. Questa versione documenta la nuova modalità e i suoi limiti; il prossimo numero dovrà essere **0002**.
