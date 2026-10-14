@@ -116,7 +116,10 @@ jsc <modules.json> [output]
 - Source file names are resolved relative to the descriptor directory.
   Existing source files must remain inside that directory when resolved.
 - Invalid descriptors, unsafe import/export identifiers and generated JS
-  syntax errors fail before overwriting a previously valid output file.
+  syntax errors fail with a nonzero status. The public shell launcher uses
+  ordinary output redirection, so an existing output file may be truncated
+  before validation fails; atomic replacement or preservation on failure
+  is not required.
   Always perform JavaScript syntax validation. When installed, run
   `google-closure-compiler --checks_only` as a separate, non-mutating
   syntax-check step before publishing the generated JavaScript; keep the
