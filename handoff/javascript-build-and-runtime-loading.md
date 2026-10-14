@@ -1,123 +1,36 @@
-# JavaScript source compilation and dynamic library loading
+# JavaScript compilation and dynamic JS/CSS loading
 
-Status: Active
+Status: Active  
 Updated: 2026-10-14
 
-## Goal
+## Responsibility and authority
 
-Evolve the original `m/jsc` into a standalone, strict-capable browser/Node JavaScript library compiler that preserves ordered source visibility, hierarchical reopenable namespaces and the original export role. Remove eval by introducing explicit external imports, maintain CSS assembly and independent dynamic loading, and keep undecided cross-bundle compatibility semantics under joint design review. The former narrow port/integration is historical task context, not a restriction on this approved evolution.
+Keep the first-party `m/jsc` compiler, its classic-browser dynamic JS/CSS loader, operational manuals and permanent tests aligned. The current normative contract is `specifications/rumiai-os/JSC.md`. Follow the entire mandatory read order of `rumiai-dev/README.md` on resumption. The separate bootstrap/shebang item remains deferred in `todo/javascript-command-bootstrap.md`; do not activate it as part of this work.
 
-## Current references (verify HEADs remotely on resumption)
+## Completed implementation checkpoint — 2026-10-14
 
-- `rumiai-dev/main`: `656cc4a8d69b4291a5a15011612a09bad0db66ef` (review pre-checkpoint; re-verify remote HEAD).
-- `rumiai-os/main`: `0c638074b0a031d7f75d62bf464faf2c0a272ef0` (user-committed original jsc; review target).
-- `rumiai-tests/main`: `024f60b85fc94a49f5222cd1fac9f3e9a326f562` (review target).
-- Original reference `m/master`: `2a57a29880c2d7a32e18782122062c695fcb1a3a`
+- Product `rumiai-os`: compiler implemented in `lib/sys/js/jsc.lib.js` (CommonJS, non-executable); superseded `bin/sys/jsc.js` removed. Outer strict IIFE wraps the existing ordered nested namespace structure. JSON `symbols` is renamed to `exports`, and optional per-source `imports` generates lexical value references without loading source files. Browser publishes namespace roots globally. CommonJS publishes the root through `module.exports`; optional root-descriptor `nodeGlobal: true` additionally reuses/publishes the corresponding `globalThis` namespace, while default false does not read/write the matching global.
+- `bin/sys/jsc`: exactly the two former `$m_COMMAND_BIN.js` invocations were changed to invoke `$m_ROOT/lib/sys/js/jsc.lib.js`. All existing minifier / gzip branches remain. The engine always validates generated JavaScript syntax using Node VM and, when installed, runs `google-closure-compiler --checks_only` against a disposable source file before emitting the original bytes. The public launcher can additionally produce `.min.js` / `.min.css` when the respective installed minifier exists and gzip the selected release artifact.
+- `lib/sys/js/dynamic-loader.lib.js`: browser-only independent source-list loader restored with the original five public function names; supports the new descriptor, strict namespaces and ordered JS/CSS loading without eval. A follow-up consistency fix rejects CSS namespaces/imports/exports.
+- Three operational manuals in `rumiai-os/res/sys/manual/` were realigned.
+- `rumiai-tests`: updated permanent namespace/import/Node-sharing regression, real-Chromium browser loader probe and public launcher JS/CSS/gzip-artifact regression; removed superseded legacy test. `rumiai-os/.github/workflows/jsc-classic-loader.yml` pins the tested suite revision.
 
-## Mandatory sources
+## Real validation evidence
 
-Follow `rumiai-dev/README.md` mandatory read order, `RULES.md`, `CONSISTENCY-GATE.md`, `specifications/README.md`, `specifications/rumiai-os/JSC.md` and current command/library/diagnostic/manual/testing contracts, then inspect current product and permanent tests. The original source lives in `m/cmd/jsc`, `m/cmd/jsc.js`, `m/js/lib/js/m/mod/LibraryDynamic.js` and `m/js/lib/dynamic-loader/dynamic-loader.js` and is behavioral reference evidence.
+- Local exact-source Node.js 22 tests: generated JS in isolated VM contexts (browser-like and CommonJS), namespace reopening and identity, static captured references versus qualified live references, opt-in and default Node publication, CSS source ordering, invalid exports and path rejection: pass.
+- Local dynamic-loader DOM simulator with stubbed HTTP and document boundary: pass, including insertion, callback and source-list behavior. Headless Chromium in this container timed out without usable DOM evidence; do not count it as a browser result.
+- Local public shell-path release orchestration using test executables standing in for minifiers: pass for check-only invocation, original bundle preservation, JS/CSS .min filenames and corresponding gzip decompression. This verifies the launcher orchestration only, **not** the real minifiers.
+- Real GitHub-hosted product-and-permanent-tests revision `rumiai-os@bbaaea5791765c0792a66dd6c0b0ba387686c4b3` with `rumiai-tests@f81ad51aa8d7bd0135819149910159f68f313aa5`: [run 38523562948](https://github.com/massimilianonardi-ai/rumiai-os/actions/runs/38523562948) SUCCESS. Real m launcher regression and artifact test passed; real headless Chrome JS/CSS loader and manual quickstart passed; Node/shell syntax passed.
+- Subsequent `rumiai-os@2c6be876be6edc113cbf2927d0f9ae6c3f2cd763` only adds CSS descriptor rejection in the loader, with current GitHub Actions [run 38523847097](https://github.com/massimilianonardi-ai/rumiai-os/actions/runs/38523847097). Check its final result before claiming hosted verification at that SHA.
 
-## Fixed user direction
+## Known pending realignments, outside the user-authorized two-line launcher change
 
-**Current user correction, 2026-10-13 (architecture exploration):** The original manifest, contracts, namespace mechanism, product paths and implementation are **not immutable constraints** for the new evaluation. Alternatives may change the JSON, compiler architecture or completely rewrite jsc if doing so better meets the user-selected characteristics. First compare solutions and consequences, then jointly choose the final architecture; do not preselect the least disruptive port merely because earlier integration work scoped it that way. No architecture alternative is promoted by the PoC alone.
+1. **Output safety mismatch:** the existing shell redirection `> "$output"` truncates a previously valid output before the child compilation succeeds. `JSC.md` currently requires rejecting malformed JS/descriptors before overwriting a valid output. The direct engine two-argument path validates first, but the public launcher does not. Correcting this requires modifying more than the two launcher invocation lines that the user explicitly asked to preserve. Do not silently claim this guarantee for the launcher.
+2. **Runtime-selection evidence:** the launcher still directly invokes `node` and relies on the `m` bootstrap environment's `PATH`. The canonical specification describes an `m`-managed default Node runtime; hosted tests proved actual Node execution but did not demonstrate that managed-runtime selection path on all reference hosts.
+3. **Installed-tool branch:** no target-revision validation with a real installed `google-closure-compiler` and `uglifycss` was executed in this work unit; only the absent-tool fallback was exercised in CI and orchestration was exercised with test substitutes locally. The product's check-only and minification flags are supported by the upstream Closure documentation, but don't attribute a full real-tool pass.
 
-**Previously fixed integration baseline, only for the original minimal port phase:** Preserve the original ordered nested `modules` / `name` / `file` / `symbols` behavior, CSS assembly, command/stdout and browser-loader responsibilities if carrying out the narrow original port rather than a newly authorized redesign. The original product paths are still the current JSC specification until an explicit new decision changes them. The user has not authorized implementing a new product architecture in this exploratory work unit.
+The first two items are inherited integration defects, not reasons to redesign `jsc` or add import registries. Preserve the current two-line launcher scope unless the user explicitly authorizes a follow-up change. Prior PoC evidence remains at `rumiai-dev-PoCs/pocs/064-jsc-no-eval-scope/` and `pocs/065-jsc-closure-imports/`; it is not product validation.
 
-The shebang/bootstrap inquiry is **deferred work only**, recorded in `todo/javascript-command-bootstrap.md` under the normal TODO lifecycle. It is NOT an active task, not a dependency, and must not be analyzed or implemented in this compiler/loader work unit. No supervision, lock, FIFO or external-effect coordination work.
+## Next action
 
-## Current state
-
-**Read-only review checkpoint, 2026-10-12.** The user committed their original `jsc` implementation to `rumiai-os/main@0c638074b0a031d7f75d62bf464faf2c0a272ef0`. Product `bin/sys/jsc.js` is **byte-identical** to reference `m/master:cmd/jsc.js`, Git blob SHA `c967f801db6b3e01e17492e0f42d21642a4cf821`. Product `bin/sys/jsc` is a m-integrated POSIX shell script with `#!/usr/bin/env m`; the JS engine currently lives beside it in `bin/sys/jsc.js` (regular non-executable) rather than under `lib/sys/js/`. The earlier `lib/sys/js/jsc.lib.js` and `lib/sys/js/dynamic-loader.lib.js` do **not** exist in this revision. The original `modules/name/file/symbols` compiler/namespace model is retained, with no id/deps or registry.
-
-**Actual review observations, no product changes made:** Direct Node 22 execution of an exact-Git-blob reconstruction of `bin/sys/jsc.js` (verified `git hash-object`) successfully compiled a concrete nested `m.srv.data.MyClass` example when passed a directory and descriptor filename explicitly, and output executed correctly in Node's classic-script VM. The one-operand `jsc modules-js.json` wrapper pattern expands `${1%/*}` to the full filename when no `/` is present, resulting in `ENOTDIR` for `modules-js.json/modules-js.json`. The engine's no-descriptor auto-discovery path still calls `new java.io.File` and throws `ReferenceError: java is not defined` under Node. Adjacent source files without a trailing newline can swallow the following symbol-export statement into a `//` comment. The exact wrapper copy was reproduced using blob SHA `bce9026ba37dd702b24e1c9779a292cc47545a7f`: a failed compilation to a non-JS/CSS suffix can still exit 0 after `gzip`, producing an empty artifact, because child statuses are not checked. A relative `../outside.js` is currently read successfully (no source-root boundary), and an invalid symbol identifier produces invalid generated JS while the compiler exits 0. The wrapper directly calls `node` rather than first selecting the default m-managed runtime, emits `echo` diagnostics instead of `log/fatal`, and invokes `npx --yes` for minification (implicit external downloads may occur), contrary to current `JSC.md` and diagnostic/offline expectations.
-
-**Cross-surface mismatch:** The current `rumiai-dev/specifications/rumiai-os/JSC.md`, product manuals `res/sys/manual/{jsc,jsc.lib.js,dynamic-loader.lib.js}`, and permanent `rumiai-tests/tests/rumiai-os/jsc` still describe/test the removed `lib/sys/js/jsc.lib.js` and `dynamic-loader.lib.js` layout; the manuals also claim validations, runtime selection and behavior not in the user's just-committed code. Exact product GitHub Actions [run 38208933554](https://github.com/massimilianonardi-ai/rumiai-os/actions/runs/38208933554) ended **failure** at the structural test `compiler engine file type/mode invalid`, before executing the current engine. The workflow pins `rumiai-tests@4e9e509f7d3d879cf9d59056e7a91aa2ba6eabec`, while the current tests main HEAD is different; no existing CI result proves the new product revision's functional paths. The prior handoff statement of a green hosted suite applies to an **older product revision only**.
-
-**Review-only scope:** Do not silently rewrite the user's committed engine or promote replacement module architecture. User has requested an integration analysis; the findings above are pending realignment, not implemented fixes. The separate `todo/javascript-command-bootstrap.md` is deferred and must not be analyzed or activated by this task.
-
-
-## 2026-10-13 architecture exploration and PoC 064 (working design, not normative)
-
-- User explicitly opened all `jsc` architecture options: old contracts, JSON and implementation are comparison baselines, not unchangeable requirements. The 12 desired properties discussed in this chat are the comparison criteria: split ordered sources, nested/reopenable namespaces, lexical visibility, symbol-based exports, one standalone artifact, private internals, full encapsulation, delimited public API, strict mode, browser + Node portability and no eval. No preferred final architecture or input schema is fixed yet.
-- The experimental PoC is at `rumiai-dev-PoCs/pocs/064-jsc-no-eval-scope/` (current tested revision `f479b4820e4e7e6c409ae9aa4513bd53ce03b3bc`); product `rumiai-os`, permanent tests and canonical JSC specification remain unchanged.
-- Experiment ran actual generated classic JavaScript inside Node v22.16.0 V8 contexts: **16/16 targeted checks passed**, including both expected successes and deliberately asserted divergences. A real-Chromium probe attempt produced no usable DOM result; browser validation is **not established**. No claim of full product-path validation or complete semantic equivalence.
-- Candidate static lexical `let` aliases with values read from namespace properties at bundle initialization preserve the tested unqualified two-bundle access and strict compatibility without eval. The PoC supplies names explicitly in an **experimental** `imports` map; automatic identifier discovery / AST support is **not** implemented.
-- Evidence of limits: injected aliases can collide with lexical class names; non-existing imports can turn `ReferenceError` into `TypeError`; captured function references differ from dynamically qualified lookups under namespace updates. The modeled original eval wrapper preserves an older `MyClass` export (`42`) after a second bundle declares `77`. A **direct Node invocation of the actual current generator** reproduced `42`, using a byte-identical product source copy (blob `288221ab1f0db09cc3f14e87c526fb439d33e341`). The current permanent test intends `77`; this is confirmed engine-level mismatch, but not a full m launcher/permanent CI execution. The standalone `actual-jsc-probe.mjs` exercises the real generator via a supplied checkout path.
-- Next design comparison: AST/free-variable inference vs explicit static external-name metadata vs full-program linking vs qualified references, including globals, reassignment, accessor evaluation, rebinding, private declarations, browser and Node actual runtime. Choose semantics and tradeoffs with user before altering authoritative specifications or product code.
-- 2026-10-13 user clarification: the old-reference-preserving redefinition behavior is *intentional*, ensuring already acquired references stay stable; it must not be called a defect merely because the current permanent test expects the newer value. User is open to changing that paradigm if overall desired functionality is better. The specification/test/engine mismatch remains to reconcile after deciding semantics.
-- Current candidates: explicit source imports from other bundles; Google Closure Compiler check-only with generated extern definitions and strengthened diagnostics. Their roles may be complementary. Nothing about the descriptor format, external reference binding semantics or compiler choice is decided.
-
-## 2026-10-13 PoC 065: Google Closure Compiler + three import declaration locations (working design)
-
-- User clarified the intended import semantics: compiler-generated external imports capture the referenced value on consumer bundle initialization (`const Base = m.Base`), preserving the caller's reference if the providing namespace is later redefined. Developers who intentionally want live references instead write fully qualified `m.Base()` without a declared external import. Do not conflate *compile-time verification* with *runtime reference acquisition*.
-- User approved evaluating explicit cross-bundle imports and a combined static-analysis workflow using Google Closure Compiler. The three authoring surfaces remain **open comparisons**, not decided schema: source-local annotations, bundle descriptor imports, and a reusable published provider interface from which consumer imports and Closure externs could be generated.
-- New research-only PoC: `rumiai-dev-PoCs/pocs/065-jsc-closure-imports/` at main revision `89447cc578bd5fb55023c28b7b141544fe2ad1bb`. Its real GitHub Actions run [38372326775](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/38372326775) at tested commit `67d4c9a6b4921e5a577481b7140c7c9525d91a35` completed SUCCESS: **18/18 checks passed** using Node 22, Java 21, Closure Compiler `v20260831` pinned from Maven. The later README-only commit records the test evidence, without changing tested script/workflow.
-- All three hypothetical import declaration placements produced byte-identical consumer code. V8 verified initial value 52, captured imported functions unchanged at 52 after namespace replacement, and explicit qualified namespace access updating to 177. Code was classic-script strict, without eval/with/Function and did not require a runtime module registry.
-- Closure `--checks_only` accepted the well-formed consumer with auto-generated provider externs; it diagnosed intentional invalid fixtures as `JSC_UNDEFINED_VARIABLE`, `JSC_PARSE_ERROR`, `JSC_INEXISTENT_PROPERTY` and `JSC_TYPE_MISMATCH`. Producer JS independently passed a syntactic Closure check.
-- Crucial missing evidence: generated externs validate **consumer assumptions**, not whether producer source correctly implements the declared API. No real-browser run, provider-to-interface verification, package-version/load-order check, or full production command validation was performed. The first attempted Maven version (v20261007) was unavailable/404; a documented published v20260831 release succeeded.
-- Next design comparison: where the import declarations best belong, how provider API declarations can be reused without requiring manually duplicate consumer mappings, how Closure/type analysis verifies both sides of public interfaces, and whether a hybrid descriptor/public-interface architecture offers the best ergonomics. No product or canonical spec modification authorized or performed.
-
-## 2026-10-13 accepted design simplification and remaining bundle-compatibility choice
-
-The user has fixed these target-design decisions (not yet implemented in product): collapse duplicated earlier objectives into composed source ordering, nested/reopenable namespaces, encapsulation with explicit public API, external imports, standalone strict browser+Node output, no eval and static syntax validation. Rename JSON `symbols` to `exports` without adding type metadata or export metadata. Optional JSON `imports` are **supported and recommended** to keep source JavaScript separate from build information; source-local declarations of imports are also **supported**, with their exact syntax not yet selected. Within-bundle lexical visibility and namespace reopening retain original `jsc` goals. Export publication itself retains the original `jsc` mechanics: do **not** infer a requirement for additional provider implementation/type conformance verification merely from earlier PoC candidates. Adopt the established TextEdit encapsulation/publication pattern while serving both classic browser and Node. Closure Compiler has a syntax-validation role; optimization/minification are left to developers. No broader JSON redesign is justified yet. Preserve CSS assembly and independent dynamic loader behavior with necessary adaptations.
-
-The explicit user placeholder `AAAAAAA` for **cross-bundle compatibility** leaves that design choice open. Disambiguate at least three independent questions before promoting a contract:
-1. **Build-time compatibility:** How is the provider's public `exports` surface made available to validate named imports, without adding metadata/types the user rejected? Whether a generated public export index is needed is unresolved.
-2. **Runtime compatibility:** When must a provider be loaded relative to a consumer capturing references at initialization, and what failure/diagnostic occurs for an absent provider? Whether to add version compatibility constraints, dependency-resolution facilities or any runtime registry is not decided.
-3. **Namespace reopening vs implicit old lexical import:** The old compiler uses direct `eval()` to materialize identifiers from pre-existing namespace properties. Strict eval-free compilation cannot dynamically manufacture unknown lexical names. The original namespace object can still be reopened, but whether unqualified access to symbols from preceding independently compiled bundles remains **implicit**, or instead requires source/JSON imports, needs an explicit semantic choice. Do not silently weaken 'like old jsc'.
-
-Potential tradeoff to discuss with user: build-time explicit imports and generated validation against a provider export listing, with a provider-first load-order requirement and no registry; this is a proposal only, not an approved contract. The original captured-reference behavior for declared imports and deliberate live qualified access remain fixed.
-
-Canonical specification `specifications/rumiai-os/JSC.md` was updated on 2026-10-13 to express only approved directions (including unchanged comma-separated export syntax and no premature restriction on possible build-time dependency information); product `rumiai-os/bin/sys/jsc.js`, current operational manuals and permanent test fixtures still describe/use `symbols` and the old eval namespace mechanism and require a later **coordinated forward-only realignment**. No product or tests were modified by this design documentation work. Current PoCs 064 and 065 remain experimental evidence, not architecture.
-
-
-## 2026-10-13 correction: namespace references, not import-based loading
-
-The user clarified explicitly: *imports in source* means only ordinary JavaScript references such as `var A = m.data.A` (or `const A = m.data.A`). These may be hand-written without any JSON entry; a JSON `imports` entry is optional and recommended to have jsc generate the equivalent lexical reference. Do **not** use import statements, require calls, source inclusion, bundled copies, file loading or a runtime module loader to implement this feature. The namespace structure and single shared provider object must remain intact. Canonical `JSC.md` now states this.
-
-### Comparison with current popular bundlers (research, not decisions)
-
-Official documentation consulted 2026-10-13:
-- [webpack externals](https://webpack.js.org/configuration/externals/) and [webpack library output](https://webpack.js.org/configuration/output): external dependencies can resolve to preexisting globals instead of being bundled; `output.library.type='assign-properties'` supports extension of an existing top-level library object; `umd` enables multiple hosts but is not by itself a deep namespace merger.
-- [Rollup configuration](https://rollupjs.org/configuration-options): `external` + `output.globals` for UMD/IIFE externals; `output.extend` prevents wholesale replacement of an existing named global but is not automatic deep merging.
-- [Vite library mode](https://vite.dev/guide/build): library output formats and Rolldown/Rollup-style externalization and `globals` mappings.
-- [esbuild API](https://esbuild.github.io/api/): `iife` + `globalName`, including dotted global paths; external module imports in IIFE/CJS may still yield `require` runtime instructions, which is **not** the desired jsc source-import behavior.
-- [Parcel targets](https://parceljs.org/features/targets/): normal library targets are ESM/CJS; `global` is for classic browser script output, not library targets.
-- [Node CommonJS caching](https://nodejs.org/api/modules.html): `require` caches for a resolved file, but distinct paths or versions can still instantiate separate copies. Node host-level module loading is not forbidden, but must not be emitted by jsc's source-level `imports` semantics.
-
-The mechanism in common is **externalization + single host-owned provider instance + consumer namespace lookup**. For a browser this can be a shared global namespace set by an independently loaded classic script. For Node, the original TextEdit CommonJS API does not automatically provide a global namespace; the approved `nodeGlobal` root-descriptor switch now controls whether generated jsc libraries do so. The comparison does not authorize UMD/AMD/Module Federation, automatic file loading, deep merge or a registry.
-
-## 2026-10-14 approved descriptor setting: `nodeGlobal`
-
-The user explicitly approved the third publication alternative: **one optional
-Boolean `nodeGlobal` on the root JSON descriptor, default `false`**.
-This is now a promoted current contract in
-`specifications/rumiai-os/JSC.md`; do not maintain an independent rule here.
-
-Implementation checkpoint: the TextEdit-style outer strict IIFE still wraps
-jsc's nested namespace scopes. The browser always publishes/reopens public
-namespace roots on `globalThis`, regardless of this setting. In Node.js
-CommonJS, the default bundle exports its independent public API via
-`module.exports` without reading/writing an existing similarly named global
-namespace. With `nodeGlobal: true`, the bundle reuses or creates the
-`globalThis` namespace root and `module.exports` exposes that same object;
-a subsequent opting-in bundle can reopen it. No options/env switches, file
-imports or runtime registry are introduced.
-
-Previously executed Node V8 `vm` exploration only exercised the
-global-sharing branch with two illustrative bundles, checking namespace
-identity, stable captured references and dynamic qualified references; it
-did not exercise the new JSON switch, the `false` branch through product
-jsc, real browser execution or production CommonJS loading. **No product or
-permanent test changes have been made for this approval.** Next implementation
-work must test both Node branches (including an unrelated pre-existing
-`globalThis.m` under `false`), browser invariance, two-bundle reopening,
-and lack of duplicated provider code, alongside the previously approved
-strict/exports/eval-free scope changes.
-
-## Validation boundary and next action
-
-The integration currently has **confirmed** mismatches at the CLI path split, runtime boundary, Java-specific auto-discovery branch, failure propagation, source validation/output integrity, product file ownership, and current tests/manuals. The first normal nested-manifest compilation path did work under real Node 22 using an exact byte-identical copy, but a successful invocation through the full m launcher on a host with managed Node was **not** demonstrated. No product edits, permanent test changes, or authoritative specification changes were made in this read-only analysis.
-
-Current user scope simplification (2026-10-13): the desired evolution consists precisely of enabling strict JavaScript, renaming `symbols` to `exports` without semantic expansion, removing `eval` by generating lexical references such as `var A = m.data.A` from optional JSON `imports` (or permitting developer-written references), preserving the original jsc authored ordering, scopes and reopenable namespace behavior, and converging on the standalone TextEdit-style outer closure/public facade to support browser and Node. Google Closure Compiler only checks syntax; keep the existing CSS/dynamic loader functioning with necessary adaptations. The user explicitly finds broader bundler ecosystems, provider interface registries, version graphs and similar mechanisms unnecessary and out of scope; do not invent them or make them prerequisites. The only substantive implementation-design work is to make the generated bindings land in the correct lexical scopes and implement/test the now-approved outer wrapper and nodeGlobal behavior. The product engine and permanent tests have not yet been updated. Keep the separate bootstrap/shebang TODO deferred.
+Complete revision-specific consistency verification of the new CI run, then decide whether the independent output-integrity/runtime-selection gap is a separate authorized work unit. No further bundle architecture redesign is pending.
