@@ -166,3 +166,44 @@ il primo passo sembra funzionare bene, quindi ora attivare chat mirror, abilita 
 Sì. Da ora **«attiva chat mirror»** abilita nella singola chat **entrambi i canali**: il mirror Markdown su GitHub (`rumiai-dev/chats/<chat>/chat.md`) e un documento Markdown cumulativo allegato a ogni risposta, con nome progressivo (`0001`, `0002`, `0003`...). **«Disattiva chat mirror»** disattiva entrambi. Non è un'impostazione globale né un processo in background: aggiorno i due canali mentre preparo ogni risposta e segnalo eventuali errori.
 
 **In questa chat sono attivi entrambi.** Ho registrato la convenzione nel task `workflow-optimization`, sincronizzato questo scambio su [GitHub](https://github.com/massimilianonardi-ai/rumiai-dev/blob/main/chats/2026-10-14-github-chat-mirror/chat.md) e preparato l'[allegato Markdown 0002](sandbox:/mnt/data/rumiai-chat-20261014-0002.md). Il prossimo progressivo sarà `0003`.
+
+---
+
+### 👤 Utente — 14 ottobre 2026
+
+ok ora proviamo con i grafici. rifammi il grafico del workflow attuale. le immagini generate devono essere linkate nel file e devono essere tutte riproposte come download insieme alla nuova versione del documento. è chiaro cosa intendo?
+
+### ✨ ChatGPT — 14 ottobre 2026
+
+Sì, è chiaro.
+
+Da ora, nelle versioni progressive del documento:
+
+- le **immagini generate** saranno **linkate dentro il Markdown**;
+- il nuovo Markdown conterrà anche una **preview** dell’immagine;
+- insieme a ogni nuova versione del documento, riproporrò come download **anche tutte le immagini generate fino a quel punto**.
+
+Per questa prova ho preparato:
+
+- [Scarica il documento 0003](sandbox:/mnt/data/rumiai-chat-20261014-0003.md)
+- [Scarica il grafico `workflow-attuale-001.png`](sandbox:/mnt/data/workflow-attuale-001.png)
+
+Nota importante: in **questa** esecuzione ho potuto aggiornare i file scaricabili locali, ma **non** il mirror GitHub, perché qui non ho strumenti di scrittura GitHub disponibili. Quindi `0003` e l’immagine sono pronti come download nella chat, ma non posso dichiarare sincronizzato anche `rumiai-dev/chats/.../chat.md` in questo turno.
+
+---
+
+### 👤 Utente — 14 ottobre 2026
+
+e dov'è il documento 0003?
+
+### ✨ ChatGPT — 14 ottobre 2026
+
+Eccolo, ho verificato che il file esiste:
+
+**[Scarica il documento Markdown 0003](sandbox:/mnt/data/rumiai-chat-20261014-0003.md)**
+
+E qui trovi l'immagine collegata:
+
+[Scarica il grafico `workflow-attuale-001.png`](sandbox:/mnt/data/workflow-attuale-001.png)
+
+Per continuità del mirror ho preparato anche [la versione progressiva 0004](sandbox:/mnt/data/rumiai-chat-20261014-0004.md), che include questo scambio.
