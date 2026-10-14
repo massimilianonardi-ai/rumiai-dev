@@ -1,7 +1,7 @@
 # workflow-optimization
 
 Status: Active
-Updated: 2026-10-11
+Updated: 2026-10-14
 
 ## Goal
 
@@ -56,7 +56,34 @@ Subsystem specifications are added only when a concrete workflow question reache
 - Significant non-trivial flows require proportional info/debug/trace observability unless a concrete bootstrap, recursion, performance, protocol/output or security constraint justifies omission.
 
 
+- Chat conversation mirroring is a workflow pilot, not an always-on ChatGPT/RumiAI feature. Its GitHub destination is `rumiai-dev/chats/`.
+- The mirror is explicitly activated and explicitly deactivated **within each chat**; activation in one chat does not imply activation in another.
+- Observe real performance and reliability before considering any default-on or always-on behavior.
+- The intended mirror preserves complete user prompts and exact final assistant responses in conversational order, with presentation reasonably similar to ChatGPT. Rich media fidelity and the practical guarantees of exact reproduction are pilot validation concerns, not already-proven capabilities.
+
 ## Working design
+
+### Chat conversation mirroring pilot
+
+**User goal:** When explicitly enabled in a chat, retain a readable and faithful copy of the discussion under `rumiai-dev/chats/` without materially slowing normal collaboration. The user must be able to disable mirroring explicitly in the same chat. Mirroring is not enabled by merely documenting this pilot.
+
+**Acceptance scenarios (to validate, not yet implemented):**
+
+1. The user activates mirroring in an individual chat; subsequent full user prompts and final assistant replies appear in the appropriate GitHub conversation record, in order, with a clear indication of whether each sync succeeded.
+2. The user deactivates mirroring; subsequent messages do not get copied, and a later chat remains unmirrored until explicitly activated.
+3. A conversation containing code, tables, images or charts retains useful fidelity; the resulting record is readable and its limitations are explicit.
+4. A write fails or the chat/session is interrupted; the assistant does not claim successful persistence of unsynchronized content, and a subsequent sync can reconcile without silently discarding or duplicating messages.
+5. Measured overhead of each sync strategy can inform whether periodic batching is worthwhile; default-on use is not assumed or authorized by this pilot.
+
+**Open technical evaluation (no selection yet):**
+
+- **Every-turn GitHub update:** strongest per-exchange durability but increases network/API operations and commits.
+- **Chat/session-local staging plus periodic GitHub flush:** may reduce latency and commits, but a file in the chat/session is not a verified durable store; buffer lifetime, restart recovery, retry and idempotency require testing. Evaluate flush by message count/time, on deactivation, and at the end of a response when useful. Do not assume background activity after the assistant has stopped.
+- **Representations:** compare GitHub-flavored Markdown with linked assets, PDF, or a Markdown canonical transcript plus optional rendered PDF. PDF can improve visual fidelity (especially images/charts), but binary diffs, incremental updates and later machine processing are harder. Static PDF cannot preserve live widget interactivity. No PDF-over-Markdown decision has been made.
+- **Faithfulness:** define and test what “exact response” means for textual output versus interactive UI, images, charts, links, rich components and attachments; do not advertise full-fidelity mirroring until it is demonstrated.
+- **Performance and robustness metrics:** per-turn latency added, number of GitHub calls/commits, failure/recovery behavior, duplicate/missing-message rate, and media-rendering fidelity. Decide whether staged/batched updates are truly an improvement from observations.
+
+Keep this evaluation inside workflow optimization for now; do not create a new implementation handoff, new `chats/` files or an always-on rule until the pilot is explicitly started.
 
 ### Adaptive human-AI cooperation model
 
@@ -302,6 +329,8 @@ The user also requested recovery of an older `m` logging idea for study. Deliber
 
 ## Current state
 
+The conversation-mirror pilot has been captured as planning and evaluation state only: GitHub destination and per-chat activation are fixed; staging/sync cadence and Markdown/PDF strategy remain open. No mirror has been activated and no chat transcript or PDF has been written.
+
 The new code-maintainability and scope gate is current canonical workflow; it must be exercised on future implementation tasks rather than treated as a claim that legacy code already complies.
 
 `workflow-optimization` remains active.
@@ -342,7 +371,10 @@ Observe the TODO lifecycle, specification promotion gate and command/library man
 12. activate `todo/diagnostic-observability-realignment.md` as a dedicated product/test audit when that migration is scheduled;
 13. analyze the historical subprocess log-level mechanism through `todo/log-level-child-propagation-analysis.md` before deciding whether a modern equivalent belongs in current `m`.
 14. apply the code-maintainability and scope gate to upcoming implementation tasks and verify that ordinary small changes stay locally understandable.
+15. when explicitly starting the conversation-mirror pilot, benchmark per-turn GitHub sync against session-local staging/batching and compare Markdown-plus-assets, PDF and optional dual-format output on text and rich-media conversations; do not consider always-on behavior before reviewing observed performance and recovery.
 
 ## Blockers / open questions
+
+The conversation-mirror pilot has no immediate blocker because it is not activated. Before implementation, evaluate persistence/recovery of session-local staging, successful GitHub sync boundaries, faithful capture of rich visual output, and whether PDF should be optional alongside Markdown rather than the primary editable source.
 
 None blocking current workflow use. The adaptive cooperation model remains deliberately non-canonical while it is exercised on real cases; the six-point core is the candidate for later joint review/promotion. Current command/library manual backfill belongs to `handoff/rumiai-os-man-documentation.md`; legacy library API visibility realignment is represented by `todo/library-api-visibility-realignment.md`. Diagnostic legacy migration is represented by `todo/diagnostic-observability-realignment.md`; subprocess log-level propagation/reduction remains an analysis item in `todo/log-level-child-propagation-analysis.md`.
