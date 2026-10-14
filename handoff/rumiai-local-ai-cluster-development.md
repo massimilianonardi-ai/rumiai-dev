@@ -62,6 +62,7 @@ Additional package, service, state or container specifications must be retrieved
 
 ## Acceptance scenarios (current operator-path work)
 
+- An operator `rsudo-admin jobs` template begins with POSIX `exec > "rsudo-jobs($(date '+%Y%m%d-%H%M%S')).log" 2>&1`, preserving the previously agreed per-run diagnostic log before any job work. This redirection is scoped to the job's nested subshell. Its scope starts only after `rsudo-admin` has selected/sourced the library and passed job editing/syntax validation. The controller must also forward preflight remote stdout/stderr on failure rather than discarding stdout held in a failed command substitution.
 - With already-loaded rsudo credential groups, an operator selects exact runtime,
   catalog and CPU artifact pins; `check` inspects all eight deployed hosts without
   changing service registration or the checked-out runtime.
