@@ -116,6 +116,8 @@ Additional package, service, state or container specifications must be retrieved
 
 ## Completed
 
+- 2026-10-14 replacement operator one-shot was rebuilt from the current rsudo-admin/rsudo implementations as exactly two chat-inline POSIX shell sources: a selected local library embedding its entire remote program and a job whose first line redirects stdout/stderr via exec. The library defines and actually calls `repair_ollama_nfs_worker` for all seven workers. One run preflights eight hosts, records exact old HEADs, applies gis/apps canaries and then the remaining workers with fail-fast behavior. Safe reconciliation is restricted to the validated NFS model entry/mount/systemd dependency and an exact forward-only rumiai-os pin; CPU manifest/provider mismatch or unknown tracked/foreign NFS state fails closed. Local sh/dash/bash parsing, source/function-availability, rsudo stdin/argv simulated-boundary sequencing, exit/log propagation, disposable real-Git fast-forward/tracked/untracked/concurrency cases, and disposable worker NFS/systemd idempotence/conflict fixture checks passed. Actual rsudo-admin interactive UI, SSH/remote sudo, physical hosts, NFS, systemd, inference and the operator-host GitHub catalog fetch were not exercised here; physical rollout remains **unvalidated**. Two sources were supplied in chat, not committed to a product/PoC repository. The separate observed `): not found`/terminal-closing rsudo-admin issue is not validated as fixed.
+
 - 2026-10-14 operator v2 (chat-inline, no downloadable-file dependency): after repeated
   uploaded logs showed only a legacy `repair_ollama_nfs_worker: not found`
   call, produced a visibly versioned **two-source** pair:
