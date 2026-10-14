@@ -1,7 +1,7 @@
 # m — JavaScript source compiler and dynamic JS/CSS library loading
 
 Status: **Current / normative — approved redesign directions; product, manuals and permanent tests pending realignment**
-Updated: 2026-10-13
+Updated: 2026-10-14
 
 ## Role and placement
 
