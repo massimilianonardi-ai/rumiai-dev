@@ -56,34 +56,46 @@ Subsystem specifications are added only when a concrete workflow question reache
 - Significant non-trivial flows require proportional info/debug/trace observability unless a concrete bootstrap, recursion, performance, protocol/output or security constraint justifies omission.
 
 
-- Chat conversation mirroring is a workflow pilot, not an always-on ChatGPT/RumiAI feature. Its GitHub destination is `rumiai-dev/chats/`.
+- Chat conversation mirroring is an opt-in workflow pilot. Its sole persistent storage is GitHub under `rumiai-dev/chats/<chat-directory>/`, one directory per chat containing one Markdown transcript and any linked image assets in that same directory.
+- No chat-local staging files, temporary files, intermediate archives, batching buffers or periodic flushes. Update the Markdown directly on GitHub for each mirrored prompt/answer exchange; create/link image assets directly in GitHub when available. GitHub commit history records the updates.
 - The mirror is explicitly activated and explicitly deactivated **within each chat**; activation in one chat does not imply activation in another.
-- Observe real performance and reliability before considering any default-on or always-on behavior.
+- Only Markdown plus colocated linked files is in scope; PDF, HTML export and alternate transcript formats are excluded.
+- Observe real per-exchange performance and reliability before considering any default-on or always-on behavior.
 - The intended mirror preserves complete user prompts and exact final assistant responses in conversational order, with presentation reasonably similar to ChatGPT. Rich media fidelity and the practical guarantees of exact reproduction are pilot validation concerns, not already-proven capabilities.
 
 ## Working design
 
 ### Chat conversation mirroring pilot
 
-**User goal:** When explicitly enabled in a chat, retain a readable and faithful copy of the discussion under `rumiai-dev/chats/` without materially slowing normal collaboration. The user must be able to disable mirroring explicitly in the same chat. Mirroring is not enabled by merely documenting this pilot.
+**User goal:** When explicitly enabled in one chat, mirror each exchange promptly and faithfully to GitHub without keeping a second transcript or persistent temporary state anywhere else. The user can explicitly disable the mode within that chat; documenting the pilot does not activate it.
 
-**Acceptance scenarios (to validate, not yet implemented):**
+**Fixed storage shape (illustrative):**
 
-1. The user activates mirroring in an individual chat; subsequent full user prompts and final assistant replies appear in the appropriate GitHub conversation record, in order, with a clear indication of whether each sync succeeded.
-2. The user deactivates mirroring; subsequent messages do not get copied, and a later chat remains unmirrored until explicitly activated.
-3. A conversation containing code, tables, images or charts retains useful fidelity; the resulting record is readable and its limitations are explicit.
-4. A write fails or the chat/session is interrupted; the assistant does not claim successful persistence of unsynchronized content, and a subsequent sync can reconcile without silently discarding or duplicating messages.
-5. Measured overhead of each sync strategy can inform whether periodic batching is worthwhile; default-on use is not assumed or authorized by this pilot.
+```text
+rumiai-dev/chats/<chat-directory>/
+    chat.md
+    image-001.png
+    image-002.png
+```
 
-**Open technical evaluation (no selection yet):**
+The Markdown uses relative paths such as `![description](image-001.png)`. An image is an asset belonging to that chat, not a second transcript representation. File names and directory identity should be assigned without collisions when the pilot is implemented; do not invent a new required RumiAI identifier or API for this planning step.
 
-- **Every-turn GitHub update:** strongest per-exchange durability but increases network/API operations and commits.
-- **Chat/session-local staging plus periodic GitHub flush:** may reduce latency and commits, but a file in the chat/session is not a verified durable store; buffer lifetime, restart recovery, retry and idempotency require testing. Evaluate flush by message count/time, on deactivation, and at the end of a response when useful. Do not assume background activity after the assistant has stopped.
-- **Representations:** compare GitHub-flavored Markdown with linked assets, PDF, or a Markdown canonical transcript plus optional rendered PDF. PDF can improve visual fidelity (especially images/charts), but binary diffs, incremental updates and later machine processing are harder. Static PDF cannot preserve live widget interactivity. No PDF-over-Markdown decision has been made.
-- **Faithfulness:** define and test what “exact response” means for textual output versus interactive UI, images, charts, links, rich components and attachments; do not advertise full-fidelity mirroring until it is demonstrated.
-- **Performance and robustness metrics:** per-turn latency added, number of GitHub calls/commits, failure/recovery behavior, duplicate/missing-message rate, and media-rendering fidelity. Decide whether staged/batched updates are truly an improvement from observations.
+**Acceptance scenarios (not yet implemented):**
 
-Keep this evaluation inside workflow optimization for now; do not create a new implementation handoff, new `chats/` files or an always-on rule until the pilot is explicitly started.
+1. The user explicitly activates mirroring in an individual chat; after each exchange the full user prompt and exact final assistant answer are committed to that chat's GitHub Markdown in order, and the assistant reports sync failures transparently.
+2. The user explicitly deactivates mirroring; subsequent exchanges are not mirrored, and a different chat stays off until activated.
+3. Image assets that can actually be retrieved/written are committed within the same chat directory and linked relatively from Markdown. Tables and code retain their text representation. For interactive charts/components or inaccessible assets, fidelity limitations are reported, not masked by a claim of exact reproduction.
+4. A GitHub update fails or another writer advances the branch: no success is claimed for the failed exchange; on retry, re-read HEAD and transcript, reconcile forward and avoid duplicate or missing turns. There is no off-GitHub persistent buffer to recover lost content automatically after an interrupted chat.
+5. Observe latency, GitHub API operations/commits, retries, ordering, and visual fidelity under this *single* direct-to-GitHub design. Do not compare with staging/batching or PDF, which are explicitly excluded.
+
+**Remaining technical validation:**
+
+- Check whether the available GitHub connection can commit each expected image type directly as binary assets (for example through Git blob/tree operations), as well as UTF-8 Markdown. Do not treat images from ChatGPT widgets as automatically exportable.
+- Define precise captured-turn boundaries and retries so the file stores the assistant answer actually shown, while making failed writes visible. No scheduled/background flush after the turn.
+- Check current `RULES.md` documentation lifecycle wording about removing chats from the current tree after durable content is propagated against the newly requested persistent `chats/` archive. Resolve any real policy mismatch before beginning writes to `chats/`; do not silently ignore it.
+- Establish realistic performance measures from active use; only then consider whether opt-in operation should change in the future.
+
+Keep the pilot planning in this existing workflow-optimization handoff. No transcript/image files are written or mirroring activated by this decision alone.
 
 ### Adaptive human-AI cooperation model
 
@@ -329,7 +341,7 @@ The user also requested recovery of an older `m` logging idea for study. Deliber
 
 ## Current state
 
-The conversation-mirror pilot has been captured as planning and evaluation state only: GitHub destination and per-chat activation are fixed; staging/sync cadence and Markdown/PDF strategy remain open. No mirror has been activated and no chat transcript or PDF has been written.
+The conversation-mirror pilot has fixed its storage and synchronization choice: direct GitHub updates per exchange; exactly one Markdown transcript plus colocated image assets per chat directory; no temporary/staging files, batching or PDF. Per-chat opt-in remains mandatory. The pilot is not yet active, and no transcript or image assets have been written.
 
 The new code-maintainability and scope gate is current canonical workflow; it must be exercised on future implementation tasks rather than treated as a claim that legacy code already complies.
 
@@ -371,10 +383,10 @@ Observe the TODO lifecycle, specification promotion gate and command/library man
 12. activate `todo/diagnostic-observability-realignment.md` as a dedicated product/test audit when that migration is scheduled;
 13. analyze the historical subprocess log-level mechanism through `todo/log-level-child-propagation-analysis.md` before deciding whether a modern equivalent belongs in current `m`.
 14. apply the code-maintainability and scope gate to upcoming implementation tasks and verify that ordinary small changes stay locally understandable.
-15. when explicitly starting the conversation-mirror pilot, benchmark per-turn GitHub sync against session-local staging/batching and compare Markdown-plus-assets, PDF and optional dual-format output on text and rich-media conversations; do not consider always-on behavior before reviewing observed performance and recovery.
+15. when explicitly starting the conversation-mirror pilot, validate direct GitHub writes of Markdown and colocated image assets, per-turn ordering/retry semantics and performance; first reconcile the chat-retention policy if it conflicts with current canonical workflow rules, and do not consider always-on behavior without real observations.
 
 ## Blockers / open questions
 
-The conversation-mirror pilot has no immediate blocker because it is not activated. Before implementation, evaluate persistence/recovery of session-local staging, successful GitHub sync boundaries, faithful capture of rich visual output, and whether PDF should be optional alongside Markdown rather than the primary editable source.
+The conversation-mirror pilot is inactive. Before first activation, verify binary image commits and visual-output capture, exact per-turn success/failure reporting and retry behavior, and reconcile the potential current-tree chat-retention policy mismatch. Temporary file persistence, periodic flushing and PDF are no longer candidate approaches.
 
 None blocking current workflow use. The adaptive cooperation model remains deliberately non-canonical while it is exercised on real cases; the six-point core is the candidate for later joint review/promotion. Current command/library manual backfill belongs to `handoff/rumiai-os-man-documentation.md`; legacy library API visibility realignment is represented by `todo/library-api-visibility-realignment.md`. Diagnostic legacy migration is represented by `todo/diagnostic-observability-realignment.md`; subprocess log-level propagation/reduction remains an analysis item in `todo/log-level-child-propagation-analysis.md`.
