@@ -154,3 +154,15 @@ Ho esaminato i due script allegati: quello shell avvia l'app ChatGPT macOS con *
 **Con `web-control` l'idea è plausibile, ma non già disponibile come funzione:** il contratto corrente permette di acquisire HTML renderizzato, testo e screenshot; non garantisce l'accesso agli snapshot interni di ChatGPT. Per riprodurre la tecnica degli script servirebbe valutare un adattatore specifico, probabilmente tramite un'estensione di debugging privilegiata del provider. Non lo confondo con le capacità già verificate di `web-control`.
 
 Il mirror GitHub già attivato resta distinto dal nuovo allegato progressivo. Questa versione documenta la nuova modalità e i suoi limiti; il prossimo numero dovrà essere **0002**.
+
+---
+
+### 👤 Utente — 14 ottobre 2026
+
+il primo passo sembra funzionare bene, quindi ora attivare chat mirror, abilita sia github che allegato in caht vero?
+
+### ✨ ChatGPT — 14 ottobre 2026
+
+Sì. Da ora **«attiva chat mirror»** abilita nella singola chat **entrambi i canali**: il mirror Markdown su GitHub (`rumiai-dev/chats/<chat>/chat.md`) e un documento Markdown cumulativo allegato a ogni risposta, con nome progressivo (`0001`, `0002`, `0003`...). **«Disattiva chat mirror»** disattiva entrambi. Non è un'impostazione globale né un processo in background: aggiorno i due canali mentre preparo ogni risposta e segnalo eventuali errori.
+
+**In questa chat sono attivi entrambi.** Ho registrato la convenzione nel task `workflow-optimization`, sincronizzato questo scambio su [GitHub](https://github.com/massimilianonardi-ai/rumiai-dev/blob/main/chats/2026-10-14-github-chat-mirror/chat.md) e preparato l'[allegato Markdown 0002](sandbox:/mnt/data/rumiai-chat-20261014-0002.md). Il prossimo progressivo sarà `0003`.
