@@ -322,7 +322,7 @@ The user also requested recovery of an older `m` logging idea for study. Deliber
 
 ## Current state
 
-The first chat mirror is being activated by direct GitHub creation of `chats/2026-10-14-github-chat-mirror/chat.md`. It records the current activation request and final assistant response, not earlier discussion; no image assets are involved in the initial exchange. Direct GitHub updates per exchange, Markdown with colocated image assets, no staging/batching/PDF, and per-chat opt-in remain fixed. Evaluate future image turns and observed performance before making broader claims.
+The original GitHub chat mirror is now disabled at the user's explicit request. Its pre-existing transcript is retained only as a non-authoritative, frozen archive; the active current chat mirror has moved to Google Drive under `ChatGPT/chats/2026-10-14-chat-mirror/`. Google Drive Markdown and the PNG asset were uploaded and verified; the local cumulative chat snapshot progressed to `0005`, with `0006` next. No unattended updates, PDF or invisible intermediate buffers are authorized. Evaluate multi-turn reliability and image rendering from real use.
 
 The new code-maintainability and scope gate is current canonical workflow; it must be exercised on future implementation tasks rather than treated as a claim that legacy code already complies.
 
