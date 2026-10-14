@@ -5,15 +5,15 @@ Updated: 2026-10-14
 
 ## Goal
 
-Modernize the imported first-party JavaScript source tree `rumiai-os/lib/sys/js/core/` for the current `jsc` compiler while retaining its established public namespace and behavior wherever possible. Keep `core-ext` outside this initial work unit.
+Modernize the imported first-party JavaScript source tree `rumiai-os/lib/sys/js/core/` for the current `jsc` while preserving established public namespace and behavior. `core-ext` remains outside this initial workstream.
 
 ## Current repository revisions
 
-- `rumiai-dev/main`: `7f90a5ed35570b4c9a7c9451546f6c018074eb2b` at preflight.
-- `rumiai-os/main`: `3b073db8b91b74c467322eae20d3a9e5f196b420` at preflight (imported legacy core).
-- `rumiai-tests/main`: `f81ad51aa8d7bd0135819149910159f68f313aa5` at preflight.
+- `rumiai-dev/main`: `1b3ee45def875f42389e80a8c12cb18d00aaca9d` before this checkpoint; concurrently advanced from the initial handoff commit on the unrelated AI-cluster handoff.
+- `rumiai-os/main`: `3cd5b6a61d5d96cfb18cefc53af34ec4ce037fc8`.
+- `rumiai-tests/main`: `47e87d32c9b38e1b7fd49155c98d47008019f3e6`.
 
-Fresh HEAD verification is mandatory on resumption.
+Always retrieve fresh remote HEADs on resumption.
 
 ## Applicable canonical sources
 
@@ -22,36 +22,42 @@ Fresh HEAD verification is mandatory on resumption.
 
 ## Fixed task-local choices
 
-- Begin with `core` only; do not blend in `core-ext` or revise `jsc` compiler semantics.
-- Use the original sources as the starting point; preserve `m` namespace, ordered declarations, `m.Class` semantics and public APIs unless a concrete defect forces a correction.
-- Establish executable compilation/runtime baseline before larger code cleanup. Avoid a bulk automatic `var`/class rewrite and do not silently redesign legacy `@eval` behavior.
-- The existing `handoff/javascript-build-and-runtime-loading.md` separately owns the `jsc` compiler and dynamic loader, not modernization of these imported application sources.
+- Work on `core` only; do not change `jsc` compiler or its separate dynamic-loader responsibilities, which are owned by `handoff/javascript-build-and-runtime-loading.md`.
+- Start from historic core sources, preserve `m` namespace, authored source order, `m.Class` and public signatures; repair demonstrated runtime defects and modernize incrementally.
+- Avoid mass mechanical class/var rewrites and do not implicitly redefine legacy `@eval` or JSON reference behavior.
+- Browser and CommonJS are both supported by the generated core bundle through the current `jsc` contract.
 
 ## Acceptance scenarios
 
-- Compiling `core/modules-js.json` through the real `jsc` engine succeeds as classic JavaScript.
-- Loading that compiled JavaScript as a browser classic script publishes `m` and initializes representative `Class`, utility, JSON and logging interfaces without a strict-mode startup error.
-- Loading it as a CommonJS bundle exposes `m` through `module.exports` without mandatory namespace publication to globalThis.
-
-## Working design
-
-- Review legacy direct `eval` in `json/path.js` / `json/resolve.js` and code-generated environment detection separately from the minimal startup compatibility corrections. Do not infer a new JSON expression language or remove previously supported behaviors as an incidental refactor.
-- Existing legacy `core/lib-dynamic.js` appears to duplicate dynamic-loader functionality; verify actual consumers before any removal.
-- Physical grouping as source fragments under `lib/sys/js/core` is not by itself an owned `*.lib.js` leaf identity. Check public distribution/manual coupling as the modernization advances.
+- The real `jsc` compiles `core/modules-js.json` with strict syntax.
+- The generated script executes in actual Chrome as a classic browser script, publishing representative `m` Class, utility, JSON and logging interfaces.
+- The generated script executes as an independent CommonJS module and returns its public `m` namespace without publishing `globalThis.m`.
 
 ## Completed
 
-- Mandatory initial repository preflight and canonical source retrieval.
-- Initial source inspection identified legacy `symbols` manifest entries, strict-mode assignment to undeclared `g`, a Node-incompatible DOM initialization path and `new Function`-based environment detection.
+- Current mandatory preflight and initial review of imported core and permanent `jsc` tests.
+- Product `870977c55366e502af48a13cea22b3907a995b7c`: changed manifest `symbols` to `exports`, fixed strict-mode `g` assignment and DOM-only initialization, removed `new Function` from environment detection, restored strict-compatible legacy `json.path` return behavior.
+- Product `b1d8b6c82cd9bb9734ed15f9cb36ddb615327344`: simplified browser/Node/Electron and mobile detection, bound `globalThis.performance.now` correctly for `m.util.timestamp`, removed conflicting `timestamp` declaration from benchmark utility while preserving `Date.now()` there, and made `uniqueID` sequence lexical.
+- Permanent tests `rumiai-tests@47e87d32c9b38e1b7fd49155c98d47008019f3e6`: `tests/rumiai-os/js-core/compile.test` with real compiler, browser-like VM + CommonJS contract checks, and actual headless Chrome with HTTP-served classic script. Clock binding and mobile fallback are covered.
+- Product CI `.github/workflows/js-core.yml` tracks `core/**`, uses Node.js 22 and real Chrome, pins the permanent test revision. Earlier checkout-origin setup issue fixed.
+- [GitHub Actions run 38554124248](https://github.com/massimilianonardi-ai/rumiai-os/actions/runs/38554124248): **SUCCESS** on exact product `3cd5b6a61d5d96cfb18cefc53af34ec4ce037fc8` with the pinned permanent tests. Hosted Linux + Chrome execution, not physical reference-host validation.
+- Reviewed forward diff: product changes limited to `core` fragments and their CI workflow; tests limited to new core regression suite. Existing `jsc`, `core-ext`, other tasks and source loaders were not changed.
 
 ## Current state
 
-Legacy `core` is present; no product code or permanent test changes are included in this handoff creation.
+First compiler/runtime compatibility and basic utility modernization are complete and mechanically protected. **Full core modernization remains active.** The current manifest still includes historic `Class`, JSON resolver, logger, other utility and queue implementations.
+
+## Working design
+
+- Analyze `m/Class.js` semantics and coupling before modernizing; it is not interchangeable with native `class` on a textual substitution basis.
+- `m/json/path.js` retains legacy expression evaluation using `eval` for compatibility. `m/json/resolve.js` still contains numerous `eval`-based behaviors including `@eval`; redesign requires explicit compatibility analysis and dedicated regression before removal.
+- `core/lib-dynamic.js` appears to duplicate the separate established browser loader; verify actual consumers before changing/removing it.
+- Grouped `core` source fragments are not `*.lib.js` library leaves. Reassess library distribution identity and operational manual coupling when promoting a standalone library; do not invent an API leaf now.
 
 ## Next action
 
-Make and validate the smallest `core` runtime compatibility patch against the real `jsc`, establish permanent representative tests, then progressively modernize other source files with regression protection.
+Incrementally inventory and regression-test `Class`, JSON and remaining utilities, then modernize one cohesive responsibility at a time without changing historical contracts silently.
 
 ## Blockers / open questions
 
-No user decision required for the first compatibility patch. Broader behavioral redesign of legacy JSON/eval features is not yet approved.
+No blocker to continued scoped refactoring. Full legacy `@eval` semantics and any future behavioral redesign remain undecided; no user authorization to change them was assumed.
