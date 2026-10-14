@@ -68,3 +68,48 @@ La distinzione importante è che **tu mantieni il controllo delle decisioni fond
 **Su GitHub esistono due responsabilità diverse:** specifiche, handoff e TODO rappresentano lo stato corrente del progetto; il mirror in `chats/` conserva la conversazione ma non ha autorità normativa. La risposta viene registrata nel mirror prima di essere mostrata qui.
 
 Il diagramma Mermaid è riprodotto nel [Markdown della chat](https://github.com/massimilianonardi-ai/rumiai-dev/blob/main/chats/2026-10-14-github-chat-mirror/chat.md) e viene renderizzato graficamente da GitHub. L'immagine illustrativa generata in ChatGPT non è stata salvata come file identico: la sua esportazione resta un limite da validare.
+
+
+---
+
+### 👤 Utente — 14 ottobre 2026
+
+analizza il motivo del blocco sui file svg
+
+### ✨ ChatGPT — 14 ottobre 2026
+
+## Prima conclusione: gli SVG non sono vietati
+
+Ho riprodotto un test direttamente con il connettore GitHub.
+
+**Risultato: un SVG minimale è stato accettato correttamente.** GitHub ha creato il relativo oggetto Git (`blob`), senza modificare alcun file del repository.
+
+Questo esclude un blocco generalizzato del formato SVG.
+
+L'errore precedente era invece:
+
+> Questa richiesta è stata bloccata dai controlli di sicurezza di OpenAI. Controlla attentamente il contenuto dell'invio.
+
+Non era un normale errore GitHub, come un problema di autorizzazioni o un formato non supportato.
+
+Resta da capire **quale parte della richiesta originale abbia attivato il controllo**.
+
+### Verifiche di isolamento
+
+| Test | Risultato |
+|---|---|
+| Creazione di un blob con SVG minimale | Riuscita |
+| Creazione di un blob con SVG strutturato (11.738 caratteri) | Riuscita |
+| Creazione di un albero Git contenente un percorso `chats/.../svg-probe.svg` | Riuscita |
+
+I test hanno creato soltanto **oggetti Git non collegati al branch**: nessun file di prova è stato aggiunto a `main`.
+
+### Cosa possiamo concludere
+
+Il problema **non dipende genericamente dall'estensione `.svg`, dalla sintassi XML/SVG, dalla presenza di elementi grafici o dalla dimensione ordinaria del contenuto**. Anche un SVG più articolato è stato accettato. Nel diagramma tentato inizialmente non avevo inserito script eseguibili, gestori di eventi o riferimenti a risorse esterne.
+
+La chiamata che era stata bloccata combinava invece molte operazioni in un unico script: costruzione dell'SVG, aggiornamento del transcript e dell'handoff, creazione dei blob, dell'albero e del commit. **Il messaggio dei controlli di sicurezza non indica quale segmento o quale regola abbia causato il rifiuto.** La causa più plausibile è un controllo sul contenuto complessivo della richiesta, oppure un falso positivo/transitorio; non ho elementi per attribuirla con certezza a uno specifico elemento SVG.
+
+C'è poi una distinzione importante: **l'immagine prodotta nella chat era un PNG**, mentre l'SVG bloccato era un diagramma vettoriale ricostruito separatamente. Anche se quel caricamento fosse riuscito, non avrebbe rappresentato una copia identica dell'immagine originale. Questo resta un problema distinto, relativo alla fedeltà del mirror.
+
+**Esito:** non serve escludere gli SVG dal workflow. Per ottenere una diagnosi ancora più precisa occorrerebbe riprodurre l'esatta richiesta composita, isolando ogni operazione e ottenendo diagnostica più dettagliata dal livello che ha applicato il blocco. Ho registrato gli esperimenti e questa incertezza nel [task `workflow-optimization`](https://github.com/massimilianonardi-ai/rumiai-dev/blob/main/handoff/workflow-optimization.md); lo scambio è nel [mirror della chat](https://github.com/massimilianonardi-ai/rumiai-dev/blob/main/chats/2026-10-14-github-chat-mirror/chat.md).
