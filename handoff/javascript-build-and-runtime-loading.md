@@ -86,17 +86,35 @@ Official documentation consulted 2026-10-13:
 - [Parcel targets](https://parceljs.org/features/targets/): normal library targets are ESM/CJS; `global` is for classic browser script output, not library targets.
 - [Node CommonJS caching](https://nodejs.org/api/modules.html): `require` caches for a resolved file, but distinct paths or versions can still instantiate separate copies. Node host-level module loading is not forbidden, but must not be emitted by jsc's source-level `imports` semantics.
 
-The mechanism in common is **externalization + single host-owned provider instance + consumer namespace lookup**. For a browser this can be a shared global namespace set by an independently loaded classic script. For Node, the established TextEdit CommonJS `module.exports` API does not automatically provide a global namespace; the host might supply the already-loaded provider object explicitly to a consumer, but the exact bridge is an **open design choice**, not a fixed new API. Resolve provider-first initialization, missing-provider diagnostic, namespace reopening/merge preserving object identity, and host ownership of single loading. Avoid promoting UMD/AMD/Module Federation, automatic file loading, deep merge or a separate registry without concrete need.
+The mechanism in common is **externalization + single host-owned provider instance + consumer namespace lookup**. For a browser this can be a shared global namespace set by an independently loaded classic script. For Node, the original TextEdit CommonJS API does not automatically provide a global namespace; the approved `nodeGlobal` root-descriptor switch now controls whether generated jsc libraries do so. The comparison does not authorize UMD/AMD/Module Federation, automatic file loading, deep merge or a registry.
 
-## 2026-10-13 outer closure proposal: nested jsc IIFEs inside TextEdit-style IIFE
+## 2026-10-14 approved descriptor setting: `nodeGlobal`
 
-Comparison on current product files: `rumiai-os/bin/sys/jsc.js` still generates per-namespace `(function(){...}).call(namespace)` and dynamically injects previously defined names via direct `eval`. `rumiai-os/lib/sys/js/text-edit.lib.js` wraps all implementation in one `(function(global){'use strict'; ... })(globalThis)`, publishes frozen API under browser global or `module.exports` in Node, and does not create a Node global.
+The user explicitly approved the third publication alternative: **one optional
+Boolean `nodeGlobal` on the root JSON descriptor, default `false`**.
+This is now a promoted current contract in
+`specifications/rumiai-os/JSC.md`; do not maintain an independent rule here.
 
-Candidate wrapper for generated jsc JS (not approved): one outer TextEdit-style strict IIFE receives `globalThis`, reuses a shared namespace root `global.m || (global.m={})`, contains the existing nested per-namespace closures with generated lexical `var/const` bindings placed in the appropriate scope, publishes only declared `exports` through namespace properties, and makes `module.exports = m` in CommonJS. Do not freeze reopenable namespace objects, since unlike TextEdit's immutable facade they must remain extendable.
+Implementation checkpoint: the TextEdit-style outer strict IIFE still wraps
+jsc's nested namespace scopes. The browser always publishes/reopens public
+namespace roots on `globalThis`, regardless of this setting. In Node.js
+CommonJS, the default bundle exports its independent public API via
+`module.exports` without reading/writing an existing similarly named global
+namespace. With `nodeGlobal: true`, the bundle reuses or creates the
+`globalThis` namespace root and `module.exports` exposes that same object;
+a subsequent opting-in bundle can reopen it. No options/env switches, file
+imports or runtime registry are introduced.
 
-**Real tradeoff:** This simplest fully independent multi-bundle behavior uses `globalThis.m` in Node as well as the browser. It is a deliberate difference from TextEdit's no-Node-global policy. To avoid a Node global, cross-bundle namespace sharing would need the host to explicitly pass a shared object to generated bundles or another explicit linkage; this is not currently required or approved. Do not silently claim simultaneously 'no Node global' and 'independent CommonJS bundles automatically share a namespace' without such a bridge.
-
-Targeted exploratory Node.js V8 `vm` evaluation (not product jsc) executed two generated-style bundles sequentially with a shared global: browser-style context and simulated separate CommonJS modules both passed initial call = 42, captured lexical reference remaining 42 after `m.data.A` replaced with 77, qualified access updating to 77, namespace reused, and independent CommonJS module.exports objects referencing the same global namespace. No real-browser DOM or complete production/physical validation was done. The outer wrapper is a proposal for user review; the user has not approved a specific Node-global/host-injected sharing choice.
+Previously executed Node V8 `vm` exploration only exercised the
+global-sharing branch with two illustrative bundles, checking namespace
+identity, stable captured references and dynamic qualified references; it
+did not exercise the new JSON switch, the `false` branch through product
+jsc, real browser execution or production CommonJS loading. **No product or
+permanent test changes have been made for this approval.** Next implementation
+work must test both Node branches (including an unrelated pre-existing
+`globalThis.m` under `false`), browser invariance, two-bundle reopening,
+and lack of duplicated provider code, alongside the previously approved
+strict/exports/eval-free scope changes.
 
 ## Validation boundary and next action
 
