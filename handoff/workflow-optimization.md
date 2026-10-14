@@ -95,7 +95,7 @@ The Markdown uses relative paths such as `![description](image-001.png)`. An ima
 - Current-tree retention is reconciled in `RULES.md`: explicitly opted-in chat mirrors under `chats/` are non-authoritative archival records, not competing development knowledge. Check whether continued retention causes real retrieval or performance issues during the pilot.
 - Establish realistic performance measures from active use; only then consider whether opt-in operation should change in the future.
 
-The user has explicitly activated the first pilot conversation in the current chat. Its record begins with the activation exchange in `chats/2026-10-14-github-chat-mirror/chat.md`; earlier exchanges are not automatically backfilled. The transcript is written directly to GitHub at each answer boundary without intermediate files or buffering. Rich-media capture remains unvalidated.
+The user has explicitly activated the first pilot conversation in the current chat. Its record begins with the activation exchange in `chats/2026-10-14-github-chat-mirror/chat.md`; earlier exchanges are not automatically backfilled. The transcript is written directly to GitHub at each answer boundary without intermediate files or buffering. Rich-media capture remains only partially validated: the first chart turn was persisted as a GitHub-renderable Mermaid diagram embedded directly in chat.md, while the rendered image shown by ChatGPT was not archived byte-for-byte. A separate direct SVG publishing attempt was blocked, so linked binary/vector media and exact-image persistence remain pending validation.
 
 ### Adaptive human-AI cooperation model
 
