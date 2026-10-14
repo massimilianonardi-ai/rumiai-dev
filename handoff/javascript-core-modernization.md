@@ -54,6 +54,16 @@ First compiler/runtime compatibility and basic utility modernization are complet
 - `core/lib-dynamic.js` appears to duplicate the separate established browser loader; verify actual consumers before changing/removing it.
 - Grouped `core` source fragments are not `*.lib.js` library leaves. Reassess library distribution identity and operational manual coupling when promoting a standalone library; do not invent an API leaf now.
 
+## Queue analysis checkpoint — 2026-10-14
+
+- User requested analysis only, with **no product code changes**.
+- Current sources inspected at `rumiai-os@ef466362e9630b86d81b07ca647c2f2fbfd97a22`: `core/m/mod/Queue.js`, the relevant `Class.js` constructor/composition machinery, source manifest, `core-ext/m/mod/Module.js`, and a separate legacy internal `Queue` in `core/lib-dynamic.js`. Permanent core tests inspected at `rumiai-tests@b8d5cbea34784d1a42af2b00bf22c09fec9d478c` contain no Queue-specific assertions.
+- Semantics observed: FIFO *callback delivery* in registration order despite out-of-order completion; completion closures preserve their invocation `this` and arguments; `Class.compose` provides distinct instance arrays; omitted/null callback is a no-op ordering barrier; invalid callback throws TypeError; callback failures are logged and swallowed so later ready callbacks continue.
+- In-memory runtime exercises used the exact current `Class.js` and `Queue.js` sources (not the actual compiled `jsc` artifact). Results: normal ordering/contexts/instance isolation pass; duplicate completion while pending overwrites pending arguments (last completion wins); callbacks added and completed inside a running callback execute reentrantly; a burst of 14,000 ready callbacks triggered V8 `RangeError: Maximum call stack size exceeded` and left 5,691 items queued in that exercise.
+- Root causes: recursive `exec()` (unbounded stack) and repeated `splice(0,1)` (potential quadratic drain cost); no timeout/cancellation/error propagation; head-of-line blocking is expected FIFO semantics, not automatically a bug. Exposed `queue` array can be mutated externally. The `thread race condition` guard is not evidence of actual JavaScript threading; ordinary code between observing the head and `splice` is synchronous.
+- The existing `core/lib-dynamic.js` has a separate internal copy of the Queue algorithm. The `core-ext` Module consumer invokes `m.mod.Queue`; no refactor was authorized or performed.
+- Follow-up when implementation is authorized: preserve ordered callback delivery and completion-context semantics, establish permanent Queue regression coverage through real `jsc` output, then consider iterative draining, controlled duplicate-completion semantics, and explicit error policy. These are working analysis findings, not promoted subsystem contracts.
+
 ## Next action
 
 Incrementally inventory and regression-test `Class`, JSON and remaining utilities, then modernize one cohesive responsibility at a time without changing historical contracts silently.
