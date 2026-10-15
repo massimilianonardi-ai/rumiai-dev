@@ -9,8 +9,8 @@ Build a deterministic, reusable exporter for ChatGPT conversations accessible th
 
 ## Current repository revisions
 
-- rumiai-dev: 0ff1e2804276b66ffd05af3e93526253068efa75 (pre-handoff HEAD)
-- rumiai-dev-PoCs: a451b7903fddf4d4e5b2e8cbf66d82d51ac88932 (pre-experiment HEAD)
+- rumiai-dev: 3c61ea9162061e76f3909c73e412b8add49ffcf5 (handoff created)
+- rumiai-dev-PoCs: 455c17de4ae1aebc0b3a87b3fd834ad2f0b13e91 (PoC source and experimental tests)
 - pwc-web-control: 5f3c8d298ac916be72ea59461a167ac31610ca61
 - electron-web-control: 22da3beab20e509cffcbd81866b51253df4e08a9
 
@@ -55,14 +55,18 @@ The live ChatGPT share DOM can change and may present only a subset of the sourc
 - Inspected both provider public commands and the existing Web-access handoff.
 - Confirmed this exporter has an independent completion/validation lifecycle from the general web-sense workstream.
 - Verified current OpenAI share-link behavior: personal links are snapshots and may represent individual responses or partial content.
+- Added `pocs/068-chatgpt-shared-link-export`: Node.js CLI over provider-neutral `web-control 2`, rendered-HTML extraction, JSON/Markdown export, attempted first-party image downloads with explicit unavailability, immutable numbered export revisions and preserved HTML/text capture evidence.
+- Added synthetic DOM parser tests and actual exporter-entrypoint workflow tests with a simulated external controller protocol. The latter do not validate a real provider.
+- GitHub Actions PoC run 38705389302 passed on hosted Ubuntu (Node.js 22), including syntax, six initial extractor cases, follow-up parser cases and simulated-command workflow; this is not user-host physical validation.
+- Reviewed the modified PoC file set against current repository contracts; no web-control provider, package catalog or rumiai-os runtime changes were made.
 
 ## Current state
 
-Preflight and design boundary established. Experimental implementation and end-to-end live share validation remain outstanding.
+PoC implementation is committed in `rumiai-dev-PoCs` and has passing synthetic/controlled-boundary CI evidence through source revision abc6d1b7a338e6e7509da742c008c5885d2041ef. A later README-only revision 455c17de4ae1aebc0b3a87b3fd834ad2f0b13e91 documents the validation boundary and has CI queued/running at the latest checkpoint. No real shared conversation URL and no live web-control controller were available here. Real site extraction and media fidelity remain unvalidated.
 
 ## Next action
 
-Implement and exercise a narrow export PoC over the portable CLI using synthetic HTML cases first; then validate against a real shared conversation and explicitly assess media coverage and rendering drift.
+Validate the existing PoC through a real installed web-control provider against an accessible shared conversation; compare all visible turns, code, images and file links to the source, then correct any observed DOM/site-specific gaps before promotion to a separate releasable project.
 
 ## Blockers / open questions
 
