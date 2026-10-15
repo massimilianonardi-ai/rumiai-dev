@@ -84,6 +84,14 @@ First compiler/runtime compatibility and basic utility modernization are complet
 - Current GitHub Actions [run 38729337423](https://github.com/massimilianonardi-ai/rumiai-os/actions/runs/38729337423) reports **success** for exact product HEAD `3c5b5460f4bc284142e271f039fd61eff9538750`, validating the existing real-jsc/browser smoke scope, not comprehensive logging behavior. Existing permanent tests assert `typeof m.log.Log`, but not the above logger semantics.
 - No product/test code edits. Future alignment requires explicit contract choices for log-exception policy, accepted sink interface/errors, level validation and index removal, and structured diagnostics, with real compiled-bundle regression tests before integration.
 
+## `Log.level` and `core-ext` initialization follow-up — 2026-10-15
+
+- User requested analysis of new `rumiai-os/main@2c6c53ef617a2b840bba50e130399d99d42396fc` commit `js m log` (parent `3c5b5460f4bc284142e271f039fd61eff9538750`), not a product implementation. Its only semantic edits: `core/m/log/Log.js` `level(value)` now throws `TypeError` for non-number arguments; `core-ext/m/init.js` uses `new m.log.Log()` instead of `m.log.Log()`. Whitespace-only change in `Log.add`.
+- Direct in-memory probes on the exact updated core Log/Logger source confirm the new type guard rejects explicit undefined/null/strings/booleans, but still accepts `NaN`, `Infinity`, `-Infinity`, negative numbers and fractional/unlisted levels. `NaN` filters all logging; no domain validation yet. No real core-ext composed runtime test executed.
+- `core-ext/m/init.js` still assigns `g = m.g` without declaring `g` in that file; a strict isolated execution with no pre-existing `g` raises `ReferenceError`. This alone does **not** establish real core-ext bundle failure, since other earlier source bindings could influence execution. Direct document/location dependence also remains. The core-ext manifest still uses legacy `symbols` descriptors; legacy core-ext modernization remains separately scoped/pending.
+- [GitHub Actions run 38731376797](https://github.com/massimilianonardi-ai/rumiai-os/actions/runs/38731376797) succeeded at this exact product revision. Current `.github/workflows/js-core.yml` includes `core/**`, but not `core-ext/**`, and runs the existing compiler/classic browser/CommonJS smoke scope, not level-edge-case or core-ext execution coverage. `rumiai-tests/main` remains `b8d5cbea34784d1a42af2b00bf22c09fec9d478c`.
+- No product or test code edited; this checkpoint updates task evidence only. Outstanding design choice: constrain `Log.level` to the defined enum if that is the intended contract, and plan authentic compatibility tests for core-ext before claiming it is aligned.
+
 ## Next action
 
 Incrementally inventory and regression-test `Class`, JSON and remaining utilities, then modernize one cohesive responsibility at a time without changing historical contracts silently.
