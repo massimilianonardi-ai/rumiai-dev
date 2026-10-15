@@ -65,7 +65,7 @@ The provider-independent contract remains specifications/rumiai-os/WEB-CONTROL.m
 
 Electron Linux ARM64 user-observed physical checks include Gmail login, authenticated restart, search and unsent composition with draft persistence; these do not prove universal site acceptance or live event trust flags. The separate provider-split handoff owns its final acceptance and Mac deferral.
 
-Playwright-only debug cdp is a provider-specific extension, not a common Electron/web-control capability. The Amazon Wishlist extractor depends on that extension and belongs to the application handoff/amazon-price-watch.md; higher-level web-sense orchestration remains independent.
+The published web-control 1/2 facility does not include debugger sessions. New source-level persistent CDP session support is now implemented in BOTH Playwright and Electron providers behind the same proposed compatibility-3 command shape; the separate handoff `handoff/web-control-debug-sessions.md` owns its contract, validation, release/catalog alignment and operational next steps. The Amazon Wishlist extractor remains an application concern under `handoff/amazon-price-watch.md`; higher-level web-sense orchestration remains independent.
 
 ### ChatGPT integration model
 
