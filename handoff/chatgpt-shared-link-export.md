@@ -9,8 +9,8 @@ Build a deterministic, reusable exporter for ChatGPT conversations accessible th
 
 ## Current repository revisions
 
-- rumiai-dev: fbbb715a1218eefcd9dea0221b276fed5f187356 (pre-checkpoint HEAD)
-- rumiai-dev-PoCs: cf4f7e9306c83d9e9374594b62dd6c705d00f810 (window scanner, merge tests and documentation)
+- rumiai-dev: 269f9a8e97dce18cab900c1c94bbeb11f62ba06b (pre-checkpoint HEAD)
+- rumiai-dev-PoCs: ddbff77455f2423b1e19a4023522bbb4bd2f5f3b (structured JSON adapter, nested CDP wheel and lazy boundary probes, styled HTML)
 - pwc-web-control: 5f3c8d298ac916be72ea59461a167ac31610ca61
 - electron-web-control: 22da3beab20e509cffcbd81866b51253df4e08a9
 
@@ -30,9 +30,9 @@ Build a deterministic, reusable exporter for ChatGPT conversations accessible th
 ## Fixed task-local choices
 
 - Implement an independent ChatGPT-specific deterministic consumer of the public `web-control` command, not a change to either browser provider.
-- Use modern JavaScript and the provider-neutral compatibility-2 navigation/inspection/capture/scroll operations; do not depend on `debug cdp`.
+- Use modern JavaScript and the public `web-control` interface. Explicit user correction after physical failure: the current PoC may use the already-published Playwright-specific `debug cdp` command for genuine wheel input into ChatGPT's nested/segmented scroll container; this does not modify the provider-independent web-control contract. The Electron portable fallback is not proven to handle nested segmented ChatGPT scrolling.
 - Begin with an experimental implementation in `rumiai-dev-PoCs` until the actual shared-page DOM and asset behavior are validated.
-- Preserve the captured rendered HTML as source evidence. Never infer unavailable attachments, invisible messages or unsurfaced image bytes.
+- Preserve captured rendered HTML windows as source evidence and distinguish the separately generated styled offline `conversation.html`. Never infer unavailable attachments, invisible messages or unsurfaced image bytes.
 - Keep revisions independent and forward-only; do not overwrite prior exports.
 - No shared conversation text or attachment is committed to GitHub by this experiment.
 
@@ -66,16 +66,20 @@ The user-supplied `chatgpt-export-v3(1)(1).py` targets the **native macOS ChatGP
 - Post-change diff covered only the opt-in workflow, PoC README and .gitignore; no provider/production API or canonical specification changed.
 - User-reported physical-host test of the original end-only implementation: 12/12 fixture tests PASS; real share export `archive/0001` reported 10 final messages, 0 images downloaded, 1 image unavailable. User inspection demonstrated the chat had additional older turns and images which had been virtualized away; the previous scan's claim of settled bottom was insufficient.
 - Implemented bidirectional virtualized-window acquisition/merging, raw per-window evidence, explicit scan-edge/gap flags and regression tests for overlapping windows, repeated text, discontinuities and end-to-end mocked viewport virtualization. No provider/runtime interfaces changed. Source reviewed against WEB-CONTROL and RumiAI testing/quality contracts.
-- GitHub Actions PoC run 38721404476 PASS (syntax and fixture suites) at `cf4f7e9306c83d9e9374594b62dd6c705d00f810`. This tests synthetic virtualized page windows through the real exporter command with a simulated external web-control protocol boundary. It is **not** physical-site revalidation of the new revision.
+- GitHub Actions PoC run 38721404476 PASS (syntax and fixture suites) at `cf4f7e9306c83d9e9374594b62dd6c705d00f810` (initial virtualized DOM scanner).
+- Ported the uploaded native-app Python reference's `mapping/current_node` active-path traversal, text/non-text preservation and filtering to JS for actual detected embedded application/json snapshots. Did not invent a shared-link endpoint or transplant the native-app private breakpoint.
+- Added self-contained styled `conversation.html`, with HTML-fragment sanitization and CSS for readable offline code/tables/messages; optional final-segment MHTML provider capture. Image bytes remain separately downloaded/unavailable.
+- User clarified that ChatGPT loads *additional segments only on reaching the current segment boundary*, so the DOM's top/bottom is not the chat's top/bottom. Replaced direct scrollTop changes with actual Playwright CDP wheel dispatch at the message-pane position and repeated edge probes (24 stable samples; resets on changed content, geometry or scroll position), with boundary-change diagnostics. These are heuristics and never assert source-chat completeness for DOM-only scans.
+- GitHub Actions PoC run `38725399854` PASS: 19 synthetic/CLI tests including a false top-edge that unlocks earlier turns only after repeated negative wheel events. Run `38725507876` also passed with the subsequent boundary-change diagnostic correction. Latest README-only revision `ddbff77455f2423b1e19a4023522bbb4bd2f5f3b` had a running Actions verification at this checkpoint; hosted fixture tests are not physical ChatGPT-page verification. No provider or rumiai-os production source changed.
 
 ## Current state
 
-PoC 068 has a new bidirectional DOM-window scanner at `cf4f7e9306c83d9e9374594b62dd6c705d00f810`, with passing hosted simulation evidence (run 38721404476). The old physical-host run on the actual shared link was demonstrably incomplete due to virtualized DOM unmounting. The newer source has **not** yet been tested on the user's host or source link. It preserves image URL references from every observed window but cannot guarantee the image binary; the original missing-image diagnostic and any structured JSON embedded in the real shared page remain uninspected. Source-chat completeness cannot be asserted by scanning alone. No user conversation bytes were committed.
+Current PoC revision `ddbff77455f2423b1e19a4023522bbb4bd2f5f3b` supports existing web-control navigation, optional Playwright CDP wheel events directed at the actual scrollable ChatGPT message container, prolonged probing of lazy segment boundaries, capture of intermediate DOM windows, optional detected embedded structured snapshot traversal, and styled self-contained `conversation.html` output. Prior physical export was incomplete; the user is actively testing the newer source on their local host, but no new physical result has been reported. The simulated lazy top-segment case has passing hosted evidence. DOM scan quiet edges are not completeness proof (`observationComplete: false` absent a structured snapshot). CSS is a readable reconstruction, not the real ChatGPT CSS bundle; image binary fidelity remains unverified. No user conversation bytes were committed.
 
 
 ## Next action
 
-On the user's real web-control host, update the PoC checkout and rerun the supplied sharing URL into an immutable new revision (with `NODE_EXTRA_CA_CERTS` set if corporate network TLS still requires it). Compare new message count and saved markdown against source UI, inspect `capture/segments/` and `assets[].reason` without publishing content/signed URLs. If still incomplete, obtain a sanitized example of the captured shared-page HTML containing its script/data shape and evaluate a browser-visible structured JSON capture route, inspired by but not conflated with the native-app CDP snapshot method.
+Collect user's physical-host result for the current revised PoC, especially the message count, `scrollSource`, `observedBoundaryExtensions`, `observedEdgeProbes`, `observedSettledAtTop`, and local styled `conversation.html` appearance. Compare the actual source with the reconstructed export, inspect asset diagnostics privately, and correct site-specific gaps using evidence from the live page. Record the final CI result for the exact source revision; do not claim physical validation from hosted fixtures.
 
 
 ## Blockers / open questions
@@ -84,5 +88,6 @@ On the user's real web-control host, update the PoC checkout and rerun the suppl
 - No live web-control service is available in the assistant's current Debian auxiliary environment.
 - Source page may omit uploaded file bytes or assets even when thumbnails/links are present.
 - Corporate npm TLS issue was previously observed, but user has now completed 12/12 local tests and a real export. How local npm trust was remedied was not independently observed. Dedicated centralized browser CA work remains deferred under `todo/browser-certificate-trust-centralization.md`.
-- Image binaries remain unverified: the prior version downloaded none, and the new scan only improves discovery of images in evicted turn windows; source/CDN/session/TLS diagnostics remain to be examined.
-- No direct evidence yet of a structured shared-page payload/API shape from the actual share DOM or network traffic. The uploaded native macOS script cannot be transplanted into provider-neutral `web-control` without changing scope/contracts.
+- Image binaries remain unverified: Node separately fetches discovered OpenAI-owned HTTPS URLs, but signed/authenticated, blob, CSS-backed and corporate-TLS resources may remain unavailable. Source/CDN/session/TLS diagnostics need physical evidence.
+- No direct evidence yet of the actual embedded shared-page JSON/segment API shape or that the page exposes `mapping/current_node`. Ported traversal activates only on observed embedded JSON; native macOS breakpoint remains app-specific.
+- Current lazy-boundary implementation has not been physically validated on the user's page. Some providers/page designs may not support the Playwright CDP wheel extension or may require a different message-container target.
