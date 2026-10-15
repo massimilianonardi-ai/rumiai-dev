@@ -9,8 +9,8 @@ Archive user-authorized ChatGPT shared-link conversations completely and readabl
 
 ## Current repository revisions
 
-- rumiai-dev: 7741d58b5e9127c2c4c4844da100bdc6e9368ffc (pre-checkpoint HEAD)
-- rumiai-dev-PoCs: bc62846b7991bede3fd809cba43530503a09a065 (turn surfaces + shared image download; final hosted test correction)
+- rumiai-dev: 400aa5ed80b9f22c2105a199f5543298ffe43240 (pre-checkpoint HEAD)
+- rumiai-dev-PoCs: 30986427d66548c91463fd6a80f23fd6bc225c36 (visible-media scope + authenticated download fallback)
 - pwc-web-control: 403f4fa9bbea419715e9c834e847c6f2b60ae421 (released v0.1.6)
 - electron-web-control: 077eb502f1d68235b4e5c9c28e4a7560795bce17 (released v0.1.6)
 - pkg-catalog: 7cd9b7585b9343a153e516c9c47b6fb92b7330e0 (facility web-control 3 and both provider realizations)
