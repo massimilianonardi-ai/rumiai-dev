@@ -9,8 +9,8 @@ Archive user-authorized ChatGPT shared-link conversations completely and readabl
 
 ## Current repository revisions
 
-- rumiai-dev: 994e415d29685fae92a3aae74c15e0c1663ac10e (pre-checkpoint HEAD)
-- rumiai-dev-PoCs: 7df999257366577eec418b4813a35bef57635611 (Node.js structured snapshot adapter)
+- rumiai-dev: 01548df3717bc83b2ab5d31bc8aaf2b2aa9dc3d8 (pre-checkpoint HEAD)
+- rumiai-dev-PoCs: d192ef3a6315ec68e2a0764d18a04aa872990d28 (bounded debugger-event drain during structured navigation)
 - pwc-web-control: 403f4fa9bbea419715e9c834e847c6f2b60ae421 (released v0.1.6)
 - electron-web-control: 077eb502f1d68235b4e5c9c28e4a7560795bce17 (released v0.1.6)
 - pkg-catalog: 7cd9b7585b9343a153e516c9c47b6fb92b7330e0 (facility web-control 3 and both provider realizations)
@@ -54,20 +54,22 @@ The failed DOM-based attempts used scrolling and window merging, produced repeat
 
 ## Current state
 
-The first physical Node.js run on the user's VM reached the common web-control path but failed during the debugger-attach phase before ChatGPT navigation. Diagnostic 0003 established: page creation succeeded; no responses/scripts/hooks were inspected; the failure occurred in persistent debugger open or one of Runtime/Debugger/Network/Page enable calls. Therefore this evidence does NOT implicate the shared ChatGPT page, mergeActiveBranch discovery or event-buffer overflow.
+The user's VM initially had electron-web-control v0.1.4 selected. After installing/selecting v0.1.6, a direct physical `web-control debug session open page-1` returned `{"session":"debug-1","page":"page-1"}`, so the compatibility-level-3 persistent debugger path is now physically reachable on that host. An earlier `unknown method: debug.session.open` observation is no longer the active blocker; the exact runtime transition that cleared it was not independently recorded.
 
-PoC diagnostics were then tightened forward-only so the next failure records the exact safe web-control operation and the provider's first privacy-reduced diagnostic line instead of collapsing all attach failures into share.web-control-failed. This diagnostic-only change does not alter acquisition protocol or provider behavior. Physical root cause remains open until the user reruns the updated PoC.
+The next physical exporter run produced diagnostic 0005 with phase `initial-navigation`, operation `debug session events`, and provider diagnostic `debug.events-overflow: events were discarded; reopen or resynchronize the session`. This establishes that page creation, debugger open and domain enables completed, and that the bounded event stream overflowed during initial navigation before any response body, script hook or JSON shape could be inspected.
+
+PoC revision d192ef3a6315ec68e2a0764d18a04aa872990d28 corrects the consumer side without changing web-control: both initial and breakpoint reload navigation now use `Page.navigate` through the existing persistent session with the event reader started first. The reader drains any preexisting backlog with zero-wait calls, requests the level-3 maximum batch of 128 events, advances only to the last actually delivered event, and starts the next event request before processing the current batch. The fixture test now fails if navigation begins without an active event poll, reproducing the physical overflow condition. GitHub Actions run 38774900291 passed syntax and the complete PoC test suite for this exact revision. This is hosted/fixture evidence only; the corrected sequence still requires the next physical shared-link rerun.
 
 The exporter still reports imagesDownloaded=0 and observationComplete=false even on a structured capture; reconstructing HTML/assets and live-site acceptance remain open.
 
 ## Next action
 
-Fast-forward the user's PoC checkout to current main and rerun the same Node command. Read the new numbered diagnostic's phase, operation and providerDiagnostic. If the failing operation is debug session open, investigate the provider attach/runtime state; if a specific *.enable fails, investigate that CDP/provider boundary. Do not change ChatGPT acquisition logic before this distinction is observed.
+Fast-forward the user's rumiai-dev-PoCs checkout to revision d192ef3a6315ec68e2a0764d18a04aa872990d28 or later and rerun the same physical Node command against the already configured electron-web-control v0.1.6 service.
 
 From PoC 068:
 node export-share.mjs https://chatgpt.com/share/<id> ./archive
 
-If the source supplies a full snapshot, verify all active messages and multimodal metadata before adding real image/graph preservation. If it does not, inspect the numbered share-debug-diagnostic JSON field shapes privately to identify the real shared-page payload; do not invent endpoints or return to DOM scrolling. Do not require reinstalling a separate Chromium browser or a raw CDP port.
+If the run still fails, inspect the next numbered diagnostic before changing acquisition logic. A repeated `debug.events-overflow` would mean the CLI/session event-drain model still cannot keep pace with the physical page and requires evidence-driven refinement. If overflow is gone, continue from the newly observed phase, response count, script count and privacy-reduced JSON shapes. If the source supplies a full snapshot, verify all active messages and multimodal metadata before adding real image/graph preservation. Do not invent endpoints, return to DOM scrolling, require a separate Chromium browser or expose a raw CDP port.
 
 ## Blockers / open questions
 
