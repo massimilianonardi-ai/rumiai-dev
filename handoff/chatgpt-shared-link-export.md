@@ -9,8 +9,8 @@ Build a deterministic, reusable exporter for ChatGPT conversations accessible th
 
 ## Current repository revisions
 
-- rumiai-dev: c26be026f948921abeb1d9881589b1f9063627ee (handoff checkpoint pre-update)
-- rumiai-dev-PoCs: 455c17de4ae1aebc0b3a87b3fd834ad2f0b13e91 (PoC source and experimental tests)
+- rumiai-dev: 482306740fa4fb1a47e755861f2923a3ec806b33 (pre-checkpoint HEAD)
+- rumiai-dev-PoCs: 0ba2245c84842789849cca2f9ab86b0e3ec60c03 (opt-in live validation workflow, README, private output ignore)
 - pwc-web-control: 5f3c8d298ac916be72ea59461a167ac31610ca61
 - electron-web-control: 22da3beab20e509cffcbd81866b51253df4e08a9
 
@@ -59,17 +59,20 @@ The live ChatGPT share DOM can change and may present only a subset of the sourc
 - Added synthetic DOM parser tests and actual exporter-entrypoint workflow tests with a simulated external controller protocol. The latter do not validate a real provider.
 - GitHub Actions PoC run 38705389302 passed on hosted Ubuntu (Node.js 22), including syntax, six initial extractor cases, follow-up parser cases and simulated-command workflow; this is not user-host physical validation.
 - Reviewed the modified PoC file set against current repository contracts; no web-control provider, package catalog or rumiai-os runtime changes were made.
+- Prepared opt-in GitHub Actions workflow `.github/workflows/poc-068-chatgpt-live-export.yml`: manually supplied URL, real pinned `pwc-web-control` CLI/service on Chrome/Xvfb, disposable no-upload archive, and summary-only output. No URL or conversation content was committed. Workflow has not been dispatched against the user's link.
+- Added `archive/` and `node_modules/` to the PoC ignore list, and documented workflow privacy caveats and exact validation scope. Existing PoC fixture workflow `38709297713` passed on hosted Ubuntu at revision `0ba2245c84842789849cca2f9ab86b0e3ec60c03`; this is not a live ChatGPT site validation.
+- Post-change diff covered only the opt-in workflow, PoC README and .gitignore; no provider/production API or canonical specification changed.
 
 ## Current state
 
-PoC implementation is committed in `rumiai-dev-PoCs` and has passing synthetic/controlled-boundary CI evidence through source revision abc6d1b7a338e6e7509da742c008c5885d2041ef. The latest PoC revision 455c17de4ae1aebc0b3a87b3fd834ad2f0b13e91 also passed GitHub Actions run 38705531193; it changes only README validation scope after the preceding source-and-test revision. No real shared conversation URL and no live web-control controller were available here. Real site extraction and media fidelity remain unvalidated.
+PoC implementation is committed in `rumiai-dev-PoCs` and has passing synthetic/controlled-boundary CI evidence through source revision abc6d1b7a338e6e7509da742c008c5885d2041ef. The latest PoC revision 455c17de4ae1aebc0b3a87b3fd834ad2f0b13e91 also passed GitHub Actions run 38705531193; it changes only README validation scope after the preceding source-and-test revision. The user has now supplied an actual share URL in the chat, but it was deliberately not committed to a repository. Access via the assistant web tool returned DisabledError; direct network access from the auxiliary container failed to resolve chatgpt.com. Real site extraction and media fidelity therefore remain unvalidated.
 
 ## Next action
 
-Validate the existing PoC through a real installed web-control provider against an accessible shared conversation; compare all visible turns, code, images and file links to the source, then correct any observed DOM/site-specific gaps before promotion to a separate releasable project.
+Run the opt-in real-browser workflow via GitHub Actions with the already-supplied user link as manual input (or execute the local exporter through the user's installed web-control provider). Inspect the summary and private capture evidence to compare all visible turns, code, images and file links; correct only observed parser/provider gaps before considering promotion.
 
 ## Blockers / open questions
 
-- No actual ChatGPT shared-link URL has been supplied for end-to-end real-site validation.
+- An actual share URL was supplied, but the assistant's available web fetch was disabled and the local container could not resolve chatgpt.com; no access to its live DOM has been obtained.
 - No live web-control service is available in the assistant's current Debian auxiliary environment.
 - Source page may omit uploaded file bytes or assets even when thumbnails/links are present.
