@@ -86,7 +86,7 @@ Additional package, service, state or container specifications must be retrieved
 
 ## Working design
 
-### First dispatcher boundary — task-local working design, not a promoted API
+### First inference-routing boundary — task-local working design, not a promoted API
 
 **Product selection now supersedes a bespoke dispatcher PoC:** use the existing Olla HTTP proxy/load balancer for the initial eight Ollama endpoints, not a custom router or a `rsudo`/SSH inference path. Olla upstream v0.0.29 provides model-aware selection, native health checks and registry, load balancing (least-connections/round-robin/priority), streaming and observability. Subsequent experiments should exercise **the real Olla distribution** at a pinned revision rather than reimplementing its routing mechanics. Do not claim Olla has been deployed or validated against the RumiAI hosts; all physical Ollama services remain loopback-bound until a later separately authorized configuration step. The higher-level AI task/tool/state orchestration remains outside Olla and is not selected by this decision.
 
@@ -101,7 +101,7 @@ individual Ollama host or making privilege-bearing `rsudo-admin` calls.
 The existing eight-host inventory is evidence for possible workers; it is
 not a newly established public scheduler/worker registry contract.
 
-For the first dispatcher proof, keep these responsibilities separable:
+For the first Olla validation, check these responsibilities separately:
 - request/role intent and optional execution limits at the caller-facing boundary;
 - eligibility and health checks for candidate workers and explicit capacity/concurrency
   observations (no assumption of uniform latency on the two network classes);
@@ -144,7 +144,7 @@ First acceptance scenarios:
    terse output. Evaluate at least one non-thinking model/profile with actual
    measured accuracy/latency before establishing task-role defaults.
 
-The first candidate should test independent inference dispatch only. Memory,
+The initial Olla-backed experiment should test independent inference routing only. Memory,
 Hindsight and generic multi-agent workflow engines are excluded from that
 minimum experiment. The `m` substrate and RumiAI cognitive layer remain
 distinct per `CURRENT-MODEL.md`; generic global orchestration is not a sense
