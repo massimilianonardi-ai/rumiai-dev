@@ -79,6 +79,7 @@ Run the new `python3 export-share-cdp.py "https://chatgpt.com/share/<id>" "./arc
 
 ## Blockers / open questions
 
+- The user requested a Node.js port using the common `web-control` interface rather than a standalone Chromium CDP port. The separate `handoff/web-control-debug-sessions.md` currently owns implementation/validation of a new common persistent debugger API on BOTH Playwright and Electron source branches (future compatibility level 3, not yet a declared installed provider compatibility). Once available in a released provider, migrate the exporter to Node.js atop that interface without altering the preserved original Python reference.
 - The assistant cannot inspect the user's physical local DOM/archive or use their configured web-control browser. The shared URL was inaccessible through the available assistant web fetch.
 - The presence of `conversation-turn-N`/message IDs in the **actual** current shared DOM remains unverified; the adapter supports them based on current source patterns/tests only.
 - Physical site has confirmed that the DOM-only Home/PageUp path does not scroll; further synthetic DOM scrolling refinements should not be treated as a path to acceptance.
