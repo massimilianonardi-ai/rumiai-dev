@@ -45,10 +45,12 @@ Relevant upstream sources:
 For the **initial eight-host CPU-only Ollama inference pool**, Olla is the
 selected existing-product candidate for the *inference-dispatch layer*, as
 recorded in the active
-`handoff/rumiai-local-ai-cluster-development.md`. It can run as a separate
-process on one yet-to-be-chosen authorized host, accepting requests from RumiAI
-or other allowed callers and routing to the planned network-visible Ollama
-endpoints. No RumiAI-owned dispatcher is needed at this stage.
+`handoff/rumiai-local-ai-cluster-development.md`. The user has explicitly
+selected **`gis` (`10.200.0.19`)** as the host for the first Olla installation.
+Olla is intended to run there as a separate process, accepting requests from
+RumiAI or other allowed callers and routing to the planned network-visible
+Ollama endpoints. This location is a RumiAI task-local decision, not an
+upstream Olla product requirement. No RumiAI-owned dispatcher is needed at this stage.
 
 Olla does **not** provide the higher-level RumiAI task/tool/memory orchestration;
 those are separate responsibilities and are not newly assigned or implemented
@@ -70,7 +72,8 @@ fit-for-purpose, not a measured RumiAI benchmark against those alternatives.
   for an access-control boundary.
 - Binding the future Ollama processes to `0.0.0.0` does not determine
   reachability or protection. Corporate routing, firewall/authorized client
-  policies, coordinator placement, and security approval are still open.
+  policies, validation of `gis`-to-worker HTTP connectivity, and security
+  approval are still open.
 - Upstream Olla `v0.0.29` includes an unauthenticated read-only dashboard,
   with its own access-policy controls; verify its effective exposure before
   live deployment, particularly with published container ports.
@@ -87,8 +90,8 @@ fit-for-purpose, not a measured RumiAI benchmark against those alternatives.
 
 ## Current assessment
 
-Use Olla as the existing product for a bounded **inference-routing PoC** once
-the user's current design-only/no-configuration-change phase ends. Evaluate
+Use Olla on the user-selected `gis` host for a bounded **inference-routing PoC**
+once the user's current design-only/no-configuration-change phase ends. Evaluate
 v0.0.29 as the pinned, inspectable baseline; verify artifact checksums and
 compatibility before distribution. Keep the adopted product behind an
 application-consumer boundary rather than promoting Olla configuration names
