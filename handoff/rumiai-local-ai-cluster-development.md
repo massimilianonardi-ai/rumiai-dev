@@ -46,6 +46,8 @@ Additional package, service, state or container specifications must be retrieved
 
 ## Fixed task-local choices
 
+- **2026-10-15 explicit user instruction — use an existing product for orchestration.** For the first inference-routing layer of the eight-node Ollama cluster, select **Olla** (https://github.com/thushan/olla) rather than designing/developing a RumiAI-owned dispatcher. Its isolated proxy/load-balancing responsibilities and upstream v0.0.29 release are evaluated at `products/ai/olla.md`. This decision does not choose the final coordinator location, security perimeter, high-level AI task orchestration, or install/reconfigure anything. Keep the current `0.0.0.0` future-binding direction and **current no-configuration-change constraint**.
+
 - **2026-10-15 current explicit first-deployment choice:** plan for network-accessible Ollama HTTP endpoints, each bound to `0.0.0.0` when a later separately authorized configuration phase takes place. **Do not change any server, service, NFS, package, firewall, network or product configuration now.** The physically validated services still bind their respective loopback port `127.0.0.1:11435`. Binding all interfaces is not evidence of Internet reachability, network permission or caller authentication: the actual access perimeter, source networks and security controls remain to be established before exposure. This is a provisional first deployment direction, not approval of a permanent enterprise topology.
 
 - The cluster consists of the rsudo credential groups:
@@ -85,6 +87,8 @@ Additional package, service, state or container specifications must be retrieved
 ## Working design
 
 ### First dispatcher boundary — task-local working design, not a promoted API
+
+**Product selection now supersedes a bespoke dispatcher PoC:** use the existing Olla HTTP proxy/load balancer for the initial eight Ollama endpoints, not a custom router or a `rsudo`/SSH inference path. Olla upstream v0.0.29 provides model-aware selection, native health checks and registry, load balancing (least-connections/round-robin/priority), streaming and observability. Subsequent experiments should exercise **the real Olla distribution** at a pinned revision rather than reimplementing its routing mechanics. Do not claim Olla has been deployed or validated against the RumiAI hosts; all physical Ollama services remain loopback-bound until a later separately authorized configuration step. The higher-level AI task/tool/state orchestration remains outside Olla and is not selected by this decision.
 
 **2026-10-15 current design scope:** The user's first network mode is direct HTTP from applications/orchestration to Ollama endpoints after a later bind change to `0.0.0.0`. The orchestrator must not assume application inference travels through privileged `rsudo` or SSH tunnels. There is no authorization to change host/service/network configuration in this work unit. Organize design into two separate responsibilities: (a) distributed inference dispatch, model eligibility, health, admission/queues, bounded concurrency, retry and metrics; (b) higher-level AI task/tool/state orchestration consuming inference. The latter is not the responsibility of an inference engine or a RumiAI sense, and is not approved as a new product component by this design note. Evaluate only the minimal first inference-dispatch workflow now.
 
@@ -364,6 +368,8 @@ per `SENSE-MODEL.md`.
 
 ## Current state
 
+**2026-10-15 orchestration product selection:** the user has explicitly rejected building a new dispatcher in favor of an existing product. Olla v0.0.29 is the selected first **inference-routing** candidate, based on current upstream release/docs and a non-normative assessment in `products/ai/olla.md`. No Olla executable has been started, no physical or mocked Olla inference test has been run, no cluster or client service configuration has changed, and no RumiAI runtime/package code has been modified for Olla.
+
 The user has selected a **future initial direct HTTP / `0.0.0.0` Ollama network binding direction** for the first deployment and explicitly prohibited any configuration changes during the current orchestration design discussion. Actual deployed binding remains loopback-only as previously validated; neither direct multi-host HTTP connectivity nor a secure network exposure policy has been physically validated under the new choice. Nothing in this discussion reconfigures the fleet.
 
 The follow-up two-file operator PoC is now committed but is *not* the source of the physically successful 8/8 log. Its isolated GitHub CI passed on 2026-10-15; physical validation and resolution of the NFS-repair behavior gap are still required before replacing the known-good operator scripts. No additional fleet mutation was performed during this repository-consolidation work unit.
@@ -397,24 +403,29 @@ The previous shared-runtime llama.cpp direction is no longer the current worker 
    `exec > "/m/src/git/rsudo-jobs.log" 2>&1`, preserve all untracked
    operating state and never repeat the completed 2026-10-14 8/8 rollout
    merely to create test evidence.
-2. **Design only (no configuration changes):** take the explicit first
-   deployment direction of network-accessible Ollama bound to `0.0.0.0`
-   as the intended HTTP target; separate minimal inference dispatch from
-   higher-level AI task orchestration. Review caller-facing scenarios,
-   model/worker inventory, health, admission limits, concurrent scheduling,
-   failure/stream semantics and metrics. Retain the ability to choose a
-   coordinator placement once the caller locations and company security/
-   connectivity perimeter are known; no SSH tunnel, proxy, gateway or new
-   host listener is chosen by default. Ollama has no local API auth, so
-   the access perimeter and approved exposed capabilities must be decided
-   before a later server-network configuration phase. Only after design is
-   fixed should an isolated dispatch PoC be scoped and executed. Evaluate
-   non-thinking task/model profiles independently.
+2. **Use Olla, not a custom inference dispatcher. Design only now:**
+   adopt the existing Olla proxy/load balancer as the first inference-routing
+   product. Select an eventual allowed coordinator location and network
+   security perimeter based on the user's organization before installation;
+   the later Ollama `0.0.0.0` binds are authorized as a *target direction*
+   only, not as current config mutations. Olla v0.0.29 has no proxy-level
+   inbound auth, so document authorized source networks and dashboard
+   exposure before a real deployment; distinguish Olla's default connection
+   retries from a proven at-most-once request guarantee. Then validate an
+   isolated pinned Olla configuration against controlled test backends
+   (model-aware routing, concurrent streams, unhealthy worker, retry
+   uncertainty and observability) without modifying the real servers.
+   Physical host access and end-to-end routing require a separately
+   authorized configuration phase. High-level task/tool orchestration is
+   a separate future decision; do not accidentally implement it in Olla.
+   Evaluate non-thinking task/model profiles separately.
 3. Decide whether Hindsight belongs in the first orchestrated deployment or
    should follow after dispatcher/model-role validation; do not put its
    writable state on the read-only NFS model share.
 
 ## Blockers / open questions
+
+- Olla v0.0.29 is selected as a **first inference-routing product**, not as a new authenticated enterprise gateway or a task/agent orchestrator. Current upstream documents no inbound proxy authentication. Its default retry-on-connection-error may replay a request whose acceptance was ambiguous. Before use, define permitted source networks, client/service placement, allowed actions, dashboard exposure, retry policy, and how to validate available model/worker capacity. Product evaluation evidence is upstream only; deployment and workload behavior on RumiAI's eight hosts remains unvalidated. No current server or product configurations are to be changed.
 
 - 2026-10-15 explicit methodological correction: the successful CPU Ollama
   eight-host experiment preceded clarification of the user's intended
