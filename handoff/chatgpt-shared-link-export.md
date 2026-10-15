@@ -9,8 +9,8 @@ Archive user-authorized ChatGPT shared-link conversations completely and readabl
 
 ## Current repository revisions
 
-- rumiai-dev: 28c43dbcc7fe6a0ee15ff517a280330afbce0219 (pre-checkpoint HEAD)
-- rumiai-dev-PoCs: 2ee90635f1170d6eda7c1ee3cfc41a8f3c12f46b (honor hidden ChatGPT message metadata)
+- rumiai-dev: 7741d58b5e9127c2c4c4844da100bdc6e9368ffc (pre-checkpoint HEAD)
+- rumiai-dev-PoCs: bc62846b7991bede3fd809cba43530503a09a065 (turn surfaces + shared image download; final hosted test correction)
 - pwc-web-control: 403f4fa9bbea419715e9c834e847c6f2b60ae421 (released v0.1.6)
 - electron-web-control: 077eb502f1d68235b4e5c9c28e4a7560795bce17 (released v0.1.6)
 - pkg-catalog: 7cd9b7585b9343a153e516c9c47b6fb92b7330e0 (facility web-control 3 and both provider realizations)
@@ -96,16 +96,21 @@ A physical rerun of PoC revision 2ee90635f1170d6eda7c1ee3cfc41a8f3c12f46b then c
 
 The user then inspected the earlier duplicated final pair from the same physical rerun. Ordinal 1359 / 8cec58b0... is status=finished_successfully, end_turn=true, weight=1, visually_hidden=false, is_complete=true and remains included; ordinal 1360 / a16804c1... has the same final-looking status/end_turn/weight/is_complete values but visually_hidden=true and is therefore excluded. This second independent duplicate confirms the same rule against the preceding renderer turn. The two concrete duplicate-answer defects observed in the first successful transcript are therefore resolved by the existing hidden-message filter in 2ee90635f1170d6eda7c1ee3cfc41a8f3c12f46b, without string comparison or turn-text heuristics.
 
-The exporter still reports imagesDownloaded=0 and observationComplete=false; binary image recovery, faithful graphic/HTML rendering and final transcript-visibility validation remain open.
+PoC revision ed6510030bc4886da5ddcbe0302361f66ed1892b implements the renderer-like turn model. Assistant commentary is no longer promoted as a standalone visible assistant response. deriveTranscript now also derives ordered turns containing one user surface, ordered activity nodes, one visible assistant surface, hidden nodes and anomalies. TURN_SURFACES.jsonl is emitted alongside the unchanged raw snapshot/audit; commentary and tool-invocation text may be retained as activity evidence, while internal reasoning/tool-output text is not promoted into the readable transcript. AUDIT.json records turn/activity counts. GitHub Actions run 38795537105 passed for this exact revision.
+
+Media recovery is now implemented forward from that model. External current implementation evidence shows public shared images are resolved through /backend-anon/files/download/<file-id>?shared_conversation_id=<share-id> followed by a temporary signed download URL. Revision e0368b686aeb14da42a6f13b6ee06670938275bf added active-branch sediment image discovery and browser-context binary retrieval through Runtime.evaluate, with backend-api fallback. Signed URLs are never persisted. Successful binaries are written under media/, checksummed, included in the ZIP and referenced locally from TRANSCRIPT.md; MEDIA.json records resolved/missing assets, dimensions, byte counts, hashes and privacy-safe attempt status. Media failure is explicit but does not destroy the otherwise valid structured export. ACQUISITION.json now records media reference/download/missing counts and observationComplete remains false until physical acceptance.
+
+The first hosted media run 38796056401 exposed only a fixture expectation mismatch: the fixture's message part lacked width/height, so the correct Markdown alt text was "immagine" rather than "immagine 1×1". No implementation failure was observed. Forward test-only revision bc62846b7991bede3fd809cba43530503a09a065 aligned that expectation. GitHub Actions run 38796180650 then passed syntax, 31/31 Node tests and all 7 retained Python reference tests. This includes turn-surface separation, public-share media acquisition and immutable ZIP/media materialization. Physical validation of the new turn/media revision is still pending.
 
 ## Next action
 
-Treat the duplicate-final-answer defect as resolved for the physically observed cases at PoC revision 2ee90635f1170d6eda7c1ee3cfc41a8f3c12f46b. The next design/implementation step is to model the renderer-visible turn surfaces separately instead of flattening all active-branch nodes into USER/ASSISTANT entries: user message, zero or more activity/thinking panels (including commentary/tool invocation/output groupings), one renderer-visible assistant response, and rendered attachments/media. Preserve the raw snapshot unchanged and keep hidden/internal nodes auditable but out of the normal transcript.
+Fast-forward the user's PoC checkout to bc62846b7991bede3fd809cba43530503a09a065 or later and rerun the same real shared-link command. Inspect the command result plus ACQUISITION.json, MEDIA.json, the local media directory and the relevant TRANSCRIPT.md image reference. The expected successful media case is one referenced image materialized locally with imagesDownloaded=1/imagesMissing=0; if media fails, MEDIA.json/assetAttempts should distinguish metadata-endpoint failure from signed-binary failure without persisting the signed URL. Also inspect the new message count/turn counts to ensure commentary is no longer flattened into the main transcript.
 
-Then implement recovery of the preserved image_asset_pointer and faithful HTML/graphic rendering using the structured snapshot plus renderer evidence as sources of truth. Do not reopen the discarded DOM-scrolling, Network-event or Debugger-breakpoint acquisition approaches unless new physical evidence invalidates the direct page-fetch path.
+If the physical run confirms turn/media behavior, the remaining acceptance work is faithful readable HTML/graphic rendering and final completeness comparison against the renderer. Do not reopen the discarded DOM-scrolling, Network-event or Debugger-breakpoint acquisition approaches unless new physical evidence invalidates the direct page-fetch path.
 
 ## Blockers / open questions
 
-- Physical structured acquisition is validated on the user's VM for the tested shared URL, and the raw active branch is structurally complete; renderer-visible transcript filtering remains under physical validation before observationComplete can become true.
-- Real image binary download and faithful graphic/HTML rendering remain open after data acquisition.
+- Physical structured acquisition and hidden-final filtering are validated on the user's VM for the tested shared URL; the new renderer-like turn model at ed651003... is hosted-tested but not yet physically accepted.
+- Shared image binary recovery at bc62846... is hosted-tested but not yet physically accepted on the user's real shared URL.
+- Faithful readable HTML/graphic rendering remains open; physical_site_completeness_verified/observationComplete must remain false until that final acceptance work is done.
 - The provider-install integration formal validation passed on both Linux architectures. Electron macOS ARM64 package job was still queued at the last shared-debugger handoff checkpoint; check its current status before making a universal installed-host claim.
