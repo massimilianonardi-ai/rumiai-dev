@@ -9,8 +9,8 @@ Build a deterministic, reusable exporter for ChatGPT conversations accessible th
 
 ## Current repository revisions
 
-- rumiai-dev: 76352ad76a700665c9f7ddee35159c7035d069f2 (pre-checkpoint HEAD)
-- rumiai-dev-PoCs: 0ba2245c84842789849cca2f9ab86b0e3ec60c03 (opt-in live validation workflow, README, private output ignore)
+- rumiai-dev: fbbb715a1218eefcd9dea0221b276fed5f187356 (pre-checkpoint HEAD)
+- rumiai-dev-PoCs: cf4f7e9306c83d9e9374594b62dd6c705d00f810 (window scanner, merge tests and documentation)
 - pwc-web-control: 5f3c8d298ac916be72ea59461a167ac31610ca61
 - electron-web-control: 22da3beab20e509cffcbd81866b51253df4e08a9
 
@@ -46,7 +46,9 @@ Build a deterministic, reusable exporter for ChatGPT conversations accessible th
 
 ## Working design
 
-The live ChatGPT share DOM can change and may present only a subset of the source chat. The first version targets observed `data-message-author-role` message containers, retains raw evidence and fails explicitly when no message structure is recognizable. Native attachments and remote image availability must be assessed against an actual user-provided or otherwise authorized share before promotion. Image downloads may need origin authorization and must not be represented as complete when unavailable.
+The live ChatGPT share DOM virtualizes/unmounts older turns. This has been confirmed by the user's visual inspection of the first real archive; the old end-only capture collected 10 final turns and missed earlier turns/images. The revised experiment traverses both directions, captures each distinct rendered HTML window under `capture/segments/`, and merges overlapping message ranges (preferring visible turn/message identifiers). Reaching the top and bottom without detected gaps is only scan evidence; it does not prove a complete source-chat export. Image binaries may still be unavailable because they are downloaded by Node separately from the authenticated browser.
+
+The user-supplied `chatgpt-export-v3(1)(1).py` targets the **native macOS ChatGPT app**: it uses CDP debugger breakpoints around `mergeActiveBranch` to capture the app renderer's full in-memory conversation `mapping/current_node` snapshot. It is not an implementation of a public shared-link API, nor a verified pagination endpoint. Exploring whether a structurally equivalent payload exists in the shared page's embedded scripts/network responses is a separate site-specific experiment requiring captured real-page evidence; any such path is undocumented and must not be hardcoded from guesses.
 
 ## Completed
 
@@ -62,16 +64,19 @@ The live ChatGPT share DOM can change and may present only a subset of the sourc
 - Prepared opt-in GitHub Actions workflow `.github/workflows/poc-068-chatgpt-live-export.yml`: manually supplied URL, real pinned `pwc-web-control` CLI/service on Chrome/Xvfb, disposable no-upload archive, and summary-only output. No URL or conversation content was committed. Workflow has not been dispatched against the user's link.
 - Added `archive/` and `node_modules/` to the PoC ignore list, and documented workflow privacy caveats and exact validation scope. Existing PoC fixture workflow `38709297713` passed on hosted Ubuntu at revision `0ba2245c84842789849cca2f9ab86b0e3ec60c03`; this is not a live ChatGPT site validation.
 - Post-change diff covered only the opt-in workflow, PoC README and .gitignore; no provider/production API or canonical specification changed.
-- User-reported physical-host acceptance on corporate-network Ubuntu (2026-10-15): `npm test` 12/12 PASS; direct `node export.mjs` against the supplied real share returned success with `archive/0001`, `messageCount: 10`, `imagesDownloaded: 0`, `imagesUnavailable: 1`, `observedSettledAtBottom: true`. These are observed CLI results reported by the user, not assistant inspection of private artifact bytes; installed provider identity, message fidelity and missing-image cause are not yet verified.
+- User-reported physical-host test of the original end-only implementation: 12/12 fixture tests PASS; real share export `archive/0001` reported 10 final messages, 0 images downloaded, 1 image unavailable. User inspection demonstrated the chat had additional older turns and images which had been virtualized away; the previous scan's claim of settled bottom was insufficient.
+- Implemented bidirectional virtualized-window acquisition/merging, raw per-window evidence, explicit scan-edge/gap flags and regression tests for overlapping windows, repeated text, discontinuities and end-to-end mocked viewport virtualization. No provider/runtime interfaces changed. Source reviewed against WEB-CONTROL and RumiAI testing/quality contracts.
+- GitHub Actions PoC run 38721404476 PASS (syntax and fixture suites) at `cf4f7e9306c83d9e9374594b62dd6c705d00f810`. This tests synthetic virtualized page windows through the real exporter command with a simulated external web-control protocol boundary. It is **not** physical-site revalidation of the new revision.
 
 ## Current state
 
-The PoC at source HEAD `0ba2245c84842789849cca2f9ab86b0e3ec60c03` is experimentally operational through the normal public `web-control` command on the user's corporate-network Ubuntu host: local tests 12/12 PASS and a real share export produced 10 messages in `archive/0001` with observed stable bottom. The preceding npm TLS installation blocker no longer prevents execution (the exact local remediation was not reported). One image is unavailable and its specific diagnostic has not yet been inspected. The assistant cannot access the user's local archive; neither the extracted 10 messages' fidelity nor completeness relative to the original source chat is established. No conversation content has been committed or uploaded.
+PoC 068 has a new bidirectional DOM-window scanner at `cf4f7e9306c83d9e9374594b62dd6c705d00f810`, with passing hosted simulation evidence (run 38721404476). The old physical-host run on the actual shared link was demonstrably incomplete due to virtualized DOM unmounting. The newer source has **not** yet been tested on the user's host or source link. It preserves image URL references from every observed window but cannot guarantee the image binary; the original missing-image diagnostic and any structured JSON embedded in the real shared page remain uninspected. Source-chat completeness cannot be asserted by scanning alone. No user conversation bytes were committed.
 
 
 ## Next action
 
-Inspect the local revision `archive/0001/conversation.json` for asset `reason`, missingImages and message roles/counts without exposing signed URLs or private message text. Compare `conversation.md` locally with visible source turns. Because media fetch uses Node independently of the browser and the corporate CA was needed for npm, optionally rerun the exact share with `NODE_EXTRA_CA_CERTS=/usr/local/share/ca-certificates/rpr-DOM-CA.crt` to test whether a new immutable revision `0002` can fetch the image; do not claim TLS is the cause until the reason is inspected.
+On the user's real web-control host, update the PoC checkout and rerun the supplied sharing URL into an immutable new revision (with `NODE_EXTRA_CA_CERTS` set if corporate network TLS still requires it). Compare new message count and saved markdown against source UI, inspect `capture/segments/` and `assets[].reason` without publishing content/signed URLs. If still incomplete, obtain a sanitized example of the captured shared-page HTML containing its script/data shape and evaluate a browser-visible structured JSON capture route, inspired by but not conflated with the native-app CDP snapshot method.
+
 
 ## Blockers / open questions
 
@@ -79,4 +84,5 @@ Inspect the local revision `archive/0001/conversation.json` for asset `reason`, 
 - No live web-control service is available in the assistant's current Debian auxiliary environment.
 - Source page may omit uploaded file bytes or assets even when thumbnails/links are present.
 - Corporate npm TLS issue was previously observed, but user has now completed 12/12 local tests and a real export. How local npm trust was remedied was not independently observed. Dedicated centralized browser CA work remains deferred under `todo/browser-certificate-trust-centralization.md`.
-- The one unavailable image may be blocked by first-party-origin rules, signed URL/session access, HTTP result, a missing DOM source, or corporate TLS trust in Node. Diagnostic is stored in `conversation.json` under `assets[].reason` or `messages[].missingImages`; cause not yet observed.
+- Image binaries remain unverified: the prior version downloaded none, and the new scan only improves discovery of images in evicted turn windows; source/CDN/session/TLS diagnostics remain to be examined.
+- No direct evidence yet of a structured shared-page payload/API shape from the actual share DOM or network traffic. The uploaded native macOS script cannot be transplanted into provider-neutral `web-control` without changing scope/contracts.
