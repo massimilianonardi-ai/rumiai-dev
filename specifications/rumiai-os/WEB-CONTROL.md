@@ -86,6 +86,8 @@ Compatibility level `1` is the existing immutable published baseline: command `w
 
 Compatibility level `2` is a separate complete, self-contained contract. It requires the same command/service identities and all level-1 operation semantics **plus** the portable `page scroll` operation below. It is not inferred to be automatically compatible with level `1` by the package resolver: consumers must state which exact compatibility they accept, and providers must declare their supported level exactly. Historic level-1 provider releases and contracts remain unchanged.
 
+Compatibility level `3` is a new complete interface level requiring all level-2 semantics **plus** the page-scoped persistent debugger-session contract in §6. Both first-party Chromium providers MUST implement the same level-3 command semantics before either publishes a level-3 provider package. Source support alone is not a release/facility compatibility declaration; the package catalog, release and validation must explicitly advertise and verify level 3. Existing level-1/2 contracts and package releases remain unchanged.
+
 The public command is the ordinary deterministic client/control surface. The service is the long-running local controller runtime and follows the existing `srv` provider-backed service lifecycle.
 
 Portable lifecycle therefore uses:
@@ -186,15 +188,29 @@ The exact selector representation is not fixed by this contract merely because t
 
 ## 6. Debug/introspection boundary
 
-Low-level browser/debugger access is a privileged extension of `web-control`, not the ordinary provider-independent operation surface.
+Compatibility levels 1 and 2 do not include debugger operations. Chromium-specific one-shot debugging such as the existing Playwright `debug cdp <page> <method> [params-json]` was historically a provider extension and must not be mistaken for the common level-1/2 interface.
 
-A concrete browser provider MAY expose controlled page-scoped debugger commands. The initial Chromium implementation may use Chrome DevTools Protocol internally.
+### Complete compatibility-level-3 persistent debugger interface
 
-The baseline MUST NOT require publication of an unrestricted browser remote-debugging endpoint.
+Level 3 adds the **same controller-owned session operations and response envelopes in both** `pwc-web-control` and `electron-web-control`, without exposing a remote-debugging port. The currently qualified low-level protocol for the two Chromium-based providers is Chrome DevTools Protocol (CDP): the command/event transport and ownership lifecycle are portable across these two providers, while individual CDP method names and payloads follow the external Chromium protocol and are not promised for a hypothetical non-Chromium provider.
 
-A provider MUST NOT expose a raw debugger port to non-local networks by default.
+```text
+web-control debug session open <page>
+web-control debug session send <session> <cdp-method> [params-json]
+web-control debug session events <session> [after-sequence] [limit] [wait-ms]
+web-control debug session close <session>
+```
 
-Provider-specific debugger protocols and methods are not compatibility-level-1 semantics and MUST NOT leak into the provider-independent facility contract.
+- **Open** attaches one persistent debugger to an existing opaque page identity and returns `{session, page}`. The session identity is an opaque controller-local handle, not a CDP target identifier, and survives client command exits and page navigation. At most one managed persistent debugger session is open per page. An already attached external debugger may prevent opening.
+- **Send** dispatches one method with a JSON object of protocol parameters and returns `{session, result}` with the unmodified method result. It can evaluate a suspended call frame and resume execution while a prior `Debugger.paused` event is outstanding. The absence of params means `{}`. Invalid method or malformed params is an error.
+- **Events** returns `{session, after, lastSequence, events}` where each event is `{sequence, method, params}`, monotonically numbered from 1 for that session. `after-sequence` starts at 0; only strictly later events are returned. `limit` defaults to 100 and is 1–128. `wait-ms` defaults to 0 and is 0–30000; positive values wait until an event, closure or timeout. Calls are separate normal local IPC requests; no long-lived CLI subprocess or raw debugger socket is required.
+- **Bounded delivery:** events are buffered in memory only, capped at 128 entries and 4 MiB total, with oversized individual events capped at 1 MiB. If an event is dropped/evicted, a caller with a cursor before the retained boundary receives explicit `debug.events-overflow`, never a falsely complete sequence. Clients that need every event must drain promptly. Long polling does not persist events across controller restarts.
+- **Close** explicitly detaches and invalidates the session. Page/browser close, renderer loss, external debugger detach and controller shutdown also invalidate the handle. Subsequent use fails with `debug.session-not-found`; the client must open a new session on a live page. A session may disappear while an event poll is outstanding; the poll then fails with this identity.
+- Ordinary page commands, including navigation and native click/fill/press, remain supported when a managed session exists. Providers coordinate any debugger use for internal native input rather than detaching the caller's session. The existing Playwright one-shot `debug cdp` remains backward compatible; both Chromium providers may expose its equivalent, but it is not the persistent session and cannot be used to implement multi-request breakpoint handling.
+
+The service owns the session and event subscription, not the command client. No client may reconstruct provider-private browser state, and no unrestricted TCP CDP endpoint is published by default. The local controller IPC remains private/restricted; raw debugger methods can expose cookies, credentials, scripts and private page state, so this operation is explicitly privileged and must not be enabled over arbitrary remote transports.
+
+A future non-Chromium provider must implement the agreed level-3 command semantics (including the specified protocol) to claim level 3 or use another compatibility level with a distinct documented capability. Do not silently interpret a partial provider feature as a common `web-control` capability.
 
 ## 7. Provider boundary
 
@@ -262,12 +278,16 @@ WEBCTRL-07  persistent authenticated browser state uses dedicated web-control pr
 WEBCTRL-08  live page identities are opaque web-control runtime identities
 WEBCTRL-09  rendered HTML/text and screenshot are portable baseline capture evidence
 WEBCTRL-10  deterministic interaction receives explicit targets; goal interpretation remains above the control boundary
-WEBCTRL-11  raw debugger protocols are provider-specific privileged extensions, not the provider-independent baseline
+WEBCTRL-11  raw debugger method payloads remain Chromium-specific and privileged; the shared level-3 session lifecycle is a defined additional contract, not part of levels 1/2
 WEBCTRL-12  unrestricted browser remote-debugging endpoints are not published by default
 WEBCTRL-13  Playwright/CDP/Chromium are initial implementation choices and do not define the public contract
 WEBCTRL-14  generic scheduling is outside web-control
 WEBCTRL-15  browser-backed providers preserve browser sandboxing by default; unsandboxed mode is explicit provider-specific opt-in only
 WEBCTRL-16  browser-backed provider services outlive browser-runtime termination, detect browser absence and recreate the browser on demand without preserving prior live page identities
 WEBCTRL-17  browser-backed status reports browser-runtime absence without starting it; browser-required operations recreate it on demand
-WEBCTRL-18  compatibility level 2 adds portable page scroll with vertical delta and post-scroll document geometry; level 1 remains semantically immutable
+WEBCTRL-18  compatibility level 2 adds portable page scroll with vertical delta and post-scroll document geometry
+WEBCTRL-19  level 3 requires identical page-scoped persistent debugger open/send/events/close semantics across both Chromium providers
+WEBCTRL-20  debugger sessions survive separate commands and page navigation but not page/browser/controller shutdown or external detach
+WEBCTRL-21  debugger event streams use monotonic cursors and explicit bounded-buffer overflow instead of silent loss
+WEBCTRL-22  level 3 never requires publishing a raw browser remote-debugging port; level 1 remains semantically immutable
 ```
