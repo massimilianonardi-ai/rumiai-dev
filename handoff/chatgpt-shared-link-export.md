@@ -9,8 +9,8 @@ Archive user-authorized ChatGPT shared-link conversations completely and readabl
 
 ## Current repository revisions
 
-- rumiai-dev: cfeab2723de533394f42c7549973e2caf1199973 (pre-checkpoint HEAD)
-- rumiai-dev-PoCs: 73f77dd1be358270ae83d7de4e287adc69f8afd1 (recover from bounded Network event overflow)
+- rumiai-dev: 7b464ee2ef6bf2b62e13bd6990b1a5ff3b4a64da (pre-checkpoint HEAD)
+- rumiai-dev-PoCs: 4b030f8f971034bc0bd45015c7b8c3f1aab5d474 (inject page capture; no Network/Debugger event domains)
 - pwc-web-control: 403f4fa9bbea419715e9c834e847c6f2b60ae421 (released v0.1.6)
 - electron-web-control: 077eb502f1d68235b4e5c9c28e4a7560795bce17 (released v0.1.6)
 - pkg-catalog: 7cd9b7585b9343a153e516c9c47b6fb92b7330e0 (facility web-control 3 and both provider realizations)
@@ -40,9 +40,9 @@ Archive user-authorized ChatGPT shared-link conversations completely and readabl
 
 ## Working design
 
-The current node adapter observes only browser-delivered structured responses/JSON scripts and (if demonstrably present) the semantic original mergeActiveBranch hook in loaded JS. The web-control 3 session handles CDP navigation/events/evaluation/resume through both providers. The original Python script used a native app:// renderer and its validated hook must not be extrapolated to https://chatgpt.com/share/.
+The active Node adapter now prefers page-context JavaScript injection over debugger event observation. A compatibility-level-3 web-control session is still used as the common privileged CDP transport because the public web-control contract has no general page-eval command, but the active path does not enable Network or Debugger event domains, does not consume debug session events, does not discover bundle scripts and does not set breakpoints. Before navigation it installs a script with Page.addScriptToEvaluateOnNewDocument; that script observes fetch/XHR responses and inline JSON, stores the first structurally valid mapping/current_node snapshot in page memory, and Node polls that value with Runtime.evaluate.
 
-The failed DOM-based attempts used scrolling and window merging, produced repeated content, missing images/graphics and an immobile page in user physical tests; do not regress to those approaches.
+The original Python script used a native app:// renderer and its validated mergeActiveBranch breakpoint remains reference behavior only; it is no longer the active shared-link acquisition mechanism. The failed DOM-based attempts used scrolling and window merging, produced repeated content, missing images/graphics and an immobile page in user physical tests; do not regress to those approaches.
 
 ## Completed
 
@@ -66,18 +66,22 @@ PoC revision a1f1e6c2d98f38651ac141b769844b7550db830a narrowed the event-produci
 
 The user's physical rerun on a1f1e6c2d98f38651ac141b769844b7550db830a produced diagnostic 0007. The failure remained `debug.events-overflow` in `initial-navigation` even with Network as the only enabled event domain; one response was inspected before loss. This isolates the pressure to the Network stream itself and demonstrates that prompt consumer draining cannot guarantee complete delivery for this real ChatGPT load under the current compatibility-level-3 bounded buffer.
 
-The canonical web-control level-3 contract explicitly caps event delivery at 128 entries / 4 MiB and requires callers to treat overflow as explicit loss and reopen or resynchronize rather than infer completeness. Therefore this task does not increase provider buffers or silently change the common contract. Current PoC revision 73f77dd1be358270ae83d7de4e287adc69f8afd1 instead treats initial Network capture as opportunistic: on `debug.events-overflow` it closes the lossy debugger session, opens a fresh session on the already navigated page, resets the sequence cursor, waits for the document to become at least interactive through `Runtime.evaluate`, then continues with embedded structured JSON and subsequent hook discovery. Other debugger failures remain fatal. A dedicated fixture forces the same overflow and proves recovery through the embedded-JSON path. GitHub Actions run 38777035127 passed syntax and the complete PoC fixture/reference job for this exact revision. Physical shared-link validation of this recovery path remains pending.
+The canonical web-control level-3 contract explicitly caps event delivery at 128 entries / 4 MiB and requires callers to treat overflow as explicit loss and reopen or resynchronize rather than infer completeness. Therefore this task does not increase provider buffers or silently change the common contract. PoC revision 73f77dd1be358270ae83d7de4e287adc69f8afd1 recovered from initial Network overflow by reopening the session and continuing without claiming the dropped event sequence was complete. GitHub Actions run 38777035127 passed for that revision.
+
+The user's physical rerun on 73f77dd1be358270ae83d7de4e287adc69f8afd1 produced diagnostic 0008. The initial overflow was successfully contained: the adapter reached embedded-json and then hook-discovery. Embedded JSON exposed only a configuration-shaped object (including authStatus, cluster and marketing flags), not a conversation snapshot. Hook discovery then failed with scriptCount=0 and share.snapshot-hook-unavailable. This showed the remaining blocker was the breakpoint/script-discovery strategy itself, not navigation or the initial overflow.
+
+The user explicitly challenged whether the Debugger domain was needed and proposed injecting JavaScript to collect the required data directly. That correction is now the active direction. An intermediate resource-tree/breakpoint revision f6be227869e2959d77da329a135a5dcc1c9771c4 passed hosted CI but was superseded before physical testing. Current PoC revision 4b030f8f971034bc0bd45015c7b8c3f1aab5d474 removes Network.enable, Debugger.enable, debugger event polling, scriptParsed/resource-tree hook discovery and breakpoints from the active acquisition path. It installs a pre-navigation page script with Page.addScriptToEvaluateOnNewDocument, observes fetch/XHR and inline JSON in page context, stores the first structurally valid mapping/current_node snapshot, and polls it via Runtime.evaluate. The session remains only the existing common level-3 privileged command transport; no provider API or contract changed. GitHub Actions run 38778806571 passed syntax and the full PoC fixture/reference job for this exact revision. Physical validation of the injected path is pending.
 
 The exporter still reports imagesDownloaded=0 and observationComplete=false even on a structured capture; reconstructing HTML/assets and live-site acceptance remain open.
 
 ## Next action
 
-Fast-forward the user's rumiai-dev-PoCs checkout to revision 73f77dd1be358270ae83d7de4e287adc69f8afd1 or later and rerun the same physical Node command against the already configured electron-web-control v0.1.6 service.
+Fast-forward the user's rumiai-dev-PoCs checkout to revision 4b030f8f971034bc0bd45015c7b8c3f1aab5d474 or later and rerun the same physical Node command against the already configured electron-web-control v0.1.6 service.
 
 From PoC 068:
 node export-share.mjs https://chatgpt.com/share/<id> ./archive
 
-The expected distinction is now after recovery. If the run reaches `embedded-json` or later, initial Network overflow has been successfully contained. A later overflow in `hook-discovery` would separately identify the `Debugger.enable` script burst and must be handled from that evidence. If the source supplies a full snapshot, verify all active messages and multimodal metadata before adding real image/graph preservation. Do not increase the common level-3 buffer as a task-local workaround, invent endpoints, return to DOM scrolling, require a separate Chromium browser or expose a raw CDP port.
+The next physical result should validate the injected-page path directly. A successful capture should report method injected-page and produce the normal structured export. If it fails, inspect the new numbered diagnostic; there should be no debug.events-overflow, hook-discovery, Debugger.enable or debug session events in the active path. Use the observed phase and privacy-reduced JSON shapes to refine only the injected page observer. Do not increase the common level-3 buffer, invent endpoints, return to DOM scrolling, require a separate Chromium browser or expose a raw CDP port.
 
 ## Blockers / open questions
 
