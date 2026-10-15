@@ -9,7 +9,7 @@ Build a deterministic, reusable exporter for ChatGPT conversations accessible th
 
 ## Current repository revisions
 
-- rumiai-dev: 482306740fa4fb1a47e755861f2923a3ec806b33 (pre-checkpoint HEAD)
+- rumiai-dev: 76352ad76a700665c9f7ddee35159c7035d069f2 (pre-checkpoint HEAD)
 - rumiai-dev-PoCs: 0ba2245c84842789849cca2f9ab86b0e3ec60c03 (opt-in live validation workflow, README, private output ignore)
 - pwc-web-control: 5f3c8d298ac916be72ea59461a167ac31610ca61
 - electron-web-control: 22da3beab20e509cffcbd81866b51253df4e08a9
@@ -62,18 +62,21 @@ The live ChatGPT share DOM can change and may present only a subset of the sourc
 - Prepared opt-in GitHub Actions workflow `.github/workflows/poc-068-chatgpt-live-export.yml`: manually supplied URL, real pinned `pwc-web-control` CLI/service on Chrome/Xvfb, disposable no-upload archive, and summary-only output. No URL or conversation content was committed. Workflow has not been dispatched against the user's link.
 - Added `archive/` and `node_modules/` to the PoC ignore list, and documented workflow privacy caveats and exact validation scope. Existing PoC fixture workflow `38709297713` passed on hosted Ubuntu at revision `0ba2245c84842789849cca2f9ab86b0e3ec60c03`; this is not a live ChatGPT site validation.
 - Post-change diff covered only the opt-in workflow, PoC README and .gitignore; no provider/production API or canonical specification changed.
+- User-reported physical-host acceptance on corporate-network Ubuntu (2026-10-15): `npm test` 12/12 PASS; direct `node export.mjs` against the supplied real share returned success with `archive/0001`, `messageCount: 10`, `imagesDownloaded: 0`, `imagesUnavailable: 1`, `observedSettledAtBottom: true`. These are observed CLI results reported by the user, not assistant inspection of private artifact bytes; installed provider identity, message fidelity and missing-image cause are not yet verified.
 
 ## Current state
 
-PoC implementation is committed in `rumiai-dev-PoCs` and has passing synthetic/controlled-boundary CI evidence through source revision abc6d1b7a338e6e7509da742c008c5885d2041ef. The latest PoC revision 455c17de4ae1aebc0b3a87b3fd834ad2f0b13e91 also passed GitHub Actions run 38705531193; it changes only README validation scope after the preceding source-and-test revision. The user has now supplied an actual share URL in the chat, but it was deliberately not committed to a repository. Access via the assistant web tool returned DisabledError; direct network access from the auxiliary container failed to resolve chatgpt.com. Real site extraction and media fidelity therefore remain unvalidated.
+The PoC at source HEAD `0ba2245c84842789849cca2f9ab86b0e3ec60c03` is experimentally operational through the normal public `web-control` command on the user's corporate-network Ubuntu host: local tests 12/12 PASS and a real share export produced 10 messages in `archive/0001` with observed stable bottom. The preceding npm TLS installation blocker no longer prevents execution (the exact local remediation was not reported). One image is unavailable and its specific diagnostic has not yet been inspected. The assistant cannot access the user's local archive; neither the extracted 10 messages' fidelity nor completeness relative to the original source chat is established. No conversation content has been committed or uploaded.
+
 
 ## Next action
 
-Resolve the one-shot npm corporate-CA trust issue on the user's Ubuntu host without weakening TLS, confirm dependency installation and PoC fixture tests, then run the exporter through that host's installed real web-control provider using the already-supplied share URL. Compare visible turns, code, images and file links with captured evidence; correct only observed gaps before promotion.
+Inspect the local revision `archive/0001/conversation.json` for asset `reason`, missingImages and message roles/counts without exposing signed URLs or private message text. Compare `conversation.md` locally with visible source turns. Because media fetch uses Node independently of the browser and the corporate CA was needed for npm, optionally rerun the exact share with `NODE_EXTRA_CA_CERTS=/usr/local/share/ca-certificates/rpr-DOM-CA.crt` to test whether a new immutable revision `0002` can fetch the image; do not claim TLS is the cause until the reason is inspected.
 
 ## Blockers / open questions
 
 - An actual share URL was supplied, but the assistant's available web fetch was disabled and the local container could not resolve chatgpt.com; no access to its live DOM has been obtained.
 - No live web-control service is available in the assistant's current Debian auxiliary environment.
 - Source page may omit uploaded file bytes or assets even when thumbnails/links are present.
-- On the user's corporate-network Ubuntu host, `npm install` in PoC 068 failed with `SELF_SIGNED_CERT_IN_CHAIN` fetching `linkedom` from registry.npmjs.org (2026-10-15). The host's already known corporate CA file is `/usr/local/share/ca-certificates/rpr-DOM-CA.crt`. A one-shot `NODE_EXTRA_CA_CERTS=/usr/local/share/ca-certificates/rpr-DOM-CA.crt npm install` was recommended with TLS verification retained. No successful retry has yet been observed. Central browser CA management remains a separately deferred concern under `todo/browser-certificate-trust-centralization.md`.
+- Corporate npm TLS issue was previously observed, but user has now completed 12/12 local tests and a real export. How local npm trust was remedied was not independently observed. Dedicated centralized browser CA work remains deferred under `todo/browser-certificate-trust-centralization.md`.
+- The one unavailable image may be blocked by first-party-origin rules, signed URL/session access, HTTP result, a missing DOM source, or corporate TLS trust in Node. Diagnostic is stored in `conversation.json` under `assets[].reason` or `messages[].missingImages`; cause not yet observed.
