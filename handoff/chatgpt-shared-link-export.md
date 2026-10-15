@@ -69,10 +69,11 @@ PoC implementation is committed in `rumiai-dev-PoCs` and has passing synthetic/c
 
 ## Next action
 
-Run the opt-in real-browser workflow via GitHub Actions with the already-supplied user link as manual input (or execute the local exporter through the user's installed web-control provider). Inspect the summary and private capture evidence to compare all visible turns, code, images and file links; correct only observed parser/provider gaps before considering promotion.
+Resolve the one-shot npm corporate-CA trust issue on the user's Ubuntu host without weakening TLS, confirm dependency installation and PoC fixture tests, then run the exporter through that host's installed real web-control provider using the already-supplied share URL. Compare visible turns, code, images and file links with captured evidence; correct only observed gaps before promotion.
 
 ## Blockers / open questions
 
 - An actual share URL was supplied, but the assistant's available web fetch was disabled and the local container could not resolve chatgpt.com; no access to its live DOM has been obtained.
 - No live web-control service is available in the assistant's current Debian auxiliary environment.
 - Source page may omit uploaded file bytes or assets even when thumbnails/links are present.
+- On the user's corporate-network Ubuntu host, `npm install` in PoC 068 failed with `SELF_SIGNED_CERT_IN_CHAIN` fetching `linkedom` from registry.npmjs.org (2026-10-15). The host's already known corporate CA file is `/usr/local/share/ca-certificates/rpr-DOM-CA.crt`. A one-shot `NODE_EXTRA_CA_CERTS=/usr/local/share/ca-certificates/rpr-DOM-CA.crt npm install` was recommended with TLS verification retained. No successful retry has yet been observed. Central browser CA management remains a separately deferred concern under `todo/browser-certificate-trust-centralization.md`.
