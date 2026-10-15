@@ -172,6 +172,8 @@ per `SENSE-MODEL.md`.
 
 ## Completed
 
+- 2026-10-15 GitHub CI result: `rumiai-dev-PoCs` at `e516e5fd314716a2315392067ac9ef3ceab5d6f3`, [run 38702344501](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/38702344501), job `operator-regressions`: success. Four relevant steps passed: `sh`/`dash`/`bash` syntax; simulated all-eight-host controller check/canary/failure sequence; isolated real-SHA-256 manifest/content verifier; and root disposable real-Git fast-forward, stale HEAD, untracked preservation and second-pin apply without extra `srv` actions. The job log contains all three explicit test `PASS` markers. This is not physical rsudo, systemd, Ollama or network validation of the committed variant; the 2026-10-14 8/8 log remains separate proof of the chat-inline variant.
+
 - 2026-10-15 **repository operator-PoC consolidation (not physical revalidation)**.
   `rumiai-dev-PoCs/pocs/067-ollama-cluster-rollout/` now provides exactly
   the two selected operator sources `controller.lib.sh` and `rollout.job`.
@@ -186,8 +188,14 @@ per `SENSE-MODEL.md`.
   were added. An isolated locally replicated verifier ran with real
   `sha256sum` and passed happy path, corrupted payload, corrupted
   manifest and absent manifest; this is NOT an execution of the exact
-  repository test files. Repository CI results and a physical run of the
-  consolidated code are not yet verified. The consolidated PoC deliberately
+  repository test files. The exact committed source additionally passed
+  GitHub Actions run `38702344501` at `rumiai-dev-PoCs` SHA
+  `e516e5fd314716a2315392067ac9ef3ceab5d6f3`: real `sh`/`dash`/`bash`
+  parsing, simulated 8-host controller sequencing, real disposable SHA-256
+  fixture validation and real local-Git safety/second-pin verification all
+  passed. This is **isolated-host/fixture** evidence, not actual production
+  rsudo/NFS/systemd/HTTP execution of the consolidated source; physical
+  validation remains outstanding. The consolidated PoC deliberately
   retains fail-closed validation of existing worker NFS/fstab/systemd
   configuration rather than the chat-inline operator's conservative NFS
   repair. It is not byte-for-byte or behavior-for-behavior identical to
@@ -335,7 +343,7 @@ per `SENSE-MODEL.md`.
 
 ## Current state
 
-The follow-up two-file operator PoC is now committed but is *not* the source of the physically successful 8/8 log. It requires its own CI and physical validation before replacing the known-good operator scripts. No additional fleet mutation was performed during this repository-consolidation work unit.
+The follow-up two-file operator PoC is now committed but is *not* the source of the physically successful 8/8 log. Its isolated GitHub CI passed on 2026-10-15; physical validation and resolution of the NFS-repair behavior gap are still required before replacing the known-good operator scripts. No additional fleet mutation was performed during this repository-consolidation work unit.
 
 The initial local AI worker pool is physically deployed and persistent. The 2026-10-14 operator run validated successful in-place updates across all eight hosts to the exact `rumiai-os` pin `9f4524d9af44cc031ba039b88cfda8d2df0e1c65`; the full 8/8 sequence returned success after HTTP readiness, shared-model visibility and real bounded inference on each host. This is physical deployment evidence for the exact pin, not for a later GitHub HEAD, another reboot, or repeat-run behavior.
 
@@ -356,16 +364,16 @@ The previous shared-runtime llama.cpp direction is no longer the current worker 
 
 ## Next action
 
-1. Validate the newly committed two-file operator PoC: obtain actual
-   results of its isolated repository tests/CI, fix any defects on current
-   main, and retain the exact user-mandated first log line. Determine whether
-   conservative NFS repair from the physically successful chat-inline source
-   is still needed as part of the durable operator procedure; the current
-   committed PoC intentionally stops on NFS mismatch. Only after offline
-   validation, perform a proportional credential-loaded physical `check`,
-   repeat-pin/idempotence check and separately, when appropriate, a
-   post-update reboot check. The completed 2026-10-14 8/8 rollout must
-   never be repeated just to manufacture new test evidence.
+1. With isolated GitHub CI now **green** for the consolidated two-file PoC,
+   resolve whether its explicit fail-closed NFS configuration check should
+   regain the conservative NFS repair behavior of the successful chat-inline
+   operator; do not silently treat the two variants as identical.
+   Then perform a proportional credential-loaded physical `check` and,
+   if justified, repeat-pin/idempotence test on that exact source. A
+   post-update reboot check remains distinct. Keep the mandatory first line
+   `exec > "/m/src/git/rsudo-jobs.log" 2>&1`, preserve all untracked
+   operating state and never repeat the completed 2026-10-14 8/8 rollout
+   merely to create test evidence.
 2. Prototype the first *inference dispatch* boundary in isolation: resolve a
    safe authenticated route to the Ollama loopback-only services, simulate
    healthy/unhealthy worker selection and failures, then validate one
@@ -379,7 +387,7 @@ The previous shared-runtime llama.cpp direction is no longer the current worker 
 
 ## Blockers / open questions
 
-- The operator's **exact first job line** remains `exec > "/m/src/git/rsudo-jobs.log" 2>&1`; never replace it with a timestamped/relative pathname. A **two-file version with corrected manifest verification is now committed** in the PoC, but it is not the exact physical 8/8 source: the committed version fails closed on NFS mismatch while the successful chat-inline version offered conservative NFS reconciliation. Both sources actually define and invoke the repair-named worker function in their own rollout path. No physical re-run of the committed code and no confirmed CI result yet. The separately reported `rsudo-admin` terminal-closure / `): not found` behavior remains unproven as fixed.
+- The operator's **exact first job line** remains `exec > "/m/src/git/rsudo-jobs.log" 2>&1`; never replace it with a timestamped/relative pathname. A **two-file version with corrected manifest verification is now committed** in the PoC, but it is not the exact physical 8/8 source: the committed version fails closed on NFS mismatch while the successful chat-inline version offered conservative NFS reconciliation. Both sources actually define and invoke the repair-named worker function in their own rollout path. No physical re-run of the committed code; isolated GitHub Actions run `38702344501` passed at SHA `e516e5fd314716a2315392067ac9ef3ceab5d6f3` with mocked external services. The separately reported `rsudo-admin` terminal-closure / `): not found` behavior remains unproven as fixed.
 
 - The user's four rsudo-jobs attachments dated 06:58, 08:00, 09:10 and 09:36 have been read from mounted file bytes and are all exactly 264 bytes with identical SHA-256 `016ee951114b3758690f42238feab2b7bda88dd8076eeec3e2541235e348cdcb`; each contains the same old `repair_ollama_nfs_worker: not found` output and the same job token; none records `cluster_rollout`. The user clarified that `): not found` came from `rsudo-admin` itself, not from the cluster job or library, and disappeared after an execution of the scripts unexpectedly closed the entire terminal. The rsudo-admin implementation places sourced job effects in nested subshells and ordinarily returns to its menu; terminal closure is not established as a normal or repaired condition. Do not conflate the two defects or assume the rsudo-admin issue is resolved by a new session. None of the repeated 264-byte legacy logs establishes a new fleet rollout.
 
@@ -387,9 +395,11 @@ The previous shared-runtime llama.cpp direction is no longer the current worker 
   2026-10-14 log and exact deployment SHA. The newly committed self-contained
   two-file PoC fixes the superseded in-package manifest assumption but has
   only isolated helper-level SHA evidence so far; its shell tests are
-  committed, not yet reported as passing in a live CI run. Repeat-run
-  idempotence of that exact committed code, NFS recovery parity and
-  post-update reboot are not physically demonstrated. The assistant
+  committed and passed isolated GitHub Actions workflow run `38702344501`.
+  Repeat-run idempotence of the exact committed code was exercised using
+  disposable real Git and mocked service/API boundaries; the corresponding
+  physical repeat-run, NFS recovery parity and post-update reboot have
+  not been demonstrated. The assistant
   cannot access the operator's credential-loaded rsudo session.
 
 - NFSv4.2 server/client operation, read-only shared Ollama runtime/model access, and local CPU inference are physically validated across every worker host in the current fleet.
