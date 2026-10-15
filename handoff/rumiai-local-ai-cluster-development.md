@@ -108,32 +108,19 @@ For the first dispatcher proof, keep these responsibilities separable:
 - observable result metadata (worker choice, duration, status, retry decision)
   suitable for validating scheduling and diagnosing failures.
 
-2026-10-15 **explicit user correction to the deployment-design method**:
-the company's actual organizational/network/security topology and the
-user's intended RumiAI deployment model are **not yet known from the current
-project sources**. The successful eight-host `rsudo` rollout proves
-administrative SSH reachability and loopback-local Ollama inference on those
-hosts. It does **not** prove that SSH, tunneling, reverse proxying, direct HTTP
-exposure, a particular coordinator placement or any other transport is
-appropriate for production application inference.
-
-Before selecting or implementing a dispatcher transport or deployment
-topology, first establish the intended deployment scenarios and the
-organization's actual constraints with the user. Compare candidate designs
-against those requirements and make the applicable choices explicitly; do
-not infer them from the existing admin access or from what happens to be
-installed. The validated Ollama listeners at `127.0.0.1:11435` are a
-current *deployment fact*, not a user-approved final topology.
-
-The user explicitly permits "build first, decide how it fits later" **only
-when they choose that order deliberately for a bounded experiment**. No
-such authorization should be inferred from the prior cluster rollout. The
-completed hardware/inference experiment remains useful evidence, not a
-retroactive approval of the missing deployment architecture. Accordingly,
-the previously proposed "SSH-mediated request first" is only a possible
-technical experiment, **not the selected or required next action**.
-No new listener, credentials contract, application data path, product
-command or persistent deployment role is approved by this handoff.
+**Deployment-design boundary:** The operator's successfully tested SSH administration
+does not define the intended AI inference transport; the current user choice
+for the initial deployment is direct Ollama HTTP with planned `0.0.0.0`
+listeners, with no configuration mutations now. The wider enterprise
+topology, source network reachability, access policy, caller identity,
+service placement and operational constraints still require explicit review
+before a real network-facing deployment. Neither the currently bound
+`127.0.0.1:11435` services nor the planned all-interface bind demonstrate
+authorized access or network reachability. The user permits experimental
+"build before complete system design" sequencing only when explicitly chosen
+for a bounded validation; it is not a default planning method. Inference
+dispatch should first be designed for the selected future HTTP topology,
+and neither SSH tunneling nor a proxy is selected by implication.
 
 First acceptance scenarios:
 1. A caller supplies the inference task and bounded response constraints, not
