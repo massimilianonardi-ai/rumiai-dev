@@ -9,8 +9,8 @@ Archive user-authorized ChatGPT shared-link conversations completely and readabl
 
 ## Current repository revisions
 
-- rumiai-dev: 199f1ae04e71dae3b35ca13f82305d8220f0bbc6 (pre-checkpoint HEAD)
-- rumiai-dev-PoCs: 3fc76222582d633cee149de45484d89c530ff779 (page-context shared JSON fetch; no event domains)
+- rumiai-dev: 28c43dbcc7fe6a0ee15ff517a280330afbce0219 (pre-checkpoint HEAD)
+- rumiai-dev-PoCs: 2ee90635f1170d6eda7c1ee3cfc41a8f3c12f46b (honor hidden ChatGPT message metadata)
 - pwc-web-control: 403f4fa9bbea419715e9c834e847c6f2b60ae421 (released v0.1.6)
 - electron-web-control: 077eb502f1d68235b4e5c9c28e4a7560795bce17 (released v0.1.6)
 - pkg-catalog: 7cd9b7585b9343a153e516c9c47b6fb92b7330e0 (facility web-control 3 and both provider realizations)
@@ -78,16 +78,22 @@ Current external implementation evidence from a recently maintained public ChatG
 
 The user's physical rerun on 3fc76222582d633cee149de45484d89c530ff779 succeeded end-to-end through the normal installed web-control provider. The command returned method=page-fetch for the shared conversation titled "Mirror chat su GitHub", exported 81 visible messages from a captured mapping of 1413 nodes, preserved one non-text part, and wrote both the immutable export directory and ZIP. This is the first physical validation that the current page-context direct JSON acquisition path works on the real shared URL without DOM scrolling, Network/Debugger event domains, breakpoints, a raw debugger port or a parallel browser.
 
-Structured acquisition is therefore no longer the active blocker. The exporter still reports imagesDownloaded=0 and observationComplete=false; binary image recovery, faithful graphic/HTML rendering and explicit physical completeness validation of the produced transcript remain open.
+Structured acquisition is therefore no longer the active blocker. Artifact-level inspection of the first successful physical export established that the raw snapshot/branch is structurally complete: AUDIT.json reports 1413 mapping nodes, 1413 active-branch nodes and zero nodes outside the active branch. It also reports 81 currently included messages (20 user, 61 assistant) and one non-text part. The non-text object is a user multimodal image_asset_pointer for a 1536x1024, 2,209,218-byte sediment asset.
+
+The same inspection also found that the current visibility filter is not yet correct enough to claim transcript completeness. The TRANSCRIPT.md tail contains repeated assistant response text and an internal-looking conversation-summary/suggestion block. AUDIT.json shows consecutive assistant final nodes at ordinals 1359/1360 and later 1370/1411/1412 all classified as visible_candidate. Therefore observationComplete must remain false even though the captured mapping itself is complete.
+
+Current PoC revision 2ee90635f1170d6eda7c1ee3cfc41a8f3c12f46b corrects the first known classification gap without text-based deduplication: deriveTranscript now excludes messages explicitly marked metadata.is_visually_hidden_from_conversation, metadata.is_thinking_preamble_message or weight=0. AUDIT nodes now retain only safe structural visibility evidence (status, end_turn, weight, the two hidden flags, message_type and is_complete) so a physical rerun can identify any remaining renderer semantics without exposing additional conversation content. The hosted fixture covers all three exclusions. GitHub Actions run 38782832929 passed syntax and the full PoC fixture/reference job for this exact revision.
+
+The exporter still reports imagesDownloaded=0 and observationComplete=false; binary image recovery, faithful graphic/HTML rendering and final transcript-visibility validation remain open.
 
 ## Next action
 
-Validate the physically produced structured export before extending media handling: inspect AUDIT.json, ACQUISITION.json, NON_TEXT_PARTS.json and the beginning/end of TRANSCRIPT.md from the successful "Mirror chat su GitHub" export. Confirm that the 81 visible messages represent the intended active branch without duplication or omission and identify the preserved non-text part. Then implement the next acquisition/export layer for referenced image binaries and faithful HTML/graphic rendering using the already validated structured snapshot as the source of truth.
+Fast-forward the user's PoC checkout to revision 2ee90635f1170d6eda7c1ee3cfc41a8f3c12f46b and rerun the same physical share export. Inspect the new message count plus the tail of TRANSCRIPT.md. If the observed duplicates disappear, inspect AUDIT.json classification_counts and the formerly suspicious ordinal region to confirm they were removed by explicit renderer metadata rather than an accidental text heuristic. If duplicates remain, use the newly recorded safe message metadata to derive the next semantic visibility rule; do not deduplicate by string overlap merely to make the transcript look correct.
 
-Do not reopen the discarded DOM-scrolling, Network-event or Debugger-breakpoint approaches unless new physical evidence invalidates the direct page-fetch path.
+After transcript visibility is physically validated, proceed to the preserved image_asset_pointer and faithful HTML/graphic rendering using the structured snapshot as the source of truth. Do not reopen the discarded DOM-scrolling, Network-event or Debugger-breakpoint approaches unless new physical evidence invalidates the direct page-fetch path.
 
 ## Blockers / open questions
 
-- Physical structured acquisition is validated on the user's VM for the tested shared URL; transcript completeness still needs explicit artifact-level inspection before marking observationComplete=true.
+- Physical structured acquisition is validated on the user's VM for the tested shared URL, and the raw active branch is structurally complete; renderer-visible transcript filtering remains under physical validation before observationComplete can become true.
 - Real image binary download and faithful graphic/HTML rendering remain open after data acquisition.
 - The provider-install integration formal validation passed on both Linux architectures. Electron macOS ARM64 package job was still queued at the last shared-debugger handoff checkpoint; check its current status before making a universal installed-host claim.
