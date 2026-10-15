@@ -9,8 +9,8 @@ Archive user-authorized ChatGPT shared-link conversations completely and readabl
 
 ## Current repository revisions
 
-- rumiai-dev: 01548df3717bc83b2ab5d31bc8aaf2b2aa9dc3d8 (pre-checkpoint HEAD)
-- rumiai-dev-PoCs: d192ef3a6315ec68e2a0764d18a04aa872990d28 (bounded debugger-event drain during structured navigation)
+- rumiai-dev: f883d6d97e17f0fbc7b83aeedb09f396b0af3d4c (pre-checkpoint HEAD)
+- rumiai-dev-PoCs: a1f1e6c2d98f38651ac141b769844b7550db830a (stage CDP domains to reduce initial event pressure)
 - pwc-web-control: 403f4fa9bbea419715e9c834e847c6f2b60ae421 (released v0.1.6)
 - electron-web-control: 077eb502f1d68235b4e5c9c28e4a7560795bce17 (released v0.1.6)
 - pkg-catalog: 7cd9b7585b9343a153e516c9c47b6fb92b7330e0 (facility web-control 3 and both provider realizations)
@@ -58,18 +58,22 @@ The user's VM initially had electron-web-control v0.1.4 selected. After installi
 
 The next physical exporter run produced diagnostic 0005 with phase `initial-navigation`, operation `debug session events`, and provider diagnostic `debug.events-overflow: events were discarded; reopen or resynchronize the session`. This establishes that page creation, debugger open and domain enables completed, and that the bounded event stream overflowed during initial navigation before any response body, script hook or JSON shape could be inspected.
 
-PoC revision d192ef3a6315ec68e2a0764d18a04aa872990d28 corrects the consumer side without changing web-control: both initial and breakpoint reload navigation now use `Page.navigate` through the existing persistent session with the event reader started first. The reader drains any preexisting backlog with zero-wait calls, requests the level-3 maximum batch of 128 events, advances only to the last actually delivered event, and starts the next event request before processing the current batch. The fixture test now fails if navigation begins without an active event poll, reproducing the physical overflow condition. GitHub Actions run 38774900291 passed syntax and the complete PoC test suite for this exact revision. This is hosted/fixture evidence only; the corrected sequence still requires the next physical shared-link rerun.
+PoC revision d192ef3a6315ec68e2a0764d18a04aa872990d28 corrected the consumer side without changing web-control: both initial and breakpoint reload navigation use `Page.navigate` through the existing persistent session with an event reader already active. The reader drains any preexisting backlog, requests the level-3 maximum batch of 128 events, advances only to the last delivered event and starts the next event request before processing the current batch. GitHub Actions run 38774900291 passed for that revision.
+
+The user's physical rerun on d192ef3a6315ec68e2a0764d18a04aa872990d28 produced diagnostic 0006. Overflow still occurred in `initial-navigation` at `debug session events`, but the adapter progressed farther: `inspectedResponses=2` and one privacy-reduced JSON shape with top-level key `integrations` were observed before loss. This proves the pre-navigation drain improved acquisition but did not keep the bounded buffer below its retention threshold under the physical ChatGPT load.
+
+Current PoC revision a1f1e6c2d98f38651ac141b769844b7550db830a narrows the event-producing domains by acquisition phase. Initial navigation enables only `Network`; `Runtime.evaluate` is used without `Runtime.enable`; after initial network/embedded-JSON inspection, `Network` is disabled and cleared before `Debugger.enable`. The debugger is enabled with the event reader already active so the existing-script `Debugger.scriptParsed` burst is drained separately instead of competing with navigation/network traffic. No web-control/provider contract changed. GitHub Actions run 38776369694 passed syntax and the complete PoC fixture/reference test job for this exact revision. Physical shared-link validation of this staged-domain sequence remains pending.
 
 The exporter still reports imagesDownloaded=0 and observationComplete=false even on a structured capture; reconstructing HTML/assets and live-site acceptance remain open.
 
 ## Next action
 
-Fast-forward the user's rumiai-dev-PoCs checkout to revision d192ef3a6315ec68e2a0764d18a04aa872990d28 or later and rerun the same physical Node command against the already configured electron-web-control v0.1.6 service.
+Fast-forward the user's rumiai-dev-PoCs checkout to revision a1f1e6c2d98f38651ac141b769844b7550db830a or later and rerun the same physical Node command against the already configured electron-web-control v0.1.6 service.
 
 From PoC 068:
 node export-share.mjs https://chatgpt.com/share/<id> ./archive
 
-If the run still fails, inspect the next numbered diagnostic before changing acquisition logic. A repeated `debug.events-overflow` would mean the CLI/session event-drain model still cannot keep pace with the physical page and requires evidence-driven refinement. If overflow is gone, continue from the newly observed phase, response count, script count and privacy-reduced JSON shapes. If the source supplies a full snapshot, verify all active messages and multimodal metadata before adding real image/graph preservation. Do not invent endpoints, return to DOM scrolling, require a separate Chromium browser or expose a raw CDP port.
+If the run still fails, inspect the next numbered diagnostic before changing acquisition logic. A repeated overflow in `initial-navigation` would now isolate the remaining pressure to the Network-only stream; an overflow in `hook-discovery` would isolate the `Debugger.enable` existing-script burst. If overflow is gone, continue from the newly observed phase, response count, script count and privacy-reduced JSON shapes. If the source supplies a full snapshot, verify all active messages and multimodal metadata before adding real image/graph preservation. Do not invent endpoints, return to DOM scrolling, require a separate Chromium browser or expose a raw CDP port.
 
 ## Blockers / open questions
 
