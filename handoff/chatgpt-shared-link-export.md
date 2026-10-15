@@ -54,11 +54,17 @@ The failed DOM-based attempts used scrolling and window merging, produced repeat
 
 ## Current state
 
-The Node.js port and hosted CI are complete, and the provider/package sources are genuinely released at compatibility 3. The actual user's shared ChatGPT page has NOT been run through the new Node exporter; compatibility with browser page structured JSON remains unverified. The exporter currently reports imagesDownloaded=0 and observationComplete=false even on a structured capture; reconstructing HTML/assets and live-site acceptance remain open.
+The first physical Node.js run on the user's VM reached the common web-control path but failed during the debugger-attach phase before ChatGPT navigation. Diagnostic 0003 established: page creation succeeded; no responses/scripts/hooks were inspected; the failure occurred in persistent debugger open or one of Runtime/Debugger/Network/Page enable calls. Therefore this evidence does NOT implicate the shared ChatGPT page, mergeActiveBranch discovery or event-buffer overflow.
+
+PoC diagnostics were then tightened forward-only so the next failure records the exact safe web-control operation and the provider's first privacy-reduced diagnostic line instead of collapsing all attach failures into share.web-control-failed. This diagnostic-only change does not alter acquisition protocol or provider behavior. Physical root cause remains open until the user reruns the updated PoC.
+
+The exporter still reports imagesDownloaded=0 and observationComplete=false even on a structured capture; reconstructing HTML/assets and live-site acceptance remain open.
 
 ## Next action
 
-On the user's configured web-control 3 host, run from PoC 068:
+Fast-forward the user's PoC checkout to current main and rerun the same Node command. Read the new numbered diagnostic's phase, operation and providerDiagnostic. If the failing operation is debug session open, investigate the provider attach/runtime state; if a specific *.enable fails, investigate that CDP/provider boundary. Do not change ChatGPT acquisition logic before this distinction is observed.
+
+From PoC 068:
 node export-share.mjs https://chatgpt.com/share/<id> ./archive
 
 If the source supplies a full snapshot, verify all active messages and multimodal metadata before adding real image/graph preservation. If it does not, inspect the numbered share-debug-diagnostic JSON field shapes privately to identify the real shared-page payload; do not invent endpoints or return to DOM scrolling. Do not require reinstalling a separate Chromium browser or a raw CDP port.
