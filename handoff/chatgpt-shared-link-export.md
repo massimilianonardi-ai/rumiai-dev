@@ -9,8 +9,8 @@ Archive user-authorized ChatGPT shared-link conversations completely and readabl
 
 ## Current repository revisions
 
-- rumiai-dev: 7b464ee2ef6bf2b62e13bd6990b1a5ff3b4a64da (pre-checkpoint HEAD)
-- rumiai-dev-PoCs: 4b030f8f971034bc0bd45015c7b8c3f1aab5d474 (inject page capture; no Network/Debugger event domains)
+- rumiai-dev: 4a6bb65b9ada2a291021c934e010509cc993f7db (pre-checkpoint HEAD)
+- rumiai-dev-PoCs: 3fc76222582d633cee149de45484d89c530ff779 (page-context shared JSON fetch; no event domains)
 - pwc-web-control: 403f4fa9bbea419715e9c834e847c6f2b60ae421 (released v0.1.6)
 - electron-web-control: 077eb502f1d68235b4e5c9c28e4a7560795bce17 (released v0.1.6)
 - pkg-catalog: 7cd9b7585b9343a153e516c9c47b6fb92b7330e0 (facility web-control 3 and both provider realizations)
@@ -40,7 +40,7 @@ Archive user-authorized ChatGPT shared-link conversations completely and readabl
 
 ## Working design
 
-The active Node adapter now prefers page-context JavaScript injection over debugger event observation. A compatibility-level-3 web-control session is still used as the common privileged CDP transport because the public web-control contract has no general page-eval command, but the active path does not enable Network or Debugger event domains, does not consume debug session events, does not discover bundle scripts and does not set breakpoints. Before navigation it installs a script with Page.addScriptToEvaluateOnNewDocument; that script observes fetch/XHR responses and inline JSON, stores the first structurally valid mapping/current_node snapshot in page memory, and Node polls that value with Runtime.evaluate.
+The active Node adapter uses the compatibility-level-3 web-control session only as a common privileged CDP command transport because the public web-control contract has no general page-eval command. After navigating the shared page and allowing its normal browser/profile state to establish, Runtime.evaluate performs a same-origin fetch for the structured share JSON, first from /backend-anon/share/<id> and then /backend-api/share/<id> as a fallback. The page-context code returns only a structurally valid mapping/current_node snapshot plus privacy-safe source/status attempt metadata. The active path does not enable Network or Debugger event domains, consume debug session events, discover bundle scripts, install breakpoints or monkeypatch page fetch/XHR. Inline application/json remains diagnostic fallback only.
 
 The original Python script used a native app:// renderer and its validated mergeActiveBranch breakpoint remains reference behavior only; it is no longer the active shared-link acquisition mechanism. The failed DOM-based attempts used scrolling and window merging, produced repeated content, missing images/graphics and an immobile page in user physical tests; do not regress to those approaches.
 
@@ -70,18 +70,22 @@ The canonical web-control level-3 contract explicitly caps event delivery at 128
 
 The user's physical rerun on 73f77dd1be358270ae83d7de4e287adc69f8afd1 produced diagnostic 0008. The initial overflow was successfully contained: the adapter reached embedded-json and then hook-discovery. Embedded JSON exposed only a configuration-shaped object (including authStatus, cluster and marketing flags), not a conversation snapshot. Hook discovery then failed with scriptCount=0 and share.snapshot-hook-unavailable. This showed the remaining blocker was the breakpoint/script-discovery strategy itself, not navigation or the initial overflow.
 
-The user explicitly challenged whether the Debugger domain was needed and proposed injecting JavaScript to collect the required data directly. That correction is now the active direction. An intermediate resource-tree/breakpoint revision f6be227869e2959d77da329a135a5dcc1c9771c4 passed hosted CI but was superseded before physical testing. Current PoC revision 4b030f8f971034bc0bd45015c7b8c3f1aab5d474 removes Network.enable, Debugger.enable, debugger event polling, scriptParsed/resource-tree hook discovery and breakpoints from the active acquisition path. It installs a pre-navigation page script with Page.addScriptToEvaluateOnNewDocument, observes fetch/XHR and inline JSON in page context, stores the first structurally valid mapping/current_node snapshot, and polls it via Runtime.evaluate. The session remains only the existing common level-3 privileged command transport; no provider API or contract changed. GitHub Actions run 38778806571 passed syntax and the full PoC fixture/reference job for this exact revision. Physical validation of the injected path is pending.
+The user explicitly challenged whether the Debugger domain was needed and proposed injecting JavaScript to collect the required data directly. Revision 4b030f8f971034bc0bd45015c7b8c3f1aab5d474 removed Network.enable, Debugger.enable, debugger event polling, script discovery and breakpoints and instead installed a pre-navigation fetch/XHR observer. GitHub Actions run 38778806571 passed for that revision.
+
+The user's physical rerun on 4b030f8f971034bc0bd45015c7b8c3f1aab5d474 produced diagnostic 0009. No debugger overflow or hook failure occurred; the injected observer simply did not see a complete snapshot. The only inline JSON shape remained the same configuration-shaped object seen in 0008. This established that passively intercepting page fetch/XHR as whole JSON is not the right acquisition point.
+
+Current external implementation evidence from a recently maintained public ChatGPT-share exporter identifies the structured share payload as a direct same-origin request to /backend-anon/share/<id>, with /backend-api/share/<id> as fallback, after the shared page is opened so the browser request context has the required cookies/Cloudflare state. Current PoC revision 3fc76222582d633cee149de45484d89c530ff779 adopts that mechanism through Runtime.evaluate in the already-open web-control page. It returns only a structurally valid snapshot and privacy-safe {source,status,...} attempt metadata, and adds sourceAttempts to failure diagnostics. No provider API or web-control contract changed. The first hosted run on implementation revision 532c63b379e71f02806d229bad260a9249ab94f7 exposed only an over-specified source-text assertion in the new fixture; the forward test-only correction 3fc76222582d633cee149de45484d89c530ff779 removed that incidental assertion. GitHub Actions run 38780482303 then passed syntax and the full PoC fixture/reference job. Physical validation of the page-context direct JSON fetch remains pending.
 
 The exporter still reports imagesDownloaded=0 and observationComplete=false even on a structured capture; reconstructing HTML/assets and live-site acceptance remain open.
 
 ## Next action
 
-Fast-forward the user's rumiai-dev-PoCs checkout to revision 4b030f8f971034bc0bd45015c7b8c3f1aab5d474 or later and rerun the same physical Node command against the already configured electron-web-control v0.1.6 service.
+Fast-forward the user's rumiai-dev-PoCs checkout to revision 3fc76222582d633cee149de45484d89c530ff779 or later and rerun the same physical Node command against the already configured electron-web-control v0.1.6 service.
 
 From PoC 068:
 node export-share.mjs https://chatgpt.com/share/<id> ./archive
 
-The next physical result should validate the injected-page path directly. A successful capture should report method injected-page and produce the normal structured export. If it fails, inspect the new numbered diagnostic; there should be no debug.events-overflow, hook-discovery, Debugger.enable or debug session events in the active path. Use the observed phase and privacy-reduced JSON shapes to refine only the injected page observer. Do not increase the common level-3 buffer, invent endpoints, return to DOM scrolling, require a separate Chromium browser or expose a raw CDP port.
+A successful capture should report method page-fetch and produce the normal structured export. If it fails, inspect the next numbered diagnostic and especially sourceAttempts: HTTP status from backend-anon/backend-api now distinguishes endpoint/access failure from snapshot-shape failure without persisting conversation content. There should still be no Network.enable, Debugger.enable or debug session events. Do not increase the common level-3 buffer, return to DOM scrolling, require a separate Chromium browser or expose a raw CDP port.
 
 ## Blockers / open questions
 
