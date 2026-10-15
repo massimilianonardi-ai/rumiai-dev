@@ -100,13 +100,22 @@ For the first dispatcher proof, keep these responsibilities separable:
 - observable result metadata (worker choice, duration, status, retry decision)
   suitable for validating scheduling and diagnosing failures.
 
-Critical current reachability constraint: on every host the validated Ollama
-service listens on `127.0.0.1:11435`. A remote coordinator therefore cannot
-reach those APIs directly. The first transport trial must explicitly compare
-the current authorized SSH/loopback route with any separately justified
-authenticated proxy; do not silently expose Ollama on a public/shared network,
-mistake privileged `rsudo` administration for the inference data path, or
-introduce a new service identity without its package/runtime ownership.
+The fleet is **already reachable through the existing SSH transport**:
+2026-10-14 physical rsudo execution reached and completed remote work on
+all eight servers, including each host's loopback-bound Ollama API. Existing
+`m` `ssh_auth` preserves normal OpenSSH arguments/stream semantics, and
+`rsudo` proves remote command execution but is a privileged **administrative**
+operation, not an adopted inference data path. Thus there is **no undiscovered
+server-reachability blocker**. The missing work is an *application inference*
+transport with suitable authentication, request/response streaming, concurrency,
+timeouts, security and lifecycle properties; a simple authenticated SSH remote
+loopback request is the first end-to-end candidate to demonstrate, without
+assuming that SSH port forwarding or a long-lived data connection has already
+been tested. The validated Ollama listeners remain at `127.0.0.1:11435`;
+do not expose them on a shared/public network or introduce a new proxy/daemon
+merely to demonstrate reachability. Design the application path first over
+existing capabilities; only evaluate a persistent tunnel or authenticated
+proxy if workload measurements and isolation requirements justify it.
 No new network listener, credentials contract, product command, API naming or
 persistent state model is approved by this working design.
 
@@ -383,10 +392,12 @@ The previous shared-runtime llama.cpp direction is no longer the current worker 
    `exec > "/m/src/git/rsudo-jobs.log" 2>&1`, preserve all untracked
    operating state and never repeat the completed 2026-10-14 8/8 rollout
    merely to create test evidence.
-2. Prototype the first *inference dispatch* boundary in isolation: resolve a
-   safe authenticated route to the Ollama loopback-only services, simulate
-   healthy/unhealthy worker selection and failures, then validate one
-   real independent request from a caller without worker-host knowledge.
+2. Prototype the first *inference dispatch* boundary using the **already
+   working SSH access**, without pretending host reachability is unresolved.
+   First prove a non-administrative, authenticated SSH-mediated HTTP request
+   to an existing loopback-bound Ollama instance, then simulate healthy/
+   unhealthy worker selection and failures and validate one real independent
+   request from a caller without worker-host knowledge.
    Keep request/role intent, scheduling, transport and provider response
    mapping separate; do not promote an API or product component prematurely.
    Evaluate a non-thinking model/profile for bounded deterministic tasks.
