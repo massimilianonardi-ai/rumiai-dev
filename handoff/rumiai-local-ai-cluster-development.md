@@ -9,14 +9,15 @@ Develop and validate a practical local AI cluster for RumiAI using the available
 
 ## Current repository revisions
 
-Remote HEADs verified at the start of the 2026-10-14 15:32+02:00 evidence work unit (refresh before future work):
+Remote HEADs verified for the 2026-10-15 post-consolidation consistency gate
+(refresh before any later RumiAI task):
 
 ```text
-rumiai-dev      857e9e1c61adaaa38d211a8a0146103ebd6d80b4  (pre-checkpoint)
+rumiai-dev      233dba230bc1a577fa0c05a41266efd224da28b6  (pre-checkpoint)
 rumiai-os       ef466362e9630b86d81b07ca647c2f2fbfd97a22
 rumiai-tests    b8d5cbea34784d1a42af2b00bf22c09fec9d478c
-pkg-catalog     7f9aadbc80f5f4fc85dee456cdd796535b2c6158
-rumiai-dev-PoCs db0f647e64c81d9f1366adfe79da3393963bef1e
+pkg-catalog     d8156212ed8212bdb53931c3e2595686527ea951
+rumiai-dev-PoCs a451b7903fddf4d4e5b2e8cbf66d82d51ac88932
 ```
 
 The **physically deployed fleet** is aligned to the exactly pinned
@@ -171,6 +172,14 @@ per `SENSE-MODEL.md`.
 - `osarch update` is an expected runtime mutation of the tracked selectors `bin/sys-osarch`, `bin/ext-osarch`, and `bin/ai-osarch`: the repository revision currently carries `linux-arm64` selector targets while the Ubuntu fleet correctly selects `linux-x86_64`. Therefore deployed runtime checkouts become Git-dirty in exactly those three paths after platform activation. Future rollout/update logic must treat those selector mutations as managed runtime state while still rejecting unrelated local changes.
 
 ## Completed
+
+- 2026-10-15 follow-up CI on **current PoC HEAD**
+  `a451b7903fddf4d4e5b2e8cbf66d82d51ac88932`: [run 38702868797](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/38702868797)
+  completed with conclusion `success`. This is the final README-only follow-up
+  on top of the previously green tested source commit
+  `e516e5fd314716a2315392067ac9ef3ceab5d6f3`; it does not add
+  new live-host evidence.
+
 
 - 2026-10-15 GitHub CI result: `rumiai-dev-PoCs` at `e516e5fd314716a2315392067ac9ef3ceab5d6f3`, [run 38702344501](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/38702344501), job `operator-regressions`: success. Four relevant steps passed: `sh`/`dash`/`bash` syntax; simulated all-eight-host controller check/canary/failure sequence; isolated real-SHA-256 manifest/content verifier; and root disposable real-Git fast-forward, stale HEAD, untracked preservation and second-pin apply without extra `srv` actions. The job log contains all three explicit test `PASS` markers. This is not physical rsudo, systemd, Ollama or network validation of the committed variant; the 2026-10-14 8/8 log remains separate proof of the chat-inline variant.
 
