@@ -46,6 +46,8 @@ Additional package, service, state or container specifications must be retrieved
 
 ## Fixed task-local choices
 
+- **2026-10-15 current explicit first-deployment choice:** plan for network-accessible Ollama HTTP endpoints, each bound to `0.0.0.0` when a later separately authorized configuration phase takes place. **Do not change any server, service, NFS, package, firewall, network or product configuration now.** The physically validated services still bind their respective loopback port `127.0.0.1:11435`. Binding all interfaces is not evidence of Internet reachability, network permission or caller authentication: the actual access perimeter, source networks and security controls remain to be established before exposure. This is a provisional first deployment direction, not approval of a permanent enterprise topology.
+
 - The cluster consists of the rsudo credential groups:
   `apisix`, `apisix_psn`, `apps`, `apps_psn`, `keycloak`, `keycloak_psn`, `gis`, `webgisrpr`.
 - `10.100.*` and `10.0.*` are local networks; `10.200.*` hosts are geographically remote. Inter-host networking is relatively slow even among local servers.
@@ -83,6 +85,12 @@ Additional package, service, state or container specifications must be retrieved
 ## Working design
 
 ### First dispatcher boundary — task-local working design, not a promoted API
+
+**2026-10-15 current design scope:** The user's first network mode is direct HTTP from applications/orchestration to Ollama endpoints after a later bind change to `0.0.0.0`. The orchestrator must not assume application inference travels through privileged `rsudo` or SSH tunnels. There is no authorization to change host/service/network configuration in this work unit. Organize design into two separate responsibilities: (a) distributed inference dispatch, model eligibility, health, admission/queues, bounded concurrency, retry and metrics; (b) higher-level AI task/tool/state orchestration consuming inference. The latter is not the responsibility of an inference engine or a RumiAI sense, and is not approved as a new product component by this design note. Evaluate only the minimal first inference-dispatch workflow now.
+
+**Candidate first-dispatch scenarios (not promoted contracts):** callers name a model/task profile rather than a concrete host; a configured inventory identifies eligible live workers; each worker has an explicit conservative in-flight capacity limit; failures before request acceptance may choose an alternate eligible worker, whereas uncertain/partially streamed requests must not be silently replayed; the response may stream through with per-request identifiers, timeout status and timing/token metrics. Existing Ollama `/api/tags`, `/api/ps` and `/api/chat` can provide model inventory, loaded-model visibility and inference timing, but `/api/ps` does not by itself prove the number of in-flight calls: the dispatcher must track its own admitted operations. Node selection can initially favor model availability, free admission slots and observed latency rather than assuming uniform hardware or equal network paths. All are design candidates for the user's review before implementation.
+
+**Security/open deployment boundary:** Ollama's local HTTP API does not natively authenticate callers (Ollama official API authentication documentation, checked 2026-10-15). Binding `0.0.0.0` exposes the listening interface to whichever sources networking/firewalls allow, not necessarily the Internet. The application orchestrator cannot impose exclusive access control on clients that bypass it to call raw Ollama endpoints. Before the later exposure/configuration phase, establish who can reach the nodes, how that reachability is restricted, and whether the intended first deployment is a trusted experiment or must enforce application identity. Do not silently deploy an API gateway, proxy, VPN or firewall rule. The existing `11435` service port is not an implied choice of a new port.
 
 Goal: a RumiAI caller requests bounded model inference without knowing the
 individual Ollama host or making privilege-bearing `rsudo-admin` calls.
@@ -369,6 +377,8 @@ per `SENSE-MODEL.md`.
 
 ## Current state
 
+The user has selected a **future initial direct HTTP / `0.0.0.0` Ollama network binding direction** for the first deployment and explicitly prohibited any configuration changes during the current orchestration design discussion. Actual deployed binding remains loopback-only as previously validated; neither direct multi-host HTTP connectivity nor a secure network exposure policy has been physically validated under the new choice. Nothing in this discussion reconfigures the fleet.
+
 The follow-up two-file operator PoC is now committed but is *not* the source of the physically successful 8/8 log. Its isolated GitHub CI passed on 2026-10-15; physical validation and resolution of the NFS-repair behavior gap are still required before replacing the known-good operator scripts. No additional fleet mutation was performed during this repository-consolidation work unit.
 
 The initial local AI worker pool is physically deployed and persistent. The 2026-10-14 operator run validated successful in-place updates across all eight hosts to the exact `rumiai-os` pin `9f4524d9af44cc031ba039b88cfda8d2df0e1c65`; the full 8/8 sequence returned success after HTTP readiness, shared-model visibility and real bounded inference on each host. This is physical deployment evidence for the exact pin, not for a later GitHub HEAD, another reboot, or repeat-run behavior.
@@ -400,18 +410,19 @@ The previous shared-runtime llama.cpp direction is no longer the current worker 
    `exec > "/m/src/git/rsudo-jobs.log" 2>&1`, preserve all untracked
    operating state and never repeat the completed 2026-10-14 8/8 rollout
    merely to create test evidence.
-2. **Before** implementing or validating an application inference
-   transport/dispatcher, establish with the user the intended production
-   deployment topology and actual organizational constraints (zones and
-   connectivity, network/security policy, caller location, intended service
-   ownership/identity, availability/scale and operating model). These are
-   open choices: `rsudo` access for administration is not approval of SSH
-   as the application transport. Compare relevant candidate designs against
-   the resulting requirements and make a deliberate decision. Run a
-   "transport first" experiment without this design only if the user
-   explicitly authorizes that sequence for a bounded verification goal.
-   Then prototype worker selection, errors and bounded inference under the
-   chosen assumptions; evaluate non-thinking model/profile separately.
+2. **Design only (no configuration changes):** take the explicit first
+   deployment direction of network-accessible Ollama bound to `0.0.0.0`
+   as the intended HTTP target; separate minimal inference dispatch from
+   higher-level AI task orchestration. Review caller-facing scenarios,
+   model/worker inventory, health, admission limits, concurrent scheduling,
+   failure/stream semantics and metrics. Retain the ability to choose a
+   coordinator placement once the caller locations and company security/
+   connectivity perimeter are known; no SSH tunnel, proxy, gateway or new
+   host listener is chosen by default. Ollama has no local API auth, so
+   the access perimeter and approved exposed capabilities must be decided
+   before a later server-network configuration phase. Only after design is
+   fixed should an isolated dispatch PoC be scoped and executed. Evaluate
+   non-thinking task/model profiles independently.
 3. Decide whether Hindsight belongs in the first orchestrated deployment or
    should follow after dispatcher/model-role validation; do not put its
    writable state on the read-only NFS model share.
