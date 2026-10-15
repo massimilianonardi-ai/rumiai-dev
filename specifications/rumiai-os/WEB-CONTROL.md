@@ -219,7 +219,7 @@ The `web-control` contract is provider-independent.
 The first implementation is expected to use a real Chromium-class browser controlled through Playwright, but:
 
 - Playwright is an implementation/provider dependency, not the public contract;
-- CDP is a provider-specific low-level mechanism, not the public contract;
+- CDP is the externally defined protocol used by the currently qualified level-3 Chromium debugger command payloads, but is not part of the level-1/2 portable browser contract;
 - Chromium is an initial browser implementation choice, not the semantic definition of `web-control`;
 - Electron is not required by the core contract.
 
@@ -280,7 +280,7 @@ WEBCTRL-09  rendered HTML/text and screenshot are portable baseline capture evid
 WEBCTRL-10  deterministic interaction receives explicit targets; goal interpretation remains above the control boundary
 WEBCTRL-11  raw debugger method payloads remain Chromium-specific and privileged; the shared level-3 session lifecycle is a defined additional contract, not part of levels 1/2
 WEBCTRL-12  unrestricted browser remote-debugging endpoints are not published by default
-WEBCTRL-13  Playwright/CDP/Chromium are initial implementation choices and do not define the public contract
+WEBCTRL-13  Chromium/Playwright/Electron are provider choices; level 3 explicitly qualifies the CDP command payload protocol only for current Chromium providers
 WEBCTRL-14  generic scheduling is outside web-control
 WEBCTRL-15  browser-backed providers preserve browser sandboxing by default; unsandboxed mode is explicit provider-specific opt-in only
 WEBCTRL-16  browser-backed provider services outlive browser-runtime termination, detect browser absence and recreate the browser on demand without preserving prior live page identities
