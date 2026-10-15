@@ -1,7 +1,7 @@
 # Advanced browser/Electron text editor
 
-Status: Active — TextEdit 0.8.2 / browser CI green; user reports successful Firefox/Ubuntu behavior; external-editor architecture review active
-Updated: 2026-10-14
+Status: Active — TextEdit 0.8.2 stable; PoC 066 DOM-free 2D geometry experiment and Chromium CI passed; unresolved module contracts remain working design
+Updated: 2026-10-15
 
 ## Goal
 
@@ -11,12 +11,12 @@ The JavaScript compilation, module loading and distribution concern has **indepe
 
 ## Current repository revisions
 
-Last verified remote main HEADs (2026-10-14; **recheck before any next task**):
+Last verified remote main HEADs (2026-10-15; **recheck before any next task**):
 
-- `rumiai-dev`: `04f50696342742461031d5df6ccfb9a823456bb6` (pre-handoff-sync snapshot; current v0.8.2 contract and active editor handoff).
+- `rumiai-dev`: `6d4666c0fd98d797f1213d71247905181a81b29b` (current canonical TextEdit contract, pre-this-checkpoint handoff revision).
 - `rumiai-os`: `ef466362e9630b86d81b07ca647c2f2fbfd97a22` (TextEdit v0.8.2 source, operational manual, workflow; pinned product CI passed).
 - `rumiai-tests`: `b8d5cbea34784d1a42af2b00bf22c09fec9d478c` (forward/reverse insertion and line-constructor permanent tests).
-- `rumiai-dev-PoCs`: `db0f647e64c81d9f1366adfe79da3393963bef1e` (PoC 066 GUI/2D CI passed).
+- `rumiai-dev-PoCs`: `051da53562d4b11697c68c2c00a578f1bf02fabf` (PoC 066 DOM-independent 2D geometry extraction, Node real TextEdit + Chromium GUI CI passed).
 - Reference `m` master: not rechecked for this handoff-only consistency sync; no source change.
 
 These are revision-specific resumption evidence, not substitutes for the mandatory fresh preflight.
@@ -62,6 +62,10 @@ These are revision-specific resumption evidence, not substitutes for the mandato
 6. Run the advanced text core independently of the browser view and embed it in an ordinary browser page or a secure Electron host; verify the core does not assume DOM APIs or renderer-specific state.
 
 ## Working design (not normative)
+
+- **2026-10-15 2D projection/selection separation checkpoint (PoC validated; NOT promoted API):** Under the user's authorization to proceed with the architecture study, `rumiai-dev-PoCs/pocs/066-text-edit-browser-gui/region-geometry.js` now owns *experimental, DOM-independent* fixture projection, 2D region overlap/full-coverage resolution and physical source-interval coalescing. `regions.js` now delegates those operations and still owns DOM, mouse, presentation, user feedback, and the sole publication to `editor.selections`; the genuine `TextEdit.replace` remains the only source-edit path. The same experimental geometry code is exercised by a new Node test `tests/regions-headless.mjs` against actual TextEdit v0.8.2 and by the existing Chromium mouse/keyboard `tests/regions.mjs`. PoC exact code revision `051da53562d4b11697c68c2c00a578f1bf02fabf`; [hosted Actions run 38706470893](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/38706470893) **PASS** for syntax, real-backend headless 2D test, and both main-GUI/regions Chromium suites. A prior functional commit `30cdd0bdac96a092312370311ab59d7744dfab4b` also passed [run 38706123106](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/38706123106); the final code revision is the delimiter-style cleanup. No new `rumiai-os` API, `rumiai-tests` permanent test, physical Firefox host run, or general overlap/edit policy was claimed. The `__regionGeometryPoC` name and fixture-specific fold/annotation discovery are intentionally provisional. The projection still traverses all source lines, measures selected entire rows and retains all region descriptors, so it does **not** establish scalable 2D virtualization.
+  **Current architecture evidence:** region *shape* and coverage can be computed without DOM; the `TextEditRepresentation` source projection, anchors and grapheme/tab metrics are reused; only `TextEditSelections` owns effective oriented editing selections. The current demonstration also shows the remaining design tension: merged adjacent/overlapping source spans can change array target count; visual traversal and source order may diverge; visual-only highlights are not editable caret targets. Do not promote the PoC's sort/merge rule or construct a second independent advanced-selection engine. Keep the extension-versus-composition choice with `TextEditAdvancedSelections` and generalized view-row mapping unresolved pending explicit cases.
+
 
 - **2026-10-14 user-reported physical result and architecture resumption:** The user explicitly states that the updated browser editor was tested on their Ubuntu 26.04 ARM64/Firefox host and behaved perfectly. This is qualitative first-hand operator feedback, not a newly executed or timestamped exact-SHA formal validation session. Do not request redundant repetition of the oriented-selection trials. The next active scope is decomposition of non-TextEdit editor responsibilities.
 - **2026-10-14 external-editor architecture inventory (WORKING DESIGN, not normative):** The user's TAB generalization concerns **2D representation elements**, not a special TAB-editing mode: an element may cover multiple logical grid cells/rows, map to a source interval, be source-anchored but not editable, or have no source payload. The PoC 066 `regions.js` currently mixes source-to-visual-row mapping, region creation, hit policies (`none`/`touch`/`full`), physical-range deduplication/orientation, DOM, pointer handling, replacement and status. `gui.js` mixes bounded viewport projection, Unicode/grid font metrics, DOM Range pixel hit testing, navigation, pointer construction, replacement and grapheme-reversal input. The reversal and array-validation adapter logic is duplicated in both pages. These are real tested experiments, not settled additional production modules.
@@ -203,7 +207,7 @@ The new external column planner demonstrates model-level 2D clipboard preparatio
 
 ## Next action
 
-Review and refine responsibility boundaries above TextEdit with the user, starting from the DOM-independent 2D region representation and general selection-construction policy, then input/action interpretation and browser-only layout/rendering. For a later authorized implementation, first isolate PoC 066 region geometry and selection resolution into independently testable headless behavior using the real TextEdit 0.8.2 contracts. Avoid new selection types, duplicate policy/source owners, unapproved TAB behavior, or premature public API promotion. Do not repeat the already user-reported successful Firefox/Ubuntu selection tests or expand deferred clipboard/history/IME scope.
+Use the now DOM-independent PoC 066 to evaluate concrete selection-resolution edge cases before deciding any new product API or library boundary: overlapping and coincident regions with different source bindings; distinct regions mapping the same source span; visual-only overlays intersecting editable text; bottom-up traversal when visual order differs from source order; folding source/view-row anchors; and bounded window projection instead of full source-line/region materialization. Compare the result with the existing `TextEditRepresentation` and `TextEditAdvancedSelections` ownership contracts, then propose the smallest coherent module boundaries and acceptance scenarios for explicit promotion. Preserve TextEdit 0.8.2 and the successful user-reported Firefox behavior; history/IME/clipboard implementation remains deferred.
 
 ## Blockers / open questions
 
