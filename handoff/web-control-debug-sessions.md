@@ -5,59 +5,58 @@ Updated: 2026-10-15
 
 ## Goal
 
-Provide the same page-scoped, persistent debugger session lifecycle through the common `web-control` interface in both first-party implementations (Playwright and Electron), enabling long-lived event reception and call-frame commands without publishing a browser debugging port.
+Provide a **common** page-scoped, persistent debugger-session capability through web-control in both Playwright and Electron providers, enabling structured CDP event/breakpoint/call-frame workflows without a second browser or remote debugger TCP port. Publish through the package facility only after new compatibility and release validation.
 
 ## Current repository revisions
 
-- rumiai-dev: 6923fe2817b341077e9e0f497a86e14ef264921c
-- pwc-web-control: 5f3c8d298ac916be72ea59461a167ac31610ca61
-- electron-web-control: 22da3beab20e509cffcbd81866b51253df4e08a9
-- rumiai-dev-PoCs: 53f269a4cdc2e91ad494de9d0f65336e6fae950d
+- rumiai-dev: 2696a9f8a06fb2a2c40143eb74e9d68eca442be8 (canonical level-3 contract, before this checkpoint)
+- pwc-web-control: f060a3bf2c3e38441e41dac09476e5ace3011e9b (source-level implementation)
+- electron-web-control: f78acc1963a2d341cd687216012a8b0dcbb22057 (source-level implementation)
+- rumiai-dev-PoCs: 53f269a4cdc2e91ad494de9d0f65336e6fae950d (existing exporter consumer candidate)
 
 ## Applicable canonical sources
 
-- README.md, RULES.md, CONSISTENCY-GATE.md, TESTING.md, handoff/README.md
+- README.md, RULES.md, CONSISTENCY-GATE.md, TESTING.md
 - specifications/README.md
-- specifications/rumiai-os/WEB-CONTROL.md
+- specifications/rumiai-os/WEB-CONTROL.md (§6 and level 3)
 - specifications/rumiai-os/DIAGNOSTICS.md
 - specifications/rumiai-os/COMMAND-ENTRYPOINTS.md
 - specifications/rumiai-os/DOCUMENTATION-MODEL.md
+- handoff/README.md
 
 ## Fixed task-local choices
 
-- The new public interface is common across BOTH current providers; do not equate a provider-only extension with the common interface.
-- Preserve compatibility-level 1 and 2 releases. Any new complete interface level needs a distinct level and matching declaration/release before users can rely on it as installed capability.
-- Keep browser debugger connections internal to local restricted provider IPC, with no raw remote debugging port.
-- The ChatGPT export PoC is one consumer, not the owner of the generic debugger lifecycle.
+- Level 3 extends complete level 2 and adds the same `debug session open/send/events/close` CLI and IPC semantics in both current Chromium providers. The identical controller-owned event-buffer/lifecycle implementation lives in both provider sources as `src/debug-sessions.mjs`. The CDP protocol method vocabulary is explicitly scoped to the current Chromium providers; hypothetical non-Chromium providers do not silently qualify as level 3.
+- Level-1/2 published package semantics and compatibility declarations are unchanged. Published package catalog support for level 3 is still pending release/catalog work and MUST NOT be claimed merely because source CI passed.
+- No remote debugger port; the controller Unix socket remains private. The existing PWC one-shot `debug cdp` remains; Electron now exposes the same one-shot command as well.
+- Electron's transient CDP native input path reuses an active managed debugger attachment without detaching it; managed `message`/`detach` listeners are removed on close.
+- Session event buffers are bounded (128 events, 4 MiB, 1 MiB/event) and cursor gaps return `debug.events-overflow` rather than silent loss.
 
 ## Acceptance scenarios
 
-1. Open a page-scoped persistent debugger session using web-control, enable a domain, navigate, collect events, inspect paused JavaScript frames, resume, and close the session without a second browser.
-2. Both Playwright and Electron provide the same CLI/request and response semantics.
-3. Page/browser closure invalidates sessions; stale handles produce distinguishable errors; queued events are bounded and overflow is visible.
-4. Ordinary page input and existing browser operations remain usable and safe while a debugger session exists.
-5. Existing published web-control 1/2 operations are unchanged, with no external debugging endpoint.
-
-## Working design
-
-Both runtimes provide attach/send/event/detach natively: Playwright `newCDPSession` / `send` / `on('event')` / `detach`; Electron `webContents.debugger.attach` / `sendCommand` / `on('message')` / `detach`. Common session handles and events must be owned by the provider controller, not by CLI subprocesses. Electron's existing `withNativeInput` transient debugger usage must reuse an active managed attachment or otherwise safely serialize it.
-
-Actual physical authentication and ChatGPT shared-page snapshot hook remain outside this task's validation; this task proves only the generic debug session interface.
+1. `web-control debug session open page-1` gives one opaque session; separate commands can `send` CDP methods, `events`-poll and `close` it.
+2. Both providers preserve a live session through navigation, deliver `Debugger.paused`, accept `Debugger.evaluateOnCallFrame` and `Debugger.resume`, and handle normal input while attached.
+3. Closing a page invalidates session handles; duplicate attaches and stale cursors fail with specific identities.
+4. No second browser, raw TCP debugger listener or provider-specific identity is required for normal session usage.
+5. Level-1/2 released provider packages remain valid until both providers ship a new declared level-3 compatibility release.
 
 ## Completed
 
-- Mandatory initial remote HEAD and current-source read, including provider implementations.
-- Verified official Playwright and Electron documentation for persistent commands/events and Electron's DevTools-driven detach.
-- Confirmed current pwc `debug.cdp` opens/detaches per call and Electron only uses its debugger internally.
+- Performed initial remote HEAD preflight and authoritative read order, inspected both provider controllers/clients/tests and compared official Playwright and Electron debugger APIs.
+- Added shared source-level `DebugSessions` manager in both repositories, identical CLI routes and command envelopes, provider attach/event/send/detach adapters, and Electron input coexistence.
+- Updated canonical `specifications/rumiai-os/WEB-CONTROL.md` to define level 3 and explicitly distinguish the current Chromium CDP payloads from generic level-1/2 portability. Documented commands and unreleased status in both provider READMEs.
+- Tests in both providers: 4 unit cases for session lifecycle, bounded overflow, page cleanup and operand failure identities; real browser fixture test for persistence over navigation, `Network.requestWillBeSent`, `Debugger.paused`, `Debugger.evaluateOnCallFrame`, `Debugger.resume`, page input while attached, one-shot CDP parity and page-close invalidation.
+- GitHub Actions: exact PWC source `f060a3bf2c3e38441e41dac09476e5ace3011e9b`: run `38739536551`, Linux+macOS+build passed after one retry of a Linux controller startup/connect ENOENT failure. Exact Electron source `f78acc1963a2d341cd687216012a8b0dcbb22057`: run `38739847979`, Linux+macOS+build passed on first attempt. These are real hosted browser fixture tests, NOT the user's ChatGPT site/installation validation.
+- Linked work from the broader `handoff/web-access-sense.md` and consumer `handoff/chatgpt-shared-link-export.md` without copying operational state into them.
 
 ## Current state
 
-Pre-implementation. The shared lifecycle is not available in the released providers.
+**Source implementation, canonical contract, both provider documentation and real hosted Linux/macOS tests are aligned.** No installed package has yet declared level-3 facility compatibility. The current package.json versions are still development v0.1.5; CI's successful build step is not evidence that a user installation was upgraded. The ChatGPT exporter remains a separate consumer task; its Node.js port has not been performed by this provider-interface work unit.
 
 ## Next action
 
-Implement a common explicitly scoped session lifecycle on both providers, document the precise shared semantics in the canonical WEB-CONTROL contract and both operational READMEs, and run proportional real tests against actual browsers. Then run consistency gate and synchronize this handoff.
+Read current MK/package/release and facility catalog contracts, verify required artifacts, publish new provider releases compatible with level 3, declare the new facility compatibility in pkg-catalog, and perform a real installed `web-control` provider-switching test across both implementations. Then resume the Node.js ChatGPT exporter port using these shared commands under the exporter handoff.
 
 ## Blockers / open questions
 
-- Release/package catalog propagation is a separate step if not performed in this unit; do not represent source commits as released packages.
+- Provider distribution/catalog declaration and physical user-host validation remain. Do not claim release or actual ChatGPT shared-link structured snapshot support before evidence.
