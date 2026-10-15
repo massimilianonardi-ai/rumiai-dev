@@ -81,6 +81,59 @@ Additional package, service, state or container specifications must be retrieved
 
 ## Working design
 
+### First dispatcher boundary — task-local working design, not a promoted API
+
+Goal: a RumiAI caller requests bounded model inference without knowing the
+individual Ollama host or making privilege-bearing `rsudo-admin` calls.
+The existing eight-host inventory is evidence for possible workers; it is
+not a newly established public scheduler/worker registry contract.
+
+For the first dispatcher proof, keep these responsibilities separable:
+- request/role intent and optional execution limits at the caller-facing boundary;
+- eligibility and health checks for candidate workers and explicit capacity/concurrency
+  observations (no assumption of uniform latency on the two network classes);
+- deterministic dispatch of one bounded, independent request at a time;
+- transport to the selected worker and mapping of its real Ollama response/error
+  to a provider-independent result, without leaking remote host identity into
+  the caller's normal path;
+- observable result metadata (worker choice, duration, status, retry decision)
+  suitable for validating scheduling and diagnosing failures.
+
+Critical current reachability constraint: on every host the validated Ollama
+service listens on `127.0.0.1:11435`. A remote coordinator therefore cannot
+reach those APIs directly. The first transport trial must explicitly compare
+the current authorized SSH/loopback route with any separately justified
+authenticated proxy; do not silently expose Ollama on a public/shared network,
+mistake privileged `rsudo` administration for the inference data path, or
+introduce a new service identity without its package/runtime ownership.
+No new network listener, credentials contract, product command, API naming or
+persistent state model is approved by this working design.
+
+First acceptance scenarios:
+1. A caller supplies the inference task and bounded response constraints, not
+   a host address; the dispatcher can select from a configured known-good
+   worker set.
+2. If one worker is unreachable before accepting a request, the dispatcher
+   reports the failure or selects another eligible worker under an explicit
+   retry policy. It must not blindly duplicate a possibly accepted inference.
+3. If the selected worker answers, the caller gets the model result and
+   interpretable execution metadata. A timeout is distinguishable from a model
+   error or worker-unavailable outcome.
+4. Concurrent requests do not all pile onto one worker merely because the
+   others exist; the first PoC must measure dispatch decisions and in-flight
+   concurrency, not claim a capacity improvement without evidence.
+5. The first configured profile may use the physically validated
+   `qwen3:4b` with `think:false`, but this flag alone does not guarantee
+   terse output. Evaluate at least one non-thinking model/profile with actual
+   measured accuracy/latency before establishing task-role defaults.
+
+The first candidate should test independent inference dispatch only. Memory,
+Hindsight and generic multi-agent workflow engines are excluded from that
+minimum experiment. The `m` substrate and RumiAI cognitive layer remain
+distinct per `CURRENT-MODEL.md`; generic global orchestration is not a sense
+per `SENSE-MODEL.md`.
+
+
 - Worker reboot-safe model access persists the validated NFS model source and filesystem type, but uses a normalized declarative NFSv4.2 option set rather than replaying runtime-derived `findmnt` state. The stable worker mount options are `ro,vers=4.2,hard,proto=tcp,timeo=600,retrans=2,sec=sys,_netdev`. Because the Ollama package root is local, only the model mount is a service dependency. On systemd hosts, a deployment-level drop-in for `m-srv-ollama.service` adds `RequiresMountsFor=/mnt/rumiai-ai/models` plus network/remote-fs ordering so the persistent Ollama service cannot start before the model store is mounted.
 
 - Worker package realization is now fixed: each worker will materialize a normal concrete package identity `ollama@v0.35.1!linux-x86_64` through the existing `pkg_integrate` path, but the integration input root will be the already validated 60 MiB CPU-only pruned runtime instead of the full upstream 2.2 GiB extracted root. Package-local metadata/projections (`cmd`, `link`, `facility`, `facility-service`, dependencies/state) and package default/public bindings remain produced by normal `pkg` integration. This deliberately makes the pruned root the package root on worker hosts rather than introducing a separate runtime abstraction.
@@ -118,6 +171,30 @@ Additional package, service, state or container specifications must be retrieved
 - `osarch update` is an expected runtime mutation of the tracked selectors `bin/sys-osarch`, `bin/ext-osarch`, and `bin/ai-osarch`: the repository revision currently carries `linux-arm64` selector targets while the Ubuntu fleet correctly selects `linux-x86_64`. Therefore deployed runtime checkouts become Git-dirty in exactly those three paths after platform activation. Future rollout/update logic must treat those selector mutations as managed runtime state while still rejecting unrelated local changes.
 
 ## Completed
+
+- 2026-10-15 **repository operator-PoC consolidation (not physical revalidation)**.
+  `rumiai-dev-PoCs/pocs/067-ollama-cluster-rollout/` now provides exactly
+  the two selected operator sources `controller.lib.sh` and `rollout.job`.
+  The former embeds the complete remote script and calls the actually
+  defined `repair_ollama_nfs_worker` for all seven worker applies; the
+  obsolete `host.sh` was deleted from main. The job begins *exactly*
+  `exec > "/m/src/git/rsudo-jobs.log" 2>&1` and defaults to `check`.
+  The worker verification resolves a pinned, external CPU `MANIFEST.sha256`
+  when absent from the integrated package and verifies the real installed
+  payload. Real-Git fixture and operator-sequencing tests were updated;
+  a focused worker-manifest SHA-256 fixture test and GitHub Actions workflow
+  were added. An isolated locally replicated verifier ran with real
+  `sha256sum` and passed happy path, corrupted payload, corrupted
+  manifest and absent manifest; this is NOT an execution of the exact
+  repository test files. Repository CI results and a physical run of the
+  consolidated code are not yet verified. The consolidated PoC deliberately
+  retains fail-closed validation of existing worker NFS/fstab/systemd
+  configuration rather than the chat-inline operator's conservative NFS
+  repair. It is not byte-for-byte or behavior-for-behavior identical to
+  the physically successful sources; do not conflate the two validation
+  scopes. The deployed fleet remains at the separately evidenced
+  `9f4524d9af44cc031ba039b88cfda8d2df0e1c65` pin.
+
 
 - 2026-10-14 **physical one-shot operator rollout complete**. The uploaded `rsudo-jobs(20261014-133231).log` contains 736 lines of host-generated results for 15:24:38–15:27:56 Europe/Rome. All eight hosts passed global preflight at old HEAD `6a964ba3f5c8acf462737e3b92daaf1af32de57e`, artifact/content checksum validation and existing NFS/systemd model dependency checks without requiring NFS reconciliation. Canary `gis` then `apps` both passed. The remaining six worker applies (`apisix`, `keycloak`, `apisix_psn`, `apps_psn`, `keycloak_psn`, `webgisrpr`) all passed. The evidence contains eight `Fast-forward` updates, eight `CLUSTER APPLY OK` markers, sixteen `rsudo.end status=0` reports, no `CLUSTER ERROR` or `REMOTE ERROR`, and final `CLUSTER ROLLOUT OK (8/8) revision=9f4524d9af44cc031ba039b88cfda8d2df0e1c65`. The executed inline script's successful apply path requires service registration and active/enabled checks, Ollama 0.35.1 readiness/version, visibility of `qwen3:4b` and completed bounded `/api/chat` inference. The uploaded log reports aggregate success markers rather than raw per-host HTTP JSON; attribute that evidence accurately. Repeated `rsudo.env-file-fallback reason=not-provided` warnings did not prevent successful remote execution. No actual host reboot, repeat-run idempotence test, or new benchmark is established by this log. The two successful operator sources were supplied in chat, not committed in a repository. **Pending realignment:** current `rumiai-dev-PoCs/pocs/067-ollama-cluster-rollout/host.sh` still requires in-package `MANIFEST.sha256`; it is not identical to the physically successful inline version, which checks the pinned external manifest against the integrated CPU package root. Update the persistent PoC/operator path and corresponding tests/documentation before claiming a repository-backed repeatable implementation. The separate historical `rsudo-admin` terminal-close / `): not found` issue is not proven repaired by this rollout.
 
@@ -258,6 +335,8 @@ Additional package, service, state or container specifications must be retrieved
 
 ## Current state
 
+The follow-up two-file operator PoC is now committed but is *not* the source of the physically successful 8/8 log. It requires its own CI and physical validation before replacing the known-good operator scripts. No additional fleet mutation was performed during this repository-consolidation work unit.
+
 The initial local AI worker pool is physically deployed and persistent. The 2026-10-14 operator run validated successful in-place updates across all eight hosts to the exact `rumiai-os` pin `9f4524d9af44cc031ba039b88cfda8d2df0e1c65`; the full 8/8 sequence returned success after HTTP readiness, shared-model visibility and real bounded inference on each host. This is physical deployment evidence for the exact pin, not for a later GitHub HEAD, another reboot, or repeat-run behavior.
 
 `gis` is the authoritative central model/artifact host. Each of the seven worker hosts runs the normal concrete package identity `ollama@v0.35.1!linux-x86_64`, whose package root is the validated 60 MiB CPU-only pruned runtime. Worker services run persistently through `srv host system` under the dedicated non-login `ollama` account and use the shared read-only NFS model store at `/mnt/rumiai-ai/models`.
@@ -277,32 +356,41 @@ The previous shared-runtime llama.cpp direction is no longer the current worker 
 
 ## Next action
 
-1. Consolidate the physically successful two-file operator rollout in the
-   persistent operator PoC/path, explicitly reconciling the obsolete
-   in-package `MANIFEST.sha256` assumption and preserving the mandatory
-   first job line `exec > "/m/src/git/rsudo-jobs.log" 2>&1`. Add proportional
-   tests for external-manifest verification and repeat-run idempotence, keep
-   all Git updates forward-only and retain the revision-specific 8/8 log
-   evidence. A subsequent reboot check on the updated pin is separate from
-   the already completed fleet rollout; do not infer it from the log.
-2. Introduce the first dispatcher/orchestrator boundary over the persistent
-   worker pool and select model/role profiles, including at least one
-   non-thinking model/profile for terse deterministic worker tasks.
+1. Validate the newly committed two-file operator PoC: obtain actual
+   results of its isolated repository tests/CI, fix any defects on current
+   main, and retain the exact user-mandated first log line. Determine whether
+   conservative NFS repair from the physically successful chat-inline source
+   is still needed as part of the durable operator procedure; the current
+   committed PoC intentionally stops on NFS mismatch. Only after offline
+   validation, perform a proportional credential-loaded physical `check`,
+   repeat-pin/idempotence check and separately, when appropriate, a
+   post-update reboot check. The completed 2026-10-14 8/8 rollout must
+   never be repeated just to manufacture new test evidence.
+2. Prototype the first *inference dispatch* boundary in isolation: resolve a
+   safe authenticated route to the Ollama loopback-only services, simulate
+   healthy/unhealthy worker selection and failures, then validate one
+   real independent request from a caller without worker-host knowledge.
+   Keep request/role intent, scheduling, transport and provider response
+   mapping separate; do not promote an API or product component prematurely.
+   Evaluate a non-thinking model/profile for bounded deterministic tasks.
 3. Decide whether Hindsight belongs in the first orchestrated deployment or
-   should follow after the dispatcher/model-role boundary is established.
+   should follow after dispatcher/model-role validation; do not put its
+   writable state on the read-only NFS model share.
 
 ## Blockers / open questions
 
-- The operator's **exact first job line** remains `exec > "/m/src/git/rsudo-jobs.log" 2>&1`; never replace it with a timestamped/relative pathname. The successful chat-inline library defines and invokes `repair_ollama_nfs_worker <rsudo-credential-group>` and successfully operated on all seven workers through real `rsudo` in the 2026-10-14 8/8 run. However the executed two-file source is **not yet committed** in the PoC: permanent source/tests still require reconciliation (especially the in-package manifest assumption). The separately reported `rsudo-admin` terminal-closure / `): not found` behavior remains unproven as fixed.
+- The operator's **exact first job line** remains `exec > "/m/src/git/rsudo-jobs.log" 2>&1`; never replace it with a timestamped/relative pathname. A **two-file version with corrected manifest verification is now committed** in the PoC, but it is not the exact physical 8/8 source: the committed version fails closed on NFS mismatch while the successful chat-inline version offered conservative NFS reconciliation. Both sources actually define and invoke the repair-named worker function in their own rollout path. No physical re-run of the committed code and no confirmed CI result yet. The separately reported `rsudo-admin` terminal-closure / `): not found` behavior remains unproven as fixed.
 
 - The user's four rsudo-jobs attachments dated 06:58, 08:00, 09:10 and 09:36 have been read from mounted file bytes and are all exactly 264 bytes with identical SHA-256 `016ee951114b3758690f42238feab2b7bda88dd8076eeec3e2541235e348cdcb`; each contains the same old `repair_ollama_nfs_worker: not found` output and the same job token; none records `cluster_rollout`. The user clarified that `): not found` came from `rsudo-admin` itself, not from the cluster job or library, and disappeared after an execution of the scripts unexpectedly closed the entire terminal. The rsudo-admin implementation places sourced job effects in nested subshells and ordinarily returns to its menu; terminal closure is not established as a normal or repaired condition. Do not conflate the two defects or assume the rsudo-admin issue is resolved by a new session. None of the repeated 264-byte legacy logs establishes a new fleet rollout.
 
-- A complete real-host 8/8 operator rollout is now evidenced by the
-  2026-10-14 log and exact deployment SHA. The chat-inline successful job
-  is not yet the committed PoC; the latter retains the superseded
-  in-package manifest check. Repeat-run idempotence and post-update reboot
-  have not been newly demonstrated, and the assistant still has no access
-  to the operator's credential-loaded rsudo session.
+- A complete real-host 8/8 operator rollout is evidenced by the
+  2026-10-14 log and exact deployment SHA. The newly committed self-contained
+  two-file PoC fixes the superseded in-package manifest assumption but has
+  only isolated helper-level SHA evidence so far; its shell tests are
+  committed, not yet reported as passing in a live CI run. Repeat-run
+  idempotence of that exact committed code, NFS recovery parity and
+  post-update reboot are not physically demonstrated. The assistant
+  cannot access the operator's credential-loaded rsudo session.
 
 - NFSv4.2 server/client operation, read-only shared Ollama runtime/model access, and local CPU inference are physically validated across every worker host in the current fleet.
 - `libgomp.so.1` is missing on seven of the eight surveyed hosts; `webgisrpr` already has it. This remains relevant only for the standalone llama.cpp runtime because the validated Ollama CPU runtime bundles its own OpenMP library.
