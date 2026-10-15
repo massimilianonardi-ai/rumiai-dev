@@ -9,7 +9,7 @@ Build a deterministic, reusable exporter for ChatGPT conversations accessible th
 
 ## Current repository revisions
 
-- rumiai-dev: 3c61ea9162061e76f3909c73e412b8add49ffcf5 (handoff created)
+- rumiai-dev: c26be026f948921abeb1d9881589b1f9063627ee (handoff checkpoint pre-update)
 - rumiai-dev-PoCs: 455c17de4ae1aebc0b3a87b3fd834ad2f0b13e91 (PoC source and experimental tests)
 - pwc-web-control: 5f3c8d298ac916be72ea59461a167ac31610ca61
 - electron-web-control: 22da3beab20e509cffcbd81866b51253df4e08a9
@@ -62,7 +62,7 @@ The live ChatGPT share DOM can change and may present only a subset of the sourc
 
 ## Current state
 
-PoC implementation is committed in `rumiai-dev-PoCs` and has passing synthetic/controlled-boundary CI evidence through source revision abc6d1b7a338e6e7509da742c008c5885d2041ef. A later README-only revision 455c17de4ae1aebc0b3a87b3fd834ad2f0b13e91 documents the validation boundary and has CI queued/running at the latest checkpoint. No real shared conversation URL and no live web-control controller were available here. Real site extraction and media fidelity remain unvalidated.
+PoC implementation is committed in `rumiai-dev-PoCs` and has passing synthetic/controlled-boundary CI evidence through source revision abc6d1b7a338e6e7509da742c008c5885d2041ef. The latest PoC revision 455c17de4ae1aebc0b3a87b3fd834ad2f0b13e91 also passed GitHub Actions run 38705531193; it changes only README validation scope after the preceding source-and-test revision. No real shared conversation URL and no live web-control controller were available here. Real site extraction and media fidelity remain unvalidated.
 
 ## Next action
 
