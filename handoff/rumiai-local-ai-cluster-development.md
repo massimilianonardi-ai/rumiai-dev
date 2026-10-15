@@ -100,24 +100,32 @@ For the first dispatcher proof, keep these responsibilities separable:
 - observable result metadata (worker choice, duration, status, retry decision)
   suitable for validating scheduling and diagnosing failures.
 
-The fleet is **already reachable through the existing SSH transport**:
-2026-10-14 physical rsudo execution reached and completed remote work on
-all eight servers, including each host's loopback-bound Ollama API. Existing
-`m` `ssh_auth` preserves normal OpenSSH arguments/stream semantics, and
-`rsudo` proves remote command execution but is a privileged **administrative**
-operation, not an adopted inference data path. Thus there is **no undiscovered
-server-reachability blocker**. The missing work is an *application inference*
-transport with suitable authentication, request/response streaming, concurrency,
-timeouts, security and lifecycle properties; a simple authenticated SSH remote
-loopback request is the first end-to-end candidate to demonstrate, without
-assuming that SSH port forwarding or a long-lived data connection has already
-been tested. The validated Ollama listeners remain at `127.0.0.1:11435`;
-do not expose them on a shared/public network or introduce a new proxy/daemon
-merely to demonstrate reachability. Design the application path first over
-existing capabilities; only evaluate a persistent tunnel or authenticated
-proxy if workload measurements and isolation requirements justify it.
-No new network listener, credentials contract, product command, API naming or
-persistent state model is approved by this working design.
+2026-10-15 **explicit user correction to the deployment-design method**:
+the company's actual organizational/network/security topology and the
+user's intended RumiAI deployment model are **not yet known from the current
+project sources**. The successful eight-host `rsudo` rollout proves
+administrative SSH reachability and loopback-local Ollama inference on those
+hosts. It does **not** prove that SSH, tunneling, reverse proxying, direct HTTP
+exposure, a particular coordinator placement or any other transport is
+appropriate for production application inference.
+
+Before selecting or implementing a dispatcher transport or deployment
+topology, first establish the intended deployment scenarios and the
+organization's actual constraints with the user. Compare candidate designs
+against those requirements and make the applicable choices explicitly; do
+not infer them from the existing admin access or from what happens to be
+installed. The validated Ollama listeners at `127.0.0.1:11435` are a
+current *deployment fact*, not a user-approved final topology.
+
+The user explicitly permits "build first, decide how it fits later" **only
+when they choose that order deliberately for a bounded experiment**. No
+such authorization should be inferred from the prior cluster rollout. The
+completed hardware/inference experiment remains useful evidence, not a
+retroactive approval of the missing deployment architecture. Accordingly,
+the previously proposed "SSH-mediated request first" is only a possible
+technical experiment, **not the selected or required next action**.
+No new listener, credentials contract, application data path, product
+command or persistent deployment role is approved by this handoff.
 
 First acceptance scenarios:
 1. A caller supplies the inference task and bounded response constraints, not
@@ -392,20 +400,35 @@ The previous shared-runtime llama.cpp direction is no longer the current worker 
    `exec > "/m/src/git/rsudo-jobs.log" 2>&1`, preserve all untracked
    operating state and never repeat the completed 2026-10-14 8/8 rollout
    merely to create test evidence.
-2. Prototype the first *inference dispatch* boundary using the **already
-   working SSH access**, without pretending host reachability is unresolved.
-   First prove a non-administrative, authenticated SSH-mediated HTTP request
-   to an existing loopback-bound Ollama instance, then simulate healthy/
-   unhealthy worker selection and failures and validate one real independent
-   request from a caller without worker-host knowledge.
-   Keep request/role intent, scheduling, transport and provider response
-   mapping separate; do not promote an API or product component prematurely.
-   Evaluate a non-thinking model/profile for bounded deterministic tasks.
+2. **Before** implementing or validating an application inference
+   transport/dispatcher, establish with the user the intended production
+   deployment topology and actual organizational constraints (zones and
+   connectivity, network/security policy, caller location, intended service
+   ownership/identity, availability/scale and operating model). These are
+   open choices: `rsudo` access for administration is not approval of SSH
+   as the application transport. Compare relevant candidate designs against
+   the resulting requirements and make a deliberate decision. Run a
+   "transport first" experiment without this design only if the user
+   explicitly authorizes that sequence for a bounded verification goal.
+   Then prototype worker selection, errors and bounded inference under the
+   chosen assumptions; evaluate non-thinking model/profile separately.
 3. Decide whether Hindsight belongs in the first orchestrated deployment or
    should follow after dispatcher/model-role validation; do not put its
    writable state on the read-only NFS model share.
 
 ## Blockers / open questions
+
+- 2026-10-15 explicit methodological correction: the successful CPU Ollama
+  eight-host experiment preceded clarification of the user's intended
+  enterprise deployment topology. Neither admin SSH reachability nor current
+  loopback bindings authorize a final application transport or coordinator
+  location. Do not solve the missing requirements by choosing SSH/tunnels/
+  proxies unilaterally. First establish the deployment goals, enterprise
+  constraints and acceptance scenarios with the user; only deliberately
+  user-authorized experiments may reverse that design-before-build order.
+  This is a current open architecture decision, not a defect in the evidence
+  supporting the completed 8/8 validation.
+
 
 - The operator's **exact first job line** remains `exec > "/m/src/git/rsudo-jobs.log" 2>&1`; never replace it with a timestamped/relative pathname. A **two-file version with corrected manifest verification is now committed** in the PoC, but it is not the exact physical 8/8 source: the committed version fails closed on NFS mismatch while the successful chat-inline version offered conservative NFS reconciliation. Both sources actually define and invoke the repair-named worker function in their own rollout path. No physical re-run of the committed code; isolated GitHub Actions run `38702344501` passed at SHA `e516e5fd314716a2315392067ac9ef3ceab5d6f3` with mocked external services. The separately reported `rsudo-admin` terminal-closure / `): not found` behavior remains unproven as fixed.
 
