@@ -9,7 +9,7 @@ Archive user-authorized ChatGPT shared-link conversations completely and readabl
 
 ## Current repository revisions
 
-- rumiai-dev: 4a6bb65b9ada2a291021c934e010509cc993f7db (pre-checkpoint HEAD)
+- rumiai-dev: 199f1ae04e71dae3b35ca13f82305d8220f0bbc6 (pre-checkpoint HEAD)
 - rumiai-dev-PoCs: 3fc76222582d633cee149de45484d89c530ff779 (page-context shared JSON fetch; no event domains)
 - pwc-web-control: 403f4fa9bbea419715e9c834e847c6f2b60ae421 (released v0.1.6)
 - electron-web-control: 077eb502f1d68235b4e5c9c28e4a7560795bce17 (released v0.1.6)
@@ -74,21 +74,20 @@ The user explicitly challenged whether the Debugger domain was needed and propos
 
 The user's physical rerun on 4b030f8f971034bc0bd45015c7b8c3f1aab5d474 produced diagnostic 0009. No debugger overflow or hook failure occurred; the injected observer simply did not see a complete snapshot. The only inline JSON shape remained the same configuration-shaped object seen in 0008. This established that passively intercepting page fetch/XHR as whole JSON is not the right acquisition point.
 
-Current external implementation evidence from a recently maintained public ChatGPT-share exporter identifies the structured share payload as a direct same-origin request to /backend-anon/share/<id>, with /backend-api/share/<id> as fallback, after the shared page is opened so the browser request context has the required cookies/Cloudflare state. Current PoC revision 3fc76222582d633cee149de45484d89c530ff779 adopts that mechanism through Runtime.evaluate in the already-open web-control page. It returns only a structurally valid snapshot and privacy-safe {source,status,...} attempt metadata, and adds sourceAttempts to failure diagnostics. No provider API or web-control contract changed. The first hosted run on implementation revision 532c63b379e71f02806d229bad260a9249ab94f7 exposed only an over-specified source-text assertion in the new fixture; the forward test-only correction 3fc76222582d633cee149de45484d89c530ff779 removed that incidental assertion. GitHub Actions run 38780482303 then passed syntax and the full PoC fixture/reference job. Physical validation of the page-context direct JSON fetch remains pending.
+Current external implementation evidence from a recently maintained public ChatGPT-share exporter identifies the structured share payload as a direct same-origin request to /backend-anon/share/<id>, with /backend-api/share/<id> as fallback, after the shared page is opened so the browser request context has the required cookies/Cloudflare state. Current PoC revision 3fc76222582d633cee149de45484d89c530ff779 adopts that mechanism through Runtime.evaluate in the already-open web-control page. It returns only a structurally valid snapshot and privacy-safe {source,status,...} attempt metadata, and adds sourceAttempts to failure diagnostics. No provider API or web-control contract changed. The first hosted run on implementation revision 532c63b379e71f02806d229bad260a9249ab94f7 exposed only an over-specified source-text assertion in the new fixture; the forward test-only correction 3fc76222582d633cee149de45484d89c530ff779 removed that incidental assertion. GitHub Actions run 38780482303 then passed syntax and the full PoC fixture/reference job.
 
-The exporter still reports imagesDownloaded=0 and observationComplete=false even on a structured capture; reconstructing HTML/assets and live-site acceptance remain open.
+The user's physical rerun on 3fc76222582d633cee149de45484d89c530ff779 succeeded end-to-end through the normal installed web-control provider. The command returned method=page-fetch for the shared conversation titled "Mirror chat su GitHub", exported 81 visible messages from a captured mapping of 1413 nodes, preserved one non-text part, and wrote both the immutable export directory and ZIP. This is the first physical validation that the current page-context direct JSON acquisition path works on the real shared URL without DOM scrolling, Network/Debugger event domains, breakpoints, a raw debugger port or a parallel browser.
+
+Structured acquisition is therefore no longer the active blocker. The exporter still reports imagesDownloaded=0 and observationComplete=false; binary image recovery, faithful graphic/HTML rendering and explicit physical completeness validation of the produced transcript remain open.
 
 ## Next action
 
-Fast-forward the user's rumiai-dev-PoCs checkout to revision 3fc76222582d633cee149de45484d89c530ff779 or later and rerun the same physical Node command against the already configured electron-web-control v0.1.6 service.
+Validate the physically produced structured export before extending media handling: inspect AUDIT.json, ACQUISITION.json, NON_TEXT_PARTS.json and the beginning/end of TRANSCRIPT.md from the successful "Mirror chat su GitHub" export. Confirm that the 81 visible messages represent the intended active branch without duplication or omission and identify the preserved non-text part. Then implement the next acquisition/export layer for referenced image binaries and faithful HTML/graphic rendering using the already validated structured snapshot as the source of truth.
 
-From PoC 068:
-node export-share.mjs https://chatgpt.com/share/<id> ./archive
-
-A successful capture should report method page-fetch and produce the normal structured export. If it fails, inspect the next numbered diagnostic and especially sourceAttempts: HTTP status from backend-anon/backend-api now distinguishes endpoint/access failure from snapshot-shape failure without persisting conversation content. There should still be no Network.enable, Debugger.enable or debug session events. Do not increase the common level-3 buffer, return to DOM scrolling, require a separate Chromium browser or expose a raw CDP port.
+Do not reopen the discarded DOM-scrolling, Network-event or Debugger-breakpoint approaches unless new physical evidence invalidates the direct page-fetch path.
 
 ## Blockers / open questions
 
-- The user's physical web-control instance/profile and actual shared URL renderer data are not accessible through the assistant's hosted CI environment. Physical functional acceptance remains open.
+- Physical structured acquisition is validated on the user's VM for the tested shared URL; transcript completeness still needs explicit artifact-level inspection before marking observationComplete=true.
 - Real image binary download and faithful graphic/HTML rendering remain open after data acquisition.
 - The provider-install integration formal validation passed on both Linux architectures. Electron macOS ARM64 package job was still queued at the last shared-debugger handoff checkpoint; check its current status before making a universal installed-host claim.
