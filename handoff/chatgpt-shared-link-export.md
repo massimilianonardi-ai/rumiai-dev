@@ -130,9 +130,13 @@ The user then ran the reference capture on five public share pages and committed
 
 ## Next action
 
+For the next physical reference-capture rerun, include the complete local Git commands in the user instructions (add/commit/push) so the captured directories and ZIP can be uploaded in one step. The ZIP may be redundant when the capture tree itself is committed, but keeping it is acceptable for convenience.
+
 Rerun the same five share URLs through capture-share-reference-set.mjs from PoC revision 6088758a45939a25586fb9258d89bad9eaf4358e or later. The wrapper preserves one log per share and SET-SUMMARY.json even when the underlying capture fails early. No additional reference pages are needed yet.
 
 Only after the rerun produces non-empty evidence for the five existing references should the task derive an artifact model covering raw snapshot identity, renderer occurrence, public download/resource transport and rendered graphics, then update export-share.mjs once from that model. Preserve the existing successful structured snapshot/visibility work and do not reopen discarded DOM scrolling, Network event streaming or debugger-breakpoint approaches unless the new direct evidence specifically requires it.
+
+A separate deferred follow-up now exists at todo/web-page-analyze.md. After PoC 068 has established which evidence surfaces are actually useful, extract the generic page-evidence collection into a reusable deterministic analyzer rather than leaving it ChatGPT-specific. Its intended relationship is analogous to pkg-analyze: broad observation/probing first, contextual interpretation later. It must remain below RumiAI sense/cognitive interpretation and use the current web-control capability rather than duplicating browser control.
 
 ## Blockers / open questions
 
