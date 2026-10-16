@@ -61,6 +61,6 @@ The arrays are aligned in **postorder**; `calcs` holds `fAnte` return values in 
 
 ## Compatibility boundary
 
-The `m.json.traverse` alias preserves both original callable signatures and its `advanced` member without duplicating the engine. `m.json.resolve` remains a consumer of the ordinary traversal API and its existing configuration directive behavior is not redefined by this contract.
+The `m.json.traverse` alias preserves both original callable signatures and its `advanced` member without duplicating the engine. `m.json.resolve` has a separate JSON-only input and directive contract defined by `JSON-RESOLVE.md`; in particular, traversal's inherited-property semantics do not apply to JSON resolution.
 
 This traversal's inherited enumerable property policy intentionally differs from the own-property policies of `m.object.clone` and `m.object.merge`; their independent contracts remain unchanged.
