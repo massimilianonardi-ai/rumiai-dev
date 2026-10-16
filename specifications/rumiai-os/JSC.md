@@ -58,8 +58,9 @@ The compiler does not emit runtime `require()` or `import` statements
 to provision referenced values. The application controls when those
 values are available.
 
-Source files are included and evaluated in descriptor order. Nested
-namespace scopes retain lexical access to earlier declarations, and
+Source files are emitted in descriptor order. When the generated
+JavaScript executes, nested namespace scopes retain lexical access to
+earlier declarations, and
 explicit exports become properties of their declared namespace.
 Namespace objects can be reopened by later generated JavaScript without
 discarding existing properties. Within the same namespace, later
