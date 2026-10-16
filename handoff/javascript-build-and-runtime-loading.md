@@ -89,7 +89,56 @@ orchestration. Do not claim installed-minifier host validation.
 Prior PoC evidence remains at `rumiai-dev-PoCs/pocs/064-jsc-no-eval-scope/`
 and `pocs/065-jsc-closure-imports/`; it is not product validation.
 
+## Working design — namespace-based dynamic library (2026-10-16)
+
+User direction for the next design phase: revisit legacy JavaScript sources selectively,
+retain sound concepts and reimplement with modern techniques. Organize source fragments
+so that paths reflect the existing `m` namespace; use distinct `jsc` JSON manifests
+for tailored distributions and a complete distribution. The dynamic-loading
+responsibility should belong to the existing `m.mod.*` area and a dedicated
+manifest should produce its generated library. Do not treat the previously
+implemented standalone `dynamic-loader.lib.js` as the design baseline.
+This is working design, not yet a promoted replacement JSC contract.
+
+Current verified source evidence at `rumiai-os/main@0d83d044222f271b99d873a403629e7df34ea1c8`:
+`lib/sys/js/dynamic-loader.lib.js` and its manual still exist, alongside
+legacy `lib/sys/js/dynamic-loader/dynamic-loader.js` and
+`core/lib-dynamic.js`. The legacy standalone loader embeds a private
+`Queue`, plus HTTP, source assembly and DOM replacement. The active
+`core/m/mod/Queue.js` already has iterative FIFO draining, per-instance
+queue composition, reentrancy suppression and duplicate-completion guards;
+it still depends on the legacy `m.Class` construction machinery.
+`core-ext/m/mod/Module.js` is another source-level consumer of
+`m.mod.Queue`. No new runtime test was executed in this analysis.
+
+The proposed loader should reuse the existing `m.mod.Queue` responsibility
+rather than copying it, but that queue only orders callback delivery; it
+does not transport HTTP, propagate asynchronous failures or load files.
+`jsc` JSON imports capture references to already-initialized namespaces
+and do not resolve bundle dependencies. If a generated loader is assembled
+separately from `core`, initialization order and dependency packaging must
+be explicit. The default CommonJS `nodeGlobal: false` does not share
+`globalThis.m` across separately compiled bundles; browser classic scripts
+do. Manifest paths are relative to and confined inside the descriptor root.
+A compiled loader must itself be bootstrapped before it can dynamically
+load other source lists.
+
+Open decisions before implementation: final public API within `m.mod`;
+whether the specialized loader distribution requires preloaded `core` or
+contains the necessary source dependencies; which original initialization,
+JavaScript/CSS and replacement behaviors to preserve; callback/Promise
+error semantics and safe failure handling; and whether the library remains
+browser-only. Align the promoted `JSC.md` contract, owner-local library
+manual and permanent tests when these decisions and the implementation
+phase are authorized. The current `JSC.md` still specifies a standalone
+`dynamic-loader.lib.js` with five global functions, so this is explicit
+pending realignment, not an invisible reinterpretation. Coordination with
+`handoff/javascript-core-modernization.md` concerns its owned
+`Queue` implementation; do not duplicate that task's operational state.
+
 ## Next action
+
+Settle the minimal `m.mod` public API and manifest composition for the new dynamic-library design, then realign the canonically owned specification, product/manual and permanent tests in an explicitly authorized implementation phase. Prior optional managed-Node and real-minifier host checks remain separate and are not established loader defects.
 
 The user-authorized compiler and browser-loader implementation has passed
 revision-specific hosted CI. No further launcher modification is required
