@@ -130,7 +130,7 @@ The user then ran the reference capture on five public share pages and committed
 
 ## Next action
 
-Fix capture-share-reference.mjs diagnostic durability before asking for another multi-page physical run. The capture must write an initial README/progress record immediately after directory allocation, preserve basic page HTML/text before the richer evidence collection when possible, and always write a failure record identifying the last phase and error if a later step fails. The next physical set should reuse the same five share URLs; no additional reference pages are needed yet.
+Rerun the same five share URLs through capture-share-reference-set.mjs from PoC revision 6088758a45939a25586fb9258d89bad9eaf4358e or later. The wrapper preserves one log per share and SET-SUMMARY.json even when the underlying capture fails early. No additional reference pages are needed yet.
 
 Only after the rerun produces non-empty evidence for the five existing references should the task derive an artifact model covering raw snapshot identity, renderer occurrence, public download/resource transport and rendered graphics, then update export-share.mjs once from that model. Preserve the existing successful structured snapshot/visibility work and do not reopen discarded DOM scrolling, Network event streaming or debugger-breakpoint approaches unless the new direct evidence specifically requires it.
 
