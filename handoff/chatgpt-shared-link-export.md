@@ -9,8 +9,8 @@ Archive user-authorized ChatGPT shared-link conversations completely and readabl
 
 ## Current repository revisions
 
-- rumiai-dev: ee67476544596d821e41505ba256f76f5b426b67 (pre-checkpoint HEAD)
-- rumiai-dev-PoCs: b1be92b69419df48ecb40b76201741178dd0e8f3 (anonymous generated-image diagnostic, user-upload deferral and media-category reporting; code+fixture validation at 4be1b5293dc33adbfde2f36d637fc0f576bf67d0)
+- rumiai-dev: 53bbd1efcc0553be6a86832aa84517c8dd38d451 (pre-checkpoint HEAD)
+- rumiai-dev-PoCs: c58b0044153da8760f95eff9f15d567ba63e53b2 (anonymous generated-image acquisition by observed file ID, deferred user uploads, full-page and lazy-image readiness; hosted validation on latest PoC HEAD in progress at time of checkpoint)
 - pwc-web-control: 403f4fa9bbea419715e9c834e847c6f2b60ae421 (released v0.1.6)
 - electron-web-control: 077eb502f1d68235b4e5c9c28e4a7560795bce17 (released v0.1.6)
 - pkg-catalog: 3fbdc1ea69ba0fafe89ca913455543c90982027b (current HEAD; web-control 3 and both provider realizations unchanged since 7cd9b7585b9343a153e516c9c47b6fb92b7330e0)
@@ -177,15 +177,15 @@ The user's current-revision physical capture at `reference-captures/20261016T160
 
 The Python summary script provided previously was incorrect for `INTERACTIONS.json.network`: it accessed nested `request.method` / `response.status`, but current `safeNetworkEvent()` serializes flattened `method`, `http_method`, `url`, `status`, `mime_type` and `request_id`. The printed three `None None => None` per click are solely a parser mismatch, not evidence of no requests or failed statuses. Read the existing current capture's three raw network entries per click with the correct fields and preserve signed URL privacy before deciding whether the network was only non-artifact traffic. Do not require a new physical capture merely to correct this local JSON read.
 
+The user independently inspected the **fully loaded anonymous RumiAI Avatar public share** and observed that the gray placeholders become actual `<img>` elements after lazy loading, and each generated-image surface includes a public Download overlay (`data-testid="image-gen-overlay-right-actions"`). The complete supplied HTML of the last image shows **three decorative `img` layers for the same signed `oaiusercontent.com/files/<UUID>/raw` resource**. Its path UUID without hyphens maps directly to the structured `file_<32hex>` image identity. The prior fast probes and three image-surface clicks sampled the renderer before these elements finished loading, not an inherently non-downloadable public image. The user explicitly identified the problem: analysis began while rendering/network image loading was still active.
+
+The PoC anonymous exporter was updated forward. It first waits for `document.readyState=complete`, then uses bounded sequential `scrollIntoView` on generated-image surfaces to trigger browser-native lazy loads. It waits for every expected generated-image `img` to have `complete=true` and positive `naturalWidth`, with stable identities observed twice consecutively, before downloading. A global Network-idle signal is not used as a completion condition because a long-lived SPA can keep connections active, while offscreen lazy resources can remain unrequested. The new acquisition uses the observed signed HTTPS image source only after comparing its UUID-derived `file_id` to the structured asset and its dimensions. It deduplicates the three visual `img` layers, validates bytes/MIME/signature/expected size, and does not serialize the signed query or probe invented anonymous file endpoints. Existing user-upload metadata stays `deferred-authenticated`. Timeouts retain explicit unresolved status; full-archive completeness remains false. Regression fixtures exercise delayed lazy-load readiness, complete document wait, and DOM stable ID deduplication. This source change is not yet physically tested on the user's browser at this checkpoint.
+
 ## Next action
 
-Continue Phase 1 only. Inspect the *existing* `20261016T160209Z` `INTERACTIONS.json` network records using their flattened format; report request URL **origin/path only**, without query strings, status, MIME, event method and request ID for correlation. Correlate the triplets within each click; confirm whether any generated-image or artifact endpoints were hit, without claiming absence from the prior malformed printout. If there is no usable public image evidence, retain the generated-image binary class as unresolved for anonymous access and proceed to faithful HTML/complete body-artifact comparison, preserving Phase-1 vs full-fidelity distinction. No authentication or speculative endpoint promotion in Phase 1.
+Continue Phase 1 anonymously. Once CI on PoC revision `c58b0044153da8760f95eff9f15d567ba63e53b2` completes, physically run `node export-share.mjs "https://chatgpt.com/share/6ad13a5b-e9f0-83eb-8519-9e2d8c8097f3" "./archive" --seconds 20` from the updated PoC checkout. Validate `imagesReferenced=3`, `imagesDownloaded=3`, `imagesMissing=0`, `generatedImageDom.expected/identified/downloaded=3` and MIME/size/signature of each archived `media/` file. A failed or partial physical run is diagnostic evidence; do not claim acceptance from hosted fixtures. Preserve anonymous access and do not persist signed image URLs.
 
-Then bring readable HTML into line with the complete structured active branch, enumerate public-content classes (including assistant sandbox documents/photos, raw image identities, Mermaid source, SVG/canvas/media where observed, linked resources versus irrelevant favicons), distinguish downloadable from genuinely unavailable binary assets, and compare exported output to what is actually rendered/retrievable without login. Explicitly record Phase-1 acceptance; do not silently upgrade existing full-fidelity completeness booleans.
-
-Only after Phase 1 is finalized proceed to Phase 2: authenticated retrieval of the user's uploaded PNG, Python file and shell script (and analogous future attachments), using the authorization boundary intentionally. Never substitute login-dependent retrieval for anonymous export.
-
-A separate deferred follow-up remains at todo/web-page-analyze.md.
+Then complete faithful HTML and per-class artifact/body completeness comparison, preserving anonymous-phase acceptance separately from full-fidelity `observationComplete`. Only after Phase 1 is finalized, begin Phase 2 authenticated recovery of the user-uploaded assets.
 
 ## Blockers / open questions
 
