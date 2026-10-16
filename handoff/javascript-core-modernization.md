@@ -26,6 +26,7 @@ Always retrieve fresh remote HEADs on resumption.
 - Start from historic core sources, preserve `m` namespace, authored source order, `m.Class` and public signatures; repair demonstrated runtime defects and modernize incrementally.
 - Avoid mass mechanical class/var rewrites and do not implicitly redefine legacy `@eval` or JSON reference behavior.
 - Browser and CommonJS are both supported by the generated core bundle through the current `jsc` contract.
+- User-directed modernization of `core/m/mod/Queue.js` must use a native JavaScript `class` instead of `m.Class`. Preserve the presently useful ordered callback-delivery, completion-context, iterative-drain and duplicate-completion behavior unless an explicit interface decision supersedes it. The runtime source change is not authorized for assistant execution: propose code in chat and let the user apply it.
 
 ## Acceptance scenarios
 
