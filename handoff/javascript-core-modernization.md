@@ -1,7 +1,7 @@
 # Legacy JavaScript core modernization
 
 Status: Active
-Updated: 2026-10-14
+Updated: 2026-10-16
 
 ## Goal
 
@@ -9,9 +9,9 @@ Modernize the imported first-party JavaScript source tree `rumiai-os/lib/sys/js/
 
 ## Current repository revisions
 
-- `rumiai-dev/main`: `1b3ee45def875f42389e80a8c12cb18d00aaca9d` before this checkpoint; concurrently advanced from the initial handoff commit on the unrelated AI-cluster handoff.
-- `rumiai-os/main`: `3cd5b6a61d5d96cfb18cefc53af34ec4ce037fc8`.
-- `rumiai-tests/main`: `47e87d32c9b38e1b7fd49155c98d47008019f3e6`.
+- `rumiai-dev/main`: `d7b24f6543b095f9efa705b83adbfae5feea4c4e` before the clone implementation handoff checkpoint.
+- `rumiai-os/main`: `449448e1817156fbf5b5e86f1093ccc97dee7671`.
+- `rumiai-tests/main`: `4d6f236d03394a5aa6aab58811457f422405dd3f` (clone CI pinned earlier suite revision).
 
 Always retrieve fresh remote HEADs on resumption.
 
@@ -151,3 +151,14 @@ No blocker to continued scoped refactoring. Full legacy `@eval` semantics and an
 - Important boundary: bracket *expressions* remain preserved, not evaluated or fully JavaScript-syntax-validated. A general JavaScript parser would be required for complete syntax verification (including regular-expression literals). Neither `path` nor `resolve` is redesigned as part of this candidate; no change is accepted/promoted yet.
 - In-memory Node.js 22.16.0 stand-alone execution of the proposed implementation (not real `jsc` bundle or current product source) passed 16 representative valid-path cases, 13 invalid-path cases and 5 non-string input cases. Current permanent JS-core regression still checks only `m.json.path` basic usage; dedicated `canonicalize` coverage is absent.
 - No product source, tests, manifest, or canonical specifications modified. Candidate code is provided in chat for review; a future authorized integration must exercise real compiled `m.json` behavior with dedicated regression and check affected downstream `resolve` semantics.
+
+## `m.object.clone` implementation checkpoint — 2026-10-16
+
+- Current user explicitly authorized creating `m.object.clone` directly, while retaining **all previous clone versions**. Production implementation was added at `rumiai-os/lib/sys/js/core/m/object/clone.js`, exported under `m.object` via `core/modules-js.json`. No existing `m.util.clone`, `m/json/clone.js`, `core-ext` or `jsc` engine source was modified. Product HEAD for validated result: `rumiai-os@449448e1817156fbf5b5e86f1093ccc97dee7671`.
+- Newly promoted current public contract: `rumiai-dev/specifications/rumiai-os/OBJECT-CLONE.md`, routed from `specifications/README.md`. Signature and bitmask numeric identities are retained from legacy; depth 0 clones the root, true/Infinity clones supported reachable graph nodes; `clone.instance` opts into prototype/own-property copying of custom instances, and `ideep`/`iall` now work for that opt-in. Unsupported stateful types remain references by default or raise under `error`. Class private fields cannot be reconstructed generically.
+- Implementation uses iterative pending graph work with `WeakMap` and deferred descriptor installation, preserves own string/Symbol keys, accessors by default without invoking them for ordinary objects, nonconfigurable descriptors, genuine arrays/holes/length, cycles and shared references. Native handling includes Map/Set, Date/RegExp, boxed values, binary buffers/views, typed arrays, Blob/File, URL/URLSearchParams and Error where supported by runtime. Source-only defects of the legacy algorithm are not inherited as a requirement.
+- New permanent `rumiai-tests/tests/rumiai-os/js-core/.support/object-clone.mjs` exercises **real jsc-generated CommonJS output**, including 20,000-node depth, flags, native objects, descriptors, cycles, cross-realm plain objects and opaque fallback. `compile.test` invokes it; existing browser/CommonJS VM checks and actual Chrome startup now assert `m.object.clone`. CI workflow `js-core.yml` pins the tested suite at `rumiai-tests@7b89ca4ccd6723f54cb234d4d44beb43933324a9`.
+- Verified [GitHub Actions run 38920627883](https://github.com/massimilianonardi-ai/rumiai-os/actions/runs/38920627883): **success** for exact `rumiai-os@449448e1817156fbf5b5e86f1093ccc97dee7671`, using real `jsc` and Chrome on hosted Linux, not physical host validation. Initial stand-alone Node 22 source probes passed 16 focused groups but are separate from integrated evidence. Final compare from product preflight HEAD confirms only the new clone fragment, core manifest and CI pin changed; legacy versions untouched.
+- Concurrency: `rumiai-tests/main` subsequently advanced to `4d6f236d03394a5aa6aab58811457f422405dd3f` for the independently developed `object-canonicalize.mjs` and its `compile.test` hook; these changes were preserved, not overwritten, and are **not** retroactively part of the pinned clone CI evidence. `rumiai-dev/main` was `d7b24f6543b095f9efa705b83adbfae5feea4c4e` before this checkpoint write.
+- Clone-specific creation is complete; further object APIs (`merge`, `link`) and ongoing JSON canonicalize modernization remain separate, unmodified work in the same broader core-modernization responsibility.
+
