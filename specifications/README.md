@@ -25,6 +25,7 @@ Read only the smallest complete set relevant to the task.
 | terminal editor abstraction and host backend policy | `rumiai-os/EDITOR.md` |
 | JavaScript object-graph cloning, depth, flags, native types and unsupported-object behavior | `rumiai-os/OBJECT-CLONE.md` |
 | JavaScript object merging, merge/copy depth, array policies and safe own-property behavior | `rumiai-os/OBJECT-MERGE.md` |
+| JavaScript object read-through links, per-property detachment, deep snapshots and arrays | `rumiai-os/OBJECT-LINK.md` |
 | JavaScript object-identity traversal, inherited enumeration, and advanced pre/post callbacks | `rumiai-os/OBJECT-TRAVERSE.md` |
 | GUI-independent TextEdit text engine, selections and source-mapped representation | `rumiai-os/TEXT-EDIT.md` |
 | memory-only terminal text editing and stream/file save semantics | `rumiai-os/VSED.md` |
