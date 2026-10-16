@@ -9,8 +9,8 @@ Archive user-authorized ChatGPT shared-link conversations completely and readabl
 
 ## Current repository revisions
 
-- rumiai-dev: b9822b695bee92a7dfd2d7e408984cd647405a9b (pre-checkpoint HEAD)
-- rumiai-dev-PoCs: 48a6c5c5c7301ea3a3e7f9bace5825453ac33f62 (direct shared-page reference capture)
+- rumiai-dev: 1cbca0d510f624b33174694b9ad597c99a961bbc (pre-checkpoint HEAD)
+- rumiai-dev-PoCs: 5818c1e64641ec98b85952e0b8d974c8dee08d9f (independent shared-page evidence probes)
 - pwc-web-control: 403f4fa9bbea419715e9c834e847c6f2b60ae421 (released v0.1.6)
 - electron-web-control: 077eb502f1d68235b4e5c9c28e4a7560795bce17 (released v0.1.6)
 - pkg-catalog: 7cd9b7585b9343a153e516c9c47b6fb92b7330e0 (facility web-control 3 and both provider realizations)
@@ -130,11 +130,11 @@ The user then ran the reference capture on five public share pages and committed
 
 The user then reran the same five references through the logging wrapper and committed reference-captures-set-002 plus its ZIP at PoC revision b0ab4e0b45404873209a3259f480a1bdd6577a5f. SET-SUMMARY.json shows exit_code=1 for all five pages, and all five per-share logs contain the identical diagnostic reference.page-evidence-unavailable. This is now strong systematic evidence that navigation/session setup is reaching the rich evidence phase but the monolithic Runtime.evaluate used by evidenceExpression is not returning a usable by-value result on real shared pages. The next diagnostic change should split that large evidence expression into smaller independently persisted probes so one oversized/unsupported result cannot discard the entire observation.
 
+PoC revisions 00ff15dba7f9e78ffb409b7cf1076f72e5843a41 and 5818c1e64641ec98b85952e0b8d974c8dee08d9f implement that split. The former replaces the monolithic evidenceExpression with independent Runtime.evaluate probes for meta, HTML, text, turns, images, source elements, links, buttons, media, iframes, interesting attributes, performance resources, candidate resource URLs, SVG inventory, canvas inventory and inline-JSON inventory. Each probe is persisted independently as probe-<kind>.json and summarized in PROBES.json; unavailable probes no longer abort the capture. Large SVG, canvas and inline-JSON bodies are fetched individually by index after their inventories, reducing by-value result size. Candidate-resource fetch, CDP snapshots, accessibility, screenshot, MHTML and direct share JSON capture remain separate downstream surfaces. Revision 5818c1e... adds a permanent fixture proving that one unavailable probe leaves the remaining page evidence intact. GitHub Actions run 38865235215 passed syntax, 33/33 Node tests and all 7 retained Python reference tests on the exact final revision.
+
 ## Next action
 
-For the next physical reference-capture rerun, include the complete local Git commands in the user instructions (add/commit/push) so the captured directories and ZIP can be uploaded in one step. The ZIP may be redundant when the capture tree itself is committed, but keeping it is acceptable for convenience.
-
-Replace the monolithic evidenceExpression Runtime.evaluate in capture-share-reference.mjs with smaller independently persisted probes (basic DOM/text, element inventories, resource/performance evidence, SVG/canvas, inline JSON and other high-volume surfaces separately). Each probe must fail independently and leave its own diagnostic rather than making the whole capture empty. Then rerun the same five reference URLs; no additional pages are needed yet.
+Rerun the same five reference URLs on PoC revision 5818c1e64641ec98b85952e0b8d974c8dee08d9f or later using capture-share-reference-set.mjs. No additional pages are needed yet. The resulting set should now contain per-probe evidence and PROBES.json even when some surfaces remain unavailable. Keep the wrapper logs and SET-SUMMARY.json. The user requested that the operational instructions include complete git add/commit/push commands for uploading the evidence set and ZIP.
 
 Only after the rerun produces non-empty evidence for the five existing references should the task derive an artifact model covering raw snapshot identity, renderer occurrence, public download/resource transport and rendered graphics, then update export-share.mjs once from that model. Preserve the existing successful structured snapshot/visibility work and do not reopen discarded DOM scrolling, Network event streaming or debugger-breakpoint approaches unless the new direct evidence specifically requires it.
 
@@ -145,7 +145,7 @@ A separate deferred follow-up now exists at todo/web-page-analyze.md. After PoC 
 - Physical structured acquisition, branch completeness, hidden-final filtering and three raw image-asset discovery are validated. The actual public share resource/download representation for images, documents and renderer-native graphics is deliberately unresolved pending the multi-page reference capture.
 - The reconstructed backend-anon file-download endpoint returned 401 for the clean image assets, and the later live-DOM image-resource heuristic observed zero renderer image references on the public share. Neither mechanism is accepted as the media contract.
 - The previously supplied source-chat MHTML is supplementary evidence only; it was not captured from the public /share/ renderer and browser save/archive transformations may change representation.
-- The first five-page direct reference set is physically inconclusive because all five capture directories are empty; capture-share-reference.mjs currently loses failures that occur before its first evidence write. Diagnostic durability must be fixed before repeating the set.
-- Document/file artifact modeling and renderer-native graphics such as Mermaid/SVG/canvas remain open until non-empty direct reference captures are inspected.
+- The first five-page reference set was empty and the second set isolated the systematic failure to the monolithic evidence Runtime.evaluate. The collector has now been split into independently persisted probes and is hosted-tested; one physical five-page rerun is required to establish which real-page surfaces are available.
+- Document/file artifact modeling and renderer-native graphics such as Mermaid/SVG/canvas remain open until the new non-monolithic direct reference captures are inspected.
 - Faithful readable HTML/graphic rendering remains open; physical_site_completeness_verified/observationComplete must remain false until final acceptance.
 - The provider-install integration formal validation passed on both Linux architectures. Electron macOS ARM64 package job was still queued at the last shared-debugger handoff checkpoint; check its current status before making a universal installed-host claim.
