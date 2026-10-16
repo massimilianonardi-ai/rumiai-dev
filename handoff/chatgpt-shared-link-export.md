@@ -9,8 +9,8 @@ Archive user-authorized ChatGPT shared-link conversations completely and readabl
 
 ## Current repository revisions
 
-- rumiai-dev: 96e974707b57f8d2163c693b14b568242a2b6285 (pre-checkpoint HEAD)
-- rumiai-dev-PoCs: fbc3848029b65e06057b53549773020554521c62 (artifact interaction diagnostics)
+- rumiai-dev: 1c6fd2bccfd3095d7c23f274bb1d86a2288b0ad2 (pre-checkpoint HEAD)
+- rumiai-dev-PoCs: 16605a53e880fa568d883c4df3b88a54974e3efc (assistant sandbox-file export)
 - pwc-web-control: 403f4fa9bbea419715e9c834e847c6f2b60ae421 (released v0.1.6)
 - electron-web-control: 077eb502f1d68235b4e5c9c28e4a7560795bce17 (released v0.1.6)
 - pkg-catalog: 7cd9b7585b9343a153e516c9c47b6fb92b7330e0 (facility web-control 3 and both provider realizations)
@@ -145,21 +145,25 @@ The remaining three references establish that broad DOM img enumeration is not a
 
 PoC revisions 1a01a96e7f8b7b6ca340870ac7fd41f90e6e9be8 and fbc3848029b65e06057b53549773020554521c62 add a diagnostic interaction stage to the reference capture without changing export-share.mjs. It discovers data-image-gen-result surfaces and sandbox-file buttons, selects at most one representative image-generation surface, one text/document sandbox button and one photo sandbox button, opens a fresh public-share page for each interaction, tags the exact discovered target, and performs the normal web-control native click while a level-3 session observes only the short post-settle interaction window. Network/Page domains are enabled only for this diagnostic click window, not for initial page navigation or the active exporter. Persisted network evidence is privacy-reduced to request URL/method/type and response URL/status/MIME/content-disposition/length; request headers, cookies and authorization are not written. When CDP exposes an artifact response body, the diagnostic stores it locally with SHA-256; otherwise it records the observed transport/failure. GitHub Actions run 38869387216 passed syntax, 34/34 Node tests and all 7 retained Python reference tests for exact revision fbc3848029b65e06057b53549773020554521c62.
 
+The user's reference-captures-set-004 at PoC revision a26a11029dff016883d8cc31e0a5a52064fc744b physically exercised representative artifact interactions. Generated-image clicks still operated on unresolved placeholder surfaces and did not expose a usable generated-image binary transport, so that artifact class remains unresolved.
+
+The same set physically established the renderer transport for assistant-generated sandbox files. Both the Markdown preview and PNG preview used the public share file_from_message route keyed by the owning assistant message and sandbox file path. The PNG case then resolved a temporary content URL and displayed the real image in the artifact preview. Temporary content URLs are transport-only evidence and are not persisted by the normal exporter.
+
+PoC revision 16605a53e880fa568d883c4df3b88a54974e3efc promotes only that observed sandbox-file mechanism into the exporter. Visible assistant sandbox references are associated with their message/node identity, recovered through file_from_message in the existing page context, stored under files/, indexed in FILES.json, included in ZIP/SHA256SUMS, and rewritten to local links in TRANSCRIPT.md. Missing files remain explicit. No authentication fallback was introduced. GitHub Actions run 38885331582 passed syntax, 36/36 Node tests and all 7 retained Python reference tests for this exact revision.
+
 ## Next action
 
-Run one more direct reference set on the same five public shares at PoC revision fbc3848029b65e06057b53549773020554521c62 or later. The baseline probes are already physically accepted; the purpose of set-004 is only to capture representative post-click transport for image-generation surfaces and sandbox-file buttons. Inspect INTERACTION-INVENTORY.json, INTERACTIONS.json, post-click screenshots and any interaction-resources bodies. The operational instructions must include the complete git add/commit/push commands requested by the user.
+Physically rerun the active exporter once on the Mirror chat share at PoC revision 16605a53e880fa568d883c4df3b88a54974e3efc or later. This run validates assistant-generated sandbox-file recovery only; do not rerun the five-page reference corpus. Inspect filesReferenced/filesDownloaded/filesMissing and FILES.json. If all referenced sandbox outputs are downloaded, accept that artifact class physically; otherwise use the per-file attempt chain to isolate the remaining failure.
 
-If set-004 exposes stable renderer-mediated transport/body recovery, update export-share.mjs from that evidence rather than reconstructing private endpoints. Preserve the structured snapshot as the completeness/identity source, preserve Mermaid source as source content, and keep renderer occurrence/interaction evidence separate from raw artifact identity. Do not return to DOM scrolling/window merging, initial-navigation Network streaming, debugger breakpoints or authentication-based media guesses.
+Generated-image binaries and user-upload attachment binaries remain separate unresolved artifact classes. Do not generalize the sandbox-file mechanism to either one. After artifact recovery is settled, complete faithful readable HTML and final completeness comparison before allowing physical_site_completeness_verified/observationComplete to become true.
 
-A separate deferred follow-up now exists at todo/web-page-analyze.md. After PoC 068 has established which evidence surfaces are actually useful, extract the generic page-evidence collection into a reusable deterministic analyzer rather than leaving it ChatGPT-specific. Its intended relationship is analogous to pkg-analyze: broad observation/probing first, contextual interpretation later. It must remain below RumiAI sense/cognitive interpretation and use the current web-control capability rather than duplicating browser control.
+A separate deferred follow-up remains at todo/web-page-analyze.md.
 
 ## Blockers / open questions
 
-- Physical structured acquisition, branch completeness, hidden-final filtering and raw artifact discovery are validated across the five-page set-003 corpus. The remaining unresolved part is renderer-mediated binary transport for generated images and downloadable sandbox files.
-- The reconstructed backend-anon file-download endpoint returned 401 for the clean image assets and is not accepted as the public artifact transport. Authentication is not a media requirement. Set-003 instead shows application-managed image placeholders/buttons whose actual click transport must be observed.
-- Generated images may have raw image_asset_pointer identity while the public share shows only data-image-gen-result placeholders with no img/src URL. User-upload attachments expose metadata.attachments file ids; assistant-generated sandbox outputs render as behavior buttons. These are separate artifact classes.
-- Mermaid is physically observed as source code in the public Mirror share, not as a renderer-generated SVG/canvas image. No additional Mermaid-image completeness requirement exists for that reference.
-- The previously supplied source-chat MHTML remains supplementary evidence only; set-003 direct /share/ HTML/CDP/screenshot evidence is authoritative for public renderer behavior in these references.
-- The narrow interaction diagnostic at fbc3848029b65e06057b53549773020554521c62 is hosted-tested but requires physical set-004 evidence before any artifact transport is promoted into the exporter.
-- Faithful readable HTML and final artifact/body completeness remain open; physical_site_completeness_verified/observationComplete must remain false until final acceptance.
-- The provider-install integration formal validation passed on both Linux architectures. Electron macOS ARM64 package job was still queued at the last shared-debugger handoff checkpoint; check its current status before making a universal installed-host claim.
+- Structured share acquisition, visibility/turn modeling, raw artifact identity and the five-page direct renderer corpus are physically established.
+- Assistant-generated sandbox-file transport is physically identified; exporter support at 16605a53e880fa568d883c4df3b88a54974e3efc is hosted-tested and needs one physical exporter run.
+- Generated-image binary transport remains unresolved: raw image identity can be complete while the public renderer exposes only unresolved image-generation placeholders.
+- User-upload attachments remain a separate binary-acquisition class.
+- Mermaid is physically observed as source code in the Mirror share, not as an additional renderer-generated image.
+- Faithful readable HTML and final artifact/body completeness remain open; observationComplete remains false.
