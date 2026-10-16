@@ -203,6 +203,43 @@ The exact current product HEAD's JavaScript core workflow run 38908894786 is SUC
 
 Pending: compile the specialized descriptor with real `jsc`, serve it and a fixture manifest in a real browser, verify JS/CSS source order, namespace semantics, fetch/network errors, replacement semantics, CSP and runtime errors. Decide and promote the new loader interface as a distinct normative contract only after its remaining design is settled. Existing standalone loader, manual and permanent tests require intentional realignment. Product code remains user-controlled; this checkpoint changes documentation only.
 
+## Proposed Queue-driven download coordination — 2026-10-16
+
+Working design candidate only; **not an accepted or implemented product change**.
+With the user-committed Queue, replace `DynamicLoader.compose`'s
+`Promise.all(urls.map(...))` + subsequent `ordered.find(result => result.error)`
+block with a local Queue used as an ordered download completion coordinator:
+
+- Register `queue.success(() => resolve())` and
+  `queue.error(entry => reject(entry.error))` before starting source fetches;
+  use one internal Promise bridge only because `compose` and Fetch are already
+  asynchronous. Do not change Queue's callback-only public API.
+- Each URL registers a default fail-fast `queue.add(result => ...)` callback.
+  A successful download appends `result.code` to ordered sources. A failed
+  download calls the same `done({ok:false,error})` wrapper; its queued callback
+  throws the original error, letting Queue record the entry, stop the current
+  round, and notify the loader once. This replaces scanning a second errors
+  representation and naturally surfaces unexpected callback exceptions.
+- `completed()` is intentionally unused in this local coordination: only
+  success or failure determines the outcome. A new Queue remains local to each
+  `compose` call, isolating concurrent compositions even though Queue itself
+  supports reuse. Existing descriptor parsing and generated JS/CSS rendering
+  stay unchanged.
+- Error notification occurs in manifest FIFO order: if an earlier fetch is
+  still pending, a later failed fetch cannot cause Queue's error callback
+  to run yet. A stopping Queue ignores later completion wrappers but does not
+  cancel underlying HTTP requests. Cancellation, script insertion/execution
+  failures, and full real-browser contract testing remain separate design
+  and validation topics.
+
+Focused isolated V8 verification of the **actual current GitHub Queue source**
+with synthetic Promise-controlled download completions passed: successful
+completion order A/B/C despite C/B/A resolution, exactly one success notice,
+and failed second download yielded one fatal error notification preserving
+the exact original Error object. This is neither a run of the proposed
+`DynamicLoader` source nor actual Fetch/jsc/Chromium validation.
+The user continues to control existing product source edits.
+
 ## Next action
 
 Continue the design review of the new `m.mod.*` dynamic-loading
