@@ -36,6 +36,7 @@ Read only the smallest complete set relevant to the task.
 | technical localization facility `lang` | `rumiai-os/LANG-BOOTSTRAP.md` |
 | promoted current `mk` development-lifecycle contract | `rumiai-os/MK.md` |
 | generic JavaScript/CSS compilation through `jsc`, ordered source descriptors and output/publication semantics | `rumiai-os/JSC.md` |
+| browser runtime source composition, `m.mod.DynamicLoader`, DOM insertion and execution-responsibility boundary | `rumiai-os/DYNAMIC-LOADER.md` |
 | portable local service lifecycle through `srv` | `rumiai-os/SERVICE-LIFECYCLE.md` |
 | developer-facing live scenario environments through `testlab` | `rumiai-os/TESTLAB.md` |
 | standalone terminal key input | `rumiai-os/READ-KEY.md` |
