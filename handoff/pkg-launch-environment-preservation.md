@@ -1,16 +1,16 @@
 # Package launcher one-shot environment preservation
 
 Status: Active
-Updated: 2026-10-12
+Updated: 2026-10-16
 
 ## Goal
 Implement and validate `m_ENV_DO_NOT_OVERRIDE` for one managed package invocation, preserving named inherited environment values at the final exec without changing managed state or privileged service context.
 
 ## Current repository revisions
-- rumiai-dev: 239e6fe6afc4267f91f1874d80824079431dbbef (before this handoff)
-- rumiai-os: c3717a8eaab1cb122519156166ac71f47a30af7a
-- rumiai-tests: 2e198877323d124049685535ecc438f1ce2bd7ea
-- electron-web-control: 7012c364beb3d082754cd1eeb23f904750cde9c0
+- rumiai-dev: c123ad23ad91e158239e65ac926e672f70a93660 (before this checkpoint)
+- rumiai-os: 0d83d044222f271b99d873a403629e7df34ea1c8
+- rumiai-tests: 11f62d1dc471ded4968e0b7c06470c3acb0c083d
+- pkg-catalog: 003efc67578c3bb8c468917074067edc77ab14dd
 Recheck remote HEADs at resumption.
 
 ## Applicable canonical sources
@@ -41,6 +41,9 @@ Recheck remote HEADs at resumption.
 - Launcher manual: rumiai-os c3717a8eaab1cb122519156166ac71f47a30af7a.
 - Canonical contract: rumiai-dev 05e419a5ddbd194158622756a849b8d273c7cb9f.
 - Regression test added and made executable: rumiai-tests 23375546a9eae8148e255a808dab9544a410e5c5.
+- Validation harness audit completed on 2026-10-16: the permanent test exercises the real managed `node` command but previously had no declared preparation requirement, so an otherwise preparable missing Node installation could become a test SKIP.
+- rumiai-tests `dc406126f1af49ffd47fd24a57b32309f97aa12c` adds `validation/requirements/pkg-launch-environment-preservation.conf`, binding the test selection to real target package `nodejs`.
+- rumiai-tests `11f62d1dc471ded4968e0b7c06470c3acb0c083d` adds the dedicated task scope `validation/pkg-launch-environment-preservation.conf`.
 
 - Physical host report (2026-10-12, `admino@vmdev`, checkout `/m/src/git/rumiai-os_TEST` at `rumiai-os` `c3717a8`): after `git pull --ff-only`, `./m node -p 'process.env.HOME'` printed `/m/src/git/rumiai-os_TEST/state/user/default/pkg/nodejs/home`; `m_ENV_DO_NOT_OVERRIDE=HOME ./m node -p 'process.env.HOME'` printed `/home/admino`. This directly validates the baseline and explicit HOME override on that host only.
 
@@ -53,10 +56,12 @@ Recheck remote HEADs at resumption.
 - User-reported physical outcome (2026-10-12): after the assistant supplied direct managed-Node checks for preserving multiple variables with special characters, one-shot behavior across a nested managed invocation, and explicit errors for missing/duplicate variables, the user confirmed that everything worked as expected. No detailed logs were attached to that confirmation; it is user-observed acceptance of those scenarios, not independently collected exhaustive/automated coverage or corporate-CA verification.
 
 ## Current state
-Commits are forward-only. A local POSIX shell sanity check verified indirect variable capture and byte-preserving env argv delivery; this was not a run of the actual RumiAI package launcher. After final review, malformed and duplicate override requests use distinct statuses (3 and 7). The baseline/override HOME pair was exercised through real `./m node` on `vmdev`; the user subsequently reported success for the additional multi-variable, nested-call and error-path examples. The full permanent test suite and the corporate-CA Electron HTTPS scenario have not been verified against this revision.
+The launcher implementation, canonical package contract, operational manual and permanent regression test are present. The previously identified validation-harness defect is corrected: formal validation now knows that the environment-preservation test requires the real managed `nodejs` target package, and the task has a dedicated validation scope. Repository consistency review confirmed the new requirement selects exactly `rumiai-os/pkg-launch/environment-preservation.test` and uses the existing package identity `nodejs`.
+
+An attempted autonomous execution of `./rumiai-validate pkg-launch-environment-preservation` on 2026-10-16 could not start because the available auxiliary container could not resolve `github.com` while cloning the exact repositories (`Could not resolve host: github.com`). This is validation-environment failure, not product/test PASS or FAIL. No further test action is requested from the user.
 
 ## Next action
-Audit the authored regression test for harness defects and incorrect assumptions; refine and execute validation autonomously on an available maintained test environment where feasible. Do not request further tests or test-environment debugging from the user. The original `./m node` HOME output is directly observed; the user also confirmed successful outcomes for later ad hoc checks without supplying logs. The Electron v0.1.5 source, Linux-validated release artifact and package catalog metadata are published. Preserve the remaining general launcher-validation work as developer-owned; the corporate CA/central trust-management topic is deferred under its independent TODO. Physical enterprise TLS evidence must not be claimed for this release.
+Execute the dedicated `pkg-launch-environment-preservation` validation scope when an autonomous maintained environment with GitHub/network access is available. If it passes, perform the final completion snapshot and remove this handoff in the subsequent forward commit. Do not request the user to execute or debug the suite.
 
 ## Blockers / open questions
-The RumiAI GitHub Actions Linux release pipeline succeeded; no direct execution against the user's corporate VM or corporate CA has been performed for Electron v0.1.5. The user explicitly declines running further tests after substantial past time loss debugging test defects rather than product defects. Treat further test authoring/execution/debugging as the development workflow's responsibility; do not require the user to run the test suite. Full automated/physical evidence remains pending and must not be reported as obtained.
+Formal automated execution is currently blocked only by lack of GitHub DNS/network access in the available auxiliary execution environment. The existing user-observed physical acceptance remains valid for the properties it exercised, but must not be relabelled as automated validation. Corporate CA/central trust management remains independent deferred work and is not a blocker for the launcher contract.
