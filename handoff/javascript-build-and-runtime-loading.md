@@ -155,6 +155,48 @@ contract/routing and realign owner-local manual and permanent tests with
 user-applied product changes. Do not put loader behavior back into
 `JSC.md`.
 
+## New dynamic source and manifest checkpoint — 2026-10-16
+
+The user expressly authorized creation of exactly two product files and
+retained control of edits to previously existing sources. New files in
+`rumiai-os/main@1e4d9fdaa2c444c5268b8529ff525a9cf63e693d`:
+
+- `lib/sys/js/core/m/mod/DynamicLoader.js` (new browser-only fragment),
+  exporting proposed `m.mod.DynamicLoader` when assembled by `jsc`.
+- `lib/sys/js/core/modules-dynamic-loader.json` (new specialized
+  descriptor, including only the current native `m.mod.Queue` and
+  `m.mod.DynamicLoader` in that order).
+
+The user's separate `Queue.js` modernization had already landed before
+the files were created and was preserved unchanged. Existing `core`
+manifest, `jsc`, old dynamic loader, manuals and permanent tests were
+not modified. The new loader uses `fetch` and `Queue.add` to preserve
+manifest order, generates browser classic-script namespace scopes or
+ordered CSS, and offers proposed `compose()` and `load()` entrypoints.
+This is an implementation proposal checkpoint, **not yet a promoted
+public-interface contract** or a completed library distribution.
+The legacy runtime loader and manuals/tests remain pending realignment.
+
+Revision-specific validation: the *actual GitHub source strings* for native
+`Queue`, `DynamicLoader` and the new manifest were exercised in an
+isolated JavaScript evaluator with stand-in `URL`, `fetch` and DOM.
+Manifest path order, JS assembly and execution (result 43), CSS order,
+DOM style replacement and HTTP 404 rejection passed. The evaluation
+does **not** establish actual `jsc` compilation, real-network HTTP, real
+Chromium behavior, CSP acceptance, generated output syntax under all
+inputs or physical validation. A native Node/Chromium tool is present
+in the workspace, but authoritative source bytes were not materialized
+there; no `jsc`/Chromium run was claimed.
+
+A new user question concerns `Queue` callback exception policy.
+Current behavior catches and logs callback exceptions then continues.
+The assistant proposed, but the user has **not accepted** as binding,
+per-callback `continueOnError` defaulting to false, structured error
+retention and explicit stopped state. Keep this as an open design choice
+owned by `handoff/javascript-core-modernization.md`, not a stealth
+change to existing `Queue.js`; asynchronous resource cancellation stays
+outside Queue.
+
 ## Next action
 
 Continue the design review of the new `m.mod.*` dynamic-loading
