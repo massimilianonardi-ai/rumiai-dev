@@ -60,8 +60,8 @@ values are available.
 
 Source files are emitted in descriptor order. When the generated
 JavaScript executes, nested namespace scopes retain lexical access to
-earlier declarations, and
-explicit exports become properties of their declared namespace.
+earlier declarations, and explicit exports become properties of their
+declared namespace.
 Namespace objects can be reopened by later generated JavaScript without
 discarding existing properties. Within the same namespace, later
 source files can use earlier lexical declarations; parent namespace
