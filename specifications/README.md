@@ -23,6 +23,7 @@ Read only the smallest complete set relevant to the task.
 | POSIX portability and host-specific abstraction boundary | `rumiai-os/POSIX-PORTABILITY-LAYER.md` |
 | terminal paging abstraction and host backend policy | `rumiai-os/PAGER.md` |
 | terminal editor abstraction and host backend policy | `rumiai-os/EDITOR.md` |
+| JavaScript object-graph cloning, depth, flags, native types and unsupported-object behavior | `rumiai-os/OBJECT-CLONE.md` |
 | GUI-independent TextEdit text engine, selections and source-mapped representation | `rumiai-os/TEXT-EDIT.md` |
 | memory-only terminal text editing and stream/file save semantics | `rumiai-os/VSED.md` |
 | interactive terminal menu engine, list/filesystem selection, multi-selection and result contract | `rumiai-os/MENU.md` |
