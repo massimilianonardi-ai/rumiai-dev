@@ -1,17 +1,16 @@
 # Package launcher one-shot environment preservation
 
-Status: Active
+Status: Complete
 Updated: 2026-10-16
 
 ## Goal
 Implement and validate `m_ENV_DO_NOT_OVERRIDE` for one managed package invocation, preserving named inherited environment values at the final exec without changing managed state or privileged service context.
 
 ## Current repository revisions
-- rumiai-dev: c123ad23ad91e158239e65ac926e672f70a93660 (before this checkpoint)
+- rumiai-dev: d5d4a8b228dd19f6b3db06dfafbbb672780cbfab (before final snapshot)
 - rumiai-os: 0d83d044222f271b99d873a403629e7df34ea1c8
 - rumiai-tests: 11f62d1dc471ded4968e0b7c06470c3acb0c083d
 - pkg-catalog: 003efc67578c3bb8c468917074067edc77ab14dd
-Recheck remote HEADs at resumption.
 
 ## Applicable canonical sources
 - README.md, RULES.md, CONSISTENCY-GATE.md, TESTING.md
@@ -56,12 +55,12 @@ Recheck remote HEADs at resumption.
 - User-reported physical outcome (2026-10-12): after the assistant supplied direct managed-Node checks for preserving multiple variables with special characters, one-shot behavior across a nested managed invocation, and explicit errors for missing/duplicate variables, the user confirmed that everything worked as expected. No detailed logs were attached to that confirmation; it is user-observed acceptance of those scenarios, not independently collected exhaustive/automated coverage or corporate-CA verification.
 
 ## Current state
-The launcher implementation, canonical package contract, operational manual and permanent regression test are present. The previously identified validation-harness defect is corrected: formal validation now knows that the environment-preservation test requires the real managed `nodejs` target package, and the task has a dedicated validation scope. Repository consistency review confirmed the new requirement selects exactly `rumiai-os/pkg-launch/environment-preservation.test` and uses the existing package identity `nodejs`.
+Complete. The launcher implementation, canonical package contract, operational manual and permanent regression test are present. The validation harness now declares the real managed `nodejs` prerequisite and has a dedicated task scope. The user explicitly reports having verified the implemented behavior successfully several times and, on 2026-10-16, instructed that this handoff be closed rather than retained for an additional automated execution.
 
-An attempted autonomous execution of `./rumiai-validate pkg-launch-environment-preservation` on 2026-10-16 could not start because the available auxiliary container could not resolve `github.com` while cloning the exact repositories (`Could not resolve host: github.com`). This is validation-environment failure, not product/test PASS or FAIL. No further test action is requested from the user.
+The 2026-10-16 autonomous validation attempt remains accurately classified as not executed because the available auxiliary environment could not resolve `github.com`; it is not relabelled as PASS. Completion relies on the existing direct physical checks, repeated user acceptance, repository consistency review and the corrected permanent validation harness. Corporate CA/central trust management remains independent deferred work.
 
 ## Next action
-Execute the dedicated `pkg-launch-environment-preservation` validation scope when an autonomous maintained environment with GitHub/network access is available. If it passes, perform the final completion snapshot and remove this handoff in the subsequent forward commit. Do not request the user to execute or debug the suite.
+None. Remove this completed handoff from the current tree in the subsequent forward commit.
 
 ## Blockers / open questions
-Formal automated execution is currently blocked only by lack of GitHub DNS/network access in the available auxiliary execution environment. The existing user-observed physical acceptance remains valid for the properties it exercised, but must not be relabelled as automated validation. Corporate CA/central trust management remains independent deferred work and is not a blocker for the launcher contract.
+None for this task.
