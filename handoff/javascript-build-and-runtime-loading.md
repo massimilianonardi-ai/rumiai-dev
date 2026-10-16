@@ -197,6 +197,15 @@ owned by `handoff/javascript-core-modernization.md`, not a stealth
 change to existing `Queue.js`; asynchronous resource cancellation stays
 outside Queue.
 
+## Current Queue integration review — 2026-10-16
+
+Product HEAD inspected: `rumiai-os/main@16b7f725f5b85de3207d4e2c40ea7539651c14c5`; current permanent tests HEAD: `rumiai-tests/main@11f62d1dc471ded4968e0b7c06470c3acb0c083d`.
+The user committed the new native Queue with per-round reuse and persistent `completed`, `success`, and `error` observer setters, and `add(callback, continueOnError = false)`. `DynamicLoader.js` and its specialized two-source descriptor remain present and unchanged. In `DynamicLoader.compose`, file download failures are passed as ordinary `{error}` results through `Queue.add`; the queued callback only pushes the result into an ordered array. Thus the newly committed Queue API does not mechanically require a DynamicLoader source edit for this current path. Unexpected exceptions thrown by the queued callback would now be internally captured without observer notification in DynamicLoader, which lacks a Queue error observer; this edge still needs robust regression coverage.
+
+The exact current product HEAD's JavaScript core workflow run 38908894786 is SUCCESS, but its pinned permanent core tests do not mention `DynamicLoader` and do not cover the specialized descriptor. The current permanent Chrome loader test exercises `lib/sys/js/dynamic-loader.lib.js` (the previous public-loader implementation), not `m.mod.DynamicLoader`. No production build of the new specialized descriptor and no actual-browser integration of the new loader have been verified in this checkpoint.
+
+Pending: compile the specialized descriptor with real `jsc`, serve it and a fixture manifest in a real browser, verify JS/CSS source order, namespace semantics, fetch/network errors, replacement semantics, CSP and runtime errors. Decide and promote the new loader interface as a distinct normative contract only after its remaining design is settled. Existing standalone loader, manual and permanent tests require intentional realignment. Product code remains user-controlled; this checkpoint changes documentation only.
+
 ## Next action
 
 Continue the design review of the new `m.mod.*` dynamic-loading
