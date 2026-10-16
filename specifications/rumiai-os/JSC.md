@@ -1,173 +1,153 @@
-# m — JavaScript source compiler and dynamic JS/CSS library loading
+# m — jsc JavaScript and CSS source compiler
 
-Status: **Current / normative — approved redesign directions; product, manuals and permanent tests pending realignment**
-Updated: 2026-10-14
+Status: **Current / normative**
+Updated: 2026-10-16
 
-## Role and placement
+## Responsibility and boundary
 
-The first-party `m` design evolves the existing `m/jsc` source compiler
-and preserves the independent browser JS/CSS dynamic source loader
-responsibility. The established product locations remain:
+`jsc` is a source compiler owned by the technical `m` layer. It reads an
+ordered JSON source descriptor and its referenced local source files, and
+generates a single JavaScript or CSS output. Its behavior is defined by the
+descriptor, source contents and explicitly selected output destination.
 
-```text
-bin/sys/jsc
-lib/sys/js/jsc.lib.js
-lib/sys/js/dynamic-loader.lib.js
-```
+`jsc` has no application- or distribution-specific responsibility: it
+does not know which functions an application needs, choose a source
+collection, discover dependencies, fetch files over HTTP, execute the
+compiled result, or decide how an application deploys or loads it.
+Different JSON descriptors may select different subsets of the same
+source tree, including a complete selection. Those selections and their
+intended uses are authored outside the compiler; `jsc` processes each
+descriptor with identical semantics.
 
-The command is bootstrap-integrated through the normal
-`#!/usr/bin/env m` shell entrypoint, invoking the Node.js engine through
-the default managed Node.js runtime. The browser loader is a separate
-non-executable classic JavaScript library with no compiler dependency.
-No different command interpreter/entrypoint model is introduced here.
+Source directory layout may reflect namespace organization, but `jsc`
+does not require or infer a mapping between file paths and namespace
+names. The JSON descriptor alone specifies namespace placement, ordered
+source inclusion and public exports.
 
-## Ordered source descriptor
+The public command remains `bin/sys/jsc`, using the established
+`#!/usr/bin/env m` bootstrap-integrated shell entrypoint and the
+default managed Node.js runtime. Its Node.js engine retains the
+`jscMain(args)` entrypoint, returning a Promise of process-style status.
+No alternative interpreter or command-bootstrap model is introduced.
 
-The ordered JSON `modules` descriptor remains the source-assembly model.
-The descriptor root may also contain the optional Boolean `nodeGlobal`
-(default `false`), controlling Node.js global publication as specified below.
-Entries are:
+## Ordered JSON source descriptor
 
-- **Namespace node:** `name` (optional JavaScript identifier) and nested
-  `modules` (ordered array).
-- **Source node:** `file` (relative source path), optional comma-separated `exports` (the
-  former `symbols`, retaining its meaning and without type or metadata
-  additions) and optional `imports` for explicit external symbols.
+The root contains an ordered `modules` array and may contain optional
+Boolean `nodeGlobal` (default `false`).
 
-Import declarations in the JSON are **supported, optional and recommended**
-to keep JavaScript source files decoupled from the build description. They
-describe **references to values exposed by already available namespace
-objects**, not file imports or dependency loading. For example, an optional
-JSON import of `A` from `m.data.A` generates an ordinary lexical binding
-equivalent to `const A = m.data.A;`. A developer may instead write that
-binding directly in JavaScript, without mentioning it in the JSON.
-`jsc` does **not** resolve and load source files, emit `require()`/`import`
-to fetch an external bundle, duplicate provider implementations, or change
-the authored source's namespace placement on account of these references.
-Provisioning the referenced provider namespace is the responsibility of
-the embedding/application environment, not an import declaration.
+Each entry is one of:
 
-Files are evaluated in the declared order. The compiler creates nested
-namespace objects, retains earlier declarations in the lexical scope of
-later source files and exposes explicitly named exports as namespace
-properties. A source in `m.srv.data` can refer directly to a prior
-`MyClass`; `m.srv` can use `data.MyClass`; the fully qualified
-`m.srv.data.MyClass` is available where `m` is visible. Namespace
-objects can be reopened by subsequent assemblies, retaining the original
-namespace and lexical visibility goals.
+- **Namespace node:** optional JavaScript identifier `name` and nested
+  ordered `modules` array.
+- **Source node:** relative source pathname `file`, optional
+  comma-separated `exports` identifiers, and optional object `imports`
+  mapping local identifiers to qualified namespace-property references.
 
-Declared cross-bundle imports produce lexical bindings to the exported
-values when the consumer bundle initializes; later replacement of a
-namespace property does not automatically replace an already captured
-function reference. Source code that deliberately uses a qualified
-namespace property access instead obtains the property's current value
-when executed. These semantics do not freeze the properties of imported
-objects.
+`exports` is the current spelling of the former `symbols` field;
+there is no added export type or metadata system. `imports` is
+supported, optional and recommended where it avoids coupling authored
+source to a specific external namespace spelling. An import mapping
+such as `{"A":"root.data.A"}` generates an ordinary lexical value
+binding equivalent to `var A = root.data.A;`. The authored source may
+instead contain that binding itself.
 
-The generated library encapsulates its internal declarations and publishes
-only the explicit public API, following the established standalone TextEdit
-model. Output is usable in both classic browser scripts and Node.js without
-`eval()`, `with`, a dynamic code generator, or a mandatory runtime registry.
+Imports are **references to values already made available by the
+execution environment**, not dependency declarations. They never
+cause additional files to be included, resolved, downloaded or loaded.
+The compiler does not emit runtime `require()` or `import` statements
+to provision referenced values. The application controls when those
+values are available.
 
-### Generated library publication
+Source files are included and evaluated in descriptor order. Nested
+namespace scopes retain lexical access to earlier declarations, and
+explicit exports become properties of their declared namespace.
+Namespace objects can be reopened by later generated JavaScript without
+discarding existing properties. Within the same namespace, later
+source files can use earlier lexical declarations; parent namespace
+scopes can refer to nested namespace objects; qualified namespace
+references remain accessible wherever their root is visible.
 
-The single generated JavaScript uses an outer strict-mode closure around the
-nested namespace scopes. The descriptor-root `nodeGlobal` setting is a
-**compile-time choice**, not a runtime environment variable or CLI option:
+A generated import captures the property value when the enclosing
+source initializes. Replacing that namespace property later does not
+automatically update the captured binding; a source expression that
+reads the qualified property at call time instead observes its current
+value. Neither form freezes an imported object's properties.
 
-- **Browser classic script:** irrespective of `nodeGlobal`, publish and
-  reopen the public namespace roots on `globalThis`, as in the original jsc.
-- **Node.js CommonJS, `nodeGlobal` omitted or `false`:** expose the
-  public API through `module.exports` without reading or writing an
-  equally named namespace on `globalThis`; the bundle remains independent
-  even when a matching global namespace already exists.
-- **Node.js CommonJS, `nodeGlobal: true`:** reuse an already existing
-  namespace root on `globalThis`, or publish a new one when absent.
-  `module.exports` exposes the same public namespace object. Separately
-  generated bundles opting into this behavior can extend the shared
-  namespace without replacing it; their initialization order remains
-  controlled by the application.
+## Generated JavaScript
 
-For example, a descriptor with root namespace `m` and `"nodeGlobal": true`
-allows two independently compiled CommonJS bundles to reopen
-`globalThis.m`. With `nodeGlobal` absent or `false`, the same library
-uses `module.exports` but does not create or reuse `globalThis.m`.
-This flag does not load another file, alter the `imports` reference model,
-freeze reopenable namespace objects, or introduce a runtime registry.
+The output is one standalone, strict-capable classic JavaScript program
+with an outer strict-mode closure around its nested namespace scopes.
+Only explicitly exported identifiers become namespace properties;
+internal lexical declarations are not automatically published.
+Generation uses no `eval()`, `with`, dynamic code generator or
+mandatory runtime registry.
 
-JavaScript and CSS are assembled separately. CSS manifests list source
-files in order, without JavaScript namespaces or exports; CSS assembly and
-dynamic loading retain their established behavior.
+Publication of the generated namespace roots depends on the execution
+environment and the descriptor-root `nodeGlobal` setting:
 
-## Public jsc command and engine
+- **Browser classic script:** publish/reopen roots on `globalThis`,
+  irrespective of `nodeGlobal`.
+- **Node.js CommonJS, `nodeGlobal` absent or `false`:** return the public
+  namespace through `module.exports` without consulting or modifying an
+  equally named `globalThis` namespace.
+- **Node.js CommonJS, `nodeGlobal: true`:** reuse an existing namespace
+  root on `globalThis` or publish one when absent; `module.exports`
+  refers to the same namespace object.
+
+`nodeGlobal` is a compile-time descriptor setting, not a command
+option or a runtime environment variable. It neither includes extra
+source files nor changes the semantics of `imports`.
+
+These are general output semantics, not a prescribed deployment strategy
+for independently generated outputs. Selection of one complete,
+specialized or other compiled artifact belongs to the application.
+
+## CSS compilation
+
+A CSS descriptor is an ordered list of source files. CSS is concatenated
+in declared order without JavaScript namespaces, `imports` or
+`exports`. JavaScript and CSS are separate compilation outputs;
+one descriptor must not mix the two source kinds.
+
+## Public command and output
 
 ```text
 jsc <modules.json> [output]
 ```
 
-- Without `output`, emit only the compiled script or CSS to stdout.
-- With `output`, write the assembled file without altering its source
-  content. When an appropriate installed minifier is available, additionally
-  create `<name>.min.js` using `google-closure-compiler` for JavaScript or
-  `<name>.min.css` using `uglifycss` for CSS, and gzip the minified artifact
-  as `<name>.min.js.gz` or `<name>.min.css.gz`. With no minifier installed,
-  create a gzip artifact of the unminified output instead. Never download or
-  install minification tools implicitly.
-- Source file names are resolved relative to the descriptor directory.
-  Existing source files must remain inside that directory when resolved.
-- Invalid descriptors, unsafe import/export identifiers and generated JS
-  syntax errors fail with a nonzero status. The public shell launcher uses
-  ordinary output redirection, so an existing output file may be truncated
-  before validation fails; atomic replacement or preservation on failure
-  is not required.
-  Always perform JavaScript syntax validation. When installed, run
-  `google-closure-compiler --checks_only` as a separate, non-mutating
-  syntax-check step before publishing the generated JavaScript; keep the
-  unminified output intact. CSS remains a distinct ordered assembly.
-- The internal `jsc.lib.js` exposes the public Node function
-  `jscMain(args)`, returning a Promise of process-style status.
-- The launcher uses the existing `m` `log`/`fatal` facilities, and
+- Without `output`, emit only compiled JavaScript or CSS on stdout.
+- With `output`, write the assembled content unchanged. If an
+  appropriate installed minifier is present, additionally produce
+  `<name>.min.js` using `google-closure-compiler` or
+  `<name>.min.css` using `uglifycss`, and gzip that minified artifact.
+  Without a minifier, gzip the unminified output. Never download or
+  install tools implicitly.
+- Resolve source paths relative to the descriptor directory. Referenced
+  files must remain inside that directory, including after resolution
+  of existing filesystem links.
+- Reject invalid descriptors, mixed source kinds, unsafe identifiers,
+  invalid source paths and generated JavaScript syntax with a nonzero
+  status. Always syntax-check JavaScript. When installed, run
+  `google-closure-compiler --checks_only` separately without mutating
+  the generated source.
+- Ordinary shell redirection may truncate an existing output before
+  validation fails. Atomic replacement or preservation on failure is
+  not required.
+- The shell launcher uses the existing `m` `log`/`fatal` facilities;
   the Node subprocess reports its own branch-specific errors without
-  duplicating them in the shell.
-
-The compiler does not require the browser dynamic loader for its output.
-
-## Independent browser dynamic loader
-
-`dynamic-loader.lib.js` implements the original source-list loading
-responsibility, with the following public functions:
-
-```text
-loadModulesDynamically(path, modulesFile, callback)
-replaceModulesDynamically(path, modulesFile, libraryElement, defaultModulesFile, tag)
-loadJSLibraryDynamically(path, jsModulesFile, jsElement)
-loadCSSLibraryDynamically(path, cssModulesFile, cssElement)
-loadLibraryDynamically(path, jsModulesFile, cssModulesFile, jsElement, cssElement)
-```
-
-The loader reads the same ordered JSON descriptors and original source files
-over browser HTTP, builds the classic script/style content, and inserts or
-replaces DOM elements. JavaScript namespace assembly preserves the original
-ordering and lexical visibility. With no explicit path and a configured
-global `dynamicLibs` array, the loader follows the original multi-library
-initialization model. Loaded JavaScript can create application effects that
-DOM-element removal does not reverse.
-
-The standalone browser library has no implicit runtime module registry,
-`require` graph, revision mechanism, or ESM translation responsibility.
+  duplicating those errors in the shell.
 
 ## Invariants
 
 ```text
-JSC-01  jsc and its engine belong to m; independent JS/CSS source loader is an m library
-JSC-02  ordered modules/name/file/exports descriptors support optional JSON reference imports or developer-written lexical bindings; neither loads files
-JSC-03  compilation preserves original namespace reopening, lexical visibility and authored source order
-JSC-04  jsc outputs standalone strict-capable browser/Node JavaScript with private internals and explicit public exports, or ordered CSS
-JSC-05  stdout-only or file output; if an installed minifier exists emit minified and gzipped siblings, else gzip the original; no implicit tool installation
-JSC-06  invalid descriptors, sources, identifiers and generated JS syntax fail before writing output
-JSC-07  dynamic loader accepts original JS and CSS source lists and preserves public function identities
-JSC-08  browser code is loaded as classic script/style; existing side effects are not undone by removal
-JSC-09  source imports do not require a runtime module registry or alternative bootstrap model
-JSC-10  cross-bundle imports capture values on bundle initialization; qualified accesses remain dynamic; no eval
-JSC-11  descriptor-root nodeGlobal defaults false; browser publishes globals; CommonJS exports public API and only shares globals when opted in
+JSC-01  jsc and its Node engine belong to the m compiler responsibility
+JSC-02  ordered modules/name/file/exports descriptors support optional lexical reference imports; imports do not load or include sources
+JSC-03  compilation preserves descriptor source order, nested namespaces, reopening and lexical visibility
+JSC-04  output is strict-capable browser/Node JavaScript with private internals and explicit exports, or ordered CSS
+JSC-05  stdout or file output; installed minifier creates minified and gzipped artifacts, otherwise gzip the original; no implicit tool installation
+JSC-06  invalid descriptors, paths, identifiers and generated JavaScript syntax fail; shell output redirection need not preserve an existing file
+JSC-09  import references neither provision dependencies nor require a runtime registry
+JSC-10  captured import values and qualified property reads retain their distinct runtime semantics; generated code uses no eval
+JSC-11  nodeGlobal defaults false; browser publishes roots; CommonJS exports the public API and shares globals only when opted in
+JSC-12  compiler operation is agnostic to application, source selection, distribution purpose and runtime loading
 ```
