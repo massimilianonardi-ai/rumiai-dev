@@ -27,6 +27,7 @@ Read only the smallest complete set relevant to the task.
 | JavaScript object merging, merge/copy depth, array policies and safe own-property behavior | `rumiai-os/OBJECT-MERGE.md` |
 | JavaScript object read-through links, per-property detachment, deep snapshots and arrays | `rumiai-os/OBJECT-LINK.md` |
 | JavaScript object-identity traversal, inherited enumeration, and advanced pre/post callbacks | `rumiai-os/OBJECT-TRAVERSE.md` |
+| JSON-only declarative configuration resolution, directives, static refs, global opt-in and result identity | `rumiai-os/JSON-RESOLVE.md` |
 | GUI-independent TextEdit text engine, selections and source-mapped representation | `rumiai-os/TEXT-EDIT.md` |
 | memory-only terminal text editing and stream/file save semantics | `rumiai-os/VSED.md` |
 | interactive terminal menu engine, list/filesystem selection, multi-selection and result contract | `rumiai-os/MENU.md` |
