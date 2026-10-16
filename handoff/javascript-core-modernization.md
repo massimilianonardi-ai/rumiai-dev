@@ -142,3 +142,12 @@ Incrementally inventory and regression-test `Class`, JSON and remaining utilitie
 ## Blockers / open questions
 
 No blocker to continued scoped refactoring. Full legacy `@eval` semantics and any future behavioral redesign remain undecided; no user authorization to change them was assumed.
+
+
+## Proposed `m.json.canonicalize` correction — 2026-10-16 (chat candidate)
+
+- User explicitly requested **code proposals in chat only**, without product-source changes, proceeding in order through `canonicalize`, `traverse`, `traverse.advanced`, `resolve`, and `path`.
+- Candidate retains the public `canonicalize(path)` function, string-only input, empty-path identity, dot-key to JSON-quoted bracket normalization, numeric/dynamic bracket expressions without evaluation, and `resolve`'s existing ability to build local/parent reference paths. It parses quoted bracket keys including single/double quotes and strict-mode JavaScript escape forms, normalizes them with `JSON.stringify`, scans balanced nested brackets with quoted delimiters, and explicitly rejects malformed delimiters, empty segments, invalid string escapes and non-string input.
+- Important boundary: bracket *expressions* remain preserved, not evaluated or fully JavaScript-syntax-validated. A general JavaScript parser would be required for complete syntax verification (including regular-expression literals). Neither `path` nor `resolve` is redesigned as part of this candidate; no change is accepted/promoted yet.
+- In-memory Node.js 22.16.0 stand-alone execution of the proposed implementation (not real `jsc` bundle or current product source) passed 16 representative valid-path cases, 13 invalid-path cases and 5 non-string input cases. Current permanent JS-core regression still checks only `m.json.path` basic usage; dedicated `canonicalize` coverage is absent.
+- No product source, tests, manifest, or canonical specifications modified. Candidate code is provided in chat for review; a future authorized integration must exercise real compiled `m.json` behavior with dedicated regression and check affected downstream `resolve` semantics.
