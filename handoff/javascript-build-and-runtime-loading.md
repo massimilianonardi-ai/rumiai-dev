@@ -188,14 +188,11 @@ inputs or physical validation. A native Node/Chromium tool is present
 in the workspace, but authoritative source bytes were not materialized
 there; no `jsc`/Chromium run was claimed.
 
-A new user question concerns `Queue` callback exception policy.
-Current behavior catches and logs callback exceptions then continues.
-The assistant proposed, but the user has **not accepted** as binding,
-per-callback `continueOnError` defaulting to false, structured error
-retention and explicit stopped state. Keep this as an open design choice
-owned by `handoff/javascript-core-modernization.md`, not a stealth
-change to existing `Queue.js`; asynchronous resource cancellation stays
-outside Queue.
+The Queue callback-exception policy described during the initial loader
+checkpoint was subsequently agreed and committed by the user. The current
+Queue API and integration implications are recorded in the current Queue
+integration review below and in `handoff/javascript-core-modernization.md`.
+Asynchronous resource cancellation stays outside Queue.
 
 ## Current Queue integration review — 2026-10-16
 
