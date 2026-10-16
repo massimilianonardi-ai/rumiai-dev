@@ -254,12 +254,12 @@ not imply authorization to change any other existing runtime sources.
 ## Real specialized-bundle and Chromium regression — 2026-10-16
 
 Latest validated product HEAD:
-`rumiai-os/main@57480d6dda883c22fd0b97ca96c55f1ac6189d4a`.
+`rumiai-os/main@9e61714e68afd8eab28df201d7c71ce24b16cfeb`.
 The actual runtime loader implementation remains the previously approved
 `DynamicLoader.js` code from product commit
 `6c7d2eacc710b98f65ca896584955eac25b09d8b`.
 New permanent coverage lives in
-`rumiai-tests/main@5301b7982f3625ab87bc27001aa4b831c2cc707f`:
+`rumiai-tests/main@76d2fb64836cf863e2b65ab89e05277415df1416`:
 `tests/rumiai-os/js-core/.support/dynamic-loader.mjs` is invoked from
 the existing executable `tests/rumiai-os/js-core/compile.test`; product
 `.github/workflows/js-core.yml` pins that exact test revision.
@@ -275,10 +275,10 @@ wrong-type replacement, and execution under restrictive
 `script-src 'self' 'nonce-test-nonce'` CSP with explicitly supplied
 nonce for every script insertion.
 
-[GitHub Actions run 38916547281](https://github.com/massimilianonardi-ai/rumiai-os/actions/runs/38916547281)
-**SUCCESS** on exact product revision `57480d6...`, with log messages
+[GitHub Actions run 38917315188](https://github.com/massimilianonardi-ai/rumiai-os/actions/runs/38917315188)
+**SUCCESS** on exact product revision `9e61714...`, with log messages
 confirming the real specialized `jsc` compilation, real Chrome JS/CSS
-integration, and real CSP nonce integration. The first non-CSP iteration
+integration, and real CSP nonce integration. The final test source also received a delimiter-alignment/readability review; the resulting exact suite revision passed the real CI tests again. The first non-CSP iteration
 also passed as run 38916044188. Intermediate run 38916323363 failed
 because the *test page*, not the loader, omitted nonce on its replacement
 script under CSP. Updating the test to pass nonce explicitly resolved
