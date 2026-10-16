@@ -251,10 +251,62 @@ normative loader contract and align the new interface's operational
 documentation and permanent tests. This specific product change did
 not imply authorization to change any other existing runtime sources.
 
+## Real specialized-bundle and Chromium regression — 2026-10-16
+
+Latest validated product HEAD:
+`rumiai-os/main@57480d6dda883c22fd0b97ca96c55f1ac6189d4a`.
+The actual runtime loader implementation remains the previously approved
+`DynamicLoader.js` code from product commit
+`6c7d2eacc710b98f65ca896584955eac25b09d8b`.
+New permanent coverage lives in
+`rumiai-tests/main@5301b7982f3625ab87bc27001aa4b831c2cc707f`:
+`tests/rumiai-os/js-core/.support/dynamic-loader.mjs` is invoked from
+the existing executable `tests/rumiai-os/js-core/compile.test`; product
+`.github/workflows/js-core.yml` pins that exact test revision.
+The new test invokes the **real first-party jsc Node engine** on
+`core/modules-dynamic-loader.json`, parses the generated bundle, and
+checks `m.mod.Queue` and `m.mod.DynamicLoader` are published.
+It then starts a real local HTTP fixture and headless Chromium, verifying
+JS source downloads completed C/B/A but composed in descriptor order,
+actual nested namespace execution (42), CSS ordering and DOM styles,
+JS and CSS replacement (including JS result 73), script nonce, malformed
+descriptor JSON, source and manifest HTTP 404, cross-origin rejection,
+wrong-type replacement, and execution under restrictive
+`script-src 'self' 'nonce-test-nonce'` CSP with explicitly supplied
+nonce for every script insertion.
+
+[GitHub Actions run 38916547281](https://github.com/massimilianonardi-ai/rumiai-os/actions/runs/38916547281)
+**SUCCESS** on exact product revision `57480d6...`, with log messages
+confirming the real specialized `jsc` compilation, real Chrome JS/CSS
+integration, and real CSP nonce integration. The first non-CSP iteration
+also passed as run 38916044188. Intermediate run 38916323363 failed
+because the *test page*, not the loader, omitted nonce on its replacement
+script under CSP. Updating the test to pass nonce explicitly resolved
+that failure; the product runtime was unchanged.
+
+Important boundary confirmed by that failure: current `load()` resolves
+after DOM element insertion, not after verified inline script execution.
+Browsers can block a script under CSP without the returned Promise
+necessarily rejecting, and JS replacement can remove the old script
+element even when the new element's code was blocked. Callers currently
+must supply `nonce` to each JS load/replacement under nonce-based CSP;
+no implicit nonce inheritance is established. The separate policy for
+execution-failure observation, diagnostics, replacement safety and
+whether loader promises guarantee execution is **not yet promoted**.
+Do not infer automatic rollback of JavaScript side effects or cancellation
+of running fetches.
+
+Remaining project work: settle public runtime-loader contract and
+execution/error observability explicitly, align its own operational
+reference without replacing the old distinct library manual prematurely,
+and decide migration/removal of the legacy `dynamic-loader.lib.js` only
+when existing usage is reconciled. Browser testing is CI evidence on the
+GitHub runner, not physical testing on the user's host.
+
 ## Next action
 
-Validate the currently committed `m.mod.DynamicLoader` bundle with
-the real `jsc` and browser before finalizing the public loader
-contract. Then complete targeted permanent tests and the separate
-loader/manual realignment. Do not reinterpret the old
-`dynamic-loader.lib.js` test suite as coverage of the new loader.
+Resolve the pending dynamic-loader interface and script execution/error
+contract, then promote the settled specification and align operator docs,
+migration strategy and any remaining permanent regression. Retain the
+actual existing `jsc` compiler boundary and the independent legacy loader
+until an explicit migration decision is made.
