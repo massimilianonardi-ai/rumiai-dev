@@ -9,8 +9,8 @@ Archive user-authorized ChatGPT shared-link conversations completely and readabl
 
 ## Current repository revisions
 
-- rumiai-dev: 3ff0a9e8151f366a2515b1912294f4e98478e031 (pre-checkpoint HEAD)
-- rumiai-dev-PoCs: 16605a53e880fa568d883c4df3b88a54974e3efc (assistant sandbox-file export)
+- rumiai-dev: 18037cd686bf7cea2210623291f436908246045c (pre-checkpoint HEAD)
+- rumiai-dev-PoCs: 721c47be57d84a29b7e1285e6938db4e538978b7 (user-upload diagnostic and DOM-fixture validation)
 - pwc-web-control: 403f4fa9bbea419715e9c834e847c6f2b60ae421 (released v0.1.6)
 - electron-web-control: 077eb502f1d68235b4e5c9c28e4a7560795bce17 (released v0.1.6)
 - pkg-catalog: 7cd9b7585b9343a153e516c9c47b6fb92b7330e0 (facility web-control 3 and both provider realizations)
@@ -155,9 +155,13 @@ The user's physical exporter rerun on exact PoC revision 16605a53e880fa568d883c4
 
 Direct inspection of the already committed Mirror structured reference further separates those four unique image assets. Three belong to tool/generated-image nodes; one belongs to a visible user multimodal message and is also present in that message's attachment metadata with matching file id, filename, MIME type, byte size and dimensions. The same Mirror snapshot also contains two additional user-upload attachments (Python and shell files) that are not image_asset_pointer parts and are therefore not represented by imagesReferenced. Consequently the remaining binary work is now split into two independent classes: generated-image assets, and user-upload attachments (one image plus two non-image files in the Mirror reference).
 
+The public Mirror share HTML itself contains the user-upload image surface under user message `07f960d8-7b16-470b-af6f-3f6ddcd585ad` and two generic file-upload labels under user message `97f7fd6f-09dc-42e5-a806-acdac0081314`. These are spans reading "Ha caricato un'immagine" and "Ha caricato un file", not ordinary sandbox file buttons, and expose no file name or href. The structured source retains the corresponding PNG (2,209,218 bytes), Python source (33,346 bytes) and shell source (8,314 bytes). No download transport can be inferred from the labels alone.
+
+PoC 068 revision `721c47be57d84a29b7e1285e6938db4e538978b7` extends only `reference-interactions.mjs` to inventory two distinct classes, `user-upload-image` and `user-upload-file`, by user message ID and per-message label index, inspect whether a label has a clickable ancestor, tag its exact DOM occurrence, and capture the bounded post-click request/response evidence through the existing web-control level-3 diagnostic. The exporter and established assistant sandbox-file transport were not modified. A new regression actually evaluates the inventory/tagging JavaScript against a representative renderer DOM, including two upload labels in one user turn, rather than stubbing those expression results. The initial VM fixture had a cross-realm assertion mismatch and was corrected forward; GitHub Actions run `38893966378` passed syntax and the complete fixture/reference workflow at the exact final revision (37 Node tests, 7 retained Python reference tests). This is hosted diagnostic validation, NOT physical proof that clicking an upload label yields file bytes.
+
 ## Next action
 
-Use the existing committed Mirror reference to extend the narrow interaction diagnostic for user-upload attachments before changing the exporter. Target the known user-upload image and one non-image attachment as a separate artifact class and observe the renderer-mediated request/response path. If a stable public-share transport is physically established, promote only that mechanism into the exporter and validate it physically.
+On the user's physical host with the installed web-control 3 provider, run the updated `capture-share-reference.mjs` once on the existing Mirror public share (`https://chatgpt.com/share/6ad093bb-2500-83eb-8519-9e2d8c8097f3`). Inspect `INTERACTION-INVENTORY.json` and the `user-upload-image` / `user-upload-file` records in `INTERACTIONS.json`, including `tagged`, `event_error`, `network`, `bodies` and post-click UI state. The representative non-image label is currently the last of the two file-upload labels (the original shell file); no file identity may be inferred from renderer label alone. If a native click on the span yields no transport, record that specific observation and investigate the actual public-share upload interaction rather than inventing a file endpoint. Promote a user-upload download mechanism to `export-share.mjs` only after directly observing and validating it on a real shared page.
 
 Generated-image binaries remain separate and unresolved; do not reuse a user-upload transport unless direct evidence proves the renderer does so. After both remaining artifact classes are settled, complete faithful readable HTML and final completeness comparison before allowing physical_site_completeness_verified/observationComplete to become true.
 
@@ -168,6 +172,6 @@ A separate deferred follow-up remains at todo/web-page-analyze.md.
 - Structured share acquisition, visibility/turn modeling, raw artifact identity and the five-page direct renderer corpus are physically established.
 - Assistant-generated sandbox files are physically accepted end-to-end at PoC revision 16605a53e880fa568d883c4df3b88a54974e3efc: 16 referenced, 16 downloaded, 0 missing.
 - Generated-image binary transport remains unresolved; the Mirror reference contains three unique generated-image assets and no accepted public binary path for them.
-- User-upload attachments are a separate unresolved class; the Mirror reference contains one uploaded PNG image plus two uploaded source files.
+- User-upload attachments remain unresolved: one uploaded PNG plus two source files. Their generic public renderer labels are now targeted by the diagnostic, but no real-site download request or binary has yet been observed for them.
 - Mermaid is physically observed as source code in the Mirror share, not as an additional renderer-generated image.
 - Faithful readable HTML and final artifact/body completeness remain open; observationComplete remains false.
