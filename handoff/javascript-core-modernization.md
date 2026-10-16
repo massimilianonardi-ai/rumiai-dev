@@ -9,9 +9,9 @@ Modernize the imported first-party JavaScript source tree `rumiai-os/lib/sys/js/
 
 ## Current repository revisions
 
-- `rumiai-dev/main`: `d7b24f6543b095f9efa705b83adbfae5feea4c4e` before the clone implementation handoff checkpoint.
-- `rumiai-os/main`: `449448e1817156fbf5b5e86f1093ccc97dee7671`.
-- `rumiai-tests/main`: `4d6f236d03394a5aa6aab58811457f422405dd3f` (clone CI pinned earlier suite revision).
+- `rumiai-dev/main`: `fd2d0db409d6777298f3328bab061dc71462908c` before the merge implementation handoff checkpoint.
+- `rumiai-os/main`: `e33b30df3894817eebc6e2a170f51a64b237c4a4`.
+- `rumiai-tests/main`: `71a4921d9fe6f78e131a21cebc63debacde72f1d` (merge CI pinned revision).
 
 Always retrieve fresh remote HEADs on resumption.
 
@@ -182,3 +182,12 @@ No blocker to continued scoped refactoring. Full legacy `@eval` semantics and an
 - **Explicit candidate behavior change for review:** inherited enumerable properties are no longer traversed; metadata arrays and paths are preserved; array-index path style remains compatible with current `resolve` ordinary cases. The function remains `m.json.traverse` while `traverse.advanced` is unsettled; consider any `m.object` promotion/alias only after both are designed together.
 - A local standalone Node 22 test of the candidate (not real `jsc` output or current product) passed preorder paths, callback/ancestor metadata, duplicate identities, self-cycles, inherited-property exclusion, live child-value reads after prior callback mutation, unusual numeric-looking keys, and a 2,000-deep object chain without call-stack recursion. Potential quadratic total memory for deep paths/ancestor metadata remains an intrinsic concern; no large-scale performance claim.
 - Pending: user review of the candidate and its inherited-property policy, then authorization before integration and authentic compiled-bundle regression.
+
+## `m.object.merge` implementation and validation — 2026-10-16
+
+- User directly authorized implementing and committing `m.object.merge`; native JavaScript `Object.assign`/object spread are only shallow and `structuredClone` does not merge existing targets. New `core/m/object/merge.js` and core descriptor export preserve the six-parameter legacy signature while leaving `m.util.merge`, `m/json/merge.js` and `core-ext` untouched. Current validated product `rumiai-os@e33b30df3894817eebc6e2a170f51a64b237c4a4`.
+- Durable current contract promoted in `specifications/rumiai-os/OBJECT-MERGE.md` and directly routed by `specifications/README.md`: independent merge/copy depths, root-compatible mutation vs replacement, explicit append/index/replace array policy, optional best-effort instances, own enumerable key traversal, own-descriptor writes without inherited prototype mutation, source graph alias/cycle preservation for ordinary nodes; native fallback follows current `m.object.clone`. Plain replaced branches retain descriptors and Symbol keys. First encountered source/destination pairing determines identity in multi-target cases; operation is not transactional. No native deep-merge replacement was claimed.
+- Permanent tests `rumiai-tests@71a4921d9fe6f78e131a21cebc63debacde72f1d` add `.support/object-merge.mjs` to real `jsc`-assembled API suite and browser/CommonJS/Chrome API assertions. Checked merge depth, copy depth, aliases/cycles, sparse and indexed/appended arrays, custom instances, source accessors, descriptor restrictions, own Symbol keys and `__proto__`/constructor safety. Workflow `rumiai-os/.github/workflows/js-core.yml` pins the exact suite revision. Initial CI failure at `38923208082` exposed an erroneous test assumption that an enumerable source accessor should not be read; corrected it to assert exactly one read; no code defect was established by that failure.
+- **Verified CI success**: GitHub Actions run [38923827072](https://github.com/massimilianonardi-ai/rumiai-os/actions/runs/38923827072) on exact product `e33b30df3894817eebc6e2a170f51a64b237c4a4`, executing real `jsc` assembly, CommonJS, and Chrome startup on hosted Linux. This does not validate physical reference hosts.
+- Final diff compare since product preflight `cc98a11cca02289e1bea6928525b699009cb2294`: only added new `m/object/merge.js`, added one manifest entry, updated CI suite pin. Test diff since `4d6f236d03394a5aa6aab58811457f422405dd3f`: one new behavior suite, one hook, two publication assertions. `rumiai-dev` progressed concurrently on the unrelated shared-link-export handoff, which was preserved.
+- Next object-helper migration candidate is `link` but remains unmodified and not authorized by this merge task. Other active core-modernization responsibilities (including `traverse`) remain separate.
