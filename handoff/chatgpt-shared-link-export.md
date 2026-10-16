@@ -9,8 +9,8 @@ Archive user-authorized ChatGPT shared-link conversations completely and readabl
 
 ## Current repository revisions
 
-- rumiai-dev: 7c0a0ed80e32ce65e116db561479b91394230ef9 (pre-checkpoint HEAD)
-- rumiai-dev-PoCs: c0a00b8a9186f04c75215f1014e3ccf799da7812 (site-specific Electron UA normalization added before share navigation, hosted validation pending; no provider source changed)
+- rumiai-dev: f024a8bf226e377c8b9666ee7c4753bfa96e4d6a (pre-checkpoint HEAD)
+- rumiai-dev-PoCs: c0a00b8a9186f04c75215f1014e3ccf799da7812 (site-specific Electron UA normalization before share navigation; GitHub Actions 38944605607 PASS: 43/43 Node tests, 7/7 Python tests, syntax checks; no provider source changed)
 - pwc-web-control: 403f4fa9bbea419715e9c834e847c6f2b60ae421 (released v0.1.6)
 - electron-web-control: 077eb502f1d68235b4e5c9c28e4a7560795bce17 (released v0.1.6)
 - pkg-catalog: 3fbdc1ea69ba0fafe89ca913455543c90982027b (current HEAD; web-control 3 and both provider realizations unchanged since 7cd9b7585b9343a153e516c9c47b6fb92b7330e0)
@@ -197,7 +197,7 @@ PoC 068 now has a narrowly scoped compatibility step in `captureStructuredSnapsh
 
 ## Next action
 
-Once hosted tests on PoC revision `c0a00b8a9186f04c75215f1014e3ccf799da7812` pass, fast-forward the user's working PoC checkout and run its existing anonymous public entry point:
+GitHub Actions run `38944605607` passed syntax checks, 43/43 Node tests and 7/7 Python tests for PoC revision `c0a00b8a9186f04c75215f1014e3ccf799da7812`. Fast-forward the user's working PoC checkout and run its existing anonymous public entry point:
 
 ```sh
 git pull --ff-only
