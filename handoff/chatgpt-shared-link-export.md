@@ -9,8 +9,8 @@ Archive user-authorized ChatGPT shared-link conversations completely and readabl
 
 ## Current repository revisions
 
-- rumiai-dev: ebe0f5d507b6018e95f9073729a5881209dcfd73 (pre-checkpoint HEAD)
-- rumiai-dev-PoCs: 721c47be57d84a29b7e1285e6938db4e538978b7 (user-upload diagnostic and DOM-fixture validation)
+- rumiai-dev: 6d4d262817c09dbd809f7b475de768c72cc48d46 (pre-checkpoint HEAD)
+- rumiai-dev-PoCs: 1695ee8f2440b47d9d2b00d87e00cdc03a1afe48 (anonymous redirect guard and regression)
 - pwc-web-control: 403f4fa9bbea419715e9c834e847c6f2b60ae421 (released v0.1.6)
 - electron-web-control: 077eb502f1d68235b4e5c9c28e4a7560795bce17 (released v0.1.6)
 - pkg-catalog: 3fbdc1ea69ba0fafe89ca913455543c90982027b (current HEAD; web-control 3 and both provider realizations unchanged since 7cd9b7585b9343a153e516c9c47b6fb92b7330e0)
@@ -30,7 +30,9 @@ Archive user-authorized ChatGPT shared-link conversations completely and readabl
 - Preserve the full message objects, branch identities, technical/non-text parts, and failure diagnostics. Preserve successive immutable exported versions. Do not commit user conversation content or signed asset URLs.
 - Task-local diagnostic exception: the user explicitly authorized committing the capture trees and ZIPs for the five selected public reference shares so they can be inspected through the PoC repository. This exception is limited to those deliberate reference captures and does not change the default rule for ordinary conversation exports or unrelated signed URLs.
 - Multimedia object metadata is NOT image binary data. Real images, SVG/canvas charts and ChatGPT-faithful HTML are separate downstream acceptance requirements, not yet demonstrated by the structured snapshot PoC.
-- For this phase the user accepts not pursuing user-uploaded attachment binaries further. Their structured identities/metadata and explicit missing-binary evidence remain in scope; the decision does not establish that the share excludes those files or waive the separate generated-image/HTML work.
+- The user manually verified in an unauthenticated browser session that user-uploaded image/file attachments on the shared conversation cannot be opened or downloaded. Treat this as physical user evidence for the observed anonymous share behavior, independent of the earlier failed/login-redirect diagnostic; do not generalize it into an undocumented server API rule.
+- The task is explicitly sequenced: **Phase 1 — finish and validate all content actually available from a public shared link in an anonymous browser** (structured transcript and branches, assistant sandbox downloads, generated-image binaries where publicly retrievable, other rendered multimodal content, readable HTML, audit/completeness by class). **Phase 2 — only after Phase 1 is finalized, investigate and implement user-uploaded attachment retrieval using an authenticated session.** Keep the user's uploaded image and source-file identifiers/metadata in Phase 1 even where binaries cannot be accessed. No authentication, login prompt, session mixing or invented download endpoint is part of Phase 1.
+- Phase-1 acceptance is not the same as declaring the full-fidelity archive complete. Keep unavailable user-upload binaries explicitly identified and full-fidelity `observationComplete` / `physical_site_completeness_verified` false until their actual contract is resolved. Do not conflate the known anonymous-access limitation with an unexpected failure to retrieve a publicly available generated image.
 
 ## Acceptance scenarios
 
@@ -38,7 +40,8 @@ Archive user-authorized ChatGPT shared-link conversations completely and readabl
 2. On an actually observed valid renderer snapshot, all visible current-branch messages are exported without repetition, with complete raw audit and multimodal references.
 3. Each export writes a unique new directory and ZIP, never overwriting previous evidence.
 4. On a shared site without a compatible snapshot, the command exits nonzero and preserves a numbered privacy-reduced diagnostic, never reporting successful completeness.
-5. Eventually export images, graphic assets and readable HTML where browser-visible; missing media remains explicit, not silently omitted.
+5. Phase 1: retrieve all anonymous-public media whose real public renderer/transport provides bytes, preserve source content/branch and HTML fidelity, and classify inaccessible user-upload binaries explicitly rather than counting them as unexpected anonymous failures.
+6. Phase 2: after anonymous export is accepted, use an authenticated session to recover user uploads where authorized and actually accessible. Keep phase-2 full-fidelity acceptance separate from the phase-1 public share.
 
 ## Working design
 
@@ -162,11 +165,15 @@ PoC 068 revision `721c47be57d84a29b7e1285e6938db4e538978b7` extends only `refere
 
 The user's physical run on 2026-10-16 (capture directory `20261016T135501Z-6ad093bb-2500-83eb-8519-9e2d8c8097f3`) invoked the current reference diagnostic on the same Mirror share but received final URL `https://chatgpt.com/auth/login?next=%2Fshare%2F6ad093bb-2500-83eb-8519-9e2d8c8097f3`, title `Inizia | ChatGPT`, 0 rendered turns and 0 interaction inventory/selected/completed despite 16/16 successful technical probes. These probes captured the login page, not the shared conversation. This is not evidence about whether public-shared user-upload binaries are available, and it does not supersede earlier successful direct public-share captures. The diagnostic currently exits 0 for a successful collection of the wrong page; its capture-status interpretation must be guarded before future completeness claims. The user explicitly accepted leaving the user-upload transport unresolved rather than continuing this investigation.
 
+PoC revision `1695ee8f2440b47d9d2b00d87e00cdc03a1afe48` adds a reference-capture navigation guard. After settling, it checks that the document is still at the requested share origin/path before expensive probes and separate interaction pages. A login redirect or unrelated page writes `failure.json` with privacy-reduced observed navigation metadata, exits nonzero with `reference.share-page-not-loaded`, and releases the debug session/page. This does not itself fix site authentication or recover media. The focused login-redirect fixture passed; GitHub Actions run `38913325048` completed successfully with 38/38 Node tests, 7/7 retained Python tests and Node syntax verification. This is hosted test evidence; no post-change physical share capture has yet been run.
+
 ## Next action
 
-Do not require another login or physical rerun for user-upload attachment retrieval. Preserve all raw upload identifiers and metadata, and make unavailable binaries explicit in the export without claiming complete media coverage. Focus next on generated-image binary acquisition, which is independently unresolved. Use the existing public-share reference corpus to distinguish actual rendered image behavior from unsupported assumptions; any new live evidence must first confirm that the requested share page (not `/auth/login`) actually loaded.
+Continue Phase 1 only. Investigate generated-image assets against the existing real anonymous shared-page corpus and establish the actual transport from renderer/network evidence instead of relying on source-chat MHTML, guessed `/backend-anon/files/download/` paths, generic DOM image counts or reauthentication. The observed public renderer displayed placeholders for generated-image surfaces in the available reference captures; do not claim binary recovery without successful anonymous-page proof. If a public image is accessible in the user's independent anonymous browser, characterize that exact interaction first.
 
-After the image class is characterized, complete faithful readable HTML and the final body/artifact completeness comparison. The diagnostic should not count navigation to an authentication/login page as successful shared-page evidence if it is reused. Do not set `physical_site_completeness_verified` or `observationComplete` to true on the basis of this failed reference-page observation or while required media remain unavailable.
+Then bring readable HTML into line with the complete structured active branch, enumerate public-content classes (including assistant sandbox documents/photos, raw image identities, Mermaid source, SVG/canvas/media where observed, linked resources versus irrelevant favicons), distinguish downloadable from genuinely unavailable binary assets, and compare exported output to what is actually rendered/retrievable without login. Explicitly record Phase-1 acceptance; do not silently upgrade existing full-fidelity completeness booleans.
+
+Only after Phase 1 is finalized proceed to Phase 2: authenticated retrieval of the user's uploaded PNG, Python file and shell script (and analogous future attachments), using the authorization boundary intentionally. Never substitute login-dependent retrieval for anonymous export.
 
 A separate deferred follow-up remains at todo/web-page-analyze.md.
 
@@ -175,7 +182,7 @@ A separate deferred follow-up remains at todo/web-page-analyze.md.
 - Structured share acquisition, visibility/turn modeling, raw artifact identity and the five-page direct renderer corpus are physically established.
 - Assistant-generated sandbox files are physically accepted end-to-end at PoC revision 16605a53e880fa568d883c4df3b88a54974e3efc: 16 referenced, 16 downloaded, 0 missing.
 - Generated-image binary transport remains unresolved; the Mirror reference contains three unique generated-image assets and no accepted public binary path for them.
-- User-upload attachment binary transport remains unverified and intentionally not pursued in this phase, by user choice. Preserve one uploaded PNG and two source files as known structured metadata with explicit unavailable-binary status; do not infer exclusion from the public share solely from the login redirect.
-- The latest reference run reached an authentication page while reporting a completed diagnostic capture (16 probes, zero turns). A successful reference capture is not automatically a successful share-page capture.
+- User manually verified that uploaded attachments are not viewable/downloadable in a separate anonymous browser session. Phase 1 preserves one uploaded PNG and two source files as structured metadata with explicit unavailable-binary status; binary recovery is Phase 2 under authenticated access, not abandoned.
+- The prior reference run reached a login page with 16 successful page probes but zero actual shared turns. PoC 068 now rejects the incorrect page with explicit failure metadata at hosted-fixture level; the new guard has not yet been physically re-tested.
 - Mermaid is physically observed as source code in the Mirror share, not as an additional renderer-generated image.
 - Faithful readable HTML and final artifact/body completeness remain open; observationComplete remains false.
