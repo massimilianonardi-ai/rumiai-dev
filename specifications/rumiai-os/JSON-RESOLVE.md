@@ -10,7 +10,7 @@ Updated: 2026-10-16
 - `config` is required and is one parsed JSON value (including scalar or `null` roots), not JSON source text.
 - `references` is an optional object/function namespace of external JavaScript values, classes, and functions; omitted or `null` means an empty namespace.
 - `allowGlobals` is an optional Boolean, default `false`. When true, names absent as **own properties** of `references` may be looked up on `globalThis`; explicit registered names always take precedence. This is ordinary property lookup, not source-code evaluation. Lexical bindings are not automatically visible.
-- An invalid input or option throws; a missing named value or an impossible resolution raises an error identifying its location. Exceptions from explicitly called user functions/constructors propagate. There is no asynchronous waiting or automatic retry.
+- An invalid input or option throws; a missing named value or an impossible resolution raises an error identifying its location. Exceptions from explicitly called user functions/constructors propagate. There is no asynchronous waiting or automatic retry. Because `@new` and `@call` can invoke arbitrary supplied JavaScript and resolve through external objects, this API is not a security sandbox for untrusted configurations; callers must control the exposed capabilities.
 
 This API belongs to `m.json`, not `m.object`: its accepted input is JSON data and its specific duty is interpreting directives, whereas the object primitives own arbitrary JavaScript object graphs.
 
