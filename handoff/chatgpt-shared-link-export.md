@@ -9,8 +9,8 @@ Archive user-authorized ChatGPT shared-link conversations completely and readabl
 
 ## Current repository revisions
 
-- rumiai-dev: 946b775eeafeb1f68927dee0187e70f11519317c (pre-checkpoint HEAD)
-- rumiai-dev-PoCs: 4b96ca1519363d630ac506ef9ced01c2bab6f8fe (explicit initial local data-document navigation before attaching persistent CDP debugger and applying site-scoped Electron UA normalization; GitHub Actions 38952640419 PASS 43/43 Node tests, 7/7 Python tests, Node syntax on exact PoC HEAD)
+- rumiai-dev: 9b338af682089162a741a644f9540d44232ce12f (pre-checkpoint HEAD)
+- rumiai-dev-PoCs: 499028ccf776fb77d4b13d79d4dd06a6b1b84cba (independent bounded cleanup; verified page disappearance/retry; non-sensitive browser loading and binary failure diagnostics; 45 Node + 7 Python tests passed on preceding functional commit; exact README-only tip CI pending)
 - pwc-web-control: 403f4fa9bbea419715e9c834e847c6f2b60ae421 (released v0.1.6)
 - electron-web-control: 077eb502f1d68235b4e5c9c28e4a7560795bce17 (released v0.1.6)
 - pkg-catalog: 3fbdc1ea69ba0fafe89ca913455543c90982027b (current HEAD; web-control 3 and both provider realizations unchanged since 7cd9b7585b9343a153e516c9c47b6fb92b7330e0)
@@ -207,16 +207,22 @@ Unlike that successful standalone sequence, prior PoC revision `c0a00b8a` create
 
 PoC 068 at `4b96ca1519363d630ac506ef9ced01c2bab6f8fe` now performs precisely this bootstrap, then the existing share-scoped UA compatibility step and CDP share navigation. Targeted tests assert the order `page navigate(data:)` → `debug session open` → `Emulation.setUserAgentOverride` (only Electron) → `Page.navigate(share)`, while other tests cover the anonymous image identity mapping. GitHub Actions run `38952640419` passed Node syntax checks, 43/43 Node tests and 7/7 Python tests on exact PoC HEAD `4b96ca1519363d630ac506ef9ced01c2bab6f8fe`; physical exporter acceptance **still has not been run on this new revision**.
 
+The user physically retested after the explicit initial data-document PoC fix (`4b96ca1519363d630ac506ef9ced01c2bab6f8fe`) and reported **"non funziona" and "non si chiude la pagina"**: the anonymous export is still unsuccessful and the web-control window remains open. No JSON counts/statuses were supplied for that run, so do not claim that it failed at the identical phase or image count as the previous 0/3 run, and do not extrapolate a new root cause. The standalone Electron CDP experiment still proves the browser can render/download 3 images when initialized correctly, but **the installed controller-based exporter has not reproduced that result**. This is now both an unresolved image-acquisition issue and an independent **page-resource cleanup** defect/observation.
+
+Source inspection identified a concrete cleanup gap: the original `finally` awaited `debug session close` before issuing `page close`, and suppressed failures. If debugger detachment stalls, the page-close request may never be sent; independently, the Electron provider's `page close` initially returns success after `BrowserWindow.close()`, which is not a synchronous guarantee of a `closed` event. We cannot assert which one occurred in the user's uninstrumented physical run. The revised PoC sends page and debugger close requests independently with bounded waits; checks `web-control page list` to verify disappearance; and retries closing that same page **once** after both close attempts if it remains. The client CLI also limits close/list subprocess waits. Reports include `cleanup.page/session/verified/pagePresent/pageRetry`; the last status distinguishes a service-acknowledged request from actual disappearance. It never closes unrelated pages, changes provider implementations or deletes browser state. Tests simulate a debugger close that never settles, and an acknowledged page close which leaves the page listed; both are passed by the revised lifecycle.
+
+The image diagnosis is likewise intentionally non-sensitive: `generatedImageDom.browser` records only page readiness, correct share origin, presence of an Electron token in JS UA, and count of image-host performance resources. Per-image binary failures record HTTP status or a safe error code only; CDP `Page.navigate.errorText` is distinguished as `share.navigation-failed` rather than an ambiguous missing-image timeout. User conversation snapshots and signed CDN query strings remain uncommitted. The revised PoC remains unaccepted physically for 3/3 images and for verified page closure.
+
 ## Next action
 
-CI on PoC revision `4b96ca1519363d630ac506ef9ced01c2bab6f8fe` is passing (run `38952640419`). Fast-forward the user's VM checkout and physically rerun the existing entrypoint (no provider release/reconfiguration needed):
+Physically rerun the exact updated PoC checkout on the same VM, preferably with `--seconds 10` for a targeted shorter diagnosis rather than waiting one 20-second window per image:
 
 ```sh
 git pull --ff-only
-node export-share.mjs "https://chatgpt.com/share/6ad13a5b-e9f0-83eb-8519-9e2d8c8097f3" "./archive" --seconds 20
+node export-share.mjs "https://chatgpt.com/share/6ad13a5b-e9f0-83eb-8519-9e2d8c8097f3" "./archive" --seconds 10
 ```
 
-Check `electronUserAgentNormalized=true` with the Electron provider and require `imagesReferenced=3`, `imagesDownloaded=3`, `imagesMissing=0`, `generatedImageDom.identified=3` and `generatedImageDom.downloaded=3`. If `img` are present but Node fetching fails, keep that a **distinct downstream binary transport issue** and use explicit diagnostic evidence; do not claim completion based on standalone browser HTTP 200 responses or mock fixtures. For mixed providers, confirm the common `page navigate(data:)` command remains supported. Once Phase 1 images are physically archived, continue HTML fidelity and completeness; Phase 2 authenticated user upload binaries remain intentionally deferred.
+Inspect `imagesReferenced/imagesDownloaded/imagesMissing`, `generatedImageDom.browser`, `generatedImageDom.statuses`, `assetAttempts` in the archive's `ACQUISITION.json` if necessary, and `cleanup`. If `cleanup.pagePresent=true`, use the existing public `web-control page list`/targeted `page close <id>` contract, and investigate whether Electron `BrowserWindow.close()` is being cancelled; a PoC-only bounded cleanup cannot guarantee destruction of a provider-owned window that refuses a normal close. Distinguish failures: missing `img` DOM, image binary failure despite loaded DOM, service debug-target initialization, or page-close problem. Do not claim successful archive until the physical run actually downloads 3/3 generated images and verifies the created page disappears. Do not change the global provider or profile without authorization. Then resume faithful HTML and anonymous artifact completeness before Phase 2 authenticated uploads.
 
 ## Blockers / open questions
 
