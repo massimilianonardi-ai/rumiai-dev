@@ -28,6 +28,7 @@ Archive user-authorized ChatGPT shared-link conversations completely and readabl
 - User explicitly wants Node.js and the common web-control interface. The active Node entrypoint is export-share.mjs and consumes compatibility-3 web-control debug sessions. It never opens a raw browser debugger TCP port, launches a parallel browser or depends directly on Playwright/Electron internals. The separate Python export-share-cdp.py adapter and legacy DOM-based export.mjs are retained for reference only and are not the accepted entrypoints.
 - Never assume the native app:// mergeActiveBranch hook or a complete mapping/current_node object exists on the shared browser page. The user must not be given a fabricated or partial transcript as a complete export.
 - Preserve the full message objects, branch identities, technical/non-text parts, and failure diagnostics. Preserve successive immutable exported versions. Do not commit user conversation content or signed asset URLs.
+- Task-local diagnostic exception: the user explicitly authorized committing the capture trees and ZIPs for the five selected public reference shares so they can be inspected through the PoC repository. This exception is limited to those deliberate reference captures and does not change the default rule for ordinary conversation exports or unrelated signed URLs.
 - Multimedia object metadata is NOT image binary data. Real images, SVG/canvas charts and ChatGPT-faithful HTML are separate downstream acceptance requirements, not yet demonstrated by the structured snapshot PoC.
 
 ## Acceptance scenarios
