@@ -13,7 +13,7 @@ Archive user-authorized ChatGPT shared-link conversations completely and readabl
 - rumiai-dev-PoCs: 721c47be57d84a29b7e1285e6938db4e538978b7 (user-upload diagnostic and DOM-fixture validation)
 - pwc-web-control: 403f4fa9bbea419715e9c834e847c6f2b60ae421 (released v0.1.6)
 - electron-web-control: 077eb502f1d68235b4e5c9c28e4a7560795bce17 (released v0.1.6)
-- pkg-catalog: 7cd9b7585b9343a153e516c9c47b6fb92b7330e0 (facility web-control 3 and both provider realizations)
+- pkg-catalog: 3fbdc1ea69ba0fafe89ca913455543c90982027b (current HEAD; web-control 3 and both provider realizations unchanged since 7cd9b7585b9343a153e516c9c47b6fb92b7330e0)
 
 ## Applicable canonical sources
 
