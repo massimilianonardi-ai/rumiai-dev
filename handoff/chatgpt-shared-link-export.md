@@ -1,7 +1,7 @@
 # ChatGPT shared-link export
 
 Status: Active
-Updated: 2026-10-15
+Updated: 2026-10-16
 
 ## Goal
 
@@ -9,7 +9,7 @@ Archive user-authorized ChatGPT shared-link conversations completely and readabl
 
 ## Current repository revisions
 
-- rumiai-dev: 1c6fd2bccfd3095d7c23f274bb1d86a2288b0ad2 (pre-checkpoint HEAD)
+- rumiai-dev: 3ff0a9e8151f366a2515b1912294f4e98478e031 (pre-checkpoint HEAD)
 - rumiai-dev-PoCs: 16605a53e880fa568d883c4df3b88a54974e3efc (assistant sandbox-file export)
 - pwc-web-control: 403f4fa9bbea419715e9c834e847c6f2b60ae421 (released v0.1.6)
 - electron-web-control: 077eb502f1d68235b4e5c9c28e4a7560795bce17 (released v0.1.6)
@@ -151,19 +151,23 @@ The same set physically established the renderer transport for assistant-generat
 
 PoC revision 16605a53e880fa568d883c4df3b88a54974e3efc promotes only that observed sandbox-file mechanism into the exporter. Visible assistant sandbox references are associated with their message/node identity, recovered through file_from_message in the existing page context, stored under files/, indexed in FILES.json, included in ZIP/SHA256SUMS, and rewritten to local links in TRANSCRIPT.md. Missing files remain explicit. No authentication fallback was introduced. GitHub Actions run 38885331582 passed syntax, 36/36 Node tests and all 7 retained Python reference tests for this exact revision.
 
+The user's physical exporter rerun on exact PoC revision 16605a53e880fa568d883c4df3b88a54974e3efc accepted the assistant sandbox-file class end-to-end: filesReferenced=16, filesDownloaded=16 and filesMissing=0. The same run still reported observationComplete=false, imagesReferenced=4, imageReferences=6, rendererImageReferences=0, imagesDownloaded=0 and imagesMissing=4. This is the expected separation: sandbox-file recovery is physically accepted, while image binary completeness is not.
+
+Direct inspection of the already committed Mirror structured reference further separates those four unique image assets. Three belong to tool/generated-image nodes; one belongs to a visible user multimodal message and is also present in that message's attachment metadata with matching file id, filename, MIME type, byte size and dimensions. The same Mirror snapshot also contains two additional user-upload attachments (Python and shell files) that are not image_asset_pointer parts and are therefore not represented by imagesReferenced. Consequently the remaining binary work is now split into two independent classes: generated-image assets, and user-upload attachments (one image plus two non-image files in the Mirror reference).
+
 ## Next action
 
-Physically rerun the active exporter once on the Mirror chat share at PoC revision 16605a53e880fa568d883c4df3b88a54974e3efc or later. This run validates assistant-generated sandbox-file recovery only; do not rerun the five-page reference corpus. Inspect filesReferenced/filesDownloaded/filesMissing and FILES.json. If all referenced sandbox outputs are downloaded, accept that artifact class physically; otherwise use the per-file attempt chain to isolate the remaining failure.
+Use the existing committed Mirror reference to extend the narrow interaction diagnostic for user-upload attachments before changing the exporter. Target the known user-upload image and one non-image attachment as a separate artifact class and observe the renderer-mediated request/response path. If a stable public-share transport is physically established, promote only that mechanism into the exporter and validate it physically.
 
-Generated-image binaries and user-upload attachment binaries remain separate unresolved artifact classes. Do not generalize the sandbox-file mechanism to either one. After artifact recovery is settled, complete faithful readable HTML and final completeness comparison before allowing physical_site_completeness_verified/observationComplete to become true.
+Generated-image binaries remain separate and unresolved; do not reuse a user-upload transport unless direct evidence proves the renderer does so. After both remaining artifact classes are settled, complete faithful readable HTML and final completeness comparison before allowing physical_site_completeness_verified/observationComplete to become true.
 
 A separate deferred follow-up remains at todo/web-page-analyze.md.
 
 ## Blockers / open questions
 
 - Structured share acquisition, visibility/turn modeling, raw artifact identity and the five-page direct renderer corpus are physically established.
-- Assistant-generated sandbox-file transport is physically identified; exporter support at 16605a53e880fa568d883c4df3b88a54974e3efc is hosted-tested and needs one physical exporter run.
-- Generated-image binary transport remains unresolved: raw image identity can be complete while the public renderer exposes only unresolved image-generation placeholders.
-- User-upload attachments remain a separate binary-acquisition class.
+- Assistant-generated sandbox files are physically accepted end-to-end at PoC revision 16605a53e880fa568d883c4df3b88a54974e3efc: 16 referenced, 16 downloaded, 0 missing.
+- Generated-image binary transport remains unresolved; the Mirror reference contains three unique generated-image assets and no accepted public binary path for them.
+- User-upload attachments are a separate unresolved class; the Mirror reference contains one uploaded PNG image plus two uploaded source files.
 - Mermaid is physically observed as source code in the Mirror share, not as an additional renderer-generated image.
 - Faithful readable HTML and final artifact/body completeness remain open; observationComplete remains false.
