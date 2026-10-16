@@ -9,7 +9,7 @@ Archive user-authorized ChatGPT shared-link conversations completely and readabl
 
 ## Current repository revisions
 
-- rumiai-dev: 18037cd686bf7cea2210623291f436908246045c (pre-checkpoint HEAD)
+- rumiai-dev: ebe0f5d507b6018e95f9073729a5881209dcfd73 (pre-checkpoint HEAD)
 - rumiai-dev-PoCs: 721c47be57d84a29b7e1285e6938db4e538978b7 (user-upload diagnostic and DOM-fixture validation)
 - pwc-web-control: 403f4fa9bbea419715e9c834e847c6f2b60ae421 (released v0.1.6)
 - electron-web-control: 077eb502f1d68235b4e5c9c28e4a7560795bce17 (released v0.1.6)
@@ -30,6 +30,7 @@ Archive user-authorized ChatGPT shared-link conversations completely and readabl
 - Preserve the full message objects, branch identities, technical/non-text parts, and failure diagnostics. Preserve successive immutable exported versions. Do not commit user conversation content or signed asset URLs.
 - Task-local diagnostic exception: the user explicitly authorized committing the capture trees and ZIPs for the five selected public reference shares so they can be inspected through the PoC repository. This exception is limited to those deliberate reference captures and does not change the default rule for ordinary conversation exports or unrelated signed URLs.
 - Multimedia object metadata is NOT image binary data. Real images, SVG/canvas charts and ChatGPT-faithful HTML are separate downstream acceptance requirements, not yet demonstrated by the structured snapshot PoC.
+- For this phase the user accepts not pursuing user-uploaded attachment binaries further. Their structured identities/metadata and explicit missing-binary evidence remain in scope; the decision does not establish that the share excludes those files or waive the separate generated-image/HTML work.
 
 ## Acceptance scenarios
 
@@ -159,11 +160,13 @@ The public Mirror share HTML itself contains the user-upload image surface under
 
 PoC 068 revision `721c47be57d84a29b7e1285e6938db4e538978b7` extends only `reference-interactions.mjs` to inventory two distinct classes, `user-upload-image` and `user-upload-file`, by user message ID and per-message label index, inspect whether a label has a clickable ancestor, tag its exact DOM occurrence, and capture the bounded post-click request/response evidence through the existing web-control level-3 diagnostic. The exporter and established assistant sandbox-file transport were not modified. A new regression actually evaluates the inventory/tagging JavaScript against a representative renderer DOM, including two upload labels in one user turn, rather than stubbing those expression results. The initial VM fixture had a cross-realm assertion mismatch and was corrected forward; GitHub Actions run `38893966378` passed syntax and the complete fixture/reference workflow at the exact final revision (37 Node tests, 7 retained Python reference tests). This is hosted diagnostic validation, NOT physical proof that clicking an upload label yields file bytes.
 
+The user's physical run on 2026-10-16 (capture directory `20261016T135501Z-6ad093bb-2500-83eb-8519-9e2d8c8097f3`) invoked the current reference diagnostic on the same Mirror share but received final URL `https://chatgpt.com/auth/login?next=%2Fshare%2F6ad093bb-2500-83eb-8519-9e2d8c8097f3`, title `Inizia | ChatGPT`, 0 rendered turns and 0 interaction inventory/selected/completed despite 16/16 successful technical probes. These probes captured the login page, not the shared conversation. This is not evidence about whether public-shared user-upload binaries are available, and it does not supersede earlier successful direct public-share captures. The diagnostic currently exits 0 for a successful collection of the wrong page; its capture-status interpretation must be guarded before future completeness claims. The user explicitly accepted leaving the user-upload transport unresolved rather than continuing this investigation.
+
 ## Next action
 
-On the user's physical host with the installed web-control 3 provider, run the updated `capture-share-reference.mjs` once on the existing Mirror public share (`https://chatgpt.com/share/6ad093bb-2500-83eb-8519-9e2d8c8097f3`). Inspect `INTERACTION-INVENTORY.json` and the `user-upload-image` / `user-upload-file` records in `INTERACTIONS.json`, including `tagged`, `event_error`, `network`, `bodies` and post-click UI state. The representative non-image label is currently the last of the two file-upload labels; the raw snapshot records the Python and shell attachments, but this alone does not establish which generic label corresponds to which file. If a native click on the span yields no transport, record that specific observation and investigate the actual public-share upload interaction rather than inventing a file endpoint. Promote a user-upload download mechanism to `export-share.mjs` only after directly observing and validating it on a real shared page.
+Do not require another login or physical rerun for user-upload attachment retrieval. Preserve all raw upload identifiers and metadata, and make unavailable binaries explicit in the export without claiming complete media coverage. Focus next on generated-image binary acquisition, which is independently unresolved. Use the existing public-share reference corpus to distinguish actual rendered image behavior from unsupported assumptions; any new live evidence must first confirm that the requested share page (not `/auth/login`) actually loaded.
 
-Generated-image binaries remain separate and unresolved; do not reuse a user-upload transport unless direct evidence proves the renderer does so. After both remaining artifact classes are settled, complete faithful readable HTML and final completeness comparison before allowing physical_site_completeness_verified/observationComplete to become true.
+After the image class is characterized, complete faithful readable HTML and the final body/artifact completeness comparison. The diagnostic should not count navigation to an authentication/login page as successful shared-page evidence if it is reused. Do not set `physical_site_completeness_verified` or `observationComplete` to true on the basis of this failed reference-page observation or while required media remain unavailable.
 
 A separate deferred follow-up remains at todo/web-page-analyze.md.
 
@@ -172,6 +175,7 @@ A separate deferred follow-up remains at todo/web-page-analyze.md.
 - Structured share acquisition, visibility/turn modeling, raw artifact identity and the five-page direct renderer corpus are physically established.
 - Assistant-generated sandbox files are physically accepted end-to-end at PoC revision 16605a53e880fa568d883c4df3b88a54974e3efc: 16 referenced, 16 downloaded, 0 missing.
 - Generated-image binary transport remains unresolved; the Mirror reference contains three unique generated-image assets and no accepted public binary path for them.
-- User-upload attachments remain unresolved: one uploaded PNG plus two source files. Their generic public renderer labels are now targeted by the diagnostic, but no real-site download request or binary has yet been observed for them.
+- User-upload attachment binary transport remains unverified and intentionally not pursued in this phase, by user choice. Preserve one uploaded PNG and two source files as known structured metadata with explicit unavailable-binary status; do not infer exclusion from the public share solely from the login redirect.
+- The latest reference run reached an authentication page while reporting a completed diagnostic capture (16 probes, zero turns). A successful reference capture is not automatically a successful share-page capture.
 - Mermaid is physically observed as source code in the Mirror share, not as an additional renderer-generated image.
 - Faithful readable HTML and final artifact/body completeness remain open; observationComplete remains false.
