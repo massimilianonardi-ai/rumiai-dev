@@ -902,5 +902,6 @@ PKG-97  pkg install resolves original package-spec roots when reached while pres
 PKG-98  recursive dependency installation is part of the canonical pkg install pipeline
 PKG-99  pkg install validates the complete original request list before dependency planning, catalog resolution or package-store mutation; any syntactically invalid request aborts the whole invocation
 PKG-100 pkg depend reports provider ambiguity with structured diagnostics identifying the facility, combined constraints, target osarch and exact compatible provider candidates; pkg install preserves that diagnostic and classifies the valid-request failure as execution failure rather than invalid arguments
+PKG-101 an installed package concrete is not refreshed or reintegrated in place when its current pkg-catalog definition differs from the definition from which it was installed; the supported realignment path is to uninstall the affected concrete and reinstall it so integration is rebuilt from the current catalog definition
 
 ```
