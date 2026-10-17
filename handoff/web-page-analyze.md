@@ -9,7 +9,7 @@ Develop and physically validate a general browser observation/replay method usin
 
 ## Current revisions
 
-- `rumiai-dev-PoCs` HEAD: `ff49f9f5e0c5b0c87ff872d26ef50d0090f409e7`.
+- `rumiai-dev-PoCs` HEAD: `cd2a247efdc068fa77cf8911507c5abe4ce195b5`.
 - `pwc-web-control` HEAD: `403f4fa9bbea419715e9c834e847c6f2b60ae421` (unchanged).
 - `rumiai-os` HEAD: `cfb732b1bc8d88b1bc14cd97cb399e5d0cb0070d` (unchanged).
 - Revalidate HEADs at the next work unit before reading or changing code.
@@ -52,6 +52,8 @@ Current PoC HEAD after forward-only source and regression revisions: `ff49f9f5e0
 2. The native MHTML viewer starts with a fresh browser scroll offset (the MHTML does not preserve live `scrollTop`). The revised reopening routine scrolls the saved MHTML page to the corresponding screenshot position based on the original scroll extent before taking `reopened.png`. It separately records `offlinePositionAligned`; it then returns focus to and stabilizes the **actual** replay tab before continuing. Restore failure is retained as an explicit gap rather than hidden.
 3. ChatGPT's SPA can asynchronously restore its scroll after navigation. Initial extent is now observed until stable or bounded timeout; starting position alignment is retried with observed geometry/late scroll restoration, rather than aborting immediately after one displaced sample. A failed alignment is recorded and marks replay incomplete; it does **not** prevent partial screenshots and review pages. Exception handling in replay also preserves already acquired checkpoints and marks `executionError`.
 4. New `overall/page.mhtml` is a **single native final-DOM snapshot** acquired after the replay's demonstrated phases, not a stitched claim of full content across virtualized states. Its `manifest.json` explicitly says previous virtualized elements may be absent. After the existing screenshot comparison prompt, Chromium opens this native MHTML using its exact PoC-local file URL for user inspection. Source MHTML bytes are never rewritten and no desktop portal is invoked.
+
+Native MHTML reopening now uses a controller-owned persistent CDP debugging session with `Network.enable` and `Network.setBlockedURLs` for HTTP(S) throughout both the per-state and overall-MHTML file navigation. This prevents silently fetching CSS/images from live sites during the offline visual comparison; CDP session and tab are closed afterward. Screenshot diagnostics now distinguish intended, before-focus, screenshot-time, after-screenshot and after-native-archive scroll positions. `replay()` preserves partial screenshots/comparison even if a later phase throws. A bounded initial scroll-extent settling observation was also added for lazy ChatGPT initialization. These mechanics still require physical validation of provider support and the resulting screenshots.
 
 The `tests/live.test.mjs` PoC checks have two added cases for deferred SPA scroll restoration and for a target beyond the currently available scroll extent. Six fixture-independent test bodies passed **in a V8 evaluation shim**, and revised `live.mjs` parses; **full native Node tests and the two-site physical `live-02` experiment have NOT run yet**. The prior physical 4/4 test pass belongs only to `live-01` revision.
 
