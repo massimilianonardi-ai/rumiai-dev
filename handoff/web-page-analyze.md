@@ -9,7 +9,7 @@ Develop and physically validate a general browser observation/replay method usin
 
 ## Current revisions
 
-- `rumiai-dev-PoCs` HEAD: `4e88d31466b2e4ba7f35ef2ca55481341aeede02`.
+- `rumiai-dev-PoCs` HEAD: `ff49f9f5e0c5b0c87ff872d26ef50d0090f409e7`.
 - `pwc-web-control` HEAD: `403f4fa9bbea419715e9c834e847c6f2b60ae421` (unchanged).
 - `rumiai-os` HEAD: `cfb732b1bc8d88b1bc14cd97cb399e5d0cb0070d` (unchanged).
 - Revalidate HEADs at the next work unit before reading or changing code.
@@ -41,22 +41,30 @@ PoC 069 was rebuilt as a **live real-site experiment** on current main:
 - `tests/live.test.mjs`: covers real-event phase construction, down/up reversal, initial mid-page/up traversal, scroll-delta-only fallback, and disclosure ordering. Static V8 parsing and four test bodies in an isolate passed in this work unit, but these are **not** a physical browser validation.
 - `evidence/` and `.runtime/` are gitignored. Prior fixture files/CI and both superseded PoC 068 workflows were removed from current main as part of the requested clean rebuild. Older commits remain in forward-only Git history.
 
+## Live-01 physical findings and corrective live-02 change (2026-10-17)
+
+User physically ran `sh run-live.sh live-01` on the VM: visible PWC `[PWC_READY]`, existing four tests 4/4 PASS. Amazon demonstrated `down→bottom`, replay scrolled monotonically 98→14400 and generated/opened screenshot comparisons. **However, original intermediate screenshots showed the page beginning instead of the actual scroll checkpoint.** ChatGPT demonstrated `down→bottom, up→position, down→position, up→top` but failed `replay.start-position-was-restored-or-drifted` and closed without its comparison. These were verified operator observations, not accepted source fidelity. User positively validated the experiment organisation and screenshot comparison UI, and explicitly requested additionally opening the single overall exported MHTML directly in Chromium.
+
+Current PoC HEAD after forward-only source and regression revisions: `ff49f9f5e0c5b0c87ff872d26ef50d0090f409e7`.
+
+**Source-grounded failure mechanisms and changes** (`pocs/069-web-page-analyze/live.mjs`):
+1. Before, each `original.png` was taken **after** native MHTML and CDP DOMSnapshot, while the PoC also repeatedly created/closed temporary tabs for each MHTML. The revised code `Page.bringToFront`s the true replay tab, aligns its intended scroll, and captures the online viewport screenshot **before** MHTML/DOM. It records before-focus, before-screenshot, after-screenshot and after-archive positions; the `[STATO]` log reports native-archive drift rather than inferring that replay scroll deltas were wrong.
+2. The native MHTML viewer starts with a fresh browser scroll offset (the MHTML does not preserve live `scrollTop`). The revised reopening routine scrolls the saved MHTML page to the corresponding screenshot position based on the original scroll extent before taking `reopened.png`. It separately records `offlinePositionAligned`; it then returns focus to and stabilizes the **actual** replay tab before continuing. Restore failure is retained as an explicit gap rather than hidden.
+3. ChatGPT's SPA can asynchronously restore its scroll after navigation. Initial extent is now observed until stable or bounded timeout; starting position alignment is retried with observed geometry/late scroll restoration, rather than aborting immediately after one displaced sample. A failed alignment is recorded and marks replay incomplete; it does **not** prevent partial screenshots and review pages. Exception handling in replay also preserves already acquired checkpoints and marks `executionError`.
+4. New `overall/page.mhtml` is a **single native final-DOM snapshot** acquired after the replay's demonstrated phases, not a stitched claim of full content across virtualized states. Its `manifest.json` explicitly says previous virtualized elements may be absent. After the existing screenshot comparison prompt, Chromium opens this native MHTML using its exact PoC-local file URL for user inspection. Source MHTML bytes are never rewritten and no desktop portal is invoked.
+
+The `tests/live.test.mjs` PoC checks have two added cases for deferred SPA scroll restoration and for a target beyond the currently available scroll extent. Six fixture-independent test bodies passed **in a V8 evaluation shim**, and revised `live.mjs` parses; **full native Node tests and the two-site physical `live-02` experiment have NOT run yet**. The prior physical 4/4 test pass belongs only to `live-01` revision.
+
+The next physical action is a new immutable evidence run from PoC 069:
+`git pull --ff-only && sh run-live.sh live-02`. Check the `[STATO]` lines for Amazon: intended/original scroll must increase with the replay instead of resetting to 0, and any archive-induced shift must be visible in the capture metadata. For ChatGPT, check `[ALLINEAMENTO]` and whether partial or complete screenshot comparison and final overall native MHTML open even with SPA auto-scroll. Review source-vs-reopened MHTML rendering. Nothing new is pushed from private `evidence/` to GitHub; old `live-01` evidence is preserved.
+
 ## Validation state
 
 The current direct live implementation has **not yet been physically executed on the user's VM**. Earlier physical runs of PoC 068 had broken HTML/CSS/resource viewing and replay behaviors; they are not acceptance of this new revision. No output archives have been committed or verified on the two real sites in PoC 069. `comparison.html` is only a visual screenshot comparison, not a site recreation.
 
 ## Exact next action
 
-From the user's VM checkout `/m/src/git/rumiai-os_TEST/src/rumiai-dev-PoCs/pocs/069-web-page-analyze`:
-
-```sh
-git pull --ff-only
-sh run-live.sh live-01
-```
-
-The user demonstrates both sites in Chromium and presses Enter when prompted. After each site's automatic acquisition, the PoC opens its comparison page directly in Chromium and the user reviews original vs native-MHTML-rendered screenshots. Run outputs go to `evidence/live-01/`. Share only the short `summary.json` and specific errors/diagnostics from `report.json`, not raw private archives.
-
-Any physical failure must be diagnosed from the actual VM log and **corrected forward**; do not add further speculative workarounds or substitute fixtures.
+Execute a fresh live physical trial in the user's VM with `sh run-live.sh live-02`, after `git pull --ff-only`. Preserve `live-01` as negative evidence. Inspect original intermediate scroll screenshots and reopened image position, ChatGPT alignment/replay diagnostics, and the final overall MHTML opened directly in Chromium. Do not claim complete content fidelity until the operator reviews these on the VM.
 
 ## Known limitations to inspect
 
