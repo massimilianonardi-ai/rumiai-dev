@@ -9,7 +9,7 @@ Investigate a generic browser-page analysis workflow, learning from a user's act
 
 ## Current repository revisions
 
-- rumiai-dev-PoCs: `45dd830debe721858bb7f2ca21a4bb10f4ac79c2` (PoC 068 current tree reduced to README; clean PoC 069)
+- rumiai-dev-PoCs: `f3888d510b70974042312634c3f0bd1fcb09738e` (first controlled Chromium fixture and tests in PoC 069)
 - pwc-web-control: `403f4fa9bbea419715e9c834e847c6f2b60ae421` (provider unchanged)
 - rumiai-os: `678c83f681125811f1dd9022bea122ef08e97e06` (unchanged)
 
@@ -47,18 +47,20 @@ Compare browser-native archives and CDP-derived structural evidence at the **sam
 
 - Preflight completed against current canonical RumiAI repositories.
 - Removed the failed code, viewers, offline HTML/CSS rewrite, replay scripts, tests, rejected generated conversations, ZIPs, raw capture samples and all other tracked content from the active PoC 068 tree. The final batched forward-only commit `45dd830debe721858bb7f2ca21a4bb10f4ac79c2` deleted 1,263 previously tracked old PoC files, leaving **only** its retired README. Old commits preserve the exact bytes and prior experiment evidence without rewrite. The replacement current tree has no active PoC 068 implementation.
-- Created `pocs/069-web-page-analyze/README.md` with a clean conceptual experiment, **no source code**. No repository implementation of the new method or user-browser physical test has been performed.
+- Created `pocs/069-web-page-analyze/` with HTML/CSS/SVG/JS local fixture, `experiment.py`, browser tests and a strictly local/gitignored evidence destination. No prior PoC 068 source, DOM rewrite or viewer is imported. The first recorder targets the fixture's known `#scrollbox` and infers direction phases from the original event samples; it does not yet generalize across arbitrary page containers.
 
 ## Current state
 
-The experimental restart is an **implementation-empty PoC 069**, with no inherited code or produced archives. PoC 068 has only its retired README on the current branch; the rejected tracked archives are removed from that branch, but preserved in historical commits. Privately ignored/untracked physical files under the user's old `experiments/evidence/` on the VM were **not** accessed or deleted remotely. Nothing here claims those local files, desktop-runtime mount points or browser-managed portal aliases were removed. The project must not refer to such paths in newly generated document/archive links.
+The controlled PoC 069 experiment is implemented but **not accepted for complete-page offline fidelity**. On the actual auxiliary Linux Chromium browser, its controlled embedded-fixture run exercised browser mouse-wheel scroll events: 31 browser-originated trusted scroll samples, phases `down [0→3715]` then `up [3715→0]`, 6 initially rendered items, all 24 available at the bottom and after the return to top; replay ended at `scrollTop=0`. Three MHTML+DOMSnapshot+viewport screenshots were saved locally **inside the auxiliary PoC test folder**. A separate real Chromium CDP test intercepted an independently requested fixture stylesheet via Playwright resource fulfillment and confirmed that MHTML included a distinct `text/css` MIME part at its original absolute web resource location. These tests use real browser/CDP input, **not a browser-URL navigation test**, because this hosted environment's administrator blocks `file://` and loopback `http://` navigations. They do not validate native Chrome `Save Page Complete`, CSS-file-relative offline reopening, or screenshot pixel equivalence.
+
+The `--embedded-host-test` auxiliary option in `experiment.py` intentionally inlines the fixture CSS and JS for the scroll test and reports `nativeCssIncluded:null`. The distinct resource-response test examines browser MHTML packaging without claiming full offline rendering. The default HTTP fixture flow has not been physically validated in the user's VM. All new output targets the current PoC's ignored `evidence/`. Do not touch or restore old PoC 068 exporters, nor the private untracked local evidence on the user's VM.
 
 ## Next action
 
-On the next implementation work unit, begin with a small local webpage fixture and test how native Chromium complete-page saving differs from DOM serialization. Separately observe and reproduce an explicit bottom-to-top user scroll. Validate each before building a site-wide export.
+The next bounded gate is **real local-HTTP navigation** to the fixture and direct reopening of Chromium's native MHTML on a host without the auxiliary browser URL policy. Verify CSS/SVG resources and compare native offline rendering against the original screenshot before considering Save Page Complete HTML, any collage generator or broad real-site analysis. The controlled browser test suite is currently defined under `pocs/069-web-page-analyze/tests/`; the user should not be asked to rerun Amazon or ChatGPT at this point.
 
 ## Blockers / open questions
 
 - Which native browser archival path provides the most faithful, reliably reopenable offline output for each supported page type?
 - How should stable intent, visible checkpoints and state evidence be correlated without altering the user's sequence?
-- Physical VM access is required for actual browser validation. All provider limitations must be measured rather than inferred.
+- The auxiliary-host Chromium is verified for wheel/CDP capture but its navigation policy prevents a real locally hosted fixture URL. Stable-host/VM offline-reopen validation is still needed before fidelity acceptance.
