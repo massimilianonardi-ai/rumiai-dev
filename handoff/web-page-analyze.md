@@ -60,6 +60,14 @@ The `tests/live.test.mjs` PoC checks have two added cases for deferred SPA scrol
 The next physical action is a new immutable evidence run from PoC 069:
 `git pull --ff-only && sh run-live.sh live-02`. Check the `[STATO]` lines for Amazon: intended/original scroll must increase with the replay instead of resetting to 0, and any archive-induced shift must be visible in the capture metadata. For ChatGPT, check `[ALLINEAMENTO]` and whether partial or complete screenshot comparison and final overall native MHTML open even with SPA auto-scroll. Review source-vs-reopened MHTML rendering. Nothing new is pushed from private `evidence/` to GitHub; old `live-01` evidence is preserved.
 
+## Live-02 CSS regression — operator interim observation (2026-10-17)
+
+During the user's **still-in-progress** physical `live-02` trial, they reported that Amazon's screenshots and the final opened MHTML appeared **unstyled or visually distorted**, whereas the MHTML in `live-01` had looked good. Treat this as **unaccepted negative interim evidence**; no live-02 final terminal report, per-checkpoint manifests, PNGs, or MHTML bytes have yet been reviewed. Do not mark the new browser/export flow as successful.
+
+Current PoC source explicitly attaches a persistent per-page CDP debugger session and calls `Network.setBlockedURLs` with `http://*` and `https://*` **before** opening each MHTML (`reopen` and `showOverall`). Chromium MHTML MIME `Content-Location` identifiers may still carry original HTTP(S) resource URLs; it is a plausible, **not yet established**, hypothesis that the blanket block interferes with native in-archive resource resolution. Crucially, this per-page block should not explain missing CSS in the separate **online** `original.png` without another mechanism. The current live capture already records `original.png`, `reopened.png`, original/checkpoint scroll offsets, `capture.json`, and `offline.json` to distinguish these mechanisms.
+
+**Do not ask the user to interrupt or rerun the still-running experiment.** Do not change the PoC source based only on this intermediate symptom. When the user returns with the completed results, distinguish online vs reopened CSS failures, inspect `archivedCssParts` and actual per-site logs, and make one evidence-grounded forward fix. Keep native MHTML unmodified, preserve prior private `live-01` and `live-02` evidence, and do not revive ad hoc CSS converters/viewers or synthetic substitution tests.
+
 ## Validation state
 
 The current direct live implementation has **not yet been physically executed on the user's VM**. Earlier physical runs of PoC 068 had broken HTML/CSS/resource viewing and replay behaviors; they are not acceptance of this new revision. No output archives have been committed or verified on the two real sites in PoC 069. `comparison.html` is only a visual screenshot comparison, not a site recreation.
