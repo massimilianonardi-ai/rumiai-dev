@@ -7,7 +7,7 @@ Updated: 2026-10-17
 
 Before analysis/modification always verify current remote HEADs; follow `rumiai-dev/README.md` Mandatory Read Order: `RULES.md`, `CONSISTENCY-GATE.md`, `specifications/README.md`, current `specifications/rumiai-os/WEB-CONTROL.md`, `DIAGNOSTICS.md` if applicable, `TESTING.md`, this handoff, current PoC implementation and tests. Explicit user corrections are higher authority than this task-state checkpoint. Do not read Git history by default.
 
-Latest PoC HEAD at this checkpoint: `402b5808f8e961ccf0e543fe2f815b144ea50b9e`; PWC baseline HEAD: `403f4fa9bbea419715e9c834e847c6f2b60ae421`. Revalidate at next work unit.
+Latest PoC HEAD at this checkpoint: `127c3628c23a979b04ee0c5a59bc9371cc0c6bc0`; PWC baseline HEAD: `403f4fa9bbea419715e9c834e847c6f2b60ae421`. Revalidate at next work unit.
 
 ## Purpose and user-fixed requirements
 
@@ -41,7 +41,7 @@ All browser profiles, evidence, generated comparative views and any other persis
 
 ## Validation and next physical step
 
-This continuation verified current GitHub HEADs and canonical read order, then made forward-only PoC changes and inspected the resulting code. The V8 isolated shim successfully executed **5/5 alignment logic test bodies** and **8/8 pre-existing live logic test bodies**. The altered `live.mjs` parses in V8 after removing the Node import/shebang/ESM entrypoint for the syntax check. These are **not** Node's test runner, Chromium, or physical validation on the user's Linux VM. An independent local Node 22 smoke checked two isolated offset cases; it did not execute checked-out PoC files. Actual `live-03` was performed by the user **before this new anchor correction** and does not validate the revised implementation.
+This continuation verified current GitHub HEADs and canonical read order, then made forward-only PoC changes and inspected the resulting code. The V8 isolated shim successfully executed **5/5 alignment logic test bodies** and **8/8 pre-existing live logic test bodies** (13/13 total), after the final logic changes. The altered `live.mjs` and `alignment.mjs` parse in V8 after substituting Node-only module constructs for the syntax check. These are **not** Node's test runner, Chromium, or physical validation on the user's Linux VM. An independent local Node 22 smoke checked two isolated offset cases; it did not execute checked-out PoC files. Actual `live-03` was performed by the user **before this new anchor correction** and does not validate the revised implementation.
 
 Do **not** repeat or overwrite `live-02` or `live-03`. Their existing files remain private and unchanged. For diagnosis of that previously reported visual mismatch, use the existing `live-03` screenshot pair and `capture.json`/`offline.json` metrics from the user's VM; those older JSON records do not contain the newly added content-anchor fields, so the precise offset cannot be inferred from scrollTop alone. The new mechanism can be validated only in a **separate unused** live trial (for example `live-04`, after confirming it does not exist). The task remains active until the user visually accepts actual Chromium source-vs-reopened alignment; do not claim the measured offset is eliminated without that evidence.
 
