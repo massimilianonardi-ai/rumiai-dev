@@ -1,13 +1,13 @@
 # ChatGPT shared-link export
 
 Status: Active
-Updated: 2026-10-16
+Updated: 2026-10-17
 
 ## Goal
 
 Archive user-authorized ChatGPT shared-link conversations completely and readably, including multimedia, without duplicated turns or DOM-window heuristics, using the normal common web-control facility and Node.js.
 
-## Current repository revisions
+## Previously recorded repository revisions (not live HEADs)
 
 - rumiai-dev: 9b338af682089162a741a644f9540d44232ce12f (pre-checkpoint HEAD)
 - rumiai-dev-PoCs: 499028ccf776fb77d4b13d79d4dd06a6b1b84cba (independent bounded cleanup, verified page disappearance/retry and non-sensitive image diagnostics; GitHub Actions 38954561266 PASS: 45/45 Node tests, 7/7 Python tests, syntax checks on exact PoC HEAD)
@@ -279,7 +279,7 @@ Five-share PWC artifact acceptance has now passed 5/5 in the committed physical 
 
 - Structured share acquisition, visibility/turn modeling, raw artifact identity and the five-page direct renderer corpus are physically established.
 - Assistant-generated sandbox files are physically accepted end-to-end at PoC revision 16605a53e880fa568d883c4df3b88a54974e3efc: 16 referenced, 16 downloaded, 0 missing.
-- **Phase 1 assistant-generated image binaries are physically recovered 3/3 for RumiAI Avatar (7) with the unchanged PoC 068 exporter through the real isolated PWC Playwright/Chromium `web-control 3` provider**, with 0 missing and 9/9 loaded DOM images in a direct provider control test. The PWC exporter reports its page absent after close; debugger explicit close reports `session:'failed'` despite successful page removal (possible cleanup race, precise cause unverified). The same PoC with the installed Electron provider still fails to materialize any generated-image `<img>`, despite `headless:false`, observed visible/focused page, UA token removal, initial document bootstrap, and 9/9 successful standalone Electron differential configurations. The shared contract is **not** sufficient to cause the fault; remaining investigation is specific to Electron provider/runtime/profile and browser-site interaction. Do not confuse isolated PWC acceptance with changing the installed default provider, or claim all five shares/HTML fidelity have been accepted.
+- **Phase 1 five-share artifact gate now passed physically 5/5 with isolated PWC `web-control 3`**: Avatar 3/3 public generated-image binaries; Mirror 3/3 public generated-image binaries plus 16/16 assistant sandbox files and one explicitly deferred user-upload image; other three references have no public image or sandbox file references. Each page was verified absent after cleanup; Mirror explicit debugger-session close reported `failed` (not evidence of a retained page). The installed Electron provider's earlier 0/3 image behavior remains a separate provider/runtime discrepancy. The new five-share runner result does **not** establish HTML fidelity, complete renderer equivalence, or a default-provider deployment decision. Only the acceptance log/status files, not the latest five ZIP archives, were committed.
 - User manually verified that uploaded attachments are not viewable/downloadable in a separate anonymous browser session. Phase 1 preserves one uploaded PNG and two source files as structured metadata; the image asset is now classified as `deferred-authenticated` in `MEDIA.json` when referenced solely by user messages, and source-file raw attachment metadata remains in the preserved snapshot. Actual upload binaries belong to Phase 2 authenticated access, not abandoned.
 - The prior reference run reached a login page with 16 successful page probes but zero actual shared turns. PoC 068 now rejects the incorrect page with explicit failure metadata at hosted-fixture level; the new guard has not yet been physically re-tested.
 - Mermaid is physically observed as source code in the Mirror share, not as an additional renderer-generated image.
