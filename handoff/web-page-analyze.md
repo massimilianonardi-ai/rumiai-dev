@@ -1,69 +1,59 @@
-# Generic web-page analysis — real Amazon + ChatGPT live PoC
+# Generic web-page analysis — live Amazon + ChatGPT
 
 Status: Active
 Updated: 2026-10-17
 
-## Goal and authority
+## Current authority and retrieval
 
-Investigate whether visible Chromium sessions can learn the user's real navigation intentions and acquire faithful native MHTML + CDP evidence for these **two specifically authorized real pages**:
+Before analysis/modification always verify current remote HEADs; follow `rumiai-dev/README.md` Mandatory Read Order: `RULES.md`, `CONSISTENCY-GATE.md`, `specifications/README.md`, current `specifications/rumiai-os/WEB-CONTROL.md`, `DIAGNOSTICS.md` if applicable, `TESTING.md`, this handoff, current PoC implementation and tests. Explicit user corrections are higher authority than this task-state checkpoint. Do not read Git history by default.
 
-- Amazon Wishlist: `https://www.amazon.it/hz/wishlist/ls/33ZKBWLPZJJVO?ref_=list_d_wl_lfu_nav_3`
-- Long ChatGPT share: `https://chatgpt.com/share/6ad1c0d5-49ec-83eb-a79b-85b04b938835`
+Latest PoC HEAD at this checkpoint: `8678cc7e4a4c10e18ed781dc68d972f4d3916386`; PWC baseline HEAD: `403f4fa9bbea419715e9c834e847c6f2b60ae421`. Revalidate at next work unit.
 
-The user explicitly rejected fixture/CI substitutes, unfaithful reconstructed HTML/CSS, and any exported references through transient desktop portals. Their current correction is: **preserve ChatGPT start alignment from `live-02`, revert the new MHTML visual regression so reopening behaves as in `live-01`, and continue the physically reviewed live-site path**.
+## Purpose and user-fixed requirements
 
-Before any task, verify remote HEADs and read `rumiai-dev/README.md` mandatory read order, `RULES.md`, `CONSISTENCY-GATE.md`, `specifications/README.md`, `specifications/rumiai-os/WEB-CONTROL.md`, `specifications/rumiai-os/DIAGNOSTICS.md` where applicable, `TESTING.md`, this handoff, and current code/tests. Do not treat this handoff or prior commits as normative.
+Capture and interpret a human's actual browser navigation through two explicitly authorized pages:
 
-## Repositories / current revision snapshot
+- Amazon Wishlist `https://www.amazon.it/hz/wishlist/ls/33ZKBWLPZJJVO?ref_=list_d_wl_lfu_nav_3`
+- Long ChatGPT share `https://chatgpt.com/share/6ad1c0d5-49ec-83eb-a79b-85b04b938835`
 
-- `massimilianonardi-ai/rumiai-dev-PoCs` current HEAD at update: `f07bd549c59092b83b7b47fc5fe41b5b66c50706`.
-- `massimilianonardi-ai/pwc-web-control` baseline HEAD: `403f4fa9bbea419715e9c834e847c6f2b60ae421` (provider unchanged).
-- `massimilianonardi-ai/rumiai-os`: not modified.
-- Revalidate all involved HEADs before resuming, including any concurrently advanced branches.
+Use the existing `pwc-web-control` provider in an isolated visible Chromium, under `rumiai-dev-PoCs/pocs/069-web-page-analyze/`. Preserve observed wheel/scroll direction and sequencing (`down→up` included). Replay inferred phases, capture original native MHTML and CDP DOM/layout/CSS plus viewport screenshots, and compare original browser vs direct Chromium MHTML reopen. Do **not** regenerate/merge modified MHTML or rewrite CSS. `page.content()` is raw DOM serialization, not standalone complete HTML.
 
-## Fixed task-local constraints
+All browser profiles, evidence, generated comparative views and any other persistent files physically stay **inside this PoC**, gitignored. A short-lived runtime socket filename/alias outside the PoC may be needed due to Unix socket pathname limits, but never becomes an artifact path. Do not automatically upload raw evidence, user content or credentials. Git is forward-only; do not rewrite history.
 
-1. Current PoC source: `rumiai-dev-PoCs/pocs/069-web-page-analyze/`. Runs use `sh run-live.sh <fresh-name>`, a visible isolated `pwc-web-control` Chromium profile, and only the two user-authorized real URLs.
-2. Preserve actual wheel/scroll/disclosure event sequence, its container and direction. Intent phases including `down→up` must survive inference and replay. Dynamic counter-scroll must be measured and handled with bounded **same-direction** correction, never silently interpreted as learned user input.
-3. All real capture files, screenshots, MHTML, DOM snapshots, browser runtime and logs remain under the PoC; only short-lived Unix IPC socket/alias filenames may exist outside due to Linux socket-path limits. No desktop file manager/portal links are generated.
-4. Preserve native `Page.captureSnapshot` MHTML unchanged; `page.html` from `page.content()` is **not** complete offline HTML. Capture CDP DOMSnapshot and viewport screenshots separately. The screenshot comparison HTML uses only PoC-relative PNGs. No fake renderer, custom CSS rewriter or MHTML stitching is authorized.
-5. Chromium opens original native per-checkpoint and final `overall/page.mhtml` directly. A final MHTML is **one live final-DOM state**, not a union of dynamically removed/virtualized nodes. Account data and evidence are gitignored and never automatically published.
-6. Mechanical `complete:true` never establishes actual visual fidelity, correct stylesheet loading, or complete chat content. Accept only what the user physically inspects on their VM. All Git changes are forward-only.
+## Actual live results
 
-## Actual physical evidence
+- `live-01`: the visible browser initialized, Amazon scroll replay and screenshot comparison operated, but intermediate screenshots appeared at the wrong position; ChatGPT failed its initial scroll alignment. User confirmed native MHTML displayed correctly when reopened directly in Chromium.
+- `live-02`: Amazon replay completed `down→bottom, up→top` with checkpoints `0000..0038` and matching source position at capture time. ChatGPT correctly aligned to the bottom of its internal scroll container (approximately `26925`) and acquired `0000..0016` while rising to approximately `13242`; it then failed on a dynamic opposite-direction scroll. Screenshots/MHTML **inside the experiment's visual comparison** appeared distorted or unstyled. **Important user correction:** both Amazon and ChatGPT native MHTML files nevertheless display **perfectly when subsequently opened directly in Chromium**. The archive bytes therefore must not be assumed corrupt; the in-run reopening/viewing procedure needs separate evaluation.
+- User established that a single ChatGPT MHTML saves only the DOM currently mounted: older virtualized chat portions have already been removed. We need a **collage from the separate original captured states**, while preserving segment provenance and noting gaps; a final native MHTML is just one final DOM state, never all previous contents.
+- User opening `comparison.html` through the Linux file manager later gets a transient desktop-document-portal URI `file:///run/user/1000/doc/.../comparison.html`, so relative PNG assets cannot be found. **This alias is from desktop file opening, not a PoC write destination.** The fix must make comparison viewable *after* a session from the persistent PoC directory, not introduce another resource rewriter.
+- User additionally observed a **slight live/automated screenshot scroll misalignment** in ChatGPT comparisons. Source inspection found `reopen()` mapped `scrollTop` to the MHTML by source/archive `maxScroll` ratio, so small dynamic extent differences produced offset. No actual pixel-accurate alignment of the revised implementation has yet been physically tested.
 
-### live-01 (pre-2026-10-17 corrective revision)
+## Current forward-only PoC changes
 
-The user's visible Chromium run passed four plan unit tests, captured Amazon's `down→bottom` replay, and opened screenshot comparisons. The original intermediate scroll screenshots appeared at the page beginning, but the user explicitly confirmed **the native MHTML opened and looked correct with CSS**. ChatGPT's initial scroll alignment failed before replay and no comparison completed. Those are partial/negative outcomes, not a successful exporter.
+- `live.mjs`: record each original screenshot's visible scrolling-container rectangle (CSS-pixel coordinates, viewport size and device pixel ratio) alongside its original `scrollTop` in `capture.json`. Native MHTML, DOM and CSS are unchanged. The MHTML reopening path now **uses the exact source `scrollTop` in CSS pixels**, not a percentage of different total scroll heights. `archiveScrollTarget()` records intended/actual coordinate, extent mismatch and explicit clamp when the source coordinate does not exist in the reopened MHTML. It also records reopened viewport geometry. The original `live-02` initial ChatGPT alignment and later bounded direction-preserving recovery from the subsequent source code remain in place.
+- `collage.mjs` and `generate-collage.mjs`: derived **screenshot-only** visual collage. Greedy original-viewport strips cover measured scroll intervals without repeating fixed browser/page chrome; each retains its original checkpoint. Explicit gaps cover missing top, internal and tail intervals; changing scroll extents/widths and unstable screenshots disallow claiming complete continuous coverage. Older `live-01` and `live-02` evidence lacks scrolling-viewport geometry: show a full-viewport chronological gallery instead of pretending it is stitchable. This is a *visual* artifact, not semantic restoration of invisible/removed DOM.
+- `serve.mjs` + `view.sh`: after ANY trial, `sh view.sh live-02` (or other existing run name) generates the screenshot collage and starts a read-only loopback HTTP viewer bound to `127.0.0.1` on an automatically selected port. Only comparison/collage HTML, their original PNGs and small diagnostics are served. It excludes MHTML and raw DOM, uses a host/path allowlist and no filesystem paths outside the PoC, disallows scripts, and prints URLs to open in Chromium. Users no longer open `comparison.html` through the desktop file manager or transient document portal; they can stop/restart the viewer at any time. This does **not** rerun Amazon/ChatGPT and does not modify archived MHTML.
+- `run-live.sh` runs all `tests/*.test.mjs` and prints the `view.sh` command after a trial, including an incomplete run. `tests/collage.test.mjs` and `tests/view.test.mjs` provide unit/regression coverage, and `tests/live.test.mjs` verifies absolute scroll alignment and explicit clipping.
 
-### live-02 (2026-10-17; full supplied terminal log, 167 lines)
+## Validation and next physical step
 
-The user ran `git pull --ff-only && sh run-live.sh live-02`, PWC initialized and six plan/alignment tests passed.
+Source files parse in the V8 isolate. The 8 live logic test bodies and 6 collage logic test bodies passed in the **shim**, not the real Node test runner on the user's VM. Read-only viewer's actual Node HTTP regression and end-to-end browser appearance have **not** been run physically from this updated revision. This distinction is material.
 
-- **Amazon:** user demonstration `down→bottom, up→top`. Automatic replay produced checkpoints `0000..0038`, progressing from `119` to `14882` and returning to `0`. Every printed `intended`, `beforeFocus`, `screenshotTop`, `afterScreenshot`, `afterArchive` matched; source scroll was restored and native MHTML viewport alignment was reported true. The program printed `[ESITO] amazon-wishlist captured`, but the user saw **incorrect/missing CSS both in screenshot comparisons and the opened overall MHTML**. Therefore Amazon's **visual result was rejected** even though the scroll coordinate gate passed.
-- **ChatGPT:** user demonstration `down→bottom, up→top`. Initial replay successfully aligned near the bottom (`start=26941, reached=26925, stable=true`), acquiring checkpoints `0000..0016` while rising from `26925` to `13242`. There the site caused a reverse-direction scroll and the replay stopped with `replay.opposite-direction`. Its partial comparison and native final MHTML did open, but the user confirmed the **same broken-CSS rendering** as Amazon. The source content was not fully traversed; result `incomplete`.
+**First physical check does NOT require a new live browser run:**
 
-The user's latest correction: **keep this successful ChatGPT starting alignment and the direction-aware replay, restore the visually correct MHTML opening from live-01, and fix the ChatGPT mid-replay opposite-direction interruption.**
+```sh
+cd /m/src/git/rumiai-os_TEST/src/rumiai-dev-PoCs/pocs/069-web-page-analyze
+git pull --ff-only
+sh view.sh live-02
+```
 
-The assistant cannot inspect private raw `evidence/live-01/` or `live-02/` MHTML/PNG on the user's VM. The terminal log proves scroll coordinates and where replay stopped, not which exact CSS resource failed.
+Open the printed `http://127.0.0.1:<port>/` site comparison and collage links. Confirm old original screenshots stay available after a run; the site-specific collage will present the older run as a complete-viewport timeline because exact scrolling-container bounds were not captured yet. Do not open comparison HTML through the file manager. Use `sh view.sh live-01` for earlier evidence.
 
-## Forward-only changes for next live-03
+For a **new** run, `sh run-live.sh live-03` remains the next unused run name (verify what exists on the VM before reuse); it will record the viewport bounds required for a genuine cropped screenshot collage and use precise original-vs-reopened MHTML scroll alignment. The user has not yet physically accepted those new results. Preserve prior private runs.
 
-In current PoC `live.mjs`:
+## Open risks
 
-- Removed the entire experimental persistent CDP `Network.setBlockedURLs` mechanism from both `reopen()` and `showOverall()`. The user visually accepted `live-01` reopening without that blocker; CSS broke in `live-02`, which added it. This is a **strong regression suspect, not a proven single root cause**. Chromium now reopens native MHTML as in `live-01`. Consequently **network-independent offline resource completeness is NOT verified** in this version: do not describe the reopened view as offline-isolated.
-- Kept the `live-02` ChatGPT scroll-extent settling and bounded initial `stabilizePosition()` alignment; retained the per-step capture, source scroll restoration, screenshot comparison, and separate overall MHTML opening.
-- When a dynamic page moves contrary to the requested direction (or a step makes no progress), attempt up to four further moves **in the planned direction**, using current geometry and updated destination. Record each disturbance and whether recovery succeeded under `report.replay.disturbances`. If none succeeds, record one incomplete scroll-phase outcome, stop subsequent planned phases and retain partial visual evidence; never incorrectly call that phase complete.
-- `capture.json` now records a small `liveStyles` summary (stylesheet/link counts and computed body styles), and `offline.json` records comparable reopened styles with `networkIsolationVerified:false`. This distinguishes missing CSS in an original online screenshot from incorrect reopening, without altering source HTML/CSS.
-- Current PoC `README.md` documents exact `live-02` physical failures and scoped `live-03` behavior. Prior private evidence is immutable; use a fresh run name.
-
-## Validation and next action
-
-Source diff / V8 grammatical parsing plus the six existing JavaScript logic test bodies exercised in a V8 shim **passed** during this work unit. This is not a real Node/PWC browser validation. No new `live-03` physical run has occurred; MHTML CSS fidelity after the rollback remains unverified.
-
-Next user live run (only when ready): from `pocs/069-web-page-analyze/`,
-`git pull --ff-only && sh run-live.sh live-03`.
-
-Review two questions separately: (1) does each original and reopened MHTML view return to the CSS fidelity the user observed in `live-01`? (2) does ChatGPT continue upward past `13242`, with any dynamic scroll corrections logged rather than hidden? Preserve raw private files; user should share only short terminal diagnostics and relevant `capture.json`/`offline.json` summaries, not account data.
-
-No modifications to `pwc-web-control`, `rumiai-os`, `rumiai-tests` or other product sources. The current PoC remains experimental, without visually accepted full export.
+- Slight original-vs-reopened viewport offset may persist if CSS/viewport geometry differs beyond the scrollTop coordinate. Compare the two stored geometry sets and image evidence without destructive postprocessing.
+- Some ChatGPT states may be genuinely missing because of early interruption or application virtualization; collage must show missing coverage instead of inventing restored contents.
+- Reopening MHTML with unrestricted network is **not proof of no external dependencies**, though the user visually confirmed the native archived file works.
+- The provider/browser runtime is unchanged; no product contracts have been promoted on the basis of this unsettled experiment.
