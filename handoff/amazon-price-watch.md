@@ -102,6 +102,37 @@ Upgrade the independent `amazon-wishlist-monitor` to a v2 state schema, preservi
 - User requested a removal operation missing from the inline multi-wishlist script. Proposed `remove NOME` as a registry-only atomic rewrite: validate the name and existence, create a secure sibling temporary registry, filter the named row, rename into place, and **retain** its JSON, HTML, logs, user targets and history. No Amazon API call and no user-state deletion. This is an inline script patch, not a repository product modification. Scoped standalone Bash test PASS for removal preserving other registrations and both state files; absent entry reports failure. No live VM execution performed.
 - Complete integrated 198-line Bash script prepared and verified locally for inline delivery (no new product/package changes): `bash -n` PASS; actual shell invocations with an isolated simulated `m` CLI cover `add`, `list`, `status`, `update all`, `report all`, `html`, `note`, `target`, `remove`, re-register with same existing JSON/HTML preserved, duplicate and invalid-name rejection, per-list failure propagation without aborting other list updates, and private registry mode 0600. Source SHA-256 in validation environment `28451327438fd061bd41a2dbf774bbb72050292162c9187ad86ba922c0b65d46`. Script remains **in chat only** for user to save beside `m`; no physical VM or Amazon site execution in this unit.
 
+
+### Operator command quick reference (local script supplied in chat)
+
+Run these examples from the local `rumiai-os_TEST` directory after saving `amazon-price-watch.sh` beside `m` and making it executable. The following table is the actual operation-to-command reference previously supplied to the user, not merely a list of subcommand names.
+
+| Operation | Command |
+| --- | --- |
+| Register Watch while preserving its existing history | `./amazon-price-watch.sh add watch URL "$PWD/watch-state.json"` |
+| Remove Watch from monitoring | `./amazon-price-watch.sh remove watch` |
+| List the registered wishlists | `./amazon-price-watch.sh list` |
+| Update every wishlist | `./amazon-price-watch.sh update all` |
+| Update only Watch | `./amazon-price-watch.sh update watch` |
+| Show the current status of every wishlist | `./amazon-price-watch.sh status all` |
+| Regenerate every offline HTML report without Amazon access | `./amazon-price-watch.sh report all` |
+| Change a product target | `./amazon-price-watch.sh target watch B012345678 25,00` |
+| Change a product note | `./amazon-price-watch.sh note watch B012345678 "Attendere sconto"` |
+
+Additional supported invocations in the same supplied script:
+
+| Operation | Command |
+| --- | --- |
+| Print the report path | `./amazon-price-watch.sh html watch` |
+| Open the Watch HTML report on a Linux desktop | `xdg-open "$(./amazon-price-watch.sh html watch)"` |
+| Change the historical minimum baseline | `./amazon-price-watch.sh baseline watch B012345678 24,00` |
+| Import Watch targets/notes/minima from a local CSV | `./amazon-price-watch.sh import-sheet watch ./Watch.csv` |
+| Show command syntax | `./amazon-price-watch.sh help` |
+
+Here `URL` is a placeholder for the **actual** Amazon.it wishlist URL, not a literal argument to use unchanged; `B012345678` is an example ASIN, not an assertion about the user's products. For the existing Watch history, use the exact existing `"$PWD/watch-state.json"` file; re-registering after `remove` with that same path resumes its data. `remove` edits only the private registry and **does not delete** the saved JSON/HTML, history, targets, notes or logs. Registration of another wishlist requires its own URL and distinct state file. Neither `update all` nor `report all` creates or enables a schedule; automated notifications and Sheets writes remain outside this local script.
+
+**Delivery/validation boundary:** This Bash script was shared as a complete code block in chat; at this checkpoint it has **not** been committed as a source file to a repository nor confirmed installed on the user's VM. The commands above are the documented interface of that supplied script. Prior synthetic test-double validation is not live Amazon/VM acceptance. The handoff must retain an operator command mapping, not only implementation summaries: otherwise a clean chat cannot recover the user's established operating workflow without reconstructing it from chat text.
+
 ## Acceptance scenarios
 
 1. Given an Amazon.it wishlist URL/identity, a deterministic program invokes `web-control`, discovers every currently listed product and returns a complete set of product observations without requiring user-supplied ASINs.
