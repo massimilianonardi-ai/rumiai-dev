@@ -9,7 +9,7 @@ Develop and physically validate a general browser observation/replay method usin
 
 ## Current revisions
 
-- `rumiai-dev-PoCs` HEAD: `7c3b0703097e592fd1ee297fb4b89a27a051db21`.
+- `rumiai-dev-PoCs` HEAD: `afd9a600b3fc28b439abff341108e99c30cf6fb3`.
 - `pwc-web-control` HEAD: `403f4fa9bbea419715e9c834e847c6f2b60ae421` (unchanged).
 - `rumiai-os` HEAD: `cfb732b1bc8d88b1bc14cd97cb399e5d0cb0070d` (unchanged).
 - Revalidate HEADs at the next work unit before reading or changing code.
@@ -39,7 +39,7 @@ PoC 069 was rebuilt as a **live real-site experiment** on current main:
 - `observe.js`: instrument the current page's trusted wheel/scroll/disclosure actions; store direction, scrollable container selector, extent and event order, without reading typed input/cookies.
 - `live.mjs`: infer ordered direction phases and safe disclosure boundaries; recreate each page and align its initial position to the observed start; move **in inferred phase direction** through viewport-sized steps; capture native MHTML, raw DOM, CDP DOMSnapshot/CSS and viewport PNG. For each MHTML use the existing PWC browser to reopen its **real PoC-local file URI** and save `reopened.png`, reporting failure. Creates screenshot-only `comparison.html` using relative PoC paths and opens that file directly in the visible browser for manual side-by-side review, asking Enter before proceeding to next site. No modified source HTML or CSS presentation is created.
 - `tests/live.test.mjs`: covers real-event phase construction, down/up reversal, initial mid-page/up traversal, scroll-delta-only fallback, and disclosure ordering. Static V8 parsing and four test bodies in an isolate passed in this work unit, but these are **not** a physical browser validation.
-- `evidence/` and `.runtime/` are gitignored. Prior fixture files/CI and expired PoC 068 workflow were removed from current main as part of the requested clean rebuild. Older commits remain in forward-only Git history.
+- `evidence/` and `.runtime/` are gitignored. Prior fixture files/CI and both superseded PoC 068 workflows were removed from current main as part of the requested clean rebuild. Older commits remain in forward-only Git history.
 
 ## Validation state
 
