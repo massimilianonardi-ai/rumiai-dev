@@ -1,66 +1,67 @@
-# Generic web-page analysis
+# Generic web-page analysis — two real-site live PoC
 
 Status: Active
 Updated: 2026-10-17
 
 ## Goal
 
-Investigate a generic browser-page analysis workflow, learning from a user's actual demonstration of how to reveal the page's relevant content, then replaying the learned interaction and acquiring browser-native page archives together with CDP DOM/layout/CSS and screenshot evidence.
+Develop and physically validate a general browser observation/replay method using the user's **two actual authorized pages**, preserving human scroll direction/sequence and acquiring native Chromium MHTML plus correlated CDP evidence. User explicitly rejected more synthetic fixtures/CI and requested **one live VM experiment**.
 
-## Current repository revisions
+## Current revisions
 
-- rumiai-dev-PoCs: `f3888d510b70974042312634c3f0bd1fcb09738e` (first controlled Chromium fixture and tests in PoC 069)
-- pwc-web-control: `403f4fa9bbea419715e9c834e847c6f2b60ae421` (provider unchanged)
-- rumiai-os: `678c83f681125811f1dd9022bea122ef08e97e06` (unchanged)
+- `rumiai-dev-PoCs` HEAD: `7c3b0703097e592fd1ee297fb4b89a27a051db21`.
+- `pwc-web-control` HEAD: `403f4fa9bbea419715e9c834e847c6f2b60ae421` (unchanged).
+- `rumiai-os` HEAD: `cfb732b1bc8d88b1bc14cd97cb399e5d0cb0070d` (unchanged).
+- Revalidate HEADs at the next work unit before reading or changing code.
 
-Read remote HEADs again at next preflight.
+## Canonical read order
 
-## Applicable canonical sources
+`rumiai-dev/README.md`, `RULES.md`, `CONSISTENCY-GATE.md`,
+`specifications/README.md`, `specifications/rumiai-os/WEB-CONTROL.md`,
+`TESTING.md`, then this handoff and current PoC sources.
 
-- `rumiai-dev/README.md`, `RULES.md`, `CONSISTENCY-GATE.md`, `TESTING.md`
-- `specifications/README.md`, `specifications/rumiai-os/WEB-CONTROL.md`
-- `specifications/rumiai-os/DIAGNOSTICS.md` when code changes diagnosability
-- `rumiai-dev-PoCs/pocs/069-web-page-analyze/README.md` — current experimental working scope
+## Fixed task-local requirements
 
-## Fixed task-local choices
+1. **No synthetic fixture or further CI experiments as a substitute for the authorized real-site run.** The latest user requested the PoC be built from zero around:
+   - `https://www.amazon.it/hz/wishlist/ls/33ZKBWLPZJJVO?ref_=list_d_wl_lfu_nav_3`
+   - `https://chatgpt.com/share/6ad1c0d5-49ec-83eb-a79b-85b04b938835`
+2. Browser capture and replay must use the real visible user-controlled browser; first observe, then infer interaction phases and replay. Preserve input direction and reversals, especially `down → up`; never replace them with a fixed forward-only scan.
+3. **Every persistent artifact and temporary file's actual data lives under PoC 069**, even when a short-lived Unix socket or symlink is required for Chromium/IPC pathname limits. Do not generate any desktop file-portal URI as an artifact reference.
+4. Use the existing, unchanged `pwc-web-control` provider to execute deterministic browser actions and CDP. Experimental interpretation belongs to this PoC, not the provider.
+5. Store native `Page.captureSnapshot` MHTML **unmodified**, raw `page.content()` DOM HTML clearly labeled as non-self-contained, CDP DOMSnapshot/computed CSS, and Chromium viewport screenshots. For each state, *directly reopen MHTML by Chromium navigating to its PoC file URI* and capture a second screenshot. Do not create a speculative HTML/CSS resource rewriter or hand-built source renderer.
+6. Keep account/session/browser evidence private and gitignored. No GitHub commit of browser outputs or credentials. Visual completeness is never inferred from counts or file transport success.
 
-1. The user rejected the ChatGPT HTML/Markdown/PDF reconstruction and the generic two-site recorder/replay/viewer path. Their displayed success metrics did not establish content fidelity. These mechanisms **must not be revived as hidden dependencies**.
-2. A demonstration can progress toward the end, then backward to the start. The recorder must retain raw action direction, scroll container identity, visible state and sequencing, then infer and validate an explicit intent; a hard-coded forward scan is not a learned replay.
-3. Browser-native complete-page archival is a distinct mechanism from `page.content()`, which exposes only rendered DOM serialization and does not rewrite external CSS/image/font references into a complete offline archive.
-4. Data/output physically belongs **inside the PoC**. Temporary desktop document-opening aliases are not user-visible archive paths. Do not add ad hoc conversions to hide broken source references.
-5. No changes to the existing `web-control` providers unless their currently supported operations prove insufficient by a concrete controlled experiment.
-6. Raw user-controlled browser evidence must remain private until individually reviewed. Historical tracked ChatGPT sample archives are rejected as visual evidence.
+## Current implementation
 
-## Acceptance scenarios
+PoC 069 was rebuilt as a **live real-site experiment** on current main:
 
-- On a controlled local page with known styles, fonts and content, show the browser's complete native save/archive output and verify that every offline resource reference resolves and renders from its actual PoC location.
-- Demonstrate a bottom-to-top scroll of a nested scrolling area and confirm that the learned replay captures the observed direction/order and exposed content. Automatically scanning top-to-bottom instead is a failed test.
-- Only after those two scenarios pass, apply the same method to the authorized Amazon wishlist and long ChatGPT shared conversation.
+- `run-live.sh <new-run-name>`: one interactive entrypoint; clones pinned current PWC source into ignored PoC `.runtime/pwc` on first use, installs provider Playwright runtime, starts an isolated visible browser/profile, waits for readiness, runs four local action-plan tests and then the real two-site trial. Does not switch installed `web-control` providers or user browser profiles.
+- `observe.js`: instrument the current page's trusted wheel/scroll/disclosure actions; store direction, scrollable container selector, extent and event order, without reading typed input/cookies.
+- `live.mjs`: infer ordered direction phases and safe disclosure boundaries; recreate each page and align its initial position to the observed start; move **in inferred phase direction** through viewport-sized steps; capture native MHTML, raw DOM, CDP DOMSnapshot/CSS and viewport PNG. For each MHTML use the existing PWC browser to reopen its **real PoC-local file URI** and save `reopened.png`, reporting failure. Creates screenshot-only `comparison.html` using relative PoC paths and opens that file directly in the visible browser for manual side-by-side review, asking Enter before proceeding to next site. No modified source HTML or CSS presentation is created.
+- `tests/live.test.mjs`: covers real-event phase construction, down/up reversal, initial mid-page/up traversal, scroll-delta-only fallback, and disclosure ordering. Static V8 parsing and four test bodies in an isolate passed in this work unit, but these are **not** a physical browser validation.
+- `evidence/` and `.runtime/` are gitignored. Prior fixture files/CI and expired PoC 068 workflow were removed from current main as part of the requested clean rebuild. Older commits remain in forward-only Git history.
 
-## Working design
+## Validation state
 
-Two independent outputs may eventually share the same observation and replay evidence: (a) a general navigable state collage when native fragments cannot safely be merged, and (b) an evidence corpus to develop a site-specific exporter. Neither output is implemented or accepted in the new PoC.
+The current direct live implementation has **not yet been physically executed on the user's VM**. Earlier physical runs of PoC 068 had broken HTML/CSS/resource viewing and replay behaviors; they are not acceptance of this new revision. No output archives have been committed or verified on the two real sites in PoC 069. `comparison.html` is only a visual screenshot comparison, not a site recreation.
 
-Compare browser-native archives and CDP-derived structural evidence at the **same stable replay checkpoints**; preserve screenshots as independent visual references. Do not add custom HTML/CSS reconstruction while native browser saving remains unvalidated.
+## Exact next action
 
-## Completed
+From the user's VM checkout `/m/src/git/rumiai-os_TEST/src/rumiai-dev-PoCs/pocs/069-web-page-analyze`:
 
-- Preflight completed against current canonical RumiAI repositories.
-- Removed the failed code, viewers, offline HTML/CSS rewrite, replay scripts, tests, rejected generated conversations, ZIPs, raw capture samples and all other tracked content from the active PoC 068 tree. The final batched forward-only commit `45dd830debe721858bb7f2ca21a4bb10f4ac79c2` deleted 1,263 previously tracked old PoC files, leaving **only** its retired README. Old commits preserve the exact bytes and prior experiment evidence without rewrite. The replacement current tree has no active PoC 068 implementation.
-- Created `pocs/069-web-page-analyze/` with HTML/CSS/SVG/JS local fixture, `experiment.py`, browser tests and a strictly local/gitignored evidence destination. No prior PoC 068 source, DOM rewrite or viewer is imported. The first recorder targets the fixture's known `#scrollbox` and infers direction phases from the original event samples; it does not yet generalize across arbitrary page containers.
+```sh
+git pull --ff-only
+sh run-live.sh live-01
+```
 
-## Current state
+The user demonstrates both sites in Chromium and presses Enter when prompted. After each site's automatic acquisition, the PoC opens its comparison page directly in Chromium and the user reviews original vs native-MHTML-rendered screenshots. Run outputs go to `evidence/live-01/`. Share only the short `summary.json` and specific errors/diagnostics from `report.json`, not raw private archives.
 
-The controlled PoC 069 experiment is implemented but **not accepted for complete-page offline fidelity**. On the actual auxiliary Linux Chromium browser, its controlled embedded-fixture run exercised browser mouse-wheel scroll events: 31 browser-originated trusted scroll samples, phases `down [0→3715]` then `up [3715→0]`, 6 initially rendered items, all 24 available at the bottom and after the return to top; replay ended at `scrollTop=0`. Three MHTML+DOMSnapshot+viewport screenshots were saved locally **inside the auxiliary PoC test folder**. A separate real Chromium CDP test intercepted an independently requested fixture stylesheet via Playwright resource fulfillment and confirmed that MHTML included a distinct `text/css` MIME part at its original absolute web resource location. These tests use real browser/CDP input, **not a browser-URL navigation test**, because this hosted environment's administrator blocks `file://` and loopback `http://` navigations. They do not validate native Chrome `Save Page Complete`, CSS-file-relative offline reopening, or screenshot pixel equivalence.
+Any physical failure must be diagnosed from the actual VM log and **corrected forward**; do not add further speculative workarounds or substitute fixtures.
 
-The `--embedded-host-test` auxiliary option in `experiment.py` intentionally inlines the fixture CSS and JS for the scroll test and reports `nativeCssIncluded:null`. The distinct resource-response test examines browser MHTML packaging without claiming full offline rendering. The default HTTP fixture flow has not been physically validated in the user's VM. All new output targets the current PoC's ignored `evidence/`. Do not touch or restore old PoC 068 exporters, nor the private untracked local evidence on the user's VM.
+## Known limitations to inspect
 
-## Next action
-
-The next bounded gate is **real local-HTTP navigation** to the fixture and direct reopening of Chromium's native MHTML on a host without the auxiliary browser URL policy. Verify CSS/SVG resources and compare native offline rendering against the original screenshot before considering Save Page Complete HTML, any collage generator or broad real-site analysis. The controlled browser test suite is currently defined under `pocs/069-web-page-analyze/tests/`; the user should not be asked to rerun Amazon or ChatGPT at this point.
-
-## Blockers / open questions
-
-- Which native browser archival path provides the most faithful, reliably reopenable offline output for each supported page type?
-- How should stable intent, visible checkpoints and state evidence be correlated without altering the user's sequence?
-- The auxiliary-host Chromium is verified for wheel/CDP capture but its navigation policy prevents a real locally hosted fixture URL. Stable-host/VM offline-reopen validation is still needed before fidelity acceptance.
+- The current observer chooses the most active scroll container, not all nested containers; `otherContainers` is recorded as a coverage gap.
+- Dynamic SPA navigation may reset an in-page observer, which must fail explicitly instead of silently claiming coverage.
+- Some disclosure actions are intentionally skipped if not safe or visible in replay, and should be listed as gaps.
+- Native MHTML can retain original HTTP URLs as `Content-Location` identifiers; these are MIME resource identities, not paths to external exported files. The only public-facing comparison HTML uses relative local PNG paths.
+- Native MHTML offline fidelity and page content completeness require actual user review, not a mechanical `complete` flag.
