@@ -9,7 +9,7 @@ Develop and physically validate a general browser observation/replay method usin
 
 ## Current revisions
 
-- `rumiai-dev-PoCs` HEAD: `afd9a600b3fc28b439abff341108e99c30cf6fb3`.
+- `rumiai-dev-PoCs` HEAD: `4e88d31466b2e4ba7f35ef2ca55481341aeede02`.
 - `pwc-web-control` HEAD: `403f4fa9bbea419715e9c834e847c6f2b60ae421` (unchanged).
 - `rumiai-os` HEAD: `cfb732b1bc8d88b1bc14cd97cb399e5d0cb0070d` (unchanged).
 - Revalidate HEADs at the next work unit before reading or changing code.
