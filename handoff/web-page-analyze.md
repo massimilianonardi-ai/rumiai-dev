@@ -9,7 +9,7 @@ Investigate a generic browser-page analysis workflow, learning from a user's act
 
 ## Current repository revisions
 
-- rumiai-dev-PoCs: `6018507fd40b8fdac23f49d0273aedbadc2febc5` (initial clean-up and PoC 069 entrypoint)
+- rumiai-dev-PoCs: `45dd830debe721858bb7f2ca21a4bb10f4ac79c2` (PoC 068 current tree reduced to README; clean PoC 069)
 - pwc-web-control: `403f4fa9bbea419715e9c834e847c6f2b60ae421` (provider unchanged)
 - rumiai-os: `678c83f681125811f1dd9022bea122ef08e97e06` (unchanged)
 
@@ -46,12 +46,12 @@ Compare browser-native archives and CDP-derived structural evidence at the **sam
 ## Completed
 
 - Preflight completed against current canonical RumiAI repositories.
-- Under PoC 068 removed 15 failed replay, offline-viewer, MHTML-rewriter and unfaithful publication source/test/document files. Removed their package scripts/dependency/command entrypoint. Replaced the misleading 30KB PoC README with a concise retired-scope explanation. Kept verified structured capture research and prior data evidence without asserting visual validity.
+- Removed the failed code, viewers, offline HTML/CSS rewrite, replay scripts, tests, rejected generated conversations, ZIPs, raw capture samples and all other tracked content from the active PoC 068 tree. The final batched forward-only commit `45dd830debe721858bb7f2ca21a4bb10f4ac79c2` deleted 1,263 previously tracked old PoC files, leaving **only** its retired README. Old commits preserve the exact bytes and prior experiment evidence without rewrite. The replacement current tree has no active PoC 068 implementation.
 - Created `pocs/069-web-page-analyze/README.md` with a clean conceptual experiment, **no source code**. No repository implementation of the new method or user-browser physical test has been performed.
 
 ## Current state
 
-The experimental restart is an empty PoC 069 working surface. Do not use prior run counts, page snapshots or the now-deleted viewer as acceptance. Old locally gitignored evidence under PoC 068's `experiments/evidence/` was not accessed or removed from the user's VM, and neither were historically committed sample archives. This is intentional preservation of user data and immutable Git history, **not a claim that all old local files are gone**.
+The experimental restart is an **implementation-empty PoC 069**, with no inherited code or produced archives. PoC 068 has only its retired README on the current branch; the rejected tracked archives are removed from that branch, but preserved in historical commits. Privately ignored/untracked physical files under the user's old `experiments/evidence/` on the VM were **not** accessed or deleted remotely. Nothing here claims those local files, desktop-runtime mount points or browser-managed portal aliases were removed. The project must not refer to such paths in newly generated document/archive links.
 
 ## Next action
 
