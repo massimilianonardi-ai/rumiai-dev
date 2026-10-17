@@ -1,85 +1,69 @@
-# Generic web-page analysis — two real-site live PoC
+# Generic web-page analysis — real Amazon + ChatGPT live PoC
 
 Status: Active
 Updated: 2026-10-17
 
-## Goal
+## Goal and authority
 
-Develop and physically validate a general browser observation/replay method using the user's **two actual authorized pages**, preserving human scroll direction/sequence and acquiring native Chromium MHTML plus correlated CDP evidence. User explicitly rejected more synthetic fixtures/CI and requested **one live VM experiment**.
+Investigate whether visible Chromium sessions can learn the user's real navigation intentions and acquire faithful native MHTML + CDP evidence for these **two specifically authorized real pages**:
 
-## Current revisions
+- Amazon Wishlist: `https://www.amazon.it/hz/wishlist/ls/33ZKBWLPZJJVO?ref_=list_d_wl_lfu_nav_3`
+- Long ChatGPT share: `https://chatgpt.com/share/6ad1c0d5-49ec-83eb-a79b-85b04b938835`
 
-- `rumiai-dev-PoCs` HEAD: `cd2a247efdc068fa77cf8911507c5abe4ce195b5`.
-- `pwc-web-control` HEAD: `403f4fa9bbea419715e9c834e847c6f2b60ae421` (unchanged).
-- `rumiai-os` HEAD: `cfb732b1bc8d88b1bc14cd97cb399e5d0cb0070d` (unchanged).
-- Revalidate HEADs at the next work unit before reading or changing code.
+The user explicitly rejected fixture/CI substitutes, unfaithful reconstructed HTML/CSS, and any exported references through transient desktop portals. Their current correction is: **preserve ChatGPT start alignment from `live-02`, revert the new MHTML visual regression so reopening behaves as in `live-01`, and continue the physically reviewed live-site path**.
 
-## Canonical read order
+Before any task, verify remote HEADs and read `rumiai-dev/README.md` mandatory read order, `RULES.md`, `CONSISTENCY-GATE.md`, `specifications/README.md`, `specifications/rumiai-os/WEB-CONTROL.md`, `specifications/rumiai-os/DIAGNOSTICS.md` where applicable, `TESTING.md`, this handoff, and current code/tests. Do not treat this handoff or prior commits as normative.
 
-`rumiai-dev/README.md`, `RULES.md`, `CONSISTENCY-GATE.md`,
-`specifications/README.md`, `specifications/rumiai-os/WEB-CONTROL.md`,
-`TESTING.md`, then this handoff and current PoC sources.
+## Repositories / current revision snapshot
 
-## Fixed task-local requirements
+- `massimilianonardi-ai/rumiai-dev-PoCs` current HEAD at update: `1bd4c4de8bb38bbfa92126d8bb19fc27bb8420b1`.
+- `massimilianonardi-ai/pwc-web-control` baseline HEAD: `403f4fa9bbea419715e9c834e847c6f2b60ae421` (provider unchanged).
+- `massimilianonardi-ai/rumiai-os`: not modified.
+- Revalidate all involved HEADs before resuming, including any concurrently advanced branches.
 
-1. **No synthetic fixture or further CI experiments as a substitute for the authorized real-site run.** The latest user requested the PoC be built from zero around:
-   - `https://www.amazon.it/hz/wishlist/ls/33ZKBWLPZJJVO?ref_=list_d_wl_lfu_nav_3`
-   - `https://chatgpt.com/share/6ad1c0d5-49ec-83eb-a79b-85b04b938835`
-2. Browser capture and replay must use the real visible user-controlled browser; first observe, then infer interaction phases and replay. Preserve input direction and reversals, especially `down → up`; never replace them with a fixed forward-only scan.
-3. **Every persistent artifact and temporary file's actual data lives under PoC 069**, even when a short-lived Unix socket or symlink is required for Chromium/IPC pathname limits. Do not generate any desktop file-portal URI as an artifact reference.
-4. Use the existing, unchanged `pwc-web-control` provider to execute deterministic browser actions and CDP. Experimental interpretation belongs to this PoC, not the provider.
-5. Store native `Page.captureSnapshot` MHTML **unmodified**, raw `page.content()` DOM HTML clearly labeled as non-self-contained, CDP DOMSnapshot/computed CSS, and Chromium viewport screenshots. For each state, *directly reopen MHTML by Chromium navigating to its PoC file URI* and capture a second screenshot. Do not create a speculative HTML/CSS resource rewriter or hand-built source renderer.
-6. Keep account/session/browser evidence private and gitignored. No GitHub commit of browser outputs or credentials. Visual completeness is never inferred from counts or file transport success.
+## Fixed task-local constraints
 
-## Current implementation
+1. Current PoC source: `rumiai-dev-PoCs/pocs/069-web-page-analyze/`. Runs use `sh run-live.sh <fresh-name>`, a visible isolated `pwc-web-control` Chromium profile, and only the two user-authorized real URLs.
+2. Preserve actual wheel/scroll/disclosure event sequence, its container and direction. Intent phases including `down→up` must survive inference and replay. Dynamic counter-scroll must be measured and handled with bounded **same-direction** correction, never silently interpreted as learned user input.
+3. All real capture files, screenshots, MHTML, DOM snapshots, browser runtime and logs remain under the PoC; only short-lived Unix IPC socket/alias filenames may exist outside due to Linux socket-path limits. No desktop file manager/portal links are generated.
+4. Preserve native `Page.captureSnapshot` MHTML unchanged; `page.html` from `page.content()` is **not** complete offline HTML. Capture CDP DOMSnapshot and viewport screenshots separately. The screenshot comparison HTML uses only PoC-relative PNGs. No fake renderer, custom CSS rewriter or MHTML stitching is authorized.
+5. Chromium opens original native per-checkpoint and final `overall/page.mhtml` directly. A final MHTML is **one live final-DOM state**, not a union of dynamically removed/virtualized nodes. Account data and evidence are gitignored and never automatically published.
+6. Mechanical `complete:true` never establishes actual visual fidelity, correct stylesheet loading, or complete chat content. Accept only what the user physically inspects on their VM. All Git changes are forward-only.
 
-PoC 069 was rebuilt as a **live real-site experiment** on current main:
+## Actual physical evidence
 
-- `run-live.sh <new-run-name>`: one interactive entrypoint; clones pinned current PWC source into ignored PoC `.runtime/pwc` on first use, installs provider Playwright runtime, starts an isolated visible browser/profile, waits for readiness, runs four local action-plan tests and then the real two-site trial. Does not switch installed `web-control` providers or user browser profiles.
-- `observe.js`: instrument the current page's trusted wheel/scroll/disclosure actions; store direction, scrollable container selector, extent and event order, without reading typed input/cookies.
-- `live.mjs`: infer ordered direction phases and safe disclosure boundaries; recreate each page and align its initial position to the observed start; move **in inferred phase direction** through viewport-sized steps; capture native MHTML, raw DOM, CDP DOMSnapshot/CSS and viewport PNG. For each MHTML use the existing PWC browser to reopen its **real PoC-local file URI** and save `reopened.png`, reporting failure. Creates screenshot-only `comparison.html` using relative PoC paths and opens that file directly in the visible browser for manual side-by-side review, asking Enter before proceeding to next site. No modified source HTML or CSS presentation is created.
-- `tests/live.test.mjs`: covers real-event phase construction, down/up reversal, initial mid-page/up traversal, scroll-delta-only fallback, and disclosure ordering. Static V8 parsing and four test bodies in an isolate passed in this work unit, but these are **not** a physical browser validation.
-- `evidence/` and `.runtime/` are gitignored. Prior fixture files/CI and both superseded PoC 068 workflows were removed from current main as part of the requested clean rebuild. Older commits remain in forward-only Git history.
+### live-01 (pre-2026-10-17 corrective revision)
 
-## Live-01 physical findings and corrective live-02 change (2026-10-17)
+The user's visible Chromium run passed four plan unit tests, captured Amazon's `down→bottom` replay, and opened screenshot comparisons. The original intermediate scroll screenshots appeared at the page beginning, but the user explicitly confirmed **the native MHTML opened and looked correct with CSS**. ChatGPT's initial scroll alignment failed before replay and no comparison completed. Those are partial/negative outcomes, not a successful exporter.
 
-User physically ran `sh run-live.sh live-01` on the VM: visible PWC `[PWC_READY]`, existing four tests 4/4 PASS. Amazon demonstrated `down→bottom`, replay scrolled monotonically 98→14400 and generated/opened screenshot comparisons. **However, original intermediate screenshots showed the page beginning instead of the actual scroll checkpoint.** ChatGPT demonstrated `down→bottom, up→position, down→position, up→top` but failed `replay.start-position-was-restored-or-drifted` and closed without its comparison. These were verified operator observations, not accepted source fidelity. User positively validated the experiment organisation and screenshot comparison UI, and explicitly requested additionally opening the single overall exported MHTML directly in Chromium.
+### live-02 (2026-10-17; full supplied terminal log, 167 lines)
 
-Current PoC HEAD after forward-only source and regression revisions: `ff49f9f5e0c5b0c87ff872d26ef50d0090f409e7`.
+The user ran `git pull --ff-only && sh run-live.sh live-02`, PWC initialized and six plan/alignment tests passed.
 
-**Source-grounded failure mechanisms and changes** (`pocs/069-web-page-analyze/live.mjs`):
-1. Before, each `original.png` was taken **after** native MHTML and CDP DOMSnapshot, while the PoC also repeatedly created/closed temporary tabs for each MHTML. The revised code `Page.bringToFront`s the true replay tab, aligns its intended scroll, and captures the online viewport screenshot **before** MHTML/DOM. It records before-focus, before-screenshot, after-screenshot and after-archive positions; the `[STATO]` log reports native-archive drift rather than inferring that replay scroll deltas were wrong.
-2. The native MHTML viewer starts with a fresh browser scroll offset (the MHTML does not preserve live `scrollTop`). The revised reopening routine scrolls the saved MHTML page to the corresponding screenshot position based on the original scroll extent before taking `reopened.png`. It separately records `offlinePositionAligned`; it then returns focus to and stabilizes the **actual** replay tab before continuing. Restore failure is retained as an explicit gap rather than hidden.
-3. ChatGPT's SPA can asynchronously restore its scroll after navigation. Initial extent is now observed until stable or bounded timeout; starting position alignment is retried with observed geometry/late scroll restoration, rather than aborting immediately after one displaced sample. A failed alignment is recorded and marks replay incomplete; it does **not** prevent partial screenshots and review pages. Exception handling in replay also preserves already acquired checkpoints and marks `executionError`.
-4. New `overall/page.mhtml` is a **single native final-DOM snapshot** acquired after the replay's demonstrated phases, not a stitched claim of full content across virtualized states. Its `manifest.json` explicitly says previous virtualized elements may be absent. After the existing screenshot comparison prompt, Chromium opens this native MHTML using its exact PoC-local file URL for user inspection. Source MHTML bytes are never rewritten and no desktop portal is invoked.
+- **Amazon:** user demonstration `down→bottom, up→top`. Automatic replay produced checkpoints `0000..0038`, progressing from `119` to `14882` and returning to `0`. Every printed `intended`, `beforeFocus`, `screenshotTop`, `afterScreenshot`, `afterArchive` matched; source scroll was restored and native MHTML viewport alignment was reported true. The program printed `[ESITO] amazon-wishlist captured`, but the user saw **incorrect/missing CSS both in screenshot comparisons and the opened overall MHTML**. Therefore Amazon's **visual result was rejected** even though the scroll coordinate gate passed.
+- **ChatGPT:** user demonstration `down→bottom, up→top`. Initial replay successfully aligned near the bottom (`start=26941, reached=26925, stable=true`), acquiring checkpoints `0000..0016` while rising from `26925` to `13242`. There the site caused a reverse-direction scroll and the replay stopped with `replay.opposite-direction`. Its partial comparison and native final MHTML did open, but the user confirmed the **same broken-CSS rendering** as Amazon. The source content was not fully traversed; result `incomplete`.
 
-Native MHTML reopening now uses a controller-owned persistent CDP debugging session with `Network.enable` and `Network.setBlockedURLs` for HTTP(S) throughout both the per-state and overall-MHTML file navigation. This prevents silently fetching CSS/images from live sites during the offline visual comparison; CDP session and tab are closed afterward. Screenshot diagnostics now distinguish intended, before-focus, screenshot-time, after-screenshot and after-native-archive scroll positions. `replay()` preserves partial screenshots/comparison even if a later phase throws. A bounded initial scroll-extent settling observation was also added for lazy ChatGPT initialization. These mechanics still require physical validation of provider support and the resulting screenshots.
+The user's latest correction: **keep this successful ChatGPT starting alignment and the direction-aware replay, restore the visually correct MHTML opening from live-01, and fix the ChatGPT mid-replay opposite-direction interruption.**
 
-The `tests/live.test.mjs` PoC checks have two added cases for deferred SPA scroll restoration and for a target beyond the currently available scroll extent. Six fixture-independent test bodies passed **in a V8 evaluation shim**, and revised `live.mjs` parses; **full native Node tests and the two-site physical `live-02` experiment have NOT run yet**. The prior physical 4/4 test pass belongs only to `live-01` revision.
+The assistant cannot inspect private raw `evidence/live-01/` or `live-02/` MHTML/PNG on the user's VM. The terminal log proves scroll coordinates and where replay stopped, not which exact CSS resource failed.
 
-The next physical action is a new immutable evidence run from PoC 069:
-`git pull --ff-only && sh run-live.sh live-02`. Check the `[STATO]` lines for Amazon: intended/original scroll must increase with the replay instead of resetting to 0, and any archive-induced shift must be visible in the capture metadata. For ChatGPT, check `[ALLINEAMENTO]` and whether partial or complete screenshot comparison and final overall native MHTML open even with SPA auto-scroll. Review source-vs-reopened MHTML rendering. Nothing new is pushed from private `evidence/` to GitHub; old `live-01` evidence is preserved.
+## Forward-only changes for next live-03
 
-## Live-02 CSS regression — operator interim observation (2026-10-17)
+In current PoC `live.mjs`:
 
-During the user's **still-in-progress** physical `live-02` trial, they reported that Amazon's screenshots and the final opened MHTML appeared **unstyled or visually distorted**, whereas the MHTML in `live-01` had looked good. Treat this as **unaccepted negative interim evidence**; no live-02 final terminal report, per-checkpoint manifests, PNGs, or MHTML bytes have yet been reviewed. Do not mark the new browser/export flow as successful.
+- Removed the entire experimental persistent CDP `Network.setBlockedURLs` mechanism from both `reopen()` and `showOverall()`. The user visually accepted `live-01` reopening without that blocker; CSS broke in `live-02`, which added it. This is a **strong regression suspect, not a proven single root cause**. Chromium now reopens native MHTML as in `live-01`. Consequently **network-independent offline resource completeness is NOT verified** in this version: do not describe the reopened view as offline-isolated.
+- Kept the `live-02` ChatGPT scroll-extent settling and bounded initial `stabilizePosition()` alignment; retained the per-step capture, source scroll restoration, screenshot comparison, and separate overall MHTML opening.
+- When a dynamic page moves contrary to the requested direction (or a step makes no progress), attempt up to four further moves **in the planned direction**, using current geometry and updated destination. Record each disturbance and whether recovery succeeded under `report.replay.disturbances`. If none succeeds, record one incomplete scroll-phase outcome and retain partial visual evidence; never incorrectly call that phase complete.
+- `capture.json` now records a small `liveStyles` summary (stylesheet/link counts and computed body styles), and `offline.json` records comparable reopened styles with `networkIsolationVerified:false`. This distinguishes missing CSS in an original online screenshot from incorrect reopening, without altering source HTML/CSS.
+- Current PoC `README.md` documents exact `live-02` physical failures and scoped `live-03` behavior. Prior private evidence is immutable; use a fresh run name.
 
-Current PoC source explicitly attaches a persistent per-page CDP debugger session and calls `Network.setBlockedURLs` with `http://*` and `https://*` **before** opening each MHTML (`reopen` and `showOverall`). Chromium MHTML MIME `Content-Location` identifiers may still carry original HTTP(S) resource URLs; it is a plausible, **not yet established**, hypothesis that the blanket block interferes with native in-archive resource resolution. Crucially, this per-page block should not explain missing CSS in the separate **online** `original.png` without another mechanism. The current live capture already records `original.png`, `reopened.png`, original/checkpoint scroll offsets, `capture.json`, and `offline.json` to distinguish these mechanisms.
+## Validation and next action
 
-**Do not ask the user to interrupt or rerun the still-running experiment.** Do not change the PoC source based only on this intermediate symptom. When the user returns with the completed results, distinguish online vs reopened CSS failures, inspect `archivedCssParts` and actual per-site logs, and make one evidence-grounded forward fix. Keep native MHTML unmodified, preserve prior private `live-01` and `live-02` evidence, and do not revive ad hoc CSS converters/viewers or synthetic substitution tests.
+Source diff / V8 grammatical parsing plus the six existing JavaScript logic test bodies exercised in a V8 shim **passed** during this work unit. This is not a real Node/PWC browser validation. No new `live-03` physical run has occurred; MHTML CSS fidelity after the rollback remains unverified.
 
-## Validation state
+Next user live run (only when ready): from `pocs/069-web-page-analyze/`,
+`git pull --ff-only && sh run-live.sh live-03`.
 
-The current direct live implementation has **not yet been physically executed on the user's VM**. Earlier physical runs of PoC 068 had broken HTML/CSS/resource viewing and replay behaviors; they are not acceptance of this new revision. No output archives have been committed or verified on the two real sites in PoC 069. `comparison.html` is only a visual screenshot comparison, not a site recreation.
+Review two questions separately: (1) does each original and reopened MHTML view return to the CSS fidelity the user observed in `live-01`? (2) does ChatGPT continue upward past `13242`, with any dynamic scroll corrections logged rather than hidden? Preserve raw private files; user should share only short terminal diagnostics and relevant `capture.json`/`offline.json` summaries, not account data.
 
-## Exact next action
-
-Execute a fresh live physical trial in the user's VM with `sh run-live.sh live-02`, after `git pull --ff-only`. Preserve `live-01` as negative evidence. Inspect original intermediate scroll screenshots and reopened image position, ChatGPT alignment/replay diagnostics, and the final overall MHTML opened directly in Chromium. Do not claim complete content fidelity until the operator reviews these on the VM.
-
-## Known limitations to inspect
-
-- The current observer chooses the most active scroll container, not all nested containers; `otherContainers` is recorded as a coverage gap.
-- Dynamic SPA navigation may reset an in-page observer, which must fail explicitly instead of silently claiming coverage.
-- Some disclosure actions are intentionally skipped if not safe or visible in replay, and should be listed as gaps.
-- Native MHTML can retain original HTTP URLs as `Content-Location` identifiers; these are MIME resource identities, not paths to external exported files. The only public-facing comparison HTML uses relative local PNG paths.
-- Native MHTML offline fidelity and page content completeness require actual user review, not a mechanical `complete` flag.
+No modifications to `pwc-web-control`, `rumiai-os`, `rumiai-tests` or other product sources. The current PoC remains experimental, without visually accepted full export.
