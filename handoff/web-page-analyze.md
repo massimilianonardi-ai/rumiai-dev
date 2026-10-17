@@ -16,7 +16,7 @@ Before any task, verify remote HEADs and read `rumiai-dev/README.md` mandatory r
 
 ## Repositories / current revision snapshot
 
-- `massimilianonardi-ai/rumiai-dev-PoCs` current HEAD at update: `1bd4c4de8bb38bbfa92126d8bb19fc27bb8420b1`.
+- `massimilianonardi-ai/rumiai-dev-PoCs` current HEAD at update: `f07bd549c59092b83b7b47fc5fe41b5b66c50706`.
 - `massimilianonardi-ai/pwc-web-control` baseline HEAD: `403f4fa9bbea419715e9c834e847c6f2b60ae421` (provider unchanged).
 - `massimilianonardi-ai/rumiai-os`: not modified.
 - Revalidate all involved HEADs before resuming, including any concurrently advanced branches.
@@ -53,7 +53,7 @@ In current PoC `live.mjs`:
 
 - Removed the entire experimental persistent CDP `Network.setBlockedURLs` mechanism from both `reopen()` and `showOverall()`. The user visually accepted `live-01` reopening without that blocker; CSS broke in `live-02`, which added it. This is a **strong regression suspect, not a proven single root cause**. Chromium now reopens native MHTML as in `live-01`. Consequently **network-independent offline resource completeness is NOT verified** in this version: do not describe the reopened view as offline-isolated.
 - Kept the `live-02` ChatGPT scroll-extent settling and bounded initial `stabilizePosition()` alignment; retained the per-step capture, source scroll restoration, screenshot comparison, and separate overall MHTML opening.
-- When a dynamic page moves contrary to the requested direction (or a step makes no progress), attempt up to four further moves **in the planned direction**, using current geometry and updated destination. Record each disturbance and whether recovery succeeded under `report.replay.disturbances`. If none succeeds, record one incomplete scroll-phase outcome and retain partial visual evidence; never incorrectly call that phase complete.
+- When a dynamic page moves contrary to the requested direction (or a step makes no progress), attempt up to four further moves **in the planned direction**, using current geometry and updated destination. Record each disturbance and whether recovery succeeded under `report.replay.disturbances`. If none succeeds, record one incomplete scroll-phase outcome, stop subsequent planned phases and retain partial visual evidence; never incorrectly call that phase complete.
 - `capture.json` now records a small `liveStyles` summary (stylesheet/link counts and computed body styles), and `offline.json` records comparable reopened styles with `networkIsolationVerified:false`. This distinguishes missing CSS in an original online screenshot from incorrect reopening, without altering source HTML/CSS.
 - Current PoC `README.md` documents exact `live-02` physical failures and scoped `live-03` behavior. Prior private evidence is immutable; use a fresh run name.
 
