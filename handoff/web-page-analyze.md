@@ -7,7 +7,7 @@ Updated: 2026-10-17
 
 Before analysis/modification always verify current remote HEADs; follow `rumiai-dev/README.md` Mandatory Read Order: `RULES.md`, `CONSISTENCY-GATE.md`, `specifications/README.md`, current `specifications/rumiai-os/WEB-CONTROL.md`, `DIAGNOSTICS.md` if applicable, `TESTING.md`, this handoff, current PoC implementation and tests. Explicit user corrections are higher authority than this task-state checkpoint. Do not read Git history by default.
 
-Latest PoC HEAD at this checkpoint: `50d60e7a6516381b7a3dd38d32c3b178bb4bf238`; PWC baseline HEAD: `403f4fa9bbea419715e9c834e847c6f2b60ae421`. Revalidate at next work unit.
+Latest PoC HEAD at this checkpoint: `bafd79963bcd3202fafa4b07a2370c234f651c1a`; PWC baseline HEAD: `403f4fa9bbea419715e9c834e847c6f2b60ae421`. Revalidate at next work unit.
 
 ## Purpose and user-fixed requirements
 
@@ -113,6 +113,22 @@ After verifying the current remote HEADs, canonical read order, code and existin
 - `tests/manual.test.mjs` covers network lifecycle, background streams, sequence ordering, bounded sampling, manual-vs-replay signature gaps and DOM quiet/timeouts. Other updated tests cover session CDP routing, occlusion stride safety and manual HTTP allowlist. `run-live.sh` runs syntax checks on the added observer, manual recorder and viewer before the suite. Local isolated V8 execution passed **42/42 logic tests** for manual, alignment, live and collage (after the preceding revisions, not native Node test runner); the HTTP viewer's test could not run in this isolated harness. Syntax for affected JS modules and the injected observer was checked by the harness. **No actual Node test run or Chromium session of this new revision has occurred**. `live-05` 33/33 Node tests validate the previous revision only.
 
 **Next physical validation** must use a previously unused run identifier such as `live-06`. The user should manually scroll through both pages as usual, verifying user prompts on ChatGPT and watching `[MANUALE]` capture lines. After the run, inspect `sh view.sh live-06` → `Navigazione manuale` vs `Confronto`, check message coverage counts, inspect readiness/timeout diagnostics and actual ChatGPT original/replay/MHTML visual alignment. If user-role selectors do not match ChatGPT's live DOM, resolve from real observations rather than assuming no prompts. Do not claim all content is recovered until physically confirmed. Preserve `live-01` through `live-05` intact.
+
+## Latest user feedback and ChatGPT-specific replay corrections
+
+User has now visually assessed the human-observation update: **Amazon's original-vs-reopened alignment is almost always perfect**, **ChatGPT user prompts are now visible**, but **ChatGPT's alignment is still poor and the conversation's beginning is repeatedly omitted**. The user did not supply an exact new run identifier or private logs/screenshots in this turn; do NOT infer precise checkpoint coverage, exact offset size for this most recent observation, or certify a run completed. This result supersedes earlier broad concern that all user prompts were systematically missing.
+
+After the current repository preflight, code review identified two mechanical limitations independent of the human report:
+- The replay used `while(steps<100)` for every scroll phase regardless of virtualized document length. `live.mjs` now computes a **distance/viewport-based `replayStepBudget()`**, capped at 600 and never below 100. If no top/bottom target is reached within the bounded budget, the phase emits `replay.step-budget-exhausted` and `[GAP]`, and remains incomplete. This removes an arbitrary early cutoff, but **does not guarantee** that virtualized scroll input reaches or renders the actual beginning.
+- The offline native MHTML comparison refused content-offset corrections larger than 100 CSS px even when multiple text anchors agreed. `contentCorrectionEligible()` now permits larger **uniform** shifts only if at least three independent matched anchors agree within 2 CSS px and the displacement is within one measured viewport (max 1200 px). It scrolls the **reopened archive only**; it does not modify MHTML, CSS, browser source or PNG bytes. Nonuniform reflow, insufficient anchors, unachievable scroll targets and large mismatches remain explicitly unaligned. Since the earlier `live-05` had `content-reflow` for many states, these will correctly remain uncorrected.
+
+The initial-portion evidence has been sharpened, without pretending geometry proves semantic completeness:
+- `manual.mjs` now records `minimumObservedTop`, `minimumCapturedTop`, `topObserved`, `topCaptured` for the original human-controlled browser, only considering scrollable containers.
+- `siteRun` separately records `replayMinimumTop` and `replayTopCaptured` from actual screenshot checkpoints, displays all three top-reached/captured indicators in the screenshot comparison and logs `[COPERTURA]`. When ChatGPT's observed plan targets `top`, a run cannot report complete without an actual top screenshot. **scrollTop=0 does not prove first chat messages were actually mounted/readable.**
+
+Two new live regression tests protect the larger replay step budget and the guarded viewport-sized correction; existing test baseline was rechecked. The relevant isolated V8 logic tests passed **25/25** for `manual.mjs`+`live.mjs` and **19/19** for `alignment.mjs`+`collage.mjs`, altogether **44/44**. These are not native Node test runner evidence nor actual Chromium evidence for the revision. No physical new run or private-image pixel inspection was performed here.
+
+The updated PoC README uses `live-07` as an **example only if unused**. Do not overwrite or rerun a known evidence directory; the user likely already ran a new trial after `live-05` but its exact name is not established in this turn. Next real validation must check manual/top screenshots, ChatGPT scroll plan/replay outcomes, `[COPERTURA]`, `offline.json` text-anchor correction evidence and visual prompts at the beginning. Amazon changes were limited to generic safety gates; its near-correct visual output must be preserved. The task remains active.
 
 ## Validation and next physical step
 
