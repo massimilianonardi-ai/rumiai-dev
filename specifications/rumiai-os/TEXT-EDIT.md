@@ -654,6 +654,37 @@ undo/redo entry, including the corresponding selection state. GUI, IME,
 pixel hit-testing, bidi, wrapped visual rows and clipboard-distribution
 policies remain outside this library revision.
 
+## Separate new `m` core: abstract `Selections` interface
+
+The separately compiled JavaScript `m.text.selection` namespace exports
+`Selections` as an abstract base for mode-dependent selection interpreters.
+This is **not** part of the unchanged standalone TextEdit 0.8.2 library,
+which continues to expose its own `TextEditSelections` API.
+
+The nominal `Selections` interface defines exactly four abstract methods:
+
+```javascript
+getSelections()
+setSelections(selections)
+addSelection(position)
+remSelection(position)
+```
+
+Direct `new Selections()` construction throws `TypeError`.
+An inherited method not overridden by a concrete subclass throws `Error`.
+Concrete implementations determine how an operation maps to effective
+selections: `addSelection` and `remSelection` do not require literal
+single-element append/removal and may reorganize the whole collection.
+The interface itself has no selections storage, geometry policy,
+`selectionMode`, source editing, GUI handling, clipboard handling or
+lifecycle method.
+
+The existing new-core `TextEditSelections` remains an independent physical
+selection/editing class, **not** a subclass of `Selections`: its current
+`addSelections` API is not the `addSelection` interpreter contract and it
+does not provide `remSelection`. No concrete selection-mode interpreter or
+`Document2D` integration is established by this abstract interface alone.
+
 ## Validation and release boundary
 
 The current v0.8.2 library is checked against the actual product source by
