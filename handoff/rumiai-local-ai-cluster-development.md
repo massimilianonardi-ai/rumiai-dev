@@ -46,11 +46,13 @@ Additional package, service, state or container specifications must be retrieved
 
 ## Fixed task-local choices
 
-- **2026-10-15 explicit user instruction — use an existing product for orchestration.** For the first inference-routing layer of the eight-node Ollama cluster, select **Olla** (https://github.com/thushan/olla) rather than designing/developing a RumiAI-owned dispatcher. Its isolated proxy/load-balancing responsibilities and upstream v0.0.29 release are evaluated at `products/ai/olla.md`. The user explicitly fixed `gis` (`10.200.0.19`) as the Olla installation host; the security perimeter, high-level AI task orchestration and actual installation/configuration remain separate and not yet implemented. Keep the current `0.0.0.0` future-binding direction and **current no-configuration-change constraint**.
+- **2026-10-19 explicit execution authorization:** The user's `procedi` after fixing Olla on `gis` starts the **GIS Olla installation/validation phase**; the earlier 2026-10-15 no-configuration-change instruction described the *preceding design-only phase*. Stage and activate a conservatively loopback-bound Olla on `gis` using the existing product; do not treat this as blanket authorization to expose the other seven Ollama APIs or an unauthenticated enterprise gateway before source networks, firewall policy, and access rights are determined. An operator job is prepared under `rumiai-dev-PoCs/pocs/070-olla-gis/`, but no remote live execution has occurred. Run only from the credential-loaded enterprise operator environment.
 
-- **2026-10-15 explicit Olla placement:** Install the first Olla instance on `gis` (`10.200.0.19`), where the central Ollama instance and authoritative model/artifact storage are already deployed. This is a fixed user decision, **not** a recommendation to choose a separate VM or `apps`. Do not install Olla or alter server/network/service settings in the present design-only phase. Co-location does not prove `gis` can reach the other seven HTTP endpoints; validate that connectivity and permitted callers before operational deployment.
+- **2026-10-15 explicit user instruction — use an existing product for orchestration.** For the first inference-routing layer of the eight-node Ollama cluster, select **Olla** (https://github.com/thushan/olla) rather than designing/developing a RumiAI-owned dispatcher. Its isolated proxy/load-balancing responsibilities and upstream v0.0.29 release are evaluated at `products/ai/olla.md`. The user explicitly fixed `gis` (`10.200.0.19`) as the Olla installation host; the security perimeter, high-level AI task orchestration and actual installation/configuration remain separate and not yet implemented. Keep the current `0.0.0.0` future-binding direction for Ollama; the earlier no-configuration-change constraint is superseded **only for the GIS-local Olla canary** by the 2026-10-19 `procedi` instruction.
 
-- **2026-10-15 current explicit first-deployment choice:** plan for network-accessible Ollama HTTP endpoints, each bound to `0.0.0.0` when a later separately authorized configuration phase takes place. **Do not change any server, service, NFS, package, firewall, network or product configuration now.** The physically validated services still bind their respective loopback port `127.0.0.1:11435`. Binding all interfaces is not evidence of Internet reachability, network permission or caller authentication: the actual access perimeter, source networks and security controls remain to be established before exposure. This is a provisional first deployment direction, not approval of a permanent enterprise topology.
+- **2026-10-15 explicit Olla placement:** Install the first Olla instance on `gis` (`10.200.0.19`), where the central Ollama instance and authoritative model/artifact storage are already deployed. This is a fixed user decision, **not** a recommendation to choose a separate VM or `apps`. Olla installation on `gis` is now authorized; it is not yet physically executed, and public network/service exposure on the other nodes is still unapproved. Co-location does not prove `gis` can reach the other seven HTTP endpoints; validate that connectivity and permitted callers before operational deployment.
+
+- **2026-10-15 current explicit first-deployment choice:** plan for network-accessible Ollama HTTP endpoints, each bound to `0.0.0.0` when a later separately authorized configuration phase takes place. **No blanket changes to existing Ollama, NFS, firewall, network, or RumiAI product configuration are approved by the GIS Olla installation authorization.** The physically validated services still bind their respective loopback port `127.0.0.1:11435`. Binding all interfaces is not evidence of Internet reachability, network permission or caller authentication: the actual access perimeter, source networks and security controls remain to be established before exposure. This is a provisional first deployment direction, not approval of a permanent enterprise topology.
 
 - The cluster consists of the rsudo credential groups:
   `apisix`, `apisix_psn`, `apps`, `apps_psn`, `keycloak`, `keycloak_psn`, `gis`, `webgisrpr`.
@@ -370,6 +372,10 @@ per `SENSE-MODEL.md`.
 
 ## Current state
 
+**2026-10-19 GIS Olla install work unit:** `rumiai-dev-PoCs/pocs/070-olla-gis/` contains a two-file `rsudo-admin jobs` operator flow (`controller.lib.sh`, `install.job`) with pinned Olla v0.0.29 Linux amd64 archive SHA-256 `fafb482e50def1f56f210ef28b46c67021bb6e25b0ff0a595682e2aac214fcc4`. The job defaults to a read-only `check`; operator can select `install`. The complete remote POSIX program downloads/verifies Olla, validates its YAML, protects pre-existing foreign config/binary/unit from overwrite, installs a dedicated `olla` account and separate `olla-gis-poc.service` on `gis`, listens on **`127.0.0.1:40114`**, connects only to GIS Ollama at **`127.0.0.1:11435`**, disables Olla's automatic retries and dashboard, and checks actual proxied `qwen3:4b` inference before reporting success. This is an Ubuntu/systemd-specific operator PoC, not a provider integrated into the m `pkg`/`srv` facility. **Physical operator execution is pending**, because the assistant's container cannot reach `gis:22`, and the assistant has no credential-loaded rsudo session. The existing Ollama configuration and the other seven workers have not been changed.
+
+**Isolated execution evidence:** GitHub Actions [run 39207500993](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/39207500993) passed at exact PoC revision `c7bc5e39a329f1491a725a7175c75638c4d3f33c`: POSIX syntax of both selected sources and extracted remote program; real Olla release download/digest; Olla's own `--validate-config`; and a real proxied `qwen3:4b` HTTP chat to a deliberately mocked Ollama server. This **does not** validate live `gis`, rsudo transport, systemd activation, true CPU inference, or multi-worker routing. The first CI run exposed a fixture that did not accept chunked request bodies; the fixture was corrected forward-only and the current exact-source run passes.
+
 **2026-10-15 orchestration product and placement selection:** the user has explicitly rejected building a new dispatcher in favor of an existing product, and has fixed the installation host as **`gis` (`10.200.0.19`)**. Olla v0.0.29 is the selected first **inference-routing** candidate, based on current upstream release/docs and a non-normative assessment in `products/ai/olla.md`. No Olla executable has been started, no physical or mocked Olla inference test has been run, no cluster or client service configuration has changed, and no RumiAI runtime/package code has been modified for Olla.
 
 The user has selected a **future initial direct HTTP / `0.0.0.0` Ollama network binding direction** for the first deployment and explicitly prohibited any configuration changes during the current orchestration design discussion. Actual deployed binding remains loopback-only as previously validated; neither direct multi-host HTTP connectivity nor a secure network exposure policy has been physically validated under the new choice. Nothing in this discussion reconfigures the fleet.
@@ -405,30 +411,29 @@ The previous shared-runtime llama.cpp direction is no longer the current worker 
    `exec > "/m/src/git/rsudo-jobs.log" 2>&1`, preserve all untracked
    operating state and never repeat the completed 2026-10-14 8/8 rollout
    merely to create test evidence.
-2. **Use Olla, not a custom inference dispatcher. Design only now:**
-   adopt the existing Olla proxy/load balancer as the first inference-routing
-   product, deployed on the user-selected `gis` host when authorized.
-   Determine permitted client networks, outbound `gis`-to-worker HTTP connectivity
-   and a security perimeter based on the user's organization before installation;
-   the later Ollama `0.0.0.0` binds are authorized as a *target direction*
-   only, not as current config mutations. Olla v0.0.29 has no proxy-level
-   inbound auth, so document authorized source networks and dashboard
-   exposure before a real deployment; distinguish Olla's default connection
-   retries from a proven at-most-once request guarantee. Then validate an
-   isolated pinned Olla configuration against controlled test backends
-   (model-aware routing, concurrent streams, unhealthy worker, retry
-   uncertainty and observability) without modifying the real servers.
-   Physical host access and end-to-end routing require a separately
-   authorized configuration phase. High-level task/tool orchestration is
-   a separate future decision; do not accidentally implement it in Olla.
-   Evaluate non-thinking task/model profiles separately.
+2. **Execute the prepared GIS-only Olla canary via the existing
+   credential-loaded operator path.** In `rsudo-admin jobs`, select
+   `rumiai-dev-PoCs/pocs/070-olla-gis/controller.lib.sh` and `install.job`.
+   First run its default read-only `check`; after confirming log output,
+   change the last operand to `install` and run again. The job installs
+   pinned Olla v0.0.29 on `gis` with a dedicated systemd canary, on loopback
+   only, and requires real proxied `qwen3:4b` inference before PASS. Record
+   the host-produced results and reconcile any actual failure without
+   claiming CI covers rsudo or the real host. Do **not** open network-facing
+   Ollama or Olla listeners, change firewalls, or add the other seven endpoints
+   before approved client network/identity and reachability requirements are
+   known. After a valid GIS canary, plan an authorized seven-worker network
+   rollout and separate model-aware multi-worker Olla tests. Higher-level
+   AI task/tool orchestration remains a separate decision.
 3. Decide whether Hindsight belongs in the first orchestrated deployment or
    should follow after dispatcher/model-role validation; do not put its
    writable state on the read-only NFS model share.
 
 ## Blockers / open questions
 
-- Olla v0.0.29 is selected as a **first inference-routing product**, not as a new authenticated enterprise gateway or a task/agent orchestrator. Current upstream documents no inbound proxy authentication. Its default retry-on-connection-error may replay a request whose acceptance was ambiguous. Before use, define permitted source networks, client access to the fixed `gis` placement, allowed actions, dashboard exposure, retry policy, and how to validate available model/worker capacity. Product evaluation evidence is upstream only; deployment and workload behavior on RumiAI's eight hosts remains unvalidated. No current server or product configurations are to be changed.
+- **2026-10-19 physical deployment access pending:** The assistant's current environment cannot connect to GIS SSH (`10.200.0.19:22`), so it cannot run credential-loaded `rsudo-admin`. The prepared operator PoC and isolated green CI are not evidence of installation. The GIS systemd service, archive download on the corporate network, actual real chat and user-account permissions remain unvalidated. The operator's live GIS job result is required for closure; the eventual remote seven-node pool remains separately pending network reachability and security policy.
+
+- Olla v0.0.29 is selected as a **first inference-routing product**, not as a new authenticated enterprise gateway or a task/agent orchestrator. Current upstream documents no inbound proxy authentication. Its default retry-on-connection-error may replay a request whose acceptance was ambiguous. Before use, define permitted source networks, client access to the fixed `gis` placement, allowed actions, dashboard exposure, retry policy, and how to validate available model/worker capacity. Product evaluation evidence is upstream only; deployment and workload behavior on RumiAI's eight hosts remains unvalidated. The GIS-local Olla canary is now authorized, but no general Ollama/network change has been authorized or performed.
 
 - 2026-10-15 explicit methodological correction: the successful CPU Ollama
   eight-host experiment preceded clarification of the user's intended
