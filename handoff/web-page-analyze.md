@@ -539,3 +539,37 @@ Earlier handoff entries describing the later `accumulate` code
 checkpoints superseded by this exact restoration. Do **not** modify
 the restored PoC or add an export mechanism again unless a new current
 user instruction authorizes that separate follow-up.
+
+## Explicit user rejection of inspect-01 as the requested earlier PoC (2026-10-19)
+
+**Current user instruction prevails over the preceding incorrect handoff
+identification:** The user explicitly states that the PoC they verified
+opening the direct ChatGPT share link at the beginning without scrolling
+was a **previous, distinct PoC**, **not** `inspect-01`.
+Consequently earlier handoff text that identifies `inspect-01` as the
+requested source or as the correct restoration target is not reliable
+identification, regardless of Git subtree equality.
+
+Recovered real user `inspect-01` terminal evidence from their uploaded
+log `Testo incollato(20261019-104251).txt`: its `initial` phase had
+`messaggiDOM=0` and then it prompted manual top/bottom/top navigation.
+This does not independently prove where the page was visually positioned,
+but it does establish that `inspect-01` requires manual navigation and
+cannot be equated with the user's requested specific preceding PoC.
+The previous exact tree restoration at `abb3f8906fb19eeb872b007219166243cf887dd5`
+is Git-correct yet **user-rejected as the wrong PoC**.
+
+Git history immediately preceding `inspect-01` contains the `run-live.sh`
+/ `live.mjs` workflow, which handles Amazon as well as ChatGPT and
+prompts manual browsing; it also does not match the user's description
+of directly launching just the shared ChatGPT page at the beginning.
+The known original `accumulate.mjs` two-tab exporter was introduced
+later and is likewise not established as that preceding small PoC.
+
+**Unresolved blocker:** The exact earlier PoC's file name, source and
+commit were not established by the accessible current sources or these
+historical candidates; previous-conversation retrieval returned errors.
+Do not guess another commit or modify the restored PoC 069 by trial and
+error. Recover the actual preceding source/command from prior chat or
+other concrete evidence, verify it against user's observation, then
+perform a forward-only exact restoration and physical validation.
