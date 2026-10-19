@@ -710,3 +710,36 @@ comparison must not be mislabeled a physical PASS. The later mistaken
 PoC 068/069 restorations remain part of forward Git history; do not
 create additional restoration commits until the correct physical
 revision is identified.
+
+## Chronological trial result and next exact candidate (2026-10-19)
+
+The operator explicitly **rejected the first physical candidate**
+`28ffd50c46bb2289b10f677f0c75436e9bd6df41`
+(19 October 12:57:56 Europe/Rome). In exact first-parent ancestry,
+the next selected PoC commit is
+`8df9121f2273a196f4d0bd01eaeb693ac7f446ba`
+(12:25:27), previously tested and explicitly **rejected** as
+`inspect-01`; its change is only `prepare-investigation.sh`.
+Do not require the user to repeat that already negative trial.
+
+Next *not yet reported physically tested* candidate:
+`ec54623fc5afe4c04e289981c56fc061949ac045`
+(12:24:43), which changes `investigate.mjs` to ensure empty
+render asset evidence logs exist. GitHub blob readback showed that at
+this and the already rejected `8df9121` revision the source
+`investigate.mjs` SHA is the same
+`8a087acccc20e263cc3ac335d59bf585e8960049`
+and the launcher `run-investigation.sh` SHA is the same
+`3d13e93512dc0904a08d5e19c28d36bc2bcacce1`.
+Thus, although the commit itself modifies the relevant PoC, it cannot
+by itself alter this unchanged runnable startup sequence; explicitly
+tell the user that in the next trial. User's requested strict sequence
+still lists it as the next untested revision.
+
+The next older relevant candidate after `ec54623` is
+`9f2175f7745735acde59149fa112a8f212d43926`
+(12:24:22). No source restoration, user VM command,
+or native Chromium validation has been performed by this assistant
+for `ec54623`; the operator's physical result is pending. Protect
+main and all prior evidence; trial should use an isolated temporary
+checkout/archive and pinned original provider revision.
