@@ -665,3 +665,48 @@ validation have **not** been performed for this restored candidate.
 The user's identification of the original *physically confirmed*
 PoC is still unresolved until they test or the original chat
 utterance/source can be recovered.
+
+## Strict backwards commit-by-commit shared-link startup hunt (2026-10-19)
+
+Latest explicit user-selected procedure: set temporal cursor to
+**2026-10-19 12:50:00 Europe/Rome = 10:50:00 UTC**; find the very first
+Git commit after that instant, then traverse parent history **one commit at a
+time in reverse chronological order**, selecting **only commits that
+actually change the relevant ChatGPT browser PoCs** (especially
+`pocs/069-web-page-analyze/`, and earlier `pocs/068-chatgpt-shared-link-export/`
+if necessary). Physically test each selected revision for its **original
+visible ChatGPT share page beginning at the first message before any scroll
+or human repositioning**. Stop only on actual operator confirmation, not on
+source comments, model memory, filenames, a plausible SHA or merely
+`scrollY=0`. Do not skip eligible revisions because they look unpromising;
+where a modification is non-runnable by itself, exercise the full historical
+revision with its corresponding original launch path and note the exact
+limitation. Do not replace `main` each time; use isolated historical
+checkouts/extractions and unique test directories.
+
+The first qualifying chronological commit **after** the cutoff is
+`28ffd50c46bb2289b10f677f0c75436e9bd6df41`,
+2026-10-19 **12:57:56 Europe/Rome = 10:57:56 UTC**,
+which modifies only
+`pocs/069-web-page-analyze/accumulate-observer.js`.
+At this exact revision, `accumulate.mjs` had **not yet been added**;
+the available original visible ChatGPT investigation launch path is
+`run-investigation.sh` -> `investigate.mjs` with a hard-coded direct
+share URL. It saves an `initial` checkpoint prior to its manual
+top/bottom/top questions; the new `accumulate-observer.js` change
+alone does not constitute a new running exporter. Subsequent older
+qualifying commits include `8df9121f2273a196f4d0bd01eaeb693ac7f446ba`
+at 12:25:27 local; the method insists on testing each applicable commit
+in sequence rather than jumping to it.
+
+The assistant container has Chromium and Node but **no DNS resolution
+for GitHub or chatgpt.com**, and no access to the user's physical
+Ubuntu Chromium/profile, so a physical end-to-end browser test on the
+operator's page cannot be performed in this environment. The operator
+must run the isolated candidate and report whether the **first
+messages are visible immediately**, then continue through older selected
+revisions until positive confirmation. Any static source check or GitHub
+comparison must not be mislabeled a physical PASS. The later mistaken
+PoC 068/069 restorations remain part of forward Git history; do not
+create additional restoration commits until the correct physical
+revision is identified.
