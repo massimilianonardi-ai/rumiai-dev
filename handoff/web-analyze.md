@@ -5,29 +5,31 @@ Updated: 2026-10-19
 
 ## Goal
 
-Build a standalone reusable JavaScript library named `web-analyze` that launches visible Chromium, observes a human's live navigation and interactions, and saves sufficiently detailed structured timestamped evidence for later behavior analysis. Keep it separate from the ChatGPT shared-link export logic in PoC 069 and from the provider-independent web-control contract.
+Implement the JavaScript library `rumiai-os/lib/sys/js/web-analyze.lib.js` in the technical `m` library tree. It must launch the actual `chromium` executable as resolved in the effective environment (especially the `m` shell), observe a human browsing session, and save highly detailed correlated logs. This is not an independent PoC, package or new `web-control` provider; any overlap with current web-control capabilities must be checked explicitly before implementation.
 
 ## Current repository revisions
 
-- rumiai-dev: 07096e23eaa3170419ae5a484bd4dd738c210729 (before this checkpoint)
-- rumiai-dev-PoCs: 04fe90b77110b5acbd721cb5bc986b3435b97c46 (published source)
+- rumiai-dev: 586de16c41d4b183b6356cfcbc8648c6b483d250 (pre-checkpoint)
+- rumiai-dev-PoCs: 04fe90b77110b5acbd721cb5bc986b3435b97c46 (unaccepted experimental source)
+- rumiai-os: f7f35e2ccd56e9c21530f94e28ee9eb5e6d82e0a (not modified)
 - pwc-web-control: 2e1759e994f52000975c6383b8cc7b229cd1b425 (read-only reference)
 
 ## Applicable canonical sources
 
-README.md, RULES.md, CONSISTENCY-GATE.md, TESTING.md, specifications/README.md, specifications/rumiai-os/WEB-CONTROL.md, handoff/README.md.
+README.md, RULES.md, CONSISTENCY-GATE.md, TESTING.md, specifications/README.md, specifications/rumiai-os/CURRENT-MODEL.md, FILESYSTEM-NAMING.md, LIBRARY-INTERFACES.md, DOCUMENTATION-MODEL.md, DIAGNOSTICS.md, WEB-CONTROL.md, handoff/README.md.
 
 ## Fixed task-local choices
 
-- Standalone experimental package `web-analyze` in PoC 071; no premature change to web-control facility/provider compatibility or rumiai-os runtime.
-- Browser: visible Chromium, Playwright pinned at 1.63.0, persistent isolated profile, default sandbox and TLS checks enabled.
+- User-fixed output: `rumiai-os/lib/sys/js/web-analyze.lib.js`, with mandatory matching owner-local operational manual `res/sys/manual/web-analyze.lib.js` and appropriate permanent test coverage.
+- The library must launch `chromium` directly through the active executable resolution environment, including when invoked from the `m` shell. The CDP interface is native to Chromium; Playwright is NOT required to enable CDP, launch Chromium or analyze a browsing session.
+- Playwright was an unrequested convenience dependency of the discarded PoC implementation; do not introduce it as a requirement without a demonstrated benefit and explicit discussion. The initial technical approach to evaluate is Chromium + native CDP, with an appropriate private transport and an isolated browser profile. Preserve sandbox and TLS verification.
 - Log format: multiple append-only JSONL streams with globally ordered sequence, UTC timestamps and process monotonic timestamps, plus summary.
 - Avoid logging input contents, raw credentials, cookies, HTTP bodies and WebSocket payloads; redact URL query strings while warning that URL paths can be sensitive.
 - No silent evidence overwrite; logs locally private and ignored by Git.
 
 ## Acceptance scenarios
 
-1. User starts an HTTP(S) URL, interacts manually with visible Chromium, stops from terminal; new evidence folder contains ordered logs and summary.
+1. Through the `m` JavaScript library, a caller starts an HTTP(S) URL by launching actual `chromium` available on the effective `m` PATH, interacts manually with visible Chromium and obtains ordered logs and a summary.
 2. Browser navigation, dynamic DOM churn, network activity, console/error events and significant performance entries are observed without application-specific logic.
 3. Closing Chromium or stopping explicitly finalizes logs; logging pressure and missing instrumentation are reported instead of falsely asserting completeness.
 4. A new session does not overwrite previous evidence; authenticated state stays in dedicated browser profile.
@@ -41,12 +43,12 @@ README.md, RULES.md, CONSISTENCY-GATE.md, TESTING.md, specifications/README.md, 
 
 ## Current state
 
-The complete source is published in PoC 071 and a local ZIP was generated. Node 22 syntax checks and two native event-logger tests pass on an auxiliary host. **No actual Chromium/Playwright end-to-end run has occurred**, because Playwright was unavailable in the auxiliary container despite Chromium being present. No product/runtime or provider contract was changed. An authentic browser session must establish that the event streams and finalization work on an actual GUI workstation.
+**User correction (2026-10-19): the PoC 071 implementation is in the wrong repository and introduces an unrequested Playwright dependency.** It is not accepted as the requested `m` library and its tests do not validate that deliverable. Chromium exposes CDP directly, so lack of Playwright is not a valid reason to say Chromium cannot be tested. Current work unit is an explanation-only phase: no product source has been changed yet. The earlier PoC remains factual experimental code, not the required implementation.
 
 ## Next action
 
-Run a real visible Chromium session on the user's graphical host after installing Playwright, inspect event coverage, error stream, resource response metadata and clean close/finalization, then correct observed gaps only from authentic evidence.
+First explain to the user the concrete advantages/limitations of Playwright versus native Chromium CDP, without implementing the library in this explanation-only phase. When proceeding, inspect the existing `m` libraries/integration and implement `web-analyze.lib.js` in `rumiai-os`, its manual and permanent tests. Validate launch in the `m` environment with real Chromium and explicitly report any host-only validation still pending.
 
 ## Blockers / open questions
 
-Real Chromium browser run and visual interaction evidence are pending.
+Real Chromium browser run and visual interaction evidence are pending. No mandatory Playwright dependency exists.
