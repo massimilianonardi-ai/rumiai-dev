@@ -372,6 +372,8 @@ per `SENSE-MODEL.md`.
 
 ## Current state
 
+**2026-10-19 11:31 Europe/Rome — read-only seven-worker integration preflight prepared:** After the successful physical GIS-only Olla installation, the user instructed `procedi` toward connecting the seven remaining workers. The current authoritative worker evidence still shows Ollama bound only to `127.0.0.1:11435` on each worker. Direct GIS-to-worker HTTP will therefore remain unavailable without a separate server-network configuration change. Created `rumiai-dev-PoCs/pocs/070-olla-gis/network-check.lib.sh` and `network-check.job` for execution as the existing `rsudo-admin jobs` two-file workflow, with the required first-line fixed log redirect. The controller queries the seven documented rsudo groups for active/enabled service, loopback `/api/tags`, listening socket, actual global IPv4 addresses and route source toward GIS. It then checks GIS Olla health and performs bounded read-only route and GET `/api/tags` probes from GIS toward only dynamically discovered addresses in the documented `10.0.*`, `10.100.*` and `10.200.*` ranges. Multiple interfaces are reported separately and no source IP is selected by guesswork. The job **does not** change listener bind, Olla config, services, firewalls, NFS or routes. An isolated rsudo transport-boundary test was added to `test-network-check.sh` and wired to the existing Olla PoC CI. **No physical enterprise network check has been executed yet**, and no remote workers are configured in Olla. This is the minimum safe evidence-gathering boundary before a narrowed network exposure/ACL decision and subsequent authorized worker rollout.
+
 **2026-10-19 10:45:24–10:45:33 Europe/Rome — GIS Olla physical installation and real inference PASS.** User-provided `rsudo-jobs(20261019-084549).log` records `rsudo.start` at `10.200.0.19` with `sh -s -- install`; verified SHA-256 for `olla_v0.0.29_linux_amd64.tar.gz` (`OK`); official Linux amd64 Olla `v0.0.29` with embedded build commit `421fd808e59a2879059062728d2b23ae`; Olla config validation `Result: PASS` (three profiles, embedded models defaults); created the systemd enablement symlink for `olla-gis-poc.service`; and reported `OLLA GIS INSTALL OK: real qwen3:4b proxied inference; remote workers NOT configured`. The `rsudo` operation completed with `status=0`. The `rsudo.env-file-fallback reason=not-provided` warning did not affect success. The pinned controller's success path also requires local Olla `/internal/health`, discovery of `qwen3:4b` and an HTTP `done:true` result from real `/olla/ollama/api/chat` proxied to the pre-existing GIS Ollama API; the response content is not printed in the operator log. The first canary is therefore **physically installed and operational for a bounded real local inference**. Physical post-reboot persistence, multi-worker selection/failover, remote worker reachability, security perimeter and off-host caller access remain unvalidated/not configured. The installed GIS-local Olla listener is intended as `127.0.0.1:40114` targeting existing Ollama at `127.0.0.1:11435`; no worker-wide changes are established by this log.
 
 **2026-10-19 10:24 Europe/Rome operator transition:** On the user's renewed explicit `procedi`, changed only the existing GIS PoC `install.job` to default to `olla_gis_deploy install` and strengthened `test-local.sh` to assert the install mode and required fixed-path log redirection. Updated the PoC README for the already-passed physical `check`. The application install/controller implementation and all eight Ollama settings are unchanged. GitHub Actions [run 39222848277](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/39222848277) completed **SUCCESS** at exact PoC revision `fd6015d3e01daafd9ec83ad9b543edfc152b5635`: the real pinned Olla archive, digest and mock HTTP route were checked, and the real remote POSIX installer was executed under actual systemd on a disposable Ubuntu runner, including repeated install; test source asserted the new install-mode job and fixed-path log redirect. **The subsequent 10:45 physical GIS `install` run has now passed, as recorded above.** Fresh TCP connect from this assistant's environment to `10.200.0.19:22` again returned `ConnectionRefusedError`, so remote execution still requires the user's credential-loaded operator session.
@@ -423,12 +425,18 @@ The previous shared-runtime llama.cpp direction is no longer the current worker 
    re-run installation simply to generate evidence. The immediate remaining
    GIS-local checks are post-reboot persistence and any operator-desired
    repeated bounded inference; they have not been evidenced by this log.
-   Before including the seven other Ollama worker endpoints, establish
-   corporate client/source-network policy, GIS outbound reachability to
-   the workers, authenticated or otherwise explicitly restricted access
-   perimeter and exposure limits. Do **not** open network-facing Ollama or
-   Olla listeners, change firewalls, or add the seven endpoints solely on
-   the strength of the GIS-local PASS. After that separate authorization,
+   **Immediate next operator step:** from the credential-loaded enterprise
+   `rsudo-admin jobs` menu select `pocs/070-olla-gis/network-check.lib.sh`
+   and `network-check.job`; review and execute the read-only inventory,
+   then inspect the resulting fixed-path `/m/src/git/rsudo-jobs.log`.
+   The new job inspects all seven workers and probes GIS-to-worker HTTP
+   without changing server settings. On the basis of actual host addresses,
+   routes, service bind/listeners and HTTP results, establish
+   corporate client/source-network policy, GIS outbound reachability,
+   authenticated or explicitly restricted API access perimeter and
+   exposure limits. Do **not** open network-facing Ollama or Olla listeners,
+   change firewalls or add the seven endpoints solely on the strength of
+   the GIS-local PASS. After that separate security/network approval,
    exercise model-aware multi-worker routing, concurrent streams, worker
    outage/failover, queue/load behavior and observability on real hosts.
    Higher-level AI task/tool orchestration remains a separate decision.
