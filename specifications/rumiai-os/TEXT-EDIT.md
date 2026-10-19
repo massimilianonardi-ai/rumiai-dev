@@ -769,10 +769,64 @@ abstract members throw `Error` until implemented by a subclass. The class
 contains no storage, registrations, selection owner, rendering algorithm or
 editing implementation. `Document`, `FlatDocument`, `PieceDocument`,
 `Selections` and `TextEditSelections` retain their existing contracts.
-No concrete `Document2D`, selector registry, insert interpreter or format
-for projected rectangle and selected-content return values has been
-implemented by this interface-only change; those details are not promoted
-to normative behavior here.
+Concrete consumers now have `RawDocument2D` described below.
+Logical/document-representation adapters, general pluggable mode registries,
+and richer projected content formats are not supplied by the raw adapter.
+
+### `RawDocument2D`: physical 2D adapter over `Document`
+
+`new RawDocument2D(document)` requires a nominal `Document` and implements
+the complete `Document2D` public surface. Both `FlatDocument` and
+`PieceDocument` are supported. It is the GUI-facing entry point for an
+untransformed source: a caller does **not** separately instantiate or call
+`TextEditSelections`. It retains exactly one private `TextEditSelections`
+instance to reuse the existing proven source-relative selection anchors,
+external-edit rebasing, virtual-position materialization and one-commit
+multi-selection replacement. The source document belongs to its caller:
+`destroy()` releases the adapter and its subscriptions but not the document.
+The standalone TextEdit 0.8.2 library remains unchanged.
+
+A raw coordinate `{row,col}` means source line and UTF-16 code-unit column.
+The adapter's exposed 2D space deliberately has **no** grapheme width,
+tab-expanded display cells, folding or logical substitutions. The GUI can
+depend on the `Document2D` interface, not on this coordinate interpretation;
+other implementations may expose different internally constructed spaces.
+
+`rowCount` is `document.lineCount`; `colCount` is the greatest raw line
+content length (UTF-16 code units, terminators excluded). The latter is
+revision-cached but can require a scan of all source rows when invalidated.
+`getRect(rowStart, colStart, rowEnd, colEnd)` accepts nonnegative safe-integer
+**half-open** row/column boundaries and returns an array of raw text strings,
+one per existing source row in the requested window. Reads clip to existing
+rows and EOL, exclude terminators and never allocate virtual padding or
+materialize full long rows just to return the requested columns.
+`read()` returns an ordered array of strings, one for each current selection.
+It preserves actual source terminators when a range crosses rows and clips
+nonmaterialized virtual portions; cursors contribute empty strings.
+
+The built-in `selectionMode` values are `line` (initial), `rectangle`,
+and `free-form`. They delegate the four selection-management operations
+to the corresponding `Selections` strategy sharing the **same** private
+physical selection owner. Changing mode leaves previously effective ranges
+and carets in place: drawing a rectangle then switching to free-form retains
+the rectangle while subsequent points add free-form cursors.
+
+`insert(content)` replaces the selected ranges and commits through the
+physical selector. `insertMode` values are `raw` (initial, one value
+repeated across selections), `lines` (split CR/LF/CRLF into values),
+`csv` and `tsv` (parse delimiter-separated cells including quoted
+fields and doubled quote escapes). A supplied array always means explicit
+values ordered by selections, independent of the current insertion mode.
+More values than selected targets fail without a source commit; missing
+values follow the existing physical selector's empty/deletion semantics.
+Every successful real edit goes through one atomic `Document.replace`.
+
+`subscribe(listener)` returns an unsubscribe callback. Notifications
+carry `{type,revision}`, where `type` is `content`, `selections`,
+`selectionMode` or `insertMode`; content notifications follow the
+physical selector's source-rebase notification. Clipboard transport,
+GUI device events and pixel hit-testing do not belong to the adapter.
+
 
 ## Validation and release boundary
 
