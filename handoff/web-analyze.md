@@ -9,9 +9,9 @@ Provide the `m` JavaScript library at `rumiai-os/lib/sys/js/web-analyze.lib.js` 
 
 ## Current repository revisions
 
-- rumiai-dev: c2764fba4b9021cf8bf1ab9d439bc827258c6a30 (before this checkpoint)
-- rumiai-os: c225b1204831dd1cbdb4153740e63698ff125ae2 (resource archive, manual, targeted CI)
-- rumiai-tests: b9285d0d8a30825d5c3105e3e7ae8a03ac04d500 (real Chrome fixture and shutdown-drain assertions)
+- rumiai-dev: ce45f31f0bee62513baacc23056f20b395d1a1aa (before this checkpoint)
+- rumiai-os: 58244e937345d99acdaf948454e20f3e18f3bac0 (non-fatal asynchronous navigation, manual, targeted CI)
+- rumiai-tests: c243a6bc1a5a153e0b17bfadba53250dc53032c8 (real Chrome delayed-navigation regression test)
 
 ## Applicable canonical sources
 
@@ -45,6 +45,14 @@ Provide the `m` JavaScript library at `rumiai-os/lib/sys/js/web-analyze.lib.js` 
 - Real GitHub Actions run https://github.com/massimilianonardi-ai/rumiai-os/actions/runs/39321448694 is PASS on Node.js 22 and the Chrome binary available on ubuntu-latest. Its job checked out tests at b9285d0d8a30825d5c3105e3e7ae8a03ac04d500 and ran the real native CDP permanent web-analyze probe successfully. This is real browser fixture evidence, NOT validation of ChatGPT asset coverage on the operator's host.
 - Recent user-committed PoC 068 real share recording had 4,843 events and an unusually active div-target scroll/mutation timeline; the old event recorder logged window.scrollY rather than the event target scrollTop. The new network resource capture does not itself address per-message DOM ID correlation or instrument runtime event-listener registration.
 - On that same host the real shared-page navigation returned `net::ERR_BLOCKED_BY_ADMINISTRATOR`. The dedicated remote-page test therefore reported SKIP, not PASS. Chromium process/CDP transport/capture success is independently evidenced; actual page-content loading is not.
+
+## Corrected slow-navigation capture startup (2026-10-19)
+
+- User physically observed `web-analyze.cdp-timeout: Page.navigate did not respond` while the target share was beginning to download; previous `Page.navigate` command used the generic 12-second CDP timeout and propagated the error to startup failure, closing Chromium.
+- Current `startWebAnalyze` dispatches navigation asynchronously after attaching all CDP instrumentation. It waits at most one second for a fast navigation acknowledgement, then declares capture ready with `navigationPending`. Slow, failed or timed-out initial navigation never stops a healthy CDP recording session; asynchronous outcome is logged as `page.initial-navigation-accepted`, `page.initial-navigation-failed` or `page.initial-navigation-command-failed`. The navigation command itself has a 120-second response timeout for diagnostics, not a session lifetime cap. Other genuine startup failures still reject.
+- Product source commit 941358b8454e71ccc9d16c47946844bd2e6e9d0a, manual commit 378276e1f3b6880af21a55aab4c3424d66a0dd3b, CI pinned-test revision at 58244e937345d99acdaf948454e20f3e18f3bac0. Permanent test at `rumiai-tests@c243a6bc1a5a153e0b17bfadba53250dc53032c8` uses an HTTP document delayed 13.5 seconds (> previous 12 seconds), verifies early start, continued resource capture and successful archiving after the late response.
+- Real Chromium + Node.js 22 GitHub Actions run **PASS**: https://github.com/massimilianonardi-ai/rumiai-os/actions/runs/39322930821 ; runner executed test at the pinned revision. This confirms real local browser/CDP fixture behavior; the exact remote ChatGPT URL remains an operator-side validation pending on the new code.
+- Verified no change to the separately pinned `chatgpt-export.lib.js` Markdown baseline.
 
 ## Current state
 
