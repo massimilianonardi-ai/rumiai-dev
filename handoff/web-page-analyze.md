@@ -350,3 +350,34 @@ including first/last messages, order, users/assistants, attachments, asset
 gaps and manifest. If real original text/DOM differs from expected fidelity,
 correct acquisition based on real evidence, never mark it complete from
 the isolated archive-port test.
+
+### Final follow-up to Python-format PoC checkpoint
+
+Forward-only PoC 069 revision `0c34ce468a46f3fddc4d80fb25ecc798209f75f5`
+further isolates sidecar failures so that the prior original HTML export
+still completes, and samples observed turn text before applying offline CSP.
+The standalone JavaScript snapshot exporter now sets the Python gzip
+OS header value where available; Node and Python may nevertheless produce
+different binary DEFLATE streams for the same input.
+
+**Measured on auxiliary Node v22.16.0 with original supplied Python
+`chatgpt-export.py`:** all four local JavaScript exporter tests passed
+natively. A shared fixture passed to both implementations produced exactly
+equal byte contents for `TRANSCRIPT.md`, `VISIBLE_MESSAGES.jsonl`,
+`NON_TEXT_PARTS.json`, `AUDIT.json` and `README.md`. The respective gzip
+archives decompressed to the same original raw JSON. The 7-member JavaScript
+ZIP passed a real Python `zipfile.testzip()` CRC check, with member bytes
+matching the saved JavaScript files. Because Node and Python zlib compressed
+byte streams differ, `conversation.raw.json.gz` and its derived
+`SHA256SUMS` file are not byte-identical; both have internally valid
+checksums. These results establish Python-compatible **content semantics**
+for a synthetic snapshot, not byte-identical ZIP/GZIP streams.
+
+The locally tested exporter source blob SHA
+`63ac3e0d6b28f1af2c7f0933b6da8b609c010fab` equals the blob in
+current remote PoC HEAD. The newly committed repository-side
+`tests/accumulate-python-export.test.mjs` was parsed in isolated V8; it
+was not executed through native Node from a checkout here. Browser
+acquisition on the user's workstation is still untested for this
+revision, and complete chat fidelity remains unknown. No original
+`accum-01` evidence has been replaced.
