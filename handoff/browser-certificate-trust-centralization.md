@@ -9,8 +9,9 @@ Deliver an explicit, centrally managed TLS trust mechanism for RumiAI-managed br
 
 ## Current repository revisions
 
-- rumiai-dev: `84eb1a799937d322c8b29abb25880fc14212a1d0` (pre-activation)
+- rumiai-dev: `5d8577fbf3376b60c75691404e7b74884f675a9c` (latest checked before this checkpoint)
 - rumiai-os: `be56b6d67d6bedb95696a303288c5620c38a4e10`
+- rumiai-dev-PoCs: `46e5465ece2cc0963f1497ab4b6da9059ae2788e`
 - rumiai-tests: `b1f67c7f575c3d5248701bd174f5b02b545227fc`
 - pkg-catalog: `4b9ff477b28841e1b7f4367978b3023147969566`
 - electron-web-control: `077eb502f1d68235b4e5c9c28e4a7560795bce17`
@@ -47,6 +48,7 @@ Deliver an explicit, centrally managed TLS trust mechanism for RumiAI-managed br
 - Evaluate Linux NSS separately from macOS host trust and any non-Chromium backends; do not assume `SSL_CERT_FILE` configures Chromium.
 - Investigate trusted integration at the package/provider boundary, keeping provider-specific behavior out of the generic package dispatcher. Normal callers should not need to know browser-release-specific NSS paths.
 - Require explicit CA enable/disable, a reproducible trust list, no private-key import, safe ownership/permissions and clear handling of pre-existing database state.
+- Isolated NSS projection through two independent browser databases passed repeated import, deletion and preservation of an unrelated pre-existing CA using real `certutil` and temporary self-signed roots. The experimental script and its limitations are in `rumiai-dev-PoCs/pocs/browser-certificate-trust/`; this does not demonstrate browser TLS behavior.
 - An isolated exploratory local CA/HTTPS probe was attempted with actual Chromium 144 and NSS certutil. NSS database initialization/import succeeded, but this auxiliary Linux Chromium exited with `GPU process isn't usable` before TLS verification; therefore it produced **no** end-to-end browser trust evidence. No corporate CA or corporate endpoint was available for physical validation.
 
 ## Completed
@@ -54,11 +56,12 @@ Deliver an explicit, centrally managed TLS trust mechanism for RumiAI-managed br
 - Fresh HEAD preflight and current canonical source retrieval.
 - Inspected both first-party Web providers, package launch environment preservation and relevant permanent launcher test.
 - Confirmed upstream Chromium NSS database path change and identified the missing trust-owner/integration contract.
-- Activated the dedicated task from `todo/browser-certificate-trust-centralization.md` (this commit).
+- Activated the dedicated task from `todo/browser-certificate-trust-centralization.md`.
+- Committed an NSS projection experiment in `rumiai-dev-PoCs`, run with real NSS tools and OpenSSL in the auxiliary Linux environment.
 
 ## Current state
 
-Design/implementation is open; nothing has been changed in product code, published package definitions or permanent tests. This is not a solved TLS trust problem yet.
+The NSS projection experiment passed but no integrated browser trust lifecycle has been implemented. Design/implementation is open; nothing has been changed in product code, published package definitions or permanent tests. This is not a solved TLS trust problem yet.
 
 ## Next action
 
@@ -67,5 +70,5 @@ Settle the ownership and trust-projection model against current m state/package 
 ## Blockers / open questions
 
 - Which scope/authority owns shared CA decisions and how service-account isolation is enforced.
-- Common NSS database versus independent derived NSS projections, including pre-existing DB safety and revocation.
+- Common NSS database versus independent derived NSS projections, including pre-existing DB safety, running-browser revocation and concurrent writers. The PoC confirms one isolated projection mechanism but does not settle the production design.
 - Full browser TLS validation blocked in auxiliary environment by Chromium GPU process failure; physical corporate CA verification not yet performed.
