@@ -98,8 +98,17 @@ fit-for-purpose, not a measured RumiAI benchmark against those alternatives.
   **same remote installer program** from the GIS operator library against
   an actual Ubuntu runner: preflight, install, `systemd` start/enable,
   health and proxied mock chat, and repeat-install all passed.
-  These CI results are **not** real GIS deployment, real CPU inference,
-  corporate SSH/rsudo, eight-host routing or runtime security validation.
+  These CI results by themselves are **not** physical GIS deployment.
+- **Physical GIS canary PASS on 2026-10-19:** The user-supplied
+  `rsudo-jobs(20261019-084549).log` records a successful `rsudo` install
+  on GIS (`10.200.0.19`), with official Olla v0.0.29 SHA-256 verified,
+  embedded build commit `421fd808e59a2879059062728d2dcec06d2b23ae`,
+  configuration validation PASS, `olla-gis-poc.service` systemd enablement,
+  and `OLLA GIS INSTALL OK: real qwen3:4b proxied inference; remote workers
+  NOT configured`. Final `rsudo` status is `0`. The operator program checks
+  real Olla health, discovers the model, and requires a completed real
+  proxy-to-local-Ollama chat to report success. This establishes the GIS-local
+  canary only, not live multi-worker dispatch or reboot persistence.
 
 ## Current assessment
 
@@ -109,10 +118,14 @@ A GIS-local `rsudo-admin` operator install job now exists in
 `rumiai-dev-PoCs/pocs/070-olla-gis/`, with loopback-only Olla and the
 existing GIS-local Ollama endpoint as its first backend. The pinned Olla
 release and its exact remote `systemd` installer program passed isolated
-Ubuntu GitHub execution, but the operator's SSH access and installation on
-the actual `gis` host, and real CPU inference, remain **pending physical
-validation**. The initial
-eight-node HTTP routing and client security boundary remain a subsequent
-explicitly reviewed deployment phase. Keep Olla behind an application
+Ubuntu GitHub execution. **Physical installation on `gis` and the first real
+proxied `qwen3:4b` inference have now passed** in the enterprise operator's
+2026-10-19 10:45 run. The deployment is initially GIS-loopback only:
+Olla listens at `127.0.0.1:40114`, connecting to GIS Ollama at
+`127.0.0.1:11435`; Olla's default automatic proxy retries and dashboard
+were disabled in the PoC configuration. The seven other workers are **not
+configured**. Eight-node HTTP routing, reboot persistence, streaming and
+failure behavior with multiple live workers, and the authorized client
+security boundary remain separate validation/deployment work. Keep Olla behind an application
 consumer boundary rather than promoting its configuration names into
 RumiAI architecture.
