@@ -84,15 +84,27 @@ fit-for-purpose, not a measured RumiAI benchmark against those alternatives.
   or accepting explicit replay semantics for read-only inference.
 - Least-connections counts admitted requests; it is not necessarily the least
   busy CPU or shortest-latency worker on heterogeneous, remote nodes.
-- Upstream documentation, release metadata and sources were inspected.
-  **No Olla executable, live RumiAI-to-Ollama HTTP routing, performance,
-  security, or failure tests were run** in this evaluation.
+- At the initial 2026-10-15 product evaluation only upstream sources
+  had been inspected. On 2026-10-19, the independent
+  `rumiai-dev-PoCs/pocs/070-olla-gis/` experiment ran the **real pinned
+  v0.0.29 Olla binary** on a GitHub Ubuntu runner, verified the upstream
+  asset digest and configuration, and routed an actual chat over HTTP
+  through Olla to a deliberately mocked local Ollama backend. Exact-source
+  CI [run 39207500993](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/39207500993)
+  passed at `c7bc5e39a329f1491a725a7175c75638c4d3f33c`.
+  This is not real GIS deployment, real CPU inference, eight-host routing,
+  runtime security validation, or evidence of the systemd operator path.
 
 ## Current assessment
 
-Use Olla on the user-selected `gis` host for a bounded **inference-routing PoC**
-once the user's current design-only/no-configuration-change phase ends. Evaluate
-v0.0.29 as the pinned, inspectable baseline; verify artifact checksums and
-compatibility before distribution. Keep the adopted product behind an
-application-consumer boundary rather than promoting Olla configuration names
-into RumiAI's permanent architecture.
+Use the existing Olla product on the user-selected `gis` host for the
+first **inference-routing canary**, as authorized by the user on 2026-10-19.
+A GIS-local `rsudo-admin` operator install job now exists in
+`rumiai-dev-PoCs/pocs/070-olla-gis/`, with loopback-only Olla and the
+existing GIS-local Ollama endpoint as its first backend. The pinned Olla
+release passed isolated GitHub execution, but the operator install and
+real CPU inference remain **pending physical validation**. The initial
+eight-node HTTP routing and client security boundary remain a subsequent
+explicitly reviewed deployment phase. Keep Olla behind an application
+consumer boundary rather than promoting its configuration names into
+RumiAI architecture.
