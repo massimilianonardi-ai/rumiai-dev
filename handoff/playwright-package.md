@@ -1,7 +1,7 @@
 # Playwright package distribution
 
 Status: Active
-Updated: 2026-10-19
+Updated: 2026-10-19 (user host validation)
 
 ## Goal
 
@@ -9,7 +9,7 @@ Provide an installable `pkg playwright` catalog package that exposes the officia
 
 ## Current repository revisions
 
-- rumiai-dev: 279c219abcee4634f24fbbe9a90dc5e8bb82c95f (pre-checkpoint HEAD)
+- rumiai-dev: e7c2b0a4e0d7c9cf541ca00f3d42d95f9ce153ef (pre-checkpoint HEAD)
 - pkg-catalog: 68b576f138400770ce1c1bd69ebf169cccc3c3df
 - rumiai-os: f7f35e2ccd56e9c21530f94e28ee9eb5e6d82e0a (read-only implementation reference)
 - rumiai-tests: 6523644e7c7e4932910f22ca64ec718b2a8bfb74 (read-only test reference)
@@ -49,16 +49,17 @@ Fresh HEAD retrieval is required on resume.
 - Added `pkg/playwright/all` definition, Node.js dependency, CLI launcher, library/browser environment and automated release-build workflow to pkg-catalog in forward commit `68b576f138400770ce1c1bd69ebf169cccc3c3df`.
 - Reviewed committed diff (12 added paths). Read back all six critical package/workflow files and passed 10/10 static structural consistency checks (launcher identity, Node/Chromium environment, dependency, link, artifact pattern, pinned build and publication command).
 - GitHub Actions build `39267417038` completed successfully and release `v1.63.0` now carries the expected asset and SHA-256 digest. Job logs confirm actual npm dependency installation (`added 2 packages in 1s`) and GitHub release creation.
+- On 2026-10-19 the user reported an error-free, working installation on Ubuntu 26.04 ARM64; no log was supplied or run directly by the assistant.
 
 ## Current state
 
-The catalog entry and required immutable release asset are now published. GitHub Actions build run `39267417038` finished successfully: npm installed 2 packages (Playwright and Playwright Core), checked both version=1.63.0, and published the 4,071,347-byte `playwright-v1.63.0-all.tar.gz` archive (GitHub-reported sha256 `d749d1e4327e9b4ce4b6d7667e2b071d86e10863a59292336de4e4ff8cdad759`). The artifact is ready for `pkg install playwright` attempts. No composed `pkg install`, CLI/browser download or browser-launch validation has occurred: the assistant's local container has no outbound DNS, and the user's actual `m` installation is not available to run here.
+The catalog entry and required immutable release asset are now published. GitHub Actions build run `39267417038` finished successfully: npm installed 2 packages (Playwright and Playwright Core), checked both version=1.63.0, and published the 4,071,347-byte `playwright-v1.63.0-all.tar.gz` archive (GitHub-reported sha256 `d749d1e4327e9b4ce4b6d7667e2b071d86e10863a59292336de4e4ff8cdad759`). The user reported successful installation of the published Playwright package without errors on a real Ubuntu 26.04 ARM64 host (2026-10-19). This is user-reported host validation, not a test executed by the assistant or an independently inspected run log. The report establishes installation success on that host; it does not separately establish execution of `playwright --version`, `playwright install chromium`, a real browser launch, or external JS module imports.
 
 ## Next action
 
-Execute a genuine `pkg install playwright`, `playwright --version`, `playwright install chromium`, and a real browser launch on a supported `m` host. Inspect any resulting integration mismatch and update evidence.
+Installation succeeded according to the user's Ubuntu 26.04 ARM64 host report. Remaining distinct checks, if completing the full Playwright/browser integration scope, are `playwright --version`, `playwright install chromium`, an actual browser launch, and import of the package from an external JavaScript program.
 
 ## Blockers / open questions
 
-- Release publication blocker resolved: workflow run successful and release asset verified through GitHub metadata. The end-to-end `m` host install remains unverified.
-- End-to-end execution on the user's supported host is pending; module discovery by consumers outside the Playwright launcher needs explicit validation before claiming reusable JS import behavior.
+- Release publication blocker resolved, and real Ubuntu 26.04 ARM64 installation success is reported by the user. Full run logs and additional browser/runtime validation are not available.
+- Browser launch, browser download and module discovery by consumers outside the Playwright launcher have not been separately validated in evidence available in this conversation.
