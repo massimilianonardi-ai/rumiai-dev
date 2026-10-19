@@ -92,8 +92,14 @@ fit-for-purpose, not a measured RumiAI benchmark against those alternatives.
   through Olla to a deliberately mocked local Ollama backend. Exact-source
   CI [run 39207500993](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/39207500993)
   passed at `c7bc5e39a329f1491a725a7175c75638c4d3f33c`.
-  This is not real GIS deployment, real CPU inference, eight-host routing,
-  runtime security validation, or evidence of the systemd operator path.
+  A follow-up GitHub Actions
+  [run 39208513826](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/39208513826)
+  (at `2781b640e5fcc25f9cf70144c388e56d0de3a4d1`) also executed the
+  **same remote installer program** from the GIS operator library against
+  an actual Ubuntu runner: preflight, install, `systemd` start/enable,
+  health and proxied mock chat, and repeat-install all passed.
+  These CI results are **not** real GIS deployment, real CPU inference,
+  corporate SSH/rsudo, eight-host routing or runtime security validation.
 
 ## Current assessment
 
@@ -102,8 +108,10 @@ first **inference-routing canary**, as authorized by the user on 2026-10-19.
 A GIS-local `rsudo-admin` operator install job now exists in
 `rumiai-dev-PoCs/pocs/070-olla-gis/`, with loopback-only Olla and the
 existing GIS-local Ollama endpoint as its first backend. The pinned Olla
-release passed isolated GitHub execution, but the operator install and
-real CPU inference remain **pending physical validation**. The initial
+release and its exact remote `systemd` installer program passed isolated
+Ubuntu GitHub execution, but the operator's SSH access and installation on
+the actual `gis` host, and real CPU inference, remain **pending physical
+validation**. The initial
 eight-node HTTP routing and client security boundary remain a subsequent
 explicitly reviewed deployment phase. Keep Olla behind an application
 consumer boundary rather than promoting its configuration names into
