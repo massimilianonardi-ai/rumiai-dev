@@ -764,3 +764,35 @@ The next older relevant commit is
 `2863b74accc053359766254d4f90654a0ca03935`
 (12:23:37), modifying the same PoC file.
 Retain isolation; no updates of main code for trials.
+
+## Backwards historical trial: 9f2175 rejected; 2863b74 next (2026-10-19)
+
+The operator explicitly reports that the isolated version at
+`9f2175f7745735acde59149fa112a8f212d43926`
+(12:24:22 Europe/Rome) was **not** the desired correctly starting
+first-message PoC. Its chronological first parent is
+`2863b74accc053359766254d4f90654a0ca03935`
+(12:23:37 local), changing only
+`pocs/069-web-page-analyze/investigate.mjs`.
+The precise change broadens private first-party response evidence
+beyond JSON to HTML and React/server-component hydration; it does
+not modify page navigation or initial snapshot ordering.
+
+Git SHA verification for historical `2863b74`:
+`run-investigation.sh` blob
+`3d13e93512dc0904a08d5e19c28d36bc2bcacce1`,
+`investigate.mjs` blob
+`38d07db78aa7c832a7b1e2b4d59fd77f654e566e`,
+`investigate-observer.js` blob
+`7a7500534551d386d60452dee0ee19e07547468c`.
+Source at revision navigates directly to
+`https://chatgpt.com/share/6ad1c0d5-49ec-83eb-a79b-85b04b938835`,
+saves `initial` before any manual navigation questions, and needs
+the original pinned pwc provider revision
+`2e1759e994f52000975c6383b8cc7b229cd1b425`.
+
+Next older relevant commit if `2863b74` is also rejected:
+`a06e5a0e1c9a2abd296080c268a04616a9a3dfce`;
+check that candidate's actual changed paths before trial.
+No physical execution was performed here; no source PoC repo
+updates authorized/needed. Keep every trial isolated.
