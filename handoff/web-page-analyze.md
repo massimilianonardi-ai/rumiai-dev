@@ -743,3 +743,24 @@ or native Chromium validation has been performed by this assistant
 for `ec54623`; the operator's physical result is pending. Protect
 main and all prior evidence; trial should use an isolated temporary
 checkout/archive and pinned original provider revision.
+
+## Backwards historical trial: ec54623 rejected; 9f2175 next (2026-10-19)
+
+The operator reports that the isolated trial at
+`ec54623fc5afe4c04e289981c56fc061949ac045`
+(19 October 12:24:43 Europe/Rome) **did not** give the original
+correct first-message startup. Next in exact first-parent history,
+which modifies the relevant PoC, is
+`9f2175f7745735acde59149fa112a8f212d43926`
+(12:24:22), with one changed file:
+`pocs/069-web-page-analyze/investigate.mjs`.
+Its diff only wraps response-body reads in a 12-second bounded
+timeout; the source still opens the exact fixed ChatGPT share URL,
+captures `initial`, then prompts manual top/bottom/top. Its original
+`run-investigation.sh` Git blob is
+`3d13e93512dc0904a08d5e19c28d36bc2bcacce1`.
+No physical result exists for this candidate until user reports it.
+The next older relevant commit is
+`2863b74accc053359766254d4f90654a0ca03935`
+(12:23:37), modifying the same PoC file.
+Retain isolation; no updates of main code for trials.
