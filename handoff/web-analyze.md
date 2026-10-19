@@ -9,8 +9,8 @@ Build a standalone reusable JavaScript library named `web-analyze` that launches
 
 ## Current repository revisions
 
-- rumiai-dev: dff3eeb7531fc6f6878e7ac1710db0fa9e17800d (pre-write)
-- rumiai-dev-PoCs: 0c34ce468a46f3fddc4d80fb25ecc798209f75f5 (pre-write)
+- rumiai-dev: 07096e23eaa3170419ae5a484bd4dd738c210729 (before this checkpoint)
+- rumiai-dev-PoCs: 04fe90b77110b5acbd721cb5bc986b3435b97c46 (published source)
 - pwc-web-control: 2e1759e994f52000975c6383b8cc7b229cd1b425 (read-only reference)
 
 ## Applicable canonical sources
@@ -36,15 +36,16 @@ README.md, RULES.md, CONSISTENCY-GATE.md, TESTING.md, specifications/README.md, 
 
 - Initial remote preflight and canonical retrieval completed for `rumiai-dev`, PoCs and web-control context.
 - Local source package authored in conversation artifact `web-analyze.zip` with reusable module, CLI, DOM observer, privacy-aware EventLog, tests and README.
-- Node 22 auxiliary environment: syntax checks for JavaScript sources and CLI passed; native Node test suite 2/2 passed for redaction and isolated ordered log streams.
+- Node 22 auxiliary environment: syntax checks for all JavaScript sources/CLI passed; native Node test suite 2/2 passed for redaction, ordering, private file modes and overwrite refusal.
+- Published complete reusable library, CLI, tests and documentation in `rumiai-dev-PoCs/pocs/071-web-analyze/`, forward-only revision `04fe90b77110b5acbd721cb5bc986b3435b97c46`. The remote JavaScript module SHA `ec3e74dd93b9219d6b64f85c4c57675c9ce72213` matches the tested local file after a forward correction to two lifecycle event listener lines; other code/tests blobs also match local test sources. Public `web-control` provider repositories and product runtime remained untouched.
 
 ## Current state
 
-The local conversation artifact is usable after installing declared Playwright dependency, but **no actual Chromium/Playwright end-to-end run has occurred**; Playwright is unavailable in the assistant container. Git repository publication of the source and browser validation remain to be completed. No product/runtime or provider contract was changed.
+The complete source is published in PoC 071 and a local ZIP was generated. Node 22 syntax checks and two native event-logger tests pass on an auxiliary host. **No actual Chromium/Playwright end-to-end run has occurred**, because Playwright was unavailable in the auxiliary container despite Chromium being present. No product/runtime or provider contract was changed. An authentic browser session must establish that the event streams and finalization work on an actual GUI workstation.
 
 ## Next action
 
-Publish the locally tested source in PoC 071, review resulting diff/source, then run a real visible Chromium session on the user's graphical host and inspect log coverage and close/finalization behavior.
+Run a real visible Chromium session on the user's graphical host after installing Playwright, inspect event coverage, error stream, resource response metadata and clean close/finalization, then correct observed gaps only from authentic evidence.
 
 ## Blockers / open questions
 
