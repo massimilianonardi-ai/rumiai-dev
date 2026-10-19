@@ -1,7 +1,7 @@
 # Advanced browser/Electron text editor
 
-Status: Active — TextEdit 0.8.2 stable; PoC 066 DOM-free 2D geometry experiment and Chromium CI passed; unresolved module contracts remain working design
-Updated: 2026-10-17
+Status: Active — TextEdit 0.8.2 frozen; new m core Document, Selections, Document2D and RawDocument2D implemented/tested; advanced logical view and editor GUI remain open
+Updated: 2026-10-19
 
 ## Goal
 
@@ -11,22 +11,61 @@ The JavaScript compilation, module loading and distribution concern has **indepe
 
 ## Current repository revisions
 
-Last verified remote main HEADs (2026-10-15; **recheck before any next task**):
+Latest independently verified remote `main` HEADs on **2026-10-19**, immediately before this handoff update (the dev HEAD necessarily advances upon publishing this file):
 
-- `rumiai-dev`: `6d4666c0fd98d797f1213d71247905181a81b29b` (current canonical TextEdit contract, pre-this-checkpoint handoff revision).
-- `rumiai-os`: `ef466362e9630b86d81b07ca647c2f2fbfd97a22` (TextEdit v0.8.2 source, operational manual, workflow; pinned product CI passed).
-- `rumiai-tests`: `b8d5cbea34784d1a42af2b00bf22c09fec9d478c` (forward/reverse insertion and line-constructor permanent tests).
-- `rumiai-dev-PoCs`: `051da53562d4b11697c68c2c00a578f1bf02fabf` (PoC 066 DOM-independent 2D geometry extraction, Node real TextEdit + Chromium GUI CI passed).
-- Reference `m` master: not rechecked for this handoff-only consistency sync; no source change.
+- `rumiai-dev`: `217b0a332baaea52ce887f5352fad605725b7feb` (current canonical text/edit contract and pre-checkpoint handoff).
+- `rumiai-os`: `f7f35e2ccd56e9c21530f94e28ee9eb5e6d82e0a` (actual compiled `RawDocument2D` source, core descriptor, final pinned document test).
+- `rumiai-tests`: `6523644e7c7e4932910f22ca64ec718b2a8bfb74` (permanent normal-path RawDocument2D test with CSV/TSV and virtual edits).
+- `rumiai-dev-PoCs`: `226560efbbca02e604417259087c2af74cf5a845` (fresh repo HEAD; PoC 066 editor-specific evidence remains at its earlier documented revision, **not** claimed retested on this HEAD).
 
-These are revision-specific resumption evidence, not substitutes for the mandatory fresh preflight.
+**Every new chat MUST verify current remote HEADs again and follow the root README Mandatory read order.** The code/test SHAs above are the relevant implementation checkpoint, not a substitute for preflight. No reference `m` repository was accessed for this checkpoint.
 
 ## Applicable canonical sources
 
-- `README.md`, `RULES.md`, `CONSISTENCY-GATE.md`, `specifications/README.md`, `specifications/rumiai-os/CURRENT-MODEL.md`, `specifications/rumiai-os/TEXT-EDIT.md`.
+- `README.md`, `RULES.md`, `CONSISTENCY-GATE.md`, `specifications/README.md`, `specifications/rumiai-os/CURRENT-MODEL.md`, `specifications/rumiai-os/TEXT-EDIT.md`; when editing JS code or tests, additionally follow `specifications/rumiai-os/JSC.md`, `FILESYSTEM-NAMING.md`, `LIBRARY-INTERFACES.md`, `DOCUMENTATION-MODEL.md`, `TESTING.md` and applicable manuals.
 - Reference `m/js/lib/ui-text-edit/m/text/TextEdit.js`, `m/js/lib/ui-text-edit/m/ui/`, `m/js/electron-app-editor/`.
 - The separately deferred terminal `vsed` advanced-editor work is `todo/vsed-advanced-editor-evaluation.md` and is not this editor.
 - The JavaScript toolchain is owned by `handoff/javascript-build-and-runtime-loading.md`.
+
+## Resume checkpoint — 2026-10-19 (read first)
+
+**Present outcome:** The user's concrete goal was a `Document` → `Document2D` adapter taking an already-constructed `PieceDocument` (or any core `Document`) and **replacing direct `TextEditSelections` use by the GUI**. The class is **`m.text.document.RawDocument2D`**, not a second source storage engine. This goal is implemented and real-core-tested. The editor, a generalized logical `Document2D`, and the physical removal of `TextEditSelections` are **not** implemented.
+
+**Normal caller path (actual exported API):**
+
+```javascript
+const source = new m.text.document.PieceDocument('abc\\ndef');
+const view = new m.text.document.RawDocument2D(source);
+view.selectionMode = 'rectangle';
+view.addSelection({row: 0, col: 1});
+view.addSelection({row: 1, col: 2});
+const window = view.getRect(0, 0, 2, 20); // ['abc', 'def']
+const chosen = view.read();               // array of selected text fragments
+view.insertMode = 'raw';
+view.insert('X');                          // one atomic source edit
+view.destroy();                            // source is still caller-owned
+```
+
+**Contracts and architecture:**
+
+- `m.text.document.Document` is the raw, linear UTF-16 source/atomic edit/notification contract. `FlatDocument` and `PieceDocument` implement it; `PieceDocument` is the intended real storage engine. `Document2D` is **independently nominal** (does not extend `Document`) and exposes an arbitrary instance-specific 2D text space; a GUI cannot know, and must never need to know, whether coordinates/text came from a raw source, a logical transformation, a virtual region or more than one transformation layer. Source/provenance and mapping are implementation-private.
+- The `Document2D` API (canonical source: `specifications/rumiai-os/TEXT-EDIT.md`) is `rowCount`, `colCount`, `getRect(rowStart,colStart,rowEnd,colEnd)` for bounded viewport text, `read()` for selected content, `getSelections()`, `setSelections(selections)`, `addSelection(position)`, `remSelection(position)`, getter/setter `selectionMode`, getter/setter `insertMode`, `insert(content)`, `subscribe(listener)`, `destroy()`. No GUI events/pixels or system clipboard transport are inside this contract.
+- `Selections` in `m.text.selection` is a four-method abstract *selection-interpretation strategy*, not an alternative data owner: get/set/add/rem selections. `LineSelections`, `RectangleSelections`, `FreeFormSelections` are concrete modes. One add/rem call may *recompute the entire effective collection*. A zero-width caret versus a one-cell selection is a mode choice, not a universal meaning of `{row,col}`. The GUI sends a stream of visited positions; selectors interpret it, not the GUI. Selection results use ordered oriented `{start:{row,col},end:{row,col},forward}` intervals and zero-length carets.
+- `RawDocument2D` privately creates **one** `TextEditSelections(document)` and the three selectors with that common owner. `TextEditSelections` is still separately exported and unchanged, but **does not appear in normal GUI code** and does not implement the abstract `Selections` class. The physical selector retains exclusive effective state, source-relative anchors, rebasing on external commits, virtual-position materialization and one-transaction replacement. `RawDocument2D` is a facade/adapter, not proof that this private engine has been deleted or migrated. Avoid a second independent owner.
+- `RawDocument2D` uses **raw** `{row,col}`: line index and UTF-16 code-unit column (not grapheme/tab-expanded glyph cells). `rowCount=document.lineCount`; `colCount` is the widest existing content row excluding line endings, cached by document revision and potentially requiring a full row scan. `getRect` accepts nonnegative safe-integer **half-open** bounds for both axes, clips to existing lines/line widths, excludes line terminators and returns one string per existing requested row. This permits horizontal and vertical bounded reads but **does not alone prove** huge-document performance. `read()` returns an **ordered array of strings**, one per current selection, retaining literal CR/LF/CRLF inside cross-row selections and returning empty strings for cursors/virtual-only selections.
+- `selectionMode` values: `line` (default), `rectangle`, `free-form`. `line` builds a single interval between initial and latest visited cells; `rectangle` generates row-wise ranges; `free-form` yields distinct zero-length carets in visitation order. Crucial explicit user acceptance case: **switch mode from rectangle to free-form without stopping the mouse drag; the already drawn rectangle remains and free-form carets accumulate after it**. Existing strategy implementation preserves mixed output through a shared owner; do not turn the selector into the permanent kind of every selection. The exact wider mid-gesture/removal/overlap policies were intentionally postponed.
+- `insertMode` values: `raw` (default: one payload repeated at all selections), `lines` (split source on CR/LF/CRLF), `csv`, `tsv` (flat ordered field parsing with double-quoted fields, escaped double quotes, separators and row breaks). Explicit arrays are always per-target values in selection order. The parser is currently a **private fixed-mode switch**, not the future pluggable insert-interpreter registry. CSV/TSV currently flatten values to selection targets; do **not** claim full MadEdit-Mod/Excel rectangle-paste distribution, cyclic autofill or heterogeneous source/target-grid parity. Invalid input and edit collisions must fail before source mutation.
+- `subscribe(listener)` returns an unsubscribe callback. Implemented event kinds: `content`, `selections`, `selectionMode`, `insertMode`, each with `revision`. The source subscription fires after the internal selection owner's subscription so consumers see rebased selections. `destroy()` is idempotent, releases the view and subscriptions, **does not** destroy the injected Document. The standalone TextEdit v0.8.2 implementation is unchanged.
+
+**Concrete code locations** (`rumiai-os`):
+
+- `lib/sys/js/core/m/text/document/{Document.js,Document2D.js,FlatDocument.js,PieceDocument.js,RawDocument2D.js,_DocumentStore.js}`
+- `lib/sys/js/core/m/text/selection/{Selections.js,_ModeSelections.js,LineSelections.js,RectangleSelections.js,FreeFormSelections.js,TextEditSelections.js,helpers.js}`
+- `lib/sys/js/core/modules-js.json` exports `RawDocument2D` after the `selection` descriptor by reopening the `document` namespace for compiler import order; this is the **actual passing compiled-core arrangement**, not a claim that the modules have been flattened into one textual source.
+
+**Test and validation evidence (no host exaggeration):** `rumiai-tests/tests/rumiai-os/text-document/core.test.mjs` uses the real `jsc` compilation of the product descriptor and tests both FlatDocument and PieceDocument, invalid constructor args, `rowCount`/`colCount`, bounded/clipped `getRect`, `read`, mixed rectangle→free-form, removals, raw and split-lines insertion, quote-aware CSV and malformed CSV atomicity, TSV, external source commit/rebase, listener/unsubscribe, idempotent destroy, virtual columns/rows and source revision. Test exact SHA `6523644e7c7e4932910f22ca64ec718b2a8bfb74`. Product exact SHA `f7f35e2ccd56e9c21530f94e28ee9eb5e6d82e0a`: [document CI 39225944555](https://github.com/massimilianonardi-ai/rumiai-os/actions/runs/39225944555) **PASS**. On executable-code-equivalent prior product revision `139823d278e67630e8e0a3856a960eaaa8a5bc8f`, [core CI 39225420117](https://github.com/massimilianonardi-ai/rumiai-os/actions/runs/39225420117) **PASS**, [selection CI 39225420236](https://github.com/massimilianonardi-ai/rumiai-os/actions/runs/39225420236) **PASS**. Subsequent product commits changed only the document-test pin, not runtime code. **No physical Ubuntu host validation of RawDocument2D, no benchmark establishing large-file latency/RAM, no finished browser GUI.**
+
+**Do not silently conflate completed and pending:** The exported abstract `Document2D`, concrete `RawDocument2D`, `Selections` and three mode strategies exist. A logical/advanced `Document2D` implementation based on the proven `TextEditRepresentation` concepts is **not** in the new `m` core. The older standalone TextEdit 0.8.2 `TextEditRepresentation` remains a separate, unchanged legacy implementation. The user's broader target is multi-level `Document2D` composition with arbitrary logical/virtual representations, browser-agnostic, tiny GUI. Review the current repo contracts and exact public behavior before the next change; choose concrete scope with user direction, never substitute earlier brainstorm for normative contract.
 
 ## Fixed task-local choices
 
@@ -216,6 +255,8 @@ These are revision-specific resumption evidence, not substitutes for the mandato
 
 ## Current state
 
+**CURRENT AS OF 2026-10-19:** The core now exposes the completed raw adapter `m.text.document.RawDocument2D`, with `PieceDocument` as the intended backing store, abstract `Document2D`, `Selections`, and three selection modes. Production GUI integration and advanced logical `Document2D` are pending; the private `TextEditSelections` implementation is retained by composition. See **Resume checkpoint — 2026-10-19** above and the canonical `TEXT-EDIT.md` for the precise current contract. The older source-and-PoC evidence below is historical task context, not the current next implementation target.
+
 **Promoted TextEdit v0.1.0 core (2026-10-11):** explicit user authorization to finalize architecture and release a GUI-independent core; the binding promoted contract is now `specifications/rumiai-os/TEXT-EDIT.md`, and the published `m` JS library is `rumiai-os/lib/sys/js/text-edit.lib.js`, documented in `res/sys/manual/text-edit.lib.js`. Public names: `TextEdit` composition; `PieceDocument` implementing structural `TextEditBase`; `TextEditSelections`; `TextEditRepresentation`; `TextEditAdvancedSelections`. The representation now offers the explicitly requested `replace(sourceStart,sourceEnd,arbitraryText)` source-coordinate overlay API, without touching the source text. Projected positions inside replaced text map to a region, not invented editable source offsets; empty placeholders and Unicode grapheme boundaries have explicit handling. Separate non-text note metadata, explicit confirmed-edit rebase and caller-selected column widths remain. No listeners/history/GUI inside the library. `TextEdit` permits injection of a selection-compatible future history wrapper. Permanent real-product validation: executable `rumiai-tests/tests/rumiai-os/text-edit/core.test` and `core.test.mjs`, pinned in the workflow. [Actions 38172706588](https://github.com/massimilianonardi-ai/rumiai-os/actions/runs/38172706588) PASS at exact released commit `45a5dc2dde494ee1411b9da9d965707c68c7adbf` for both real product tests and GitHub release publishing. Verified [GitHub Release TextEdit v0.1.0](https://github.com/massimilianonardi-ai/rumiai-os/releases/tag/text-edit-v0.1.0): non-draft, non-prerelease, immutable tag `text-edit-v0.1.0` at this commit, attached `TextEdit-v0.1.0.zip` (12,511 bytes, SHA-256 `9c2af1178a9376cb4141bd799999505d803f23177cba4c07e83ec77854a3aeaa`). A forward-only `release/text-edit-v0.1.0` source branch also points to the released revision. This initial baseline does not establish native GUI/IME/rendering/RTL parity or full optimized giant-line selection. Future optimizations are explicitly deferred per user instruction.
 
 - **Concrete source-mapping checkpoint (2026-10-11):** PoC 063 `src/projection-metadata-rebase-probe.mjs` and `tests/projection-metadata-rebase-probe.mjs` now exercise the explicit before/after rebase on real FlatDocument/PieceDocument/AdaptiveRepackDocument with 24 per-backend test scenarios in total: insertion affinity, surviving anchors, deleted anchors, fold shifts after earlier newline insertion, hidden-fold mutation, fold-boundary damage, EOF-fold mutation, contiguous multicaret edits and stale length/line-count rejection. A 200,000-row PieceDocument with one hidden 2 MiB line and 2,400 annotations was rebased after one newline insertion without any `slice` calls in 1.63 ms on the final observed GitHub Linux/Node run. An added test then applies 160 real disjoint multicaret insertions and independently verifies all 2,400 rebased annotation offsets in 1.69 ms, again with no source slices (single-run measures, not performance bounds). [Actions 38161702721](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/38161702721) PASS both genuine hosted core and unchanged browser regression at code commit `5f49370104fbe4859755c9059ff37e32c5825e91`. Existing document projection and advanced selections were not changed. No source-version identifiers exist; an unreported edit preserving length/line-count could defeat this rebase, so callers must supply the exact confirmed edit record. API and folding policies remain candidates, not product contracts.
@@ -236,9 +277,18 @@ The new external column planner demonstrates model-level 2D clipboard preparatio
 
 ## Next action
 
-Resume the editor's architectural redesign **from code the user has inspected**, not from unreviewed PoC abstractions. The first requested review export is complete under `m.text.document`, with the stable TextEdit 0.8.2 source unchanged and the positive GUI experiment preserved as reference behavior. Wait for a concrete user-directed next source/component or architecture question; do not continue extracting `region-geometry.js` or impose new region/selection APIs by default.
+1. **New-chat resumption:** perform fresh README-ordered repository preflight, read current `TEXT-EDIT.md` plus this handoff, inspect `RawDocument2D.js` and its real-core permanent tests, and report any code/spec/test mismatch without silently choosing an implementation.
+2. **Then follow the user's next explicit target**, not a speculative automatic follow-up. Reasonable alternatives to discuss include auditing/finalizing `RawDocument2D` semantics, designing/implementing the **logical** `Document2D` layered on `RawDocument2D`, or resuming GUI integration. The intended outer consumer must not know source representation. Do not begin removing private `TextEditSelections`, implementing generalized view-region geometry, adding more insertion modes, or porting the PoC unless explicitly authorized for that task.
+3. Preserve the current source/test/handoff revisions with forward-only Git; physical GUI testing of the new adapter and large-file performance remain unperformed.
 
 ## Blockers / open questions
+
+- **No blocker for the validated RawDocument2D normal path.** The next *feature* or migration boundary is deliberately left for user selection.
+- **Advanced logical Document2D:** source↔view mapping, nested view composition, grapheme/TAB/wide cells, folded/virtual/source-less regions, regions spanning multiple visual rows, rectangle boundaries intersecting tokens, virtual editability/overlay copy policies, and the output of a richer `getRect` without breaking the raw adapter's published behavior.
+- **Pluggability:** whether/when selection and insertion interpreters should be externally registered or configured (currently three/four built-in modes), mode-switch state and gesture boundaries, duplicate and overlapping targets, reverse-oriented editing and multi-mode `remSelection` semantics. The concrete implementation currently handles the tested mixed-mode case; more general policy remains intentionally deferred.
+- **Performance and validation:** `colCount` revision-cache invalidation still scans every row; `getRect` is bounded but no asymptotic/host evidence for enormous rows; no formal physical-host run of `RawDocument2D` or new editor integration.
+- **Exact migration meaning:** the direct GUI dependence on `TextEditSelections` has been eliminated, but the class remains as the adapter's **private** physical edit owner. Deleting it, renaming it or transferring its source-anchor/rebase mechanism to `RawDocument2D` is **not** implicitly authorized by the completed caller-facing replacement.
+- **External transfer semantics:** the fixed simple raw/lines/csv/tsv parser is not general MadEdit-Mod CSV/TSV 2D import with cycling/fill/shape mismatch policies; clipboard/system transport and physical GUI handling remain external.
 
 - Which exact MadEdit column-editing interactions distinguish it from competitors, and how do they behave for short lines, virtual columns, tabs, Unicode and clipboard?
 - Which huge-document data structure, generalized selection model, edit/undo transaction form, viewport geometry and input strategy meet the performance/memory constraints?
