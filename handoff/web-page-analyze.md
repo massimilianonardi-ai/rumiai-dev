@@ -7,7 +7,7 @@ Updated: 2026-10-17
 
 Before analysis/modification always verify current remote HEADs; follow `rumiai-dev/README.md` Mandatory Read Order: `RULES.md`, `CONSISTENCY-GATE.md`, `specifications/README.md`, current `specifications/rumiai-os/WEB-CONTROL.md`, `DIAGNOSTICS.md` if applicable, `TESTING.md`, this handoff, current PoC implementation and tests. Explicit user corrections are higher authority than this task-state checkpoint. Do not read Git history by default.
 
-Latest PoC 069 change checkpoint: `ec54623fc5afe4c04e289981c56fc061949ac045`; other unrelated PoC directories are receiving concurrent main-branch commits and must be preserved. PWC baseline HEAD: `403f4fa9bbea419715e9c834e847c6f2b60ae421`. Revalidate current repository HEAD before subsequent work. Revalidate at next work unit.
+Latest PoC 069 change checkpoint: `8df9121f2273a196f4d0bd01eaeb693ac7f446ba`; other unrelated PoC directories are receiving concurrent main-branch commits and must be preserved. PWC baseline HEAD: `403f4fa9bbea419715e9c834e847c6f2b60ae421`. Revalidate current repository HEAD before subsequent work. Revalidate at next work unit.
 
 ## Purpose and user-fixed requirements
 
