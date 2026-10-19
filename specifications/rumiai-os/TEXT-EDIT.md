@@ -720,6 +720,60 @@ The exact interaction lifecycle, later `Document2D` mode registry and
 editing/representation composition are **not** implemented here. The
 separate standalone TextEdit 0.8.2 specification and engine remain unchanged.
 
+## Separate new `m` core: abstract `Document2D` interface
+
+The new `m.text.document.Document2D` is a **separate nominal abstract
+interface**, not a subclass of `Document`. It describes text and editing
+in the particular two-dimensional coordinate space exposed to a consumer,
+regardless of whether the backing content is physical text, a logical
+representation, virtual content or the output of another representation.
+The GUI must not need to distinguish the provenance or internal coordinate
+encoding to invoke the same `Document2D` API.
+
+The exported abstract class defines these members:
+
+```javascript
+get rowCount()
+get colCount()
+getRect(rowStart, colStart, rowEnd, colEnd)
+read()
+getSelections()
+setSelections(selections)
+addSelection(position)
+remSelection(position)
+get selectionMode()
+set selectionMode(mode)
+get insertMode()
+set insertMode(mode)
+insert(content)
+subscribe(listener)
+destroy()
+```
+
+`rowCount` describes the exposed document's rows. `colCount` describes
+its maximum text column; neither property reveals source storage geometry.
+`getRect` reads a **bounded 2D window** for display, including a bounded
+column range; `read()` separately reads the *current selections* for transfer
+to external consumers. Coordinate interpretation, selected text production,
+selection-mode policies and input-mode parsing belong to concrete
+implementations. `addSelection` and `remSelection` may reorganize the entire
+effective selection set according to the selected interpretation mode.
+`insert(content)` receives content for selected editing without requiring
+the interface to know where the content originated; system clipboard
+transport and GUI pointer/key events are external responsibilities.
+`subscribe(listener)` observes document changes; `destroy()` is the
+lifetime endpoint of an implementing view.
+
+Direct construction throws `TypeError('Document2D is abstract')`; inherited
+abstract members throw `Error` until implemented by a subclass. The class
+contains no storage, registrations, selection owner, rendering algorithm or
+editing implementation. `Document`, `FlatDocument`, `PieceDocument`,
+`Selections` and `TextEditSelections` retain their existing contracts.
+No concrete `Document2D`, selector registry, insert interpreter or format
+for projected rectangle and selected-content return values has been
+implemented by this interface-only change; those details are not promoted
+to normative behavior here.
+
 ## Validation and release boundary
 
 The current v0.8.2 library is checked against the actual product source by
