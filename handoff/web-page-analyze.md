@@ -573,3 +573,45 @@ Do not guess another commit or modify the restored PoC 069 by trial and
 error. Recover the actual preceding source/command from prior chat or
 other concrete evidence, verify it against user's observation, then
 perform a forward-only exact restoration and physical validation.
+
+## Earlier numbered PoC recovered as source, not confused with inspect-01 (2026-10-19)
+
+Following the user's explicit correction that the requested PoC preceded
+`inspect-01` and was not the PoC 069 investigation, Git history exposed
+a distinct earlier **PoC 068**, at
+`pocs/068-chatgpt-shared-link-export/`. Unlike PoC 069's
+`run-investigation.sh` or `run-live.sh`, PoC 068's
+`export-share.mjs` and `snapshot-acquire.mjs` form an actual
+one-share entry path using the original share URL, a structured
+`mapping/current_node` snapshot, and no DOM scrolling for message
+enumeration. Historical source revision selected:
+`a0ad39cdfe4f064debcd536c905a880f5147d26d`
+(2026-10-17, with recorded 5/5 **limited** anonymous artifact
+acceptance; visual fidelity **not** proven). This is a grounded
+earlier PoC source, not a claim that the original user's
+no-scroll/top visual confirmation has been newly observed.
+
+A forward-only PoC repository commit
+`4742e2d0b69c5b5f1828f5655db3d765680f5d3e`
+restores **all 22 original top-level source and documentation/test/reference
+entries** from historical PoC 068 subtree
+`dfc91610035cf9639971ca2697c060f21d4aa2f5`.
+Every restored entry has exactly its original Git object SHA; no file was
+rewritten to emulate it. Historical generated captures, publication copies,
+signed/resource-derived data and evidence ZIPs were intentionally **not
+republished** into the current branch. Crucially, concurrently present
+tracked `archive/`, `node_modules/` and `package-lock.json` were
+left intact and are not claimed to match the historical version. The
+current `pocs/069-web-page-analyze/` tree and every other PoC
+were unchanged; the previously restored `inspect-01` code remains there
+but is explicitly **not** the requested preceding PoC.
+
+Remote Git readback verified original blob SHAs for `README.md`,
+`export-share.mjs`, `snapshot-acquire.mjs` and `package.json`;
+comparison showed only PoC 068 files changed in the new commit.
+No new Node tests or physical Chromium session was executed. The
+historical 5/5 structured/public-artifact result must not be
+relabelled as a success on this restored revision or evidence of
+rendering fidelity. The user must physically verify the source they
+meant: if this is still not their specific earlier PoC, do not infer
+an even older source or rewrite an exporter by approximation.
