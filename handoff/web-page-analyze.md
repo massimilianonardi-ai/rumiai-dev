@@ -7,7 +7,7 @@ Updated: 2026-10-17
 
 Before analysis/modification always verify current remote HEADs; follow `rumiai-dev/README.md` Mandatory Read Order: `RULES.md`, `CONSISTENCY-GATE.md`, `specifications/README.md`, current `specifications/rumiai-os/WEB-CONTROL.md`, `DIAGNOSTICS.md` if applicable, `TESTING.md`, this handoff, current PoC implementation and tests. Explicit user corrections are higher authority than this task-state checkpoint. Do not read Git history by default.
 
-Latest PoC 069 change checkpoint: `a66e7e6da1ff315fdbe330233fb7c497595e475d`; other unrelated PoC directories are receiving concurrent main-branch commits and must be preserved. PWC baseline HEAD: `403f4fa9bbea419715e9c834e847c6f2b60ae421`. Revalidate current repository HEAD before subsequent work. Revalidate at next work unit.
+Latest PoC 069 change checkpoint: `fd15a4fb87a797226ab08c15be937fe4ea3bc74d`; other unrelated PoC directories are receiving concurrent main-branch commits and must be preserved. PWC baseline HEAD: `403f4fa9bbea419715e9c834e847c6f2b60ae421`. Revalidate current repository HEAD before subsequent work. Revalidate at next work unit.
 
 ## Purpose and user-fixed requirements
 
@@ -270,6 +270,16 @@ Follow-up PoC 069 changes, forward-only and isolated to its sources/tests/README
 - README documents the actual failed acquisition and two operator workflows: `node diagnose-accumulation.mjs accum-01`, then **new unused run** `PWC069_SCROLL_MODE=manual sh run-accumulate.sh accum-02` after `git pull --ff-only`. Preserve `accum-01` and previous evidence, do not publish the HTML/stream/profile to Git.
 
 Pending: compare diagnostic error categories, inspect saved new manual-run source identity growth and ordering connectivity; if original human scroll mounts new segments and observer misses them, instrument actual source turn identity/DOM ancestry from private evidence and correct detection before CSS/media fidelity. Preserve unknown results as unknown. For fully autonomous deterministic operation, source site-specific navigation must still be learned from executing JS and human input evidence; manual fallback is an instrumented **bridge**, not the completed algorithm. Validate actual first/last messages, content, all rich attachments, fonts, CSS, SVG/canvas and exact order before calling export complete.
+
+## Current user correction: shared link is the only selection; retain top-first startup
+
+The user explicitly rejected copying the original macOS Python exporter's **SQLite conversation selection, interactive menu or conversation ID choice** into the shared-link JavaScript exporter. The public `https://chatgpt.com/share/<id>` URL identifies the source conversation completely. The user also emphasized that the preceding PoC code **already starts at the correct top of the conversation**; do not add any repositioning, scroll reset, bottom-first navigation, selected-message filtering or app-specific `/work/conversation/<id>` route that might break that verified property.
+
+The earlier local scratch JavaScript port of the Python file was a macOS/Electron `app://` renderer translation; **it is not approved as the shared-link runtime**, since its catalog selection and `mergeActiveBranch` snapshot assumption differ from the web share semantics and the user's physical DOM segment observations. It has **not** been committed as part of this correction. The existing PoC 069 `accumulate.mjs` / `accumulate-observer.js` already implements share URL as the source, installs the observer before `source.goto(url)`, waits for initial IDs, scans them and drains them to export before any automated wheel. The source/replica navigation implementation remains unchanged.
+
+Forward-only PoC changes at checkpoint `fd15a4fb87a797226ab08c15be937fe4ea3bc74d` add only `tests/accumulate-link-entry.test.mjs` and a README clarification. This test guards (1) link-only entry rather than a catalog, (2) observer injection before shared URL navigation, (3) initial scan plus persistence before wheel and manual takeover, (4) accumulating every identifiable turn without manual per-message choice. The **three focused tests passed in an isolated V8 harness with mocked readFile and URL**, based on current GitHub sources. Native `node:test`, browser runtime or physical full-link export were not rerun for this correction. No previous source evidence or existing outputs were altered.
+
+The objective remains **exact JavaScript share-link export**, preserving known correct initial page behavior and actual lifecycle capture; multimedia/CSS/attachment correctness still requires real validation. Do not claim full Python macOS behavior has been transferred to a public shared page just because output formatting code can be ported.
 
 ## Validation and next physical step
 
