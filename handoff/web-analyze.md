@@ -54,13 +54,22 @@ Provide the `m` JavaScript library at `rumiai-os/lib/sys/js/web-analyze.lib.js` 
 - Real Chromium + Node.js 22 GitHub Actions run **PASS**: https://github.com/massimilianonardi-ai/rumiai-os/actions/runs/39322930821 ; runner executed test at the pinned revision. This confirms real local browser/CDP fixture behavior; the exact remote ChatGPT URL remains an operator-side validation pending on the new code.
 - Verified no change to the separately pinned `chatgpt-export.lib.js` Markdown baseline.
 
+## Real shared-page archived-resource validation (user-operated, 2026-10-19)
+
+- Operator committed evidence at `rumiai-dev-PoCs@cfc4533627382bb0e339ea1c424eb96d1f88b123` under `pocs/068-chatgpt-shared-link-export/analysis-chromium-resources-02/` for the agreed target share.
+- `summary.json`: 4,768 events across 71.81 seconds, zero dropped logged events; 631 requests observed, 614 bodies archived (40,498,763 bytes), 13 redirects without bodies, 2 failed requests, 2 unfinished at shutdown, 0 pending CDP reads. In `resources.jsonl` there are also 11 `finished-without-metadata` records (unmatched requests from early attachment/races). They do not imply 11 additional successfully archived requests.
+- `scripts.jsonl`: 530 script parse events, all 530 source reads saved, zero failures, producing 525 distinct source file objects due to duplicate-content hashing. The output directory has 589 distinct resource payload files for 614 saved outcomes.
+- Initial navigation was acknowledged at 10.36 seconds, Page.loadEventFired at 11.86 seconds; capture continued until operator shutdown around 71.75 seconds. Thus the user-observed navigation-timeout regression is no longer occurring in this run.
+- This is actual target-host validation of CDP response/script capture, *not* proof of 100% resource completeness or DOM replay accuracy. The preserved resource and script indices can contain full signed URLs and source/body data.
+- **Security/privacy:** user committed a new entire Chromium profile and raw response archive again. Files in profile may include browser/session secrets; the historical record cannot be sanitized through a normal forward commit. Do not inspect/expose private values or automatically rewrite Git history; request an authorized remediation plan if these artifacts are not intentionally safe to retain in the repository.
+
 ## Current state
 
-Native-CDP response and compiled-script archives, documentation and real fixture-based CI regression coverage are committed. User's previous PoC 068 logs demonstrate actual real-page HTTP 200 and DOM interactions for the same share URL, but the **revised raw archive** has not yet been executed against that real page from the user's `m` shell. Exit/logging paths distinguish incomplete capture from CDP data actually archived. Existing private profiles in PoC 068 must not be re-committed; their existing committed presence warrants a separate privacy/history risk assessment.
+Native-CDP response and compiled-script archives, documentation and real fixture-based CI regression coverage are committed. The **revised raw archive has now been physically operated successfully against the real target share** and the complete JSONL indexes have been examined. Coverage is substantial but explicitly incomplete for redirects/unrecoverable/persistent resources. Follow-up focuses on correlating preserved scripts with runtime observers, turn identities and render-triggering interactions.
 
 ## Next action
 
-On the user's normal `m` workstation, pull current rumiai-os and run the same two-operand `web-analyze.lib.js` command with a **fresh private output directory**. Navigate as desired and press Ctrl+C instead of externally closing the browser to allow the bounded drain. Read `summary.json.resourceCapture`, `resources.jsonl` and `scripts.jsonl`, then inspect archived JS without committing confidential captures. Correlate script registrations/DOM IDs through a separate focused observation step; this revision collects source evidence, it does not claim full event registration tracing.
+Use the committed script metadata to locate the share renderer's turn virtualization and observer callbacks; combine with a future event-target and message-ID-aware runtime probe to reproduce mounting/unmounting under controlled scroll/root-intersection conditions. Prefer a private output directory for new captures; do not commit browser profiles or raw unreviewed resources. Capture coverage remains audited through `resourceCapture` and per-request outcomes. The current archive is already available, so a duplicate capture is not a prerequisite for initial static analysis.
 
 ## Blockers / open questions
 
