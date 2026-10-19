@@ -381,3 +381,61 @@ was not executed through native Node from a checkout here. Browser
 acquisition on the user's workstation is still untested for this
 revision, and complete chat fidelity remains unknown. No original
 `accum-01` evidence has been replaced.
+
+## Correction: autonomous shared-link export, preserve verified start (2026-10-19)
+
+The user rejected the prior assistant's claim of completion: the PoC still
+blocked on manual scrolling/Enter, did not reliably produce export artifacts
+in the normal interactive run, and the DOM-observation ZIP was not equivalent
+to the original automatic Python snapshot export. This negative feedback is
+current task evidence, not an accepted export result. The already verified
+initial shared URL navigation and beginning-of-chat capture **must remain
+unchanged**.
+
+Forward-only PoC 069 correction at remote revision
+`71b0408f2f5ab60e0dfc01c790f4c2dc8737a4d0`:
+- Kept source tab creation, pre-navigation `accumulate-observer.js`
+  installation, direct `source.goto(url)`, initial `scan()`/`drain()`
+  and invisible replica sequencing untouched. No catalog, message choice,
+  route reset, or bottom-first navigation was introduced.
+- `accumulate-auto.mjs`: after the first retained turns, traverse using
+  Chromium `PageDown`, fall back to targeted wheel and
+  `scrollIntoView` on the last mounted turn when the viewport stops
+  progressing. Observe rendered geometry/viewport and newly retained IDs,
+  drain the lifecycle observer after each movement, and stop with explicit
+  `automatic-navigation-stalled` or `automatic-step-budget` evidence.
+- Default `run-accumulate.sh <new-name> <share-url>` no longer invokes the
+  terminal prompt or requires a manual scroll. On normal bounded stop it
+  proceeds to write HTML, retained observation data, manifest and the
+  Python-layout ZIP; a sidecar write exception propagates as run failure.
+  Optional explicit manual mode remains diagnostic only.
+- Added focused native Node driver regressions covering fallback sequence,
+  monotonic segment retention before the next input, and lack of any
+  fabricated completion claim. The link-entry test now guards the existing
+  initialization before automatic navigation. README and launcher updated.
+- Current auto traversal still **does not** implement the macOS Python
+  debugger snapshot capture on a public web share. Neither a complete
+  mapping/current_node source nor full live shared-page coverage has been
+  verified. A Python-format ZIP of observed DOM is not identical input.
+  Keep `complete=false` and never claim a verified full transcript.
+
+Validation performed here: local auxiliary native Node v22.16.0
+`accumulate-auto.test.mjs` and an existing Python-export test mirror passed
+7/7 total; the new navigation unit tests alone passed 3/3 after final
+formatting. The committed main `accumulate.mjs` parsed as JavaScript after
+normalizing module import/export syntax for isolated V8 parsing, and source
+ordering was checked: `addInitScript` precedes `goto`; initial scan/drain
+precedes the new traversal. Browser execution on the user's actual share,
+full native checkout suite, first/last-message audit, multimedia completeness
+and ZIP production from a real run have **not** been executed in this
+environment. Previous `accum-01` remains untouched and incomplete.
+
+Next action: physically run a **new unused** automatic run with the exact
+shared URL, without manual intervention; audit actual growth beyond the
+initial 17 IDs, first/last user+assistant turns, ordering, complete zip
+creation, and observer/resource-loss reports. If traversal still stalls or
+misses source segments, inspect the recorded private navigation/DOM evidence
+and correct the actual browser interaction or source-data retrieval without
+changing already working startup. Real success requires comparing the
+complete source data and actual Python-compatible outputs; simulated
+serializer parity cannot substitute.
