@@ -293,3 +293,60 @@ Preflight: current remote HEADs verified for `rumiai-dev`, `rumiai-dev-PoCs` and
 - Some ChatGPT states may be genuinely missing because of early interruption or application virtualization; collage must show missing coverage instead of inventing restored contents.
 - Reopening MHTML with unrestricted network is **not proof of no external dependencies**, though the user visually confirmed the native archived file works.
 - The provider/browser runtime is unchanged; no product contracts have been promoted on the basis of this unsettled experiment.
+
+
+## 2026-10-19 — JavaScript Python-format export added to the share-link PoC
+
+**Current checkpoint:** `rumiai-dev-PoCs` HEAD `ac163a6a1b469362a37c18de66e0bfadde4eb602`; `rumiai-dev` HEAD was `2e3038ce149d44f7e158b0520363ce2907e95ee7` before this handoff update. Always refresh HEAD before further work.
+
+User-requested path: begin **only** from the supplied public
+`https://chatgpt.com/share/<id>` URL; keep the already-observed correct
+top-first original page startup, pre-navigation observer, immediate first
+scan/drain and append-only retention. Do not introduce a conversation catalog,
+message selection or macOS-specific renderer route.
+
+Implemented forward-only in PoC 069:
+- New `python-export.mjs` faithfully ports the original supplied Python
+  **snapshot serialization, filtering/audit and archive stage** for an
+  actual `mapping/current_node` JSON input: parent chain validation,
+  original full message retention, non-text part inventory, Python output
+  filenames, gzip, SHA-256 checksums and ZIP, without invoking Python.
+- Existing `accumulate.mjs` navigation/observer/wheel/manual code is unchanged
+  except for importing and invoking the new export **after** the replica has
+  been finalized. It writes private
+  `evidence/accumulations/<run>/python-export/` and
+  `python-export.zip`, alongside existing HTML/manifest evidence.
+- For the real shared-page entrypoint the new bundle is explicitly labeled
+  DOM observation data: retained original turn HTML + visible text/roles and
+  ordering evidence, not fabricated `mapping/current_node` or source
+  message objects. The public page was previously observed to virtualize
+  segments and has **not** exposed a complete renderer snapshot.
+- `tests/accumulate-python-export.test.mjs` covers the snapshot and DOM
+  cases. The stale link-entry test was reconciled with the current
+  mandatory explicit URL; README examples now supply the required link,
+  and launcher checks the new module syntax before navigation.
+
+**Validation:** On the assistant's auxiliary Node 22 environment,
+`python-export.mjs` passed `node --check` and its local reference test
+suite passed 4/4 native Node cases. A controlled snapshot fixture was run
+through the user-supplied original `chatgpt-export.py` and the JS
+`exportSnapshot`: the Markdown transcript, JSONL visible messages,
+non-text parts and audit semantics matched. The committed exporter Git
+blob SHA matched the locally tested source byte-for-byte
+(`089b03a6907af41397d98c4fc055c1cc05d85368`).
+Remote final code was syntactically parsed using V8 after stripping module
+imports/shebang; **the full committed Node test suite and actual browser
+export have not been executed** on the user's Chromium reference host.
+No assertion of complete share-page conversation export or rich-media
+fidelity is permitted yet.
+
+**Next physical validation:** from the refreshed PoC checkout, use an unused
+run name and explicit share URL, preferably
+`PWC069_SCROLL_MODE=manual sh run-accumulate.sh accum-python-01
+'https://chatgpt.com/share/6ad1c0d5-49ec-83eb-a79b-85b04b938835'`;
+scroll source from observed first turn to actual last turn before pressing
+Enter. Inspect both old `export/index.html` and new `python-export.zip`,
+including first/last messages, order, users/assistants, attachments, asset
+gaps and manifest. If real original text/DOM differs from expected fidelity,
+correct acquisition based on real evidence, never mark it complete from
+the isolated archive-port test.
