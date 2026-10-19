@@ -439,3 +439,46 @@ and correct the actual browser interaction or source-data retrieval without
 changing already working startup. Real success requires comparing the
 complete source data and actual Python-compatible outputs; simulated
 serializer parity cannot substitute.
+
+## Recovery of the actual verified shared-page startup (2026-10-19)
+
+The user clarified that the original physically confirmed beginning-of-chat
+startup was **not** the later `accumulate.mjs` path. The responsible current
+source is `pocs/069-web-page-analyze/investigate.mjs`, first introduced at
+PoC revision `4d229fb29068c4021587778c380bcf4ae629e99f` and used by
+the user's `inspect-01` research run. The existing handoff separately
+records the user's direct observation that this `inspect-01` browser opened
+on the first messages of the shared chat without needing a scroll. The
+original `investigate.mjs` startup has been retrieved from that exact
+historic revision (explicit revision lookup requested by user): one visible
+page, CDP `Page`/`Debugger`/`Profiler`/`Network`, original
+`investigate-observer.js` injected using
+`Page.addScriptToEvaluateOnNewDocument`, precise-coverage startup,
+direct `page.goto(shareUrl)`, then an initial checkpoint without scroll.
+
+A forward-only PoC 069 update now restores that **specific startup
+sequence** to `accumulate.mjs` rather than treating the latter's
+different original two-tab bootstrap as the proven code. It keeps the
+original `investigate-observer.js` pre-navigation and adds the
+accumulating observer through the same CDP mechanism. The original source
+page's first snapshot and `startup-initial.png` are saved **before**
+opening the invisible export tab; only afterward does the automatic
+traversal/collection proceed. `tests/accumulate-link-entry.test.mjs`
+checks source/CDP/navigation/checkpoint/replica ordering and that no
+automatic scrolling runs in that startup region. README was corrected
+to identify `inspect-01` as the origin, not `accumulate`.
+Latest changed PoC revision: `f2305cb757e4319034448dff6b6933b4fb57a3dc`.
+
+Post-change checks: compared the remote PoC diff against the previously
+observed HEAD; only PoC 069 README, `accumulate.mjs` and its link-entry
+test changed in this work unit. V8 parsed the updated runtime and test
+sources after normalizing module-only syntax; the ordered startup
+markers were independently checked. **Native Node test execution and
+physical Chromium validation against the operator's shared page were
+not performed** in this work unit. The historical first-page behavior
+is supported by the operator's `inspect-01` observation, not by
+relabeling the new changes as physically verified. A new run must check
+the private `startup-initial.png` for genuine first-message position;
+subsequent complete transcript acquisition and Python-equivalent
+output remain separate unresolved acceptance criteria. Do not change
+this recovered startup while investigating traversal.
