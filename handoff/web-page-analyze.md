@@ -796,3 +796,29 @@ Next older relevant commit if `2863b74` is also rejected:
 check that candidate's actual changed paths before trial.
 No physical execution was performed here; no source PoC repo
 updates authorized/needed. Keep every trial isolated.
+
+## Backwards historical trial: 2863b74 rejected; a06e5a0 next (2026-10-19)
+
+The operator explicitly rejects
+`2863b74accc053359766254d4f90654a0ca03935` as not
+the physically observed correct first-message startup. Its first
+parent is `a06e5a0e1c9a2abd296080c268a04616a9a3dfce`,
+committed on 2026-10-19 12:21:11 Europe/Rome (10:21:11 UTC).
+It modifies **only** `pocs/069-web-page-analyze/README.md`
+(Markdown quoting). The full historical checkout contains an
+unchanged original `run-investigation.sh` with blob
+`3d13e93512dc0904a08d5e19c28d36bc2bcacce1`,
+`investigate.mjs` blob `66187da7c3b63088944f7027cd2ff4da37ea5506`,
+and `investigate-observer.js` blob
+`7a7500534551d386d60452dee0ee19e07547468c`.
+The script performs `page.goto` on the fixed original
+`https://chatgpt.com/share/6ad1c0d5-49ec-83eb-a79b-85b04b938835`,
+captures `initial`, then asks for manual top/bottom/top; no
+current real-browser validation of this exact trial exists.
+The next older PoC commit if rejected is
+`fd43418c7082893b34901b3c8921bbf20a67d73b`,
+19 October 12:20:51 local (also README).
+The backwards-search protocol explicitly retains
+every PoC-changing commit even if only docs changed.
+Use isolated Git archive and private pinned pwc dependency;
+do not overwrite the PoC main branch. No PoC source modified.
