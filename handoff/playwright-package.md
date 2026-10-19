@@ -47,17 +47,18 @@ Fresh HEAD retrieval is required on resume.
 - Preflight retrieved current remote heads for rumiai-dev, rumiai-os, rumiai-tests and pkg-catalog and consulted canonical package/testing sources.
 - Official Playwright browser documentation verified: Playwright browser binaries are separately installed, selected by a Playwright-version-specific revision; external Chrome/Chromium is an optional explicit launch target.
 - Added `pkg/playwright/all` definition, Node.js dependency, CLI launcher, library/browser environment and automated release-build workflow to pkg-catalog in forward commit `68b576f138400770ce1c1bd69ebf169cccc3c3df`.
-- Reviewed committed diff (12 added paths). Read back all six critical package/workflow files and passed 10/10 static structural consistency checks (launcher identity, Node/Chromium environment, dependency, link, artifact pattern, pinned build and publication command). Verified after push that GitHub releases were still empty and no corresponding new Actions run was visible.
+- Reviewed committed diff (12 added paths). Read back all six critical package/workflow files and passed 10/10 static structural consistency checks (launcher identity, Node/Chromium environment, dependency, link, artifact pattern, pinned build and publication command).
+- GitHub Actions build `39267417038` completed successfully and release `v1.63.0` now carries the expected asset and SHA-256 digest. Job logs confirm actual npm dependency installation (`added 2 packages in 1s`) and GitHub release creation.
 
 ## Current state
 
-The catalog entry is published, **but is not yet installable**: the required `playwright-v1.63.0-all.tar.gz` release asset has not appeared. The assistant container cannot reach npm registry (EAI_AGAIN), so no npm-build, browser download or composed `pkg install` validation occurred.
+The catalog entry and required immutable release asset are now published. GitHub Actions build run `39267417038` finished successfully: npm installed 2 packages (Playwright and Playwright Core), checked both version=1.63.0, and published the 4,071,347-byte `playwright-v1.63.0-all.tar.gz` archive (GitHub-reported sha256 `d749d1e4327e9b4ce4b6d7667e2b071d86e10863a59292336de4e4ff8cdad759`). The artifact is ready for `pkg install playwright` attempts. No composed `pkg install`, CLI/browser download or browser-launch validation has occurred: the assistant's local container has no outbound DNS, and the user's actual `m` installation is not available to run here.
 
 ## Next action
 
-Verify workflow registration/execution, fix and run release publication if necessary; then verify release artifact name/digest, perform a genuine `pkg install playwright`, `playwright --version`, `playwright install chromium` and a real browser launch on a supported host. Inspect any resulting integration mismatch and synchronize this handoff.
+Execute a genuine `pkg install playwright`, `playwright --version`, `playwright install chromium`, and a real browser launch on a supported `m` host. Inspect any resulting integration mismatch and update evidence.
 
 ## Blockers / open questions
 
-- GitHub Actions release build has not yet been observed executing after the catalog commit. GitHub connector currently exposes read APIs for workflow runs but no workflow dispatch in this session.
+- Release publication blocker resolved: workflow run successful and release asset verified through GitHub metadata. The end-to-end `m` host install remains unverified.
 - End-to-end execution on the user's supported host is pending; module discovery by consumers outside the Playwright launcher needs explicit validation before claiming reusable JS import behavior.
