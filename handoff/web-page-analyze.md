@@ -615,3 +615,53 @@ relabelled as a success on this restored revision or evidence of
 rendering fidelity. The user must physically verify the source they
 meant: if this is still not their specific earlier PoC, do not infer
 an even older source or rewrite an exporter by approximation.
+
+## Previous (earliest runnable) PoC 068 revision restored on user request (2026-10-19)
+
+**User's latest correction:** the previously restored `inspect-01`
+PoC 069 and the later PoC 068 exporter were both **not** the user-verified
+early share-page startup; the user asks to try the **preceding** version.
+Do not interpret PoC directory 067 as the predecessor: its current role
+is an Ollama cluster rollout, not shared-link browser export.
+
+Repository archaeology located the earliest **complete runnable**
+PoC 068 checkout in the 2026-10-15 development sequence:
+`455c17de4ae1aebc0b3a87b3fd834ad2f0b13e91`,
+whose canonical PoC subtree is
+`706b5c2977d463217a6c53f062243495de273adb`.
+It contains `README.md`, `export.mjs`, `extract.mjs`,
+`package.json`, and `tests/`. `export.mjs` calls
+`web-control page navigate` with exactly the supplied share URL
+**before** calling `_observe`, which subsequently does scroll
+operations; this source order proves there is **no preparatory scroll
+to force the page's initial position**, not that it was physically
+observed to open at the first chat message.
+
+Forward-only PoC repo commit
+`994865e7384df1fe034bf9282a43806d33755ff0`
+replaces the *source and test entries* under
+`pocs/068-chatgpt-shared-link-export/` with their Git objects
+from exactly that 2026-10-15 revision. It removes the later
+structured-CDP/publication source from the current working tree,
+preserving it in history. Existing separately tracked
+`archive/`, `node_modules/`, `package-lock.json`,
+`reference/`, and `.gitignore` are retained unchanged so user
+data and auxiliary resources are not destroyed. As a consequence
+the entire PoC subtree differs from the historical tree, but
+**all six historical individual README/source/package/test blob
+SHA values match** the selected original revision.
+Only the PoC 068 subtree changed; PoC 069 and other PoCs remain
+unchanged. Final independent Git readback verified all six blobs.
+
+The original operator command for this candidate version is
+`node export.mjs 'https://chatgpt.com/share/6ad1c0d5-49ec-83eb-a79b-85b04b938835' './archive'`
+inside `pocs/068-chatgpt-shared-link-export` after
+`git pull --ff-only` and appropriate npm dependency readiness.
+The source expects a configured web-control provider (level 2).
+Do not mistake this DOM based historical exporter for the later
+structured-snapshot exporter or the `inspect-01` investigation.
+Native tests and physical Chromium visual starting-position
+validation have **not** been performed for this restored candidate.
+The user's identification of the original *physically confirmed*
+PoC is still unresolved until they test or the original chat
+utterance/source can be recovered.
