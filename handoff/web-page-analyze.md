@@ -482,3 +482,60 @@ the private `startup-initial.png` for genuine first-message position;
 subsequent complete transcript acquisition and Python-equivalent
 output remain separate unresolved acceptance criteria. Do not change
 this recovered startup while investigating traversal.
+
+## Exact operator-verified inspect-01 PoC restoration (2026-10-19)
+
+**Highest-priority current user correction:** Restore **exactly the prior
+PoC**, not its startup logic transplanted into the later exporter. The user
+explicitly rejected the previous attempts that changed `accumulate.mjs`,
+added CDP hooks, extra startup screenshots, replica tabs, or automatic
+navigation and called those changes a restoration.
+
+The original `inspect-01` investigation entry was introduced at
+`4d229fb29068c4021587778c380bcf4ae629e99f`. The later
+**actual remote revision at the time of the operator's confirmed
+`inspect-01` run** was
+`8df9121f2273a196f4d0bd01eaeb693ac7f446ba`; this is the
+selected exact restoration target, not the earlier initial draft.
+
+At PoC repository commit
+`abb3f8906fb19eeb872b007219166243cf887dd5`,
+the **complete** `pocs/069-web-page-analyze/` Git subtree was restored
+byte-for-byte and path-for-path to revision `8df9121` by reusing its
+original tree object
+`d84bae6afeddad0757906a8a23efee97572f30e4`.
+No manual reconstruction or cherry-picking was used. The update was a
+new single-parent forward Git commit, with no reset, force push, or
+history rewrite. Comparison of the old and new top-level and `pocs/`
+trees confirmed the **only** changed subtree was PoC 069;
+all 73 other `pocs/` entries and other repository root entries
+were preserved.
+
+Final independent Git verification: remote main points to
+`abb3f8906fb19eeb872b007219166243cf887dd5`;
+PoC subtree SHA exactly equals the historical `8df9121` SHA;
+33 historical source/test files are retained; `investigate.mjs` blob
+`8a087acccc20e263cc3ac335d59bf585e8960049`,
+`run-investigation.sh` blob
+`3d13e93512dc0904a08d5e19c28d36bc2bcacce1`,
+and README blob
+`32e58914aeed5e695c6fea5446edf7c30f566edf`
+match their historical revision exactly. Source inspection confirms
+the original investigation installs its CDP observer before a direct
+share URL navigation, records an initial checkpoint without any
+programmatic scroll, and accepts one fresh run-name argument.
+
+This deliberately removes the later `accumulate*` and
+`python-export.mjs` source/test files from **current PoC 069**.
+Their work is preserved in forward-only history but is **not** part of
+the restored PoC. No physical Chromium run or Node test suite was
+executed here; exact Git tree equality, not live behavior, is the
+verified result. Existing gitignored private evidence is not changed.
+A new physical run must use an unused investigation run name; do not
+overwrite `inspect-01`.
+
+Earlier handoff entries describing the later `accumulate` code
+(including claims it had a recovered startup) are historical task
+checkpoints superseded by this exact restoration. Do **not** modify
+the restored PoC or add an export mechanism again unless a new current
+user instruction authorizes that separate follow-up.
