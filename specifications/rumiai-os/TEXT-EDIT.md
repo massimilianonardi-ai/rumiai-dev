@@ -682,8 +682,43 @@ lifecycle method.
 The existing new-core `TextEditSelections` remains an independent physical
 selection/editing class, **not** a subclass of `Selections`: its current
 `addSelections` API is not the `addSelection` interpreter contract and it
-does not provide `remSelection`. No concrete selection-mode interpreter or
-`Document2D` integration is established by this abstract interface alone.
+does not provide `remSelection`.
+
+### Concrete selection modes in the separately compiled core
+
+The same `m.text.selection` namespace also exports these `Selections`
+subclasses:
+
+```javascript
+new LineSelections(owner)
+new RectangleSelections(owner)
+new FreeFormSelections(owner)
+```
+
+`owner` supplies `getSelections()` and `setSelections(selections)` and is
+the **single owner of effective selections** shared by all mode instances.
+These mode interpreters do not store or modify document text and do not
+create alternative authoritative selection collections. Each exposes the
+four `Selections` operations in the caller's own `{row,col}` space.
+A selection record is `{start:{row,col},end:{row,col},forward}`, with
+ordered half-open endpoints; cursors have equal endpoints. Record order,
+orientation and mixed-mode ranges/cursors are preserved when passed through
+`setSelections` and returned by `getSelections`.
+
+`LineSelections` produces an oriented linear range between the first and
+most recent submitted cells, including those endpoint cells.
+`RectangleSelections` produces one ordinary range for each included row,
+from the first to the last row in gesture order and with horizontal
+orientation preserved. `FreeFormSelections` produces distinct zero-length
+cursors at visited positions in visitation order. In all modes,
+`addSelection` and `remSelection` can recompute the effective collection.
+Another mode may add to the existing selection set without erasing the
+previous mode's results: rectangle followed by free-form yields a rectangle
+plus additional cursors.
+
+The exact interaction lifecycle, later `Document2D` mode registry and
+editing/representation composition are **not** implemented here. The
+separate standalone TextEdit 0.8.2 specification and engine remain unchanged.
 
 ## Validation and release boundary
 
