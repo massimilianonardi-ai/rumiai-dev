@@ -7,7 +7,7 @@ Updated: 2026-10-17
 
 Before analysis/modification always verify current remote HEADs; follow `rumiai-dev/README.md` Mandatory Read Order: `RULES.md`, `CONSISTENCY-GATE.md`, `specifications/README.md`, current `specifications/rumiai-os/WEB-CONTROL.md`, `DIAGNOSTICS.md` if applicable, `TESTING.md`, this handoff, current PoC implementation and tests. Explicit user corrections are higher authority than this task-state checkpoint. Do not read Git history by default.
 
-Latest PoC HEAD at this checkpoint: `bafd79963bcd3202fafa4b07a2370c234f651c1a`; PWC baseline HEAD: `403f4fa9bbea419715e9c834e847c6f2b60ae421`. Revalidate at next work unit.
+Latest PoC HEAD at this checkpoint: `61ff239b5bd3e66a58f96c8a444a705e691c8792`; PWC baseline HEAD: `403f4fa9bbea419715e9c834e847c6f2b60ae421`. Revalidate at next work unit.
 
 ## Purpose and user-fixed requirements
 
@@ -129,6 +129,14 @@ The initial-portion evidence has been sharpened, without pretending geometry pro
 Two new live regression tests protect the larger replay step budget and the guarded viewport-sized correction; existing test baseline was rechecked. The relevant isolated V8 logic tests passed **25/25** for `manual.mjs`+`live.mjs` and **19/19** for `alignment.mjs`+`collage.mjs`, altogether **44/44**. These are not native Node test runner evidence nor actual Chromium evidence for the revision. No physical new run or private-image pixel inspection was performed here.
 
 The updated PoC README uses `live-07` as an **example only if unused**. Do not overwrite or rerun a known evidence directory; the user likely already ran a new trial after `live-05` but its exact name is not established in this turn. Next real validation must check manual/top screenshots, ChatGPT scroll plan/replay outcomes, `[COPERTURA]`, `offline.json` text-anchor correction evidence and visual prompts at the beginning. Amazon changes were limited to generic safety gates; its near-correct visual output must be preserved. The task remains active.
+
+## Workstation TLS blocker before live-07 acquisition
+
+User attempted `git pull --ff-only; sh run-live.sh live-07` at corporate workstation `PRTL-GS-01` on 2026-10-19. Checkout was already current at previous revision, but the isolated provider setup failed **before test execution, Chromium startup or evidence creation**, at `npm install` fetching `https://registry.npmjs.org/playwright` with `SELF_SIGNED_CERT_IN_CHAIN`. The script's prior ordering checks absence of the target evidence run before npm installation. Therefore this attempt did NOT create `evidence/live-07`, unless a separate actor has since created it. The actual identity or installation of the corporate CA on that host has NOT been examined remotely.
+
+Forward-only PoC correction: `run-live.sh` now executes the isolated Playwright `npm install` with `NODE_USE_SYSTEM_CA=${NODE_USE_SYSTEM_CA-1}`, enabling Node 26 to trust the Linux system's approved CA store without disabling HTTPS validation, unless an explicit operator override exists. It preserves `NODE_EXTRA_CA_CERTS` and `npm_config_cafile` from the caller, and emits an actionable diagnostic on installation failure. No certificates, credentials or npm configuration are added to the repository, nor is `npm strict-ssl` or Node's TLS validation weakened. The PoC README documents use of an authorized company PEM if the OS system CA store lacks it; the path must be supplied from the workstation/IT, not guessed.
+
+**Next physical step:** after `git pull --ff-only`, retry `sh run-live.sh live-07` if its evidence directory still does not exist. If npm still reports the TLS error, use `NODE_EXTRA_CA_CERTS=/path/to/approved-company-ca.pem sh run-live.sh live-07` with the real authorized file path, or configure the enterprise-approved npm registry/CA per IT instructions. Do not bypass certificate verification. The prior Amazon/ChatGPT physical findings remain unchanged; no browser tests or captures have yet happened for the attempted `live-07` run. Native shell and Node/Chromium execution of this latest launcher revision remain pending.
 
 ## Validation and next physical step
 
