@@ -277,6 +277,41 @@ A package-specific exception belongs in the package definition/adapter/integrati
 
 The package manager must not infer a new public semantic merely from an implementation shortcut; changes to these interfaces require a current specification update.
 
+## Migration of installed native-command concretes
+
+Moving the technical `m` bootstrap from the integrated `#!/usr/bin/env m` command model to native command entrypoints changes the materialized package `cmd/` files and, for some packages, package-level `env` source. These files were copied into immutable installed concrete directories during installation. Updating `rumiai-os` and `pkg-catalog` source trees does **not** update installed concretes.
+
+The migration is **not** an in-place file replacement or an implicit bootstrap-time conversion. It requires a coordinated maintenance window and the existing public `pkg uninstall`, `pkg install`, and `pkg default` operations. No new public package-management command is implied.
+
+The operator must perform all of the following before removing any installed concrete:
+
+1. Record the exact installed concrete identities (package, version, and optional osarch) for every affected package/platform class. Use the existing local `pkg versions <package-class>` interface where applicable; do not substitute an unversioned or latest request for a recorded exact concrete.
+2. Record whether each package/platform class has a current/default selection, as distinct from merely having installed versions. Also capture any consumer provider bindings, global provider defaults, service registration/runtime relationships, and configuration/state relevant to the affected packages. Never reconstruct private state filenames from memory when an existing `pkg` or `state-path` interface supplies the value.
+3. Ensure every recorded exact concrete is supported by the selected revised catalog snapshot and that its artifact can actually be obtained and verified. `pkg depend` is only dependency planning and does not prove artifact availability. A missing upstream artifact is a **blocking** migration prerequisite, not a reason to silently install latest.
+4. Preserve verified, restorable copies of the existing installation and mutable state/configuration. Package-owned mutable state lives under the applicable `state-path` scopes, not just inside `$m_PKG_DIR`; services can also use state instances. Inspect package-local `root/` content for unsupported/unmapped mutable data and handle it explicitly before uninstall.
+5. Stop affected consumers and managed services. Coordinate the compatible runtime/catalog transition so no newly started process requires an old `env m` launcher under the new dispatcher. The product and catalog stages are not independently deployable.
+
+Within that maintenance window, reconcile each **exact concrete** using:
+
+```text
+m pkg uninstall <package>@<exact-version>[!<osarch>]
+m pkg install   <package>@<exact-version>[!<osarch>]
+```
+
+Save every original current/default identity beforehand. After successful installation, restore only the previously selected defaults using:
+
+```text
+m pkg default <package>@<original-current-version>[!<osarch>]
+```
+
+A class that had no default must not gain one merely because it was reinstalled. Do not assume that `pkg install` selects a default. Restart services and consumers only after validating new native launcher and package `env` contents, executable resolution, necessary provider bindings, preserved state and service-specific behavior.
+
+Dependency/provider references must be respected: removal of a referenced provider can fail by contract. Plan consumer-first removal and provider-first restoration where the actual installed dependencies require this; do not bypass a refusal or forcibly delete package directories. An entire multi-concrete migration is **not atomic**: after each failure, preserve the completed checkpoint and reconcile the remaining work explicitly instead of silently continuing.
+
+Uninstalling an installed concrete normally removes its immutable package-local materialization and selected default, not the package's managed user/system mutable state. Reintegration must not overwrite authoritative pre-existing state defaults, but this does **not** imply that arbitrary upstream data stored inside an unmanaged concrete root is preserved. Recovery from an installation/artifact or rollout failure requires restoring a verified compatible runtime/catalog/concrete snapshot and separately verified mutable state, not rewriting Git history or modifying concrete files in place.
+
+The migration is validated proportionally by a permanent test using the real integration, uninstall, default, and launcher facilities, and by real catalog-backed installs where available. No test limited to synthetic payloads or auxiliary GitHub runners may claim to have completed a physical deployed-host migration.
+
 ## Launch model
 
 Integrated package commands execute through the package launcher contract.
