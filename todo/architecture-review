@@ -1,0 +1,28 @@
+
+- minimal for new-m migration finalize:
+  - m bootstrap + functions + shebang
+  - pkg + srv + (srv-host & srv-user)
+  - rsudo + rsudo-fs + rsudo-db
+  - rsudo-admin jobs
+  - src organization + deploy (mk???) + gitman
+    - src ignored: contains everi repo user needs (m-js, pocs, etc.)
+    - bin + lib + state + res as deploy of m-sources => root is no more origin of sources and will always be only runtime
+    - rumiai-os repo will only be the root with m, rumiai-os-sh,  rumiai-os
+    - redefine gitman commands especially synch or alternatives, need reset hard
+
+- js libs:
+  - browser deploy
+  - nodejs deploy
+  - electron deploy
+  - modernize m.js (especially ui and openlayers m.ui.Map)
+  - text-edit
+  - web-analyze
+  - web-control
+  - computer-control
+
+- webapps:
+  - modernize webgis
+  - deploy webgis prod, test, dev -> workflow + git
+  - deploy akas = apisix + keycloak + apps + services (db, gis, etc.)
+  - migrate webpatrimonio to akas
+  - ai cluster
