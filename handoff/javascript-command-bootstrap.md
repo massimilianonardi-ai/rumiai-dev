@@ -13,7 +13,7 @@ Migrate m-dependent commands and package launchers from the sourced `#!/usr/bin/
 | --- | --- | --- | --- |
 | rumiai-dev | `8bbbcf00f6dddcecc0883a180abf0483d5e940e2` before this checkpoint update | `m-native-command-contract` | `9d1ccaef3a11cc368fdbe8971b1d50691e400003` |
 | rumiai-os | `21bfd86728829e83bc7fff81f35dda0f8c2f925a` | `m-native-command-dispatch` | `673df1a2d5476ad57d54c7bc7e1fc2deeaf16195` |
-| rumiai-tests | `cde888bbc67e9c9b930a003f090d32e351287091` | `m-native-command-tests` | `eec5244cc4ab3b3df7a810056cb0155cc594158b` |
+| rumiai-tests | `cde888bbc67e9c9b930a003f090d32e351287091` | `m-native-command-tests` | `13b5690db43a314b107deefab8eef1ab8f59cf17` |
 | pkg-catalog | `b08023f378dc4d773a539b1910e7fc20313cd976` | `m-native-command-launchers` | `893120694670ac91e67353797ca3602d8f2b330b` |
 
 Refresh every remote HEAD before further work. Do not assume these SHAs remain branch HEADs.
@@ -60,8 +60,8 @@ Real GitHub-hosted execution paired the exact staged `rumiai-os` and `pkg-catalo
 
 ## Provider-discovery validation checkpoint (2026-10-23)
 
-- The independent published fixes were reconciled through forward-only two-parent merge commits: `rumiai-os/m-native-command-dispatch` at `673df1a2d5476ad57d54c7bc7e1fc2deeaf16195` and `rumiai-tests/m-native-command-tests` at `9fbcdeec143146149546d33e9a9375126b3d1ed0`; latest staged tests workflow HEAD `eec5244cc4ab3b3df7a810056cb0155cc594158b`.
-- [Final published-vs-staged comparison 39963793482](https://github.com/massimilianonardi-ai/rumiai-tests/actions/runs/39963793482) passed on both exact revision pairs. The existing `pkg-dependency.lib.sh` manual already required corrupt provider metadata to be reported rather than hidden; its public contract needed no edit.
+- The independent published fixes were reconciled through forward-only two-parent merge commits: `rumiai-os/m-native-command-dispatch` at `673df1a2d5476ad57d54c7bc7e1fc2deeaf16195` and `rumiai-tests/m-native-command-tests` at `9fbcdeec143146149546d33e9a9375126b3d1ed0`; latest staged test branch HEAD `13b5690db43a314b107deefab8eef1ab8f59cf17` (the exact last green regression run used suite SHA `eec5244cc4ab3b3df7a810056cb0155cc594158b`).
+- [Final published-vs-staged comparison 39963793482](https://github.com/massimilianonardi-ai/rumiai-tests/actions/runs/39963793482) passed on both exact revision pairs. The existing `pkg-dependency.lib.sh` manual already required corrupt provider metadata to be reported rather than hidden; its public contract needed no edit. The one-off published-versus-staged comparison workflow was removed from the staged test branch in forward commit `13b5690db43a314b107deefab8eef1ab8f59cf17` after successful execution; its revision-pinned GitHub Actions results remain available.
 - [Staged two-host regression 39963793299](https://github.com/massimilianonardi-ai/rumiai-tests/actions/runs/39963793299): Ubuntu 26.04 ARM64 and macOS ARM64 each **42 PASS, 0 FAIL, 1 SKIP**, including `pkg/dependency.test` and native launcher reinstall checks, with staged catalog `893120694670ac91e67353797ca3602d8f2b330b`. The general runner SKIP concerns `mk` without managed Node; [managed Node workflow 39963793251](https://github.com/massimilianonardi-ai/rumiai-tests/actions/runs/39963793251) passed on both hosts with real Node package install, `mk` and `jsc`.
 - No deployed RumiAI host, existing concrete or service was changed. Physical validation and coordinated native command/catalog rollout remain open.
 
