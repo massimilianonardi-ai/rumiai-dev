@@ -38,17 +38,19 @@ The terms are intentionally not interchangeable.
 
 The broader `mk` lifecycle engine is implemented in **JavaScript**.
 
-The public command remains the bootstrap-integrated:
+The public command remains the `m`-environment-dependent native POSIX-shell entrypoint:
 
 ```text
 bin/sys/mk
 ```
 
-and therefore uses:
+with:
 
 ```sh
-#!/usr/bin/env m
+#!/bin/sh
 ```
+
+It requires nonempty `m_ROOT`, loads its needed shell runtime itself, and is invoked as `m mk` from an uninitialized host shell.
 
 The command entrypoint is a thin POSIX-shell launcher. The lifecycle engine itself is JavaScript and is executed with the current `m`-managed Node.js runtime supplied through the `nodejs` package integration. `mk` does not depend on a host Python runtime and does not automatically install its runtime as a side effect of a lifecycle request.
 

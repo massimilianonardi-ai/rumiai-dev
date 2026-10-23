@@ -24,11 +24,12 @@ does not require or infer a mapping between file paths and namespace
 names. The JSON descriptor alone specifies namespace placement, ordered
 source inclusion and public exports.
 
-The public command remains `bin/sys/jsc`, using the established
-`#!/usr/bin/env m` bootstrap-integrated shell entrypoint and the
-default managed Node.js runtime. Its Node.js engine retains the
-`jscMain(args)` entrypoint, returning a Promise of process-style status.
-No alternative interpreter or command-bootstrap model is introduced.
+The public command remains `bin/sys/jsc`, a native POSIX
+`#!/bin/sh` entrypoint requiring an initialized `m` environment and
+explicitly loading its needed shell libraries. From an uninitialized
+host shell it is invoked as `m jsc`. It uses the default managed
+Node.js runtime; its Node.js engine retains the `jscMain(args)`
+entrypoint, returning a Promise of process-style status.
 
 ## Ordered JSON source descriptor
 

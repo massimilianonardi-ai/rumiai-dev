@@ -51,22 +51,9 @@ Moving the complete RumiAI OS tree to another path must not require source modif
 
 ## Command resolution after bootstrap
 
-For a command operand, `m` attempts to resolve the first operand and
-canonicalize the selected pathname. Resolution back to the bootstrap itself is
-rejected.
+For a command operand, `m` attempts to resolve and canonicalize the selected pathname to reject recursive execution of the bootstrap. It then executes the original command vector externally; it does not provide a sourced-command identity.
 
-When the resolved command's first line is exactly `#!/usr/bin/env m`, `m`
-exports its canonical pathname readonly as:
-
-```text
-m_COMMAND_BIN
-```
-
-and sources that command body in the initialized runtime after removing the
-command operand from the argument vector.
-
-Otherwise `m` clears `m_COMMAND_BIN` and executes the original command vector
-externally.
+A POSIX shell command obtains its own invocation identity from `$0` and may use established `readpathce` to canonicalize an existing entrypoint. This works with explicit relative/absolute invocation paths, symlinks and PATH-based invocation. Every native command uses the interpreter-appropriate entrypoint identity mechanism.
 
 ## Invariants
 
@@ -75,6 +62,6 @@ ROOT-01  m_BOOTSTRAP_BIN identifies the physical m bootstrap
 ROOT-02  m_ROOT is derived from the canonical m bootstrap location
 ROOT-03  root resolution is independent of a fixed installation path
 ROOT-04  supported symlink/PATH invocation resolves to the physical bootstrap
-ROOT-05  m_COMMAND_BIN identifies the resolved integrated command
-ROOT-06  command operands not recognized as integrated commands fall through to external execution
+ROOT-05  native commands resolve their own physical identity when needed
+ROOT-06  all command operands execute externally without special integrated classification
 ```
