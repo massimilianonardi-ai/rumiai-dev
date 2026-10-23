@@ -11,9 +11,9 @@ Migrate m-dependent commands and package launchers from the sourced `#!/usr/bin/
 
 | Repository | Current main | Staged branch | Staged HEAD |
 | --- | --- | --- | --- |
-| rumiai-dev | `0c06a1670e385f0c931f54b7e5621ab0d00b7c0f` before this handoff update | `m-native-command-contract` | `6775d5c156ea39f7da05d9012ade56880fd19e7c` |
-| rumiai-os | `5ca07aeb26dbc04c0b38998bb05edacd8587a977` | `m-native-command-dispatch` | `3b5d6019db0cf1b4c419792aef36b4bee12037cb` |
-| rumiai-tests | `02eb2c25221f6d399e6ed22c6d668824fa2a8b9d` | `m-native-command-tests` | `a0048a8680ffe02736e0305ffbae3e5406504811` |
+| rumiai-dev | `0c06a1670e385f0c931f54b7e5621ab0d00b7c0f` before this handoff update | `m-native-command-contract` | `9d1ccaef3a11cc368fdbe8971b1d50691e400003` |
+| rumiai-os | `5ca07aeb26dbc04c0b38998bb05edacd8587a977` | `m-native-command-dispatch` | `59d5ec2d78494c126d5c2869b5b01076e735a6ab` |
+| rumiai-tests | `02eb2c25221f6d399e6ed22c6d668824fa2a8b9d` | `m-native-command-tests` | `fb56fa796494cb120247e449c8bcd02a0946f328` |
 | pkg-catalog | `b08023f378dc4d773a539b1910e7fc20313cd976` | `m-native-command-launchers` | `893120694670ac91e67353797ca3602d8f2b330b` |
 
 Refresh every remote HEAD before further work. Do not assume these SHAs remain branch HEADs.
@@ -49,15 +49,24 @@ Real GitHub-hosted execution paired the exact staged `rumiai-os` and `pkg-catalo
 - Earlier failed runs remain historical evidence, not PASS: initial failure was `package-env-invalid` on both hosts; a later macOS run failed with an HTTP 403 from the public GitHub releases endpoint while Linux passed. A subsequent unchanged artifact request succeeded in the final macOS run. The newly created managed Node regression test initially failed due to non-executable GitHub file mode; it was corrected forward with mode `100755` before the successful run.
 - **Evidence limits:** These are authentic GitHub-hosted runner tests of the exercised behavior, not formal full-product validation or validation on project-owned physical hosts. They do not prove service installation through real host supervisors, all package types or reinstall/rollout safety of existing concretes.
 
+## Installed-concrete migration checkpoint (2026-10-23)
+
+- The canonical *new* contract is staged in `rumiai-dev/m-native-command-contract` (`9d1ccaef3a11cc368fdbe8971b1d50691e400003`): `PACKAGE-MODEL.md` now defines a coordinated operator-managed maintenance window, a full exact-version/default inventory, provider/service preflight, explicit artifact accessibility/integrity checks, immutable concrete reinstall, preserved managed state and restorable compatible backups. The operational `pkg` manual is staged in `rumiai-os/m-native-command-dispatch` (`59d5ec2d78494c126d5c2869b5b01076e735a6ab`). No new public `pkg` command was introduced.
+- A permanent test, `tests/rumiai-os/pkg/native-launcher-reinstall.test`, integrates an intentionally obsolete `env m`/legacy-env concrete using real integration machinery, confirms same-identity overwrite is denied, invokes real `pkg uninstall`, checks preserved system configuration/data and user HOME/configuration, reintegrates a new native concrete with the same identity, restores its previous default, and launches it to verify that retained state and the validated concrete root are used.
+- **Latest targeted regression:** [GitHub Actions run 39957583463](https://github.com/massimilianonardi-ai/rumiai-tests/actions/runs/39957583463), suite SHA `fb56fa796494cb120247e449c8bcd02a0946f328` with runtime SHA `59d5ec2d78494c126d5c2869b5b01076e735a6ab` and catalog SHA `893120694670ac91e67353797ca3602d8f2b330b`: Ubuntu 26.04 ARM64 **41 PASS, 0 FAIL, 1 SKIP**; macOS ARM64 **41 PASS, 0 FAIL, 1 SKIP**. Both jobs succeeded. The additional package lifecycle tests (`native-launcher-reinstall`, `uninstall`, `state`, `default`) passed on both hosts. The remaining SKIP is the general runner's `mk/lifecycle` with no managed Node; the separate managed-Node workflow provides that evidence.
+- **Real exact same-concrete reinstall:** [GitHub Actions run 39956381930](https://github.com/massimilianonardi-ai/rumiai-tests/actions/runs/39956381930), suite SHA `b3503b14f63c125352d575a45aedca36fd1b08fe`, installed and selected Node.js `v26.8.2` through the staged catalog on both hosts; after successful managed-node, `mk` and `jsc` tests, it ran real public `pkg uninstall`, `pkg install` with the recorded exact version, restored the default, and verified retained user HOME and user/system configuration sentinels and native Node execution on both hosts. Both jobs succeeded. An earlier Linux attempt was blocked by a workflow fixture assertion and macOS by transient GitHub HTTP 403; neither earlier run is relabelled PASS.
+- **Discovered mismatch outside validated migration scope:** `pkg/dependency.test` presently fails the corrupt-provider discovery scenario (the resolver returns success instead of the expected `provider-discovery-invalid`). The specific provider dependency library has an identical Git blob on `rumiai-os/main` and the staged branch, but this alone does not establish whether the failing behavior exists on current `main`; no causality was asserted. The mismatch remains pending isolated investigation/reconciliation. It is not silently considered PASS, and the migration-specific green workflow does not claim to cover this scenario.
+- The command/fixture and package migration tests ran on auxiliary GitHub-hosted systems in temporary checkouts, **not** on existing deployed RumiAI installations. No installed user/production package, service, or configuration was modified. A multi-package dependency-aware host migration and physical validation are still unexecuted; reinstalling a concrete is not an atomic transaction with all consumers.
+
 ## Next action
 
-1. Conduct proportionate formal/revision-pinned and physical validation on applicable project-owned hosts, especially native entrypoints, service host registrations and existing concrete package migrations.
-2. Define and test coordinated upgrade/rollout of the currently installed package concretes. Existing installed copies retain their old `#!/usr/bin/env m` launchers and obsolete `env` sources, so they must be removed and reinstalled using the canonical package model; do not overwrite immutable concrete package content in place.
-3. Re-scan other permanent tests for any old shebang or identity assumptions not exercised by the targeted runs, and reconcile current manual/specification mismatches if found.
-4. After all compatibility gates, reconcile the four branches forward before any integration into `main`. Do not merge dependent runtime/catalog stages independently.
+1. Before deployment, obtain a real target-host inventory of **all** affected exact installed concretes, selected defaults, active facility provider bindings/defaults and host services. Verify artifact availability and backup/recovery before removing any package. Do not infer actual installed inventory from CI.
+2. Independently investigate the `pkg/dependency.test` provider-discovery mismatch against current published and staged runtimes, apply the project authority hierarchy and realign code/test/spec if required.
+3. Perform proportionate physical and service-supervisor validation on project-owned hosts. Run a controlled coordinated native-runtime/catalog rollout and exact concrete reinstall only with the required deployment prerequisites and authorization; preserve system/user/service state and reconcile failures forward.
+4. Then coordinate and review forward-only integration of the four feature branches; never merge the incompatible runtime/catalog migration stages independently.
 
 ## Open constraints
 
 - `rumiai-dev/main` remains the canonical contract for the currently published runtime; the approved replacement is staged, not yet published.
 - `pkg-catalog/main` and `rumiai-os/main` retain mutually compatible old behavior; independently merging either migration branch would break consumers.
-- Real catalog-backed managed Node install and native launch have passed on both GitHub-hosted reference OS/architecture environments. Physical validation on project-owned hosts and installed-concrete rollout remain pending.
+- Real catalog-backed managed Node install, same-identity uninstall/reinstall and native launch have passed on both GitHub-hosted reference OS/architecture environments. Physical validation, real installed-concrete inventory and deployed-host rollout remain pending. Provider-discovery regression mismatch remains open.
