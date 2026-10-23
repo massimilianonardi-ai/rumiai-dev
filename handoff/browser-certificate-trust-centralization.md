@@ -1,73 +1,73 @@
 # Centralized TLS certificate trust
 
 Status: Active
-Updated: 2026-10-19
+Updated: 2026-10-23
 
 ## Goal
 
-Deliver a centrally authorized, securely projected additional TLS CA trust mechanism for managed browser and non-browser clients of `m`, without TLS verification bypass or cross-service/session state sharing.
+Deliver centrally authorized additional TLS CA trust for m-managed browsers and other TLS clients, preserving TLS verification, unrelated trust entries, browser profiles and service isolation.
 
 ## Current repository revisions
 
-- rumiai-dev: `a67a59d488adaa1d50b0e49b63ce1ed8d5e98c51` (pre-handoff checkpoint)
-- rumiai-os: `f7f35e2ccd56e9c21530f94e28ee9eb5e6d82e0a`
-- rumiai-tests: `6523644e7c7e4932910f22ca64ec718b2a8bfb74`
-- pkg-catalog: `4b9ff477b28841e1b7f4367978b3023147969566`
+- rumiai-dev: `607896b7203d4aae1c520120bbbfa0880cb47f00` (pre-handoff update)
+- rumiai-os: `5ca07aeb26dbc04c0b38998bb05edacd8587a977`
+- rumiai-tests: `02eb2c25221f6d399e6ed22c6d668824fa2a8b9d`
+- pkg-catalog: `5842282c1d56eb1e541e50d05ebcd19d8ccc0862`
 - electron-web-control: `077eb502f1d68235b4e5c9c28e4a7560795bce17`
 - pwc-web-control: `2e1759e994f52000975c6383b8cc7b229cd1b425`
-- rumiai-dev-PoCs: `853391e4b10a71d4f9d77d2134887abb968c18c2`
+- rumiai-dev-PoCs: `f31ab4f5edbef0eaaa1285e3a6ef0b5cc26df85e`
 
 ## Applicable canonical sources
 
 - `RULES.md`, `CONSISTENCY-GATE.md`, `TESTING.md`
-- `specifications/rumiai-os/TLS-TRUST.md` — promoted security/authority/trust contract
-- `specifications/rumiai-os/STATE-MODEL.md`
-- `specifications/rumiai-os/PACKAGE-MODEL.md`
-- `specifications/rumiai-os/WEB-CONTROL.md`
-- `specifications/rumiai-os/PYTHON-RUNTIME.md`
-- For command/library development: `COMMAND-ENTRYPOINTS.md`, `DOCUMENTATION-MODEL.md`, `FILESYSTEM-NAMING.md`, `LIBRARY-INTERFACES.md`, `DIAGNOSTICS.md`.
+- `specifications/rumiai-os/TLS-TRUST.md`
+- `specifications/rumiai-os/STATE-MODEL.md`, `PACKAGE-MODEL.md`, `WEB-CONTROL.md`
+- `COMMAND-ENTRYPOINTS.md`, `DOCUMENTATION-MODEL.md`, `FILESYSTEM-NAMING.md`, `LIBRARY-INTERFACES.md`, `DIAGNOSTICS.md` for added and modified commands/libraries.
 
 ## Fixed task-local choices
 
-- Authority and initial system-only visibility have been promoted to `TLS-TRUST.md`; do not reinterpret `state-path user` as a POSIX principal.
-- Implementation/API names, schema, backend orchestration and package integration are **not** yet promoted.
+- Initial CA authority and scope, administrative command semantics, Linux NSS projection and launcher integration have been promoted to `TLS-TRUST.md`. This handoff does not redefine them.
+- Current user request prioritizes automatic Linux Chrome, Chromium and Electron startup synchronization before broader runtime integration.
 
 ## Acceptance scenarios
 
-1. One explicit system CA authorization permits independent managed Chromium/Electron and Node clients to establish TLS to a server signed by that CA, while untrusted issuers remain rejected.
-2. Removing that authorization causes owned projections and restarted managed clients to reject that server again; unrelated public CA trust and local NSS entries remain intact.
-3. Package/release/profile changes do not require operator reauthorization and neither browser profiles nor service credentials become shared.
-4. An untrusted service or package cannot modify the system CA authority by virtue of consuming it; unauthorized and malformed imports fail safely.
-5. Python/pip and other supported consumers can use an appropriate additive or merged CA projection, not an additional-only file masquerading as a complete default bundle.
+1. An administrator approves a public CA once, and real managed Linux Chrome/Chromium/Electron launchers reconcile their effective NSS HOME before browser execution.
+2. Repeat launches do not duplicate entries; other NSS CA entries and client material survive; a removed CA is deleted at next sync and the restarted browser rejects its TLS chain.
+3. Nested Electron packages using `m_ENV_DO_NOT_OVERRIDE=HOME` synchronize the HOME actually passed to Chromium, without sharing Web-control profiles.
+4. Malformed CA, absent trusted tools, conflicting NSS nickname/ownership or unsafe state fail explicitly without disabling verification.
+5. The system authority is writable only by its authorized POSIX administrator; user and service isolation is enforced in the physical deployment.
 
-## Working design
+## Working design / residual decisions
 
-- Admin interface and persisted registry revision/manifest design remain open. Must verify certificate CA status and private-key absence, safe ownership/writes, collision handling, concurrent writers/readers, atomic publication, restart observation and recovery.
-- Linux Chromium NSS: database location changed at M146; existing `$HOME/.pki/nssdb` wins over modern `$HOME/.local/share/pki/nssdb` when present. Project safely within each effective browser HOME, never by blind per-profile copying. Pre-existing NSS entries, concurrent access and revocation while browser runs still need robust implementation.
-- Managed `electron-web-control` uses `m_ENV_DO_NOT_OVERRIDE=HOME` on nested Electron runtime launch. Preserve that behavior and do not mistake Node PEM trust for the Chromium browser trust backend.
-- Node.js: additive `NODE_EXTRA_CA_CERTS` is read at process startup. An existing application-requested extra CA file cannot be silently overwritten; compose safely or report incompatibility. Actual `pkg`/service integration has not been implemented.
-- Other backends: pip/Requests, `http-fetch` and download transport, micromamba/Conda, Java/JSSE and native applications must be evaluated with respect to whether custom CA options add to or replace normal roots. Do not globally export replacement variables.
-- macOS host trust is not the same as Linux NSS; platform-specific projection requires validation. External host trust and live process restarts limit what revocation can guarantee.
+- Current Linux adapter uses a per-HOME lock, a private owned-entry manifest and fingerprint-named NSS entries. No backend-specific runtime profile copy is required.
+- Administrative CA add/remove currently publish/remove individual PEM files without a shared authority lock. Evaluate cross-process registry snapshot consistency and revocation races before claiming concurrent-administrator semantics.
+- Host permission ownership and read access to system CA files must be confirmed for the actual service POSIX accounts; same-account execution is not an authorization boundary.
+- Actual managed browser HTTP/TLS verification, NSS behavior while a browser is already running, legacy pre-existing DB compatibility and multi-host behavior remain unverified.
+- macOS trust integration, Node.js process CA projection, Python/pip/Conda, curl and Java remain additional backend work in the same task.
+- The existing NSS and Node PoCs supply isolated backend evidence, not end-to-end product evidence.
 
 ## Completed
 
-- Verified fresh current remote HEADs and read current canonical contracts and active handoff.
-- Promoted `specifications/rumiai-os/TLS-TRUST.md` with system-only CA authority, independent runtime projections, no TLS bypass and explicit revocation semantics. Updated `specifications/README.md` router.
-- Confirmed existing NSS projection PoC with two independent certutil databases remains experiment-only.
-- Added `rumiai-dev-PoCs/pocs/browser-certificate-trust/tests/node-extra-ca.mjs` and updated its README.
-- Ran the corresponding Node/OpenSSL localhost HTTPS test in auxiliary Linux on 2026-10-19: Node 22.16.0 / OpenSSL 3.5.5 PASS for rejection → explicit PEM CA trust → rejection with CA removed; `node --check` also PASS. This tests Node's backend behavior only and does not prove `m` package integration.
-- No product code, package catalog definition or permanent `rumiai-tests` test changed in this checkpoint.
+- Verified current remote HEAD of all involved repositories and read the current authoritative sources before modifications.
+- Implemented `bin/sys/tls-ca` with explicit public CA add/remove/list, DER SHA-256 fingerprint identity and input validation.
+- Implemented `bin/sys/tls-nss-sync` with Linux NSS path selection, idempotent import/removal, owned-entry validation, no-op when unused and per-HOME Linux flock.
+- Added trusted `launcher_nss` to the existing package launcher. Reconciliation happens after regular environment preparation and before exec, using effective final HOME even when inherited through the one-shot nested Electron override.
+- Switched current Linux package-catalog command wrappers for chrome, chromium and electron to `launcher_nss`. Non-Linux wrappers remain unchanged.
+- Added/updated command and library operational manuals. Updated the canonical TLS trust specification.
+- Added permanent Linux `rumiai-os/tls-trust/contract.test` and focused `validation/tls-trust.conf` to exercise real m CA operations and NSS reconciliation, including another unrelated NSS CA.
+- Verified Git diff file coverage, executable bits for new m commands and test, Git history forward-only and no unexpected files changed.
+- Independently exercised basic `certutil` Linux SQL-NSS commands for empty DB creation, SSL CA trust flags, long fingerprint nickname, DER export and noninteractive deletion in the ChatGPT auxiliary environment. This is **mechanism-level evidence only**, not execution of the new m product commands.
 
 ## Current state
 
-The authority/visibility boundary is now binding in the current specification. Browser and Node integration are **still not implemented**. NSS experiment and Node TLS experiment provide backend-level evidence; the corporate CA and real browser verification remain untested.
+**Implementation committed, but NOT yet validated as a working composed m/browser feature.** The auxiliary environment cannot access a complete executable rumiai-os checkout via the available network, so no real `tls-ca`/`tls-nss-sync` run through `m`, no permanent test PASS and no real Chromium/Electron TLS acceptance/rejection have been obtained for these revisions. No corporate CA/physical network test has been performed. Do not report the feature as fully solved.
 
 ## Next action
 
-Implement the secure authoritative CA registry and explicit administrator-facing interface in `rumiai-os`, with its operational manual and real permanent tests, respecting `TLS-TRUST.md`. Then integrate the smallest complete consumer slice (Node launch and Linux NSS providers), validate full TLS positive/negative/revocation through real managed launch paths, and expand backend coverage deliberately.
+Run focused real-product validation against the committed heads in a disposable rumiai-os environment; repair any observed issues forward. Then validate browser startup paths and end-to-end HTTPS rejection → trust → revocation for Chrome/Chromium/Electron, including nested Electron HOME. Audit concurrent authorization and physical service-account access before declaring this phase complete.
 
 ## Blockers / open questions
 
-- Registry/admin CLI concrete API, atomic multi-writer implementation and safe permissions enforcement remain to be designed and tested.
-- No real browser HTTPS evidence yet: auxiliary Chromium previously exited with `GPU process isn't usable`.
-- No physical test with the real corporate CA/network; do not infer corporate validation.
+- An accessible complete target checkout and relevant managed browser binaries are needed to execute the real test and browser integration scenarios.
+- Cross-host NSS DB configurations and corporate CA trust cannot be certified in the auxiliary Linux environment.
+- Wider backend work remains active; no handoff completion is claimed.
