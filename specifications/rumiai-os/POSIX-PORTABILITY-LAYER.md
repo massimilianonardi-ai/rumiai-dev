@@ -23,13 +23,7 @@ The technical root bootstrap `m` uses:
 #!/bin/sh
 ```
 
-Bootstrap-integrated commands use:
-
-```sh
-#!/usr/bin/env m
-```
-
-Standalone shell utilities use `#!/bin/sh` only under the independence contract in `COMMAND-ENTRYPOINTS.md`.
+All POSIX shell command entrypoints use `#!/bin/sh`, whether they require an initialized `m` environment or are standalone. Other interpreter runtimes are permitted only with an explicit execution dependency and corresponding native shebang. Commands requiring `m` check nonempty `m_ROOT` at entry and load required shell libraries explicitly; standalone utilities remain independent. See `COMMAND-ENTRYPOINTS.md`.
 
 Do not depend accidentally on Bash arrays, `[[ ... ]]`, process substitution, `$RANDOM`, GNU-only options or equivalent unapproved extensions.
 

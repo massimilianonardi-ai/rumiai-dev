@@ -133,15 +133,11 @@ The technical root bootstrap `$m_ROOT/m` uses exactly:
 #!/bin/sh
 ```
 
-A command integrated with `m` or using `m` runtime facilities uses:
+A command owned by `m` or RumiAI uses the native interpreter of its source. POSIX shell commands use `#!/bin/sh`; a Node.js command may use `#!/usr/bin/env node` when Node.js is a declared execution dependency. `m` is the environment bootstrap and command dispatcher, not a shebang interpreter.
 
-```sh
-#!/usr/bin/env m
-```
+Every `m`-environment-dependent command MUST check nonempty `m_ROOT` at entry and fail if it is absent. From a clean host shell, invoke these commands through `m <command>`; an already initialized `m` environment is also sufficient. Shell commands themselves source the shell libraries they use; shell functions are not inherited across the native process boundary.
 
-A shell utility may use `#!/bin/sh` as a directly executable standalone utility only when its independence from `m` is intentional, durable and explicitly documented by a current specification.
-
-A standalone utility must not depend on `m_*`, `log`, `lang`, `m_COMMAND_BIN`, `m`-sourced libraries or other bootstrap facilities.
+Independently executable standalone utilities may also use native interpreters and have no `m` environment dependency. They must not depend on `m_*`, `log`, `lang`, `m`-sourced libraries or other bootstrap facilities. Existing intentional standalone exceptions retain their independent behavior.
 
 Do not accidentally depend on Bash syntax or unapproved GNU/vendor extensions.
 

@@ -175,33 +175,11 @@ See `STATE-MODEL.md`.
 
 ## Command execution
 
-When invoked without command operands, `m` enters the technical shell facility.
+Without command operands, `m` invokes the managed technical shell facility.
 
-For a command operand, `m` first resolves the first operand when possible and
-canonicalizes that resolved pathname. Resolution back to the bootstrap itself is
-rejected.
+For a command operand, `m` attempts to resolve and canonicalize the first operand so that dispatch back to the bootstrap itself can be rejected. It clears any inherited legacy `m_COMMAND_BIN` state and invokes the original command vector externally using `exec "$@"`. No command is sourced by the bootstrap and shebang text does not select a special command class.
 
-A resolved command is treated as bootstrap-integrated only when its first line
-is exactly:
-
-```sh
-#!/usr/bin/env m
-```
-
-For that case, `m` removes the command operand from the argument vector,
-exports readonly:
-
-```text
-m_COMMAND_BIN
-```
-
-sources the command body in the initialized runtime and returns its status.
-
-If the first operand is not recognized as an integrated command, `m` clears
-`m_COMMAND_BIN` and executes the original command vector externally in the
-initialized environment. Failed command resolution is therefore handled by the
-normal external command execution path rather than by inventing a separate
-bootstrap command class.
+Commands requiring `m` environment variables validate nonempty `m_ROOT` at entry; POSIX shell commands load the shell libraries they need within their own process. The bootstrap exports roots and the generated global execution environment, not live shell functions or a command-local identity. See `COMMAND-ENTRYPOINTS.md`.
 
 ## Invariants
 
@@ -214,14 +192,14 @@ BOOT-05  the technical m bootstrap does not add the RumiAI ai executable layer
 BOOT-06  core.lib.sh is the bootstrap entry library that defines filesystem loadlib and loads base.lib.sh
 BOOT-07  state roots are semantic pathnames, not eagerly resolved selectors
 BOOT-08  bootstrap does not derive user identity from host-id/UID
-BOOT-09  m_COMMAND_BIN identifies the integrated command being sourced
+BOOT-09  the bootstrap provides no inherited per-command m_COMMAND_BIN identity
 BOOT-10  before core is loaded, m defines only readpathce and export_readonly as bootstrap helper functions
 BOOT-11  m directly dot-sources core.lib.sh as the library-loading chicken/egg exception
 BOOT-12  loadlib is provided by core.lib.sh; base.lib.sh provides loadsyslib and the common base runtime
 BOOT-13  the root bootstrap performs no package/provider resolution or initialization
 BOOT-14  the root bootstrap is limited to root resolution, fundamental system-variable initialization, core loading, generated global-environment sourcing and execution
 BOOT-15  generated global environment is sourced from system sys/environment cache as env then env-osarch
-BOOT-16  integrated-command recognition requires the exact first line #!/usr/bin/env m
+BOOT-16  command dispatch does not inspect shebang text or source the command
 BOOT-17  technical m PATH roots precede provider PATH contributions, which precede inherited host PATH
-BOOT-18  a non-integrated command operand is executed externally with the original command vector
+BOOT-18  every command operand is executed externally with the original command vector
 ```
