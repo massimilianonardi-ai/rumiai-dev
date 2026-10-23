@@ -291,9 +291,11 @@ For a launched package, the launcher:
   identity instead;
 - creates/validates the selected package HOME as needed;
 - exports that HOME to the process;
-- applies package-level environment materialization when present;
+- applies package-level environment materialization when present, in the launcher process after validating the canonical installed concrete and useful root;
 - applies user package environment from `<package-conf>/.m/env` when present;
 - executes the real target command with the caller arguments.
+
+Package-level `env` source is evaluated by the launcher with `pkg_launch_root` set to the validated canonical useful root of the selected installed concrete. Package environment definitions that need paths inside their installed payload MUST use this existing launcher context rather than reconstructing the command pathname from the retired `m_COMMAND_BIN`. The context is local to the launcher source evaluation; it is not an inherited bootstrap identity and is not exported as a new public environment variable. Per-user `.m/env` remains a separate final configuration layer.
 
 The launcher does not create a second package-state model.
 
