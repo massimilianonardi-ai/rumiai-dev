@@ -11,10 +11,10 @@ Migrate m-dependent commands and package launchers from the sourced `#!/usr/bin/
 
 | Repository | Current main | Staged branch | Staged HEAD |
 | --- | --- | --- | --- |
-| rumiai-dev | `0c06a1670e385f0c931f54b7e5621ab0d00b7c0f` before this handoff update | `m-native-command-contract` | `2f677632586e6ec018c2093f8a04c9af7d6ab00b` |
-| rumiai-os | `5ca07aeb26dbc04c0b38998bb05edacd8587a977` | `m-native-command-dispatch` | `f8f8acea460aa9bc024e5fed0ab04a350431b3e7` |
-| rumiai-tests | `02eb2c25221f6d399e6ed22c6d668824fa2a8b9d` | `m-native-command-tests` | `67fe44ea2e3dd78dc214b2dacf64588ae1749783` |
-| pkg-catalog | `b08023f378dc4d773a539b1910e7fc20313cd976` | `m-native-command-launchers` | `304ab8e4fedbef543f68f9d63e60854f80c9cb7c` |
+| rumiai-dev | `0c06a1670e385f0c931f54b7e5621ab0d00b7c0f` before this handoff update | `m-native-command-contract` | `6775d5c156ea39f7da05d9012ade56880fd19e7c` |
+| rumiai-os | `5ca07aeb26dbc04c0b38998bb05edacd8587a977` | `m-native-command-dispatch` | `3b5d6019db0cf1b4c419792aef36b4bee12037cb` |
+| rumiai-tests | `02eb2c25221f6d399e6ed22c6d668824fa2a8b9d` | `m-native-command-tests` | `a0048a8680ffe02736e0305ffbae3e5406504811` |
+| pkg-catalog | `b08023f378dc4d773a539b1910e7fc20313cd976` | `m-native-command-launchers` | `893120694670ac91e67353797ca3602d8f2b330b` |
 
 Refresh every remote HEAD before further work. Do not assume these SHAs remain branch HEADs.
 
@@ -41,24 +41,23 @@ Refresh every remote HEAD before further work. Do not assume these SHAs remain b
 
 ## Revision-specific validation evidence
 
-Real GitHub-hosted execution used the exact staged `rumiai-os` and `pkg-catalog` revisions above and the test-suite SHA attached to each workflow run. Dedicated workflow: `rumiai-tests/.github/workflows/native-command-staged.yml` on the staged test branch.
+Real GitHub-hosted execution paired the exact staged `rumiai-os` and `pkg-catalog` revisions above with the exact triggering test suite revision. All staged workflows are confined to the feature branch and have not modified the compatible public `main` runtime/catalog.
 
-- Final two-host run: `https://github.com/massimilianonardi-ai/rumiai-tests/actions/runs/39942872301`, suite SHA `67fe44ea2e3dd78dc214b2dacf64588ae1749783`; Ubuntu 26.04 ARM64: **37 PASS, 0 FAIL, 1 SKIP**; macOS latest: **37 PASS, 0 FAIL, 1 SKIP**. Both GitHub Actions jobs concluded success.
-- Prior successful two-host run `39942392118` at suite SHA `a29a9150d4922c0be18406bc2d21859a5ecd22c8` obtained the same 37 PASS / 1 SKIP per host.
-- Tested groups: 7 command dispatch/identity tests, 16 bootstrap tests, 1 real package-launch test, 1 real package-integration test, 5 log tests, 4 lang tests, 1 jsc/compiler-loader test, 2 srv lifecycle/provider tests, and 1 `mk/lifecycle` test returning SKIP on each host. The latter SKIP was caused by lack of a configured managed Node.js provider.
-- Both host jobs also ran `sh -n` over every executable package launcher source under the staged `pkg-catalog/pkg/**/cmd` tree (static syntax check only).
-- Failures in earlier runs were investigated and reconciled forward: initial workflow selection paths, product-origin normalization for canonical test discovery, and outdated `bootstrap/library-loading` and `srv` fixtures/identity assertions. Earlier runs are not relabelled as PASS.
-- **Scope limit:** package tests used real m/package integration code with synthetic provider/payload inputs. No real catalog-backed installation or already-installed concrete migration has been exercised. `mk` with managed Node was not exercised. GitHub-hosted runs are auxiliary execution evidence, **not** physical validation on project-owned stable hosts, and not full-product validation.
+- **Latest full targeted native regression:** [GitHub Actions run 39948858625](https://github.com/massimilianonardi-ai/rumiai-tests/actions/runs/39948858625), test-suite commit `a0048a8680ffe02736e0305ffbae3e5406504811`. Ubuntu 26.04 ARM64: **37 PASS, 0 FAIL, 1 SKIP**; macOS ARM64: **37 PASS, 0 FAIL, 1 SKIP**. Both jobs succeeded. The SKIP is `mk/lifecycle.test` without the managed Node execution requirement in this general-purpose runner. Tests exercised dispatcher/identity, bootstrap, pkg-launch, pkg-integration, log, lang, jsc, srv lifecycle/provider. Both hosts also ran `sh -n` over all staged catalog `cmd/` entrypoints and all `env` sources.
+- **Latest managed Node installed/runtime validation:** [GitHub Actions run 39948480452](https://github.com/massimilianonardi-ai/rumiai-tests/actions/runs/39948480452), test-suite commit `9fde6fa9dc409cbdcd4edbe7feb23ee7fd53de89`. Real `m pkg install nodejs@v26.8.2` from a Git repository checkout pinned to `pkg-catalog` `893120694670ac91e67353797ca3602d8f2b330b`, then `m pkg default nodejs@v26.8.2` and `m node --version`, succeeded on **both Ubuntu ARM64 and macOS ARM64**. The permanent tests `pkg-launch/managed-node.test`, `mk/lifecycle.test` and `jsc/compiler-loader.test` each returned PASS on each host (**6 PASS, 0 FAIL, 0 SKIP**). `managed-node.test` checks that `process.execPath` resolves beneath the selected managed concrete root, `m_ROOT` is correct and no `m_COMMAND_BIN` is inherited. No host Node replacement was used.
+- The live-install validation exposed a genuine catalog incompatibility: 12 package `env` sources (Node.js on six osarch streams plus chromium, geoserver, macgpg, playwright and podman) were still deriving the concrete location from obsolete `m_COMMAND_BIN`. They were migrated in `pkg-catalog` commit `893120694670ac91e67353797ca3602d8f2b330b` to the existing validated launcher-local `pkg_launch_root`; the ownership contract was added to staged `PACKAGE-MODEL.md` and the `pkg-launch.lib.sh` operational manual. The permanent pkg-launch contract test also verifies canonical root availability and absence of `m_COMMAND_BIN`.
+- Earlier failed runs remain historical evidence, not PASS: initial failure was `package-env-invalid` on both hosts; a later macOS run failed with an HTTP 403 from the public GitHub releases endpoint while Linux passed. A subsequent unchanged artifact request succeeded in the final macOS run. The newly created managed Node regression test initially failed due to non-executable GitHub file mode; it was corrected forward with mode `100755` before the successful run.
+- **Evidence limits:** These are authentic GitHub-hosted runner tests of the exercised behavior, not formal full-product validation or validation on project-owned physical hosts. They do not prove service installation through real host supervisors, all package types or reinstall/rollout safety of existing concretes.
 
 ## Next action
 
-1. Validate a real managed Node.js package installation and launch using the exact staged catalog snapshot with the paired staged runtime; run `m mk` and `m jsc` through the real managed Node path and verify no implicit host Node fallback.
-2. Reconcile any remaining legacy-shebang fixtures and current manuals/specification mismatches exposed by wider targeted or formal validation; execute proportional revision-pinned suites on all applicable reference hosts.
-3. Plan coordinated rollout: existing installed package concretes retain old copied launchers and must use the current supported uninstall/reinstall integration path. Do not in-place overwrite immutable concrete files.
-4. Only after that gate, reconcile all four repositories forward and plan compatible merges. No staged branch has been merged into `main`.
+1. Conduct proportionate formal/revision-pinned and physical validation on applicable project-owned hosts, especially native entrypoints, service host registrations and existing concrete package migrations.
+2. Define and test coordinated upgrade/rollout of the currently installed package concretes. Existing installed copies retain their old `#!/usr/bin/env m` launchers and obsolete `env` sources, so they must be removed and reinstalled using the canonical package model; do not overwrite immutable concrete package content in place.
+3. Re-scan other permanent tests for any old shebang or identity assumptions not exercised by the targeted runs, and reconcile current manual/specification mismatches if found.
+4. After all compatibility gates, reconcile the four branches forward before any integration into `main`. Do not merge dependent runtime/catalog stages independently.
 
 ## Open constraints
 
 - `rumiai-dev/main` remains the canonical contract for the currently published runtime; the approved replacement is staged, not yet published.
 - `pkg-catalog/main` and `rumiai-os/main` retain mutually compatible old behavior; independently merging either migration branch would break consumers.
-- Managed Node/catalog real-install evidence, physical validation and installed-concrete rollout are pending.
+- Real catalog-backed managed Node install and native launch have passed on both GitHub-hosted reference OS/architecture environments. Physical validation on project-owned hosts and installed-concrete rollout remain pending.
