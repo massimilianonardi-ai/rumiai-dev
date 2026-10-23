@@ -1,11 +1,11 @@
 # JavaScript command bootstrap and Node.js shebang
 
 Status: Active
-Updated: 2026-10-12
+Updated: 2026-10-23
 
 ## Goal
 
-Evaluate whether first-party JavaScript-backed `m` commands can use direct JavaScript source/Node shebangs without losing the integrated `m` environment and command identity. Preserve POSIX relocatability and normal direct command invocation unless a user-visible change is explicitly approved.
+Migrate `m` command execution to native interpreter shebangs (`sh`, `node`, etc.) with one authoritative `m` bootstrap. Commands requiring `m` must run through `m <command>` or an already initialized `m` environment, and must check for nonempty `m_ROOT` on entry. Preserve relocatability and native runtime behavior; do not require an interactive `m` shell.
 
 ## Current repository revisions
 
@@ -22,6 +22,10 @@ Evaluate whether first-party JavaScript-backed `m` commands can use direct JavaS
 - Tests: `rumiai-tests/tests/rumiai-os/{bootstrap,command,mk,jsc}`
 
 ## Fixed task-local choices
+
+- Current explicit user decision (2026-10-23): retire `#!/usr/bin/env m` as a command interpreter; use native shebangs, require `m_ROOT` at command startup for environment-dependent commands, load needed shell libraries inside each shell command, and expose selected shell facilities through CLI commands when useful.
+- An initialized `m` environment is the prerequisite, not a dedicated interactive `m` shell. `m <command>` is the supported explicit bootstrap entry from an uninitialized host environment.
+- Migrate stepwise without breaking the current `main`; new native-only `m` dispatch is staged in a feature branch until dependent commands, package launchers, tests, manuals and specifications can be realigned coherently.
 
 - This is independent of the ongoing `javascript-build-and-runtime-loading` work, which does not own bootstrap/shebang changes.
 - Evaluate first; do not change product bootstrap or command semantics before validation and a deliberate design decision.
@@ -49,12 +53,12 @@ Evaluate whether first-party JavaScript-backed `m` commands can use direct JavaS
 
 ## Current state
 
-Evaluation active. Current normative contract still requires `#!/usr/bin/env m` for bootstrap-integrated commands; no `rumiai-os` or permanent test changes made.
+The user approved the native-interpreter design and authorized modification of `m` first. In `rumiai-os`, branch `m-native-command-dispatch` at commit `a2b5e8a703e2703bb456919651b0897dadeec0cc` changes only root `m`: drops shebang inspection and source-based integrated dispatch, retains bootstrap and self-recursion guard, and finishes with `exec "$@"`. `main` remains at `5ca07aeb26dbc04c0b38998bb05edacd8587a977`, retaining the current working behavior. The branch is **not ready to merge**: current `bin/sys` commands and `pkg-catalog` launchers still use `#!/usr/bin/env m`; canonical specifications, operational manuals and permanent tests still describe the old contract.
 
 ## Next action
 
-Build an isolated authentic test on the current `m` execution path for a Node-shebang command via direct invocation vs `m <command>`, including PATH/identity/status and managed Node availability; compare with thin launchers. Recommend a concrete design based on test evidence, then request a choice only if the normal-path/interface contract must change.
+Validate the staged `m` with native `#!/bin/sh` and `#!/usr/bin/env node` commands in an authentic runtime checkout; test argument/status propagation, PATH and self-recursion guard. Then migrate the dependent shell commands and package launchers with explicit library loading and `m_ROOT` checks, realign command identity users (`pkg-launch` and `srv`), and update the canonical specifications, manuals and permanent tests as a coordinated migration before merging into `main`. Do not turn the staged partial branch into a published incompatible runtime.
 
 ## Blockers / open questions
 
-A native Node shebang alone cannot initialize `m`. Decide whether keeping direct `mk`/`jsc` invocation with transparent bootstrap is mandatory before considering a bootstrap redesign.
+The direct-from-clean-host `mk`/`jsc` behavior currently described as an acceptance scenario has been intentionally superseded by the user's explicit acceptance of `m <command>` or an inherited initialized `m` environment. The staged `m` branch is incompatible with all remaining `env m` commands until the coordinated migration completes. `m_COMMAND_BIN` consumers (`pkg-launch`, `srv`) require explicit realignment. Authentic full-runtime testing and native-command permanent tests have not yet been performed for the staged branch; no physical validation is claimed.
