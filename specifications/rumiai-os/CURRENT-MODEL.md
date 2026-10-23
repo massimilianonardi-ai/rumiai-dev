@@ -343,7 +343,7 @@ See `LANG-BOOTSTRAP.md`.
 
 `mk` belongs to `m` and is responsible for management and orchestration of a project's development lifecycle.
 
-The lifecycle engine is implemented in JavaScript and consumes declarative JSON project configuration from project-root `mk.json`. The public `mk` entrypoint remains bootstrap-integrated with `m` and delegates to the JavaScript engine through the current `m`-managed Node.js package runtime.
+The lifecycle engine is implemented in JavaScript and consumes declarative JSON project configuration from project-root `mk.json`. The public `mk` entrypoint is a native POSIX-shell command requiring the initialized `m` environment and delegates to the JavaScript engine through the current `m`-managed Node.js package runtime.
 
 The lifecycle model distinguishes project `dependency`, operation `prerequisite` and external `requirement`. Project-defined goals select lifecycle roots; operation prerequisites form the detailed lifecycle graph.
 
@@ -441,7 +441,7 @@ CURRENT-03   RumiAI is the branded upper layer
 CURRENT-04   m has no semantic dependency on RumiAI
 CURRENT-05   pkg and pkg-catalog belong to m
 CURRENT-06   technical runtime root is m
-CURRENT-07   integrated commands use #!/usr/bin/env m
+CURRENT-07   m-dependent commands use native interpreters, check m_ROOT, and load their own shell facilities
 CURRENT-08   internal libraries are ownership-qualified under lib/sys or lib/ai
 CURRENT-09   state root is $m_ROOT/state
 CURRENT-10   state scopes are system and user
