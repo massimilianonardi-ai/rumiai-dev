@@ -1,7 +1,7 @@
 # RumiAI OS — Managed TLS CA trust
 
 Status: **Current / normative**  
-Updated: 2026-10-19
+Updated: 2026-10-23
 
 ## Purpose and authority
 
@@ -32,11 +32,40 @@ An explicitly integrated managed client uses the current `system` approved CA se
 
 Clients that do not participate in this integration and programs launched outside the selected `m` environment are not reconfigured implicitly. Existing host CA trust, upstream runtime-specific CA configuration and explicit application overrides remain distinct authorities. An `m` removal cannot revoke certificates that remain independently trusted elsewhere.
 
+## Current system CA management interface
+
+The technical `tls-ca` command operates on the selected `system sys tls conf`
+authority and has these operations:
+
+```text
+tls-ca add <one-public-ca.pem>
+tls-ca remove <sha256-fingerprint>
+tls-ca list
+```
+
+An approved certificate is stored under the existing managed `conf` state by
+its lowercase SHA-256 DER fingerprint. Imports validate CA capability and
+reject private-key input. A second import of the identical certificate is
+idempotent. Removal targets only the specified approved identity; removal
+does not imply revocation of independent host trust or running-process caches.
+
+The administrative interface does not confer privilege on its caller:
+permission to modify system trust is granted by the actual POSIX security
+boundary protecting the selected system-state tree.
+
 ## Derived representations
 
 The managed CA set is one authoritative decision represented in whatever **non-authoritative derived projection** each supported TLS backend requires. Browser profile creation, package version changes and runtime updates must not require repeating CA authorization.
 
 On Linux, Chromium-family browsers use an NSS Shared DB under their effective `HOME`, independently from individual browser navigation profiles. The adapter must identify the browser's effective NSS lookup path (including the modern and legacy lookup rules), preserve unrelated pre-existing NSS entries and private key material, and remove only entries demonstrably owned by the projection. Separate package/service HOMEs must not be coupled by pointing them at one writable shared NSS database.
+
+On Linux, the `chrome`, `chromium` and `electron` package launchers
+request `tls-nss-sync` after normal package HOME and environment preparation,
+immediately before executing the browser. The sync uses the final effective
+`HOME`, including a trusted one-shot override for nested Electron. It maintains
+a manifest of only m-owned NSS entries and uses a per-HOME lock; absence of both
+approved anchors and past m-owned entries is a no-op. Verification or
+reconciliation failure blocks browser launch rather than bypassing TLS.
 
 For Node.js, `NODE_EXTRA_CA_CERTS` is a process-startup mechanism for *additional* PEM trust. Node-specific integration must not silently discard caller/application CA customizations, or assume that Node's extra CA setting automatically configures Chromium/Electron browser TLS. The application may expressly override Node trust through its TLS `ca` option.
 
@@ -48,6 +77,3 @@ Removing an approved CA removes the `m` authorization and requires owned project
 
 `STATE-MODEL.md` remains authoritative for all state path semantics. `PACKAGE-MODEL.md` and `WEB-CONTROL.md` remain authoritative for package launch, HOME, service and profile behavior.
 
-## Implementation status
-
-These are binding trust design constraints, **not proof that any runtime already implements the mechanism**. Integrated support must be established by current product code and real test evidence before it is claimed.
