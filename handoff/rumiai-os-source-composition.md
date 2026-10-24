@@ -6,8 +6,10 @@ Updated: 2026-10-24
 ## Goal
 
 Extract an autonomous, minimal technical source foundation, provisionally named
-`m-core` by the user, containing the `m` bootstrap, `pkg`, and only the core
-commands/libraries/resources required by those two responsibilities. Keep the
+`m-core` by the user, containing the `m` bootstrap, `pkg`, and the foundational technical commands,
+libraries and resources required for their runtime operation and shared
+substrate responsibilities (including the technical manual interface,
+localization selection, managed additional TLS trust and portable services). Keep the
 existing independent `pkg-catalog` as the essential external catalog source.
 Treat `mk` as an important but non-core, separately sourced and `pkg`-installable
 development tool, whose Node.js runtime is provided through `pkg`, never required
@@ -42,12 +44,14 @@ Refresh remote HEADs before resuming. These SHAs are checkpoints only, not autho
 
 ## Fixed task-local choices
 
-- Keep `m`, `pkg`, and only their real prerequisite core facilities together in one self-contained `m-core` source project; this source/release arrangement is the intended direction, not yet the published/current runtime layout.
+- Keep `m`, `pkg`, their real prerequisite core facilities, and the user-selected fundamental shared capabilities together in one self-contained `m-core` source project; this source/release arrangement is the intended direction, not yet the published/current runtime layout.
 - The clean-host prerequisite boundary must not include Node.js, `mk`, or an already installed RumiAI OS. `m` initializes and `pkg` operates without any of them.
 - Keep `pkg-catalog` in its already independent repository as the essential catalog authority consumed by `pkg` operations; ordinary `m` bootstrap must not require catalog/provider resolution or network access.
 - Separate `mk` source from `m-core`; package/install it via `pkg`, declaring the existing Node.js facility dependency through `pkg-catalog`. `mk` retains its technical `m` semantic ownership and build-orchestrator responsibilities, but no longer belongs to the minimal distribution.
 - Treat `mk` as source-distributed JavaScript requiring no compilation; all of its implementation files, including any multiple JS modules, MUST stay beneath the package's own materialized `root/` (for example `root/bin/mk` and `root/lib/mk.lib.js`). Do not place `mk` implementation libraries in the system `m` library tree. A POSIX source copy/archive packaging step is sufficient; the normal package launcher and dependency integration remain `pkg` responsibilities.
-- Higher-level commands, libraries and resources outside the actual dependency closure of `m` + `pkg` move to other projects, preserving original runtime identities/interfaces until a separately authorized contract change.
+- The core command inventory explicitly includes `pkg`, `osarch`, `state-path`, `http-fetch`, `digest`, `extract`, `log`, `lang`, `shell`, `manual`, `pager`, `lang-set`, `tls-ca`, `tls-nss-sync`, and `srv`, alongside the root `m` bootstrap and its `bin/sys/m` exposure. `pager` is required to preserve normal `manual` presentation (not only `manual --no-pager`).
+- `srv` stays inside the foundation because it builds directly on existing `pkg` facility/provider/dependency and `state-path` contracts; it must not introduce an alternate resolver or bootstrap-time service supervisor. The `tls-ca` authority and `tls-nss-sync` projection remain technical `m` facilities, including their current package-launch integration, without making host-specific tools or systemd/launchd unconditional bootstrap prerequisites. `lang-set` remains owner-generic and must not introduce a dependency on the branded `ai` layer.
+- Higher-level commands, libraries and resources outside the accepted foundational inventory and its real dependency closure move to other projects, preserving original runtime identities/interfaces until a separately authorized contract change.
 - Existing PoC 072 tests of standalone `mk` under host Node remain historical experimental evidence; making host Node a production bootstrap requirement is rejected. Preserve the PoC unchanged unless a new evidence question requires extending it.
 - Keep package management/provider resolution owned by `pkg`; no alternate build engine or package manager is needed to bootstrap `m-core`.
 - Do not migrate production hosts or change `rumiai-os` runtime code solely from the architectural discussion. Align canonical specifications as the intended source arrangement becomes actual implemented/published behavior.
@@ -105,7 +109,7 @@ composition evidence and must not be credited as a real `m-core` extraction.
 
 ## Next action
 
-1. Start from the now-focused `m` source repository and produce a current-file ownership/dependency inventory for the future `m-core` composition, based on real `m` and `pkg` callers, tests, manuals and resources; identify non-core files for later extraction.
+1. Start from the now-focused `m` source repository and produce a current-file ownership/dependency inventory for the future `m-core` composition, based on real bootstrap/package callers, manual and language resources, TLS and service integration, permanent tests, and accepted core tools; identify non-core files for later extraction.
 2. Build an isolated `m-core` candidate from real sources and run clean-host bootstrap and `pkg` tests **without Node.js**.
 3. Promote the PoC 073 mk source/packaging to a dedicated source repository and publish a versioned verifiable release; then create the corresponding `pkg-catalog` descriptor, test the **public** `pkg install mk` path and run full permanent mk regressions including watch. The current GitHub connector cannot create a repository or publish GitHub release assets, so this source/release step remains pending.
 4. Only then promote the new source/distribution boundary to current canonical specifications and change product repository structure via authorized forward-only work.
