@@ -1,7 +1,7 @@
 # RumiAI OS — Documentation model
 
 Status: **Current / normative**  
-Updated: 2026-09-20
+Updated: 2026-10-24
 
 This specification defines documentation ownership, the first terminal-first operational-reference storage/access model, and the long-term multi-channel documentation target for RumiAI OS.
 
@@ -225,11 +225,13 @@ The first-delivery executable belongs to the technical `m` layer and is located 
 bin/sys/manual
 ```
 
-Because it consumes bootstrap facilities such as `m_RES_DIR`, it is a bootstrap-integrated command and uses:
+Because it consumes bootstrap facilities such as `m_RES_DIR`, it is an `m`-environment-dependent command. It uses the native POSIX shell entrypoint:
 
 ```sh
-#!/usr/bin/env m
+#!/bin/sh
 ```
+
+It rejects an absent or empty `m_ROOT` and explicitly sources `core.lib.sh` before using shell runtime facilities. An uninitialized caller invokes it as `m manual`.
 
 ## 5. First-delivery `manual` interface
 
@@ -518,7 +520,7 @@ DOC-16  long-term documentation build orchestration belongs to mk; runtime manua
 DOC-17  the first delivery does not introduce per-command --help or -h
 DOC-18  paging never changes the canonical page content contract
 DOC-19  every command modification includes a manual-consistency check and any resulting documentation realignment occurs in the same work unit
-DOC-20  the first-delivery executable is bin/sys/manual, belongs to m, and is bootstrap-integrated through #!/usr/bin/env m
+DOC-20  the first-delivery executable is bin/sys/manual, belongs to m, uses #!/bin/sh and requires an initialized m environment
 DOC-21  manual uses public exit statuses 0 success, 1 invalid request, 2 not found, 3 exact ambiguity, and 4 execution/presentation failure
 DOC-22  every `m`- or RumiAI-owned directly executable command identity has an owner-local operational manual topic
 DOC-23  command creation, rename and removal realign the corresponding manual topic in the same work unit
