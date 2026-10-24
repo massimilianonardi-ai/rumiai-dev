@@ -5,7 +5,7 @@ Updated: 2026-10-23
 
 ## Goal
 
-Migrate m-dependent commands and package launchers from the sourced `#!/usr/bin/env m` model to native interpreter entrypoints. Keep `m` as the environment bootstrap and dispatch point, preserve native argument/status semantics and canonical command identity, and preserve coordinated repository publication while leaving deployed-host package reintegration as a separately controlled maintenance operation.
+Migrate m-dependent commands and package launchers from the sourced `#!/usr/bin/env m` model to native interpreter entrypoints. Keep `m` as the environment bootstrap and dispatch point, preserve native argument/status semantics and canonical command identity, and preserve coordinated repository publication, and validate the native command behavior. Existing RumiAI installations are test-only; no deployed-host concrete migration or rollout is part of this task.
 
 ## Current revisions (2026-10-23 publication)
 
@@ -29,7 +29,7 @@ Refresh every remote HEAD before further work. Do not assume these SHAs remain b
 - Environment-dependent commands use their native interpreter (POSIX shell `#!/bin/sh`, Node.js when applicable), require nonempty `m_ROOT`, and may run as `m <command>` or directly in an inherited initialized m environment. An interactive m shell is not a prerequisite.
 - Shell commands load needed libraries in their own process. Shell functions are not inherited across native process boundaries.
 - The bootstrap does not inspect special shebangs or source command files. `m_COMMAND_BIN` no longer supplies an inherited command identity; the native command resolves its own invocation identity.
-- Native runtime and package catalog are now published together across their repositories; deployed installations still require a dependency-aware, planned concrete reinstall. Git history remains forward-only.
+- Native runtime and package catalog are published together across their repositories. The user confirmed that installations are test-only, so no deployed-concrete migration, inventory, or coordinated rollout is required. Git history remains forward-only.
 - This task is separate from `javascript-build-and-runtime-loading`.
 
 ## Published implementation
@@ -80,15 +80,20 @@ Prepublication GitHub-hosted execution paired the exact staged `rumiai-os` and `
 - Published-main broad GitHub Actions [health run 39968009167](https://github.com/massimilianonardi-ai/rumiai-tests/actions/runs/39968009167) and [web-control package run 39968008929](https://github.com/massimilianonardi-ai/rumiai-tests/actions/runs/39968008929), both at suite `1e45b0e893216a3ef4ea8469a3462610f30b8de0`, completed with **FAILURE** on their configured hosts. The targeted follow-up [diagnostic run 39969090076](https://github.com/massimilianonardi-ai/rumiai-tests/actions/runs/39969090076) passed on Ubuntu ARM64 and macOS. Broad failures have not been proven unrelated to the migration, and green targeted runs are not a substitute for complete health validation; failure triage remains open under the existing next action. No new CI execution or physical/deployed-host validation was performed in this audit.
 - GitHub `main` publication is verified complete. No installed concrete, host service or existing RumiAI deployment was migrated by this audit; actual rollout still requires recorded exact inventory, artifact/backup preflight and a coordinated maintenance window as specified in `PACKAGE-MODEL.md`.
 
+## Deployment-scope correction (2026-10-24)
+
+- The user explicitly confirmed that **no current deployed installations exist**; there are only test installations. A deployed-concrete migration is **not required**. Earlier inventory, backups, maintenance-window and host-rollout items were based on an incorrect deployment assumption and are removed from this task's next actions.
+- The conditional installed-concrete procedure in `PACKAGE-MODEL.md` does not represent work pending for this task. Existing reinstall tests remain revision-specific tests of package lifecycle behavior, not evidence of a real deployed upgrade.
+- This correction does not turn previous broad CI failures into PASS, nor require an unrelated physical/deployment gate. The remaining work is to classify relevant published-main CI failures, correct any proven native-command regression, and apply the final consistency gate before closing the task.
+
 ## Next action
 
-1. Before deployment, obtain a real target-host inventory of **all** affected exact installed concretes, selected defaults, active facility provider bindings/defaults and host services. Verify artifact availability and backup/recovery before removing any package. Do not infer actual installed inventory from CI.
-2. Evaluate the new published-main GitHub Actions runs, distinguish pre-existing/out-of-scope failures from native-entrypoint regressions, and realign only demonstrated migration-related tests/code.
-3. Perform proportionate physical and service-supervisor validation on project-owned hosts. Run a controlled coordinated native-runtime/catalog rollout and exact concrete reinstall only with the required deployment prerequisites and authorization; preserve system/user/service state and reconcile failures forward.
-4. Keep publication of the four repository `main` branches as the completed checkpoint. Do not claim host deployment until the concrete reinstall and service-specific physical validation have happened.
+1. Triage the broad published-main GitHub Actions failures and distinguish any demonstrated native-command regression from independent test/environment/upstream failures. Avoid re-running unrelated full suites by default.
+2. If a migration-related failure is demonstrated, correct it forward-only and run proportionate executable validation on the affected real paths, including disposable package test installations as necessary.
+3. Once migration-specific validation is complete, run the final consistency gate and close the handoff through the documented completed-handoff lifecycle. No installed-concrete migration, deployment inventory or host maintenance window is pending.
 
 ## Open constraints
 
-- `rumiai-dev/main` is the canonical native-command contract; main code and catalog are published, but existing deployed concrete launchers may still use the old mechanism.
-- `pkg-catalog/main` and `rumiai-os/main` now contain the coordinated native-command source migration. Installed package concretes retain their materialized old launchers until separately reinstalled.
-- Real catalog-backed managed Node install, same-identity uninstall/reinstall and native launch have passed on both GitHub-hosted reference OS/architecture environments. Physical validation, real installed-concrete inventory and deployed-host rollout remain pending. Provider discovery has been corrected and tested on both published and staged revisions.
+- The canonical native-entrypoint contract, product code, permanent tests, and package catalog are already published in their `main` branches.
+- Only test installations exist; there is no deployed RumiAI installation or old concrete requiring conversion. No physical rollout or service restart is a completion criterion for this task.
+- Published-main broad CI failures remain unclassified relative to the native interpreter migration; targeted green tests do not automatically clear those broad failures. Test evidence remains revision-specific.
