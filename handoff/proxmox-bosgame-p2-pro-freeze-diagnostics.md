@@ -43,15 +43,14 @@ The operator's explicit plan overrides earlier PVEMods-first isolation. **They n
 6. **If Ubuntu also freezes:** return the computer.
 7. **If Ubuntu does not freeze:** operator will assess the next course of action; do **not** automatically conclude hardware is good or prescribe a predetermined next installation.
 
-Important: the return deadline is unknown; remind operator to keep enough time for the explicitly intended refund/replacement. A clean Memtest or a stable idle Linux test alone does not prove the machine reliable. Preserve the above sequence unless the operator explicitly changes it.
+Important: the return deadline remains unknown. After the reported Memtest failure the selected path is return/replacement; the clean-install branches below are retained only as the original conditional plan, not pending work.
 
 ## Acceptance scenarios
 
-1. Standalone Memtest result is **operator-reported failure**, without inventing measurements; its error branch triggers the previously selected return.
-2. After a clean Memtest, **both** VM backups are verified and stored away from the disk to be reformatted before a destructive reinstall.
-3. Fresh Proxmox is tested at BIOS defaults, without additional packages or VMs; report uptime and outcome without assuming a passing interval until actually observed.
-4. Only if the clean Proxmox host freezes, Ubuntu is installed and exercised with a task workload; a second freeze triggers the operator's planned return, otherwise the operator decides.
-5. Preserve evidence and enough time for retailer return, and distinguish a memory-test pass from proof of system-wide reliability.
+1. Operator-reported standalone Memtest failure is recorded without fabricated error counts or photographs, supporting a memory-subsystem fault beyond the installed OS.
+2. The user-selected return/replacement is pursued, with the error screen and earlier Oops photographs retained as evidence if available.
+3. Optional backup of VM 100 OPNsense and VM 101 Home Assistant to storage outside the device is completed and checked **only if the operator needs to retain these VMs before return**.
+4. The handoff is closed only after the user confirms the computer has been returned/replaced, not merely because a return was recommended.
 
 ## Hardware identity and topology (operator-confirmed)
 
@@ -185,7 +184,7 @@ Important: the return deadline is unknown; remind operator to keep enough time f
 - Operator supplied `Testo incollato(20261024-152511).txt`, which contains read-only output from the **actual host filesystem**. This is definitive evidence of a **PVEMods software collector**, not just an unidentified `www-data` process; do not silently conflate the separate root-owned `glances.service` with it.
 - `/usr/share/perl5/PVE/PVEMods/Collector/LmSensors.pm` defines `collector_for_temperature_sensors` and explicitly sets `$0 = "collector-temperature-sensors"` (line 23); inside its acquisition path it calls **`sensors -J 2>/dev/null | python3 -m json.tool`** (line 71). The executable command, associated `www-data` collector and photographed kernel fault with `UID: 33 Comm: sensors` form a **strong caller-path match**. Runtime process parent tree from actual crashed child is not available, and matching command/UID is **not** proof that PVEMods induced corruption or that the same trigger explains prior PID 0 Oops.
 - `/usr/share/perl5/PVE/API2/PVEMods_SensorInfo.pm` checks `$config{lm_sensors}{enabled}` in `get_sensors_info`, but **this is an API-read guard; do not assume setting it to false stops the running collector without inspecting its separate startup/loop config**. `/usr/share/perl5/PVE/API2/Nodes.pm` has a PVEMods SensorInfo API integration at line 541, and `/usr/share/pve-manager/js/PveMods_PveNodeStatusView.js` contains PVEMods-specific sensor UI integration.
-- **Deferred diagnostic alternative, superseded as immediate next test by the operator's clean-reinstall decision:** isolate the PVEMods temperature collector only if the user later chooses that experiment. PVEMods remains a concrete possible cause/exposure path, not a demonstrated root cause. Do not change its installed files as part of the clean-host trial.
+- **Superseded diagnostic alternative:** isolate the PVEMods temperature collector only if the user explicitly reopens software isolation; a failed standalone Memtest now drives the decision to return. PVEMods remains a possible error exposure path, not an established hardware cause.
 - Full PVEMods collector module / configuration are **not uploaded**, only `grep` excerpts. Safe future host read-only inspection: `ps -ww -p 1438,1439 -o user,pid,ppid,comm,args`, `pstree -asp 1439`, `sed -n '1,115p' /usr/share/perl5/PVE/PVEMods/Collector/LmSensors.pm`, and inspect only PVEMods-owned config/launcher paths. Avoid inventing configuration locations or stop commands.
 - **Superseded by later operator result:** Memtest failed on 2026-10-24, and the operator chose return rather than continuing the previously planned overnight run.
 
