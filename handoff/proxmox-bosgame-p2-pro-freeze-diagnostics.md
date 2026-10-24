@@ -122,6 +122,15 @@ Identify whether repeated complete freezes of a newly purchased BOSGAME P2 Pro (
    Expected values `off` for `tcp-segmentation-offload`, `generic-segmentation-offload`, `generic-receive-offload`. Changes ephemeral across reboot; checksum/VLAN/LRO/etc were **not** explicitly disabled.
 5. **Current user request immediately before handoff:** "voglio provare ad attivare le vm con offloading disattivato". Assistant advised `qm start 100`; `qm start 101`; `qm list`, with BIOS/default kernel/driver and TSO/GSO/GRO off and no change to guest VirtIO/TAP offloading. **No subsequent confirmation/results posted**. Resume by verifying actual state and observation duration, not claiming the VM test succeeded or failed.
 
+
+## Working design — post-diagnosis energy/thermal profile (planning only)
+
+- Intended long-term workload newly clarified on 2026-10-24: Proxmox hosting OPNsense and Home Assistant VMs; 2.5 Gbit/s fiber connection, multiple VLANs, an external Wi-Fi access point with three wireless networks, and three IP cameras recording locally to SD with email events. Optimize wall power and heat without impairing routing throughput, peak single-core responsiveness or reliability.
+- The operator reattached offline manufacturer-firmware analysis files `DB19D005_BIOS_analysis.md` and `DB19D005_BIOS_IFR_options.txt`. These are conversation attachments, **not Git-controlled files or current NVRAM snapshots**. IFR candidates: Platform PL1 = 28000 and Platform PL2 = 45000 (apparently mW; actual active limits unverified), C-states enabled, Package C-State Limit Auto, Intel Speed Shift enabled, Turbo Mode enabled, Energy Efficient Turbo enabled, and thermal/fan policy controls. IFR declarations do not guarantee the machine exposes or applies each control.
+- Candidate later approach, **not yet an experiment**: measure idle wall power, CPU package power, temperatures, effective power limits, WAN throughput/latency under actual routing mode and optional security features; then evaluate modest staged PL1/PL2 reductions while retaining frequency scaling, Turbo and default C-states. Distinguish CPU peak power reductions from whole-system idle savings. Do not alter C-state, ASPM, Ethernet, fan or thermal-safety settings speculatively.
+- The active B1 comparison retains BIOS factory defaults and the existing NIC offload/VM configuration until its result is recorded. No BIOS change, power benchmark or physical validation has been performed for this optimization objective. Completing or handing off a separate optimization lifecycle will be decided **after** the freeze/return decision.
+
+
 ## Next action
 
 1. Ask for/report **actual outcome of the ongoing B1 trial**: duration since boot/VM start, whether VM 100/101 are indeed `running`, whether `ethtool -k` verifies TSO/GSO/GRO off on both NICs, and whether host stayed responsive or froze. No need to ask for data already established above.
