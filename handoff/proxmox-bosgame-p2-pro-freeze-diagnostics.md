@@ -31,12 +31,12 @@ Identify whether repeated complete freezes of a newly purchased BOSGAME P2 Pro (
 - **B1 failed:** a new photographed Oops and operator-reported full-host freeze at approximately 2h43m with factory BIOS; VM 100/101 boot starts are now verified by the supplied journal. Pre-crash `ethtool -k` was not supplied; do not imply verified offload state.
 - Preserve distinction: disabling TSO/GSO/GRO is **not** disabling all offloading; checksum, VLAN and virtual/tap/guest offload settings remain unchanged.
 
-## Operator decision tree for final isolation and return (fixed 2026-10-24)
+## Operator decision tree for final isolation and return (fixed 2026-10-24; fault branch selected)
 
-This is the **operator's explicitly selected plan**, overriding earlier proposed PVEMods-first software-isolation ordering. Steps following Memtest are **not yet performed**; update actual status as results arrive.
+The operator's explicit plan overrides earlier PVEMods-first isolation. **They now report standalone Memtest failure and have selected return of the mini-PC.** The clean Proxmox/Ubuntu reinstall branches below are historical contingencies **not currently requested**.
 
-1. **2026-10-24 evening → 2026-10-25 morning:** leave the already prepared standalone memory test running overnight, with default BIOS. Do not infer a pass/error count until operator supplies evidence.
-2. **If the memory test reports any fault:** return the new BOSGAME P2 Pro; stop further software-reinstall experimentation.
+1. **2026-10-24 outcome:** the operator reports standalone Memtest **failed**, before the intended overnight observation ended. No numeric error count, pass number, test ID, BIOS screen photo, or Memtest version has been provided.
+2. **Triggered:** memory test reported failure → operator states the hardware is defective and selects **return the BOSGAME P2 Pro**, foregoing subsequent OS reinstall experiments. A memory subsystem fault is strongly supported, but faulty DIMM vs slot/IMC/board is not resolved.
 3. **If the memory test is clean:** first export/back up **both existing Proxmox VMs** (VM 100 OPNsense, VM 101 Home Assistant). Before erasing the installation, keep the exports on storage **not affected by disk formatting**, verify backup completion and that files are readable, and preserve any pertinent VM/host network and device assignment settings needed for eventual restoration. Do not start reinstallation before backups are safely off-host.
 4. **Reformat and install Proxmox VE from scratch**, with a stock configuration: no additional packages, PVEMods, Glances, lm-sensors customization, custom kernel command line, BIOS tuning, VM creation, VM import, or discretionary NIC/offload tweaks. Necessary initial installer networking is not a customization. Leave this clean host running without VMs for a meaningful observation period; record start time, actual kernel/boot cmdline and any crash. No precise observation period was committed by the operator.
 5. **If freshly installed clean Proxmox freezes:** install **Ubuntu** instead, with no Proxmox, and run it with some workload/tasks (exact workload not yet specified). Observe stability and preserve evidence.
@@ -47,7 +47,7 @@ Important: the return deadline is unknown; remind operator to keep enough time f
 
 ## Acceptance scenarios
 
-1. Overnight standalone Memtest outcome is recorded without claiming an unperformed test; any actual memory error triggers the operator's planned return.
+1. Standalone Memtest result is **operator-reported failure**, without inventing measurements; its error branch triggers the previously selected return.
 2. After a clean Memtest, **both** VM backups are verified and stored away from the disk to be reformatted before a destructive reinstall.
 3. Fresh Proxmox is tested at BIOS defaults, without additional packages or VMs; report uptime and outcome without assuming a passing interval until actually observed.
 4. Only if the clean Proxmox host freezes, Ubuntu is installed and exercised with a task workload; a second freeze triggers the operator's planned return, otherwise the operator decides.
@@ -176,8 +176,8 @@ Important: the return deadline is unknown; remind operator to keep enough time f
 - **PVEMods collector identified by later uploaded host source excerpts:** process `www-data PID 1439 PPID 1438` with command `collector-temperature-sensors` is named exactly by `PVE::PVEMods::Collector::LmSensors`, which launches `sensors -J`. Shares UID 33 with photographed crashing `sensors` task. Exact live parent/scheduling unit and causation remain unverified; do not attribute it to Glances.
 - No `glances`/`sensors` references surfaced in the reported grep of `/etc/cron*`, `/etc/systemd/system`, `/etc/modules`, `/etc/modules-load.d` other than the two systemd service files; this **does not rule out package-owned scripts**, `/usr/local`, `/etc/pve`, or runtime API collectors.
 - User highlighted recurring ~2h30-2h45 timing of freezes, sometimes shorter/longer. This can be consistent with recurrent jobs or elapsed-state corruption, but does not eliminate RAM/IMC faults; no exact periodic trigger established.
-- Operator **intends to run a standalone UEFI USB Memtest86+ overnight into 2026-10-25** with stock BIOS and no Proxmox kernel/VMs (no start or results confirmed yet). Recommended latest stable official UEFI Memtest86+ image, at least four passes/overnight, record version, pass count, error count, any hang and screenshot/report. A pass is not an all-clear for runtime kernel/driver faults; an error is strong evidence for unstable memory subsystem but not automatically a specific DIMM. Remain aware of return deadline.
-- A reversible isolation test of PVEMods' verified `collector-temperature-sensors` remains a possible **future diagnostic lead**, **not the next step**: the operator has explicitly decided to back up VMs and use a clean Proxmox install if Memtest is clean. Do not ascribe cause to `sensors` solely because the Oops interrupted its operation; previous Oops was in slab/RCU while `igc` was blacklisted.
+- **Subsequent result: operator reports standalone Memtest FAIL on 2026-10-24.** Hardware memory-subsystem instability is independently supported beyond Proxmox/drivers/VMs. The specific faulty component is unconfirmed; test version, error count, pass/test IDs, photographs and exact duration were not supplied. This supersedes the prior intended overnight test and triggers the operator's return branch.
+- Previous PVEMods `collector-temperature-sensors` isolation was a possible software experiment; it is **not required for the chosen return** after standalone Memtest errors. Do not assert that PVEMods/`sensors`, `igc`, or `i915` caused the corruption; the fault site is not identified to a specific memory component.
 - No configuration change, USB imaging, or physical test has been performed directly by assistant.
 
 ## PVEMods temperature collector source identified (operator output, 2026-10-24)
@@ -187,7 +187,7 @@ Important: the return deadline is unknown; remind operator to keep enough time f
 - `/usr/share/perl5/PVE/API2/PVEMods_SensorInfo.pm` checks `$config{lm_sensors}{enabled}` in `get_sensors_info`, but **this is an API-read guard; do not assume setting it to false stops the running collector without inspecting its separate startup/loop config**. `/usr/share/perl5/PVE/API2/Nodes.pm` has a PVEMods SensorInfo API integration at line 541, and `/usr/share/pve-manager/js/PveMods_PveNodeStatusView.js` contains PVEMods-specific sensor UI integration.
 - **Deferred diagnostic alternative, superseded as immediate next test by the operator's clean-reinstall decision:** isolate the PVEMods temperature collector only if the user later chooses that experiment. PVEMods remains a concrete possible cause/exposure path, not a demonstrated root cause. Do not change its installed files as part of the clean-host trial.
 - Full PVEMods collector module / configuration are **not uploaded**, only `grep` excerpts. Safe future host read-only inspection: `ps -ww -p 1438,1439 -o user,pid,ppid,comm,args`, `pstree -asp 1439`, `sed -n '1,115p' /usr/share/perl5/PVE/PVEMods/Collector/LmSensors.pm`, and inspect only PVEMods-owned config/launcher paths. Avoid inventing configuration locations or stop commands.
-- Operator now states they will leave the Memtest running from the evening of 2026-10-24 until the following morning; **no test result has yet been supplied**. Return/replacement timing remains an important constraint.
+- **Superseded by later operator result:** Memtest failed on 2026-10-24, and the operator chose return rather than continuing the previously planned overnight run.
 
 ## Deferred GRUB and offload configuration request (after B1 failure)
 
@@ -214,16 +214,16 @@ Important: the return deadline is unknown; remind operator to keep enough time f
 
 ## Next action
 
-1. **Operator's immediate action:** leave standalone UEFI Memtest86+ running overnight through the morning of 2026-10-25, BIOS at defaults. Obtain actual pass/error count and any freezes from operator; neither start nor outcome has been independently verified in chat.
-2. **Branch on measured memory result:** any errors → return. If no errors → export/verify VM 100 and VM 101 backups on storage outside the soon-to-be-formatted disk, then reinstall Proxmox stock, with no VMs or extra customizations.
-3. Observe clean Proxmox for freezes; only if it freezes, install Ubuntu with some active tasks and observe. If Ubuntu also freezes, return; if not, the operator will assess next steps. Do not replace this branch ordering with previous PVEMods/igc isolation suggestions.
-4. At each branch, record what was actually tested, duration, firmware/kernel/OS version and any fault evidence. Respect the unknown but imminent return deadline; no software or hardware work by assistant has been run on the host.
+1. **Return/replacement is the operator-selected next action:** standalone Memtest reportedly failed, supporting instability of the memory subsystem independent of Proxmox. No clean-install Proxmox or Ubuntu testing is needed for this branch.
+2. Photograph/preserve the Memtest error display (version, failing tests, error count, pass count) for seller/return evidence if still accessible. **No photograph or numerical test log has yet been supplied**.
+3. If data must be retained, back up the existing OPNsense and Home Assistant VMs onto external storage before returning the device and verify they are readable. Handle personal information on the device appropriately within the seller's warranty/return terms; **backup is no longer a prerequisite to reinstallation**.
+4. Keep the handoff **Active until the actual return/replacement is confirmed**, or the user explicitly closes the case. No hardware alteration or host change has been executed by the assistant.
 
 ## Blockers / open questions
 
-- Exact remaining retailer return deadline not recorded. Do not overinvest in extensive testing or firmware flashing.
+- Exact remaining retailer return deadline not recorded; return has now been selected by operator. Do not overinvest in further testing or firmware flashing.
 - **B1 failed**: a second photographed Oops and reported full-host freeze at ~2h43m, current offload state was not freshly verified before the crash; prioritize host reliability/return decision, not persistent offload tweaks.
-- An independent, sustained baseline with BIOS defaults / `igc` enabled / VMs off / default offloads has not been recorded; causal assessment remains tentative.
-- The earlier Oops may be from altered BIOS conditions or an unrelated memory corruption bug; not established to be the same freeze mechanism as earlier silent hangs.
+- Lack of a controlled `igc`/offload baseline no longer blocks the chosen return because standalone Memtest failure independently demonstrates a memory-subsystem stability problem; original NIC-specific causal theories remain unproven.
+- The photographed kernel Oops events are compatible with memory corruption; whether they were caused by the same failing memory-subsystem component detected by standalone Memtest remains unproven.
 - No BOSGAME-approved I226-V NVM image or reliable ETrackID inventory yet; generic NVM versions alone insufficient.
 - Full BIOS IFR inventory and prior large text log were conversation artifacts, not presently verified as long-term Git repository files.
