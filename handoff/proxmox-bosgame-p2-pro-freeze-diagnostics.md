@@ -1,7 +1,7 @@
 # BOSGAME P2 Pro / Proxmox complete-freeze diagnosis
 
 Status: Active
-Updated: 2026-10-24 (Europe/Rome)
+Updated: 2026-10-24 (Europe/Rome; new workload/power observations)
 
 ## Goal
 
@@ -28,7 +28,7 @@ Identify whether repeated complete freezes of a newly purchased BOSGAME P2 Pro (
 - Test one variable at a time where practicable; clearly flag comparisons confounded by simultaneously changed BIOS, VM state or offload settings.
 - Keep exact physical-console access when network controllers are blacklisted; disabling `igc` kills both integrated Ethernet interfaces.
 - Avoid speculative BIOS flashing, third-party I226-V NVM flashing or deliberately induced kernel panic. BIOS/NVM inventories and diagnostic reads are permitted.
-- The **latest direction** is to stress the actual workload with VM 100 and VM 101 running while host `nic0` and `nic1` have TSO/GSO/GRO disabled; the user expressed intent, but **has not yet supplied command output proving VM starts or confirming current offload state**.
+- The **latest direction** is to stress the actual workload with VM 100 and VM 101 running while host `nic0` and `nic1` have TSO/GSO/GRO disabled; on 2026-10-24 the operator reports the VMs active, but **has not supplied `qm` output, verified current offload state, or a timed B1 stability outcome**.
 - Preserve distinction: disabling TSO/GSO/GRO is **not** disabling all offloading; checksum, VLAN and virtual/tap/guest offload settings remain unchanged.
 
 ## Acceptance scenarios
@@ -120,20 +120,29 @@ Identify whether repeated complete freezes of a newly purchased BOSGAME P2 Pro (
    done
    ```
    Expected values `off` for `tcp-segmentation-offload`, `generic-segmentation-offload`, `generic-receive-offload`. Changes ephemeral across reboot; checksum/VLAN/LRO/etc were **not** explicitly disabled.
-5. **Current user request immediately before handoff:** "voglio provare ad attivare le vm con offloading disattivato". Assistant advised `qm start 100`; `qm start 101`; `qm list`, with BIOS/default kernel/driver and TSO/GSO/GRO off and no change to guest VirtIO/TAP offloading. **No subsequent confirmation/results posted**. Resume by verifying actual state and observation duration, not claiming the VM test succeeded or failed.
+5. **B1 follow-up:** after prior instructions to start VM 100 and 101, the operator now reports both VMs active with factory-default BIOS and 24 W at the wall under negligible traffic. Still **no `qm list` output, `ethtool -k` confirmation of offloads, or measured duration/stability/freeze outcome for B1**. Do not infer a successful B1 test from the idle power observation.
 
+
+## Additional operator-confirmed workload and power observations (2026-10-24)
+
+- OPNsense VM: 4 vCPUs pinned onto P-core CPUs according to the operator, 4 GiB assigned RAM; expected workload routing/NAT/stateful firewall and VLANs up to a **future** 2.5 Gbit/s WAN service, explicitly **no** PPPoE, IDS/IPS, VPN, or traffic inspection; optional light DNS ad blocking.
+- Home Assistant VM: 4 vCPUs, 8 GiB assigned RAM. Possible future NAS VM, not active or provisioned as part of current trial. Existing host RAM inventory is about 16 GiB total; guest allocations total 12 GiB, leaving approximately 4 GiB nominal for host/overhead before considering allocation versus resident-use differences.
+- Current WAN modem/link is 1 Gbit/s because the modem supports 1 Gbit/s, while main switches support 2.5 Gbit/s; this is **not evidence of NIC failure**.
+- Wall meter currently reads approximately **24 W** with default BIOS, VMs reported active, and negligible traffic. This is total system AC power at that operating point, not CPU package wattage, nor a 2.5 Gbit/s throughput benchmark.
+- Previously the operator tried BIOS PL1=20000 / PL2=30000 (interpreted as 20 W/30 W), observed noticeably less warm air by touch and core temperature about **49°C**. There is no matched, instrumented wall-power/throughput/stability comparison for that profile; do not treat it as proof of fault resolution.
+- Current BIOS must remain **unchanged at defaults** until the active freeze/return decision is established.
 
 ## Working design — post-diagnosis energy/thermal profile (planning only)
 
 - Intended long-term workload newly clarified on 2026-10-24: Proxmox hosting OPNsense and Home Assistant VMs; 2.5 Gbit/s fiber connection, multiple VLANs, an external Wi-Fi access point with three wireless networks, and three IP cameras recording locally to SD with email events. Optimize wall power and heat without impairing routing throughput, peak single-core responsiveness or reliability.
 - The operator reattached offline manufacturer-firmware analysis files `DB19D005_BIOS_analysis.md` and `DB19D005_BIOS_IFR_options.txt`. These are conversation attachments, **not Git-controlled files or current NVRAM snapshots**. IFR candidates: Platform PL1 = 28000 and Platform PL2 = 45000 (apparently mW; actual active limits unverified), C-states enabled, Package C-State Limit Auto, Intel Speed Shift enabled, Turbo Mode enabled, Energy Efficient Turbo enabled, and thermal/fan policy controls. IFR declarations do not guarantee the machine exposes or applies each control.
-- Candidate later approach, **not yet an experiment**: measure idle wall power, CPU package power, temperatures, effective power limits, WAN throughput/latency under actual routing mode and optional security features; then evaluate modest staged PL1/PL2 reductions while retaining frequency scaling, Turbo and default C-states. Distinguish CPU peak power reductions from whole-system idle savings. Do not alter C-state, ASPM, Ethernet, fan or thermal-safety settings speculatively.
+- Candidate later approach, **not yet an experiment**: measure idle wall power, CPU package power, temperatures, effective power limits, WAN throughput/latency under real routing/NAT/stateful firewall; compare a carefully isolated PL1=20 W / PL2=30 W profile (already informally tried) against defaults only after host reliability is established. Preserve frequency scaling, Turbo and default C-states; distinguish CPU peak power reductions from whole-system idle savings. Intel PL3 is an optional duty-cycle-reactive peak limiter; Intel PL4 is a preemptive peak limiter. This BIOS IFR declares PL3 override Disabled and PL4 override Enabled with default numeric value 120000, actual effective BIOS/NVRAM state unverified. Do **not** adjust PL3/PL4, C-state, ASPM, Ethernet, fan or thermal protections speculatively.
 - The active B1 comparison retains BIOS factory defaults and the existing NIC offload/VM configuration until its result is recorded. No BIOS change, power benchmark or physical validation has been performed for this optimization objective. Completing or handing off a separate optimization lifecycle will be decided **after** the freeze/return decision.
 
 
 ## Next action
 
-1. Ask for/report **actual outcome of the ongoing B1 trial**: duration since boot/VM start, whether VM 100/101 are indeed `running`, whether `ethtool -k` verifies TSO/GSO/GRO off on both NICs, and whether host stayed responsive or froze. No need to ask for data already established above.
+1. Obtain **actual timed outcome of the ongoing B1 trial**: boot/VM uptime, `qm list` confirmation of reported active VMs, and `ethtool -k` verification of TSO/GSO/GRO disabled on both NICs; record whether host stayed responsive or froze. Do not repeat already reported 24 W idle reading or VM sizing questions.
 2. If freeze: preserve console photo; obtain `journalctl -b -1 -k` and full prior journal, approximate clock time/uptime; compare with A1 and overnight A0, note VM/offload confounds. Consider a **controlled** test with `igc` enabled and VMs off and offloads on/off, or isolate one I226-V at a time; choose based on urgency of return window.
 3. If stable: run long enough to be informative given typical 2–3h failure timing, then (while BIOS/kernel/VM workload constant) restore one offloading feature at a time for causal reproduction **only if user judges return window allows it**. A single stable period is not causal proof.
 4. If host freezes again under multiple materially distinct configs, prioritize **return/replacement** over speculative firmware flashing. Memtest86+ 4 passes and minimal external-boot diagnostics are fallback to investigate RAM/IMC/mainboard, but not at expense of deadline.
@@ -142,7 +151,7 @@ Identify whether repeated complete freezes of a newly purchased BOSGAME P2 Pro (
 ## Blockers / open questions
 
 - Exact remaining retailer return deadline not recorded. Do not overinvest in extensive testing or firmware flashing.
-- The status/duration of the latest VM-on / TSO+GSO+GRO-off experiment is unknown.
+- VM activity is operator-reported, while the exact duration and outcome of the VM-on / TSO+GSO+GRO-off experiment, including current offload state, are unverified.
 - An independent, sustained baseline with BIOS defaults / `igc` enabled / VMs off / default offloads has not been recorded; causal assessment remains tentative.
 - The earlier Oops may be from altered BIOS conditions or an unrelated memory corruption bug; not established to be the same freeze mechanism as earlier silent hangs.
 - No BOSGAME-approved I226-V NVM image or reliable ETrackID inventory yet; generic NVM versions alone insufficient.
