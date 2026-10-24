@@ -28,7 +28,7 @@ Identify whether repeated complete freezes of a newly purchased BOSGAME P2 Pro (
 - Test one variable at a time where practicable; clearly flag comparisons confounded by simultaneously changed BIOS, VM state or offload settings.
 - Keep exact physical-console access when network controllers are blacklisted; disabling `igc` kills both integrated Ethernet interfaces.
 - Avoid speculative BIOS flashing, third-party I226-V NVM flashing or deliberately induced kernel panic. BIOS/NVM inventories and diagnostic reads are permitted.
-- The **latest direction** is to stress the actual workload with VM 100 and VM 101 running while host `nic0` and `nic1` have TSO/GSO/GRO disabled; on 2026-10-24 the operator reports the VMs active, but **has not supplied `qm` output, verified current offload state, or a timed B1 stability outcome**.
+- **B1 failed:** a new photographed Oops and operator-reported full-host freeze at approximately 2h43m with factory BIOS and VM 100/101 operator-reported running. Pre-crash `ethtool -k` and `qm list` were not freshly supplied; do not imply verified offload state.
 - Preserve distinction: disabling TSO/GSO/GRO is **not** disabling all offloading; checksum, VLAN and virtual/tap/guest offload settings remain unchanged.
 
 ## Acceptance scenarios
@@ -120,7 +120,7 @@ Identify whether repeated complete freezes of a newly purchased BOSGAME P2 Pro (
    done
    ```
    Expected values `off` for `tcp-segmentation-offload`, `generic-segmentation-offload`, `generic-receive-offload`. Changes ephemeral across reboot; checksum/VLAN/LRO/etc were **not** explicitly disabled.
-5. **B1 follow-up:** after prior instructions to start VM 100 and 101, the operator now reports both VMs active with factory-default BIOS and 24 W at the wall under negligible traffic. Still **no `qm list` output, `ethtool -k` confirmation of offloads, or measured duration/stability/freeze outcome for B1**. Do not infer a successful B1 test from the idle power observation.
+5. **B1 follow-up and outcome:** operator reported both VMs active with BIOS defaults and 24 W at the wall under negligible traffic; subsequent new photographed Oops at ~2h43m established **failure**. VM state and effective TSO/GSO/GRO switches were not independently verified by requested shell output before failure.
 
 
 
@@ -133,13 +133,11 @@ Identify whether repeated complete freezes of a newly purchased BOSGAME P2 Pro (
 - **Priority changed:** preserve photo/evidence and previous boot journal (kernel + full) after unavoidable power-cycle; optional standalone memory test from UEFI USB (e.g. Memtest86+) if return window permits; prioritize seller return/replacement after multiple serious kernel faults across configurations/kernels. **Defer** GRUB cleanup, permanent `ethtool` hooks and power optimization until reliability is resolved; no host configuration changes have been executed by the assistant.
 - Do not infer whether offloading was disabled in the crashed boot by reading `ethtool -k` *after* reboot: NIC settings reset when the driver initializes. Journal may lack photographed Oops, as previously seen.
 
-## B1 stability observation and configuration maintenance plan (2026-10-24)
+## Deferred GRUB and offload configuration request (after B1 failure)
 
-- Operator initially reported **two hours without a freeze** under B1, but the subsequent photo **confirmed a kernel Oops at ~2h43m**. This test **failed**, not an ongoing four-hour observation. Configuration files may be inspected read-only, but do not enable permanent offload mitigation as if effective.
-- Operator requests removal of past experimental kernel parameters from the persistent boot configuration, and automatic reapplication of `ethtool -K nic0/nic1 tso off gso off gro off` after reboot. At this checkpoint **neither change has been performed on the host** (assistant has no shell access).
-- Safe next procedure: verify `cat /proc/cmdline`, `proxmox-boot-tool status`, saved `/etc/default/grub` / `/etc/kernel/cmdline`, `/etc/network/interfaces` and any `interfaces.new`; preserve necessary root/boot, virtualization or passthrough args; remove only unwanted historical experiment flags; with GRUB use `update-grub` without reboot. For permanent NIC offloads consider `post-up /usr/sbin/ethtool -K nicX tso off gso off gro off` within existing `iface nicX inet manual` definitions, if confirmed present. Do not `ifreload -a`, `ifdown`, reboot, or apply pending network GUI changes in B1. On later **deliberate** reboot, check that hooks executed and all six booleans remain off and that VMs/network return.
-- Changing the persisted bootloader or network configuration but not activating it does not modify the running test's kernel command line or the active NIC offload state, but should be documented separately from next-boot test conditions.
-
+- Before the crash, the operator requested cleaning experimental persistent boot parameters and setting up automatic TSO/GSO/GRO disablement on `nic0` and `nic1`. The assistant has **not edited host configuration**.
+- The prior two-hour no-freeze report was superseded by the photographed ~2h43m Oops, so **do not treat a persistent offload hook as a validated cure**. Defer applying or testing these changes while assessing reliability/return. Read-only inspection of `/proc/cmdline`, `/etc/default/grub`, `/etc/kernel/cmdline`, `/etc/network/interfaces` and `interfaces.new` is still safe, but there is no need to reboot/reconfigure for cleanup alone.
+- If host is eventually retained after reliability is established, the previously proposed `post-up ethtool` hook must first be checked against the actual network declarations and validated on a planned restart. It only controls TSO/GSO/GRO, not all offloading.
 
 ## Additional operator-confirmed workload and power observations (2026-10-24)
 
@@ -155,7 +153,7 @@ Identify whether repeated complete freezes of a newly purchased BOSGAME P2 Pro (
 - Intended long-term workload newly clarified on 2026-10-24: Proxmox hosting OPNsense and Home Assistant VMs; 2.5 Gbit/s fiber connection, multiple VLANs, an external Wi-Fi access point with three wireless networks, and three IP cameras recording locally to SD with email events. Optimize wall power and heat without impairing routing throughput, peak single-core responsiveness or reliability.
 - The operator reattached offline manufacturer-firmware analysis files `DB19D005_BIOS_analysis.md` and `DB19D005_BIOS_IFR_options.txt`. These are conversation attachments, **not Git-controlled files or current NVRAM snapshots**. IFR candidates: Platform PL1 = 28000 and Platform PL2 = 45000 (apparently mW; actual active limits unverified), C-states enabled, Package C-State Limit Auto, Intel Speed Shift enabled, Turbo Mode enabled, Energy Efficient Turbo enabled, and thermal/fan policy controls. IFR declarations do not guarantee the machine exposes or applies each control.
 - Candidate later approach, **not yet an experiment**: measure idle wall power, CPU package power, temperatures, effective power limits, WAN throughput/latency under real routing/NAT/stateful firewall; compare a carefully isolated PL1=20 W / PL2=30 W profile (already informally tried) against defaults only after host reliability is established. Preserve frequency scaling, Turbo and default C-states; distinguish CPU peak power reductions from whole-system idle savings. Intel PL3 is an optional duty-cycle-reactive peak limiter; Intel PL4 is a preemptive peak limiter. This BIOS IFR declares PL3 override Disabled and PL4 override Enabled with default numeric value 120000, actual effective BIOS/NVRAM state unverified. Do **not** adjust PL3/PL4, C-state, ASPM, Ethernet, fan or thermal protections speculatively.
-- The active B1 comparison retains BIOS factory defaults and the existing NIC offload/VM configuration until its result is recorded. No BIOS change, power benchmark or physical validation has been performed for this optimization objective. Completing or handing off a separate optimization lifecycle will be decided **after** the freeze/return decision.
+- B1 has **failed** with an Oops despite the attempted default-BIOS/VM-on setup. No power benchmark or physical validation has been performed for this optimization objective. Defer all power tuning and permanent offload/boot adjustments pending the freeze/return decision.
 
 
 ## Next action
