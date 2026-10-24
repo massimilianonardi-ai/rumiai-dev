@@ -28,6 +28,7 @@ Last verified on 2026-10-24:
 - `pkg-catalog/main`: `707ca9aee61f16270da222d8873e4e96a659ab5a`.
 - `rumiai-tests/main`: `7bd33837210850cee26acaf02d78f873eab884e0`.
 - `rumiai-dev-PoCs/main`: `c65bcf0306e88daaf3061962bafd750372751881`.
+- Legacy `m/master` reused as a focused `m` source checkout in forward commit `b05bb649400c35314e97a3d0876f5413c8145aba` (parent `2a57a29880c2d7a32e18782122062c695fcb1a3a`): only executable `m` and `.gitignore` copied byte-for-byte from `rumiai-os/main` `673df1a2d5476ad57d54c7bc7e1fc2deeaf16195`; the previous tree remains in Git history.
 - Original PoC 072 experiment branch: `rumiai-dev-PoCs/rumiai-os-composition-comparison`, last verified experiment commit `0c8f8fa098e5c74d8e2e15c6552a9c633a383048`; engine snapshot intentionally pinned there.
 
 Refresh remote HEADs before resuming. These SHAs are checkpoints only, not authority.
@@ -75,6 +76,8 @@ These scenarios are pending implementation and mechanical evidence; PoC 072's pr
 
 ## Current state
 
+- The user explicitly authorized repurposing the old `massimilianonardi-ai/m` repository in place. Its `master` HEAD now contains only the current `m` bootstrap (Git mode `100755`, blob `afeba6c209093aa0c180cf9dc5052ea8fb511ad3`) and `.gitignore` (mode `100644`, blob `d277ed33d10cfe6a7183af4385f826504dff00f3`). This is a **source-only checkout** for the bootstrap; it is not by itself a runnable `m-core` because it deliberately does not include the `core.lib.sh` and `base.lib.sh` runtime dependencies. No changes were made to `rumiai-os/main`, test suite, or `pkg-catalog/main`. Validation: GitHub tree and blob identity verified; no new runtime tests and no physical validation performed.
+
 The source boundary decision now favors an autonomous `m-core` plus the existing
 independent `pkg-catalog`, with `mk` packaged separately via `pkg`.
 There is no current `pkg/mk` entry in `pkg-catalog/main`, and the current
@@ -102,7 +105,7 @@ composition evidence and must not be credited as a real `m-core` extraction.
 
 ## Next action
 
-1. Produce a current-file ownership/dependency inventory for `m-core` based on real `m` and `pkg` callers, tests, manuals and resources; identify non-core files for later extraction.
+1. Start from the now-focused `m` source repository and produce a current-file ownership/dependency inventory for the future `m-core` composition, based on real `m` and `pkg` callers, tests, manuals and resources; identify non-core files for later extraction.
 2. Build an isolated `m-core` candidate from real sources and run clean-host bootstrap and `pkg` tests **without Node.js**.
 3. Promote the PoC 073 mk source/packaging to a dedicated source repository and publish a versioned verifiable release; then create the corresponding `pkg-catalog` descriptor, test the **public** `pkg install mk` path and run full permanent mk regressions including watch. The current GitHub connector cannot create a repository or publish GitHub release assets, so this source/release step remains pending.
 4. Only then promote the new source/distribution boundary to current canonical specifications and change product repository structure via authorized forward-only work.
