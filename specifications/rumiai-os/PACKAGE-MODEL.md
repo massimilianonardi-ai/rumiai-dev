@@ -632,13 +632,18 @@ A resolved concrete may be cached as derived state, but such a cache is not auth
 
 ### Dependency installation policy
 
-The baseline package-install contract does not automatically install missing dependency providers and does not choose a provider from the catalog.
+`pkg install` validates the original package requests, obtains a recursive
+facility-dependency plan through `pkg depend`, and installs the selected exact
+provider concretes before the originally requested packages. The plan follows
+existing provider binding/default and deterministic resolution policy; an
+unresolvable or ambiguous required dependency fails planning before installation.
+The complete dependency-first sequence and snapshot boundaries are defined
+below in the `pkg depend` and installation orchestration contract.
 
-Installation validates the package's dependency declarations as catalog metadata before artifact download, but current runtime satisfiability is **not** an installation precondition. A package may therefore be installed while one or more declared facilities are currently unavailable or ambiguous. The dependency declaration is materialized with the concrete and is resolved again when the consumer is actually launched.
-
-After resolving the artifact descriptor but before artifact transfer, `pkg install` reports currently unsatisfied dependencies as warnings so the operator sees the facility, compatibility constraints and resolution reason before a potentially large download begins. The warning is informational: mutable runtime/provider state remains outside the artifact-install gate and is resolved again when the consumer is actually launched.
-
-Automatic transitive dependency installation remains outside the baseline. Explicit provider bindings/defaults remain available when stable policy is desired, while deterministic implicit resolution handles the non-ambiguous installed-provider case without requiring redundant setup.
+Package dependency metadata remains part of each installed concrete and is
+resolved again on consumer launch. Installation does not freeze mutable
+provider bindings/defaults or remove the requirement to validate the selected
+runtime provider when it is used.
 
 ### Runtime provider application
 
