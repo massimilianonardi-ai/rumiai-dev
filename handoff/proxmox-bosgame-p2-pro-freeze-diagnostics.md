@@ -120,7 +120,7 @@ Identify whether repeated complete freezes of a newly purchased BOSGAME P2 Pro (
    done
    ```
    Expected values `off` for `tcp-segmentation-offload`, `generic-segmentation-offload`, `generic-receive-offload`. Changes ephemeral across reboot; checksum/VLAN/LRO/etc were **not** explicitly disabled.
-5. **B1 follow-up and outcome:** operator reported both VMs active with BIOS defaults and 24 W at the wall under negligible traffic; subsequent new photographed Oops at ~2h43m established **failure**. VM state and effective TSO/GSO/GRO switches were not independently verified by requested shell output before failure.
+5. **B1 follow-up and outcome:** operator reported both VMs active with BIOS defaults and 24 W at the wall under negligible traffic; the later full journal **verified successful starts of VM 100/101** at 14:25, while subsequent photographed Oops at ~2h43m established **failure**. Effective TSO/GSO/GRO switches were not verified before failure.
 
 
 
