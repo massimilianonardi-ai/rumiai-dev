@@ -47,10 +47,11 @@ Important: the return deadline is unknown; remind operator to keep enough time f
 
 ## Acceptance scenarios
 
-1. On BIOS defaults, same kernel and comparable VM/network workload, repeated runs show whether `igc` active vs excluded materially changes host stability.
-2. If `igc` is implicated, isolate whether toggling host TSO/GSO/GRO or one of the two I226-V ports changes the failure, without unverified NVM flashing.
-3. Provide return/keep recommendation based on observed reliability within available return period; never call a single short stable run proof of a repair.
-4. If a freeze occurs, collect photo of physical console, uptime/wall time, complete prior boot journal and pstore; distinguish recorded evidence from hypotheses.
+1. Overnight standalone Memtest outcome is recorded without claiming an unperformed test; any actual memory error triggers the operator's planned return.
+2. After a clean Memtest, **both** VM backups are verified and stored away from the disk to be reformatted before a destructive reinstall.
+3. Fresh Proxmox is tested at BIOS defaults, without additional packages or VMs; report uptime and outcome without assuming a passing interval until actually observed.
+4. Only if the clean Proxmox host freezes, Ubuntu is installed and exercised with a task workload; a second freeze triggers the operator's planned return, otherwise the operator decides.
+5. Preserve evidence and enough time for retailer return, and distinguish a memory-test pass from proof of system-wide reliability.
 
 ## Hardware identity and topology (operator-confirmed)
 
@@ -213,10 +214,10 @@ Important: the return deadline is unknown; remind operator to keep enough time f
 
 ## Next action
 
-1. After any unavoidable power-cycle, preserve read-only evidence from the previous boot: `journalctl --list-boots`, `journalctl -b -1 -k --no-pager` and `journalctl -b -1 --no-pager` (especially the tail near the crash); photograph any other console output before power off. Avoid assuming the Oops will be present in persistent journal. **Also identify `sensors` UID 33, the monitoring tool called `glance`, and services/schedules that might launch `sensors`.**
-2. Treat the current B1 trial as a **failed stability test**. Do not continue attempts to make TSO/GSO/GRO permanent or edit GRUB to produce a purportedly stable profile. Changes to persisted boot/network files, if any made independently by operator, must be recorded before interpreting next trial.
-3. Recommend **return/replacement** if still in return window: repeated hard lockups/Oops on multiple kernels under differing NIC/BIOS/VM combinations are unacceptable for a 24/7 firewall. If operator wants a last non-destructive discriminator and deadline permits, run a standalone UEFI USB memory test with BIOS defaults for multiple complete passes; errors are strong evidence of memory subsystem faults, but a pass does **not** clear the host.
-4. **Operator-fixed new sequence:** overnight memory test → any errors: return → no errors: safely export both VM backups off the disk to be wiped, **then** fresh unmodified Proxmox with no VM creation/import and uptime observation → if it freezes: clean Ubuntu with an actual workload → if that also freezes: return; otherwise operator decides next actions. Do not substitute the previously suggested PVEMods-first isolation for this explicit current choice. Track checkpoints and actual validation, and watch the return deadline.
+1. **Operator's immediate action:** leave standalone UEFI Memtest86+ running overnight through the morning of 2026-10-25, BIOS at defaults. Obtain actual pass/error count and any freezes from operator; neither start nor outcome has been independently verified in chat.
+2. **Branch on measured memory result:** any errors → return. If no errors → export/verify VM 100 and VM 101 backups on storage outside the soon-to-be-formatted disk, then reinstall Proxmox stock, with no VMs or extra customizations.
+3. Observe clean Proxmox for freezes; only if it freezes, install Ubuntu with some active tasks and observe. If Ubuntu also freezes, return; if not, the operator will assess next steps. Do not replace this branch ordering with previous PVEMods/igc isolation suggestions.
+4. At each branch, record what was actually tested, duration, firmware/kernel/OS version and any fault evidence. Respect the unknown but imminent return deadline; no software or hardware work by assistant has been run on the host.
 
 ## Blockers / open questions
 
