@@ -123,6 +123,15 @@ Identify whether repeated complete freezes of a newly purchased BOSGAME P2 Pro (
 5. **B1 follow-up:** after prior instructions to start VM 100 and 101, the operator now reports both VMs active with factory-default BIOS and 24 W at the wall under negligible traffic. Still **no `qm list` output, `ethtool -k` confirmation of offloads, or measured duration/stability/freeze outcome for B1**. Do not infer a successful B1 test from the idle power observation.
 
 
+
+## B1 stability observation and configuration maintenance plan (2026-10-24)
+
+- Operator reports **two hours without a freeze** during the ongoing default-BIOS test with both VMs reported running and host TSO/GSO/GRO disablement intended. This is an observed survival window, not a timed command log or proof that all six features are currently disabled; operator plans to observe for approximately two more hours. Do not claim four-hour success before confirmation. Repeated prior events often occurred at approximately 2–3 hours.
+- Operator requests removal of past experimental kernel parameters from the persistent boot configuration, and automatic reapplication of `ethtool -K nic0/nic1 tso off gso off gro off` after reboot. At this checkpoint **neither change has been performed on the host** (assistant has no shell access).
+- Safe next procedure: verify `cat /proc/cmdline`, `proxmox-boot-tool status`, saved `/etc/default/grub` / `/etc/kernel/cmdline`, `/etc/network/interfaces` and any `interfaces.new`; preserve necessary root/boot, virtualization or passthrough args; remove only unwanted historical experiment flags; with GRUB use `update-grub` without reboot. For permanent NIC offloads consider `post-up /usr/sbin/ethtool -K nicX tso off gso off gro off` within existing `iface nicX inet manual` definitions, if confirmed present. Do not `ifreload -a`, `ifdown`, reboot, or apply pending network GUI changes in B1. On later **deliberate** reboot, check that hooks executed and all six booleans remain off and that VMs/network return.
+- Changing the persisted bootloader or network configuration but not activating it does not modify the running test's kernel command line or the active NIC offload state, but should be documented separately from next-boot test conditions.
+
+
 ## Additional operator-confirmed workload and power observations (2026-10-24)
 
 - OPNsense VM: 4 vCPUs pinned onto P-core CPUs according to the operator, 4 GiB assigned RAM; expected workload routing/NAT/stateful firewall and VLANs up to a **future** 2.5 Gbit/s WAN service, explicitly **no** PPPoE, IDS/IPS, VPN, or traffic inspection; optional light DNS ad blocking.
@@ -151,7 +160,7 @@ Identify whether repeated complete freezes of a newly purchased BOSGAME P2 Pro (
 ## Blockers / open questions
 
 - Exact remaining retailer return deadline not recorded. Do not overinvest in extensive testing or firmware flashing.
-- VM activity is operator-reported, while the exact duration and outcome of the VM-on / TSO+GSO+GRO-off experiment, including current offload state, are unverified.
+- Operator reports **two hours without a freeze** on B1 with VM activity, but the current offload state is not freshly verified and the planned four-hour observation has not yet concluded.
 - An independent, sustained baseline with BIOS defaults / `igc` enabled / VMs off / default offloads has not been recorded; causal assessment remains tentative.
 - The earlier Oops may be from altered BIOS conditions or an unrelated memory corruption bug; not established to be the same freeze mechanism as earlier silent hangs.
 - No BOSGAME-approved I226-V NVM image or reliable ETrackID inventory yet; generic NVM versions alone insufficient.
