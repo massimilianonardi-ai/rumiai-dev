@@ -18,8 +18,8 @@ from a clean POSIX host.
 Compose downstream `rumiai-os` distributions from that technical foundation
 and other optional projects. The earlier independent POSIX vs host-Node `mk`
 composition experiments remain experimental evidence, not two parallel target
-product architectures. No repository migration or package descriptor is considered
-implemented by this handoff decision.
+product architectures. The independent `m` source checkout has now been populated;
+downstream `rumiai-os` composition and the separate `mk` package remain pending.
 
 ## Current repository revisions
 
@@ -30,7 +30,7 @@ Last verified on 2026-10-24:
 - `pkg-catalog/main`: `707ca9aee61f16270da222d8873e4e96a659ab5a`.
 - `rumiai-tests/main`: `7bd33837210850cee26acaf02d78f873eab884e0`.
 - `rumiai-dev-PoCs/main`: `c65bcf0306e88daaf3061962bafd750372751881`.
-- Legacy `m/master` reused as a focused `m` source checkout in forward commit `b05bb649400c35314e97a3d0876f5413c8145aba` (parent `2a57a29880c2d7a32e18782122062c695fcb1a3a`): only executable `m` and `.gitignore` copied byte-for-byte from `rumiai-os/main` `673df1a2d5476ad57d54c7bc7e1fc2deeaf16195`; the previous tree remains in Git history.
+- `m/master` source extraction baseline: `b05bb649400c35314e97a3d0876f5413c8145aba`; current integrated checkout `809f4d63173c32ecede0cd6bb183da6fc6ab8fa9`. New commits added the technical core without rewriting earlier history. Source implementation and pre-existing operational manuals were copied from `rumiai-os/main` `673df1a2d5476ad57d54c7bc7e1fc2deeaf16195`.
 - Original PoC 072 experiment branch: `rumiai-dev-PoCs/rumiai-os-composition-comparison`, last verified experiment commit `0c8f8fa098e5c74d8e2e15c6552a9c633a383048`; engine snapshot intentionally pinned there.
 
 Refresh remote HEADs before resuming. These SHAs are checkpoints only, not authority.
@@ -64,7 +64,7 @@ Refresh remote HEADs before resuming. These SHAs are checkpoints only, not autho
 4. The installed `mk` runs using its managed provider and can orchestrate downstream projects without entering the `m-core` bootstrap dependency closure.
 5. Root layout, manual/resource ownership, existing consumer interfaces and established `m`/RumiAI layer boundaries remain compatible after extraction.
 
-These scenarios are pending implementation and mechanical evidence; PoC 072's previous reduced-fixture acceptance evidence does not validate them.
+Scenarios 1 and 2 have initial direct-checkout smoke evidence on Ubuntu and macOS for bootstrap, platform setup, command dispatch, manuals, localization and offline operations. Real `pkg install nodejs@v26.8.2` and managed-node invocation passed on both hosts in GitHub Actions run `40088928262`. The independent `mk` release/install and full downstream-consumer scenarios remain pending; the separate PoC 072 reduced-fixture evidence does not validate them.
 
 ## Completed
 
@@ -80,7 +80,12 @@ These scenarios are pending implementation and mechanical evidence; PoC 072's pr
 
 ## Current state
 
-- The user explicitly authorized repurposing the old `massimilianonardi-ai/m` repository in place. Its `master` HEAD now contains only the current `m` bootstrap (Git mode `100755`, blob `afeba6c209093aa0c180cf9dc5052ea8fb511ad3`) and `.gitignore` (mode `100644`, blob `d277ed33d10cfe6a7183af4385f826504dff00f3`). This is a **source-only checkout** for the bootstrap; it is not by itself a runnable `m-core` because it deliberately does not include the `core.lib.sh` and `base.lib.sh` runtime dependencies. No changes were made to `rumiai-os/main`, test suite, or `pkg-catalog/main`. Validation: GitHub tree and blob identity verified; no new runtime tests and no physical validation performed.
+- The user explicitly authorized integration into the reused `massimilianonardi-ai/m` repository. `master` at `809f4d63173c32ecede0cd6bb183da6fc6ab8fa9` now has the functional standalone `m` checkout: 15 technical commands beyond the root bootstrap, 28 shell libraries (4 basic, 16 package, 5 facility, 3 GitHub/Node.js/artifact adapters), 44 operational manuals, essential en_US/it_IT localization, state/catalog/shell baseline and existing selectors, plus README and GitHub Actions. The previous two original files remain unchanged.
+- SHA/mode comparison with `rumiai-os/main` verified that all imported command/library/resource/state files are byte-identical; only the project README differs as intended and five missing library manual topics and workflow sources were newly authored. The source artifact still requires `osarch update` on initial host setup because the current platform selectors are carried over from `rumiai-os`.
+- Normal-path hosted validation: run `40088797938` passed basic checkout smoke on Ubuntu/macOS; run `40088928262` passed the real `pkg install nodejs@v26.8.2` public path and materialized `node` command on Ubuntu/macOS, with host `node` shadowed for bootstrap checks. After fast-forwarding `master`, run `40089045452` failed on macOS due to HTTP 403 from the **external** Node.js GitHub release API (Ubuntu passed), not due to a changed `m` source. The live download test was split into an explicitly dispatched workflow; deterministic `master` smoke run `40089184835` passed on both Ubuntu/macOS. The transient failure remains recorded as failure.
+- This extraction intentionally includes only the GitHub, Node.js and shared artifact repository adapters first; other adapter types in the current catalog remain unsupported by this checkout until added. The copied `osarch` selector still references a placeholder `ai-osarch` for alignment, without including branded `ai` implementation. Both limits need explicit downstream composition/realignment rather than silent inference.
+- No changes to `rumiai-os/main`, `pkg-catalog/main` or permanent tests in `rumiai-tests/main` occurred in this work unit. The original `rumiai-os` implementation still coexists as transition source evidence; it is not yet rewired to consume the new independent repository.
+
 
 The source boundary decision now favors an autonomous `m-core` plus the existing
 independent `pkg-catalog`, with `mk` packaged separately via `pkg`.
@@ -93,15 +98,14 @@ The previously contradictory `PACKAGE-MODEL.md` dependency policy subsection
 was realigned to its existing detailed pipeline, implementation, public manual
 and permanent tests in `rumiai-dev` commit `2a5e83eadcdc2ff64024aa5af6c2eeef7bed331b`.
 
-No published runtime/catalog code or permanent tests have been modified for this ownership
-change. PoC 073 now validates the real package-integrated module-local mk layout on
-an isolated target, but is not a dedicated mk source repository and does not
-exercise the public `pkg install mk` release path. PoC 072 remains bounded
-composition evidence and must not be credited as a real `m-core` extraction.
+PoC 073 validates package-integrated module-local `mk` in isolation, but is not
+a dedicated `mk` source repository and does not exercise the public
+`pkg install mk` release path. PoC 072 remains reduced-fixture evidence and
+must not be credited as complete downstream `rumiai-os` composition.
 
 ## Working design / open questions
 
-- Inventory the actual transitive file/runtime dependencies of `m` and `pkg`, including bootstrap core/base, `loadlib`, `log`, `lang`, `osarch`, `state-path`, package catalog adapters, resources and manuals. Do not equate all `bin/sys` and `lib/sys` contents with core.
+- Verify the newly independent `m` source revision as a downstream build/composition input and keep its runtime contract aligned with legacy consumers while `rumiai-os` transitions. The first concrete import and its 3-adapter subset are complete.
 - Use PoC 073's verified source-root, package-local launcher/dependency and watch re-entry layout as implementation evidence. Convert the staged mk source into its own source repository and create a versioned downloadable verified release. A real `pkg-catalog` descriptor and artifact publication do not exist yet.
 - Keep the `pkg-catalog` authority separate from the source checkout but resolve catalog selection/bootstrap availability only when an actual operation requires it.
 - Decide whether any minimal packaging/export steps are necessary to make the `m-core` checkout directly usable; do not introduce a second general build system merely to create a build loop.
@@ -109,17 +113,20 @@ composition evidence and must not be credited as a real `m-core` extraction.
 
 ## Next action
 
-1. Start from the now-focused `m` source repository and produce a current-file ownership/dependency inventory for the future `m-core` composition, based on real bootstrap/package callers, manual and language resources, TLS and service integration, permanent tests, and accepted core tools; identify non-core files for later extraction.
-2. Build an isolated `m-core` candidate from real sources and run clean-host bootstrap and `pkg` tests **without Node.js**.
+1. Integrate the independent `m` checkout into the downstream `rumiai-os` composition and reconcile any duplicated original system files, platform-selector state and non-core project ownership without silently changing runtime semantics.
+2. Add suitable permanent regression coverage in `rumiai-tests` for the independent source boundary and public operations, and verify required catalog-adapter compatibility beyond the initial 3-adapter subset. Baseline checkout smoke and managed Node installation evidence already exist on both major hosts.
 3. Promote the PoC 073 mk source/packaging to a dedicated source repository and publish a versioned verifiable release; then create the corresponding `pkg-catalog` descriptor, test the **public** `pkg install mk` path and run full permanent mk regressions including watch. The current GitHub connector cannot create a repository or publish GitHub release assets, so this source/release step remains pending.
 4. Only then promote the new source/distribution boundary to current canonical specifications and change product repository structure via authorized forward-only work.
 
 ## Blockers / open questions
 
-No blocking architecture decision remains. Implementation is pending: genuine
-minimal m-core dependency closure, autonomous checkout validation, a dedicated
-mk source repository, versioned release asset and real `pkg-catalog` descriptor.
-Available repository write tools cannot create a new repository or publish
-GitHub release assets; PoC 073 stages and validates the design without
-claiming that the missing release exists. No physical deployment is part of this
-work unit.
+No blocking architecture decision remains. The autonomous minimal `m` source
+checkout and initial Ubuntu/macOS tests are complete. Pending work includes
+downstream RumiAI OS composition, complete catalog-adapter compatibility,
+permanent test realignment, independent `mk` source/release assets and the real
+`pkg-catalog` descriptor for `mk`. GitHub API 403 responses for live upstream
+release requests are external availability constraints, not a license to
+relax integrity or silently bypass live discovery. Available repository write
+tools still cannot create a new repository or publish GitHub release assets;
+PoC 073 cannot stand in for the missing published `mk` release. No physical
+deployment was performed.
