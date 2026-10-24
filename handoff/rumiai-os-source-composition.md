@@ -45,6 +45,7 @@ Refresh remote HEADs before resuming. These SHAs are checkpoints only, not autho
 - The clean-host prerequisite boundary must not include Node.js, `mk`, or an already installed RumiAI OS. `m` initializes and `pkg` operates without any of them.
 - Keep `pkg-catalog` in its already independent repository as the essential catalog authority consumed by `pkg` operations; ordinary `m` bootstrap must not require catalog/provider resolution or network access.
 - Separate `mk` source from `m-core`; package/install it via `pkg`, declaring the existing Node.js facility dependency through `pkg-catalog`. `mk` retains its technical `m` semantic ownership and build-orchestrator responsibilities, but no longer belongs to the minimal distribution.
+- Treat `mk` as source-distributed JavaScript requiring no compilation; all of its implementation files, including any multiple JS modules, MUST stay beneath the package's own materialized `root/` (for example `root/bin/mk` and `root/lib/mk.lib.js`). Do not place `mk` implementation libraries in the system `m` library tree. A POSIX source copy/archive packaging step is sufficient; the normal package launcher and dependency integration remain `pkg` responsibilities.
 - Higher-level commands, libraries and resources outside the actual dependency closure of `m` + `pkg` move to other projects, preserving original runtime identities/interfaces until a separately authorized contract change.
 - Existing PoC 072 tests of standalone `mk` under host Node remain historical experimental evidence; making host Node a production bootstrap requirement is rejected. Preserve the PoC unchanged unless a new evidence question requires extending it.
 - Keep package management/provider resolution owned by `pkg`; no alternate build engine or package manager is needed to bootstrap `m-core`.
@@ -69,6 +70,8 @@ These scenarios are pending implementation and mechanical evidence; PoC 072's pr
 - Expanded experimental tests to explicitly clear inherited `m` environment and reject missing source revisions. Green run `39964558371`, PoC SHA `ec09f5fd890342a1ddda7744d81026c6eafec5af`.
 - Latest full branch revision `0c8f8fa098e5c74d8e2e15c6552a9c633a383048`: GitHub Actions run `39964601629` **PASS on Ubuntu and macOS**; includes the failure-path checks and cross-host fixes.
 - Early macOS failures revealed actual portability issues in the experiment: BSD `diff -r` traversed a relative locale selector to report a directory loop; physical `/var` path resolution differs from logical temporary paths. Both checks were corrected. Earlier failed runs remain failed evidence, not PASS.
+- Added PoC 073 on `rumiai-dev-PoCs/mk-package-local-runtime` branch: initial commit `6325990d26feb5632ada2eced70aa2d5489ddf1a`, extended revision `596feac910aced4fbd5db3bbd5a27f1e34d8fcd5`. The latter carries an isolated copy of the real current `mk.lib.js` with only the two `--watch` child-command references redirected to the package-local `cmd/mk`; POSIX archive packaging; a real package range fixture with `nodejs =26`, `cmd/mk`, and `link/mk`; and a full script using actual `pkg_integrate`/`pkg_default_apply` on an isolated real `rumiai-os` checkout where the old system mk executable/library have been removed.
+- PoC 073 GitHub Actions run `40081595096`, initial SHA `6325990d`, **Ubuntu PASS**, macOS job not yet complete at last observation. Extended run `40081898644`, SHA `596feac`, **Ubuntu PASS** including source-based package execution, real managed Node.js installation through `pkg`, `--goals`, `--plan`, executable actions, and package-local `--watch` re-entry on changed input; macOS job was queued at last observation. No full published `pkg install mk` test has run because the release repository/asset does not yet exist. Do not relabel queued macOS jobs or a direct `pkg_integrate` scenario as a published package install.
 
 ## Current state
 
@@ -83,14 +86,16 @@ The previously contradictory `PACKAGE-MODEL.md` dependency policy subsection
 was realigned to its existing detailed pipeline, implementation, public manual
 and permanent tests in `rumiai-dev` commit `2a5e83eadcdc2ff64024aa5af6c2eeef7bed331b`.
 
-No runtime/catalog code or permanent tests have been modified for this ownership
-decision. PoC 072 remains available as bounded composition evidence and must not
-be credited as a real `m-core` extraction or Node-free `mk` installation test.
+No published runtime/catalog code or permanent tests have been modified for this ownership
+change. PoC 073 now validates the real package-integrated module-local mk layout on
+an isolated target, but is not a dedicated mk source repository and does not
+exercise the public `pkg install mk` release path. PoC 072 remains bounded
+composition evidence and must not be credited as a real `m-core` extraction.
 
 ## Working design / open questions
 
 - Inventory the actual transitive file/runtime dependencies of `m` and `pkg`, including bootstrap core/base, `loadlib`, `log`, `lang`, `osarch`, `state-path`, package catalog adapters, resources and manuals. Do not equate all `bin/sys` and `lib/sys` contents with core.
-- Determine how `pkg` installs the independently sourced `mk` artifact with a Node.js facility dependency while retaining correct package launcher/provider semantics; a package descriptor and artifact publication do not exist yet.
+- Use PoC 073's verified source-root, package-local launcher/dependency and watch re-entry layout as implementation evidence. Convert the staged mk source into its own source repository and create a versioned downloadable verified release. A real `pkg-catalog` descriptor and artifact publication do not exist yet.
 - Keep the `pkg-catalog` authority separate from the source checkout but resolve catalog selection/bootstrap availability only when an actual operation requires it.
 - Decide whether any minimal packaging/export steps are necessary to make the `m-core` checkout directly usable; do not introduce a second general build system merely to create a build loop.
 - Validate compatibility of existing `rumiai-os` consumers while gradually relocating higher-level code into owning repositories.
@@ -99,12 +104,15 @@ be credited as a real `m-core` extraction or Node-free `mk` installation test.
 
 1. Produce a current-file ownership/dependency inventory for `m-core` based on real `m` and `pkg` callers, tests, manuals and resources; identify non-core files for later extraction.
 2. Build an isolated `m-core` candidate from real sources and run clean-host bootstrap and `pkg` tests **without Node.js**.
-3. Define and test `mk` as a separately installable `pkg-catalog` package with its existing Node.js facility dependency, then verify the resulting managed launcher and lifecycle.
+3. Promote the PoC 073 mk source/packaging to a dedicated source repository and publish a versioned verifiable release; then create the corresponding `pkg-catalog` descriptor, test the **public** `pkg install mk` path and run full permanent mk regressions including watch. The current GitHub connector cannot create a repository or publish GitHub release assets, so this source/release step remains pending.
 4. Only then promote the new source/distribution boundary to current canonical specifications and change product repository structure via authorized forward-only work.
 
 ## Blockers / open questions
 
-No blocking user decision is required. Implementation is pending: genuine
-minimal dependency closure, autonomous checkout validation, artifact publication
-and `mk` package descriptor are not yet complete. No physical deployment is
-part of this work unit.
+No blocking architecture decision remains. Implementation is pending: genuine
+minimal m-core dependency closure, autonomous checkout validation, a dedicated
+mk source repository, versioned release asset and real `pkg-catalog` descriptor.
+Available repository write tools cannot create a new repository or publish
+GitHub release assets; PoC 073 stages and validates the design without
+claiming that the missing release exists. No physical deployment is part of this
+work unit.
