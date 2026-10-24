@@ -1,29 +1,36 @@
 # RumiAI OS source composition comparison
 
 Status: Active
-Updated: 2026-10-23
+Updated: 2026-10-24
 
 ## Goal
 
-Investigate two genuinely independent ways to build a complete, clone-ready `rumiai-os` distribution from independently owned first-party component sources:
+Extract an autonomous, minimal technical source foundation, provisionally named
+`m-core` by the user, containing the `m` bootstrap, `pkg`, and only the core
+commands/libraries/resources required by those two responsibilities. Keep the
+existing independent `pkg-catalog` as the essential external catalog source.
+Treat `mk` as an important but non-core, separately sourced and `pkg`-installable
+development tool, whose Node.js runtime is provided through `pkg`, never required
+from a clean POSIX host.
 
-1. a minimal POSIX shell + Git + filesystem composition script;
-2. the existing `mk` engine running with host Node.js and no pre-existing RumiAI OS.
-
-Compare them on the same exact source revisions and target layout before selecting a production path. The intended eventual build combines component-owned runtime files and component-owned bootstrap definitions into the generated technical `m` bootstrap. Do not prematurely promote experimental source/repository placement or descriptor formats into canonical contract.
+Compose downstream `rumiai-os` distributions from that technical foundation
+and other optional projects. The earlier independent POSIX vs host-Node `mk`
+composition experiments remain experimental evidence, not two parallel target
+product architectures. No repository migration or package descriptor is considered
+implemented by this handoff decision.
 
 ## Current repository revisions
 
-Last verified:
+Last verified on 2026-10-24:
 
-- `rumiai-dev/main`: `9d2cd51ff023859376f80e1ea1806b39e2f9d386` before this handoff's creation.
-- `rumiai-os/main`: `21bfd86728829e83bc7fff81f35dda0f8c2f925a` (advanced during the PoC without a relevant `mk` engine change).
-- `rumiai-dev-PoCs/main`: `f31ab4f5edbef0eaaa1285e3a6ef0b5cc26df85e`.
-- Experiment branch: `rumiai-dev-PoCs/rumiai-os-composition-comparison`, latest experiment commit `0c8f8fa098e5c74d8e2e15c6552a9c633a383048`.
-- Tested `mk` engine source snapshot: `rumiai-os` `5ca07aeb26dbc04c0b38998bb05edacd8587a977` (pinned intentionally; not claimed as current HEAD).
-- `rumiai-tests/main`: `02eb2c25221f6d399e6ed22c6d668824fa2a8b9d`; no permanent tests changed.
+- `rumiai-dev/main` pre-change: `69d4b4467fe35980667e3ea9234c50ab639209a8`; subsequent canonical package-policy alignment commit `2a5e83eadcdc2ff64024aa5af6c2eeef7bed331b`; this handoff commit follows.
+- `rumiai-os/main`: `673df1a2d5476ad57d54c7bc7e1fc2deeaf16195`.
+- `pkg-catalog/main`: `707ca9aee61f16270da222d8873e4e96a659ab5a`.
+- `rumiai-tests/main`: `7bd33837210850cee26acaf02d78f873eab884e0`.
+- `rumiai-dev-PoCs/main`: `c65bcf0306e88daaf3061962bafd750372751881`.
+- Original PoC 072 experiment branch: `rumiai-dev-PoCs/rumiai-os-composition-comparison`, last verified experiment commit `0c8f8fa098e5c74d8e2e15c6552a9c633a383048`; engine snapshot intentionally pinned there.
 
-Reverify all remote heads and the staged native-interpreter migration before any additional work.
+Refresh remote HEADs before resuming. These SHAs are checkpoints only, not authority.
 
 ## Applicable canonical sources
 
@@ -34,22 +41,24 @@ Reverify all remote heads and the staged native-interpreter migration before any
 
 ## Fixed task-local choices
 
-- Explore both build paths in parallel and measure them against the same exact source revisions and equivalent output trees.
-- Use experiments in `rumiai-dev-PoCs`; do not change `rumiai-os/main` or its published specification merely to demonstrate candidates.
-- Keep the POSIX compositor understandable and independent of `mk`, Node.js and installed RumiAI OS.
-- Reuse the real `mk` engine through host Node.js for initially supported lifecycle functionality; do not fork or reimplement `mk`.
-- Keep package management/integration with `pkg` distinct from project development/build orchestration by `mk`.
-- A small seed script may be acceptable for bootstrap; do not select one approach as production contract before comparative evidence.
+- Keep `m`, `pkg`, and only their real prerequisite core facilities together in one self-contained `m-core` source project; this source/release arrangement is the intended direction, not yet the published/current runtime layout.
+- The clean-host prerequisite boundary must not include Node.js, `mk`, or an already installed RumiAI OS. `m` initializes and `pkg` operates without any of them.
+- Keep `pkg-catalog` in its already independent repository as the essential catalog authority consumed by `pkg` operations; ordinary `m` bootstrap must not require catalog/provider resolution or network access.
+- Separate `mk` source from `m-core`; package/install it via `pkg`, declaring the existing Node.js facility dependency through `pkg-catalog`. `mk` retains its technical `m` semantic ownership and build-orchestrator responsibilities, but no longer belongs to the minimal distribution.
+- Higher-level commands, libraries and resources outside the actual dependency closure of `m` + `pkg` move to other projects, preserving original runtime identities/interfaces until a separately authorized contract change.
+- Existing PoC 072 tests of standalone `mk` under host Node remain historical experimental evidence; making host Node a production bootstrap requirement is rejected. Preserve the PoC unchanged unless a new evidence question requires extending it.
+- Keep package management/provider resolution owned by `pkg`; no alternate build engine or package manager is needed to bootstrap `m-core`.
+- Do not migrate production hosts or change `rumiai-os` runtime code solely from the architectural discussion. Align canonical specifications as the intended source arrangement becomes actual implemented/published behavior.
 
 ## Acceptance scenarios
 
-1. Given independent source checkouts at recorded SHAs, an operator can build the same experimental distribution without installing RumiAI OS, via either path.
-2. The generated technical bootstrap executes from a relocated physical root and exports contributed `pkg` and `lang` roots.
-3. A plan-only `mk` request has no build side effects.
-4. An unavailable pinned SHA causes both builders to fail without publishing a completed distribution.
-5. Both paths produce equivalent contents and symlink identities under Linux and macOS.
+1. A clean POSIX host without Node.js or `mk` checks out `m-core` and can execute `m`, resolve technical roots, and use `pkg` (given the documented host utilities and a reachable selected catalog when an installation needs it).
+2. `m-core` bootstrap works when the package catalog cannot be reached; any network/catalog requirement arises only from a requested package operation.
+3. A `pkg-catalog` descriptor for `mk` declares its Node.js runtime dependency. `pkg install mk` can plan, obtain, integrate and resolve compatible provider concretes, with normal ambiguity and failure behavior; it does not require a preinstalled host Node.js.
+4. The installed `mk` runs using its managed provider and can orchestrate downstream projects without entering the `m-core` bootstrap dependency closure.
+5. Root layout, manual/resource ownership, existing consumer interfaces and established `m`/RumiAI layer boundaries remain compatible after extraction.
 
-These are experimental acceptance scenarios until a real-component design is promoted.
+These scenarios are pending implementation and mechanical evidence; PoC 072's previous reduced-fixture acceptance evidence does not validate them.
 
 ## Completed
 
@@ -63,22 +72,39 @@ These are experimental acceptance scenarios until a real-component design is pro
 
 ## Current state
 
-The initial small-component comparison is implemented on an isolated PoC branch; the feature branch has not been merged into `rumiai-dev-PoCs/main`. The successful runs validate only the reduced composition scenario, not separation of the real core, `pkg` or `lang` implementation and not full RumiAI OS production builds. There is no product change, production deployment or physical-host validation.
+The source boundary decision now favors an autonomous `m-core` plus the existing
+independent `pkg-catalog`, with `mk` packaged separately via `pkg`.
+There is no current `pkg/mk` entry in `pkg-catalog/main`, and the current
+`rumiai-os/bin/sys/mk` still lives in the root runtime and explicitly calls
+`pkg default nodejs`; these are pending implementation changes, not evidence
+that the future package installation already works. Current `pkg install`
+does invoke recursive `pkg depend` and installs planned dependencies first.
+The previously contradictory `PACKAGE-MODEL.md` dependency policy subsection
+was realigned to its existing detailed pipeline, implementation, public manual
+and permanent tests in `rumiai-dev` commit `2a5e83eadcdc2ff64024aa5af6c2eeef7bed331b`.
 
-The staged native-interpreter migration is separate; do not merge it or assume it is published as part of this composition experiment.
+No runtime/catalog code or permanent tests have been modified for this ownership
+decision. PoC 072 remains available as bounded composition evidence and must not
+be credited as a real `m-core` extraction or Node-free `mk` installation test.
 
-## Working design / open comparison
+## Working design / open questions
 
-- Determine genuine component source boundaries without duplicating current `core.lib.sh`/`base.lib.sh` ownership.
-- Establish component-owned bootstrap contributions and their dependency/collision checks using real sources, not new generic APIs invented before evidence.
-- Compare incremental rebuilds, error recovery, provenance/pinning, symlink/mode handling and maintenance effort as the real distribution grows.
-- `mk` v1 runs autonomously for the constrained graph; its public launcher, `pkg` facility requirements, `state-path` cache and `watch` have further environmental dependencies. Evaluate these rather than claiming all `mk` functionality is already standalone.
-- The minimal shell script might remain the final assembler even if `mk` builds individual projects. This remains an option, not a chosen architecture.
+- Inventory the actual transitive file/runtime dependencies of `m` and `pkg`, including bootstrap core/base, `loadlib`, `log`, `lang`, `osarch`, `state-path`, package catalog adapters, resources and manuals. Do not equate all `bin/sys` and `lib/sys` contents with core.
+- Determine how `pkg` installs the independently sourced `mk` artifact with a Node.js facility dependency while retaining correct package launcher/provider semantics; a package descriptor and artifact publication do not exist yet.
+- Keep the `pkg-catalog` authority separate from the source checkout but resolve catalog selection/bootstrap availability only when an actual operation requires it.
+- Decide whether any minimal packaging/export steps are necessary to make the `m-core` checkout directly usable; do not introduce a second general build system merely to create a build loop.
+- Validate compatibility of existing `rumiai-os` consumers while gradually relocating higher-level code into owning repositories.
 
 ## Next action
 
-Expand PoC 072 from reduced fixtures to **real**, revision-pinned `rumiai-os` component content, beginning with a bounded root/bootstrap + `pkg`/`lang` ownership slice. Reconcile the staged native-command migration, make both builders consume identical inputs, and measure the actual complexity/collision and failure behaviors. Only then consider moving source ownership into separate repositories or promoting a production build contract.
+1. Produce a current-file ownership/dependency inventory for `m-core` based on real `m` and `pkg` callers, tests, manuals and resources; identify non-core files for later extraction.
+2. Build an isolated `m-core` candidate from real sources and run clean-host bootstrap and `pkg` tests **without Node.js**.
+3. Define and test `mk` as a separately installable `pkg-catalog` package with its existing Node.js facility dependency, then verify the resulting managed launcher and lifecycle.
+4. Only then promote the new source/distribution boundary to current canonical specifications and change product repository structure via authorized forward-only work.
 
 ## Blockers / open questions
 
-Real component extraction has not been designed or validated; do not represent the small fixture demonstration as a composed full product. No blocker prevents continuing the PoC with existing repositories and pinned revisions.
+No blocking user decision is required. Implementation is pending: genuine
+minimal dependency closure, autonomous checkout validation, artifact publication
+and `mk` package descriptor are not yet complete. No physical deployment is
+part of this work unit.
