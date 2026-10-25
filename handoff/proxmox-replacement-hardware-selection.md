@@ -1,7 +1,7 @@
 # Proxmox replacement hardware selection
 
 Status: Active
-Updated: 2026-10-25 (Europe/Rome; two SSD choices compared)
+Updated: 2026-10-25 (Europe/Rome; SSD thermal evidence added)
 
 ## Goal
 
@@ -221,6 +221,21 @@ User explicitly identifies **Samsung 990 PRO 2 TB MZ-V9P2T0BW** and **WD_BLACK S
 
 **Production policy caveat:** Proxmox official administration guide recommends SSDs with hardware PLP and discourages consumer SSDs for production VM storage: https://pve.proxmox.com/pve-docs/pve-admin-guide.pdf . **Neither 990 PRO nor SN7100 qualifies as a verified enterprise PLP SSD** merely because Samsung has DRAM. UPS, tested external backups and optional mirrored devices address separate risks and do not replace PLP. Filesystem choice (ZFS versus ext4/LVM-thin), one drive/mirror, future NAS data/storage and actual budget remain undecided. No physical device tests or Linux idle power measurements have been performed.
 
+### Thermal measurements checkpoint — Samsung 990 PRO 2 TB vs WD SN7100 2 TB (2026-10-25)
+
+Independent test comparison **Tweakers** (same test suite Z790/i7-13700K, write heat test with cooler included with SSD if supplied or test board Taichi M.2 heatsink): 2 TB WD SN7100 **60°C average, 65°C maximum**; Samsung 990 PRO **with its own heatsink (HS)** **67°C average, 77°C maximum**. These are *test period* temperatures, **not 24/7 idle averages**; actual cooler differs between units. https://tweakers.net/reviews/13548/wd-sn7100-2tb-ssd-een-echte-concurrent-voor-de-nm790.html .
+
+Independent idle and load data with separately documented configurations:
+- **WD SN7100 2 TB**, ServeTheHome with no heatsink/active cooling: 35°C at idle, 59°C maximum under tests, per source temperature graph https://www.servethehome.com/wp-content/uploads/2025/01/WD-Black-SN7100-2TB-Temps-Chart.png ; review https://www.servethehome.com/wd-black-sn7100-2tb-nvme-ssd-review/3/ .
+- **Samsung 990 PRO 2 TB**, Tom's Hardware (non-heatsink): idle **36°C composite SMART**, ~45°C external IR, and ~72°C after 1.6 TB continuous writing https://www.tomshardware.com/reviews/samsung-990-pro-ssd-review/2 . KitGuru without heatsink: ~36°C average across the bulk of its benchmarking and 54°C peak in its own stability load, markedly different workload/cooling https://www.kitguru.net/components/ssd-drives/simon-crisp/samsung-990-pro-2tb-review/all/1/ .
+- **Samsung 990 PRO 2 TB**, ComputerBase: bare 73°C CrystalDiskMark max / 82°C sustained full-write max; with **ASUS motherboard Strix cooler** 55°C CrystalDiskMark max / 69°C full-write max. Factory Samsung heatsink comparison in that review used a **1 TB unit**, so 1 TB versus 2 TB must not be represented as a matched 2 TB head-to-head. https://www.computerbase.de/artikel/storage/samsung-990-pro-ssd-heatsink-test.84873/ .
+- **WD SN7100 2 TB** Tom's Hardware primary composite sensor, ~22°C ambient: usually below 60°C, peak 64°C, first **composite sensor** throttling point stated as 90°C. https://www.tomshardware.com/pc-components/ssds/wd-black-sn7100-ssd-review/2 .
+- **Critical hotspot caution for WD 2 TB:** a *sponsored* Japanese April 2025 hands-on test repeatedly running 64GiB CrystalDiskMark without heatsink measured ~80°C on temperature sensors 1/3 and **107°C** sensor 2 (presumed controller hotspot) without loss of throughput; adding ASUS TUF X870 motherboard heatsink reduced 1/3 to the 50°C range and sensor 2 to **68°C**. This is a different internal sensor than primary composite measured in most other reviews; do not compare 107°C to Samsung composite. https://www.gdm.or.jp/review/2025/0418/581882/7 . ComputerBase also noticed thermal throttling on an uncooled **SN7100 1 TB** while its low composite telemetry seemed normal; that finding is variant-specific and warns against interpreting composite as chip peak: https://www.computerbase.de/artikel/storage/mittelklasse-ssds-wd-black-sn7100-tlc-wd-blue-sn5100-qlc-test.94932/ .
+
+Thermal generation in watts: matched Tweakers 1MB read power **WD 3.578 W vs Samsung 4.871 W** and deep idle **WD 0.006 W vs Samsung 0.507 W**, states dependent on host/firmware/APST/ASPM. This is heat-producing electrical power during those operating points, not an absolute average over a Proxmox workload. Both drives' bare/heatsink temperature range depends on ambient and airflow. Vendor operating temperature specifications: **WD 0-85°C**, **Samsung 0-70°C**, neither is a prediction of routine measured temperature. https://www.sandisk.com/it-it/products/ssd/internal-ssd/wd-black-sn7100-nvme-internal-ssd?sku=WDS200T4X0E-00CJA0 and https://www.samsung.com/it/memory-storage/nvme-ssd/990-pro-2tb-nvme-pcie-gen-4-mz-v9p2t0bw/ .
+
+**Design consequence:** WD still favorable for lower dissipated power and cooler measured composite, but use the selected ASUS motherboard M.2 cooler even for WD and monitor all exposed NVMe temperature sensors after assembly, not just composite. In the ALAMENGDA AL02 open frame within an open cabinet, temperatures are unverified; passive ambient heating and future Nvidia heat may affect either. No comparable controlled low-duty Linux Proxmox 24/7 mean/min measurements exist in the retrieved evidence, so do not make up expected actual idle °C. No device physically tested, no purchase priority fixed.
+
 ## Completed
 
 - Identified compatible LGA1851 CPU pair and initial motherboard shortlist from official model specifications and Italian market price indications.
@@ -233,7 +248,7 @@ Owned and selected base chassis: **ALAMENGDA AL02 ATX open frame**, to be instal
 
 ## Next action
 
-1. Confirm user's preference and actual retailer offers for Samsung 990 PRO 2 TB vs WD Black SN7100 2 TB, weighing Linux idle/thermal efficiency, Samsung DRAM and high concurrency, and price. Both are consumer drives without verified hardware PLP. Capacity is fixed at 2 TB for current comparison; no purchase or filesystem choice finalized.
+1. Confirm user's preference and actual retailer offers for Samsung 990 PRO 2 TB vs WD Black SN7100 2 TB, weighing Linux idle/thermal efficiency and exposed hotspot sensors, Samsung DRAM and high concurrency, and price. Both are consumer drives without verified hardware PLP. Capacity is fixed at 2 TB for current comparison; no purchase or filesystem choice finalized.
 2. Complete purchase costing (CPU, motherboard, NIC, RAM, PSU, cooler and SSD) and RAM QVL validation; owned AL02 costs zero. Preserve future large GPU and x4 NIC coexistence. Cabinet fan selection is deliberately deferred.
 3. Before purchase, seek model/BIOS evidence of independent low PL1/PL2 with non-K CPU; after assembly plan idle-power and stability measurement.
 
