@@ -95,12 +95,13 @@ Source documents describe family-level BIOS controls, **not proof the exact cand
 
 ## RAM comparison checkpoint (2026-10-25)
 
-User compared five 32GB (2x16GB) DDR5 UDIMM kits:
+User compared six 32GB (2x16GB) DDR5 UDIMM kits:
 - Corsair CMG32GX5M2B5600Z40: 5600 CL40 1.25V profiled, base SPD 4800 1.1V.
 - Crucial CP2K16G60C36U5B: 6000 CL36 1.35V profiled; base JEDEC 5600 CL46 1.1V, best candidate for no-XMP operation.
 - Patriot PVV532G600C36K: 6000 CL36 profiled, base 4800 CL40 1.1V. Patriot materials conflict on profile voltage (older matrix 1.25V, specific datasheet and newer overview 1.35V).
 - Corsair CMG32GX5M2B5200Z40: 5200 CL40 1.25V profiled, base SPD 4800 1.1V.
 - Patriot PVV532G600C30K: 6000 CL30 1.35V profiled, base SPD 4800 CL40 1.1V.
+- Patriot PVV532G640C32K (new sixth user-sourced kit): Viper Venom 32 GB (2x16 GB) DDR5 UDIMM; official Patriot SKU sheet specifies **XMP 6400 MT/s CL32-40-40-84 1.4 V** versus **base JEDEC 4800 MT/s CL40-40-40-77 1.1 V**, non-system-ECC, 43 mm module height; official reference https://gzhls.at/blob/ldb/1/c/0/c/52741725d8732ee343a468ec9863a1b8e4e7.pdf . Italian listing indicative ~EUR 452+ (not checkout confirmed). This adds no JEDEC/no-OC benefit over the other Patriot kits; Crucial CP2K16G60C36U5B stays the provisional preferred 32 GB kit, conditional on ASUS QVL and real price.
 Both ASUS Z890 boards support DDR5 UDIMM, but complete QVL certification for each exact module has not been confirmed: published lists are dynamically paginated. No purchase decision fixed; the Crucial is a preliminary preference only, dependent on real retailer price and final QVL check.
 ## Completed
 
