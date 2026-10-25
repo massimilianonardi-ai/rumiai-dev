@@ -93,6 +93,15 @@ Source documents describe family-level BIOS controls, **not proof the exact cand
 - Indicative Italian October 2026 catalog ranges for 16 GB Crucial ~€230–315 depending seller/date; an older indexed €211 quotation may be stale. 2×16 GB Crucial kit ~€540–550. Search listings frequently mix physically incompatible notebook SO-DIMM and desktop UDIMM; verify exact product/SKU and current checkout. No purchase decision made.
 - These remain two proposed RAM **configurations**, not fixed purchase choices. 1×16 minimizes outlay and offers upgrade path at the cost of single-channel bandwidth; matched 2×16 provides capacity and dual-channel; 2×8 is less future-proof.
 
+## RAM comparison checkpoint (2026-10-25)
+
+User compared five 32GB (2x16GB) DDR5 UDIMM kits:
+- Corsair CMG32GX5M2B5600Z40: 5600 CL40 1.25V profiled, base SPD 4800 1.1V.
+- Crucial CP2K16G60C36U5B: 6000 CL36 1.35V profiled; base JEDEC 5600 CL46 1.1V, best candidate for no-XMP operation.
+- Patriot PVV532G600C36K: 6000 CL36 profiled, base 4800 CL40 1.1V. Patriot materials conflict on profile voltage (older matrix 1.25V, specific datasheet and newer overview 1.35V).
+- Corsair CMG32GX5M2B5200Z40: 5200 CL40 1.25V profiled, base SPD 4800 1.1V.
+- Patriot PVV532G600C30K: 6000 CL30 1.35V profiled, base SPD 4800 CL40 1.1V.
+Both ASUS Z890 boards support DDR5 UDIMM, but complete QVL certification for each exact module has not been confirmed: published lists are dynamically paginated. No purchase decision fixed; the Crucial is a preliminary preference only, dependent on real retailer price and final QVL check.
 ## Completed
 
 - Identified compatible LGA1851 CPU pair and initial motherboard shortlist from official model specifications and Italian market price indications.
