@@ -37,7 +37,7 @@ Select practical, purchasable and energy-efficient desktop hardware for a 24/7 P
 4. Quad-port PCIe Intel NIC and future wide NVIDIA GPU can coexist physically and electrically; all critical firewall Ethernet ports independent from temporary USB adapters.
 5. Required rear/front USB-C/TB4 and USB-A counts verified, price and supported BIOS version known before final purchase.
 
-## Working design (candidates and evidence checked 2026-10-25)
+## Earlier candidate comparison evidence (before final two-board shortlist; 2026-10-25)
 
 - **ASUS PRIME Z890-P WIFI**, ASUS Intel 800-series BIOS guide linked from this board's support page: `Long Duration Package Power Limit` (PL1) numeric **1–4095 W**, independent `Short Duration Package Power Limit` (PL2) option, adjustable `Package Power Time Window`. The guide explicitly warns options vary by CPU and DIMM; **do not call 285/265 at PL1=25–35W / PL2=45–65W on retail BIOS proven without exact firmware confirmation**. Physical slots: CPU PCIe 5.0 x16, chipset 2x PCIe 4.0 x4 plus a x1. Rear 1x Thunderbolt 4 USB-C 40Gb/s, assorted A, rear Realtek 2.5GbE; 4 M.2. Product: https://www.asus.com/it/motherboards-components/motherboards/prime/prime-z890-p-wifi/ ; BIOS guide: https://dlcdnets.asus.com/pub/ASUS/mb/13MANUAL/E25827_Intel_800_Series_BIOS_manual_EM_WEB.pdf?model=PRIME+Z890-P .
 - **ASRock Z890 Pro-A, NON-WiFi**: retail Italian offer roughly €139–180 before verification of shipping/current availability; CPU-connected PCIe 5.0 x16 + 2 chipset PCIe 4.0 x4, **one** rear Thunderbolt 4/USB4 USB-C 40Gb/s **plus one** rear USB-C 20Gb/s (do not confuse with Z890 Pro RS, which has 2 TB4). Multiple USB-A, front C 20Gb/s, 4 M.2 and 2.5GbE Realtek. The power-limit numeric minimum **NOT verified**. Official: https://asrock.com/mb/Intel/Z890%20Pro-A/index.it.asp . This is a strong price/port contender only after PL1/PL2 BIOS validation.
@@ -62,7 +62,7 @@ Select practical, purchasable and energy-efficient desktop hardware for a 24/7 P
 - **PL1/PL2 hard gate STILL UNVERIFIED for actual non-K Core Ultra 7 265 / 9 285 and specific BIOS revision** on all newly found mATX models, notwithstanding ASUS shared Intel 800 BIOS guide. Do not recommend any board as fully compliant until confirmed. Neither B860 nor Z890 idle wall consumption for identical configurations is established; don't infer B860 lower idle from chipset classification.
 - New operator question was whether listed boards are ATX and smaller formats exist; no new chassis-size constraint has been fixed. Availability observation concerns the *previous* shortlist; the new micro-ATX candidates surfaced in market listings, not guaranteed stock at the user's preferred retailer.
 
-## ATX-only ranked shortlist and BIOS-source verification (2026-10-25)
+## Earlier ATX-ranked comparison evidence (superseded by operator-fixed ASUS pair, 2026-10-25)
 
 The operator **explicitly fixes ATX format** and ranks motherboards primarily by BIOS PL1/PL2 freedom, NIC PCIe x4 compatibility, then **onboard Thunderbolt**, next **USB5 (provisionally interpreted as USB 5Gbps, counting 10/20Gbps as faster)** and finally USB-C. Previous micro-ATX research remains comparison evidence but is **not the active selection scope**.
 
