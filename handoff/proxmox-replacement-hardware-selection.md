@@ -26,6 +26,9 @@ Select practical, purchasable and energy-efficient desktop hardware for a 24/7 P
 - **Form factor now fixed to ATX**, not micro-ATX/mini-ITX. For motherboard ranking: mandatory independent low manual PL1/PL2 and PCIe electrically >=x4 quad Intel LAN NIC alongside CPU PCIe x16 future NVIDIA; **priority order Thunderbolt onboard, then USB 5Gbps-or-better port inventory, then USB-C availability**. "USB5" is treated provisionally as USB 5Gbps (not a USB standard version name), pending an explicit correction if the user intended something else. SATA/NVMe counts and RAID features **not primary criteria**; sufficient OS storage is implicit. Baseline applications: Proxmox/KVM, OPNsense VM WAN/LAN VLANs (future 2.5 GbE), Home Assistant VM, possible ZFS-managed storage and future local AI NVIDIA. Initial old VM nominal RAM 4+8 GiB; final RAM hardware TBD.
 - Budget-conscious and vendor-supported retail boards; no fixed total budget. Avoid unverified claims about returned BOSGAME specific fault component; standalone Memtest failure reported in separate handoff.
 
+- **Operator-fixed easily available motherboard pair (2026-10-25):** **ASUS TUF GAMING Z890-PRO WIFI** and **ASUS PRIME Z890-P non-WiFi** only. Other earlier ranked motherboards remain prior comparison evidence, not active purchase alternatives. Both ATX; low BIOS PL2 acceptance and runtime enforcement remain unverified. PRIME non-WiFi has no rear Thunderbolt 4; TUF provides two rear TB4.
+- **Operator-fixed quad 2.5GbE PCIe NIC pair (2026-10-25):** **ZimaBoard ZBA022-EU** (marketed 4x Intel I226) and **KALEA-INFORMATIQUE 11870587** (marketed 4x Intel I226 with PLX bridge). KALEA **11628082** has older Intel I225 controllers and is excluded by the I226-or-better requirement. Neither remaining card purchased or physically validated. Before purchase confirm seller product revision/SKU, controller IDs, PCIe bridge/switch, power draw, Proxmox/FreeBSD driver support, passthrough IOMMU topology, physical slot position and four-port aggregate performance.
+
 ## Acceptance scenarios
 
 1. Select CPU 265 or 285 based on offers without changing compatible LGA1851 motherboard.
@@ -81,6 +84,15 @@ Manufacturer official BIOS manuals *read and checked as PDFs with page screensho
 
 Source documents describe family-level BIOS controls, **not proof the exact candidate board/BIOS and non-K CPU accept and enforce 25–35 W / 45–65 W**. Need specific revision/manual/BIOS evidence or vendor explicit confirmation, then physically measure after assembly. All eight have model-level PCIe lane counts but verify GPU slot thickness and physical x4 clearance; no motherboard whole-system idle watt comparison measured or claimed. Retail price-search was 2026-10-25 and availability may be different by purchase date.
 
+## RAM working options (2026-10-25; no final choice yet)
+
+- Both selected ASUS Z890 boards specify 4 desktop DDR5 slots, non-ECC unbuffered, dual-channel, and nominal support for UDIMM/CUDIMM. Intel Core Ultra 7 265 / 9 285 memory support up to 6400 MT/s under relevant configurations. DDR5 on-die ECC is not full CPU/memory-path ECC; boards do not advertise system ECC.
+- User wants to minimize RAM expense while prioritizing stability: 16 GB acceptable at launch, more RAM attractive for future guests and NAS. Former VM allocations: OPNsense 4 GiB plus Home Assistant 8 GiB. The host needs headroom, particularly with future ZFS/NAS.
+- **16 GB budget candidate:** Crucial desktop UDIMM **CT16G56C46U5**, **1×16 GB DDR5-5600 CL46 JEDEC 1.1 V**, non-ECC. Alone it runs single-channel and allows adding another 16 GB later; future separately sourced modules may require retraining/speed fallback. Alternative verified manufacturer specification: Kingston ValueRAM **KVR56U46BS8-16**, 1Rx8 non-ECC 5600 CL46 1.1 V. Specific ASUS QVL qualification remains open.
+- **32 GB capacity candidate:** Crucial desktop UDIMM kit **CT2K16G56C46U5**, **2×16 GB DDR5-5600 CL46 JEDEC 1.1 V**, non-ECC, dual-channel, leaves two slots empty. Verify exact board QVL and BIOS revision; avoid XMP/OC.
+- Indicative Italian October 2026 catalog ranges for 16 GB Crucial ~€230–315 depending seller/date; an older indexed €211 quotation may be stale. 2×16 GB Crucial kit ~€540–550. Search listings frequently mix physically incompatible notebook SO-DIMM and desktop UDIMM; verify exact product/SKU and current checkout. No purchase decision made.
+- These remain two proposed RAM **configurations**, not fixed purchase choices. 1×16 minimizes outlay and offers upgrade path at the cost of single-channel bandwidth; matched 2×16 provides capacity and dual-channel; 2×8 is less future-proof.
+
 ## Completed
 
 - Identified compatible LGA1851 CPU pair and initial motherboard shortlist from official model specifications and Italian market price indications.
@@ -89,18 +101,17 @@ Source documents describe family-level BIOS controls, **not proof the exact cand
 
 ## Current state
 
-ATX-only selection now fixed by operator. Eight candidates ranked by independent PL1/PL2 documentation, PCIe x4 quad NIC support and Thunderbolt/USB priorities. The readily available **ASUS PRIME Z890-P non-WiFi ATX** differs from PRIME Z890-P WIFI and lacks rear TB4. Earlier mATX options are no longer in active scope. All three OEM Intel 800 BIOS guides have been read, but **none of the eight boards has passed a physical test of low manual PL1/PL2 on non-K 265/285, nor actual whole-system idle power measurement and slot-clearance validation**.
+Fixed shortlist has two independent choices per completed component: CPUs Core Ultra 7 265 / Ultra 9 285; motherboards ASUS TUF GAMING Z890-PRO WIFI / ASUS PRIME Z890-P non-WiFi; quad-port Intel I226 NICs ZimaBoard ZBA022-EU / KALEA 11870587. Currently evaluating DDR5 RAM: 16 GB budget-expandable vs 32 GB capacity/dual-channel, no RAM selection fixed. This workflow is independent of the defective BOSGAME return. No purchases, BIOS low-limit physical experiment, DIMM qualification or idle-power measurements performed by assistant.
 
 ## Next action
 
-1. Compare model-specific exact BIOS revision manual/screenshots or support replies on independent PL1=25–35W and PL2=45–65W values for non-K Ultra 7 265 / 9 285.
-2. Compare motherboard and full-system idle measurements under matched CPU/PSU/devices or qualify estimates as unknown, and prioritize light-load efficient PSU.
-3. **Only ATX models**: prioritize ASUS TUF Z890-PRO WIFI, MSI MAG Z890 TOMAHAWK WIFI, MSI PRO Z890-A WIFI, and the substantially cheaper ASRock Z890 Pro RS (all 2x rear TB4); then 1x TB4 candidates and lastly the easily found PRIME Z890-P non-WiFi with no onboard TB4. Verify x4 NIC physical access with a wide NVIDIA, slot spacing, case dimensions, chipset sharing, available rear USB ports and retailer stock.
-4. Price final board + four-port NIC + RAM + PSU + case/cooling and ensure actual vendor/return policy is reasonable.
+1. Finalize RAM capacity and configuration using desktop DDR5 JEDEC non-ECC UDIMM and verify exact part in the ASUS QVL for *both* shortlisted boards. Compare genuine available retail prices, warranty and 1.1 V JEDEC operation.
+2. Complete total build costing (CPU, motherboard, NIC, RAM, chassis, efficient low-idle PSU, cooler and storage), including future wide GPU plus x4 NIC clearance.
+3. Before purchase, seek model/BIOS evidence of independent low PL1/PL2 with non-K CPU; after assembly plan measured idle energy and stability tests.
 
 ## Blockers / open questions
 
 - Minimum accepted PL2 and runtime enforcement on exact ASUS BIOS revision + non-K CPU unverified; equivalent on ASRock/MSI unverified.
 - Measured idle energy use under the intended host/Proxmox profile unavailable for shortlisted boards.
 - NVIDIA model/slot thickness/power unknown; select enclosure and slot layout with safety margin.
-- No fixed total purchase budget, case dimensions or exact quad-port Intel NIC SKU yet.
+- No fixed total purchase budget, case dimensions, final RAM capacity or NIC choice between the two fixed card candidates.
