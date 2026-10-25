@@ -137,6 +137,18 @@ Thus 850 W saves ~1.40 W at a sustained 40 W DC output versus 1200 W; at hypothe
 
 **Architecture revision:** 1200 W Pure Power 13 M is built by **CWT** whereas smaller 850/1000 variants are **FSP** in Cybenetics's reviewed units; similar marketing name does not imply identical internals. 1200 W rated model still ATX 3.1, 12V-2x6 600 W, 2 EPS CPU cables, 10-year warranty, 160 mm depth, fully modular and semi-passive. The attractive low price and future NVIDIA room favor a provisional 1200 W recommendation *among the operator's three easy-to-obtain Pure Power 13 M models*, conditional on genuine item and return policy; 850 W could win total cost over long 24/7 ultra-low use, or a smaller/different PSU could save more. Do not lock wattage before future GPU requirement and retailer validation.
 
+## Fixed PSU alternatives — 2026-10-25
+
+Operator explicitly fixes **be quiet! Pure Power 13 M 1200W BP029EU** as first choice and **be quiet! Power Zone 2 1200W BP030EU** as second. These supersede the previous 750W/850W/1000W/Seasonic alternatives for the active shortlist. The known Pure Power 1200W offer is EUR 126; Power Zone 2 purchase price not stated. Neither PSU has been purchased or physically validated.
+
+**Matched Cybenetics EU 230V light-load tests, actual 20W and 40W DC outputs:**
+- Pure Power 13 M 1200W: at 20W DC, 27.542W AC (72.586%); at 40W DC, 49.047W AC (81.577%).
+- Power Zone 2 1200W: at 20W DC, 32.607W AC (61.345%); at 40W DC, 55.763W AC (71.725%).
+- At 30W DC, simple *linear interpolation of AC input*, not a direct measurement: Pure Power ~38.295W AC (~78.34%); Power Zone 2 ~44.185W AC (~67.90%). Differences in AC input ~5.89W at 30W DC and ~6.72W at 40W DC. Distinguish output watts from user wall-meter input watts.
+- **Pure Power 13 M is clearly the more efficient of these two specific 1200W units at 20-40W DC**, despite being marketed Gold versus the Power Zone 2 Platinum. Higher-load certification cannot establish very-low-load efficiency.
+
+Reports: https://www.cybenetics.com/evaluations/psus/3127/cert/en/ (Pure Power, issued Jan 20 2026) and https://www.cybenetics.com/evaluations/psus/3042/cert/ (Power Zone 2 EU, issued Nov 21 2025). Official EU models: https://www.bequiet.com/en/powersupply/6022 and https://www.bequiet.com/en/powersupply/6013 . No matched physical host idle measurement; the actual desktop system wattage is not established. Both have ATX 3.1, 10-year warranty, native GPU 12V-2x6 and two EPS CPU connectors. Future GPU actual load remains unknown.
+
 ## Completed
 
 - Identified compatible LGA1851 CPU pair and initial motherboard shortlist from official model specifications and Italian market price indications.
@@ -145,11 +157,11 @@ Thus 850 W saves ~1.40 W at a sustained 40 W DC output versus 1200 W; at hypothe
 
 ## Current state
 
-Fixed shortlist has two independent choices per completed component: CPUs Core Ultra 7 265 / Ultra 9 285; motherboards ASUS TUF GAMING Z890-PRO WIFI / ASUS PRIME Z890-P non-WiFi; quad-port Intel I226 NICs ZimaBoard ZBA022-EU / KALEA 11870587. Operator now fixes 32 GB RAM pair Crucial CP2K16G60C36U5B (first) and Patriot PVV532G600C36K (alternative), both below EUR 500; QVL confirmation remains pending. PSU evaluation now includes operator-available Pure Power 13 M 1200W at EUR 126 (provisionally favored among available be quiet! units), 850W EUR 139, 1000W EUR 145, versus earlier Pure Power 13 M 750W/Seasonic alternatives that are not assured available from the operator's supplier. This workflow is independent of the defective BOSGAME return. No purchases, BIOS low-limit physical experiment, DIMM qualification or idle-power measurements performed by assistant.
+Fixed shortlist has two independent choices per completed component: CPUs Core Ultra 7 265 / Ultra 9 285; motherboards ASUS TUF GAMING Z890-PRO WIFI / ASUS PRIME Z890-P non-WiFi; quad-port Intel I226 NICs ZimaBoard ZBA022-EU / KALEA 11870587. Operator now fixes 32 GB RAM pair Crucial CP2K16G60C36U5B (first) and Patriot PVV532G600C36K (alternative), both below EUR 500; QVL confirmation remains pending. PSU pair now fixed: be quiet! Pure Power 13 M 1200W BP029EU first; be quiet! Power Zone 2 1200W BP030EU second. Exact measured Cybenetics 230V light-load data favor Pure Power; real Proxmox whole-system draw remains unknown. This workflow is independent of the defective BOSGAME return. No purchases, BIOS low-limit physical experiment, DIMM qualification or idle-power measurements performed by assistant.
 
 ## Next action
 
-1. Compare the two proposed PSU options for budget, low-load efficiency, power connectors and future GPU expansion; do not fix final wattage before target GPU is specified. Verify chosen RAM QVL for both ASUS boards before purchasing.
+1. Next select CPU cooler, ATX case and NVMe, ensuring adequate NIC x4 slot clearance for future wide NVIDIA; confirm RAM exact QVL on both ASUS boards and final PSU seller identity before ordering.
 2. Complete total build costing (CPU, motherboard, NIC, RAM, chassis, efficient low-idle PSU, cooler and storage), including future wide GPU plus x4 NIC clearance.
 3. Before purchase, seek model/BIOS evidence of independent low PL1/PL2 with non-K CPU; after assembly plan measured idle energy and stability tests.
 
@@ -158,4 +170,4 @@ Fixed shortlist has two independent choices per completed component: CPUs Core U
 - Minimum accepted PL2 and runtime enforcement on exact ASUS BIOS revision + non-K CPU unverified; equivalent on ASRock/MSI unverified.
 - Measured idle energy use under the intended host/Proxmox profile unavailable for shortlisted boards.
 - NVIDIA model/slot thickness/power unknown; select enclosure and slot layout with safety margin.
-- No fixed total purchase budget, case dimensions, PSU wattage/final SKU or NIC choice between the two fixed card candidates; the chosen 32GB RAM pair awaits exact QVL confirmation.
+- No fixed total purchase budget, case dimensions, Power Zone 2 price, or NIC final choice between two fixed candidates; 32GB RAM pair awaits exact ASUS QVL confirmation. PSU shortlist fixed to two 1200W SKUs but the future NVIDIA power envelope remains unconfirmed.
