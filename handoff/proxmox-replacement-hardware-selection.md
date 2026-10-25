@@ -47,6 +47,18 @@ Select practical, purchasable and energy-efficient desktop hardware for a 24/7 P
 - Models' precise slot spacing with future thick NVIDIA cards and sharing need layout diagram confirmation before purchase.
 - Research is not approval to purchase. No hardware ordered or tested by assistant.
 
+## More compact readily purchasable boards (2026-10-25 research)
+
+- Operator provided Amazon.it product URL `https://www.amazon.it/dp/B0DJDFX4M1/` and identified it as **ASUS PRIME Z890-P without Wi-Fi**, the only easily obtainable board in the *previous* ATX shortlist. Do not conflate with **PRIME Z890-P WIFI** already in the working design: the non-WiFi board has **rear USB-C 20 Gb/s DP Alt**, **NOT an integrated Thunderbolt 4 rear port** (the WIFI SKU has rear TB4 40 Gb/s). Both are **ATX 30.5×24.4 cm**, 1x CPU PCIe5 x16, 2x chipset PCIe4 electrically x4 in full-length sockets, allowing dedicated NIC plus future GPU subject to physical slot clearance. ASUS SKU-specific specifications: `https://www.asus.com/it/motherboards-components/motherboards/prime/prime-z890-p/techspec/`; direct comparison in ASUS Z890 product press release: `https://press.asus.com/news/press-releases/asus-unveils-z890-motherboards-intel-core-ultra-ai/`.
+- **mATX 24.4×24.4cm options located for sale in Italy** (market offers fluctuate):
+  - **ASUS PRIME B860M-A WIFI**, offered on Amazon.it approx **€190–194**, 1 CPU PCIe5 x16, 1 chipset PCIe4 physical x16 / electrical **x4**, x1 additional, rear **USB-C 20Gbps** and front USB-C 10Gbps, **no rear TB4** (internal TB/USB4 header only). Intel B860, rear 8 USB incl many USB2, 2.5G Realtek. Manufacturer spec `https://www.asus.com/it/motherboards-components/motherboards/all-series/prime-b860m-a-wifi/techspec/`.
+  - **ASUS PRIME Z890M-PLUS WIFI**, Italian retail/marketplace **~€234–238** (Amazon.it market offer seen on Trovaprezzi), Z890, 1 CPU PCIe5 x16 + 1 electrically **x4** PCIe4 full-length + 2 electrically x1, rear **USB-C 20Gbps NOT Thunderbolt 4**; front USB-C only 5Gbps. Official `https://www.asus.com/it/motherboards-components/motherboards/prime/prime-z890m-plus-wifi/`, full spec `https://www.asus.com/us/motherboards-components/motherboards/prime/prime-z890m-plus-wifi/techspec/`.
+  - **MSI PRO B860M-A WIFI**, Amazon.it listed **~€242**, rear **Thunderbolt 4 40Gbps USB-C** plus USB-C 5Gbps, LAN Realtek 5GbE, CPU PCIe5 x16 and chipset PCIe4 electrical x4 full-length (physical PCI_E4 fourth slot), with 2 other x1 full-length PCIe connectors, 24.4×24.4cm. Official `https://www.msi.com/Motherboard/PRO-B860M-A-WIFI/Specification`. Inspect exact PCIe x4 physical clearance for 3–4-slot Nvidia card before committing.
+- **mini-ITX 17×17cm** generally provides just one PCIe x16 slot. Example official ASUS ROG STRIX Z890-I only 1 PCIe5 x16, `https://rog.asus.com/it/motherboards/rog-strix/rog-strix-z890-i-gaming-wifi/spec/`; it **cannot directly accommodate both future NVIDIA and separate four-port Intel PCIe NIC** without complex riser/bifurcation. Do not promote mini-ITX against the present mandatory PCIe expansion requirement.
+- ATX physical extra slot spacing is advantageous for future **3–4 slot-thick NVIDIA** and permanent x4 quad NIC; mATX x4 socket can be obscured by the GPU even though the board electrically supports both. Must check specific layout/slot cover positions and case before buying. Physical miniaturization **does not itself demonstrate lower idle wattage**.
+- **PL1/PL2 hard gate STILL UNVERIFIED for actual non-K Core Ultra 7 265 / 9 285 and specific BIOS revision** on all newly found mATX models, notwithstanding ASUS shared Intel 800 BIOS guide. Do not recommend any board as fully compliant until confirmed. Neither B860 nor Z890 idle wall consumption for identical configurations is established; don't infer B860 lower idle from chipset classification.
+- New operator question was whether listed boards are ATX and smaller formats exist; no new chassis-size constraint has been fixed. Availability observation concerns the *previous* shortlist; the new micro-ATX candidates surfaced in market listings, not guaranteed stock at the user's preferred retailer.
+
 ## Completed
 
 - Identified compatible LGA1851 CPU pair and initial motherboard shortlist from official model specifications and Italian market price indications.
@@ -55,13 +67,13 @@ Select practical, purchasable and energy-efficient desktop hardware for a 24/7 P
 
 ## Current state
 
-Research/shortlist only. No motherboard has passed **all** hard gates (exact BIOS low-power settings *and* idle consumption measurement in a comparable setup *and* physical slot coexistence). ASUS has the strongest publicly documented PL1/PL2 setting detail, not tested enforcement with exact CPUs.
+Research/shortlist only. Operator confirms easy availability for **ASUS PRIME Z890-P non-WiFi ATX**, now distinguished from earlier WIFI shortlist. Additional mATX retail candidates discovered. No motherboard has passed **all** hard gates (exact BIOS low-power settings *and* idle consumption measurement in a comparable setup *and* physical slot coexistence). ASUS shared Intel 800 guide has strongest public PL1/PL2 descriptions, not tested enforcement with exact CPUs.
 
 ## Next action
 
 1. Compare model-specific exact BIOS revision manual/screenshots or support replies on independent PL1=25–35W and PL2=45–65W values for non-K Ultra 7 265 / 9 285.
 2. Compare motherboard and full-system idle measurements under matched CPU/PSU/devices or qualify estimates as unknown, and prioritize light-load efficient PSU.
-3. Verify PCIe x4 remains physically accessible with a wide NVIDIA and confirm chipset uplink/sharing and case/airflow; verify needed rear USB counts.
+3. Compare available **ATX PRIME Z890-P (non-WiFi, USB-C20, no TB4)** with micro-ATX ASUS PRIME B860M-A WIFI, PRIME Z890M-PLUS WIFI, and MSI PRO B860M-A WIFI (rear TB4). Verify PCIe x4 remains physically accessible with a wide NVIDIA (slot spacing in 4-slot mATX case), chipset uplink/sharing and case/airflow; verify needed rear USB counts.
 4. Price final board + four-port NIC + RAM + PSU + case/cooling and ensure actual vendor/return policy is reasonable.
 
 ## Blockers / open questions
