@@ -109,6 +109,20 @@ User fixes **32 GB (2x16 GB)** RAM alternatives: **Crucial CP2K16G60C36U5B** fir
 
 PSU research for 24/7 low-idle Proxmox: candidate A **be quiet! Pure Power 13 M 750W BP026EU**, ATX 3.1, modular, native 12V-2x6, 2 EPS 8-pin CPU cables; maker reports 230V conversion efficiency 71.9% at 2% and 90.6% at 10% output load; Italian observed EUR 123.90 excluding shipping, 10-year warranty. https://www.bequiet.com/en/powersupply/6019 . Candidate B **Seasonic CORE GX-650 V2 ATX 3.1**, modular, 12V-2x6, two EPS 8/4-pin CPU cables, 7-year warranty, Italian observed EUR 97.98; low-output-load 230V efficiency not established from directly comparable measurements. https://seasonic.com/core-gx-atx-3-2024/ . Both ASUS board candidates have 2 EPS 8-pin CPU sockets. Final PSU selection is not fixed until budget and future Nvidia power envelope are clearer. PSU output ratings do not imply fixed AC wall consumption; measure final 24/7 host idle at wall. Still to select: CPU cooler, ATX chassis, NVMe, chassis airflow/fans. The future Nvidia GPU and optional NAS disks are deferred expansion items.
 
+## PSU comparison extension — be quiet! Power Zone 2 750W (2026-10-25)
+
+User asked specifically about **be quiet! Power Zone 2 750W BP006EU**, in comparison with already short-listed **Pure Power 13 M 750W BP026EU**. Both are ATX 3.1 modular, native 12V-2x6 and 10y warranties; Power Zone 2 is 80 PLUS Platinum, 140 mm fan, Pure Power 13 M 80 PLUS Gold, 120 mm fan, both semi-passive. The Power Zone 2 supports two CPU power leads (P4+4 and P8), 3 PCIe 6+2 and 6 SATA; Pure Power provides P4+4 plus P8, 4 PCIe 6+2 and 6 SATA.
+
+**Crucial verified evidence:** same-independent-laboratory Cybenetics 230V low-load tests show **Power Zone 2 / Pure Power 13 M efficiencies**, respectively:
+- 20 W DC: **70.935% / 77.598%** (AC input 28.186 / 25.781 W).
+- 40 W DC: **82.766% / 85.668%** (AC input 48.321 / 46.699 W).
+- 60 W DC: **87.716% / 88.802%**.
+- 80 W DC: **89.919% / 90.855%**.
+
+Sources: https://www.cybenetics.com/evaluations/psus/2681/en/ (Power Zone 2 750W), https://www.cybenetics.com/evaluations/psus/2844/cert/ch/ (Pure Power 13 M 750W); manufacturer https://www.bequiet.com/en/powersupply/5821 and https://www.bequiet.com/en/powersupply/6019 . Therefore Power Zone 2 Platinum is NOT the more-efficient PSU at the intended ultra-low DC loads, despite its higher overall certification. At continuous 20 W output, the measured AC delta is about 2.4 W, i.e. ~21 kWh/year if sustained all year, not a proven difference in the as-yet-unbuilt Z890 host.
+
+An indicative Italian comparison site lists Power Zone 2 BP006EU at ~EUR 118 excluding shipping, with some shipped offers ~EUR 123; no price guarantee (https://www.idealo.it/confronta-prezzi/205850625/be-quiet-power-zone-2-750w.html). The previous Pure Power candidate retains preference for **24/7 very low idle power**; Power Zone 2 is a technically sound alternate if acquisition price and priorities favor it, without a purchase lock. Neither 750 W option is confirmed appropriate for unknown future GPU wattage. Physical PSU dimensions 160x150x86 mm each; case compatibility TBD.
+
 ## Completed
 
 - Identified compatible LGA1851 CPU pair and initial motherboard shortlist from official model specifications and Italian market price indications.
