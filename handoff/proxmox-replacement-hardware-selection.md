@@ -117,11 +117,11 @@ PSU research for 24/7 low-idle Proxmox: candidate A **be quiet! Pure Power 13 M 
 
 ## Current state
 
-Fixed shortlist has two independent choices per completed component: CPUs Core Ultra 7 265 / Ultra 9 285; motherboards ASUS TUF GAMING Z890-PRO WIFI / ASUS PRIME Z890-P non-WiFi; quad-port Intel I226 NICs ZimaBoard ZBA022-EU / KALEA 11870587. Currently evaluating DDR5 RAM: 16 GB budget-expandable vs 32 GB capacity/dual-channel, no RAM selection fixed. This workflow is independent of the defective BOSGAME return. No purchases, BIOS low-limit physical experiment, DIMM qualification or idle-power measurements performed by assistant.
+Fixed shortlist has two independent choices per completed component: CPUs Core Ultra 7 265 / Ultra 9 285; motherboards ASUS TUF GAMING Z890-PRO WIFI / ASUS PRIME Z890-P non-WiFi; quad-port Intel I226 NICs ZimaBoard ZBA022-EU / KALEA 11870587. Operator now fixes 32 GB RAM pair Crucial CP2K16G60C36U5B (first) and Patriot PVV532G600C36K (alternative), both below EUR 500; QVL confirmation remains pending. PSU options under evaluation: be quiet! Pure Power 13 M 750W BP026EU and Seasonic CORE GX-650 V2. This workflow is independent of the defective BOSGAME return. No purchases, BIOS low-limit physical experiment, DIMM qualification or idle-power measurements performed by assistant.
 
 ## Next action
 
-1. Finalize RAM capacity and configuration using desktop DDR5 JEDEC non-ECC UDIMM and verify exact part in the ASUS QVL for *both* shortlisted boards. Compare genuine available retail prices, warranty and 1.1 V JEDEC operation.
+1. Compare the two proposed PSU options for budget, low-load efficiency, power connectors and future GPU expansion; do not fix final wattage before target GPU is specified. Verify chosen RAM QVL for both ASUS boards before purchasing.
 2. Complete total build costing (CPU, motherboard, NIC, RAM, chassis, efficient low-idle PSU, cooler and storage), including future wide GPU plus x4 NIC clearance.
 3. Before purchase, seek model/BIOS evidence of independent low PL1/PL2 with non-K CPU; after assembly plan measured idle energy and stability tests.
 
@@ -130,4 +130,4 @@ Fixed shortlist has two independent choices per completed component: CPUs Core U
 - Minimum accepted PL2 and runtime enforcement on exact ASUS BIOS revision + non-K CPU unverified; equivalent on ASRock/MSI unverified.
 - Measured idle energy use under the intended host/Proxmox profile unavailable for shortlisted boards.
 - NVIDIA model/slot thickness/power unknown; select enclosure and slot layout with safety margin.
-- No fixed total purchase budget, case dimensions, final RAM capacity or NIC choice between the two fixed card candidates.
+- No fixed total purchase budget, case dimensions, PSU wattage/final SKU or NIC choice between the two fixed card candidates; the chosen 32GB RAM pair awaits exact QVL confirmation.
