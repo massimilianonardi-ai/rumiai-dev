@@ -175,6 +175,20 @@ Operator explicitly reports very positive previous experience with **Thermalrigh
 
 **Market pointers (Oct 2026):** user has not provided seller costs. Italian listings for exact Freezer 36 CO ~EUR 31; Phantom Spirit 120 SE ~EUR 35-41 depending variants (avoid substituting Phantom Spirit 120 non-SE, ARGB, EVO or Peerless Assassin). No order finalized.
 
+## Open-frame cabinet case direction — 2026-10-25
+
+The operator proposes an **ALAMENGDA open-air motherboard test-bench frame, permanently placed in an open cabinet/shelving unit**. This is a **candidate direction, not a fixed exact SKU or a confirmed final chassis**. Research found several noninterchangeable ALAMENGDA variants:
+- AL02 / common ATX tray: ATX 305x245mm board, standard ATX power supply around 140-250mm depth, ~440x265x128mm frame, ~160mm with PSU according to seller, open GPU placement claimed by seller as not length limited; steel SPCC 0.8mm; one SSD and HDD mount. Newegg https://www.newegg.com/alamengda-atx-open-frame-chassis-high-quality-0-8mm-spcc-steel-plate-baked-black-sand-grain-paint-on-the-surface-cases-al02/p/2AM-0319-00081 .
+- Wider E-ATX version ~440x345mm footprint, E-ATX 305x330mm and two SSD/two HDD support (varies by vendor); potentially more room for cabling. https://www.newegg.com/alamengda-atx-open-frame-chassis-high-quality-0-8mm-spcc-steel-plate-the-surface-is-baked-with-black-sand-grain-paint-cases/p/2AM-0319-00067 .
+- Another ALAMENGDA ATX model **B0DRJSSKN7** lists GPU length up to **256mm**, unlike AL02's vendor stated 'unlimited'; exact variant must be verified, no blanket assurance of RTX5090 compatibility. https://www.ypc.co.uk/product/alamengda-open-computer-caseopen-air-pc-case-motherboard-accessoriestest-stand-diy-pc-test-bench-atx/ .
+- Italian retail an ALAMENGDA ATX frame appears ~EUR 30-33 marketplace, AL02 ~EUR 40-43; not operator purchase prices and subject to changing availability: https://www.trovaprezzi.it/prezzo_altro-informatica_telaio_atx_aperto.aspx and https://www.trovaprezzi.it/prezzo_altro-informatica_open_pc_frame.aspx .
+
+**Working engineering criteria:** open frame is viable for 24/7 host only with structurally secure standoffs/PSU mount, firm base, safe earth-bonding of metal parts, no loose conductors or accidental access, PSU fan intake unblocked and GPU anti-sag brace for future large heavy GPU; confirm full-length NIC x4 bracket and Ethernet cable strain relief. Horizontal motherboard orientation on a stable shelf generally simplifies heavy-GPU support, but choice must match exact bench's vertical/horizontal support layout. With chosen Phantom Spirit 120 SE the **154mm nominal cooler height** plus any front fan shift for Patriot 43mm RAM is not constrained by a case side panel, but **cabinet shelf clearance must include total mounted geometry and connector bends**, not only the cooler nominal dimension.
+
+**Thermal/operations conditions:** cabinet being 'open' must mean useful inlet and outlet flow, ideally open rear as well as front/sides, with clearance for rising hot air and PSU/GPU exhaust. Absence of side panels does NOT guarantee lower temperatures for passively/heatsink-cooled VRMs, chipset, NVMe or quad-port I226 NIC; plan a slow PWM 120/140mm airflow fan aimed at board/NIC when needed and validate under real 24/7 load. Future RTX5090 at ~575W can heat a cabinet much more than today's CPU-limited host: verify ambient near motherboard, GPU/SSD/NIC temperatures and cabinet exhaust under sustained actual GPU workload. Dust, contact exposure, moving objects/cables, noise and pets/children are drawbacks; add physical guarding/mesh where required without blocking airflow. Leave possible cabling and physical access for hard drives/NAS.
+
+**Important distinction:** an ALAMENGDA product variant's claimed 'no GPU length limit' applies to the chassis alone, not ASUS expansion slot spacing, GPU thickness interfering with separate x4 NIC, cabinet wall clearances, 12V-2x6 bend radius, airflow, or support rigidity. Before buying the **specific product link/SKU and internal usable shelf width/depth/height + whether its rear is open** are needed to complete geometry checks; do not ask the operator for specs retrievable from the exact listing. Nothing ordered or physically tested.
+
 ## Completed
 
 - Identified compatible LGA1851 CPU pair and initial motherboard shortlist from official model specifications and Italian market price indications.
@@ -187,7 +201,7 @@ Fixed shortlist has two independent choices per completed component: CPUs Core U
 
 ## Next action
 
-1. Tentatively prioritize Thermalright Phantom Spirit 120 SE over ARCTIC Freezer 36 CO after operator feedback; **neither is fixed/purchased**. Confirm case cooler height >=165-170mm allowing any front-fan offset over 43mm Patriot, and physical GPU/NIC clearance. Preserve 1200W PSU pair; check RAM QVL before purchase.
+1. Evaluate the operator's proposed ALAMENGDA open-air ATX frame in open shelving: identify exact model/SKU and mounting layout, usable shelf space/ventilation and GPU+NIC physical clearance; keep Thermalright Phantom Spirit 120 SE preferred but not purchased. Verify RAM QVL on both ASUS boards.
 2. Complete total build costing (CPU, motherboard, NIC, RAM, chassis, efficient low-idle PSU, cooler and storage), including future wide GPU plus x4 NIC clearance.
 3. Before purchase, seek model/BIOS evidence of independent low PL1/PL2 with non-K CPU; after assembly plan measured idle energy and stability tests.
 
