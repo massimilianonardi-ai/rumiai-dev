@@ -103,6 +103,12 @@ User compared six 32GB (2x16GB) DDR5 UDIMM kits:
 - Patriot PVV532G600C30K: 6000 CL30 1.35V profiled, base SPD 4800 CL40 1.1V.
 - Patriot PVV532G640C32K (new sixth user-sourced kit): Viper Venom 32 GB (2x16 GB) DDR5 UDIMM; official Patriot SKU sheet specifies **XMP 6400 MT/s CL32-40-40-84 1.4 V** versus **base JEDEC 4800 MT/s CL40-40-40-77 1.1 V**, non-system-ECC, 43 mm module height; official reference https://gzhls.at/blob/ldb/1/c/0/c/52741725d8732ee343a468ec9863a1b8e4e7.pdf . Italian listing indicative ~EUR 452+ (not checkout confirmed). This adds no JEDEC/no-OC benefit over the other Patriot kits; Crucial CP2K16G60C36U5B stays the provisional preferred 32 GB kit, conditional on ASUS QVL and real price.
 Both ASUS Z890 boards support DDR5 UDIMM, but complete QVL certification for each exact module has not been confirmed: published lists are dynamically paginated. No purchase decision fixed; the Crucial is a preliminary preference only, dependent on real retailer price and final QVL check.
+## 2026-10-25 selection checkpoint: RAM and PSU
+
+User fixes **32 GB (2x16 GB)** RAM alternatives: **Crucial CP2K16G60C36U5B** first, **Patriot PVV532G600C36K** second, both quoted at slightly below EUR 500. First operates at JEDEC 5600, second at JEDEC 4800. Exact ASUS memory QVL remains unconfirmed. Do not treat older 16 GB option as current shortlist.
+
+PSU research for 24/7 low-idle Proxmox: candidate A **be quiet! Pure Power 13 M 750W BP026EU**, ATX 3.1, modular, native 12V-2x6, 2 EPS 8-pin CPU cables; maker reports 230V conversion efficiency 71.9% at 2% and 90.6% at 10% output load; Italian observed EUR 123.90 excluding shipping, 10-year warranty. https://www.bequiet.com/en/powersupply/6019 . Candidate B **Seasonic CORE GX-650 V2 ATX 3.1**, modular, 12V-2x6, two EPS 8/4-pin CPU cables, 7-year warranty, Italian observed EUR 97.98; low-output-load 230V efficiency not established from directly comparable measurements. https://seasonic.com/core-gx-atx-3-2024/ . Both ASUS board candidates have 2 EPS 8-pin CPU sockets. Final PSU selection is not fixed until budget and future Nvidia power envelope are clearer. PSU output ratings do not imply fixed AC wall consumption; measure final 24/7 host idle at wall. Still to select: CPU cooler, ATX chassis, NVMe, chassis airflow/fans. The future Nvidia GPU and optional NAS disks are deferred expansion items.
+
 ## Completed
 
 - Identified compatible LGA1851 CPU pair and initial motherboard shortlist from official model specifications and Italian market price indications.
