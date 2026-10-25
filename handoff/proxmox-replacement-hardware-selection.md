@@ -123,6 +123,20 @@ Sources: https://www.cybenetics.com/evaluations/psus/2681/en/ (Power Zone 2 750W
 
 An indicative Italian comparison site lists Power Zone 2 BP006EU at ~EUR 118 excluding shipping, with some shipped offers ~EUR 123; no price guarantee (https://www.idealo.it/confronta-prezzi/205850625/be-quiet-power-zone-2-750w.html). The previous Pure Power candidate retains preference for **24/7 very low idle power**; Power Zone 2 is a technically sound alternate if acquisition price and priorities favor it, without a purchase lock. Neither 750 W option is confirmed appropriate for unknown future GPU wattage. Physical PSU dimensions 160x150x86 mm each; case compatibility TBD.
 
+## 2026-10-25 Pure Power 13 M availability and revised PSU comparison
+
+Operator says locally obtainable **be quiet! Pure Power 13 M** retail prices are **1200 W EUR 126**, **1000 W EUR 145**, and **850 W EUR 139**; smaller Pure Power 13 M capacities not available from their practical supplier. User did NOT finalize PSU. The **1200 W** is cheapest of the obtainable family, surprisingly lower than 850/1000. Verify seller, VAT, warranty, shipping and exact European article **BP029EU** before acquisition. Official https://www.bequiet.com/en/powersupply/6022 .
+
+Matched absolute low-output-load independent Cybenetics 230V **40 W DC** tests:
+- 850 W: 83.944% / AC 47.651 W — https://www.cybenetics.com/evaluations/psus/2841/cert/en/
+- 1000 W: 81.068% / AC 49.346 W — https://www.cybenetics.com/evaluations/psus/2834/en/
+- 1200 W: 81.577% / AC 49.047 W — https://www.cybenetics.com/evaluations/psus/3127/cert/en/
+- Earlier 750 W reference (not currently easy for operator to obtain): ~85.67% / AC ~46.7 W at 40 W DC — https://www.cybenetics.com/evaluations/psus/2844/cert/ch/ .
+
+Thus 850 W saves ~1.40 W at a sustained 40 W DC output versus 1200 W; at hypothetical EUR 0.30/kWh and 24/7, ~EUR 3.67/year. The EUR 13 purchase-price premium of 850 W would take ~3.5 years of that *same hypothetical constant-load difference* to repay; not a host consumption forecast. Do not compare efficiency at different *percentage* loads. Actual target desktop idle still unmeasured; PSU high-watt rating does not mean constant high draw. Cybenetics 1000 W 20 W load row appears internally inconsistent (reported efficiency vs DC/AC); avoid basing a decision on that point until independently checked.
+
+**Architecture revision:** 1200 W Pure Power 13 M is built by **CWT** whereas smaller 850/1000 variants are **FSP** in Cybenetics's reviewed units; similar marketing name does not imply identical internals. 1200 W rated model still ATX 3.1, 12V-2x6 600 W, 2 EPS CPU cables, 10-year warranty, 160 mm depth, fully modular and semi-passive. The attractive low price and future NVIDIA room favor a provisional 1200 W recommendation *among the operator's three easy-to-obtain Pure Power 13 M models*, conditional on genuine item and return policy; 850 W could win total cost over long 24/7 ultra-low use, or a smaller/different PSU could save more. Do not lock wattage before future GPU requirement and retailer validation.
+
 ## Completed
 
 - Identified compatible LGA1851 CPU pair and initial motherboard shortlist from official model specifications and Italian market price indications.
@@ -131,7 +145,7 @@ An indicative Italian comparison site lists Power Zone 2 BP006EU at ~EUR 118 exc
 
 ## Current state
 
-Fixed shortlist has two independent choices per completed component: CPUs Core Ultra 7 265 / Ultra 9 285; motherboards ASUS TUF GAMING Z890-PRO WIFI / ASUS PRIME Z890-P non-WiFi; quad-port Intel I226 NICs ZimaBoard ZBA022-EU / KALEA 11870587. Operator now fixes 32 GB RAM pair Crucial CP2K16G60C36U5B (first) and Patriot PVV532G600C36K (alternative), both below EUR 500; QVL confirmation remains pending. PSU options under evaluation: be quiet! Pure Power 13 M 750W BP026EU and Seasonic CORE GX-650 V2. This workflow is independent of the defective BOSGAME return. No purchases, BIOS low-limit physical experiment, DIMM qualification or idle-power measurements performed by assistant.
+Fixed shortlist has two independent choices per completed component: CPUs Core Ultra 7 265 / Ultra 9 285; motherboards ASUS TUF GAMING Z890-PRO WIFI / ASUS PRIME Z890-P non-WiFi; quad-port Intel I226 NICs ZimaBoard ZBA022-EU / KALEA 11870587. Operator now fixes 32 GB RAM pair Crucial CP2K16G60C36U5B (first) and Patriot PVV532G600C36K (alternative), both below EUR 500; QVL confirmation remains pending. PSU evaluation now includes operator-available Pure Power 13 M 1200W at EUR 126 (provisionally favored among available be quiet! units), 850W EUR 139, 1000W EUR 145, versus earlier Pure Power 13 M 750W/Seasonic alternatives that are not assured available from the operator's supplier. This workflow is independent of the defective BOSGAME return. No purchases, BIOS low-limit physical experiment, DIMM qualification or idle-power measurements performed by assistant.
 
 ## Next action
 
