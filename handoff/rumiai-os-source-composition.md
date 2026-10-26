@@ -45,6 +45,8 @@ Refresh remote HEADs before resuming. These SHAs are checkpoints only, not autho
 
 ## Fixed task-local choices
 
+- **User-agreed design direction (2026-10-26, not yet a promoted implementation contract):** one package-owned semantic composition/dependency/provider model, with three distinct visibility/materialization scopes: **global**, **consumer-contextual**, and **package-private**. Physical projection may differ by resource class (existing command symlinks/launchers, existing typed facility/provider resolution and environment, or direct package-local access). Do not impose a universal symlink graph or a parallel dependency resolver by convenience; the unresolved implementation choices must be tested before specification promotion.
+
 - **Explicit user hold (2026-10-26):** Do not modify `rumiai-os` at all until the user explicitly authorizes that repository. It is available only as an unchanged factual/source reference for extraction. Do not modify `rumiai-tests` at all until the user explicitly reopens its heavily questioned design; do not schedule, write, migrate or run that repository's tests as a prerequisite to extracting other independent packages. This instruction supersedes earlier next-action suggestions to change those repositories. Use proportionate, real, package-local validation in an authorized independent source/PoC repository instead.
 
 - Keep `m`, `pkg`, their real prerequisite core facilities, and the user-selected fundamental shared capabilities together in one self-contained `m-core` source project; this source/release arrangement is the intended direction, not yet the published/current runtime layout.
@@ -395,6 +397,69 @@ Latest check-runs for `m@a033e509` show the three Ubuntu jobs in run `4032842162
 
 ## Working design / open questions
 
+### Runtime composition matrix and resource packaging choices (2026-10-26, provisional)
+
+The user clarified that *logical resolution* means the already existing
+`pkg` facility/provider selection model, not necessarily a new pathname or
+URI resolver. Evaluate the current **symlink + command launcher** mechanism
+against **facility/provider resolution + typed environment** as two existing
+implementations of one underlying package composition intent. Do not pretend
+that either mechanism already handles package-manual discovery, package-local
+`lang` catalog integration or arbitrary runtime libraries.
+
+Separate four independent axes for each published component:
+
+1. **Distribution unit**: files bundled with one binary release, separate
+   independently released component package, or distribution shared by a
+   compatible family of binary releases.
+2. **Logical selection**: concrete package/version, package default,
+   consumer dependency/facility binding, compatibility/locale selection. The
+   existing facility contract represents substitutable provider-independent
+   capabilities, not automatically every ordinary library or resource.
+3. **Exposure scope**: global, consumer-contextual, package-private.
+4. **Physical access**: executable symlink/launcher, pre-resolved environment
+   or consumer-local projection, direct private path/runtime import, or
+   resource-specific lookup. A physical projection is derived from validated
+   package state, never an independent graph authority.
+
+Resource granularity is independently open, especially for `manual` and
+`lang`: (A) release-owned bundled copies, (B) always separately released
+resource packages, or (C) optional component packages shared across some
+compatible versions (often—but not necessarily—one major). Do not assume
+same major proves identity or semantic/API/message-key compatibility;
+specific documentation must match the selected executable/library API,
+while translations must cover the message identities required by that
+consumer. If split, design truthful optional vs required resource
+dependencies and version binding, install/uninstall/GC behavior, fallback,
+and user-facing discovery. Splitting must not require misclassifying ordinary
+resource dependencies as substitutable facility contracts.
+
+Illustrative matrix, not yet implementation contract:
+
+```text
+content         typical scope       currently available access
+m command       global              internal executable
+pkg command     global              pkg-default links + real launcher
+private lib     package-private     package-local import
+shared lib      consumer-context    facility env possible; generic lib usage open
+m manual        global              global res/sys/manual lookup
+pkg manual      public/consumer     retained in pkg root; publication open
+m lang          global              current sys lang selector and fallback
+pkg lang        consumer/private    retained in pkg root; publication open
+```
+
+Acceptance scenarios for the architectural decision: two consumers bind
+different compatible provider versions concurrently without accidental
+global takeover; selected command/manual describe the same API; separate
+documentation or locale pack shared by several application releases is
+selected by declared compatibility, survives updates/uninstalls safely and
+does not contaminate other consumers; normal command and message access
+do not repeatedly recompute the dependency graph; global discovery handles
+identities/collisions without forcing a second authoritative registry.
+Benchmark the real costs and failure paths of symlink and facility-based
+materialization before adding a new typed part or resolver.
+
+
 - Verify the newly independent `m` source revision as a downstream build/composition input and keep its runtime contract aligned with legacy consumers while `rumiai-os` transitions. The first concrete import and its 3-adapter subset are complete.
 - Reuse the released `m-mk` root and tested `pkg-catalog` descriptor as the independent build/release boundary. Keep the published v0.1.0 artifact immutable while future mk work proceeds forward in source.
 - Keep the `pkg-catalog` authority separate from the source checkout but resolve catalog selection/bootstrap availability only when an actual operation requires it.
@@ -403,7 +468,7 @@ Latest check-runs for `m@a033e509` show the three Ubuntu jobs in run `4032842162
 
 ## Next action
 
-1. With independently published `m-mk` and `m-jsc` validated through public `pkg install`, proceed to the next independent package candidate (`pkg-analyze`) after checking its global runtime-library dependencies and catalog surface.
+1. Before extracting further shared-library/resource consumers such as `pkg-analyze`, compare and validate the single semantic composition model across `bin`, `lib`, and `res`: global/contextual/private exposure, symlink vs facility/provider projections, and bundled vs shared-major/compatible resource package distribution. Do not promote unresolved mechanisms into specifications.
 2. Continue analyzing ownership/dependency boundaries for `pkg-analyze`, terminal primitives/menu/vsed/editor, gitman, SSH/rsudo administration, testlab, JavaScript core/UI and Web components. Reuse existing independent projects and package facilities rather than duplicating implementation.
 3. **On hold until explicit user authorization:** any edit or migration to old `rumiai-os`, and any work on `rumiai-tests` (including re-alignment of its permanent suite). Do not treat those holds as validation blockers for independently released packages.
 4. Independently maintain core `m` package adapter completeness under a separate authorized workstream; its adapter gaps should not be mistaken for missing user-installable product packages.
