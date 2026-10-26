@@ -1,7 +1,7 @@
 # Proxmox replacement hardware selection
 
 Status: Active
-Updated: 2026-10-25 (Europe/Rome; Samsung 990 EVO comparison added)
+Updated: 2026-10-26 (Europe/Rome; staged acquisition feasibility)
 
 ## Goal
 
@@ -258,6 +258,18 @@ User requests evaluation of **Samsung 990 EVO 2 TB MZ-V9E2T0BW**, not the 990 EV
 
 **Storage-policy caveat:** all three are consumer SSDs without verified complete enterprise-style PLP. ZFS versus LVM-thin and mirrored versus single disk remain unselected, requiring backup/UPS decisions independently. No SSD purchased or physically evaluated.
 
+## Staged acquisition and independent testing (2026-10-26)
+
+The operator expects they may **not purchase all new Proxmox hardware in a single order**, and asks to reuse a **working older Intel Core i7 PC**, thought to contain DDR3, to test components autonomously before the final host can boot. This is an **evaluation of staging**, not an operator-fixed purchase sequence. Exact old PC CPU/motherboard/socket/memory/PCIe slots/PSU are **not known in current RumiAI repository**; obtain `sudo dmidecode -t baseboard`, `sudo dmidecode -t memory`, `lscpu`, `lspci -nn` from old host as practical. Do not infer old motherboard generation from the branding "i7" alone.
+
+**Memory/CPU constraints established:** both operator-shortlisted boards ASUS TUF GAMING Z890-PRO WIFI and ASUS PRIME Z890-P non-WiFi have only **DDR5 DIMM sockets** and support Intel **Core Ultra 200 series LGA1851**. DDR3 cannot physically/electrically work in either. New DDR5 can be separately tested on old i7 only if its motherboard itself supports DDR5 (contradicts an actually DDR3-fitted board); DDR3 i7 CPU and DDR5 new CPU are non-interchangeable socket/generation-wise. Links: https://www.asus.com/it/motherboards-components/motherboards/tuf-gaming/tuf-gaming-z890-pro-wifi/techspec/ and https://www.asus.com/it/motherboards-components/motherboards/prime/prime-z890-p/techspec/ ; CPU https://www.intel.com/content/www/us/en/products/sku/241068/intel-core-ultra-7-processor-265-30m-cache-up-to-5-30-ghz/specifications.html .
+
+**Can test before new platform:** standalone planned PCIe 2.5GbE NIC on old PC **if** suitable physical x4-or-larger PCIe slot and adequate firmware/OS support; Linux enumerate 4 controllers/ports, negotiate links and sustained throughput. This does **not establish future ASUS PCIe slot physical coexistence with a wide Nvidia GPU or correct IOMMU groups/passthrough**, whose topology depends on actual target board. Planned NVMe M.2 2280 SSD on old PC if an M.2 NVMe-capable socket is available, **otherwise** via PCIe-to-NVMe x4 card and suitable available slot (a USB NVMe case tests basic operation but not native PCIe APST/ASPM, throughput, passthrough, boot or cooling). Old BIOS may not support **boot** from NVMe although Linux can discover it as a secondary data disk. Test recognition, SMART/temperature, read/write and sustained operation on a blank new drive, cautiously avoiding other disks. Both candidate 1200W ATX PSUs can be tested with the old PC if motherboard power connectors match and cables **belong to new PSU**, not swapped modular PSU cables; wall power test on the old machine is not representative of new platform idle; semi-passive fan may not spin at low load. Thermalright Phantom Spirit 120 SE officially supports LGA115x/1200/1700/1851, so can test physical mount/fans on a matching old socket **if** correct manufacturer's brackets included: https://www.thermalright.com/product/phantom-spirit-120-se/ . Already owned ALAMENGDA AL02 ATX can be physically trial-fitted with an older compatible ATX board if suitable standoffs, no electrical signal validation of new board.
+
+**Minimum independently bootable target subset:** ASUS motherboard + matching LGA1851 CPU (Ultra 7 265 / Ultra 9 285, non-F iGPU) + **at least one** compatible DDR5 UDIMM + appropriate mounted CPU cooler/fan + compatible working ATX PSU and 24-pin/CPU EPS cabling + monitor/USB keyboard. USB Linux live environment or UEFI RAM test suffices to run BIOS, memory test and PL1/PL2 measurement planning **without buying SSD or PCIe NIC**. This does **not verify final 2x16GB memory kit until both sticks are present**, nor platform idle under final PCIe inventory. The user's existing PSU might be reused **temporarily** only after its age, electrical health, CPU connectors and output quality are confirmed; do not assume an old supply is safe. New motherboard cannot complete full POST/UEFI without matching CPU/RAM; BIOS FlashBack (where explicitly supported) is firmware management only, not a meaningful substitute for boot/memory stability validation. MemTest86 UEFI USB https://www.memtest86.com/memtest86.html supports DDR5; test each installed DIMM/slot configuration at JEDEC first, then optionally XMP, and keep logs if any error.
+
+**Practical purchasing order if minimizing immediate expenditure:** individually verifiable SSD or NIC or PSU first *only if old-PC compatibility is established*, or acquire new motherboard+CPU+DDR5+cooler as a **single bootable test block** using qualified old PSU, then add NVMe/NIC/new PSU later. Prefer purchasing mutually-dependent parts close together so retailer return/testing windows overlap (hardware-only warranty cannot compensate for inability to complete a timely integrated test). Selected RAM kit is 2x16GB Crucial CP2K16G60C36U5B or Patriot PVV532G600C36K: do not substitute DDR3, and ASUS QVL still to check. Fans deliberately deferred. No operator-fixed acquisition order, no components physically tested, and old-PC inventory still unknown.
+
 ## Completed
 
 - Identified compatible LGA1851 CPU pair and initial motherboard shortlist from official model specifications and Italian market price indications.
@@ -270,6 +282,7 @@ Owned and selected base chassis: **ALAMENGDA AL02 ATX open frame**, to be instal
 
 ## Next action
 
+0. Identify exact older i7 motherboard/RAM/PCIe/PSU inventory to classify component tests and choose acquisition groups; DDR3 is not compatible with either DDR5 ASUS Z890 board.
 1. Confirm user's preference and actual retailer offers for Samsung 990 PRO 2 TB vs WD Black SN7100 2 TB, weighing Linux idle/thermal efficiency and exposed hotspot sensors, Samsung DRAM and high concurrency, and price. Both are consumer drives without verified hardware PLP. Capacity is fixed at 2 TB for current comparison; no purchase or filesystem choice finalized.
 2. Complete purchase costing (CPU, motherboard, NIC, RAM, PSU, cooler and SSD) and RAM QVL validation; owned AL02 costs zero. Preserve future large GPU and x4 NIC coexistence. Cabinet fan selection is deliberately deferred.
 3. Before purchase, seek model/BIOS evidence of independent low PL1/PL2 with non-K CPU; after assembly plan idle-power and stability measurement.
