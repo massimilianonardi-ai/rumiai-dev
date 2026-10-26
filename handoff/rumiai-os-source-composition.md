@@ -440,6 +440,48 @@ shared-major-family installable packages. Identical source files may be
 reused when producing versioned artifacts. This does not decide the
 independent resource-access and visibility contracts.
 
+### PATH-oriented command discovery versus contextual resource lookup (2026-10-26, user clarification)
+
+The user identified a stronger reason for the existing `bin` projection:
+**a shell command name is discovered via ordered PATH directories without
+necessarily knowing its provider**, whereas library and resource requests
+normally carry a logical identity and a consumer/owner context. Large
+numbers of installed packages should not linearly expand the number of
+searched PATH directories. A small stable set of indexed filesystem
+directories plus package-owned command symlinks provides efficient native
+shell discovery independently of the number of installed commands. The
+current `m` PATH already has multiple ordered `sys-osarch`, `sys`,
+`ext-osarch`, `ext` roots; the architectural goal is *bounded stable
+PATH roots*, not literally a single directory or a promise of quantified
+speedups without measurements.
+
+This refines (but does not negate) the shared component-to-file/directory
+resolution idea: **discovery** of an unqualified executable name and
+**contextual lookup** of a known component are distinct use cases. The
+normal `bin` projection is a derived PATH index; package dependency,
+provider and version selection remain authoritative in `pkg`, and a
+command's public symlink must retain the genuine package launcher so
+that dependency/environment application is not bypassed.
+
+For ordinary `lib` and `res` consumers, prefer a precisely selected
+file or directory derived from package identity, consumer binding and
+resource kind; do not require global symlinks for all package content
+merely to mirror `bin`. Keep private package files directly accessible
+within their validated package root. Contextual resolution should be
+reused/cached at appropriate setup/import boundaries for hot-path
+operations such as repeated localization messages, not repeated on
+every lookup. Global manual-topic enumeration and similar deliberate
+*discovery* requests remain legitimate exceptional searches but need
+not force a global symlink projection for each resource.
+
+One semantic composition model, two intentionally distinct lookup
+patterns (PATH name discovery versus targeted contextual resolution).
+Scope and version stability, collisions/precedence, return identity and
+error behavior are still unsettled API requirements. This is a working
+design criterion, not yet a new public resolver, namespace or materialization
+mandate; no change to `RESOURCE-MODEL.md` or other promoted contracts is
+implied.
+
 ### Filesystem component resolution as common access primitive (2026-10-26, candidate)
 
 The user proposed collapsing the **component lookup** portion of global,
