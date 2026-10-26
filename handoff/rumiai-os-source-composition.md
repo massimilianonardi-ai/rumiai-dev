@@ -470,100 +470,28 @@ Neither bootstrap nor package-private lookup may introduce mandatory
 catalog/network access. Code/manual/lang continue bundled in each package.
 The existing rumiai-os and rumiai-tests repository freeze remains binding.
 
-### PATH-oriented command discovery versus contextual resource lookup (2026-10-26, user clarification)
+The existing command PATH lookup is a consumer-side filesystem
+optimization: a bounded set of global command directories avoids growing
+PATH with every package. Contextual components can instead use pre-resolved
+provider environments, package-local paths or selectively materialized
+per-consumer directories. These are **not distinct semantic resolvers**.
 
-The user identified a stronger reason for the existing `bin` projection:
-**a shell command name is discovered via ordered PATH directories without
-necessarily knowing its provider**, whereas library and resource requests
-normally carry a logical identity and a consumer/owner context. Large
-numbers of installed packages should not linearly expand the number of
-searched PATH directories. A small stable set of indexed filesystem
-directories plus package-owned command symlinks provides efficient native
-shell discovery independently of the number of installed commands. The
-current `m` PATH already has multiple ordered `sys-osarch`, `sys`,
-`ext-osarch`, `ext` roots; the architectural goal is *bounded stable
-PATH roots*, not literally a single directory or a promise of quantified
-speedups without measurements.
+The existing file/directory result remains useful as a *requested output*
+or as one field of the resolved context, but not the universal result type.
+An environment may include typed value members and service behavior that
+cannot be represented by a pathname. A generic context must not override
+the trusted facility part-specific contracts or bypass the public launcher
+for commands.
 
-This refines (but does not negate) the shared component-to-file/directory
-resolution idea: **discovery** of an unqualified executable name and
-**contextual lookup** of a known component are distinct use cases. The
-normal `bin` projection is a derived PATH index; package dependency,
-provider and version selection remain authoritative in `pkg`, and a
-command's public symlink must retain the genuine package launcher so
-that dependency/environment application is not bypassed.
-
-For ordinary `lib` and `res` consumers, prefer a precisely selected
-file or directory derived from package identity, consumer binding and
-resource kind; do not require global symlinks for all package content
-merely to mirror `bin`. Keep private package files directly accessible
-within their validated package root. Contextual resolution should be
-reused/cached at appropriate setup/import boundaries for hot-path
-operations such as repeated localization messages, not repeated on
-every lookup. Global manual-topic enumeration and similar deliberate
-*discovery* requests remain legitimate exceptional searches but need
-not force a global symlink projection for each resource.
-
-One semantic composition model, two intentionally distinct lookup
-patterns (PATH name discovery versus targeted contextual resolution).
-Scope and version stability, collisions/precedence, return identity and
-error behavior are still unsettled API requirements. This is a working
-design criterion, not yet a new public resolver, namespace or materialization
-mandate; no change to `RESOURCE-MODEL.md` or other promoted contracts is
-implied.
-
-### Filesystem component resolution as common access primitive (2026-10-26, candidate)
-
-The user proposed collapsing the **component lookup** portion of global,
-consumer-contextual and private runtime access into a command/API that
-accepts enough identity/selection/context information to yield **one
-filesystem pathname identifying either a file or a directory**. This is a
-promising common *lookup* contract for materialized `bin`, `lib`, `res`
-and package roots, not an accepted name/signature or implementation yet.
-
-Candidate request dimensions to evaluate (not all caller-supplied every
-time): component identity and, only where necessary, component kind;
-consumer/package context for contextual dependency bindings; optional
-explicit concrete version or constraint; facility/capability identity
-when substitutable provider resolution applies; relevant osarch and locale,
-usually inferred from already-authoritative current selection.
-
-The core operation must select through the already-authoritative `pkg`
-package/concrete/dependency/provider context, or the existing `m` core
-semantic roots, returning a unique, validated pathname. The filesystem
-representation may be a canonical concrete-package path, a selected
-symlink projection or an already-materialized consumer-local view; choosing
-one has observable update/pinning, security and lifetime implications.
-Returning the raw private executable rather than the proper package
-launcher must not bypass dependency/environment application.
-
-Contract constraints to resolve before promotion:
-- one result vs no-match vs ambiguity vs invalid or unavailable context;
-  diagnostics and status are independent of the successful path payload;
-- caller-specified type versus type derived from identity/namespace,
-  relative-versus-absolute and physical-versus-semantic selected paths;
-- existing paths versus precomputed semantic paths (contrast `state-path`);
-  file/directory validation, permissions, confinement and path traversal;
-- stable concrete version for an executing consumer versus mutable global
-  default symlinks; races across update/removal and cache invalidation;
-- directory lookup vs discovery of an arbitrary set of topics/components:
-  whether enumeration remains the owning higher-level interface;
-- high-frequency localized lookup must not repeatedly traverse dependency
-  graphs; the existing `lang` final identifier-string fallback occurs
-  precisely when no file exists, and belongs to the translation operation;
-- non-filesystem facility results (e.g. `env` literal values, service
-  behavior) are **outside** this path-only primitive and keep their trusted
-  typed-part contracts.
-
-Existing `state-path`, `manual`, `lang`, `loadlib/loadsyslib`,
-command launchers and `pkg` facility/provider selection demonstrate parts
-of the required behavior; do not duplicate their current authorities.
-`RESOURCE-MODEL.md` currently explicitly rejects an *unmotivated*
-universal resource resolver. It is still authoritative while this broader
-candidate is evaluated; no novel public command/function, namespace or
-canonical spec change is authorized by this handoff alone.
-Manual and localization content remain unconditionally **bundled with the
-same software package**, regardless of how the path is resolved.
+Requirements to validate include explicit/default selection, consistent
+version bindings, path/variable safety, ownership and collision handling,
+source resource/package boundaries, deterministic ambiguity failures,
+configuration precedence, update concurrency and the lifetime of a prepared
+environment. Global manual discovery remains distinct from targeted
+manual selection; localized lookup should reuse prepared context rather
+than solve provider dependencies for every message. Existing
+`state-path`, `manual`, `lang`, `loadlib/loadsyslib` and pkg provider
+selection remain authoritative until an explicit contract is promoted.
 
 Illustrative matrix, not yet implementation contract:
 
@@ -627,7 +555,7 @@ resolve those questions or start implementation in the present unit.
 
 ## Next action
 
-1. Before extracting further shared-library/resource consumers such as `pkg-analyze`, define and compare implementation-independent access contracts for `bin`, `lib`, and `res` across global/consumer-contextual/private visibility; test the existing symlink/launcher and facility/provider approaches. Resource distribution has been fixed to one concrete software package including its own manuals and translations. Do not promote unresolved access mechanisms into specifications.
+1. Before extracting further shared-library/resource consumers such as `pkg-analyze`, develop and verify a single context-resolution/environment-preparation contract for `bin`, `lib`, and `res`. Treat global shell PATH command lookup as an optimized materialized view, compare facility/provider environment setup against per-consumer symlink groups, and validate precedence, lifetime, and efficiency before proposing a public API or changing current specifications. Manuals and translations stay bundled in their owning package.
 2. Continue analyzing ownership/dependency boundaries for `pkg-analyze`, terminal primitives/menu/vsed/editor, gitman, SSH/rsudo administration, testlab, JavaScript core/UI and Web components. Reuse existing independent projects and package facilities rather than duplicating implementation.
 3. **On hold until explicit user authorization:** any edit or migration to old `rumiai-os`, and any work on `rumiai-tests` (including re-alignment of its permanent suite). Do not treat those holds as validation blockers for independently released packages.
 4. Independently maintain core `m` package adapter completeness under a separate authorized workstream; its adapter gaps should not be mistaken for missing user-installable product packages.
