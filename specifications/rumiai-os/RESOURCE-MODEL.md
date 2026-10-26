@@ -236,6 +236,21 @@ The public access utility name is `manual`, but this resource specification does
 
 Package resources belong to the package and remain in its managed tree/version.
 
+Operational manual content and localization catalogs belonging to a package's
+commands, libraries or application **MUST be distributed in that same concrete
+versioned package artifact**. Separate installable documentation packages,
+language packs or major-version-shared companion resource packages for that
+software are not supported. A release may reuse identical source content from
+another release at build time, but its own installed artifact is complete for
+the manual and localization content it actually provides. A package is not
+required to invent manuals or locales that its software does not provide.
+
+Keeping package resources physically complete does not by itself make them
+globally discoverable: the public access/exposure contract is separate from
+package distribution. Resource ownership, version correspondence and package
+lifecycle remain unified even when the access path is projected or selected
+through another established runtime mechanism.
+
 They are not copied or projected automatically under:
 
 ```text
@@ -300,4 +315,5 @@ RES-17  global operational documentation uses res/<owner>/manual/<topic>
 RES-18  manual topics are extensionless and their content/access semantics belong to DOCUMENTATION-MODEL.md
 RES-19  the manual resource class has no lang-style selector or fallback unless a later explicit contract introduces one
 RES-20  technical testlab scenario resources live under res/sys/testlab/scenarios and their execution semantics belong to TESTLAB.md
+RES-21  package manuals and localization catalogs ship within the same concrete software package artifact, never as independently installable companion resource packages
 ```

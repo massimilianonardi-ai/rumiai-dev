@@ -45,6 +45,8 @@ Refresh remote HEADs before resuming. These SHAs are checkpoints only, not autho
 
 ## Fixed task-local choices
 
+- **Explicit user choice (2026-10-26):** package-owned operational manuals and localization catalogs MUST ship in the same versioned artifact as their owning software; standalone doc/lang packages, including a shared package for one major release family, are categorically excluded. Common source content can still be reused when building releases, but each concrete package distributes its own matching copy. This distribution contract is recorded in `RESOURCE-MODEL.md`; it does not predetermine global/consumer-private resource exposure.
+
 - **User-agreed design direction (2026-10-26, not yet a promoted implementation contract):** one package-owned semantic composition/dependency/provider model, with three distinct visibility/materialization scopes: **global**, **consumer-contextual**, and **package-private**. Physical projection may differ by resource class (existing command symlinks/launchers, existing typed facility/provider resolution and environment, or direct package-local access). Do not impose a universal symlink graph or a parallel dependency resolver by convenience; the unresolved implementation choices must be tested before specification promotion.
 
 - **Explicit user hold (2026-10-26):** Do not modify `rumiai-os` at all until the user explicitly authorizes that repository. It is available only as an unchanged factual/source reference for extraction. Do not modify `rumiai-tests` at all until the user explicitly reopens its heavily questioned design; do not schedule, write, migrate or run that repository's tests as a prerequisite to extracting other independent packages. This instruction supersedes earlier next-action suggestions to change those repositories. Use proportionate, real, package-local validation in an authorized independent source/PoC repository instead.
@@ -428,17 +430,13 @@ Separate four independent axes for each published component:
    resource-specific lookup. A physical projection is derived from validated
    package state, never an independent graph authority.
 
-Resource granularity is independently open, especially for `manual` and
-`lang`: (A) release-owned bundled copies, (B) always separately released
-resource packages, or (C) optional component packages shared across some
-compatible versions (often—but not necessarily—one major). Do not assume
-same major proves identity or semantic/API/message-key compatibility;
-specific documentation must match the selected executable/library API,
-while translations must cover the message identities required by that
-consumer. If split, design truthful optional vs required resource
-dependencies and version binding, install/uninstall/GC behavior, fallback,
-and user-facing discovery. Splitting must not require misclassifying ordinary
-resource dependencies as substitutable facility contracts.
+The resource distribution-unit choice is now **closed** by the explicit
+user decision and promoted in `RESOURCE-MODEL.md`: package-owned `manual`
+and `lang` resources always accompany the software in the same concrete
+artifact. Do not explore separate documentation, translation or
+shared-major-family installable packages. Identical source files may be
+reused when producing versioned artifacts. This does not decide the
+independent resource-access and visibility contracts.
 
 Illustrative matrix, not yet implementation contract:
 
@@ -454,16 +452,44 @@ m lang          global              current sys lang selector and fallback
 pkg lang        consumer/private    retained in pkg root; publication open
 ```
 
-Acceptance scenarios for the architectural decision: two consumers bind
-different compatible provider versions concurrently without accidental
-global takeover; selected command/manual describe the same API; separate
-documentation or locale pack shared by several application releases is
-selected by declared compatibility, survives updates/uninstalls safely and
-does not contaminate other consumers; normal command and message access
-do not repeatedly recompute the dependency graph; global discovery handles
-identities/collisions without forcing a second authoritative registry.
-Benchmark the real costs and failure paths of symlink and facility-based
-materialization before adding a new typed part or resolver.
+The user proposes a uniform, implementation-independent **access contract**
+for consumer operations, without requiring one physical resolver or one
+universal call syntax. Design it against *existing* APIs such as external
+command execution via `m`, `pkg` package/facility selection, `loadlib` /
+`loadsyslib` for core shell libraries, `manual` topic presentation,
+`lang` domain/message lookup, and `state-path` for state. Avoid inventing
+an official `lib` or `res` API name before evaluating reuse and precise
+request/response/ambiguity semantics. Distinguish **selection** (package
+identity, provider, consumer context, default/version) from **operation**
+(execute, source/import, read/present, translate); materialization (symlink,
+facility environment, package-local path) is an implementation choice.
+
+Normal-path contract candidates to evaluate, not yet promoted:
+- execution of the current package command without caller awareness of
+  its physical root, retaining the existing `m`/launcher semantics;
+- retrieval/presentation of the correct manual for a selected command or
+  library and optionally an explicitly selected version, with deterministic
+  ambiguous-name handling; manuals remain bundled in the concrete package;
+- localized message lookup with selected language/fallback and a clear
+  owner/consumer context, with no repeated graph traversal in the hot path;
+- use of a shared library by two different consumers bound to different
+  compatible provider versions, without inadvertent global takeover;
+- private access inside a package without a public projection;
+- clean updates/removal, no dangling projections, no second authoritative
+  package/provider registry; all physical state is derived/recoverable.
+
+Benchmark real symlink and facility/provider materialization costs and
+error/reconciliation cases before proposing any new typed facility part,
+entrypoint or resolver. Do not mistake identical *naming* of operations
+for a meaningful shared semantic contract.
+
+The user also suggested that the technical root `m` **could eventually be
+represented as an already-installed `pkg`**, allowing `pkg` to manage its
+own updates. This idea is expressly **suspended**, not a new requirement,
+task or source change. Any future consideration must first establish
+bootstrap independence, circular-dependency prevention, recovery/rollback,
+integrity, root relocation and safe atomic upgrade behavior; do not
+resolve those questions or start implementation in the present unit.
 
 
 - Verify the newly independent `m` source revision as a downstream build/composition input and keep its runtime contract aligned with legacy consumers while `rumiai-os` transitions. The first concrete import and its 3-adapter subset are complete.
@@ -474,7 +500,7 @@ materialization before adding a new typed part or resolver.
 
 ## Next action
 
-1. Before extracting further shared-library/resource consumers such as `pkg-analyze`, compare and validate the single semantic composition model across `bin`, `lib`, and `res`: global/contextual/private exposure, symlink vs facility/provider projections, and bundled vs shared-major/compatible resource package distribution. Do not promote unresolved mechanisms into specifications.
+1. Before extracting further shared-library/resource consumers such as `pkg-analyze`, define and compare implementation-independent access contracts for `bin`, `lib`, and `res` across global/consumer-contextual/private visibility; test the existing symlink/launcher and facility/provider approaches. Resource distribution has been fixed to one concrete software package including its own manuals and translations. Do not promote unresolved access mechanisms into specifications.
 2. Continue analyzing ownership/dependency boundaries for `pkg-analyze`, terminal primitives/menu/vsed/editor, gitman, SSH/rsudo administration, testlab, JavaScript core/UI and Web components. Reuse existing independent projects and package facilities rather than duplicating implementation.
 3. **On hold until explicit user authorization:** any edit or migration to old `rumiai-os`, and any work on `rumiai-tests` (including re-alignment of its permanent suite). Do not treat those holds as validation blockers for independently released packages.
 4. Independently maintain core `m` package adapter completeness under a separate authorized workstream; its adapter gaps should not be mistaken for missing user-installable product packages.
