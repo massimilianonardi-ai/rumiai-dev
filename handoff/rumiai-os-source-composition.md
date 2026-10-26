@@ -594,6 +594,116 @@ without binding the new ideal model to current `pkg` or launcher
 contracts. This remains working design, not a promoted contract or
 implemented runtime behavior.
 
+### `context` lifecycle: prepare, activate, derive, replace, restore (2026-10-26, first-principles candidate)
+
+This work unit develops **candidate lifecycle semantics**, not an
+implementation or promoted API shape. Starting point: the user has
+accepted `context` as a POSIX sh function, requiring one coherent
+runtime composition for commands/libraries/resources/state, primarily
+exposed through a prepared shell environment. It must honor explicit
+requests plus declared inheritance/propagation rules and can optionally
+materialize context-specific filesystem command views. Existing
+pkg/launcher contracts provide evidence, *not constraints on ideal
+design*. Manual and lang remain bundled in the owning concrete package.
+
+**Separate conceptual objects** (not endorsed names/namespaces):
+- *request*: desired consumer identity, selected package/versions,
+  compatible capabilities, state scope/profile and explicit policy
+  choices, with defaults/inheritance filled only when unambiguous;
+- *resolved plan*: a validated, coherent selection graph and proposed
+  environment delta, including values, their source, unset-vs-empty
+  distinction, export/preservation rules, path ordering, resource
+  references, required derived filesystem projections and lifetimes;
+- *active context*: the result of applying the prepared plan to the
+  invoking shell; the active context carries enough ownership metadata
+  to reverse its own contributions and convey propagation rules;
+- *derived filesystem view*: optional disposable/index/cache symlink
+  tree for commands or other genuinely path-search-driven consumers,
+  created from pinned provider/package selections, not an independent
+  resolution registry.
+
+**Candidate transitions**:
+1. *Create/request*: acquire explicit parameters and inherited selection
+   policies; no mutations, no implicit installation or directory
+   creation merely from requesting a context.
+2. *Resolve/prepare*: solve constraints once, select concrete versions,
+   calculate relevant `state-path`-like area paths and provider/resource
+   roots, validate all reserved/protected values and variable operations,
+   and stage any required projections. The common path must not repeat
+   graph resolution for every subsequent consumer access.
+3. *Activate*: only after preparation succeeds, change the current POSIX
+   shell's managed variables and ordered search paths, retaining enough
+   previous state for deterministic restoration. A command in a child,
+   pipeline or command substitution cannot mutate its calling shell.
+4. *Derive*: a nested/child context inherits only the values **and
+   propagation policies** permitted by its parent, adds explicit
+   choices, and resolves the resulting composition. Protected parent
+   bindings cannot be silently overwritten; conflicts need a
+   deterministic policy. An independently invoked native child without
+   the context mechanism cannot be forced by shell variables alone to
+   enforce such policies.
+5. *Replace*: switching A -> B in the **same shell** replaces the managed
+   projection of A with B from a specified baseline, rather than
+   appending B blindly to A's PATH or leaking A's cache/config variables.
+   Re-applying the same selection should be idempotent. Distinguish
+   this transition from intentionally deriving B as a child of A.
+6. *Restore/release*: where explicitly supported, return the shell's
+   managed values (including *unset* versus *set-empty* and relevant
+   export attributes) to the state preceding activation, remove
+   ownership of superseded PATH entries and release only
+   context-owned temporary projections. Do not promise to undo
+   arbitrary sourced code, loaded shell functions, chdir, traps,
+   external filesystem modifications, or changes by other actors.
+   Detect or specify precedence for user modifications to managed
+   variables while the context is active; silent clobbering is unsafe.
+
+**Version/freshness recommendation for evaluation**: for non-default
+consumer contexts, resolve concrete package/provider identities at
+activation and keep their intended meaning stable until explicit
+refresh/replacement. External default/config/profile changes affect a
+fresh context, not silently mutate a pinned active context. A global
+default command PATH may keep its existing live-fast-path behavior as a
+deliberate special case. A pinned consumer must not route through a
+mutable global default symlink if that can change its selected version.
+For state paths, decide whether a pathname contains live `current`
+selectors or identifies the selected profile snapshot; these differ
+observably and cannot both be promised simultaneously.
+
+**Behavioral scenarios to use for validation**:
+A. One context selection yields coherent `conf`, `cache`, `home`,
+   osarch and resource variables without one `state-path` process per
+   area; no eager creation of all possible areas.
+B. A selects Node/provider v1 and B v2. A -> B in one shell contains no
+   duplicated A PATH prefixes or leftover A-owned values; A and B run
+   concurrently in different shells; an optional B symlink view points
+   to selected concretes and preserves launch obligations.
+C. A protects its effective HOME in a nested Chromium/Electron chain.
+   B attempts to replace HOME. Derived B must preserve or explicitly
+   fail, never silently override, and the trusted NSS projection must
+   match the actual final browser HOME. Do not mistake this logical
+   policy for POSIX authorization/security.
+D. Failed selection/projection cannot leave half-applied shell env.
+   Exact rollback of arbitrary code is out of scope; narrow the trusted
+   mutation surface until the needed guarantee is feasible.
+E. A -> B -> restoration yields the pre-A values for context-owned
+   keys and ordered search path. Decide explicit handling for values
+   modified intentionally by the user during A.
+F. Subsequent change to package-default, facility binding or system
+   profile requires clear *new* activation or explicit refresh to
+   affect an active pinned context; no version drift mid-execution.
+
+**Open, not settled**: minimal user-facing operations and parameter
+shape; whether nested contexts need a stack (and how deep), whether
+replace is the default while derive is explicit; exact restore
+semantics for externally modified variables; path identity vs selector
+freshness; whether a prepared plan is an in-shell object or durable
+validated snapshot; package GC/retention for active processes; and
+whether/when context-specific symlink views outperform direct variables.
+The shell cannot atomically commit arbitrary assignments, but complete
+preflight plus an intentionally narrow trusted apply phase can reduce
+partial-update exposure. Run proportional POSIX-shell/host PoCs only
+after these desired semantics are sufficiently clear.
+
 ### Unified contextual environment resolution (2026-10-26, working design)
 
 The user's correction: one composition resolver should cover executables,
@@ -709,7 +819,7 @@ resolve those questions or start implementation in the present unit.
 
 ## Next action
 
-1. Define the optimal **`context`** POSIX sh semantics from first principles: explicit selections + protected inherited values, **single-call environment-first materialization** of context-specific state paths/osarch/profile/provider/resource references, and optionally prepared per-context PATH symlink views. Specify context replacement, no duplicate PATH layers, snapshot/selector freshness, nested propagation and measurable costs before a separate pragmatic assessment and canonical migration plan. Current pkg/launcher contracts are evidence, not ideal-design constraints; keep manual/lang bundled and frozen repositories untouched.
+1. Advance the first-principles **`context`** lifecycle model (request -> prepare -> activate -> derive/replace -> restore), including stable consumer versions, protected inherited variables, shell-environment rollback boundaries, and optional contextual PATH views. Evaluate scenarios A-F and choose the smallest user-facing operation set plus explicit ownership/precedence/freshness semantics; only then perform the separate pragmatic POSIX implementation/performance and migration assessment. Do not prematurely inherit existing pkg/launcher constraints; preserve bundled manual/lang and frozen repositories.
 2. Continue analyzing ownership/dependency boundaries for `pkg-analyze`, terminal primitives/menu/vsed/editor, gitman, SSH/rsudo administration, testlab, JavaScript core/UI and Web components. Reuse existing independent projects and package facilities rather than duplicating implementation.
 3. **On hold until explicit user authorization:** any edit or migration to old `rumiai-os`, and any work on `rumiai-tests` (including re-alignment of its permanent suite). Do not treat those holds as validation blockers for independently released packages.
 4. Independently maintain core `m` package adapter completeness under a separate authorized workstream; its adapter gaps should not be mistaken for missing user-installable product packages.
