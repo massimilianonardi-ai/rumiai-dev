@@ -47,6 +47,7 @@ Always recheck HEADs before resuming.
 - Inspected current catalog conventions and core package adapter/launcher.
 - Committed 20 files to `pkg-catalog` as `e8679ece70b523c7798bc4cc10bfd450810fcf64`: GitHub repository descriptors, two platform-specific range anchors, SHA-256 verification settings, source-format selectors and standard native `m` launchers/links (`utm`, `utmctl`, `tart`).
 - Post-change review verified that all three `cmd/` blobs have executable Git modes `100755`, metadata blobs `100644`, correct `macos-arm64` placement and canonical launcher script content. Live GitHub release assets were rechecked: names, published upload state, stable tags and expected SHA-256 digests match. The current catalog main HEAD was rechecked at the new commit.
+- On the available Linux container, POSIX `/bin/sh -n` passed for the standard UTM/Tart wrapper templates; their exact generated text was separately matched against the committed catalog command blobs. This validates syntax only, not actual `m` package launch.
 - No native extraction, code-signing, Gatekeeper, launcher or VM test was run; the current execution environment is Linux without a macOS host, and external release downloads were unavailable in the local container.
 
 ## Current state
