@@ -229,7 +229,7 @@ was not rebuilt from the later CI/test-only commit.
 
 Canonical source/distribution and package-local manual boundaries were
 realigned forward in `rumiai-dev` commits `12c90959d4ba7aa376024ee4e684ff137665826f`
-and `fd8428f5adc6ea09c55a0c287a8c2fdd53956191`.
+and `fd8428f5adc6ea09c55a0c287a8c2fdd53956191`, followed by a stale global-library example correction at `d5e16b15ed366dc04dc30e13e37a637a039850d6`.
 No `m` or legacy `rumiai-os` source modifications or physical
 production-host deployment were made in this unit. Existing legacy
 `rumiai-os/bin/sys/mk` and `lib/sys/js/mk.lib.js` still require
