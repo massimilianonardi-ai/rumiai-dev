@@ -45,6 +45,8 @@ Refresh remote HEADs before resuming. These SHAs are checkpoints only, not autho
 
 ## Fixed task-local choices
 
+- **Explicit user hold (2026-10-26):** Do not modify `rumiai-os` at all until the user explicitly authorizes that repository. It is available only as an unchanged factual/source reference for extraction. Do not modify `rumiai-tests` at all until the user explicitly reopens its heavily questioned design; do not schedule, write, migrate or run that repository's tests as a prerequisite to extracting other independent packages. This instruction supersedes earlier next-action suggestions to change those repositories. Use proportionate, real, package-local validation in an authorized independent source/PoC repository instead.
+
 - Keep `m`, `pkg`, their real prerequisite core facilities, and the user-selected fundamental shared capabilities together in one self-contained `m-core` source project; this source/release arrangement is the intended direction, not yet the published/current runtime layout.
 - The clean-host prerequisite boundary must not include Node.js, `mk`, or an already installed RumiAI OS. `m` initializes and `pkg` operates without any of them.
 - Keep `pkg-catalog` in its already independent repository as the essential catalog authority consumed by `pkg` operations; ordinary `m` bootstrap must not require catalog/provider resolution or network access.
@@ -258,6 +260,51 @@ Both browser installations used the public `./m pkg install <browser>` with the 
 
 This closes the **real Linux native package launch / automatic NSS projection / fail-closed** validation scenario for Chrome and Chromium on the exact m revision, supplementing the separate prior real Electron PASS on `m@5c1e02a`. It does **not** prove web-page HTTPS validation by the browser engine, Chrome/Chromium one-shot inherited HOME behavior, GUI/browser-profile integration, or a permanent `rumiai-tests` run. The preflight test-only SKIP remains recorded as a corrected preliminary attempt, not a product failure. The previously identified Chromium historical compare-via-network mismatch with the current package spec/tests remains open and is not altered by successful browser installation. No code or test repository mutation is implied by this physical evidence.
 
+### Remaining first-party package inventory and isolated jsc extraction (2026-10-26)
+
+A fresh comparison of `rumiai-os/main@673df1a2d5476ad57d54c7bc7e1fc2deeaf16195`
+(read-only) with standalone `m/master@47e6055f8ccdccee6906ec1de387b17124e56527`
+shows 31 old `bin/sys` command identities and 16 already present in
+standalone `m`. The independently released `mk` accounts for one more,
+leaving 14 old commands to place: `jsc`, `pkg-analyze`, `editor`,
+`read-key`, `readpass`, `readpassv`, `menu`, `vsed`, `gitman`,
+`rssh`, `rsudo`, `rsudo-admin`, `ssh-askpass`, `testlab`.
+They are **not** presumed to require 14 source repositories or packages.
+Current working grouping (not yet a promoted packaging contract):
+`jsc` standalone compiler; `pkg-analyze` standalone developer tool;
+terminal primitives/interactive commands; `gitman` depending on terminal
+facilities; SSH/rsudo administration; `testlab` scenario lifecycle.
+Non-command work includes `lib/sys/js/core`, `core-ext`, `ui`,
+`text-edit.lib.js`, `dynamic-loader.lib.js`, Web/ChatGPT export scripts,
+other global shell libraries, upper RumiAI activation/resources and possible
+duplicates with existing independent Web repos. The new `m` currently has
+five repository adapters (`artifact`, `chrome`, `chromium`, `github`,
+`nodejs`), compared with twelve in old `rumiai-os`; remaining adapters
+are package-runtime implementation responsibilities, not automatically
+separate user-installable packages.
+
+Since the future jsc source repository does not yet exist, a genuine
+**isolated package-local candidate** was staged in
+`rumiai-dev-PoCs/jsc-package-local-runtime` at
+`29bed6bc6cfafc96265c9b4d4b8b9e811b6aa6e9`, under
+`pocs/074-jsc-package-local-runtime`. It copies the exact current
+`rumiai-os` CommonJS engine without modification; the package-local
+POSIX command resolves its sibling engine from its physical command root
+rather than `m/lib/sys/js`, and corrects an inherited invalid `log warning`
+severity to `log warn`. The source archive builder requires no Node.js
+or `mk`; the test-only catalog fixture declares `nodejs =26`, real
+`pkg_integrate` and `pkg_default_apply` are used against a disposable
+copy of standalone `m`, and real managed Node.js executes actual JavaScript
+and CSS compilation. This PoC has not been published in `pkg-catalog` and
+is not a release or evidence for the public `pkg install jsc` path.
+
+GitHub Actions workflow `40315415150` at the exact candidate commit
+passed Ubuntu; the first macOS attempt failed at upstream Node.js release
+API HTTP 403 before compiler execution. Failed-job retry (attempt 2)
+is **PASS Ubuntu and macOS**. Preserve the initial external failure as
+separate evidence. No `rumiai-os`, `rumiai-tests`, `m` or
+`pkg-catalog` files were altered for the jsc PoC.
+
 ## Working design / open questions
 
 - Verify the newly independent `m` source revision as a downstream build/composition input and keep its runtime contract aligned with legacy consumers while `rumiai-os` transitions. The first concrete import and its 3-adapter subset are complete.
@@ -268,10 +315,10 @@ This closes the **real Linux native package launch / automatic NSS projection / 
 
 ## Next action
 
-1. Integrate the independent `m` checkout into the downstream `rumiai-os` composition and reconcile any duplicated original system files, platform-selector state and non-core project ownership without silently changing runtime semantics.
-2. Add suitable permanent regression coverage in `rumiai-tests` for the independent source boundary and public operations, and verify required catalog-adapter compatibility beyond the initial 3-adapter subset. Baseline checkout smoke and managed Node installation evidence already exist on both major hosts.
-3. Realign the permanent mk regression suite in `rumiai-tests` against the independently published `m-mk` and the real package launcher, including watch and full lifecycle behavior; reconcile remaining old monolith consumers before removing legacy system mk.
-4. Continue forward-only source/distribution composition for the remaining legacy `rumiai-os` responsibilities. The independent `m`/`m-mk` boundary is now promoted in current canonical specifications, while broader product composition remains open.
+1. Promote the verified `jsc` package-local candidate into a dedicated source repository and produce a real versioned release with integrity metadata. Only after that publication, add the corresponding authoritative `pkg-catalog` descriptor and validate public `pkg install jsc` against standalone `m`.
+2. Continue analyzing ownership/dependency boundaries for `pkg-analyze`, terminal primitives/menu/vsed/editor, gitman, SSH/rsudo administration, testlab, JavaScript core/UI and Web components. Reuse existing independent projects and package facilities rather than duplicating implementation.
+3. **On hold until explicit user authorization:** any edit or migration to old `rumiai-os`, and any work on `rumiai-tests` (including re-alignment of its permanent suite). Do not treat those holds as validation blockers for independently released packages.
+4. Independently maintain core `m` package adapter completeness under a separate authorized workstream; its adapter gaps should not be mistaken for missing user-installable product packages.
 
 ## Blockers / open questions
 
