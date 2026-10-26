@@ -531,6 +531,69 @@ new public policy operators or an instruction to adopt the old override
 mechanism. Favor free first-principles modeling, followed later by
 pragmatic comparison against current implementations/contracts.
 
+### Environment-first resolved contexts and optional command views (2026-10-26, working design)
+
+The user proposes maximizing the representation of **resolved context
+values in shell environment variables** rather than requiring consumers
+to re-read filesystem selectors, follow many links or invoke resolvers
+individually. This does NOT imply removing the authoritative persistent
+configuration, package payloads or state from filesystem storage:
+the environment should primarily be a derived, ready-to-consume
+projection of the selected context. The POSIX sh `context` function
+must still honor explicitly requested parameters and declared
+inheritance/protected-propagation rules through nested contexts.
+
+Concrete motivation: a consumer that currently invokes
+`state-path` separately for package `conf`, `cache` and other areas
+could receive those already selected paths after a **single**
+`context` call, with names such as `m_CONF_DIR` and `m_CACHE_DIR`
+used by the user as examples, not yet new public variable contracts.
+Similarly the selected osarch, user-state choice, system-state profile,
+package concrete, provider-related paths and resource roots may be
+calculated and exposed to the extent relevant to the consumer.
+Avoid exporting a giant Cartesian product of all state scopes/areas
+or eagerly creating absent state directories. Distinguish state path
+identities and semantic selector paths from immutable physical targets
+so context switching does not silently introduce stale assumptions.
+
+The user also observes that the traditional global/default command
+`PATH` symlink directory is only a *special case*: since multiple
+versions and facility providers can coexist, selected consumer contexts
+may optionally have **prepared filesystem command views** comprising
+symlinks to the appropriate installed package entrypoints, with each
+shell context selecting its corresponding directory through PATH.
+This can retain native shell command discovery efficiency even for
+non-default versions, but creation of per-context bin directories
+is only a candidate materialization tool, to be justified by actual
+benefit and measured overhead. Any command link must preserve required
+launch/environment semantics and validated package identity, not
+bypass a needed launcher.
+
+Conceptual consequences to analyze *before* implementation:
+- one prepared, coherent runtime environment for repeated consumer
+  operations; minimize repeated resolver processes/graph traversals;
+- make context activation and replacement idempotent, avoiding PATH
+  growth, duplicate entries and stale inherited context metadata;
+- define snapshot vs live selector semantics, when context needs
+  refreshing after state-profile, version, facility or language changes;
+- distinguish exported values needed by child processes from
+  current-shell-only function/state metadata, and ensure requested
+  propagation protection remains in force across nested launches;
+- ensure non-POSIX consumers use valid runtime-specific module/library
+  loading mechanisms (no assumed universal LIB_PATH);
+- assess shell environment size, collision/precedence, secret exposure,
+  trusted identity/permission boundaries, and failure-safe application;
+- compare direct exported paths, selective provider environment,
+  and optional per-context symlink views for simplicity, update cost,
+  cleanup, concurrency and normal use performance.
+
+Use current `state-path`, bootstrap semantic roots, provider-environment
+materialization and global command links as *evidence* only: the user
+has expressly authorized first-principles architectural exploration
+without binding the new ideal model to current `pkg` or launcher
+contracts. This remains working design, not a promoted contract or
+implemented runtime behavior.
+
 ### Unified contextual environment resolution (2026-10-26, working design)
 
 The user's correction: one composition resolver should cover executables,
@@ -646,7 +709,7 @@ resolve those questions or start implementation in the present unit.
 
 ## Next action
 
-1. Design the optimal **`context`** POSIX sh function semantics from first principles, including **explicit parameters and declared environment inheritance/propagation rules** that prevent unwanted variable overwrites through nested contexts (validate against effective Chromium HOME/NSS trust). Existing `pkg`/launcher/facility behavior is inspiration/evidence, not a design constraint. Then separately assess simplicity, robustness, performance, POSIX feasibility, migration/compatibility and canonical realignment before implementation or specification promotion. Keep package manual/lang bundled and frozen repositories untouched.
+1. Define the optimal **`context`** POSIX sh semantics from first principles: explicit selections + protected inherited values, **single-call environment-first materialization** of context-specific state paths/osarch/profile/provider/resource references, and optionally prepared per-context PATH symlink views. Specify context replacement, no duplicate PATH layers, snapshot/selector freshness, nested propagation and measurable costs before a separate pragmatic assessment and canonical migration plan. Current pkg/launcher contracts are evidence, not ideal-design constraints; keep manual/lang bundled and frozen repositories untouched.
 2. Continue analyzing ownership/dependency boundaries for `pkg-analyze`, terminal primitives/menu/vsed/editor, gitman, SSH/rsudo administration, testlab, JavaScript core/UI and Web components. Reuse existing independent projects and package facilities rather than duplicating implementation.
 3. **On hold until explicit user authorization:** any edit or migration to old `rumiai-os`, and any work on `rumiai-tests` (including re-alignment of its permanent suite). Do not treat those holds as validation blockers for independently released packages.
 4. Independently maintain core `m` package adapter completeness under a separate authorized workstream; its adapter gaps should not be mistaken for missing user-installable product packages.
