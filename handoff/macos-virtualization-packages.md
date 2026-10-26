@@ -10,7 +10,7 @@ Add reusable `utm` and `tart` package definitions to `pkg-catalog` for `macos-ar
 ## Current repository revisions
 
 - `rumiai-dev`: `6c0cf0bbef14166eb629ddfed9aa1577616e5a97` (pre-task)
-- `pkg-catalog`: `202dbf9de5381bd08951aa4853b7229518a9e870` (source command modes corrected from initial `e8679ece70b523c7798bc4cc10bfd450810fcf64`)
+- `pkg-catalog`: `6a324426f11d151bb43945579d8dd018674dee48` (current main HEAD, with unrelated independent `mk` package); UTM/Tart validated at ancestor `202dbf9de5381bd08951aa4853b7229518a9e870` (command source modes corrected from `e8679ece70b523c7798bc4cc10bfd450810fcf64`)
 - `rumiai-os`: `673df1a2d5476ad57d54c7bc7e1fc2deeaf16195` (inspected; no modification planned)
 - `rumiai-tests`: `89641269b80fc740dfce03b0764ee9e6e49c84e4` (new macOS live tests and Actions workflow; initial test revision `039e8114497e0a9651d231678716f96b9f447358`)
 
