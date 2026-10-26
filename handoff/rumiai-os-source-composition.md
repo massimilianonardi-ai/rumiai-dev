@@ -22,6 +22,8 @@ product architectures. The independent `m` source and separately distributed
 `m-mk` package are now published and verified on hosted Ubuntu/macOS;
 downstream `rumiai-os` composition and permanent-suite migration remain pending.
 
+Full functional validation of the autonomous `m` source is independently tracked in `handoff/m-autonomous-validation.md`, including `pkg` provider/dependency/uninstall, positive `srv` lifecycle, host supervision and all other technical commands. Partial `mk`/`jsc` PASS here does **not** close that workstream.
+
 ## Current repository revisions
 
 Last verified on 2026-10-24:
