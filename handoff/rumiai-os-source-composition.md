@@ -48,6 +48,7 @@ Refresh remote HEADs before resuming. These SHAs are checkpoints only, not autho
 ## Fixed task-local choices
 
 - **Explicit user decisions (2026-10-26):** the public function is named `context` and is a **POSIX sh function**, because it must be able to modify the current shell's environment. Its role is the general composition and activation of a resolved runtime context, including executables as well as libraries/resources; ordinary shell `PATH` lookup is one optimized consumption mechanism. The new architecture/implementation should be designed cleanly from first principles. Existing `pkg`, facility/provider and launcher code and even their present contracts are **inspiration and evidence, not design constraints**: during conceptual design, deliberately explore better semantics even when they would supersede the current architecture. Only after defining the best intended behavior should the team evaluate global practical tradeoffs, migration, compatibility, implementation complexity, robustness and performance. This design freedom is not authorization to modify the current runtime or silently replace current canonical contracts.
+- **Explicit user requirement (2026-10-26):** `context` must compose its effective shell/environment state from **explicit context parameters AND declared inheritance/propagation policies**. Values designated for preservation must not be silently overwritten by intermediate package, provider or nested-launch environment setup. The motivating real operational case is central Chromium certificate trust: effective browser `HOME` (and any deliberately propagated variables) must remain coherent with the trusted NSS certificate projection across nested execution. This is a semantic design requirement, not an endorsement of the existing launcher override API as the future `context` interface.
 - **Explicit user choice (2026-10-26):** package-owned operational manuals and localization catalogs MUST ship in the same versioned artifact as their owning software; standalone doc/lang packages, including a shared package for one major release family, are categorically excluded. Common source content can still be reused when building releases, but each concrete package distributes its own matching copy. This distribution contract is recorded in `RESOURCE-MODEL.md`; it does not predetermine global/consumer-private resource exposure.
 
 - **User-agreed design direction (2026-10-26, not yet a promoted implementation contract):** one package-owned semantic composition/dependency/provider model, with three distinct visibility/materialization scopes: **global**, **consumer-contextual**, and **package-private**. Physical projection may differ by resource class (existing command symlinks/launchers, existing typed facility/provider resolution and environment, or direct package-local access). Do not impose a universal symlink graph or a parallel dependency resolver by convenience; the unresolved implementation choices must be tested before specification promotion.
@@ -481,6 +482,55 @@ Do not modify frozen `rumiai-os` or `rumiai-tests`. No implementation
 or specification promotion has been requested in this naming/design
 checkpoint.
 
+### Declared environment inheritance and propagation (2026-10-26, required context behavior)
+
+The user specifically requires that `context` derive its effective
+environment from **explicit request parameters and specified rules for
+inheriting/passing values between contexts**, including a way to pass
+selected incoming variables through nested composition without overwriting
+them. A plain last-assignment-wins merge is not a sufficient semantic
+contract. The rule should remain meaningful for direct shell application,
+package launcher transitions and nested process execution.
+
+Current-state *evidence only*: `PACKAGE-MODEL.md` documents
+`m_ENV_DO_NOT_OVERRIDE`, a single-invocation request to carry validated,
+already-present caller variables to the final process despite subsequent
+package/provider/user environment layers. It distinguishes unset from
+present-but-empty values, rejects missing and duplicate identifiers and
+control-plane variables, and does not prevent normal dependency and HOME
+state preparation. In `m`, the launcher captures overrides before
+environment application, and the optional NSS browser integration uses
+the final effective `HOME` (including a trusted nested override) before
+executing the browser. `TLS-TRUST.md` specifies centralized approved
+additional CAs, per-effective-HOME NSS database projection on Linux and
+no coupling of writable NSS state between distinct package/service HOMEs.
+Do **not** assume preserving an arbitrary `HOME` assignment is itself
+sufficient to implement Chromium certificate trust.
+
+During unconstrained conceptual design, address at least:
+- for each relevant value: whether it is unset, set-empty or set-nonempty;
+  source identity, explicit assignment, inherited value and allowed override;
+- ordering/precedence between inherited, explicit, package/provider and
+  nested contexts, including protected propagation that cannot be
+  silently replaced and intentional explicit overrides when permitted;
+- different operation kinds where appropriate (retain, assign, remove,
+  ordered search-path composition), with a deterministic conflict policy;
+- which propagation rules survive into children and grandchildren, how
+  trust/control variables stay separate from ordinary application env,
+  and whether scopes can be isolated/replaced/restored;
+- validation before modifying the caller's POSIX shell, minimal exported
+  data, and consistent environment *and* required derived side effects
+  (e.g. NSS synchronization for the actual effective browser HOME);
+- explicit scenario: an outer approved browser context supplies a value
+  that is declared preserved; an intervening package attempts to redefine
+  it; the next nested Chromium/Electron launch receives the intended value
+  and its matching authorized trust projection, or fails deterministically.
+
+These are **behavioral requirements and design questions**, not names of
+new public policy operators or an instruction to adopt the old override
+mechanism. Favor free first-principles modeling, followed later by
+pragmatic comparison against current implementations/contracts.
+
 ### Unified contextual environment resolution (2026-10-26, working design)
 
 The user's correction: one composition resolver should cover executables,
@@ -596,7 +646,7 @@ resolve those questions or start implementation in the present unit.
 
 ## Next action
 
-1. Design the optimal **`context`** POSIX sh function semantics from first principles, unconstrained by current `pkg`/launcher/facility contracts (which remain evidence and inspiration). After the conceptual design is coherent, perform the separate practical assessment of simplicity, robustness, performance, POSIX feasibility, migration/compatibility and required canonical realignment, before implementing or promoting a new contract. Preserve bundled manual/lang resources and the frozen repository boundaries.
+1. Design the optimal **`context`** POSIX sh function semantics from first principles, including **explicit parameters and declared environment inheritance/propagation rules** that prevent unwanted variable overwrites through nested contexts (validate against effective Chromium HOME/NSS trust). Existing `pkg`/launcher/facility behavior is inspiration/evidence, not a design constraint. Then separately assess simplicity, robustness, performance, POSIX feasibility, migration/compatibility and canonical realignment before implementation or specification promotion. Keep package manual/lang bundled and frozen repositories untouched.
 2. Continue analyzing ownership/dependency boundaries for `pkg-analyze`, terminal primitives/menu/vsed/editor, gitman, SSH/rsudo administration, testlab, JavaScript core/UI and Web components. Reuse existing independent projects and package facilities rather than duplicating implementation.
 3. **On hold until explicit user authorization:** any edit or migration to old `rumiai-os`, and any work on `rumiai-tests` (including re-alignment of its permanent suite). Do not treat those holds as validation blockers for independently released packages.
 4. Independently maintain core `m` package adapter completeness under a separate authorized workstream; its adapter gaps should not be mistaken for missing user-installable product packages.
