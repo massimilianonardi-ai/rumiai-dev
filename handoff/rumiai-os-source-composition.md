@@ -438,6 +438,59 @@ shared-major-family installable packages. Identical source files may be
 reused when producing versioned artifacts. This does not decide the
 independent resource-access and visibility contracts.
 
+### Filesystem component resolution as common access primitive (2026-10-26, candidate)
+
+The user proposed collapsing the **component lookup** portion of global,
+consumer-contextual and private runtime access into a command/API that
+accepts enough identity/selection/context information to yield **one
+filesystem pathname identifying either a file or a directory**. This is a
+promising common *lookup* contract for materialized `bin`, `lib`, `res`
+and package roots, not an accepted name/signature or implementation yet.
+
+Candidate request dimensions to evaluate (not all caller-supplied every
+time): component identity and, only where necessary, component kind;
+consumer/package context for contextual dependency bindings; optional
+explicit concrete version or constraint; facility/capability identity
+when substitutable provider resolution applies; relevant osarch and locale,
+usually inferred from already-authoritative current selection.
+
+The core operation must select through the already-authoritative `pkg`
+package/concrete/dependency/provider context, or the existing `m` core
+semantic roots, returning a unique, validated pathname. The filesystem
+representation may be a canonical concrete-package path, a selected
+symlink projection or an already-materialized consumer-local view; choosing
+one has observable update/pinning, security and lifetime implications.
+Returning the raw private executable rather than the proper package
+launcher must not bypass dependency/environment application.
+
+Contract constraints to resolve before promotion:
+- one result vs no-match vs ambiguity vs invalid or unavailable context;
+  diagnostics and status are independent of the successful path payload;
+- caller-specified type versus type derived from identity/namespace,
+  relative-versus-absolute and physical-versus-semantic selected paths;
+- existing paths versus precomputed semantic paths (contrast `state-path`);
+  file/directory validation, permissions, confinement and path traversal;
+- stable concrete version for an executing consumer versus mutable global
+  default symlinks; races across update/removal and cache invalidation;
+- directory lookup vs discovery of an arbitrary set of topics/components:
+  whether enumeration remains the owning higher-level interface;
+- high-frequency localized lookup must not repeatedly traverse dependency
+  graphs; the existing `lang` final identifier-string fallback occurs
+  precisely when no file exists, and belongs to the translation operation;
+- non-filesystem facility results (e.g. `env` literal values, service
+  behavior) are **outside** this path-only primitive and keep their trusted
+  typed-part contracts.
+
+Existing `state-path`, `manual`, `lang`, `loadlib/loadsyslib`,
+command launchers and `pkg` facility/provider selection demonstrate parts
+of the required behavior; do not duplicate their current authorities.
+`RESOURCE-MODEL.md` currently explicitly rejects an *unmotivated*
+universal resource resolver. It is still authoritative while this broader
+candidate is evaluated; no novel public command/function, namespace or
+canonical spec change is authorized by this handoff alone.
+Manual and localization content remain unconditionally **bundled with the
+same software package**, regardless of how the path is resolved.
+
 Illustrative matrix, not yet implementation contract:
 
 ```text
