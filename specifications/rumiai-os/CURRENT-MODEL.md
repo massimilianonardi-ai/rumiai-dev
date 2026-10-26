@@ -37,7 +37,9 @@ mainline still includes the combined implementation while consumers and
 other components are migrated; this is a transition, not an additional
 semantic technical layer. The independent `m-mk` repository distributes
 `mk` as an installable `pkg` package with package-local source and managed
-Node.js dependency. This separation does not move `mk` into the branded
+Node.js dependency. The independent `m-jsc` repository likewise distributes
+the technical `jsc` compiler with package-local source and managed Node.js.
+Neither separation moves a technical responsibility into the branded
 RumiAI layer.
 
 ### First-party project and distribution boundary

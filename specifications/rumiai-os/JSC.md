@@ -24,12 +24,23 @@ does not require or infer a mapping between file paths and namespace
 names. The JSON descriptor alone specifies namespace placement, ordered
 source inclusion and public exports.
 
-The public command remains `bin/sys/jsc`, a native POSIX
+The public compiler is independently distributed through the `jsc` package
+from `m-jsc`. Its materialized `root/bin/jsc` is a native POSIX
 `#!/bin/sh` entrypoint requiring an initialized `m` environment and
-explicitly loading its needed shell libraries. From an uninitialized
-host shell it is invoked as `m jsc`. It uses the default managed
-Node.js runtime; its Node.js engine retains the `jscMain(args)`
-entrypoint, returning a Promise of process-style status.
+explicitly loading the necessary global shell core. The entrypoint resolves
+its own physical command root and invokes its package-local
+`root/lib/jsc.lib.js`, never a global `m/lib/sys/js/jsc.lib.js` copy.
+The public package command is exposed through `pkg` integration and is
+invoked as `m jsc` from an uninitialized host shell.
+
+`pkg install jsc` resolves the package's declared managed `nodejs =26`
+dependency. Compilation itself never installs runtimes or optional minifiers.
+The JavaScript engine retains its `jscMain(args)` entrypoint, returning a
+Promise of process-style status. `jsc` remains semantically part of the
+technical `m` layer, not the branded RumiAI layer. The old combined
+`rumiai-os` source still contains its prior `bin/sys/jsc` and global
+`lib/sys/js/jsc.lib.js` as untouched legacy source pending explicit
+authorization for any change to that repository.
 
 ## Ordered JSON source descriptor
 

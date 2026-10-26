@@ -67,6 +67,9 @@ m
 m-mk
     independently distributed technical mk implementation
 
+m-jsc
+    independently distributed technical jsc implementation
+
 rumiai-tests
     permanent tests, runner and revision-specific validation evidence
 

@@ -311,6 +311,50 @@ After real Ubuntu `m@47e6055f8ccdccee6906ec1de387b17124e56527` native Chrome/Chr
 
 Validation to date is strictly **script Bash parsing PASS** plus OpenSSL server-certificate SAN/chain generation and verify PASS in an assistant-provided Linux container. Actual physical Ubuntu Chrome/Chromium headless HTTPS process results are **pending operator execution**; no browser HTTPS PASS is claimed and there is no change to m, `rumiai-os`, `pkg-catalog` or `rumiai-tests`. The auxiliary container's installed Chromium was not able to provide meaningful headless DOM evidence under its own execution restrictions; it is not substitute physical evidence. The prepared script cleans up its local server and test material on exit and preserves the user's existing checkout modifications. If actual headless trust failure diagnostics differ from the anticipated `ERR_CERT_AUTHORITY_INVALID`, inspect actual browser outputs and reconcile rather than weakening validation. The inherited Chromium repository adapter's unnecessary live historical version comparison remains a separate previously recorded pending realignment.
 
+### Independent m-jsc source, published release and public pkg installation (2026-10-26)
+
+User created the new empty `massimilianonardi-ai/m-jsc` repository.
+The previously validated `rumiai-dev-PoCs/jsc-package-local-runtime@29bed6bc6cfafc96265c9b4d4b8b9e811b6aa6e9`
+command, unchanged CommonJS compiler engine, POSIX archive builder and
+package-owned manuals were moved into `m-jsc` without touching the
+legacy `rumiai-os`. The source entrypoint loads its sibling package-local
+engine, and uses the global `m` shell core only for established interfaces.
+The first full import commit was `55280e377b4cbcd697faa60fa4ae03a1b1ff370f`.
+
+Versioned immutable release `m-jsc/v0.1.0` was published from
+`m-jsc@0f5371ba10e55b21a95b9021bf82a64aacfd28be` with asset
+`jsc-v0.1.0-all.tar.gz` (6,799 bytes), SHA-256
+`d4d5a4ab667b1c89bca89b9d1726b483cd64021dd2df1bc5f685a0a72f492bfc`.
+The real `pkg-catalog@8a346e9c1b30fa40706213cf9798720d7ffd39ff`
+registered `pkg/jsc/all/n0001=v0.1.0`, its existing GitHub repository
+adapter, SHA-256 verification, `nodejs =26` execution dependency, normal
+command launcher and relative target link. No global system implementation
+was projected into standalone `m`.
+
+GitHub Actions run `40319511067` for the published source:
+Ubuntu genuine package-local integration PASS, macOS initially blocked by
+HTTP 403 while fetching upstream Node.js GitHub release metadata (not a
+compiler execution failure), source release job PASS. A later run
+`40319768375` on `m-jsc@952b97dd291cf178362f541129640f3375841b04`
+is **PASS on both Ubuntu and macOS**, including actual managed Node.js
+compiler execution, JavaScript/CSS compilation, POSIX packaging and
+pre-existing release preservation. The package release itself is pinned
+to its initial versioned source; later source changes were confined to CI
+or public install validation.
+
+The separate real public `pkg install jsc@v0.1.0` run
+`40319768324`, also at `m-jsc@952b97dd291cf178362f541129640f3375841b04`,
+is **PASS Ubuntu + macOS** with genuine artifact retrieval/verification,
+managed Node.js, package-local engine, JavaScript/CSS output and negative
+source-path validation, in disposable standalone `m@47e6055f8ccdccee6906ec1de387b17124e56527`
+roots. This is hosted GitHub execution, not physical workstation validation.
+
+The explicit user freeze remains binding: **no edits to `rumiai-os` or
+`rumiai-tests` without fresh permission**. They were read only or not
+accessed, respectively, during the release. Package-owned test workflows
+are allowed and are not a substitute for claims about the paused
+`rumiai-tests` repository.
+
 ## Working design / open questions
 
 - Verify the newly independent `m` source revision as a downstream build/composition input and keep its runtime contract aligned with legacy consumers while `rumiai-os` transitions. The first concrete import and its 3-adapter subset are complete.
@@ -321,7 +365,7 @@ Validation to date is strictly **script Bash parsing PASS** plus OpenSSL server-
 
 ## Next action
 
-1. Promote the verified `jsc` package-local candidate into a dedicated source repository and produce a real versioned release with integrity metadata. Only after that publication, add the corresponding authoritative `pkg-catalog` descriptor and validate public `pkg install jsc` against standalone `m`.
+1. With independently published `m-mk` and `m-jsc` validated through public `pkg install`, proceed to the next independent package candidate (`pkg-analyze`) after checking its global runtime-library dependencies and catalog surface.
 2. Continue analyzing ownership/dependency boundaries for `pkg-analyze`, terminal primitives/menu/vsed/editor, gitman, SSH/rsudo administration, testlab, JavaScript core/UI and Web components. Reuse existing independent projects and package facilities rather than duplicating implementation.
 3. **On hold until explicit user authorization:** any edit or migration to old `rumiai-os`, and any work on `rumiai-tests` (including re-alignment of its permanent suite). Do not treat those holds as validation blockers for independently released packages.
 4. Independently maintain core `m` package adapter completeness under a separate authorized workstream; its adapter gaps should not be mistaken for missing user-installable product packages.

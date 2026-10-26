@@ -237,6 +237,9 @@ m
 m-mk
     independent development-lifecycle engine distributed through pkg
 
+m-jsc
+    independent JavaScript/CSS source compiler distributed through pkg
+
 rumiai-tests
     permanent executable tests, runner and revision-specific validation evidence
 
