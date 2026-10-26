@@ -10,9 +10,9 @@ Add reusable `utm` and `tart` package definitions to `pkg-catalog` for `macos-ar
 ## Current repository revisions
 
 - `rumiai-dev`: `6c0cf0bbef14166eb629ddfed9aa1577616e5a97` (pre-task)
-- `pkg-catalog`: `e8679ece70b523c7798bc4cc10bfd450810fcf64` (two package definitions published; pre-task HEAD `73c0cd7003802ce120c693c9427b22f1141a2f8b`)
+- `pkg-catalog`: `202dbf9de5381bd08951aa4853b7229518a9e870` (source command modes corrected from initial `e8679ece70b523c7798bc4cc10bfd450810fcf64`)
 - `rumiai-os`: `673df1a2d5476ad57d54c7bc7e1fc2deeaf16195` (inspected; no modification planned)
-- `rumiai-tests`: `039e8114497e0a9651d231678716f96b9f447358` (no modification planned)
+- `rumiai-tests`: `89641269b80fc740dfce03b0764ee9e6e49c84e4` (new macOS live tests and Actions workflow; initial test revision `039e8114497e0a9651d231678716f96b9f447358`)
 
 Always recheck HEADs before resuming.
 
@@ -31,7 +31,7 @@ Always recheck HEADs before resuming.
 
 ## Acceptance scenarios
 
-1. An initialized Apple Silicon `m` host installs `utm` through `m pkg install utm`, selects a package default with `m pkg default`, and then launches `m utmctl version` / the UTM UI from the managed application bundle.
+1. An initialized Apple Silicon `m` host installs `utm` through `m pkg install utm`, selects a package default with `m pkg default`, validates UTM.app code signing and local `m utmctl` help; real version/XPC/GUI operation remains a distinct host-session check.
 2. `m pkg install tart` materializes `tart.app`; after selecting the installed package default, `m tart --version` works with its embedded provisioning profile intact.
 3. Neither installation creates guest VMs or deletes pre-existing user VM state. VM start/control can subsequently be tested via each upstream CLI.
 
@@ -46,20 +46,23 @@ Always recheck HEADs before resuming.
 - Verified release assets and SHA-256 metadata through official upstream GitHub APIs.
 - Inspected current catalog conventions and core package adapter/launcher.
 - Committed 20 files to `pkg-catalog` as `e8679ece70b523c7798bc4cc10bfd450810fcf64`: GitHub repository descriptors, two platform-specific range anchors, SHA-256 verification settings, source-format selectors and standard native `m` launchers/links (`utm`, `utmctl`, `tart`).
-- Post-change review verified that all three `cmd/` blobs have executable Git modes `100755`, metadata blobs `100644`, correct `macos-arm64` placement and canonical launcher script content. Live GitHub release assets were rechecked: names, published upload state, stable tags and expected SHA-256 digests match. The current catalog main HEAD was rechecked at the new commit.
+- Original source command file modes `100755` proved invalid in real macOS installation. Corrected all three `cmd/` source blobs to `100644` (commit `202dbf9de5381bd08951aa4853b7229518a9e870`), matching the existing `pkg` integration contract; integration materializes executable commands after validating non-executable sources.
 - On the available Linux container, POSIX `/bin/sh -n` passed for the standard UTM/Tart wrapper templates; their exact generated text was separately matched against the committed catalog command blobs. This validates syntax only, not actual `m` package launch.
-- No native extraction, code-signing, Gatekeeper, launcher or VM test was run; the current execution environment is Linux without a macOS host, and external release downloads were unavailable in the local container.
+- Real GitHub Actions Apple Silicon macOS validation was added under `rumiai-tests/tests/external/{utm,tart}/install-live.test` and `.github/workflows/utm-tart-packages.yml`, invoking real `m pkg` and uploading test artifacts. The first runs were blocked by runner checkout-origin normalization; subsequent runs diagnosed and corrected source command modes.
+- In Actions run `40310600488`, macOS 15.7.9 ARM64: UTM `v5.0.8` real install/default/Info.plist/Mach-O ARM64/codesign PASS; GUI/AppleScript-dependent `utmctl version` failed under headless hosted runner, and complete UTM test did not pass. Tart `2.41.1` real install/default/Info.plist/Mach-O ARM64/codesign/entitlements/`m tart --version`/uninstall PASS.
+- macOS 26.6.2 ARM64 run was blocked at upstream GitHub Release API with HTTP 403 and `x-ratelimit-remaining: 0`; this is an actual anonymous API quota exhaustion for shared runner IPs, not a proved package defect. Actions run `40311244938` confirmed this with raw `x-ratelimit-*` headers. Job re-execution after reset has been requested and must be checked before making new claims.
+- The latest test revision `89641269b80fc740dfce03b0764ee9e6e49c84e4` separates local UTM CLI help (asserted) from `utmctl version` (observed but not claimed to work on headless runners). These specific changes have not yet been verified past the API-rate-limit blocker.
 
 ## Current state
 
-Both package definitions are published. Catalog metadata / file-mode / upstream-release checks passed, but macOS runtime validation is pending. No new `rumiai-os` feature, adapter, package facility or test runner was introduced.
+Both package definitions are published with corrected command-source modes. Real GitHub macOS 15 tests validated Tart end-to-end and UTM through signing but not AppleScript-dependent CLI operation. macOS 26 is blocked by the transient GitHub API rate limit. No `rumiai-os` production code was changed. Physical MacBook Air M4 VM lifecycle validation remains pending.
 
 ## Next action
 
-When an Apple Silicon macOS host is available, validate `m pkg install` for each package (artifact download, digest, extraction, immutable bundle layout); select defaults explicitly and validate `m utm`, `m utmctl version`, `m tart --version`, notarization/codesign, UTM location-dependent CLI behavior and Tart entitlements. Then test minimal VM creation/launch, update/uninstall state preservation, and add only durable permanent coverage justified by real behavior.
+First reconcile any newly finished GitHub Actions retry (run `40311244938` attempt 2), identify precise macOS 26 result and UTM CLI help outcome, and refine proportionally if needed. On MacBook Air M4 validate UTM GUI/AppleScript (`utmctl version` outside `/Applications`), notarization/Gatekeeper interactions, Tart entitlements with a real guest, headless/SSH, and minimal VM create/launch, then update/uninstall state preservation.
 
 ## Blockers / open questions
 
-- No actual `macos-arm64` test host is available today.
+- No user-owned physical `macos-arm64` test host is available today; GitHub Actions provided genuine macOS ARM64 execution but not nested virtualization or physical host confirmation.
 - UTM upstream describes location-sensitive behavior for `utmctl` outside the standard `/Applications` install. The generic managed-root executable target has not been verified in an actual GUI session.
-- Upstream release archives themselves were not fetched/extracted on Linux: static release-API digest metadata is not a substitute for artifact-byte SHA-256 verification.
+- Upstream release bytes were downloaded, integrity-checked and extracted via actual `m pkg` on macOS 15, as evidenced by Actions run `40310600488` (Tart full PASS; UTM up to code signing PASS). Further hosted runner attempts hit anonymous GitHub API rate limits.
