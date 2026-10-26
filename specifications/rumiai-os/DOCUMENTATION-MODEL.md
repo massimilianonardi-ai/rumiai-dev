@@ -135,7 +135,7 @@ This requirement is independent of intended audience. It applies to commands use
 
 The requirement follows semantic command identity rather than executable pathname count. Multiple paths or symlink exposures of the same command identity require one manual topic, not duplicate pages. In particular, `$m_ROOT/m` and its `bin/sys/m` exposure are the same command identity.
 
-`m`- or RumiAI-owned libraries are not command identities; their separate mandatory coverage is defined in section 4.2. Package-owned external executables are not `m`- or RumiAI-owned command identities and are outside this coverage requirement.
+`m`- or RumiAI-owned libraries are not command identities; their separate mandatory coverage is defined in section 4.2. Commands independently distributed as package-owned executables are outside the global runtime command/manual coverage, even when the first-party project belongs semantically to the technical `m` layer. Their operational reference remains within their package root; the current `manual` command does not automatically discover it. A package such as `m-mk` therefore retains its command reference with its own released artifact without projecting a duplicate global manual topic.
 
 Command lifecycle and manual lifecycle are coupled:
 
@@ -161,7 +161,7 @@ A command-development work unit is incomplete while the command and its operatio
 
 ### 4.2 Mandatory library coverage
 
-Every `m`- or RumiAI-owned library identity defined by `LIBRARY-INTERFACES.md` MUST have exactly one corresponding operational manual topic in the `manual` resource tree of the library's semantic owner.
+Every global runtime `m`- or RumiAI-owned library identity defined by `LIBRARY-INTERFACES.md` MUST have exactly one corresponding operational manual topic in the `manual` resource tree of the library's semantic owner. Package-owned implementation libraries remain package-local with their own documentation and do not require a second global topic merely because their source project is first-party.
 
 The topic identity is exactly the runtime-qualified library leaf:
 

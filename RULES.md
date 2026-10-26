@@ -59,7 +59,13 @@ rumiai-dev
     rules, workflow and current semantic specifications
 
 rumiai-os
-    product/runtime implementation
+    existing combined product/runtime implementation during extraction
+
+m
+    autonomous technical bootstrap and pkg implementation
+
+m-mk
+    independently distributed technical mk implementation
 
 rumiai-tests
     permanent tests, runner and revision-specific validation evidence

@@ -229,7 +229,13 @@ rumiai-dev
     current rules, workflow and semantic specifications
 
 rumiai-os
-    current product/runtime implementation
+    existing combined product/runtime implementation (transition source)
+
+m
+    autonomous technical bootstrap, pkg and essential tools
+
+m-mk
+    independent development-lifecycle engine distributed through pkg
 
 rumiai-tests
     permanent executable tests, runner and revision-specific validation evidence

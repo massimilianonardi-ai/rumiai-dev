@@ -20,7 +20,6 @@ For example:
 ```text
 lib/sys/sh/array.lib.sh
 lib/sys/sh/pkg/pkg-install.lib.sh
-lib/sys/js/mk.lib.js
 ```
 
 have owner `sys` and library identities:
@@ -28,12 +27,15 @@ have owner `sys` and library identities:
 ```text
 array.lib.sh
 pkg-install.lib.sh
-mk.lib.js
 ```
 
 The `.lib.<runtime>` components are part of the library identity. They are not documentation-format suffixes.
 
-Package-owned external libraries are outside this `m`- or RumiAI-owned library contract unless another current specification explicitly adopts them.
+Package-owned libraries, including first-party technical projects distributed
+as independent packages such as `m-mk`, remain package-local and are outside
+this global runtime-library layout/manual mapping unless an explicit current
+contract adopts them into the global runtime. Semantic ownership of the
+project by `m` does not by itself authorize projection into `lib/sys`.
 
 ## 2. System shell library loading
 

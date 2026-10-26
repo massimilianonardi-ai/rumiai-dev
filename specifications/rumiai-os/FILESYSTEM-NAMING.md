@@ -93,14 +93,18 @@ lib/sys/sh/pkg/facility/pkg-facility-cmd.lib.sh
 lib/sys/sh/pkg/facility/pkg-facility-env.lib.sh
 lib/sys/sh/pkg/facility/pkg-facility-service.lib.sh
 lib/sys/sh/pkg/repository/pkg-repository-github.lib.sh
-lib/sys/js/mk.lib.js
 ```
 
 A grouping directory is physical organization only and is not part of the library leaf identity. The `.lib` component identifies library role; the final suffix identifies load/runtime format.
 
 Shell libraries are not commands: they have no shebang and no executable bit.
 
-The historical `lib/<runtime>/...` layout is not current.
+The historical `lib/<runtime>/...` layout is not current for the global
+technical and branded runtime libraries. Libraries privately distributed
+within an independently installable package (for example the `m-mk`
+package's `root/lib/mk.lib.js`) remain inside that package and do not
+become global `lib/sys` libraries merely because the project is semantically
+part of the `m` layer.
 
 ## Root metadata and semantic roots
 

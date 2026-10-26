@@ -31,6 +31,15 @@ Terminology follows that layer boundary. In current development contracts, imple
 
 `pkg`, package runtime infrastructure and `pkg-catalog` belong to `m`.
 
+The independent `m` repository now distributes the autonomous bootstrap,
+`pkg` and selected essential technical tools. The existing `rumiai-os`
+mainline still includes the combined implementation while consumers and
+other components are migrated; this is a transition, not an additional
+semantic technical layer. The independent `m-mk` repository distributes
+`mk` as an installable `pkg` package with package-local source and managed
+Node.js dependency. This separation does not move `mk` into the branded
+RumiAI layer.
+
 ### First-party project and distribution boundary
 
 Semantic ownership (`m` or RumiAI) and source/distribution placement are independent dimensions.
@@ -299,7 +308,7 @@ versions
 default
 ```
 
-Package definitions/catalog data live in the separate `pkg-catalog` repository. Runtime adapters, resolution, download, extraction, integration and launcher logic belong to `m` inside `rumiai-os`.
+Package definitions/catalog data live in the separate `pkg-catalog` repository. Runtime adapters, resolution, download, extraction, integration and launcher logic belong to the `m` technical substrate. The standalone `m` repository now contains the core package runtime with its initial supported adapters; the legacy combined `rumiai-os` repository retains other adapters pending realignment. Adapter completeness must not be inferred from repository separation.
 
 Package launchers resolve mutable state through `state-path`. Package HOME is user-scoped state selected at launch. `m`-managed package configuration uses the reserved `.m/` subnamespace within the package configuration area.
 
@@ -343,7 +352,7 @@ See `LANG-BOOTSTRAP.md`.
 
 `mk` belongs to `m` and is responsible for management and orchestration of a project's development lifecycle.
 
-The lifecycle engine is implemented in JavaScript and consumes declarative JSON project configuration from project-root `mk.json`. The public `mk` entrypoint is a native POSIX-shell command requiring the initialized `m` environment and delegates to the JavaScript engine through the current `m`-managed Node.js package runtime.
+The lifecycle engine is implemented in JavaScript and consumes declarative JSON project configuration from project-root `mk.json`. The independent `m-mk` project publishes `mk` through `pkg`: its package-local `root/bin/mk` uses a native Node.js entrypoint, `root/lib/mk.lib.js` contains its engine, and the package declares the managed Node.js dependency. It requires an initialized `m` environment and is normally invoked as `m mk`. The older `rumiai-os/bin/sys/mk` shell entrypoint and global library remain only in the legacy combined source pending coordinated removal.
 
 The lifecycle model distinguishes project `dependency`, operation `prerequisite` and external `requirement`. Project-defined goals select lifecycle roots; operation prerequisites form the detailed lifecycle graph.
 

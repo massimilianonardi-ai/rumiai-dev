@@ -38,21 +38,27 @@ The terms are intentionally not interchangeable.
 
 The broader `mk` lifecycle engine is implemented in **JavaScript**.
 
-The public command remains the `m`-environment-dependent native POSIX-shell entrypoint:
+The current independently distributed `mk` is a `pkg` package sourced from
+`m-mk`. Its materialized root contains:
 
 ```text
-bin/sys/mk
+root/bin/mk
+root/lib/mk.lib.js
 ```
 
-with:
+The package-local `bin/mk` is a native `#!/usr/bin/env node` entrypoint.
+It requires nonempty `m_ROOT`, imports its sibling package-local JavaScript
+engine and executes with Node.js provided by the package subsystem. The
+package declares the managed Node.js dependency; `pkg install mk` resolves
+and installs dependencies through the normal package pipeline. `mk` does not
+install runtimes implicitly when a lifecycle request is run. An uninitialized
+host-shell caller invokes `m mk` to obtain the `m` environment.
 
-```sh
-#!/bin/sh
-```
-
-It requires nonempty `m_ROOT`, loads its needed shell runtime itself, and is invoked as `m mk` from an uninitialized host shell.
-
-The command entrypoint is a thin POSIX-shell launcher. The lifecycle engine itself is JavaScript and is executed with the current `m`-managed Node.js runtime supplied through the `nodejs` package integration. `mk` does not depend on a host Python runtime and does not automatically install its runtime as a side effect of a lifecycle request.
+The previously combined `rumiai-os` source still contains its legacy
+`bin/sys/mk` POSIX-shell entrypoint and `lib/sys/js/mk.lib.js`.
+They are transition copies, not the implementation or entrypoint of the
+independent `m-mk` package. Removing them from the combined product source
+and realigning its consumers/tests requires the coordinated extraction step.
 
 Project configuration is structured declarative **JSON**. It MUST NOT be shell-sourced, `eval`ed or otherwise treated as executable configuration.
 
