@@ -47,6 +47,8 @@ Refresh remote HEADs before resuming. These SHAs are checkpoints only, not autho
 
 ## Fixed task-local choices
 
+- **Explicit user choices (2026-10-26, current context work unit):** the future general runtime composition/activation instrument is a **POSIX sh function**, not only a separate executable, because applying a context must be able to modify the invoking shell's variables and PATH directly. Design and implementation are to be newly authored from the ground up, learning from pkg/facility/provider/launcher behavior but **not inheriting their existing implementation structure or making this foundation depend on an individual tool**. This new foundational implementation is intended for eventual reuse by those tools, not as a second long-lived independent provider graph. The public function name remains under decision: the user prefers `context` over `resolve`, `env`/`environment`, while asking for its suitability to be evaluated before naming it definitively.
+
 - **Explicit user choice (2026-10-26):** package-owned operational manuals and localization catalogs MUST ship in the same versioned artifact as their owning software; standalone doc/lang packages, including a shared package for one major release family, are categorically excluded. Common source content can still be reused when building releases, but each concrete package distributes its own matching copy. This distribution contract is recorded in `RESOURCE-MODEL.md`; it does not predetermine global/consumer-private resource exposure.
 
 - **User-agreed design direction (2026-10-26, not yet a promoted implementation contract):** one package-owned semantic composition/dependency/provider model, with three distinct visibility/materialization scopes: **global**, **consumer-contextual**, and **package-private**. Physical projection may differ by resource class (existing command symlinks/launchers, existing typed facility/provider resolution and environment, or direct package-local access). Do not impose a universal symlink graph or a parallel dependency resolver by convenience; the unresolved implementation choices must be tested before specification promotion.
@@ -440,6 +442,47 @@ shared-major-family installable packages. Identical source files may be
 reused when producing versioned artifacts. This does not decide the
 independent resource-access and visibility contracts.
 
+### POSIX shell context function and clean foundation (2026-10-26, current naming discussion)
+
+User explicitly narrowed the immediate next decision to the **public function
+name**. Suggested names: `resolve` (too narrow), `env`/`environment`
+(ambiguous/too narrow), and `context` (preferred conceptually though
+generic). `context` describes the coherent selected and applied
+execution context (version/provider graph, variables, paths and optional
+filesystem projections) rather than one subordinate step, and fits a
+non-subshell POSIX sh function. The current standalone `m` implementation
+has no public function `context` in `core.lib.sh`, `base.lib.sh`,
+`pkg-launch.lib.sh` or `pkg-provider.lib.sh`; the existing
+`m_PKG_LAUNCH_CONTEXT` is a launcher-specific control variable, not
+the desired shared function. `context` is the assistant's recommended
+name, not recorded as user-confirmed until accepted.
+
+The user requires an architectural **fresh implementation** for the
+general function, treating current `pkg` facility/provider and launcher
+code as behavior/mechanism references rather than component dependencies.
+When adopted, the new core must eventually become the *one* effective
+runtime composition authority, with `pkg`, launcher and other consumers
+realigned to use it, not a competing graph implementation.
+Installation/catalog ownership still belongs to `pkg`, but runtime
+selection/preparation ownership and authority boundaries need a deliberate
+canonical contract revision before any implementation.
+
+As a function called directly in the current shell, it can export changes
+to that process, but an invocation in a subshell, pipeline or command
+substitution cannot mutate the parent's environment. Stage and validate
+an entire context before applying state to avoid leaving partially applied
+PATH/variables on failure; POSIX sh cannot promise fully transactional
+rollback of arbitrary sourced code. Need decide whether execution is
+replace-only or supports nested scopes/restoration, whether queries are
+pure, scope of variables, trust boundaries for package-provided content,
+and how to preserve the current PATH fast path and bootstrap independence.
+Do not impose a universal LIB_PATH without mapping runtime-specific
+loader behavior.
+
+No implementation, public signature, or canonical contract change is
+authorized solely by choosing the name. `rumiai-os` and `rumiai-tests`
+remain frozen until explicit user permission.
+
 ### Unified contextual environment resolution (2026-10-26, working design)
 
 The user's correction: one composition resolver should cover executables,
@@ -555,7 +598,7 @@ resolve those questions or start implementation in the present unit.
 
 ## Next action
 
-1. Before extracting further shared-library/resource consumers such as `pkg-analyze`, develop and verify a single context-resolution/environment-preparation contract for `bin`, `lib`, and `res`. Treat global shell PATH command lookup as an optimized materialized view, compare facility/provider environment setup against per-consumer symlink groups, and validate precedence, lifetime, and efficiency before proposing a public API or changing current specifications. Manuals and translations stay bundled in their owning package.
+1. Choose the new POSIX sh **context function name** (assistant recommends `context`; user confirmation pending), then design its externally observable context-selection/application behavior and a clean foundational implementation from scratch. Consult existing pkg/launcher/facility contracts as evidence and migration constraints, not as dependencies of the future general function. Evaluate environment atomicity, reentrancy/scopes, PATH, runtime loaders, symlinks and performance before changing canonical specifications or coding; keep package-owned manuals/translations together.
 2. Continue analyzing ownership/dependency boundaries for `pkg-analyze`, terminal primitives/menu/vsed/editor, gitman, SSH/rsudo administration, testlab, JavaScript core/UI and Web components. Reuse existing independent projects and package facilities rather than duplicating implementation.
 3. **On hold until explicit user authorization:** any edit or migration to old `rumiai-os`, and any work on `rumiai-tests` (including re-alignment of its permanent suite). Do not treat those holds as validation blockers for independently released packages.
 4. Independently maintain core `m` package adapter completeness under a separate authorized workstream; its adapter gaps should not be mistaken for missing user-installable product packages.
