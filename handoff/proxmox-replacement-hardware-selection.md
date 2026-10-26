@@ -1,7 +1,7 @@
 # Proxmox replacement hardware selection
 
 Status: Active
-Updated: 2026-10-26 (Europe/Rome; staged acquisition feasibility)
+Updated: 2026-10-26 (Europe/Rome; previously supplied legacy-PC details not carried to active handoff)
 
 ## Goal
 
@@ -260,7 +260,7 @@ User requests evaluation of **Samsung 990 EVO 2 TB MZ-V9E2T0BW**, not the 990 EV
 
 ## Staged acquisition and independent testing (2026-10-26)
 
-The operator expects they may **not purchase all new Proxmox hardware in a single order**, and asks to reuse a **working older Intel Core i7 PC**, thought to contain DDR3, to test components autonomously before the final host can boot. This is an **evaluation of staging**, not an operator-fixed purchase sequence. Exact old PC CPU/motherboard/socket/memory/PCIe slots/PSU are **not known in current RumiAI repository**; obtain `sudo dmidecode -t baseboard`, `sudo dmidecode -t memory`, `lscpu`, `lspci -nn` from old host as practical. Do not infer old motherboard generation from the branding "i7" alone.
+The operator expects they may **not purchase all new Proxmox hardware in a single order**, and had planned to reuse an older Intel Core i7 PC, thought to contain DDR3, as test host. **Correction 2026-10-26:** operator explicitly states full old-PC hardware specifications were already supplied in a previous chat and should have been preserved. They are not present in this active handoff, and the assistant could not recover those exact details from accessible conversation context. This is a **continuity / handoff failure**, not missing input from the operator. **Do not ask the operator to repeat the hardware inventory, dmidecode or lscpu merely because the handoff lacks it.** Operator will handle the old-PC staging/test investigation independently for now; do not make it a prerequisite for progress on other Proxmox acquisition choices. Do not infer CPU/motherboard/socket from the name "i7".
 
 **Memory/CPU constraints established:** both operator-shortlisted boards ASUS TUF GAMING Z890-PRO WIFI and ASUS PRIME Z890-P non-WiFi have only **DDR5 DIMM sockets** and support Intel **Core Ultra 200 series LGA1851**. DDR3 cannot physically/electrically work in either. New DDR5 can be separately tested on old i7 only if its motherboard itself supports DDR5 (contradicts an actually DDR3-fitted board); DDR3 i7 CPU and DDR5 new CPU are non-interchangeable socket/generation-wise. Links: https://www.asus.com/it/motherboards-components/motherboards/tuf-gaming/tuf-gaming-z890-pro-wifi/techspec/ and https://www.asus.com/it/motherboards-components/motherboards/prime/prime-z890-p/techspec/ ; CPU https://www.intel.com/content/www/us/en/products/sku/241068/intel-core-ultra-7-processor-265-30m-cache-up-to-5-30-ghz/specifications.html .
 
@@ -282,7 +282,7 @@ Owned and selected base chassis: **ALAMENGDA AL02 ATX open frame**, to be instal
 
 ## Next action
 
-0. Identify exact older i7 motherboard/RAM/PCIe/PSU inventory to classify component tests and choose acquisition groups; DDR3 is not compatible with either DDR5 ASUS Z890 board.
+0. Old-PC staging/testing is **user-handled independently for now**, not an active request for new inventory. Earlier chat reportedly already provided exact specs but current handoff failed to preserve them. **Do not ask again**; if revisited, first recover previous details from accessible archives or context, and clearly disclose limitations if retrieval fails.
 1. Confirm user's preference and actual retailer offers for Samsung 990 PRO 2 TB vs WD Black SN7100 2 TB, weighing Linux idle/thermal efficiency and exposed hotspot sensors, Samsung DRAM and high concurrency, and price. Both are consumer drives without verified hardware PLP. Capacity is fixed at 2 TB for current comparison; no purchase or filesystem choice finalized.
 2. Complete purchase costing (CPU, motherboard, NIC, RAM, PSU, cooler and SSD) and RAM QVL validation; owned AL02 costs zero. Preserve future large GPU and x4 NIC coexistence. Cabinet fan selection is deliberately deferred.
 3. Before purchase, seek model/BIOS evidence of independent low PL1/PL2 with non-K CPU; after assembly plan idle-power and stability measurement.
