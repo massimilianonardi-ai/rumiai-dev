@@ -10,7 +10,7 @@ Produce a readable offline archive of ChatGPT public shared conversations, prese
 ## Current repository revisions
 
 - `rumiai-dev`: `ac4b86af68cde1802513f336dc048e6aafdd077e` as checked before this handoff was created.
-- `rumiai-dev-PoCs`: `d5672b8bbc8c638712e74b42d401e57f99337619`.
+- `rumiai-dev-PoCs`: `c85de05bf2bd1114507413d1f875cd65ac2c3215`.
 
 Fresh remote HEAD retrieval remains mandatory on resumption.
 
@@ -42,7 +42,7 @@ Fresh remote HEAD retrieval remains mandatory on resumption.
 ## Completed
 
 - Share 2 regained DOM readiness and capture sweep. Physical vmdev evidence: 12 selected turns and a later full source capture at `/home/admino/chatgpt-share2-full-2MGSvdpK` with 51 turn snapshots, 46 CSS bodies, 1 font body, no recorded static-body failures, sweep finished.
-- Commit `d5672b8` adds `render-same-session-styled.mjs`, reusing the already existing DOM assembler and static-resource localizer, with integrity checks, opt-in HTML creation and three fixture tests.
+- Commit `d5672b8` adds `render-same-session-styled.mjs`, reusing the already existing DOM assembler and static-resource localizer, with integrity checks, opt-in HTML creation and three fixture tests. Commit `c85de05` permits CSS hover on buttons without enabling scripts.
 - Local Node syntax check and three orchestration tests with stubbed assembly/localization passed; they are not proof that the existing real assembler/localizer integration passes or that the physical site renders correctly.
 
 ## Current state
