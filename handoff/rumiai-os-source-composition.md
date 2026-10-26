@@ -157,6 +157,38 @@ Existing `rumiai-tests/tests/external/electron/linux-launch-live.test` exercises
 
 **Physical Electron integration attempt (2026-10-26)**: user ran the isolated Electron NSS test block on `PRTL-GS-01`; it stopped at its first preflight with `SKIP: Electron requires sudo for chrome-sandbox` because non-interactive `sudo -n true` did not pass. Neither clone, CA approval nor Electron package install/launch were attempted. The original Git status remained unchanged. This is explicitly **SKIP, not FAIL/PASS**. The next operator step, if host administrator rights are available and authorized by the user, is `sudo -v` interactively in their own terminal, verify `sudo -n true`, and rerun the exact isolated scenario; no sandbox bypass or mock should substitute. If the account has no sudo authority, keep physical Electron launch pending and use an appropriately privileged disposable Linux runner/VM to obtain separate hosted evidence. New `pkg-catalog/main@e8679ece70b523c7798bc4cc10bfd450810fcf64` still declares exact `electron@v44.3.0!linux-x86_64`. Preserve user-local selector symlinks and package projection.
 
+### Independent mk package candidate against autonomous m (2026-10-26)
+
+The existing PoC 073 isolated package-local source was retained on
+`rumiai-dev-PoCs/mk-package-local-runtime`, now at
+`fdf655405eb3a22c34b549c013387d0fa01c34ea`. Its POSIX packaging harness
+was corrected for macOS `chmod` semantics; its real watch input-change scenario
+now avoids a baseline-snapshot startup race without replacing the target.
+The existing real `pkg_integrate` / `pkg_default_apply` path now runs both
+against an isolated copy of legacy `rumiai-os@673df1a2` (with embedded mk
+removed) and directly against the autonomous `m@5c1e02a` (which has no
+embedded mk). Each checkout selects the actual host osarch in its disposable
+clone. No product checkout or user's installed state was changed.
+
+GitHub Actions run `40309229176` at exact PoC revision
+`fdf655405eb3a22c34b549c013387d0fa01c34ea` is **PASS Ubuntu + macOS**
+for both composed scenarios, real managed Node.js, package-local source,
+`--goals`, `--plan`, a lifecycle process and watch re-entry. An Ubuntu job
+also uploaded `mk-v0.1.0-release-candidate` with SHA-256 checksum as a
+temporary Actions workflow artifact. The archive is **not** a GitHub release.
+Earlier failed runs `40308481026`, `40308625741`, `40308770547`,
+`40308893970` remain failed evidence of corrected macOS packaging and
+watch-test race issues; do not relabel them PASS.
+
+Blocking publication tasks are still: create the independent `mk` source
+repository (unsupported by the connected GitHub write actions), populate it
+from the validated staged source, publish a versioned verified release asset,
+add the real catalog descriptor in `pkg-catalog`, execute public
+`pkg install mk` from a clean standalone m checkout, and realign permanent
+mk tests and documentation. The current phase did **not** change `m`,
+`rumiai-os`, `pkg-catalog` or `rumiai-tests`, nor did it perform physical
+host validation.
+
 ## Working design / open questions
 
 - Verify the newly independent `m` source revision as a downstream build/composition input and keep its runtime contract aligned with legacy consumers while `rumiai-os` transitions. The first concrete import and its 3-adapter subset are complete.
