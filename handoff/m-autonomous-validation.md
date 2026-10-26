@@ -40,12 +40,12 @@ All categories below must be accounted for; distinct supported-host behavior rem
 
 | ID | Area | Required public/real scenarios | Current evidence and coverage |
 |---|---|---|---|
-| M01 | clean bootstrap/environment | initial `m` w/o Node/mk/catalog; PATH/root, shell invocation, failure paths | GitHub Ubuntu/macOS core smoke on `a033e509` partial; macOS latest jobs cancelled |
-| M02 | osarch/host platform | detect/update/selector, supported platform materialization | Ubuntu physical selection prior commits; GitHub Ubuntu smoke current, broader matrix pending |
-| M03 | state-path and mutable scopes | system/user/package state, instances, path security, no side effects | partial earlier Ubuntu; comprehensive pending |
-| M04 | localization and manuals | `lang`, `lang-set`, `manual`, `pager`, topic coverage/fallback | basic GitHub smoke; normal paging and localization fallback pending |
-| M05 | shell/core/libs/diagnostics | `shell`, `log`, core env/lib loading, controlled errors | basic smoke; full contracts pending |
-| M06 | transfer/integrity/archive | `http-fetch`, `digest`, `extract` real HTTPS, verified archive and invalid-input behavior | earlier Ubuntu sample; full supported format/backends pending |
+| M01 | clean bootstrap/environment | initial `m` w/o Node/mk/catalog; PATH/root, shell invocation, failure paths | Latest current-m Ubuntu core smoke plus real shell invocation PASS; broader bootstrap failure cases PENDING |
+| M02 | osarch/host platform | detect/update/selector, supported platform materialization | Ubuntu osarch detect/update/show PASS on m@cf3660ca; alternate platform/error permutations PENDING |
+| M03 | state-path and mutable scopes | system/user/package state, instances, path security, no side effects | Ubuntu pkg user path nonmaterialization, invalid scope rejection PASS on m@cf3660ca; instances/security/state persistence PENDING |
+| M04 | localization and manuals | `lang`, `lang-set`, `manual`, `pager`, topic coverage/fallback | Public locale query/fallback, invalid locale, manual discovery/topic PASS Ubuntu on m@cf3660ca; interactive pager/resource variants PENDING |
+| M05 | shell/core/libs/diagnostics | `shell`, `log`, core env/lib loading, controlled errors | Public managed shell, warn logging and invalid severity PASS Ubuntu on m@cf3660ca; full diagnostics/severity cases PENDING |
+| M06 | transfer/integrity/archive | `http-fetch`, `digest`, `extract` real HTTPS, verified archive and invalid-input behavior | Public SHA-256 independently verified, stdin, tar.gz extraction and loopback HTTP body/length PASS Ubuntu on m@cf3660ca; HTTPS/formats/backends PENDING |
 | M07 | package/catalog/versioning | real `pkg` current/exact version, offline historical compare, catalog snapshot semantics, errors | Chromium historical compare PASS on earlier revision, real current catalog pkg operations PASS Ubuntu `m@1e1ce599`; broader versions/errors PENDING |
 | M08 | package install/default/launch | real multi-operand, dependency-first, verified download/extract, `pkg versions/default`, package managed HOME, idempotent repeat | **physical Ubuntu PASS** mk/jsc/Node install, defaults, JS/CSS, mk goal on `a033e509`; general edges pending |
 | M09 | package uninstall/reinstallation | uninstall/version/default semantics, referenced-provider protection, uninstall+reinstall, no unrelated mutable state loss | Real jsc/mk/Node uninstall+reinstall via pkg PASS Ubuntu `m@1e1ce599`; referenced-provider protection/mutable-state cases PENDING |
@@ -77,13 +77,17 @@ New genuine public CLI integration coverage was added in independent `m` CI only
 Current `m` CI Ubuntu: checkout smoke `121646679176` PASS, public mk install `121646678699` PASS, public jsc install `121646678863` PASS, plus the provider and srv jobs above. **macOS jobs at this checkpoint remained queued**; do not mark PASS without a new check. This work has not validated `srv host user/system`, multiple distinct provider ambiguity/priority, failure/stale-runtime recovery, all state/manual/runtime-facility variants, or full regression scope. `m` changes through this checkpoint were **only CI workflow files**. No modifications to the frozen `rumiai-os`/`rumiai-tests` code or tests.
 
 
+### Real technical command HTTP, digest, extraction and resource smoke (2026-10-26)
+
+The `m/.github/workflows/m-technical-commands.yml` workflow was added, with no application/library changes, advancing standalone `m/master` to `cf3660ca0e206f94d0c8292b2b2cabeb096703ef`. On a real Ubuntu GitHub runner, it executed public `./m osarch update/show`, `digest -a sha256` compared against independent Python SHA-256 for both file and stdin, real `extract tar.gz` with byte comparison, and `http-fetch` against a real loopback Python HTTP server with body and Content-Length verification. It also exercised `state-path` nonmaterialization/invalid-scope rejection, `lang-set` query/invalid-locale, `lang` fallback, `manual` discovery/exact topic, `log` warn/invalid severity, and managed `shell`. **Ubuntu `technical-public` job `121650261617` PASS at `m@cf3660ca`**. Its macOS counterpart was queued at last observation; do not mark PASS yet. Further tests are required for HTTPS, paging, full locale catalogs, other archive formats, log variants and mutable-state ownership. Latest-m Ubuntu `srv-ubuntu-live` job `121650271263` and `pkg-public-lifecycle` job `121650259900` also PASS.
+
 A full source and catalog inventory was read: public `bin/sys` commands `digest`, `extract`, `http-fetch`, `lang`, `lang-set`, `log`, `manual`, `osarch`, `pager`, `pkg`, `shell`, `srv`, `state-path`, `tls-ca`, `tls-nss-sync` and exposed bootstrap `m`. Current `pkg` has install, uninstall, versions, depend, default, provider and requirement interfaces, facility typed parts; existing catalog provides real `nodejs 26` provider and `ollama 1` service provider with `ollama-serve` realization. Presence in catalog does not itself establish support by the limited set of adapters in current autonomous m.
 
 ## Next action
 
 1. Close remaining advanced M07/M09/M10/M11 scenarios: multiple providers, precedence and ambiguity, provider/uninstall protection, range and failure states, state preservation and the typed facility-env path. Keep real public CLI and catalog/released artifacts for end-to-end evidence.
 2. Extend M12 beyond its successful real-service normal path to stale-PID, restart/error paths and explicit host user/system supervision M13. Host-system mutations require controlled account/permissions and must not touch unrelated production services.
-3. Expand M01–M06 and M14–M15 across the exact source revision and supported hosts, and re-check GitHub macOS queued/cancelled status separately. Keep all uncovered rows PENDING.
+3. Expand uncovered M01–M06 and M14–M15 cases (pager, localization, errors, State Instances, HTTPS, archive backends and browser TLS on current m) across supported hosts. Keep macOS queued/cancelled separate; uncovered rows PENDING.
 4. Once earlier development/hosted validation is stable, request a **short public-command** physical Ubuntu confirmation plan for the full target without reinstalling already tested unrelated packages or manually cloning their source repositories.
 
 ## Blockers / open questions
