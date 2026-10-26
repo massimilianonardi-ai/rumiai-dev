@@ -9,8 +9,8 @@ Produce a readable offline archive of ChatGPT public shared conversations, prese
 
 ## Current repository revisions
 
-- `rumiai-dev`: `40e9fa18012e3871c3d0fdb0ffcc9e94ef20301b` at this checkpoint.
-- `rumiai-dev-PoCs`: `9d84c8f51641ef6486773745fe96a7871c001c6f`.
+- `rumiai-dev`: `4f73e517b5d76c992b32d858460ad48a9be0668c` at this checkpoint.
+- `rumiai-dev-PoCs`: `cb763ddd7e809d1dfa0c482fd33e9847d1626526`.
 
 Fresh remote HEAD retrieval remains mandatory on resumption.
 
@@ -47,17 +47,20 @@ Fresh remote HEAD retrieval remains mandatory on resumption.
 
 - Commit `9d84c8f` removes the generic table-cell borders from the original-CSS preview and adds a private-safe interaction-structure inspector plus focused tests. No claim of visual acceptance of the corrected table or functional source controls. 
 
+- Physical vmdev execution of four focused tests passed (0 failures); regenerated styled share 2 with 12 turns, no missing ordinals, 43 localized stylesheets and 77 unresolved references. Private-safe control inspection: `Mostra di più` on 1/5/9 (aria-expanded false), grouped +N labels on 2/4/6, with immediate label ancestry lacking link anchors. 
+- Commit `cb763ddd` introduces **opt-in live interaction observation** during the existing sweep, for original-page show-more activation and source +N hover. It saves any newly observed links only in private event evidence; the sanitized inspector reports counts. This is not yet validated on physical vmdev and does not itself implement the offline controls.
+
 ## Current state
 
 Operator physically inspected the original-CSS offline view and **accepted the diagram** following “2. La soluzione che adotterei”. Cost-per-token table styling, OpenAI +1 source controls and long-message “Mostra di più” are not yet accepted. The earlier accepted semantic outputs remain unchanged.
 
 ## Next action
 
-On vmdev, pull current PoC, run targeted fixture tests, re-render the **existing** private capture into a fresh output, and inspect the cost table after removing generic fallback borders. Run `inspect-styled-interactions.mjs /home/admino/chatgpt-share2-full-2MGSvdpK` and use the sanitized structural report to choose a safe mechanism for OpenAI +1 and long-message expansion. Do not disturb the accepted diagram or accepted semantic outputs.
+On vmdev, pull current PoC, run `node --test tests/live-share-interactions.test.mjs`, and run one fresh `render-probe.mjs --headless --sweep --capture-image-bodies --capture-static-bodies --observe-interactions` acquisition for share 2. Read the sanitized `inspect-live-share-interactions.mjs` summary and inspect expanded-snapshot coverage and source popover link provenance **before** implementing offline show-more/source expansion. The corrected table still requires explicit operator visual acceptance. Preserve accepted diagram and semantic outputs.
 
 ## Blockers / open questions
 
-- New cost-table regression and structural inspector require real vmdev test; the diagram is visually accepted.
+- Cost-table test and control-structure inspector passed physically on vmdev; **visual** acceptance of the corrected table is still pending.
 - CSS order and missing source DOM ancestors may cause layout mismatches.
-- Original source-link expansion and long-message controls depend on React; determine whether exact link targets and unclipped message content exist in captured DOM before implementing a standalone interaction.
+- New opt-in source-hover and show-more capture needs physical Chromium execution; click/hover attempts alone are not proof of complete expanded text or correct link attribution.
 - RAW source conversation completeness not proven by contiguous turn ordinals.
