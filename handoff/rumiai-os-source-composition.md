@@ -440,6 +440,36 @@ shared-major-family installable packages. Identical source files may be
 reused when producing versioned artifacts. This does not decide the
 independent resource-access and visibility contracts.
 
+### Unified contextual environment resolution (2026-10-26, working design)
+
+The user's correction: one composition resolver should cover executables,
+libraries and resources alike. The POSIX shell's native PATH search is an
+optimized consumption path for globally selected executables, not a separate
+source of resolution authority. A small index of command symlinks remains
+useful; other resolved contexts may also benefit from per-consumer symlink
+groups, but this is an implementation choice.
+
+The proposed generalized result is broader than one file/directory: a
+coherent prepared execution environment, possibly including selected
+package/provider identities, PATH, runtime-specific library search roots,
+resource roots, environment values and derived filesystem projections.
+The conversational name "resolve" is not an approved public API.
+
+Keep logical graph selection, environment/projection preparation, and
+application/execution conceptually distinct while reusing current pkg
+facility bindings, provider environment planning and command launcher.
+There is no universal runtime facility apply in the current PACKAGE-MODEL;
+nor is LIB_PATH a standard portable loader variable. A child command
+cannot alter its caller's environment. These require explicit validation
+and design, not assumed new contracts.
+
+Evaluate minimal context parameters, variable precedence, ambiguity,
+native PATH fast path, safe environment application, snapshot lifetime,
+atomic projection refresh, cleanup and runtime-specific module loading.
+Neither bootstrap nor package-private lookup may introduce mandatory
+catalog/network access. Code/manual/lang continue bundled in each package.
+The existing rumiai-os and rumiai-tests repository freeze remains binding.
+
 ### PATH-oriented command discovery versus contextual resource lookup (2026-10-26, user clarification)
 
 The user identified a stronger reason for the existing `bin` projection:
