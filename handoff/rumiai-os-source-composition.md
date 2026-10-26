@@ -48,6 +48,7 @@ Refresh remote HEADs before resuming. These SHAs are checkpoints only, not autho
 ## Fixed task-local choices
 
 - **Explicit user decisions (2026-10-26):** the public function is named `context` and is a **POSIX sh function**, because it must be able to modify the current shell's environment. Its role is the general composition and activation of a resolved runtime context, including executables as well as libraries/resources; ordinary shell `PATH` lookup is one optimized consumption mechanism. The new architecture/implementation should be designed cleanly from first principles. Existing `pkg`, facility/provider and launcher code and even their present contracts are **inspiration and evidence, not design constraints**: during conceptual design, deliberately explore better semantics even when they would supersede the current architecture. Only after defining the best intended behavior should the team evaluate global practical tradeoffs, migration, compatibility, implementation complexity, robustness and performance. This design freedom is not authorization to modify the current runtime or silently replace current canonical contracts.
+- **Explicit user simplification (2026-10-26):** one active `context` per shell, surviving until another context **replaces** it or the shell exits; **no context restore/pop/activation stack**. The user also proposes removing the many filesystem `current` selectors. Treat their elimination as the **desired architecture**, pending a clean replacement for persistent defaults and an explicit impact/migration assessment; do not infer that independent fresh shells no longer need persistent default-selection configuration. Neither change has yet been implemented or promoted into the existing filesystem/state/resource contracts.
 - **Explicit user requirement (2026-10-26):** `context` must compose its effective shell/environment state from **explicit context parameters AND declared inheritance/propagation policies**. Values designated for preservation must not be silently overwritten by intermediate package, provider or nested-launch environment setup. The motivating real operational case is central Chromium certificate trust: effective browser `HOME` (and any deliberately propagated variables) must remain coherent with the trusted NSS certificate projection across nested execution. This is a semantic design requirement, not an endorsement of the existing launcher override API as the future `context` interface.
 - **Explicit user choice (2026-10-26):** package-owned operational manuals and localization catalogs MUST ship in the same versioned artifact as their owning software; standalone doc/lang packages, including a shared package for one major release family, are categorically excluded. Common source content can still be reused when building releases, but each concrete package distributes its own matching copy. This distribution contract is recorded in `RESOURCE-MODEL.md`; it does not predetermine global/consumer-private resource exposure.
 
@@ -470,7 +471,7 @@ changed in current code.
 
 Still-open design dimensions: what an activated context means;
 selection and binding of packages, versions, facilities and private
-components; scoping/nesting/restoration; whether `context` also has
+components; single-context replacement and child inheritance; whether `context` also has
 pure queries; environment variable/path precedence and security;
 validation before changing the invoking shell; symlinks and cached
 views versus direct variable/projection application; lifecycle of a
@@ -517,7 +518,7 @@ During unconstrained conceptual design, address at least:
   ordered search-path composition), with a deterministic conflict policy;
 - which propagation rules survive into children and grandchildren, how
   trust/control variables stay separate from ordinary application env,
-  and whether scopes can be isolated/replaced/restored;
+  and whether child contexts are isolated/replaced without a restore stack;
 - validation before modifying the caller's POSIX shell, minimal exported
   data, and consistent environment *and* required derived side effects
   (e.g. NSS synchronization for the actual effective browser HOME);
@@ -594,115 +595,117 @@ without binding the new ideal model to current `pkg` or launcher
 contracts. This remains working design, not a promoted contract or
 implemented runtime behavior.
 
-### `context` lifecycle: prepare, activate, derive, replace, restore (2026-10-26, first-principles candidate)
+### `context` lifecycle: one active context per shell, replaced until exit (2026-10-26)
 
-This work unit develops **candidate lifecycle semantics**, not an
-implementation or promoted API shape. Starting point: the user has
-accepted `context` as a POSIX sh function, requiring one coherent
-runtime composition for commands/libraries/resources/state, primarily
-exposed through a prepared shell environment. It must honor explicit
-requests plus declared inheritance/propagation rules and can optionally
-materialize context-specific filesystem command views. Existing
-pkg/launcher contracts provide evidence, *not constraints on ideal
-design*. Manual and lang remain bundled in the owning concrete package.
+**User simplification adopted as the new design direction:** do not model
+a stack of activated contexts and do not expose a "restore previous
+context" operation. The live context belongs to the invoking POSIX
+shell and lasts until it is replaced by another resolved context or
+the shell/process terminates. Explicit and protected inheritance
+policies still govern what may flow into an intentionally derived
+context or child process. Derivation is a *composition rule*, not
+push/pop activation or preservation of an old activation stack.
 
-**Separate conceptual objects** (not endorsed names/namespaces):
-- *request*: desired consumer identity, selected package/versions,
-  compatible capabilities, state scope/profile and explicit policy
-  choices, with defaults/inheritance filled only when unambiguous;
-- *resolved plan*: a validated, coherent selection graph and proposed
-  environment delta, including values, their source, unset-vs-empty
-  distinction, export/preservation rules, path ordering, resource
-  references, required derived filesystem projections and lifetimes;
-- *active context*: the result of applying the prepared plan to the
-  invoking shell; the active context carries enough ownership metadata
-  to reverse its own contributions and convey propagation rules;
-- *derived filesystem view*: optional disposable/index/cache symlink
-  tree for commands or other genuinely path-search-driven consumers,
-  created from pinned provider/package selections, not an independent
-  resolution registry.
+**Conceptual lifecycle, candidate mechanics**:
+1. *Request*: choose the consumer and any explicit package, provider,
+   osarch, state scope, profile, locale and inheritance policies.
+   Unspecified choices may come from permitted incoming context
+   state and configured persistent defaults.
+2. *Prepare*: validate/resolve a complete coherent selection, calculate
+   relevant state/resource/command roots and variables once, preserve
+   provenance and protection policy, and prepare any useful derived
+   symlink command view. This stage must not partly mutate the shell.
+3. *Apply or replace*: apply the prepared environment to the invoking
+   shell. If context A was previously active, replace **only A's owned
+   contributions** with the new context B: unset keys no longer owned
+   or supplied by B, update changed keys, avoid accumulating A's PATH
+   segments and enforce inheritance/policy conflicts. Applying B again
+   must not duplicate B's contributions. Replacing A is NOT equivalent
+   to arbitrarily appending B atop A.
+4. *Use/propagate*: consumers use the already selected variables, paths
+   and optional command-index views; an integrated child context
+   obtains the declared propagated values AND relevant rules. Child
+   modifications cannot mutate its parent shell. POSIX exports of
+   values alone do not enforce policy for arbitrary unintegrated apps.
+5. *End*: the live shell terminates; no shell-environment restore or
+   stack unwind is required. Temporary or cached filesystem
+   projections, if used, require a safe independent reuse/GC policy:
+   POSIX shell exit is not a reliable global cleanup notification.
 
-**Candidate transitions**:
-1. *Create/request*: acquire explicit parameters and inherited selection
-   policies; no mutations, no implicit installation or directory
-   creation merely from requesting a context.
-2. *Resolve/prepare*: solve constraints once, select concrete versions,
-   calculate relevant `state-path`-like area paths and provider/resource
-   roots, validate all reserved/protected values and variable operations,
-   and stage any required projections. The common path must not repeat
-   graph resolution for every subsequent consumer access.
-3. *Activate*: only after preparation succeeds, change the current POSIX
-   shell's managed variables and ordered search paths, retaining enough
-   previous state for deterministic restoration. A command in a child,
-   pipeline or command substitution cannot mutate its calling shell.
-4. *Derive*: a nested/child context inherits only the values **and
-   propagation policies** permitted by its parent, adds explicit
-   choices, and resolves the resulting composition. Protected parent
-   bindings cannot be silently overwritten; conflicts need a
-   deterministic policy. An independently invoked native child without
-   the context mechanism cannot be forced by shell variables alone to
-   enforce such policies.
-5. *Replace*: switching A -> B in the **same shell** replaces the managed
-   projection of A with B from a specified baseline, rather than
-   appending B blindly to A's PATH or leaking A's cache/config variables.
-   Re-applying the same selection should be idempotent. Distinguish
-   this transition from intentionally deriving B as a child of A.
-6. *Restore/release*: where explicitly supported, return the shell's
-   managed values (including *unset* versus *set-empty* and relevant
-   export attributes) to the state preceding activation, remove
-   ownership of superseded PATH entries and release only
-   context-owned temporary projections. Do not promise to undo
-   arbitrary sourced code, loaded shell functions, chdir, traps,
-   external filesystem modifications, or changes by other actors.
-   Detect or specify precedence for user modifications to managed
-   variables while the context is active; silent clobbering is unsafe.
+The old restoration problem is removed, but **replacement still needs
+a small amount of ownership information**, not a full historical
+snapshot stack. Study how a coherent new environment projection can
+be computed from a stable underlying host baseline plus policy-
+permitted inherited values while preserving legitimate user changes.
+For `PATH`, either track context-owned entries without ambiguous
+subtraction, or reconstruct from a controlled baseline and the new
+selected command views. Do not silently discard unowned PATH edits
+or overwrite protected env changes. A failed preparation must leave
+the *existing* active context effective; a narrow trusted apply step
+should avoid partially switching to B. Exact rollback of arbitrary
+shell code is not required or promised.
 
-**Version/freshness recommendation for evaluation**: for non-default
-consumer contexts, resolve concrete package/provider identities at
-activation and keep their intended meaning stable until explicit
-refresh/replacement. External default/config/profile changes affect a
-fresh context, not silently mutate a pinned active context. A global
-default command PATH may keep its existing live-fast-path behavior as a
-deliberate special case. A pinned consumer must not route through a
-mutable global default symlink if that can change its selected version.
-For state paths, decide whether a pathname contains live `current`
-selectors or identifies the selected profile snapshot; these differ
-observably and cannot both be promised simultaneously.
+**User-proposed elimination of filesystem `current` selectors**:
+- Global `state/system/current`, `state/user/current`,
+  `res/*/lang/current` and similar mutable selectors are *current
+  implementation*, not inherently necessary in the ideal model.
+- Distinguish a *persistent default preference* (read when a new shell
+  or independent process initializes) from a *shell-active selected
+  identity* and from a *concrete immutable package/profile path*.
+- The intended context can expose pre-resolved profile, user/state,
+  locale, osarch, provider and resource variables directly without
+  following these `current` selectors at every access. Prefer clear
+  pinned selection semantics for a non-default consumer: global
+  changes must not invisibly retarget its running environment.
+- Persistence of defaults across independent shells still needs some
+  durable representation; it does **not** imply `current` symlinks are
+  required. Any alternative must avoid secretly recreating equivalent
+  mutable indirection under a new name, while remaining resilient to
+  configuration changes and protected against unauthorized identity
+  inference. It must not conflate RumiAI's user-state namespace with
+  authenticated POSIX user identity.
+- Normal global command discovery through a bounded PATH/symlink
+  index remains a possible **performance optimization**, including
+  a separately prepared view for selected non-default package/provider
+  versions. This is unrelated to retaining filesystem `current`
+  selectors as runtime identity authority.
 
-**Behavioral scenarios to use for validation**:
-A. One context selection yields coherent `conf`, `cache`, `home`,
-   osarch and resource variables without one `state-path` process per
-   area; no eager creation of all possible areas.
-B. A selects Node/provider v1 and B v2. A -> B in one shell contains no
-   duplicated A PATH prefixes or leftover A-owned values; A and B run
-   concurrently in different shells; an optional B symlink view points
-   to selected concretes and preserves launch obligations.
-C. A protects its effective HOME in a nested Chromium/Electron chain.
-   B attempts to replace HOME. Derived B must preserve or explicitly
-   fail, never silently override, and the trusted NSS projection must
-   match the actual final browser HOME. Do not mistake this logical
-   policy for POSIX authorization/security.
-D. Failed selection/projection cannot leave half-applied shell env.
-   Exact rollback of arbitrary code is out of scope; narrow the trusted
-   mutation surface until the needed guarantee is feasible.
-E. A -> B -> restoration yields the pre-A values for context-owned
-   keys and ordered search path. Decide explicit handling for values
-   modified intentionally by the user during A.
-F. Subsequent change to package-default, facility binding or system
-   profile requires clear *new* activation or explicit refresh to
-   affect an active pinned context; no version drift mid-execution.
+**Revised acceptance scenarios to test later**:
+A. `context(A)` prepares complete state/locale/provider/command
+   references with one shell function call and no repeated state-path
+   processes for normal consumer operations.
+B. `context(A)` then `context(B)` in the same shell leaves only B's
+   managed env/path contributions; repeat B has identical results,
+   with no stack, pop or restore.
+C. A protects a value (including a valid empty value when declared);
+   a derived B cannot silently overwrite it, and Chromium/Electron
+   trust synchronization matches the effective browser HOME.
+D. A preparation failure leaves A unchanged. A valid B apply does
+   not depend on running A's teardown/restoration hooks.
+E. New independent shells pick a configured default without sharing
+   another shell's mutable active context; shells bound to A and B
+   can coexist with different package/provider/profile/locale choices.
+F. Persistent default/profile/provider changes affect *new*
+   resolutions, not already pinned active selections. Mutable
+   symlinks used for global PATH discovery must not silently
+   override a context-specific concrete version.
+G. Unowned user PATH/environment changes during an active context
+   are handled according to a deliberate rule rather than clobbered
+   accidentally; side-effect projections remain valid and safely
+   collectible independently from shell-exit signals.
 
-**Open, not settled**: minimal user-facing operations and parameter
-shape; whether nested contexts need a stack (and how deep), whether
-replace is the default while derive is explicit; exact restore
-semantics for externally modified variables; path identity vs selector
-freshness; whether a prepared plan is an in-shell object or durable
-validated snapshot; package GC/retention for active processes; and
-whether/when context-specific symlink views outperform direct variables.
-The shell cannot atomically commit arbitrary assignments, but complete
-preflight plus an intentionally narrow trusted apply phase can reduce
-partial-update exposure. Run proportional POSIX-shell/host PoCs only
-after these desired semantics are sufficiently clear.
+**Still open**: exact public parameters and whether a pure query is
+useful, explicit vs derived inheritance precedence, how to track
+context ownership compactly in POSIX sh, policy for user-edited
+managed variables, default preference representation, compatibility
+with existing consumers after removal of `current` selectors,
+environment projection lifetime and filesystem cache/GC, and
+pragmatic performance/security tests. Prior current
+`STATE-MODEL.md`, `BOOTSTRAP-ENVIRONMENT.md`,
+`LANG-BOOTSTRAP.md`, `CURRENT-MODEL.md` and package contracts
+still describe today's implementation and must be explicitly
+realigned as one coordinated future implementation work unit if
+the ideal design is adopted.
 
 ### Unified contextual environment resolution (2026-10-26, working design)
 
@@ -819,7 +822,7 @@ resolve those questions or start implementation in the present unit.
 
 ## Next action
 
-1. Advance the first-principles **`context`** lifecycle model (request -> prepare -> activate -> derive/replace -> restore), including stable consumer versions, protected inherited variables, shell-environment rollback boundaries, and optional contextual PATH views. Evaluate scenarios A-F and choose the smallest user-facing operation set plus explicit ownership/precedence/freshness semantics; only then perform the separate pragmatic POSIX implementation/performance and migration assessment. Do not prematurely inherit existing pkg/launcher constraints; preserve bundled manual/lang and frozen repositories.
+1. Finish the first-principles **`context`** one-active-per-shell replacement model **without restore/pop**; evaluate removal of filesystem `current` selectors while preserving durable configured defaults for independent new shells. Define the minimal ownership/precedence/inheritance semantics needed to replace A with B safely (especially PATH and protected HOME), then validate acceptance scenarios A-G. Only afterward perform practical POSIX/performance tests and plan explicit realignment of existing state/bootstrap/lang/pkg contracts. Keep manuals/lang bundled and frozen repositories untouched.
 2. Continue analyzing ownership/dependency boundaries for `pkg-analyze`, terminal primitives/menu/vsed/editor, gitman, SSH/rsudo administration, testlab, JavaScript core/UI and Web components. Reuse existing independent projects and package facilities rather than duplicating implementation.
 3. **On hold until explicit user authorization:** any edit or migration to old `rumiai-os`, and any work on `rumiai-tests` (including re-alignment of its permanent suite). Do not treat those holds as validation blockers for independently released packages.
 4. Independently maintain core `m` package adapter completeness under a separate authorized workstream; its adapter gaps should not be mistaken for missing user-installable product packages.
