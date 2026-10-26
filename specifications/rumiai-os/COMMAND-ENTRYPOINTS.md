@@ -49,7 +49,7 @@ Complex shell command entrypoints SHOULD normally define their functions before 
 
 Multiword public commands normally use lowercase hyphen-separated semantic names, without suffixes identifying their implementation language.
 
-Every `m`- or RumiAI-owned directly executable command identity, including the root `m` and intentional standalone utilities, MUST have the operational manual topic defined by `DOCUMENTATION-MODEL.md`. Package-owned external commands are outside that command-manual requirement.
+Every directly executable command identity globally distributed by the `m` or RumiAI runtime, including the root `m` and intentional standalone utilities, MUST have the operational manual topic defined by `DOCUMENTATION-MODEL.md`. Independently distributed package-owned commands, including first-party technical packages such as `mk`, retain package-local documentation and do not require a duplicate global manual topic.
 
 Owned internal libraries under `lib/sys/<runtime>/` and `lib/ai/<runtime>/` are imported, not executable entrypoints. Shell libraries have `.lib.sh`, no shebang and no executable bit.
 

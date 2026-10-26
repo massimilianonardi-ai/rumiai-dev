@@ -210,7 +210,7 @@ The rule follows the real contract of the invoked tool, POSIX or otherwise.
 
 ### Operational manual completeness
 
-Every `m`- or RumiAI-owned directly executable command identity defined by the command-entrypoint model must have a corresponding operational manual topic under the owner-specific `manual` resource tree defined by `DOCUMENTATION-MODEL.md`.
+Every globally distributed `m`- or RumiAI-owned directly executable command identity defined by the command-entrypoint model must have a corresponding operational manual topic under the owner-specific `manual` resource tree defined by `DOCUMENTATION-MODEL.md`. Independently packaged commands retain their own package-local operational reference instead of projecting implementation manuals into the global runtime resource tree.
 
 This requirement applies regardless of whether the command is intended primarily for end users, developers, maintenance or internal technical workflows. Package-owned external commands are outside this `m`- or RumiAI-owned command requirement.
 
@@ -218,7 +218,7 @@ Creating a command and creating its manual topic are one development obligation 
 
 Every modification of a command requires an explicit manual-consistency check. If purpose, invocation syntax, operands, options, output, exit statuses, environment/files, side effects or other documented observable behavior changes, update the affected manual topic in the same work unit. A purely internal implementation change requires no manual edit when the existing topic remains fully accurate, but the check is still required.
 
-Every `m`- or RumiAI-owned library identity must likewise have exactly one owner-local operational manual topic. Its topic identity is the runtime-qualified library leaf `<library-name>.lib.<runtime>`. The library manual exposes the complete public function interface and does not expose internal functions as callable API.
+Every globally distributed `m`- or RumiAI-owned library identity must likewise have exactly one owner-local operational manual topic. Its topic identity is the runtime-qualified library leaf `<library-name>.lib.<runtime>`. The library manual exposes the complete public function interface and does not expose internal functions as callable API. Independently packaged libraries keep their own package-local reference.
 
 Creating, renaming or removing a library requires corresponding manual realignment in the same work unit. Every library modification requires both a visibility-naming check and a manual-consistency check. Any public-function addition, removal, rename or contract change updates the library manual in the same work unit.
 
