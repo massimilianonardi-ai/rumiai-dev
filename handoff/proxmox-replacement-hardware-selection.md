@@ -1,7 +1,7 @@
 # Proxmox replacement hardware selection
 
 Status: Active
-Updated: 2026-10-27 (Europe/Rome; five operator-suggested blower models compared)
+Updated: 2026-10-27 (Europe/Rome; WOLFBOX MF200 research added)
 
 ## Goal
 
@@ -303,6 +303,15 @@ Compared **exact model identifiers** ONEVAN `sku4B6189`, Lemolifys `Akku-Gebläs
 
 **Comparative criterion:** prioritize measured real thrust/air volume AND runtime on max; do not compare RPM across dissimilar fan geometry, or mAh across differing battery voltages; verify capacity in **Wh**, spare packs, protections, charger quality and thermal cut-off. Power in watts may be instantaneous/marketing, not necessarily continuously sustainable. ONEVAN and Yofidra are high-output value candidates but the exact verified sustainable performance and reliability remain below Makita's documented test transparency; WHATOOK is a precision/adjustability option but fails removable-battery priority, as does VANTRUE. No field testing and no altered hardware purchasing decisions. For electronics, turn off/unplug and hold fan blades; do not vacuum bare PCB using ungrounded plastic/non-ESD-rated equipment.
 
+### WOLFBOX MF200 researched (2026-10-27; no selection)
+
+The operator next proposed **WOLFBOX MF200**, exact model distinct from MF100/50 and from other Wolfbox products. Verified manufacturer/product page and actual independent comparison, preserving primary requirements power + sustained runtime, with inflation and true collected vacuum separately.
+
+- WOLFBOX official EU product: https://eu.wolfbox.com/it/products/wolfbox-mf200-soffiatore-aria-compressa-cartuccia-batteria-sostituibile ; official family comparison https://eu.wolfbox.com/it/collections/air-duster ; official outdoor spec https://outdoor.wolfbox.com/products/compressed-air-duster-mf200 . **Removable proprietary cartridge**, two nominal 3,000mAh cells (marketing 6,000mAh pack, independently reviewed approximately **22.2Wh nominal**), USB-C rechargeable independently of main body, matching replacement packs genuinely offered. 252W claimed peak/power without verified continuous electrical input. 110,000 RPM, 3 modes, claimed max 190–196 mph (= approx. 85–88m/s; some inconsistent regional 210mph), 0.62 lb / 270g promotional thrust, 4 nozzles including **inflatable-bed nozzle**, 2 brushes, ~380–400g device. True **dust vacuum/collection not supported or documented**; no HEPA collection filter. Inflates pool float/air mattresses, nozzle/valve match to be checked; large-volume inflation rate unverified.
+- Official speed-level runtime **100min low, 20min medium, 10min maximum per cartridge**. Official EU store lists **Lite €84.99 promotional**, **Enduro €109.99**, **UltraEnduro €129.99** (checkout and bundle contents need confirmation); stand-alone original spare battery is listed around **€34.99** on EU accessory collection (https://de.wolfbox.com/collections/luftgeblase-zubehor). Prices subject to active promotions; do not mistake `from €34.99` collection price for the full duster.
+- Crucial **independent May 22 2026 test**, Gough's Tech Zone https://goughlui.com/2026/05/22/quick-review-generic-air-duster-vs-wolfbox-super-power-turbofan-mf100-mf200/ : same 12mm nominal circular nozzle, maximum scale force MF200 **132g** versus MF100 **140g**, medium MF200 **45g** versus MF100 **55g**. **Force result is not directly comparable to manufacturer 270g** because test geometry differs, but disproves assumption MF200 categorically outblows MF100. Continuously operated on **medium** until battery empty: MF200 **23 minutes**, MF100 **20 minutes**; **maximum was NOT duration-tested** because highest gear requires holding button. At 5V recharge ~2.5hrs, packed cartridge energy ~22.2Wh inference from charging results; battery pack mechanical slight rattle noted. Bench demonstrates this is a substantive compact duster versus generic; does **not** compare against ONEVAN, Yofidra, Makita at matched conditions or establish 252W sustained.
+- Current provisional positioning: **top compact precision cleaning / inflatable / swappable-battery shortlist**, stronger practical documentation than WHATOOK W02 PRO or VANTRUE T150 built-in battery, but **not a proven most powerful blower** versus ONEVAN/Yofidra/Makita. Makita DUB185Z still best documented higher-volume/real bag vacuum, though bulkier and with inflatable nozzle compatibility unverified. MF200 excellent one-tool candidate except genuine collected vacuum. Need optional spare original pack, exact inflation-valve compatibility, no ESD certification assumed; turn off/unplug hardware and restrain fans. No purchase authorization and no final candidate selected.
+
 ## Completed
 
 - Identified compatible LGA1851 CPU pair and initial motherboard shortlist from official model specifications and Italian market price indications.
@@ -319,7 +328,7 @@ Owned and selected base chassis: **ALAMENGDA AL02 ATX open frame**, to be instal
 1. Confirm user's preference and actual retailer offers for Samsung 990 PRO 2 TB vs WD Black SN7100 2 TB, weighing Linux idle/thermal efficiency and exposed hotspot sensors, Samsung DRAM and high concurrency, and price. Both are consumer drives without verified hardware PLP. Capacity is fixed at 2 TB for current comparison; no purchase or filesystem choice finalized.
 2. Complete purchase costing (CPU, motherboard, NIC, RAM, PSU, cooler and SSD) and RAM QVL validation; owned AL02 costs zero. Preserve future large GPU and x4 NIC coexistence. Cabinet fan selection is deliberately deferred.
 3. Before purchase, seek model/BIOS evidence of independent low PL1/PL2 with non-K CPU; after assembly plan idle-power and stability measurement.
-4. If continuing cabinet-maintenance accessory selection, resolve precision/inflation priority versus true dust-collection priority, verify actual inflatable valves, and cost original battery/charger setup; no selection fixed.
+4. If continuing cabinet-maintenance accessory selection, include WOLFBOX MF200 as compact, inflation-ready, swappable-cartridge alternative; verify actual inflatable valves, battery bundle/spares and collect-vacuum requirement; no selection fixed.
 
 ## Blockers / open questions
 
