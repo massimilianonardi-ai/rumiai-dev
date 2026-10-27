@@ -9,8 +9,8 @@ Produce a readable offline archive of ChatGPT public shared conversations, prese
 
 ## Current repository revisions
 
-- `rumiai-dev`: `fe7a0fe2c2009e5bed40553875df9ea412a597af` at this checkpoint.
-- `rumiai-dev-PoCs`: `25b3133cb4f6f410e61f402ee43b3098c25ae3c3`.
+- `rumiai-dev`: `62faa4d00ffdd1970ead48d04cfa079db7b99d9f` at this checkpoint.
+- `rumiai-dev-PoCs`: `0410fdf8940bbfb39b846b4999f064f1ae33cafc`.
 
 Fresh remote HEAD retrieval remains mandatory on resumption.
 
@@ -71,7 +71,7 @@ Fresh remote HEAD retrieval remains mandatory on resumption.
 - PoC commit `af7e052` adds a passive URL discovery probe for per-card direct HTML attributes or immediate React props, restricted to unambiguous HTTPS destinations. URL values remain in private `events.jsonl` only; sanitized summaries expose button counts, React click-handler counts, and direct-target counts per ordinal/source index. It does not click source cards, navigate or change the offline HTML/CSS. New Node/Chromium physical tests still pending; V8 syntax check and mocked DOM/URL primitive behavior were verified, which is not a complete Node or browser test.
 
 - Physical vmdev run on `af7e052`: all 6 focused Node tests passed. Captured `/home/admino/chatgpt-share2-targets-WiF0gU8j` with 79 DOM snapshots and 8 of 8 source groups each having the exact expected number of source-card buttons (19 total), with 19 React `onClick` handlers but **zero directly declared HTTPS destinations**. The previous passive source-card metadata technique is exhausted; further href/prop-only scans are not useful.
-- PoC commit `c60b365` adds explicit optional `--probe-source-card-actions`, accepted only in a sweep with `--observe-interactions`. After source-card content is mounted, a disposable Chromium session installs mandatory fail-closed CDP Fetch request interception, propagates it to newly paused targets, intercepts JavaScript `window.open` and programmatic anchor clicks, then invokes source-card click behavior with a bounded per-card list. HTTPS destinations and blocked requests remain only in local private evidence. Interception stays active for the remainder of the session, so this capture is **not valid for completeness/style comparisons**. Separate `inspect-source-card-actions.mjs` prints counts only. Added synthetic focused tests for intercepted openings, guard ordering and failure. JS syntax and mocked V8 behavior checked, but no physical Node or Chromium validation yet. No offline rendering code/CSS is changed.
+- PoC commits `c60b365` and `0410fdf` add explicit optional `--probe-source-card-actions`, accepted only in a sweep with `--observe-interactions`. After source-card content is mounted, a disposable Chromium session installs mandatory fail-closed CDP Fetch request interception, propagates it to newly paused targets, intercepts JavaScript `window.open` and programmatic anchor clicks, then invokes source-card click behavior with a bounded per-card list. HTTPS destinations and blocked requests remain only in local private evidence. Interception stays active for the remainder of the session, so this capture is **not valid for completeness/style comparisons**. Separate `inspect-source-card-actions.mjs` prints counts only. Added synthetic focused tests for intercepted openings, guard ordering and failure. JS syntax and mocked V8 behavior checked, but no physical Node or Chromium validation yet. No offline rendering code/CSS is changed.
 
 ## Current state
 
@@ -79,7 +79,7 @@ Operator physically inspected the original-CSS offline view and **accepted the d
 
 ## Next action
 
-On vmdev, pull PoC `25b3133` (doc-only follow-up to functional `c60b365`) and run `node --check render-probe.mjs`, `node --check inspect-source-card-actions.mjs` and `node --test tests/live-share-interactions.test.mjs tests/source-card-actions.test.mjs`. Only after tests pass, perform one **separate** private navigation-guarded opt-in sweep using `--headless --sweep --observe-interactions --probe-source-card-actions`, without requiring CSS/image resource capture. Inspect only `inspect-source-card-actions.mjs <capture-dir>` sanitized counts and report the private capture directory; do not paste raw events.jsonl with URLs. If per-card `windowOpenTargets`, `anchorClickTargets` or blocked requests indicate destinations, validate unambiguous ownership without automatically promoting unrelated background requests. If not, another source introspection mechanism will be required and no source links should be synthesized. Keep accepted offline SVG/layout, original CSS and long-message controls intact.
+On vmdev, pull PoC `0410fdf` (functional guard correction after `c60b365`) and run `node --check render-probe.mjs`, `node --check inspect-source-card-actions.mjs` and `node --test tests/live-share-interactions.test.mjs tests/source-card-actions.test.mjs`. Only after tests pass, perform one **separate** private navigation-guarded opt-in sweep using `--headless --sweep --observe-interactions --probe-source-card-actions`, without requiring CSS/image resource capture. Inspect only `inspect-source-card-actions.mjs <capture-dir>` sanitized counts and report the private capture directory; do not paste raw events.jsonl with URLs. If per-card `windowOpenTargets`, `anchorClickTargets` or blocked requests indicate destinations, validate unambiguous ownership without automatically promoting unrelated background requests. If not, another source introspection mechanism will be required and no source links should be synthesized. Keep accepted offline SVG/layout, original CSS and long-message controls intact.
 
 ## Blockers / open questions
 
