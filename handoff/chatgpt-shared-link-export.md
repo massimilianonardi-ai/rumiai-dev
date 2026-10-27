@@ -10,7 +10,7 @@ Produce a readable offline archive of ChatGPT public shared conversations, prese
 ## Current repository revisions
 
 - `rumiai-dev`: `f831820d619115ecea619c4dbf26424f4a96f620` at this checkpoint.
-- `rumiai-dev-PoCs`: `e6d47a1f889bd6a6f5980a23bda708570b497991`.
+- `rumiai-dev-PoCs`: `5cf5b9e23ddfbcbf2ab0c7a4db21c196440bb855`.
 
 Fresh remote HEAD retrieval remains mandatory on resumption.
 
