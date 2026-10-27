@@ -9,8 +9,8 @@ Produce a readable offline archive of ChatGPT public shared conversations, prese
 
 ## Current repository revisions
 
-- `rumiai-dev`: `5083fe978c1aa27d3452a99b5aec5e18382ad9ee` at this checkpoint.
-- `rumiai-dev-PoCs`: `af7e0521d64118e909b8b84bf8c900f8e3e7a64e`.
+- `rumiai-dev`: `63335063cb674b8c24a3023ab3e5cf88820f32b9` at this checkpoint.
+- `rumiai-dev-PoCs`: `c60b36518ed37ed70a1c9cbd95eb69ff046d4eb6`.
 
 Fresh remote HEAD retrieval remains mandatory on resumption.
 
@@ -70,13 +70,16 @@ Fresh remote HEAD retrieval remains mandatory on resumption.
 - Physical vmdev validation of PoC `dcbf875` succeeded: 8/8 targeted Node tests passed. Source capture `/home/admino/chatgpt-share2-sources-fixed-ZPOiH7NQ` contained 85 snapshots, 8 opened source pills, zero href URLs attributable to scoped popovers, and 7 of 8 pills with a number of source-card buttons equal to the expected source count; the remaining card group had zero buttons at the sampled moment. The observed source links are button controls rather than HTML anchors; existing capture provides button counts but no guaranteed destinations. Do not infer URLs from unscoped page anchors.
 - PoC commit `af7e052` adds a passive URL discovery probe for per-card direct HTML attributes or immediate React props, restricted to unambiguous HTTPS destinations. URL values remain in private `events.jsonl` only; sanitized summaries expose button counts, React click-handler counts, and direct-target counts per ordinal/source index. It does not click source cards, navigate or change the offline HTML/CSS. New Node/Chromium physical tests still pending; V8 syntax check and mocked DOM/URL primitive behavior were verified, which is not a complete Node or browser test.
 
+- Physical vmdev run on `af7e052`: all 6 focused Node tests passed. Captured `/home/admino/chatgpt-share2-targets-WiF0gU8j` with 79 DOM snapshots and 8 of 8 source groups each having the exact expected number of source-card buttons (19 total), with 19 React `onClick` handlers but **zero directly declared HTTPS destinations**. The previous passive source-card metadata technique is exhausted; further href/prop-only scans are not useful.
+- PoC commit `c60b365` adds explicit optional `--probe-source-card-actions`, accepted only in a sweep with `--observe-interactions`. After source-card content is mounted, a disposable Chromium session installs mandatory fail-closed CDP Fetch request interception, propagates it to newly paused targets, intercepts JavaScript `window.open` and programmatic anchor clicks, then invokes source-card click behavior with a bounded per-card list. HTTPS destinations and blocked requests remain only in local private evidence. Interception stays active for the remainder of the session, so this capture is **not valid for completeness/style comparisons**. Separate `inspect-source-card-actions.mjs` prints counts only. Added synthetic focused tests for intercepted openings, guard ordering and failure. JS syntax and mocked V8 behavior checked, but no physical Node or Chromium validation yet. No offline rendering code/CSS is changed.
+
 ## Current state
 
 Operator physically inspected the original-CSS offline view and **accepted the diagram** following “2. La soluzione che adotterei”. Cost-per-token table styling and OpenAI +1 source controls remain unresolved. Native show-more toggle interaction and initially-collapsed default are operator accepted. Writing-editor style fidelity remains pending source-vs-offline diagnosis; manually patched padding was revoked. The earlier accepted semantic outputs remain unchanged.
 
 ## Next action
 
-On vmdev, pull PoC `af7e052`, run `node --test tests/live-share-interactions.test.mjs`, then perform one opt-in same-session capture with `--observe-interactions` if the test succeeds, saving into a fresh private directory. Run the sanitized `inspect-live-share-interactions.mjs` summary and examine `groupsWithButtons`, `buttonCountMatches`, `buttonsWithReactClicks`, `buttonsWithDirectTargets` and each `sourceGroups[].directTargets`. If the direct URL count remains zero, conclude that destinations are not declared in accessible card attributes/props and design a separate explicitly safe observation of source-card navigation intent, not additional href-only captures. Do not invent source links or alter accepted diagram/preview controls/CSS. The original writing-block padding requires computed-style/cascade comparison rather than manual override.
+On vmdev, pull PoC `c60b365` and run `node --check render-probe.mjs`, `node --check inspect-source-card-actions.mjs` and `node --test tests/live-share-interactions.test.mjs tests/source-card-actions.test.mjs`. Only after tests pass, perform one **separate** private navigation-guarded opt-in sweep using `--headless --sweep --observe-interactions --probe-source-card-actions`, without requiring CSS/image resource capture. Inspect only `inspect-source-card-actions.mjs <capture-dir>` sanitized counts and report the private capture directory; do not paste raw events.jsonl with URLs. If per-card `windowOpenTargets`, `anchorClickTargets` or blocked requests indicate destinations, validate unambiguous ownership without automatically promoting unrelated background requests. If not, another source introspection mechanism will be required and no source links should be synthesized. Keep accepted offline SVG/layout, original CSS and long-message controls intact.
 
 ## Blockers / open questions
 
