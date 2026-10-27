@@ -9,8 +9,8 @@ Produce a readable offline archive of ChatGPT public shared conversations, prese
 
 ## Current repository revisions
 
-- `rumiai-dev`: `2351e1c2050ede4d09a613cc6cd6112a93ac21db` at this checkpoint.
-- `rumiai-dev-PoCs`: `cfb430fb460549517350f1f7a4479442bae53149`.
+- `rumiai-dev`: `0b8ff5f2b258ff576bd516b16282a47d505145f3` at this checkpoint.
+- `rumiai-dev-PoCs`: `dcbf87589a7b0598ffbf0487b5cdeab7daee5661`.
 
 Fresh remote HEAD retrieval remains mandatory on resumption.
 
@@ -64,7 +64,7 @@ Fresh remote HEAD retrieval remains mandatory on resumption.
 - The same commit corrects live source observation: uses the actual `aria-haspopup` trigger, attempts native popup click/hover, associates URL evidence only with `aria-controls` or a single newly visible popup, and retains page-wide new URL counts as unscoped evidence. Tests cover synthetic popup capture and private-safe layout scanning. The subsequent `4806a2d` correction also uses accurate diagnostic field names (`hasClassAttribute`, `scopedCountMatches`) instead of names implying unsupported evidence. This path needs a new physical opt-in capture before the grouped-source function can be implemented in the offline page.
 
 - Physical vmdev evidence after `4806a2d`: tests 6 pass / 1 fail (the source-popup regression expected "single-new-popup" but returned "none"). The prior run's capture `/home/admino/chatgpt-share2-sources-Ld75fDXQ` yielded 75 turn snapshots, 8 source-hover attempts, 8 popovers labeled scoped, but **0 scoped URL targets** and 0 scoped count matches. Do not treat these eight popup detections as proof that links were recoverable. The writer-layout inspector found 2 writing-editor surfaces at ordinals 2 and 6, each bearing all four original editor padding variable names; computed values remain unknown.
-- PoC commit `cfb430f` corrects the root bug: the string `scopeType === 'none'` was tested by boolean negation, so fallback detection of newly appeared popups could never execute. A valid but linkless `aria-controls` node no longer prevents checking one newly visible popup. The sampler also recognizes previously hidden popup nodes, records linkless/clickable panel counts, distinguishes controlled panels from single-new-popup provenance and skips popup triggers nested in anchors. The broken regression fixture was augmented to protect this case. Local JavaScript syntax checks and V8 execution of the exact updated popup functions with mocked DOM passed; real vmdev Node tests and a new Chromium observation remain pending.
+- PoC commits `cfb430f` and `dcbf875` correct the root bug: the string `scopeType === 'none'` was tested by boolean negation, so fallback detection of newly appeared popups could never execute. A valid but linkless `aria-controls` node no longer prevents checking one newly visible popup. The sampler also recognizes previously hidden popup nodes, records linkless/clickable panel counts, distinguishes controlled panels from single-new-popup provenance and skips popup triggers nested in anchors. The broken regression fixture was augmented to protect this case. The latest `dcbf875` update adds privacy-safe per-group source structure (`sourceGroups` with ordinal/index, scoped anchor and link-like element counts, no URLs) and a summary regression check to avoid further blind recaptures. Local JavaScript syntax checks and V8 execution of the exact updated popup functions with mocked DOM passed; real vmdev Node tests and a new Chromium observation remain pending.
 - Original writer CSS remains unchanged; only structural, privacy-safe evidence is currently available. Determine original-vs-offline computed style and cascade/ancestor differences before changing CSS.
 
 ## Current state
@@ -73,7 +73,7 @@ Operator physically inspected the original-CSS offline view and **accepted the d
 
 ## Next action
 
-On vmdev, pull PoC `cfb430f` and run `node --test tests/live-share-interactions.test.mjs tests/captured-writing-layout.test.mjs tests/offline-preview-controls.test.mjs`. If tests pass, one new private `render-probe.mjs --headless --sweep --capture-image-bodies --capture-static-bodies --observe-interactions` capture is needed: older source-hover events contain empty scoped links and cannot be retroactively attributed. Inspect `inspect-live-share-interactions.mjs` safe summary; confirm `scopedWithLinks`, `controlledPopupWithLinks` and `scopedCountMatches` before mapping source groups offline. Only trust exact URL ownership from the associated popup. Preserve accepted diagram, initial-collapse controls and unmodified writer CSS. For writing fidelity compare actual computed padding and original stylesheet cascade in live and offline browsers, not merely inline attribute names.
+On vmdev, pull PoC `dcbf875` and run `node --test tests/live-share-interactions.test.mjs tests/captured-writing-layout.test.mjs tests/offline-preview-controls.test.mjs`. If tests pass, one new private `render-probe.mjs --headless --sweep --capture-image-bodies --capture-static-bodies --observe-interactions` capture is needed: older source-hover events contain empty scoped links and cannot be retroactively attributed. Inspect `inspect-live-share-interactions.mjs` safe summary including `sourceGroups`, `scopedWithLinks`, `controlledPopupWithLinks`, `linkLikeWithoutHref` and `scopedCountMatches` before mapping source groups offline. Only trust exact URL ownership from the associated popup. Preserve accepted diagram, initial-collapse controls and unmodified writer CSS. For writing fidelity compare actual computed padding and original stylesheet cascade in live and offline browsers, not merely inline attribute names.
 
 ## Blockers / open questions
 
