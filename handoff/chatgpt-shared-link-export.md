@@ -9,8 +9,8 @@ Produce a readable offline archive of ChatGPT public shared conversations, prese
 
 ## Current repository revisions
 
-- `rumiai-dev`: `63335063cb674b8c24a3023ab3e5cf88820f32b9` at this checkpoint.
-- `rumiai-dev-PoCs`: `c60b36518ed37ed70a1c9cbd95eb69ff046d4eb6`.
+- `rumiai-dev`: `fe7a0fe2c2009e5bed40553875df9ea412a597af` at this checkpoint.
+- `rumiai-dev-PoCs`: `25b3133cb4f6f410e61f402ee43b3098c25ae3c3`.
 
 Fresh remote HEAD retrieval remains mandatory on resumption.
 
@@ -79,7 +79,7 @@ Operator physically inspected the original-CSS offline view and **accepted the d
 
 ## Next action
 
-On vmdev, pull PoC `c60b365` and run `node --check render-probe.mjs`, `node --check inspect-source-card-actions.mjs` and `node --test tests/live-share-interactions.test.mjs tests/source-card-actions.test.mjs`. Only after tests pass, perform one **separate** private navigation-guarded opt-in sweep using `--headless --sweep --observe-interactions --probe-source-card-actions`, without requiring CSS/image resource capture. Inspect only `inspect-source-card-actions.mjs <capture-dir>` sanitized counts and report the private capture directory; do not paste raw events.jsonl with URLs. If per-card `windowOpenTargets`, `anchorClickTargets` or blocked requests indicate destinations, validate unambiguous ownership without automatically promoting unrelated background requests. If not, another source introspection mechanism will be required and no source links should be synthesized. Keep accepted offline SVG/layout, original CSS and long-message controls intact.
+On vmdev, pull PoC `25b3133` (doc-only follow-up to functional `c60b365`) and run `node --check render-probe.mjs`, `node --check inspect-source-card-actions.mjs` and `node --test tests/live-share-interactions.test.mjs tests/source-card-actions.test.mjs`. Only after tests pass, perform one **separate** private navigation-guarded opt-in sweep using `--headless --sweep --observe-interactions --probe-source-card-actions`, without requiring CSS/image resource capture. Inspect only `inspect-source-card-actions.mjs <capture-dir>` sanitized counts and report the private capture directory; do not paste raw events.jsonl with URLs. If per-card `windowOpenTargets`, `anchorClickTargets` or blocked requests indicate destinations, validate unambiguous ownership without automatically promoting unrelated background requests. If not, another source introspection mechanism will be required and no source links should be synthesized. Keep accepted offline SVG/layout, original CSS and long-message controls intact.
 
 ## Blockers / open questions
 
