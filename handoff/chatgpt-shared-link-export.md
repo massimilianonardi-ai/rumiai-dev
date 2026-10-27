@@ -9,8 +9,8 @@ Produce a readable offline archive of ChatGPT public shared conversations, prese
 
 ## Current repository revisions
 
-- `rumiai-dev`: `023232938c1b42b0274fe1444d8e1cd15ffe7bf1` at this checkpoint.
-- `rumiai-dev-PoCs`: `455dad59c68c2261b462c9d9890b34b33604f55c`.
+- `rumiai-dev`: `391c49c8db854229cc071ccbd0b65eaa064b5d95` at this checkpoint.
+- `rumiai-dev-PoCs`: `4806a2dea8f55e5578a8cca12c3c8cf4752490be`.
 
 Fresh remote HEAD retrieval remains mandatory on resumption.
 
@@ -60,8 +60,8 @@ Fresh remote HEAD retrieval remains mandatory on resumption.
 - Commit `a51a4ed` sets every preview checkbox initially unchecked and normalizes stale source `data-expanded` to collapsed while retaining complete captured text. It adds a 1rem logical inset narrowly scoped to original `--writing-block-editor-pl` editor elements, updates fixture assertions and records source/initial state counts separately. New code has preliminary syntax checks but still requires real vmdev Node tests and visual acceptance.
 
 - Operator visually confirmed long user messages **start collapsed**, and both expand/collapse controls work correctly. The "Scrittura" writing block, after "Una richiesta sperimentale potrebbe essere questa:", still lacks original left and bottom inset; user explicitly rejects ad-hoc CSS fixes. Clipboard controls remain optional.
-- PoC commit `455dad5` **removes** the fixed inline start/end 1rem writing-editor padding override. It preserves source HTML/CSS and adds `inspect-captured-writing-layout.mjs` to report original archived editor/ancestor structure without printing content or style values. Further root-cause analysis must compare source/live and archived *computed* styles, DOM ancestors and stylesheet cascade/order; the current offline page does not include all original application ancestors.
-- The same commit corrects live source observation: uses the actual `aria-haspopup` trigger, attempts native popup click/hover, associates URL evidence only with `aria-controls` or a single newly visible popup, and retains page-wide new URL counts as unscoped evidence. Tests cover synthetic popup capture and private-safe layout scanning. This path needs a new physical opt-in capture before the grouped-source function can be implemented in the offline page.
+- PoC commits `455dad5` and `4806a2d` **remove** the fixed inline start/end 1rem writing-editor padding override. It preserves source HTML/CSS and adds `inspect-captured-writing-layout.mjs` to report original archived editor/ancestor structure without printing content or style values. Further root-cause analysis must compare source/live and archived *computed* styles, DOM ancestors and stylesheet cascade/order; the current offline page does not include all original application ancestors.
+- The same commit corrects live source observation: uses the actual `aria-haspopup` trigger, attempts native popup click/hover, associates URL evidence only with `aria-controls` or a single newly visible popup, and retains page-wide new URL counts as unscoped evidence. Tests cover synthetic popup capture and private-safe layout scanning. The subsequent `4806a2d` correction also uses accurate diagnostic field names (`hasClassAttribute`, `scopedCountMatches`) instead of names implying unsupported evidence. This path needs a new physical opt-in capture before the grouped-source function can be implemented in the offline page.
 
 ## Current state
 
