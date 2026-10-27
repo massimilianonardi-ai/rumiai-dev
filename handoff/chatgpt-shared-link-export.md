@@ -9,8 +9,8 @@ Produce a readable offline archive of ChatGPT public shared conversations, prese
 
 ## Current repository revisions
 
-- `rumiai-dev`: `0b8ff5f2b258ff576bd516b16282a47d505145f3` at this checkpoint.
-- `rumiai-dev-PoCs`: `dcbf87589a7b0598ffbf0487b5cdeab7daee5661`.
+- `rumiai-dev`: `5083fe978c1aa27d3452a99b5aec5e18382ad9ee` at this checkpoint.
+- `rumiai-dev-PoCs`: `af7e0521d64118e909b8b84bf8c900f8e3e7a64e`.
 
 Fresh remote HEAD retrieval remains mandatory on resumption.
 
@@ -67,18 +67,21 @@ Fresh remote HEAD retrieval remains mandatory on resumption.
 - PoC commits `cfb430f` and `dcbf875` correct the root bug: the string `scopeType === 'none'` was tested by boolean negation, so fallback detection of newly appeared popups could never execute. A valid but linkless `aria-controls` node no longer prevents checking one newly visible popup. The sampler also recognizes previously hidden popup nodes, records linkless/clickable panel counts, distinguishes controlled panels from single-new-popup provenance and skips popup triggers nested in anchors. The broken regression fixture was augmented to protect this case. The latest `dcbf875` update adds privacy-safe per-group source structure (`sourceGroups` with ordinal/index, scoped anchor and link-like element counts, no URLs) and a summary regression check to avoid further blind recaptures. Local JavaScript syntax checks and V8 execution of the exact updated popup functions with mocked DOM passed; real vmdev Node tests and a new Chromium observation remain pending.
 - Original writer CSS remains unchanged; only structural, privacy-safe evidence is currently available. Determine original-vs-offline computed style and cascade/ancestor differences before changing CSS.
 
+- Physical vmdev validation of PoC `dcbf875` succeeded: 8/8 targeted Node tests passed. Source capture `/home/admino/chatgpt-share2-sources-fixed-ZPOiH7NQ` contained 85 snapshots, 8 opened source pills, zero href URLs attributable to scoped popovers, and 7 of 8 pills with a number of source-card buttons equal to the expected source count; the remaining card group had zero buttons at the sampled moment. The observed source links are button controls rather than HTML anchors; existing capture provides button counts but no guaranteed destinations. Do not infer URLs from unscoped page anchors.
+- PoC commit `af7e052` adds a passive URL discovery probe for per-card direct HTML attributes or immediate React props, restricted to unambiguous HTTPS destinations. URL values remain in private `events.jsonl` only; sanitized summaries expose button counts, React click-handler counts, and direct-target counts per ordinal/source index. It does not click source cards, navigate or change the offline HTML/CSS. New Node/Chromium physical tests still pending; V8 syntax check and mocked DOM/URL primitive behavior were verified, which is not a complete Node or browser test.
+
 ## Current state
 
 Operator physically inspected the original-CSS offline view and **accepted the diagram** following “2. La soluzione che adotterei”. Cost-per-token table styling and OpenAI +1 source controls remain unresolved. Native show-more toggle interaction and initially-collapsed default are operator accepted. Writing-editor style fidelity remains pending source-vs-offline diagnosis; manually patched padding was revoked. The earlier accepted semantic outputs remain unchanged.
 
 ## Next action
 
-On vmdev, pull PoC `dcbf875` and run `node --test tests/live-share-interactions.test.mjs tests/captured-writing-layout.test.mjs tests/offline-preview-controls.test.mjs`. If tests pass, one new private `render-probe.mjs --headless --sweep --capture-image-bodies --capture-static-bodies --observe-interactions` capture is needed: older source-hover events contain empty scoped links and cannot be retroactively attributed. Inspect `inspect-live-share-interactions.mjs` safe summary including `sourceGroups`, `scopedWithLinks`, `controlledPopupWithLinks`, `linkLikeWithoutHref` and `scopedCountMatches` before mapping source groups offline. Only trust exact URL ownership from the associated popup. Preserve accepted diagram, initial-collapse controls and unmodified writer CSS. For writing fidelity compare actual computed padding and original stylesheet cascade in live and offline browsers, not merely inline attribute names.
+On vmdev, pull PoC `af7e052`, run `node --test tests/live-share-interactions.test.mjs`, then perform one opt-in same-session capture with `--observe-interactions` if the test succeeds, saving into a fresh private directory. Run the sanitized `inspect-live-share-interactions.mjs` summary and examine `groupsWithButtons`, `buttonCountMatches`, `buttonsWithReactClicks`, `buttonsWithDirectTargets` and each `sourceGroups[].directTargets`. If the direct URL count remains zero, conclude that destinations are not declared in accessible card attributes/props and design a separate explicitly safe observation of source-card navigation intent, not additional href-only captures. Do not invent source links or alter accepted diagram/preview controls/CSS. The original writing-block padding requires computed-style/cascade comparison rather than manual override.
 
 ## Blockers / open questions
 
 - Cost-table test and control-structure inspector passed physically on vmdev; **visual** acceptance of the corrected table is still pending.
 - CSS order and missing source DOM ancestors may cause layout mismatches.
 - Browser interaction and collapsed-by-default behavior of native preview controls are operator-accepted. "Scrittura" left and bottom padding remains unverified against original computed style; do not revive a hard-coded fallback.
-- Link count consistency is weak evidence, not source-to-pill provenance; repaired popup-fallback detection requires physical vmdev test and fresh CDP capture. The known 2026-10-27 `Ld75fDXQ` capture has no attributed source URLs.
+- Link count consistency is weak evidence, not source-to-pill provenance; popup fallback was physically exercised on vmdev; the new `ZPOiH7NQ` capture confirms source-card buttons but zero attributed hrefs. Per-card URL destination provenance remains unresolved; passive direct-attribute/React-prop capture is pending.
 - RAW source conversation completeness not proven by contiguous turn ordinals.
