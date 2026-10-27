@@ -9,8 +9,8 @@ Produce a readable offline archive of ChatGPT public shared conversations, prese
 
 ## Current repository revisions
 
-- `rumiai-dev`: `391c49c8db854229cc071ccbd0b65eaa064b5d95` at this checkpoint.
-- `rumiai-dev-PoCs`: `4806a2dea8f55e5578a8cca12c3c8cf4752490be`.
+- `rumiai-dev`: `2351e1c2050ede4d09a613cc6cd6112a93ac21db` at this checkpoint.
+- `rumiai-dev-PoCs`: `cfb430fb460549517350f1f7a4479442bae53149`.
 
 Fresh remote HEAD retrieval remains mandatory on resumption.
 
@@ -63,18 +63,22 @@ Fresh remote HEAD retrieval remains mandatory on resumption.
 - PoC commits `455dad5` and `4806a2d` **remove** the fixed inline start/end 1rem writing-editor padding override. It preserves source HTML/CSS and adds `inspect-captured-writing-layout.mjs` to report original archived editor/ancestor structure without printing content or style values. Further root-cause analysis must compare source/live and archived *computed* styles, DOM ancestors and stylesheet cascade/order; the current offline page does not include all original application ancestors.
 - The same commit corrects live source observation: uses the actual `aria-haspopup` trigger, attempts native popup click/hover, associates URL evidence only with `aria-controls` or a single newly visible popup, and retains page-wide new URL counts as unscoped evidence. Tests cover synthetic popup capture and private-safe layout scanning. The subsequent `4806a2d` correction also uses accurate diagnostic field names (`hasClassAttribute`, `scopedCountMatches`) instead of names implying unsupported evidence. This path needs a new physical opt-in capture before the grouped-source function can be implemented in the offline page.
 
+- Physical vmdev evidence after `4806a2d`: tests 6 pass / 1 fail (the source-popup regression expected "single-new-popup" but returned "none"). The prior run's capture `/home/admino/chatgpt-share2-sources-Ld75fDXQ` yielded 75 turn snapshots, 8 source-hover attempts, 8 popovers labeled scoped, but **0 scoped URL targets** and 0 scoped count matches. Do not treat these eight popup detections as proof that links were recoverable. The writer-layout inspector found 2 writing-editor surfaces at ordinals 2 and 6, each bearing all four original editor padding variable names; computed values remain unknown.
+- PoC commit `cfb430f` corrects the root bug: the string `scopeType === 'none'` was tested by boolean negation, so fallback detection of newly appeared popups could never execute. A valid but linkless `aria-controls` node no longer prevents checking one newly visible popup. The sampler also recognizes previously hidden popup nodes, records linkless/clickable panel counts, distinguishes controlled panels from single-new-popup provenance and skips popup triggers nested in anchors. The broken regression fixture was augmented to protect this case. Local JavaScript syntax checks and V8 execution of the exact updated popup functions with mocked DOM passed; real vmdev Node tests and a new Chromium observation remain pending.
+- Original writer CSS remains unchanged; only structural, privacy-safe evidence is currently available. Determine original-vs-offline computed style and cascade/ancestor differences before changing CSS.
+
 ## Current state
 
 Operator physically inspected the original-CSS offline view and **accepted the diagram** following “2. La soluzione che adotterei”. Cost-per-token table styling and OpenAI +1 source controls remain unresolved. Native show-more toggle interaction and initially-collapsed default are operator accepted. Writing-editor style fidelity remains pending source-vs-offline diagnosis; manually patched padding was revoked. The earlier accepted semantic outputs remain unchanged.
 
 ## Next action
 
-On vmdev, pull PoC `455dad5` and run focused tests for styling, interactions and writer structure. Analyze already-captured `/home/admino/chatgpt-share2-interactive-m8xthV9A` with `inspect-captured-writing-layout.mjs`; do not infer computed styles from DOM alone. Create a fresh styled view to confirm no manual writing-editor padding remains and that the accepted diagram/preview toggles remain intact. To advance OpenAI +N groups, perform one new private opt-in sweep with `--observe-interactions` and inspect `inspect-live-share-interactions.mjs` sanitized scope/count telemetry; never reassign bare page-wide anchors to groups. Only implement native offline source-group expansion after scoped provenance is verified.
+On vmdev, pull PoC `cfb430f` and run `node --test tests/live-share-interactions.test.mjs tests/captured-writing-layout.test.mjs tests/offline-preview-controls.test.mjs`. If tests pass, one new private `render-probe.mjs --headless --sweep --capture-image-bodies --capture-static-bodies --observe-interactions` capture is needed: older source-hover events contain empty scoped links and cannot be retroactively attributed. Inspect `inspect-live-share-interactions.mjs` safe summary; confirm `scopedWithLinks`, `controlledPopupWithLinks` and `scopedCountMatches` before mapping source groups offline. Only trust exact URL ownership from the associated popup. Preserve accepted diagram, initial-collapse controls and unmodified writer CSS. For writing fidelity compare actual computed padding and original stylesheet cascade in live and offline browsers, not merely inline attribute names.
 
 ## Blockers / open questions
 
 - Cost-table test and control-structure inspector passed physically on vmdev; **visual** acceptance of the corrected table is still pending.
 - CSS order and missing source DOM ancestors may cause layout mismatches.
 - Browser interaction and collapsed-by-default behavior of native preview controls are operator-accepted. "Scrittura" left and bottom padding remains unverified against original computed style; do not revive a hard-coded fallback.
-- Link count consistency is weak evidence, not source-to-pill provenance. Improved trigger-scoped popup capture needs physical Chromium verification.
+- Link count consistency is weak evidence, not source-to-pill provenance; repaired popup-fallback detection requires physical vmdev test and fresh CDP capture. The known 2026-10-27 `Ld75fDXQ` capture has no attributed source URLs.
 - RAW source conversation completeness not proven by contiguous turn ordinals.
