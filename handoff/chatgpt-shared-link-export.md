@@ -9,8 +9,8 @@ Produce a readable offline archive of ChatGPT public shared conversations, prese
 
 ## Current repository revisions
 
-- `rumiai-dev`: `17c8629ba5783f8b8a8b3ab7b41950ec7e7bfc0c` at this checkpoint.
-- `rumiai-dev-PoCs`: `431562e6284d3c56f3da43179471066ee1c56b17`.
+- `rumiai-dev`: `08d57104e909432b4d2e661c73c08edfd90c47cc` at this checkpoint.
+- `rumiai-dev-PoCs`: `a51a4edb13a333f70d03867f8cbf89f0d3d71486`.
 
 Fresh remote HEAD retrieval remains mandatory on resumption.
 
@@ -56,17 +56,20 @@ Fresh remote HEAD retrieval remains mandatory on resumption.
 - Physical vmdev run after `f2ecce3`: four real tests passed; new capture `/home/admino/chatgpt-share2-interactive-m8xthV9A` has 74 verified snapshots, 5 recognized preview labels, 5 click attempts and final user turns 1 and 9 marked `aria-expanded=true`; turn 5 is collapsed again in the latest snapshot. One of eight source-group hover counts agreed with `+N`; link identity remains unproven.
 - Commit `431562e` adds opt-in expanded snapshot preference for the original-CSS assembler, and script-free checkbox/label controls scoped only to user `data-can-expand` previews. The accepted assistant diagram and semantic renderer are intentionally unmodified. A two-scenario fixture was added. Physical testing of the new offline mode and actual user text completeness is pending.
 
+- Operator reports the local CSS-only user-preview expand/collapse control **works**, but expanded-source snapshots initially display open; user explicitly requires **collapsed by default**. The writing block starting “Scrittura”, after “Una richiesta sperimentale potrebbe essere questa:”, has insufficient text inset. Copy buttons are optional and must not justify weakening the offline CSP.
+- Commit `a51a4ed` sets every preview checkbox initially unchecked and normalizes stale source `data-expanded` to collapsed while retaining complete captured text. It adds a 1rem logical inset narrowly scoped to original `--writing-block-editor-pl` editor elements, updates fixture assertions and records source/initial state counts separately. New code has preliminary syntax checks but still requires real vmdev Node tests and visual acceptance.
+
 ## Current state
 
-Operator physically inspected the original-CSS offline view and **accepted the diagram** following “2. La soluzione che adotterei”. Cost-per-token table styling, OpenAI +1 source controls and long-message “Mostra di più” are not yet accepted. The earlier accepted semantic outputs remain unchanged.
+Operator physically inspected the original-CSS offline view and **accepted the diagram** following “2. La soluzione che adotterei”. Cost-per-token table styling and OpenAI +1 source controls remain unresolved. Native show-more toggle interaction is operator accepted; default-collapse and writing-editor inset await retest. The earlier accepted semantic outputs remain unchanged.
 
 ## Next action
 
-On vmdev, pull PoC `431562e`, run `node --test tests/offline-preview-controls.test.mjs tests/same-session-styled.test.mjs`, and generate a fresh styled output from the existing `/home/admino/chatgpt-share2-interactive-m8xthV9A` capture using `render-same-session-styled.mjs`. Physically verify native show-more/less toggles and complete user message text in turns 1, 5 and 9, the accepted assistant diagram, and the cost table; report `restoredPreviews`/`initiallyExpandedPreviews`. Source `+N` groups remain unresolved pending scope-based link attribution, not just count matching. Preserve all previous outputs.
+On vmdev, pull PoC `a51a4ed`, rerun `node --test tests/offline-preview-controls.test.mjs tests/same-session-styled.test.mjs`, and create a new styled output using existing `/home/admino/chatgpt-share2-interactive-m8xthV9A`. Visually confirm all long messages start collapsed, can expand/re-collapse and display complete text; confirm writing block “Scrittura” inset, preserve accepted assistant diagram, and inspect cost table. Report the output counts (`restoredPreviews`, `initiallyExpandedPreviews`, `sourceExpandedPreviews`, `writingEditorCandidates`). Continue source-pill provenance work only when verified; copying is optional/deferred under script-src none.
 
 ## Blockers / open questions
 
 - Cost-table test and control-structure inspector passed physically on vmdev; **visual** acceptance of the corrected table is still pending.
 - CSS order and missing source DOM ancestors may cause layout mismatches.
-- Physical Chromium proved the nested-label selector clickable, but a real browser check of the newly generated native offline toggles and full-message coverage is pending. Link count consistency is weak evidence, not source-to-pill provenance.
+- Browser interaction of native preview toggles was positively reported, but new collapsed-by-default behavior, reading padding and complete message text still require physical validation. Link count consistency is weak evidence, not source-to-pill provenance.
 - RAW source conversation completeness not proven by contiguous turn ordinals.
