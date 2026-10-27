@@ -9,8 +9,8 @@ Produce a readable offline archive of ChatGPT public shared conversations, prese
 
 ## Current repository revisions
 
-- `rumiai-dev`: `08d57104e909432b4d2e661c73c08edfd90c47cc` at this checkpoint.
-- `rumiai-dev-PoCs`: `a51a4edb13a333f70d03867f8cbf89f0d3d71486`.
+- `rumiai-dev`: `023232938c1b42b0274fe1444d8e1cd15ffe7bf1` at this checkpoint.
+- `rumiai-dev-PoCs`: `455dad59c68c2261b462c9d9890b34b33604f55c`.
 
 Fresh remote HEAD retrieval remains mandatory on resumption.
 
@@ -59,17 +59,22 @@ Fresh remote HEAD retrieval remains mandatory on resumption.
 - Operator reports the local CSS-only user-preview expand/collapse control **works**, but expanded-source snapshots initially display open; user explicitly requires **collapsed by default**. The writing block starting “Scrittura”, after “Una richiesta sperimentale potrebbe essere questa:”, has insufficient text inset. Copy buttons are optional and must not justify weakening the offline CSP.
 - Commit `a51a4ed` sets every preview checkbox initially unchecked and normalizes stale source `data-expanded` to collapsed while retaining complete captured text. It adds a 1rem logical inset narrowly scoped to original `--writing-block-editor-pl` editor elements, updates fixture assertions and records source/initial state counts separately. New code has preliminary syntax checks but still requires real vmdev Node tests and visual acceptance.
 
+- Operator visually confirmed long user messages **start collapsed**, and both expand/collapse controls work correctly. The "Scrittura" writing block, after "Una richiesta sperimentale potrebbe essere questa:", still lacks original left and bottom inset; user explicitly rejects ad-hoc CSS fixes. Clipboard controls remain optional.
+- PoC commit `455dad5` **removes** the fixed inline start/end 1rem writing-editor padding override. It preserves source HTML/CSS and adds `inspect-captured-writing-layout.mjs` to report original archived editor/ancestor structure without printing content or style values. Further root-cause analysis must compare source/live and archived *computed* styles, DOM ancestors and stylesheet cascade/order; the current offline page does not include all original application ancestors.
+- The same commit corrects live source observation: uses the actual `aria-haspopup` trigger, attempts native popup click/hover, associates URL evidence only with `aria-controls` or a single newly visible popup, and retains page-wide new URL counts as unscoped evidence. Tests cover synthetic popup capture and private-safe layout scanning. This path needs a new physical opt-in capture before the grouped-source function can be implemented in the offline page.
+
 ## Current state
 
-Operator physically inspected the original-CSS offline view and **accepted the diagram** following “2. La soluzione che adotterei”. Cost-per-token table styling and OpenAI +1 source controls remain unresolved. Native show-more toggle interaction is operator accepted; default-collapse and writing-editor inset await retest. The earlier accepted semantic outputs remain unchanged.
+Operator physically inspected the original-CSS offline view and **accepted the diagram** following “2. La soluzione che adotterei”. Cost-per-token table styling and OpenAI +1 source controls remain unresolved. Native show-more toggle interaction and initially-collapsed default are operator accepted. Writing-editor style fidelity remains pending source-vs-offline diagnosis; manually patched padding was revoked. The earlier accepted semantic outputs remain unchanged.
 
 ## Next action
 
-On vmdev, pull PoC `a51a4ed`, rerun `node --test tests/offline-preview-controls.test.mjs tests/same-session-styled.test.mjs`, and create a new styled output using existing `/home/admino/chatgpt-share2-interactive-m8xthV9A`. Visually confirm all long messages start collapsed, can expand/re-collapse and display complete text; confirm writing block “Scrittura” inset, preserve accepted assistant diagram, and inspect cost table. Report the output counts (`restoredPreviews`, `initiallyExpandedPreviews`, `sourceExpandedPreviews`, `writingEditorCandidates`). Continue source-pill provenance work only when verified; copying is optional/deferred under script-src none.
+On vmdev, pull PoC `455dad5` and run focused tests for styling, interactions and writer structure. Analyze already-captured `/home/admino/chatgpt-share2-interactive-m8xthV9A` with `inspect-captured-writing-layout.mjs`; do not infer computed styles from DOM alone. Create a fresh styled view to confirm no manual writing-editor padding remains and that the accepted diagram/preview toggles remain intact. To advance OpenAI +N groups, perform one new private opt-in sweep with `--observe-interactions` and inspect `inspect-live-share-interactions.mjs` sanitized scope/count telemetry; never reassign bare page-wide anchors to groups. Only implement native offline source-group expansion after scoped provenance is verified.
 
 ## Blockers / open questions
 
 - Cost-table test and control-structure inspector passed physically on vmdev; **visual** acceptance of the corrected table is still pending.
 - CSS order and missing source DOM ancestors may cause layout mismatches.
-- Browser interaction of native preview toggles was positively reported, but new collapsed-by-default behavior, reading padding and complete message text still require physical validation. Link count consistency is weak evidence, not source-to-pill provenance.
+- Browser interaction and collapsed-by-default behavior of native preview controls are operator-accepted. "Scrittura" left and bottom padding remains unverified against original computed style; do not revive a hard-coded fallback.
+- Link count consistency is weak evidence, not source-to-pill provenance. Improved trigger-scoped popup capture needs physical Chromium verification.
 - RAW source conversation completeness not proven by contiguous turn ordinals.
