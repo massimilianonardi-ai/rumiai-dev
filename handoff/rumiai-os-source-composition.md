@@ -707,6 +707,134 @@ still describe today's implementation and must be explicitly
 realigned as one coordinated future implementation work unit if
 the ideal design is adopted.
 
+### Context domains, selection axes and consumers (2026-10-27, conceptual proposal)
+
+The user requests a domain map: what context a new shell has,
+whether "system", "default", "user" or "pkg" are exclusive modes;
+which inputs matter (user, package, profile and others); and
+who consumes the resulting context. The following is working design,
+**not approved argument names, namespaces or a new canonical contract**.
+Explore optimal semantics unconstrained by old mechanisms first.
+
+**Do not create one mutually exclusive mode enum** out of these labels:
+- `system` / `user` describe **state/configuration scopes**;
+  a consumer may require both at once, e.g. system trust/configuration
+  plus separate user-specific writable data;
+- `default` is a **selection policy for unspecified dimensions**,
+  not a state scope, actor or executable consumer;
+- `pkg` is an **owner class and possible consumer identity**, not a
+  third system/user state scope;
+- a `profile` identifies a chosen configuration within an applicable
+  scope (current canonical `system` profile and `user` binding differ;
+  generalized user-profile selection is a *new candidate*, not a
+  description of today's contract);
+- the POSIX effective execution identity is a **host security
+  principal**, never derived merely from the RumiAI logical user/profile
+  label. It governs real filesystem permissions.
+
+**Conceptual input axes**:
+1. requesting entrypoint/execution mode: an ordinary host shell,
+   m-initialized interactive shell, m command, managed service,
+   application/package launcher or other child process;
+2. consumer identity: interactive m session, technical m facility,
+   concrete package/application, service instance, build/test job;
+3. system profile and optional user-state identity/profile as
+   independent bindings; requested state owner and areas determine
+   the relevant directories and write scope;
+4. concrete package/version, service instance where applicable,
+   dependency/capability requirements and provider selections;
+5. osarch, locale, runtime-specific resource/loading needs;
+6. explicitly supplied overrides and **inherited value + propagation
+   policies**, including protected values, unset/empty distinction,
+   allowed override and PATH-composition rules.
+
+**Default and start-of-shell proposal**:
+An OS-native shell begins with a host environment; it is not
+automatically an m context merely because its process exists.
+An m-managed interactive shell may initialize a user-oriented
+"default selection" *resolved context* while simultaneously
+holding the applicable system-profile bindings, host POSIX identity
+and system capabilities. "Default" is calculated per dimension
+from explicit permitted input, declared inherited policy and
+persistent selected preferences, rather than implemented as a
+`current` symbolic-link context. A separate `m command` run as a
+child cannot set environment variables in the calling shell;
+a directly sourced POSIX `context` function can.
+
+Service and maintenance execution have distinct *requested
+consumer/state configurations*, not different context engines:
+a system service may use system-owned package state with a
+service-specific State Instance and a separately constrained
+non-root host principal. Neither mere root UID nor setting
+`scope=system` implicitly authorizes administrative operations.
+An m-initialized consumer may use system-owned read-only resources
+and user-owned state concurrently; access rights remain external
+to semantic selection.
+
+**Who consumes**:
+- interactive shell, scripts and administrative commands: use the
+  effective export/PATH projection directly;
+- package/application launchers: select concrete package and
+  capabilities, state directories, user/app overrides and child env;
+- service launchers: package plus service instance, scope, host
+  principal and supervision/trust side effects;
+- build/test tools: optionally choose distinct package/provider
+  versions and development/test profiles per process/shell;
+- libraries, manuals, language and runtime adapters: read the
+  already-selected roots/catalogs on demand, not solve the graph
+  for every library import/message lookup;
+- child/embedded browser or runtime processes: inherit only declared
+  exports and honored propagation policy via trusted integrations.
+
+**Proposed request/selection algorithm** (policy design, not CLI syntax):
+- resolve which consumer is being prepared from its trusted entrypoint
+  if derivable; demand an explicit identity only if ambiguous;
+- collect explicit selections, then inherited approved selections,
+  persistent per-dimension preferences and safe inferred defaults;
+- check protected-value conflicts *before* precedence application:
+  an explicit attempt to override protected inherited data fails
+  unless an authorized override rule explicitly permits it;
+- derive system profile, user binding, package concrete, provider graph,
+  locale, osarch and relevant state areas, then validate and apply a
+  single coherent environment projection;
+- when context A is replaced by B, do not treat every A-owned export
+  as an implicit inheritance source: carry forward only permitted
+  inherited values/policies and non-owned host environment. Do not
+  duplicate PATH entries or retain A-only state variables.
+  One active context per shell; no restore stack.
+
+**Minimum scenarios**:
+A. Fresh m-managed interactive shell: system profile P1, user logical
+   binding U1, default package/provider selections; no package
+   consumer argument required simply to use the shell.
+B. Same user opens a second shell bound to P2/U2 while first stays
+   P1/U1; no shared mutable `current` path changes either shell.
+C. A command of concrete package X: user area paths, X roots,
+   X's bundled manuals/language, compatible provider concrete;
+   the calling interactive shell is not modified by execution.
+D. System service: system-owned service-instance `home`/`conf`,
+   system trust policy and separate real POSIX service account;
+   not confused with a normal user-scope package launch.
+E. Nested Chromium/Electron: protected effective HOME and its policy
+   survive recognized child composition; NSS projection corresponds
+   to the actual final browser HOME.
+F. Fresh shell or process with no persisted user/profile preference
+   receives a safe, documented default or a precise failure; never
+   invent an authenticated user identity from a logical profile name.
+
+**Still open**: whether global defaults should be per system/user
+profile or layered; if there should be both named system and user
+profiles (today only system profiles are canonical); conflict
+precedence, exact schema and minimal public parameters; trust
+boundary for inherited context metadata; whether interactive context
+is automatically applied by a shell startup integration or only via
+explicit m initialization; and whether some technical m bootstrap
+paths must be available before full context resolution.
+Do not promote conceptual terms to file layout, public keys or CLI
+until evaluated and confirmed. `current` elimination and single
+active shell context remain the intended redesign, not yet an
+implementation in the current code.
+
 ### Unified contextual environment resolution (2026-10-26, working design)
 
 The user's correction: one composition resolver should cover executables,
@@ -822,7 +950,7 @@ resolve those questions or start implementation in the present unit.
 
 ## Next action
 
-1. Finish the first-principles **`context`** one-active-per-shell replacement model **without restore/pop**; evaluate removal of filesystem `current` selectors while preserving durable configured defaults for independent new shells. Define the minimal ownership/precedence/inheritance semantics needed to replace A with B safely (especially PATH and protected HOME), then validate acceptance scenarios A-G. Only afterward perform practical POSIX/performance tests and plan explicit realignment of existing state/bootstrap/lang/pkg contracts. Keep manuals/lang bundled and frozen repositories untouched.
+1. Validate the proposed **orthogonal context axes** (system/user state bindings, profile/identity, consumer, concrete package/provider and inherited policy) through realistic interactive-shell, package, service and nested-process scenarios, then decide the smallest public request parameters and persistent per-dimension default model. Maintain one active context per shell without restore, evaluate removal of filesystem `current` selectors, and define safe A-to-B replacement and protected propagation. Only afterward assess POSIX/performance and plan explicit canonical realignment. Preserve bundled manual/lang and frozen repositories.
 2. Continue analyzing ownership/dependency boundaries for `pkg-analyze`, terminal primitives/menu/vsed/editor, gitman, SSH/rsudo administration, testlab, JavaScript core/UI and Web components. Reuse existing independent projects and package facilities rather than duplicating implementation.
 3. **On hold until explicit user authorization:** any edit or migration to old `rumiai-os`, and any work on `rumiai-tests` (including re-alignment of its permanent suite). Do not treat those holds as validation blockers for independently released packages.
 4. Independently maintain core `m` package adapter completeness under a separate authorized workstream; its adapter gaps should not be mistaken for missing user-installable product packages.
