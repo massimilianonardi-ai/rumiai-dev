@@ -9,7 +9,7 @@ Produce a readable offline archive of ChatGPT public shared conversations, prese
 
 ## Current repository revisions
 
-- `rumiai-dev`: `62faa4d00ffdd1970ead48d04cfa079db7b99d9f` at this checkpoint.
+- `rumiai-dev`: `a3a55d0877445bc09afae6f143d2a941c4e2c57e` at this checkpoint.
 - `rumiai-dev-PoCs`: `0410fdf8940bbfb39b846b4999f064f1ae33cafc`.
 
 Fresh remote HEAD retrieval remains mandatory on resumption.
@@ -75,16 +75,18 @@ Fresh remote HEAD retrieval remains mandatory on resumption.
 
 ## Current state
 
+- Physical vmdev execution on PoC `0410fdf` passed all nine focused Node tests (9/9) and passed `node --check` for the runner and guarded source-card action inspector. A subsequent guarded CDP run ended `sweep.not-ready`, zero turn snapshots and no source-card action events. The immediate blocker is an **incorrect shared URL in the assistant's command**: `6ad1c0f5-7110-83eb-bfbc-4e44c80863dc` was accidentally substituted for the known working share 2 `6ad1c0f5-7110-83eb-bc19-356d48fc1259`. The current PoC README already lists the correct URL. No technical conclusion about guarded source-card navigation may be drawn from this failed acquisition, and no renderer/observer code change is warranted on this evidence. Repeat only the guarded capture with the correct URL, preserve the failed private archive separately and report sanitized `inspect-source-card-actions.mjs` output.
+
 Operator physically inspected the original-CSS offline view and **accepted the diagram** following “2. La soluzione che adotterei”. Cost-per-token table styling and OpenAI +1 source controls remain unresolved. Native show-more toggle interaction and initially-collapsed default are operator accepted. Writing-editor style fidelity remains pending source-vs-offline diagnosis; manually patched padding was revoked. The earlier accepted semantic outputs remain unchanged.
 
 ## Next action
 
-On vmdev, pull PoC `0410fdf` (functional guard correction after `c60b365`) and run `node --check render-probe.mjs`, `node --check inspect-source-card-actions.mjs` and `node --test tests/live-share-interactions.test.mjs tests/source-card-actions.test.mjs`. Only after tests pass, perform one **separate** private navigation-guarded opt-in sweep using `--headless --sweep --observe-interactions --probe-source-card-actions`, without requiring CSS/image resource capture. Inspect only `inspect-source-card-actions.mjs <capture-dir>` sanitized counts and report the private capture directory; do not paste raw events.jsonl with URLs. If per-card `windowOpenTargets`, `anchorClickTargets` or blocked requests indicate destinations, validate unambiguous ownership without automatically promoting unrelated background requests. If not, another source introspection mechanism will be required and no source links should be synthesized. Keep accepted offline SVG/layout, original CSS and long-message controls intact.
+On vmdev, keep PoC `0410fdf` (all nine new tests already passed), and repeat the **guarded capture only** with exact share-2 URL `https://chatgpt.com/share/6ad1c0f5-7110-83eb-bc19-356d48fc1259`. The prior URL was an assistant-provided typo, not a user selection. Run `render-probe.mjs --headless --sweep --observe-interactions --probe-source-card-actions` in a new private capture directory, without requiring CSS/image resource capture. Inspect only `inspect-source-card-actions.mjs <capture-dir>` sanitized counts and report the private capture directory; do not paste raw events.jsonl with URLs. If per-card `windowOpenTargets`, `anchorClickTargets` or blocked requests indicate destinations, validate unambiguous ownership without automatically promoting unrelated background requests. If not, another source introspection mechanism will be required and no source links should be synthesized. Keep accepted offline SVG/layout, original CSS and long-message controls intact.
 
 ## Blockers / open questions
 
 - Cost-table test and control-structure inspector passed physically on vmdev; **visual** acceptance of the corrected table is still pending.
 - CSS order and missing source DOM ancestors may cause layout mismatches.
 - Browser interaction and collapsed-by-default behavior of native preview controls are operator-accepted. "Scrittura" left and bottom padding remains unverified against original computed style; do not revive a hard-coded fallback.
-- Link count consistency is weak evidence, not source-to-pill provenance; popup fallback was physically exercised on vmdev; the new `ZPOiH7NQ` capture confirms source-card buttons but zero attributed hrefs. Per-card URL destination provenance remains unresolved; passive direct-attribute/React-prop capture is pending.
+- Link count consistency is weak evidence, not source-to-pill provenance; popup fallback was physically exercised on vmdev; the new `ZPOiH7NQ` capture confirms source-card buttons but zero attributed hrefs. Per-card URL destination provenance remains unresolved; a repeat guarded action capture on the correct share-2 URL is pending.
 - RAW source conversation completeness not proven by contiguous turn ordinals.
