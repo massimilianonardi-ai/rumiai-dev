@@ -9,8 +9,8 @@ Produce a readable offline archive of ChatGPT public shared conversations, prese
 
 ## Current repository revisions
 
-- `rumiai-dev`: `4f73e517b5d76c992b32d858460ad48a9be0668c` at this checkpoint.
-- `rumiai-dev-PoCs`: `cb763ddd7e809d1dfa0c482fd33e9847d1626526`.
+- `rumiai-dev`: `d63346e55abac94b56684a9da863825fc1689587` at this checkpoint.
+- `rumiai-dev-PoCs`: `f2ecce3f1145156dfeeec3351df5029d574a490b`.
 
 Fresh remote HEAD retrieval remains mandatory on resumption.
 
@@ -50,17 +50,20 @@ Fresh remote HEAD retrieval remains mandatory on resumption.
 - Physical vmdev execution of four focused tests passed (0 failures); regenerated styled share 2 with 12 turns, no missing ordinals, 43 localized stylesheets and 77 unresolved references. Private-safe control inspection: `Mostra di più` on 1/5/9 (aria-expanded false), grouped +N labels on 2/4/6, with immediate label ancestry lacking link anchors. 
 - Commit `cb763ddd` introduces **opt-in live interaction observation** during the existing sweep, for original-page show-more activation and source +N hover. It saves any newly observed links only in private event evidence; the sanitized inspector reports counts. This is not yet validated on physical vmdev and does not itself implement the offline controls.
 
+- Physical vmdev interaction run: two tests passed, 59 turn snapshots, 8 hover attempts, 2 hovers revealing 4 distinct HTTPS URLs, no show-more clicks or reported errors. Source ownership remains unverified. Capture at `/home/admino/chatgpt-share2-interactive-QelaT13q`.
+- Commit `f2ecce3` fixes show-more selection to match leaf-span label when the entire button contains extra hidden text. Adds candidate/label-match telemetry, a fake-DOM regression and a counts-only attribution inspector for the existing four URLs. These changes require vmdev tests and the fixed live capture has not yet been run.
+
 ## Current state
 
 Operator physically inspected the original-CSS offline view and **accepted the diagram** following “2. La soluzione che adotterei”. Cost-per-token table styling, OpenAI +1 source controls and long-message “Mostra di più” are not yet accepted. The earlier accepted semantic outputs remain unchanged.
 
 ## Next action
 
-On vmdev, pull current PoC, run `node --test tests/live-share-interactions.test.mjs`, and run one fresh `render-probe.mjs --headless --sweep --capture-image-bodies --capture-static-bodies --observe-interactions` acquisition for share 2. Read the sanitized `inspect-live-share-interactions.mjs` summary and inspect expanded-snapshot coverage and source popover link provenance **before** implementing offline show-more/source expansion. The corrected table still requires explicit operator visual acceptance. Preserve accepted diagram and semantic outputs.
+On vmdev, pull current PoC and run the two focused interaction tests. First audit the **existing** `/home/admino/chatgpt-share2-interactive-QelaT13q` archive with `inspect-source-hover-attribution.mjs` (no new page visit). Next repeat one opt-in private CDP sweep with the corrected nested-label show-more detector to obtain expanded snapshots, examine candidate/click counts and compare capture completeness. Before building standalone source popovers, verify link-to-pill provenance; before displaying expanded messages, verify full text was actually captured. The corrected table still needs operator visual acceptance.
 
 ## Blockers / open questions
 
 - Cost-table test and control-structure inspector passed physically on vmdev; **visual** acceptance of the corrected table is still pending.
 - CSS order and missing source DOM ancestors may cause layout mismatches.
-- New opt-in source-hover and show-more capture needs physical Chromium execution; click/hover attempts alone are not proof of complete expanded text or correct link attribution.
+- Corrected nested-label expansion selector needs a new physical Chromium run; synthetic tests alone are insufficient. Link count consistency is only weak evidence, not source-to-pill provenance.
 - RAW source conversation completeness not proven by contiguous turn ordinals.
