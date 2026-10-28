@@ -116,9 +116,9 @@ Fresh remote HEAD retrieval remains mandatory on resumption.
 
 ## Current state
 
-- Physical vmdev execution on PoC `0410fdf` passed all nine focused Node tests (9/9) and passed `node --check` for the runner and guarded source-card action inspector. A subsequent guarded CDP run ended `sweep.not-ready`, zero turn snapshots and no source-card action events. The immediate blocker is an **incorrect shared URL in the assistant's command**: `6ad1c0f5-7110-83eb-bfbc-4e44c80863dc` was accidentally substituted for the known working share 2 `6ad1c0f5-7110-83eb-bc19-356d48fc1259`. The current PoC README already lists the correct URL. No technical conclusion about guarded source-card navigation may be drawn from this failed acquisition, and no renderer/observer code change is warranted on this evidence. Repeat only the guarded capture with the correct URL, preserve the failed private archive separately and report sanitized `inspect-source-card-actions.mjs` output.
-
-Operator physically inspected the original-CSS offline view and **accepted the diagram** following “2. La soluzione che adotterei”. Cost-per-token table styling and OpenAI +1 source controls remain unresolved. Native show-more toggle interaction and initially-collapsed default are operator accepted. Writing-editor style fidelity remains pending source-vs-offline diagnosis; manually patched padding was revoked. The earlier accepted semantic outputs remain unchanged.
+- **Completed and operator-accepted:** original-CSS offline diagram following “2. La soluzione che adotterei”, native user-message show-more behavior, 8 native +N source disclosure groups with 19 independently captured/verified HTTPS card destinations and stable identity across four private captures, and original external-link icon visibility after exact URL/SHA-based localization (24 IMG references, 11 saved image bodies, zero conflicts). Preserve original CSS, existing inert `script-src 'none'`, diagram, user previews and the accepted private archive.
+- **Outstanding original-control behavior:** The first guarded remaining-control capture on `866de4c` verified that all 8 singleton citation triggers open a one-button/zero-anchor React popup but their initial click does not directly open a URL. Four standalone `Fonti` controls were identified (ordinals 2,4,6,8); two native clicks dispatched without a recognized popup, while the others were offscreen/unmounted. The updated `f585472` guarded probe can now independently click the unique singleton popup button, record its exact HTTPS intent, compare before/after `Fonti` turn DOM and retry transiently unavailable controls. Its real tests/Chromium capture are pending.
+- **Separate acceptance items:** cost-per-token table visual styling, original “Scrittura” writing-block padding, and RAW/full-conversation completeness remain unproven. Do not reinterpret passing structural checks as visual acceptance.
 
 ## Next action
 
@@ -126,8 +126,7 @@ On vmdev, pull PoC `f585472`, run `node --check inspect-remaining-controls.mjs` 
 
 ## Blockers / open questions
 
-- Cost-table test and control-structure inspector passed physically on vmdev; **visual** acceptance of the corrected table is still pending.
-- CSS order and missing source DOM ancestors may cause layout mismatches.
-- Browser interaction and collapsed-by-default behavior of native preview controls are operator-accepted. "Scrittura" left and bottom padding remains unverified against original computed style; do not revive a hard-coded fallback.
-- Link count consistency is weak evidence, not source-to-pill provenance; popup fallback was physically exercised on vmdev; the new `ZPOiH7NQ` capture confirms source-card buttons but zero attributed hrefs. Per-card URL destination provenance remains unresolved; the guarded synthetic-click capture succeeded but disclosed no source-card destinations; trusted CDP pointer observation revealed all card targets out of viewport; five groups now yielded 10 exact source-card opening intents; the cursor-preserving capture achieved 17/19 destinations; the missing group 4:1 was physically captured; all 8 groups and 19 per-card HTTPS intents are now recovered. Cross-capture DOM/source-pill identity is operator-validated; optional script-free offline source controls now implemented but still await physical Node/Chromium testing and visual acceptance.
-- RAW source conversation completeness not proven by contiguous turn ordinals.
+- Original one-link citation navigation targets remain unverified until the guarded **second click** on each source-popup button yields an unambiguous per-control HTTPS destination and stable control identity.
+- The original four `Fonti` buttons' panel or inline expansion behavior remains unverified; before/after turn DOM evidence is now collected by the focused probe. Do not aggregate nearby +N groups merely because their ordinals match.
+- The cost-per-token table requires operator visual acceptance; “Scrittura” left/bottom padding requires measured source-versus-offline comparison, not a hard-coded fallback.
+- RAW source conversation completeness has not been proven by contiguous turn ordinals.
