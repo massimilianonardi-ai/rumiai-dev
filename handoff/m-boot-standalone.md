@@ -9,8 +9,8 @@ Evolve the existing, extensively field-used `m-boot` multiboot system into a wor
 
 ## Current repository revisions
 
-- `massimilianonardi-ai/m-boot` main: `47b9832dad08f24f3bb77d6f73a48602948b3334`
-- `massimilianonardi-ai/rumiai-dev` main (preflight): `f96bd4610e970897b9490db2045394cc38e6ff52`
+- `massimilianonardi-ai/m-boot` main: `af0b323c426d54f4692a3728bf98f0dc8a0422b7`
+- `massimilianonardi-ai/rumiai-dev` main (before this handoff checkpoint): `953b4dce68012e109e4043fc0f1e1e102bc90c78`
 
 ## Applicable canonical sources
 
@@ -56,18 +56,22 @@ There is no current `m-boot` subsystem specification routed from `specifications
 ## Completed
 
 - Verified live repository HEADs and mandatory source routing.
+- Committed a focused GRUB runtime correction to `m-boot` main at `af0b323c426d54f4692a3728bf98f0dc8a0422b7`: `loader/script/init` now validates a boot source and falls back between firmware path, embedded `root.conf` and environment file search, holds `prefix=(memdisk)` until a device is verified, restricts imported environment variables and selects embedded recovery on failure. `loader/script/gui` preserves theme/resolution preferences and falls back to the console if gfxterm fails. New `loader/script/menu-recovery` is included by existing memdisk TAR wildcard. `loader/bootstrap-memdisk.sh` is unchanged.
+- Reviewed actual Git diff: only the three intended files were changed, with a forward-only commit. Static structural checks passed for embedded boot module availability in the existing x86 BIOS/EFI lists, memdisk inclusion, fallback branches, approved environment whitelist and basic conditional balance. These are NOT GRUB parser or boot tests.
 - Inspected current repository composition and build/boot scripts from current imported source.
 - Verified platform distinctions and UEFI fallback filenames against GRUB and UEFI documentation.
 
 ## Current state
 
-Requirements established; no product code, installation behavior or real boot validation has been changed or completed in this work unit. Historical use established by the user, not revalidated against the current imported repository. `m-boot` contains 326 Git blobs under `loader/` and `theme/`; the original archive's root `.mk/mk.conf` was not imported and is unrelated to the intended standalone path.
+First focused runtime hardening code has been committed, but it is NOT yet considered boot-validated or an accepted finished release. No standalone Linux build/install workflow or actual GRUB firmware boot test has been delivered yet. `grub-script-check`, `grub-mkimage`, GRUB modules and QEMU were unavailable in the ChatGPT Linux auxiliary container, so validation is limited to diff review and static checks. The build still uses its Cygwin-era assumptions. Historical production use is user-confirmed, not revalidated for the new revision. The original archive's root `.mk/mk.conf` was not imported and does not affect the intended standalone build.
 
 ## Next action
 
-Build and validate the first standalone Linux host entrypoints, beginning with target-module/toolchain discovery and boot-image generation; implement safe installation/staging and run real firmware boot validation for each target, preserving and iterating from the existing GRUB scripts.
+First run `grub-script-check` and real GRUB boot tests against the committed changed `init`, `gui` and `menu-recovery` scripts, then fix any discovered parser/runtime defects. Continue standalone Linux host build toolchain discovery/generation, safe installation/staging and QEMU BIOS/UEFI firmware validation of each supported target, without changing the proven GRUB model unnecessarily.
 
 ## Blockers / open questions
 
 - Need actual GRUB target-module sets and QEMU firmware/test tools; they are not available in the current ChatGPT container.
 - On-device firmware/boot behavior and Secure Boot cannot be claimed until appropriate tests have run.
+- Media cloning ambiguity remains unresolved when firmware `cmdpath` cannot identify an installed environment: the embedded marker search or generic environment search can select the first matching cloned filesystem. The current implementation prioritizes a verified `cmdpath` source to avoid that case when possible; it is not a uniqueness guarantee. Investigate the known boot device and marker uniqueness in real firmware tests.
+- The changes made to GRUB code need an authentic GRUB script parser and firmware boot smoke test before they can be considered validated, especially for BIOS recovery with no external root.
