@@ -47,6 +47,7 @@ Refresh remote HEADs before resuming. These SHAs are checkpoints only, not autho
 
 ## Fixed task-local choices
 
+- **User-confirmed conceptual decisions (2026-10-28):** (1) one coherent kind of active `context` per shell regardless of entrypoint/initialization; (2) system and user scopes are **composable orthogonal domains**, not exclusive mode choices; (3) the consumer has a determinable identity, inferred from a trusted entrypoint when reliable and supplied explicitly otherwise; (4) **defaults are selected per dimension**, not as one undifferentiated `default` context; (5) profile/user and concrete identity are **resolved context selections**, not identities implicitly defined by mutable `current` symlinks (elimination of the latter remains the migration direction); (6) activation **replaces** the existing shell context, without restore/pop/stack. The agreement fixes these *conceptual decisions* for further design, not CLI syntax, configuration format, new profile-user feature, precedence details, or a currently implemented contract.
 - **Explicit user decisions (2026-10-26):** the public function is named `context` and is a **POSIX sh function**, because it must be able to modify the current shell's environment. Its role is the general composition and activation of a resolved runtime context, including executables as well as libraries/resources; ordinary shell `PATH` lookup is one optimized consumption mechanism. The new architecture/implementation should be designed cleanly from first principles. Existing `pkg`, facility/provider and launcher code and even their present contracts are **inspiration and evidence, not design constraints**: during conceptual design, deliberately explore better semantics even when they would supersede the current architecture. Only after defining the best intended behavior should the team evaluate global practical tradeoffs, migration, compatibility, implementation complexity, robustness and performance. This design freedom is not authorization to modify the current runtime or silently replace current canonical contracts.
 - **Explicit user simplification (2026-10-26):** one active `context` per shell, surviving until another context **replaces** it or the shell exits; **no context restore/pop/activation stack**. The user also proposes removing the many filesystem `current` selectors. Treat their elimination as the **desired architecture**, pending a clean replacement for persistent defaults and an explicit impact/migration assessment; do not infer that independent fresh shells no longer need persistent default-selection configuration. Neither change has yet been implemented or promoted into the existing filesystem/state/resource contracts.
 - **Explicit user requirement (2026-10-26):** `context` must compose its effective shell/environment state from **explicit context parameters AND declared inheritance/propagation policies**. Values designated for preservation must not be silently overwritten by intermediate package, provider or nested-launch environment setup. The motivating real operational case is central Chromium certificate trust: effective browser `HOME` (and any deliberately propagated variables) must remain coherent with the trusted NSS certificate projection across nested execution. This is a semantic design requirement, not an endorsement of the existing launcher override API as the future `context` interface.
@@ -707,14 +708,16 @@ still describe today's implementation and must be explicitly
 realigned as one coordinated future implementation work unit if
 the ideal design is adopted.
 
-### Context domains, selection axes and consumers (2026-10-27, conceptual proposal)
+### Context domains, selection axes and consumers (2026-10-27, model; core design confirmed 2026-10-28)
 
-The user requests a domain map: what context a new shell has,
-whether "system", "default", "user" or "pkg" are exclusive modes;
-which inputs matter (user, package, profile and others); and
-who consumes the resulting context. The following is working design,
-**not approved argument names, namespaces or a new canonical contract**.
-Explore optimal semantics unconstrained by old mechanisms first.
+The user **accepted the six core design choices** summarized under
+"Fixed task-local choices": one active context kind per shell;
+independent/composable system and user domains; identifiable consumer;
+per-dimension defaults; selected profile/user identity not dependent
+on `current` symlinks; replace-until-exit without restoration.
+The matrices and scenario distinctions below guide the next design
+step. Specific signatures, automatic inference rules, persistent
+default representation, user-profile model and migration remain open.
 
 **Do not create one mutually exclusive mode enum** out of these labels:
 - `system` / `user` describe **state/configuration scopes**;
@@ -950,7 +953,7 @@ resolve those questions or start implementation in the present unit.
 
 ## Next action
 
-1. Validate the proposed **orthogonal context axes** (system/user state bindings, profile/identity, consumer, concrete package/provider and inherited policy) through realistic interactive-shell, package, service and nested-process scenarios, then decide the smallest public request parameters and persistent per-dimension default model. Maintain one active context per shell without restore, evaluate removal of filesystem `current` selectors, and define safe A-to-B replacement and protected propagation. Only afterward assess POSIX/performance and plan explicit canonical realignment. Preserve bundled manual/lang and frozen repositories.
+1. With the **six context-model choices confirmed by the user**, design the minimal public request parameters and the per-dimension persistent default/initialization rules. Exercise interactive-shell, package, service, multiple-shell and nested-process cases, including protected propagation and A-to-B replacement. Decide whether named user profiles are useful, without assuming symmetry with system profiles. Then evaluate practical POSIX/performance tradeoffs and explicit migration away from `current` selectors before changing implemented contracts. Preserve bundled manual/lang and frozen repositories.
 2. Continue analyzing ownership/dependency boundaries for `pkg-analyze`, terminal primitives/menu/vsed/editor, gitman, SSH/rsudo administration, testlab, JavaScript core/UI and Web components. Reuse existing independent projects and package facilities rather than duplicating implementation.
 3. **On hold until explicit user authorization:** any edit or migration to old `rumiai-os`, and any work on `rumiai-tests` (including re-alignment of its permanent suite). Do not treat those holds as validation blockers for independently released packages.
 4. Independently maintain core `m` package adapter completeness under a separate authorized workstream; its adapter gaps should not be mistaken for missing user-installable product packages.
