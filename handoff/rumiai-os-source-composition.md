@@ -838,6 +838,114 @@ until evaluated and confirmed. `current` elimination and single
 active shell context remain the intended redesign, not yet an
 implementation in the current code.
 
+### Alternatives for startup defaults, public requests and example interactions (2026-10-28; proposal only)
+
+The user asks for concrete alternatives and examples. The previously
+confirmed **six conceptual choices** remain fixed; no new syntax,
+configuration schema, profile namespace or public env variable is
+approved by these proposals.
+
+**Candidate A: one complete persistent global default** for every
+managed shell. Easy to reason about for the initial case, but a poor
+fit for concurrent user identities, provider selections, package
+versions and service instances. **Not recommended** as the base.
+
+**Candidate B: independent defaults by selection axis** (recommended).
+A new managed interactive shell combines independently configured
+system profile, optional logical user binding, locale, platform,
+installed package/provider defaults and any explicit/approved incoming
+selections. Missing parameters are resolved per dimension; no global
+`default` context object is required. A POSIX host shell is
+unchanged until it deliberately initializes m/context; a managed
+shell may initialize its normal context during its supported startup
+flow. The caller supplies only non-derivable differences.
+
+**Candidate C: named preset/bundle** selecting several dimensions at
+once. It could later be a user convenience overlay on B, not the
+canonical unit of identity or an independent graph authority.
+Introducing named user profiles just for symmetry is not assumed;
+the current implementation has a named system profile but a
+different user-state binding model.
+
+Illustrative interaction surface (not committed syntax/API):
+```sh
+context                              # prepare ordinary managed-shell defaults
+context profile=development          # replace only effective profile selection
+context user=work locale=en_US       # select logical user/locale; derive the rest
+context consumer=mk version=v0.1.0   # prepare mk context when explicitly requested
+```
+The function must already be sourced/available in the calling POSIX
+shell for shell mutation. A separately started package command,
+service or other child resolves its own context in its process and
+cannot rewrite the invoking interactive shell. Consumers whose
+identity is unambiguously known through a trusted launch path should
+not have to restate `consumer`. Example values and keys above are
+**illustrative only** and must not be promoted as names.
+
+**Candidate selection precedence for ordinary, unprotected choices**:
+explicit caller selection > permitted inherited selection >
+consumer-specific declared preference/constraint > optional
+logical-user preference > system-profile preference >
+safe deterministic platform/technical fallback. This is not one
+untyped env assignment ordering: dependency compatibility, state
+ownership and host POSIX access controls remain enforced.
+Protected inherited variables are checked before layering, and
+incompatible overrides must fail unless explicitly authorized.
+Unset differs from empty. An ordinary replacement must not
+carry forward all A-owned values as though they were permissible
+inherited inputs for B.
+
+Examples to validate:
+1. m-managed interactive shell, with no explicit args, selects
+   system profile `office`, logical user `development`,
+   `linux-x86_64`, locale `it_IT` and available default
+   providers. Its state/cache/resource paths are pre-resolved
+   env outputs and its PATH contains only the selected relevant
+   command projections.
+2. A second shell selects another system profile and user binding,
+   without altering the first shell or changing a global `current`
+   symlink; independent processes see their own exported env.
+3. A concrete package `mk` launched from the first shell
+   selects its own package graph, instance state and provided
+   resource roots while retaining applicable system policy;
+   the parent shell remains unchanged.
+4. A service instance picks system-scoped writable state,
+   service-specific identity and provider requirements; a
+   separately configured non-root POSIX account determines
+   actual filesystem permission. This is not equivalent to
+   `user=service`.
+5. A child browser/Electron execution preserves any explicitly
+   protected effective HOME across intermediate context resolution
+   and triggers the authorized NSS projection for that effective
+   browser HOME.
+6. Switching active contexts A -> B removes A-owned exported state
+   variables and PATH entries, deduplicates B, does not restore A,
+   and does not accidentally clobber unowned host edits.
+7. A later persistent default change affects *new* shell
+   initialization or deliberate re-resolution, not a currently
+   pinned concrete version. If implicit selection is ambiguous
+   or invalid, fail instead of guessing.
+8. A host POSIX shell not managed by m remains independent; merely
+   being a process does not imply it should be rewritten to the
+   current configured m selection.
+
+Important design question: persistent defaults must exist beyond
+one shell's lifetime, but need not use `current` symlink selectors.
+A small authoritative preference source read on initialization
+is a **possible implementation**, not yet an approved path/file
+schema. Separate the enduring choice from the resolved active
+identity, and avoid requiring external catalog/network access
+for ordinary offline startup. Decide missing-user/default policy
+without conflating RumiAI's logical user-state identity with a
+POSIX authenticated principal.
+
+**Next design work**: choose the minimum caller-facing parameter
+grammar and explicit-vs-inherited semantics; define which defaults
+are allowed at each scope, how conflicting provider/version
+requirements are reported, and the necessary small shell-resident
+metadata for safe A -> B projection replacement. Assess optional
+preset convenience only after those normal workflows are clear.
+
 ### Unified contextual environment resolution (2026-10-26, working design)
 
 The user's correction: one composition resolver should cover executables,
@@ -953,7 +1061,7 @@ resolve those questions or start implementation in the present unit.
 
 ## Next action
 
-1. With the **six context-model choices confirmed by the user**, design the minimal public request parameters and the per-dimension persistent default/initialization rules. Exercise interactive-shell, package, service, multiple-shell and nested-process cases, including protected propagation and A-to-B replacement. Decide whether named user profiles are useful, without assuming symmetry with system profiles. Then evaluate practical POSIX/performance tradeoffs and explicit migration away from `current` selectors before changing implemented contracts. Preserve bundled manual/lang and frozen repositories.
+1. Evaluate **candidate B (independent per-dimension defaults)** against A (single global bundle) and C (optional named preset overlay), using the eight concrete examples above. Decide minimal `context` caller syntax, consumer identity inference, durable preference source, protected inheritance and safe A -> B env/PATH replacement; do not adopt sample argument keys or user-profile symmetry prematurely. After user agreement, compare POSIX/performance and plan explicit migration away from `current` selectors. Preserve bundled manual/lang and frozen repositories.
 2. Continue analyzing ownership/dependency boundaries for `pkg-analyze`, terminal primitives/menu/vsed/editor, gitman, SSH/rsudo administration, testlab, JavaScript core/UI and Web components. Reuse existing independent projects and package facilities rather than duplicating implementation.
 3. **On hold until explicit user authorization:** any edit or migration to old `rumiai-os`, and any work on `rumiai-tests` (including re-alignment of its permanent suite). Do not treat those holds as validation blockers for independently released packages.
 4. Independently maintain core `m` package adapter completeness under a separate authorized workstream; its adapter gaps should not be mistaken for missing user-installable product packages.
