@@ -9,8 +9,8 @@ Create one user-facing Node.js command that accepts a public ChatGPT shared URL 
 
 ## Current repository revisions
 
-- `rumiai-dev`: `d8955933cc91feca457225ac410317819c662af3`.
-- `rumiai-dev-PoCs`: `65a7139da03566d28d4dc2e7a083d21c75601587`.
+- `rumiai-dev`: `f14bbd53242e8684cbf22909910db31f80745634`.
+- `rumiai-dev-PoCs`: `810fbb097f736697d9ec4e4a4ab272aeed0eaf38`.
 
 ## Applicable canonical sources
 
@@ -38,9 +38,9 @@ Create one user-facing Node.js command that accepts a public ChatGPT shared URL 
 ## Completed
 
 - Added `export-offline.mjs` as a single-invocation Node.js command inside PoC 068; user supplies only an accessible public shared URL and a fresh private output directory. It composes current capture/identity/renderer/icon/local singleton modules and limits targeted source retries. It publishes only a completed, audited archive; errors preserve private diagnostic captures and never publish partial output. `--keep-evidence` retains private captures after success by request.
-- Added six focused tests covering CLI/URL validation, source evidence disambiguation, full mock-boundary orchestration and image retry, failure atomicity, singleton mismatch and optional evidence retention.
+- Added eight focused tests covering CLI/URL validation, source evidence disambiguation, full mock-boundary orchestration and image retry, failure atomicity, singleton mismatch and optional evidence retention.
 - Updated package syntax-check script and PoC README with usage, honest exact-eight-singleton limitations and physical testing requirements. No changes to existing original-CSS rendering modules or the previously accepted archive.
-- Git commits `8c27eb7` and `65a7139`. Preliminary V8 syntax checks completed; no real Node tests of the new entrypoint and no fresh single-command Chromium run yet.
+- Git commits `8c27eb7`, `65a7139`, `fc9fabb` and `810fbb0`. The runner also retries a documented `sweep-not-ready` result once with a separate Chrome profile; two fixture tests cover that bounded retry and unrelated failures. V8 parse checks of the current CLI/tests passed; the tool isolate does not provide Node's URL global, so URL validation is **not** considered physically tested. No real Node test of the new entrypoint and no fresh single-command Chromium run yet.
 
 ## Current state
 
@@ -48,7 +48,7 @@ Implementation published for validation. **Not yet physically validated** as a g
 
 ## Next action
 
-On vmdev, from `pocs/068-chatgpt-shared-link-export`, pull `65a7139`, run `npm install`, `npm run check`, `node --test tests/export-offline.test.mjs`, then exercise `node export-offline.mjs 'https://chatgpt.com/share/6ad1c0f5-7110-83eb-bc19-356d48fc1259' <fresh-private-output-dir>`. Confirm `index.html` opens offline, original CSS/icons, 8 native +N groups/19 HTTPS links and 8 singleton direct links. The single-command flow automatically captures live evidence, may perform multiple fresh Chromium sweeps, and fails closed when original source identity or images cannot be proven. Physical failures do not invalidate the previously accepted multi-step archive. Keep generated capture data and HTML private; do not commit evidence.
+On vmdev, from `pocs/068-chatgpt-shared-link-export`, pull `810fbb0`, run `npm install`, `npm run check`, `node --test tests/export-offline.test.mjs`, then exercise `node export-offline.mjs 'https://chatgpt.com/share/6ad1c0f5-7110-83eb-bc19-356d48fc1259' <fresh-private-output-dir>`. Confirm `index.html` opens offline, original CSS/icons, 8 native +N groups/19 HTTPS links and 8 singleton direct links. The single-command flow automatically captures live evidence, may perform multiple fresh Chromium sweeps, and fails closed when original source identity or images cannot be proven. Physical failures do not invalidate the previously accepted multi-step archive. Keep generated capture data and HTML private; do not commit evidence.
 
 ## Blockers / open questions
 
