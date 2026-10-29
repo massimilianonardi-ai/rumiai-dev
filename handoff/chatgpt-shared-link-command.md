@@ -9,8 +9,8 @@ Create one user-facing Node.js command that accepts a public ChatGPT shared URL 
 
 ## Current repository revisions
 
-- `rumiai-dev`: `460eee164e7ee24b94c579a942b5922491f1d691`.
-- `rumiai-dev-PoCs`: `5da8a3f3b444c765950e09de68560f27426b1f7d`.
+- `rumiai-dev`: `d8955933cc91feca457225ac410317819c662af3`.
+- `rumiai-dev-PoCs`: `65a7139da03566d28d4dc2e7a083d21c75601587`.
 
 ## Applicable canonical sources
 
@@ -35,13 +35,20 @@ Create one user-facing Node.js command that accepts a public ChatGPT shared URL 
 - The existing provenance restorers have evidence/cardinality requirements including a fixed eight-singleton layout. Do not silently relax those or claim general-page production readiness.
 - Compose current native CDP modules inside the PoC, not as a new generic web-control provider.
 
+## Completed
+
+- Added `export-offline.mjs` as a single-invocation Node.js command inside PoC 068; user supplies only an accessible public shared URL and a fresh private output directory. It composes current capture/identity/renderer/icon/local singleton modules and limits targeted source retries. It publishes only a completed, audited archive; errors preserve private diagnostic captures and never publish partial output. `--keep-evidence` retains private captures after success by request.
+- Added six focused tests covering CLI/URL validation, source evidence disambiguation, full mock-boundary orchestration and image retry, failure atomicity, singleton mismatch and optional evidence retention.
+- Updated package syntax-check script and PoC README with usage, honest exact-eight-singleton limitations and physical testing requirements. No changes to existing original-CSS rendering modules or the previously accepted archive.
+- Git commits `8c27eb7` and `65a7139`. Preliminary V8 syntax checks completed; no real Node tests of the new entrypoint and no fresh single-command Chromium run yet.
+
 ## Current state
 
-Preflight done; implement the orchestrator and targeted tests. Real end-to-end Chromium validation remains required.
+Implementation published for validation. **Not yet physically validated** as a general-purpose command. The underlying PoC output and its known wrapping and inert Fonti limitations remain unchanged.
 
 ## Next action
 
-Finish one-command implementation and test from a clean invocation on vmdev. Preserve the previously approved archive.
+On vmdev, from `pocs/068-chatgpt-shared-link-export`, pull `65a7139`, run `npm install`, `npm run check`, `node --test tests/export-offline.test.mjs`, then exercise `node export-offline.mjs 'https://chatgpt.com/share/6ad1c0f5-7110-83eb-bc19-356d48fc1259' <fresh-private-output-dir>`. Confirm `index.html` opens offline, original CSS/icons, 8 native +N groups/19 HTTPS links and 8 singleton direct links. The single-command flow automatically captures live evidence, may perform multiple fresh Chromium sweeps, and fails closed when original source identity or images cannot be proven. Physical failures do not invalidate the previously accepted multi-step archive. Keep generated capture data and HTML private; do not commit evidence.
 
 ## Blockers / open questions
 
