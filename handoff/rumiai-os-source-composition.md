@@ -47,6 +47,8 @@ Refresh remote HEADs before resuming. These SHAs are checkpoints only, not autho
 
 ## Fixed task-local choices
 
+- **User-confirmed expansion (2026-10-29):** approve automatic managed-shell initialization with plain `context` (A), override-only re-selection of desired dimensions (B), and one generalized context function reused by package/service/child consumers (C). Include **named complete-context presets as a composition input** to the same per-dimension engine, not a separate context type; `context full-context=my_full_profile` is the user's *example syntax*, not yet a finalized public grammar. Adopt an **environment-first and context-derived executable namespace** design direction: eliminate fixed `$m_ROOT/bin` as the long-lived globally authoritative command tree, generating reusable command symlink `bin` views for selected package concrete/provider choices. Plain `context` selects a default command view, whereas contexts with version/provider pins can compose matching override views through PATH precedence. This is a conceptual redesign for the next implementation, not an immediate change to current bootstrapping, package identity or canonical specifications. The exact view organization, update policy and ordering remain subject to pragmatic validation.
+
 - **User-confirmed conceptual decisions (2026-10-28):** (1) one coherent kind of active `context` per shell regardless of entrypoint/initialization; (2) system and user scopes are **composable orthogonal domains**, not exclusive mode choices; (3) the consumer has a determinable identity, inferred from a trusted entrypoint when reliable and supplied explicitly otherwise; (4) **defaults are selected per dimension**, not as one undifferentiated `default` context; (5) profile/user and concrete identity are **resolved context selections**, not identities implicitly defined by mutable `current` symlinks (elimination of the latter remains the migration direction); (6) activation **replaces** the existing shell context, without restore/pop/stack. The agreement fixes these *conceptual decisions* for further design, not CLI syntax, configuration format, new profile-user feature, precedence details, or a currently implemented contract.
 - **Explicit user decisions (2026-10-26):** the public function is named `context` and is a **POSIX sh function**, because it must be able to modify the current shell's environment. Its role is the general composition and activation of a resolved runtime context, including executables as well as libraries/resources; ordinary shell `PATH` lookup is one optimized consumption mechanism. The new architecture/implementation should be designed cleanly from first principles. Existing `pkg`, facility/provider and launcher code and even their present contracts are **inspiration and evidence, not design constraints**: during conceptual design, deliberately explore better semantics even when they would supersede the current architecture. Only after defining the best intended behavior should the team evaluate global practical tradeoffs, migration, compatibility, implementation complexity, robustness and performance. This design freedom is not authorization to modify the current runtime or silently replace current canonical contracts.
 - **Explicit user simplification (2026-10-26):** one active `context` per shell, surviving until another context **replaces** it or the shell exits; **no context restore/pop/activation stack**. The user also proposes removing the many filesystem `current` selectors. Treat their elimination as the **desired architecture**, pending a clean replacement for persistent defaults and an explicit impact/migration assessment; do not infer that independent fresh shells no longer need persistent default-selection configuration. Neither change has yet been implemented or promoted into the existing filesystem/state/resource contracts.
@@ -838,19 +840,21 @@ until evaluated and confirmed. `current` elimination and single
 active shell context remain the intended redesign, not yet an
 implementation in the current code.
 
-### Alternatives for startup defaults, public requests and example interactions (2026-10-28; proposal only)
+### Startup defaults and optional complete presets (2026-10-28 proposal, accepted direction 2026-10-29)
 
-The user asks for concrete alternatives and examples. The previously
-confirmed **six conceptual choices** remain fixed; no new syntax,
-configuration schema, profile namespace or public env variable is
-approved by these proposals.
+The user has confirmed automatic plain-`context` initialization,
+selective override-only calls and unified package/service/child use,
+with **per-dimension defaults (B) plus composable named full-context
+presets (C)**. A single undifferentiated global bundle (A) remains
+rejected as the architectural foundation. The call syntax, preference
+schema and environment variable names below remain illustrative.
 
 **Candidate A: one complete persistent global default** for every
 managed shell. Easy to reason about for the initial case, but a poor
 fit for concurrent user identities, provider selections, package
 versions and service instances. **Not recommended** as the base.
 
-**Candidate B: independent defaults by selection axis** (recommended).
+**Accepted design B: independent defaults by selection axis**.
 A new managed interactive shell combines independently configured
 system profile, optional logical user binding, locale, platform,
 installed package/provider defaults and any explicit/approved incoming
@@ -860,12 +864,14 @@ unchanged until it deliberately initializes m/context; a managed
 shell may initialize its normal context during its supported startup
 flow. The caller supplies only non-derivable differences.
 
-**Candidate C: named preset/bundle** selecting several dimensions at
-once. It could later be a user convenience overlay on B, not the
-canonical unit of identity or an independent graph authority.
-Introducing named user profiles just for symmetry is not assumed;
-the current implementation has a named system profile but a
-different user-state binding model.
+**Accepted design extension C: named complete-context preset** selecting
+several dimensions at once through the *same* B resolution engine,
+not a new type/graph authority. The user illustrates this as
+`context full-context=my_full_profile`; an explicit per-dimension
+argument could override the preset's corresponding choice when
+inheritance protection and constraints allow. Exact grammar and
+configuration format are not yet approved. Do not introduce named
+user profiles merely to create unnecessary symmetry with system profiles.
 
 Illustrative interaction surface (not committed syntax/API):
 ```sh
@@ -943,8 +949,89 @@ POSIX authenticated principal.
 grammar and explicit-vs-inherited semantics; define which defaults
 are allowed at each scope, how conflicting provider/version
 requirements are reported, and the necessary small shell-resident
-metadata for safe A -> B projection replacement. Assess optional
-preset convenience only after those normal workflows are clear.
+metadata for safe A -> B projection replacement. Validate complete preset expansion and per-dimension override behavior
+using the same resolver as plain `context` and consumer-specific requests.
+
+### Derived command views replace the fixed root bin: accepted design direction (2026-10-29)
+
+The user wants to remove the permanently fixed `bin` directory
+from the **root m layout**, making command-directory + PATH
+an implementation strategy of the context-resolution system.
+The physical executables remain owned by core or the installed
+immutable package concretes; only the *published command namespace*
+is derived from selected versions/provider bindings.
+A context chooses command symlink view(s) and applies an ordered PATH.
+This extends the default-case symlink index to alternative pinned
+versions and facility providers. The user accepts it as a
+design direction; names and physical cache layout are undecided.
+
+**Illustrative only; not proposed real paths**:
+```text
+installed executable payloads: <core> / <pkg-A@1> / <pkg-A@2> / <provider-B@3>
+          |
+          v
+context selection -> immutable/coherent command views (symlinks)
+                       + environment values
+          |
+          +--> plain context  : PATH=<default-view>:<host-path>
+          +--> pinned context : PATH=<specific-override-view>:<base-view>:<host-path>
+          +--> complete preset: expanded selections -> same context mechanism
+```
+
+The `default` command view should expose *one selected applicable
+installed concrete per published command*, with user-preferred
+"latest" candidates when allowed; this must not silently reinterpret
+existing configured package/facility defaults or fetch arbitrary
+upstream latest at shell startup. Explicitly distinguish:
+(a) newest **installed** applicable concrete selected deterministically,
+(b) configured package/facility default, and (c) live upstream latest.
+Resolve the policy and handling of command name collisions before
+committing semantics. A profile's explicit pin takes precedence over
+an otherwise eligible default, subject to dependency consistency.
+
+Critical conditions of use:
+- **Bootstrap boundary:** `m` must load its fundamental POSIX shell
+  mechanism and resolve its physical root without relying on an
+  as-yet-unbuilt context view or an unavailable root `bin`. Core
+  executable ownership/location is separate from exported command
+  lookup. Missing/stale cached views need an offline rebuild or
+  error behavior that does not make m unstartable.
+- **PATH layering:** context-specific override views can precede
+  baseline/default views; an override of a command name must reliably
+  win. Name collisions, transitively required commands and facility
+  constraints must be handled by one resolved graph rather than PATH
+  lookup guessing dependency compatibility. No repeated A-owned
+  segments when replacing A with B; preserve allowed host PATH and
+  protected inherited contributions.
+- **Consistency:** validate concrete identities, targets and launch
+  obligations; a symlink to a managed executable must not skip
+  required launcher/environment/state/TLS logic. Resolve aliases
+  or wrapper entrypoint requirements using the chosen new architecture.
+- **Freshness:** avoid mutating a command view used by an already-pinned
+  shell. Prefer coherent revisioned/immutable views with safe publication,
+  then repoint new context activations to new revisions after
+  install/uninstall/default changes. Plan retention and garbage
+  collection without depending on POSIX shell-exit notification.
+  The bare name `default` can express *selection policy* without a
+  mutable global `current` filesystem indirection in active PATH.
+- **Cost:** do not eagerly allocate a fresh bin for every invocation.
+  Consider reusing identical content-keyed views, producing narrow
+  override views only for changed command bindings, or a single
+  flattened context view; compare filesystem creation/rebuild costs,
+  PATH lookup overhead, cache invalidation and number of symlinks.
+- **Scope:** only components genuinely looked up by command name need
+  PATH/symlinks; state dirs, libraries, resources, selected profile,
+  user/osarch and provider data remain primarily environment projections.
+
+Design questions, not yet approved facts: physical replacement
+location for core commands after root bin removal; command-name
+collision policy; newest-installed vs configured-default semantics;
+whether layered override views or one complete view has better
+robustness/performance; launch integration; view freshness/retention;
+how to keep stable concrete selections across parallel shells and
+concurrent package transactions. The user's high-level preference
+for context-derived bin directories should **not** accidentally
+create an unbounded per-shell cache or hidden mutable global selector.
 
 ### Unified contextual environment resolution (2026-10-26, working design)
 
@@ -959,11 +1046,12 @@ The proposed generalized result is broader than one file/directory: a
 coherent prepared execution environment, possibly including selected
 package/provider identities, PATH, runtime-specific library search roots,
 resource roots, environment values and derived filesystem projections.
-The conversational name "resolve" is not an approved public API.
+The public POSIX sh function name `context` has been confirmed by the user.
 
 Keep logical graph selection, environment/projection preparation, and
-application/execution conceptually distinct while reusing current pkg
-facility bindings, provider environment planning and command launcher.
+application/execution conceptually distinct while studying existing pkg
+facility bindings, provider environment planning and command launcher as
+behavioral evidence, not as required implementation dependencies.
 There is no universal runtime facility apply in the current PACKAGE-MODEL;
 nor is LIB_PATH a standard portable loader variable. A child command
 cannot alter its caller's environment. These require explicit validation
@@ -1061,7 +1149,7 @@ resolve those questions or start implementation in the present unit.
 
 ## Next action
 
-1. Evaluate **candidate B (independent per-dimension defaults)** against A (single global bundle) and C (optional named preset overlay), using the eight concrete examples above. Decide minimal `context` caller syntax, consumer identity inference, durable preference source, protected inheritance and safe A -> B env/PATH replacement; do not adopt sample argument keys or user-profile symmetry prematurely. After user agreement, compare POSIX/performance and plan explicit migration away from `current` selectors. Preserve bundled manual/lang and frozen repositories.
+1. With A/B/C workflow choices and composable named full-context presets **accepted**, refine the ideal `context` caller grammar and complete-context expansion/override semantics; **design context-derived command symlink bin views in place of fixed `$m_ROOT/bin`**, including default newest-installed vs configured-selection policy, PATH overlays/collisions, offline bootstrap boundary, pinned-view immutability, concurrency, publication/invalidation/GC and launch integration. Compare layered vs flattened views and costs, then plan explicit canonical migration from `current` selectors and the legacy bin/launcher model. Preserve bundled manuals/lang and frozen repositories.
 2. Continue analyzing ownership/dependency boundaries for `pkg-analyze`, terminal primitives/menu/vsed/editor, gitman, SSH/rsudo administration, testlab, JavaScript core/UI and Web components. Reuse existing independent projects and package facilities rather than duplicating implementation.
 3. **On hold until explicit user authorization:** any edit or migration to old `rumiai-os`, and any work on `rumiai-tests` (including re-alignment of its permanent suite). Do not treat those holds as validation blockers for independently released packages.
 4. Independently maintain core `m` package adapter completeness under a separate authorized workstream; its adapter gaps should not be mistaken for missing user-installable product packages.
