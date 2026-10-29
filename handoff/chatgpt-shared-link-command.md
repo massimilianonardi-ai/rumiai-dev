@@ -9,7 +9,7 @@ Create one user-facing Node.js command that accepts a public ChatGPT shared URL 
 
 ## Current repository revisions
 
-- `rumiai-dev`: `ee2e9df5ddc2c50b1e87b1f52cbaf07918d09e2b` (before this checkpoint).
+- `rumiai-dev`: `a75bf9f3847e9ad05aee28fa68060266745ea4e8` (previous handoff checkpoint, before this final revision-reference correction).
 - `rumiai-dev-PoCs`: `3066b35127a2dddc71c54259ce708abc45f3a0fb` (README operator-confirmation checkpoint; the exporter itself remains unchanged from `810fbb0`).
 
 ## Applicable canonical sources
