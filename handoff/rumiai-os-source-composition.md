@@ -1287,6 +1287,113 @@ compatibility check, the user's left-to-right operand rule,
 environment propagation and the context-derived (rather than
 root-fixed) executable namespace.
 
+### pkg-owned latest/default/policy selectors and reusable bin groupings (2026-10-29, user proposal under refinement)
+
+**Exploratory user proposal:** `bin` views are pkg-subsystem-owned state,
+and each groups command names from multiple installed packages.
+For each package name (scoped by applicable platform/package class),
+consider `latest`, `default` and
+`default-policy=auto|manual`. Default policy is `auto`;
+when a new installed candidate becomes latest, default follows it;
+manual pins a specific default until intentionally changed.
+Materialize `bin/latest` and `bin/default` automatically,
+plus explicitly requested named groupings. Apply analogous selection
+policy per facility compatibility version. Pkg owns symlink creation,
+updates and grouping. Context only composes selected existing
+directories into PATH, respecting ordered caller operands. These
+are user suggestions, NOT approved concrete paths, public field
+names, commands or final behavior.
+
+**Recommended semantic separation**:
+- pkg `conf` stores the authoritative selection/policy;
+- installed package concretes own immutable command payloads;
+- pkg-owned `cache` or equivalent derived state holds regenerable
+  grouped `bin` views. Do not equate the pkg-subsystem selection
+  metadata with writable state private to an arbitrary application.
+- `context` resolves and validates the effective selection and
+  composes pre-created view paths plus non-PATH env; no filesystem
+  writes during ordinary context calls.
+
+**Example of the auto/manual behavior**:
+```text
+install node@v24       latest-installed=v24 default=v24 policy=auto
+install node@v26       latest-installed=v26 default=v26 policy=auto
+select default v24     latest-installed=v26 default=v24 policy=manual
+install node@v28       latest-installed=v28 default=v24 policy=manual
+switch policy auto     latest-installed=v28 default=v28 policy=auto
+```
+Propose that an explicit manual default selection changes policy
+to manual unless explicitly overridden. On uninstall/removal of a
+manual pinned default, do not silently point at another package:
+reject or require a deliberate transition. Package version order
+must respect the relevant authoritative stream/adapter ordering
+and platform eligibility, not naive filename/semver comparison.
+
+**Terminology warning:** current `PACKAGE-MODEL.md` defines
+upstream `latest` as a live remote assertion, not the newest
+installed or most recent catalog-known version. For this proposal,
+`latest` must mean a deterministic *latest installed applicable*
+candidate; choosing eventual public names must prevent ambiguity
+with upstream-latest install requests. Normal context startup
+must not require remote network discovery.
+
+**Facility is a different selection problem:** a facility's
+compatibility/version level is a provider-independent contract.
+Several provider packages may implement that same level and each
+can have its own concrete version. A facility selector must therefore
+distinguish (facility, compatibility version, provider choice,
+provider concrete). A `latest` provider is NOT automatically
+defined by comparing versions across unrelated packages. Auto
+selection needs a deterministic applicable rule, or must report
+ambiguity / preserve the configured provider. Only facility cmd
+parts belong in `bin`; env and service parts remain coupled with
+the selected provider through their respective consumers.
+
+**Consequences to validate**:
+1. `bin/latest` and `bin/default` are multi-package namespaces,
+   so two packages and a facility provider may export the same
+   command name. Pkg must reject conflicts or follow an explicit,
+   deterministic policy compatible with context's final selection.
+2. Live shared `bin/default` updated by pkg can cause a shell
+   that retains its PATH to use new executables after a package
+   update *without another context call*. That can desynchronize
+   previously prepared provider env, HOME, resources or runtime ABI.
+   Choose between safe live-default guarantees and pkg-time-created
+   stable generation views which context can select without
+   generating files itself; do not promise snapshot and live
+   semantics simultaneously.
+3. Global/system and logical-user defaults cannot all occupy one
+   undifferentiated physical `bin/default` if shells may legitimately
+   have different persistent default policies. Specify authority
+   and scope/profile ownership before choosing physical paths.
+4. Pkg should publish related symlink updates consistently for
+   concurrent readers. Atomic replacement of an individual link
+   is not an atomic revision of a whole command group.
+   Consider pkg-time immutable generations/publication while
+   keeping context-time operations read-only.
+5. Provider compatibility and trusted launcher identity cannot be
+   inferred solely from PATH. Versioned package commands and
+   facility cmd/env/service realization must remain coherent
+   with selected packages. Uninstall must account for still-used
+   pinned concretes. Dangling links cannot reliably mask commands.
+6. `bin` named groups must be created on explicit pkg config
+   request (and reusable), not for each theoretical combination
+   of parameters or on every context call.
+
+**Recommended evaluation scenarios:** (a) three installs with
+auto->manual->auto, (b) two provider packages for one compatible
+facility version, (c) named grouping and override through PATH,
+(d) two simultaneous shells with different selected views,
+(e) change default while a shell has matching provider-specific
+env already applied, (f) collision of two public command names.
+
+Keep the earlier confirmed composition semantics: ordered left-to-
+right selections with inline full-context expansion, no fixed
+priority among operand origins, validated protected inheritance,
+one active context per shell without restoration. Do not promote
+this exploratory pkg-selection model to current specifications
+until the open correctness and ergonomics issues are resolved.
+
 ### Unified contextual environment resolution (2026-10-26, working design)
 
 The user's correction: one composition resolver should cover executables,
@@ -1403,7 +1510,7 @@ resolve those questions or start implementation in the present unit.
 
 ## Next action
 
-1. Prioritize the user's simpler **pre-materialized bin + PATH composition** architecture: minimal stable bootstrap `sys`; existing per-concrete package command bins; a default command view updated at install/default time; `context` resolves/validates ordered choices then selects existing PATH entries without filesystem writes. Determine default-live vs pinned snapshot behavior, duplicate-name collisions, optional negative selection (dangling symlinks do not mask), protected env/provider/launcher consistency and concurrent install/uninstall effects. Keep full flattened views only as a separately justified fallback. Complete semantic/operability and POSIX tests before coordinating migration of current fixed-bin/`current` contracts. Preserve bundled manuals/lang and frozen repositories.
+1. Refine the user's **pkg-owned package/facility latest/default/default-policy plus grouped bin views** proposal. Settle installed-latest vs upstream-latest naming, auto/manual semantics and uninstall behavior, facility compatibility vs provider identity, pkg conf/cache ownership and scope/profile, collisions, live-default env coherence and pkg-time generation publication. Exercise the six scenarios above before defining public configuration and layout; keep `context` read-only on filesystem and responsible for PATH composition. Preserve bootstrap `sys`, manuals/lang and frozen repos; do not promote exploratory details to current specifications.
 2. Continue analyzing ownership/dependency boundaries for `pkg-analyze`, terminal primitives/menu/vsed/editor, gitman, SSH/rsudo administration, testlab, JavaScript core/UI and Web components. Reuse existing independent projects and package facilities rather than duplicating implementation.
 3. **On hold until explicit user authorization:** any edit or migration to old `rumiai-os`, and any work on `rumiai-tests` (including re-alignment of its permanent suite). Do not treat those holds as validation blockers for independently released packages.
 4. Independently maintain core `m` package adapter completeness under a separate authorized workstream; its adapter gaps should not be mistaken for missing user-installable product packages.
