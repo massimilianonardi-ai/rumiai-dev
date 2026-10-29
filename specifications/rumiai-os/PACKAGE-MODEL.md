@@ -597,10 +597,10 @@ concrete** that declares and was validated against the exact
 `<facility, compatibility>` contract for the applicable platform class.
 Their link destinations are concrete identities under `$m_ROOT/pkg`, not
 copies of software or second copies of the facility command/environment/service
-projections. For platform-independent installed concretes, the map retains
-the generic platform class rather than fabricating platform-specific concrete
-identities; platform resolution preserves the existing exact-class-then-generic
-fallback rules.
+projections. Platform-independent installed concretes are grouped under the literal
+`all` platform-class directory rather than being replicated under multiple
+host platform names; platform resolution preserves the existing
+exact-class-then-generic fallback rules.
 
 A `<provider-package>@latest` selector is local to one
 `<facility, compatibility, osarch, provider-package>` group. It selects the
@@ -636,15 +636,6 @@ environment and service parts. A long-lived shell must not retain
 mutable-alias command resolution while retaining already resolved environment
 values from a different concrete. Removal of a concrete must respect existing
 dependency/default reference protections and reconcile derived map membership.
-
-The existing `pkg provider default <facility>` public interface presently
-stores a single facility-wide selector, and the current implementation does
-not yet materialize this map. Its transition to revision/platform-aware defaults,
-the exact provider-version ordering metadata needed for offline reconciliation,
-and the corresponding runtime/manual/test realignment are pending implementation
-under the active source-composition workstream. This is an explicit
-specification/implementation mismatch, not a claim that the current runtime
-already provides this layout.
 
 ### Provider selection
 
