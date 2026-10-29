@@ -10,7 +10,7 @@ Create one user-facing Node.js command that accepts a public ChatGPT shared URL 
 ## Current repository revisions
 
 - `rumiai-dev`: `ee2e9df5ddc2c50b1e87b1f52cbaf07918d09e2b` (before this checkpoint).
-- `rumiai-dev-PoCs`: `b24b5184632fc86ab1914ad9b3822681f20bddf4` (validation workflow commit; exporter itself remains at the `810fbb0` release content).
+- `rumiai-dev-PoCs`: `8e5064f5b05773a51a0177757e67591ce8b09cb0` (workflow and README validation checkpoint; exporter source remains unchanged from `810fbb0`).
 
 ## Applicable canonical sources
 
@@ -42,7 +42,7 @@ Create one user-facing Node.js command that accepts a public ChatGPT shared URL 
 - Added `export-offline.mjs` as a single-invocation Node.js command inside PoC 068; user supplies only an accessible public shared URL and a fresh private output directory. It composes current capture/identity/renderer/icon/local singleton modules and limits targeted source retries. It publishes only a completed, audited archive; errors preserve private diagnostic captures and never publish partial output. `--keep-evidence` retains private captures after success by request.
 - Added eight focused tests covering CLI/URL validation, source evidence disambiguation, full mock-boundary orchestration and image retry, failure atomicity, singleton mismatch and optional evidence retention.
 - Updated package syntax-check script and PoC README with usage, honest exact-eight-singleton limitations and physical testing requirements. No changes to existing original-CSS rendering modules or the previously accepted archive.
-- Git commits `8c27eb7`, `65a7139`, `fc9fabb` and `810fbb0`. The runner also retries a documented `sweep-not-ready` result once with a separate Chrome profile; two fixture tests cover that bounded retry and unrelated failures. V8 parse checks of the current CLI/tests passed; the tool isolate does not provide Node's URL global, so URL validation is **not** considered physically tested. No real Node test of the new entrypoint and no fresh single-command Chromium run yet.
+- Git commits `8c27eb7`, `65a7139`, `fc9fabb` and `810fbb0`. The runner also retries a documented `sweep-not-ready` result once with a separate Chrome profile; two fixture tests cover that bounded retry and unrelated failures. V8 parse checks of the current CLI/tests passed; the tool isolate does not provide Node's URL global, so URL validation is **not** considered physically tested. At that original packaging checkpoint, there was no real Node test or single-command Chromium run; the subsequent GitHub-hosted validation below supersedes that pending state for its tested example.
 
 ## Current state
 
