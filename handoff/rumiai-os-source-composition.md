@@ -1394,6 +1394,125 @@ one active context per shell without restoration. Do not promote
 this exploratory pkg-selection model to current specifications
 until the open correctness and ergonomics issues are resolved.
 
+### Package alias selectors and independent multi-facility provider identities (2026-10-29, current user refinement)
+
+The user now proposes a more concrete **indirect symlink chain**:
+upon installing `pkg/foo@1.2.3!linux-arm64`, pkg automatically
+maintains `pkg/foo@latest!linux-arm64 -> foo@1.2.3!linux-arm64`
+(latest **installed** applicable concrete); it creates
+`pkg/foo@default!linux-arm64` **only when explicitly requested
+through pkg**. Multi-package command group entries can link
+through these stable aliases and automatically follow alias
+updates without rewriting each entry in a grouped `bin`.
+The user asks how to represent a concrete `foo` that exports both
+`facility_1` and `facility_2`. The spelling of facility names
+here is only illustrative; actual identifier grammar remains the
+current controlled convention. Do not treat this example as final
+public syntax, path layout or approved replacement for current
+upstream-`latest` semantics.
+
+**Design recommendation:** represent *one* immutable package
+concrete, including its independent declared facility realizations
+(`facility` declaration, `facility-cmd/<facility>`,
+`facility-env/<facility>` and any service part), while maintaining
+**independent facility-selection aliases** by facility identity,
+compatibility version, applicable osarch and configuration scope.
+A facility alias selects a provider *concrete* or validated provider
+selector, not a second installed copy of the package. Two facility
+defaults can initially resolve to the same foo concrete, but can
+independently diverge to foo/bar later.
+
+**Schematic logical example, NOT real filesystem names:**
+```text
+pkg/foo@1.2.3!linux-arm64/
+  facility                    # declares facility_1 compat=1, facility_2 compat=2
+  facility-cmd/facility_1/...
+  facility-cmd/facility_2/...
+  facility-env/facility_1
+  facility-env/facility_2
+pkg/foo@latest!linux-arm64  -> foo@1.2.3!linux-arm64
+pkg/foo@default!linux-arm64 -> foo@1.2.3!linux-arm64  # only if configured
+
+pkg-owned facility selection state (illustrative):
+  facility_1/compat-1/linux-arm64/default -> foo@1.2.3!linux-arm64
+  facility_2/compat-2/linux-arm64/default -> foo@1.2.3!linux-arm64
+
+later:
+  facility_1/default -> bar@2.0.0!linux-arm64
+  facility_2/default -> foo@1.2.3!linux-arm64
+```
+The actual facility selector may be a config file containing a
+package selector rather than a filesystem symlink if that better
+preserves the consumer/provider compatibility and ownership
+contract; do not make mutable symlink contents a new competing
+authority over an existing provider configuration.
+
+**Distinct alias semantics**:
+- `foo@latest` is latest installed foo, NOT the current
+  upstream-latest request in the promoted package contract.
+- `foo@default` is optional and explicit; absence is not silently
+  equivalent to latest. This user proposal supersedes the earlier
+  speculative **automatic creation of every package default**.
+  The earlier auto/manual policy remains an open question *for
+  an explicitly configured default*: should the selector follow
+  package latest after creation, or remain pinned by default?
+- `facility_1/default` selects the provider for the specified
+  facility compatibility level. It is **not automatically identical**
+  to `foo@default` and must be independently configurable. Even if
+  it tracks `foo@latest` by intent, pkg must prevent an automatic
+  update to a newer foo version that no longer declares or
+  satisfies the same facility contract.
+- No arbitrary global `facility/latest` exists when there are
+  incomparable provider packages; require explicit provider policy
+  or report ambiguity. Facility compatibility level selection is
+  distinct from provider package concrete version ordering.
+
+**Why stable double indirection is useful but not sufficient**:
+```text
+<bin-group>/foo-command
+    -> pkg/foo@latest!linux-arm64/cmd/foo-command
+    -> pkg/foo@1.2.3!linux-arm64/cmd/foo-command
+
+<bin-group>/facility-command
+    -> <facility_1-selected-provider>/facility-cmd/facility_1/<command>
+```
+Retargeting an alias automatically changes execution targets with
+no group-bin rewrite **only while the new concrete continues to
+publish the same command leaf names and compatible facility parts**.
+Newly added/renamed/removed command names need pkg-time group
+maintenance; dangling links are not negative PATH masks.
+Changing a selected provider via an alias can also make command
+runtime environment, service integration or trusted launcher
+preparation inconsistent with variables already resolved in a
+running shell. A *live* alias is not a *pinned* context. Decide
+which selectors can stay live and how dependent env is synchronized.
+
+**Test cases for this revised model**:
+A. Install two foo concretes: latest alias changes and stable group
+   link follows without context-time writes.
+B. Explicitly create/update/remove default alias; absent default
+   has a defined no-fallback meaning, unless the caller requests
+   latest explicitly.
+C. Foo declares two different facility compatibility versions:
+   two independent facility defaults point to foo; change only
+   facility_1 to bar while facility_2 keeps foo.
+D. Install a newer foo no longer providing facility_1: the
+   facility_1 selector cannot silently follow foo@latest into an
+   incompatible provider.
+E. Change exports from one concrete to the next: pkg reconciles
+   group-bin command-name membership at install/config time;
+   links alone do not add/remove names.
+F. Launch a consumer while a live provider alias changes:
+   ensure provider cmd/env/service selections and concrete launcher
+   identity remain coherent; consider pinning an execution snapshot
+   or dedicated child-context validation.
+
+This maintains the user's intended ownership boundary:
+pkg publishes and updates aliases, provider selections and reusable
+grouped bins; context composes ordered PATH and other environment
+from those available surfaces without constructing symlinks
+for each invocation.
+
 ### Unified contextual environment resolution (2026-10-26, working design)
 
 The user's correction: one composition resolver should cover executables,
@@ -1510,7 +1629,7 @@ resolve those questions or start implementation in the present unit.
 
 ## Next action
 
-1. Refine the user's **pkg-owned package/facility latest/default/default-policy plus grouped bin views** proposal. Settle installed-latest vs upstream-latest naming, auto/manual semantics and uninstall behavior, facility compatibility vs provider identity, pkg conf/cache ownership and scope/profile, collisions, live-default env coherence and pkg-time generation publication. Exercise the six scenarios above before defining public configuration and layout; keep `context` read-only on filesystem and responsible for PATH composition. Preserve bootstrap `sys`, manuals/lang and frozen repos; do not promote exploratory details to current specifications.
+1. Validate the user's **two-stage package symlink selectors**: `foo@latest` maintained on install, optional `foo@default` created only on pkg request; grouped bin entries follow those aliases without context-time writes. Model independently selected facility providers for each `(facility, compatibility, osarch, scope)` even when one concrete foo provides multiple facilities. Check six cases: missing default, latest updates, provider divergence, dropped facility compatibility, changed command name set and provider cmd/env coherence under concurrent updates. Decide installed-latest vs upstream-latest spelling and default-policy behavior only after those semantics are settled. Preserve pkg ownership of symlinks, context ownership of PATH, core bootstrap `sys`, bundled manuals/lang and frozen repos.
 2. Continue analyzing ownership/dependency boundaries for `pkg-analyze`, terminal primitives/menu/vsed/editor, gitman, SSH/rsudo administration, testlab, JavaScript core/UI and Web components. Reuse existing independent projects and package facilities rather than duplicating implementation.
 3. **On hold until explicit user authorization:** any edit or migration to old `rumiai-os`, and any work on `rumiai-tests` (including re-alignment of its permanent suite). Do not treat those holds as validation blockers for independently released packages.
 4. Independently maintain core `m` package adapter completeness under a separate authorized workstream; its adapter gaps should not be mistaken for missing user-installable product packages.
