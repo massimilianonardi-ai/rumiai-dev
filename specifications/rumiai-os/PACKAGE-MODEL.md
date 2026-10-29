@@ -575,6 +575,77 @@ Provider conformance is validated against the facility contract from the same im
 
 Mechanical conformance validation proves only properties that can actually be established from the package artifact and declarative metadata. It must not be described as proof of the provider's full behavioral implementation of the external capability.
 
+### Installed facility provider map
+
+The managed facility map is a derived index of installed, validated provider
+concretes, maintained by `pkg` from the installed package store. It is
+distinct from the provider-independent contracts in `pkg-catalog/facility/`,
+and from authoritative mutable selection configuration under the appropriate
+state scope.
+
+The managed path scheme is:
+
+```text
+$m_ROOT/facility/<facility>/<compatibility>/<osarch>/
+    <provider-package>@<version> -> installed provider concrete
+    <provider-package>@latest     -> <provider-package>@<version>
+    default                       -> selected provider concrete or provider@latest
+```
+
+The leaves `<provider-package>@<version>` enumerate **every installed
+concrete** that declares and was validated against the exact
+`<facility, compatibility>` contract for the applicable platform class.
+Their link destinations are concrete identities under `$m_ROOT/pkg`, not
+copies of software or second copies of the facility command/environment/service
+projections. For platform-independent installed concretes, the map retains
+the generic platform class rather than fabricating platform-specific concrete
+identities; platform resolution preserves the existing exact-class-then-generic
+fallback rules.
+
+A `<provider-package>@latest` selector is local to one
+`<facility, compatibility, osarch, provider-package>` group. It selects the
+latest *installed* version of **that provider package** which declares and
+satisfies the exact facility contract. Ranking must use the provider package's
+defined version ordering, never lexicographic pathname ordering or comparison
+of unrelated provider package version strings. If that ordering cannot be
+established, `pkg` must report failure rather than publish a guessed latest.
+This selector may differ from the package's overall latest version, which
+could have stopped providing the selected facility compatibility level.
+
+There is **no** cross-provider `latest` selector at
+`<facility, compatibility, osarch>`: different provider package versions
+do not define a common version order. The facility-level `default` is instead
+the explicit or policy-selected provider for that facility compatibility level
+and platform class. A default may select an exact concrete (pinned) or a
+specific provider's compatible `@latest` selector (tracking). It is optional:
+absence is not an implicit choice of the globally newest provider. Changes
+to a tracking default must never silently select a concrete that fails the
+facility contract.
+
+The `default` symlink is a **derived projection**, not a separate authority
+that competes with mutable provider-selection configuration. It expresses the
+corresponding global/default-scope selection only; user, profile and
+consumer-specific choices remain independently configurable through their
+own context/state selection rules. `pkg` owns creation, reconciliation and
+removal of all derived entries when installations, uninstalls, defaults or
+policies change. Ordinary `context` activation does not rebuild these links.
+
+A consumer resolving a selector must validate its target and resolve it to
+one exact installed provider concrete before applying that provider's command,
+environment and service parts. A long-lived shell must not retain
+mutable-alias command resolution while retaining already resolved environment
+values from a different concrete. Removal of a concrete must respect existing
+dependency/default reference protections and reconcile derived map membership.
+
+The existing `pkg provider default <facility>` public interface presently
+stores a single facility-wide selector, and the current implementation does
+not yet materialize this map. Its transition to revision/platform-aware defaults,
+the exact provider-version ordering metadata needed for offline reconciliation,
+and the corresponding runtime/manual/test realignment are pending implementation
+under the active source-composition workstream. This is an explicit
+specification/implementation mismatch, not a claim that the current runtime
+already provides this layout.
+
 ### Provider selection
 
 Provider installation and explicit provider configuration are separate responsibilities.
