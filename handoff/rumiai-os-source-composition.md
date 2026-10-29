@@ -1394,38 +1394,35 @@ one active context per shell without restoration. Do not promote
 this exploratory pkg-selection model to current specifications
 until the open correctness and ergonomics issues are resolved.
 
-### Facility selector layout: confirmed direction, shape still open (2026-10-29)
+### Facility provider map: accepted contract; implementation pending (2026-10-29)
 
-The user explicitly agrees to keep facility contracts independent and reuse the already-materialized per-concrete `facility-cmd/<facility>` and `facility-env/<facility>` surfaces. The proposed `$m_ROOT/facility/` tree should contain only virtual facility **selections/aliases** rather than duplicate command or environment projections. The next design question is its exact layout and lookup semantics: facility identity, compatibility level, target osarch, global vs consumer/user/profile scope, named selections, and explicit vs optional default. `pkg` continues to own resolution/publication and `context` consumes coherent selected provider concretes. Avoid a second authoritative provider registry or treating a compatibility level as the ordering of different provider packages. In particular, a mutable global `default` pathname alone cannot encode different scoped defaults; any materialized shortcut must stay consistent with authoritative selection state. No concrete pathname grammar, cross-provider `latest` policy, or runtime implementation is approved by this checkpoint.
+The user approved the final topology and selector semantics, now promoted to
+`specifications/rumiai-os/PACKAGE-MODEL.md` under
+"Installed facility provider map". This section is only an implementation
+checkpoint: the autonomous `m` runtime at
+`cf3660ca0e206f94d0c8292b2b2cabeb096703ef` still has no
+`$m_ROOT/facility` index. In particular, its `pkg provider default`
+configuration is one selector per facility name rather than
+`(facility, compatibility, osarch, scope)`, and `pkg install` currently
+selects a package default automatically. The existing installed concrete
+`facility-cmd/<facility>` and `facility-env/<facility>` projections
+are reusable as-is.
 
-### Facility-to-provider installed map and latest semantics (2026-10-29, active design)
-
-The user proposes a derived, package-owned installed-provider map with the
-shape `$m_ROOT/facility/<facility-name>/<facility-revision>/<osarch>/<provider-pkg-name>@<version>`,
-whose leaves link to existing installed package concretes. The map must
-enumerate all installed providers and their applicable concrete versions
-realizing **that exact facility contract level**. It reuses each concrete's
-existing `facility-cmd/<facility>` and `facility-env/<facility>` and must not
-become a second authoritative provider registry. The proposal is not yet a
-promoted pathname specification.
-
-User identifies that a bare `latest` across *different provider packages*
-has no unambiguous semantic version order. Recommended working resolution:
-do **not** create `facility/<facility>/<revision>/<osarch>/latest`.
-An optional `<provider-pkg-name>@latest` inside the same key would select
-the latest **installed and compatible** version of that one provider package;
-it is not necessarily the package's general `pkg/<provider>@latest` if
-a newer package version stopped realizing that facility revision.
-A facility-level `default` (manual or policy-driven) may select either a
-specific provider concrete (pinned) or a named provider's compatible-latest
-alias (tracking), always validated by pkg. In either case a context must
-resolve and keep command/environment/service surfaces coherent for the
-chosen concrete. The exact `default` configuration authority vs derived
-symlink projection and per-scope default hierarchy are still open; do not
-introduce competing mutable configuration authorities. Consumer requirements
-accepting more than one facility revision also need deterministic selection
-semantics, not an implicit cross-revision numeric maximum.
-No runtime changes are authorized in this phase.
+Pending work before claiming a running implementation:
+- reconcile the new derived map on installation/removal, including one link
+  per provider concrete, per-provider compatible installed latest, and
+  non-conflicting default projections;
+- identify authoritative per-provider version ordering for all installed
+  concretes, including offline updates/removal and historic catalog ranks;
+  never choose `latest` by path/string sort or last installed;
+- reconcile globally configured vs scoped `default` selections with existing
+  state/provider APIs; avoid a second authoritative provider index;
+- keep effective provider command/environment/service selections coherent
+  when aliases change; preserve existing reference protections;
+- realign relevant manuals and permanent/hosted behavior tests, and validate
+  real install/uninstall/reselection; follow explicit product authorization.
+The selected layout does **not** imply that these behavior changes have
+already landed. Legacy `rumiai-os` and `rumiai-tests` remain on hold.
 
 ### Package alias selectors and independent multi-facility provider identities (2026-10-29, current user refinement)
 
@@ -1662,7 +1659,7 @@ resolve those questions or start implementation in the present unit.
 
 ## Next action
 
-1. Validate the user's **two-stage package symlink selectors**: `foo@latest` maintained on install, optional `foo@default` created only on pkg request; grouped bin entries follow those aliases without context-time writes. Model independently selected facility providers for each `(facility, compatibility, osarch, scope)` even when one concrete foo provides multiple facilities. Check six cases: missing default, latest updates, provider divergence, dropped facility compatibility, changed command name set and provider cmd/env coherence under concurrent updates. Decide installed-latest vs upstream-latest spelling and default-policy behavior only after those semantics are settled. Preserve pkg ownership of symlinks, context ownership of PATH, core bootstrap `sys`, bundled manuals/lang and frozen repos.
+1. Implement the approved facility provider-map contract from `PACKAGE-MODEL.md` in the autonomous `m` repository as an isolated, validated work unit, beginning with derived provider membership and per-provider compatible-latest ordering. Then reconcile revision/platform/global defaults with authoritative state and existing `pkg provider default` without silently changing current public callers. Preserve pkg-owned install/uninstall/alias reconciliation, context-owned PATH and environment composition, and exact concrete cmd/env coherence. The separately proposed package `@latest`/`@default` alias redesign and policy still requires its own resolution; do not conflate generic package latest with facility-compatible provider latest. Validate cases for multiple provider versions, dropped compatibility, ambiguous defaults, user/consumer scopes, changed commands, removal and nested execution. Keep `rumiai-os` and `rumiai-tests` frozen.
 2. Continue analyzing ownership/dependency boundaries for `pkg-analyze`, terminal primitives/menu/vsed/editor, gitman, SSH/rsudo administration, testlab, JavaScript core/UI and Web components. Reuse existing independent projects and package facilities rather than duplicating implementation.
 3. **On hold until explicit user authorization:** any edit or migration to old `rumiai-os`, and any work on `rumiai-tests` (including re-alignment of its permanent suite). Do not treat those holds as validation blockers for independently released packages.
 4. Independently maintain core `m` package adapter completeness under a separate authorized workstream; its adapter gaps should not be mistaken for missing user-installable product packages.
