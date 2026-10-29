@@ -47,6 +47,8 @@ Refresh remote HEADs before resuming. These SHAs are checkpoints only, not autho
 
 ## Fixed task-local choices
 
+- **User correction / revised working direction (2026-10-29):** favor a stable core **`sys` bootstrap directory** (rather than introducing an `m-sys` package solely to break bootstrap circularity), and favor **pre-existing, reusable `bin` directories composed only through ordered `PATH` changes by `context`**. Install/default/configuration operations, *not every invocation of `context`*, own symlink publication and update. In particular, existing per-concrete package command directories and a maintained default command view can be reused, with provider/version-specific directories prepended as overrides. Reassess the earlier recommendation to generate a complete immutable `bin` for every effective context: the user identifies that dynamic construction/refresh as avoidable and impractical. A dangling symlink in an earlier `PATH` directory is NOT a deletion/mask: POSIX shell testing found fallback to a later executable; decide whether negative selection is needed before implementing any masking layer. No runtime change authorized in this design phase.
+
 - **Explicit user proposal adopted as active design direction (2026-10-29):** apply context selection operands **strictly left-to-right in command-line order**, with later choices overriding earlier choices for the same logical binding. Expand `full-context` presets inline at their operand position, without fixed precedence among `full-context`, `user`, `pkg`, `profile`, provider or other selection sources. This is an ordered composition of *selection intent*, not sequential mutation of shell environment. Perform complete compatibility/ownership/permission/protected-inheritance validation after composition and before activation. Protected bindings are not silently overrideable by ordinary later operands; an authorized explicit policy change or deterministic rejection is required. Operand grammar, masks/removals and policy syntax remain open.
 
 - **User-confirmed expansion (2026-10-29):** approve automatic managed-shell initialization with plain `context` (A), override-only re-selection of desired dimensions (B), and one generalized context function reused by package/service/child consumers (C). Include **named complete-context presets as a composition input** to the same per-dimension engine, not a separate context type; `context full-context=my_full_profile` is the user's *example syntax*, not yet a finalized public grammar. Adopt an **environment-first and context-derived executable namespace** design direction: eliminate fixed `$m_ROOT/bin` as the long-lived globally authoritative command tree, generating reusable command symlink `bin` views for selected package concrete/provider choices. Plain `context` selects a default command view, whereas contexts with version/provider pins can compose matching override views through PATH precedence. This is a conceptual redesign for the next implementation, not an immediate change to current bootstrapping, package identity or canonical specifications. The exact view organization, update policy and ordering remain subject to pragmatic validation.
@@ -1153,13 +1155,137 @@ effective command map (not independent PATH-based facility discovery):
   invocation behavior. Public resolution must not be implemented
   solely by `PATH` search.
 
-**Recommendation for next design iteration:** accept left-to-right
-selection folding as the source of logical precedence, and prefer a
-single complete effective command map regardless of physical PATH
-projection. Start with **flat immutable view** as the simplest
-semantic reference model; benchmark layered views as an optimization,
-especially for positive version overrides. Define precise collision,
-removal and default precedence rules before implementing.
+**Revised recommendation after the user's implementation-simplicity
+correction:** accept left-to-right folding as the selection contract,
+while treating **already materialized, reusable command-directory
+layers + ordered PATH** as the *default implementation candidate*.
+The physical published views are maintained at package install,
+uninstall, default/provider selection or explicit configuration
+change, not rebuilt on every `context` call. Keep a normalized
+logical selection map for compatibility/collision validation if it
+proves useful, but this does not imply creating a flattened bin.
+Materialize a special flattened view only if a concrete requirement
+(e.g. true negative selection) and measured tradeoffs justify it.
+Do not create a general masking abstraction merely to satisfy an
+unrequested theoretical feature.
+
+### Bootstrap sys and static bin/PATH composition: reconsidered after user correction (2026-10-29)
+
+The user pushes back on the previous default recommendation of one
+generated flat bin **per fully resolved context**: that model would
+require unnecessary filesystem materialization on context activation
+and a complex cache/update lifecycle. The user proposes:
+- the always-available bootstrap commands in a stable core `sys`
+  directory (an `m-sys` package is possible but not justified just
+  for bootstrap); the core can load and execute `context` without
+  first preparing a package command view;
+- default `bin` symlinks maintained by pkg/default operations
+  and available before `context` is called, plus per-version/provider
+  command bins pre-created at install/configuration time;
+- `context` only selects/combines applicable existing bin paths,
+  normally prepending pinned/override command dirs ahead of a default
+  bin, while simultaneously preparing non-PATH environment values;
+- no general filesystem rebuild or per-shell bin creation merely
+  because context operands or a named full-context preset are
+  evaluated. A profile is an ordered selection of prepared
+  candidates, not an instruction to generate a fresh bin.
+This is the **preferred model to evaluate first**; exact bin ownership
+and paths remain unapproved.
+
+Concrete minimal POSIX /bin/sh experiment (Linux host, independent
+temporary directories, not RumiAI product test): a static
+`default/node -> <node-v26>/cmd/node`, alongside
+`<node-v24>/cmd/node`, gave Node v26 for
+`PATH=<default>:<host>` and Node v24 for
+`PATH=<node-v24>/cmd:<default>:<host>`, with no context-time
+symlink changes. Removing the pinned path returned v26. This
+supports a simple, pre-materialized override architecture.
+
+**Correction to suggested negative-mask behavior:** a dangling
+symbolic link in the earlier PATH directory does **not** hide a
+same-name executable in a later PATH directory. Tested on Linux
+`/bin/sh`, `dash`, `bash`: all resolved and executed the lower
+executable with an upper dangling symlink (also when the upper
+symlink referred to a non-executable file). A symlink to an
+*existing executable stub* can stop fallback by executing the
+stub, but the command remains discoverable and gains stub exit
+semantics: this is **not a true deletion**. A profile must either
+accept inherited default commands as always available, choose a
+different set of base bins/exclude their paths when an explicit
+negative selection is required, or separately implement such
+negative-selection semantics. Do not complicate the common path
+for an unconfirmed deletion requirement.
+
+**Meaningful differences that still require decisions:**
+- **Default freshness:** a shared mutable symlink
+  `<default>/node` updated from v26 to v28 means that an *already
+  running shell using that default PATH* will begin seeing v28
+  on a later command invocation. By contrast a shell prepending a
+  stable concrete v24 cmd directory stays pinned to v24, assuming
+  the installed concrete is retained. Choose deliberately whether
+  default is live or snapshot; user preference for "latest" might
+  favor live default. Avoid claiming both pinning and live updates
+  for the same directory without separate selections.
+- **Versioned command directories:** current installed package
+  concretes already include managed `cmd/` entrypoints validated
+  by the package launcher. They may be exposed directly in PATH or
+  via prebuilt symlinks, but preserving command identity and required
+  launcher/provider/HOME/NSS environment setup remains mandatory.
+- **Resolution/compatibility:** the physical PATH first-match rule
+  is useful for command overrides but is not sufficient to select
+  providers subject to the consuming package's dependency/ABI
+  constraints or to ensure that non-PATH variables match the
+  selected commands. `context` still resolves/validates the
+  applicable graph, without necessarily materializing new views.
+- **Name collisions:** if two package command directories publish
+  the same name, the earlier PATH directory wins. Require an
+  explicit deterministic policy or a detected conflict when that
+  would contradict the requested selections. Shell builtins,
+  functions and host PATH are separate lookup considerations.
+- **Deletion is optional:** if disabling/hiding a lower-priority
+  command is not a supported operation, this limitation is not a
+  blocker. If it is, removal must affect the *effective lookup
+  namespace* (e.g. omit a base directory) rather than rely on a
+  dangling symlink. Validate intended behavior before adding
+  syntax or a masking layer.
+- **Update concurrency:** install/default operations maintain the
+  default bin; consider atomic publication of changes and
+  concurrent readers. Static per-version bins should be stable.
+  Define what uninstall may remove while still used by another
+  shell; this is a separate package-retention problem, not a
+  reason to rebuild bins at context-time.
+- **PATH replacement:** shell context A -> B must replace the
+  context-owned directory segment and keep permitted host PATH
+  edits and protected inherited env; never prepend endlessly.
+  Re-evaluate command hashing/caching after a PATH change.
+- **Bootstrap scope:** a core `sys` directory for bootstrap does
+  not automatically mean every technical utility belongs there;
+  keep the minimal core/package boundary. The exact physical
+  relocation of existing core commands requires later coordinated
+  specification and runtime realignment.
+
+**Recommended reference cases:**
+1. No-argument `context`: adds already maintained default bin,
+   core sys bin and inherited host PATH; no symlink created.
+2. Select concrete v24: prepends existing v24 command directory
+   ahead of default; no filesystem write.
+3. Change concrete v24 -> v26: drops only A-owned PATH entry,
+   exposes already installed v26; B invocation is idempotent.
+4. Update default v26 -> v28: document whether a live-default
+   shell sees the change and ensure pinned v24 shell does not.
+5. Attempt to mask `foo` by creating an upper dangling symlink
+   above a lower executable: verify lower is still found.
+6. Provider-specific package launch: PATH command version and
+   provider environment agree, and launcher sees the correct
+   package concrete and effective HOME.
+7. Two independent concurrent shells: use distinct selected
+   version directories without mutating each other's bindings.
+
+This supersedes the earlier **flat-view-first** implementation
+preference, while retaining a complete logical selection and
+compatibility check, the user's left-to-right operand rule,
+environment propagation and the context-derived (rather than
+root-fixed) executable namespace.
 
 ### Unified contextual environment resolution (2026-10-26, working design)
 
@@ -1277,7 +1403,7 @@ resolve those questions or start implementation in the present unit.
 
 ## Next action
 
-1. Formalize **left-to-right ordered selection folding**, with preset expansion in place, last-assignment-wins only for overrideable *matching logical bindings*, and full constraint/protected-propagation checks before shell mutation. Define the minimal operand/unselect syntax and a coherent **effective executable command map**. Compare single immutable flat `bin` view against safe PATH-ordered overlays, explicitly testing deletion/masking, same-name collisions, pinned versions across concurrent shells, provider/launcher identity, core bootstrap, offline default freshness and GC. Only then assess POSIX/performance and plan canonical realignment of the current fixed-bin/`current`/pkg launcher contracts. Keep bundled manuals/lang and frozen repos untouched.
+1. Prioritize the user's simpler **pre-materialized bin + PATH composition** architecture: minimal stable bootstrap `sys`; existing per-concrete package command bins; a default command view updated at install/default time; `context` resolves/validates ordered choices then selects existing PATH entries without filesystem writes. Determine default-live vs pinned snapshot behavior, duplicate-name collisions, optional negative selection (dangling symlinks do not mask), protected env/provider/launcher consistency and concurrent install/uninstall effects. Keep full flattened views only as a separately justified fallback. Complete semantic/operability and POSIX tests before coordinating migration of current fixed-bin/`current` contracts. Preserve bundled manuals/lang and frozen repositories.
 2. Continue analyzing ownership/dependency boundaries for `pkg-analyze`, terminal primitives/menu/vsed/editor, gitman, SSH/rsudo administration, testlab, JavaScript core/UI and Web components. Reuse existing independent projects and package facilities rather than duplicating implementation.
 3. **On hold until explicit user authorization:** any edit or migration to old `rumiai-os`, and any work on `rumiai-tests` (including re-alignment of its permanent suite). Do not treat those holds as validation blockers for independently released packages.
 4. Independently maintain core `m` package adapter completeness under a separate authorized workstream; its adapter gaps should not be mistaken for missing user-installable product packages.
