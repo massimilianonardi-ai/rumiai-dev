@@ -47,6 +47,8 @@ Refresh remote HEADs before resuming. These SHAs are checkpoints only, not autho
 
 ## Fixed task-local choices
 
+- **Explicit user proposal adopted as active design direction (2026-10-29):** apply context selection operands **strictly left-to-right in command-line order**, with later choices overriding earlier choices for the same logical binding. Expand `full-context` presets inline at their operand position, without fixed precedence among `full-context`, `user`, `pkg`, `profile`, provider or other selection sources. This is an ordered composition of *selection intent*, not sequential mutation of shell environment. Perform complete compatibility/ownership/permission/protected-inheritance validation after composition and before activation. Protected bindings are not silently overrideable by ordinary later operands; an authorized explicit policy change or deterministic rejection is required. Operand grammar, masks/removals and policy syntax remain open.
+
 - **User-confirmed expansion (2026-10-29):** approve automatic managed-shell initialization with plain `context` (A), override-only re-selection of desired dimensions (B), and one generalized context function reused by package/service/child consumers (C). Include **named complete-context presets as a composition input** to the same per-dimension engine, not a separate context type; `context full-context=my_full_profile` is the user's *example syntax*, not yet a finalized public grammar. Adopt an **environment-first and context-derived executable namespace** design direction: eliminate fixed `$m_ROOT/bin` as the long-lived globally authoritative command tree, generating reusable command symlink `bin` views for selected package concrete/provider choices. Plain `context` selects a default command view, whereas contexts with version/provider pins can compose matching override views through PATH precedence. This is a conceptual redesign for the next implementation, not an immediate change to current bootstrapping, package identity or canonical specifications. The exact view organization, update policy and ordering remain subject to pragmatic validation.
 
 - **User-confirmed conceptual decisions (2026-10-28):** (1) one coherent kind of active `context` per shell regardless of entrypoint/initialization; (2) system and user scopes are **composable orthogonal domains**, not exclusive mode choices; (3) the consumer has a determinable identity, inferred from a trusted entrypoint when reliable and supplied explicitly otherwise; (4) **defaults are selected per dimension**, not as one undifferentiated `default` context; (5) profile/user and concrete identity are **resolved context selections**, not identities implicitly defined by mutable `current` symlinks (elimination of the latter remains the migration direction); (6) activation **replaces** the existing shell context, without restore/pop/stack. The agreement fixes these *conceptual decisions* for further design, not CLI syntax, configuration format, new profile-user feature, precedence details, or a currently implemented contract.
@@ -1033,6 +1035,129 @@ concurrent package transactions. The user's high-level preference
 for context-derived bin directories should **not** accidentally
 create an unbounded per-shell cache or hidden mutable global selector.
 
+### Ordered selection folding and bin/PATH feasibility (2026-10-29, analyzed candidate)
+
+**User proposal, recommended:** parse and apply all command-line
+operands strictly **left to right**, expanding each named
+`full-context` bundle exactly where it appears in the operand
+sequence. There is no intrinsic priority for selection *origins*
+such as user, package, system profile or complete preset.
+Selections should be normalized by **logical binding key**:
+two package selections for different package identities coexist;
+a later selection of the *same* package/version binding replaces
+the earlier selection, with the analogous rule for a facility,
+profile, locale and other dimensions. A later profile may implicitly
+replace several bindings. Resolve the final aggregate once, then
+validate compatibility and derived dependencies. Do **not** source
+untrusted or arbitrary user commands as operand transformers.
+
+Illustration (not public argument grammar):
+```text
+context full-context=development pkg=node@v24
+  => development expanded, then node=v24
+
+context pkg=node@v24 full-context=development
+  => node=v24, then development expanded (possibly node=v26)
+
+context full-context=development user=work provider=js:node@v24
+  => preset, then selected user, then provider pin
+```
+The *order of explicit selections* is not an override authorization
+for a protected inherited HOME/variable, a capability-compatibility
+invariant, or real POSIX filesystem permissions. Separate overrideable
+choices from mandatory constraints, protected propagation and derived
+facts (such as detected host osarch). Overwriting a provider binding
+may invalidate a prior consumer constraint and must trigger an error
+at the final graph-validation stage rather than a silent compromise.
+Clarify semantics of explicit unselect/mask if a later selection wishes
+to *remove* a command or provider entirely, not merely replace it.
+
+**Important PATH mapping:** left-to-right **selection** folding and
+left-to-right **PATH directory lookup** have opposite ordering if
+each operand produces an additive new command view: later operands
+must end up **earlier in PATH** to win. Example:
+`context full-context=dev pkg=node@v24` might lead to
+`PATH=<node24-override>:<dev-or-default-view>:<host>` once resolved.
+This mapping is an implementation strategy, not a separate
+selection precedence rule.
+
+**Identified key limitation of naive stacked directories:** PATH
+can shadow but cannot remove a command already available in an
+older/lower-priority directory. Example: if an earlier base view
+contains `foo`, a later overlay that simply omits `foo` does not
+hide it; `foo` is still found in base. A deliberately disabled
+package or an incompatible default provider therefore requires
+a recomputed base that excludes it, a single complete effective
+view, or an explicit masking mechanism with carefully specified
+observable behavior. Do not claim absence in upper view is an
+unset operation. A simple local POSIX `/bin/sh` experiment
+verified first-match selection, fallback to a lower PATH directory
+on upper absence, and non-discovery only after removing the
+underlying base directory from PATH; this is POSIX search-path
+mechanics evidence, **not RumiAI product validation**.
+
+**Two materialization options**, both derived from one fully validated
+effective command map (not independent PATH-based facility discovery):
+- **Flat complete view**: one immutable generated `bin` directory
+  per unique compatible map, containing exactly the public command
+  names selected for the context. Simplifies negative selection,
+  collision detection, PATH length and a coherent snapshot. Can
+  require a greater initial symlink build than narrow overlays.
+- **Layered views**: immutable/reusable base command view plus small
+  override directories prepended to PATH in reverse effective
+  selection priority. Cheap for narrow positive changes and
+  potentially shareable, but requires handling exclusions, aliases,
+  command collisions, incompatible shadowing, PATH growth and
+  obsolete directory cleanup explicitly. Always derive the layers
+  from a validated map: mere concatenation of arbitrarily built
+  provider bins is insufficient.
+- **Hybrid evaluation**: normalize to one resolved map regardless,
+  then use a complete flattened view by default and optional
+  safe override layers when the change is purely additive or
+  replaces known commands, with verified no-accidental-fallback.
+  Avoid building an extra complexity framework until realistic
+  performance evidence justifies the hybrid.
+
+**Further hard limits to design around:**
+- `PATH` yields **one effective external executable per command
+  name in a process** (subject also to shell builtins/functions and
+  search/cache behavior). It cannot simultaneously satisfy two
+  independent consumers that need incompatible versions under the
+  same name; their *child process contexts* or direct concrete paths
+  must differ rather than expecting magical per-consumer PATH search.
+- A selected provider may need non-PATH env, private resources,
+  `HOME`/TLS/NSS setup and a trusted launcher. The symlink itself
+  does not enforce compatible state or policies. Preserve concrete
+  identity from execution entrypoint even through a generated view.
+- `m` bootstrap and fundamental core functionality must be invocable
+  via known physical paths before any generated bin exists. Eliminate
+  the fixed `$m_ROOT/bin` *published namespace* as desired without
+  making context initialization circular.
+- `default` view must be locally and deterministically selected;
+  explicit `pkg default` and facility defaults are not synonyms
+  for newest installed or upstream latest. Collision policy with
+  protected core commands, host PATH and same-name packages is an
+  explicit semantic choice.
+- Publish generated views coherently after validating link targets.
+  Prefer immutable content-addressed/revisioned views, reusing equal
+  selections across shells and preventing partial in-place mutation
+  of an active shell's PATH targets. Installation/removal should not
+  silently change pinned bindings; define lifecycle/references and
+  safe garbage collection without shell-exit callbacks.
+- Rebuild the managed PATH section on context A -> B rather than
+  blindly prepending; preserve allowable unowned host entries and
+  correctly handle shell command-hash and noninteractive child
+  invocation behavior. Public resolution must not be implemented
+  solely by `PATH` search.
+
+**Recommendation for next design iteration:** accept left-to-right
+selection folding as the source of logical precedence, and prefer a
+single complete effective command map regardless of physical PATH
+projection. Start with **flat immutable view** as the simplest
+semantic reference model; benchmark layered views as an optimization,
+especially for positive version overrides. Define precise collision,
+removal and default precedence rules before implementing.
+
 ### Unified contextual environment resolution (2026-10-26, working design)
 
 The user's correction: one composition resolver should cover executables,
@@ -1149,7 +1274,7 @@ resolve those questions or start implementation in the present unit.
 
 ## Next action
 
-1. With A/B/C workflow choices and composable named full-context presets **accepted**, refine the ideal `context` caller grammar and complete-context expansion/override semantics; **design context-derived command symlink bin views in place of fixed `$m_ROOT/bin`**, including default newest-installed vs configured-selection policy, PATH overlays/collisions, offline bootstrap boundary, pinned-view immutability, concurrency, publication/invalidation/GC and launch integration. Compare layered vs flattened views and costs, then plan explicit canonical migration from `current` selectors and the legacy bin/launcher model. Preserve bundled manuals/lang and frozen repositories.
+1. Formalize **left-to-right ordered selection folding**, with preset expansion in place, last-assignment-wins only for overrideable *matching logical bindings*, and full constraint/protected-propagation checks before shell mutation. Define the minimal operand/unselect syntax and a coherent **effective executable command map**. Compare single immutable flat `bin` view against safe PATH-ordered overlays, explicitly testing deletion/masking, same-name collisions, pinned versions across concurrent shells, provider/launcher identity, core bootstrap, offline default freshness and GC. Only then assess POSIX/performance and plan canonical realignment of the current fixed-bin/`current`/pkg launcher contracts. Keep bundled manuals/lang and frozen repos untouched.
 2. Continue analyzing ownership/dependency boundaries for `pkg-analyze`, terminal primitives/menu/vsed/editor, gitman, SSH/rsudo administration, testlab, JavaScript core/UI and Web components. Reuse existing independent projects and package facilities rather than duplicating implementation.
 3. **On hold until explicit user authorization:** any edit or migration to old `rumiai-os`, and any work on `rumiai-tests` (including re-alignment of its permanent suite). Do not treat those holds as validation blockers for independently released packages.
 4. Independently maintain core `m` package adapter completeness under a separate authorized workstream; its adapter gaps should not be mistaken for missing user-installable product packages.
