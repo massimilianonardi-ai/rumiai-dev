@@ -1394,6 +1394,10 @@ one active context per shell without restoration. Do not promote
 this exploratory pkg-selection model to current specifications
 until the open correctness and ergonomics issues are resolved.
 
+### Facility selector layout: confirmed direction, shape still open (2026-10-29)
+
+The user explicitly agrees to keep facility contracts independent and reuse the already-materialized per-concrete `facility-cmd/<facility>` and `facility-env/<facility>` surfaces. The proposed `$m_ROOT/facility/` tree should contain only virtual facility **selections/aliases** rather than duplicate command or environment projections. The next design question is its exact layout and lookup semantics: facility identity, compatibility level, target osarch, global vs consumer/user/profile scope, named selections, and explicit vs optional default. `pkg` continues to own resolution/publication and `context` consumes coherent selected provider concretes. Avoid a second authoritative provider registry or treating a compatibility level as the ordering of different provider packages. In particular, a mutable global `default` pathname alone cannot encode different scoped defaults; any materialized shortcut must stay consistent with authoritative selection state. No concrete pathname grammar, cross-provider `latest` policy, or runtime implementation is approved by this checkpoint.
+
 ### Package alias selectors and independent multi-facility provider identities (2026-10-29, current user refinement)
 
 The user now proposes a more concrete **indirect symlink chain**:
