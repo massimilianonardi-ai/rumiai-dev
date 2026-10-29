@@ -890,18 +890,21 @@ identity is unambiguously known through a trusted launch path should
 not have to restate `consumer`. Example values and keys above are
 **illustrative only** and must not be promoted as names.
 
-**Candidate selection precedence for ordinary, unprotected choices**:
-explicit caller selection > permitted inherited selection >
-consumer-specific declared preference/constraint > optional
-logical-user preference > system-profile preference >
-safe deterministic platform/technical fallback. This is not one
-untyped env assignment ordering: dependency compatibility, state
-ownership and host POSIX access controls remain enforced.
-Protected inherited variables are checked before layering, and
-incompatible overrides must fail unless explicitly authorized.
-Unset differs from empty. An ordinary replacement must not
-carry forward all A-owned values as though they were permissible
-inherited inputs for B.
+**Current selection ordering (supersedes the earlier candidate fixed-source
+precedence):** establish only the default/fallback **baseline** for
+unprovided dimensions from applicable consumer constraints, declared
+inherited choices, logical-user/system preferences and deterministic
+technical values; resolve any conflicts between those sources through
+an explicit policy still to be defined. Then fold the **ordered caller
+operands** from left to right, expanding complete presets in place.
+There is no fixed preference between an operand originating in a user,
+package, system profile or complete preset; the later overrideable
+binding wins. Distinguish unset from empty and deletion from absence.
+Dependency compatibility, state ownership, protected inherited values
+and host POSIX access controls remain independent hard constraints:
+a protected binding cannot be overwritten silently by a later operand.
+An ordinary context replacement must not carry all A-owned variables
+into B as though they were automatically authorized inherited inputs.
 
 Examples to validate:
 1. m-managed interactive shell, with no explicit args, selects
