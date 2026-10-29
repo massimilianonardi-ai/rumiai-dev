@@ -1398,6 +1398,35 @@ until the open correctness and ergonomics issues are resolved.
 
 The user explicitly agrees to keep facility contracts independent and reuse the already-materialized per-concrete `facility-cmd/<facility>` and `facility-env/<facility>` surfaces. The proposed `$m_ROOT/facility/` tree should contain only virtual facility **selections/aliases** rather than duplicate command or environment projections. The next design question is its exact layout and lookup semantics: facility identity, compatibility level, target osarch, global vs consumer/user/profile scope, named selections, and explicit vs optional default. `pkg` continues to own resolution/publication and `context` consumes coherent selected provider concretes. Avoid a second authoritative provider registry or treating a compatibility level as the ordering of different provider packages. In particular, a mutable global `default` pathname alone cannot encode different scoped defaults; any materialized shortcut must stay consistent with authoritative selection state. No concrete pathname grammar, cross-provider `latest` policy, or runtime implementation is approved by this checkpoint.
 
+### Facility-to-provider installed map and latest semantics (2026-10-29, active design)
+
+The user proposes a derived, package-owned installed-provider map with the
+shape `$m_ROOT/facility/<facility-name>/<facility-revision>/<osarch>/<provider-pkg-name>@<version>`,
+whose leaves link to existing installed package concretes. The map must
+enumerate all installed providers and their applicable concrete versions
+realizing **that exact facility contract level**. It reuses each concrete's
+existing `facility-cmd/<facility>` and `facility-env/<facility>` and must not
+become a second authoritative provider registry. The proposal is not yet a
+promoted pathname specification.
+
+User identifies that a bare `latest` across *different provider packages*
+has no unambiguous semantic version order. Recommended working resolution:
+do **not** create `facility/<facility>/<revision>/<osarch>/latest`.
+An optional `<provider-pkg-name>@latest` inside the same key would select
+the latest **installed and compatible** version of that one provider package;
+it is not necessarily the package's general `pkg/<provider>@latest` if
+a newer package version stopped realizing that facility revision.
+A facility-level `default` (manual or policy-driven) may select either a
+specific provider concrete (pinned) or a named provider's compatible-latest
+alias (tracking), always validated by pkg. In either case a context must
+resolve and keep command/environment/service surfaces coherent for the
+chosen concrete. The exact `default` configuration authority vs derived
+symlink projection and per-scope default hierarchy are still open; do not
+introduce competing mutable configuration authorities. Consumer requirements
+accepting more than one facility revision also need deterministic selection
+semantics, not an implicit cross-revision numeric maximum.
+No runtime changes are authorized in this phase.
+
 ### Package alias selectors and independent multi-facility provider identities (2026-10-29, current user refinement)
 
 The user now proposes a more concrete **indirect symlink chain**:
