@@ -9,8 +9,8 @@ Create one user-facing Node.js command that accepts a public ChatGPT shared URL 
 
 ## Current repository revisions
 
-- `rumiai-dev`: `f14bbd53242e8684cbf22909910db31f80745634`.
-- `rumiai-dev-PoCs`: `810fbb097f736697d9ec4e4a4ab272aeed0eaf38`.
+- `rumiai-dev`: `ee2e9df5ddc2c50b1e87b1f52cbaf07918d09e2b` (before this checkpoint).
+- `rumiai-dev-PoCs`: `b24b5184632fc86ab1914ad9b3822681f20bddf4` (validation workflow commit; exporter itself remains at the `810fbb0` release content).
 
 ## Applicable canonical sources
 
@@ -37,6 +37,8 @@ Create one user-facing Node.js command that accepts a public ChatGPT shared URL 
 
 ## Completed
 
+- **2026-10-29 GitHub-hosted Ubuntu real-browser acceptance:** added isolated workflow `.github/workflows/poc-068-live-export.yml` in PoCs commit `b24b5184632fc86ab1914ad9b3822681f20bddf4`; successful push-triggered run [40954580470](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/40954580470). Node 22 `npm ci`, syntax checks and all 8 `export-offline` tests passed. The actual `node export-offline.mjs` invoked Chrome headlessly against the public share `6ad1c0f5-7110-83eb-bc19-356d48fc1259`, published its private local output, and returned verified 8 +N groups/19 links, 8 singleton links, 0 remote images, CSP script blocking and 264,928 bytes for `index.html`. The CI job and its browser step succeeded. No private archive, profile, captured payload or HTML was uploaded as an Actions artifact; runner data was ephemeral.
+
 - Added `export-offline.mjs` as a single-invocation Node.js command inside PoC 068; user supplies only an accessible public shared URL and a fresh private output directory. It composes current capture/identity/renderer/icon/local singleton modules and limits targeted source retries. It publishes only a completed, audited archive; errors preserve private diagnostic captures and never publish partial output. `--keep-evidence` retains private captures after success by request.
 - Added eight focused tests covering CLI/URL validation, source evidence disambiguation, full mock-boundary orchestration and image retry, failure atomicity, singleton mismatch and optional evidence retention.
 - Updated package syntax-check script and PoC README with usage, honest exact-eight-singleton limitations and physical testing requirements. No changes to existing original-CSS rendering modules or the previously accepted archive.
@@ -44,12 +46,12 @@ Create one user-facing Node.js command that accepts a public ChatGPT shared URL 
 
 ## Current state
 
-Implementation published for validation. **Not yet physically validated** as a general-purpose command. The underlying PoC output and its known wrapping and inert Fonti limitations remain unchanged.
+The single-command release has passed a fresh end-to-end run on a GitHub-hosted Ubuntu Linux runner with real Chrome and the public sample share, with all fixed-layout archive checks passing. This is positive auxiliary CI-host validation for the tested share, **not physical reference-host validation or a claim of support for arbitrary ChatGPT shares**. The underlying PoC output and its known wrapping and inert Fonti limitations remain unchanged.
 
 ## Next action
 
-On vmdev, from `pocs/068-chatgpt-shared-link-export`, pull `810fbb0`, run `npm install`, `npm run check`, `node --test tests/export-offline.test.mjs`, then exercise `node export-offline.mjs 'https://chatgpt.com/share/6ad1c0f5-7110-83eb-bc19-356d48fc1259' <fresh-private-output-dir>`. Confirm `index.html` opens offline, original CSS/icons, 8 native +N groups/19 HTTPS links and 8 singleton direct links. The single-command flow automatically captures live evidence, may perform multiple fresh Chromium sweeps, and fails closed when original source identity or images cannot be proven. Physical failures do not invalidate the previously accepted multi-step archive. Keep generated capture data and HTML private; do not commit evidence.
+The requested GitHub Actions Linux run has succeeded. If additional operator-side assurance is needed, open the private archive from a real `vmdev` execution and visually check its CSS and native links; this is separate validation and was not performed by GitHub Actions. Do not generalize the fixed eight-singleton assumption to other shares. Decide whether to close the packaging handoff after accepting this validation result.
 
 ## Blockers / open questions
 
-- Fresh real end-to-end one-command acceptance is pending.
+- No blocker for the validated GitHub Actions sample. Broader real-share and physical reference-host validation remain unclaimed.
