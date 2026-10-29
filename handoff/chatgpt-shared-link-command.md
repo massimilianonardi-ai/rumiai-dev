@@ -10,7 +10,7 @@ Create one user-facing Node.js command that accepts a public ChatGPT shared URL 
 ## Current repository revisions
 
 - `rumiai-dev`: `ee2e9df5ddc2c50b1e87b1f52cbaf07918d09e2b` (before this checkpoint).
-- `rumiai-dev-PoCs`: `8e5064f5b05773a51a0177757e67591ce8b09cb0` (workflow and README validation checkpoint; exporter source remains unchanged from `810fbb0`).
+- `rumiai-dev-PoCs`: `3066b35127a2dddc71c54259ce708abc45f3a0fb` (README operator-confirmation checkpoint; the exporter itself remains unchanged from `810fbb0`).
 
 ## Applicable canonical sources
 
@@ -37,6 +37,8 @@ Create one user-facing Node.js command that accepts a public ChatGPT shared URL 
 
 ## Completed
 
+- **2026-10-29 operator correction:** the operator explicitly reports that a real export test had already been executed and that its result was perfect. This is affirmative operator-reported real-use validation; it supersedes the previous claim that no real test had been performed. The exact command/revision and private test outputs were not included in this correction; retain the report without misattributing it to an independently recorded run or extending it to untested shares.
+
 - **2026-10-29 GitHub-hosted Ubuntu real-browser acceptance:** added isolated workflow `.github/workflows/poc-068-live-export.yml` in PoCs commit `b24b5184632fc86ab1914ad9b3822681f20bddf4`; successful push-triggered run [40954580470](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/40954580470). Node 22 `npm ci`, syntax checks and all 8 `export-offline` tests passed. The actual `node export-offline.mjs` invoked Chrome headlessly against the public share `6ad1c0f5-7110-83eb-bc19-356d48fc1259`, published its private local output, and returned verified 8 +N groups/19 links, 8 singleton links, 0 remote images, CSP script blocking and 264,928 bytes for `index.html`. The CI job and its browser step succeeded. No private archive, profile, captured payload or HTML was uploaded as an Actions artifact; runner data was ephemeral.
 
 - Added `export-offline.mjs` as a single-invocation Node.js command inside PoC 068; user supplies only an accessible public shared URL and a fresh private output directory. It composes current capture/identity/renderer/icon/local singleton modules and limits targeted source retries. It publishes only a completed, audited archive; errors preserve private diagnostic captures and never publish partial output. `--keep-evidence` retains private captures after success by request.
@@ -46,12 +48,12 @@ Create one user-facing Node.js command that accepts a public ChatGPT shared URL 
 
 ## Current state
 
-The single-command release has passed a fresh end-to-end run on a GitHub-hosted Ubuntu Linux runner with real Chrome and the public sample share, with all fixed-layout archive checks passing. This is positive auxiliary CI-host validation for the tested share, **not physical reference-host validation or a claim of support for arbitrary ChatGPT shares**. The underlying PoC output and its known wrapping and inert Fonti limitations remain unchanged.
+The operator confirms a prior real export test with a perfect result. The separately logged end-to-end GitHub-hosted Ubuntu Linux/Chrome run also passed the fixed-layout archive checks for the public sample share. The operator confirmation is user-reported; the CI result is independent automated evidence. Neither establishes support for arbitrary ChatGPT shares. The source of the accepted PoC and its previously documented limitations remain unchanged.
 
 ## Next action
 
-The requested GitHub Actions Linux run has succeeded. If additional operator-side assurance is needed, open the private archive from a real `vmdev` execution and visually check its CSS and native links; this is separate validation and was not performed by GitHub Actions. Do not generalize the fixed eight-singleton assumption to other shares. Decide whether to close the packaging handoff after accepting this validation result.
+The requested GitHub Actions Linux run succeeded and the operator has corrected the validation status to include a prior successful real export. The remaining lifecycle action is to decide whether to close this packaging handoff. Do not generalize the fixed eight-singleton assumption to other shares.
 
 ## Blockers / open questions
 
-- No blocker for the validated GitHub Actions sample. Broader real-share and physical reference-host validation remain unclaimed.
+- No blocker for the accepted sample. Exact revision/command details for the operator-reported earlier real test were not supplied in this correction; broader real-share compatibility remains unclaimed.
