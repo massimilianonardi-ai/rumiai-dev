@@ -48,7 +48,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: massimilianonardi-ai/rumiai-dev-PoCs
-          ref: 87427118a0cc6993918400417852c2dce5272ac7
+          ref: dfdf5a4492b89023e18e4de1e16bc5539d57e232
           path: source
           persist-credentials: false
 
@@ -62,7 +62,7 @@ jobs:
           cd source/pocs/068-chatgpt-shared-link-export
           npm ci --no-audit --no-fund
           npm run check
-          node --test tests/share-metadata.test.mjs tests/publish-chat-archive.test.mjs tests/localize-first-party-images.test.mjs tests/export-offline.test.mjs
+          node --test tests/share-metadata.test.mjs tests/publish-chat-archive.test.mjs tests/localize-first-party-images.test.mjs tests/omit-external-link-icons.test.mjs tests/export-offline.test.mjs
           browser="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
           test -n "$browser"
           mkdir -p "$RUNNER_TEMP/poc068-bin"
