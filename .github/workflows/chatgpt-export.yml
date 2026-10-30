@@ -1,0 +1,131 @@
+name: Export ChatGPT share to chats
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: chatgpt-archive-publisher
+  cancel-in-progress: false
+
+jobs:
+  export:
+    if: >-
+      github.event.issue.user.login == 'massimilianonardi-ai' &&
+      github.event.issue.title == 'ChatGPT export request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Check request authority and JSON format
+        run: |
+          set -eu
+          umask 077
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import path from 'node:path';
+          const issue=JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH,'utf8')).issue;
+          if(issue?.user?.login!=='massimilianonardi-ai' ||
+             issue?.title!=='ChatGPT export request')
+            throw Error('Unauthorized export request');
+          const data=JSON.parse(issue.body||'');
+          if(!data || typeof data!=='object' || Array.isArray(data) ||
+             Object.keys(data).sort().join(',')!=='topic,url' ||
+             typeof data.url!=='string'||typeof data.topic!=='string')
+            throw Error('Expected a JSON issue body with url and topic');
+          fs.writeFileSync(path.join(process.env.RUNNER_TEMP,'request.json'),
+            JSON.stringify(data),{flag:'wx',mode:0o600});
+          NODE
+
+      - uses: actions/checkout@v4
+        with:
+          path: destination
+          persist-credentials: true
+
+      - uses: actions/checkout@v4
+        with:
+          repository: massimilianonardi-ai/rumiai-dev-PoCs
+          ref: 4f1a074d357b4a257649d9ddc1381d60089430c0
+          path: source
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install the exporter and prepare real Chrome
+        run: |
+          set -eu
+          cd source/pocs/068-chatgpt-shared-link-export
+          npm ci --no-audit --no-fund
+          npm run check
+          node --test tests/share-metadata.test.mjs tests/publish-chat-archive.test.mjs
+          browser="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          test -n "$browser"
+          mkdir -p "$RUNNER_TEMP/poc068-bin"
+          cat > "$RUNNER_TEMP/poc068-bin/chromium" <<EOF
+          #!/bin/sh
+          exec "$browser" "\$@"
+          EOF
+          chmod +x "$RUNNER_TEMP/poc068-bin/chromium"
+
+      - name: Export and stage verified offline archive
+        env:
+          POC068_RESULT_FILE: ${{ runner.temp }}/publication-result.json
+        run: |
+          set -eu
+          umask 077
+          export PATH="$RUNNER_TEMP/poc068-bin:$PATH"
+          node source/pocs/068-chatgpt-shared-link-export/publish-chat-archive.mjs \
+            "$RUNNER_TEMP/request.json" "$GITHUB_WORKSPACE/destination"
+
+      - name: Commit and push forward only
+        run: |
+          set -eu
+          cd destination
+          git fetch origin main
+          git merge --ff-only origin/main
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- chats
+          if git diff --cached --quiet; then
+            echo 'No new archive to commit' >&2
+            exit 1
+          fi
+          git commit -m "chats: requested ChatGPT archive (issue #${{ github.event.issue.number }})"
+          git push origin HEAD:main
+
+      - name: Comment with published archive link
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          set -eu
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import path from 'node:path';
+          const data=JSON.parse(fs.readFileSync(
+            path.join(process.env.RUNNER_TEMP,'publication-result.json'),'utf8'));
+          const location=data.archivePath.split('/').map(encodeURIComponent).join('/');
+          const url='https://github.com/massimilianonardi-ai/rumiai-dev/blob/main/'+
+            location+'/index.html';
+          const body='Chat export published: '+url+'\n'+
+            'Original start: '+data.date+'. Resource files: '+data.files+'.';
+          fs.writeFileSync(path.join(process.env.RUNNER_TEMP,'comment.txt'),body,
+            {mode:0o600});
+          NODE
+          gh issue comment "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" \
+            --body-file "$RUNNER_TEMP/comment.txt"
+
+      - name: Report a refused or failed export
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          gh issue comment "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" \
+            --body 'Export was not published. Inspect the Actions run; no partial archive was committed.'
