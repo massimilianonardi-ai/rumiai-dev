@@ -48,30 +48,44 @@ Create one user-facing Node.js command that accepts a public ChatGPT shared URL 
 
 ## Current state
 
-**2026-10-30 operator correction now canonical in `chats/README.md`:**
-Ignore decorative images belonging to citation controls and external-link
-badges. Their URLs, response bodies and hash conflicts are not completeness
-requirements. Preserve the citation/link text, original CSS and substantive
-conversation media. The implementation on `rumiai-dev-PoCs@dfdf5a4492b89023e18e4de1e16bc5539d57e232`
-removes only selected original IMG tags before localization, without
-serializing the rest of the DOM. Focused unit and real macOS share acceptance
-are being exercised in PoC workflow run 41113594527. The publisher's pinned
-source is deliberately unchanged until the live run succeeds.
+**2026-10-30 operator correction and completed macOS dev archive:** The
+canonical `chats/README.md` now explicitly excludes citation and external-link
+decorative images from publication completeness; citation/link text and
+substantive conversation media remain preserved and verified. PoC 068 uses
+`omit-external-link-icons.mjs` before local resource localization, removing
+only recognized decorative IMG tags from the original HTML bytes and avoiding
+favicon-fetch and irrelevant provenance conflicts. Source checkpoint:
+`rumiai-dev-PoCs@dfdf5a4492b89023e18e4de1e16bc5539d57e232`.
 
-The operator-confirmed accepted sample and earlier Ubuntu live acceptance remain unchanged. Those results do not establish general share compatibility.
+The real GitHub-hosted Ubuntu/Chrome macOS share validation [run
+41113594527](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/41113594527)
+succeeded with 29 focused Node tests passing, script-blocking CSP and zero
+residual remote images. This is runner evidence, not physical operator-host
+validation or proof of RAW completeness.
 
-**2026-10-30 macOS dev export repair (active; publication blocked):** Issue #5 in `rumiai-dev` requests shared URL `6ae4dde6-93a0-83ed-820e-74d0e3f3c9e1`. The original authorized publisher failed without committing an archive. Read-only live Chrome diagnostics, isolated in GitHub-hosted Ubuntu runners, traced the 14–15 unmatched Google icon references to two or three distinct `/s2/favicons` URLs; source variability across runs prevents assuming a stable count. In the latest diagnostic run [41110299094](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/41110299094), Chrome observed 37 matched/15 unmatched references, one conflicting image URL, and for the unmatched resources four `404:image/png` and two `200:image/png` response observations across the captures. A previous scoped no-cookie HTTPS retrieval run failed to retrieve an exact Google favicon. The bounded recovery implementation and SHA-verified additional provenance are available in `rumiai-dev-PoCs@fcdd192eec0b8cc9756b42cb25cfe8b7aa00fe8f`; its 23 focused Node tests passed in the latest run, but the real target export **failed**. No image bytes, profiles, private HTML or raw URLs were published. The `rumiai-dev` publisher still pins its earlier accepted source revision; no retargeting or issue reopen has occurred. No physical validation is claimed.
+The authorized publisher in `rumiai-dev` was updated to pin this tested PoC
+revision and include its icon-omission regressions. Existing issue #5 was
+closed/reopened to trigger the established workflow. GitHub [run
+41114014637](https://github.com/massimilianonardi-ai/rumiai-dev/actions/runs/41114014637)
+completed successfully and committed
+`chats/macOS dev/2026-10-26 Virtualizzare macOS per sviluppo/index.html`
+plus 45 resource files and audits. The destination directory, `index.html`
+and audits were independently checked through the repository API after the
+commit. The original failure notice remains visible as past issue history;
+the later success notice provides the exact archive link. Prior accepted chat
+archives remain untouched.
 
 ## Next action
 
-Check run 41113594527 for real browser validation. On success, update the
-authorized publisher's pinned PoC source, re-run its focused checks and
-reopen existing issue #5 (reopened is an authorized dispatch event). Confirm
-the archive is committed with script blocking and local substantive media.
-On failure, inspect the new failure and adjust only this implementation,
-preserving its privacy and image-integrity boundary.
+No further action is required for issue #5. Future exports use the newly
+pinned implementation and retain strict substantive-media checks. Any future
+new renderer image shape that cannot be classified unambiguously must not
+silently weaken these checks.
 
 ## Blockers / open questions
 
-- The earlier accepted sample has no blocker; exact details of the operator-reported real run were not independently recorded.
-- `macOS dev` publication has not yet succeeded. The former favicon blocker is explicitly superseded by the operator's decorative-media exclusion policy; this does not waive checks for substantive conversation images.
+- No blocker for the macOS dev publication. Full RAW completeness and exact
+  pixel/interaction fidelity are not certified by these HTML/archive checks.
+- The previously operator-reported successful sample remains independent
+  evidence; its exact private bytes and operator-host execution revision were
+  not supplied.
