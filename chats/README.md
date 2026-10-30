@@ -54,7 +54,12 @@ Actions Ubuntu runner uses the pinned source revision of
 `massimilianonardi-ai/rumiai-dev-PoCs`; the workflow source is
 `.github/workflows/chatgpt-export.yml`.
 
-**Known scope:** the current exporter still expects the verified reference
-layout with eight singleton citations; other shared conversations can fail
-until their structures are supported. A successful archive does not certify
-completeness of underlying raw conversation data.
+**Citation policy (operator correction, 2026-10-30):** Citations are
+archived as visible controls where captured, but neither the reachability
+of external sources nor citation click behavior is guaranteed or required.
+The export **must not fail solely because citation URLs cannot be verified**;
+no fixed number of grouped or singleton citations is assumed. Inert citation
+controls are acceptable. The separate requirements for preserving visible
+conversation content, local resource integrity, script blocking, valid
+original title/date and safe Git publication remain in force. A successful
+archive does not certify completeness of underlying raw conversation data.
