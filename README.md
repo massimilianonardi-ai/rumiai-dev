@@ -156,7 +156,11 @@ products/
     ai/                    evaluations of external AI products
 
 chats/
-    <conversation>/         legacy non-authoritative conversation archive; GitHub mirror is disabled
+    <topic>/                operator-requested shared-link offline archives
+        <YYYY-MM-DD> <title>/
+            index.html      original-CSS offline export
+            assets/         local resources
+    <legacy-path>/          older non-authoritative chat archive
 
 todo/
     README.md              deferred-work lifecycle and minimal item contract
@@ -176,6 +180,8 @@ The complete pre-reset documentation remains recoverable from Git history. The l
 ```
 
 That commit is a historical reference, never a default source for current work.
+
+The opt-in public shared-link export workflow is documented in `chats/README.md`. It is separate from the disabled legacy automatic GitHub chat mirror and from the Google Drive conversation mirror; all such archives remain non-authoritative.
 
 ## Documentation lifecycle
 
