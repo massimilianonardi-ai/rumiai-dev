@@ -9,8 +9,8 @@ Allow the operator to provide a public ChatGPT share URL and topic in ChatGPT; t
 
 ## Current repository revisions
 
-- `rumiai-dev`: `ce92416baa837b189dc6c5cb581be2da6bd74f6f` (workflow pinned to metadata and original-CSS isolation revision; before this handoff update).
-- `rumiai-dev-PoCs`: `1d7f17de67bdac9f714d996bec467dd9b3ad1f6b` (optional `--with-metadata`, publisher and original-CSS Document filter plus regression tests; integrated real-Chromium run `41027051553` ongoing).
+- `rumiai-dev`: `24d8aaf1bc34eeecaa39687e0e2a48038077166d` (canonical chat citation policy corrected; workflow pinned and reopened-event retry enabled).
+- `rumiai-dev-PoCs`: `f7567415961bdb4346d4b1bd6319e92679dfb597` (citation-independent exporter, tests, README; m-context smoke run launched).
 
 ## Applicable canonical sources
 
@@ -41,6 +41,10 @@ Allow the operator to provide a public ChatGPT share URL and topic in ChatGPT; t
 
 ## Completed
 
+- **2026-10-30 operator correction (current):** citation destination reachability and click-functionality guarantees are **removed entirely as export prerequisites**. The new integrated `export-offline.mjs` captures original visible DOM/CSS/images, retains citation controls visually and does not perform source-card or singleton-link target verification. Citation controls can be inert; only content, local resources, CSP, title/date and safe publication are gated. Historical guarded link-recovery PoC scripts remain separate and are not invoked. The standalone `rumiai-dev-PoCs` repo implementation and Node tests were updated (source `a5ad33a`, tests `e50d6ea`, docs `f756741`). The new real-browser m-context smoke run `41036454863` was in progress at this checkpoint.
+- **First live publication attempt:** authorized Issue [#1](https://github.com/massimilianonardi-ai/rumiai-dev/issues/1) supplied `https://chatgpt.com/share/6ae46210-ceac-83eb-bf52-09b707731aff`, topic `m-context`. GitHub run [41033345519](https://github.com/massimilianonardi-ai/rumiai-dev/actions/runs/41033345519) validated request, setup, tests, Chrome then **refused before any Git commit** because prior strict exporter could not verify every +N source HTTPS target. This link requirement is the precise rule superseded by the operator. Workflow source is now pinned to the revised exporter and supports Issue `reopened` for retrying the same request.
+- **Previous integrated Chrome metadata run 41027051553:** browser export and original title/date extraction passed for the prior reference sample; the overall run failed later only at a report-file Git merge. Do not confuse this with a successful m-context publication.
+
 - **2026-10-30 implementation:** deployed owner-authorized GitHub Issue → Actions → multi-file export → forward-only commit workflow in `rumiai-dev`, with a completion/failure Issue comment. Updated canonical documentation in `RULES.md`, `README.md`, and `chats/README.md`. No actual conversation archive has yet been publicly committed.
 - **2026-10-30 PoC extension:** `render-probe.mjs` privately captures original HTML Document bodies; added `share-metadata.mjs` and `publish-chat-archive.mjs`, and `export-offline.mjs --with-metadata` returns metadata without keeping private captures. Original share title and first-user timestamp were verified against real HTML, and component tests passed. Real Chrome run `41026492307` exposed a specific regression (`Invalid archived resource reference`) because the CSS/font materializer considered Document evidence; fixed it in `render-same-session-styled.mjs`, updated the existing CSS fixture, and added a Document-isolation regression test. A new integrated runner check `41027051553` passed its unit tests and was still executing its Chrome capture at the latest observation.
 
@@ -49,13 +53,13 @@ Allow the operator to provide a public ChatGPT share URL and topic in ChatGPT; t
 
 ## Current state
 
-The publication workflow and exported metadata API are committed. The original title/date and safe archive path passed live-page and scoped tests; integrated Chrome run `41027051553` is in progress after the Document/CSS materializer regression fix. A real authorized Issue → public repository publication remains untested. No chat archive has been committed.
+The actual m-context publication Issue #1 completed with a deliberate refusal under now-superseded citation-link requirements. Default link-proof capture and restoration requirements have been removed; the source, tests and documentation were updated, and the workflow pinned forward to the revised exporter. At this checkpoint the new m-context real-Chromium smoke run `41036454863` was still in progress. No public chat archive has yet been committed.
 
 ## Next action
 
-Inspect completed GitHub run `41027051553`, its test/Chrome steps, and sanitized metadata report; reconcile any remaining failure forward. Once ready, create an owner-authorized Issue for an operator-supplied share URL and topic, then verify the first actual Git publication and Issue outcome. Never select a conversation/topic for public publication by inference.
+Confirm new citation-independent smoke run `41036454863`; if successful, close and reopen the already-authorized Issue #1 to trigger the updated workflow (instead of creating an unnecessary duplicate Issue), and verify the actual `chats/m-context/<date> <title>/index.html` Git commit, asset tree and Issue outcome. If it fails, diagnose without re-introducing citation-target completeness requirements.
 
 ## Blockers / open questions
 
-- The integrated original-Document capture → optional exporter metadata result is not yet confirmed on a **completed** passing Chrome run for revision `1d7f17de67bdac9f714d996bec467dd9b3ad1f6b`.
-- GitHub Issue trigger identity and `GITHUB_TOKEN` push permissions require one real authorized request to verify. The publisher rejects path collisions without overwriting and applies safe filename checks; broader share layouts remain unsupported.
+- Need to finish real m-context smoke under the revised citation-independent implementation and exercise GitHub archive commit. The previous Issue request did trigger and pass owner authorization, but no Git commit reached.
+- Local image resources and CSS remain integrity-gated, unrelated to external citation URL reachability. Additional real-share variation may expose independent rendering/metadata constraints.
