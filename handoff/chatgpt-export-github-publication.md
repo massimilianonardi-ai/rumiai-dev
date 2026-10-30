@@ -1,6 +1,6 @@
 # ChatGPT shared-link exports — GitHub Actions publication
 
-Status: Active
+Status: Complete
 Updated: 2026-10-30
 
 ## Goal
@@ -39,6 +39,15 @@ Allow the operator to provide a public ChatGPT share URL and topic in ChatGPT; t
 - Canonical `RULES.md`, `README.md`, and `chats/README.md` now distinguish this explicit public-share export from the disabled legacy GitHub mirror and from Google Drive. Recheck this alignment after each workflow change.
 - `rumiai-dev` is public. Published HTML is world-readable and Git-retained; per-export authorization and handling of personal/sensitive content must be explicit before writing a real conversation.
 
+## Final validation and publication
+
+- **User correction:** external citation destination reachability, click behavior and fixed +N/singleton cardinality are no longer export acceptance requirements. The default exporter preserves captured citation controls visually but does not restore external targets or reject when they are unverifiable. HTML/CSS, exact local image resources, script blocking, title/date provenance and safe Git publication remain required.
+- **Citation-independent smoke:** GitHub-hosted Ubuntu/Chrome run [41036454863](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/41036454863) concluded `success`; 22 focused Node tests passed. The real m-context share produced 1,370,089-byte HTML in the private runner, verified original date `2026-10-26`, source title captured, and `citationLinkVerificationRequired:false`.
+- **Live operator-requested publication:** original Issue [#1](https://github.com/massimilianonardi-ai/rumiai-dev/issues/1) was reopened after the prior failed linked-citation attempt. The new GitHub Actions run [41037053581](https://github.com/massimilianonardi-ai/rumiai-dev/actions/runs/41037053581) completed `success`: author request check, checkout, dependency/tests, Chrome export, Git forward-only commit, and an Issue success comment all passed. Public archive directory is `chats/m-context/2026-10-26 m context/` with `index.html`, 42 local assets, and 3 archive audit JSON files (46 files). The public `index.html` was 1,370,044 bytes in the committed version. The original failure was the user-rejected +N HTTPS verification gate, not a Git authorization failure.
+- **Canonical state:** `chats/README.md` now expresses the operator-approved citation policy, distinct from content/resource/CSP requirements. `.github/workflows/chatgpt-export.yml` pins the current exporter and supports both `opened` and `reopened` for authorized Issues. The current PoC README documents the citation-independent command and preserves old linked archive validation only as revision-specific evidence.
+- Current validated repository revisions at the beginning of this closeout: `rumiai-dev@cd165ace9d6d8b21b5e8879e1eb322b1e884abce` and `rumiai-dev-PoCs@f7567415961bdb4346d4b1bd6319e92679dfb597` (plus diagnostic-only workflow commits in PoCs; the default exporter source is at `a5ad33a`, tests at `e50d6ea`).
+- No more work is required for the specified m-context publication. Future independently requested shares may encounter other image, metadata or DOM layout constraints; these are not implied successes.
+
 ## Completed
 
 - **2026-10-30 operator correction (current):** citation destination reachability and click-functionality guarantees are **removed entirely as export prerequisites**. The new integrated `export-offline.mjs` captures original visible DOM/CSS/images, retains citation controls visually and does not perform source-card or singleton-link target verification. Citation controls can be inert; only content, local resources, CSP, title/date and safe publication are gated. Historical guarded link-recovery PoC scripts remain separate and are not invoked. The standalone `rumiai-dev-PoCs` repo implementation and Node tests were updated (source `a5ad33a`, tests `e50d6ea`, docs `f756741`). The new real-browser m-context smoke run `41036454863` was in progress at this checkpoint.
@@ -53,13 +62,12 @@ Allow the operator to provide a public ChatGPT share URL and topic in ChatGPT; t
 
 ## Current state
 
-The actual m-context publication Issue #1 completed with a deliberate refusal under now-superseded citation-link requirements. Default link-proof capture and restoration requirements have been removed; the source, tests and documentation were updated, and the workflow pinned forward to the revised exporter. At this checkpoint the new m-context real-Chromium smoke run `41036454863` was still in progress. No public chat archive has yet been committed.
+Complete. Operator-requested m-context export was published successfully and its GitHub-hosted implementation validated. The public archive and final Issue link were checked directly against the remote repository.
 
 ## Next action
 
-Confirm new citation-independent smoke run `41036454863`; if successful, close and reopen the already-authorized Issue #1 to trigger the updated workflow (instead of creating an unnecessary duplicate Issue), and verify the actual `chats/m-context/<date> <title>/index.html` Git commit, asset tree and Issue outcome. If it fails, diagnose without re-introducing citation-target completeness requirements.
+None for this work unit. New operator-supplied URLs and topics can be handled as separate explicit publication requests.
 
 ## Blockers / open questions
 
-- Need to finish real m-context smoke under the revised citation-independent implementation and exercise GitHub archive commit. The previous Issue request did trigger and pass owner authorization, but no Git commit reached.
-- Local image resources and CSS remain integrity-gated, unrelated to external citation URL reachability. Additional real-share variation may expose independent rendering/metadata constraints.
+None for this completed m-context export. Do not interpret citation-independent output as guaranteed navigation behavior or complete RAW conversation evidence.
