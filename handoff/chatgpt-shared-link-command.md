@@ -48,12 +48,15 @@ Create one user-facing Node.js command that accepts a public ChatGPT shared URL 
 
 ## Current state
 
-The operator confirms a prior real export test with a perfect result. The separately logged end-to-end GitHub-hosted Ubuntu Linux/Chrome run also passed the fixed-layout archive checks for the public sample share. The operator confirmation is user-reported; the CI result is independent automated evidence. Neither establishes support for arbitrary ChatGPT shares. The source of the accepted PoC and its previously documented limitations remain unchanged.
+The operator-confirmed accepted sample and earlier Ubuntu live acceptance remain unchanged. Those results do not establish general share compatibility.
+
+**2026-10-30 macOS dev export repair (active):** Issue #5 on `rumiai-dev` requested public share `6ae4dde6-93a0-83ed-820e-74d0e3f3c9e1`. Its authorized publisher failed without a partial archive. Private-safe real Chromium diagnostics on `rumiai-dev-PoCs` (runs 41106770806 and 41107505886) observed 52 Google image references, 38 with exact saved bodies and 14 without; the missing references represent only two distinct `/s2/favicons` URLs. No cited URL or private HTML/profile was published. A scoped direct-HTTPS Google favicon recovery extension, with byte/hash verification and no unsupported-host fallback, was added to the PoC; 22 focused unit tests passed in run 41108778750, but the actual share export still failed because an exact Google favicon URL was not retrievable. No `rumiai-dev` publisher pin has been updated. Current source checkpoint: `rumiai-dev-PoCs@fcdd192eec0b8cc9756b42cb25cfe8b7aa00fe8f`; dedicated safe diagnostic rerun is pending at this checkpoint. A GitHub-hosted runner is not physical validation.
 
 ## Next action
 
-The requested GitHub Actions Linux run succeeded and the operator has corrected the validation status to include a prior successful real export. The remaining lifecycle action is to decide whether to close this packaging handoff. Do not generalize the fixed eight-singleton assumption to other shares.
+Read the next safe real-share diagnostic result, especially the missing favicon HTTP and MIME status. If a verifiable exact-resource recovery can be established, run the real exporter, update the publisher's pinned PoC commit and retrigger issue #5. If the original favicon bytes are unavailable, leave the publication refused and document the evidence-based blocker rather than substituting images or weakening structural/CSP checks.
 
 ## Blockers / open questions
 
-- No blocker for the accepted sample. Exact revision/command details for the operator-reported earlier real test were not supplied in this correction; broader real-share compatibility remains unclaimed.
+- The earlier accepted sample has no blocker; exact details of the operator-reported real run were not independently recorded.
+- The macOS dev share remains blocked by exact Google favicon response availability; two distinct source URLs account for 14 remaining remote image references. The scoped HTTPS fallback has not yet succeeded on that share.
