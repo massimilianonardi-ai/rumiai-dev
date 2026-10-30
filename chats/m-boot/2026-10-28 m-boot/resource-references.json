@@ -1,0 +1,278 @@
+[
+  {
+    "attribute": "href",
+    "reference": "/cdn/assets/sprites-core-e3d8576f.svg#f7cf8e"
+  },
+  {
+    "attribute": "href",
+    "reference": "/cdn/assets/sprites-core-e3d8576f.svg#07889e"
+  },
+  {
+    "attribute": "href",
+    "reference": "/cdn/assets/sprites-core-e3d8576f.svg#72c6a7"
+  },
+  {
+    "attribute": "href",
+    "reference": "/cdn/assets/sprites-core-e3d8576f.svg#7fccfb"
+  },
+  {
+    "attribute": "src",
+    "reference": "/images/ecosystem/apps/github/icon.png"
+  },
+  {
+    "attribute": "href",
+    "reference": "/cdn/assets/sprites-core-e3d8576f.svg#c6783c"
+  },
+  {
+    "attribute": "href",
+    "reference": "/cdn/assets/sprites-core-e3d8576f.svg#ba2866"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://manpages.debian.org/unstable/grub-common/grub-mkimage.1.en.html?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://manpages.debian.org&amp;sz=128"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://www.gnu.org/software/grub/manual/grub/html_node/Images.html?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://www.gnu.org&amp;sz=128"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://www.gnu.org/software/grub/manual/grub/html_node/Installation.html?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://www.gnu.org/software/grub/manual/grub/html_node/save_005fenv.html?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://www.gnu.org/software/grub/manual/grub/html_node/menuentry.html?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://www.gnu.org/software/grub/manual/grub/grub.html?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://www.gnu.org&amp;sz=32"
+  },
+  {
+    "attribute": "href",
+    "reference": "/cdn/assets/sprites-core-e3d8576f.svg#dd315f"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://man.archlinux.org/man/grub-install.8?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://man.archlinux.org&amp;sz=128"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://asahilinux.org/docs/platform/introduction/?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://asahilinux.org&amp;sz=128"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://uefi.org/specs/UEFI/2.10/03_Boot_Manager.html?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://uefi.org&amp;sz=128"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://www.gnu.org/software/grub/manual/grub/html_node/Invoking-grub_002dinstall.html?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://www.gnu.org/software/grub/manual/grub/html_node/normal.html?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://www.gnu.org/software/grub/manual/grub/html_node/Embedded-configuration.html?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://www.gnu.org/software/grub/manual/grub/html_node/search.html?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://www.gnu.org/software/grub/manual/grub/html_node/load_005fenv.html?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://sources.debian.org/src/grub2/2.06-3~deb10u1/grub-core/kern/main.c?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://sources.debian.org&amp;sz=128"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://sources.debian.org/src/grub2/2.06-3~deb11u2/docs/grub.texi?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://www.gnu.org/software/grub/manual/grub/html_node/prefix.html?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://www.gnu.org/software/grub/manual/grub/html_node/regexp.html?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://www.gnu.org/software/grub/manual/grub/html_node/root.html?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://www.gnu.org/software/grub/manual/grub/html_node/source.html?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://uefi.org/specs/UEFI/2.11/13_Protocols_Media_Access.html?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://www.gnu.org/software/grub/manual/grub/html_node/Loopback-booting.html?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://www.southampton.ac.uk/~qs2g22/mirror/info/grub/Menu-interface.html?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://www.southampton.ac.uk&amp;sz=128"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://www.southampton.ac.uk&amp;sz=32"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://www.gnu.org/software/grub/manual/grub/html_node/BIOS-installation.html?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://packages.ubuntu.com/grub?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://packages.ubuntu.com&amp;sz=128"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://packages.ubuntu.com/noble/amd64/grub-common/filelist?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://packages.ubuntu.com&amp;sz=32"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://uefi.org/specs/UEFI/2.10/05_GUID_Partition_Table_Format.html?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://wiki.archlinux.org/title/GRUB?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://wiki.archlinux.org&amp;sz=128"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://wiki.archlinux.org&amp;sz=32"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://uefi.org/specs/UEFI/2.11/03_Boot_Manager.html?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://uefi.org&amp;sz=32"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://www.gnu.org/software/grub/manual/grub/html_node/Supported-kernels.html?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://learn.microsoft.com/it-it/windows-hardware/drivers/bringup/switch-from-legacy-mbr-disk-to-gpt-disk-with-windows-10?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://learn.microsoft.com&amp;sz=128"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://learn.microsoft.com&amp;sz=32"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://ubuntu.com/hardware/docs/boards/how-to/ubuntu_supported/qemu-arm64/?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://ubuntu.com&amp;sz=128"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://packages.ubuntu.com/noble/all/qemu-efi-aarch64/filelist?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://ubuntu.com/server/docs/virtualization-qemu/?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://ubuntu.com&amp;sz=32"
+  },
+  {
+    "attribute": "href",
+    "reference": "/cdn/assets/sprites-external-e813c99f.svg#1a6f23"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://manpages.ubuntu.com&amp;sz=32"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://docs.github.com&amp;sz=32"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://github.com/massimilianonardi-ai/m-boot/actions/runs/40962846357?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://github.com/massimilianonardi-ai/m-boot/commit/5418b0133a0152204aae3ab3bfc7d42ff179b872?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://github.com/massimilianonardi-ai/m-boot/actions/runs/40963276519?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://sources.debian.org&amp;sz=32"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://github.com&amp;sz=32"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://www.qemu.org&amp;sz=32"
+  }
+]
