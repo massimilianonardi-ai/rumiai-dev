@@ -48,15 +48,30 @@ Create one user-facing Node.js command that accepts a public ChatGPT shared URL 
 
 ## Current state
 
+**2026-10-30 operator correction now canonical in `chats/README.md`:**
+Ignore decorative images belonging to citation controls and external-link
+badges. Their URLs, response bodies and hash conflicts are not completeness
+requirements. Preserve the citation/link text, original CSS and substantive
+conversation media. The implementation on `rumiai-dev-PoCs@dfdf5a4492b89023e18e4de1e16bc5539d57e232`
+removes only selected original IMG tags before localization, without
+serializing the rest of the DOM. Focused unit and real macOS share acceptance
+are being exercised in PoC workflow run 41113594527. The publisher's pinned
+source is deliberately unchanged until the live run succeeds.
+
 The operator-confirmed accepted sample and earlier Ubuntu live acceptance remain unchanged. Those results do not establish general share compatibility.
 
 **2026-10-30 macOS dev export repair (active; publication blocked):** Issue #5 in `rumiai-dev` requests shared URL `6ae4dde6-93a0-83ed-820e-74d0e3f3c9e1`. The original authorized publisher failed without committing an archive. Read-only live Chrome diagnostics, isolated in GitHub-hosted Ubuntu runners, traced the 14–15 unmatched Google icon references to two or three distinct `/s2/favicons` URLs; source variability across runs prevents assuming a stable count. In the latest diagnostic run [41110299094](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/41110299094), Chrome observed 37 matched/15 unmatched references, one conflicting image URL, and for the unmatched resources four `404:image/png` and two `200:image/png` response observations across the captures. A previous scoped no-cookie HTTPS retrieval run failed to retrieve an exact Google favicon. The bounded recovery implementation and SHA-verified additional provenance are available in `rumiai-dev-PoCs@fcdd192eec0b8cc9756b42cb25cfe8b7aa00fe8f`; its 23 focused Node tests passed in the latest run, but the real target export **failed**. No image bytes, profiles, private HTML or raw URLs were published. The `rumiai-dev` publisher still pins its earlier accepted source revision; no retargeting or issue reopen has occurred. No physical validation is claimed.
 
 ## Next action
 
-Keep issue #5 unrepublished until both original Google favicon URL(s) can be localized from verified exact bytes without source ambiguity. If independently acquired valid evidence becomes available, rerun the full exporter on the real share; only a successful result may justify pinning the publisher to the tested PoC revision and retriggering the issue. If the original service keeps returning 404 or ambiguous bodies, request an explicit operator decision before any change to the currently strict decorative-image completeness contract.
+Check run 41113594527 for real browser validation. On success, update the
+authorized publisher's pinned PoC source, re-run its focused checks and
+reopen existing issue #5 (reopened is an authorized dispatch event). Confirm
+the archive is committed with script blocking and local substantive media.
+On failure, inspect the new failure and adjust only this implementation,
+preserving its privacy and image-integrity boundary.
 
 ## Blockers / open questions
 
 - The earlier accepted sample has no blocker; exact details of the operator-reported real run were not independently recorded.
-- The macOS dev share remains blocked by 404/unavailable or conflicting evidence for Google favicon URLs (14–15 residual HTML references across runs); the recovery fallback has not passed a live export. The publisher must not substitute icons, drop the unresolved references or publish a partial archive under the current contract.
+- `macOS dev` publication has not yet succeeded. The former favicon blocker is explicitly superseded by the operator's decorative-media exclusion policy; this does not waive checks for substantive conversation images.
