@@ -1,0 +1,246 @@
+[
+  {
+    "attribute": "href",
+    "reference": "/cdn/assets/sprites-core-e3d8576f.svg#07889e"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://www.apple.com/legal/sla/docs/macOSSequoia.pdf?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://www.apple.com&amp;sz=128"
+  },
+  {
+    "attribute": "href",
+    "reference": "/cdn/assets/sprites-core-e3d8576f.svg#7fccfb"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://knowledge.broadcom.com/external/article/301109/vmware-discontinuation-of-latest-macos-a.html?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://knowledge.broadcom.com&amp;sz=128"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://community.broadcom.com&amp;sz=128"
+  },
+  {
+    "attribute": "href",
+    "reference": "/cdn/assets/sprites-core-e3d8576f.svg#72c6a7"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://developer.apple.com/library/archive/documentation/MacOSX/Conceptual/BPSystemStartup/Chapters/DesigningDaemons.html?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://developer.apple.com&amp;sz=128"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://developer.apple.com/documentation/servicemanagement/smappservice?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://github.com/openai/tart?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "/cdn/assets/sprites-core-e3d8576f.svg#ba2866"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://tart.run/faq/?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://tart.run&amp;sz=128"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://github.com&amp;sz=128"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://developer.apple.com/documentation/virtualization/vzmacguestprovisioningoptions?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://darlinghq.org/?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://github.com/darlinghq/darling?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://github.com/cross-rs/cross-toolchains/blob/main/README.md?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-mac-instances.html?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://docs.aws.amazon.com&amp;sz=128"
+  },
+  {
+    "attribute": "href",
+    "reference": "/cdn/assets/sprites-external-e813c99f.svg#1a6f23"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://tart.run&amp;sz=32"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://developer.apple.com&amp;sz=32"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://developer.apple.com/documentation/virtualization/virtualize-macos-on-a-mac?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://developer.apple.com/documentation/virtualization/installing-macos-on-a-virtual-machine?changes=_7_2&amp;utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://developer.apple.com/documentation/virtualization/running-macos-in-a-virtual-machine-on-apple-silicon?changes=_4%2C_4&amp;utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://getutm.app/?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://github.com/utmapp/UTM/blob/main/Documentation/Architecture.md?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://docs.getutm.app/guest-support/macos/?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://docs.getutm.app&amp;sz=128"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://docs.getutm.app/advanced/headless/?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://docs.getutm.app/scripting/scripting/?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://docs.getutm.app/remote/server/?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://docs.getutm.app/advanced/snapshots/?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://docs.getutm.app/settings-apple/devices/network/?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://tart.run/?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://github.com/openai/tart/blob/main/Sources/tart/Commands/Run.swift?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://github.com/openai/tart/issues/1269?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://tart.run/quick-start/?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://github.com/openai/tart/blob/main/docs/faq.md?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://github.com/openai/tart/blob/main/LICENSE?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://docs.getutm.app&amp;sz=32"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://github.com/utmapp/UTM/releases?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://github.com/openai/tart/releases?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://docs.getutm.app/installation/macos/?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://github.com/openai/tart/blob/main/.goreleaser.yml?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://docs.github.com/en/actions/reference/runners/larger-runners?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://docs.github.com&amp;sz=128"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://docs.github.com/en/actions/reference/runners/github-hosted-runners?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://docs.github.com/en/enterprise-cloud%40latest/actions/reference/limits?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://github.blog/changelog/2026-10-01-github-actions-macos-14-runner-image-retirement/?trk=article-ssr-frontend-pulse_little-text-block&amp;utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://github.blog&amp;sz=128"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://docs.github.com/en/billing/concepts/product-billing/github-actions?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://github.blog&amp;sz=32"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://docs.github.com&amp;sz=32"
+  },
+  {
+    "attribute": "href",
+    "reference": "/cdn/assets/sprites-core-e3d8576f.svg#dd315f"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://github.com&amp;sz=32"
+  },
+  {
+    "attribute": "href",
+    "reference": "/cdn/assets/sprites-core-e3d8576f.svg#f7cf8e"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://github.com/massimilianonardi-ai/rumiai-dev/blob/69b125c43006ec30c21e1c3ce75423de8f348870/handoff/macos-virtualization-packages.md?utm_source=chatgpt.com"
+  }
+]
