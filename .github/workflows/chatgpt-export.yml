@@ -48,7 +48,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: massimilianonardi-ai/rumiai-dev-PoCs
-          ref: 1d7f17de67bdac9f714d996bec467dd9b3ad1f6b
+          ref: f7567415961bdb4346d4b1bd6319e92679dfb597
           path: source
           persist-credentials: false
 
