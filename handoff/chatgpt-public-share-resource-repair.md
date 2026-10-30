@@ -1,6 +1,6 @@
 # ChatGPT public archive resource validation repair
 
-Status: Active
+Status: Complete
 Updated: 2026-10-30
 
 ## Goal
@@ -9,9 +9,10 @@ Repair and complete the owner-requested public offline export of ChatGPT share `
 
 ## Current repository revisions
 
-- `rumiai-dev`: current checkpoint `2010b98cc20239add113b1b1b4341233be286df9`; currently pins PoC code `87427118a0cc6993918400417852c2dce5272ac7`.
-- `rumiai-dev-PoCs`: code revision `87427118a0cc6993918400417852c2dce5272ac7`, with first-party Chrome User-Agent and regression test; head includes isolated transport smoke workflow.
-- Fresh HEAD checks are always required before subsequent writes.
+- `rumiai-dev`: `f9c5c614617c149f3def1f7d3d7a65cf0857bd9c` after the successful issue #2 publication (before final handoff retirement).
+- `rumiai-dev-PoCs`: `ee6401d48c45d26c5d4100865b50d0bba66b6fa9` after removing the one-off transport diagnostic workflow.
+- Successful export/workflow pinned PoC source `87427118a0cc6993918400417852c2dce5272ac7`.
+
 
 ## Applicable canonical sources
 
@@ -32,19 +33,22 @@ Repair and complete the owner-requested public offline export of ChatGPT share `
 
 ## Completed
 
-- Initial Issue #2 and workflow run [41043087885](https://github.com/massimilianonardi-ai/rumiai-dev/actions/runs/41043087885) failed after 9 tests passed; no partial archive was committed.
-- Added publisher diagnostics and CSS regression coverage (PoC commits `0cae619`, `e7f5a5a`). Second actual Chrome run [41045115672](https://github.com/massimilianonardi-ai/rumiai-dev/actions/runs/41045115672) confirmed a specific root-relative GitHub app icon, without any publication.
-- Added exact-origin first-party image localizer, bounded/signed verified files, negative tests and exporter integration (PoC commits `df30238`, `5878a39`, `16999b9`, `19bfd5c`); updated PoC README in `0150564`.
-- Updated publication workflow to pin `19bfd5c` and include the additional focused tests, and re-opened Issue #2, triggering live run [41046461277](https://github.com/massimilianonardi-ai/rumiai-dev/actions/runs/41046461277). Its preparatory checks and tests have passed; browser acquisition is ongoing.
+- Issue #2 initially failed to publish because a captured original `img` used the ChatGPT root-relative URL `/images/ecosystem/apps/github/icon.png`, with no localized asset. The publisher correctly rejected the unresolved reference. Diagnostic run [41045115672](https://github.com/massimilianonardi-ai/rumiai-dev/actions/runs/41045115672) identified it.
+- Implemented bounded first-party exact-URL retrieval, image MIME/signature/size/SHA checks, local HTML replacement, final structural/absolute-path rejection, and missing-asset diagnostics in PoC 068. Historical details and source revisions are recoverable through Git history.
+- Hosted-runner transport check [41047331525](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/41047331525) showed default Node User-Agent 403 versus Chromium User-Agent 200 and 9,380-byte PNG; source fetch uses the verified browser User-Agent without relaxing origin or integrity requirements.
+- Successful full Chrome + Git publication run [41047538020](https://github.com/massimilianonardi-ai/rumiai-dev/actions/runs/41047538020): **23/23 Node tests**, original chat title `export ChatGPT`, first-user date `2026-10-26`, topic `ChatGPT - export`, 46 files including 42 assets, 80 captured turn elements, `index.html` 1,220,060 bytes, exact 9,380-byte first-party PNG local, `script-src 'none'`. All workflow steps (including commit, forward-only push and owner-Issue comment) succeeded.
+- Published archive: [`chats/ChatGPT - export/2026-10-26 export ChatGPT/index.html`](https://github.com/massimilianonardi-ai/rumiai-dev/blob/main/chats/ChatGPT%20-%20export/2026-10-26%20export%20ChatGPT/index.html).
+- Issue [#2](https://github.com/massimilianonardi-ai/rumiai-dev/issues/2) closed as completed. Temporary diagnostic workflow removed via a later forward-only PoC commit. No product or `rumiai-tests` files modified.
+
 
 ## Current state
 
-Second real run [41045115672](https://github.com/massimilianonardi-ai/rumiai-dev/actions/runs/41045115672) identified the exact blocker as the original `<img src="/images/ecosystem/apps/github/icon.png">` root-relative first-party ChatGPT icon; the publisher was correctly refusing a path outside its archive. The exporter initially counted only remote absolute image URLs, not same-origin root-relative images, and the saved CDP image index did not contain this static icon. The current PoC now includes bounded exact-origin image retrieval with MIME/signature/size/SHA validation, local HTML replacement and a final check for any remaining absolute image references. Focused unit tests passed in the new workflow's initial test step; the first end-to-end retry failed on Node HTTP status 403 (the image URL was not retrievable); an isolated hosted-runner transport smoke [41047331525](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/41047331525) verified Node fetch returns 200 image/png (9,380 bytes) with an ordinary Chromium User-Agent. The corrected exact-origin fetch is in the new live export attempt; publication remains pending.
+Successfully published and independently verified in the public destination repository. No partial failed archives were committed. Citation reachability remains optional, original scripts blocked, all required local resources validated. The HTML archive is historical/non-authoritative, consistent with `chats/README.md`. GitHub-hosted Chromium was exercised; no physical validation on an operator workstation is claimed.
 
 ## Next action
 
-Await actual run [41047538020](https://github.com/massimilianonardi-ai/rumiai-dev/actions/runs/41047538020). If successful, verify GitHub files/title/date/assets/Issue comment and complete/retire this handoff using two forward commits. If it fails, diagnose the next concrete blocker without relaxing integrity.
+None. Work complete.
 
 ## Blockers / open questions
 
-The image endpoint's difference between the default Node User-Agent (403) and the ordinary Chromium User-Agent (200) was observed on the GitHub-hosted runner. The full share publication is still under validation.
+None.
