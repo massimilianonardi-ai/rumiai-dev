@@ -2,7 +2,7 @@ name: Export ChatGPT share to chats
 
 on:
   issues:
-    types: [opened]
+    types: [opened, reopened]
 
 permissions:
   contents: write
