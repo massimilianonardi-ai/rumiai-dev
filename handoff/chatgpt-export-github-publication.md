@@ -1,7 +1,7 @@
 # ChatGPT shared-link exports — GitHub Actions publication
 
 Status: Active
-Updated: 2026-10-29
+Updated: 2026-10-30
 
 ## Goal
 
@@ -9,12 +9,12 @@ Allow the operator to provide a public ChatGPT share URL and topic in ChatGPT; t
 
 ## Current repository revisions
 
-- `rumiai-dev`: `4a26e94cf752f70ca5518bd2f62d8bc3d8ec1ba0` (pre-activation checkpoint).
-- `rumiai-dev-PoCs`: `3066b35127a2dddc71c54259ce708abc45f3a0fb` (accepted exporter; existing GitHub Actions browser run 40954580470 passed).
+- `rumiai-dev`: `2e69792ffc125d2df9514cc88b043b345ae713c8` (publication workflow and canonical documentation added; before this handoff checkpoint).
+- `rumiai-dev-PoCs`: `aa4501aaaec18aebfe6d1eb1655a737ff7eb4df8` (metadata module, private Document acquisition, archive publisher and targeted tests; integrated full-browser probe triggered).
 
 ## Applicable canonical sources
 
-- `README.md`, `RULES.md`, `CONSISTENCY-GATE.md`, `TESTING.md`, `specifications/README.md`, `handoff/README.md`.
+- `README.md`, `RULES.md`, `CONSISTENCY-GATE.md`, `TESTING.md`, `specifications/README.md`, `handoff/README.md`, `chats/README.md`.
 - `specifications/rumiai-os/WEB-CONTROL.md` as a browser-security boundary; current `handoff/chatgpt-shared-link-command.md` for the exporter and its validated scope.
 - PoC 068 `export-offline.mjs`, `render-probe.mjs`, `audit-rendered-dom-raw.mjs`, `localize-rendered-resources.mjs`, `localize-exact-captured-images.mjs` and `poc-068-live-export.yml`.
 
@@ -34,25 +34,28 @@ Allow the operator to provide a public ChatGPT share URL and topic in ChatGPT; t
 ## Working design
 
 - The operator selected the PoC's existing multi-file layout instead of a standalone HTML file. Preserve `index.html`, local `assets/`, stylesheets, fonts and their relative paths; validate the full output tree before Git publication. There is no single-file inlining or renderer change.
-- `audit-rendered-dom-raw.mjs` shows parsing of serialized `linear_conversation` from separately archived React Router hydration, but normal `render-probe.mjs --capture-static-bodies` currently saves stylesheets/fonts, **not** the initial Document response body. Neither the finished HTML nor the share URL currently provides a verified creation date **or original title**. Extend the capture/metadata boundary to obtain both: original chat title from authoritative share metadata or verified original-page title, first relevant user-message creation timestamp from original conversation evidence; reject missing/ambiguous/generic values. The offline generated HTML title is generic and must not be mistaken for the original chat title. Exact field availability and time-zone conversion (proposed Europe/Rome) need live proof. The OpenAI account-data export documents a shared-conversation title field, but that is not proof that the public share HTML exposes it.
-- A chat-linked GitHub Issue can trigger Actions using `issues` events, subject to an authorization check, minimal `contents: write` and a safe published-path validation. Pin exporter source revision; do not execute untrusted Issue text as shell.
-- The current `rumiai-dev/RULES.md` and `README.md` state that the old GitHub chats mirror is disabled and Google Drive is the authorized mirror. The user's newer explicit destination instruction supersedes that for this workflow, but the authoritative documentation needs deliberate realignment during implementation; do not silently describe the new publication as the old mirror.
+- The share sample's original HTTP HTML contains `ChatGPT - Integrare Chat e Work` as its title, while `og:title` is a generic sharing invitation. Its React Router hydration `linear_conversation` yields a first user `create_time` corresponding to 2026-10-08 in Europe/Rome, distinct from the share creation time. A live GitHub curl extraction and targeted Node tests passed. `render-probe.mjs` now privately captures the original HTML Document in its static evidence; the full real-Chromium pipeline reading that evidence was triggered but its result must still be verified.
+- The deployed workflow `.github/workflows/chatgpt-export.yml` accepts an owner-created Issue titled `ChatGPT export request` with a strict JSON body containing `url` and `topic`. Source revision is pinned and request content is passed to Node through private JSON, not shell interpolation. Publication uses a fast-forward-only Git push. A real Issue-to-commit execution remains unverified.
+- Canonical `RULES.md`, `README.md`, and `chats/README.md` now distinguish this explicit public-share export from the disabled legacy GitHub mirror and from Google Drive. Recheck this alignment after each workflow change.
 - `rumiai-dev` is public. Published HTML is world-readable and Git-retained; per-export authorization and handling of personal/sensitive content must be explicit before writing a real conversation.
 
 ## Completed
+
+- **2026-10-30 implementation:** deployed owner-authorized GitHub Issue → Actions → multi-file export → forward-only commit workflow in `rumiai-dev`, with a completion/failure Issue comment. Updated canonical documentation in `RULES.md`, `README.md`, and `chats/README.md`. No actual conversation archive has yet been publicly committed.
+- **2026-10-30 PoC extension:** `render-probe.mjs` privately captures original HTML Document bodies; added `share-metadata.mjs` and `publish-chat-archive.mjs`, plus targeted tests. The sample original title and first-user date were independently recovered from its live HTML on GitHub Actions. The CI metadata/test result was `testStatus: pass`. A real export with new private-document metadata checking is triggered separately and must not be counted as passed until its report is observed.
 
 - Confirmed read-only that PoC 068 runs successfully end-to-end on GitHub-hosted Ubuntu/Chrome (`40954580470`), but that run did not publish an archive to Git.
 - Verified existing exporter data/evidence boundary and current public repository/policy; identified the need for original timestamp and title evidence. Multi-file output now matches the chosen archive layout, so no single-file packing is needed.
 
 ## Current state
 
-Publishing workflow is **not implemented**. This handoff captures the new independent workstream and its concrete constraints. No conversation output has been committed.
+The publication workflow and exporter metadata adapter are implemented and committed. The first-user date/title and target path selection passed live-page and mock-boundary tests; the integrated Chrome capture check has been initiated but not yet confirmed. The first real authorized Issue → repository publication run remains untested. No chat archive has been committed.
 
 ## Next action
 
-Verify reliable original chat-title and chat-start timestamp availability from a representative share via privacy-safe metadata-only observation. Then implement and test the metadata extension, the full-directory publication/audit logic and the authorized GitHub Actions Issue-to-commit workflow, realigning the canonical chats publication policy in the same work unit.
+Confirm the result of the real Chromium integrated capture check on the GitHub runner; reconcile any failure forward. Once ready, use an explicitly supplied share URL and topic to create the first authorized Issue and verify actual GitHub publication and Issue outcome. Do not publish a chat without the operator's explicit request for that particular URL/topic.
 
 ## Blockers / open questions
 
-- Whether the original chat title and first-message creation time can be extracted reliably from current shared-page evidence; the chosen timezone for `YYYY-MM-DD` is still to be verified.
-- Title/path collision and invalid-title handling must be verified without overwriting unrelated archives.
+- The integrated original-Document capture → metadata read has not yet been confirmed on the completed browser run.
+- GitHub Issue trigger identity and `GITHUB_TOKEN` push permissions require one real authorized request to verify. The publisher rejects path collisions without overwriting and applies safe filename checks; broader share layouts remain unsupported.
