@@ -59,7 +59,18 @@ archived as visible controls where captured, but neither the reachability
 of external sources nor citation click behavior is guaranteed or required.
 The export **must not fail solely because citation URLs cannot be verified**;
 no fixed number of grouped or singleton citations is assumed. Inert citation
-controls are acceptable. The separate requirements for preserving visible
-conversation content, local resource integrity, script blocking, valid
-original title/date and safe Git publication remain in force. A successful
-archive does not certify completeness of underlying raw conversation data.
+controls are acceptable.
+
+**Decorative media policy (operator correction, 2026-10-30):**
+Favicon, site icons and other images belonging to citation controls or
+external-link badges are excluded from the offline archive. Their download,
+availability, original bytes and URL-to-body correspondence are not
+publication requirements. Omit only decorative citation/link images; retain
+the citation text and link markup and preserve substantive conversation
+media, which remain subject to exact-resource and integrity validation.
+Original CSS and unrelated visible HTML remain unchanged.
+
+The separate requirements for preserving visible conversation content,
+substantive local resource integrity, script blocking, valid original
+title/date and safe Git publication remain in force. A successful archive
+does not certify completeness of underlying raw conversation data.
