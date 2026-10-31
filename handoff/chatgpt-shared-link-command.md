@@ -48,6 +48,23 @@ Create one user-facing Node.js command that accepts a public ChatGPT shared URL 
 
 ## Current state
 
+**2026-10-31 computer use export resumption (issue #8):**
+First publisher run [41181630821](https://github.com/massimilianonardi-ai/rumiai-dev/actions/runs/41181630821)
+failed at original Chromium sweep readiness (exit 3, including isolated retry).
+All 28 focused publisher tests passed; no archive was committed. Created a
+private-safe comparative Chromium readiness workflow in PoC 068 commit
+`7e3d86d7605b94a0b32dfe239d0fb5007c5c8393`. Its [run
+41184140728](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/41184140728)
+succeeded: two separate target sessions both observed HTTP 200 and the
+required scroll/turn hooks (146 wrappers each), while the control share
+lacked turn hooks in its sampled interval. This establishes transient
+readiness for the target at the diagnostic revision, not successful full
+export or RAW completeness. Existing authorized issue #8 was closed/reopened
+to trigger the unchanged official workflow; publication rerun
+[41184266527](https://github.com/massimilianonardi-ai/rumiai-dev/actions/runs/41184266527)
+was still executing when this checkpoint was written. No exporter
+readiness behavior or archive-completeness criteria were relaxed.
+
 **2026-10-30 operator correction and completed macOS dev archive:** The
 canonical `chats/README.md` now explicitly excludes citation and external-link
 decorative images from publication completeness; citation/link text and
@@ -77,10 +94,12 @@ archives remain untouched.
 
 ## Next action
 
-No further action is required for issue #5. Future exports use the newly
-pinned implementation and retain strict substantive-media checks. Any future
-new renderer image shape that cannot be classified unambiguously must not
-silently weaken these checks.
+Check official publisher run 41184266527. If successful, verify that issue #8
+receives the exact archive link and the repository contains index.html and
+local resources, then record completion. If it fails, inspect the precise
+new failure and only modify the existing PoC after discriminating a transient
+provider failure from a reproducible capture defect. Do not publish partial
+HTML or weaken substantive-media checks.
 
 ## Blockers / open questions
 
