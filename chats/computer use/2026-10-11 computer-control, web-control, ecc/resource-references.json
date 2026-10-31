@@ -1,0 +1,54 @@
+[
+  {
+    "attribute": "href",
+    "reference": "/cdn/assets/sprites-core-e3d8576f.svg#dd315f"
+  },
+  {
+    "attribute": "href",
+    "reference": "/cdn/assets/sprites-core-e3d8576f.svg#07889e"
+  },
+  {
+    "attribute": "href",
+    "reference": "/cdn/assets/sprites-core-e3d8576f.svg#72c6a7"
+  },
+  {
+    "attribute": "href",
+    "reference": "/cdn/assets/sprites-core-e3d8576f.svg#7fccfb"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://developer.apple.com&amp;sz=32"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://chromedevtools.github.io&amp;sz=32"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://developer.chrome.google.cn&amp;sz=32"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://firefox-source-docs.mozilla.org&amp;sz=32"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://developer.mozilla.org&amp;sz=32"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://support.google.com/accounts/answer/7675428?hl=en&amp;utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://support.google.com&amp;sz=32"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://developer.chrome.com&amp;sz=32"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://github.com/massimilianonardi-ai/rumiai-dev/blob/main/handoff/web-access-sense.md?utm_source=chatgpt.com"
+  }
+]
