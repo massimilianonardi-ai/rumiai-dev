@@ -1,16 +1,22 @@
 # ChatGPT shared-link export — one-command packaging
 
-Status: Active
-Updated: 2026-10-29
+Status: Complete
+Updated: 2026-10-31
 
 ## Goal
 
-Create one user-facing Node.js command that accepts a public ChatGPT shared URL and a new private output directory, orchestrating existing PoC 068 evidence capture, verified +N links, exact local image bodies and singleton links into an inert offline archive.
+Deliver and validate the operator-authorized public ChatGPT shared-link offline
+export workflow documented canonically in `chats/README.md`. The workflow
+must preserve visible conversation content and substantive image integrity,
+allow inert citations and exclude citation/link decorative icons, prohibit
+original JavaScript and partial Git publication, and support longer virtualized
+conversations within bounded capture.
 
 ## Current repository revisions
 
-- `rumiai-dev`: `a75bf9f3847e9ad05aee28fa68060266745ea4e8` (previous handoff checkpoint, before this final revision-reference correction).
-- `rumiai-dev-PoCs`: `3066b35127a2dddc71c54259ce708abc45f3a0fb` (README operator-confirmation checkpoint; the exporter itself remains unchanged from `810fbb0`).
+- `rumiai-dev`: `725d9d21f4693225963352470fc6c8c7bd9a7e87` (published computer use archive, before final handoff closure).
+- `rumiai-dev-PoCs`: `3712dc38ad2a39cfef330ad549a67c1a67634d7b`
+  (successfully validated updated exporter pinned by the publisher).
 
 ## Applicable canonical sources
 
@@ -20,9 +26,9 @@ Create one user-facing Node.js command that accepts a public ChatGPT shared URL 
 
 ## Fixed task-local choices
 
-- A new packaging task, not re-opening the completed visual PoC.
-- Preserve the accepted HTML and limitations; no source React/JavaScript, fabricated source targets, raw capture data in Git or unverified icon fetching.
-- Normal caller supplies only a shared URL and a new output directory. Discover grouping/evidence internally; fail closed for unsupported layouts.
+No unresolved task-local architecture or publication choices remain.
+`chats/README.md` is the canonical continuing contract; archived handoff
+details are revision-specific evidence, not a second source of current rules.
 
 ## Acceptance scenarios
 
@@ -32,8 +38,8 @@ Create one user-facing Node.js command that accepts a public ChatGPT shared URL 
 
 ## Working design
 
-- The existing provenance restorers have evidence/cardinality requirements including a fixed eight-singleton layout. Do not silently relax those or claim general-page production readiness.
-- Compose current native CDP modules inside the PoC, not as a new generic web-control provider.
+None. Earlier source-card/singleton-restoration candidates are not part of
+the citation-independent integrated export contract and have not been promoted.
 
 ## Completed
 
@@ -46,65 +52,44 @@ Create one user-facing Node.js command that accepts a public ChatGPT shared URL 
 - Updated package syntax-check script and PoC README with usage, honest exact-eight-singleton limitations and physical testing requirements. No changes to existing original-CSS rendering modules or the previously accepted archive.
 - Git commits `8c27eb7`, `65a7139`, `fc9fabb` and `810fbb0`. The runner also retries a documented `sweep-not-ready` result once with a separate Chrome profile; two fixture tests cover that bounded retry and unrelated failures. V8 parse checks of the current CLI/tests passed; the tool isolate does not provide Node's URL global, so URL validation is **not** considered physically tested. At that original packaging checkpoint, there was no real Node test or single-command Chromium run; the subsequent GitHub-hosted validation below supersedes that pending state for its tested example.
 
+- **2026-10-31 computer use acceptance and publication:** The initial and
+  immediately retried publisher runs [41181630821](https://github.com/massimilianonardi-ai/rumiai-dev/actions/runs/41181630821)
+  and [41184266527](https://github.com/massimilianonardi-ai/rumiai-dev/actions/runs/41184266527)
+  failed with exit 3, initially reported as missing DOM readiness. Private-safe
+  diagnostics showed that both basic and full capture modes did recognize
+  approximately 141 conversation wrappers, but traversed only about 41k of
+  over 218k CSS pixels in 85 seconds; the six-minute sweep limit and conflated
+  timeout/readiness diagnostics were the relevant problem. PoC 068 revision
+  `3712dc38ad2a39cfef330ad549a67c1a67634d7b` applies overlapping
+  85%-viewport steps with 220 ms settlement, separates timeout (exit 5)
+  and disconnected (exit 6) from missing DOM (exit 3), and verifies that
+  the virtualized fixture retains all 16 turns. The real browser fixture
+  workflow [41185803386](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/41185803386)
+  passed. The actual target export [41185803537](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/41185803537)
+  passed with 140 rendered turns, zero missing ordinals, 0 remote images,
+  script-blocking policy, 14/14 scoped tests and recorded sweep completion.
+  The official issue #8 was reopened after pinning that revision, and
+  [publisher run 41186135521](https://github.com/massimilianonardi-ai/rumiai-dev/actions/runs/41186135521)
+  succeeded. The archive is
+  `chats/computer use/2026-08-29 Computer Use - Piano P5A P5E/index.html`;
+  its 23 local assets and audits were verified through the repository API,
+  and issue #8 has the success link. No partial archive was committed and
+  no RAW conversation completeness or operator-host physical validation
+  is claimed.
+
 ## Current state
 
-**2026-10-31 computer use export resumption (issue #8):**
-First publisher run [41181630821](https://github.com/massimilianonardi-ai/rumiai-dev/actions/runs/41181630821)
-failed at original Chromium sweep readiness (exit 3, including isolated retry).
-All 28 focused publisher tests passed; no archive was committed. Created a
-private-safe comparative Chromium readiness workflow in PoC 068 commit
-`7e3d86d7605b94a0b32dfe239d0fb5007c5c8393`. Its [run
-41184140728](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/41184140728)
-succeeded: two separate target sessions both observed HTTP 200 and the
-required scroll/turn hooks (146 wrappers each), while the control share
-lacked turn hooks in its sampled interval. This establishes transient
-readiness for the target at the diagnostic revision, not successful full
-export or RAW completeness. Existing authorized issue #8 was closed/reopened
-to trigger the unchanged official workflow; publication rerun
-[41184266527](https://github.com/massimilianonardi-ai/rumiai-dev/actions/runs/41184266527)
-was still executing when this checkpoint was written. No exporter
-readiness behavior or archive-completeness criteria were relaxed.
-
-**2026-10-30 operator correction and completed macOS dev archive:** The
-canonical `chats/README.md` now explicitly excludes citation and external-link
-decorative images from publication completeness; citation/link text and
-substantive conversation media remain preserved and verified. PoC 068 uses
-`omit-external-link-icons.mjs` before local resource localization, removing
-only recognized decorative IMG tags from the original HTML bytes and avoiding
-favicon-fetch and irrelevant provenance conflicts. Source checkpoint:
-`rumiai-dev-PoCs@dfdf5a4492b89023e18e4de1e16bc5539d57e232`.
-
-The real GitHub-hosted Ubuntu/Chrome macOS share validation [run
-41113594527](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/41113594527)
-succeeded with 29 focused Node tests passing, script-blocking CSP and zero
-residual remote images. This is runner evidence, not physical operator-host
-validation or proof of RAW completeness.
-
-The authorized publisher in `rumiai-dev` was updated to pin this tested PoC
-revision and include its icon-omission regressions. Existing issue #5 was
-closed/reopened to trigger the established workflow. GitHub [run
-41114014637](https://github.com/massimilianonardi-ai/rumiai-dev/actions/runs/41114014637)
-completed successfully and committed
-`chats/macOS dev/2026-10-26 Virtualizzare macOS per sviluppo/index.html`
-plus 45 resource files and audits. The destination directory, `index.html`
-and audits were independently checked through the repository API after the
-commit. The original failure notice remains visible as past issue history;
-the later success notice provides the exact archive link. Prior accepted chat
-archives remain untouched.
+Completed. Issue #8 has a verified published offline archive. The official
+GitHub publisher pins the tested exporter revision. Existing chat archives
+and concurrent unrelated repository changes were preserved.
 
 ## Next action
 
-Check official publisher run 41184266527. If successful, verify that issue #8
-receives the exact archive link and the repository contains index.html and
-local resources, then record completion. If it fails, inspect the precise
-new failure and only modify the existing PoC after discriminating a transient
-provider failure from a reproducible capture defect. Do not publish partial
-HTML or weaken substantive-media checks.
+None for this task. Future opt-in exports use the canonical
+`chats/README.md` process and a separate authorized request.
 
 ## Blockers / open questions
 
-- No blocker for the macOS dev publication. Full RAW completeness and exact
-  pixel/interaction fidelity are not certified by these HTML/archive checks.
-- The previously operator-reported successful sample remains independent
-  evidence; its exact private bytes and operator-host execution revision were
-  not supplied.
+None blocking this task. Offline visible-HTML archives do not certify RAW
+conversation completeness, pixel-identical rendering or physical operator-host
+acceptance.
