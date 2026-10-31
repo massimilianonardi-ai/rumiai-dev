@@ -1,0 +1,126 @@
+[
+  {
+    "attribute": "href",
+    "reference": "/cdn/assets/sprites-core-e3d8576f.svg#dd315f"
+  },
+  {
+    "attribute": "href",
+    "reference": "/cdn/assets/sprites-core-e3d8576f.svg#07889e"
+  },
+  {
+    "attribute": "href",
+    "reference": "/cdn/assets/sprites-core-e3d8576f.svg#72c6a7"
+  },
+  {
+    "attribute": "href",
+    "reference": "/cdn/assets/sprites-core-e3d8576f.svg#7fccfb"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://gnome.pages.gitlab.gnome.org/gtk/gtk4/running.html"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://gnome.pages.gitlab.gnome.org&amp;sz=128"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://docs.github.com/en/actions/reference/runners/github-hosted-runners"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://docs.github.com&amp;sz=128"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://docs.github.com/en/billing/concepts/product-billing/github-actions"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://docs.github.com/en/actions/concepts/workflows-and-actions/workflow-artifacts"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://docs.github.com/en/actions/reference/runners/self-hosted-runners?apiVersion=2022-11-28"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://docs.github.com/en/actions/reference/security/secure-use"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://docs.github.com/en/billing/concepts/product-billing/github-codespaces"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://openai.com/index/introducing-codex/"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://openai.com&amp;sz=128"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://openai.com/index/introducing-the-codex-app/"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://developers.google.com/gemini-code-assist/docs/deprecations/consumer-code-review"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://developers.google.com&amp;sz=128"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://ai.google.dev/gemini-api/docs/pricing"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://ai.google.dev&amp;sz=128"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://claude.com/it/pricing"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://claude.com&amp;sz=128"
+  },
+  {
+    "attribute": "href",
+    "reference": "/cdn/assets/sprites-external-e813c99f.svg#1a6f23"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://docs.github.com&amp;sz=32"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://gnome.pages.gitlab.gnome.org&amp;sz=32"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://docs.github.com/en/codespaces/about-codespaces/what-are-codespaces?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://docs.github.com/en/actions/reference/runners/github-hosted-runners?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://docs.github.com/en/codespaces?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "/cdn/assets/sprites-core-e3d8576f.svg#e04414"
+  }
+]
