@@ -1,0 +1,128 @@
+{
+  "evidence": "render-probe.mjs DOM snapshots",
+  "status": "partial-offline-reconstruction",
+  "provisionalImagePreview": false,
+  "unidentifiedImageTurns": 0,
+  "selection": "most recent expanded preview when available; otherwise latest per turn",
+  "recordedSnapshots": 7,
+  "capturedTurnCount": 2,
+  "selectedExpandedPreviewTurns": 0,
+  "capturedMessageCount": 2,
+  "ordinalRange": [
+    1,
+    2
+  ],
+  "missingOrdinals": [],
+  "rawComparison": {
+    "status": "not-compared",
+    "reason": "Original RAW transcript not supplied"
+  },
+  "limitations": [
+    "No live React component state or interactive behavior",
+    "Original CSS and external resource bytes not included in the capture",
+    "Missing resources and events between snapshots cannot be reconstructed",
+    "A contiguous observed ordinal range does not prove whole-conversation coverage"
+  ],
+  "turns": [
+    {
+      "turnId": "ae7c8dbd-b114-4206-8011-775bd0fd92ea",
+      "ordinal": 1,
+      "messageIds": [
+        "ae7c8dbd-b114-4206-8011-775bd0fd92ea"
+      ],
+      "selected": {
+        "sequence": 289,
+        "sha256": "2654d7e60f18d88ee8c9e61869c9705891042723caadcc5ecb1ebd3d3cf20426",
+        "file": "turns/2654d7e60f18d88ee8c9e61869c9705891042723caadcc5ecb1ebd3d3cf20426.html",
+        "bytes": 4716
+      },
+      "versions": [
+        {
+          "sequence": 289,
+          "file": "turns/2654d7e60f18d88ee8c9e61869c9705891042723caadcc5ecb1ebd3d3cf20426.html",
+          "sha256": "2654d7e60f18d88ee8c9e61869c9705891042723caadcc5ecb1ebd3d3cf20426",
+          "bytes": 4716,
+          "messageIds": [
+            "ae7c8dbd-b114-4206-8011-775bd0fd92ea"
+          ],
+          "expandedPreview": false
+        }
+      ]
+    },
+    {
+      "turnId": "ef6019d0-0a5e-4cfc-8283-ef1f0252e793",
+      "ordinal": 2,
+      "messageIds": [
+        "91049247-59f9-4461-8406-9024e07f83aa"
+      ],
+      "selected": {
+        "sequence": 376,
+        "sha256": "f8ab8a8e1d656513af3bb85cbc1ff3148ce1463ab0ac539d27cea8be73cbb860",
+        "file": "turns/f8ab8a8e1d656513af3bb85cbc1ff3148ce1463ab0ac539d27cea8be73cbb860.html",
+        "bytes": 73910
+      },
+      "versions": [
+        {
+          "sequence": 291,
+          "file": "turns/e691089182bc1efe434a08a3b2a27a6e350d9c678b1528cc7fe66922fc060582.html",
+          "sha256": "e691089182bc1efe434a08a3b2a27a6e350d9c678b1528cc7fe66922fc060582",
+          "bytes": 56734,
+          "messageIds": [
+            "91049247-59f9-4461-8406-9024e07f83aa"
+          ],
+          "expandedPreview": false
+        },
+        {
+          "sequence": 319,
+          "file": "turns/423f4fdbc1530ec21ff4fada87abc3608844d99a30205e20d1d9372bfb333f6f.html",
+          "sha256": "423f4fdbc1530ec21ff4fada87abc3608844d99a30205e20d1d9372bfb333f6f",
+          "bytes": 56974,
+          "messageIds": [
+            "91049247-59f9-4461-8406-9024e07f83aa"
+          ],
+          "expandedPreview": false
+        },
+        {
+          "sequence": 357,
+          "file": "turns/56ad7199a21c001a6b4e7b347edfd9ef74a8dd5be90e4283edaeada29728f364.html",
+          "sha256": "56ad7199a21c001a6b4e7b347edfd9ef74a8dd5be90e4283edaeada29728f364",
+          "bytes": 73910,
+          "messageIds": [
+            "91049247-59f9-4461-8406-9024e07f83aa"
+          ],
+          "expandedPreview": false
+        },
+        {
+          "sequence": 364,
+          "file": "turns/302c755d37de422f62f20a2dfec95e591ea2453effd9c96e92c5b2efafc7dcf5.html",
+          "sha256": "302c755d37de422f62f20a2dfec95e591ea2453effd9c96e92c5b2efafc7dcf5",
+          "bytes": 73910,
+          "messageIds": [
+            "91049247-59f9-4461-8406-9024e07f83aa"
+          ],
+          "expandedPreview": false
+        },
+        {
+          "sequence": 371,
+          "file": "turns/8ce92fd89be2d5eb3f3f1031165affd086283bbd8bad732b665390670737760e.html",
+          "sha256": "8ce92fd89be2d5eb3f3f1031165affd086283bbd8bad732b665390670737760e",
+          "bytes": 73910,
+          "messageIds": [
+            "91049247-59f9-4461-8406-9024e07f83aa"
+          ],
+          "expandedPreview": false
+        },
+        {
+          "sequence": 376,
+          "file": "turns/f8ab8a8e1d656513af3bb85cbc1ff3148ce1463ab0ac539d27cea8be73cbb860.html",
+          "sha256": "f8ab8a8e1d656513af3bb85cbc1ff3148ce1463ab0ac539d27cea8be73cbb860",
+          "bytes": 73910,
+          "messageIds": [
+            "91049247-59f9-4461-8406-9024e07f83aa"
+          ],
+          "expandedPreview": false
+        }
+      ]
+    }
+  ]
+}
