@@ -370,6 +370,33 @@ The migration is validated proportionally by a permanent test using the real int
 
 ## Launch model
 
+### Command entrypoints versus useful-root executables
+
+The installed package **command** (`cmd/<command>`) is the public
+execution entrypoint, not a synonym for an upstream executable in the
+package useful root (which may be located under `root/bin/`).
+A package definition supplies a `cmd/<command>` script and a matching
+`link/<command>` descriptor mapping that command to its executable
+inside the selected concrete's useful root. Integration installs the
+executable command wrapper in the concrete's `cmd/` directory and
+materializes the target mapping separately under `link/`.
+
+The command can require package environment, an appropriate runtime,
+fixed startup arguments or other package-specific launch adaptation.
+Its wrapper and the trusted package launcher retain those responsibilities.
+A public command-view symlink, including a `bin/ext` default projection,
+points to the selected concrete's **`cmd/` entrypoint**, not directly to
+the upstream binary. Similarly, `context` exposes the selected
+concrete's `cmd/` entrypoints through `PATH`; it must not bypass their
+launcher/environment/argument behavior by exposing useful-root `bin/`
+files instead.
+
+Therefore `cmd/` and `bin/` are intentionally **not interchangeable**
+and renaming or replacing the package command surface with a binary
+directory is not an accepted migration direction. Future changes to
+the published command-view layout may change symlink grouping, not
+this command-versus-executable distinction.
+
 Integrated package commands execute through the package launcher contract.
 
 For a launched package, the launcher:
