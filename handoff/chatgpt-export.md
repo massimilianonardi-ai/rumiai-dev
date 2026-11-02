@@ -365,3 +365,19 @@ Share 2 remains **unacquired**. The operator's private existing-capture audit fo
 
 ## Blockers / open questions
 The complete Markdown scenario is no longer blocked: user has confirmed it. The fidelity and provenance of non-Markdown artifacts, automatic asset retrieval, and reproducibility across share versions remain open. The official permanent runner was not executed by this assistant in this checkpoint.
+
+
+## Codex shared-snapshot export extension (2026-11-02)
+
+Status: Active, investigation and implementation authorized by operator.
+
+Goal: extend the existing operator-requested public offline archive workflow to accept real Codex shared snapshot links of the form `https://chatgpt.com/s/cx_<id>`, in addition to existing `/share/<id>`, preserving existing archives and keeping author/date evidence and resource/script-integrity gates. The motivating link is `https://chatgpt.com/s/cx_6ae86b0755a08191a57b79dc77833361` with requested topic `js text edit`.
+
+Acceptance scenarios:
+1. Operator provides a publicly accessible Codex shared snapshot URL plus topic; exporter captures the *actual visible snapshot*, proves title/original date as available, and publishes a separate HTML archive without overwriting any existing archive.
+2. Ordinary `/share/<id>` links continue to follow the already accepted path unchanged.
+3. Private, unavailable or incompletely rendered Codex shares fail explicitly, without publishing an empty or misleading archive. No raw page HTML, session/CDP/profile or private diagnostics are committed or logged.
+
+Current fact: pinned `pocs/068-chatgpt-shared-link-export/export-offline.mjs` validates only `/share/` and expects the regular ChatGPT turn DOM; `share-metadata.mjs` expects React stream hydration specific to ordinary shares. A URL-regex relaxation alone is insufficient. The initiating Codex URL was not reachable from the assistant's auxiliary container (DNS blocked); Chrome on GitHub Actions is candidate real-page evidence. Source and test changes should initially be made as an isolated PoC. Public workflow changes need an appropriate checked/pinned exporter revision; do not weaken existing provenance gates or reuse a generic HTML page title/date.
+
+Next action: obtain bounded privacy-safe real Codex page structure evidence using a runner, implement and validate distinct Codex acquisition/metadata as supported, then align public workflow/docs only when accepted. If live evidence remains blocked, report remaining blocker rather than claiming implemented support.
