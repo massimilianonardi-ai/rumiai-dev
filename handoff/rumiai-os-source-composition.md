@@ -1760,7 +1760,7 @@ resolve those questions or start implementation in the present unit.
 ## Next action
 
 **Additional context/library work:** For the proposed shared-library extension of `context`, use PoC 073's
- Java evidence and existing facility-env / shell-loader / Python-site
+Java evidence and existing facility-env / shell-loader / Python-site
 contracts to determine whether a new pkg-owned library view declaration
 is actually needed. Do not install a universal `LIB_PATH` or inject
 `CLASSPATH` globally. If supported, implement a narrowly scoped
