@@ -1639,6 +1639,55 @@ rules, and how consumers load a selected package library. These are
 implementation questions in the ordinary package/command-view workstream,
 not proposals to extend `facility-env` or the facility namespace.
 
+### Runtime-separated command and library lookup roots (2026-11-02, candidate)
+
+**User proposal, still exploratory:** distinguish lookup directory groups by
+runtime rather than treat all installed package payloads as executable
+commands. Illustrative only (not approved physical paths or descriptor
+names): `bin/` for executable commands, `lib/sh/` for shell source
+files, `lib/java/` for Java JARs, and runtime-appropriate further
+library groupings. `pkg` owns versioned package content and derived
+reusable symlink publication; `context` composes the groups selected
+from one coherent package-concrete set. Ordinary shared libraries do
+not become facilities.
+
+**Lookup detail confirmed:** POSIX `.` searches `PATH` for a file
+operand without a slash; unlike ordinary command lookup, the sourced
+file need not be executable. A minimal isolated test creating one
+non-executable `lib/sh/example` and one executable `bin/example-cmd`,
+with both directories on PATH, passed on the available Linux `sh`,
+`dash`, and `bash`. This is shell lookup evidence, not an `m`
+product test. Consequently `PATH` can technically contain both
+`bin/` and `lib/sh/` roots, but this *shares* one lookup namespace:
+source-file names, executable names, current working directory/empty
+PATH components, shell builtins/functions and security/trust policy
+must be considered. The current `m`-owned `loadlib/loadsyslib`
+contract explicitly resolves owned source identities under
+`m_LIB_DIR`; plain `.`-via-PATH for ordinary package libraries must
+not silently replace that interface or its injection support.
+
+Java `CLASSPATH` may contain explicit JAR files, class roots or
+`<view>/lib/java/*` wildcard entries; wildcard expansion only includes
+JARs and does **not** promise deterministic order among JARs in the same
+directory. Explicit `java -cp` replaces `CLASSPATH`. Other
+languages' library search paths differ: `PYTHONPATH` does not handle
+ordinary site `.pth` initialization, and native loader variables
+cannot be presumed safe/portable. The layout axis `lib/<runtime>`
+is a useful candidate for publication grouping, **not** a claim that
+all groups should be appended through the same environment-variable
+mechanism.
+
+**Pending design checks:** whether package library identities and
+load-time conflicts are represented as managed directory entries or
+by existing package payload conventions; how ordered `PATH` segments
+remain safe when `lib/sh` is exposed; how wildcard JAR collisions are
+handled; how one ordered context updates its own `PATH` and
+`CLASSPATH` contributions without clobbering inherited state;
+how source loading respects the established `m` system library API;
+and which runtimes need a concrete integration before any new
+directory schema or operand grammar is promoted. No product code or
+canonical specification changed in this discussion.
+
 ### Unified contextual environment resolution (2026-10-26, working design)
 
 The user's correction: one composition resolver should cover executables,
