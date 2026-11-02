@@ -3,7 +3,7 @@
 Status: **Current reference material**  
 Updated: 2026-10-01
 
-This directory records evaluations of external software that may be useful to RumiAI through reuse, integration or technical study.
+This directory records evaluations of external software that may be useful to RumiAI through reuse, integration or technical study, and selected external catalogs that are useful for product and API discovery.
 
 It exists to preserve durable product research without promoting that research into RumiAI architecture or specifications.
 
@@ -77,6 +77,9 @@ Vendor benchmark, performance, adoption or security claims must be identified as
 Current categories:
 
 ```text
+catalogs/               curated discovery indexes (not executable products)
+    awesome-lightpanda.md
+    public-apis.md
 ai/
     a2a.md
     ag-ui.md
@@ -101,6 +104,8 @@ ai/
     univer.md
     voicestudio.md
 ```
+
+Catalog records are discovery pointers, not verified endorsements of all listed entries. Their license does not govern the separately linked projects or APIs; independently verify individual candidates before use.
 
 Add a category only when it creates a useful retrieval boundary. Do not duplicate one product record across categories merely because a product spans multiple topics.
 
