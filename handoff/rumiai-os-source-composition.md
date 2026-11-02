@@ -26,6 +26,8 @@ Full functional validation of the autonomous `m` source is independently tracked
 
 ## Current repository revisions
 
+- 2026-11-02 library-view PoC: `rumiai-dev-PoCs/main` verified at `ff10b84e635d903446840272402fef0f7986263a`; `m/master` verified at `28b170feb7e28e0d3ae023b01ef04a8cceeebbc6`; `pkg-catalog/main` verified at `acdcd66a60c06f368c8e313f850b86d76f4bf1ae` before the experiment. Refresh all HEADs on resumption.
+
 Last verified on 2026-10-24:
 
 - `rumiai-dev/main` pre-change: `69d4b4467fe35980667e3ea9234c50ab639209a8`; subsequent canonical package-policy alignment commit `2a5e83eadcdc2ff64024aa5af6c2eeef7bed331b`; this handoff commit follows.
@@ -1582,6 +1584,65 @@ grouped bins; context composes ordered PATH and other environment
 from those available surfaces without constructing symlinks
 for each invocation.
 
+### Runtime-specific library views: Java PoC 073 (2026-11-02, working design)
+
+The user proposes that shared libraries should receive reusable symlink
+views analogous to command `bin` groups, with `context` composing the
+runtime-appropriate loading/search paths (Java `CLASSPATH`, shell
+libraries via their actual loader contract, and other runtimes through
+their own mechanisms). User authorized autonomous progress as far as
+well-grounded decisions permit, not a second invented provider registry.
+
+Preflight against current `m`/`pkg-catalog` found no generic
+installed-library projection or runtime-neutral library-path contract:
+the current `facility-env` part already permits a declared ordinary
+environment variable to reference an installed provider root/path, and
+allows repeated *PATH* contributions; other variables currently have
+single-value semantics. Existing `m` shell `loadlib` and `loadsyslib`
+resolve owned libraries under `m_LIB_DIR`; setting executable PATH is
+not an equivalent implementation of `loadlib`. Python PoC 043 already
+demonstrates that `PYTHONPATH` alone skips normal site `.pth` behavior.
+
+**Experimental evidence:** new source in
+`rumiai-dev-PoCs/pocs/073-context-library-projections/` at
+`rumiai-dev-PoCs/main` `ff10b84e635d903446840272402fef0f7986263a`.
+`tests/java-classpath.sh` compiles two versions of one real Java
+class into JARs, links them into separate version-specific view
+directories, and executes the same independently compiled consumer:
+`CLASSPATH=<view>/*:<consumer-classes>` selects A -> B -> A without
+copying the JARs or regenerating links. Reversing ordered view entries
+changes which duplicate class wins. An explicit `java -cp` which omits
+the JAR ignores `CLASSPATH` and fails. This experimental script was
+run successfully with real OpenJDK 21 on the available Linux container,
+and POSIX shell syntax checks also passed. Hosted Ubuntu/macOS workflow
+`poc-073-library-paths.yml` was published but a completed hosted run
+was **not inspected**. This is not real `m` runtime validation.
+
+**Working direction, not promoted syntax:** keep one authoritative
+concrete/provider selection graph. Allow `pkg` to publish derived,
+reusable per-runtime library views *when declared package capabilities
+actually require them*, preserving payload identity and version; have
+`context` apply ordered, runtime-specific search roots/env/loader
+bindings coherently with selected executable and provider state. In
+Java, JAR-directory wildcard `<view>/*` must remain literal and
+is distinct from a class root, Java module path and explicit launcher
+`-cp`. Do not expose unrelated Java libraries globally by default;
+class-name conflicts, access policy and installation/uninstallation
+lifetime matter. Native libraries should generally use loader-owned
+path mechanisms/RPATH rather than opportunistically exporting global
+`LD_LIBRARY_PATH`; Node ESM and Python site behavior are not equivalent
+to universal colon-separated env vars. Avoid inventing `LIB_PATH`.
+
+**Pending before runtime promotion:** determine whether existing
+`facility-env` plus package-local access handles the normal need or
+whether a new declared library-view part is materially required; define
+library identities, per-runtime metadata, namespace/collision handling,
+Java launcher integration/explicit `-cp` policy, path inheritance and
+transactional replacement with command/env selection, and exact
+provider-concrete coherence. Compare a package-owned symlink view
+against direct versioned package roots for real consumers. No `m`
+product code or canonical specification changed in this experiment.
+
 ### Unified contextual environment resolution (2026-10-26, working design)
 
 The user's correction: one composition resolver should cover executables,
@@ -1697,6 +1758,14 @@ resolve those questions or start implementation in the present unit.
 - Validate compatibility of existing `rumiai-os` consumers while gradually relocating higher-level code into owning repositories.
 
 ## Next action
+
+0. For the proposed shared-library extension of `context`, use PoC 073's
+   Java evidence and existing facility-env / shell-loader / Python-site
+   contracts to determine whether a new pkg-owned library view declaration
+   is actually needed. Do not install a universal `LIB_PATH` or inject
+   `CLASSPATH` globally. If supported, implement a narrowly scoped
+   Java consumer/launcher path with exact provider pinning and real
+   library-load tests before generalizing to other runtimes.
 
 1. Finish the authorized incremental `context` capability: integrate no-argument initialization with managed shells, derive a coherent effective context with facility/provider selections and exact package runtime env, reconcile system/user/profile defaults and active-context replacement, implement validated protected inheritance and child propagation, and exercise actual installed package/provider and nested launch scenarios. Reuse already-installed command directories; do not introduce per-call symlink generation. The published first-phase shell function is not yet an environment/provider-context implementation. Preserve frozen repositories and real/authentic validation requirements.
 2. Implement the approved facility provider-map contract from `PACKAGE-MODEL.md` in the autonomous `m` repository as an isolated, validated work unit, beginning with derived provider membership and per-provider compatible-latest ordering. Then reconcile revision/platform/global defaults with authoritative state and existing `pkg provider default` without silently changing current public callers. Preserve pkg-owned install/uninstall/alias reconciliation, context-owned PATH and environment composition, and exact concrete cmd/env coherence. The separately proposed package `@latest`/`@default` alias redesign and policy still requires its own resolution; do not conflate generic package latest with facility-compatible provider latest. Validate cases for multiple provider versions, dropped compatibility, ambiguous defaults, user/consumer scopes, changed commands, removal and nested execution. Keep `rumiai-os` and `rumiai-tests` frozen.
