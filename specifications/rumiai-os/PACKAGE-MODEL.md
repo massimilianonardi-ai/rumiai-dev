@@ -384,9 +384,11 @@ materializes the target mapping separately under `link/`.
 The command can require package environment, an appropriate runtime,
 fixed startup arguments or other package-specific launch adaptation.
 Its wrapper and the trusted package launcher retain those responsibilities.
-A public command-view symlink, including a `bin/ext` default projection,
-points to the selected concrete's **`cmd/` entrypoint**, not directly to
-the upstream binary. Similarly, `context` exposes the selected
+An **ordinary package-default** command-view symlink published under
+`bin/ext` points to the selected concrete's **`cmd/` entrypoint**, not
+directly to the upstream binary. A separate facility-command projection
+follows its existing direct-root or package-command realization contract.
+Similarly, `context` exposes the selected
 concrete's `cmd/` entrypoints through `PATH`; it must not bypass their
 launcher/environment/argument behavior by exposing useful-root `bin/`
 files instead.
