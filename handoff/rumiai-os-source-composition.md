@@ -1644,109 +1644,23 @@ grouped bins; context composes ordered PATH and other environment
 from those available surfaces without constructing symlinks
 for each invocation.
 
-### Ordinary package shared-library views: corrected model (2026-11-02, working design)
+### Further library runtime support and lookup models (2026-11-02, pending)
 
-**Explicit user correction:** shared-library publishing is analogous to
-ordinary installed package `cmd` entrypoints and their `bin` symlink/PATH
-views, **not** an analogy with facility contracts. Do not make an ordinary
-shared-library export depend on a facility, an artificial provider-independent
-compatibility level or a new facility part.
+Ordinary `pkg`-owned versioned exports for sh/Java, and `context`'s
+PATH/CLASSPATH projection, are now described in current
+`PACKAGE-MODEL.md` and `BOOTSTRAP-ENVIRONMENT.md`; implementation
+and validation state is recorded in the current checkpoint above.
+The former working-design candidate sections for those two runtimes
+are no longer separate active contracts.
 
-The intended model has three parallel responsibilities:
-- a concrete package owns its versioned command and library payloads;
-- `pkg` can publish **derived, reusable symbolic-link views** of those
-  package contents, for libraries as for executable command names, at
-  installation/configuration time rather than during every `context` call;
-- `context` chooses the appropriate existing command and library views
-  from its selected package concretes and exposes their search roots in the
-  receiving runtime's native mechanism, without an independent library
-  dependency graph or duplicating the files.
-
-A selected `pkg=a@v1` must not silently expose `a@v2` libraries. Views
-for different selections may coexist between shells, and activating B
-replaces the context-owned parts of A's search paths without re-preparing
-link directories. The same logical selections apply to executable and
-library projections, though the host/runtime lookup mechanism differs.
-Class/library namespace collisions and required runtime-specific
-compatibility checks must be resolved before publication/application.
-
-Runtime details to preserve: `PATH` searches executables, not sh libraries;
-`m` system sh sources use their established `loadlib/loadsyslib` contract,
-so integrating ordinary package shell libraries would require a deliberate
-loader extension rather than pretending PATH already supports it. Java can
-read JAR symlink directories using `CLASSPATH=<view>/*` for compatible
-launchers, and an explicit `-cp` supersedes the environment value. Python
-`PYTHONPATH` does not reproduce ordinary site `.pth` behavior (see
-existing PoC 043), while Node and native-library loaders differ again.
-No invented universal `LIB_PATH` or automatic process-global native
-loader override is justified. Runtime-specific adaptation must remain
-small and tied to real consumption requirements.
-
-**Already obtained evidence, not product validation:** PoC
-`rumiai-dev-PoCs/pocs/073-context-library-projections/` at
-`b87cf52982c1c27cd149caabb7c3339c6791ae12` exercises real
-OpenJDK 21 loading from symlinked JAR views A -> B -> A, class
-precedence and explicit `-cp` override in a Linux container. A
-Ubuntu/macOS hosted workflow was published, but its completed result
-has not been inspected. No product runtime/shared-library interface or
-package catalog declaration is implemented by that PoC.
-
-**Still open for the actual `m` implementation:** decide package-owned
-library export declarations (or reuse of an existing package artifact
-convention), the representation of versioned library links, exact
-per-runtime search-root composition, ownership/collision and uninstall
-rules, and how consumers load a selected package library. These are
-implementation questions in the ordinary package/command-view workstream,
-not proposals to extend `facility-env` or the facility namespace.
-
-### Runtime-separated command and library lookup roots (2026-11-02, candidate)
-
-**User proposal, still exploratory:** distinguish lookup directory groups by
-runtime rather than treat all installed package payloads as executable
-commands. Illustrative only (not approved physical paths or descriptor
-names): `bin/` for executable commands, `lib/sh/` for shell source
-files, `lib/java/` for Java JARs, and runtime-appropriate further
-library groupings. `pkg` owns versioned package content and derived
-reusable symlink publication; `context` composes the groups selected
-from one coherent package-concrete set. Ordinary shared libraries do
-not become facilities.
-
-**Lookup detail confirmed:** POSIX `.` searches `PATH` for a file
-operand without a slash; unlike ordinary command lookup, the sourced
-file need not be executable. A minimal isolated test creating one
-non-executable `lib/sh/example` and one executable `bin/example-cmd`,
-with both directories on PATH, passed on the available Linux `sh`,
-`dash`, and `bash`. This is shell lookup evidence, not an `m`
-product test. Consequently `PATH` can technically contain both
-`bin/` and `lib/sh/` roots, but this *shares* one lookup namespace:
-source-file names, executable names, current working directory/empty
-PATH components, shell builtins/functions and security/trust policy
-must be considered. The current `m`-owned `loadlib/loadsyslib`
-contract explicitly resolves owned source identities under
-`m_LIB_DIR`; plain `.`-via-PATH for ordinary package libraries must
-not silently replace that interface or its injection support.
-
-Java `CLASSPATH` may contain explicit JAR files, class roots or
-`<view>/lib/java/*` wildcard entries; wildcard expansion only includes
-JARs and does **not** promise deterministic order among JARs in the same
-directory. Explicit `java -cp` replaces `CLASSPATH`. Other
-languages' library search paths differ: `PYTHONPATH` does not handle
-ordinary site `.pth` initialization, and native loader variables
-cannot be presumed safe/portable. The layout axis `lib/<runtime>`
-is a useful candidate for publication grouping, **not** a claim that
-all groups should be appended through the same environment-variable
-mechanism.
-
-**Pending design checks:** whether package library identities and
-load-time conflicts are represented as managed directory entries or
-by existing package payload conventions; how ordered `PATH` segments
-remain safe when `lib/sh` is exposed; how wildcard JAR collisions are
-handled; how one ordered context updates its own `PATH` and
-`CLASSPATH` contributions without clobbering inherited state;
-how source loading respects the established `m` system library API;
-and which runtimes need a concrete integration before any new
-directory schema or operand grammar is promoted. No product code or
-canonical specification changed in this discussion.
+**Still open:** the future physical `bin/` command-view migration
+from current per-concrete `cmd/`; safe ordinary shell library access
+via the current `loadlib` contract or a later explicit package loader;
+Python site/`.pth` compatibility; Node ESM/CJS and native loader
+requirements; and globally maintained default library views. These
+are not covered by the current initial sh/Java export implementation.
+Avoid inventing uniform runtime-variable semantics and do not conflate
+ordinary library links with facilities.
 
 ### Unified contextual environment resolution (2026-10-26, working design)
 
