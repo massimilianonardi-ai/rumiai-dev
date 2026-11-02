@@ -26,7 +26,7 @@ Full functional validation of the autonomous `m` source is independently tracked
 
 ## Current repository revisions
 
-- 2026-11-02 library-view PoC: `rumiai-dev-PoCs/main` verified at `ff10b84e635d903446840272402fef0f7986263a`; `m/master` verified at `28b170feb7e28e0d3ae023b01ef04a8cceeebbc6`; `pkg-catalog/main` verified at `acdcd66a60c06f368c8e313f850b86d76f4bf1ae` before the experiment. Refresh all HEADs on resumption.
+- 2026-11-02 library-view PoC: `rumiai-dev-PoCs/main` verified at `4262ac6f67207462a01dd1aef109a64a867aaa22`; `m/master` verified at `28b170feb7e28e0d3ae023b01ef04a8cceeebbc6`; `pkg-catalog/main` verified at `acdcd66a60c06f368c8e313f850b86d76f4bf1ae` before the experiment. Refresh all HEADs on resumption.
 
 Last verified on 2026-10-24:
 
@@ -1605,7 +1605,7 @@ demonstrates that `PYTHONPATH` alone skips normal site `.pth` behavior.
 
 **Experimental evidence:** new source in
 `rumiai-dev-PoCs/pocs/073-context-library-projections/` at
-`rumiai-dev-PoCs/main` `ff10b84e635d903446840272402fef0f7986263a`.
+`rumiai-dev-PoCs/main` `4262ac6f67207462a01dd1aef109a64a867aaa22`.
 `tests/java-classpath.sh` compiles two versions of one real Java
 class into JARs, links them into separate version-specific view
 directories, and executes the same independently compiled consumer:
@@ -1759,13 +1759,13 @@ resolve those questions or start implementation in the present unit.
 
 ## Next action
 
-0. For the proposed shared-library extension of `context`, use PoC 073's
-   Java evidence and existing facility-env / shell-loader / Python-site
-   contracts to determine whether a new pkg-owned library view declaration
-   is actually needed. Do not install a universal `LIB_PATH` or inject
-   `CLASSPATH` globally. If supported, implement a narrowly scoped
-   Java consumer/launcher path with exact provider pinning and real
-   library-load tests before generalizing to other runtimes.
+**Additional context/library work:** For the proposed shared-library extension of `context`, use PoC 073's
+ Java evidence and existing facility-env / shell-loader / Python-site
+contracts to determine whether a new pkg-owned library view declaration
+is actually needed. Do not install a universal `LIB_PATH` or inject
+`CLASSPATH` globally. If supported, implement a narrowly scoped
+Java consumer/launcher path with exact provider pinning and real
+library-load tests before generalizing to other runtimes.
 
 1. Finish the authorized incremental `context` capability: integrate no-argument initialization with managed shells, derive a coherent effective context with facility/provider selections and exact package runtime env, reconcile system/user/profile defaults and active-context replacement, implement validated protected inheritance and child propagation, and exercise actual installed package/provider and nested launch scenarios. Reuse already-installed command directories; do not introduce per-call symlink generation. The published first-phase shell function is not yet an environment/provider-context implementation. Preserve frozen repositories and real/authentic validation requirements.
 2. Implement the approved facility provider-map contract from `PACKAGE-MODEL.md` in the autonomous `m` repository as an isolated, validated work unit, beginning with derived provider membership and per-provider compatible-latest ordering. Then reconcile revision/platform/global defaults with authoritative state and existing `pkg provider default` without silently changing current public callers. Preserve pkg-owned install/uninstall/alias reconciliation, context-owned PATH and environment composition, and exact concrete cmd/env coherence. The separately proposed package `@latest`/`@default` alias redesign and policy still requires its own resolution; do not conflate generic package latest with facility-compatible provider latest. Validate cases for multiple provider versions, dropped compatibility, ambiguous defaults, user/consumer scopes, changed commands, removal and nested execution. Keep `rumiai-os` and `rumiai-tests` frozen.
