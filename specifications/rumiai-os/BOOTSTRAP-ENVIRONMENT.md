@@ -122,46 +122,77 @@ it does not load `base.lib.sh` separately.
 
 The root bootstrap performs no package/provider resolution or initialization.
 
-## Shell context command selection
+## Shell context selection and library search roots
 
 The core runtime exposes the POSIX shell **function** `context` in the
 shell that sources `core.lib.sh`. It is not an external executable and
 cannot modify the invoking shell when run in a child process.
 
-The initial supported public grammar is:
+The initial supported public grammar remains:
 
 ```text
 context
 context pkg=<package>@<version>[!<osarch>] ...
 ```
 
-A no-argument invocation clears the active package-command override
-selections owned by this function. A `pkg=` operand selects a pre-installed
-exact package concrete and its already materialized `cmd/` directory.
-Selections are folded left-to-right. A later selection of the same package
-name replaces its earlier one; other selected package names remain selected.
-The most recently selected valid package directory is first in the
-context-owned PATH block.
+A no-argument invocation clears the active package selections owned by
+this function. A `pkg=` operand selects an already installed exact
+package concrete. Selections are folded left-to-right. A later selection
+of the same package replaces its earlier version, while unrelated
+package selections are retained. The most recent selection has the
+highest search-path precedence. This is a shell-local context, not a
+new persisted package default.
 
-The function validates the package identity, applicable target platform,
-installed concrete and executable command surface before changing the
-calling shell's `PATH`. Protected `m` core command names and collisions
-between independently selected package command directories are rejected.
-The prior context-owned PATH block is removed when a new selection is
-applied, so repeated activation does not accumulate entries. Unowned PATH
-entries are preserved. A failed selection leaves the previous effective
-selection and PATH unchanged.
+For each selected concrete, `context` reads existing, separately
+materialized lookup views when present:
 
-No package directory, command-view symlink or default configuration is
-created by this function. It does not yet resolve facility providers,
-dependency environments, state profiles, named full-context presets or
-propagation policies. The existing package launcher continues to own those
-runtime responsibilities in this initial implementation.
+```text
+<concrete>/cmd        -> PATH, executable command lookup
+<concrete>/lib/sh     -> PATH, POSIX dot-source lookup
+<concrete>/lib/java   -> CLASSPATH, literal <directory>/* wildcard
+```
 
-The technical root bootstrap merely loads the function definition as part
-of `core.lib.sh`. Ordinary `m` command execution uses an external
-`exec`, and therefore does not transfer shell functions into that child;
-callers needing `context` in a new shell must source `core.lib.sh` there.
+A package may publish only libraries and no ordinary executable
+commands. The function neither builds nor refreshes the symlink
+views on activation. Libraries are ordinary package exports, not
+facility parts or independent provider selections.
+
+For selected `cmd` entries, command names must not collide with
+one another or protected `m` sys command names. Library projections
+must be existing, non-symlink directories containing appropriately
+typed readable library links. Identical library leaf names between
+independently selected concretes for the same runtime are rejected
+rather than ambiguously ordered. POSIX shell source files must be
+non-executable; the two runtime groups are selected from the same
+pinned package-concrete identity.
+
+Before changing caller state, `context` validates operand identities,
+applicable platform, available concrete/lookup views, collisions,
+and the ownership of its previously installed search-path segments.
+It then replaces only its own `PATH` and `CLASSPATH` contributions;
+host contributions are retained. Repeated application is idempotent.
+When the incoming `CLASSPATH` was unset or set-empty, the two states
+are preserved on a no-argument reset. Failed selection does not
+change `PATH`, `CLASSPATH` or the previously active package set.
+
+`PATH` is shared between executable command lookup and POSIX dot
+lookup, so publishing `lib/sh` has a common namespace and must not
+silently redefine existing `m`-owned `loadlib/loadsyslib` identities.
+For Java, the wildcard `<directory>/*` includes JARs in that
+directory but does not guarantee JAR enumeration order. An explicit
+Java `-cp` option overrides `CLASSPATH`; this variable does not
+govern every Java launch method.
+
+Provider environment/service coherence, dependency resolution, state
+profiles, named full-context presets and protected propagation policies
+remain outside this initial package command/library lookup phase.
+The existing package launcher continues to own those responsibilities.
+
+The technical root bootstrap merely loads the function definition as
+part of `core.lib.sh`. Ordinary `m` command execution uses an
+external `exec`, and therefore does not transfer shell functions
+into that child; callers needing `context` in a new shell must
+source `core.lib.sh` there.
 
 ## Generated global execution environment
 
