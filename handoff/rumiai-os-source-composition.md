@@ -51,6 +51,8 @@ Refresh remote HEADs before resuming. These SHAs are checkpoints only, not autho
 
 ## Fixed task-local choices
 
+- **User correction (2026-11-02):** package `cmd/` is the command launcher/entrypoint surface, not an upstream `bin/` directory. A command may need environment preparation and fixed launch options; `link/` maps it to the packaged executable. Published PATH symlink groups must continue to expose the command wrapper. The distinction is now explicit in the current `PACKAGE-MODEL.md` launch contract. No `cmd/` to `bin/` migration is intended.
+
 - **User authorization and first implementation (2026-11-02):** user explicitly authorized proceeding with the initial `context` implementation in autonomous `m`. The current first implementation intentionally supports only POSIX shell-local exact installed package `cmd/` PATH selections (`context` and repeated `pkg=<concrete>` operands), using pre-existing directories without context-time filesystem publication. This supersedes prior design-phase non-authorization for the limited `m` work unit; it does not lift the explicit freezes on `rumiai-os` or `rumiai-tests` and does not approve unimplemented facility/profile/policy grammar as if it were live.
 
 - **User correction / revised working direction (2026-10-29):** favor a stable core **`sys` bootstrap directory** (rather than introducing an `m-sys` package solely to break bootstrap circularity), and favor **pre-existing, reusable `bin` directories composed only through ordered `PATH` changes by `context`**. Install/default/configuration operations, *not every invocation of `context`*, own symlink publication and update. In particular, existing per-concrete package command directories and a maintained default command view can be reused, with provider/version-specific directories prepended as overrides. Reassess the earlier recommendation to generate a complete immutable `bin` for every effective context: the user identifies that dynamic construction/refresh as avoidable and impractical. A dangling symlink in an earlier `PATH` directory is NOT a deletion/mask: POSIX shell testing found fallback to a later executable; decide whether negative selection is needed before implementing any masking layer. No runtime change authorized in this design phase.
@@ -506,9 +508,8 @@ The fixtures do not prove external catalog-backed `pkg install`,
 production app launchers, or real installation migration. No physical
 host validation was run.
 
-The initial code remains intentionally bounded: `cmd/` is the
-existing concrete command directory rather than the eventual renamed
-`bin/` view; only sh/Java ordinary library exports are implemented;
+The initial code remains intentionally bounded: `cmd/` remains the package command-entrypoint directory (distinct
+from upstream `root/bin/` executables); only sh/Java ordinary library exports are implemented;
 other runtime loader semantics, Java `-cp` override behavior,
 provider/child process environmental coherence, full-context presets,
 global default library views, auto-init shells, user/system profile
@@ -1067,7 +1068,9 @@ from the **root m layout**, making command-directory + PATH
 an implementation strategy of the context-resolution system.
 The physical executables remain owned by core or the installed
 immutable package concretes; only the *published command namespace*
-is derived from selected versions/provider bindings.
+is derived from selected versions/provider bindings. A PATH-visible
+`bin` grouping is a publication surface for `cmd` entrypoints, not
+a substitution of the package's upstream binaries for those commands.
 A context chooses command symlink view(s) and applies an ordered PATH.
 This extends the default-case symlink index to alternative pinned
 versions and facility providers. The user accepts it as a
@@ -1653,8 +1656,9 @@ and validation state is recorded in the current checkpoint above.
 The former working-design candidate sections for those two runtimes
 are no longer separate active contracts.
 
-**Still open:** the future physical `bin/` command-view migration
-from current per-concrete `cmd/`; safe ordinary shell library access
+**Still open:** potential changes to reusable PATH-visible command-view
+symlink groupings **while preserving per-concrete `cmd/` launcher scripts**;
+safe ordinary shell library access
 via the current `loadlib` contract or a later explicit package loader;
 Python site/`.pth` compatibility; Node ESM/CJS and native loader
 requirements; and globally maintained default library views. These
@@ -1783,8 +1787,8 @@ sh/Java library exports on the real hosted workflow and then through
 one real catalog-backed package installation/consumer where an
 actual package definition declares an export. Reconcile any failures
 forward, preserve exact package version binding and coexistence with
-existing command/loader defaults; do not silently rename the current
-`cmd/` layout or extend runtime support without a verified loader
+existing command/loader defaults; do not rename or bypass the package `cmd/` entrypoints, and do not
+extend runtime support without a verified loader
 contract. This workstream is independent of facilities.
 
 1. Finish the authorized incremental `context` capability: integrate no-argument initialization with managed shells, derive a coherent effective context with facility/provider selections and exact package runtime env, reconcile system/user/profile defaults and active-context replacement, implement validated protected inheritance and child propagation, and exercise actual installed package/provider and nested launch scenarios. Reuse already-installed command directories; do not introduce per-call symlink generation. The published first-phase shell function is not yet an environment/provider-context implementation. Preserve frozen repositories and real/authentic validation requirements.
