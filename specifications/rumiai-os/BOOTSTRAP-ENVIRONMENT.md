@@ -1,7 +1,7 @@
 # RumiAI OS — Bootstrap environment
 
 Status: **Current / normative**  
-Updated: 2026-10-06
+Updated: 2026-11-02
 
 This specification defines the environment established by the technical root runtime `$m_ROOT/m`.
 
