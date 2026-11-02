@@ -1,7 +1,7 @@
 # RumiAI OS — Package model
 
 Status: **Current / normative**  
-Updated: 2026-10-05
+Updated: 2026-11-02
 
 This document defines the current semantic contract of the `m` package subsystem without duplicating implementation internals that belong in `rumiai-os`.
 
@@ -274,6 +274,58 @@ Component names, Payload-root selectors and overlay target paths are package-def
 These installer-package forms are host-specific materialization behind the package abstraction; they do not change package identity or state semantics. Mutable state exposed by software installed this way remains governed by the normal package HOME/conf/state model rather than being stored in the immutable package root.
 
 A package-specific exception belongs in the package definition/adapter/integration boundary that owns it, not as an accidental special case in unrelated generic code.
+
+### Ordinary package library exports
+
+Ordinary shared-library exports are owned by the **concrete package** and
+do not imply a facility, provider substitution, or another dependency graph.
+An installed package may publish reusable, read-only symlink views to files
+already present in its immutable useful root. The initial supported runtime
+classes are POSIX shell source libraries and Java JAR archives.
+
+A package range may declare:
+
+```text
+lib/
+    sh/
+        <library>.lib.sh  # file containing a relative pathname in root/
+    java/
+        <archive>.jar     # file containing a relative pathname in root/
+```
+
+Only the declared `sh` and `java` runtime directories are accepted by
+this initial export mechanism. Each descriptor leaf is a controlled package
+pathname component with the indicated suffix; descriptor files are readable,
+non-executable, ordinary files. Contents must be one nonempty relative
+pathname, with no absolute, empty, `.`, `..` or repeated-separator component,
+resolving to a readable regular file inside the canonical useful root.
+Shell library targets are also non-executable and pass POSIX `sh -n`
+validation. A library-only package does not have to declare ordinary
+package commands or a facility.
+
+At integration, after complete descriptor/root validation, `pkg` creates
+concrete-local projections:
+
+```text
+$m_PKG_DIR/<package>@<version>[!<osarch>]/lib/sh/<library>.lib.sh
+    -> ../../root/<declared-relative-target>
+$m_PKG_DIR/<package>@<version>[!<osarch>]/lib/java/<archive>.jar
+    -> ../../root/<declared-relative-target>
+```
+
+These are symlinks, not copies or independently mutable package payloads.
+`pkg` owns their installation and removal with the concrete, including
+rollback when integration fails. `context` may select these already-installed
+views but does not publish, rewrite or update links on activation.
+
+The two export classes are lookup *surfaces*, not proof that every runtime
+can consume every library. POSIX dot lookup may use a `lib/sh` directory
+included in `PATH`; existing `m` system-library `loadlib/loadsyslib`
+identities remain separate. Java `CLASSPATH` may contain literal
+`<concrete>/lib/java/*` entries for ordinary classpath launches; Java
+modules, explicit `-cp`, custom classloaders and archive compatibility
+have their own rules. Additional runtimes require explicit contracts
+rather than copying Java or shell semantics.
 
 ## Uninstall, versions and default
 
