@@ -508,9 +508,10 @@ The fixtures do not prove external catalog-backed `pkg install`,
 production app launchers, or real installation migration. No physical
 host validation was run.
 
-The initial code remains intentionally bounded: `cmd/` remains the package command-entrypoint directory (distinct
-from upstream `root/bin/` executables); only sh/Java ordinary library exports are implemented;
-other runtime loader semantics, Java `-cp` override behavior,
+The initial code remains intentionally bounded: `cmd/` remains the
+package command-entrypoint directory (distinct from upstream
+`root/bin/` executables); only sh/Java ordinary library exports are
+implemented; other runtime loader semantics, Java `-cp` override behavior,
 provider/child process environmental coherence, full-context presets,
 global default library views, auto-init shells, user/system profile
 selection and controlled inheritance remain pending. No changes to
@@ -1658,8 +1659,8 @@ are no longer separate active contracts.
 
 **Still open:** potential changes to reusable PATH-visible command-view
 symlink groupings **while preserving per-concrete `cmd/` launcher scripts**;
-safe ordinary shell library access
-via the current `loadlib` contract or a later explicit package loader;
+safe ordinary shell library access via the current `loadlib` contract
+or a later explicit package loader;
 Python site/`.pth` compatibility; Node ESM/CJS and native loader
 requirements; and globally maintained default library views. These
 are not covered by the current initial sh/Java export implementation.
@@ -1787,9 +1788,9 @@ sh/Java library exports on the real hosted workflow and then through
 one real catalog-backed package installation/consumer where an
 actual package definition declares an export. Reconcile any failures
 forward, preserve exact package version binding and coexistence with
-existing command/loader defaults; do not rename or bypass the package `cmd/` entrypoints, and do not
-extend runtime support without a verified loader
-contract. This workstream is independent of facilities.
+existing command/loader defaults; do not rename or bypass the
+package `cmd/` entrypoints, and do not extend runtime support
+without a verified loader contract. This workstream is independent of facilities.
 
 1. Finish the authorized incremental `context` capability: integrate no-argument initialization with managed shells, derive a coherent effective context with facility/provider selections and exact package runtime env, reconcile system/user/profile defaults and active-context replacement, implement validated protected inheritance and child propagation, and exercise actual installed package/provider and nested launch scenarios. Reuse already-installed command directories; do not introduce per-call symlink generation. The published first-phase shell function is not yet an environment/provider-context implementation. Preserve frozen repositories and real/authentic validation requirements.
 2. Implement the approved facility provider-map contract from `PACKAGE-MODEL.md` in the autonomous `m` repository as an isolated, validated work unit, beginning with derived provider membership and per-provider compatible-latest ordering. Then reconcile revision/platform/global defaults with authoritative state and existing `pkg provider default` without silently changing current public callers. Preserve pkg-owned install/uninstall/alias reconciliation, context-owned PATH and environment composition, and exact concrete cmd/env coherence. The separately proposed package `@latest`/`@default` alias redesign and policy still requires its own resolution; do not conflate generic package latest with facility-compatible provider latest. Validate cases for multiple provider versions, dropped compatibility, ambiguous defaults, user/consumer scopes, changed commands, removal and nested execution. Keep `rumiai-os` and `rumiai-tests` frozen.
