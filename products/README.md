@@ -1,7 +1,7 @@
 # External product evaluations
 
 Status: **Current reference material**  
-Updated: 2026-10-01
+Updated: 2026-11-02
 
 This directory records evaluations of external software that may be useful to RumiAI through reuse, integration or technical study, and selected external catalogs that are useful for product and API discovery.
 
@@ -96,6 +96,7 @@ ai/
     litellm.md
     llama-cpp.md
     localai.md
+    olla.md
     openhands.md
     openllmetry.md
     orca.md
