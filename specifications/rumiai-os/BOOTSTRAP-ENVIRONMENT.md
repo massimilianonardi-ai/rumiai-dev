@@ -105,10 +105,11 @@ loads the core shell library directly:
 
 This direct dot-source is the deliberate chicken/egg exception. `core.lib.sh`
 defines the filesystem-backed `loadlib` primitive and immediately uses it to
-load:
+load the common runtime followed by the shell context implementation:
 
 ```text
 sys/sh/base
+sys/sh/context
 ```
 
 `base.lib.sh` establishes the common runtime, including `loadsyslib` and the
@@ -120,6 +121,47 @@ The root bootstrap still knows only the single `core.lib.sh` entry library;
 it does not load `base.lib.sh` separately.
 
 The root bootstrap performs no package/provider resolution or initialization.
+
+## Shell context command selection
+
+The core runtime exposes the POSIX shell **function** `context` in the
+shell that sources `core.lib.sh`. It is not an external executable and
+cannot modify the invoking shell when run in a child process.
+
+The initial supported public grammar is:
+
+```text
+context
+context pkg=<package>@<version>[!<osarch>] ...
+```
+
+A no-argument invocation clears the active package-command override
+selections owned by this function. A `pkg=` operand selects a pre-installed
+exact package concrete and its already materialized `cmd/` directory.
+Selections are folded left-to-right. A later selection of the same package
+name replaces its earlier one; other selected package names remain selected.
+The most recently selected valid package directory is first in the
+context-owned PATH block.
+
+The function validates the package identity, applicable target platform,
+installed concrete and executable command surface before changing the
+calling shell's `PATH`. Protected `m` core command names and collisions
+between independently selected package command directories are rejected.
+The prior context-owned PATH block is removed when a new selection is
+applied, so repeated activation does not accumulate entries. Unowned PATH
+entries are preserved. A failed selection leaves the previous effective
+selection and PATH unchanged.
+
+No package directory, command-view symlink or default configuration is
+created by this function. It does not yet resolve facility providers,
+dependency environments, state profiles, named full-context presets or
+propagation policies. The existing package launcher continues to own those
+runtime responsibilities in this initial implementation.
+
+The technical root bootstrap merely loads the function definition as part
+of `core.lib.sh`. Ordinary `m` command execution uses an external
+`exec`, and therefore does not transfer shell functions into that child;
+callers needing `context` in a new shell must source `core.lib.sh` there.
 
 ## Generated global execution environment
 
