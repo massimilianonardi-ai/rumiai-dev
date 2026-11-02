@@ -26,7 +26,7 @@ Full functional validation of the autonomous `m` source is independently tracked
 
 ## Current repository revisions
 
-- 2026-11-02 library-view PoC and correction: `rumiai-dev-PoCs/main` verified at `b87cf52982c1c27cd149caabb7c3339c6791ae12`; `m/master` verified at `28b170feb7e28e0d3ae023b01ef04a8cceeebbc6`; `pkg-catalog/main` verified at `acdcd66a60c06f368c8e313f850b86d76f4bf1ae` before the experiment. Refresh all HEADs on resumption.
+- 2026-11-02 library-view PoC and correction: `rumiai-dev-PoCs/main` verified at `b87cf52982c1c27cd149caabb7c3339c6791ae12`; `m/master` verified at `28b170feb7e28e0d3ae023b01ef04a8cceeebbc6`; `pkg-catalog/main` verified at `acdcd66a60c06f368c8e313f850b86d76f4bf1ae` before the experiment; during final consistency recheck pkg-catalog/main had advanced to `17a08adc0bb5bf708d3357d1f5e70d5110cdc9cc`. Its current top-level pkg/facility namespaces were reread, and no catalog files were edited in this task. Refresh all HEADs on resumption.
 
 Last verified on 2026-10-24:
 
