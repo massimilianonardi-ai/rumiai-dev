@@ -456,6 +456,66 @@ removal semantics; and complete composed runtime testing. This is a
 **partial implementation**, not a finished context engine or validated
 deployment. `rumiai-os` and `rumiai-tests` were not touched.
 
+### Runtime-separated ordinary library exports: implemented first unit (2026-11-02)
+
+User authorized implementing the agreed runtime-separated package views
+after the previous design checkpoint. In autonomous `m/master`, current
+HEAD as verified during this work unit is
+`3feb1f0cfa2b2bd74c82ec3aaf9e57726a6cd841`
+(refresh remotely before any further edit).
+
+Implemented in `m/lib/sys/sh/pkg/pkg-integration.lib.sh`:
+- accept optional ordinary range `lib/sh/<leaf>.lib.sh` and
+  `lib/java/<leaf>.jar` descriptor files, each containing a safe
+  relative pathname inside the already validated useful root;
+- validate descriptor identity, suffix, non-executable shell sources
+  with POSIX sh parse, root containment, and real readable targets;
+- materialize concrete-local `lib/sh` and `lib/java` symlinks to the
+  exact package concrete `root/` on `pkg_integrate`;
+- restore staging root on library materialization failure, with new
+  status 21 and specific diagnostic; remove exports with the concrete.
+No provider/facility declaration is needed.
+
+Implemented in `m/lib/sys/sh/context.lib.sh`:
+- reuse the existing ordered `pkg=<exact-concrete>` selection across
+  present `cmd`, `lib/sh`, `lib/java` directories;
+- compose `PATH` for executable and POSIX-dot library lookup and
+  `CLASSPATH` for literal `<concrete>/lib/java/*` Java JAR lookup;
+- preserve inherited set/unset classpath distinction, keep unrelated
+  search-path edits, replace own contributions, reject duplicate
+  library names and shell-library/selected-command collisions,
+  validate before mutation and probe readonly target variables.
+- no context-time filesystem writes, no new public operand or separate
+  library selection graph.
+
+Promoted implemented first-stage contracts to current
+`specifications/rumiai-os/PACKAGE-MODEL.md` and
+`BOOTSTRAP-ENVIRONMENT.md`. Updated operational manuals for
+`context.lib.sh`, `pkg-integration.lib.sh` and the `pkg` command.
+
+Added `m/.github/scripts/context-libraries-test.sh`, invoked from
+`m/.github/workflows/m-context-shell.yml` on Ubuntu/macOS with Java 21.
+The script targets real `pkg_integrate` and real core `context`
+from an initialized `./m`, using isolated staged library-only
+package fixtures and compiled JVM classes; it asserts source/JVM
+version switches, actual symlinks, reset semantics, duplicate-name
+rejection, readonly rejection, external PATH/CLASSPATH edits and
+failure-without-mutation. **Published test workflow only: no completed
+hosted CI PASS was retrieved or inspected in this work unit.**
+The fixtures do not prove external catalog-backed `pkg install`,
+production app launchers, or real installation migration. No physical
+host validation was run.
+
+The initial code remains intentionally bounded: `cmd/` is the
+existing concrete command directory rather than the eventual renamed
+`bin/` view; only sh/Java ordinary library exports are implemented;
+other runtime loader semantics, Java `-cp` override behavior,
+provider/child process environmental coherence, full-context presets,
+global default library views, auto-init shells, user/system profile
+selection and controlled inheritance remain pending. No changes to
+frozen `rumiai-os` or `rumiai-tests`; no new catalog package range
+was migrated to use these exports.
+
 ## Working design / open questions
 
 ### Runtime composition matrix and resource packaging choices (2026-10-26, provisional)
@@ -1804,15 +1864,14 @@ resolve those questions or start implementation in the present unit.
 
 ## Next action
 
-**Additional context/library work:** Continue the ordinary-package
-command-view model for shared libraries, independently of facilities.
-Before changing the runtime, inspect existing package payload conventions
-and consumers to establish the smallest reusable library-export view
-and runtime search-root composition that are actually required. Reuse
-the PoC 073 Java results as loader evidence, not a facility contract.
-Keep concrete command/library versions coherent, preserve existing sh
-loader/Python-site semantics, and validate real consumer launches before
-promoting new package declarations, paths or public operands.
+**Additional context/library work:** Validate the published `m`
+sh/Java library exports on the real hosted workflow and then through
+one real catalog-backed package installation/consumer where an
+actual package definition declares an export. Reconcile any failures
+forward, preserve exact package version binding and coexistence with
+existing command/loader defaults; do not silently rename the current
+`cmd/` layout or extend runtime support without a verified loader
+contract. This workstream is independent of facilities.
 
 1. Finish the authorized incremental `context` capability: integrate no-argument initialization with managed shells, derive a coherent effective context with facility/provider selections and exact package runtime env, reconcile system/user/profile defaults and active-context replacement, implement validated protected inheritance and child propagation, and exercise actual installed package/provider and nested launch scenarios. Reuse already-installed command directories; do not introduce per-call symlink generation. The published first-phase shell function is not yet an environment/provider-context implementation. Preserve frozen repositories and real/authentic validation requirements.
 2. Implement the approved facility provider-map contract from `PACKAGE-MODEL.md` in the autonomous `m` repository as an isolated, validated work unit, beginning with derived provider membership and per-provider compatible-latest ordering. Then reconcile revision/platform/global defaults with authoritative state and existing `pkg provider default` without silently changing current public callers. Preserve pkg-owned install/uninstall/alias reconciliation, context-owned PATH and environment composition, and exact concrete cmd/env coherence. The separately proposed package `@latest`/`@default` alias redesign and policy still requires its own resolution; do not conflate generic package latest with facility-compatible provider latest. Validate cases for multiple provider versions, dropped compatibility, ambiguous defaults, user/consumer scopes, changed commands, removal and nested execution. Keep `rumiai-os` and `rumiai-tests` frozen.
