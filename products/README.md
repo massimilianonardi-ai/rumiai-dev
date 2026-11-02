@@ -93,10 +93,12 @@ ai/
     hydradb.md
     langgraph.md
     letta.md
+    lightpanda.md
     litellm.md
     llama-cpp.md
     localai.md
     olla.md
+    openbot.md
     openhands.md
     openllmetry.md
     orca.md
