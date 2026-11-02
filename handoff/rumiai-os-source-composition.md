@@ -36,6 +36,8 @@ Last verified on 2026-10-24:
 - `m/master` source extraction baseline: `b05bb649400c35314e97a3d0876f5413c8145aba`; current integrated checkout `809f4d63173c32ecede0cd6bb183da6fc6ab8fa9`. New commits added the technical core without rewriting earlier history. Source implementation and pre-existing operational manuals were copied from `rumiai-os/main` `673df1a2d5476ad57d54c7bc7e1fc2deeaf16195`.
 - Original PoC 072 experiment branch: `rumiai-dev-PoCs/rumiai-os-composition-comparison`, last verified experiment commit `0c8f8fa098e5c74d8e2e15c6552a9c633a383048`; engine snapshot intentionally pinned there.
 
+- 2026-11-02 `m/master`: initial context implementation now includes `28b170feb7e28e0d3ae023b01ef04a8cceeebbc6` (refresh before resumption); `rumiai-dev/main`: initial context contract commit `4f4d1a4f7d7f2fe2804ada8015fade7093c8592b`, with subsequent handoff update following. `pkg-catalog/main` verified at `acdcd66a60c06f368c8e313f850b86d76f4bf1ae` and not modified.
+
 Refresh remote HEADs before resuming. These SHAs are checkpoints only, not authority.
 
 ## Applicable canonical sources
@@ -46,6 +48,8 @@ Refresh remote HEADs before resuming. These SHAs are checkpoints only, not autho
 - Current `rumiai-os/lib/sys/js/mk.lib.js`, `bin/sys/mk` and `rumiai-tests/tests/rumiai-os/mk/lifecycle.test` as factual implementation/test evidence.
 
 ## Fixed task-local choices
+
+- **User authorization and first implementation (2026-11-02):** user explicitly authorized proceeding with the initial `context` implementation in autonomous `m`. The current first implementation intentionally supports only POSIX shell-local exact installed package `cmd/` PATH selections (`context` and repeated `pkg=<concrete>` operands), using pre-existing directories without context-time filesystem publication. This supersedes prior design-phase non-authorization for the limited `m` work unit; it does not lift the explicit freezes on `rumiai-os` or `rumiai-tests` and does not approve unimplemented facility/profile/policy grammar as if it were live.
 
 - **User correction / revised working direction (2026-10-29):** favor a stable core **`sys` bootstrap directory** (rather than introducing an `m-sys` package solely to break bootstrap circularity), and favor **pre-existing, reusable `bin` directories composed only through ordered `PATH` changes by `context`**. Install/default/configuration operations, *not every invocation of `context`*, own symlink publication and update. In particular, existing per-concrete package command directories and a maintained default command view can be reused, with provider/version-specific directories prepended as overrides. Reassess the earlier recommendation to generate a complete immutable `bin` for every effective context: the user identifies that dynamic construction/refresh as avoidable and impractical. A dangling symlink in an earlier `PATH` directory is NOT a deletion/mask: POSIX shell testing found fallback to a later executable; decide whether negative selection is needed before implementing any masking layer. No runtime change authorized in this design phase.
 
@@ -418,6 +422,37 @@ Latest check-runs for `m@a033e509` show the three Ubuntu jobs in run `4032842162
 On reference host `PRTL-GS-01` with the **already installed** published `mk@v0.1.0`, `jsc@v0.1.0` and managed `nodejs@v26.8.2!linux-x86_64` on standalone `m/master@a033e5093d7c50b9c74127e90641f5be3ef34903`, the operator ran a test entirely through **public `./m mk`, `./m jsc`, `./m node` commands**, using a temporary user-authored project and no source repository clones or package reinstall. The `mk` project defined one goal `check` and operation `calculate`, running `node -p '21*2'`; `./m mk --project <temp-project> --goals` printed `check`, `--plan check` printed `calculate`, and execution `... check` printed `42`. For `jsc`, a descriptor compiled `const answer = 42;` as CommonJS export, and the managed `./m node` process `require`d generated output, printing `JSC result: 42`. A separate CSS descriptor compiled `.demo { color: red; }` into a nonempty output. The operator output concluded **`MK + JSC EXECUTION: PASS`**. Both `jsc` operations emitted `jsc.minifier-unavailable` warnings for optional `google-closure-compiler` and `uglifycss`, respectively, without failure; no minifier-specific functionality was validated. This completes the genuine physical Ubuntu public-install/default/runtime/execution work unit for these two independently packaged components at the exact m revision (preceding physical install check and this run). It does **not** prove macOS physical behavior, other standalone packages or full suite conformance.
 
 No changes were made to `m`, `pkg-catalog`, `m-mk`, `m-jsc`, frozen `rumiai-os` or frozen `rumiai-tests` by this checkpoint. The earlier external-host CI `m@a033e509` macOS jobs were **cancelled**, not PASSED, and are distinct from the physical Ubuntu PASS. Follow-up scope for future work: current architecture analysis of bin/lib/res composition remains the active handoff's next action; do not repeat mk/jsc installation to recreate already observed success.
+
+### POSIX context command selection: first production increment (2026-11-02)
+
+In authorized autonomous `m`, implemented and committed:
+`lib/sys/sh/context.lib.sh`, loaded by `core.lib.sh`; published matching
+operational manuals `context.lib.sh` and amended `core.lib.sh`;
+added `.github/workflows/m-context-shell.yml` for hosted Ubuntu/macOS
+bootstrap-path tests. Current implementation resolves exact installed concrete
+`cmd/` paths, handles ordered repeated package selections, replaces only its
+previous PATH layer, preserves other PATH entries, rejects protected core
+command collisions and cross-package command name ambiguity, and leaves PATH
+and active selection unchanged on validation failure.
+
+A synthetic local POSIX sh component fixture using the context implementation
+and a minimal stub for the existing package identity parser passed selection,
+override, collision, invalid target, user PATH edits and reset cases. This
+does **not** validate the full real `m` bootstrap or package installer. The
+hosted workflow has been published but no hosted PASS result was inspected
+in this work unit. No physical host validation occurred.
+
+The supported first-phase public grammar and behavior were promoted to
+`specifications/rumiai-os/BOOTSTRAP-ENVIRONMENT.md`. Crucial pending work
+for the full user-requested `context` capability: automatic managed-shell
+invocation (the current core only makes the function available when sourced),
+coherent provider facility cmd/env/service selection and the new facility
+map; profile/user/system and full-context preset resolution; protected
+inheritance/propagation and NSS/home obligations; child execution context;
+collisions with inherited shell functions and command hashing; concurrency/
+removal semantics; and complete composed runtime testing. This is a
+**partial implementation**, not a finished context engine or validated
+deployment. `rumiai-os` and `rumiai-tests` were not touched.
 
 ## Working design / open questions
 
@@ -1663,10 +1698,11 @@ resolve those questions or start implementation in the present unit.
 
 ## Next action
 
-1. Implement the approved facility provider-map contract from `PACKAGE-MODEL.md` in the autonomous `m` repository as an isolated, validated work unit, beginning with derived provider membership and per-provider compatible-latest ordering. Then reconcile revision/platform/global defaults with authoritative state and existing `pkg provider default` without silently changing current public callers. Preserve pkg-owned install/uninstall/alias reconciliation, context-owned PATH and environment composition, and exact concrete cmd/env coherence. The separately proposed package `@latest`/`@default` alias redesign and policy still requires its own resolution; do not conflate generic package latest with facility-compatible provider latest. Validate cases for multiple provider versions, dropped compatibility, ambiguous defaults, user/consumer scopes, changed commands, removal and nested execution. Keep `rumiai-os` and `rumiai-tests` frozen.
-2. Continue analyzing ownership/dependency boundaries for `pkg-analyze`, terminal primitives/menu/vsed/editor, gitman, SSH/rsudo administration, testlab, JavaScript core/UI and Web components. Reuse existing independent projects and package facilities rather than duplicating implementation.
-3. **On hold until explicit user authorization:** any edit or migration to old `rumiai-os`, and any work on `rumiai-tests` (including re-alignment of its permanent suite). Do not treat those holds as validation blockers for independently released packages.
-4. Independently maintain core `m` package adapter completeness under a separate authorized workstream; its adapter gaps should not be mistaken for missing user-installable product packages.
+1. Finish the authorized incremental `context` capability: integrate no-argument initialization with managed shells, derive a coherent effective context with facility/provider selections and exact package runtime env, reconcile system/user/profile defaults and active-context replacement, implement validated protected inheritance and child propagation, and exercise actual installed package/provider and nested launch scenarios. Reuse already-installed command directories; do not introduce per-call symlink generation. The published first-phase shell function is not yet an environment/provider-context implementation. Preserve frozen repositories and real/authentic validation requirements.
+2. Implement the approved facility provider-map contract from `PACKAGE-MODEL.md` in the autonomous `m` repository as an isolated, validated work unit, beginning with derived provider membership and per-provider compatible-latest ordering. Then reconcile revision/platform/global defaults with authoritative state and existing `pkg provider default` without silently changing current public callers. Preserve pkg-owned install/uninstall/alias reconciliation, context-owned PATH and environment composition, and exact concrete cmd/env coherence. The separately proposed package `@latest`/`@default` alias redesign and policy still requires its own resolution; do not conflate generic package latest with facility-compatible provider latest. Validate cases for multiple provider versions, dropped compatibility, ambiguous defaults, user/consumer scopes, changed commands, removal and nested execution. Keep `rumiai-os` and `rumiai-tests` frozen.
+3. Continue analyzing ownership/dependency boundaries for `pkg-analyze`, terminal primitives/menu/vsed/editor, gitman, SSH/rsudo administration, testlab, JavaScript core/UI and Web components. Reuse existing independent projects and package facilities rather than duplicating implementation.
+4. **On hold until explicit user authorization:** any edit or migration to old `rumiai-os`, and any work on `rumiai-tests` (including re-alignment of its permanent suite). Do not treat those holds as validation blockers for independently released packages.
+5. Independently maintain core `m` package adapter completeness under a separate authorized workstream; its adapter gaps should not be mistaken for missing user-installable product packages.
 
 ## Blockers / open questions
 
