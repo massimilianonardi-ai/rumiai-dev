@@ -1,6 +1,6 @@
 # Advanced browser/Electron text editor
 
-Status: Active — occupied same-row substitutions and composed atomic editing CI-verified; general many-to-many relations, precise geometry, rebasing and GUI remain open
+Status: Active — source-derived many-to-many read-only substitutions CI-verified; editable general mapping, precise geometry, rebasing and GUI remain open
 Updated: 2026-11-03
 
 ## Goal
@@ -10,6 +10,12 @@ Design and eventually build an extremely fast, memory-efficient advanced JavaScr
 The JavaScript compilation, module loading and distribution concern has **independent ownership** at `handoff/javascript-build-and-runtime-loading.md`. This handoff must not make bundler/loader decisions.
 
 ## Current repository revisions
+
+**Current read-only many-to-many mapping checkpoint (2026-11-03; dev HEAD advances with this handoff):**
+- `rumiai-dev`: `6eaa901519f986b170138584ad66467436c9e81d` — current canonical `TEXT-EDIT.md` defines derived source-fragment substitution mapping and protected edit semantics.
+- `rumiai-os`: `ce3446811d67f209f409f88c7c6d0ad5234af705` — source-derived `SubstitutionDocument2D` configuration and updated workflow pin.
+- `rumiai-tests`: `aeffbc2f15b2cbf696becd2e7cc42246920a8b15` — permanent FlatDocument/PieceDocument, composition, ambiguity, validation and source-copy tests.
+- `rumiai-dev-PoCs`: `7faa0e496ab41e0c1bf1b0ef1592d5f47cd3543f` — experimental PoC 074 untouched.
 
 **Current occupied-region substitution checkpoint (2026-11-03; dev HEAD advances after this handoff):**
 - `rumiai-dev`: `4b694d0d42b3781188d683b47c7f148afc0d73c4` — canonical `TEXT-EDIT.md` substitution contract.
@@ -65,7 +71,19 @@ Latest independently verified remote `main` HEADs on **2026-10-19**, immediately
 - The separately deferred terminal `vsed` advanced-editor work is `todo/vsed-advanced-editor-evaluation.md` and is not this editor.
 - The JavaScript toolchain is owned by `handoff/javascript-build-and-runtime-loading.md`.
 
-## Resume checkpoint — 2026-11-03 (occupied substitutions; read first)
+## Resume checkpoint — 2026-11-03 (derived many-to-many read-only projection; read first)
+
+**Authorized scope:** The user approved continuing the concrete general region mapping work on `rumiai-os/main/lib/sys/js/core/m/text`, alongside examining the requirements for precise geometric mutation notifications. Existing `SubstitutionDocument2D` is extended, avoiding another component with overlapping responsibility.
+
+**Completed:** `setSubstitutions` now accepts either a literal `text` **or** an ordered nonempty `sources:[{start,end}, ...]` field. Each source part must be positive, within one existing input row, and composed only of text regions without splitting or crossing protected input. The synthetic label is derived from each part's bounded `input.getRect` at one input revision, concatenated and segmented into grapheme display cells. One synthetic region can depend on disjoint input spans; multiple distinct synthetic regions can reuse the same source span. The derived labels are protected read-only display dependencies, **not** editable copies; selections/edit requests covering the replaced source interval are refused and the actual source remains the only effective selection owner. `getRegions` exposes only detached visible regions, while the configuration getter returns detached literal/sources records, never internal display offsets. Changing the input revision clears all substitutions.
+
+**Actual mechanical validation:** Real-code in-memory smoke on FlatDocument and PieceDocument passed before publishing. Product `ce3446811d67f209f409f88c7c6d0ad5234af705` pins tests `aeffbc2f15b2cbf696becd2e7cc42246920a8b15`. GitHub Actions `m.text.document core extraction verification` run `41620989841` **PASS**, `Git tracking boundaries` run `41620989896` **PASS**. Permanent tests cover a derived display region from disjoint source spans, repeating a source span in two display regions, detached copies, forbidden covered-interval selection and edits, a mixed rejected batch, one successful source commit and stale invalidation, invalid source fragment geometry and protected source regions, Unicode grapheme fragments composed with annotations/cells/folding, and a long source-derived label materialized at configuration rather than per viewport read. This is Node/compiler CI evidence, **not** GUI or broad memory-performance evidence.
+
+**Geometric mutation-notification investigation:** Current source `_DocumentStore._prepareEdits` provides old-document physical offsets and texts in its notification arguments, but `FlatDocument.replace` and `PieceDocument.replace` commit their new storage before invoking `_publish`. Thus an ordinary `RawDocument2D` subscriber cannot reconstruct both **old** row/column geometry and **new** geometry merely by querying its input after the commit. The present `invalidation:{all:true}` is correct, if coarse. A safe rebasing increment must capture old row positions and removed-line geometry *before* the physical commit, define a versioned old/new geometric batch event for every mutation path (including selected edits and external source changes), and propagate or transform that event through nested `Document2D` instances. Do not infer a precise range from new content alone. This is currently a **working design observation**, not an implemented event contract or automatic anchor-rebasing facility.
+
+**Limits / next scope:** Derivation is read-only and snapshots source fragments at configuration; it is not a generic editable many-to-many relation or streaming source-copy renderer. The output destination interval itself remains positive same-row and protected. Exact old/new mutation geometry, durable source-anchored fold/annotation/substitution rebasing, direction-sensitive editable provenance, partial TAB policy and physical UI performance remain open. No public `Representation` or `BaseDocument2D` was added.
+
+## Resume checkpoint — 2026-11-03 (prior occupied substitutions)
 
 **Task and completed work:** User approved the next concrete occupied source-less region mapping increment on `rumiai-os/main/lib/sys/js/core/m/text`. Added `m.text.document.SubstitutionDocument2D` in `lib/sys/js/core/m/text/document/SubstitutionDocument2D.js`, exported by the real `lib/sys/js/core/modules-js.json`. `setSubstitutions([{id,text,start,end}, ...])` configures protected substitutions of disjoint, positive, same-input-row intervals with synthetic text of grapheme-measured display width. One exposed row can alternate many visible input fragments and read-only occupied synthetic regions. The physical source is unchanged until actual supported text editing.
 
@@ -412,10 +430,10 @@ The new external column planner demonstrates model-level 2D clipboard preparatio
 
 ## Next action
 
-1. Refresh current remote HEADs, canonical `TEXT-EDIT.md`, the checkpoint, core implementation and permanent tests.
-2. Study a genuinely many-to-many region relation (a displayed item derived from disjoint input spans, or one input span projected to multiple displayed regions), including directional endpoint affinity and whole-interval edit authorization, before considering a reusable `Representation` primitive.
-3. Separately design precise old/new 2D geometry notifications and rebased source anchors, avoiding automatic reset of folds and substitutions when safe edits permit preservation.
-4. Preserve one effective selection owner, bounded viewport behavior and one physical atomic commit per accepted batch. Do not overclaim physical GUI or large-document performance.
+1. Reverify current remote HEADs, canonical `TEXT-EDIT.md`, current source/test revisions and this checkpoint.
+2. Implement the minimal **old/new source 2D change geometry** contract, capturing pre-commit rows and post-commit rows at the authoritative physical mutation boundary and propagating revisioned events through `RawDocument2D`. Define normal path for raw replace, selection-driven insert and arbitrary external `Document.replace`, retaining `invalidation:{all:true}` as fallback when precision is unavailable.
+3. Only after geometry is validated, derive safe source-anchor rebasing and consider precise downstream invalidation to retain unaffected fold/annotation/substitution configurations across edits. Do not guess old geometry from post-commit state.
+4. Decide whether a reusable mapping abstraction is justified by a *concrete editable* many-to-many case. Read-only duplicated source fragments do not establish reversible edit ownership or a public `Representation`. Preserve single effective selection ownership and one atomic physical commit.
 
 ## Blockers / open questions
 
