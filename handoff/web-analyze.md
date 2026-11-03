@@ -9,9 +9,9 @@ Provide the `m` JavaScript library at `rumiai-os/lib/sys/js/web-analyze.lib.js` 
 
 ## Current repository revisions
 
-- rumiai-dev: a8cab8bb9152ffb9d5e25fcb9a6a1b1d4f992a28 (before this checkpoint)
-- rumiai-os: c78e4981ea7759f6798f14b13f135ef5e55a00b3 (Node command, manual, CDP library extension and CLI CI)
-- rumiai-tests: e9c335408ccef021590d468949775e277bfec49d (real Chromium dynamic-scroll command test)
+- rumiai-dev: 5623d0282adb7b70399c084776078359695dfd57 (before this checkpoint)
+- rumiai-os: 57886c999b0fcb49da87229a44b1369c3f148d53 (DOM settlement, artifacts, manuals and CI)
+- rumiai-tests: af36e8f42bb4fea9cdd57ef5492a9198673b7f89 (real browser delayed-hydration and non-converging DOM tests)
 
 ## Applicable canonical sources
 
@@ -28,6 +28,7 @@ Provide the `m` JavaScript library at `rumiai-os/lib/sys/js/web-analyze.lib.js` 
 - On caller stop/SIGINT, wait up to 6 seconds for response lifecycle/body/source reads and require a 750ms quiet interval; unresolved requests, failed body retrieval, pending CDP reads and skipped redirect bodies remain explicit in per-resource indexes and summary. An external Chromium close cannot enforce network quiescence; long-lived SSE/WebSockets do not admit a global completion guarantee.
 - User-provided real acceptance URL: `https://chatgpt.com/share/6ad1c0d5-49ec-83eb-a79b-85b04b938835`.
 - The new command defaults to headless Chromium, records at most 29 DOM states after bounded passive document/nested-container scrolling, inventories links/forms/controls, retains compiled scripts and response-body archives, and produces Markdown and Mermaid outputs. Each invocation creates an isolated private `run-*` under the supplied directory. No automatic click, form submission, login or challenge bypass; unobserved routes/behavior are not asserted.
+- Explicit 2026-11-03 correction: preserve a post-loading resting DOM, not just a fixed-delay or scrolling snapshot. Initial and final full main-document outerHTML is stored under `states/dom-rest-{initial,final}.html`, with JSON settlement evidence. Per-state bounded snapshots follow quiescence checks. `settled` requires document complete, fonts loaded, and 1.5s quiet DOM/network with no pending CDP requests/reads; unresolved but quiet requests after 4.5s yield `dom-quiet-network-pending` instead of a false completion claim. Initial/per-step waits are bounded at 15s/6s within a 45s exploration budget; non-converging pages retain snapshots marked `timeout`. These observations do not prove all eventual app work has completed.
 
 ## Acceptance scenarios
 
@@ -37,6 +38,7 @@ Provide the `m` JavaScript library at `rumiai-os/lib/sys/js/web-analyze.lib.js` 
 4. On an externally reachable host, verify actual shared-page navigation/response independently of debugger launch and logging mechanics.
 5. Execute `m web-analyze https://example.org ./analysis` without knowing CDP identities: observe a new private run directory containing raw resources, script archive, rendered states, and navigable Markdown reports with Mermaid scroll flow.
 6. Run a real dynamic local page whose nested scroller loads new controls and JSON: verify these changes and resource bodies are captured; repeat in the same parent without overwriting the prior run.
+7. A page that hydrates content 1.2s after DOMContentLoaded must include that content in the initial resting snapshot; a page that changes its DOM continually must not be described as settled and must still save a bounded best-effort snapshot.
 
 ## Completed
 
@@ -50,6 +52,8 @@ Provide the `m` JavaScript library at `rumiai-os/lib/sys/js/web-analyze.lib.js` 
 - On that same host the real shared-page navigation returned `net::ERR_BLOCKED_BY_ADMINISTRATOR`. The dedicated remote-page test therefore reported SKIP, not PASS. Chromium process/CDP transport/capture success is independently evidenced; actual page-content loading is not.
 
 - On 2026-11-03 published `rumiai-os@fe6cfd33759b06d46286684e6b2018606cd68baf` (Node command/manual and additive `sendPage` native-CDP page command method) and `rumiai-os@c78e4981ea7759f6798f14b13f135ef5e55a00b3` (CI including new real-command test). Published `rumiai-tests@e9c335408ccef021590d468949775e277bfec49d` with a real Chrome/Chromium local HTTP fixture exercising dynamic lazy controls, resource/script capture, output isolation, argument errors and Mermaid output. GitHub Actions run `41634919134` passed on hosted Linux with Node.js 22 and real Chromium. This does not prove all React behaviors or acceptance on a physical operator host.
+
+- On 2026-11-03 extended the native-CDP library's returned session with read-only `networkActivity()` (counts + elapsed quiet time), and the command with DOM MutationObserver-based quiescence, full resting DOM exports, settlement metadata and Markdown reporting. First CI run `41638548568` exposed excessive waiting on requests left active by CDP; this is failure evidence, not a passing run. Corrected forward-only to distinguish `dom-quiet-network-pending` from `settled`, and bound the overall sweep. Current permanent fixture covers delayed hydration, delayed scroll-dependent control, preserved response bodies, repeated output isolation, and perpetual DOM mutation timeout. Hosted Linux Node.js 22 + real Chromium CI `41639402973` **PASS** for `rumiai-os@57886c999b0fcb49da87229a44b1369c3f148d53` and `rumiai-tests@af36e8f42bb4fea9cdd57ef5492a9198673b7f89`. This does not prove physical-host or arbitrary-site completeness.
 
 ## Corrected slow-navigation capture startup (2026-10-19)
 
@@ -70,7 +74,7 @@ Provide the `m` JavaScript library at `rumiai-os/lib/sys/js/web-analyze.lib.js` 
 
 ## Current state
 
-Native-CDP manual capture remains available and has user-operated evidence against the original shared URL. The new `bin/sys/web-analyze` automates bounded passive inspection, nested scroll, screenshot/DOM state capture and Markdown reports. The composed command has a passing real-browser fixture CI run `41634919134`; physical operator-host execution of the *new command* has not been verified. Coverage remains incomplete for never-visited interactions, authenticated states and unrecoverable/persistent resources.
+Native-CDP manual capture remains available and has user-operated evidence against the original shared URL. The new `bin/sys/web-analyze` automates bounded passive inspection, nested scroll, screenshot/DOM state capture, full initial/final DOM-at-rest snapshots and Markdown reports, preserving timeout/ongoing-network caveats. The composed command has a passing real-browser fixture CI run `41639402973` for the current revisions; physical operator-host execution of the *new command* has not been verified. Coverage remains incomplete for never-visited interactions, authenticated states and unrecoverable/persistent resources.
 
 ## Next action
 
