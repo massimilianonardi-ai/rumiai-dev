@@ -125,6 +125,13 @@ All raw data, including auth cookies/tokens, HTTP headers, message payloads, sto
 - Updated `bin/sys/web-analyze` human-readable index and limitations and both affected command/library manuals. Permanent real Chromium regression checks that `Runtime.executionContextCreated` (not explicitly handled by the old dispatcher) survives in raw wire evidence, commands and responses correlate, capability protocol exists, files are 0600 and raw request headers are not copied into redacted network diagnostics. Existing rest-only and opt-in scroll paths remain as before.
 - Chromium CI `41719097541` PASS on `rumiai-os@8bc6d270` and test revision `3d77187`. Final browser-backed CI `41719712596` **PASS** on `rumiai-os@783d0131` and `rumiai-tests@cc7ca95a`, including short-write detection and the private-versus-redacted header test. No operator physical Chromium/real-site test is claimed.
 
+### WU-02 implementation checkpoint (2026-11-03)
+
+- Added per-CDP-target recursive `Target.setAutoAttach` for page/iframe, dedicated/shared/service worker targets. Discovered targets, attachment parent, target type/status, instrumented domains and `Runtime.executionContextCreated/Destroyed/Cleared` lifecycle are correlated with target sessions. Browser `Target.getTargets` refreshes the observed inventory while retaining detached/destroyed target observations. Other target types are explicitly non-applicable rather than forced into a DOM or worker schema.
+- Added public read-only session `targetGraph()` alongside existing `targets()` and `sendTarget()`. Rest evidence now saves `rest/target-graph-initial.json` and `rest/target-graph-final.json`, worker-specific global observations and parent/child relationships. A bounded up-to-3-second initial graph quiescence check requires ~800 ms without changes to attached/ready target identities. Final graph reports unattached relevant targets, attached-but-unready targets, and targets discovered too late to receive a corresponding capture; no completeness claims for them.
+- Updated the native recorder's public library manual, rest library manual and command manual, plus readable report links. Permanent Chromium fixture creates same-origin/cross-origin iframe documents and dedicated/shared/service workers, verifies actual attached worker execution context and worker-global evidence, and validates that the cross-origin frame is represented in the page frame tree. OOPIF creation is Chromium-dependent and is not asserted merely because a frame is cross-origin.
+- Chromium run `41722677633` PASS for initial target/worker/iframe capture and `41723249494` PASS including shared/service workers. Subsequent changes for bounded stabilization, more accurate coverage statuses, source readability and non-applicable target handling are tracked in final CI run `41723799071` (pending when this checkpoint was written). No operator physical browser or real external site proof.
+
 ### Cross-unit validation discipline and completion gate
 
 For **every work unit**: (1) reread latest HEADs and authoritative rules; (2) implement one bounded responsibility; (3) realign corresponding operational manuals in the same work unit; (4) add permanent tests in `rumiai-tests`; (5) pin the tested test HEAD in the existing CI workflow; (6) execute real Node/Chromium fixture tests, preserving run ID and actual outcome; (7) inspect source diff, warning paths, status fidelity, permissions and concurrent changes; (8) update this handoff with completed/blocked state and next action. A passed synthetic local fixture is **not** a passed real external-site or operator-host test. Do not claim total CDP completeness merely because individual feature fixtures pass.
@@ -136,7 +143,7 @@ For **every work unit**: (1) reread latest HEADs and authoritative rules; (2) im
 | Work unit | State | Evidence / pending validation |
 | --- | --- | --- |
 | WU-01 | **Complete — Chromium fixture PASS** | `rumiai-os@783d0131bd29832c9c594d5c8efad5b560f256cf`, `rumiai-tests@cc7ca95a07ffb7f9ba93d22fa52b97d47fcea53f`, GitHub Actions `41719712596` PASS; full connected-CDP messages, browser protocol/schema, command-response correlation, private request headers, redacted diagnostics and restrictive permissions verified; physical-host/real-site coverage pending |
-| WU-02 | Pending | Target/worker/context graph and nested attach tests |
+| WU-02 | **Implemented; final CI pending** | `rumiai-os@f457d1d36c174a3ddef65e481f98422b7fe5dd04`, `rumiai-tests@25ee0bd58166aaecde7e414dc6b04c8c69286067`; Chromium runs `41722677633` and `41723249494` PASS; most recent refactor CI `41723799071` pending; operator-host and external-site coverage pending |
 | WU-03 | Pending | Durable network body retrieval and edge cases |
 | WU-04 | Pending | Complete DOM mutation chronology |
 | WU-05 | Pending | Reconciled integrity/coverage statuses |
@@ -166,7 +173,7 @@ Native-CDP manual capture remains available with historical user-operated share-
 
 ## Next action
 
-Resume **WU-02** next: use the browser-specific schema and packet ledger from WU-01 to enumerate and correlate all available targets/execution contexts. Add recursive attach to iframe/OOPIF/worker/service-worker targets where supported, and report non-attached/opaque/unavailable contexts before claiming any rest completeness. Verify on real Chromium with iframe and worker fixtures. Preserve rest-only default, no simulated input and private evidence. Then begin WU-03 on network-body durability. Operator-host real-site validation remains open.
+After confirming the final WU-02 real-Chromium CI, proceed to **WU-03**: make response-body retrieval durable across large resources, navigations and process swaps, preserve exact request/response metadata and archive statuses, and test stream/abort/redirect cases. Do not extend to synthetic user input. Verify target graph gaps against an operator-host real site separately without publishing credentials or raw browser artifacts.
 
 ## Blockers / open questions
 
