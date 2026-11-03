@@ -11,11 +11,11 @@ The JavaScript compilation, module loading and distribution concern has **indepe
 
 ## Current repository revisions
 
-**Fresh remote checkpoints verified 2026-11-03 for this work unit** (the dev HEAD advances when publishing this handoff):
-- `rumiai-dev`: `7c08dfdc1a0630ece83d2310c929956d3106484b` — canonical `TEXT-EDIT.md` updated for versioned batch editing and conservative invalidation.
-- `rumiai-os`: `da043ecd7d1fe9026a41d2026f9437232a8f0ac3` — new `Document2D.revision`, `Document2D.replace(edits, expectedRevision)`, real `RawDocument2D` implementation and CI pin.
-- `rumiai-tests`: `32999e72f383adec7658045d398866090e718c1e` — permanent test additions for versioned atomic 2D edits.
-- `rumiai-dev-PoCs`: `7faa0e496ab41e0c1bf1b0ef1592d5f47cd3543f` — PoC 074 remains an experimental reference; unchanged in this work unit.
+**Fresh remote checkpoints verified 2026-11-03 after the CellDocument2D implementation** (the dev HEAD advances again when publishing this handoff):
+- `rumiai-dev`: `940ced334a4cfa50020d5d4f7bcaa45cb2afe01c` — current `TEXT-EDIT.md` contracts for versioned batches, structured regions and the first cell projection; this handoff is updated forward.
+- `rumiai-os`: `393645236cb77ea6a36198574bb94fe363e5711f` — current real core, class export, CI workflow and selection-anchor guard.
+- `rumiai-tests`: `2e4e26f38d24114fb2544c95dc968030ad0c8e18` — pinned permanent cell/raw Document2D tests.
+- `rumiai-dev-PoCs`: `7faa0e496ab41e0c1bf1b0ef1592d5f47cd3543f` — unchanged PoC 074 reference.
 
 The paragraphs below are the preceding 2026-10-19 checkpoint and must not be mistaken for the latest repository HEADs.
 
