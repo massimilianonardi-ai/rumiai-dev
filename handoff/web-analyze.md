@@ -5,13 +5,13 @@ Updated: 2026-11-03
 
 ## Goal
 
-Provide the `m` JavaScript library at `rumiai-os/lib/sys/js/web-analyze.lib.js` to launch the `chromium` executable from the effective `m` PATH, observe the user's manual browsing via native Chromium CDP on loopback TCP, and record extensive structured JSONL evidence. No Playwright dependency or separate provider/PoC is required. A new `bin/sys/web-analyze` Node.js command reuses this capture library to perform bounded, passive page-state exploration and produce Markdown evidence.
+Provide the `m` JavaScript library at `rumiai-os/lib/sys/js/web-analyze.lib.js` to launch the `chromium` executable from the effective `m` PATH, observe the user's manual browsing via native Chromium CDP on loopback TCP, and record extensive structured JSONL evidence. No Playwright dependency or separate provider/PoC is required. A new `bin/sys/web-analyze` Node.js command reuses this capture library for exhaustive-as-observable resting-page evidence acquisition by default; optional `--scroll` enables a later bounded passive exploration. Markdown reports distinguish observed evidence from unverified completeness.
 
 ## Current repository revisions
 
-- rumiai-dev: 5623d0282adb7b70399c084776078359695dfd57 (before this checkpoint)
-- rumiai-os: 57886c999b0fcb49da87229a44b1369c3f148d53 (DOM settlement, artifacts, manuals and CI)
-- rumiai-tests: af36e8f42bb4fea9cdd57ef5492a9198673b7f89 (real browser delayed-hydration and non-converging DOM tests)
+- rumiai-dev: 5ef9dd5bd85cb6ca8eb3de7e604e3861bebf258b (before this checkpoint)
+- rumiai-os: a8c96d53283ffb4b9d5cad36e99e3120c722aaa1 (rest acquisition, request metadata, startup, manuals)
+- rumiai-tests: cb717e50c2031be8e414f50d82f288b0c1dd1fb2 (pinned real Chromium rest and opt-in scroll tests)
 
 ## Applicable canonical sources
 
@@ -27,7 +27,7 @@ Provide the `m` JavaScript library at `rumiai-os/lib/sys/js/web-analyze.lib.js` 
 - **Current explicit user authorization (2026-10-19) supersedes the previous no-response-body scope for a separate raw evidence archive.** CDP Network.getResponseBody saves finished response bodies content-addressed in resources/ with full URL/status/provenance in resources.jsonl; Debugger.scriptParsed/getScriptSource saves compiled JS (including inline/eval where available) in scripts/ and scripts.jsonl. Both raw indexes and bodies may contain secrets/signed URLs and are for private analysis only, not redacted diagnostics or repository artifacts.
 - On caller stop/SIGINT, wait up to 6 seconds for response lifecycle/body/source reads and require a 750ms quiet interval; unresolved requests, failed body retrieval, pending CDP reads and skipped redirect bodies remain explicit in per-resource indexes and summary. An external Chromium close cannot enforce network quiescence; long-lived SSE/WebSockets do not admit a global completion guarantee.
 - User-provided real acceptance URL: `https://chatgpt.com/share/6ad1c0d5-49ec-83eb-a79b-85b04b938835`.
-- The new command defaults to headless Chromium, records at most 29 DOM states after bounded passive document/nested-container scrolling, inventories links/forms/controls, retains compiled scripts and response-body archives, and produces Markdown and Mermaid outputs. Each invocation creates an isolated private `run-*` under the supplied directory. No automatic click, form submission, login or challenge bypass; unobserved routes/behavior are not asserted.
+- The new command defaults to headless Chromium and **no automated input or scroll**: `m web-analyze <url> <analysis-path>` captures the page at rest, while explicit `--scroll` adds bounded passive document/nested-container scrolling (maximum 29 states). It inventories links/forms/controls, retains compiled scripts/response bodies and produces Markdown and Mermaid outputs. Each invocation creates an isolated private `run-*` child. No automatic click, form submission, login or challenge bypass; unobserved routes/behavior are not asserted.
 - Explicit 2026-11-03 correction: preserve a post-loading resting DOM, not just a fixed-delay or scrolling snapshot. Initial and final full main-document outerHTML is stored under `states/dom-rest-{initial,final}.html`, with JSON settlement evidence. Per-state bounded snapshots follow quiescence checks. `settled` requires document complete, fonts loaded, and 1.5s quiet DOM/network with no pending CDP requests/reads; unresolved but quiet requests after 4.5s yield `dom-quiet-network-pending` instead of a false completion claim. Initial/per-step waits are bounded at 15s/6s within a 45s exploration budget; non-converging pages retain snapshots marked `timeout`. These observations do not prove all eventual app work has completed.
 
 ## Acceptance scenarios
@@ -36,8 +36,8 @@ Provide the `m` JavaScript library at `rumiai-os/lib/sys/js/web-analyze.lib.js` 
 2. Navigate/interact manually, close Chromium or press Ctrl+C, then read timestamped lifecycle, interaction, DOM, network, console, performance and error logs and summary.
 3. Repeat against a directory with existing evidence: fail without overwriting prior log files. An existing directory without conflicting evidence is accepted.
 4. On an externally reachable host, verify actual shared-page navigation/response independently of debugger launch and logging mechanics.
-5. Execute `m web-analyze https://example.org ./analysis` without knowing CDP identities: observe a new private run directory containing raw resources, script archive, rendered states, and navigable Markdown reports with Mermaid scroll flow.
-6. Run a real dynamic local page whose nested scroller loads new controls and JSON: verify these changes and resource bodies are captured; repeat in the same parent without overwriting the prior run.
+5. Execute `m web-analyze https://example.org ./analysis` without knowing CDP identities: observe a new private run directory with rest-only DOM/state, native MHTML, resource/script archives, storage, metadata and Markdown without simulated input.
+6. Run `m web-analyze https://example.org ./analysis --scroll` against a dynamic local page whose nested scroller loads new controls and JSON: verify states and response bodies, then rerun without overwriting earlier evidence.
 7. A page that hydrates content 1.2s after DOMContentLoaded must include that content in the initial resting snapshot; a page that changes its DOM continually must not be described as settled and must still save a bounded best-effort snapshot.
 
 ## Completed
@@ -54,6 +54,16 @@ Provide the `m` JavaScript library at `rumiai-os/lib/sys/js/web-analyze.lib.js` 
 - On 2026-11-03 published `rumiai-os@fe6cfd33759b06d46286684e6b2018606cd68baf` (Node command/manual and additive `sendPage` native-CDP page command method) and `rumiai-os@c78e4981ea7759f6798f14b13f135ef5e55a00b3` (CI including new real-command test). Published `rumiai-tests@e9c335408ccef021590d468949775e277bfec49d` with a real Chrome/Chromium local HTTP fixture exercising dynamic lazy controls, resource/script capture, output isolation, argument errors and Mermaid output. GitHub Actions run `41634919134` passed on hosted Linux with Node.js 22 and real Chromium. This does not prove all React behaviors or acceptance on a physical operator host.
 
 - On 2026-11-03 extended the native-CDP library's returned session with read-only `networkActivity()` (counts + elapsed quiet time), and the command with DOM MutationObserver-based quiescence, full resting DOM exports, settlement metadata and Markdown reporting. First CI run `41638548568` exposed excessive waiting on requests left active by CDP; this is failure evidence, not a passing run. Corrected forward-only to distinguish `dom-quiet-network-pending` from `settled`, and bound the overall sweep. Current permanent fixture covers delayed hydration, delayed scroll-dependent control, preserved response bodies, repeated output isolation, and perpetual DOM mutation timeout. Hosted Linux Node.js 22 + real Chromium CI `41639402973` **PASS** for `rumiai-os@57886c999b0fcb49da87229a44b1369c3f148d53` and `rumiai-tests@af36e8f42bb4fea9cdd57ef5492a9198673b7f89`. This does not prove physical-host or arbitrary-site completeness.
+
+## Deep resting-page acquisition and sensitive-state evidence (2026-11-03)
+
+- **Current user direction:** focus exclusively on acquiring everything already observable at URL load, without input. The purpose is generic reverse engineering and a reliable basis for future site-specific adapters. An input-simulation phase is intentionally separate and not implemented here. The user explicitly includes cookies, tokens and browser state among the required private evidence.
+- Added `lib/sys/js/web-analyze-rest.lib.js` with mandatory manual, invoked **before any programmatic scroll**. It collects full initial rendered DOM, frame tree, CDP pierced DOM tree, computed style/layout snapshot, CSSOM and stylesheet source, window/document/root listener locations, native MHTML, screenshot, scripts, current DOM/media/forms/shadow-tree observations, globals and performance resource inventory. Indexes for observed response bodies and compiled JS are frozen at the rest boundary.
+- The native CDP recorder now also captures a dedicated private `network-details.jsonl` with raw CDP request/response/handshake and realtime-message events. Best-effort `Network.getRequestPostData` fetches POST bodies that CDP makes available. Existing ordinary diagnostic event streams remain redacted.
+- The rest collector archives browser-context cookies (including CDP-readable HttpOnly values) under `rest/cookies.json`; local/session storage key/value entries under per-target `storage.json`; per-origin IndexedDB schema/records with CDP deep serialization and per-value availability; Cache Storage entries and content-addressed cached bodies; and storage quota/usage metadata. The private browser profile remains in the run. On partial/error, the corresponding manifest entry explicitly records the limitation. Closed/unloaded states, cross-origin non-attached frames, inaccessible backend code, binary values not faithfully deep-serialized, future fetches and unavailable CDP bodies cannot be certified complete.
+- **Real-browser evidence:** GitHub Actions run `41658598103` PASS for cookie, storage and original network event captures; `41660878989` PASS for IndexedDB and Cache Storage, and `41662194795` PASS for deeper IndexedDB serialization + a natural-loading POST request. The latest report-reference correction at `a8c96d5` triggers a separate run; verify its outcome before reporting the current revision fully green.
+- Startup robustness was improved forward-only after CI exposed an incompletely written Chromium `DevToolsActivePort` file and a shared startup deadline. Both behaviors now have staged bounded waits. Repeated runner jobs for older revisions passed and failed intermittently; distinguish actual test-result failures from startup preflight failures. No operator-host validation or proof of arbitrary-site completeness has been achieved.
+- **Security:** these captures can include live authentication material and private page/request data. All run and individual evidence files use restrictive permissions. Do not commit or transmit raw outputs or profile contents. The command uses a fresh dedicated profile and does not read existing personal browser credentials.
 
 ## Corrected slow-navigation capture startup (2026-10-19)
 
@@ -74,11 +84,11 @@ Provide the `m` JavaScript library at `rumiai-os/lib/sys/js/web-analyze.lib.js` 
 
 ## Current state
 
-Native-CDP manual capture remains available and has user-operated evidence against the original shared URL. The new `bin/sys/web-analyze` automates bounded passive inspection, nested scroll, screenshot/DOM state capture, full initial/final DOM-at-rest snapshots and Markdown reports, preserving timeout/ongoing-network caveats. The composed command has a passing real-browser fixture CI run `41639402973` for the current revisions; physical operator-host execution of the *new command* has not been verified. Coverage remains incomplete for never-visited interactions, authenticated states and unrecoverable/persistent resources.
+Native-CDP manual capture remains available with historical user-operated share-page evidence. The new command defaults to one deep passive *rest-only* capture, and accepts `--scroll` only as an explicit opt-in. Current rest evidence includes cookies/auth material and per-origin database/cache contents where available. See the 2026-11-03 checkpoint above for revision-specific CI claims. Operator-host and real complex-site coverage remain unverified; no single page-at-rest dump proves all possible future interactions.
 
 ## Next action
 
-Validate the new public `m web-analyze` command on the operator's actual Chromium/m environment and representative dynamic target, keeping raw output private. Then correlate saved compiled scripts with observer callbacks and React component/turn identities, and design explicit, controlled interaction scenarios to move beyond passive scroll evidence. Do not commit browser profiles or raw unreviewed resources.
+First finalize the real Chromium CI for the current revision and inspect the rest manifest/statuses for missing IndexedDB/Cache/CDP data. Then validate the default rest-only command on the operator's own Chromium/m environment and representative complex site, keeping raw evidence private. Evaluate additional resting-page surfaces (e.g. partitioned storage, OPFS, runtime heap, worker-specific sources) by actual CDP/browser evidence, not assumed completeness. Do not begin input simulation until the resting-page coverage and missing-evidence ledger are credible.
 
 ## Blockers / open questions
 
