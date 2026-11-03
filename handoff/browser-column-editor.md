@@ -1,6 +1,6 @@
 # Advanced browser/Electron text editor
 
-Status: Active — composable grapheme/TAB, whole-row and inline folding, and source-less annotations CI-verified; precise geometry, broader substitution and GUI remain open
+Status: Active — composed Document2D mappings and shared atomic edit delegation CI-verified; arbitrary region substitution, rebasing and GUI remain open
 Updated: 2026-11-03
 
 ## Goal
@@ -10,6 +10,12 @@ Design and eventually build an extremely fast, memory-efficient advanced JavaScr
 The JavaScript compilation, module loading and distribution concern has **independent ownership** at `handoff/javascript-build-and-runtime-loading.md`. This handoff must not make bundler/loader decisions.
 
 ## Current repository revisions
+
+**Current composed-region mapping checkpoint (2026-11-03; dev HEAD advances with this handoff):**
+- `rumiai-dev`: `3d3a83fe483e79446fe010114aae78611eaebf49` — canonical `TEXT-EDIT.md` adds proved composition invariants and the shared internal mapped-edit delegation.
+- `rumiai-os`: `220b2b1d564845f3b0cb90e972ca59ce1dfbfef0` — `Document2D._replaceMapped` implementation, reused by Cell/Fold/Annotation; current pinned workflow.
+- `rumiai-tests`: `04b684a83277e1c5a30d731e7c6a56b90835bdc7` — nested region correspondence and reentrant batch validation.
+- `rumiai-dev-PoCs`: `7faa0e496ab41e0c1bf1b0ef1592d5f47cd3543f` — unchanged experimental PoC 074.
 
 **Current inline-fold increment (verified 2026-11-03; dev HEAD advances with this handoff):**
 - `rumiai-dev`: `4b4cc21da66c542c83e62439b9bef8f94661cdfb` — canonical `TEXT-EDIT.md` now specifies inline splice mapping and editing boundaries.
@@ -53,7 +59,28 @@ Latest independently verified remote `main` HEADs on **2026-10-19**, immediately
 - The separately deferred terminal `vsed` advanced-editor work is `todo/vsed-advanced-editor-evaluation.md` and is not this editor.
 - The JavaScript toolchain is owned by `handoff/javascript-build-and-runtime-loading.md`.
 
-## Resume checkpoint — 2026-11-03 (inline cross-row folding; read first)
+## Resume checkpoint — 2026-11-03 (shared mapping invariants; read first)
+
+**Authorized scope:** User accepted the next general region mapping design increment, specifically deriving demonstrable common responsibilities from the current `Document2D` implementations without exposing source coordinates to GUI callers or introducing speculative public abstractions.
+
+**Completed engineering evidence:**
+- The current `Document2D` exposed `getRegions` stream continues to describe only displayed geometry and metadata. A layer's private input↔view coordinate correspondence is a distinct responsibility. There is no new GUI-facing `Representation` API, and `RawDocument2D` stays the sole physical selection owner.
+- Added real-core permanent tests composing **two distinct inline fold layers** over annotation and physical storage, then a cell layer above them. Both FlatDocument and PieceDocument are exercised. Tests assert visible row/region geometry, preservation of only visible annotation identities, unambiguous marker-side caret mapping, exclusion of hidden intervals, reverse selection into physical coordinates, stale invalidation and one physical commit for an explicit two-target edit.
+- The same test suite separately verifies independent insertions at the two marker boundaries. These do not equate two different source points even when one synthetic marker separates them in the visible row.
+- Identified *one proven common implementation role*: coherent mapped-edit batch delegation, previously repeated across `CellDocument2D`, `FoldDocument2D`, and `AnnotationDocument2D`. Added internal `Document2D._replaceMapped(input,edits,expectedRevision,translate)`. Each subclass supplies its own mapping and protected-span checks; the helper validates revision and shape, snapshots each edit field **once**, checks for reentrant coordinate changes and invokes exactly one `input.replace`. No common selection owner and no global mapping cache were introduced.
+- A new permanent regression verifies edits with getters that mutate the physical source during translation: the whole requested batch is refused as stale. Initial attempt of the helper read a `text` getter twice, which CI exposed. Corrected forward to one snapshot/read; prior failed run is not retconned as passing.
+- **Current revision-specific CI:** product `220b2b1d564845f3b0cb90e972ca59ce1dfbfef0` pins tests `04b684a83277e1c5a30d731e7c6a56b90835bdc7`. `m.text.document core extraction verification` run `41614742462` **PASS**, `JavaScript core compilation and runtime` run `41614742488` **PASS**, and `Git tracking boundaries` run `41614742569` **PASS**. Earlier run `41614482272` failed on double getter invocation and motivated the forward fix. These are real hosted compiler/Node checks, not GUI/physical-host evidence.
+- Canonical specification updated in `rumiai-dev/specifications/rumiai-os/TEXT-EDIT.md` to capture only the *implemented* composition and protected-interval invariants.
+
+**Working architecture candidate — NOT yet a normative/public API:**
+- A later general region transformation may require an internal, lazily generated relation between a displayed region and **zero, one or multiple** input regions, including non-contiguous input spans. Source-less occupied regions differ from zero-width annotation overlays; an indivisible TAB/grapheme is neither a 1:1 text cell nor a source-less marker.
+- Preserve two distinct mapping questions: (a) a boundary's possible input positions and directional ambiguity, and (b) the *entire covered input interval(s)* of a selection or edit. Mapping just two endpoints is not sufficient when hidden/protected input lies between them.
+- Do not embed input provenance in the public `getRegions` records or demand that the GUI knows the backing representation. Do not allocate global full-document mapping tables without evidence; viewport reads must remain bounded.
+- Determine a concrete next transformation with **occupied source-less or non-contiguous mapped regions** before extracting a generic internal region relation engine. `BaseDocument2D` inheritance remains unproven; only the internal mapped-edit transaction is already shared.
+
+**Remaining work:** General arbitrary multi-region substitution, partial-tab UX policy, exact old/new geometric invalidation, rebasing durable annotations/folds, output geometry indexes for extremely large documents, editing policies for occupied virtual content and physical browser/Electron parity. Do not claim these are implemented or automatically solved by the shared transaction helper.
+
+## Resume checkpoint — 2026-11-03 (prior inline cross-row folding)
 
 **Task authorization/location:** The user approved the next PoC 074-inspired increment under `rumiai-os/main/lib/sys/js/core/m/text`; do not move the implementation to a PoC or create a redundant folding class.
 
@@ -367,10 +394,10 @@ The new external column planner demonstrates model-level 2D clipboard preparatio
 
 ## Next action
 
-1. Reverify current remote HEADs and reread canonical `TEXT-EDIT.md`, this latest checkpoint and compiled real-core tests.
-2. Evaluate the remaining general transformation need: multiple inline/rectangular region substitutions, non-source-backed occupied layout elements, and precise source↔view correspondence. Use current concrete `FoldDocument2D`, `CellDocument2D`, and `AnnotationDocument2D` to identify reusable responsibilities before considering a public `Representation` or `BaseDocument2D`.
-3. Plan precise old/new geometric change notifications and rebased source anchors to preserve fold/annotation configuration across safe external modifications.
-4. Maintain separate tests for partial-TAB policy, indexed large-document layout, GUI integration and physical-host performance. Keep the existing core descriptor and current CI pin aligned with new tests.
+1. Recheck remote HEADs, latest canonical `TEXT-EDIT.md`, this checkpoint, the actual core classes and pinned tests. Do not infer current state from the SHAs here.
+2. Select and implement one concrete region transform that challenges the present contiguous-endpoint model (for example occupied synthetic substitution or a truly disjoint mapping) with explicit source-less edit/selection policy. Validate mapped boundaries *and* covered intervals, and only then decide whether the repeated geometry mechanism warrants an internal reusable region relation.
+3. Separately design precise old/new geometric mutation notifications and source-anchored rebasing to avoid clearing every fold/annotation on any upstream edit. Neither revision tracking nor `_replaceMapped` presently supplies that geometry.
+4. Preserve a single effective selection owner, chained `Document2D` inputs, conservative invalidation where necessary, and one physical atomic commit per accepted batch. Keep public `Representation` and `BaseDocument2D` deferred unless the next concrete implementation demonstrates shared responsibility.
 
 ## Blockers / open questions
 
