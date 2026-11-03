@@ -999,10 +999,11 @@ be established after a committed edit, the raw content event omits
 `geometry` while still publishing conservative whole-view invalidation;
 the physical commit is never reported as failed because metadata could
 not be derived. Revision wrap from `Number.MAX_SAFE_INTEGER` to `0`
-retains the established loss-of-continuity semantics. No fine-grained
-viewport invalidation, replay log, old/new geometry transformation through
-`CellDocument2D`, folding or annotation layers, or persistent anchor
-rebasing is supplied by this first source-geometry increment.
+retains the established loss-of-continuity semantics. The raw adapter continues publishing whole-view invalidation. A directly
+composed `CellDocument2D` can now project supported raw pre/post edit
+endpoints through an internal pre-commit observation. No fine-grained
+viewport invalidation, replay log, downstream fold/annotation/substitution
+geometry or persistent source-anchor rebasing is supplied.
 Clipboard transport, GUI device events and pixel hit-testing do not belong to
 the adapter.
 
@@ -1063,9 +1064,42 @@ Selection/mode events do not advance the view-coordinate revision.
 `destroy()` unsubscribes this view but does not destroy its input.
 
 This concrete class is deliberately limited to grapheme/TAB
-geometry. Physical source-edit geometry is not yet reprojected into the
-exposed grapheme/TAB view's events: its invalidation remains conservative
-even when the input has an exact raw geometry payload.
+geometry. A cell view directly over `RawDocument2D`, backed by the current
+`_DocumentStore`, observes the physical edit through an internal
+pre-commit hook while the old source still exists. After that edit
+commits, it projects the new endpoints from the new source geometry.
+Only when every endpoint is exactly representable does its `content`
+event include immutable `geometry` in the cell view's coordinates:
+
+```javascript
+{
+  previousRevision, revision, oldRowCount, newRowCount,
+  edits:[
+    {
+      old:{start:{row,col},end:{row,col}},
+      new:{start:{row,col},end:{row,col}}
+    }
+  ]
+}
+```
+
+Edits retain the original physical batch order; cell points contain no
+underlying source offsets. The source `Document.subscribe` contract is
+unchanged; this hook is internal and is not a public `Document2D` method.
+
+Even when `geometry` is available, `invalidation:{all:true}` remains:
+TAB stops and neighboring graphemes can change outside the inserted
+span. If any endpoint is inside a grapheme, source terminator or other
+nonrepresentable boundary, or if the pre-commit observation, matching
+post-commit raw geometry or revision continuity is absent, the cell
+event omits `geometry` and still reports whole-view invalidation.
+This fallback never turns a completed physical edit into an error.
+Revision wrap also disables precise projection for that commit.
+
+The precise projection is limited to direct raw-to-cell composition.
+Nested cell, fold, annotation and substitution compositions still
+invalidate conservatively. This geometry does not yet prove safe
+persistent rebasing of fold, annotation or substitution anchors.
 Neither `BaseDocument2D` nor a public `Representation` interface is
 introduced by this implementation.
 
