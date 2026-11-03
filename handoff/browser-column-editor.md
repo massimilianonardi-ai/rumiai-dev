@@ -1,6 +1,6 @@
 # Advanced browser/Electron text editor
 
-Status: Active — source-derived many-to-many read-only substitutions CI-verified; editable general mapping, precise geometry, rebasing and GUI remain open
+Status: Active — authoritative raw pre/post UTF-16 geometry CI-verified; transformed-view geometry, source-anchor rebasing and GUI remain open
 Updated: 2026-11-03
 
 ## Goal
@@ -10,6 +10,12 @@ Design and eventually build an extremely fast, memory-efficient advanced JavaScr
 The JavaScript compilation, module loading and distribution concern has **independent ownership** at `handoff/javascript-build-and-runtime-loading.md`. This handoff must not make bundler/loader decisions.
 
 ## Current repository revisions
+
+**Current physical source geometry checkpoint (2026-11-03; dev HEAD advances with this handoff):**
+- `rumiai-dev`: `c1ad3b5af6546fa03e16f52a1b3083a5118cc4e9` — canonical raw source geometry contract in `TEXT-EDIT.md`.
+- `rumiai-os`: `d81e64bf452347bff2550deaccfa13f69b9a6e0b` — source geometry capture, both physical backends, raw 2D publication, pinned CI.
+- `rumiai-tests`: `7d278823e7941b0f748cd80fc9f9893195f2ab7e` — source geometry tests for atomic edits, CRLF, selection-driven edits and notification compatibility.
+- `rumiai-dev-PoCs`: `7faa0e496ab41e0c1bf1b0ef1592d5f47cd3543f` — unchanged.
 
 **Current read-only many-to-many mapping checkpoint (2026-11-03; dev HEAD advances with this handoff):**
 - `rumiai-dev`: `6eaa901519f986b170138584ad66467436c9e81d` — current canonical `TEXT-EDIT.md` defines derived source-fragment substitution mapping and protected edit semantics.
@@ -71,7 +77,19 @@ Latest independently verified remote `main` HEADs on **2026-10-19**, immediately
 - The separately deferred terminal `vsed` advanced-editor work is `todo/vsed-advanced-editor-evaluation.md` and is not this editor.
 - The JavaScript toolchain is owned by `handoff/javascript-build-and-runtime-loading.md`.
 
-## Resume checkpoint — 2026-11-03 (derived many-to-many read-only projection; read first)
+## Resume checkpoint — 2026-11-03 (authoritative raw change geometry; read first)
+
+**Authorization:** User approved physical pre/post geometry capture in the established `rumiai-os/main/lib/sys/js/core/m/text` chain, without changing the public `Document.subscribe` notification shape or selecting a general `Representation` abstraction.
+
+**Product changes:** Shared `_DocumentStore._captureGeometry` captures the original batch's old source endpoints, old line count, source revision and post-commit numeric offsets **before staging text**. `FlatDocument` and `PieceDocument` pass that capture into `_publish`; the shared `_completeGeometry` resolves the new endpoints against **committed** source line geometry before notifying listeners. The immutable internal result has `{previousRevision,revision,oldRowCount,newRowCount,edits:[{old:{start,end},new:{start,end}}]}`; endpoints are exact source `{row,col,offset}` values, and `edits` retain original caller order. Columns inside CRLF can exceed content width and must not be assumed to be GUI caret columns.
+- Internal `_DocumentStore._getLastGeometry()` provides this data to `RawDocument2D` via the existing subscription. Raw content events now optionally add `geometry` while retaining `invalidation:{all:true}`. The public physical `Document.subscribe(listener)` continues to deliver **exactly the original replace operands**; neither its arguments nor the standalone TextEdit 0.8.2 library have changed.
+- If post-commit geometry computation fails, the edit still commits and a diagnostic is emitted; the raw adapter falls back to a conservative content invalidation without `geometry`. Exact 2D geometry transformation through Cell/Fold/Annotation/Substitution and automatic source-anchor rebasing remain unimplemented; the higher layers continue to clear their local configurations.
+
+**Validation:** Actual product `d81e64bf452347bff2550deaccfa13f69b9a6e0b` pins permanent tests `7d278823e7941b0f748cd80fc9f9893195f2ab7e`. GitHub Actions `m.text.document core extraction verification` run `41625038337` **PASS** and `Git tracking boundaries` run `41625038209` **PASS**. Both FlatDocument/PieceDocument tested: unsorted batch preserving notification order, old/new row counts and source coordinates, immutable snapshots, original overload shape, three-argument and successful no-effect edits, rejected batch, CRLF split geometry, raw explicit replace, selected `insert`, external `Document.replace`, optional metadata fallback, and insertion+replacement at the same source boundary. An earlier run `41624299994` failed due to an incorrect test expectation for the post-CRLF split row; corrected forward and verified. Hosted compilation/Node CI is *not* physical browser validation.
+
+**Next scope:** One concrete projection of old/new physical geometry through a row-preserving `Document2D` layer with both pre/post coordinate spaces available, followed by proven safe source-anchor rebasing where possible. Do not project precise invalidation through arbitrary fold/synthetic mapping from only the current post-edit geometry. Continue to avoid unproven `BaseDocument2D` / public `Representation` classes.
+
+## Resume checkpoint — 2026-11-03 (prior derived many-to-many read-only projection)
 
 **Authorized scope:** The user approved continuing the concrete general region mapping work on `rumiai-os/main/lib/sys/js/core/m/text`, alongside examining the requirements for precise geometric mutation notifications. Existing `SubstitutionDocument2D` is extended, avoiding another component with overlapping responsibility.
 
@@ -430,10 +448,10 @@ The new external column planner demonstrates model-level 2D clipboard preparatio
 
 ## Next action
 
-1. Reverify current remote HEADs, canonical `TEXT-EDIT.md`, current source/test revisions and this checkpoint.
-2. Implement the minimal **old/new source 2D change geometry** contract, capturing pre-commit rows and post-commit rows at the authoritative physical mutation boundary and propagating revisioned events through `RawDocument2D`. Define normal path for raw replace, selection-driven insert and arbitrary external `Document.replace`, retaining `invalidation:{all:true}` as fallback when precision is unavailable.
-3. Only after geometry is validated, derive safe source-anchor rebasing and consider precise downstream invalidation to retain unaffected fold/annotation/substitution configurations across edits. Do not guess old geometry from post-commit state.
-4. Decide whether a reusable mapping abstraction is justified by a *concrete editable* many-to-many case. Read-only duplicated source fragments do not establish reversible edit ownership or a public `Representation`. Preserve single effective selection ownership and one atomic physical commit.
+1. Reverify remote HEADs and reread current `TEXT-EDIT.md`, this checkpoint, the physical/RawDocument2D implementation and permanent tests.
+2. Design and verify a *single concrete* mapping of pre/post raw source geometry through the next `Document2D` layer (initially row-preserving cell mapping). Use both old and new mapping snapshots: neither display-cell widths nor TAB/grapheme boundaries can be safely reconstructed from only the post-edit source.
+3. Implement safe, limited rebasing of unaffected fold/annotation/substitution source anchors only after validating the corresponding transformed geometry. Keep conservative whole-view invalidation where correspondence is ambiguous or unavailable.
+4. Preserve `Document.subscribe` original operands, one physical commit, one effective selection owner, bounded reads and the present synthetic-region edit barriers. Do not introduce speculative public `Representation` or `BaseDocument2D`.
 
 ## Blockers / open questions
 
