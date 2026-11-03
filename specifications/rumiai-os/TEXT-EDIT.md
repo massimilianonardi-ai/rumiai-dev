@@ -763,7 +763,9 @@ half-open 2D window in the same coordinate space, returning one array
 per existing requested row. Each region is a detached
 `{kind,text,start:{row,col},end:{row,col}}` record, with an optional
 stable `id` for an additive annotation. Ordinary content regions have
-positive extent; an additive `kind:'annotation'` is a **zero-width,
+positive extent. A protected occupied `kind:'substitution'` region
+replaces a positive input interval in the exposed geometry but carries
+source-less display text; an additive `kind:'annotation'` is a **zero-width,
 source-less overlay** with identical start/end coordinates, independently
 coexisting with any content region at the same column. A zero-width
 annotation is included only when its anchor is in the requested
@@ -819,8 +821,10 @@ Correspondence need not be bijective. A grapheme may combine multiple
 input UTF-16 code units into one exposed cell, while a TAB may expand
 one input code unit into multiple display cells. An inline fold can
 concatenate pieces from different source rows into one visible row;
-a protected fold marker has no source text, and a zero-width annotation
-adds visible metadata without occupying or owning text. The two exposed boundaries
+a protected fold marker has no source text, while an occupied
+substitution can replace an arbitrary positive same-row source interval
+with synthetic cells. A zero-width annotation adds visible metadata
+without occupying or owning text. The two exposed boundaries
 of a protected inline marker can refer to **different** input positions.
 They must not be merged into a single source point merely because
 the displayed marker is one indivisible cell. An input point hidden by
@@ -1193,6 +1197,88 @@ The general semantics of occupied source-less regions, overlapping
 editable projections and precise 2D invalidation remain open.
 Neither `BaseDocument2D` nor a public `Representation` interface
 is introduced by this incremental case.
+
+
+
+### `SubstitutionDocument2D`: protected occupied same-row regions
+
+`new SubstitutionDocument2D(input)` wraps a nominal `Document2D`,
+including raw, cell, folded and annotated views. It implements the
+complete `Document2D` interface with the **same exposed row count**
+as its immediate input, replacing configured positive-length input
+intervals with synthetic read-only display regions. This is a
+concrete same-row substitution, not a general arbitrary multi-region
+relation engine. The physical document and the one effective
+selection collection remain owned by the underlying input chain.
+
+`setSubstitutions([{id,text,start:{row,col},end:{row,col}}, ...])`
+atomically replaces the local substitution configuration. An
+`id` and `text` must each be nonempty strings, ids unique,
+and both positions must belong to one existing input row with
+`start.col < end.col <= input.getRowWidth(row)`. The display
+text cannot contain CR, LF or TAB. Its display width is the number
+of Unicode grapheme segments produced by `Intl.Segmenter`, not its
+UTF-16 length or pixel width. Each grapheme in the synthetic label
+occupies one exposed cell. Input intervals may be supplied in any
+order, but cannot overlap; adjacent intervals are permitted.
+A substitution cannot cut an indivisible input grapheme or TAB
+nor conceal an already protected or synthetic non-text input
+region. Configuration validation does not mutate the source.
+Repeating the identical normalized configuration is a no-op.
+The `substitutions` getter returns detached source-coordinate
+configuration snapshots; internal display offsets are not exposed.
+
+A substitution `[a,b)` in an input row creates a single
+`{kind:'substitution',id,text,start:{row,col},end:{row,col}}`
+region with **positive, possibly different display-cell extent**.
+The region is emitted whole from `getRegions` when any of its
+cells intersect the half-open requested column window.
+`getRect` renders only the grapheme cells intersecting that
+window. Other input fragments preserve their content, region kind,
+and column order, translated by the cumulative substitution widths
+minus the hidden input widths. Multiple disjoint replacements thus
+produce alternating visible input and synthetic fragments within
+one row. Input annotations on visible fragments and at source cut
+boundaries remain visible, preserving ids and zero-width geometry;
+annotations wholly inside hidden intervals do not appear. A
+composed `CellDocument2D` preserves the identity and indivisible
+width of occupied synthetic regions instead of resegmenting their
+labels as editable text.
+
+Mapping distinguishes a **boundary** from the entire covered input
+range. The start and end of a synthetic substitution map to the
+two respective input cut positions. A point strictly inside its
+occupied display cells has no editable input coordinate; a source
+point strictly inside the hidden interval has no valid displayed
+coordinate. Any selected or edited interval intersecting a
+substituted input interval must be rejected, **even when both
+endpoints individually map**. `getSelections`, selected `read`
+and `insert(content)` reject source-owned selections that would
+expose hidden content. Unaffected selections use the input's
+single effective selection owner, with local selection-mode
+strategies for gesture interpretation. Accepted explicit
+`replace(edits,expectedRevision)` passes a fully translated
+batch through the shared internal `Document2D._replaceMapped`
+protocol and performs exactly one input replacement; a rejected
+or stale batch cannot partly commit.
+
+Changing the configuration advances the view revision and emits
+conservative `{type:'content',invalidation:{all:true}}`.
+Any upstream coordinate-revision change clears all substitutions,
+advances the local revision and invalidates previously captured
+coordinates. No automatic rebasing is inferred without precise
+old/new 2D source geometry. `destroy()` unsubscribes this view
+without destroying its input. Bounded reads never materialize
+hidden source intervals, while configuring ranges, calculating
+a complete row width and `colCount` may require larger scans
+and have no general large-document indexing guarantee.
+
+This increment does not permit editing synthetic label text,
+map one synthetic item to multiple non-contiguous *input*
+intervals, replace ranges spanning multiple source rows, or
+make arbitrary region substitution a public generic engine.
+`BaseDocument2D` and a public `Representation` are not
+introduced by this implementation.
 
 
 ## Validation and release boundary
