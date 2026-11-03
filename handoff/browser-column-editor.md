@@ -1,6 +1,6 @@
 # Advanced browser/Electron text editor
 
-Status: Active — substitution/fold/raw/cell old/new geometry CI-verified in restricted cases; inline folds, general anchor mapping and GUI remain open
+Status: Active — raw-backed inline fold pre/post geometry and restricted substitution/fold/cell/annotation geometry CI-verified; nested old-boundary and general anchors remain open
 Updated: 2026-11-03
 
 ## Goal
@@ -10,6 +10,12 @@ Design and eventually build an extremely fast, memory-efficient advanced JavaScr
 The JavaScript compilation, module loading and distribution concern has **independent ownership** at `handoff/javascript-build-and-runtime-loading.md`. This handoff must not make bundler/loader decisions.
 
 ## Current repository revisions
+
+**Current raw-backed inline fold precommit old/new geometry checkpoint (2026-11-03; dev advances upon handoff publication):**
+- `rumiai-dev`: `b50e2f0b847743aaceb65f02c7244617df5fbbba` — canonical `TEXT-EDIT.md` updated to describe the raw precommit observation and the restricted inline-fold old/new projection; the handoff commit advances dev.
+- `rumiai-os`: `2ae4e0be609a9f83a31f37f282c74520e2860444` — product `FoldDocument2D` reuses the existing `RawDocument2D._subscribeBeforeGeometry` bridge without widening the public `Document2D` interface; workflow pins the exact suite.
+- `rumiai-tests`: `10da9e544c06552b2b33424e8640560a78508a7c` — real permanent precommit fold suite and corrected old row-start-only assertions.
+- Exact Node 22 hosted evidence: `m.text.document core extraction verification` run `41648407169` **PASS** on product `2ae4e0be609a9f83a31f37f282c74520e2860444` and pinned tests `10da9e544c06552b2b33424e8640560a78508a7c`, plus `Git tracking boundaries` run `41648407224` **PASS**. Earlier hosted core run `41647922841` failed on obsolete negative test expectations and was superseded forward by the successful pinned assertion update. No browser/GUI physical validation.
 
 **Current substitution pre/post geometry and synthetic-anchor safety checkpoint (2026-11-03; dev HEAD advances on handoff commit):**
 - `rumiai-dev`: `346bd4f2cbcb294029c9f9428cca39c38bab2f13` — current canonical `TEXT-EDIT.md` describes the exact substitution-boundary and row-start geometry projection and restricts annotation anchor preservation.
@@ -106,7 +112,21 @@ Latest independently verified remote `main` HEADs on **2026-10-19**, immediately
 - The separately deferred terminal `vsed` advanced-editor work is `todo/vsed-advanced-editor-evaluation.md` and is not this editor.
 - The JavaScript toolchain is owned by `handoff/javascript-build-and-runtime-loading.md`.
 
-## Resume checkpoint — 2026-11-03 (substitution old/new geometry and synthetic-anchor safety; read first)
+## Resume checkpoint — 2026-11-03 (raw-backed fold old-point precommit; read first)
+
+**Delivered:** `FoldDocument2D` directly over `RawDocument2D` now uses the established internal physical pre-commit geometry observation while the *old raw document and fold configuration* still exist. It validates every original `{row,col,offset}` endpoint against the old real row width, checks each old source span against hidden-fold barriers, and projects the visible old endpoints through the old fold mapping. The staged old points and original physical offsets are checked in original batch order against the authoritative post-commit raw event. If exact, the folded view publishes immutable `{row,col}` old endpoints in the old folded coordinate system and new points in the committed unfolded input, carrying the folded view's own old/new revisions and row counts; no source offsets are exposed. Whole-space invalidation continues and all fold configurations still clear. No public `Document2D` or `Document.subscribe` change, duplicate selection owner, extra commit, or source-text capture in a view was introduced.
+
+**New valid cases:** Nonzero old columns are supported for raw-backed whole-row folds and cross-row inline folds. For an inline fold, edits entirely in the joined prefix or suffix and insertions exactly at either boundary of the synthetic marker map correctly to their distinct old input positions. Edits in visible rows after the splice also map from the old compressed row count to the new physical row count. Source unsorted batches preserve their invocation order. Direct public `FoldDocument2D.replace` remains a single atomic source commit with stale revision rejection. For a `CellDocument2D` or another nested immediate input without the same private precommit bridge, whole-row fold mapping retains its previous row-start-only fallback and inline fold geometry remains unavailable.
+
+**Safety and lifecycle:** Source offsets in CRLF terminator interiors, old points beyond real EOL, intervals traversing protected/hidden source content, old endpoints in folded-out rows, unavailable or incompatible pre/post raw geometry, missing revision continuity, cyclic revision wrap and other mismatches all suppress the `geometry` field without rejecting the already successful source edit. Precommit observer state resets for each physical attempt and after notification; `destroy()` unsubscribes the private observer. The conservative annotation clear above fold/substitution layers remains in force: edit endpoints do not prove survival of unaffected anchor coordinates after an expanded fold.
+
+**Mechanical evidence:** New `fold-precommit.test.mjs` compiles the real `m.text.document` core with actual `jsc` and exercises both `FlatDocument` and `PieceDocument`. Permanent tests cover inline prefix/suffix nonzero edits, distinct start/end marker-side insertions, public one-commit edit, unsorted batch, row insertion after splice, whole-row fold nonzero edits, hidden/crossing edits, CRLF interior, missing raw postcommit geometry, conservative cell→inline fold, local fold configuration events and immutable no-offset event structures. Existing fold geometry tests were updated from expected missing geometry to exact old/new values for real raw-backed cases. The full hosted Node 22 suite at `41648407169` **PASS** (40 prior parity comparisons + cell/annotation/fold/substitution/precommit geometry). Tracking run `41648407224` **PASS**. No physical browser/GUI run was performed.
+
+**Next:** Apply the same established internal precommit observation to the narrowest safe *direct raw-backed* non-boundary `SubstitutionDocument2D` edit, retaining its synthetic interval and adjacent-boundary ambiguity barriers. Separately evaluate whether a private **immediate-view** observation (rather than a pass-through to the physical source) is justified for nested Cell/Annotation/Fold compositions; no new public abstraction is authorized. Extend tests before widening anchor retention.
+
+## Resume checkpoint — 2026-11-03 (prior substitution old/new geometry and synthetic-anchor safety)
+
+
 
 **Delivered:** A `SubstitutionDocument2D` source-coordinate revision can now report detached, frozen old→new edit geometry when its immediate input publishes a complete contiguous batch, every old endpoint is at a genuine prior input row start or at a **unique recorded boundary** of an occupied substitution, and no old edit span traverses synthetic source content. Previous endpoints are projected through the still-installed old cumulative substitution widths; new endpoints are checked against the committed immediate-input real EOL **after all substitutions and copied-label dependencies are cleared**. Source physical edit invocation order is retained; no physical `offset` or synthetic-label copy destination escapes. Every source revision still clears the whole substitution configuration and publishes `invalidation:{all:true}`. Local `setSubstitutions` emits no physical edit geometry.
 
@@ -511,7 +531,7 @@ view.destroy();                            // source is still caller-owned
 
 ## Current state
 
-**CURRENT AS OF 2026-11-03:** Exact raw/cell/annotation old/new geometry and restricted **whole-row fold** and **substitution** edit-boundary projections are Node 22 CI-verified. `AnnotationDocument2D` retains anchors only through Raw/Cell/zero-width annotation chains with proven unchanged coordinates; it clears anchors above collapsing fold/substitution spaces despite forwarding edit geometry. Every synthetic configuration still clears on upstream coordinate changes with whole-view invalidation. General old nonzero-point capture, inline-fold geometry, same-row suffix rebasing, persistent protected anchors and GUI integration remain open. The earlier 2026-10-19 state below is a prior checkpoint.
+**CURRENT AS OF 2026-11-03:** Raw/cell/annotation geometry, whole-row fold row-start plus raw-backed nonzero-point geometry, raw-backed inline fold pre/post geometry and restricted substitution boundary geometry are Node 22 CI-verified. `AnnotationDocument2D` retains anchors only through proven Raw/Cell/zero-width annotation chains; it clears anchors above collapsing fold/substitution spaces despite forwarding edit geometry. All synthetic configurations still clear on upstream changes with full-view invalidation. Non-boundary substitution old points, nested inline fold geometry, same-row suffix rebasing, persistent protected anchors and GUI integration remain open. The earlier 2026-10-19 state below is a prior checkpoint.
 
 **CURRENT AS OF 2026-10-19:** The core now exposes the completed raw adapter `m.text.document.RawDocument2D`, with `PieceDocument` as the intended backing store, abstract `Document2D`, `Selections`, and three selection modes. Production GUI integration and advanced logical `Document2D` are pending; the private `TextEditSelections` implementation is retained by composition. See **Resume checkpoint — 2026-10-19** above and the canonical `TEXT-EDIT.md` for the precise current contract. The older source-and-PoC evidence below is historical task context, not the current next implementation target.
 
@@ -535,14 +555,14 @@ The new external column planner demonstrates model-level 2D clipboard preparatio
 
 ## Next action
 
-1. Reverify current remote HEADs and mandatory `rumiai-dev/README.md` retrieval, including the up-to-date `TEXT-EDIT.md` and this handoff.
-2. Determine the narrowest reusable **private pre-edit observation** for old `Document2D` points, without inventing public abstractions. A proven old nonzero caret boundary is currently missing when the immediate input supplies geometry after the physical commit. Preserve exact correspondence across single source edit, batch and revision continuity, or fail closed.
-3. Use that proof to extend an existing nonidentity transformation (e.g. `FoldDocument2D` cross-row inline fold or a non-boundary `SubstitutionDocument2D` edit) with original/committed coordinate maps. Exercise both physical backends, newline/CRLF, TAB/graphemes, protected boundaries, stale revisions and one atomic commit.
-4. Only after valid old/new correspondence beyond endpoints is available should additional anchor survival across fold/substitution, arbitrary source-derived regions or GUI integration be considered. Avoid public `Representation`, `BaseDocument2D` or a second selection owner.
+1. Verify current remote HEADs, read current `rumiai-dev/README.md` mandatory order, active handoff, canonical `TEXT-EDIT.md`, implementation and permanent tests; reconcile any concurrently advancing commits forward-only.
+2. Reuse the existing private raw precommit observation to prove old nonzero `SubstitutionDocument2D` cuts in visible, non-synthetic input content. Respect synthetic occupied regions, copied-label references as display-only dependencies, and ambiguous adjacent marker boundaries. Publish no geometry when original/committed source offsets or revisions mismatch.
+3. Test both physical backends: source edits through or below the substitution, nonzero cuts before/after multiple width-changing labels, TAB/grapheme/CRLF, row insertions, disjoint unsorted batches, protected barriers and missing/stale geometry. Assert one atomic source commit, immutable edit batches and conservative fallback.
+4. Then evaluate old-point observation for nested Cell/Fold/Annotation immediate input chains, and only afterward consider provenance-backed anchor survival. Never introduce a speculative public `Representation`/`BaseDocument2D` or second selection owner.
 
 ## Blockers / open questions
 
-- **No blocker for validated raw/cell/annotation geometry and restricted whole-row fold/substitution mutation geometry.** The next responsibility is proving old nonzero input boundaries (or cross-row inline fold mapping), not guessing from a committed source snapshot; general persistent anchor rebasing remains unimplemented.
+- **No blocker for validated direct raw-backed inline fold and whole-row fold old-point geometry, raw/cell/annotation mapping and restricted substitution boundaries.** The next responsibility is non-boundary substitution old-point capture or safe nested immediate-view precommit, never inference from a committed source; persistent source-anchor rebasing remains unimplemented.
 - **Advanced logical Document2D:** source↔view mapping, nested view composition, grapheme/TAB/wide cells, folded/virtual/source-less regions, regions spanning multiple visual rows, rectangle boundaries intersecting tokens, virtual editability/overlay copy policies, and the output of a richer `getRect` without breaking the raw adapter's published behavior.
 - **Pluggability:** whether/when selection and insertion interpreters should be externally registered or configured (currently three/four built-in modes), mode-switch state and gesture boundaries, duplicate and overlapping targets, reverse-oriented editing and multi-mode `remSelection` semantics. The concrete implementation currently handles the tested mixed-mode case; more general policy remains intentionally deferred.
 - **Performance and validation:** `colCount` revision-cache invalidation still scans every row; `getRect` is bounded but no asymptotic/host evidence for enormous rows; no formal physical-host run of `RawDocument2D` or new editor integration.
