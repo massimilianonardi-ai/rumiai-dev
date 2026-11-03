@@ -74,6 +74,19 @@ The `m` semantic layer/runtime is unchanged. Earlier revision-specific
 it is not new validation of the renamed-source workflow checkouts.
 Refresh `m-os` HEAD before continuing full autonomous validation.
 
+Rename-only CI validation (2026-11-03): the updated `m-mk` and
+`m-jsc` GitHub Actions successfully check out the renamed
+`massimilianonardi-ai/m-os` repository on Ubuntu. Their published
+install/release workflows `41656855078`/`41656855012` (mk) and
+`41657220781`/`41657220779` (jsc) then fail during public
+`pkg-depend`/install because exact `mk@v0.1.0`,
+`jsc@v0.1.0` or `nodejs@v26.8.2` requests cannot be resolved
+by current `m-os/master`. The checkout rename works, but package
+resolution on current master is **not a PASS**; investigate in
+the autonomous package/dependency validation workstream without treating
+this rename-only commit as evidence of a new product change. The
+associated macOS jobs were queued at this checkpoint.
+
 ### Current standalone m full-validation checkpoint (2026-10-26)
 
 The user reiterated that isolated `mk`/`jsc` execution did not meet the task objective: **verify the full autonomous `m` system**. This separate handoff owns full completeness and does not allow a partial PASS to close the project.
