@@ -803,6 +803,54 @@ validate the entire batch before one atomic backing commit. Ambiguous or
 unsupported edits must be rejected instead of silently clipped, redirected
 or partly applied.
 
+### Composition and coordinate correspondence invariants
+
+Every transformed `Document2D` defines a distinct exposed coordinate space
+and translates its accepted operations into the coordinate space of its
+**immediate** input `Document2D`. A chain of transformations does not
+bypass intermediate layers or expose a backing document directly to the
+GUI. A layer must distinguish the visible region geometry returned by
+`getRegions` from the **private** correspondence needed to interpret
+selections and edits. The display stream is not a provenance or
+edit-authorization API: neither a region kind nor the presence of an
+annotation label proves that a region is editable.
+
+Correspondence need not be bijective. One exposed grapheme or TAB cell
+region can cover multiple input code units; an inline fold can concatenate
+pieces from different source rows into one visible row; a protected fold
+marker has no source text; and a zero-width annotation adds visible
+metadata without occupying or owning text. The two exposed boundaries
+of a protected inline marker can refer to **different** input positions.
+They must not be merged into a single source point merely because
+the displayed marker is one indivisible cell. An input point hidden by
+a fold has no valid exposed counterpart.
+
+An accepted selection endpoint must have an unambiguous translation
+through **every** layer. A selected interval may not implicitly include
+input content that is hidden by any layer, even when its endpoints are
+individually representable. The same requirement applies to explicit
+edit intervals. A request whose translation is ambiguous, crosses a
+protected source-less region, or would secretly modify omitted input
+content must be rejected without a partial operation. Valid multiple
+targets remain a *single* `replace(edits, expectedRevision)` batch
+through the layers and ultimately one atomic physical commit.
+`getSelections` and `read()` must not silently relabel hidden source
+content as visible text.
+
+A local display configuration change advances the coordinate revision
+of its layer; downstream composition observes the change and
+invalidates its own captured geometry. Until a correct old/new geometry
+mapping exists, whole-view invalidation and conservative clearing of
+row-indexed source anchors are preferable to retaining stale
+relationships. The existing `getRegions` and `getRect` viewport
+contract remains bounded: a fold is not allowed to force a full
+materialization of omitted source rows.
+
+These are invariants of currently supported compositions, not a claim
+that arbitrary region graphs, occupied source-less edits, a
+public `Representation` abstraction, or persistent source-anchored
+rebasing are implemented.
+
 Direct construction throws `TypeError('Document2D is abstract')`; inherited
 abstract members throw `Error` until implemented by a subclass. The class
 contains no storage, registrations, selection owner, rendering algorithm or
