@@ -368,81 +368,90 @@ escaping or cyclic links. Resource export testing is out of scope.
 - `rumiai-os` and `rumiai-tests` remain frozen and unchanged
   by this work.
 
+- The resumed m-context/v2 environment checkpoint added contract-keyed v2
+  facility-env validation, materialized the existing trusted flat runtime
+  environment view, and tested it through the real public provider-default
+  environment path on Ubuntu. Corrected a global environment selector mismatch:
+  explicitly version-pinned providers must not require a package-class default.
+  The integrated v2 facility-command fixture tests now reject unknown, missing,
+  duplicate and root-escaping environment parameter values. Updated the
+  affected context, facility and integration library manuals in the m branch.
+  The change remains provisional on pkg-schema-v2 until macOS and further
+  provider/service validation complete; no v2 mainline promotion occurred.
+
 ## Current state
 
-Verified 2026-11-03 checkpoint, source HEADs at time of review:
+Checkpoint 2026-11-03, current verified revisions:
 - `m/master@ff55fc9f220f8da3f1f90d1bf4aa2e46c55a5d2a`
-- `m/pkg-schema-v2@9ba8d4ace24a45f02f6e4874bd4785e154fca97b`
+- `m/pkg-schema-v2@dca35bafd1e7ab3993bb9b38e72877b200dfb5b5`
 - `pkg-catalog/main@759127c79c576cacb22ba0c4bb55d4746279e0f3`
-- `pkg-catalog/pkg-schema-v2@4db2ae636009b8a7284a5dc67abcd70eca838330`
+- `pkg-catalog/pkg-schema-v2@b47f3b69f69ff96de73d96cda3a698861d1e1327`
 
-V1 is published and validated for concrete jq package install/launch
-on Ubuntu and macOS with the autonomous m runtime.
+V1 remains published and previously validated for concrete jq install/launch
+on Ubuntu and macOS. V2 is **still unmerged** into the main branches.
+The v2 branch already supports schema-aware `context` command and ordinary
+library views, link/bin direct/wrapped command publication, link/lib
+shell/Java and library-only packages, installed v1/v2 coexistence,
+state-map and fixture-based facility command and service-entry resolution.
 
-V2 is **not merged** into the main branches. Its development implementation
-now includes schema markers, exact v2 `link/bin` direct and wrapper execution,
-`context` views, `link/lib/sh` and `link/lib/java` including
-library-only packages, mixed installed v1/v2 context selection,
-`state-map` backed by the existing managed-state materializer, and
-initial facility command parameterization. Facility command tests
-exercise provider-independent Node.js and full Java 21 contract
-members with a provider-supplied binary directory and synthesized
-`link/bin` mappings. A separate service-entry test exercises an
-Ollama-like fixture's exact `link/bin` start-command resolution;
-it does **not** exercise the complete public srv start/stop or
-host-service lifecycle, nor a real upstream service-provider install.
-Provider environment parameterization and comprehensive real
-provider validation remain open.
+**This checkpoint advances v2 provider environment parameterization:**
+the provider now binds typed values to names declared by the independent
+`facility/<name>/<compatibility>/env` contract under
+`facility-env/<facility>/<variable>`. The v2 conformance validator rejects
+missing/undeclared/duplicate/invalid members. Integration materializes the
+validated bindings into the existing flat installed `facility-env/<facility>`
+representation; `pkg-provider` remains the sole interpreter for applying
+provider environments. `context` still only composes selected command/library
+views. A current generic/global environment selector defect was found and
+fixed: version-pinned selectors do not require package-class defaults,
+whether the candidate is platform-specific or generic.
 
-Most recent catalog CI on the v2 branch: run `41634248851` at
-`pkg-catalog@4db2ae63`, 10 jobs:
-- PASS Ubuntu+macOS: v2 library-only shell/Java JAR and state-map,
-  facility-command Node.js/Java fixture conformance, and v2
-  service-entry fixture command resolution.
-- PASS Ubuntu: real v2 jq direct/wrapped command execution and
-  v1 regression using upgraded runtime.
-- FAIL macOS: v2 jq and v1 regression, both during upstream
-  GitHub release API fetch for jq with HTTP 403 / curl status 56
-  at `https://api.github.com/repos/jqlang/jq/releases/tags/jq-1.8.2`,
-  before package installation. This is a download-stage external
-  failure; not evidence of a v2 layout error or a macOS PASS.
-- Earlier v2 runs did achieve Ubuntu+macOS PASS for real jq and
-  same-store v1/v2 context coexistence, but are revision-specific
-  evidence and must not be relabelled as latest-head PASS.
+**Latest hosted verification:** `pkg-catalog` workflow run
+`41640555343`, exact catalog `b47f3b69` and m `dca35baf`:
+- **Ubuntu PASS 5/5:** real v2 jq direct/wrapped public install/execution;
+  v1 jq regression on upgraded m; v2 library-only shell/JAR fixture;
+  Node.js/Java provider-independent facility-command fixtures,
+  contract-keyed JAVA_HOME environment validation and actual public
+  `pkg provider default` applied in a fresh m shell; v2 Ollama-like
+  exact link/bin service-entry fixture.
+- **macOS not yet assessed at this checkpoint:** the five corresponding
+  jobs were queued when last checked. Do not infer PASS/FAIL.
+- A prior Ubuntu run at m `e84169b8` failed the new Java environment
+  assertion (exit 43). Its investigation revealed the version-pinned
+  selector defect corrected in `dca35baf`; the subsequent exact-revision
+  Ubuntu facility job passes. Preserve this as a correction, not a generic
+  download/network failure.
 
-Existing handoff prior `## Completed` section contains an earlier
-checkpoint and its stale `no v2 PASS` wording. This
-`Current state` section supersedes that checkpoint for task
-status only; promote final durable schema semantics to canonical
-specifications before completion.
+The Java and service checks here use locally constructed provider roots
+and real m integration/provider commands; they are not claims of
+**real catalog-backed Java/Ollama provider installations** or
+full `srv start/stop`/host lifecycle conformance. Previous macOS jq
+network HTTP 403 remains revision-specific external failure evidence.
+No edits to frozen `rumiai-os` or `rumiai-tests`; no branch merge.
 
-No changes to frozen `rumiai-os` or `rumiai-tests` were made for
-this package-schema work, and no v2 mainline merge has occurred.
+Previous Completed/Current state sections preserve prior checkpoints;
+this Current state supersedes older stale 'no v2 PASS' claims.
 
 ## Next action
 
-1. Finish v2 provider environment parameterization and make facility
-   command/service resolution use one authoritative contract with
-   only provider-specific parameter bindings; reject duplicated member
-   schemas in v2 package definitions.
-2. Validate a real facility provider installation and public
-   `pkg provider default`, then the actual `srv start/stop` and
-   host-service lifecycle through exact `link/bin`, preserving
-   HOME, foreground process, runtime instance and provider identity.
-3. Remove external GitHub API-rate-limit ambiguity from macOS
-   reproducibility tests without hiding download/integrity failures,
-   and rerun authentic complete Ubuntu/macOS validation at exact
-   current v2 branch revisions.
-4. Run final schema-specific mixed v1/v2 checks, review docs/manuals
-   and library API consistency, then promote complete stable v2
-   contracts before a coordinated non-force merge.
-Keep package resources deferred to v3+.
-Compare the strict two-tier current range model with a minimal
-explicit defaults/override option before deciding syntax.
-Then stage authorized, coordinated `m` + `pkg-catalog` implementation,
-operational manuals and real public package install/launch tests.
-Only after successful implementation/validation promote stable current
-contracts to `PACKAGE-MODEL.md` and relevant `context` spec.
+1. Inspect and close the exact-revision macOS jobs from workflow
+   `41640555343`; resolve any intrinsic failures and separately report
+   upstream download/rate-limit issues. Rerun appropriately pinned
+   reproducibility checks when needed.
+2. Exercise a real catalog-backed v2 facility provider with public
+   `pkg install` and `pkg provider default`, then complete actual
+   `srv start/stop` and host-supervisor lifecycle through the exact
+   `link/bin` entrypoint, preserving HOME, service foreground state,
+   runtime instance and provider identity.
+3. Resolve/validate v2 PATH contribution ordering and any remaining
+   provider environment precedence issues before final contract promotion.
+   Perform mixed v1/v2 regression, final manual/library interface audit
+   and consistent host-specific validation.
+4. Promote only stable complete v2 semantics into canonical specifications
+   and coordinate a forward-only, non-force merge once acceptance holds.
+   Keep package resource exports deferred to v3+; compare optional
+   range metadata inheritance with the current two-tier model before
+   choosing a descriptor syntax.
 
 ## Blockers / open questions
 
@@ -454,6 +463,6 @@ contracts to `PACKAGE-MODEL.md` and relevant `context` spec.
   scope/precedence and safe checks.
 - Whether stable metadata inheritance pays for its complexity while
   retaining range anchors and `all`/osarch stream selection.
-- Real hosted sh/Java library workflow and catalog-backed consumer
-  validation have not yet been reported PASS for the relevant
-  `m` source revision.
+- The v2 shell/Java library-only fixture has hosted PASS on Ubuntu
+  at this checkpoint; real catalog-backed Java library consumers and
+  real service-provider lifecycle still need independent validation.
