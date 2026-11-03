@@ -1101,34 +1101,36 @@ This fallback never turns a completed physical edit into an error.
 Revision wrap also disables precise projection for that commit.
 
 A `CellDocument2D` can certify old/new text geometry when its
-immediate input is `RawDocument2D`, or a chain of one or more
-zero-width `AnnotationDocument2D` layers whose ultimate input is
-`RawDocument2D`. Such an annotation chain preserves the original
-raw UTF-16 coordinate space, but it owns distinct view revisions.
-The established private annotation identity check admits only that
-chain; an intervening `CellDocument2D`, fold, substitution or other
-nonidentity transform does not qualify merely because it forwards
-precommit points. No additional public `Document2D` interface
-is introduced.
+immediate input is `RawDocument2D`, a chain of zero-width
+`AnnotationDocument2D` layers whose ultimate input is Raw, or
+another `CellDocument2D` whose private old-point observation is
+available and whose committed geometry is independently verified.
+Annotated Raw chains preserve raw UTF-16 coordinates but own distinct
+view revisions. A direct Cell input instead supplies transformed cell
+coordinates, never source offsets. The established private annotation
+identity check admits only a Raw-coordinate chain; an intervening Cell,
+fold or substitution is not raw identity. No public `Document2D`
+interface is added.
 
-In both supported forms, the Cell view subscribes to the private
-`_subscribeBeforeGeometry` hook of its **immediate** input and
-projects old edit boundaries while the old layout exists. For direct
-Raw input the captured original `{row,col,offset}` points must
-match committed raw endpoints. For an annotated Raw input, its
-observation contains only old `{row,col}` points, and the
-`AnnotationDocument2D` chain has already retained and validated
-physical offsets privately against its own postcommit input
-events. The Cell view checks the original old row/column points,
-presence or absence of offsets, immediate-input revision
-continuity, old/new row counts and original batch ordering
-against that input's separately certified committed geometry.
-An observation alone can never certify a completed edit.
-The Cell view independently maps the new endpoints using the
-committed immediate-input layout. Invalid or mismatched old/new
-geometry, a cut inside a grapheme or CRLF terminator, or a revision
-gap suppresses precise geometry without failing an already
-committed source edit.
+For each supported immediate input, the Cell view subscribes to its
+private `_subscribeBeforeGeometry` hook and maps old edit boundaries
+through its own **old** grapheme/TAB layout before the physical edit.
+After commit it compares the observed original immediate-input old
+points, offset presence, revisions, row counts and edit order against
+the immediate input's separately certified committed `geometry`.
+It then projects new boundaries through its own **new** cell layout.
+Direct Raw observations carry source offsets, which must match the
+committed raw batch; annotated Raw and direct Cell observations do not
+carry source offsets. The lower Cell must authenticate its own physical
+source chain before the upper Cell can use its event. A precommit
+observation alone does not certify a successful edit.
+
+Any mismatch, missing old/new evidence, revision discontinuity,
+nonrepresentable grapheme/TAB or source terminator boundary, or
+input-layer inability to certify its own edit suppresses precise
+geometry without failing the committed edit. Each Cell independently
+proves its own transformed coordinate endpoints; raw source offsets
+are never reinterpreted as cell positions.
 
 The private `CellDocument2D._subscribeBeforeGeometry` relay
 continues to publish a detached, deeply frozen snapshot using
@@ -1142,11 +1144,14 @@ physical edits. Every committed coordinate change retains
 `invalidation:{all:true}`: TAB stop reflow and neighboring
 grapheme boundaries can affect cells beyond the edit endpoints.
 
-A `CellDocument2D` above another Cell, or above annotations
-whose coordinate identity passes through a nonidentity input,
-still lacks an authoritative old-point projection; this
-composition must invalidate conservatively. Neither raw source
-offsets nor synthetic annotation labels become edit destinations.
+A `CellDocument2D` directly above another Cell can provide
+precise old/new endpoints only when the lower Cell publishes a
+matching precommit observation and independently certified committed
+geometry. An upper Cell above an annotation chain whose Raw identity
+passes through a nonidentity input, or above an unsupported fold,
+substitution or other transform, still invalidates conservatively
+without edit geometry. Neither raw source offsets nor synthetic
+annotation labels become edit destinations.
 The one atomic physical commit and the one effective selection
 owner remain unchanged. Edit endpoint geometry does not establish
 general persistent rebasing of fold, substitution or annotation
