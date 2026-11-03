@@ -9,7 +9,7 @@ Evolve the historically field-used `m-boot` into a standalone, reusable multiboo
 
 ## Current repository revisions
 
-- `massimilianonardi-ai/Ventoy` branch `m-boot-secondary-uefi`: `56cf2fb7e9da56b6be913dac82dfda46463d3912` (authentic Ventoy EDK2 virtual BlockIo full-CRC FAT32/GPT3 plus ISO-contained EFI StartImage from a real fragmented El Torito ISO PASS in OVMF; actual installers and post-kernel mount NOT tested)
+- `massimilianonardi-ai/Ventoy` branch `m-boot-secondary-uefi`: `20c4eb9fef2835d28fcce2c198be2bd75ae148d1` (CI 41718658250 SUCCESS: published 96 MiB raw GPT boot disk in GRUB2/dist/secondary-usb-uefi, synthetic EFI StartImage from GPT3 ext4 through isolated qcow2 USB source; real Proxmox and operator USB untested)
 - `massimilianonardi-ai/Ventoy` master: `74cff34240dca6991b79c6656770670da7b0c39e` (unmodified fork baseline)
 - `massimilianonardi-ai/m-boot` main: `c06cd35a73b7e420c3a06dc51537c028ffa619d0` (Kali live+forensic menu and GRUB CI; Grml grub_memcpy note; runtime Kali validation pending)
 - `massimilianonardi-ai/rumiai-dev-PoCs` main: `7faa0e496ab41e0c1bf1b0ef1592d5f47cd3543f` (current remote HEAD; this task did not change PoC files or validate its live boot)
