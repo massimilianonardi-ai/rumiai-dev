@@ -1156,16 +1156,41 @@ the entire batch, then invokes `input.replace` exactly once;
 the input retains atomicity and its own validation rules.
 
 Folds are indexed by input row numbers, not persistent source
-anchors. Although the raw document may now publish exact old/new physical
-source-edit endpoints, transforming those changes through arbitrary
-intermediate representations and safely rebasing fold anchors is **not**
-implemented. Therefore **every input coordinate-revision change clears all folds**,
+anchors. **Every input coordinate-revision change clears all folds**,
 increments the folded view revision and emits a conservative
-whole-view geometric invalidation. This includes successful
-edits made through the folded view. Callers must not reuse
-previous folded coordinates after this change. Destroying a
-folded view unsubscribes its listeners but never destroys
-its input document.
+whole-view geometric invalidation, including edits made through
+the folded view. Callers must not reuse captured folded coordinates
+after the change. Destroying a folded view unsubscribes its
+listeners but never destroys its input document.
+
+For the restricted case of **whole-row** folding, the view can
+also forward authoritative pre/post edit geometry when every
+old input endpoint is the **start of a real, visible row** (column
+zero), no old edit interval crosses hidden rows, and the immediate
+input supplies complete, sequential old/new geometry. Projection
+uses the still-installed old fold configuration to map each old
+source row to its previous exposed row. The newly exposed geometry
+has no folds because the same source commit clears the configuration:
+its new endpoints and new row count equal those of the committed
+immediate input. The immutable published `geometry` carries
+`previousRevision` and `revision` in the folded view, old folded
+row count, new unfolded row count, and edits in original source-batch
+order. Its points are detached, frozen `{row,col}` records without
+physical source offsets. The event **always** retains
+`invalidation:{all:true}`.
+
+The column-zero restriction is intentional: a physical source edit
+may report old UTF-16 coordinates inside a CRLF terminator, which
+cannot be validated using the post-edit source alone. Edits with
+other old columns, hidden or traversed folded rows, an inline
+fold, missing/invalid input geometry, revision discontinuity or
+cyclic revision wrap do not publish `geometry`; they still
+commit and invalidate the whole folded view normally. The
+same conservative behavior applies to local fold configuration
+changes, which are not physical text edits. This limited whole-row
+projection does **not** preserve fold configurations or establish
+general old/new mappings through inline or other synthetic
+representations.
 
 The same class also supports **one cross-row inline fold** through
 `setInlineFold({start:{row,col},end:{row,col}})`, with both endpoints
@@ -1222,8 +1247,9 @@ edits, implement multiple inline splices in a single view, or
 provide generic arbitrary-region substitution. The separate
 `AnnotationDocument2D` owns creation of additive overlays;
 `FoldDocument2D` only forwards overlays belonging to visible
-regions. Precise old/new 2D invalidations and general source↔view
-region relations remain open. `BaseDocument2D` and a public
+regions. General old/new mutation geometry for inline folds and
+source↔view region relations remains open. Fine-grained viewport
+invalidations have not been implemented. `BaseDocument2D` and a public
 `Representation` interface remain deferred until their shared
 responsibilities are demonstrated by concrete implementations.
 
