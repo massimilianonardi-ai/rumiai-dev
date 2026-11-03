@@ -118,6 +118,13 @@ All raw data, including auth cookies/tokens, HTTP headers, message payloads, sto
 - Capture appropriate LayerTree/Animation/Media/WebAudio/WebRTC/PerformanceTimeline/Tracing/Preload/BackgroundService/ReportingAPI signals only when present; report their active domains and non-applicability. Prefer low-interference observation before intrusive profiling, and never call mutating CDP methods solely to claim broad API coverage.
 - Test relevant representative media/animation and worker-heavy pages on an actual browser, then operator-host physical execution against consented representative sites. No credential export to source repositories.
 
+### WU-01 implementation checkpoint (2026-11-03)
+
+- Reused the native recorder's `_ResourceArchive` and `_Cdp` responsibilities: added private `cdp-wire.jsonl` at the earliest connected WebSocket boundary. Outgoing command JSON and incoming event/response JSON are stored with sequence and capture timestamp **before** event filtering; this preserves notifications unknown to the existing dispatcher. The ledger uses synchronous file writes (no bounded log queue) and a separate aggregate `resourceCapture.wireCapture` status; write errors and short writes mark the result partial. Only connected, enabled-domain packets are claimed, never events before attachment or from disabled domains.
+- Before starting navigation, `Browser.getVersion` and the loopback `/json/protocol` endpoint are queried. `cdp-capabilities.json` records version, domain/command/event inventory, protocol retrieval outcome and provenance; successful `cdp-protocol.json` preserves the current browser schema and SHA-256. An unsupported/unavailable endpoint is reported rather than replaced with tip-of-tree expectations.
+- Updated `bin/sys/web-analyze` human-readable index and limitations and both affected command/library manuals. Permanent real Chromium regression checks that `Runtime.executionContextCreated` (not explicitly handled by the old dispatcher) survives in raw wire evidence, commands and responses correlate, capability protocol exists, files are 0600 and raw request headers are not copied into redacted network diagnostics. Existing rest-only and opt-in scroll paths remain as before.
+- Chromium CI `41719097541` is PASS on `rumiai-os@8bc6d270` and test revision `3d77187`; subsequent strict-write and private-header assertions were published forward-only, with final CI `41719712596` running at this checkpoint. Do not report full WU-01 validation until that run completes. No operator physical Chromium/real-site test is claimed.
+
 ### Cross-unit validation discipline and completion gate
 
 For **every work unit**: (1) reread latest HEADs and authoritative rules; (2) implement one bounded responsibility; (3) realign corresponding operational manuals in the same work unit; (4) add permanent tests in `rumiai-tests`; (5) pin the tested test HEAD in the existing CI workflow; (6) execute real Node/Chromium fixture tests, preserving run ID and actual outcome; (7) inspect source diff, warning paths, status fidelity, permissions and concurrent changes; (8) update this handoff with completed/blocked state and next action. A passed synthetic local fixture is **not** a passed real external-site or operator-host test. Do not claim total CDP completeness merely because individual feature fixtures pass.
@@ -128,7 +135,7 @@ For **every work unit**: (1) reread latest HEADs and authoritative rules; (2) im
 
 | Work unit | State | Evidence / pending validation |
 | --- | --- | --- |
-| WU-01 | **In progress** | Implement version/protocol acquisition plus raw wire ledger and real Chromium regression |
+| WU-01 | **Implemented; final CI verification in progress** | `rumiai-os@783d0131` (native browser schema/version, full raw CDP packet ledger, short-write detection, manuals/report), `rumiai-tests@cc7ca95a` (Chromium event/command correlation, private HTTP metadata, 0600 files); initial complete Chromium run `41719097541` PASS at `rumiai-os@8bc6d270`; revision-specific final CI run `41719712596` pending |
 | WU-02 | Pending | Target/worker/context graph and nested attach tests |
 | WU-03 | Pending | Durable network body retrieval and edge cases |
 | WU-04 | Pending | Complete DOM mutation chronology |
