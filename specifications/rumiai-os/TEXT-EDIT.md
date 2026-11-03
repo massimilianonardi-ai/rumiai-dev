@@ -815,12 +815,12 @@ selections and edits. The display stream is not a provenance or
 edit-authorization API: neither a region kind nor the presence of an
 annotation label proves that a region is editable.
 
-Correspondence need not be bijective. A grapheme may combine multiple input UTF-16 code units into
-one exposed cell, while a TAB may expand one input code unit into
-multiple display cells; an inline fold can concatenate
-pieces from different source rows into one visible row; a protected fold
-marker has no source text; and a zero-width annotation adds visible
-metadata without occupying or owning text. The two exposed boundaries
+Correspondence need not be bijective. A grapheme may combine multiple
+input UTF-16 code units into one exposed cell, while a TAB may expand
+one input code unit into multiple display cells. An inline fold can
+concatenate pieces from different source rows into one visible row;
+a protected fold marker has no source text, and a zero-width annotation
+adds visible metadata without occupying or owning text. The two exposed boundaries
 of a protected inline marker can refer to **different** input positions.
 They must not be merged into a single source point merely because
 the displayed marker is one indivisible cell. An input point hidden by
@@ -871,8 +871,10 @@ intervals. The helper snapshots each edit record's fields once,
 checks the exposed and immediate-input revisions before and after
 translation, then delegates the complete batch to exactly one
 `input.replace`. It cannot implement a region correspondence
-without the concrete view's mapping rules. `Document`, `FlatDocument`, `PieceDocument`,
-`Selections` and `TextEditSelections` retain their existing contracts.
+without the concrete view's mapping rules.
+
+`Document`, `FlatDocument`, `PieceDocument`, `Selections` and
+`TextEditSelections` retain their existing contracts.
 Concrete consumers now have `RawDocument2D` described below.
 Logical/document-representation adapters, general pluggable mode registries,
 and richer projected content formats are not supplied by the raw adapter.
