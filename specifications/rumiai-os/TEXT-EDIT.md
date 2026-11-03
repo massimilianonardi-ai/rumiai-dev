@@ -1268,26 +1268,48 @@ this view's revision and forwards the complete batch once to
 annotation label by submitting a text edit: a text edit at the same
 coordinate targets the original underlying text, not the overlay.
 
-On any upstream coordinate-revision change, the view clears
-all annotations and increments its own revision, with conservative
-whole-view invalidation. If the immediate input publishes complete
-old/new edit geometry for one continuous input revision, this
-row-preserving, zero-width-overlay layer forwards the immutable edit
-batch into its own unchanged 2D text coordinates. It rewrites only
+On an upstream coordinate-revision change, the view advances its
+own revision and publishes conservative whole-view invalidation.
+If the immediate input publishes complete old/new edit geometry
+for one continuous input revision, this row-preserving,
+zero-width-overlay layer also forwards that immutable edit batch
+in its own unchanged 2D text coordinates. It rewrites only
 `previousRevision` and `revision` to identify the annotation view's
 coordinate revisions; old/new row counts and the physical invocation
 order remain unchanged. Each forwarded endpoint is a detached,
 frozen `{row,col}` point, never a source `offset`, even when the
-input is `RawDocument2D`. The forwarded `geometry` is omitted if
-the input supplies no complete, consistent geometry or has lost
+input is `RawDocument2D`. The forwarded `geometry` is omitted
+if the input supplies no complete, consistent geometry or loses
 revision continuity. Local `setAnnotations` events carry no edit
 geometry, because changing overlays is not a physical text commit.
 
-Forwarded geometry does not prevent local annotations from being
-cleared. In particular, it is not yet a source-anchor rebasing
-algorithm, and a cell edit can reflow TAB stops and neighboring
-graphemes beyond its endpoint spans. Safe preservation of
-unaffected anchors therefore remains deferred. `destroy()`
+Given such exact contiguous input geometry, the annotation layer
+preserves only local anchors with a demonstrably unchanged input
+text prefix and a uniquely determined old/new row displacement.
+This includes anchors in untouched rows, and anchors strictly
+before the first edit on a touched row if no preceding edit has
+touched that row and the reported old/new edit starts agree on
+the corresponding row and column translation. The complete batch
+is considered in source order even when the original edit array
+was unsorted. Original annotation IDs, labels and same-anchor
+ordering survive; each candidate position must pass the same
+row/EOL, indivisible-region and synthetic-fold checks as
+`setAnnotations` against the new input. Anchors on a modified
+span or exactly at an edit start, on a modified-row suffix, or
+without a unique new boundary are discarded. Touching/overlapping
+edit intervals are too ambiguous for this limited rebasing and
+invalidate the local annotation configuration conservatively.
+
+Cell edits may reflow TAB stops and neighboring graphemes beyond
+their reported endpoints. Therefore the annotation layer must
+not translate same-row suffix anchors with a simple cell-column
+delta, even when the edit appears disjoint from an anchor. Missing
+geometry, revision discontinuity, invalid correspondence or
+unsupported synthetic boundaries clear all affected local anchors
+conservatively without rejecting the committed source edit.
+The view still emits `invalidation:{all:true}` even if some
+annotations survive; this limited survival is not a general
+persistent source-anchor rebasing mechanism. `destroy()`
 unsubscribes the view while leaving the input alive.
 `CellDocument2D` additionally passes through zero-width
 annotations below it, remapping anchors to cell coordinates;
@@ -1297,9 +1319,10 @@ would split a logical grapheme can be valid in the raw coordinate
 space but is rejected by a downstream cell transform, never
 silently snapped.
 
-This first implementation does **not** reserve layout cells,
-render inline badges, implement annotation hit-testing, attach
-persistent/rebased source anchors, or make annotation text editable.
+This implementation does **not** reserve layout cells, render
+inline badges, implement annotation hit-testing, provide general
+source-anchored rebasing across arbitrary transformations, or make
+annotation text editable.
 The general semantics of occupied source-less regions, overlapping
 editable projections and precise 2D invalidation remain open.
 Neither `BaseDocument2D` nor a public `Representation` interface
