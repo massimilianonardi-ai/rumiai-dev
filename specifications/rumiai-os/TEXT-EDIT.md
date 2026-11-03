@@ -815,8 +815,9 @@ selections and edits. The display stream is not a provenance or
 edit-authorization API: neither a region kind nor the presence of an
 annotation label proves that a region is editable.
 
-Correspondence need not be bijective. One exposed grapheme or TAB cell
-region can cover multiple input code units; an inline fold can concatenate
+Correspondence need not be bijective. A grapheme may combine multiple input UTF-16 code units into
+one exposed cell, while a TAB may expand one input code unit into
+multiple display cells; an inline fold can concatenate
 pieces from different source rows into one visible row; a protected fold
 marker has no source text; and a zero-width annotation adds visible
 metadata without occupying or owning text. The two exposed boundaries
