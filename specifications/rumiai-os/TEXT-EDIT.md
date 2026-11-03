@@ -1103,11 +1103,11 @@ Revision wrap also disables precise projection for that commit.
 The grapheme/TAB projection itself is limited to direct raw-to-cell
 composition. A downstream `AnnotationDocument2D` can forward those
 old/new cell endpoints unchanged because its overlays occupy no cells.
-Nested cell and substitution transformations still lack a
-pre/post mapping of their own. Whole-row folding has only the
-restricted row-start projection described below; inline folding
-still lacks such a mapping. All these views retain conservative
-invalidation, and this geometry does not yet prove persistent
+Nested cell transformations still lack a pre/post mapping of their
+own. Whole-row folding and substitution views have the restricted
+projections described below; inline folding still lacks such a
+mapping. All these views retain conservative invalidation, and
+edit endpoint geometry does not establish general persistent
 rebasing of fold or substitution anchors.
 Neither `BaseDocument2D` nor a public `Representation` interface is
 introduced by this implementation.
@@ -1311,9 +1311,17 @@ if the input supplies no complete, consistent geometry or loses
 revision continuity. Local `setAnnotations` events carry no edit
 geometry, because changing overlays is not a physical text commit.
 
-Given such exact contiguous input geometry, the annotation layer
-preserves only local anchors with a demonstrably unchanged input
-text prefix and a uniquely determined old/new row displacement.
+Given such exact contiguous input geometry from a direct
+`RawDocument2D` or `CellDocument2D` input, or from a chain
+consisting of those views and zero-width `AnnotationDocument2D`
+layers, the annotation layer can preserve local anchors with a
+demonstrably unchanged input text prefix and a uniquely determined
+old/new row displacement. Geometry from a fold or substitution
+view that clears a nonidentity configuration is **not** sufficient
+to prove anchor continuity on other rows or columns. Annotations
+above such a view, including through additional annotation
+layers, clear their local anchors on upstream coordinate changes
+even if edit endpoint `geometry` is forwarded unchanged.
 This includes anchors in untouched rows, and anchors strictly
 before the first edit on a touched row if no preceding edit has
 touched that row and the reported old/new edit starts agree on
@@ -1329,7 +1337,9 @@ edit intervals are too ambiguous for this limited rebasing and
 invalidate the local annotation configuration conservatively.
 
 Cell edits may reflow TAB stops and neighboring graphemes beyond
-their reported endpoints. Therefore the annotation layer must
+their reported endpoints. Clearing a fold or occupied substitution
+can additionally move unedited rows or columns outside every
+reported edit span. Therefore the annotation layer must
 not translate same-row suffix anchors with a simple cell-column
 delta, even when the edit appears disjoint from an anchor. Missing
 geometry, revision discontinuity, invalid correspondence or
@@ -1441,10 +1451,44 @@ revision and publishes conservative
 `{type:'content',invalidation:{all:true}}`. **Any upstream
 coordinate-revision change clears all substitutions**, including
 derived source relationships, advances this view's revision and
-invalidates previous coordinates. Persistent source anchoring
-would require accurate old/new 2D change geometry, which is not
-yet provided. `destroy()` leaves the input alive.
-Bounded viewport reads do not materialize hidden input spans.
+invalidates previous coordinates. A complete and contiguous
+immediate-input old/new edit batch can also be projected through
+the *old* substitution configuration, before that configuration
+is cleared. This deliberately limited projection accepts an old
+endpoint only at the start of an existing input row (`col:0`),
+or at one **unique, recorded** source boundary of an occupied
+substitution interval. The latter maps to the old displayed start
+or end of that synthetic region, including any cumulative width
+changes caused by earlier substitutions on the same row. A cut
+shared by adjacent substitutions has multiple display
+representations and is rejected. No old endpoint may lie inside
+a replaced interval, and the original source-edit span cannot
+cross any protected substitution interval, even when the
+physical edit originated from a different view.
+
+New endpoints are validated against the committed immediate
+input's real EOL, because the substitutions have been cleared.
+The published detached, frozen `geometry` contains the old
+substituted row count, new input row count, old/new `{row,col}`
+endpoints, the substitution view's continuous
+`previousRevision`/`revision`, and the physical edit batch's
+original order. No source offsets or copied-label source
+locations are exposed as editable destinations. The event
+**always** retains `invalidation:{all:true}`. Local
+`setSubstitutions` events carry no text-edit geometry.
+
+Other old columns cannot be proven using postcommit source
+geometry alone: in particular, a raw UTF-16 column may be inside
+a CRLF terminator or a displayed grapheme. Missing/invalid
+input geometry, revision discontinuity or wrap, ambiguous
+boundaries and protected spans therefore suppress `geometry`
+without failing the committed source edit. The entire
+substitution configuration still clears normally. Edit endpoint
+projection does **not** prove persistence of annotations above
+the disappearing substitution view, or automatic rebasing of
+occupied and derived source relationships. `destroy()` leaves
+the input alive. Bounded viewport reads do not materialize
+hidden input spans.
 
 This implementation demonstrates *read-only* many-to-one and
 one-to-many derivation, but not an editable general many-to-many
