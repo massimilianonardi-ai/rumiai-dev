@@ -383,7 +383,7 @@ escaping or cyclic links. Resource export testing is out of scope.
 
 **Resume/validation checkpoint (2026-11-03, after repository rename):**
 `m-os/master@ff55fc9f220f8da3f1f90d1bf4aa2e46c55a5d2a`,
-`m-os/pkg-schema-v2@8c8397dbcf1df44822553aebd1891ab6db880945`,
+`m-os/pkg-schema-v2@d11363856ee06f32eadd7b2b3cb89ae390ef7ac3`,
 `pkg-catalog/main@35b230d44d9e45ad2fb1e7473a838f5a485cf81a`.
 The renamed-source v2 matrix run `41656568757` is now **10/10 PASS**
 (5 Ubuntu and 5 macOS), including real jq acquisition and v1 regression;
@@ -394,9 +394,16 @@ final provider query assertion, not on the product behavior already reached.
 `pkg-catalog/pkg-schema-v2@0ec577773b08721ca974ed13d187b34a7523d868`
 repairs only that test syntax (single closing `]`). New Node.js workflow
 run `41717928682` was queued when last inspected; do not mark PASS until
-both host jobs finish successfully. No `m-os` product change or mainline
-v2 merge was made in this checkpoint. The next real product-validation
-boundary is host supervision and unresolved v2 PATH/provider precedence.
+both host jobs finish successfully. A further test-only commit
+`m-os/pkg-schema-v2@d11363856ee06f32eadd7b2b3cb89ae390ef7ac3`
+extends mixed v1/v2 `context` assertions to most-recent-first PATH
+ordering, re-selection and idempotence without changing product code.
+`pkg-catalog/pkg-schema-v2@e15c350ee1ec288a4a544a7cc850edccec437e6c`
+re-pins all five jobs in the v2 matrix to that exact updated runtime.
+Matrix run `41718659259` was queued when inspected and has no PASS yet.
+No `m-os` product change or mainline v2 merge was made in this
+checkpoint. Host supervision and provider environment precedence remain
+unvalidated.
 
 **Current repository and v2 execution checkpoint (2026-11-03):**
 
@@ -495,10 +502,11 @@ this Current state supersedes older stale 'no v2 PASS' claims.
 
 ## Next action
 
-1. Inspect the new Node.js matrix run `41717928682` at exact catalog
-   `0ec57777` after it completes; record Ubuntu and macOS results separately.
-   The previously blocked macOS jq matrix is now confirmed PASS at run
-   `41656568757` and needs no speculative rerun.
+1. Inspect Node.js matrix `41717928682` at catalog `0ec57777`, and
+   the full v2 matrix `41718659259` at catalog `e15c350e` with pinned
+   m-os `d1136385`. Record both host outcomes separately and investigate
+   any genuine failure before promoting v2. The earlier macOS jq matrix
+   is PASS at `41656568757` and needs no speculative rerun.
 2. Extend the passed real catalog-backed v2 Node.js and Ollama normal
    paths to host-supervisor lifecycle on supported hosts, preserving
    HOME, exact provider identity, foreground process ownership and
