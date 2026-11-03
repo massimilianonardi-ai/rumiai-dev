@@ -1105,11 +1105,12 @@ composition. A downstream `AnnotationDocument2D` can forward those
 old/new cell endpoints unchanged because its overlays occupy no cells.
 Nested cell transformations still lack a pre/post mapping of their
 own. Whole-row folding and substitution views have the restricted
-projections described below. An inline fold directly above a raw
-document can additionally capture exact old physical edit
-boundaries before commit; an inline fold above a cell or other
-nested view still has no such old-point observation. All these
-views retain conservative invalidation, and edit endpoint
+projections described below. A fold or substitution view directly
+above `RawDocument2D` can additionally capture exact old physical
+edit boundaries before commit, including nonzero columns in visible
+source content. An inline fold or substitution above a cell or
+other nested view lacks an equivalent private old-point observation.
+All these views retain conservative invalidation; edit endpoint
 geometry does not establish general persistent rebasing of
 fold or substitution anchors.
 Neither `BaseDocument2D` nor a public `Representation` interface is
@@ -1475,41 +1476,62 @@ coordinate-revision change clears all substitutions**, including
 derived source relationships, advances this view's revision and
 invalidates previous coordinates. A complete and contiguous
 immediate-input old/new edit batch can also be projected through
-the *old* substitution configuration, before that configuration
-is cleared. This deliberately limited projection accepts an old
-endpoint only at the start of an existing input row (`col:0`),
-or at one **unique, recorded** source boundary of an occupied
-substitution interval. The latter maps to the old displayed start
-or end of that synthetic region, including any cumulative width
-changes caused by earlier substitutions on the same row. A cut
-shared by adjacent substitutions has multiple display
-representations and is rejected. No old endpoint may lie inside
-a replaced interval, and the original source-edit span cannot
-cross any protected substitution interval, even when the
-physical edit originated from a different view.
+the *old* substitution configuration before it is cleared.
 
-New endpoints are validated against the committed immediate
-input's real EOL, because the substitutions have been cleared.
-The published detached, frozen `geometry` contains the old
+Without an old-source observation, an old endpoint is provable
+only at the start of an existing input row (`col:0`), or at one
+**unique, recorded** source boundary of an occupied substitution
+interval. Such a boundary maps to its previous displayed start
+or end, including cumulative width shifts from preceding
+substitutions in that row. A cut shared by two adjacent occupied
+regions has different possible displayed endpoints and is
+rejected.
+
+For `SubstitutionDocument2D` directly above `RawDocument2D`,
+the existing private source `_subscribeBeforeGeometry` bridge
+captures the original raw `{row,col,offset}` endpoints
+**before** the physical source changes. Each old cut must be
+on a real input row at or before its old EOL and outside the
+interior of every protected occupied interval; a shared
+synthetic boundary remains ambiguous. Each source-edit
+interval must avoid all occupied source content, even if the
+edit originated in a layer below the substitution view. Valid
+old endpoints are projected through the old substitution map,
+including nonzero columns **before, between and after** multiple
+width-changing synthetic regions. The staged old row/column
+positions and physical offsets must match the committed raw
+geometry in the original batch order. Source fragments copied
+into derived labels remain display dependencies, never edit
+destinations.
+
+After the source commit, the substitution configuration is
+cleared. New endpoints are validated against the committed
+immediate input's real EOL and published without old display
+offsets. The detached, frozen `geometry` contains the old
 substituted row count, new input row count, old/new `{row,col}`
-endpoints, the substitution view's continuous
-`previousRevision`/`revision`, and the physical edit batch's
-original order. No source offsets or copied-label source
-locations are exposed as editable destinations. The event
-**always** retains `invalidation:{all:true}`. Local
+endpoints, the substitution view's own continuous
+`previousRevision`/`revision`, and the original physical
+edit invocation order. No raw source offsets or copied-label
+source locations are exposed as editable destinations. The
+event **always** retains `invalidation:{all:true}`. Local
 `setSubstitutions` events carry no text-edit geometry.
 
-Other old columns cannot be proven using postcommit source
-geometry alone: in particular, a raw UTF-16 column may be inside
-a CRLF terminator or a displayed grapheme. Missing/invalid
-input geometry, revision discontinuity or wrap, ambiguous
-boundaries and protected spans therefore suppress `geometry`
-without failing the committed source edit. The entire
-substitution configuration still clears normally. Edit endpoint
-projection does **not** prove persistence of annotations above
-the disappearing substitution view, or automatic rebasing of
-occupied and derived source relationships. `destroy()` leaves
-the input alive. Bounded viewport reads do not materialize
+Without direct raw precommit observation, old nonzero
+columns other than a uniquely recorded substitution boundary
+remain unverified, even if an intermediate view supplies its
+own post-commit mutation endpoints. CRLF terminator interiors,
+hidden or crossing intervals, ambiguous shared cuts,
+missing/inconsistent pre/post geometry, revision discontinuity
+and wrap suppress `geometry` without failing an already
+committed physical edit. When precommit preparation fails, a
+separately provable row start or unique recorded boundary may
+still use the restricted mapping. The whole substitution
+configuration still clears normally. Edit endpoint projection
+does **not** prove persistence of annotations above the
+disappearing substitution view or automatic rebasing of
+occupied and derived source relationships. `destroy()`
+unsubscribes its private observer when present and leaves the
+input alive. Bounded viewport reads do not materialize
 hidden input spans.
 
 This implementation demonstrates *read-only* many-to-one and
