@@ -999,7 +999,9 @@ be established after a committed edit, the raw content event omits
 `geometry` while still publishing conservative whole-view invalidation;
 the physical commit is never reported as failed because metadata could
 not be derived. Revision wrap from `Number.MAX_SAFE_INTEGER` to `0`
-retains the established loss-of-continuity semantics. The raw adapter continues publishing whole-view invalidation. A directly
+retains the established loss-of-continuity semantics.
+
+The raw adapter continues publishing whole-view invalidation. A directly
 composed `CellDocument2D` can now project supported raw pre/post edit
 endpoints through an internal pre-commit observation. No fine-grained
 viewport invalidation, replay log, downstream fold/annotation/substitution
@@ -1064,7 +1066,9 @@ Selection/mode events do not advance the view-coordinate revision.
 `destroy()` unsubscribes this view but does not destroy its input.
 
 This concrete class is deliberately limited to grapheme/TAB
-geometry. A cell view directly over `RawDocument2D`, backed by the current
+geometry.
+
+A cell view directly over `RawDocument2D`, backed by the current
 `_DocumentStore`, observes the physical edit through an internal
 pre-commit hook while the old source still exists. After that edit
 commits, it projects the new endpoints from the new source geometry.
