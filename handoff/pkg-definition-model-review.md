@@ -381,6 +381,13 @@ escaping or cyclic links. Resource export testing is out of scope.
 
 ## Current state
 
+**V2 host-supervision validation checkpoint — 2026-11-03 (latest):**
+- Current technical branch under test: `m-os/pkg-schema-v2@d11363856ee06f32eadd7b2b3cb89ae390ef7ac3`; production `m-os/master` was not changed.
+- `pkg-catalog/pkg-schema-v2@0a840c126a07e63b99c7bf0066bedcfb439b5edf` adds an independent real Ollama `srv host system` Ubuntu GitHub-hosted test and re-pins the portable Ollama test to exact current m-os. The new Node.js workflow pin was synchronized to this runtime in catalog commit `04c66fdfe21dd147e75fe2712a8655a4a41710d0`. Earlier host workflow commits `151c0793`/`04c66fdf` had invalid YAML job indentation; the corrected `0a840c12` workflow is the tested revision.
+- Workflow **`41719853510` PASS 2/2 Ubuntu jobs**, at exact catalog `0a840c12` and m-os `d1136385`: real catalog-backed v2 Ollama portable `srv start/stop` job `126209423892` PASS; real disposable-runner **systemd system host-supervision** job `126209423383` PASS. The latter validates pre-existing non-root account, real exact-pinned service install, enabled-but-not-started state, dedicated system package HOME ownership/mode, actual responsive non-root process, restart/stop, rejected start after clearing provider default, uninstall and retained HOME. The log contains the expected `provider-resolution-failed` diagnostic on deliberately invalid start.
+- `m-os` product code, `pkg-catalog/main`, frozen `rumiai-os` and `rumiai-tests` were not changed by this work unit. No merge was performed. These runs are GitHub-hosted Ubuntu execution evidence, **not physical Ubuntu ARM64 or macOS host-supervision validation**. User-host lifecycle, host-system macOS, and provider-precedence edge cases remain unvalidated.
+- Node.js matrix `41719785578` (catalog `04c66fdf`, runtime `d1136385`) and general v2 matrix `41718659259` (catalog `e15c350e`, runtime `d1136385`) were still queued at last check; do not claim PASS.
+
 **Resume/validation checkpoint (2026-11-03, after repository rename):**
 `m-os/master@ff55fc9f220f8da3f1f90d1bf4aa2e46c55a5d2a`,
 `m-os/pkg-schema-v2@d11363856ee06f32eadd7b2b3cb89ae390ef7ac3`,
@@ -502,11 +509,14 @@ this Current state supersedes older stale 'no v2 PASS' claims.
 
 ## Next action
 
-1. Inspect Node.js matrix `41717928682` at catalog `0ec57777`, and
-   the full v2 matrix `41718659259` at catalog `e15c350e` with pinned
-   m-os `d1136385`. Record both host outcomes separately and investigate
-   any genuine failure before promoting v2. The earlier macOS jq matrix
-   is PASS at `41656568757` and needs no speculative rerun.
+1. Inspect the updated real Node.js matrix `41719785578` at
+   catalog `04c66fdf` and the full v2 matrix `41718659259` at
+   `e15c350e`, both pinned to m-os `d1136385`; record host-specific
+   results before declaring broader cross-host v2 coverage.
+2. Extend real `srv host user` supervision validation on actual
+   available systemd-user/launchd sessions, and system-host macOS where
+   a controlled non-root account/administrative runner is available. Do
+   not imply Ubuntu GitHub-hosted system supervision proves those paths.
 2. Extend the passed real catalog-backed v2 Node.js and Ollama normal
    paths to host-supervisor lifecycle on supported hosts, preserving
    HOME, exact provider identity, foreground process ownership and
