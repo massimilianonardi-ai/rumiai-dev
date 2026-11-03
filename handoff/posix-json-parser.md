@@ -5,16 +5,18 @@ Updated: 2026-11-03
 
 ## Goal
 
-Implement a standalone, strictly POSIX `#!/bin/sh` JSON parser command in `rumiai-os/bin/sys/`, independently rewritten with RFC 8259 / ECMA-404 syntax coverage, permanent tests and the matching operational manual.
+Evolve the standalone POSIX `bin/sys/json` utility into a genuinely useful JSON **query** command, with `jq` as CLI/filter-language reference. Strict JSON parsing/validation is an underlying correctness obligation, not the product's primary purpose. The originally published validator/compactor is an implemented starting point, not an accepted final user workflow.
 
 ## Current repository revisions
 
-- `rumiai-dev`: `34402c8d6566e519b6b8ddaf0b1724bb4fc0d5a0` (before this checkpoint)
-- `rumiai-os`: `53bac942ff9552de1770d7439dd2d547017aa9ea` (parser blob unchanged: `f7cb24574f473565245fc8ba3757d4c5bb7f5f74`)
-- `rumiai-tests`: `0333818b7ab0b90203c6e43ee271bd58b958be0a`
-- `nst/JSONTestSuite`: `1ef36fa01286573e846ac449e8683f8833c5b26a`
+- `rumiai-dev`: `b85844662af1474e5dee3e03c1633a2af1f769e8` (before this design checkpoint)
+- `rumiai-os`: `220b2b1d564845f3b0cb90e972ca59ce1dfbfef0` (`bin/sys/json` blob `f7cb24574f473565245fc8ba3757d4c5bb7f5f74`, unchanged)
+- `rumiai-tests`: `04b684a83277e1c5a30d731e7c6a56b90835bdc7`
+- `ryncsn/poorjson.sh`: `1bf9a1894b99732ac03d64ef0a2b645166cfb2d5`
+- `pystardust/jsp`: `94e7b4a371b823786cc60431af7ddb68caf6a68b`
+- `jqlang/jq`: `5c001b18d7237cce1fdba63608732163f978dd23`
 
-All repository HEADs were checked before and after validation. These are task evidence, not a substitute for future fresh retrieval.
+Verify fresh HEADs before future work; these are only the revisions used for this comparison.
 
 ## Applicable canonical sources
 
@@ -31,24 +33,33 @@ All repository HEADs were checked before and after validation. These are task ev
 
 ## Fixed task-local choices
 
-- Command identity: `json`, source `bin/sys/json`, shebang `#!/bin/sh`.
-- Standalone POSIX utility with `od` and `awk` as POSIX utility dependencies, not dependent on `m_ROOT`.
-- The existing `lib/sys/sh/json.lib.sh` API and tests remain unchanged.
-- Accept JSON documents of any root type, preserve number lexemes, duplicate member names and raw valid UTF-8, reject invalid UTF-8 and non-JSON tokens.
-- Use a nonrecursive container parser; stage output so that a malformed document never leaks partial successful output.
+- The user has explicitly corrected the product goal: `json` must query JSON, not merely validate/compact; CLI design must use `jq` as the primary reference and account for `poorjson.sh` and `jsp`.
+- Command path/identity remains `bin/sys/json`, native `#!/bin/sh`, pure POSIX implementation requirement from original request.
+- Strict JSON parsing and UTF-8 checks remain important underlying protections; the existing dedicated `lib/sys/sh/json.lib.sh` is a different, specialized extraction API and was not changed.
+- No new query CLI, options, filter language or output semantics have yet been accepted as canonical. The existing `json -c` means check, conflicting with `jq -c` compact; treat this as a migration/design mismatch requiring explicit resolution rather than a durable contract.
 
 ## Acceptance scenarios
 
-- Pipe a valid JSON document to `json` and receive an equivalent compact JSON document.
-- Run `json -c` to check the whole document without output and distinguish accepted versus rejected documents by exit status.
-- Pass an explicitly selected readable file with `json -- file`; reject malformed or unreadable files without output.
-- Accept escaped Unicode, UTF-8, large exact numeric lexemes and deeply nested arrays/objects, but reject truncated strings, malformed escapes/numbers, trailing data and illegal UTF-8.
+- Extract a nested value from stdin or a file using an intuitive filter, e.g. `.user.name`.
+- Select array elements/indexed values and obtain multiple query results, with JSON output or raw string output for shell pipelines.
+- Distinguish missing keys, empty results, invalid JSON, malformed queries and I/O failures; quoted/escaped Unicode keys must match semantically.
+- Keep robust UTF-8/grammar validation, deep nesting behavior and standalone POSIX execution through the real public command.
 
 ## Working design
 
-The external references are illustrative rather than implementation dependencies: `poorjson.sh`, `jsp`, `nst/JSONTestSuite`. JSONTestSuite `y_` and `n_` groups should be checked where practical; `i_` intentionally leaves some behavior implementation-defined.
+Current comparison proposes (NOT PROMOTED) a jq-shaped CLI:
+
+```text
+json [options] [filter] [file ...]
+json --check [file ...]      # local extension, rather than old -c
+```
+
+Candidate compatibility priorities: `.`, `.key`, `.[index]`, `.["escaped key"]`, chained selectors, `.[]`, optional access, `|`, `,`; multiple JSON results; `-r` raw strings, `-c` compact JSON, `-e` output-based status, `-f` filter source, ordinary stdin/files and `--` termination. jq's `-s`, `-n`, `-R`, `--arg`, `--argjson`, predicate/select, comparison and function language require explicit feature-boundary decisions; do not claim full jq compatibility for a subset. A default `.` identity and pretty output are candidate jq-aligned defaults. The current single-document, all-or-nothing staging model may need revision to support multi-document streams and pipeline usability. Query keys require actual Unicode escape decoding and duplicate-key selection semantics must be defined. Existing shell library does not currently cover these general querying semantics.
+
+The analysis and CLI comparison are complete enough to discuss and choose the bounded supported language; no product changes authorized by this design step were made.
 
 ## Completed
+- 2026-11-03: Compared current upstream `jq`, `ryncsn/poorjson.sh` and `pystardust/jsp` CLI/source against current published `json`; reproduced specific shell escape, array, malformed-input and missing-key differences; identified the user-goal mismatch. Analysis only, no product/manual/test changes in this response.
 
 - Verified all involved remote HEADs and current canonical rules/specifications; reviewed existing specialized JSON shell library, its tests, command layout and manual model.
 - Analysed `ryncsn/poorjson.sh`, `pystardust/jsp`, and `nst/JSONTestSuite` as external references.
@@ -63,12 +74,15 @@ The external references are illustrative rather than implementation dependencies
 
 ## Current state
 
-`JSONTestSuite` conformance validation is complete for the exact pinned parser revision: all 283 strict expectations passed; all 35 optional cases were exercised. The actual GitHub-hosted workflow completed successfully. This is a focused external parsing-acceptance check (`-c` mode), not a formal `rumiai-validate` product session, exhaustive proof of all JSON-related behavior, or physical validation on the stable macOS/Ubuntu ARM64 hosts.
+Strict parsing is implemented and previously passed all 283 obligatory JSONTestSuite cases (`rumiai-tests` run `41605872966` against parser revision `53bac942...`). Query functionality does **not** exist yet. Current command's `-c` is validation-only, unlike jq.
+
+Comparative source read and auxiliary behavior probes used exact `poorjson.sh` and `jsp` Git blobs verified by `git hash-object`. Observed: `poorjson.sh` provides positional traversal and wildcard but `echo` on dash corrupts JSON backslash escapes and semantically equivalent escaped object keys do not match. `jsp` provides dot-path lookup but gives malformed output for nonempty arrays/escaped quotes and accepts malformed JSON (e.g. trailing comma or invalid escape). This is auxiliary Linux evidence, not a cross-platform certification. No bug in the RumiAI parser grammar was established by this comparison; the critical defect is the missing user-facing query capability.
 
 ## Next action
 
-For future parser modifications, update the workflow pinned parser commit and rerun the corpus. When broader parser closure is authorized, validate the emitted compact JSON values and undertake any required revision-bound `rumiai-validate` / physical host validation. This request's JSONTestSuite parsing check requires no further action.
+Settle the query CLI/filter-language compatibility boundary and precise observable semantics (options, jq-like filter subset, result cardinality, Unicode keys, duplicate names, stdin/multiple documents, no-match behavior, statuses). Once accepted, promote the contract into the appropriate current `rumiai-dev` specification, then implement it coherently in `bin/sys/json`, realign operational manual and permanent tests, and rerun relevant JSONTestSuite validation.
 
 ## Blockers / open questions
 
-None for the requested JSONTestSuite parsing check. Complete cross-host product validation and transform-output equivalence are distinct, unperformed validation levels; no evidence for them is claimed here.
+- How far to align the pure-POSIX query language with jq: read-only path selectors only, a meaningful jq-like subset including filters/composition, or complete jq language (large separate effort)?
+- Whether default output/input-stream behavior and `-e` exit codes should exactly emulate jq, versus retaining some existing single-document/atomic-output semantics. `-c` collision must be resolved deliberately.
