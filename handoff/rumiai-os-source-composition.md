@@ -1783,6 +1783,13 @@ resolve those questions or start implementation in the present unit.
 
 ## Next action
 
+**Related specialized pkg-definition work:** The comprehensive
+`pkg-catalog` definition-schema review and any coordinated
+`link/bin` / `link/lib` catalog-runtime migration are independently
+owned by `handoff/pkg-definition-model-review.md`. This source-
+composition handoff retains only that relationship; avoid duplicating
+its working schema, migration decisions or validation state here.
+
 **Additional context/library work:** Validate the published `m`
 sh/Java library exports on the real hosted workflow and then through
 one real catalog-backed package installation/consumer where an
