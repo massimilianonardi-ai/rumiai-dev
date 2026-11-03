@@ -26,6 +26,18 @@ Full functional validation of the autonomous `m` source is independently tracked
 
 ## Current repository revisions
 
+Repository identity checkpoint (2026-11-03): the GitHub source repository
+formerly `massimilianonardi-ai/m` is now
+`massimilianonardi-ai/m-os`. The GitHub rename retained `master` and
+`pkg-schema-v2`, whose verified HEADs were
+`ff55fc9f220f8da3f1f90d1bf4aa2e46c55a5d2a` and
+`8c8397dbcf1df44822553aebd1891ab6db880945` respectively.
+The technical `m` layer and runtime command retain their names. The
+pre-rename `m/master` and `massimilianonardi-ai/m` strings in historical
+physical/CI evidence below denote that same repository at its old URL,
+not a current second repository. Future source retrieval must target
+`m-os` and verify its current remote HEAD.
+
 - 2026-11-02 library-view PoC and correction: `rumiai-dev-PoCs/main` verified at `b87cf52982c1c27cd149caabb7c3339c6791ae12`; `m/master` verified at `28b170feb7e28e0d3ae023b01ef04a8cceeebbc6`; `pkg-catalog/main` verified at `acdcd66a60c06f368c8e313f850b86d76f4bf1ae` before the experiment; during final consistency recheck pkg-catalog/main had advanced to `17a08adc0bb5bf708d3357d1f5e70d5110cdc9cc`. Its current top-level pkg/facility namespaces were reread, and no catalog files were edited in this task. Refresh all HEADs on resumption.
 
 Last verified on 2026-10-24:
