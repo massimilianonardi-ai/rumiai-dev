@@ -267,16 +267,12 @@ service-contract change. Preserve foreground process lifecycle,
 host-supervisor, recorded instance identity, state scope and
 package launcher environment/privilege guarantees.
 
-**Routing descriptor name.** The current `var/<area>` files map
-specified useful-root relative paths to static system-scoped mutable
-state, including factory/default initialization. `var` is
-misleading as a *descriptor* because it need not correspond to a
-physical `root/var` directory. Bare `map` would be too generic:
-prefer a responsibility-specific candidate such as `state-map/<area>`
-(or `state-link/<area>` if link creation is chosen as the defining
-semantic), while leaving existing managed `state-path` semantics
-and v1 `var` descriptors unchanged. The v2 exact name and any
-state-map syntax are still under review.
+**Routing descriptor name.** The user agreed to `state-map/<area>`
+for v2. It describes the existing static system-scoped routing of
+specific useful-root paths into managed mutable state, including
+factory/default initialization. The v1 `var/<area>` definition
+remains unchanged. Do not reinterpret this as a generic map or as
+dynamic user-state routing. V2 schema implementation remains pending.
 
 **Resources deferred.** Resources remain distinct from libraries.
 No package resource-export descriptor or `link/res` materialization
@@ -301,25 +297,73 @@ escaping or cyclic links. Resource export testing is out of scope.
 - Inventoried current package descriptors, compared common real
   package variants with `m` code and identified existing reusable
   responsibilities and path consumers.
-- Prepared working design only. No `m` runtime, `pkg-catalog`
-  package definition, installed concrete, or frozen repository changed.
-  No tests run: this checkpoint is source/schema analysis only.
+- Implemented the first production migration unit, **v1 catalog
+  relocation**, with no altered package/facility definition blob:
+  `pkg-catalog/main@334506291aa9ce47a4d93323e7c97d0424ffb494`
+  moved the former top-level `pkg/` and `facility/` trees
+  under `v1/` by reusing their exact Git tree SHAs.
+  `sync-version-history.mjs` and its workflow now use `v1/pkg`.
+- `m/master@11e92a17b85c6511324b83cd82b45a6b2be532f9`
+  teaches `pkg_catalog_init` to return the definition root
+  `catalog/v1` while preserving support for a genuinely
+  unversioned legacy catalog snapshot; it validates and rejects
+  mixed flat-and-v1 shapes. Updated its library manual in the
+  same commit. A new v1-specific validation workflow was
+  published in `m@ff55fc9f220f8da3f1f90d1bf4aa2e46c55a5d2a`.
+- The current `PACKAGE-MODEL.md` was realigned in
+  `rumiai-dev@a7c6394890ff364f4316897ccab6f8631a715291`
+  to document current v1 root selection and the explicit
+  pre-versioning fallback. V2 candidate semantics remain here
+  in this handoff, not in that current v1 specification.
+- Catalog CI workflow path filters were adjusted for `v1/pkg`;
+  `pkg-catalog/main@82e11b135f3fdb27eabf7f483a7c52e5a2bd32bd`
+  additionally introduced a local pre-migration snapshot pin
+  for one legacy `rumiai-os` compatibility workflow without
+  modifying the frozen product. Its workflow run still FAILED
+  at legacy `pkg-depend nodejs` with `request-unresolvable`;
+  do **not** claim compatibility PASS from this attempt.
+- `pkg-catalog/main@032c00a426fc1163d88783565a15343f6eb2fccd`
+  adds hosted real public v1 catalog verification using the
+  exact autonomous `m@ff55fc9f` checkout.
+  Workflow run `41615053850`: Ubuntu job `125846306687`
+  **PASS**; macOS job `125846306489` was still queued
+  at this checkpoint. The test covers `pkg requirement list`
+  for mk/jsc, catalog snapshot layout and a facility contract;
+  it is not evidence for artifact install/launch or mixed v1/v2.
+- No v2 catalog/package definitions, v2 runtime dispatch,
+  installed-concrete migration, or resource exports were
+  implemented. `rumiai-os` and `rumiai-tests` remain frozen,
+  untouched and untested.
 
 ## Current state
 
-Design review in progress. No final new schema or migration procedure
-has passed the specification promotion/implementation gate.
+V1 catalog layout is published and its existing definition tree
+contents are byte-identical. The v1-selecting autonomous m runtime is
+published, and one Ubuntu public catalog-lookup integration PASS
+is confirmed. The entire v1 installation/lifecycle validation
+and macOS outcome remain pending.
+
+V2 stays an active, separately validated implementation phase.
+Do not publish v2 package definitions before coherent runtime
+schema selection, link/bin direct/wrapped target handling,
+exact installed-concrete schema provenance, facility and srv
+resolution, state-map routing, context/default views, manuals,
+and proportionate live tests are implemented.
 
 ## Next action
 
-Fix the exact v2 `link/bin` authored descriptor/launcher
-target contract, while v1 remains the unchanged current catalog
-schema moved under `v1/{pkg,facility}`. Define how v1/v2 installed
-concretes identify their schema and how facility and `srv`
-entrypoints follow the uniform selected `link/bin` path without
-losing launch-time state/environment requirements. Choose a precise
-replacement name for v2 `var` routing; keep new resource
-exports deferred to v3+ and outside the v2 migration.
+1. Complete authentic hosted v1 package install/launch and macOS
+   validation, and resolve the separate frozen-runtime/legacy-catalog
+   compatibility workflow without changing frozen repositories.
+2. Implement v2 as one coherent version-aware pathway with an exact
+   package schema marker, new public `link/bin` direct/wrapped
+   realization, v1/v2 mixed installed-concrete dispatch and
+   resolved default/context/facility/`srv` paths. V2 renames
+   `var` routing to `state-map`.
+3. Migrate a small set of real package classes through actual
+   public install/launch/provider/service validation before
+   moving additional package definitions.
+Keep package resources deferred to v3+.
 Compare the strict two-tier current range model with a minimal
 explicit defaults/override option before deciding syntax.
 Then stage authorized, coordinated `m` + `pkg-catalog` implementation,
@@ -333,7 +377,6 @@ contracts to `PACKAGE-MODEL.md` and relevant `context` spec.
   contract once the public `link/bin` symlink may point at `cmd`.
 - V1/v2 installed-concrete schema identity and safe mixed-version
   launch, plus coordinated facility/`srv` migration.
-- Exact v2 replacement for the `var/<area>` state-routing name.
 - Minimum non-imperative ordinary package `env` shape, including
   scope/precedence and safe checks.
 - Whether stable metadata inheritance pays for its complexity while
