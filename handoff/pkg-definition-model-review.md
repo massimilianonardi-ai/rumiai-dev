@@ -381,6 +381,23 @@ escaping or cyclic links. Resource export testing is out of scope.
 
 ## Current state
 
+**Resume/validation checkpoint (2026-11-03, after repository rename):**
+`m-os/master@ff55fc9f220f8da3f1f90d1bf4aa2e46c55a5d2a`,
+`m-os/pkg-schema-v2@8c8397dbcf1df44822553aebd1891ab6db880945`,
+`pkg-catalog/main@35b230d44d9e45ad2fb1e7473a838f5a485cf81a`.
+The renamed-source v2 matrix run `41656568757` is now **10/10 PASS**
+(5 Ubuntu and 5 macOS), including real jq acquisition and v1 regression;
+Ollama portable run `41656568773` is **PASS**. The Node.js matrix
+`41656569243` ran the real install, HOME, context and pinned provider path
+on both hosts before failing on a missing closing `]` in the workflow's
+final provider query assertion, not on the product behavior already reached.
+`pkg-catalog/pkg-schema-v2@0ec577773b08721ca974ed13d187b34a7523d868`
+repairs only that test syntax (single closing `]`). New Node.js workflow
+run `41717928682` was queued when last inspected; do not mark PASS until
+both host jobs finish successfully. No `m-os` product change or mainline
+v2 merge was made in this checkpoint. The next real product-validation
+boundary is host supervision and unresolved v2 PATH/provider precedence.
+
 **Current repository and v2 execution checkpoint (2026-11-03):**
 
 The independent technical source repository was renamed from
@@ -478,9 +495,10 @@ this Current state supersedes older stale 'no v2 PASS' claims.
 
 ## Next action
 
-1. Rerun the previously upstream-403-blocked macOS v2 jq acquisition
-   when GitHub release access is available; inspect the new exact-m-os
-   workflow runs without treating queued jobs as PASS.
+1. Inspect the new Node.js matrix run `41717928682` at exact catalog
+   `0ec57777` after it completes; record Ubuntu and macOS results separately.
+   The previously blocked macOS jq matrix is now confirmed PASS at run
+   `41656568757` and needs no speculative rerun.
 2. Extend the passed real catalog-backed v2 Node.js and Ollama normal
    paths to host-supervisor lifecycle on supported hosts, preserving
    HOME, exact provider identity, foreground process ownership and
