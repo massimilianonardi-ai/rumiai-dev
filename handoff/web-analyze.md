@@ -75,6 +75,67 @@ Provide the `m` JavaScript library at `rumiai-os/lib/sys/js/web-analyze.lib.js` 
 - **Concrete misleading-success risks to fix before claiming completeness:** stylesheet aggregate `saved` status is used even when individual retrievals failed; listener artifact is marked `saved` when some queried scopes fail; the rest aggregate `captured` status does not require drained HTTP/body/script activity, nor consider incomplete deep IndexedDB types or dropped ordinary log events. `Network.enable` has no explicit durable-body buffer policy, `Network.getResponseBody` is called only on completion with a short timeout, and the event dispatcher persists only whitelisted CDP notifications. The 1.5-second quiet heuristic can precede later application timers. The command uses an isolated **new** profile: it does not acquire an existing signed-in user's browser session simply by being launched.
 - **Boundary:** not all CDP methods are observational; calling every command would mutate the browser, violate the current no-input requirement or cause disruptive profiling. No finite initial-page dump can contain undisclosed future server responses or backend-only logic. Proposed work remains in the same active `web-analyze` handoff, not a new specification or parallel abstraction. Do not begin user-input simulation before phase-zero coverage has an honest capability-specific completeness ledger.
 
+## Implementation plan — phase-zero CDP evidence completeness (active, 2026-11-03)
+
+### Objective, ownership, and scope
+
+Implement a generic and revision-verifiable **rest-only** acquisition of all information observable from an initially loaded URL through supported Chromium/CDP and bounded read-only browser APIs. The command stays `m web-analyze <url> <analysis-path>`, with `--scroll` as an independently selected, subsequent phase; do not add clicks, synthetic input, navigation to undiscovered routes, auth bypass or site-specific extraction. Reuse the present native CDP recorder, rest collector and permanent real-Chromium tests. Avoid introducing a parallel browser-control abstraction or provider dependency.
+
+A "complete" claim is **relative to the enumerated browser version/protocol, attached targets, enabled domains, capture interval, retrieval attempts, resource limits and explicit exclusions**, never a claim to reconstruct server-only or future-unloaded application logic. Persist unmodified private evidence before generating lossy summaries. Explicitly retain failures, truncation, unsupported methods, pending reads and coverage gaps. Capture is not an atomic freeze; record time boundaries and observer effects.
+
+All raw data, including auth cookies/tokens, HTTP headers, message payloads, storage values and profile data, remains in private local output files (directories 0700/files 0600). Redacted diagnostics and Markdown summaries must never embed these values. Do not commit or upload real-site evidence. All additions use forward-only commits, source/manual/test alignment and proportional validation under `CONSISTENCY-GATE.md`.
+
+### Ordered work units and exit criteria
+
+**WU-01 — Browser capability inventory and raw CDP transport ledger (P0, FIRST).**
+- Before `Page.navigate`, query and save `Browser.getVersion`; retrieve the browser's version-specific `/json/protocol` over loopback, with SHA-256/provenance/status on failure. Avoid using a public tip-of-tree schema as evidence of locally supported methods. Discover/record available domains and any errors without preventing ordinary navigation if a capability cannot be queried.
+- Register a private chronological **inbound/outbound CDP packet** ledger at the earliest connected transport boundary, before the application-specific dispatcher drops unknown events. Include IDs, session association, wire ordering, timestamps, full messages and observed message/byte counts; do not reuse the intentionally redacted/bounded ordinary diagnostic logger. Explicitly record transport errors, file failures and termination/dropped-message status; never silently label a partial ledger lossless.
+- Keep the existing public session API, existing raw resource archive and redacted log streams intact. Preserve the new wire ledger in both manual-recorder and `m web-analyze` runs.
+- **Acceptance:** a real Chromium local fixture generates an unhandled-by-dispatcher event (e.g. `Runtime.executionContextCreated`), outgoing command(s), response(s), and a request with private headers. The wire file contains full packets in order while the ordinary redacted stream does not reveal private values; the version-specific protocol schema and `Browser.getVersion` have explicit success/error provenance; IDs reconcile between sent and received packets. Test source syntax, launch/stop and command path on actual Chromium (not mocks); check file permissions and no regression in existing rest/scroll behavior.
+
+**WU-02 — Complete target/context enumeration and capture boundaries (P0; after WU-01).**
+- Enumerate browser/page/iframe/OOPIF/worker/shared-worker/service-worker targets and execution contexts, attaching recursively as CDP permits. Preserve creation, attachment, context, navigation, detachment and target-type metadata. Snapshot a target graph and an explicit non-attached/opaque/unavailable list before declaring rest complete; persist per-target snapshots of applicable domains.
+- Add bounded waits for targets dynamically created during navigation and for late initial hydration without claiming infinite stability. Verify lifecycle on pages with cross-origin iframe and worker; record source/heap access failures, site isolation and provenance rather than silently omitting targets.
+
+**WU-03 — Network response-body durability and lifecycle accuracy (P0; after WU-01/02).**
+- Negotiate relevant `Network.enable` buffer parameters/durable-message capability; probe `Network.streamResourceContent` or documented fallback retrieval only when supported and without re-requesting resources or changing page behavior. Preserve request/redirect chains, original headers/POST data, raw frame/SSE payloads, encoded/decoded distinctions, cache/SW provenance, response and failure statuses, and content-addressed bodies.
+- Test large responses, redirects, cache hits, navigation/process swaps, streamed content, aborted and long-lived requests. Require observed-vs-archived counts/byte totals plus explicit reasons for missing bodies. No false `complete` when pending/expired requests exist.
+
+**WU-04 — DOM mutation history and closure of observed states (P0; after WU-02).**
+- Install read-only instrumentation at document start where possible; chronicle ordered node mount/unmount, text/attributes, shadow-root attachment, frame relation and stable identities, with initial/final DOM and mutation evidence correlated. Support virtualized lists without inferring unobserved items from scroll geometry. Identify untracked closed shadow roots and missed pre-attachment work.
+- Test add/remove-before-settle, nested shadow DOM, same-origin and cross-origin iframe, virtualized turn/list nodes, and continuous mutations; never conflate final DOM coverage with all-history coverage.
+
+**WU-05 — Evidence completeness ledger and reporting correctness (P0; after WU-01 to WU-04).**
+- Define per-domain/per-target/per-artifact status: saved, partial, unsupported, inapplicable, failed, interrupted; record start/end, source method, item counts, bytes/digest, output path, truncation/caps, remaining activity and error identity. Aggregate only when all required children are verified, including CSS/listeners, database records, pending network/body/script reads and wire drops. Do not hide ambiguous outputs behind a `captured` status.
+- Add report validation that every indexed artifact exists and hashes match, no secret values appear in the human-readable report, unknown event types survive in the wire log, and interrupted captures visibly report partial results.
+
+**WU-06 — Broader read-only CDP acquisition (P1, staged after reliable P0).**
+- Accessibility full AX tree with DOM node mappings and frame context; matched/computed CSS, variables/pseudo states, style sheets/font inventory and CSS coverage; all available parsed JS/Wasm bytecode, source maps as independent resources, execution context graph, console/exception details and best-effort code coverage.
+- Storage keys/partitions/buckets, IndexedDB binary fidelity, Cache Storage per partition, service-worker scripts/registrations, OPFS structure/content when supported via read-only browser APIs; resource tree/PWA manifest, security/permissions/origin trials. For `HeapProfiler` snapshots and execution profiling, measure perturbation and place them in a separately identified **deep introspection** pass, not a silent part of the canonical baseline.
+- Make each capability conditional on actual browser schema. Add real Chromium fixtures for each class, preserving explicit capability-supported/unsupported distinction.
+
+**WU-07 — Optional and situational CDP evidence (P2; after reliable P1).**
+- Capture appropriate LayerTree/Animation/Media/WebAudio/WebRTC/PerformanceTimeline/Tracing/Preload/BackgroundService/ReportingAPI signals only when present; report their active domains and non-applicability. Prefer low-interference observation before intrusive profiling, and never call mutating CDP methods solely to claim broad API coverage.
+- Test relevant representative media/animation and worker-heavy pages on an actual browser, then operator-host physical execution against consented representative sites. No credential export to source repositories.
+
+### Cross-unit validation discipline and completion gate
+
+For **every work unit**: (1) reread latest HEADs and authoritative rules; (2) implement one bounded responsibility; (3) realign corresponding operational manuals in the same work unit; (4) add permanent tests in `rumiai-tests`; (5) pin the tested test HEAD in the existing CI workflow; (6) execute real Node/Chromium fixture tests, preserving run ID and actual outcome; (7) inspect source diff, warning paths, status fidelity, permissions and concurrent changes; (8) update this handoff with completed/blocked state and next action. A passed synthetic local fixture is **not** a passed real external-site or operator-host test. Do not claim total CDP completeness merely because individual feature fixtures pass.
+
+**Planned final acceptance:** an installed Chromium's actual supported domains can be audited against every deliberately exercised read-only acquisition and every explicit exclusion; an unseen CDP event is not silently discarded; recovery failures are visible; raw private evidence is faithful and reusable; output integrity is verified; and report states accurately bound coverage to the captured initial URL and interval. Adapter development and simulated user input remain outside this plan.
+
+### Execution tracker
+
+| Work unit | State | Evidence / pending validation |
+| --- | --- | --- |
+| WU-01 | **In progress** | Implement version/protocol acquisition plus raw wire ledger and real Chromium regression |
+| WU-02 | Pending | Target/worker/context graph and nested attach tests |
+| WU-03 | Pending | Durable network body retrieval and edge cases |
+| WU-04 | Pending | Complete DOM mutation chronology |
+| WU-05 | Pending | Reconciled integrity/coverage statuses |
+| WU-06 | Pending | Accessibility, CSS, runtime, storage, security and source fidelity |
+| WU-07 | Pending | Domain-specific passive diagnostics and operator-host coverage |
+
 ## Corrected slow-navigation capture startup (2026-10-19)
 
 - User physically observed `web-analyze.cdp-timeout: Page.navigate did not respond` while the target share was beginning to download; previous `Page.navigate` command used the generic 12-second CDP timeout and propagated the error to startup failure, closing Chromium.
