@@ -412,8 +412,15 @@ Revision-scoped v2 validation since the older checkpoint:
   upstream GitHub jq release API HTTP 403 during download, before
   v2 materialization; this is not a v2 execution PASS.
 - The renamed-repository Ollama validation workflow `41656568773`
-  is **PASS**. The other renamed-checkout workflows were still
-  queued during this checkpoint and cannot be counted as PASS.
+  is **PASS**. The v2 matrix `41656568757` has 6 PASS and 4 macOS
+  queued at the repository-rename consistency check.
+- The renamed-source Node.js matrix `41656569243` checked out
+  `m-os` successfully and completed the Ubuntu v2 installation,
+  node/npm/npx, HOME, context and provider-selection assertions.
+  Its final query assertion failed with shell `[: missing ]` in
+  `.github/workflows/validate-v2-nodejs.yml` (not a product
+  regression); the macOS job remained queued. Repair that test in the
+  owning v2 validation work unit and rerun on its new exact revision.
 
 The preceding checkpoint remains retained below as revision-specific
 prior state rather than current evidence.
