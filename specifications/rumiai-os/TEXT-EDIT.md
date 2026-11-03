@@ -1241,15 +1241,19 @@ the previous fold configuration in these verified cases:
   This supports nonzero columns for both whole-row and
   cross-row inline folds, including the inline marker's
   **distinct left and right input cuts**.
-- For a fold immediately above a `CellDocument2D` that itself
-  directly wraps `RawDocument2D`, the private hook observes old
-  **cell** boundaries at the cell layer's own revision, without
-  physical offsets. The fold validates visible old caret
-  boundaries and protected spans in cell coordinates, then
-  matches those old cell points and batch order with the cell
-  layer's verified committed `geometry`. This also supports
-  nonzero whole-row and inline-fold cuts across TAB/grapheme
-  boundaries, not cuts inside indivisible cells.
+- For a fold immediately above a `CellDocument2D` with a certified
+  old-cell observation and matching committed geometry, the private
+  hook observes old **cell** boundaries at the immediate cell
+  layer's own revision, without physical offsets. This applies
+  both to a directly Raw-backed Cell and to a Cell above one or
+  more zero-width Annotation layers ending at another certified
+  Cell. Each intermediate Cell/Annotation layer separately checks
+  its own old/new coordinate correspondence and batch order. The
+  fold validates visible old caret boundaries and protected
+  spans in its immediate cell coordinates, then compares captured
+  points with that input's verified committed `geometry`.
+  This supports nonzero whole-row and inline-fold cuts across
+  TAB/grapheme boundaries, but never cuts inside indivisible cells.
 - One or more intermediate zero-width `AnnotationDocument2D`
   layers may relay proven raw or cell cuts to a fold. Each
   annotation layer substitutes its own coordinate revision,
@@ -1606,16 +1610,19 @@ including nonzero columns **before, between and after** multiple
 width-changing synthetic regions. The staged old row/column
 positions and physical offsets must match the committed raw
 geometry in the original batch order. For a substitution view
-directly above `CellDocument2D` whose own input is
-`RawDocument2D`, the cell layer instead emits a private
-pre-commit observation in **cell coordinates** with no raw
-offsets. Its post-commit cell event independently certifies
-the original physical offsets. The substitution view checks
-the matching old cell endpoints, cell revision and batch order
-before projecting its old occupied-region coordinates.
-The same certified mapping is available through any intermediate
-chain of zero-width annotation layers, each checking its immediate
-pre/post input correspondence under its own revision.
+directly above `CellDocument2D` whose own old observation and
+committed geometry are certified, that cell layer instead emits
+a private pre-commit observation in **cell coordinates**, with
+no raw offsets. The Cell may directly wrap Raw or itself wrap
+a zero-width Annotation chain ultimately backed by another
+certified Cell. Every intermediate layer checks its own
+old/new endpoint correspondence, revision identity and original
+batch order. The substitution view compares captured old cell
+points with its immediate Cell's verified committed geometry
+before projecting its own old occupied-region coordinates.
+The same certified mapping can also traverse intermediate
+zero-width annotation layers above that Cell, with each layer
+verifying the matching batch in its own revision space.
 Valid old cell points can lie before, between or after synthetic
 regions, but not inside a protected TAB/grapheme, substitution,
 or shared adjacent boundary. Source fragments copied into derived
@@ -1633,9 +1640,10 @@ source locations are exposed as editable destinations. The
 event **always** retains `invalidation:{all:true}`. Local
 `setSubstitutions` events carry no text-edit geometry.
 
-Without verified raw or directly raw-backed cell precommit
-observation, old nonzero columns other than a uniquely recorded
-substitution boundary remain unverified, even if an intermediate
+Without verified precommit observation in the immediate Raw, Cell
+or zero-width Annotation coordinate space, old nonzero columns
+other than a uniquely recorded substitution boundary remain
+unverified, even if an intermediate
 view supplies only post-commit mutation endpoints. CRLF terminator interiors,
 hidden or crossing intervals, ambiguous shared cuts,
 missing/inconsistent pre/post geometry, revision discontinuity
