@@ -1124,7 +1124,9 @@ A `CellDocument2D` above another cell or arbitrary transformed
 input does not yet offer a verified precommit observation;
 nested cell-to-cell projection remains conservative. Fold and
 substitution views can receive proven old cuts from a direct
-raw input or a directly raw-backed cell input, as detailed below.
+raw input or a directly raw-backed cell input, including through
+one or more intervening zero-width `AnnotationDocument2D`
+layers that independently certify their immediate input.
 All these views retain conservative invalidation; edit endpoint
 geometry does not establish general persistent rebasing of
 fold or substitution anchors.
@@ -1213,6 +1215,13 @@ the previous fold configuration in these verified cases:
   layer's verified committed `geometry`. This also supports
   nonzero whole-row and inline-fold cuts across TAB/grapheme
   boundaries, not cuts inside indivisible cells.
+- One or more intermediate zero-width `AnnotationDocument2D`
+  layers may relay proven raw or cell cuts to a fold. Each
+  annotation layer substitutes its own coordinate revision,
+  preserves the original input point order and validates its
+  pre/post input correspondence without exposing source offsets.
+  The fold compares the result with its immediate annotated
+  input, never by skipping representation layers.
 
 All cases project the old endpoints using the still-installed
 old fold configuration. Once the source commit completes,
@@ -1299,7 +1308,8 @@ provide generic arbitrary-region substitution. The separate
 `AnnotationDocument2D` owns creation of additive overlays;
 `FoldDocument2D` only forwards overlays belonging to visible
 regions. General old/new mutation geometry for inline folds above
-nested/non-raw inputs, and source↔view region relations, remains
+nonidentity intermediate inputs lacking a certified immediate-view
+precommit bridge, and source↔view region relations, remains
 open. Fine-grained viewport invalidations have not been implemented. `BaseDocument2D` and a public
 `Representation` interface remain deferred until their shared
 responsibilities are demonstrated by concrete implementations.
@@ -1359,6 +1369,37 @@ input is `RawDocument2D`. The forwarded `geometry` is omitted
 if the input supplies no complete, consistent geometry or loses
 revision continuity. Local `setAnnotations` events carry no edit
 geometry, because changing overlays is not a physical text commit.
+
+If the immediate input exposes the established private
+`_subscribeBeforeGeometry` observation, a zero-width annotation
+view also relays the observed **old input cuts** to its immediate
+consumers before the source edit. The detached, frozen observation
+contains this annotation view's `previousRevision`, `oldRowCount`
+and the original ordered old `{row,col}` endpoints, with no source
+offsets or text. Each point must be a real previous input caret at
+or before its EOL. The annotation layer keeps any incoming raw
+offsets **privately** and compares them with the committed old
+offsets, old points, view revisions, row count and original batch
+order. For input cell or annotation points without physical
+offsets, the annotation layer matches old points and revisions
+against the immediate input's separately certified postcommit
+geometry. Any mismatch suppresses precise `geometry` and clears
+unsupported anchors while retaining `invalidation:{all:true}`
+without failing the committed physical edit.
+
+This private relay supports a direct raw input, a directly
+raw-backed cell input, and successive zero-width annotation
+layers. A downstream fold or substitution projects old points
+only when its **immediate** input publishes a matching verified
+postcommit batch; precommit observation alone does not certify
+a completed edit. Local `setAnnotations` updates emit no
+precommit edit observation. A source without a private
+observation cannot acquire one merely by being wrapped.
+Observer unsubscribe is idempotent and an observer exception
+cannot cancel a valid source commit or prevent notification
+of remaining observers. `destroy()` unsubscribes the private
+bridge. No public `Document2D` interface or editable synthetic
+annotation-label destination is created.
 
 Given such exact contiguous input geometry from a direct
 `RawDocument2D` or `CellDocument2D` input, or from a chain
@@ -1534,6 +1575,9 @@ offsets. Its post-commit cell event independently certifies
 the original physical offsets. The substitution view checks
 the matching old cell endpoints, cell revision and batch order
 before projecting its old occupied-region coordinates.
+The same certified mapping is available through any intermediate
+chain of zero-width annotation layers, each checking its immediate
+pre/post input correspondence under its own revision.
 Valid old cell points can lie before, between or after synthetic
 regions, but not inside a protected TAB/grapheme, substitution,
 or shared adjacent boundary. Source fragments copied into derived
