@@ -1,6 +1,6 @@
 # Advanced browser/Electron text editor
 
-Status: Active — raw/cell/annotation pre/post geometry CI-verified; fold/substitution geometry, anchor rebasing and GUI remain open
+Status: Active — limited annotation anchor survival and raw/cell/annotation geometry CI-verified; fold/substitution geometry, general anchor rebasing and GUI remain open
 Updated: 2026-11-03
 
 ## Goal
@@ -10,6 +10,12 @@ Design and eventually build an extremely fast, memory-efficient advanced JavaScr
 The JavaScript compilation, module loading and distribution concern has **independent ownership** at `handoff/javascript-build-and-runtime-loading.md`. This handoff must not make bundler/loader decisions.
 
 ## Current repository revisions
+
+**Current selective annotation anchor survival checkpoint (2026-11-03; dev advances again on handoff publication):**
+- `rumiai-dev`: `f0ae91611c117507c42115e9a67e28ed2e09cf89` — authoritative `TEXT-EDIT.md` now specifies the restricted survivor criteria and full conservative fallback.
+- `rumiai-os`: `a6387b396f61a6c9af4d3a87d7ce559afe655199` — product `AnnotationDocument2D` anchor survival and pinned CI. The unrelated concurrently published `web-analyze` change was preserved.
+- `rumiai-tests`: `e71a4bf3bc29415a35869ae25c4216bcc6c96d31` — pinned real core/geometry/annotation survival suites, plus aligned earlier annotation/fold expectations. Remote `main` subsequently advanced to `e9c335408ccef021590d468949775e277bfec49d` by unrelated `web-analyze` tests; the TextEdit suite remains pinned to the exact validated revision.
+- Exact product CI: `m.text.document core extraction verification` run `41634726797` **PASS** at `a6387b396f61a6c9af4d3a87d7ce559afe655199` with pinned suite `e71a4bf3bc29415a35869ae25c4216bcc6c96d31`; `Git tracking boundaries` run `41634726737` **PASS**. An earlier isolated suite `41634464153` PASS covered the simpler cases before nested composition tests. Native browser/GUI were not physically validated.
 
 **Current annotation-composed geometry checkpoint (2026-11-03; dev HEAD advances when synchronizing):**
 - `rumiai-dev`: `cae1a748bda793d9fede31f27d9206d811d6e8f1` — canonical annotation geometry forwarding contract; the handoff commit advances this HEAD.
@@ -88,7 +94,17 @@ Latest independently verified remote `main` HEADs on **2026-10-19**, immediately
 - The separately deferred terminal `vsed` advanced-editor work is `todo/vsed-advanced-editor-evaluation.md` and is not this editor.
 - The JavaScript toolchain is owned by `handoff/javascript-build-and-runtime-loading.md`.
 
-## Resume checkpoint — 2026-11-03 (annotation-composed old/new geometry; read first)
+## Resume checkpoint — 2026-11-03 (selective annotation anchor survival; read first)
+
+**Delivered:** The existing `AnnotationDocument2D` now retains local annotations on an upstream source coordinate revision **only** when the immediate input publishes a complete contiguous old/new mutation batch and the anchor has provably unchanged source text correspondence. Retention covers unchanged rows shifted by prior line insertions/deletions, and untouched prefixes before the first source edit on an affected row when the old/new edit start matches the row/column shift. The original edit array may be unsorted: correspondence is computed in sorted old coordinate order, with touching/overlapping old intervals rejected conservatively. Candidates must re-pass the exact `setAnnotations` boundary check (in-bounds, real EOL, indivisible graphemes/TAB, synthetic fold marker). Annotation ID/text and ordering remain unchanged; outward geometry remains immutable and whole-view invalidation persists.
+
+**Safety and intentional non-coverage:** An anchor at an edit start, inside any touched row's affected/suffix region, without an exact row shift, or at a nonrepresentable new cell boundary is removed, not snap-mapped. In particular, anchor positions to the **right of an edit on the same row** are not rebased using naive old/new cell-column deltas: TAB width and grapheme grouping may change elsewhere. Missing `geometry`, invalid revision continuity, overlapping/touching batch cuts, inaccessible post-edit input or any malformed geometry fully clear the local configuration without changing or rolling back the successful source commit. Local annotation-only events still lack physical geometry. `FoldDocument2D` and `SubstitutionDocument2D` continue to invalidate their configurations conservatively and do not claim old/new transformation geometry.
+
+**Mechanical evidence:** The real Node 22 document suite compiles the current core through actual `jsc` and tests both FlatDocument and PieceDocument. New `annotation-rebase.test.mjs` exercises same-row prefix/suffix distinction, row insertion and deletion, unsorted two-edit multiline batches, nonlinear TAB displacement, nonrepresentable grapheme boundaries, raw and cell CRLF cases, missing cell precommit geometry, identity propagation through two annotation layers, and fold-with-protected-marker fallback. Existing regression assertions were realigned so proven surviving underlying annotations are not expected to be discarded merely because overlying folds clear. Product commit `a6387b396f61a6c9af4d3a87d7ce559afe655199`, permanent tests `e71a4bf3bc29415a35869ae25c4216bcc6c96d31`, hosted CI run `41634726797` PASS, tracking run `41634726737` PASS. CI does not establish real browser/GUI behavior.
+
+**Next:** Determine the narrowest correct old/new geometry mapping for one genuinely non-identity transformed view (fold or substitution), initially only in cases with provably untouched content. Validate synthetic barriers, relative input/output coordinate shifts and revision discontinuity with real core tests before permitting anchors on those views to survive. Do not introduce a speculative public `Representation`, `BaseDocument2D` or another effective selection owner; no general source-offset anchor rebase is implemented.
+
+## Resume checkpoint — 2026-11-03 (prior annotation-composed old/new geometry)
 
 **Scope:** `AnnotationDocument2D` now propagates immutable `geometry` from its immediate input on a continuous input-coordinate revision. Because additive annotation overlays occupy zero cells and do not alter input row/column space, its projection retains all old/new `{row,col}` endpoints and original edit order, changes only the view's own `previousRevision`/`revision`, and copies/freeze-publishes detached 2D point records (never raw source offsets). The view still clears its annotations on EVERY upstream coordinate change and still emits `invalidation:{all:true}`; a local annotation reconfiguration is not a physical edit and publishes no mutation geometry.
 
@@ -457,7 +473,7 @@ view.destroy();                            // source is still caller-owned
 
 ## Current state
 
-**CURRENT AS OF 2026-11-03:** Exact old/new geometry is implemented and Node CI-verified through raw, cell and zero-width annotation compositions, including two annotation views in sequence. Whole-view invalidation still persists. Fold/substitution geometry, surviving-anchor policies and GUI integration remain open. The earlier 2026-10-19 state below is retained only as a prior checkpoint.
+**CURRENT AS OF 2026-11-03:** Exact raw/cell/annotation old/new geometry and conservative preservation of annotations on provably unchanged prefixes or shifted untouched rows are implemented and Node CI-verified, including nested zero-width annotation views. Whole-view invalidation persists. Same-row suffix rebasing, fold/substitution geometry, general anchors and GUI integration remain open. The earlier 2026-10-19 state below is a prior checkpoint.
 
 **CURRENT AS OF 2026-10-19:** The core now exposes the completed raw adapter `m.text.document.RawDocument2D`, with `PieceDocument` as the intended backing store, abstract `Document2D`, `Selections`, and three selection modes. Production GUI integration and advanced logical `Document2D` are pending; the private `TextEditSelections` implementation is retained by composition. See **Resume checkpoint — 2026-10-19** above and the canonical `TEXT-EDIT.md` for the precise current contract. The older source-and-PoC evidence below is historical task context, not the current next implementation target.
 
@@ -481,14 +497,14 @@ The new external column planner demonstrates model-level 2D clipboard preparatio
 
 ## Next action
 
-1. Reverify current remote HEADs and follow `rumiai-dev/README.md` mandatory retrieval, including `TEXT-EDIT.md` and this handoff.
-2. Prove and implement *safe survival of unaffected annotations* through one real source edit and one immediate-input geometry transform. The recorded annotation anchor must have a demonstrably exact old→new position; endpoint deltas alone are insufficient when grapheme/TAB reflow affects other cells. Preserve annotation identity and text only in those proven cases, otherwise clear conservatively.
-3. Test both physical backends, earlier/after edits, row insertion/deletion, TAB/grapheme reflow, CRLF, stale revisions, ambiguous/synthetic regions, and edit batching. Do not reduce source commit atomicity or leak non-editable coordinates as selections.
-4. Once annotation rebasing is validated, consider the materially different fold/substitution geometry and protected source anchors separately. Do not introduce speculative public `BaseDocument2D` or `Representation` abstractions.
+1. Reverify all involved remote HEADs and follow the current `rumiai-dev/README.md` mandatory read order; reconcile concurrent commits without historical rewrites.
+2. Take one existing non-identity transformation (`FoldDocument2D` or `SubstitutionDocument2D`) and establish *exact* old/new geometry for the smallest provably safe edit case. Compare the immediate input and view spaces before/after change; do not extrapolate from post-only output or forget synthetic marker boundaries.
+3. Prove representative surviving and rejected mappings with both real physical backends, row insertion/deletion, CRLF, grapheme/TAB, disjoint batches, synthetic barriers and stale revisions. Keep conservative fallback where correspondence is ambiguous. Only then consider preserving notes above that transformed layer.
+4. Deferred: source-backed same-row suffix anchor rebase (cannot be derived from old/new cell endpoints alone), arbitrary fold/substitution source anchors, general GUI/editor integration and public `Representation` / `BaseDocument2D` abstractions.
 
 ## Blockers / open questions
 
-- **No blocker for the validated raw → cell → annotation geometry path.** The next step is safe, limited annotation-anchor survival; fold/substitution mapping and persistent source-anchor rebasing remain intentionally unimplemented.
+- **No blocker for the validated raw → cell → annotation geometry and limited annotation survivor path.** The next responsibility is mapping a non-identity fold or substitution space; surviving same-row suffix anchors and general source-anchor rebasing remain intentionally unimplemented.
 - **Advanced logical Document2D:** source↔view mapping, nested view composition, grapheme/TAB/wide cells, folded/virtual/source-less regions, regions spanning multiple visual rows, rectangle boundaries intersecting tokens, virtual editability/overlay copy policies, and the output of a richer `getRect` without breaking the raw adapter's published behavior.
 - **Pluggability:** whether/when selection and insertion interpreters should be externally registered or configured (currently three/four built-in modes), mode-switch state and gesture boundaries, duplicate and overlapping targets, reverse-oriented editing and multi-mode `remSelection` semantics. The concrete implementation currently handles the tested mixed-mode case; more general policy remains intentionally deferred.
 - **Performance and validation:** `colCount` revision-cache invalidation still scans every row; `getRect` is bounded but no asymptotic/host evidence for enormous rows; no formal physical-host run of `RawDocument2D` or new editor integration.
