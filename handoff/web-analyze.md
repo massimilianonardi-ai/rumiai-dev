@@ -123,7 +123,7 @@ All raw data, including auth cookies/tokens, HTTP headers, message payloads, sto
 - Reused the native recorder's `_ResourceArchive` and `_Cdp` responsibilities: added private `cdp-wire.jsonl` at the earliest connected WebSocket boundary. Outgoing command JSON and incoming event/response JSON are stored with sequence and capture timestamp **before** event filtering; this preserves notifications unknown to the existing dispatcher. The ledger uses synchronous file writes (no bounded log queue) and a separate aggregate `resourceCapture.wireCapture` status; write errors and short writes mark the result partial. Only connected, enabled-domain packets are claimed, never events before attachment or from disabled domains.
 - Before starting navigation, `Browser.getVersion` and the loopback `/json/protocol` endpoint are queried. `cdp-capabilities.json` records version, domain/command/event inventory, protocol retrieval outcome and provenance; successful `cdp-protocol.json` preserves the current browser schema and SHA-256. An unsupported/unavailable endpoint is reported rather than replaced with tip-of-tree expectations.
 - Updated `bin/sys/web-analyze` human-readable index and limitations and both affected command/library manuals. Permanent real Chromium regression checks that `Runtime.executionContextCreated` (not explicitly handled by the old dispatcher) survives in raw wire evidence, commands and responses correlate, capability protocol exists, files are 0600 and raw request headers are not copied into redacted network diagnostics. Existing rest-only and opt-in scroll paths remain as before.
-- Chromium CI `41719097541` is PASS on `rumiai-os@8bc6d270` and test revision `3d77187`; subsequent strict-write and private-header assertions were published forward-only, with final CI `41719712596` running at this checkpoint. Do not report full WU-01 validation until that run completes. No operator physical Chromium/real-site test is claimed.
+- Chromium CI `41719097541` PASS on `rumiai-os@8bc6d270` and test revision `3d77187`. Final browser-backed CI `41719712596` **PASS** on `rumiai-os@783d0131` and `rumiai-tests@cc7ca95a`, including short-write detection and the private-versus-redacted header test. No operator physical Chromium/real-site test is claimed.
 
 ### Cross-unit validation discipline and completion gate
 
@@ -135,7 +135,7 @@ For **every work unit**: (1) reread latest HEADs and authoritative rules; (2) im
 
 | Work unit | State | Evidence / pending validation |
 | --- | --- | --- |
-| WU-01 | **Implemented; final CI verification in progress** | `rumiai-os@783d0131` (native browser schema/version, full raw CDP packet ledger, short-write detection, manuals/report), `rumiai-tests@cc7ca95a` (Chromium event/command correlation, private HTTP metadata, 0600 files); initial complete Chromium run `41719097541` PASS at `rumiai-os@8bc6d270`; revision-specific final CI run `41719712596` pending |
+| WU-01 | **Complete — Chromium fixture PASS** | `rumiai-os@783d0131bd29832c9c594d5c8efad5b560f256cf`, `rumiai-tests@cc7ca95a07ffb7f9ba93d22fa52b97d47fcea53f`, GitHub Actions `41719712596` PASS; full connected-CDP messages, browser protocol/schema, command-response correlation, private request headers, redacted diagnostics and restrictive permissions verified; physical-host/real-site coverage pending |
 | WU-02 | Pending | Target/worker/context graph and nested attach tests |
 | WU-03 | Pending | Durable network body retrieval and edge cases |
 | WU-04 | Pending | Complete DOM mutation chronology |
@@ -166,7 +166,7 @@ Native-CDP manual capture remains available with historical user-operated share-
 
 ## Next action
 
-Next phase-zero work: discover/persist the actual browser CDP schema/version, attach all relevant execution targets and collect all available observational CDP events with precise provenance and loss/coverage reporting. Address network-body durability, DOM mutation history and misleading aggregate success first; then storage keys/buckets/OPFS, Accessibility, CSS fidelity, Wasm/source maps and runtime heap/coverage with measured instrumentation impact. Validate representative dynamic real sites and user-host session boundaries while keeping credentials private. Do not start input simulation before this evidence layer is credible.
+Resume **WU-02** next: use the browser-specific schema and packet ledger from WU-01 to enumerate and correlate all available targets/execution contexts. Add recursive attach to iframe/OOPIF/worker/service-worker targets where supported, and report non-attached/opaque/unavailable contexts before claiming any rest completeness. Verify on real Chromium with iframe and worker fixtures. Preserve rest-only default, no simulated input and private evidence. Then begin WU-03 on network-body durability. Operator-host real-site validation remains open.
 
 ## Blockers / open questions
 
