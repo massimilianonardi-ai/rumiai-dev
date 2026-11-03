@@ -1,7 +1,7 @@
 # Advanced browser/Electron text editor
 
-Status: Active — TextEdit 0.8.2 frozen; new m core Document, Selections, Document2D and RawDocument2D implemented/tested; advanced logical view and editor GUI remain open
-Updated: 2026-10-19
+Status: Active — versioned atomic Document2D batch contract implemented and CI-verified; generalized transformed Document2D and GUI remain open
+Updated: 2026-11-03
 
 ## Goal
 
@@ -10,6 +10,14 @@ Design and eventually build an extremely fast, memory-efficient advanced JavaScr
 The JavaScript compilation, module loading and distribution concern has **independent ownership** at `handoff/javascript-build-and-runtime-loading.md`. This handoff must not make bundler/loader decisions.
 
 ## Current repository revisions
+
+**Fresh remote checkpoints verified 2026-11-03 for this work unit** (the dev HEAD advances when publishing this handoff):
+- `rumiai-dev`: `7c08dfdc1a0630ece83d2310c929956d3106484b` — canonical `TEXT-EDIT.md` updated for versioned batch editing and conservative invalidation.
+- `rumiai-os`: `da043ecd7d1fe9026a41d2026f9437232a8f0ac3` — new `Document2D.revision`, `Document2D.replace(edits, expectedRevision)`, real `RawDocument2D` implementation and CI pin.
+- `rumiai-tests`: `32999e72f383adec7658045d398866090e718c1e` — permanent test additions for versioned atomic 2D edits.
+- `rumiai-dev-PoCs`: `7faa0e496ab41e0c1bf1b0ef1592d5f47cd3543f` — PoC 074 remains an experimental reference; unchanged in this work unit.
+
+The paragraphs below are the preceding 2026-10-19 checkpoint and must not be mistaken for the latest repository HEADs.
 
 Latest independently verified remote `main` HEADs on **2026-10-19**, immediately before this handoff update (the dev HEAD necessarily advances upon publishing this file):
 
@@ -27,7 +35,22 @@ Latest independently verified remote `main` HEADs on **2026-10-19**, immediately
 - The separately deferred terminal `vsed` advanced-editor work is `todo/vsed-advanced-editor-evaluation.md` and is not this editor.
 - The JavaScript toolchain is owned by `handoff/javascript-build-and-runtime-loading.md`.
 
-## Resume checkpoint — 2026-10-19 (read first)
+## Resume checkpoint — 2026-11-03 (read first)
+
+**User authorization (current work unit):** Proceed with the six architectural directions accepted after PoC 074: `Document2D` remains the GUI interface; transformed documents compose over `Document2D`; region correspondences and geometric invalidations must eventually cover additive/ambiguous/virtual regions; batch editing is atomic and versioned; `Selections` remains a separate interpretation responsibility; defer `BaseDocument2D` and a public `Representation` interface until real reuse is demonstrated.
+
+**Completed first implementation increment (not the whole target):**
+- Public `Document2D` now declares `revision` and `replace(edits, expectedRevision)`. The edits are a nonempty array of `{start:{row,col},end:{row,col},text}`, all in the exposed pre-edit coordinates.
+- `RawDocument2D` validates captured source revision, converts the entire batch to physical UTF-16 offsets, rejects virtual/out-of-bounds locations and stale versions, and commits once via the existing `Document.replace`. This does not replace or duplicate the private `TextEditSelections` owner or disturb `insert(content)`.
+- Content notifications now include conservative `invalidation:{all:true}` as a safe geometric invalidation baseline; they do **not** yet report precise old/new 2D affected regions.
+- Permanent normal-path tests in `text-document/core.test.mjs` cover both real storage backends, one commit/notification, insertion, source-backed replacement, stale revision rejection, overlapping targets, virtual positions, and external mutations. Product `text-document-core.yml` now pins these exact tests.
+- Actual-source V8 smoke exercise passed on both backends. **GitHub Actions `m.text.document core extraction verification` completed successfully** for product `da043ecd7d1fe9026a41d2026f9437232a8f0ac3`, run `41593617566`, using pinned test revision `32999e72f383adec7658045d398866090e718c1e`. This establishes CI coverage of the real compiler and core document API, not physical GUI performance or a finished transformed document.
+
+**Still open:** A new concrete transformed `Document2D` implementing grapheme and TAB geometry; invariant-preserving view-coordinate selections; richer bounded region content/mapping for folding, annotations and non-text elements; precise old/new 2D notifications; nested atomic translations; performance-sensitive indexing and viewport reads. Existing `getRect` returns strings and has no general element/provenance stream. Do not invent a second selection owner or silently redefine the existing raw-coordinate contract merely to make the first transformed class convenient.
+
+**Next incremental implementation:** Design and validate the smallest region/mapping contract needed by a grapheme/TAB transformed `Document2D` using PoC 074 as evidence and the proven standalone `TextEditRepresentation` algorithms as starting points. Implement that layer only once the `Document2D` selection and bounded-reading semantics are reconciled; add permanent real-core tests. Maintain `BaseDocument2D` and public `Representation` as deferred abstractions.
+
+## Resume checkpoint — 2026-10-19 (prior checkpoint)
 
 **Present outcome:** The user's concrete goal was a `Document` → `Document2D` adapter taking an already-constructed `PieceDocument` (or any core `Document`) and **replacing direct `TextEditSelections` use by the GUI**. The class is **`m.text.document.RawDocument2D`**, not a second source storage engine. This goal is implemented and real-core-tested. The editor, a generalized logical `Document2D`, and the physical removal of `TextEditSelections` are **not** implemented.
 
@@ -277,9 +300,10 @@ The new external column planner demonstrates model-level 2D clipboard preparatio
 
 ## Next action
 
-1. **New-chat resumption:** perform fresh README-ordered repository preflight, read current `TEXT-EDIT.md` plus this handoff, inspect `RawDocument2D.js` and its real-core permanent tests, and report any code/spec/test mismatch without silently choosing an implementation.
-2. **Then follow the user's next explicit target**, not a speculative automatic follow-up. Reasonable alternatives to discuss include auditing/finalizing `RawDocument2D` semantics, designing/implementing the **logical** `Document2D` layered on `RawDocument2D`, or resuming GUI integration. The intended outer consumer must not know source representation. Do not begin removing private `TextEditSelections`, implementing generalized view-region geometry, adding more insertion modes, or porting the PoC unless explicitly authorized for that task.
-3. Preserve the current source/test/handoff revisions with forward-only Git; physical GUI testing of the new adapter and large-file performance remain unperformed.
+1. Fresh HEAD and canonical-source preflight, then inspect the newly committed revision/batch contract and permanent tests.
+2. Continue the user-approved architecture by resolving the bounded structured-region/mapping needs of the **first composed grapheme/TAB Document2D**, including view↔source selections, multi-cell indivisibility, geometry revisions, source-backed insertions and atomic one-commit translation. Reuse real TextEdit 0.8.2 algorithms and respect large-document constraints rather than copying PoC 074's full-row splitting.
+3. Extend with folding and additive annotations only after a common region stream and selection semantics are validated; improve coarse invalidation into accurate old/new 2D geometry without emitting misleading narrow regions. Keep `BaseDocument2D` / public `Representation` unimplemented until a second concrete use demonstrates their shared responsibility.
+4. Continue normal forward-only Git, source/test/manual consistency checks and revision-specific validation. Physical GUI parity, huge-file benchmarks and a complete logical Document2D remain unverified.
 
 ## Blockers / open questions
 
