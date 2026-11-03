@@ -21,12 +21,15 @@ source continues to contain its original package implementation during
 migration. Not every legacy repository adapter is included in the independent
 `m` checkout yet.
 
-The catalog has two disjoint top-level semantic areas:
+The current published catalog schema is `v1`, which retains the existing
+package and facility definition formats without modifying their contents.
+The two disjoint semantic areas share that versioned definition root:
 
 ```text
 pkg-catalog/
-    pkg/<package>/...
-    facility/<facility>/...
+    v1/
+        pkg/<package>/...
+        facility/<facility>/...
 ```
 
 `pkg/` contains installable package definitions. `facility/` contains provider-independent facility-contract definitions. The two namespaces are intentionally separate: a facility definition is never an installable package merely because both are catalog data. Both are read from the same immutable catalog revision/snapshot, so a package/provider realization and the facility contract it claims to satisfy are revision-coupled without a second catalog authority. The exact contents of `facility/<facility>/` are defined only by the promoted facility-contract meta-model; this layout decision does not predefine that still-open schema.
@@ -118,7 +121,14 @@ A requested package name is resolved only beneath:
 pkg/<package>
 ```
 
-inside the selected `pkg-catalog` snapshot. The `facility/` area is therefore outside the installable-package namespace and must never be enumerated or interpreted as a package merely because it is present in the same repository.
+relative to the selected catalog **schema definition root** inside one
+immutable `pkg-catalog` snapshot. The current `pkg_catalog_init`
+selects `v1/` when present and accepts an unversioned
+`pkg/`+`facility/` root only as the explicitly supported pre-versioning
+catalog shape with the same v1 descriptor semantics; a snapshot containing
+both shapes is invalid. Catalog schema version is distinct from upstream
+package version, facility compatibility level and Git snapshot revision.
+ The `facility/` area is therefore outside the installable-package namespace and must never be enumerated or interpreted as a package merely because it is present in the same repository.
 
 Each installable package may expose one or both of these package streams:
 
