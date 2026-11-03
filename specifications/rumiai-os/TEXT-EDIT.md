@@ -1267,8 +1267,24 @@ coordinate targets the original underlying text, not the overlay.
 
 On any upstream coordinate-revision change, the view clears
 all annotations and increments its own revision, with conservative
-whole-view invalidation. Reanchoring across edits requires future
-precise mutation geometry and is not inferred. `destroy()`
+whole-view invalidation. If the immediate input publishes complete
+old/new edit geometry for one continuous input revision, this
+row-preserving, zero-width-overlay layer forwards the immutable edit
+batch into its own unchanged 2D text coordinates. It rewrites only
+`previousRevision` and `revision` to identify the annotation view's
+coordinate revisions; old/new row counts and the physical invocation
+order remain unchanged. Each forwarded endpoint is a detached,
+frozen `{row,col}` point, never a source `offset`, even when the
+input is `RawDocument2D`. The forwarded `geometry` is omitted if
+the input supplies no complete, consistent geometry or has lost
+revision continuity. Local `setAnnotations` events carry no edit
+geometry, because changing overlays is not a physical text commit.
+
+Forwarded geometry does not prevent local annotations from being
+cleared. In particular, it is not yet a source-anchor rebasing
+algorithm, and a cell edit can reflow TAB stops and neighboring
+graphemes beyond its endpoint spans. Safe preservation of
+unaffected anchors therefore remains deferred. `destroy()`
 unsubscribes the view while leaving the input alive.
 `CellDocument2D` additionally passes through zero-width
 annotations below it, remapping anchors to cell coordinates;
