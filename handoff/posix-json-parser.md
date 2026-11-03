@@ -9,11 +9,12 @@ Implement a standalone, strictly POSIX `#!/bin/sh` JSON parser command in `rumia
 
 ## Current repository revisions
 
-- `rumiai-dev`: `c2f384fc2ec443b3d31ec6df6cd116cadf0173b5` (before this handoff checkpoint)
-- `rumiai-os`: `4ffc3af233c4ff7ceccdb67eb6ac5e21b0be8e9f` (parser committed at `caf001f98e935a3c378be5feafb293f35d103d6d`)
-- `rumiai-tests`: `502bab8beabdfe6c0c0c5c55c37f7ceac0556118`
+- `rumiai-dev`: `34402c8d6566e519b6b8ddaf0b1724bb4fc0d5a0` (before this checkpoint)
+- `rumiai-os`: `53bac942ff9552de1770d7439dd2d547017aa9ea` (parser blob unchanged: `f7cb24574f473565245fc8ba3757d4c5bb7f5f74`)
+- `rumiai-tests`: `0333818b7ab0b90203c6e43ee271bd58b958be0a`
+- `nst/JSONTestSuite`: `1ef36fa01286573e846ac449e8683f8833c5b26a`
 
-All revisions were freshly checked after concurrent, unrelated branch changes. Recheck current HEADs before any future write.
+All repository HEADs were checked before and after validation. These are task evidence, not a substitute for future fresh retrieval.
 
 ## Applicable canonical sources
 
@@ -56,15 +57,18 @@ The external references are illustrative rather than implementation dependencies
 - Auxiliary Linux exploratory execution: 56 handcrafted accepted/rejected inputs, 300 generated valid documents compared with Python JSON reference, 10,000 nested array levels, 100 KB/1 MB strings, selected malformed UTF-8 cases; all PASS. Executed the same committed parser/test Git blobs through the native command in a temporary target fixture; test returned 0. Shell syntax checks PASS; selected runtime probes passed under dash and BusyBox ash with mawk/BusyBox awk.
 - Post-change consistency review: verified remote Git blob SHAs, executable/manual modes, manual/test presence and expected changed paths; compared intervening concurrent commits and preserved unrelated text-editor changes. No current JSON library consumers modified.
 
+- Ran the complete pinned JSONTestSuite `test_parsing` corpus against the actual `rumiai-os/bin/sys/json -c -- <fixture>` entrypoint in GitHub-hosted Ubuntu 24.04 (GitHub Actions run `41605872966`, job `125815422537`, completed success, 2026-11-03). Result: `y_ 95/95 accepted`, `n_ 188/188 rejected`, `i_ 21 accepted / 14 rejected`, strict mismatches `0`, total fixtures `318`. The `i_` group is implementation-defined by the external suite. The runner printed and checked exact source commits. This proves parsing/acceptance classification in check mode, not compaction equivalence for every corpus item.
+- Added opt-in reproducible runner `tests/rumiai-os/json/json-testsuite.run` (blob `f06e6de5c7dbe3afea343a9ddd183f58d24f55c5`) and workflow `.github/workflows/json-testsuite.yml` (blob `4cd317966b154ee5adc4e1b11ba3479f5b4e9941`) in `rumiai-tests` commit `0333818b7ab0b90203c6e43ee271bd58b958be0a`. The workflow intentionally pins the product and external corpus revisions for reproducibility; future parser revisions need a deliberate ref update.
+- Completed post-change consistency check of added workflow/runner diff, actual remote file blobs, source/man-test identity, real workflow logs and result status; no product code modification was required by the conformance result.
+
 ## Current state
 
-The command, its operational manual, and executable permanent test are committed and mutually consistent at the revisions above. Proportional auxiliary Linux tests passed, but no complete JSONTestSuite run, formal `rumiai-validate` revision-bound validation, or real cross-host/physical validation has yet been performed. Do not infer total conformance solely from the exploratory coverage.
+`JSONTestSuite` conformance validation is complete for the exact pinned parser revision: all 283 strict expectations passed; all 35 optional cases were exercised. The actual GitHub-hosted workflow completed successfully. This is a focused external parsing-acceptance check (`-c` mode), not a formal `rumiai-validate` product session, exhaustive proof of all JSON-related behavior, or physical validation on the stable macOS/Ubuntu ARM64 hosts.
 
 ## Next action
 
-Run all applicable `nst/JSONTestSuite` `y_`/`n_` inputs against the exact published parser; investigate deviations, update permanent tests where appropriate, and execute formal revision-bound and materially different POSIX host validation if available. Follow the current consistency gate after any correction.
+For future parser modifications, update the workflow pinned parser commit and rerun the corpus. When broader parser closure is authorized, validate the emitted compact JSON values and undertake any required revision-bound `rumiai-validate` / physical host validation. This request's JSONTestSuite parsing check requires no further action.
 
 ## Blockers / open questions
 
-- Complete JSONTestSuite input corpus was inspected at the taxonomy/list level but not downloaded and executed in this work unit; keep unvalidated cases explicit.
-- No operator input currently required.
+None for the requested JSONTestSuite parsing check. Complete cross-host product validation and transform-output equivalence are distinct, unperformed validation levels; no evidence for them is claimed here.
