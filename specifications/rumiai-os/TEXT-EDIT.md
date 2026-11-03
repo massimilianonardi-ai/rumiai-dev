@@ -761,10 +761,17 @@ column range; `getRowWidth(row)` reports occupied columns for a
 single exposed row (zero for future rows). `getRegions` reads a bounded
 half-open 2D window in the same coordinate space, returning one array
 per existing requested row. Each region is a detached
-`{kind,text,start:{row,col},end:{row,col}}` record. An indivisible
-region intersecting the window is returned whole, even when its bounds
-extend outside the requested columns. Region kinds are presentation
-data, not edit policies. Internal input/source mappings remain private
+`{kind,text,start:{row,col},end:{row,col}}` record, with an optional
+stable `id` for an additive annotation. Ordinary content regions have
+positive extent; an additive `kind:'annotation'` is a **zero-width,
+source-less overlay** with identical start/end coordinates, independently
+coexisting with any content region at the same column. A zero-width
+annotation is included only when its anchor is in the requested
+half-open column window, including on an empty row. Positive-width
+indivisible regions intersecting a window are returned whole even when
+their boundaries extend beyond the requested columns. Overlays do not
+consume columns, change `getRect` or take part in `read()`. Region
+kinds are presentation data, not edit policies. Internal input/source mappings remain private
 to the implementing document; GUI consumers do not need to know its
 provenance. A displayed grapheme may have a JavaScript string length
 different from its occupied display-cell width.
@@ -900,8 +907,14 @@ the TAB cells intersecting the requested window into spaces.
 A grapheme may contain multiple UTF-16 units but occupy one cell.
 Non-text input regions, and regions whose cell extent differs from
 their UTF-16 text length, retain their existing extent; ordinary
-one-to-one text regions are segmented into graphemes. Public region
-records are detached values and cannot alter the view's mapping.
+one-to-one text regions are segmented into graphemes. Additive
+zero-width `kind:'annotation'` regions preserve their `id`, `text`
+and anchor when mapped into cell coordinates. They contribute no width
+and are excluded from `getRect`. An annotation anchored strictly
+inside a grapheme, TAB or other indivisible element cannot be mapped
+unambiguously and must be rejected rather than inventing an edit or
+selection boundary. Public region records are detached values and
+cannot alter the view's mapping.
 
 The scanner requests at most 2048 input columns per read chunk and
 retains a trailing grapheme across boundaries. A bounded window near
@@ -960,8 +973,10 @@ and exposes an indivisible `{kind:'fold',text:'…'}` region in
 Unfolded output rows retain the content, column geometry and region
 kinds of their input rows, remapped to exposed row coordinates.
 All returned region and configuration objects are detached from
-internal mappings. Bounded reads do not materialize hidden input
-rows. Exact `colCount` may scan all visible rows and is not a
+internal mappings. An input annotation overlay from a visible row
+retains its `id` and zero-width anchor after translating the row;
+overlays in hidden rows are not returned. Bounded reads do not
+materialize hidden input rows. Exact `colCount` may scan all visible rows and is not a
 general indexed huge-document layout promise.
 
 The synthetic fold row has **no editable input coordinate**.
@@ -998,6 +1013,68 @@ These behaviors require further explicit contracts and tests.
 `BaseDocument2D` and a public `Representation` interface
 remain deferred until their common responsibilities are
 demonstrated by concrete implementations.
+
+
+
+### `AnnotationDocument2D`: additive source-less metadata in `getRegions`
+
+`new AnnotationDocument2D(input)` wraps any nominal `Document2D`,
+including cell and folded views. The wrapper does not change the
+input's `rowCount`, `colCount`, `getRowWidth`, `getRect`,
+selected `read`, selection strategies or underlying edit storage.
+The sole effective selection collection remains owned by the input.
+It implements the full `Document2D` API, forwarding selection
+operations and selected editing to the input without inventing a
+second source or replacing the input's proven atomicity.
+
+`setAnnotations([{id,text,at:{row,col}}, ...])` is an atomic,
+view-local replacement of the annotation configuration. Each
+`id` and `text` is a nonempty string; ids are unique within
+this view. Anchors refer to existing input rows and real cell
+boundaries up to and including EOL, not future/virtual rows.
+Annotations inside indivisible input regions are rejected, as are
+anchors on synthetic fold markers without a source position.
+Records are sorted by row, column and id. `annotations` returns
+detached `{id,text,at}` snapshots. Reapplying an identical
+normalized configuration does not advance the revision; a
+successful change advances the view's revision and publishes
+`{type:'content',revision,invalidation:{all:true}}`.
+
+`getRegions` returns all input regions together with additional
+`{kind:'annotation',id,text,start:{row,col},end:{row,col}}`
+records, where start and end are the **same point**. Multiple
+annotations may share an anchor; they do not claim a text interval.
+The overlay records are included when `colStart <= col < colEnd`
+in the requested bounded row/column window, even on an otherwise
+empty row. No separate `noteAt` query is required. Their labels
+are UI-facing metadata, **not** source contents; the ordinary
+`getRect`, selected `read` and `insert` continue to work only
+with the input's text. `replace(edits, expectedRevision)` validates
+this view's revision and forwards the complete batch once to
+`input.replace(edits, inputRevision)`. A caller cannot edit the
+annotation label by submitting a text edit: a text edit at the same
+coordinate targets the original underlying text, not the overlay.
+
+On any upstream coordinate-revision change, the view clears
+all annotations and increments its own revision, with conservative
+whole-view invalidation. Reanchoring across edits requires future
+precise mutation geometry and is not inferred. `destroy()`
+unsubscribes the view while leaving the input alive.
+`CellDocument2D` additionally passes through zero-width
+annotations below it, remapping anchors to cell coordinates;
+`FoldDocument2D` preserves identities of visible annotations
+and omits those inside folded rows. A raw UTF-16 annotation that
+would split a logical grapheme can be valid in the raw coordinate
+space but is rejected by a downstream cell transform, never
+silently snapped.
+
+This first implementation does **not** reserve layout cells,
+render inline badges, implement annotation hit-testing, attach
+persistent/rebased source anchors, or make annotation text editable.
+The general semantics of occupied source-less regions, overlapping
+editable projections and precise 2D invalidation remain open.
+Neither `BaseDocument2D` nor a public `Representation` interface
+is introduced by this incremental case.
 
 
 ## Validation and release boundary
