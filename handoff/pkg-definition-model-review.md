@@ -336,15 +336,37 @@ escaping or cyclic links. Resource export testing is out of scope.
   and macOS job `125848446011` **PASS**.
   These establish specific normal-path v1 catalog-backed install
   and command execution on both hosts, not all package families.
-- Parallel forward-only `pkg-schema-v2` branches have been
-  opened in `m` (base `ff55fc9f`) and `pkg-catalog`
-  (base `30ab3735`) to isolate upcoming coherent v2
-  implementation from published v1. No v2 product changes
-  have been committed to those branches yet.
-- No v2 catalog/package definitions, v2 runtime dispatch,
-  installed-concrete migration, or resource exports were
-  implemented. `rumiai-os` and `rumiai-tests` remain frozen,
-  untouched and untested.
+- Parallel forward-only `pkg-schema-v2` branches are in active
+  development. Current verified branch HEADs (2026-11-03):
+  `m/pkg-schema-v2@047550a27e97f0f0cc18cdfad50fa04a98c284f6`
+  and `pkg-catalog/pkg-schema-v2@4a76b7756a3a4a63f8ca75b39e82bc8f3b2a20ce`.
+  These are NOT merged into `m/master` or `pkg-catalog/main`.
+  The `m` branch has first-pass v2 catalog stream preference and
+  schema marker handling, link/bin direct and wrapped command
+  materialization, wrapper private target lookup, package-default
+  publication and schema-aware `context` views.
+  The catalog branch has an initial v2 jq package definition for
+  Linux and macOS, with link/bin pointing directly to useful-root
+  executables. None of these v2 branches has a confirmed hosted
+  workflow run or real v2 install/launch PASS; source is provisional
+  and may still require corrective revisions.
+- The v2 branch has NOT completed generic facility parameter
+  realization, facility-command publication, `srv` launch path,
+  state-map routing, the full link/lib projection, mixed installed
+  v1/v2 lifecycle, or manuals and integration tests. The v2
+  proof package is jq only; no v2 provider/service catalog
+  migration is validated.
+- A sync reconciler correction at
+  `pkg-catalog/main@759127c79c576cacb22ba0c4bb55d4746279e0f3`
+  removed leftover root-level pkg paths and refuses zero-stream
+  scans. The corresponding release-history workflow
+  `41616409159` reports success. Earlier green workflow results
+  for this reconciler were insufficient evidence of a real scan
+  because the previous loop could inspect zero repositories.
+  The catalog v2 branch has been fast-forward reconciled
+  to this main change before adding its v2 jq definitions.
+- `rumiai-os` and `rumiai-tests` remain frozen and unchanged
+  by this work.
 
 ## Current state
 
@@ -355,12 +377,15 @@ hosted PASS at the exact revisions above. More complex v1
 provider/service packages and legacy pinned rumiai-os workflows
 remain unvalidated or failing separately.
 
-V2 stays an active, separately validated implementation phase.
-Do not publish v2 package definitions before coherent runtime
-schema selection, link/bin direct/wrapped target handling,
-exact installed-concrete schema provenance, facility and srv
-resolution, state-map routing, context/default views, manuals,
-and proportionate live tests are implemented.
+V2 stays an active, separately validated implementation phase
+on the isolated `pkg-schema-v2` branches. The first-pass command
+entrypoint and direct-jq catalog implementation exists, but has not
+yet passed v2 integration validation. Do not merge or publish v2
+package definitions on main before coherent runtime schema
+selection, link/bin direct/wrapped target handling, exact
+installed-concrete schema provenance, facility and srv resolution,
+state-map routing, context/default views, manuals, and real tests
+are complete.
 
 ## Next action
 
