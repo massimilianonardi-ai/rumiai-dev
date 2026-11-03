@@ -830,8 +830,9 @@ content length (UTF-16 code units, terminators excluded).
 zero for a future row. `getRegions` produces at most one ordinary
 `kind:'text'` segment per requested existing row, clipped to the
 requested UTF-16 columns. Such a raw range can divide a Unicode
-grapheme; the untransformed raw view intentionally exposes code units. The latter is
-revision-cached but can require a scan of all source rows when invalidated.
+grapheme; the untransformed raw view intentionally exposes code units.
+The maximum-column result is revision-cached but may require a scan of
+all source rows when invalidated.
 `getRect(rowStart, colStart, rowEnd, colEnd)` accepts nonnegative safe-integer
 **half-open** row/column boundaries and returns an array of raw text strings,
 one per existing source row in the requested window. Reads clip to existing
@@ -934,6 +935,70 @@ geometry: folding, source-less annotations, general 2D region
 substitution and precise old/new region invalidations remain open.
 Neither `BaseDocument2D` nor a public `Representation` interface is
 introduced by this implementation.
+
+
+### `FoldDocument2D`: protected whole-row folding
+
+`new FoldDocument2D(input)` requires an existing nominal
+`Document2D`, including `RawDocument2D` or `CellDocument2D`.
+It implements the full `Document2D` interface. Each configured
+half-open interval of complete input rows is represented by one
+synthetic output row; source content and terminators are unchanged.
+
+`setFolds([{startRow,endRow}, ...])` accepts arbitrarily ordered,
+nonoverlapping intervals in **input-row coordinates**, with
+`0 <= startRow < endRow <= input.rowCount`. Invalid batches cause
+no state change. The `folds` property returns detached
+`{startRow,endRow}` snapshots. Repeating an identical normalized
+configuration is a no-op; actual configuration changes advance the
+view's coordinate revision and publish
+`{type:'content',revision,invalidation:{all:true}}`.
+
+Each synthetic row has width one, reads as `…` in `getRect`,
+and exposes an indivisible `{kind:'fold',text:'…'}` region in
+`getRegions`, with exposed half-open columns `[0,1)`.
+Unfolded output rows retain the content, column geometry and region
+kinds of their input rows, remapped to exposed row coordinates.
+All returned region and configuration objects are detached from
+internal mappings. Bounded reads do not materialize hidden input
+rows. Exact `colCount` may scan all visible rows and is not a
+general indexed huge-document layout promise.
+
+The synthetic fold row has **no editable input coordinate**.
+Both selection and explicit batch editing reject endpoints on a
+fold marker and intervals that would traverse any hidden source
+rows. `getSelections`, `read` and `insert(content)` likewise
+reject input-owned selections with hidden endpoints or spans
+crossing hidden rows; they may not silently copy or edit hidden
+text. Other valid selections are translated into the existing
+single effective selection collection owned by the input
+`Document2D`; no second selection owner is created. Local
+`LineSelections`, `RectangleSelections` and `FreeFormSelections`
+strategies interpret gestures in the folded view. Explicit
+`replace(edits, expectedRevision)` validates and translates
+the entire batch, then invokes `input.replace` exactly once;
+the input retains atomicity and its own validation rules.
+
+Folds are indexed by input row numbers, not persistent source
+anchors. The current input notification does not include the
+precise old/new row mapping needed for safe rebasing. Therefore
+**every input coordinate-revision change clears all folds**,
+increments the folded view revision and emits a conservative
+whole-view geometric invalidation. This includes successful
+edits made through the folded view. Callers must not reuse
+previous folded coordinates after this change. Destroying a
+folded view unsubscribes its listeners but never destroys
+its input document.
+
+This initial projection does not merge partial rows around a
+fold (as the illustrative PoC 074 did), permit selections on
+virtual fold markers, preserve folds across underlying edits,
+or implement arbitrary region overlays or additive annotations.
+These behaviors require further explicit contracts and tests.
+`BaseDocument2D` and a public `Representation` interface
+remain deferred until their common responsibilities are
+demonstrated by concrete implementations.
+
 
 ## Validation and release boundary
 
