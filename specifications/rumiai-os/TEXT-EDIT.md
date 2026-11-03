@@ -1004,7 +1004,7 @@ retains the established loss-of-continuity semantics.
 The raw adapter continues publishing whole-view invalidation. A directly
 composed `CellDocument2D` can now project supported raw pre/post edit
 endpoints through an internal pre-commit observation. No fine-grained
-viewport invalidation, replay log, downstream fold/annotation/substitution
+viewport invalidation, replay log, fold/substitution transformation
 geometry or persistent source-anchor rebasing is supplied.
 Clipboard transport, GUI device events and pixel hit-testing do not belong to
 the adapter.
@@ -1100,10 +1100,13 @@ event omits `geometry` and still reports whole-view invalidation.
 This fallback never turns a completed physical edit into an error.
 Revision wrap also disables precise projection for that commit.
 
-The precise projection is limited to direct raw-to-cell composition.
-Nested cell, fold, annotation and substitution compositions still
-invalidate conservatively. This geometry does not yet prove safe
-persistent rebasing of fold, annotation or substitution anchors.
+The grapheme/TAB projection itself is limited to direct raw-to-cell
+composition. A downstream `AnnotationDocument2D` can forward those
+old/new cell endpoints unchanged because its overlays occupy no cells.
+Nested cell, fold and substitution transformations still lack a
+pre/post mapping of their own. All these views retain conservative
+invalidation, and this geometry does not yet prove safe persistent
+rebasing of fold, annotation or substitution anchors.
 Neither `BaseDocument2D` nor a public `Representation` interface is
 introduced by this implementation.
 
