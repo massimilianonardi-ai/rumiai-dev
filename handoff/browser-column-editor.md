@@ -1,6 +1,6 @@
 # Advanced browser/Electron text editor
 
-Status: Active — authoritative raw pre/post UTF-16 geometry CI-verified; transformed-view geometry, source-anchor rebasing and GUI remain open
+Status: Active — direct raw-to-cell pre/post geometry CI-verified; downstream geometry, source-anchor rebasing and GUI remain open
 Updated: 2026-11-03
 
 ## Goal
@@ -10,6 +10,11 @@ Design and eventually build an extremely fast, memory-efficient advanced JavaScr
 The JavaScript compilation, module loading and distribution concern has **independent ownership** at `handoff/javascript-build-and-runtime-loading.md`. This handoff must not make bundler/loader decisions.
 
 ## Current repository revisions
+
+**Current raw-to-cell geometry checkpoint (2026-11-03; dev advances on handoff update):**
+- `rumiai-dev`: `dcdea7c7be08b39d4bf0760557e218da0d81a948` — current raw-to-cell geometry specification.
+- `rumiai-os`: `bf1bb1195a5f6fb7a30caf88086e32cefe504c0e` — direct raw-to-cell propagation and CI pin.
+- `rumiai-tests`: `bb41cd536502f7b37a8049d0ba053508b1223a51` — dedicated real-core cell geometry regression run by the permanent document suite.
 
 **Current physical source geometry checkpoint (2026-11-03; dev HEAD advances with this handoff):**
 - `rumiai-dev`: `c1ad3b5af6546fa03e16f52a1b3083a5118cc4e9` — canonical raw source geometry contract in `TEXT-EDIT.md`.
@@ -77,7 +82,17 @@ Latest independently verified remote `main` HEADs on **2026-10-19**, immediately
 - The separately deferred terminal `vsed` advanced-editor work is `todo/vsed-advanced-editor-evaluation.md` and is not this editor.
 - The JavaScript toolchain is owned by `handoff/javascript-build-and-runtime-loading.md`.
 
-## Resume checkpoint — 2026-11-03 (authoritative raw change geometry; read first)
+## Resume checkpoint — 2026-11-03 (direct raw-to-cell old/new geometry; read first)
+
+**Scope and product:** The current `m.text.document` physical store invokes private geometry observers after edit validation but before staging, while the old source still exists. `RawDocument2D` exposes that observation only through an underscore-prefixed internal bridge; the original public `Document.subscribe` callback arguments and committed raw geometry remain unchanged. A direct `CellDocument2D(RawDocument2D)` computes old grapheme/TAB boundary points pre-commit, waits for the corresponding authoritative raw post-commit payload, then projects new points against the committed source. The cell event includes immutable `geometry` with old/new `{row,col}` endpoints in their respective cell spaces, original physical batch order, old/new row counts and cell revisions. Raw source offsets are not exposed in the cell geometry. The event **always** retains `invalidation:{all:true}`, since TAB stops or neighboring graphemes may reflow.
+
+**Safety boundary:** Any nonrepresentable old/new boundary (including a source edit inside a grapheme or CRLF terminator), revision discontinuity/wrap, unavailable precommit observation or absent raw postcommit geometry suppresses the complete cell `geometry` property without failing the physical edit. A second `CellDocument2D` around the first still receives conservative invalidation without geometry; no claim is made for fold, annotation or substitution propagation or persisted anchors. The private precommit hook prevents reentrant source edits and its observer failures cannot turn a valid edit into a failed one.
+
+**Exact current commits and evidence:** `rumiai-os` `bf1bb1195a5f6fb7a30caf88086e32cefe504c0e` contains the code and pins permanent tests at `rumiai-tests` `bb41cd536502f7b37a8049d0ba053508b1223a51`. Real Node 22 `m.text.document core extraction verification` Actions run `41629013018` **PASS**, with log line `cell old/new geometry PASS`; existing full document extraction parity also **PASS**. Tests exercise both FlatDocument/PieceDocument backends, unsorted edits, grapheme mapping, TAB width change, selected inserts, no-effect commits, cross-row edits, immutable cell events, nonrepresentable boundaries, missing raw geometry and conservative nested-cell fallback. `Git tracking boundaries` run `41629012952` **PASS**. Neither hosted run is physical browser validation.
+
+**Next:** Establish a correct next-layer pre/post mapping for one existing downstream transformation before preserving any fold, annotation or substitution anchors. In particular, simple edit endpoint deltas are not sufficient to rebase later cell anchors after TAB/grapheme reflow. Keep the current downstream clear-on-upstream-change behavior until validated correspondence exists.
+
+## Resume checkpoint — 2026-11-03 (prior authoritative raw change geometry)
 
 **Authorization:** User approved physical pre/post geometry capture in the established `rumiai-os/main/lib/sys/js/core/m/text` chain, without changing the public `Document.subscribe` notification shape or selecting a general `Representation` abstraction.
 
@@ -426,6 +441,8 @@ view.destroy();                            // source is still caller-owned
 
 ## Current state
 
+**CURRENT AS OF 2026-11-03:** Direct raw-to-cell old/new geometry is implemented and Node CI-verified. Cell content events now optionally carry exact old/new cell endpoints; whole-view invalidation persists. Nested cell, fold, annotation and substitution geometry, surviving-anchor policies and GUI integration remain open. The earlier 2026-10-19 state below is retained only as a prior checkpoint.
+
 **CURRENT AS OF 2026-10-19:** The core now exposes the completed raw adapter `m.text.document.RawDocument2D`, with `PieceDocument` as the intended backing store, abstract `Document2D`, `Selections`, and three selection modes. Production GUI integration and advanced logical `Document2D` are pending; the private `TextEditSelections` implementation is retained by composition. See **Resume checkpoint — 2026-10-19** above and the canonical `TEXT-EDIT.md` for the precise current contract. The older source-and-PoC evidence below is historical task context, not the current next implementation target.
 
 **Promoted TextEdit v0.1.0 core (2026-10-11):** explicit user authorization to finalize architecture and release a GUI-independent core; the binding promoted contract is now `specifications/rumiai-os/TEXT-EDIT.md`, and the published `m` JS library is `rumiai-os/lib/sys/js/text-edit.lib.js`, documented in `res/sys/manual/text-edit.lib.js`. Public names: `TextEdit` composition; `PieceDocument` implementing structural `TextEditBase`; `TextEditSelections`; `TextEditRepresentation`; `TextEditAdvancedSelections`. The representation now offers the explicitly requested `replace(sourceStart,sourceEnd,arbitraryText)` source-coordinate overlay API, without touching the source text. Projected positions inside replaced text map to a region, not invented editable source offsets; empty placeholders and Unicode grapheme boundaries have explicit handling. Separate non-text note metadata, explicit confirmed-edit rebase and caller-selected column widths remain. No listeners/history/GUI inside the library. `TextEdit` permits injection of a selection-compatible future history wrapper. Permanent real-product validation: executable `rumiai-tests/tests/rumiai-os/text-edit/core.test` and `core.test.mjs`, pinned in the workflow. [Actions 38172706588](https://github.com/massimilianonardi-ai/rumiai-os/actions/runs/38172706588) PASS at exact released commit `45a5dc2dde494ee1411b9da9d965707c68c7adbf` for both real product tests and GitHub release publishing. Verified [GitHub Release TextEdit v0.1.0](https://github.com/massimilianonardi-ai/rumiai-os/releases/tag/text-edit-v0.1.0): non-draft, non-prerelease, immutable tag `text-edit-v0.1.0` at this commit, attached `TextEdit-v0.1.0.zip` (12,511 bytes, SHA-256 `9c2af1178a9376cb4141bd799999505d803f23177cba4c07e83ec77854a3aeaa`). A forward-only `release/text-edit-v0.1.0` source branch also points to the released revision. This initial baseline does not establish native GUI/IME/rendering/RTL parity or full optimized giant-line selection. Future optimizations are explicitly deferred per user instruction.
@@ -448,14 +465,14 @@ The new external column planner demonstrates model-level 2D clipboard preparatio
 
 ## Next action
 
-1. Reverify remote HEADs and reread current `TEXT-EDIT.md`, this checkpoint, the physical/RawDocument2D implementation and permanent tests.
-2. Design and verify a *single concrete* mapping of pre/post raw source geometry through the next `Document2D` layer (initially row-preserving cell mapping). Use both old and new mapping snapshots: neither display-cell widths nor TAB/grapheme boundaries can be safely reconstructed from only the post-edit source.
-3. Implement safe, limited rebasing of unaffected fold/annotation/substitution source anchors only after validating the corresponding transformed geometry. Keep conservative whole-view invalidation where correspondence is ambiguous or unavailable.
-4. Preserve `Document.subscribe` original operands, one physical commit, one effective selection owner, bounded reads and the present synthetic-region edit barriers. Do not introduce speculative public `Representation` or `BaseDocument2D`.
+1. Reverify remote HEADs and follow the canonical mandatory read order, including current `TEXT-EDIT.md` and this handoff.
+2. Prove the next-layer old/new mapping through one existing transformation (`AnnotationDocument2D`, `FoldDocument2D` or `SubstitutionDocument2D`) without inferring old positions from post-only state; preserve current conservative invalidation wherever exact correspondence is unavailable.
+3. After verified downstream correspondence, define and test limited anchor survival for nonintersecting source edits, including grapheme/TAB reflow, row insertion/deletion, CRLF boundaries, revision discontinuities and synthetic protected spans.
+4. Keep one atomic source commit, one effective selection owner, bounded reads, synthetic edit barriers and the unchanged original `Document.subscribe` operands. Do not introduce speculative public `Representation` or `BaseDocument2D`.
 
 ## Blockers / open questions
 
-- **No blocker for the validated RawDocument2D normal path.** The next *feature* or migration boundary is deliberately left for user selection.
+- **No blocker for the validated direct RawDocument2D → CellDocument2D geometry path.** The next step is downstream transformation correspondence; persistent source-anchor rebasing remains intentionally unimplemented.
 - **Advanced logical Document2D:** source↔view mapping, nested view composition, grapheme/TAB/wide cells, folded/virtual/source-less regions, regions spanning multiple visual rows, rectangle boundaries intersecting tokens, virtual editability/overlay copy policies, and the output of a richer `getRect` without breaking the raw adapter's published behavior.
 - **Pluggability:** whether/when selection and insertion interpreters should be externally registered or configured (currently three/four built-in modes), mode-switch state and gesture boundaries, duplicate and overlapping targets, reverse-oriented editing and multi-mode `remSelection` semantics. The concrete implementation currently handles the tested mixed-mode case; more general policy remains intentionally deferred.
 - **Performance and validation:** `colCount` revision-cache invalidation still scans every row; `getRect` is bounded but no asymptotic/host evidence for enormous rows; no formal physical-host run of `RawDocument2D` or new editor integration.
