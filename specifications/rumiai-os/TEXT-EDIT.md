@@ -735,6 +735,7 @@ The exported abstract class defines these members:
 ```javascript
 get rowCount()
 get colCount()
+get revision()
 getRect(rowStart, colStart, rowEnd, colEnd)
 read()
 getSelections()
@@ -746,6 +747,7 @@ set selectionMode(mode)
 get insertMode()
 set insertMode(mode)
 insert(content)
+replace(edits, expectedRevision)
 subscribe(listener)
 destroy()
 ```
@@ -763,6 +765,23 @@ the interface to know where the content originated; system clipboard
 transport and GUI pointer/key events are external responsibilities.
 `subscribe(listener)` observes document changes; `destroy()` is the
 lifetime endpoint of an implementing view.
+
+`revision` identifies the observable 2D coordinate space, not merely the
+underlying physical text revision. A representation that changes its exposed
+geometry independently of its backing document must invalidate previously
+captured coordinate revisions. The GUI still does not know the backing
+source or the mapping between representation layers.
+
+`replace(edits, expectedRevision)` is an atomic explicit-edit operation:
+`edits` is a nonempty array of
+`{start:{row,col},end:{row,col},text}` records in the exposed 2D
+coordinates, all referring to the same pre-edit revision. The captured
+`expectedRevision` argument is mandatory; stale coordinates must be
+rejected without a partial commit. Explicit edits are independent of the
+selection-driven `insert(content)`. Implementations must translate and
+validate the entire batch before one atomic backing commit. Ambiguous or
+unsupported edits must be rejected instead of silently clipped, redirected
+or partly applied.
 
 Direct construction throws `TypeError('Document2D is abstract')`; inherited
 abstract members throw `Error` until implemented by a subclass. The class
@@ -820,11 +839,23 @@ values ordered by selections, independent of the current insertion mode.
 More values than selected targets fail without a source commit; missing
 values follow the existing physical selector's empty/deletion semantics.
 Every successful real edit goes through one atomic `Document.replace`.
+`RawDocument2D.revision` equals the underlying `Document.revision`.
+`RawDocument2D.replace(edits, expectedRevision)` checks that revision
+before and after preparing physical offsets. Explicit positions must be
+within existing rows and at or before the actual end of line; unlike
+`insert(content)`, this API does not materialize virtual columns or rows.
+Zero-length ranges insert text; ranges may span rows. The underlying
+`Document.replace` validates collision/order semantics and executes the
+entire converted array as one atomic commit. Existing physical selections
+continue to rebase from the committed document notification.
 
-`subscribe(listener)` returns an unsubscribe callback. Notifications
-carry `{type,revision}`, where `type` is `content`, `selections`,
-`selectionMode` or `insertMode`; content notifications follow the
-physical selector's source-rebase notification. Clipboard transport,
+`subscribe(listener)` returns an unsubscribe callback. Notifications carry `{type,revision}`, where `type` is
+`content`, `selections`, `selectionMode` or `insertMode`.
+Content notifications follow the physical selector's source-rebase
+notification and include `invalidation:{all:true}`, which conservatively
+invalidates the entire exposed 2D geometry. This is a correct but coarse
+initial geometric invalidation; bounded old/new affected-region payloads
+remain to be implemented and must not underestimate their impact. Clipboard transport,
 GUI device events and pixel hit-testing do not belong to the adapter.
 
 
