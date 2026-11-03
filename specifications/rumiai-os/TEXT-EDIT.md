@@ -897,9 +897,10 @@ regions in the exposed coordinates. A `kind:'tab'` retains
 `text:'\\t'` in the region record, while `getRect` expands only
 the TAB cells intersecting the requested window into spaces.
 A grapheme may contain multiple UTF-16 units but occupy one cell.
-Input regions already indivisible in a different coordinate space
-retain their extent and are not split. Public region records are
-detached values and cannot alter the view's internal mapping.
+Non-text input regions, and regions whose cell extent differs from
+their UTF-16 text length, retain their existing extent; ordinary
+one-to-one text regions are segmented into graphemes. Public region
+records are detached values and cannot alter the view's mapping.
 
 The scanner requests at most 2048 input columns per read chunk and
 retains a trailing grapheme across boundaries. A bounded window near
