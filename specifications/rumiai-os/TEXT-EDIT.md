@@ -1103,10 +1103,12 @@ Revision wrap also disables precise projection for that commit.
 The grapheme/TAB projection itself is limited to direct raw-to-cell
 composition. A downstream `AnnotationDocument2D` can forward those
 old/new cell endpoints unchanged because its overlays occupy no cells.
-Nested cell, fold and substitution transformations still lack a
-pre/post mapping of their own. All these views retain conservative
-invalidation, and this geometry does not yet prove safe persistent
-rebasing of fold, annotation or substitution anchors.
+Nested cell and substitution transformations still lack a
+pre/post mapping of their own. Whole-row folding has only the
+restricted row-start projection described below; inline folding
+still lacks such a mapping. All these views retain conservative
+invalidation, and this geometry does not yet prove persistent
+rebasing of fold or substitution anchors.
 Neither `BaseDocument2D` nor a public `Representation` interface is
 introduced by this implementation.
 
