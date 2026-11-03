@@ -381,6 +381,43 @@ escaping or cyclic links. Resource export testing is out of scope.
 
 ## Current state
 
+**Current repository and v2 execution checkpoint (2026-11-03):**
+
+The independent technical source repository was renamed from
+`massimilianonardi-ai/m` to `massimilianonardi-ai/m-os`; its contents,
+branch names and commit ancestry were preserved. The `m` command and
+technical layer retain their names. The latest checked heads are
+`m-os/master@ff55fc9f220f8da3f1f90d1bf4aa2e46c55a5d2a` and
+`m-os/pkg-schema-v2@8c8397dbcf1df44822553aebd1891ab6db880945`.
+The catalog's independent v2 branch was realigned to use `m-os` in its
+checkout workflows at `pkg-catalog/pkg-schema-v2@56398be0661d395e0fd07af018da0a1bffbf0235`.
+The published v1 catalog checkout was similarly realigned at
+`pkg-catalog/main@35b230d44d9e45ad2fb1e7473a838f5a485cf81a`.
+Older `m/...` revision strings below identify the same repository
+before its rename, not another source repository.
+
+Revision-scoped v2 validation since the older checkpoint:
+- Real catalog-backed v2 Node.js exact install, wrapped node/npm/npx,
+  managed HOME, context and explicit pinned facility default **PASS**
+  on Ubuntu, workflow `41645063670`, runtime `m-os@8c8397db`,
+  catalog `pkg-catalog@5096bd01`. The Node.js upstream adapter was
+  corrected to ignore prerelease tags when listing stable versions.
+- Real catalog-backed v2 Ollama installation, pinned provider and
+  portable `srv start`, responsive client, `srv stop`, idempotent stop
+  **PASS** on Ubuntu, workflow `41645645062`, catalog
+  `pkg-catalog@90b81b40` and runtime `m-os@8c8397db`.
+  Host-supervisor registration/start/stop remains unvalidated.
+- Earlier workflow `41640555343` completed **9/10 PASS**:
+  5/5 Ubuntu and 4/5 macOS. The only macOS failure was a real
+  upstream GitHub jq release API HTTP 403 during download, before
+  v2 materialization; this is not a v2 execution PASS.
+- The renamed-repository Ollama validation workflow `41656568773`
+  is **PASS**. The other renamed-checkout workflows were still
+  queued during this checkpoint and cannot be counted as PASS.
+
+The preceding checkpoint remains retained below as revision-specific
+prior state rather than current evidence.
+
 Checkpoint 2026-11-03, current verified revisions:
 - `m/master@ff55fc9f220f8da3f1f90d1bf4aa2e46c55a5d2a`
 - `m/pkg-schema-v2@dca35bafd1e7ab3993bb9b38e72877b200dfb5b5`
@@ -434,15 +471,13 @@ this Current state supersedes older stale 'no v2 PASS' claims.
 
 ## Next action
 
-1. Inspect and close the exact-revision macOS jobs from workflow
-   `41640555343`; resolve any intrinsic failures and separately report
-   upstream download/rate-limit issues. Rerun appropriately pinned
-   reproducibility checks when needed.
-2. Exercise a real catalog-backed v2 facility provider with public
-   `pkg install` and `pkg provider default`, then complete actual
-   `srv start/stop` and host-supervisor lifecycle through the exact
-   `link/bin` entrypoint, preserving HOME, service foreground state,
-   runtime instance and provider identity.
+1. Rerun the previously upstream-403-blocked macOS v2 jq acquisition
+   when GitHub release access is available; inspect the new exact-m-os
+   workflow runs without treating queued jobs as PASS.
+2. Extend the passed real catalog-backed v2 Node.js and Ollama normal
+   paths to host-supervisor lifecycle on supported hosts, preserving
+   HOME, exact provider identity, foreground process ownership and
+   runtime state. Do not treat portable srv PASS as host-supervisor PASS.
 3. Resolve/validate v2 PATH contribution ordering and any remaining
    provider environment precedence issues before final contract promotion.
    Perform mixed v1/v2 regression, final manual/library interface audit
@@ -463,6 +498,7 @@ this Current state supersedes older stale 'no v2 PASS' claims.
   scope/precedence and safe checks.
 - Whether stable metadata inheritance pays for its complexity while
   retaining range anchors and `all`/osarch stream selection.
-- The v2 shell/Java library-only fixture has hosted PASS on Ubuntu
-  at this checkpoint; real catalog-backed Java library consumers and
-  real service-provider lifecycle still need independent validation.
+- The v2 shell/Java library-only fixture has hosted PASS on Ubuntu;
+  real catalog-backed Java library consumers and real *host-supervisor*
+  service lifecycle still need independent validation. The portable
+  Ollama srv start/stop path is already proven for its pinned revision.
