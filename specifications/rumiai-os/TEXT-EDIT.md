@@ -736,6 +736,8 @@ The exported abstract class defines these members:
 get rowCount()
 get colCount()
 get revision()
+getRowWidth(row)
+getRegions(rowStart, colStart, rowEnd, colEnd)
 getRect(rowStart, colStart, rowEnd, colEnd)
 read()
 getSelections()
@@ -755,7 +757,18 @@ destroy()
 `rowCount` describes the exposed document's rows. `colCount` describes
 its maximum text column; neither property reveals source storage geometry.
 `getRect` reads a **bounded 2D window** for display, including a bounded
-column range; `read()` separately reads the *current selections* for transfer
+column range; `getRowWidth(row)` reports occupied columns for a
+single exposed row (zero for future rows). `getRegions` reads a bounded
+half-open 2D window in the same coordinate space, returning one array
+per existing requested row. Each region is a detached
+`{kind,text,start:{row,col},end:{row,col}}` record. An indivisible
+region intersecting the window is returned whole, even when its bounds
+extend outside the requested columns. Region kinds are presentation
+data, not edit policies. Internal input/source mappings remain private
+to the implementing document; GUI consumers do not need to know its
+provenance. A displayed grapheme may have a JavaScript string length
+different from its occupied display-cell width.
+`read()` separately reads the *current selections* for transfer
 to external consumers. Coordinate interpretation, selected text production,
 selection-mode policies and input-mode parsing belong to concrete
 implementations. `addSelection` and `remSelection` may reorganize the entire
@@ -812,7 +825,12 @@ depend on the `Document2D` interface, not on this coordinate interpretation;
 other implementations may expose different internally constructed spaces.
 
 `rowCount` is `document.lineCount`; `colCount` is the greatest raw line
-content length (UTF-16 code units, terminators excluded). The latter is
+content length (UTF-16 code units, terminators excluded).
+`getRowWidth(row)` returns that row's raw UTF-16 content width, or
+zero for a future row. `getRegions` produces at most one ordinary
+`kind:'text'` segment per requested existing row, clipped to the
+requested UTF-16 columns. Such a raw range can divide a Unicode
+grapheme; the untransformed raw view intentionally exposes code units. The latter is
 revision-cached but can require a scan of all source rows when invalidated.
 `getRect(rowStart, colStart, rowEnd, colEnd)` accepts nonnegative safe-integer
 **half-open** row/column boundaries and returns an array of raw text strings,
@@ -861,6 +879,60 @@ remain to be implemented and must not underestimate their impact.
 Clipboard transport, GUI device events and pixel hit-testing do not belong to
 the adapter.
 
+
+
+### `CellDocument2D`: row-preserving grapheme and TAB projection
+
+`new CellDocument2D(input, tabSize=4)` requires an existing nominal
+`Document2D` and a positive safe-integer tab size. It implements the
+complete `Document2D` API in a transformed cell space: one ordinary
+Unicode grapheme occupies one column, and a TAB advances to the next
+tab stop. The input may itself be a transformed `Document2D`;
+`Intl.Segmenter` is required. The adapter has no DOM, font or
+pixel dependency. Configurable widths of other graphemes are not
+implemented yet.
+
+The bounded `getRegions` call returns whole grapheme and TAB
+regions in the exposed coordinates. A `kind:'tab'` retains
+`text:'\\t'` in the region record, while `getRect` expands only
+the TAB cells intersecting the requested window into spaces.
+A grapheme may contain multiple UTF-16 units but occupy one cell.
+Input regions already indivisible in a different coordinate space
+retain their extent and are not split. Public region records are
+detached values and cannot alter the view's internal mapping.
+
+The scanner requests at most 2048 input columns per read chunk and
+retains a trailing grapheme across boundaries. A bounded window near
+the beginning of a long row need not materialize the entire row.
+Computing complete row widths and `colCount` can scan complete
+rows or the whole document; no general indexed layout or huge-file
+performance claim is made.
+
+`CellDocument2D` does **not** own a second effective selection set.
+Its local `Selections` mode interpreters operate in displayed cell
+coordinates and forward complete effective ranges to the input's
+existing selection owner. Selected text `read()` and selected
+`insert(content)` continue using the input's behavior.
+A source position strictly inside a grapheme and a view position
+strictly inside a multi-cell TAB are not exact selectable/editable
+boundaries: they are rejected rather than snapped. Virtual
+columns retain their displacement beyond the actual EOL.
+The user-facing policy for partial-TAB selections remains open.
+
+`replace(edits, expectedRevision)` translates all requested cell
+endpoints to input coordinates, verifies revision consistency, then
+forwards one batch through `input.replace`. No rejected batch can
+partially mutate the input. This view's own numeric revision
+increments whenever the input coordinate revision changes; it
+publishes conservative whole-space geometric invalidation then.
+Selection/mode events do not advance the view-coordinate revision.
+`destroy()` unsubscribes this view but does not destroy its input.
+
+This concrete class is deliberately limited to grapheme/TAB
+geometry: folding, source-less annotations, general 2D region
+substitution and precise old/new region invalidations remain open.
+Neither `BaseDocument2D` nor a public `Representation` interface is
+introduced by this implementation.
 
 ## Validation and release boundary
 
