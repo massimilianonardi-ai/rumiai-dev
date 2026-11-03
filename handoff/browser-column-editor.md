@@ -1,6 +1,6 @@
 # Advanced browser/Electron text editor
 
-Status: Active — versioned 2D batches, CellDocument2D and protected FoldDocument2D implemented and CI-verified; additive annotations, inline folding and GUI remain open
+Status: Active — versioned Document2D, grapheme/TAB, whole-row folding and source-less annotations implemented and CI-verified; inline folding, precise geometry and GUI remain open
 Updated: 2026-11-03
 
 ## Goal
@@ -10,6 +10,12 @@ Design and eventually build an extremely fast, memory-efficient advanced JavaScr
 The JavaScript compilation, module loading and distribution concern has **independent ownership** at `handoff/javascript-build-and-runtime-loading.md`. This handoff must not make bundler/loader decisions.
 
 ## Current repository revisions
+
+**Fresh remote checkpoints verified 2026-11-03 after the annotation increment** (the dev HEAD will advance on this handoff commit):
+- `rumiai-dev`: `48ae5296a2819e0309b3c68c3881a56fb24b45b6` — canonical annotation/region contract in `TEXT-EDIT.md`.
+- `rumiai-os`: `825400229e432835b62162505efce0b81bcc45a5` — current real-core annotation view, cell/fold forwarding and workflow pin.
+- `rumiai-tests`: `2ae3cb52f8388a78ceb5aaa5da955ecef02c107f` — current permanent document test revision.
+- `rumiai-dev-PoCs`: `7faa0e496ab41e0c1bf1b0ef1592d5f47cd3543f` — unchanged; PoC 074 remains exploratory reference.
 
 **Fresh HEAD verification for this folding work unit (2026-11-03; dev HEAD advances with this handoff commit):**
 - `rumiai-dev`: `1b4549ddc33ccbc5f1dd1b0d5964b542c760b98e` (current folding specification published; this handoff is being updated).
@@ -41,7 +47,25 @@ Latest independently verified remote `main` HEADs on **2026-10-19**, immediately
 - The separately deferred terminal `vsed` advanced-editor work is `todo/vsed-advanced-editor-evaluation.md` and is not this editor.
 - The JavaScript toolchain is owned by `handoff/javascript-build-and-runtime-loading.md`.
 
-## Resume checkpoint — 2026-11-03 (whole-row folding increment; read first)
+## Resume checkpoint — 2026-11-03 (additive annotations increment; read first)
+
+**User approval:** Continue directly on `rumiai-os/main/lib/sys/js/core/m/text`, after the validated whole-row folding increment, with a first additive annotation representation. Keep `Document2D` as the only GUI document contract and do not create a second effective selection owner or prematurely introduce `BaseDocument2D` / a public `Representation`.
+
+**Completed product changes:**
+- New `m.text.document.AnnotationDocument2D` in `lib/sys/js/core/m/text/document/AnnotationDocument2D.js`, exported in `lib/sys/js/core/modules-js.json`. Construction wraps any nominal `Document2D`.
+- `setAnnotations([{id,text,at:{row,col}}, ...])` stores unique-id, nonempty-text annotation records at existing input row/cell boundaries (including EOL). It rejects invalid positions and synthetic fold markers; configuration is view-local and revisioned. `annotations` returns detached configuration snapshots.
+- `getRegions` emits `{kind:'annotation',id,text,start,end}` **zero-width** records (equal start/end) alongside the input's structured regions, including empty source rows. These are source-less overlay labels, *not* new display columns, editable content, selected text, or pixel/UI layout reservations. `getRect`, `read`, all effective selection operations and `insert` delegate to the input; explicit `replace` forwards exactly one version-checked batch to the input.
+- `CellDocument2D` scanner now recognizes zero-width `kind:'annotation'` records and maps input annotation anchors into output cell columns without adding display width or text. An annotation that splits a grapheme/TAB is rejected rather than snapped. Source-independent ID survives the cell region stream. `FoldDocument2D` now preserves optional region metadata (including annotation IDs) for visible source rows; annotations in folded rows are absent from its bounded output.
+- **Conservative invalidation:** any input coordinate revision change clears this view's current annotations and increments its revision; no attempt to rebase anchors with insufficient old/new geometry. Annotation config changes also increment local revision and notify `{type:'content',invalidation:{all:true}}`. Input object stays alive after annotation-view destruction.
+- **Permanent verification:** `rumiai-tests/tests/rumiai-os/text-document/core.test.mjs` has additive annotation cases for FlatDocument/PieceDocument, sorted+detached records, no-op config, invalid/duplicate/tab-splitting anchors, source edits separated from metadata, selection/clipboard semantics, auto-clear on external edits, EOL and empty rows, annotations below a cell view with two tab edges, below folding, marker rejection, raw UTF-16 ambiguous grapheme and 100001-char bounded reads. The test suite is pinned by the actual product workflow.
+- **CI confirmation:** `rumiai-os` `825400229e432835b62162505efce0b81bcc45a5` pinned `rumiai-tests` `2ae3cb52f8388a78ceb5aaa5da955ecef02c107f`, GitHub Actions `m.text.document core extraction verification` run `41601561727` **PASS** on the real compiled core and permanent Node tests. This is mechanical validation, not browser GUI/physical performance.
+- Canonical specification `rumiai-dev/specifications/rumiai-os/TEXT-EDIT.md` now includes the zero-width overlay-region and `AnnotationDocument2D` contracts at commit `48ae5296a2819e0309b3c68c3881a56fb24b45b6`. No changes were made to the frozen standalone TextEdit 0.8.2 library or PoC 074.
+
+**Known limits:** No occupied/inline source-less layout cells, editable annotation content, stable rebased annotation anchors, image/badge rendering, pixel hit-testing, or precise partial geometric invalidation. The `AnnotationDocument2D` configuration carries point anchors in the *input view* and clears on its revision change. `getRegions` is a structured overlap-aware stream, but it is not a general region graph or a DOM layout engine.
+
+**Next work unit:** Evaluate the more general inline cross-row folding/synthetic substitution model and precise 2D geometry notifications, including the relationship to existing `TextEditRepresentation` rebase algorithms. Consider extracting shared internals from Cell/Fold/Annotation only after concrete reduction of duplicated responsibility is demonstrated. A browser GUI and huge-file physical tests remain separate validation.
+
+## Resume checkpoint — 2026-11-03 (prior whole-row folding increment)
 
 **User approval and repository location:** Continue the PoC 074-inspired layered `Document2D` architecture on the product main branch at `rumiai-os/lib/sys/js/core/m/text`, not in a new PoC or an alternative namespace. All existing selection ownership, atomicity and no-GUI-dependency invariants remain.
 
@@ -325,10 +349,10 @@ The new external column planner demonstrates model-level 2D clipboard preparatio
 
 ## Next action
 
-1. Reverify all involved remote HEADs; reread current `TEXT-EDIT.md`, this latest checkpoint, compiled descriptor, concrete `RawDocument2D`, `CellDocument2D`, `FoldDocument2D` and permanent tests.
-2. Implement a first composable **additive annotation** case that appears through the same structured `getRegions` interface without enabling hidden or source-less text edits by accident. Preserve a single effective selection owner and one physical commit for valid edits.
-3. Revisit more general inline folding (PoC 074's cross-row splice), selection semantics for non-source-backed visible regions, and accurate old/new 2D geometric invalidation as explicitly separate design increments; do not conflate whole-row folding with the full transformation model.
-4. Keep `BaseDocument2D` and public `Representation` deferred until a demonstrable shared concrete responsibility justifies them. Validate with current permanent tests, CI and future physical GUI/huge-file checks as applicable.
+1. Refresh current remote HEADs and applicable canonical docs; inspect `Document2D`, `RawDocument2D`, `CellDocument2D`, `FoldDocument2D`, `AnnotationDocument2D` and real-core tests before new changes.
+2. Examine the next general transformation: PoC 074's inline prefix/suffix cross-row folding or virtual substitutions that alter the geometry of rows, with explicit multi-region source↔view correspondence and strict editability. Preserve the single effective selection owner and single physical commit.
+3. Address precise old/new 2D invalidation and source-anchored rebasing, rather than clearing all fold/annotation records after any upstream revision, when enough mutation data exists to guarantee correctness.
+4. Keep source-less occupied/interactive annotations, display-cell TAB partial selection, huge-file layout indexing and GUI/host physical validation as distinct open concerns. Introduce `BaseDocument2D` or a public `Representation` only if demonstrated common code requires it; do not assume a general virtual-space contract is already solved.
 
 ## Blockers / open questions
 
