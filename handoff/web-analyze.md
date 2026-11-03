@@ -1,25 +1,25 @@
 # Chromium manual-session analysis — web-analyze
 
 Status: Active
-Updated: 2026-10-19
+Updated: 2026-11-03
 
 ## Goal
 
-Provide the `m` JavaScript library at `rumiai-os/lib/sys/js/web-analyze.lib.js` to launch the `chromium` executable from the effective `m` PATH, observe the user's manual browsing via native Chromium CDP on loopback TCP, and record extensive structured JSONL evidence. No Playwright dependency or separate provider/PoC is required.
+Provide the `m` JavaScript library at `rumiai-os/lib/sys/js/web-analyze.lib.js` to launch the `chromium` executable from the effective `m` PATH, observe the user's manual browsing via native Chromium CDP on loopback TCP, and record extensive structured JSONL evidence. No Playwright dependency or separate provider/PoC is required. A new `bin/sys/web-analyze` Node.js command reuses this capture library to perform bounded, passive page-state exploration and produce Markdown evidence.
 
 ## Current repository revisions
 
-- rumiai-dev: ce45f31f0bee62513baacc23056f20b395d1a1aa (before this checkpoint)
-- rumiai-os: 58244e937345d99acdaf948454e20f3e18f3bac0 (non-fatal asynchronous navigation, manual, targeted CI)
-- rumiai-tests: c243a6bc1a5a153e0b17bfadba53250dc53032c8 (real Chrome delayed-navigation regression test)
+- rumiai-dev: a8cab8bb9152ffb9d5e25fcb9a6a1b1d4f992a28 (before this checkpoint)
+- rumiai-os: c78e4981ea7759f6798f14b13f135ef5e55a00b3 (Node command, manual, CDP library extension and CLI CI)
+- rumiai-tests: e9c335408ccef021590d468949775e277bfec49d (real Chromium dynamic-scroll command test)
 
 ## Applicable canonical sources
 
-`README.md`, `RULES.md`, `CONSISTENCY-GATE.md`, `TESTING.md`, `TEST-PATTERNS.md`, `specifications/README.md`, `specifications/rumiai-os/CURRENT-MODEL.md`, `BOOTSTRAP-ENVIRONMENT.md`, `FILESYSTEM-NAMING.md`, `LIBRARY-INTERFACES.md`, `DOCUMENTATION-MODEL.md`, `DIAGNOSTICS.md`, `WEB-CONTROL.md`, `handoff/README.md`.
+`README.md`, `RULES.md`, `CONSISTENCY-GATE.md`, `TESTING.md`, `TEST-PATTERNS.md`, `specifications/README.md`, `specifications/rumiai-os/CURRENT-MODEL.md`, `BOOTSTRAP-ENVIRONMENT.md`, `FILESYSTEM-NAMING.md`, `LIBRARY-INTERFACES.md`, `COMMAND-ENTRYPOINTS.md`, `DOCUMENTATION-MODEL.md`, `DIAGNOSTICS.md`, `WEB-CONTROL.md`, `handoff/README.md`.
 
 ## Fixed task-local choices
 
-- User-facing invocation: `nodejs <path-to-lib> <url> <analisys-dir>`. The library doubles as CommonJS import and direct Node.js entrypoint; no extra CLI wrapper.
+- Existing manual-recorder invocation remains `nodejs <path-to-lib> <url> <analisys-dir>`, both CommonJS import and direct Node.js entrypoint. The new, distinct automation request explicitly authorizes `m web-analyze <url> <analysis-path>` as an executable `#!/usr/bin/env node` command; it does not rename or replace the library entrypoint.
 - The destination analysis directory, including missing parents, is created automatically; any user-chosen pathname component is handled as pathname data rather than parsed as a CLI option. An existing directory can be used if it contains no conflicting evidence files. Existing JSONL streams and `summary.json` are never overwritten.
 - Chromium is launched directly from the effective PATH, without Playwright, using a dedicated profile and ephemeral CDP TCP debugging port bound to `127.0.0.1`; sandbox and TLS verification remain enabled by default.
 - Interactive CLI capture lasts until Chromium exits or SIGINT/SIGTERM; API callers may also stop explicitly. The capture finalizes multiple correlated JSONL streams plus `summary.json`.
@@ -27,6 +27,7 @@ Provide the `m` JavaScript library at `rumiai-os/lib/sys/js/web-analyze.lib.js` 
 - **Current explicit user authorization (2026-10-19) supersedes the previous no-response-body scope for a separate raw evidence archive.** CDP Network.getResponseBody saves finished response bodies content-addressed in resources/ with full URL/status/provenance in resources.jsonl; Debugger.scriptParsed/getScriptSource saves compiled JS (including inline/eval where available) in scripts/ and scripts.jsonl. Both raw indexes and bodies may contain secrets/signed URLs and are for private analysis only, not redacted diagnostics or repository artifacts.
 - On caller stop/SIGINT, wait up to 6 seconds for response lifecycle/body/source reads and require a 750ms quiet interval; unresolved requests, failed body retrieval, pending CDP reads and skipped redirect bodies remain explicit in per-resource indexes and summary. An external Chromium close cannot enforce network quiescence; long-lived SSE/WebSockets do not admit a global completion guarantee.
 - User-provided real acceptance URL: `https://chatgpt.com/share/6ad1c0d5-49ec-83eb-a79b-85b04b938835`.
+- The new command defaults to headless Chromium, records at most 29 DOM states after bounded passive document/nested-container scrolling, inventories links/forms/controls, retains compiled scripts and response-body archives, and produces Markdown and Mermaid outputs. Each invocation creates an isolated private `run-*` under the supplied directory. No automatic click, form submission, login or challenge bypass; unobserved routes/behavior are not asserted.
 
 ## Acceptance scenarios
 
@@ -34,6 +35,8 @@ Provide the `m` JavaScript library at `rumiai-os/lib/sys/js/web-analyze.lib.js` 
 2. Navigate/interact manually, close Chromium or press Ctrl+C, then read timestamped lifecycle, interaction, DOM, network, console, performance and error logs and summary.
 3. Repeat against a directory with existing evidence: fail without overwriting prior log files. An existing directory without conflicting evidence is accepted.
 4. On an externally reachable host, verify actual shared-page navigation/response independently of debugger launch and logging mechanics.
+5. Execute `m web-analyze https://example.org ./analysis` without knowing CDP identities: observe a new private run directory containing raw resources, script archive, rendered states, and navigable Markdown reports with Mermaid scroll flow.
+6. Run a real dynamic local page whose nested scroller loads new controls and JSON: verify these changes and resource bodies are captured; repeat in the same parent without overwriting the prior run.
 
 ## Completed
 
@@ -45,6 +48,8 @@ Provide the `m` JavaScript library at `rumiai-os/lib/sys/js/web-analyze.lib.js` 
 - Real GitHub Actions run https://github.com/massimilianonardi-ai/rumiai-os/actions/runs/39321448694 is PASS on Node.js 22 and the Chrome binary available on ubuntu-latest. Its job checked out tests at b9285d0d8a30825d5c3105e3e7ae8a03ac04d500 and ran the real native CDP permanent web-analyze probe successfully. This is real browser fixture evidence, NOT validation of ChatGPT asset coverage on the operator's host.
 - Recent user-committed PoC 068 real share recording had 4,843 events and an unusually active div-target scroll/mutation timeline; the old event recorder logged window.scrollY rather than the event target scrollTop. The new network resource capture does not itself address per-message DOM ID correlation or instrument runtime event-listener registration.
 - On that same host the real shared-page navigation returned `net::ERR_BLOCKED_BY_ADMINISTRATOR`. The dedicated remote-page test therefore reported SKIP, not PASS. Chromium process/CDP transport/capture success is independently evidenced; actual page-content loading is not.
+
+- On 2026-11-03 published `rumiai-os@fe6cfd33759b06d46286684e6b2018606cd68baf` (Node command/manual and additive `sendPage` native-CDP page command method) and `rumiai-os@c78e4981ea7759f6798f14b13f135ef5e55a00b3` (CI including new real-command test). Published `rumiai-tests@e9c335408ccef021590d468949775e277bfec49d` with a real Chrome/Chromium local HTTP fixture exercising dynamic lazy controls, resource/script capture, output isolation, argument errors and Mermaid output. GitHub Actions run `41634919134` passed on hosted Linux with Node.js 22 and real Chromium. This does not prove all React behaviors or acceptance on a physical operator host.
 
 ## Corrected slow-navigation capture startup (2026-10-19)
 
@@ -65,12 +70,12 @@ Provide the `m` JavaScript library at `rumiai-os/lib/sys/js/web-analyze.lib.js` 
 
 ## Current state
 
-Native-CDP response and compiled-script archives, documentation and real fixture-based CI regression coverage are committed. The **revised raw archive has now been physically operated successfully against the real target share** and the complete JSONL indexes have been examined. Coverage is substantial but explicitly incomplete for redirects/unrecoverable/persistent resources. Follow-up focuses on correlating preserved scripts with runtime observers, turn identities and render-triggering interactions.
+Native-CDP manual capture remains available and has user-operated evidence against the original shared URL. The new `bin/sys/web-analyze` automates bounded passive inspection, nested scroll, screenshot/DOM state capture and Markdown reports. The composed command has a passing real-browser fixture CI run `41634919134`; physical operator-host execution of the *new command* has not been verified. Coverage remains incomplete for never-visited interactions, authenticated states and unrecoverable/persistent resources.
 
 ## Next action
 
-Use the committed script metadata to locate the share renderer's turn virtualization and observer callbacks; combine with a future event-target and message-ID-aware runtime probe to reproduce mounting/unmounting under controlled scroll/root-intersection conditions. Prefer a private output directory for new captures; do not commit browser profiles or raw unreviewed resources. Capture coverage remains audited through `resourceCapture` and per-request outcomes. The current archive is already available, so a duplicate capture is not a prerequisite for initial static analysis.
+Validate the new public `m web-analyze` command on the operator's actual Chromium/m environment and representative dynamic target, keeping raw output private. Then correlate saved compiled scripts with observer callbacks and React component/turn identities, and design explicit, controlled interaction scenarios to move beyond passive scroll evidence. Do not commit browser profiles or raw unreviewed resources.
 
 ## Blockers / open questions
 
-The assistant environment cannot independently load the ChatGPT share because its browser/network policies block it. Physical validation on the user's current workstation and coverage of every loaded resource remain open. CDP cannot guarantee recovery of all response bodies (e.g. early eviction, redirects, persistent streams, resources loaded before attachment). Access to raw artifacts may expose session/private information; users must keep the output private.
+The new command was not validated against the real ChatGPT share or on the operator's physical workstation. Complete reconstruction of all possible behaviors from one URL is not technically guaranteed; controlled interaction scenarios, authentication and server-side conditions may be needed. Physical validation and coverage of every loaded resource remain open. CDP cannot guarantee recovery of all response bodies (e.g. early eviction, redirects, persistent streams, resources loaded before attachment). Access to raw artifacts may expose session/private information; users must keep the output private.
