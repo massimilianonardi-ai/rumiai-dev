@@ -9,7 +9,7 @@ Evolve the historically field-used `m-boot` into a standalone, reusable multiboo
 
 ## Current repository revisions
 
-- `massimilianonardi-ai/Ventoy` branch `m-boot-secondary-uefi`: `84d00192b75d6015531cc720c56d3b28271ba5dd` (original Ventoy chain/os_param byte metadata and disposable GRUB->EFI LoadOptions diagnostic handoff proven on FAT32, ext4 and GPT3/ext4; no original Ventoy ISO boot)
+- `massimilianonardi-ai/Ventoy` branch `m-boot-secondary-uefi`: `9bd1f5d1d2ea228b6d23963d1eecca662a79393f` (original Ventoy chain/os_param byte metadata and disposable GRUB->EFI LoadOptions diagnostic handoff proven on FAT32, ext4 and GPT3/ext4; no original Ventoy ISO boot)
 - `massimilianonardi-ai/Ventoy` master: `74cff34240dca6991b79c6656770670da7b0c39e` (unmodified fork baseline)
 - `massimilianonardi-ai/m-boot` main: `c06cd35a73b7e420c3a06dc51537c028ffa619d0` (Kali live+forensic menu and GRUB CI; Grml grub_memcpy note; runtime Kali validation pending)
 - `massimilianonardi-ai/rumiai-dev-PoCs` main: `3dd15fb609456b5c476075a6f883bf7f446afc2f` (recover ext4 PoC image after privileged ESP inspection mismatch; live boot pending)
