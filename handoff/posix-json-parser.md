@@ -9,11 +9,11 @@ Implement a standalone, strictly POSIX `#!/bin/sh` JSON parser command in `rumia
 
 ## Current repository revisions
 
-- `rumiai-dev`: `e2980759d37a8ea0369922745d99321839ebc57d`
-- `rumiai-os`: `ff5156443a7d900bac4f1342480fbafc42e0a503`
-- `rumiai-tests`: `324da93d6c69125770f0e7fd2338de7368dee4d3`
+- `rumiai-dev`: `c2f384fc2ec443b3d31ec6df6cd116cadf0173b5` (before this handoff checkpoint)
+- `rumiai-os`: `4ffc3af233c4ff7ceccdb67eb6ac5e21b0be8e9f` (parser committed at `caf001f98e935a3c378be5feafb293f35d103d6d`)
+- `rumiai-tests`: `502bab8beabdfe6c0c0c5c55c37f7ceac0556118`
 
-These revisions were checked after concurrent unrelated branch advancement. Fresh HEAD retrieval remains required before each write.
+All revisions were freshly checked after concurrent, unrelated branch changes. Recheck current HEADs before any future write.
 
 ## Applicable canonical sources
 
@@ -49,18 +49,22 @@ The external references are illustrative rather than implementation dependencies
 
 ## Completed
 
-- Verified the involved remote HEADs; read the current canonical repository contracts and inspected current JSON library/test and command/manual layout.
-- Analysed the two shell implementations and JSONTestSuite taxonomy.
-- Implemented an auxiliary local prototype; 56 handcrafted positive/negative cases, 300 generated JSON documents, nesting depth 10,000 and a 1 MB string passed in the auxiliary Linux environment.
+- Verified all involved remote HEADs and current canonical rules/specifications; reviewed existing specialized JSON shell library, its tests, command layout and manual model.
+- Analysed `ryncsn/poorjson.sh`, `pystardust/jsp`, and `nst/JSONTestSuite` as external references.
+- Published `rumiai-os/bin/sys/json` with `#!/bin/sh`, mode `100755`, and its operational manual `res/sys/manual/json` in commits `d470d74af83cdb34bed2d285ced5d3575e8f97f0` and `caf001f98e935a3c378be5feafb293f35d103d6d`. Parser Git blob `f7cb24574f473565245fc8ba3757d4c5bb7f5f74`; manual blob `9a76fe91673d1906fa9c9b69168ddd24f59535f6`.
+- Published executable permanent test `rumiai-tests/tests/rumiai-os/json/command-conformance.test` in commits `fd0faf6fc8f20f859d7d51a3cd63a83939e22440` and `502bab8beabdfe6c0c0c5c55c37f7ceac0556118`. Test Git blob `541112ffd9399b10974492ed5c74cc7251b33142`.
+- Auxiliary Linux exploratory execution: 56 handcrafted accepted/rejected inputs, 300 generated valid documents compared with Python JSON reference, 10,000 nested array levels, 100 KB/1 MB strings, selected malformed UTF-8 cases; all PASS. Executed the same committed parser/test Git blobs through the native command in a temporary target fixture; test returned 0. Shell syntax checks PASS; selected runtime probes passed under dash and BusyBox ash with mawk/BusyBox awk.
+- Post-change consistency review: verified remote Git blob SHAs, executable/manual modes, manual/test presence and expected changed paths; compared intervening concurrent commits and preserved unrelated text-editor changes. No current JSON library consumers modified.
 
 ## Current state
 
-The prototype is present only in an auxiliary workspace, not yet committed to `rumiai-os`. Final portability review, permanent tests, operational manual, publication and final consistency gate remain.
+The command, its operational manual, and executable permanent test are committed and mutually consistent at the revisions above. Proportional auxiliary Linux tests passed, but no complete JSONTestSuite run, formal `rumiai-validate` revision-bound validation, or real cross-host/physical validation has yet been performed. Do not infer total conformance solely from the exploratory coverage.
 
 ## Next action
 
-Refine/validate the standalone command, add the command + manual to `rumiai-os`, then commit permanent JSON conformance tests to `rumiai-tests`; run final consistency review and synchronize this handoff.
+Run all applicable `nst/JSONTestSuite` `y_`/`n_` inputs against the exact published parser; investigate deviations, update permanent tests where appropriate, and execute formal revision-bound and materially different POSIX host validation if available. Follow the current consistency gate after any correction.
 
 ## Blockers / open questions
 
-No operator decision is currently required. Complete JSONTestSuite execution and cross-host validation have not yet been evidenced.
+- Complete JSONTestSuite input corpus was inspected at the taxonomy/list level but not downloaded and executed in this work unit; keep unvalidated cases explicit.
+- No operator input currently required.
