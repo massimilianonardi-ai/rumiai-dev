@@ -326,10 +326,21 @@ escaping or cyclic links. Resource export testing is out of scope.
   adds hosted real public v1 catalog verification using the
   exact autonomous `m@ff55fc9f` checkout.
   Workflow run `41615053850`: Ubuntu job `125846306687`
-  **PASS**; macOS job `125846306489` was still queued
-  at this checkpoint. The test covers `pkg requirement list`
-  for mk/jsc, catalog snapshot layout and a facility contract;
-  it is not evidence for artifact install/launch or mixed v1/v2.
+  **PASS**, macOS job `125846306489` **PASS**;
+  the test covers `pkg requirement list` for mk/jsc, catalog
+  snapshot layout and a facility contract.
+- Follow-up `pkg-catalog/main@30ab3735a0945fff79ccb3266a9eb92745cea0a3`
+  extends that real hosted workflow to `pkg install jq@jq-1.8.2`
+  followed by the actual `m jq -n '21*2'` execution.
+  Run `41615692369`: Ubuntu job `125848446369` **PASS**
+  and macOS job `125848446011` **PASS**.
+  These establish specific normal-path v1 catalog-backed install
+  and command execution on both hosts, not all package families.
+- Parallel forward-only `pkg-schema-v2` branches have been
+  opened in `m` (base `ff55fc9f`) and `pkg-catalog`
+  (base `30ab3735`) to isolate upcoming coherent v2
+  implementation from published v1. No v2 product changes
+  have been committed to those branches yet.
 - No v2 catalog/package definitions, v2 runtime dispatch,
   installed-concrete migration, or resource exports were
   implemented. `rumiai-os` and `rumiai-tests` remain frozen,
@@ -337,11 +348,12 @@ escaping or cyclic links. Resource export testing is out of scope.
 
 ## Current state
 
-V1 catalog layout is published and its existing definition tree
-contents are byte-identical. The v1-selecting autonomous m runtime is
-published, and one Ubuntu public catalog-lookup integration PASS
-is confirmed. The entire v1 installation/lifecycle validation
-and macOS outcome remain pending.
+V1 catalog layout is published with byte-identical definition
+tree contents. The autonomous m runtime's v1 catalog lookup and
+the real jq install/execute path have confirmed Ubuntu + macOS
+hosted PASS at the exact revisions above. More complex v1
+provider/service packages and legacy pinned rumiai-os workflows
+remain unvalidated or failing separately.
 
 V2 stays an active, separately validated implementation phase.
 Do not publish v2 package definitions before coherent runtime
@@ -352,8 +364,8 @@ and proportionate live tests are implemented.
 
 ## Next action
 
-1. Complete authentic hosted v1 package install/launch and macOS
-   validation, and resolve the separate frozen-runtime/legacy-catalog
+1. Retain successful v1 Ubuntu/macOS public jq lifecycle evidence
+   as the baseline, and resolve the separate failing frozen-runtime
    compatibility workflow without changing frozen repositories.
 2. Implement v2 as one coherent version-aware pathway with an exact
    package schema marker, new public `link/bin` direct/wrapped
