@@ -839,6 +839,7 @@ values ordered by selections, independent of the current insertion mode.
 More values than selected targets fail without a source commit; missing
 values follow the existing physical selector's empty/deletion semantics.
 Every successful real edit goes through one atomic `Document.replace`.
+
 `RawDocument2D.revision` equals the underlying `Document.revision`.
 `RawDocument2D.replace(edits, expectedRevision)` checks that revision
 before and after preparing physical offsets. Explicit positions must be
@@ -855,8 +856,9 @@ Content notifications follow the physical selector's source-rebase
 notification and include `invalidation:{all:true}`, which conservatively
 invalidates the entire exposed 2D geometry. This is a correct but coarse
 initial geometric invalidation; bounded old/new affected-region payloads
-remain to be implemented and must not underestimate their impact. Clipboard transport,
-GUI device events and pixel hit-testing do not belong to the adapter.
+remain to be implemented and must not underestimate their impact.
+Clipboard transport, GUI device events and pixel hit-testing do not belong to
+the adapter.
 
 
 ## Validation and release boundary
