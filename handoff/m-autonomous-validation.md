@@ -66,6 +66,14 @@ Also inventory current repository adapter set (GitHub, Node.js, Chrome, Chromium
 
 ## Current state
 
+Repository identity update (2026-11-03): the independent source formerly
+at `massimilianonardi-ai/m` is now `massimilianonardi-ai/m-os`,
+with `master@ff55fc9f220f8da3f1f90d1bf4aa2e46c55a5d2a` preserved.
+The `m` semantic layer/runtime is unchanged. Earlier revision-specific
+`m@...` evidence below identifies the same repository before the rename;
+it is not new validation of the renamed-source workflow checkouts.
+Refresh `m-os` HEAD before continuing full autonomous validation.
+
 ### Current standalone m full-validation checkpoint (2026-10-26)
 
 The user reiterated that isolated `mk`/`jsc` execution did not meet the task objective: **verify the full autonomous `m` system**. This separate handoff owns full completeness and does not allow a partial PASS to close the project.
