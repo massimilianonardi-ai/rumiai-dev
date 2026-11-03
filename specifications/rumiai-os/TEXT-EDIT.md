@@ -951,10 +951,58 @@ continue to rebase from the committed document notification.
 carry `{type,revision}`, where `type` is `content`, `selections`,
 `selectionMode` or `insertMode`.
 Content notifications follow the physical selector's source-rebase
-notification and include `invalidation:{all:true}`, which conservatively
-invalidates the entire exposed 2D geometry. This is a correct but coarse
-initial geometric invalidation; bounded old/new affected-region payloads
-remain to be implemented and must not underestimate their impact.
+notification and retain `invalidation:{all:true}`, which conservatively
+invalidates the entire exposed 2D geometry. For current core
+`FlatDocument` and `PieceDocument` inputs, an additional immutable
+`geometry` record describes the exact pre-/post-commit source boundaries:
+
+```javascript
+{
+  type:'content', revision,
+  invalidation:{all:true},
+  geometry:{
+    previousRevision, revision, oldRowCount, newRowCount,
+    edits:[
+      {
+        old:{start:{row,col,offset},end:{row,col,offset}},
+        new:{start:{row,col,offset},end:{row,col,offset}}
+      }
+    ]
+  }
+}
+```
+
+One geometry record is published per successful physical commit, including
+successful no-effect edits. Its `edits` follow the **caller's original
+argument order**, not the order in which physical replacements were staged.
+`old` endpoints identify the replaced source span in the old document;
+`new` endpoints identify the inserted-text span after all edits have
+committed, including earlier disjoint edit shifts and same-boundary insertion
+ordering. Every `offset` is an exact UTF-16 boundary in the corresponding
+source revision. `row` comes from `Document.lineAt(offset)`, and
+`col=offset-Document.lineInfo(row).start`; a position inside CRLF can have
+a column beyond the editable row width. These are **source mutation
+coordinates**, not automatically valid GUI selection or edit points.
+
+The old geometry is captured *before* staging a physical commit; the new
+geometry is resolved after the committed source is installed and before
+the source listeners run. The payload and its nested arrays and points are
+frozen, not modifiable references into document state. The stable
+`Document.subscribe` contract remains unchanged: its listener still
+receives **only** the exact original `replace` arguments. Geometry uses
+an implementation-private coordination channel between the core
+`_DocumentStore` and `RawDocument2D`, not an extra source notification
+argument or public `Document` method.
+
+When an input `Document` lacks this internal support or geometry cannot
+be established after a committed edit, the raw content event omits
+`geometry` while still publishing conservative whole-view invalidation;
+the physical commit is never reported as failed because metadata could
+not be derived. Revision wrap from `Number.MAX_SAFE_INTEGER` to `0`
+retains the established loss-of-continuity semantics. No fine-grained
+viewport invalidation, replay log, old/new geometry transformation through
+`CellDocument2D`, folding or annotation layers, or persistent anchor
+rebasing is supplied by this first source-geometry increment.
 Clipboard transport, GUI device events and pixel hit-testing do not belong to
 the adapter.
 
@@ -1015,8 +1063,9 @@ Selection/mode events do not advance the view-coordinate revision.
 `destroy()` unsubscribes this view but does not destroy its input.
 
 This concrete class is deliberately limited to grapheme/TAB
-geometry: folding, source-less annotations, general 2D region
-substitution and precise old/new region invalidations remain open.
+geometry. Physical source-edit geometry is not yet reprojected into the
+exposed grapheme/TAB view's events: its invalidation remains conservative
+even when the input has an exact raw geometry payload.
 Neither `BaseDocument2D` nor a public `Representation` interface is
 introduced by this implementation.
 
@@ -1066,9 +1115,10 @@ the entire batch, then invokes `input.replace` exactly once;
 the input retains atomicity and its own validation rules.
 
 Folds are indexed by input row numbers, not persistent source
-anchors. The current input notification does not include the
-precise old/new row mapping needed for safe rebasing. Therefore
-**every input coordinate-revision change clears all folds**,
+anchors. Although the raw document may now publish exact old/new physical
+source-edit endpoints, transforming those changes through arbitrary
+intermediate representations and safely rebasing fold anchors is **not**
+implemented. Therefore **every input coordinate-revision change clears all folds**,
 increments the folded view revision and emits a conservative
 whole-view geometric invalidation. This includes successful
 edits made through the folded view. Callers must not reuse
