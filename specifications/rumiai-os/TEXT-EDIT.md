@@ -950,7 +950,7 @@ Neither `BaseDocument2D` nor a public `Representation` interface is
 introduced by this implementation.
 
 
-### `FoldDocument2D`: protected whole-row folding
+### `FoldDocument2D`: protected whole-row and cross-row inline folding
 
 `new FoldDocument2D(input)` requires an existing nominal
 `Document2D`, including `RawDocument2D` or `CellDocument2D`.
@@ -1005,14 +1005,65 @@ previous folded coordinates after this change. Destroying a
 folded view unsubscribes its listeners but never destroys
 its input document.
 
-This initial projection does not merge partial rows around a
-fold (as the illustrative PoC 074 did), permit selections on
-virtual fold markers, preserve folds across underlying edits,
-or implement arbitrary region overlays or additive annotations.
-These behaviors require further explicit contracts and tests.
-`BaseDocument2D` and a public `Representation` interface
-remain deferred until their common responsibilities are
-demonstrated by concrete implementations.
+The same class also supports **one cross-row inline fold** through
+`setInlineFold({start:{row,col},end:{row,col}})`, with both endpoints
+in the input `Document2D` coordinate space. The first point must
+belong to an earlier existing input row, and both columns must be
+at/before their real EOL. Cuts strictly inside indivisible graphemes,
+TABs or protected synthetic regions are rejected. The
+`inlineFold` getter returns a detached snapshot or `null`.
+
+For an inline fold from `(s,a)` to `(e,b)`, with `s<e`,
+the output row `s` contains the input row `s` prefix
+`[0,a)`, an indivisible synthetic `…` region in output
+columns `[a,a+1)`, then the input row `e` suffix `[b,EOL)`
+translated to start at output column `a+1`. Source rows
+`s+1..e` disappear as separate output rows, so the exposed
+`rowCount` decreases by `e-s`. All other visible rows retain
+their input content, geometry and region kinds, with row indexes
+adjusted after the splice. `getRegions` and `getRect` read only
+the requested visible prefix/suffix fragments; hidden source rows
+are never materialized for a bounded view. Source-less annotations
+on visible fragments and at the two cut boundaries retain their
+identities, while annotations inside the folded interval remain
+hidden. The synthetic marker occupies exactly one exposed cell.
+
+The two marker boundaries map independently: output `(s,a)`
+to the start cut and output `(s,a+1)` to the end cut.
+An insertion precisely at either boundary acts on that particular
+source-side position; an interval that includes the marker or
+otherwise intersects hidden input content is rejected before any
+edit commits. Selection mapping follows the same rule: source
+points strictly inside the folded interval are not representable,
+and selected reads/inserts must not expose hidden text. Visible
+prefix and suffix fragments can each be selected and edited
+normally, including as different targets within one atomic
+`replace(edits,expectedRevision)` batch. A view-local fold
+configuration change increments the coordinate revision;
+upstream changes clear this inline fold conservatively, just as
+they clear whole-row folds.
+
+Only one inline fold can be configured in one `FoldDocument2D`
+at a time. `setInlineFold(null)` clears all folds in that view.
+`setInlineFold(...)` and `setFolds(...)` are mutually exclusive
+configurations: applying either replaces the other. Repeating
+the same normalized configuration is a no-op. Independent folded
+views may still be composed. A `CellDocument2D` above the
+inline-folded view recomputes TAB widths in the new row;
+a cell view below it retains widths computed in the original
+input rows. Both orders preserve the respective exposed coordinate
+contract and reject partial-cell edits.
+
+The initial folding contract does **not** allow selecting or
+editing the synthetic marker itself, preserve folds across input
+edits, implement multiple inline splices in a single view, or
+provide generic arbitrary-region substitution. The separate
+`AnnotationDocument2D` owns creation of additive overlays;
+`FoldDocument2D` only forwards overlays belonging to visible
+regions. Precise old/new 2D invalidations and general source↔view
+region relations remain open. `BaseDocument2D` and a public
+`Representation` interface remain deferred until their shared
+responsibilities are demonstrated by concrete implementations.
 
 
 
