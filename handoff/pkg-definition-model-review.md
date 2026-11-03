@@ -517,10 +517,6 @@ this Current state supersedes older stale 'no v2 PASS' claims.
    available systemd-user/launchd sessions, and system-host macOS where
    a controlled non-root account/administrative runner is available. Do
    not imply Ubuntu GitHub-hosted system supervision proves those paths.
-2. Extend the passed real catalog-backed v2 Node.js and Ollama normal
-   paths to host-supervisor lifecycle on supported hosts, preserving
-   HOME, exact provider identity, foreground process ownership and
-   runtime state. Do not treat portable srv PASS as host-supervisor PASS.
 3. Resolve/validate v2 PATH contribution ordering and any remaining
    provider environment precedence issues before final contract promotion.
    Perform mixed v1/v2 regression, final manual/library interface audit
