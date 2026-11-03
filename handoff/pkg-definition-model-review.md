@@ -180,6 +180,82 @@ manuals, tests and public installed-package behaviors must realign in
 one coordinated rollout; preserve state/default/provider references.
 Do not use silent path-probing fallback as an accidental new contract.
 
+### Schema-versioned catalog, facility ownership and resource exports (2026-11-03, working design)
+
+Current user proposals refine the ongoing pkg model review; **not yet a
+promoted specification or catalog migration**.
+
+**Catalog compatibility namespace.** Prefer a common versioned root
+`v01/{pkg,facility}/...`, with possible later `v02/{pkg,facility}`
+coexisting. The schema version is distinct from (a) upstream package
+version/range anchor `nNNNN=<version>`, (b) exact facility compatibility
+level, and (c) immutable catalog Git snapshot revision. The existing flat
+`pkg/` and `facility/` roots are a legacy unversioned schema;
+do not silently reinterpret them as `v01` when semantics differ.
+Decide explicitly whether `v01` preserves existing interpretation or
+starts with revised links and declarative provider parameters. A directory
+name alone cannot keep old installed concretes executable when a new
+`pkg-launch` reads different link paths. New concrete installations
+need explicit schema/provenance identity, and the runtime needs coherent
+schema-specific readers or an explicit coordinated reinstall/migration.
+Previously installed unmarked concretes require a safe legacy policy.
+Avoid an accidental ambiguous same concrete-version identity between
+schema versions; a Git revision remains required for reproducible
+definition recovery. Current `m` catalog resolver uses snapshot-relative
+`pkg/` and `facility/`; catalog sync script and workflow also hardcode
+the top-level `pkg` folder. Those consumers must move together.
+
+**Facility contract ownership.** User wants **all facility definitions**
+and required member names in `facility/<facility>/<compatibility>`,
+not repeated as provider `facility-cmd`, `facility-env`, and
+`facility-service` member inventories in each package range. The package
+declares which facility level it provides and only the implementation
+parameters needed to satisfy the central contract: e.g. a root-relative
+binary directory, specific command-path exceptions/delegation to its
+`cmd` wrappers, environment target paths/values and service-start
+command binding. The generic `m` facility handlers validate required
+members, synthesize projections and reject incompatible bindings.
+**Do not put provider-specific paths inside the central facility
+contract:** the central facility defines what/validation, while
+the provider supplies where/how realized. This narrows the provider
+realization rather than erasing it. Evidence: `facility/java/21` already
+has independent required `cmd/java`, `cmd/javac`, `env/JAVA_HOME`
+markers, but Temurin and GraalVM redundantly map many
+`facility-cmd/java/* = bin/*` entries; Node.js needs
+`package-command node`, and `ollama` needs a package-specific
+`start=ollama-serve` binding. A central member list plus typed
+parameter mapping must handle all these without a second
+provider-defined facility schema or generic executable template
+language. Exact proposed parameter names/structure are open.
+
+**Static resource exports versus code libraries.** User identifies
+missing package-resource export descriptors for `lang`, `manual`,
+possible icons and other static assets. The current
+`RESOURCE-MODEL.md` requires package-owned manuals and translations
+to ship in their same concrete artifact, and keeps them private unless
+an explicit exposure contract is introduced. They must not be
+automatically copied into global `$m_RES_DIR` or synchronized by
+global `lang-set`. Prefer separate semantic projection classes
+`link/lib/<runtime>` for code/JAR imports and candidate
+`link/res/<class>` for static payload access, with the same generic
+validated link-materialization mechanism underneath. Publication
+scope, namespace/ownership, locale fallback, manual lookup,
+version selection and collision rules remain to be defined per class.
+Icons are not a current globally fixed resource class; only add a
+typed export when a concrete consumer/access rule is established.
+Do not invent a universal `resource-path` API solely for symmetry.
+
+**Acceptance scenarios to resolve before schema promotion:** install
+legacy-unversioned and new-versioned packages together; launch both
+through real `cmd` wrappers after a runtime upgrade; preserve exact
+installed schema identity, mutable state and facility defaults. Validate
+Temurin/GraalVM Java, Node.js delegated commands, Ollama service,
+Chromium environment and a library-only package. Export and access a
+package's revision-matched manual/lang resource without leaking it
+to global `sys` or `ai`; verify collisions and invalid paths fail
+before changing installed state. Keep all assertions based on actual
+public package install/launch, not only component stubs.
+
 ## Completed
 
 - Verified current involved repository HEADs and read current authoritative
@@ -198,8 +274,11 @@ has passed the specification promotion/implementation gate.
 
 ## Next action
 
-Resolve the target schema as the smallest coherent declarative
-contract, using the already inspected representative package classes.
+Resolve the common `v01/{pkg,facility}` schema version boundary,
+legacy installed-concrete provenance and runtime compatibility, central
+facility-owned member definitions with package-owned binding parameters,
+and distinct resource export semantics as the smallest coherent
+declarative contract, using representative real package classes.
 Compare the strict two-tier current range model with a minimal
 explicit defaults/override option before deciding syntax.
 Then stage authorized, coordinated `m` + `pkg-catalog` implementation,
