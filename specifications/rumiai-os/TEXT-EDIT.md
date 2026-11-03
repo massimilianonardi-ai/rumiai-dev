@@ -1105,10 +1105,13 @@ composition. A downstream `AnnotationDocument2D` can forward those
 old/new cell endpoints unchanged because its overlays occupy no cells.
 Nested cell transformations still lack a pre/post mapping of their
 own. Whole-row folding and substitution views have the restricted
-projections described below; inline folding still lacks such a
-mapping. All these views retain conservative invalidation, and
-edit endpoint geometry does not establish general persistent
-rebasing of fold or substitution anchors.
+projections described below. An inline fold directly above a raw
+document can additionally capture exact old physical edit
+boundaries before commit; an inline fold above a cell or other
+nested view still has no such old-point observation. All these
+views retain conservative invalidation, and edit endpoint
+geometry does not establish general persistent rebasing of
+fold or substitution anchors.
 Neither `BaseDocument2D` nor a public `Representation` interface is
 introduced by this implementation.
 
@@ -1165,34 +1168,53 @@ the folded view. Callers must not reuse captured folded coordinates
 after the change. Destroying a folded view unsubscribes its
 listeners but never destroys its input document.
 
-For the restricted case of **whole-row** folding, the view can
-also forward authoritative pre/post edit geometry when every
-old input endpoint is the **start of a real, visible row** (column
-zero), no old edit interval crosses hidden rows, and the immediate
-input supplies complete, sequential old/new geometry. Projection
-uses the still-installed old fold configuration to map each old
-source row to its previous exposed row. The newly exposed geometry
-has no folds because the same source commit clears the configuration:
-its new endpoints and new row count equal those of the committed
-immediate input. The immutable published `geometry` carries
-`previousRevision` and `revision` in the folded view, old folded
-row count, new unfolded row count, and edits in original source-batch
-order. Its points are detached, frozen `{row,col}` records without
-physical source offsets. The event **always** retains
-`invalidation:{all:true}`.
+A fold view can forward authoritative old/new edit geometry through
+the previous fold configuration in two demonstrably correct cases:
 
-The column-zero restriction is intentional: a physical source edit
-may report old UTF-16 coordinates inside a CRLF terminator, which
-cannot be validated using the post-edit source alone. Edits with
-other old columns, hidden or traversed folded rows, an inline
-fold, missing/invalid input geometry, revision discontinuity or
-cyclic revision wrap do not publish `geometry`; they still
-commit and invalidate the whole folded view normally. The
-same conservative behavior applies to local fold configuration
-changes, which are not physical text edits. This limited whole-row
-projection does **not** preserve fold configurations or establish
-general old/new mappings through inline or other synthetic
-representations.
+- For a **whole-row** fold without pre-commit observation, every
+  old input endpoint must be the beginning (`col:0`) of a real,
+  visible input row and the edit intervals must not cross folded
+  source rows. The immediate input must publish a complete
+  contiguous old/new mutation batch.
+- For a fold directly over `RawDocument2D`, the existing
+  private source `_subscribeBeforeGeometry` observation can
+  capture old endpoints **before the physical edit**, while the
+  original raw row widths and fold mapping remain available.
+  Every old cut must be at or before the real row EOL, map to
+  a visible source fragment or a permitted fold boundary, and
+  all edit intervals must avoid hidden source text. The matching
+  committed raw geometry must report the same original
+  source offsets and positions in the same invocation order.
+  This supports nonzero columns for both whole-row and
+  cross-row inline folds, including the inline marker's
+  **distinct left and right input cuts**.
+
+Both cases project the old endpoints using the still-installed
+old fold configuration. Once the source commit completes,
+the fold configuration is cleared, so all new endpoints and
+the new row count are expressed in the committed immediate
+input's coordinates. The resulting detached, frozen `geometry`
+contains `previousRevision` and `revision` in the fold view,
+the old folded and new unfolded row counts, and the original
+physical batch order, with `{row,col}` endpoints and no
+source offsets. The event **always** retains
+`invalidation:{all:true}`; this projection does not preserve
+fold configurations.
+
+The pre-commit observation is internal to the existing physical
+document bridge, not a new public `Document2D` contract.
+If an old raw endpoint lies inside a CRLF terminator, a
+hidden source interval is crossed, the old pre-commit snapshot
+is unavailable or does not match the raw post-commit batch,
+the resulting point is outside a real row, or a revision
+discontinuity/wrap occurs, no precise `geometry` is published
+and the committed source edit is not rejected or rolled back.
+For an input lacking that pre-commit hook, only the stricter
+visible whole-row start case is allowed; inline folds stay on
+whole-view invalidation without `geometry`. Local fold
+configuration changes also carry no physical-edit geometry.
+The old/new endpoint correspondence is not a general map
+for untouched anchors across a fold that disappears.
 
 The same class also supports **one cross-row inline fold** through
 `setInlineFold({start:{row,col},end:{row,col}})`, with both endpoints
@@ -1249,9 +1271,9 @@ edits, implement multiple inline splices in a single view, or
 provide generic arbitrary-region substitution. The separate
 `AnnotationDocument2D` owns creation of additive overlays;
 `FoldDocument2D` only forwards overlays belonging to visible
-regions. General old/new mutation geometry for inline folds and
-source↔view region relations remains open. Fine-grained viewport
-invalidations have not been implemented. `BaseDocument2D` and a public
+regions. General old/new mutation geometry for inline folds above
+nested/non-raw inputs, and source↔view region relations, remains
+open. Fine-grained viewport invalidations have not been implemented. `BaseDocument2D` and a public
 `Representation` interface remain deferred until their shared
 responsibilities are demonstrated by concrete implementations.
 
