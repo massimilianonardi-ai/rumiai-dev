@@ -381,7 +381,12 @@ escaping or cyclic links. Resource export testing is out of scope.
 
 ## Current state
 
-**V2 host-supervision validation checkpoint — 2026-11-03 (latest):**
+**V2 user-host validation checkpoint — 2026-11-03 (latest):**
+- New `pkg-catalog/pkg-schema-v2@2cf67084f2e21c78acf67fd107d2e2b77c213797` adds a real, isolated Ubuntu `srv host user` Ollama scenario on the existing runner POSIX account and its existing systemd user manager. It refuses a missing user manager, a conflicting unit or occupied Ollama endpoint; does not create a login session or enable systemd linger.
+- GitHub Actions **`41722352670` PASS 3/3 Ubuntu jobs** using exact `m-os/pkg-schema-v2@d11363856ee06f32eadd7b2b3cb89ae390ef7ac3` and catalog `2cf67084`: portable `real-ollama-service` PASS, `real-ollama-host-system` PASS, and new `real-ollama-host-user` job `126218163468` PASS. User-host evidence: pre-existing `runner` account/systemd manager, unit install without starting, real Ollama client responsiveness, systemd MainPID owned by selected account, restart/stop, rejected start after clearing system provider default, and unit removal. The intentionally rejected start logged `provider-resolution-failed`.
+- This establishes **Ubuntu GitHub-hosted systemd user and system supervision**, not macOS launchd, physical Ubuntu 26.04 ARM64, or production-host evidence. No `m-os` product code was modified and v2 remains unmerged. Updated Node.js matrix `41719785578` and the generic v2 matrix `41718659259` were still queued at last inspection; their current-revision success is not claimed.
+
+**V2 host-supervision validation checkpoint — 2026-11-03 (prior):**
 - Current technical branch under test: `m-os/pkg-schema-v2@d11363856ee06f32eadd7b2b3cb89ae390ef7ac3`; production `m-os/master` was not changed.
 - `pkg-catalog/pkg-schema-v2@0a840c126a07e63b99c7bf0066bedcfb439b5edf` adds an independent real Ollama `srv host system` Ubuntu GitHub-hosted test and re-pins the portable Ollama test to exact current m-os. The new Node.js workflow pin was synchronized to this runtime in catalog commit `04c66fdfe21dd147e75fe2712a8655a4a41710d0`. Earlier host workflow commits `151c0793`/`04c66fdf` had invalid YAML job indentation; the corrected `0a840c12` workflow is the tested revision.
 - Workflow **`41719853510` PASS 2/2 Ubuntu jobs**, at exact catalog `0a840c12` and m-os `d1136385`: real catalog-backed v2 Ollama portable `srv start/stop` job `126209423892` PASS; real disposable-runner **systemd system host-supervision** job `126209423383` PASS. The latter validates pre-existing non-root account, real exact-pinned service install, enabled-but-not-started state, dedicated system package HOME ownership/mode, actual responsive non-root process, restart/stop, rejected start after clearing provider default, uninstall and retained HOME. The log contains the expected `provider-resolution-failed` diagnostic on deliberately invalid start.
@@ -513,10 +518,10 @@ this Current state supersedes older stale 'no v2 PASS' claims.
    catalog `04c66fdf` and the full v2 matrix `41718659259` at
    `e15c350e`, both pinned to m-os `d1136385`; record host-specific
    results before declaring broader cross-host v2 coverage.
-2. Extend real `srv host user` supervision validation on actual
-   available systemd-user/launchd sessions, and system-host macOS where
-   a controlled non-root account/administrative runner is available. Do
-   not imply Ubuntu GitHub-hosted system supervision proves those paths.
+2. Validate the remaining macOS launchd user/system supervision paths
+   with controlled account/administrative context, and physical Ubuntu
+   ARM64 when available. Ubuntu GitHub-hosted systemd user/system PASS
+   does not establish those other hosts or provider-precedence edge cases.
 3. Resolve/validate v2 PATH contribution ordering and any remaining
    provider environment precedence issues before final contract promotion.
    Perform mixed v1/v2 regression, final manual/library interface audit
