@@ -850,8 +850,9 @@ Zero-length ranges insert text; ranges may span rows. The underlying
 entire converted array as one atomic commit. Existing physical selections
 continue to rebase from the committed document notification.
 
-`subscribe(listener)` returns an unsubscribe callback. Notifications carry `{type,revision}`, where `type` is
-`content`, `selections`, `selectionMode` or `insertMode`.
+`subscribe(listener)` returns an unsubscribe callback. Notifications
+carry `{type,revision}`, where `type` is `content`, `selections`,
+`selectionMode` or `insertMode`.
 Content notifications follow the physical selector's source-rebase
 notification and include `invalidation:{all:true}`, which conservatively
 invalidates the entire exposed 2D geometry. This is a correct but coarse
