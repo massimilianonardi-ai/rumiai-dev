@@ -1,6 +1,6 @@
 # Advanced browser/Electron text editor
 
-Status: Active — Cell-over-annotated-Cell precommit CI-verified; downstream synthetic projections, general anchors and GUI remain open
+Status: Active — nested annotated Cell to Fold/Substitution CI-verified; general anchors and physical GUI remain open
 Updated: 2026-11-03
 
 ## Goal
@@ -12,7 +12,15 @@ The JavaScript compilation, module loading and distribution concern has **indepe
 
 ## Current repository revisions
 
-**Current 2026-11-03 Cell→Annotation→Cell checkpoint:**
+**Current 2026-11-03 annotated nested Cell to Fold/Substitution proof:**
+- `rumiai-dev`: promoted clarified `TEXT-EDIT.md` contract `0fc0ad02a1a3c21419004ecfdf40bb46269c2b24`, stating old/new independent geometry through the verified immediate Cell and zero-width Annotation chain; no public mapping/API or persistent anchor contract.
+- `rumiai-os`: `caf94d9ad0e2ee7778e5ea3a9e6a574c1139a0a5` (exact tested product); Fold/Substitution production code unchanged because their private precommit and protected-region checks already handle certified immediate input. Only `.github/workflows/text-document-core.yml` updated to pin tests and syntax-check the new test file.
+- `rumiai-tests`: `77d73d547507cd3d587e8509ea855d38922fc066`; added permanent `cell-annotation-cell-protected.test.mjs` to actual compiled-core runner with both FlatDocument/PieceDocument.
+- Hosted Node 22 `m.text.document core extraction verification` run `41722649759` **PASS**: 40 extraction parity comparisons and all existing suites plus `Cell over annotated Cell to Fold/Substitution geometry PASS`; `Git tracking boundaries` run `41722649792` **PASS** at same exact product revision.
+- An earlier CI run `41722240449` failed because the initial test attempted to reject an allowed boundary at the end of the one-cell `Q` label. The test was corrected forward to address a true interior cut inside the four-cell `LONG` synthetic region; the revised run passed. No product defect was attributed to the initial test failure.
+- Model-only compiled-core validation, not native browser/GUI interaction. The same old/new endpoint proof does not preserve fold/substitution configuration or establish general anchor rebase.
+
+**Prior 2026-11-03 Cell→Annotation→Cell checkpoint:**
 - `rumiai-dev` specification `dfe37f0301890778b78f05ca1843f7113158902b`; current `TEXT-EDIT.md` distinguishes annotated Raw and annotated Cell private identity and demands independent verified old/new cut projection.
 - `rumiai-os` `643fb731261d958d216cc823b505aa739edd4926`: `AnnotationDocument2D._hasCellCoordinateIdentity()` admits zero-width annotation chains terminating at Cell without claiming Raw identity; upper Cell verifies its own old input cuts against separately certified postcommit annotation geometry. Existing physical selection and single atomic commit are unchanged.
 - `rumiai-tests` `d10ac6f9f015b2c519a5954cae03ab092b1bed6e`: new permanent `cell-annotation-cell-precommit.test.mjs`, amended pre-existing conservative expectation and pinned real-core runner. Both FlatDocument/PieceDocument.
@@ -34,7 +42,17 @@ The JavaScript compilation, module loading and distribution concern has **indepe
 - The JavaScript toolchain is owned by `handoff/javascript-build-and-runtime-loading.md`.
 
 
-## Resume checkpoint — 2026-11-03 (Cell over annotated Cell; read first)
+## Resume checkpoint — 2026-11-03 (nested Cell through Fold/Substitution; read first)
+
+**Delivered:** The composed input chain `RawDocument2D → CellDocument2D → AnnotationDocument2D (one or two levels) → CellDocument2D` supplies independently authenticated precommit old-cell cuts and matching committed old/new geometry to existing `FoldDocument2D` and `SubstitutionDocument2D`. Neither upper derived view needs new implementation: it already captures the immediate input's old points before an edit, maps those points in its **own old protected layout**, verifies batch order, old points and revision against the certified committed input event, and emits the new endpoints in the **new unfurled/unsubstituted input space**. The old inline fold marker's left and right cuts map different input positions, while occupied Substitution boundaries account for different cumulative width changes. Whole-view invalidation stays mandatory and synthetic configurations clear.
+
+**Verification:** New permanent real-core regression on both FlatDocument and PieceDocument covers inline Fold old prefix/suffix and distinct left/right marker cuts, whole-row Fold row shifts, unsorted physical multi-edits, public Fold and Substitution edits with one source commit and stale-revision rejection, forbidden marker/occupied intervals, two substitutions of different widths, protected copied-label source dependencies, shared adjacent-substitution boundary ambiguity, external edits inside hidden content, local annotation-only configuration changes, multiline row insertion, invalid grapheme or CRLF interior cuts, corrupted immediate Cell committed old points, frozen offset-free geometry and complete fallback. All earlier document-core regression modules also passed. Exact `rumiai-os` `caf94d9ad0e2ee7778e5ea3a9e6a574c1139a0a5` / `rumiai-tests` `77d73d547507cd3d587e8509ea855d38922fc066` in GitHub Actions `41722649759` PASS and tracking `41722649792` PASS. The Fold/Substitution source classes, public signatures and standalone TextEdit 0.8.2 manual have not changed; tests and CI pin were the implementation artifacts.
+
+**Boundary:** Precise endpoints are not permission to edit markers/labels or keep synthetic configurations after any input-coordinate revision. A source cut inside hidden content, partial grapheme/TAB or CRLF terminator, ambiguous shared substitution boundary, missing/forged committed batch or lost revision still suppresses geometry and retains `invalidation:{all:true}`. General persistent source provenance, arbitrary nonidentity transformations, fine-grained viewport invalidation and physical GUI/browser validation remain open.
+
+**Next:** Evaluate the real browser/Electron editor integration boundary against these certified model notifications and full invalidation, without assuming a GUI test has run or generalizing persistent anchors. Read current GUI consumer/host first; introduce only bounded integration tests as warranted.
+
+## Resume checkpoint — 2026-11-03 (prior Cell over annotated Cell)
 
 **Delivered:** `Raw → Cell → Annotation → Cell` and additional zero-width Annotation layers now propagate certified old/new edit geometry in their own immediate coordinate spaces. The existing Annotation precommit relay compares ordered old cuts with its input's independently verified committed batch; its new private `_hasCellCoordinateIdentity()` predicate recognizes only an Annotation chain terminating at Cell, separately from `_hasRawCoordinateIdentity()`. The upper Cell independently projects old/new grapheme/TAB boundaries and matches committed old points, revisions and row counts. It emits frozen offset-free points and retains `invalidation:{all:true}`, omitting geometry on ambiguity without rejecting a committed edit.
 
@@ -186,18 +204,18 @@ The JavaScript compilation, module loading and distribution concern has **indepe
 
 ## Current state
 
-Both direct Cell→Cell and zero-width annotated Cell→Cell old/new endpoint geometry are implemented, documented and hosted real-core CI-verified on Flat/Piece. Unsupported Fold/Substitution and arbitrary nonidentity inputs still invalidate conservatively. Precise edit endpoints do not imply fine-grained repaint invalidation; browser/Electron physical GUI remains untested.
+Direct Cell→Cell, zero-width annotated Cell→Cell and final Fold/Substitution old/new endpoint geometry above the verified nested chain are documented and hosted real-core CI-verified on Flat/Piece. Unproven arbitrary nonidentity compositions still invalidate conservatively. Synthetic configurations clear even with known edit endpoints. Precise edit coordinates do not imply fine-grained viewport invalidation, and physical browser/Electron GUI integration remains untested.
 
 ## Next action
 
-1. Reverify fresh remote HEADs and follow the full mandatory read order.
-2. Examine only proven old/new protected boundaries for `Cell → Annotation → Cell → FoldDocument2D` and `Cell → Annotation → Cell → SubstitutionDocument2D`, including unsorted edits, nonzero columns, TAB/grapheme geometry, protected hidden/occupied regions and exactly one physical commit.
-3. Do not keep collapsing synthetic regions or annotations merely because edit endpoints were certified; conservatively omit geometry where correspondence is unprovable.
-4. Keep general provenance/anchor rebasing, public mapping abstractions and physical GUI/browser integration out of this bounded increment.
+1. Recheck fresh remote HEADs and the canonical mandatory read order; inspect the actual browser/Electron editor consumer as implementation evidence.
+2. Define and run a bounded GUI integration scenario consuming the complete `Document2D` notifications from verified `Cell → Annotation → Cell → Fold/Substitution` views: initial paint, allowed caret edit, protected marker/occupied rejection, a physical edit triggering full invalidation and post-commit redraw/selection coherence. Keep the model and GUI roles distinct.
+3. Use real browser execution when possible and reserve physical macOS / Ubuntu 26.04 ARM64 host claims for actual reference-host tests. Do not infer real viewport performance, IME or accessibility from Node geometry-only passes.
+4. General persistent source-anchor rebasing, arbitrary cross-space mapping, history and new public interfaces remain separate and unapproved for this step.
 
 ## Blockers / open questions
 
-- **No blocker for certified Cell→Annotation→Cell geometry.** The next scope is Fold/Substitution directly above that chain, with independently proven protected/occupied coordinates; general anchor rebasing and physical GUI validation remain open.
+- **No blocker for certified final Fold/Substitution geometry above nested annotated Cells.** The next bounded validation concern is the real GUI consumer and rendering/selection response to whole-view invalidation. General persistent source anchors and arbitrary nonidentity provenance remain open.
 - **Advanced logical Document2D:** source↔view mapping, nested view composition, grapheme/TAB/wide cells, folded/virtual/source-less regions, regions spanning multiple visual rows, rectangle boundaries intersecting tokens, virtual editability/overlay copy policies, and the output of a richer `getRect` without breaking the raw adapter's published behavior.
 - **Pluggability:** whether/when selection and insertion interpreters should be externally registered or configured (currently three/four built-in modes), mode-switch state and gesture boundaries, duplicate and overlapping targets, reverse-oriented editing and multi-mode `remSelection` semantics. The concrete implementation currently handles the tested mixed-mode case; more general policy remains intentionally deferred.
 - **Performance and validation:** `colCount` revision-cache invalidation still scans every row; `getRect` is bounded but no asymptotic/host evidence for enormous rows; no formal physical-host run of `RawDocument2D` or new editor integration.
