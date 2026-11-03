@@ -1103,13 +1103,28 @@ Revision wrap also disables precise projection for that commit.
 The grapheme/TAB projection itself is limited to direct raw-to-cell
 composition. A downstream `AnnotationDocument2D` can forward those
 old/new cell endpoints unchanged because its overlays occupy no cells.
-Nested cell transformations still lack a pre/post mapping of their
-own. Whole-row folding and substitution views have the restricted
-projections described below. A fold or substitution view directly
-above `RawDocument2D` can additionally capture exact old physical
-edit boundaries before commit, including nonzero columns in visible
-source content. An inline fold or substitution above a cell or
-other nested view lacks an equivalent private old-point observation.
+
+A `CellDocument2D` whose immediate input is `RawDocument2D`
+also relays the proven **old cell-coordinate endpoints** to immediate
+view consumers through its existing-style private
+`_subscribeBeforeGeometry` hook. It runs during the physical
+pre-commit observation while the old cell layout still exists.
+The detached, frozen observation carries this cell view's
+`previousRevision`, `oldRowCount` and old
+`{row,col}` edit boundaries in original batch order, **without raw
+offsets**. The cell view alone retains and verifies physical
+old offsets against the committed raw geometry; its resulting
+post-commit `geometry` is the authoritative matching edit batch
+in cell coordinates. Direct consumers can compare the old
+cell points, revisions and invocation order against that
+post-commit cell event. Source offsets are never repurposed as
+cell coordinates or exposed as GUI editing destinations.
+
+A `CellDocument2D` above another cell or arbitrary transformed
+input does not yet offer a verified precommit observation;
+nested cell-to-cell projection remains conservative. Fold and
+substitution views can receive proven old cuts from a direct
+raw input or a directly raw-backed cell input, as detailed below.
 All these views retain conservative invalidation; edit endpoint
 geometry does not establish general persistent rebasing of
 fold or substitution anchors.
@@ -1170,7 +1185,7 @@ after the change. Destroying a folded view unsubscribes its
 listeners but never destroys its input document.
 
 A fold view can forward authoritative old/new edit geometry through
-the previous fold configuration in two demonstrably correct cases:
+the previous fold configuration in these verified cases:
 
 - For a **whole-row** fold without pre-commit observation, every
   old input endpoint must be the beginning (`col:0`) of a real,
@@ -1189,8 +1204,17 @@ the previous fold configuration in two demonstrably correct cases:
   This supports nonzero columns for both whole-row and
   cross-row inline folds, including the inline marker's
   **distinct left and right input cuts**.
+- For a fold immediately above a `CellDocument2D` that itself
+  directly wraps `RawDocument2D`, the private hook observes old
+  **cell** boundaries at the cell layer's own revision, without
+  physical offsets. The fold validates visible old caret
+  boundaries and protected spans in cell coordinates, then
+  matches those old cell points and batch order with the cell
+  layer's verified committed `geometry`. This also supports
+  nonzero whole-row and inline-fold cuts across TAB/grapheme
+  boundaries, not cuts inside indivisible cells.
 
-Both cases project the old endpoints using the still-installed
+All cases project the old endpoints using the still-installed
 old fold configuration. Once the source commit completes,
 the fold configuration is cleared, so all new endpoints and
 the new row count are expressed in the committed immediate
@@ -1205,10 +1229,12 @@ fold configurations.
 The pre-commit observation is internal to the existing physical
 document bridge, not a new public `Document2D` contract.
 If an old raw endpoint lies inside a CRLF terminator, a
-hidden source interval is crossed, the old pre-commit snapshot
-is unavailable or does not match the raw post-commit batch,
-the resulting point is outside a real row, or a revision
-discontinuity/wrap occurs, no precise `geometry` is published
+cell boundary would split a grapheme or TAB, a hidden source
+interval is crossed, the old pre-commit observation is
+unavailable or does not match the immediate input's verified
+post-commit batch, the resulting point is outside a real row,
+or a revision discontinuity/wrap occurs, no precise
+`geometry` is published
 and the committed source edit is not rejected or rolled back.
 For an input lacking that pre-commit hook, only the stricter
 visible whole-row start case is allowed; inline folds stay on
@@ -1500,9 +1526,18 @@ old endpoints are projected through the old substitution map,
 including nonzero columns **before, between and after** multiple
 width-changing synthetic regions. The staged old row/column
 positions and physical offsets must match the committed raw
-geometry in the original batch order. Source fragments copied
-into derived labels remain display dependencies, never edit
-destinations.
+geometry in the original batch order. For a substitution view
+directly above `CellDocument2D` whose own input is
+`RawDocument2D`, the cell layer instead emits a private
+pre-commit observation in **cell coordinates** with no raw
+offsets. Its post-commit cell event independently certifies
+the original physical offsets. The substitution view checks
+the matching old cell endpoints, cell revision and batch order
+before projecting its old occupied-region coordinates.
+Valid old cell points can lie before, between or after synthetic
+regions, but not inside a protected TAB/grapheme, substitution,
+or shared adjacent boundary. Source fragments copied into derived
+labels remain display dependencies, never edit destinations.
 
 After the source commit, the substitution configuration is
 cleared. New endpoints are validated against the committed
@@ -1516,10 +1551,10 @@ source locations are exposed as editable destinations. The
 event **always** retains `invalidation:{all:true}`. Local
 `setSubstitutions` events carry no text-edit geometry.
 
-Without direct raw precommit observation, old nonzero
-columns other than a uniquely recorded substitution boundary
-remain unverified, even if an intermediate view supplies its
-own post-commit mutation endpoints. CRLF terminator interiors,
+Without verified raw or directly raw-backed cell precommit
+observation, old nonzero columns other than a uniquely recorded
+substitution boundary remain unverified, even if an intermediate
+view supplies only post-commit mutation endpoints. CRLF terminator interiors,
 hidden or crossing intervals, ambiguous shared cuts,
 missing/inconsistent pre/post geometry, revision discontinuity
 and wrap suppress `geometry` without failing an already
