@@ -39,16 +39,36 @@ Refresh HEADs and reconcile forward before all subsequent work.
 - Explicit user direction: package definitions should describe product facts,
   while reusable behaviors belong in runtime `m`; minimizing edits when new
   versions/platforms appear is a primary goal.
-- The earlier user-approved direction is to keep package `cmd/` as an
-  **intentional, package-specific executable launcher/wrapper layer**,
-  distinct from upstream useful-root binaries. Do not generalize `cmd`
-  scripts in this phase; do not bypass them through `PATH`.
-- The favored *future* organization groups existing file projections under
-  `link/bin/` (command target executables) and `link/lib/<runtime>/`
-  (runtime-specific library exports), keeping `cmd/` separate and exact
-  concrete version binding. `link/bin/` must not be placed on `PATH`.
-  The physical layout is not yet implemented/promoted; `link` today is
-  flat for commands, while `lib/sh` and `lib/java` are sibling views.
+- **Current user correction (2026-11-03):** for the next package schema,
+  `link/bin/<command>` is the *uniform public executable entrypoint*.
+  It resolves either directly to the exact concrete's useful-root executable
+  or, when adaptation is needed, relatively to
+  `../../cmd/<command>` inside the same concrete.
+  `cmd/` contains only package-specific optional wrappers, not the complete
+  published command set. `context`, ordinary defaults and facility/service
+  consumers should use the selected concrete's `link/bin` command view,
+  not expose `cmd/` directly as a second public namespace.
+  Do not attempt to abstract wrapper bodies in this schema work.
+- `link/lib/<runtime>/` remains the intended ordinary-library projection
+  view. `link/bin/` is intentionally included in `PATH` when selected
+  through a validated exact concrete, unlike the prior superseded
+  target-only interpretation. Symlinks targeting `cmd/` are optional,
+  and unwrapped commands may not bypass required package environment,
+  dependency or state preparation.
+- **Current user decision (2026-11-03):** the pre-existing flat
+  `pkg/`+`facility/` catalog schema is placed under `v1/`
+  **without changing its internal format**, so its definitions remain
+  usable. The next revised schema is `v2/` (no leading zeroes).
+  Catalogue schema versions are independent of upstream software versions,
+  facility compatibility levels and immutable Git snapshots.
+- **Current user decision (2026-11-03):** retain static `res` as distinct
+  from libraries but explicitly defer new package-resource export
+  descriptors and projections to `v3` or later. No `link/res` in v2.
+- **Current user proposal under evaluation:** rename the `var/`
+  package-definition routing descriptor to a less ambiguous name,
+  potentially `map/`; do not confuse its existing *static, system-scoped
+  useful-root to managed-state routing* with a generic arbitrary map,
+  the state area itself, or the upstream `root/var` directory.
 - Retain separate provider-independent `facility/` catalog contracts;
   ordinary shared libraries must not be recast as facility parts.
 - Preserve existing provider resolution, immutable catalog snapshots,
@@ -57,20 +77,26 @@ Refresh HEADs and reconcile forward before all subsequent work.
 
 ## Acceptance scenarios
 
-1. Install one package whose specific `cmd` wrapper requires environment and
-   fixed arguments: its `link/bin/<command>` target resolves to the exact
-   selected useful root, and public command execution still uses the wrapper
-   and trusted `pkg-launch`.
-2. Install a package exporting both a shell library and a Java JAR, and a
+1. Install two ordinary commands: an unwrapped command with
+   `link/bin/<name> -> ../../root/...` and a wrapped command with
+   `link/bin/<name> -> ../../cmd/<name>`. Public PATH/default/`context`
+   resolution reaches the correct exact concrete through `link/bin`;
+   only the wrapped command runs its package-specific wrapper.
+   Required environment/state/dependency/NSS behavior is not silently lost.
+2. Install a package exporting a shell library and a Java JAR, and a
    library-only package: `pkg` validates/materializes version-pinned
-   `link/lib/sh` and `link/lib/java` views once; `context` composes only
-   their runtime lookup directories, without constructing links.
+   `link/lib/sh` and `link/lib/java` views once; `context` composes
+   lookup directories without constructing links.
 3. New upstream versions that do not change a defined range's behavior
    require no new package descriptor; platform-common metadata is not
    duplicated merely because catalog streams differ.
-4. A provider package with direct facility executables and one delegating
-   facility command maintains its current facility cmd/env/service contracts;
-   ordinary library exports do not alter provider selection.
+4. A facility provider maps its required command members to selected
+   exact-concrete `link/bin` entries, whether direct or wrapped, and
+   validates them against the central facility contract. A service
+   similarly starts one exact provider-selected `link/bin` entry
+   through `srv` (never a global PATH search) and retains foreground,
+   HOME/state and lifecycle ownership semantics. Ordinary library exports
+   do not alter provider selection.
 5. A browser or service retaining controlled HOME, declared environment,
    privilege and mutable state preserves the same behavior after migration.
 6. A legacy installed concrete, including its state, defaults and provider
@@ -137,13 +163,19 @@ Refresh HEADs and reconcile forward before all subsequent work.
 
 ## Working design (not yet current contract)
 
-**1. Projection topology.** Favor a consistent authored
-`link/bin/<command>`, `link/lib/sh/<name>.lib.sh`,
-`link/lib/java/<name>.jar` representation, and matching
-concrete-local projections. A command uses `cmd/<command>` plus
-`link/bin/<command>`; library-only packages need no `cmd`.
-No automatic PATH exposure of `link/bin`. Exact names/placement
-are candidates until committed with runtime and migration.
+**1. Projection topology.** In the planned v2 authoring and installed
+layouts, `link/bin/<command>` is the one public command entrypoint.
+Each materialized executable link points to a useful-root executable
+or to an optional same-concrete `../../cmd/<command>` wrapper.
+`cmd/` has no mandatory 1:1 correspondence with commands;
+a library-only package has no `link/bin/` requirement.
+`context` composes the exact selected `link/bin/` directory into PATH;
+package default publication and facility command projections also select
+the validated `link/bin` command, with no per-context symlink writes.
+`link/lib/sh` and `link/lib/java` remain version-pinned library views.
+Catalog descriptors must distinguish a root target from a wrapper target
+unambiguously, even if the final materialized links have relative paths.
+The exact descriptor encoding is still to be decided, not a v1 contract.
 
 **2. Keep typed responsibility boundaries:** source identity and
 version stream (`repository/` + range anchors), acquisition/integrity,
@@ -171,90 +203,96 @@ user and inherited protected variables. Package-specific script env
 cases that cannot yet be modeled safely remain explicit and are
 counted rather than abstracted speculatively.
 
-**5. Migration and compatibility.** No destructive catalog-only
-rename. Define how explicit old and new installed link layouts are
-distinguished, whether a schema/revision marker is needed, and whether
-legacy concretes require reinstall. `pkg-launch`,
-`pkg-integration`, `pkg-state`, `context`, catalog descriptors,
-manuals, tests and public installed-package behaviors must realign in
-one coordinated rollout; preserve state/default/provider references.
-Do not use silent path-probing fallback as an accidental new contract.
+**5. Migration and compatibility.** `v1` is the exact existing
+catalog structure beneath a versioned parent; `v2` introduces the
+new `link/bin` public entrypoint and v2 facility parameter model.
+New installed concretes must retain schema identity; legacy unmarked
+ones must be treated deterministically as v1 only when verified.
+Installing a v2 definition over an already-installed exact v1 concrete
+is not an implicit replacement. The v1 catalog relocation is not
+literally only one code edit: the catalog resolver, facility lookup,
+catalog sync script/workflow and external snapshot consumers must
+address the `v1` base, while legacy installed launch paths remain
+supported. For v2, `pkg-launch`, `pkg-integration`, `pkg-state`,
+`context`, facility/service command resolution, defaults, manuals and
+real tests need coordinated realignment; retain state/default/provider
+references and do not use speculative path-probing compatibility.
 
-### Schema-versioned catalog, facility ownership and resource exports (2026-11-03, working design)
+### Schema-versioned catalog and facility ownership (2026-11-03, revised working design)
 
-Current user proposals refine the ongoing pkg model review; **not yet a
-promoted specification or catalog migration**.
+**Catalog generations.** The user's explicit choice is
+`v1/{pkg,facility}` preserving the present flat descriptor format
+exactly, followed by `v2/{pkg,facility}` for the revised model.
+The version label uses unpadded integers (`v1`, `v2`), not
+`v01`/`v02`. Retaining the v1 definitions is necessary for
+compatibility but does not by itself make an upgraded launcher
+compatible with old installed concretes; identity/provenance and
+schema-specific readers matter. The present runtime resolves
+snapshot-relative `pkg/` and `facility/` and the
+`pkg-catalog` synchronization code stages top-level `pkg`.
+For v1, these must consistently use the selected v1 base without
+changing the nested catalog data. Do not silently rewrite old
+concrete layouts in place, or confuse schema version with Git snapshot,
+upstream version, or facility compatibility.
 
-**Catalog compatibility namespace.** Prefer a common versioned root
-`v01/{pkg,facility}/...`, with possible later `v02/{pkg,facility}`
-coexisting. The schema version is distinct from (a) upstream package
-version/range anchor `nNNNN=<version>`, (b) exact facility compatibility
-level, and (c) immutable catalog Git snapshot revision. The existing flat
-`pkg/` and `facility/` roots are a legacy unversioned schema;
-do not silently reinterpret them as `v01` when semantics differ.
-Decide explicitly whether `v01` preserves existing interpretation or
-starts with revised links and declarative provider parameters. A directory
-name alone cannot keep old installed concretes executable when a new
-`pkg-launch` reads different link paths. New concrete installations
-need explicit schema/provenance identity, and the runtime needs coherent
-schema-specific readers or an explicit coordinated reinstall/migration.
-Previously installed unmarked concretes require a safe legacy policy.
-Avoid an accidental ambiguous same concrete-version identity between
-schema versions; a Git revision remains required for reproducible
-definition recovery. Current `m` catalog resolver uses snapshot-relative
-`pkg/` and `facility/`; catalog sync script and workflow also hardcode
-the top-level `pkg` folder. Those consumers must move together.
+**One effective executable namespace in v2.** A user invokes a
+`link/bin` symlink. For a simple binary it points into that same
+concrete's useful root. For a wrapper it points to
+`../../cmd/<command>`. The wrapper remains specific code, not an
+ordinary public PATH namespace. Direct symlink execution is permitted
+only when its requisite runtime preparation is already satisfied;
+packages needing launch-time HOME/dependency/environment/NSS setup
+must use a suitable wrapper or a defined generic preparation
+boundary. This is substantive: the current `pkg-launch` assumes
+`$0` resolves into `<concrete>/cmd/` and reads
+`<concrete>/link/<command>` as the *upstream target*. That assumption
+cannot continue when the new public link may point at the wrapper
+itself; the v2 wrapper must convey/discover the upstream target
+without circular resolution. The exact v2 descriptor representation
+is pending. Also validate upstream scripts that derive installation
+paths or behavior from argv[0]/symlink execution.
 
-**Facility contract ownership.** User wants **all facility definitions**
-and required member names in `facility/<facility>/<compatibility>`,
-not repeated as provider `facility-cmd`, `facility-env`, and
-`facility-service` member inventories in each package range. The package
-declares which facility level it provides and only the implementation
-parameters needed to satisfy the central contract: e.g. a root-relative
-binary directory, specific command-path exceptions/delegation to its
-`cmd` wrappers, environment target paths/values and service-start
-command binding. The generic `m` facility handlers validate required
-members, synthesize projections and reject incompatible bindings.
-**Do not put provider-specific paths inside the central facility
-contract:** the central facility defines what/validation, while
-the provider supplies where/how realized. This narrows the provider
-realization rather than erasing it. Evidence: `facility/java/21` already
-has independent required `cmd/java`, `cmd/javac`, `env/JAVA_HOME`
-markers, but Temurin and GraalVM redundantly map many
-`facility-cmd/java/* = bin/*` entries; Node.js needs
-`package-command node`, and `ollama` needs a package-specific
-`start=ollama-serve` binding. A central member list plus typed
-parameter mapping must handle all these without a second
-provider-defined facility schema or generic executable template
-language. Exact proposed parameter names/structure are open.
+**Facility and service transparency.** The facility owns member
+names and conformance, the provider binds only implementation-specific
+paths/parameters. The v2 facility-command realization should
+consume the exact concrete's public `link/bin` entries, with no
+`package-command` vs `root` distinction imposed on consumers.
+For services, `srv` resolves the system-selected exact provider
+and executes the service's validated entry in that exact
+`link/bin` directory, not through an unpinned/global PATH.
+The existing baseline `service/start=package-command` and
+`pkg_facility_service_start_resolve` returning an exact `cmd/`
+path are **current v1 behavior** and need a deliberate v2
+service-contract change. Preserve foreground process lifecycle,
+host-supervisor, recorded instance identity, state scope and
+package launcher environment/privilege guarantees.
 
-**Static resource exports versus code libraries.** User identifies
-missing package-resource export descriptors for `lang`, `manual`,
-possible icons and other static assets. The current
-`RESOURCE-MODEL.md` requires package-owned manuals and translations
-to ship in their same concrete artifact, and keeps them private unless
-an explicit exposure contract is introduced. They must not be
-automatically copied into global `$m_RES_DIR` or synchronized by
-global `lang-set`. Prefer separate semantic projection classes
-`link/lib/<runtime>` for code/JAR imports and candidate
-`link/res/<class>` for static payload access, with the same generic
-validated link-materialization mechanism underneath. Publication
-scope, namespace/ownership, locale fallback, manual lookup,
-version selection and collision rules remain to be defined per class.
-Icons are not a current globally fixed resource class; only add a
-typed export when a concrete consumer/access rule is established.
-Do not invent a universal `resource-path` API solely for symmetry.
+**Routing descriptor name.** The current `var/<area>` files map
+specified useful-root relative paths to static system-scoped mutable
+state, including factory/default initialization. `var` is
+misleading as a *descriptor* because it need not correspond to a
+physical `root/var` directory. Bare `map` would be too generic:
+prefer a responsibility-specific candidate such as `state-map/<area>`
+(or `state-link/<area>` if link creation is chosen as the defining
+semantic), while leaving existing managed `state-path` semantics
+and v1 `var` descriptors unchanged. The v2 exact name and any
+state-map syntax are still under review.
 
-**Acceptance scenarios to resolve before schema promotion:** install
-legacy-unversioned and new-versioned packages together; launch both
-through real `cmd` wrappers after a runtime upgrade; preserve exact
-installed schema identity, mutable state and facility defaults. Validate
-Temurin/GraalVM Java, Node.js delegated commands, Ollama service,
-Chromium environment and a library-only package. Export and access a
-package's revision-matched manual/lang resource without leaking it
-to global `sys` or `ai`; verify collisions and invalid paths fail
-before changing installed state. Keep all assertions based on actual
-public package install/launch, not only component stubs.
+**Resources deferred.** Resources remain distinct from libraries.
+No package resource-export descriptor or `link/res` materialization
+belongs to v2; defer that capability to v3 or later and preserve
+existing package-local/manual/language distribution and privacy
+semantics. This supersedes the previous working proposal to include
+`link/res` in the immediately upcoming schema.
+
+**Acceptance focus.** Validate v1 install/launch after relocating
+its catalog definitions, then v1/v2 installed coexistence and
+unchanged exact identity/default behavior. In v2 test a direct binary,
+a wrapper requiring fixed argv and state/environment, a Java
+facility with many members, a Node-like delegated launcher, and an
+Ollama-like service through both portable and host paths. Verify
+no fallback through a different package version and reject missing,
+escaping or cyclic links. Resource export testing is out of scope.
 
 ## Completed
 
@@ -274,11 +312,14 @@ has passed the specification promotion/implementation gate.
 
 ## Next action
 
-Resolve the common `v01/{pkg,facility}` schema version boundary,
-legacy installed-concrete provenance and runtime compatibility, central
-facility-owned member definitions with package-owned binding parameters,
-and distinct resource export semantics as the smallest coherent
-declarative contract, using representative real package classes.
+Fix the exact v2 `link/bin` authored descriptor/launcher
+target contract, while v1 remains the unchanged current catalog
+schema moved under `v1/{pkg,facility}`. Define how v1/v2 installed
+concretes identify their schema and how facility and `srv`
+entrypoints follow the uniform selected `link/bin` path without
+losing launch-time state/environment requirements. Choose a precise
+replacement name for v2 `var` routing; keep new resource
+exports deferred to v3+ and outside the v2 migration.
 Compare the strict two-tier current range model with a minimal
 explicit defaults/override option before deciding syntax.
 Then stage authorized, coordinated `m` + `pkg-catalog` implementation,
@@ -288,8 +329,11 @@ contracts to `PACKAGE-MODEL.md` and relevant `context` spec.
 
 ## Blockers / open questions
 
-- Exact authorship and installed layout semantics for
-  `link/bin` / `link/lib`, and migration/compatibility strategy.
+- Precise v2 wrapper-target descriptor semantics and generic launcher
+  contract once the public `link/bin` symlink may point at `cmd`.
+- V1/v2 installed-concrete schema identity and safe mixed-version
+  launch, plus coordinated facility/`srv` migration.
+- Exact v2 replacement for the `var/<area>` state-routing name.
 - Minimum non-imperative ordinary package `env` shape, including
   scope/precedence and safe checks.
 - Whether stable metadata inheritance pays for its complexity while
