@@ -826,6 +826,13 @@ They must not be merged into a single source point merely because
 the displayed marker is one indivisible cell. An input point hidden by
 a fold has no valid exposed counterpart.
 
+The shared internal `_replaceMapped` delegation is the already
+demonstrated common responsibility across `CellDocument2D`,
+`FoldDocument2D` and `AnnotationDocument2D`. The coordinate
+mapping itself remains local to each view: a shared commit protocol
+does not imply a reusable arbitrary-region transformation or a
+second selection owner.
+
 An accepted selection endpoint must have an unambiguous translation
 through **every** layer. A selected interval may not implicitly include
 input content that is hidden by any layer, even when its endpoints are
@@ -854,8 +861,17 @@ rebasing are implemented.
 
 Direct construction throws `TypeError('Document2D is abstract')`; inherited
 abstract members throw `Error` until implemented by a subclass. The class
-contains no storage, registrations, selection owner, rendering algorithm or
-editing implementation. `Document`, `FlatDocument`, `PieceDocument`,
+contains no storage, registrations, selection owner, rendering
+algorithm or concrete editing policy. It supplies an **internal**
+`_replaceMapped(input,edits,expectedRevision,translate)` helper shared
+by composed 2D views. This method is not a GUI-facing public API:
+the implementing view supplies its own private translation of each
+edit and its policy for rejecting hidden, partial or ambiguous
+intervals. The helper snapshots each edit record's fields once,
+checks the exposed and immediate-input revisions before and after
+translation, then delegates the complete batch to exactly one
+`input.replace`. It cannot implement a region correspondence
+without the concrete view's mapping rules. `Document`, `FlatDocument`, `PieceDocument`,
 `Selections` and `TextEditSelections` retain their existing contracts.
 Concrete consumers now have `RawDocument2D` described below.
 Logical/document-representation adapters, general pluggable mode registries,
