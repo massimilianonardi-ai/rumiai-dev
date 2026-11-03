@@ -61,7 +61,7 @@ rumiai-dev
 rumiai-os
     existing combined product/runtime implementation during extraction
 
-m
+m-os
     autonomous technical bootstrap and pkg implementation
 
 m-mk

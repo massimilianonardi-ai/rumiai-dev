@@ -16,7 +16,7 @@ pkg-catalog
 ```
 
 repository. Runtime package logic belongs to the `m` technical layer and
-now has an autonomous source home in `m`; the legacy combined `rumiai-os`
+now has an autonomous source home in `m-os`; the legacy combined `rumiai-os`
 source continues to contain its original package implementation during
 migration. Not every legacy repository adapter is included in the independent
 `m` checkout yet.

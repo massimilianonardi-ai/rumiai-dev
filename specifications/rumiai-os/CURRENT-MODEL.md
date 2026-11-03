@@ -27,11 +27,14 @@ RumiAI
 
 `m` MUST NOT semantically depend on RumiAI.
 
+The independent source repository is named `m-os`. That repository name does
+not rename the semantic `m` layer, the public `m` bootstrap/command or `m_ROOT`.
+
 Terminology follows that layer boundary. In current development contracts, implementation and operational reference, unqualified `RumiAI` denotes the branded upper layer or the product as a whole only when that broader product context is actually intended. A technical responsibility owned by `m` MUST be described as `m` (or by its concrete `sys`/`pkg` responsibility), not as RumiAI-owned or RumiAI-managed. A rule that applies to both semantic layers names both explicitly as `m` and RumiAI. Repository-level references may use `rumiai-os` or RumiAI OS when the repository/product as a whole is the subject.
 
 `pkg`, package runtime infrastructure and `pkg-catalog` belong to `m`.
 
-The independent `m` repository now distributes the autonomous bootstrap,
+The independent `m-os` repository now distributes the autonomous bootstrap,
 `pkg` and selected essential technical tools. The existing `rumiai-os`
 mainline still includes the combined implementation while consumers and
 other components are migrated; this is a transition, not an additional
@@ -310,7 +313,7 @@ versions
 default
 ```
 
-Package definitions/catalog data live in the separate `pkg-catalog` repository. Runtime adapters, resolution, download, extraction, integration and launcher logic belong to the `m` technical substrate. The standalone `m` repository now contains the core package runtime with its initial supported adapters; the legacy combined `rumiai-os` repository retains other adapters pending realignment. Adapter completeness must not be inferred from repository separation.
+Package definitions/catalog data live in the separate `pkg-catalog` repository. Runtime adapters, resolution, download, extraction, integration and launcher logic belong to the `m` technical substrate. The standalone `m-os` repository now contains the core package runtime with its initial supported adapters; the legacy combined `rumiai-os` repository retains other adapters pending realignment. Adapter completeness must not be inferred from repository separation.
 
 Package launchers resolve mutable state through `state-path`. Package HOME is user-scoped state selected at launch. `m`-managed package configuration uses the reserved `.m/` subnamespace within the package configuration area.
 

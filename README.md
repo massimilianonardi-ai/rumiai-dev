@@ -237,8 +237,8 @@ rumiai-dev
 rumiai-os
     existing combined product/runtime implementation (transition source)
 
-m
-    autonomous technical bootstrap, pkg and essential tools
+m-os
+    autonomous technical bootstrap, pkg and essential tools (technical `m` layer)
 
 m-mk
     independent development-lifecycle engine distributed through pkg
