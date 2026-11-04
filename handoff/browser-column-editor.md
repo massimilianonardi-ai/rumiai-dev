@@ -12,6 +12,11 @@ The JavaScript compilation, module loading and distribution concern has **indepe
 
 ## Current repository revisions
 
+**Operator Ubuntu x64 GUI feedback (2026-11-04; exploratory, not a PASS):**
+- The experimental Document2D browser page visibly clips the emoji on the right; arrow keys scroll the container; ordinary mouse/keyboard text editing is not usable.
+- At the tested PoC revision, spans use a fixed 13px width per cell with overflow hidden, the key handler only processes printable characters when the scroller is focused, click does not explicitly focus it, and arrows are not handled. The automated Chromium DOM/probe test did not cover these human-facing acceptance scenarios.
+- Before another physical-session request, implement and browser-test measured Unicode layout, focus/caret, arrow navigation and ordinary editing via the public Document2D API. Retain the separate TextEdit 0.8.2 GUI; the existing core/DOM test PASS keeps its narrow meaning.
+
 **Current 2026-11-04 Ubuntu x64 operator Node bootstrap unblocked:**
 - Operator physically cloned pinned `rumiai-os` `c453b5764fec8403571125ea62107ae072a823a1` and `rumiai-dev-PoCs` `7b061111a07ac3d9786140dff573f11e39ef20da` into an isolated user workspace; local `node` was absent. `./m osarch set linux-x86_64` succeeded, but `./m pkg install nodejs@v26.8.2!linux-x86_64` failed with `pkg-depend request-unresolvable`; later `./m node` attempts could not start. No physical GUI test was completed.
 - Two separate causes were verified by the real current catalog and hosted reproduction: the Node.js upstream `dist/index.json` begins with `v27.0.0-alpha.0.0.0`, which the legacy adapter incorrectly validates before excluding non-26 releases; and `rumiai-os` package catalog initialization erroneously returned the outer snapshot instead of the current `v1/` definition root. The `m-os` implementation already had the correct v1 snapshot selection; this was an existing combined-product implementation/specification mismatch, not an operator mistake.
