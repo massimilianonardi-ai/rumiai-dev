@@ -381,7 +381,14 @@ escaping or cyclic links. Resource export testing is out of scope.
 
 ## Current state
 
-**V2 provider PATH + context precedence checkpoint — 2026-11-04 (latest):**
+**V2 consumer-launch environment checkpoint — 2026-11-04 (latest):**
+- Current inspected branch HEADs: `m-os/pkg-schema-v2@71b33c6c811a1a7b4840dba0d2a3f86aa054ef3a`, `pkg-catalog/pkg-schema-v2@cc6be43aca57c05c840ec960cfdd350be76633cd`; mainline `m-os/master@ff55fc9f`, `pkg-catalog/main@35b230d4` were not modified, and no v2 merge occurred.
+- Verified a concrete v2 mismatch: `_pkg_integration_v2_validate_definition` rejected `dependency` even though the existing package dependency contract and v2 launcher consumed dependency metadata, and `pkg_integrate` already materialized it. Corrected the v2 envelope to reuse the **existing** `_pkg_dependency_file_validate` at `m-os@a4fc43e1`; no new dependency grammar, selector or projection interpreter introduced. Corrected outdated `res/sys/manual/pkg-launch.lib.sh` claim that facility `PATH` is invalid at `m-os@7763847e`; current contract permits ordered root/root-path PATH contributions.
+- `m-os@71b33c6c` extends the existing `.github/scripts/pkg-v2-facility-command-test.sh` fixture by integrating a v2 consumer with declared `java =21` dependency, real `link/bin → cmd → launcher → upstream` execution, package `env`, real provider `facility-cmd` and `facility-env`, final user package `.m/env`, and explicit consumer provider binding after clearing the independent global facility default. The upstream payload asserts actual JAVA_HOME, PATH precedence, selected `javac`, managed HOME and selected ordinary variable at exec. It succeeded in all three variants in the Ubuntu job logs. The Java provider is an integrated **fixture using a temporary copied catalog facility contract**, not a real Java provider downloaded from the catalog; the consumer's integration/launch code is real.
+- `pkg-catalog` pins all three workflows to exact m-os `71b33c6c`: general matrix at `c7c14dc1` run `41787604558`, Node.js at `35f613ff` run `41787611004`, Ollama at `cc6be43a` run `41787617458`. Node.js **2/2 PASS** (Ubuntu/macOS), Ollama portable/systemd user/system **3/3 PASS** (Ubuntu). At the last inspection the general matrix had **8/10 PASS**, including Ubuntu consumer launch, with only macOS `v2-facility-commands` and `v2-service-entry` still **queued**. Do not attribute PASS to those two jobs until their exact-run conclusions are confirmed.
+- Current changes are deliberately confined to `m-os` v2 implementation, its fixture and manual, `pkg-catalog` v2 test workflow references, and this active handoff. No frozen legacy or mainline product branch was touched. Physical target-host, macOS launchd and osarch/generic provider cross-class precedence remain outside this validation.
+
+**V2 provider PATH + context precedence checkpoint — 2026-11-04 (prior):**
 - Latest checked v2 branches: `m-os/pkg-schema-v2@ff14e53f14ffbbeadbaf48a823cb0b7e3e7d3612`; `pkg-catalog/pkg-schema-v2@5503efb1c6ee088576d5a16b169bac75a98b3902`. Mainline `m-os/master@ff55fc9` and `pkg-catalog/main@35b230d` unchanged; no v2 merge. Only a test script and a pinned workflow changed, not product code or canonical package contracts.
 - Previously pending real Node.js workflow `41719785578` completed **2/2 PASS** (Ubuntu/macOS), catalog `04c66fdf` pinned to m-os `d1136385`. Previously pending general v2 workflow `41718659259` completed **10/10 PASS** (five jobs per Ubuntu/macOS), catalog `e15c350e` pinned to m-os `d1136385`.
 - To validate explicit precedence, the fixture in `m-os/.github/scripts/pkg-v2-facility-command-test.sh` extends only a **temporary copied** Java facility contract with `env/PATH` and two typed values (`root-path bin`, `root-path tools`). It exercises real v2 facility conformance/materialization, real public `pkg provider default`, fresh `m` bootstrap, and shell-local `context`. Assertions protect technical m command roots before global provider PATH, later PATH record before earlier, exact v2 `link/bin` first after context selection, unchanged global JAVA_HOME, repeated-selection idempotence and reset preserving non-context PATH. The catalog's actual Java contract is not modified, and this is not a real catalog-backed Java provider install.
@@ -521,23 +528,22 @@ this Current state supersedes older stale 'no v2 PASS' claims.
 
 ## Next action
 
-1. Close remaining environment precedence with tests of **normal package
-   launcher** behavior: consumer package environment, effective provider
-   command/PATH/ordinary variable projection, and final user package
-   overrides. Extend platform-specific/generic global provider projection
-   checks without inventing a second environment interpreter in context.
-2. Validate macOS launchd user/system supervision with a controlled
-   eligible host/account, and physical Ubuntu ARM64 when available.
-   GitHub-hosted Ubuntu systemd user/system PASS and fixture PATH PASS
-   are not substitutes for these separate host checks.
-3. Audit current v2 wrapper target/launcher semantics, mixed installed
-   schema behavior, manual/library interfaces and remaining provider
-   selection edge cases before specification promotion. Keep v1 behavior
-   unchanged and use a final exact-revision cross-host validation.
-4. Promote only settled complete v2 semantics into canonical specifications;
-   coordinate forward-only mainline merge after acceptance. Continue to
-   defer package resources to v3+ and range inheritance until independently
-   justified.
+1. Inspect the last two macOS jobs in `pkg-catalog` general v2 workflow
+   `41787604558` (`v2-facility-commands` and `v2-service-entry`);
+   distinguish an actual product failure from a runner/fixture failure,
+   and reconcile forward if necessary. The existing Node.js and Ollama
+   exact-revision workflows are already PASS.
+2. Extend current global provider environment validation to osarch-specific
+   versus osarch-independent contributions and mixed selectors. Preserve
+   technical command roots and deterministic provider PATH/ordinary
+   variable semantics; do not add a second interpreter to `context`.
+3. Validate macOS launchd user/system on an eligible controlled host and
+   Ubuntu ARM64 on the physical reference host when available.
+4. Audit the remaining v2 wrapper/launcher semantics, mixed v1/v2
+   installed-concrete states and manuals, then promote only settled
+   complete v2 semantics and coordinate a forward-only merge after
+   acceptance. Resource export stays deferred to v3+; metadata
+   inheritance remains an open choice.
 
 ## Blockers / open questions
 
