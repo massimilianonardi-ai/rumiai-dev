@@ -9,9 +9,9 @@ Replace the incomplete existing rsudo APISIX administration module with a safe, 
 
 ## Current repository revisions
 
-- rumiai-dev: dc30a1215742dcf96aaf7df35dc7d169c8d1d95f (before detailed-plan checkpoint)
-- rumiai-os: b792859dce7a19e33dfaf83b55147b47d84f309f (pre-plan HEAD)
-- rumiai-tests: fcedf4060a6b328dc932f4cec3d45856c56f81b7 (pre-plan HEAD)
+- rumiai-dev: bb38cae58dd6c0024ea25478ce5bf6acb24277c6 (before implementation checkpoint)
+- rumiai-os: d228cf3236337976590f10c31d3f4a32abbe106b (read-only inspect)
+- rumiai-tests: 7f047fa541f2178afc424fb14f08c2c09ab0f048 (focused tests and Actions validation scope)
 - m-os: 31693e814f682690adfd48185da822f7f5007f9e (historical comparison repository, no edits intended)
 
 Fresh HEAD checks remain required before edits/resumption.
@@ -24,6 +24,7 @@ Fresh HEAD checks remain required before edits/resumption.
 - specifications/README.md
 - specifications/rumiai-os/CURRENT-MODEL.md
 - specifications/rumiai-os/RSUDO.md
+- specifications/rumiai-os/RSUDO-APISIX.md
 - specifications/rumiai-os/COMMAND-ENTRYPOINTS.md
 - specifications/rumiai-os/FILESYSTEM-NAMING.md
 - specifications/rumiai-os/LIBRARY-INTERFACES.md
@@ -186,20 +187,26 @@ This is a resumable task implementation plan and a set of provisional technical 
 - `rumiai-tests@ad992490`: added `tests/rumiai-os/rsudo/apisix-mode.test` to verify source syntax, module public loading via a real `m` probe, remote-shell command and stdin transport up to the external LuaJIT boundary, positional path rejection, fail-closed profile ambiguity and explicit configuration selection. The LuaJIT external-boundary fixture does not prove APISIX's real parser or the live gateway. This new test has **not yet been executed**.
 - Inspected the completed `rumiai-os-health` run 41806952411: `rumiai-os/rsudo/legacy-modules.test` PASS on macOS and Ubuntu ARM64 for `rumiai-os@213f673c`, but the full workflow failed in unrelated suites/environment preparation. The PASS is revision-specific and does not validate the new mode code.
 - Final readback at `rumiai-os@a8a532e` confirms only the APISIX module and its manual were changed by this task since the previous checkpoint, with unrelated concurrent web-analyze commits preserved. The permanent test and handoff changes are separate and concurrent edits are preserved. Source/manual consistency and branch-specific failure review were completed; no sh -n execution, installed APISIX integration test or physical test of this new revision is claimed.
+- **Current response / Phase A start:** saved this detailed twelve-phase A-L plan in the active handoff at `rumiai-dev@c96f2149` before making product changes, including stage gates, provider dependencies, legacy migration, Keycloak and the test/security/concurrency matrix.
+- **Product `rumiai-os@d228cf32`:** added public `rsudo_mod_apisix_inspect` (dispatch `rsudo apisix inspect`) which composes the configured-only backend resolver, validates the returned backend and emits exactly four machine-usable evidence fields: `configured_mode`, `configuration_evidence=on-disk`, `runtime_identity=unverified`, `mutation_readiness=not-established`. Unexpected backend identity returns status 22. Updated the APISIX library manual in the same forward commit. No Admin API operations, live process introspection or gateway configuration were changed.
+- **Tests `rumiai-tests@9507b2cf`:** expanded the real-`m`/external-LuaJIT-boundary test with inspection output and unexpected backend rejection. **Tests `rumiai-tests@7f047fa5`:** added focused `validation/rsudo-apisix.conf` and `rsudo-apisix.yml` GitHub Actions matrix on macOS and Ubuntu ARM64 to run both mode and legacy contract tests. The focused run 41815144458 was **queued** at last observation, not PASS.
+- **Canonical spec `rumiai-dev@c03ed6f7`:** added current `specifications/rumiai-os/RSUDO-APISIX.md` and indexed it in `specifications/README.md`. The specification promotes only observed current legacy and read-only mode/inspect behavior, explicitly excluding unfinished runtime verification, safe provider routing, complete mutation and Keycloak modernization.
+- **Consistency review:** compared changed paths against original per-repo HEADs, confirmed only the APISIX module/manual, APISIX scoped tests/workflow and APISIX handoff/spec/index were changed by this task. Unrelated concurrent web-analyze and other work remained intact. Read back `rsudo_mod_apisix_inspect`, manual entries, test assertions and Actions interpolation. A separately reconstructed isolated POSIX shell function was syntax-checked and executed on Debian auxiliary host, but this is **not** a test of the exact product checkout or composed `m` execution path. No live APISIX validation performed for the new code.
+
 
 ## Current state
 
-Comprehensive phase-by-phase plan A-L is now saved above. Begin with A without enabling writes; progress and evidence must update this same handoff.
+The detailed plan is persisted and Phase A has begun. The current APISIX public module now has both read-only `mode` and `inspect`, with explicit configured-only evidence; the 35 APISIX and 16 Keycloak previous functions continue to reach preserved legacy modules. No new safe CRUD or complete provider routing has been enabled. The current canonical implemented contract is `specifications/rumiai-os/RSUDO-APISIX.md` and library manual; unimplemented design remains in this handoff. APISIX configuration, secrets and deployed services have **not** been modified.
 
+`rumiai-os@d228cf32` and `rumiai-tests@7f047fa5` are the revisions for the new focused test; the scoped Actions run is queued/unverified at the last check. The earlier legacy-only CI PASS on `rumiai-os@213f673c` does not validate this revision. Installed APISIX runtime identity, multi-provider parser behavior, read API and mutations remain unvalidated.
 
-The legacy-name separation and transitional APISIX/Keycloak facades remain. The new APISIX original-name module now also implements read-only `mode`, backed by a private configured-backend selector and a static remote shell script that uses APISIX's Lua/YAML dependencies. It identifies the selected on-disk configured mode but does NOT establish the active process identity; no mode-specific CRUD routing or standalone mutation is enabled. The 35/16 legacy functions continue to forward unchanged. Both current APISIX and legacy manuals remain present. The new focused mode test is committed but unexecuted, and there is no live APISIX/physical validation for this revision.
 
 ## Next action
 
-1. Run the new `tests/rumiai-os/rsudo/apisix-mode.test` through the real `m` target and validate shell syntax and read-only boundary behavior at the pinned current product/test revisions. Do not interpret the earlier legacy test PASS as coverage of this addition.
-2. Validate APISIX LuaJIT parser availability, defaulted role/provider classification, custom `-c`/profile selection and runtime/installation identity on real representative traditional, standalone file-driven (YAML and JSON) and API-driven installations. If runtime identity cannot be proved, keep all mutation routing disabled.
-3. Implement safe, mode-specific, read-only resource operations using the internal selector (Admin API traditional; file read; standalone Admin API GET), followed by verified authenticated transport and resource mutation with appropriate concurrency/lost-update prevention.
-4. Realign authoritative current subsystem specifications when the behavior is sufficiently settled, keep library manual and permanent tests synchronized, and separately modernize Keycloak without affecting the legacy boundary.
+1. Retrieve the result/logs of the focused rsudo-apisix Actions run 41815144458; fix any test or product regressions through forward commits and rerun equivalent scoped real-`m` tests. Treat queued, canceled and infrastructure-failed results honestly.
+2. Complete Work-unit A real installed-APISIX LuaJIT/config parser tests, then implement Work-unit C actual process/config identity evidence (custom `-c`, profiles, nonstandard homes, containers) without assuming on-disk mode means active mode.
+3. Resolve Work-unit B exact APISIX version/resource/method capability matrix and Work-unit D secret-safe HTTP transport. Implement Work-unit E read-only resource access only after its prerequisites; no writes until the relevant identity, concurrency and security gates are proven.
+
 
 ## Blockers / open questions
 
