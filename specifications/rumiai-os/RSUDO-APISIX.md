@@ -66,7 +66,7 @@ The public command
 rsudo apisix runtime <absolute-remote-apisix-home>
 ```
 
-and direct function `rsudo_mod_apisix_runtime` observe a specifically selected remote installation. Automatic instance discovery is **not** implemented by this operation. The caller supplies an absolute installation root. The operation checks the generated `conf/nginx.conf` and `logs/nginx.pid`, then reads the PID's visible process arguments using the remote POSIX `ps` interface. It recognizes the APISIX CLI's `-p <home> -c <home>/conf/nginx.conf` startup and the official Docker foreground startup using `-p <home> -g 'daemon off;'` (for the generated default `conf/nginx.conf`). Process-title quoting can differ; neither form proves the gateway's source configuration.
+and direct function `rsudo_mod_apisix_runtime` observe a specifically selected remote installation. Automatic instance discovery is **not** implemented by this operation. The caller supplies an absolute installation root. The operation checks the generated `conf/nginx.conf` and `logs/nginx.pid`, then reads the PID's visible process arguments using remote POSIX `ps`, with a guarded Linux `/proc/<pid>/cmdline` fallback when minimal containers lack `ps`. A master may legitimately have namespace PID 1. `/proc` is a Linux capability, not a universal POSIX dependency. It recognizes the APISIX CLI's `-p <home> -c <home>/conf/nginx.conf` startup and the official Docker foreground startup using `-p <home> -g 'daemon off;'` (for the generated default `conf/nginx.conf`). Process-title quoting can differ; neither form proves the gateway's source configuration.
 
 If the PID file is missing, successful stdout is exactly:
 
@@ -76,7 +76,7 @@ runtime_identity=unverified
 mutation_readiness=not-established
 ```
 
-This does **not** prove that the server is stopped. When a readable, ordinary PID file refers to an observable nginx/OpenResty master whose visible `-p` and `-c` operands match that installation's expected generated nginx configuration, stdout is:
+This does **not** prove that the server is stopped. When a readable, ordinary PID file refers to an observable nginx/OpenResty master whose visible startup arguments match either the verified CLI `-p`/`-c` pair or the Docker foreground `-p`/`-g` form for the expected generated nginx configuration, stdout is:
 
 ```text
 runtime_evidence=pidfile-and-master-args
@@ -85,7 +85,7 @@ runtime_identity=process-consistent-config-unverified
 mutation_readiness=not-established
 ```
 
-Unexpected or unavailable process evidence fails non-zero. The operation never emits the process command line itself, because other process arguments might be sensitive. A PID file and process title can be stale or misleading and do **not** prove which source `config.yaml`, custom `-c`, profile, container namespace, or effective gateway settings the active process loaded. The method is a partial process observation, not a confirmed APISIX runtime identity, a healthy-server result, or permission to write configuration. An installation that does not expose POSIX `ps`, or is started with different OpenResty arguments, currently returns a distinct unsupported/unverified result rather than guessing a matching instance.
+Unexpected or unavailable process evidence fails non-zero. The operation never emits the process command line itself, because other process arguments might be sensitive. A PID file and process title can be stale or misleading and do **not** prove which source `config.yaml`, custom `-c`, profile, container namespace, or effective gateway settings the active process loaded. The method is a partial process observation, not a confirmed APISIX runtime identity, a healthy-server result, or permission to write configuration. An installation that exposes neither POSIX `ps` nor a readable Linux procfs command line, or is started with unrecognized OpenResty arguments, returns a distinct failure rather than guessing a matching instance. Even matched arguments do not establish which source APISIX configuration is active.
 
 ## Current limits and security boundary
 
