@@ -12,6 +12,11 @@ The JavaScript compilation, module loading and distribution concern has **indepe
 
 ## Current repository revisions
 
+**2026-11-04 proposed Raw/Cell display-unit distinction (working design):**
+- The user expects RawDocument2D to present individual exposed UTF-16 units, including separate, possibly diagnostic glyphs for surrogate halves or combining marks, rather than automatically composing them as one displayed grapheme; CellDocument2D instead exposes and displays a complete grapheme as an indivisible cell. The source data must remain unchanged.
+- The existing interface uses Raw UTF-16 columns and Cell grapheme/TAB columns, but Raw getRegions may return a contiguous text run and browsers naturally shape its entire string as one grapheme. This visual differentiation is **not yet automatically guaranteed by the current GUI**.
+- Verify the proposal in the next GUI PoC using only the public bounded Document2D region/window API without implementation-type checks, source-string rewriting or private engine knowledge. Raw display placeholders are presentation only. Evaluate Unicode/TAB/caret/selection interactions and efficient viewport rendering before deciding whether any public contract change is truly necessary. Keep this as pending working design, not canonical policy, until tested and agreed.
+
 **2026-11-04 user-directed GUI-first convergence checkpoint (active working direction):**
 - Operator confirms the explicitly requested real-Document2D PoC button tests PASSED on Ubuntu x64: protected edit refusal, allowed atomic source edit with fold invalidation and four-row repaint, repeated across FlatDocument and PieceDocument. This is a qualitative operator report for those scenarios, not formal full GUI, browser-version-pinned or Ubuntu ARM64 validation.
 - User correctly distinguishes a PoC from a production editor and asks to **pause further deep engine expansion** at the current demonstrated checkpoint; concentrate development on a test GUI that begins offering real expected user interactions, while consuming ONLY the published `Document2D` surface and knowing nothing about physical storage or private transformation layers.
