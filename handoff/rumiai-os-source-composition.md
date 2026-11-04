@@ -123,6 +123,79 @@ Scenarios 1 and 2 have initial direct-checkout smoke evidence on Ubuntu and macO
 
 ## Current state
 
+### DEVPLAN: package-v2 shell-library reuse (2026-11-04)
+
+**Planning only; no runtime/catalog/legacy-product modifications authorized by
+this invocation.** Goal: make eligible legacy `rumiai-os` POSIX shell
+libraries distributable as independent v2 packages and genuinely consumable by
+another v2 package through the existing shell-local `context` function. Keep
+bootstrap-essential `m` libraries in the core; do not move them merely because
+they are shell source. The first acceptance path uses explicit installed exact
+concrete selection, not implicit dependency discovery or automatic child-shell
+propagation. The full-context design remains independently pending.
+
+Current evidence/routing: `specifications/rumiai-os/{CURRENT-MODEL,
+PACKAGE-MODEL,BOOTSTRAP-ENVIRONMENT,LIBRARY-INTERFACES,FILESYSTEM-NAMING,
+DOCUMENTATION-MODEL,RESOURCE-MODEL,STATE-MODEL}.md`; `DEVPLAN.md`,
+`TESTING.md`; this handoff and `handoff/pkg-definition-model-review.md`.
+Checked source baselines in this planning pass: `m-os/master@31693e81`,
+`m-os/pkg-schema-v2@dad7c0d2`, `pkg-catalog/main@7892040e`,
+`pkg-catalog/pkg-schema-v2@420e0870`, legacy
+`rumiai-os/main@7c97e986`, `rumiai-tests/main@b28283cb`.
+These are checkpoints only: refresh every relevant HEAD and authoritative
+source on execution/resumption.
+
+Dependency map and owners (local planning IDs, not product interfaces):
+
+- **V01** — *existing owner: pkg-definition-model-review.* Finish frozen
+  v2 branch reconciliation, targeted authentic Ubuntu/macOS coverage, known
+  missing adapter/evidence evaluation, manual/permanent-test audit and safe
+  release readiness; do not redesign schema, trust or validation target.
+- **V02** — *same owner; depends V01.* Forward-promote v2 runtime/catalog and
+  the settled contract to their respective mainlines only when evidence and
+  the consistency/operability gates permit. Respect outstanding physical and
+  launchd evidence without calling CI physical validation.
+- **L01 — ready, this source-composition owner; parallel to V01.** Inventory
+  current legacy shell libraries, their consumers/dependencies/public
+  functions/manuals and corresponding autonomous `m-os` implementations.
+  Classify core bootstrap/runtime necessities versus cohesive independently
+  packageable capabilities under the first-party distribution contract.
+  Deliver a traceable ownership/porting matrix and an initial real consumer
+  scenario. No implementation, package layout or new API is pre-approved by
+  this inventory.
+- **L02 — after L01 and stable v2 package surface (V01/V02).** Package one
+  smallest cohesive eligible library unit, source and package-local
+  reference/docs included, with the existing v2 `link/lib/sh` projection
+  and no second loader. Keep library public/internal naming and POSIX
+  compatibility; no `lib/sys` projection or facility reclassification.
+  Validate real catalog-backed install, projection and rollback.
+- **L03 — after L02.** Integrate one real v2 *consumer* package and verify in
+  its actual POSIX shell that `core.lib.sh` makes `context` available,
+  `context pkg=<exact-installed-concrete>` selects the exported lookup view
+  and POSIX `.` loads the selected library and calls its documented public
+  interface. Verify error, version isolation, collision, nested invocation
+  and v1 coexistence where material. Do not claim automatic dependency
+  installation or propagation that `context` does not implement.
+- **L04 — after L03, inventory-dependent.** Migrate remaining eligible
+  cohesive shell-library groups in separately testable batches; for each
+  batch preserve contracts, consumers, manuals and immutable distribution
+  ownership. Re-evaluate grouping or escalate any newly found architecture
+  or public-interface decision before porting.
+- **A01 — after V02/L03 and applicable L04 batches.** Recheck primary user
+  workflows, catalog/runtime/manual/permanent-test consistency and exact
+  revision evidence across supported hosts. Record unperformed physical
+  reference-host and unsupported-adapter validations as open rather than
+  fabricating PASS. This does not alter `rumiai-validate`'s existing target.
+
+Functional independence: L01 may progress while V01 is validated.
+Operational independence: v2 runtime/catalog files and release gates remain
+exclusively with the existing pkg-definition owner; library-porting work must
+coordinate shared catalog/CI and public interfaces. Later units are
+outcome-level until L01 identifies real package boundaries. A new chat starts
+at L01 while checking V01's current status, not at a speculative package name.
+No tests were run and no product/mainline merge was performed by this DEVPLAN.
+
+
 - The user explicitly authorized integration into the reused `massimilianonardi-ai/m` repository. `master` at `809f4d63173c32ecede0cd6bb183da6fc6ab8fa9` now has the functional standalone `m` checkout: 15 technical commands beyond the root bootstrap, 28 shell libraries (4 basic, 16 package, 5 facility, 3 GitHub/Node.js/artifact adapters), 44 operational manuals, essential en_US/it_IT localization, state/catalog/shell baseline and existing selectors, plus README and GitHub Actions. The previous two original files remain unchanged.
 - SHA/mode comparison with `rumiai-os/main` verified that all imported command/library/resource/state files are byte-identical; only the project README differs as intended and five missing library manual topics and workflow sources were newly authored. The source artifact still requires `osarch update` on initial host setup because the current platform selectors are carried over from `rumiai-os`.
 - Normal-path hosted validation: run `40088797938` passed basic checkout smoke on Ubuntu/macOS; run `40088928262` passed the real `pkg install nodejs@v26.8.2` public path and materialized `node` command on Ubuntu/macOS, with host `node` shadowed for bootstrap checks. After fast-forwarding `master`, run `40089045452` failed on macOS due to HTTP 403 from the **external** Node.js GitHub release API (Ubuntu passed), not due to a changed `m` source. The live download test was split into an explicitly dispatched workflow; deterministic `master` smoke run `40089184835` passed on both Ubuntu/macOS. The transient failure remains recorded as failure.
