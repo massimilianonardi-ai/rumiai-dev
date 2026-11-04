@@ -63,10 +63,10 @@ If mode discovery fails, inspection fails without a successful inspection payloa
 The public command
 
 ```sh
-rsudo apisix runtime <absolute-remote-apisix-home>
+rsudo apisix runtime <absolute-remote-apisix-home> [full-docker-container-id]
 ```
 
-and direct function `rsudo_mod_apisix_runtime` observe a specifically selected remote installation. Automatic instance discovery is **not** implemented by this operation. The caller supplies an absolute installation root. The operation checks the generated `conf/nginx.conf` and `logs/nginx.pid`, then reads the PID's visible process arguments using remote POSIX `ps`, with a guarded Linux `/proc/<pid>/cmdline` fallback when minimal containers lack `ps`. A master may legitimately have namespace PID 1. `/proc` is a Linux capability, not a universal POSIX dependency. It recognizes the APISIX CLI's `-p <home> -c <home>/conf/nginx.conf` startup and the official Docker foreground startup using `-p <home> -g 'daemon off;'` (for the generated default `conf/nginx.conf`). Process-title quoting can differ; neither form proves the gateway's source configuration.
+and direct function `rsudo_mod_apisix_runtime` observe a specifically selected remote installation. Automatic instance discovery is **not** implemented by this operation. The caller supplies an absolute installation root. By default the observation runs in the remote SSH/sudo host namespace. An optional *explicit* full lowercase 64-character hexadecimal Docker container ID scopes the unchanged read-only program to the selected running container via the existing remote rsudo SSH/sudo transport and `docker exec -i <id> sh -s`; this requires remote Docker access and a working shell in that container. Shortened IDs, names, invalid characters and Docker option operands are rejected before remote execution (status 44). The operation checks the generated `conf/nginx.conf` and `logs/nginx.pid` inside the selected namespace, then reads the PID's visible process arguments using POSIX `ps`, with a guarded Linux `/proc/<pid>/cmdline` fallback when minimal containers lack `ps`. A master may legitimately have namespace PID 1. `/proc` is a Linux capability, not a universal POSIX dependency. It recognizes the APISIX CLI's `-p <home> -c <home>/conf/nginx.conf` startup and the official Docker foreground startup using `-p <home> -g 'daemon off;'` (for the generated default `conf/nginx.conf`). Process-title quoting can differ; neither form proves the gateway's source configuration.
 
 If the PID file is missing, successful stdout is exactly:
 
@@ -85,7 +85,7 @@ runtime_identity=process-consistent-config-unverified
 mutation_readiness=not-established
 ```
 
-Unexpected or unavailable process evidence fails non-zero. The operation never emits the process command line itself, because other process arguments might be sensitive. A PID file and process title can be stale or misleading and do **not** prove which source `config.yaml`, custom `-c`, profile, container namespace, or effective gateway settings the active process loaded. The method is a partial process observation, not a confirmed APISIX runtime identity, a healthy-server result, or permission to write configuration. An installation that exposes neither POSIX `ps` nor a readable Linux procfs command line, or is started with unrecognized OpenResty arguments, returns a distinct failure rather than guessing a matching instance. Even matched arguments do not establish which source APISIX configuration is active.
+Unexpected or unavailable process evidence fails non-zero. The operation never emits the process command line itself, because other process arguments might be sensitive. A PID file and process title can be stale or misleading and do **not** prove which source `config.yaml`, custom `-c`, profile, listener or effective gateway settings the active process loaded. An explicit Docker ID selects the observation namespace through the remote manager, but does **not** establish source configuration provenance, Admin API listener ownership, deployment-controller ownership or write readiness. The method is a partial process observation, not a confirmed APISIX runtime identity, a healthy-server result, or permission to write configuration. An installation that exposes neither POSIX `ps` nor a readable Linux procfs command line, or is started with unrecognized OpenResty arguments, returns a distinct failure rather than guessing a matching instance. Even matched arguments do not establish which source APISIX configuration is active.
 
 ## Explicit read-only Admin API transport (advanced, interim)
 
@@ -107,7 +107,7 @@ Invalid local arguments and remote preconditions produce distinct non-zero statu
 
 ## Current limits and security boundary
 
-The current read-only resolvers do not prove which `-c`/profile, container, process or namespace is actively in use. It cannot be used by a new mutating backend router until live identity and safe update conditions are independently verified.
+The current read-only resolvers do not prove which `-c`/profile or effective configuration is active or bind the Admin listener to a selected running process. The optional explicit Docker runtime selector confines process observation to one manager-selected container, but does not perform automatic instance discovery or authoritative source/listener attribution. It cannot be used by a new mutating backend router until live identity and safe update conditions are independently verified.
 
 Mode inspection does not emit API keys or the selected configuration contents. Credentials and target data remain subject to `RSUDO.md` and `DIAGNOSTICS.md`. The legacy APISIX functions retain previously documented unsafe JSON/request behavior, and their existence is not evidence that modern secure mutation is complete.
 
