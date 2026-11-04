@@ -381,7 +381,14 @@ escaping or cyclic links. Resource export testing is out of scope.
 
 ## Current state
 
-**V2 user-host validation checkpoint — 2026-11-03 (latest):**
+**V2 provider PATH + context precedence checkpoint — 2026-11-04 (latest):**
+- Latest checked v2 branches: `m-os/pkg-schema-v2@ff14e53f14ffbbeadbaf48a823cb0b7e3e7d3612`; `pkg-catalog/pkg-schema-v2@5503efb1c6ee088576d5a16b169bac75a98b3902`. Mainline `m-os/master@ff55fc9` and `pkg-catalog/main@35b230d` unchanged; no v2 merge. Only a test script and a pinned workflow changed, not product code or canonical package contracts.
+- Previously pending real Node.js workflow `41719785578` completed **2/2 PASS** (Ubuntu/macOS), catalog `04c66fdf` pinned to m-os `d1136385`. Previously pending general v2 workflow `41718659259` completed **10/10 PASS** (five jobs per Ubuntu/macOS), catalog `e15c350e` pinned to m-os `d1136385`.
+- To validate explicit precedence, the fixture in `m-os/.github/scripts/pkg-v2-facility-command-test.sh` extends only a **temporary copied** Java facility contract with `env/PATH` and two typed values (`root-path bin`, `root-path tools`). It exercises real v2 facility conformance/materialization, real public `pkg provider default`, fresh `m` bootstrap, and shell-local `context`. Assertions protect technical m command roots before global provider PATH, later PATH record before earlier, exact v2 `link/bin` first after context selection, unchanged global JAVA_HOME, repeated-selection idempotence and reset preserving non-context PATH. The catalog's actual Java contract is not modified, and this is not a real catalog-backed Java provider install.
+- First new catalog matrix `41785796723` at `b3a67837` failed its two new fixture jobs because the fresh child `m sh -ec` test had not dot-sourced `core.lib.sh`, so the shell function `context` was unavailable: **test-harness error**, not established product defect. That run also saw a macOS jq upstream GitHub release API HTTP 403, before package install; it is external network failure at that revision. `m-os@ff14e53f` fixed the fixture by explicitly sourcing the core library; catalog `5503efb1` pinned all five matrix jobs to that revision.
+- Corrected exact-revision workflow **`41785965939` completed 10/10 PASS on GitHub-hosted Ubuntu and macOS** (both v2 facility-precedence fixture jobs, v2 jq, v1 regression, v2 libraries and service-entry fixtures). These successes apply to the corrected revision, not retroactively to the prior failing run. This covers **global facility PATH ordering in the fixture and isolation of context from global JAVA_HOME**, not the still-open consumer-specific package/user environment precedence, osarch-specific versus generic provider combinations, macOS launchd supervision or reference-host physical validation.
+
+**V2 user-host validation checkpoint — 2026-11-03 (prior):**
 - New `pkg-catalog/pkg-schema-v2@2cf67084f2e21c78acf67fd107d2e2b77c213797` adds a real, isolated Ubuntu `srv host user` Ollama scenario on the existing runner POSIX account and its existing systemd user manager. It refuses a missing user manager, a conflicting unit or occupied Ollama endpoint; does not create a login session or enable systemd linger.
 - GitHub Actions **`41722352670` PASS 3/3 Ubuntu jobs** using exact `m-os/pkg-schema-v2@d11363856ee06f32eadd7b2b3cb89ae390ef7ac3` and catalog `2cf67084`: portable `real-ollama-service` PASS, `real-ollama-host-system` PASS, and new `real-ollama-host-user` job `126218163468` PASS. User-host evidence: pre-existing `runner` account/systemd manager, unit install without starting, real Ollama client responsiveness, systemd MainPID owned by selected account, restart/stop, rejected start after clearing system provider default, and unit removal. The intentionally rejected start logged `provider-resolution-failed`.
 - This establishes **Ubuntu GitHub-hosted systemd user and system supervision**, not macOS launchd, physical Ubuntu 26.04 ARM64, or production-host evidence. No `m-os` product code was modified and v2 remains unmerged. Updated Node.js matrix `41719785578` and the generic v2 matrix `41718659259` were still queued at last inspection; their current-revision success is not claimed.
@@ -514,23 +521,23 @@ this Current state supersedes older stale 'no v2 PASS' claims.
 
 ## Next action
 
-1. Inspect the updated real Node.js matrix `41719785578` at
-   catalog `04c66fdf` and the full v2 matrix `41718659259` at
-   `e15c350e`, both pinned to m-os `d1136385`; record host-specific
-   results before declaring broader cross-host v2 coverage.
-2. Validate the remaining macOS launchd user/system supervision paths
-   with controlled account/administrative context, and physical Ubuntu
-   ARM64 when available. Ubuntu GitHub-hosted systemd user/system PASS
-   does not establish those other hosts or provider-precedence edge cases.
-3. Resolve/validate v2 PATH contribution ordering and any remaining
-   provider environment precedence issues before final contract promotion.
-   Perform mixed v1/v2 regression, final manual/library interface audit
-   and consistent host-specific validation.
-4. Promote only stable complete v2 semantics into canonical specifications
-   and coordinate a forward-only, non-force merge once acceptance holds.
-   Keep package resource exports deferred to v3+; compare optional
-   range metadata inheritance with the current two-tier model before
-   choosing a descriptor syntax.
+1. Close remaining environment precedence with tests of **normal package
+   launcher** behavior: consumer package environment, effective provider
+   command/PATH/ordinary variable projection, and final user package
+   overrides. Extend platform-specific/generic global provider projection
+   checks without inventing a second environment interpreter in context.
+2. Validate macOS launchd user/system supervision with a controlled
+   eligible host/account, and physical Ubuntu ARM64 when available.
+   GitHub-hosted Ubuntu systemd user/system PASS and fixture PATH PASS
+   are not substitutes for these separate host checks.
+3. Audit current v2 wrapper target/launcher semantics, mixed installed
+   schema behavior, manual/library interfaces and remaining provider
+   selection edge cases before specification promotion. Keep v1 behavior
+   unchanged and use a final exact-revision cross-host validation.
+4. Promote only settled complete v2 semantics into canonical specifications;
+   coordinate forward-only mainline merge after acceptance. Continue to
+   defer package resources to v3+ and range inheritance until independently
+   justified.
 
 ## Blockers / open questions
 
@@ -542,7 +549,8 @@ this Current state supersedes older stale 'no v2 PASS' claims.
   scope/precedence and safe checks.
 - Whether stable metadata inheritance pays for its complexity while
   retaining range anchors and `all`/osarch stream selection.
-- The v2 shell/Java library-only fixture has hosted PASS on Ubuntu;
-  real catalog-backed Java library consumers and real *host-supervisor*
-  service lifecycle still need independent validation. The portable
-  Ollama srv start/stop path is already proven for its pinned revision.
+- The v2 shell/Java library-only fixture has hosted PASS on both
+  Ubuntu and macOS, but a real catalog-backed Java consumer is not yet
+  independently proven. Ollama portable and systemd user/system supervision
+  passed on GitHub-hosted Ubuntu; macOS launchd and physical reference hosts
+  remain unvalidated.
