@@ -9,9 +9,9 @@ Replace the incomplete existing rsudo APISIX administration module with a safe, 
 
 ## Current repository revisions
 
-- rumiai-dev: a42641f66691e41746ef4c22f9452df74bf3b5df (pre-checkpoint)
-- rumiai-os: f68c72e875d6c0d7dedfce22c728a8bffc892fe9 (pre-checkpoint)
-- rumiai-tests: c82efe4552447105ca4c1e0b8c6294e897470c3e (pre-checkpoint)
+- rumiai-dev: fec40bf7f9974fa79899b3ea6aec9e184e84d266 (before this handoff update)
+- rumiai-os: 213f673c420e08493d9cfd862a6256dbb1530609 (legacy separation)
+- rumiai-tests: 679058991c61b9ace7881196b7f8a97778f68aa4 (permanent focused test)
 - m-os: 31693e814f682690adfd48185da822f7f5007f9e (historical comparison repository, no edits intended)
 
 Fresh HEAD checks remain required before edits/resumption.
@@ -70,7 +70,7 @@ The generic shell interface should separate resource operations and all availabl
 
 Preserve `rsudo apisixlegacy` and `rsudo keycloaklegacy` dispatcher usability when renaming: rsudo maps a module operation to `rsudo_mod_<module>_<operation>`; merely renaming the file is insufficient if its public function prefix stays unchanged. Collision and manual completeness need explicit treatment.
 
-Open sequencing issue: immediately replacing original module leaves users with a partially implemented public interface unless the new implementation is sufficiently complete or work is isolated behind a non-default integration branch. Do not silently break the current workflows for an incomplete scaffold.
+Sequencing resolved for the first code checkpoint: both original module identities are compatibility facades that load their separately named legacy libraries, forwarding the pre-existing public function surface. All 35 APISIX and 16 Keycloak legacy function identifiers were renamed mechanically to avoid dispatcher/function collisions, and every forwarded public function remains accessible. This is an explicitly temporary bridge: it does NOT implement the new APISIX mode routing or fix legacy security defects. Replace operations in the original-name modules incrementally after the new safe paths and tests are available.
 
 ## Completed
 
@@ -79,17 +79,20 @@ Open sequencing issue: immediately replacing original module leaves users with a
 - Verified three APISIX backend families against current upstream documentation.
 - Checked current APISIX/Keycloak module manual topics: absent; documentation and permanent mechanical coverage must be realigned with the product changes.
 - Confirmed no separate active APISIX module handoff exists; this task has independently resumable implementation/validation boundaries from the broader AI administrative-tools handoff.
+- `rumiai-os@213f673c`: preserved APISIX/Keycloak code as `rsudo-mod-apisixlegacy.lib.sh` and `rsudo-mod-keycloaklegacy.lib.sh`, mechanically adjusted the function prefixes for direct legacy dispatch, and replaced the original module leafs with thin forwarding facades. Added all four operational library manuals, documenting the retained legacy public functions and limitations. No new backend behavior is claimed.
+- `rumiai-tests@67905899`: added `tests/rumiai-os/rsudo/legacy-modules.test` for real shell source loading, wrapper forwarding and mandatory manuals; test has NOT been executed in this response.
+- Reviewed product diff (`f68c72e..213f673c`): 8 expected files only. Verified current legacy code is exactly the previous implementation with a mechanical function-prefix replacement, with 35/16 functions represented by the new facades and both manual variants. These are source-level consistency checks, not executable validation.
 
 ## Current state
 
-Design requirements are fixed; detailed backend discovery, safe authenticated transport, resource mutation algorithms and compatibility migration remain to implement. No product change is yet represented by this checkpoint.
+The legacy-name separation and transitional original-name facades are committed on `rumiai-os` main. Current `rsudo apisix` and `rsudo keycloak` still execute original behavior through forwarding; `rsudo apisixlegacy` and `rsudo keycloaklegacy` reach the retained versions. The new routing and complete administration API have NOT been implemented, so legacy limitations remain. Manual topics are present. A focused permanent test exists but has not been executed; physical/APISIX validation has not been performed.
 
 ## Next action
 
-1. Inspect current production callers and permanent tests for both rsudo modules, and identify breaking public interface risks.
-2. Define/test an effective-config and credential resolution strategy against representative traditional, standalone file-driven and API-driven APISIX instances.
-3. Implement a safe APISIX core and internal routing with full modeled behavior and concise convenience operations; preserve the old code as two explicitly addressable legacy libraries.
-4. Align Keycloak module transition, required operational manuals and permanent tests, run proportional development validation, and update canonical APISIX contract once the design is promoted.
+1. Execute `tests/rumiai-os/rsudo/legacy-modules.test` against `rumiai-os@213f673c` in a real `m` development environment; repair any discovered loading or command-dispatch defect, preserving pre-existing workflows.
+2. Establish a safe effective-runtime-config discovery mechanism for traditional, standalone file-driven (YAML/JSON), and standalone API-driven. Test on actual relevant APISIX installations and fail closed when ambiguous.
+3. Replace the original-name APISIX facade with the new core, internal routing, full shell administration API and small-operand shortcuts in reviewed increments. Do not leave unsupported backend requests mutating a different backend.
+4. Implement and validate file-driven staged publication and API-driven versioned snapshot updates without unchecked lost updates, then realign current specification/manuals and extend permanent tests. Independently modernize the new Keycloak module while retaining legacy access.
 
 ## Blockers / open questions
 
