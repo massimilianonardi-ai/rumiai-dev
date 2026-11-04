@@ -915,6 +915,7 @@ Changed/added JSON component schemas: `OrganizationIdentityProviderLinkRepresent
 
 ## Completed
 
+- **2026-11-04 APISIX fixture correction follow-up, revision-specific Ubuntu result:** auto-triggered Actions run **41843485135**, `rumiai-tests@8070e0d6` and frozen `rumiai-os@9e86935c47b4642c969e43db3ccdc35a9491f9de`, Ubuntu 26.04 ARM64: all **7/7** rsudo APISIX tests **PASS**, scope **VALIDATED**. This does not validate macOS; its matrix job was still queued at inspection. No new production or APISIX product code changes occurred in this validation.
 - **2026-11-04 APISIX macOS evidence classification and test portability correction:** examined GitHub Actions `rsudo-apisix` run **41821503037** and the published revision-specific evidence `validation/20261104T131524+0000-5461`. The macOS job finished with **legacy-modules PASS**, **apisix-mode ERROR** during fixture setup (`chmod: --: No such file or directory`), and Docker-based parser/runtime tests **SKIP**. This was a test portability/setup error, **not** an observed APISIX product FAIL or validated macOS scope. Updated only the two fixture chmod invocations to POSIX-compatible `chmod 700 "$tmp/bin/..."` in `rumiai-tests/tests/rumiai-os/rsudo/apisix-mode.test`, forward commit **8070e0d6**; read back the changed lines. Push triggered focused run **41843485135**, queued at observation; no revised macOS test PASS has yet been observed. No APISIX product or server change.
 
 - **2026-11-04 APISIX D — real isolated SSH/sudo transport proven:** added `rumiai-tests/tests/rumiai-os/rsudo/apisix-admin-rsudo-ssh-live.test` with a disposable Ubuntu 24.04 Docker image containing a real OpenSSH server, a nonprivileged password-authenticated user, password-required sudo, NOPASSWD sudo, root-only API header file, curl and Python loopback HTTP. The test enters through real `m`, loads the **actual** `rsudo` and modern APISIX libraries and uses a wrapper solely to select a temporary OpenSSH client configuration with a pinned ephemeral host key and loopback-published dynamic SSH port. OpenSSH authentication, sudo password transfer, heredoc stdin, root-only file read, HTTP JSON response and 401→curl-22 status propagation all run as real processes; there is no mocked SSH/sudo. Root-owned credential and synthetic passwords never become user-visible output. The test does not access a company host or a real APISIX listener.
@@ -975,6 +976,8 @@ Changed/added JSON component schemas: `OrganizationIdentityProviderLinkRepresent
 
 
 ## Current state
+
+Latest focused run **41843485135** has Ubuntu ARM64 7/7 PASS / scope VALIDATED against frozen `rumiai-os@9e86935c` and `rumiai-tests@8070e0d6`; the macOS job remains queued, so the portability correction is not yet confirmed on macOS.
 
 The earlier macOS uncertainty is now classified: run 41821503037 failed because the permanent `apisix-mode.test` fixture used nonportable `chmod 700 -- ...`; Linux-only Docker tests SKIP on macOS. The fixture-only correction is in `rumiai-tests@8070e0d6`, with new scope run 41843485135 triggered but not yet evaluated. No product regression is established by this macOS ERROR.
 
