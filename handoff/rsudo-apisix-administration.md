@@ -9,12 +9,10 @@ Replace the incomplete existing rsudo APISIX administration module with a safe, 
 
 ## Current repository revisions
 
-- rumiai-dev: 1db3ef07fbf306233994cafd3745b62631d6556f (before APISIX B/C evidence checkpoint)
-- rumiai-os: c7353b51e0560aa0b187e9397610a280b1709457 (unchanged product implementation in this work unit)
-- rumiai-tests: 42c32dfde8b625dc8fbb7a9c6c64d9f51afcb546 (five-test scoped real APISIX HTTP matrix, identity-drift validation)
+- rumiai-dev: 25b901073e9c765d15952b096b3980cb9a770822 (before APISIX D checkpoint)
+- rumiai-os: 5bfad5640caaade4d80e3142dbca00e258d30d1b (provisional read-only Admin HTTP transport)
+- rumiai-tests: b9daf4c6c73d151ffcc27709caf07891fbfacc04 (six-test APISIX scoped suite)
 - m-os: 31693e814f682690adfd48185da822f7f5007f9e (not involved)
-
-Fresh remote HEAD checks remain mandatory before each further RumiAI action.
 
 ## Applicable canonical sources
 
@@ -907,6 +905,11 @@ Changed/added JSON component schemas: `OrganizationIdentityProviderLinkRepresent
 
 ## Completed
 
+- **2026-11-04 APISIX D (partial):** implemented `rsudo apisix admin-read resource absolute-remote-header-file [port]` in `rumiai-os` (latest APISIX module `c98a7bc4`). It carries only resource, protected remote header-file path and port via existing `rsudo sh -s`; remote curl >=7.55 loads `X-API-KEY` via `-H @file`, not argv. Restricts GET to remote loopback and `configs/routes/services/upstreams`, refuses redirects/proxies, validates file permissions, symlink, single-header bytes, port and resource, and preserves curl failure status. No write path or implicit provider selection. This is an **advanced explicit interim interface** requiring an operator-provisioned credential file; it is not the promised automatic `list/get` normal path. Manual `rumiai-os@3293f11f`; current spec `rumiai-dev@45e359ad`.
+- **Real scoped validation:** permanent `rumiai-tests/tests/rumiai-os/rsudo/apisix-admin-transport.test` (`100755`) exercises actual `m` and curl against a disposable loopback HTTP server with only SSH/sudo interposed; verifies correct GET JSON, 401/status 22, header absent from curl argv/stderr, insecure/symlink credentials and bad input, binary/multi-header rejection. Run **41837205329**, `rumiai-os@5bfad564` and `rumiai-tests@b9daf4c6`, yielded 6/6 APISIX tests **PASS** and task scope **VALIDATED on Ubuntu ARM64**. macOS remains queued; neither real SSH/sudo nor a real APISIX HTTP request through this new curl transport has been exercised. Earlier APISIX 3.16/3.19 HTTP tests remain separately validated at their own boundaries.
+- **Remaining safety gap:** active backend/process/admin-listener identity is unverified (on-disk config may diverge), remote credential ownership/race/rotation is not proven, HTTPS/TLS and real rsudo stdin behavior are unvalidated. No production APISIX or Keycloak configuration touched.
+
+
 
 - **2026-11-04, APISIX work units B/C — live read-only HTTP behavior and disk/runtime mismatch:** added executable `rumiai-tests/tests/rumiai-os/rsudo/apisix-admin-read-live.test` and its selection/trigger to the existing focused `rsudo-apisix` validation, preserving actual `m` product mode resolution. The fixture launches Apache APISIX **3.16.0 and 3.19.0** using the two already-pinned Debian images, in isolated standalone API-driven mode (`traditional` role, YAML provider) with network disabled, no host-exposed ports, and synthetically scoped test-only viewer/admin credentials. It queries real HTTP via Bash `/dev/tcp` inside the container; this is **not** the secure rsudo/curl management transport.
 - **Live endpoint matrix (tested, not yet a product API):** in both releases, `GET /apisix/admin/configs` is HTTP 200 with valid viewer key and returns a versioned JSON snapshot containing `routes_conf_version` and `services_conf_version`. `GET /apisix/admin/routes`, `/services`, `/upstreams` return HTTP 404 under standalone API-driven routing; they are **not** traditional resource endpoints in this mode. Invalid admin key is denied (401/403). `HEAD /apisix/admin/configs` with viewer key is HTTP 401, whereas admin role returns HTTP 200; upstream `apisix/admin/init.lua` for 3.16.0 and 3.19.0 grants viewer **GET only**. Do not equate an HTTP route's registered methods with every credential's permissions.
@@ -958,7 +961,7 @@ Changed/added JSON component schemas: `OrganizationIdentityProviderLinkRepresent
 
 Work units A/B/C are still active. The current module's read-only `mode` and `inspect` distinguish selected-on-disk configuration from the gateway process. `runtime` now observes both APISIX CLI master and official Docker foreground master, including valid container PID 1, with POSIX `ps` and guarded minimal Linux `/proc` fallback. This is **process consistency evidence only**; there is no verified correlation to the active source `config.yaml`, `-c`, `APISIX_PROFILE` or running container namespace ownership. Mutation readiness is always `not-established`; all 35/16 legacy APISIX/Keycloak functions remain available through existing forwarding.
 
-The current five-test APISIX scope PASSed on Ubuntu ARM64 in Actions run **41824947531**, frozen `rumiai-os@c7353b51e0560aa0b187e9397610a280b1709457` and `rumiai-tests@42c32dfd`. Besides real 3.16.0/3.19.0 process and installed-parser tests, it proves standalone API-driven GET/HEAD auth behavior and a real divergence between changed on-disk config and effective running HTTP API. The **provider API was tested**, but no new rsudo secure credential transport or resource-read API is yet implemented; no real SSH/sudo or company APISIX installation was exercised. The actual source config loaded by a running gateway remains unverified. macOS remains queued and unrelated/concurrent changes are preserved.
+The six-test APISIX scope now PASSes on Ubuntu ARM64 (run **41837205329**, frozen `rumiai-os@5bfad564` / `rumiai-tests@b9daf4c6`). The new advanced, explicit `admin-read` GET transport uses a preexisting protected remote header file and curl, tested through real `m` against a local HTTP fixture. This test does **not** exercise actual SSH/sudo or bind a live APISIX backend to the loopback listener; the prior isolated APISIX 3.16/3.19 parser/process/Admin API tests remain separate evidence. Automatic read-only `list/get`, trusted process/config identity, safe mutation and modern Keycloak are not implemented. macOS remains queued; concurrent changes preserved.
 
 ## Next action
 
@@ -967,7 +970,7 @@ The current five-test APISIX scope PASSed on Ubuntu ARM64 in Actions run **41824
 1. Inspect the still-queued macOS result for run 41821503037; classify failures by cause, including known possible validation-evidence publication errors, rather than interpreting a hosted job failure as a product failure.
 2. Continue Work-unit C: correlate the selected running APISIX gateway with the **actual source configuration** (`-c`, `APISIX_PROFILE`, deployment manager/container namespace and effective provider) with authoritative APISIX/service evidence. Keep all new mutating paths disabled until provenance is proven; process title/PID alone are insufficient.
 3. Continue Work-unit B with real traditional/etcd **per-resource GET/list** capability, authorization and version response envelopes, then file-driven standalone local document read; the two-release standalone API-driven `GET /configs` and viewer/admin HEAD distinction are now verified. Do not infer generic CRUD from router registrations.
-4. Work-unit D: design/validate secret-safe authenticated Admin API access over real `rsudo`, then implement Work-unit E read-only resource list/get through the internal mode router; support common low-operand workflows without mandatory authored JSON files only after backend and security gates pass.
+4. Work-unit D partial: next verify actual SSH/sudo stdin and credential-file ownership/race/rotation, listener/process identity and TLS options. Then implement E automatic provider-aware `list/get` without requiring operators to know a credential-file path. The current advanced `admin-read` is explicit and read-only; do not enable mutations.
 
 ## Blockers / open questions
 
