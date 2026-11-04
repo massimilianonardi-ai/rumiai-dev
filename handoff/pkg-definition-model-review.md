@@ -590,23 +590,26 @@ this Current state supersedes older stale 'no v2 PASS' claims.
 
 ## Next action
 
-1. Audit whether installed v2 **direct** `link/bin` commands can be
-   abused after a default is already published or through
-   shell-local `context` without passing the new selection-time check.
-   Resolve the active contract's trust boundary before broadening
-   hardening. Preserve v1 and valid v2 wrapper/direct semantics.
-2. Review diagnostics and targeted scope beyond this passing fixture,
-   and determine whether a formal autonomous `m-os` target path in
-   `rumiai-validate` is authorized; current runner-only hosted
-   results are not formal `rumiai-os` validation.
-3. Exercise real artifact-backed v1/v2 reinstall/migration and
-   user/system state on applicable hosts, spacing GitHub Releases
-   API calls according to rate-limit reset evidence. Validate
-   macOS launchd and physical Ubuntu ARM64 separately.
-4. Before any forward-only v2 promotion, reconcile the concurrent
-   `m-os/master` Node.js adapter changes with the feature-branch
-   prerelease behavior. Resource export remains v3+ and metadata
-   inheritance is still an open choice.
+1. Verify the macOS job `126523286614` for exact run
+   `41814931647` (`m-os@6168cb05`, `rumiai-tests@9038a8c8`).
+   Capture PASS/FAIL/ERROR from that job, not an earlier revision.
+2. Assess installed v2 direct-command integrity **after** a valid
+   default/context selection, and the independent facility-global
+   command projection. Current selection-time validation does not
+   mediate future native command execution. Decide whether the
+   existing immutable managed-installation boundary suffices before
+   adding a stronger enforcement mechanism.
+3. Evaluate a formally supported autonomous m-os validation scope
+   without reinterpreting the current rumiai-os `rumiai-validate`
+   contract. Existing GitHub-hosted runner checks are not physical
+   or formal validation.
+4. Exercise real artifact-backed v1/v2 reinstallation and mutable
+   state on supported hosts, pacing GitHub Releases requests.
+   MacOS launchd and physical Ubuntu ARM64 remain unvalidated.
+5. Before forward-only promotion, reconcile m-os/master's current
+   Node.js repository adapter with feature-branch prerelease
+   handling. Package resources remain v3+; metadata inheritance
+   is still a separate open choice.
 
 ## Blockers / open questions
 
