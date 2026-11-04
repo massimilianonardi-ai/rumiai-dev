@@ -9,9 +9,9 @@ Provide the `m` JavaScript library at `rumiai-os/lib/sys/js/web-analyze.lib.js` 
 
 ## Current repository revisions
 
-- rumiai-dev: 1122fb5ca8dd08424bc1965b0129ceac867d68c7 (pre-checkpoint HEAD; resolve actual main HEAD on resumption)
-- rumiai-os: f68c72e875d6c0d7dedfce22c728a8bffc892fe9 (WU-05 archive integrity audit, redacted reports, permanent CI pin)
-- rumiai-tests: c82efe4552447105ca4c1e0b8c6294e897470c3e (real Chromium integrity, tampering, nesting, interruption fixture)
+- rumiai-dev: 387a3a7ca9e7277bb495c4a0967b13895779e675 (pre-checkpoint HEAD; always retrieve current main on resumption)
+- rumiai-os: 3982427e75f61611802b24d2b5fcec8b5f78aa35 (WU-06 Accessibility acquisition + source formatting)
+- rumiai-tests: d28295770adba4aade83cba9a97553ca74ad2659 (WU-06 Chromium AX fixture; other concurrent test changes are independent)
 
 ## Applicable canonical sources
 
@@ -158,6 +158,13 @@ All raw data, including auth cookies/tokens, HTTP headers, message payloads, sto
 - Permanent Chromium regression extends the existing fixture with a sensitive query parameter and page heading, checks the integrity ledger, referenced CSS/IndexedDB/cache/body content and private output permissions; mutates a resource body both by changing length and by preserving length while altering SHA-256, removes a nested cached-response body, and verifies a forced interruption cannot return a saved capture. A real Chromium run `41797588616` **PASS** established the full evidence integrity verification and private report behavior on the initial revision, with `41797876616` **PASS** covering same-size SHA-256 corruption as well. Run `41798028537` **FAILED** on a semantic status mismatch: a deliberately aborted HTTP request was incorrectly promoted from a browser-side incomplete response to a failed whole-domain archive. The implementation now treats such request failures or unavailable browser bodies as `partial` while keeping missing/mismatched bytes, digests and invalid indexes `failed`. Final GitHub Actions `41798441956` **PASS** validates the corrected implementation at `rumiai-os@f68c72e875d6c0d7dedfce22c728a8bffc892fe9` with permanent `rumiai-tests@c82efe4552447105ca4c1e0b8c6294e897470c3e`. This is a real Chromium fixture result, not a user-machine or arbitrary-site guarantee.
 - Pending physical/user-host validation and true renderer process swap or service-worker-served network capture remain unchanged. No automated page input, public recording upload or history rewrite was added.
 
+### WU-06 Accessibility slice checkpoint (2026-11-04; real Chromium fixture PASS on tested revision)
+
+- Added browser-schema-gated `Accessibility.getFullAXTree` acquisition inside the existing `web-analyze-rest.lib.js`, before any optional scroll. Each ready page/iframe target saves a private `accessibility/index.json` with up to 128 frame attempts and raw `frame-NNN.json` CDP responses, retaining `backendDOMNodeId`/frame identities, support/missing-tree/failed-frame distinctions, truncation status and artifact digests. This observes the page without enabling the persistent Accessibility domain or simulating input. A failed/unavailable frame never promotes the target to complete.
+- Extended the WU-05 independent file audit to check the new nested Accessibility files and report an independent `accessibility` domain, then updated the command and rest-library manuals and the real Chromium permanent test. The test asserts a genuine accessible heading, DOM backend node IDs, file permissions and digest verification. CI workflow pins exactly `rumiai-tests@d28295770adba4aade83cba9a97553ca74ad2659`.
+- Product `rumiai-os@078a82e67e37c3695d7bcc223c0c491b8b4e93f7` and test `rumiai-tests@d28295770adba4aade83cba9a97553ca74ad2659` passed real-Chromium GitHub Actions `41809862223`. Follow-up edits only aligned JavaScript multiline delimiter formatting in the same library. Latest product `3982427e75f61611802b24d2b5fcec8b5f78aa35` has its own Actions `41810202778` in progress at this checkpoint. Never relabel the earlier passing result as evidence for the later revision.
+- Diff verification shows this work unit changed only the existing collector, its command/library manuals, permanent fixture, and the workflow test pin. Concurrent `rsudo` product changes and unrelated `m-os` test changes were preserved. No operator-host/remote-site validation was run; subsequent WU-06 CSS/runtime/storage/security collection remains pending.
+
 ### Cross-unit validation discipline and completion gate
 
 For **every work unit**: (1) reread latest HEADs and authoritative rules; (2) implement one bounded responsibility; (3) realign corresponding operational manuals in the same work unit; (4) add permanent tests in `rumiai-tests`; (5) pin the tested test HEAD in the existing CI workflow; (6) execute real Node/Chromium fixture tests, preserving run ID and actual outcome; (7) inspect source diff, warning paths, status fidelity, permissions and concurrent changes; (8) update this handoff with completed/blocked state and next action. A passed synthetic local fixture is **not** a passed real external-site or operator-host test. Do not claim total CDP completeness merely because individual feature fixtures pass.
@@ -173,7 +180,7 @@ For **every work unit**: (1) reread latest HEADs and authoritative rules; (2) im
 | WU-03 | **Complete — real Chromium fixture PASS (bounded)** | `rumiai-os@9217c8e004044f96c83dfc65db76a5a3faa5afaf`, `rumiai-tests@a273137dcca43861d64778047a00de769260dbb7`; final GitHub Actions `41789460366` PASS for 3 MiB binary integrity, naturally consumed chunked body, redirect and cacheable HTTP resources, interrupted/EventSource statuses, and natural cross-origin navigation continuity; true process swap and physical-host/site fidelity still unverified |
 | WU-04 | **Complete — real Chromium fixture PASS (bounded)** | `rumiai-os@8bf767a02ae7a08586caf54ad8487f34be99c353`, `rumiai-tests@57e0aa08be1b520dd6f29785338e6390765249dd`; latest CI `41794196797` PASS for transient/continuous DOM, previous/current values, observed open/closed/nested shadow roots, same/cross-origin iframe contexts, privacy and loss reporting; operator-host/browser compatibility unverified |
 | WU-05 | **Complete — real Chromium fixture PASS (bounded)** | `rumiai-os@f68c72e875d6c0d7dedfce22c728a8bffc892fe9`, `rumiai-tests@c82efe4552447105ca4c1e0b8c6294e897470c3e`; GitHub Actions `41798441956` PASS: recursive indexes/SHA-256/bytes, same-size tampering, missing nested cache body, interrupted and aborted-request statuses, private and redacted reporting; physical-host and real-site validation pending |
-| WU-06 | Pending | Accessibility, CSS, runtime, storage, security and source fidelity |
+| WU-06 | **In progress — Accessibility slice implemented; fixture PASS** | Full per-frame AX trees, DOM links, browser-schema negotiation, SHA-256 audit and manuals/tests. Real Chromium CI `41809862223` PASS on `rumiai-os@078a82e67` with `rumiai-tests@d2829577`; formatting-only source correction `3982427e7` has a separate CI run `41810202778` in progress at this checkpoint. CSS, JS/Wasm, source maps, storage/OPFS, security remain open. |
 | WU-07 | Pending | Domain-specific passive diagnostics and operator-host coverage |
 
 ## Corrected slow-navigation capture startup (2026-10-19)
@@ -195,11 +202,13 @@ For **every work unit**: (1) reread latest HEADs and authoritative rules; (2) im
 
 ## Current state
 
+WU-06 has begun with the private full Accessibility tree per-frame capture, browser-version protocol support check and nested evidence-integrity audit. The real Chromium permanent fixture passed at product `078a82e67` / tests `d2829577` (Actions `41809862223`). The source-only alignment at `3982427e7` is undergoing a new CI run `41810202778`; its result must be checked before claiming that exact final revision validated. Other WU-06 work remains open.
+
 Native-CDP manual capture remains available with historical user-operated share-page evidence. The new command defaults to one deep passive *rest-only* capture, and accepts `--scroll` only as an explicit opt-in. Current rest evidence includes cookies/auth material and per-origin database/cache contents where available. See the 2026-11-03 checkpoint above for revision-specific CI claims. Operator-host and real complex-site coverage remain unverified; no single page-at-rest dump proves all possible future interactions.
 
 ## Next action
 
-Proceed to **WU-06** using fresh remote HEADs and the mandatory current canonical read order: increase fidelity of Accessibility, CSS, runtime/JavaScript/WebAssembly, storage/security and source-map-related CDP evidence with explicit partial/unsupported states. Reuse the WU-05 audit to verify new nested files and coverage statuses. Keep true renderer process swap, service-worker-served response and operator-host/real-site validation gaps explicit; do not simulate user input or publish raw browser secrets.
+Continue **WU-06** using fresh remote HEADs and mandatory current read order. Confirm real Chromium CI for the source-formatted AX revision `3982427e7` (run `41810202778`), then add scoped CSS matched/computed style, variable, pseudo, fonts and coverage evidence with version-gated CDP methods and explicit partial/unsupported statuses; subsequently progress to JS/Wasm/source maps, storage/security/OPFS and other P1 capabilities. Reuse the WU-05 audit to verify new nested files and coverage statuses. Keep true renderer process swap, service-worker-served response and operator-host/real-site validation gaps explicit; do not simulate user input or publish raw browser secrets.
 
 ## Blockers / open questions
 
