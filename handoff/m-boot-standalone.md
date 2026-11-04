@@ -9,10 +9,10 @@ Evolve the historically field-used `m-boot` into a standalone, reusable multiboo
 
 ## Current repository revisions
 
-- `massimilianonardi-ai/Ventoy` branch `m-boot-secondary-uefi`: `8edc1b92ce89314b79b7230015a1b1b6dd679865` (original EDK2 and external native GRUB module; separate Proxmox/TrueNAS GPT boot-only bundles CI 41724233842 SUCCESS with synthetic EFI StartImage and unchanged source GPT; operator Proxmox boot reached Linux initramfs, media ISO ID not found; operator TrueNAS test pending)
+- `massimilianonardi-ai/Ventoy` branch `m-boot-secondary-uefi`: `8ebc9a7adef342e803b70ab4c5a2b6926ea60bfa` (PoC 078 synthetic firmware BlockIo and EFI ISO9660 file-read CI `41819449870` SUCCESS; no real installer boot).
 - `massimilianonardi-ai/Ventoy` master: `74cff34240dca6991b79c6656770670da7b0c39e` (unmodified fork baseline)
 - `massimilianonardi-ai/m-boot` main: `c06cd35a73b7e420c3a06dc51537c028ffa619d0` (Kali live+forensic menu and GRUB CI; Grml grub_memcpy note; runtime Kali validation pending)
-- `massimilianonardi-ai/rumiai-dev-PoCs` main: `0cfece9fde44914d27782bbe4eb64df5a4c47566` (PoC 075 real Ubuntu dm-linear/ISO9660 CI PASS at run `41792950859`; not an EFI-to-Linux boot test)
+- `massimilianonardi-ai/rumiai-dev-PoCs` main: `5c7c054065380fe3ae19cd2187319bec7060e402` (PoC 078 synthetic UEFI ISO file override SUCCESS; PoCs 075-077 separately validated).
 - `massimilianonardi-ai/rumiai-dev` main (before this checkpoint): `b12954dbe035d798292662b93a07e55c3fe59c0f`
 
 ## Applicable canonical sources
