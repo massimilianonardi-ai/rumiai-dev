@@ -36,6 +36,18 @@ Refresh HEADs and reconcile forward before all subsequent work.
 
 ## Fixed task-local choices
 
+- **User scope decisions (2026-11-04, current):** keep the existing
+  package-store permission/trust behavior; do not add OS-enforced sealing,
+  ownership barriers or mediated execution. Keep the existing
+  `rumiai-validate` target contract unchanged (focused autonomous
+  `m-os` runner tests remain non-formal evidence). Keep the current
+  v2 design unchanged rather than extending its schema or reopening
+  deferred metadata/resource decisions. Complete applicable integration
+  validations and then proceed with forward-only reconciliation/promotion
+  of the v2 runtime and catalog into their mainlines when the evidence
+  and consistency gates permit. These directions override older
+  unresolved next-action suggestions below; do not claim new validation
+  or promotion until actually performed.
 - Explicit user direction: package definitions should describe product facts,
   while reusable behaviors belong in runtime `m`; minimizing edits when new
   versions/platforms appear is a primary goal.
@@ -607,26 +619,26 @@ this Current state supersedes older stale 'no v2 PASS' claims.
 
 ## Next action
 
-1. Resolve whether the managed immutable-concrete semantics require a
-   **stronger OS-enforced integrity boundary** against an actor that can
-   write to the package store. Current implementation does not supply
-   that guarantee, and selection-time validation cannot replace it.
-   Do not add chmod/ownership/sandbox behavior without specifying
-   host authority, lifecycle and state implications.
-2. Define the proper autonomous `m-os` formal-validation contract
-   and target preparation if authorized. Existing `rumiai-validate`
-   is hardwired to `rumiai-os`; a scope file alone cannot validate
-   `m-os`. Current focused `rumiai-test` hosted evidence is not
-   formal product or physical-host validation.
-3. Add composed Node.js adapter index/resolve acceptance at the
-   external HTTP input boundary, using no real Releases downloads,
-   to complement the new direct offline record-filter regression.
-   Preserve the now-combined major filter and prerelease exclusion.
-4. Run representative real artifact-backed v1/v2 reinstall and
-   mutable-state checks with paced GitHub Releases requests; physical
-   Ubuntu ARM64 and macOS launchd remain pending. Before v2 promotion,
-   reconcile remaining concurrent mainline changes. Resources
-   stay deferred to v3+ and metadata inheritance remains open.
+1. Reconcile latest independently advanced `m-os/pkg-schema-v2`,
+   `pkg-catalog/pkg-schema-v2` and `rumiai-tests/main` revisions
+   with exact committed code, workflows and current evidence. Do not
+   mistake older pinned CI successes for newer revisions.
+2. Complete integration coverage: composed Node.js index/resolve at
+   the real external-HTTP boundary, catalog-backed v1/v2 exact
+   uninstall/reinstall and mutable state preservation, and a real
+   catalog-backed Java consumer. Use authentic artifacts and operations;
+   classify any inaccessible upstream artifact as a blocker.
+3. Exercise remaining applicable macOS `launchd` and physical Ubuntu
+   ARM64 checks on actual reference hosts, respecting `TESTING.md`
+   and `PHYSICAL-TESTING.md`. Hosted runners are supplemental only.
+4. Review the complete v2 runtime/catalog diffs against mainline and
+   the current canon, manuals, permanent tests and any concurrent edits.
+   Once required validation is genuinely satisfied, reconcile and
+   promote forward-only to `m-os/master` and `pkg-catalog/main`;
+   perform the final post-promotion consistency/operability gate.
+   If blocked, preserve branches and report exactly which evidence
+   is missing. Do not silently extend schema or security/validator
+   responsibilities already left unchanged by the user.
 
 ## Blockers / open questions
 
