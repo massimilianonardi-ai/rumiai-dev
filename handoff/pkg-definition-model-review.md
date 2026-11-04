@@ -607,26 +607,30 @@ this Current state supersedes older stale 'no v2 PASS' claims.
 
 ## Next action
 
-1. Check exact macOS job `126535191057` from catalog workflow
-   `41818454082` (`m-os@9e55d29f`, `rumiai-tests@152131da`)
-   and record its real conclusion. Do not infer macOS PASS from
-   Ubuntu or another pinned revision; avoid repeated broad reruns.
-2. Examine whether the current immutable installed-concrete ownership
-   and filesystem permissions actually enforce the intended trust
-   boundary for native direct commands **after** a valid selection.
-   If stronger protection is needed, document the contract choice
-   explicitly before adding mediation/sandboxing. Preserve v1 and
-   valid direct/wrapped v2 semantics.
-3. Evaluate formal autonomous `m-os` `rumiai-validate` support
-   separately from the existing `rumiai-os` target; current hosted
-   `rumiai-test` results are not formal or physical validation.
-4. Validate real artifact-backed exact v1/v2 reinstall and state on
-   controlled hosts with paced GitHub Releases access; macOS launchd
-   and physical Ubuntu ARM64 remain outstanding.
-5. Before any forward-only promotion, reconcile `m-os/master`'s
-   Node.js repository adapter changes with feature-branch prerelease
-   handling under the current contract. Resource export is deferred
-   to v3+ and metadata inheritance remains open.
+1. Check the exact macOS job `126546677383` in the pinned offline
+   catalog run `41821850370` (`m-os@8d39c188`,
+   `rumiai-tests@cf6ef10b`). Do not infer PASS from earlier cancelled
+   jobs or from the completed Ubuntu 4/4 result.
+2. Resolve whether the managed immutable-concrete semantics require a
+   **stronger OS-enforced integrity boundary** against an actor that can
+   write to the package store. Current implementation does not supply
+   that guarantee, and selection-time validation cannot replace it.
+   Do not add chmod/ownership/sandbox behavior without specifying
+   host authority, lifecycle and state implications.
+3. Define the proper autonomous `m-os` formal-validation contract
+   and target preparation if authorized. Existing `rumiai-validate`
+   is hardwired to `rumiai-os`; a scope file alone cannot validate
+   `m-os`. Current focused `rumiai-test` hosted evidence is not
+   formal product or physical-host validation.
+4. Add composed Node.js adapter index/resolve acceptance at the
+   external HTTP input boundary, using no real Releases downloads,
+   to complement the new direct offline record-filter regression.
+   Preserve the now-combined major filter and prerelease exclusion.
+5. Run representative real artifact-backed v1/v2 reinstall and
+   mutable-state checks with paced GitHub Releases requests; physical
+   Ubuntu ARM64 and macOS launchd remain pending. Before v2 promotion,
+   reconcile remaining concurrent mainline changes. Resources
+   stay deferred to v3+ and metadata inheritance remains open.
 
 ## Blockers / open questions
 
