@@ -381,7 +381,15 @@ escaping or cyclic links. Resource export testing is out of scope.
 
 ## Current state
 
-**V2 mixed installed-schema/default/provider lifecycle checkpoint — 2026-11-04 (latest):**
+**V2 mixed-schema uninstall, refusal and reintegration checkpoint — 2026-11-04 (latest):**
+- Preflight verified current remote HEADs and followed the mandatory current `README.md`, `RULES.md`, `CONSISTENCY-GATE.md`, package/state/testing specifications and active handoff before editing. Inspected the real v2-branch `pkg-uninstall`, `pkg-integration`, `pkg-state`, `pkg-provider`, the current offline mixed-schema fixtures, and their existing catalog-hosted matrix. There is **no product/runtime change** in this checkpoint.
+- `m-os/pkg-schema-v2@980401be` extends the existing mixed ordinary-package fixture with public `m pkg uninstall` of an unselected v2 concrete, local **re-`pkg_integrate`** from a fresh captured test payload, continued absence of an automatically selected default, and then removal of the current v2 concrete (the public selector and both ordinary command projections must disappear) while v1 remains independently installable/selectable. It checks `state-path user pkg <name> home` retains its user-written sentinel through both uninstall/reintegrate cycles and final legacy removal. A damaged **broken** installed link blocks a default change without losing the prior selection; an escaping `link/bin` **definition** is rejected before consuming the input root, publishing a concrete or altering the existing selected command. This does not establish rejection of *all* possible executable escaping installed links and does not exercise a partial post-mutation rollback; those are separate cases.
+- `m-os/pkg-schema-v2@b2a96632` extends the existing mixed consumer/provider fixture: public provider uninstall refuses a concrete referenced by a consumer binding and a different one referenced by the global facility default, leaving the referenced concrete and consumer execution intact. It also verifies release of these references, successful provider removal when no explicit reference remains, implicit single-provider consumer resolution, consumer v2 uninstall/reintegration with v1 default unchanged, retention of managed consumer user HOME, and clearing of the selected consumer default on uninstall. Providers' external command payloads remain synthetic and the central v2 nodejs facility contract is copied unchanged; all tested package/provider/default/launcher mechanisms are real.
+- Initial catalog workflow `41800303619` failed at fixture status 41: the fixture incorrectly expected `pkg provider default nodejs <provider>@999` to reject a **syntactically valid but currently unavailable explicit selector**. Canonical provider rules allow retaining that authoritative intent; resolution must fail rather than fall back. Corrected the **test**, not the product, in `m-os/pkg-schema-v2@ba42d7b0b5469ddefd164c1578c46531451b7098`: asserts the unavailable pinned default is stored; `pkg requirement resolve` fails; an independent consumer binding still wins; and a malformed selector syntax is rejected without altering a restored valid default.
+- `pkg-catalog/pkg-schema-v2@78efe555fcf025623bb83583636fdb53d01daf7d` pins the isolated, no-GitHub-Releases `validate-v2-coexistence.yml` to exact `m-os@ba42d7b0`. GitHub Actions run **`41800547236` completed 2/2 PASS**: Ubuntu job `126474941297` and macOS job `126474940878` each logged both positive fixture PASS markers after real execution. It did not download jq, Node.js releases or any real software artifacts; it was not a full previously run 12-job suite or physical reference-host validation.
+- Scope and limits: changes are confined to these two `m-os` test scripts, one exact pinned CI workflow ref, and this handoff. No code/library/manual/specification or frozen/mainline product files were modified; `pkg-schema-v2` remains unmerged. Material pending cases are post-mutation transaction rollback, more adversarial *existing executable* escaping-link tampering, current revision formal `rumiai-tests` integration, real artifact-backed uninstall/reinstall plus physical validation, and the previously logged master/v2 Node.js adapter divergence before any merge.
+
+**V2 mixed installed-schema/default/provider lifecycle checkpoint — 2026-11-04 (prior):**
 - Verified current involved remote HEADs, re-read the canonical `rumiai-dev` rules, package/default/launch/provider specs, testing contract and this active handoff, and inspected the existing current `m-os/pkg-schema-v2` launcher, schema reader, integrator, package-default transitions, provider selectors and prior fixture tests. The missing covered property was **transitioning an ordinary package default across genuine coinstalled v1 and v2 concretes of the same package identity**; the existing context coexistence fixture depended on an externally downloaded v2 jq and did not exercise package-default transitions.
 - Added test-only `m-os/.github/scripts/pkg-v2-default-coexistence-test.sh` at `m-os@fe8c3047`: integrates actual v1@1 and v2@2 concrete layouts from local fixture useful roots, then exercises public `m pkg default` v1 → v2 → v1 → unset, public command symlink target updates/removal, v1 launcher, v2 wrapped entry with fixed argv and package environment, v2 direct entry (which deliberately does not apply wrapper environment), failed nonexistent-version change preserving the previous view, and independent shell-local `context` selection/reset. This is an integration/launch test through real m code, not a download or upgrade-in-place scenario.
 - Added test-only `m-os/.github/scripts/pkg-v2-mixed-provider-test.sh` at `m-os@380d0f43`: copies the **actual** catalog v2 nodejs facility contract, integrates two synthetic-external-provider v2 package versions (same facility level), and both v1/v2 installed consumer schema versions declaring `nodejs =26`. It checks consumer version default transitions, global facility default provider@1 → provider@2 transitions (both provider concretes are v2 schema), explicit consumer binding precedence surviving a consumer default change, restoration after unbinding, failure on unresolved ambiguity when no default/binding exists, and binding-based recovery. Every observed consumer output comes from the real package launcher/real selected facility command (external `node` payloads are fixtures). No GitHub Releases downloads.
@@ -557,30 +565,27 @@ this Current state supersedes older stale 'no v2 PASS' claims.
 
 ## Next action
 
-1. Extend the focused, no-release-download mixed v1/v2 integration
-   scenario to **uninstall/refusal/rollback and reinstallation** across
-   schemas, including preservation of current/default selectors and
-   mutable state, and rejection of malformed/escaping installed links.
-   Distinguish synthetic payload verification from real upstream
-   v1/v2 migration; do not introduce implicit conversion.
-2. Reconcile representative real mixed-schema scenarios into the
-   permanent `rumiai-tests` suite at the appropriate validation scope;
-   use `pkg-catalog` hosted fixtures as exact-revision integration
-   evidence, not a substitute for formal or physical validation.
-3. Preserve real upstream install tests while pacing GitHub Releases
-   API usage: on a suspected 403 limit, inspect rate-limit headers
-   when available and retry only the failed job after reset, not
-   whole matrices repeatedly.
-4. Before any v2 mainline promotion, reconcile the concurrently advanced
-   Node.js repository adapter in m-os/master with its distinct v2 branch
-   prerelease handling; use current contracts and live Node.js coverage.
-   Do not overwrite either implementation silently.
-5. Validate macOS launchd user/system on an eligible controlled host
-   and Ubuntu 26.04 ARM64 on the physical reference host when available.
-   Audit remaining v2 wrapper/provider edge cases, then promote only
-   settled complete semantics and coordinate forward-only merge.
-   Resource export remains deferred to v3+; metadata inheritance is
-   still a separate open design choice.
+1. Reconcile representative real mixed-schema lifecycle acceptance
+   cases into the canonical permanent `rumiai-tests` suite and choose
+   appropriate isolated `rumiai-validate` scope; the current v2-branch
+   fixture scripts plus catalog-hosted workflows are integration evidence,
+   not formal suite validation.
+2. Audit adversarial installed *executable* escaping link/collision
+   semantics and specifically exercise failure after partial state/default
+   materialization to assess actual rollback rather than only preflight
+   rejection. Apply canonical rules and do not silently reinterpret v1.
+3. Exercise representative real catalog-backed v1/v2 artifact uninstall/
+   reinstall with explicit default restoration and mutable-state checks;
+   avoid repetitive anonymous GitHub Releases API calls by separating
+   offline tests and pacing release-backed jobs after the reported reset.
+4. Preserve concurrent mainline changes. Before a v2 merge, reconcile
+   current master Node.js adapter's major-filter policy with the v2
+   feature branch's prerelease policy using live tests and the
+   authoritative contract.
+5. Validate macOS launchd user/system on a controlled eligible host and
+   Ubuntu 26.04 ARM64 on the physical reference host when available.
+   Promote only settled complete v2 semantics; retain forward-only Git.
+   Resources stay deferred to v3+ and metadata inheritance stays open.
 
 ## Blockers / open questions
 
