@@ -393,7 +393,15 @@ escaping or cyclic links. Resource export testing is out of scope.
 
 ## Current state
 
-**Live Node.js HTTP index/resolve verification — 2026-11-04 (latest, awaiting execution evidence):**
+**V2 live Node.js evidence and forward-only catalog reconciliation — 2026-11-04 (latest):**
+- Verified current repository HEADs and re-read canonical rules, package/testing contracts and the active handoff. The current `m-os/pkg-schema-v2` runtime remains `8fb1db493a3265f77bb36ac604a2a1a495a4d448`; no product/schema implementation was changed.
+- Exact `pkg-catalog@2c71b2180a4c5e270f33e00a67ddb8ca190d2b8c` Node.js run **[41840170587](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/41840170587)** completed **SUCCESS, 2/2 jobs**: GitHub-hosted Ubuntu job `126609358482` PASS and macOS job `126609359325` PASS. Retrieved both full job logs: each executed real public `m pkg depend nodejs` across the live external Node.js HTTP index, then real pinned `pkg install nodejs@v26.8.2`, launcher/HOME/context/provider checks, exact uninstall/reinstall and preserved HOME sentinel, reaching the terminal PASS marker. No FAIL was observed in either job. This is hosted evidence, not physical reference-host or formal `rumiai-validate` evidence.
+- `pkg-catalog/main` contained two concurrent commits absent from `pkg-schema-v2`: a v1 workflow repository rename correction and three v1 Electron stream version additions. Reconciled **main into feature only**, with exact parent commits `pkg-schema-v2@2c71b2180` and `main@7892040e`, producing merge `pkg-catalog/pkg-schema-v2@6d810478657fc2937633b27e0e773b531e96e9d2`. Created its tree by retaining the feature tree and reusing the four current main blobs; advanced the feature ref without force. Verified `main...pkg-schema-v2` is now **87 ahead / 0 behind**, all four files equal main, and the v2 Node.js workflow blob unchanged. Neither mainline was promoted or modified.
+- Broader exact `pkg-catalog@25ca1daca3095f71614af1e7e9201fb97dfb6996` CI run **[41829939821](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/41829939821)** remains **queued** at this checkpoint: its 7 Ubuntu jobs are completed PASS (including real jq v1→v2 reinstall) and 7 macOS jobs are queued. Do not assert 14/14 or transfer this pre-merge revision's result to the merge commit.
+- A genuine catalog-backed Java consumer path remains unproven: current `v1/pkg/maven` and `v1/pkg/temurin` use repository adapter types `apache-maven` and `temurin`, whereas the autonomous `m-os` repository currently has only artifact/chrome/chromium/github/nodejs repository libraries. Do not disguise setup-java or synthetic Java provider fixtures as a full catalog-backed install. Adding missing adapters or changing schema is not authorized by this checkpoint.
+- Concurrent `rumiai-dev` and `rumiai-tests` HEAD movements touched other task areas and were not overwritten. Physical Ubuntu 26.04 ARM64 and physical macOS launchd validation remain open. No `m-os/master` or `pkg-catalog/main` promotion occurred.
+
+**Live Node.js HTTP index/resolve verification — 2026-11-04 (prior, now verified above):**
 - Fresh preflight verified `m-os/pkg-schema-v2@8fb1db493a3265f77bb36ac604a2a1a495a4d448`, `pkg-catalog/pkg-schema-v2@1d8961c8654dc128581c11a8579d3f231cb6ae00` before the catalog write, `pkg-catalog/main@7892040e906723ef6641df88a03964c041cee9bc` and `rumiai-tests/main@b9daf4c6c73d151ffcc27709caf07891fbfacc04`. `rumiai-dev/main` advanced independently during retrieval; the intervening changes concern chat archiving and rsudo/Keycloak documentation, not this handoff's package authority.
 - Updated only `pkg-catalog/pkg-schema-v2@2c71b2180a4c5e270f33e00a67ddb8ca190d2b8c`, `.github/workflows/validate-v2-nodejs.yml`: exact-pin current `m-os` v2 HEAD and exercise public `m pkg depend nodejs` against the real upstream HTTP Node.js index before the existing real catalog-backed pinned Node.js install, command execution, managed HOME and state-preserving uninstall/reinstall assertions. Review of the committed diff confirmed this limited scope.
 - The workflow is configured for push to this branch, but its new exact-revision execution and Ubuntu/macOS conclusions have **not yet been retrieved/verified**. This change is test orchestration only; it supplies no new PASS evidence. The existing offline `rumiai-tests` index fixture remains a different, already validated boundary. No product runtime, catalog schema/data, test runner, `rumiai-validate`, canonical specification, operational manual, mainline merge or physical host was changed.
@@ -625,7 +633,10 @@ this Current state supersedes older stale 'no v2 PASS' claims.
 
 ## Next action
 
-Before other new validation work, retrieve the exact CI run and both Ubuntu/macOS job logs for `pkg-catalog/pkg-schema-v2@2c71b2180a4c5e270f33e00a67ddb8ca190d2b8c`; classify real upstream/network failures separately from product failures and do not claim PASS until observed. If the run cannot be retrieved, preserve that evidence gap. Then continue with the ordered work below.
+1. Recheck and classify the queued macOS jobs in exact v2 matrix `41829939821`; preserve the host/revision boundary of each PASS and investigate any failed job instead of re-running the entire matrix indiscriminately.
+2. Complete the remaining real catalog-backed Java consumer integration only through a supported real adapter/definition path; currently the required Maven/Temurin adapters are absent from autonomous `m-os`, so keep this as an explicit gap rather than inventing an adapter as incidental fixture work.
+3. Arrange applicable physical macOS launchd and Ubuntu 26.04 ARM64 validation on the real reference hosts. Hosted runners do not substitute.
+4. Audit v2 runtime/catalog implementation, operational manuals, permanent coverage, authoritative specification-promotion scope and post-merge branch revisions. Promote forward-only into `m-os/master` and `pkg-catalog/main` only when the applicable evidence and canonical realignment are sufficient; otherwise keep the feature branches separate.
 
 1. Reconcile latest independently advanced `m-os/pkg-schema-v2`,
    `pkg-catalog/pkg-schema-v2` and `rumiai-tests/main` revisions
@@ -650,16 +661,8 @@ Before other new validation work, retrieve the exact CI run and both Ubuntu/macO
 
 ## Blockers / open questions
 
-- Precise v2 wrapper-target descriptor semantics and generic launcher
-  contract once the public `link/bin` symlink may point at `cmd`.
-- V1/v2 installed-concrete schema identity and safe mixed-version
-  launch, plus coordinated facility/`srv` migration.
-- Minimum non-imperative ordinary package `env` shape, including
-  scope/precedence and safe checks.
-- Whether stable metadata inheritance pays for its complexity while
-  retaining range anchors and `all`/osarch stream selection.
-- The v2 shell/Java library-only fixture has hosted PASS on both
-  Ubuntu and macOS, but a real catalog-backed Java consumer is not yet
-  independently proven. Ollama portable and systemd user/system supervision
-  passed on GitHub-hosted Ubuntu; macOS launchd and physical reference hosts
-  remain unvalidated.
+- Exact newer v2 matrix `41829939821` has seven macOS jobs queued; do not transfer the prior Ubuntu PASS to them.
+- The autonomous `m-os` adapter set lacks the `apache-maven` and `temurin` adapter types required by the current v1 catalog Java package/consumer examples. Full catalog-backed Java coverage therefore remains unproven pending a separately verified supported path; no change to v2 schema was made.
+- Physical Ubuntu 26.04 ARM64 and macOS launchd reference-host checks are not accessible through GitHub-hosted CI and remain unvalidated.
+- Canonical `PACKAGE-MODEL.md` still specifies the published v1 baseline; v2 design in feature branches has not yet passed promotion and must not be described as current normative mainline.
+- Older working-design candidates in this handoff are not permission to extend the frozen v2 scope; preserve the user's explicit instruction not to reopen schema, package-store security or formal-validation targets.
