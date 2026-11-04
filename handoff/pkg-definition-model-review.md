@@ -387,7 +387,7 @@ escaping or cyclic links. Resource export testing is out of scope.
 - **Formal validation evaluation:** current `rumiai-validate` command, `lib/sh/rumiai-validate.lib.sh`, evidence metadata, checkout cloning and bootstrap are explicitly coupled to `rumiai-os`; simply adding a `validation/*.conf` selector for `m-os` would misidentify the target and would not prepare a clean autonomous checkout. Supported `m-os` formal validation needs a separately authorized target contract/launcher realignment, not an opportunistic config-only claim.
 - **Node.js branch reconciliation:** current `m-os/master` filtered index records to the configured major while `pkg-schema-v2` independently excluded prerelease tags. `m-os/pkg-schema-v2@8d39c188e7a1a1f4a6d3f8308281411564360810` retains **both** conditions in a small internal record-filter function used by the real Node adapter; it still strictly rejects malformed selected-major stable releases and duplicate stable versions. Public adapter signatures and operational manual remain unchanged. An initial source extraction introduced a shell heredoc syntax defect; this was corrected **forward-only** before the final successful run, and the permanent test checks shell syntax to prevent a similar false SKIP.
 - **Permanent offline regression:** `rumiai-tests/main@cf6ef10bc5d43f15988f23ba621515363a5bacb7` adds executable `tests/m-os/pkg-schema-v2/nodejs-index.test` exercising the actual adapter's new filter against parsed-index-shaped synthetic input, including foreign-major malformed data, current-major prerelease, valid stable versions and invalid selected-major data. It does **not** exercise `http-fetch`, upstream Node availability, archive checksums or full installation; those remain separate.
-- Exact pinned `pkg-catalog/pkg-schema-v2@ed613dcbd8deea261f299b31eeaf8e7976c4b21c` workflow run **`41821850370`**, Ubuntu job **`126546677016` PASS 4/4** permanent offline tests, 0 FAIL/SKIP/ERROR; macOS job **`126546677383` still queued at last inspection**. Previous superseded runs were cancelled; they do not establish macOS PASS at this revision. No GitHub Releases requests were made.
+- Exact pinned `pkg-catalog/pkg-schema-v2@ed613dcbd8deea261f299b31eeaf8e7976c4b21c` workflow run **`41821850370`**, Ubuntu job **`126546677016` PASS 4/4** permanent offline tests, 0 FAIL/SKIP/ERROR; macOS job **`126546677383` completed PASS 4/4** at the same pinned revisions; exact workflow **`41821850370` completed SUCCESS, 2/2 jobs, 8/8 permanent tests PASS, 0 FAIL/SKIP/ERROR** as confirmed by both job logs on 2026-11-04. Previous superseded runs were cancelled and do not alter this revision-specific result. No GitHub Releases requests were made.
 - All commits were forward-only; unrelated concurrent changes in other repos were preserved, and `m-os/master`/`rumiai-os/main`/`pkg-catalog/main` were not modified. Feature branch `pkg-schema-v2` remains unmerged and physical validation remains open.
 
 **V2 global facility command projection confinement — 2026-11-04 (prior):**
@@ -607,26 +607,22 @@ this Current state supersedes older stale 'no v2 PASS' claims.
 
 ## Next action
 
-1. Check the exact macOS job `126546677383` in the pinned offline
-   catalog run `41821850370` (`m-os@8d39c188`,
-   `rumiai-tests@cf6ef10b`). Do not infer PASS from earlier cancelled
-   jobs or from the completed Ubuntu 4/4 result.
-2. Resolve whether the managed immutable-concrete semantics require a
+1. Resolve whether the managed immutable-concrete semantics require a
    **stronger OS-enforced integrity boundary** against an actor that can
    write to the package store. Current implementation does not supply
    that guarantee, and selection-time validation cannot replace it.
    Do not add chmod/ownership/sandbox behavior without specifying
    host authority, lifecycle and state implications.
-3. Define the proper autonomous `m-os` formal-validation contract
+2. Define the proper autonomous `m-os` formal-validation contract
    and target preparation if authorized. Existing `rumiai-validate`
    is hardwired to `rumiai-os`; a scope file alone cannot validate
    `m-os`. Current focused `rumiai-test` hosted evidence is not
    formal product or physical-host validation.
-4. Add composed Node.js adapter index/resolve acceptance at the
+3. Add composed Node.js adapter index/resolve acceptance at the
    external HTTP input boundary, using no real Releases downloads,
    to complement the new direct offline record-filter regression.
    Preserve the now-combined major filter and prerelease exclusion.
-5. Run representative real artifact-backed v1/v2 reinstall and
+4. Run representative real artifact-backed v1/v2 reinstall and
    mutable-state checks with paced GitHub Releases requests; physical
    Ubuntu ARM64 and macOS launchd remain pending. Before v2 promotion,
    reconcile remaining concurrent mainline changes. Resources
