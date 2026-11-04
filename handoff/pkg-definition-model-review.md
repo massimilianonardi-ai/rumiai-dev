@@ -381,7 +381,13 @@ escaping or cyclic links. Resource export testing is out of scope.
 
 ## Current state
 
-**V2 generic/osarch provider global environment checkpoint — 2026-11-04 (latest):**
+**V2 cross-facility global environment precedence checkpoint — 2026-11-04 (latest):**
+- Verified remote repository HEADs and re-read the mandatory current rules/specifications, test contracts, implementation, existing workflow and this handoff before changing anything. The previously queued general v2 run `41790160639` (catalog `bb640f68` pinned to m-os `151cc990`) finished **10/12 jobs PASS**. Its macOS `v2-global-environment` failed during fixture setup due to nonportable `chmod +x --` (BSD `chmod` treated `--` as a pathname). Separately, macOS `v1-regression` failed after three upstream GitHub jq release API HTTP 403 responses. The other ten jobs, including macOS real v2 jq, passed. Neither failed job established a runtime product regression.
+- `m-os/pkg-schema-v2@2caeb3f95f0e0281920da55a79382096208e05b8` changes only `.github/scripts/pkg-v2-global-environment-test.sh`: removes the nonportable `chmod --`, checks for pre-existing fixture concretes and facility defaults before installing a destructive cleanup trap, and extends the synthetic external provider input with a second **independent `nodejs` facility**. It exercises the real v2 integration, global default mutations, snapshots, platform/generic selection and fresh bootstrap with overlapping ordinary `CI_SHARED` values and `PATH` roots. `java` precedes `nodejs` in LC_ALL=C facility order, so the later `nodejs` assignment must win and its PATH segment must precede java's; checks cover all six generated osarch snapshots, both runner-host executions, and changing the earlier java selector to a host-qualified pin while nodejs remains selected. No product/runtime code or operational manual changed.
+- `pkg-catalog/pkg-schema-v2@e64aed2939d750b0fe261503696c228cf207b2dc` pins all six matrix workflow jobs to that exact m-os revision. Workflow `41792388863` finished **11/12 PASS**: both `v2-global-environment` jobs (Ubuntu `126448527420`, macOS `126448527613`) PASS with explicit output; all v2 jq/other v2 fixture jobs and Ubuntu v1 regression PASS. The single failed job, macOS `v1-regression` `126448527466`, again received upstream jq release API HTTP 403 in all three installation attempts. This is an unresolved external fetch/CI reliability issue, **not** a 12/12 matrix PASS and not evidence of a v1 runtime regression. Earlier exact-revision real Node.js `41787611004` 2/2 and Ollama `41787617458` 3/3 PASS remain separately valid for their pinned runtime `71b33c6c`.
+- Only `m-os` v2 test script, `pkg-catalog` v2 workflow pins, and this handoff were edited in this checkpoint. Mainline `m-os/master` and `pkg-catalog/main`, legacy `rumiai-os` and `rumiai-tests`, and canonical package contracts were not edited; v2 remains unmerged. Host-backed macOS CI and Ubuntu CI are not physical reference-host validation; service supervision through macOS launchd remains unchecked.
+
+**V2 generic/osarch provider global environment checkpoint — 2026-11-04 (prior):**
 - At the start of this increment, verified all involved remote branch HEADs and reread current `rumiai-dev` rules, specifications, test contracts and this handoff. The previously queued `pkg-catalog` generic v2 workflow **`41787604558` completed 10/10 PASS**, including both macOS jobs; Node.js `41787611004` 2/2 PASS and Ollama `41787617458` 3/3 PASS at prior exact m-os `71b33c6c`. This closes that checkpoint's macOS queue without assigning those successes to newer revisions.
 - New `m-os/pkg-schema-v2@151cc99069e213d05469bce3f50665c02501910c` adds only `.github/scripts/pkg-v2-global-environment-test.sh`; `pkg-catalog/pkg-schema-v2@bb640f68b2ef48b98703327006beddb451dfc05e` adds the `v2-global-environment` Ubuntu/macOS CI matrix job and pins all six jobs to that exact m-os revision. Product implementation and operational manuals remain unchanged.
 - The new test copies the existing v2 Java facility contract **as test input** and extends only that copy with typed `CI_SHARED`, `CI_CLASS` and `PATH` members. It exercises real `pkg_facility_provider_validate`, `pkg_integrate` for two same-package/version concretes (one generic and one for the live host's `m_OSARCH`), public `pkg provider default`, actual global snapshot materialization for all six supported osarch values and real `m` bootstrap/command execution on the runner. It checks host-specific preference, generic fallback on other osarch classes, common versus osarch-delta assignments, explicit host-only pin without other-class fallback, and unset cleanup. No real Java upstream download is implied; this is integration/selector/environment **with a synthetic external provider payload**, not physical six-host execution.
@@ -535,21 +541,21 @@ this Current state supersedes older stale 'no v2 PASS' claims.
 
 ## Next action
 
-1. Inspect all remaining macOS jobs in exact-revision catalog workflow
-   `41790160639` (m-os `151cc990`). Record individual outcomes,
-   investigate any actual failing property, and reconcile forward before
-   reporting multi-host provider-class coverage.
-2. Verify remaining cross-facility global default precedence when two
-   independent facilities contribute overlapping ordinary variables
-   and PATH segments, without changing current deterministic facility
-   order or introducing a context-specific environment interpreter.
-3. Validate macOS launchd user/system with a controlled suitable host and
-   Ubuntu ARM64 on the reference host when available.
-4. Audit the remaining v2 wrapper/launcher semantics, mixed v1/v2
-   installed-concrete states, manuals and integration coverage; promote
-   only complete settled v2 semantics and merge forward after acceptance.
-   Resource export stays deferred to v3+; metadata inheritance remains
-   a separate open choice.
+1. Investigate the repeatable macOS `v1-regression` GitHub jq release
+   API HTTP 403 in runs `41790160639` and `41792388863` without
+   downgrading, bypassing or faking real v1 package installation. Separate
+   upstream request/rate-limit infrastructure from any package resolver
+   defect. A rerun is useful only if the provider endpoint is accessible;
+   do not recast an unavailable API as a product PASS.
+2. Audit remaining v2 wrapper target/launcher semantics and mixed v1/v2
+   installed-concrete and provider-selection states, applying settled
+   specifications and using real entrypoint tests. Global generic/osarch
+   and cross-facility ordering have hosted Ubuntu/macOS fixture PASS.
+3. Validate macOS launchd user/system on an eligible controlled host and
+   physical Ubuntu 26.04 ARM64 on the stable reference host when available.
+4. Promote complete stable v2 semantics only after remaining acceptance
+   coverage and coordinate a forward-only merge. Resource export stays
+   deferred to v3+ and metadata inheritance remains a separate open choice.
 
 ## Blockers / open questions
 
