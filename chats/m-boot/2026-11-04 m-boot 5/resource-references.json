@@ -1,0 +1,66 @@
+[
+  {
+    "attribute": "href",
+    "reference": "/cdn/assets/sprites-core-e3d8576f.svg#dd315f"
+  },
+  {
+    "attribute": "href",
+    "reference": "/cdn/assets/sprites-core-e3d8576f.svg#07889e"
+  },
+  {
+    "attribute": "href",
+    "reference": "/cdn/assets/sprites-core-e3d8576f.svg#7fccfb"
+  },
+  {
+    "attribute": "href",
+    "reference": "/cdn/assets/sprites-core-e3d8576f.svg#72c6a7"
+  },
+  {
+    "attribute": "href",
+    "reference": "/cdn/assets/sprites-core-e3d8576f.svg#ba2866"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://uefi.org/specs/UEFI/2.10/08_Services_Runtime_Services.html?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://uefi.org&amp;sz=128"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://www.ventoy.net/en/doc_compatible_pass.html?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://github.com/ventoy/Ventoy/blob/master/DOC/BuildVentoyFromSource.txt?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://github.com&amp;sz=128"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://www.ventoy.net&amp;sz=128"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://learn.microsoft.com&amp;sz=32"
+  },
+  {
+    "attribute": "src",
+    "reference": "https://www.google.com/s2/favicons?domain=https://www.ventoy.net&amp;sz=32"
+  },
+  {
+    "attribute": "href",
+    "reference": "/cdn/assets/sprites-external-e813c99f.svg#1a6f23"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/41888230017/artifacts/13352721690?utm_source=chatgpt.com"
+  },
+  {
+    "attribute": "href",
+    "reference": "https://github.com/massimilianonardi-ai/rumiai-dev/blob/a72236d076f1cfb39808de85da8f08ae617ead5e/handoff/m-boot-standalone.md?utm_source=chatgpt.com"
+  }
+]
