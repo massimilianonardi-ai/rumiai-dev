@@ -1,0 +1,198 @@
+# rsudo Keycloak Administration — Public Contract
+
+Status: **Current / target contract; implementation pending**
+Updated: 2026-11-04
+
+## 1. Scope and authority
+
+This is the promoted forward contract for the new technical m shell administration module at lib/sys/sh/rsudo/rsudo-mod-keycloak.lib.sh, dispatched through the existing rsudo keycloak operation. It defines what K04–K08 must implement and validate; it is **not** evidence that the current forwarding facade already implements these operations. The existing product implementation and operational manual remain revision-coupled and describe legacy forwarding until corresponding work units change them.
+
+The rsudo SSH/sudo execution, credential-group, stdin and terminal contracts remain owned by RSUDO.md and SSH.md; diagnostic identities, secret redaction and return-status engineering remain owned by DIAGNOSTICS.md; owned library naming and public/internal functions follow FILESYSTEM-NAMING.md and LIBRARY-INTERFACES.md. This module adds Keycloak administration semantics, not another SSH authentication facility, standalone Keycloak CLI installation, arbitrary HTTP client or remote m runtime dependency.
+
+Supported server scope starts at Keycloak **26.7.3**, with later releases only as individually documented or verified. A version-number comparison is not proof of behavioral compatibility. The current K01 method inventories compare 26.7.3 and 26.8.1; K02 independently inventories authentication and trust. Source evidence and unverified release-specific observations remain in the active handoff, not as a second normative specification.
+
+## 2. Ownership, public entrypoints and legacy boundary
+
+The new implementation stays in one existing Keycloak module; private helpers use the established underscore-prefixed internal function rule. The following **new public functions** and their corresponding rsudo keycloak operations have one-to-one argument contracts:
+
+| Shell function | rsudo invocation | Responsibility |
+|---|---|---|
+| rsudo_mod_keycloak_request | rsudo keycloak request | General Admin REST operation |
+| rsudo_mod_keycloak_auth | rsudo keycloak auth | Acquire, refresh, revoke or inspect the status of an administrative session without revealing credentials |
+| rsudo_mod_keycloak_version | rsudo keycloak version | Report server version and provenance |
+| rsudo_mod_keycloak_capabilities | rsudo keycloak capabilities | Machine-readable release/method/capability evidence |
+| rsudo_mod_keycloak_realm | rsudo keycloak realm | Common realm administration |
+| rsudo_mod_keycloak_client | rsudo keycloak client | Common client administration |
+| rsudo_mod_keycloak_user | rsudo keycloak user | Common user administration |
+| rsudo_mod_keycloak_group | rsudo keycloak group | Common group administration |
+| rsudo_mod_keycloak_role | rsudo keycloak role | Common role assignment/administration |
+| rsudo_mod_keycloak_authorization | rsudo keycloak authorization | Common authorization management or explicitly delegated general JSON operations |
+
+The existing 16 rsudo_mod_keycloak_* functions retain their current signatures and legacy forwarding semantics until a separately authorized migration work unit proves and documents a replacement. These existing names are: set_auth_vars, access_token, access_token_set, api___, api, method_get, method_put, method_post, method_delete, delete, delete_client, create, create_client, get, get_client and update. They are **not** automatically reinterpreted as the secure new request/identity/auth interfaces. The explicit rsudo keycloaklegacy and rsudo_mod_keycloaklegacy_* identities remain addressable. New operations never fall through to these functions and never silently select their password-grant, shell interpolation or curl behavior. A user who explicitly calls an existing compatibility operation receives its existing behavior and legacy documentation until its controlled migration; K08 must settle every such caller, warn appropriately and realign the two operational manuals and permanent tests. Do not infer that this contract makes legacy safe.
+
+All functions are callable after the normal loadsyslib "rsudo/rsudo-mod-keycloak" and reuse already resolved rsudo caller state. All CLI forms are dispatched by the existing rsudo parser, not a newly invented executable. The new library and rsudo dispatcher must not change unrelated APISIX/rsudo semantics.
+
+## 3. Common invocation grammar and selection
+
+New operations take their own domain operands followed by the same repeatable selection/authentication options; rsudo connection options precede the keycloak submodule name. At minimum:
+
+    rsudo [rsudo-options] keycloak request METHOD API-PATH [keycloak-options]
+    rsudo [rsudo-options] keycloak auth acquire|refresh|revoke|status [keycloak-options]
+    rsudo [rsudo-options] keycloak version [keycloak-options]
+    rsudo [rsudo-options] keycloak capabilities [--method METHOD --path API-PATH] [keycloak-options]
+    rsudo [rsudo-options] keycloak realm|client|user|group|role|authorization ACTION [domain-operands] [keycloak-options]
+
+Applicable keycloak-options include:
+
+| Option | Meaning and boundary |
+|---|---|
+| --server HTTPS-BASE-URL | Approved Keycloak HTTP base (origin plus optional reverse-proxy context path), **not** a full API resource URL; no embedded credentials/query/fragment. |
+| --target-realm NAME | Realm whose administration is requested, independent of token issuer; specialized resource commands usually take this as a domain operand instead. |
+| --issuer-realm NAME | Realm authenticating the principal and issuing the token; never implicitly default to master or the target realm. |
+| --auth-mode MODE | One explicitly selected supported flow, described in section 6; omitted only when an independently selected authenticated token source makes bearer mode unambiguous. |
+| --client-id ID | The Keycloak OIDC client identity, not necessarily the internal UUID of an Admin REST client resource. |
+| --client-auth METHOD | Explicit configured confidential-client authenticator; never downgrade on failure. |
+| --token-file REMOTE-PATH | Protected pre-existing remote bearer-token source, or an explicitly generated session token store. |
+| --client-secret-file REMOTE-PATH | Protected remote secret for permitted client authenticators. |
+| --password-file REMOTE-PATH | Protected remote user password for explicitly chosen and enabled direct grant only. |
+| --assertion-file REMOTE-PATH | Protected remote external JWT / token-exchange assertion or subject-token source, as required by the selected grant. |
+| --private-key-file REMOTE-PATH; --certificate-file REMOTE-PATH | Explicit protected signing/mTLS key and certificate sources when applicable. |
+| --ca-file REMOTE-PATH | Operator-approved remote CA anchor (or the existing trusted system CA facility); never an insecure TLS override. |
+| --version-pin VERSION | Operator-selected release when authorized server version observation is unavailable; report evidence as operator-pinned, never verified. |
+
+All remote credential paths must be absolute, non-symlink regular files readable by the selected rsudo sudo target with appropriate owner and restrictive permissions. They are **never** interpreted as local filesystem paths or copied automatically across the SSH boundary. Options carrying arbitrary resource JSON, usernames, role names, query/path values or domain IDs are data and must not be interpolated into shell source. No token, password, client secret, signed assertion or private key value is accepted as an ordinary CLI operand. Operator-managed remote credential files may be used without ever hand-authoring a JSON resource file. A future source-location extension requires explicit contract promotion; unspecified implicit transfer is forbidden.
+
+Selection precedence: explicitly supplied nonsecret option for this invocation; an already established, authenticated and unambiguous caller-side selection if supported; an authoritative unique discovery from the selected running Keycloak instance on the chosen rsudo host; otherwise a fail-closed selection error. An implementation must not invent a Keycloak endpoint from SSH host/port, use localhost:8080, assume /auth or master, guess from a list of candidate processes or redirect to another origin. An explicit URL pin must still pass TLS, issuer and server-identity validation. The rsudo SSH host may differ from the Keycloak server, browser frontend, OIDC issuer and administration URL.
+
+## 4. Endpoint discovery, HTTP topology and trust
+
+When a token must be acquired, use the selected issuing realm's trusted OIDC discovery document at BASE/realms/{issuer-realm}/.well-known/openid-configuration. Validate the exact advertised issuer identity and URLs, HTTPS authority, server/realm binding and allowed destinations; select token/authorization/device/CIBA/revocation/introspection endpoints only from validated metadata and applicable feature evidence. An Admin REST URL is independently selected or proven from authoritative running-server/proxy configuration; OIDC discovery alone does not certify Admin REST access or its separate hostname. The Admin REST v1 resource base is BASE/admin, with both /admin/realms and /admin/serverinfo global paths and /admin/realms/{target-realm} per-realm paths. Never force all calls through the latter.
+
+Keycloak hostname, hostname-admin, reverse proxy, TLS termination, context path and backchannel routing are distinct concerns. The setting hostname-admin alone does not make the Admin REST API unreachable on the frontend URL. Do not regard a reachable HTTP endpoint as evidence of a unique selected Keycloak instance, and do not treat 404 as proof of absence when an Admin API feature gate or proxy rule might hide it. Network enforcement, approved origins, trusted certificate/hostname verification and SSH host-key trust are independent; no silent untrusted redirect, HTTPS downgrade, automatic credential forwarding to another origin, insecure TLS flag or Host-header-derived authority. Use the existing m-managed additional CA trust where applicable without changing its authorization model.
+
+The module's normal Admin HTTP execution remains on the explicitly selected remote rsudo target, using its installed HTTP client and trusted Keycloak route. Interactive browser steps may involve the operator's local browser/TTY but do not create an unauthorized alternate HTTP/SSH transport; the token-grant request's execution location and the trust boundary must be observable. Require user-selected, verified routing when an interactive callback cannot be completed without a new trust path; never fabricate a local callback address or intercept a browser without the appropriate registered redirect.
+
+## 5. General Admin REST request contract
+
+Syntax:
+
+    rsudo [rsudo-options] keycloak request GET|POST|PUT|DELETE API-PATH
+        [--server HTTPS-BASE-URL] [--target-realm NAME]
+        [--path NAME=VALUE]... [--query NAME=VALUE]...
+        [--body-stdin | --body-file CALLER-PATH] [--content-type MIME]
+        [--output CALLER-PATH] [--meta-out CALLER-PATH]
+        [--allow-sensitive-output] [authentication-options]
+
+The corresponding rsudo_mod_keycloak_request has precisely the same operand/option order without the rsudo prefix. METHOD is one Admin REST operation explicitly described for the selected release by the version-pinned capability inventory. API-PATH is an absolute path **relative to the Keycloak base** (for example /admin/realms/{realm}/clients/{client-uuid}), not a full URL; named placeholders are supplied through --path. Literal path/query concatenation, unsafe normalization, arbitrary headers, arbitrary HTTP hosts, arbitrary resource redirects, wildcard privileged URL access and unrecognized method/path combinations are rejected. Query parameters are supplied as repeated --query NAME=VALUE and validated against the selected operation; repeated keys and defaults follow upstream semantics. Percent-encoding preserves Unicode, reserved characters and endpoint-specific slashes; it is not a shell escape. Never replace a human clientId with an internal client UUID without an explicit verified lookup.
+
+The default request body is absent. --body-stdin consumes ordinary *caller* stdin after rsudo has acquired any SSH/sudo password; --body-file is an optional **caller-local** input file, not a remote credential path. They are mutually exclusive. No JSON file is needed for a JSON body; stdin bytes must be preserved exactly (including UTF-8, quotes, newlines, control characters allowed by the selected MIME, arbitrary JSON fields and unknown data), transmitted through a data-only framing/channel and never evaluated as shell code. The existing rsudo --interactive injected-source mode is **not** the data transport for untrusted JSON and must be rejected or safely separated from it. No implicit "scope" form field may be injected into an unrelated Admin REST request.
+
+Content-Type is determined by the selected operation's real accepted media unless explicitly provided as one of that operation's supported media. JSON is the ordinary representation, but text/plain, YAML, XML, form-urlencoded, certificates/application/octet-stream and other declared exceptions retain their actual wire types; YAML and binary are not silently labeled JSON. Multipart/unsupported representations must either be implemented with correct typed handling or reported as not yet supported, never silently coerced. K01's inconsistent or missing schema metadata must not be treated as runtime proof; when behavior is unknown, the operation is not declared validated.
+
+Successful stdout is the **unmodified response body byte sequence** (JSON for JSON methods, other bytes for non-JSON). A genuine HTTP 204/empty-body success writes zero stdout bytes and exits 0; it is not converted to null, {}, [], or an invented status line. HTTP 201 Location may identify a server-generated resource ID and must not be discarded or guessed. --output optionally writes the same bytes to a securely created caller-local file rather than stdout. --meta-out optionally writes a separate machine-readable JSON object with at least http_status, content_type (if supplied), safe Location when present, and observed version/capability provenance; metadata must never contain authorization headers, cookies, tokens, request body or unsafe unvalidated server-provided URLs. Neither metadata file is mandatory; stdout never mixes diagnostics, polling progress or status text into successful data. A failed HTTP status always yields nonzero even if it supplies a JSON body; no response is mistaken for successful empty data.
+
+Known secret-bearing response operations (for example credentials, client secrets and certificates) may emit intentionally requested sensitive bytes only with an explicit --allow-sensitive-output and an authorized protected sink. Without this opt-in they fail closed instead of returning secrets in ordinary stdout. Unrecognized payload fields may still be sensitive; do not log successful payloads, and treat caller-requested raw output as an explicitly trusted data channel rather than promising to classify all possible custom fields. Protected output files use private permissions and safe replacement. An API returning secrets does not authorize exposing acquisition tokens/refresh tokens or client authentication secrets.
+
+GET/list does not imply uniform pagination, sorting, or a consistent envelope. Responses retain upstream list vs missing vs filtered-by-permission meanings. Counts are not necessarily totals over globally visible data. PUT/DELETE, email sends, session destruction, identity actions and other methods are not automatically idempotent; no silent write retry, pseudo-transaction, automatic read-modify-write without verified concurrency semantics, or success assertion for an uncertain remote outcome. A caller may explicitly repeat an operation as a new request.
+
+## 6. Administrative authentication and lifecycle
+
+Admin HTTP requires a Keycloak-accepted Authorization bearer or a specifically supported sender-constrained proof; token acquisition does not itself confer realm/client/organization admin rights. Only actual user/service-account roles, client scopes and fine-grained permissions evaluated by Keycloak authorize a request. The effective issuing realm, target realm, principal and client are different identities.
+
+Supported selections when actually enabled by server and client:
+
+| --auth-mode | User interaction / authority preconditions |
+|---|---|
+| bearer | Pre-existing Keycloak-accepted token from --token-file; no implicit refresh without a separate refresh context |
+| client-credentials | Enabled confidential client service account; selected allowed confidential client authentication; no assumption that refresh token is issued |
+| authorization-code | Human browser login with registered redirect, state and PKCE S256, issuer/nonce checks where applicable; no password passed via CLI |
+| device | Initiate trusted device endpoint and show verification URI/user code on the local terminal, honor polling interval/expiry/slow_down |
+| password | Explicitly selected server-enabled Direct Access Grant; password from a protected remote file; **never** an automatic fallback |
+| ciba | Enabled confidential client and supported CIBA poll/authentication policy, honor auth_req_id and expiration |
+| jwt-bearer | JWT Authorization Grant with configured trusted IdP/client and protected assertion; not direct acceptance of an arbitrary external JWT as admin bearer |
+| token-exchange | Standard permitted token exchange with subject token, client policy and actual admin authority, no privilege gain |
+| token-exchange-legacy | Explicitly selected preview/legacy provider only when configured and supported; never a hidden fallback |
+
+Client authentication is independently selected from none (only public-capable flows), client-secret-basic, client-secret-post, private-key-jwt, client-secret-jwt, federated-jwt, tls-client-auth, self-signed-tls-client-auth or another server-registered authenticator verified for that version. Different grants cannot be freely combined with every authenticator. Client-specific prerequisites, server policies and disabled/preview features are genuine unsupported/denied results, not reasons to weaken authentication. User login factors (OTP, WebAuthn, Kerberos, LDAP, SAML, X.509 login) belong to configured Keycloak authentication flows and are not invented additional OAuth grant names. DPoP/mTLS bound-token proof and other policy-specific requirements must be met for subsequent Admin REST requests; an ordinary replayed bearer string is not universally sufficient.
+
+Auth operations:
+
+    rsudo keycloak auth acquire --auth-mode MODE ... [--token-store REMOTE-PATH]
+    rsudo keycloak auth refresh --token-file REMOTE-PATH ... 
+    rsudo keycloak auth revoke --token-file REMOTE-PATH ...
+    rsudo keycloak auth status --token-file REMOTE-PATH ...
+
+Acquire/refresh write only to a protected remote token store when explicitly selected; never print access/refresh tokens as ordinary output. No token store is created implicitly. Refresh is available only when the selected previous grant supplied a valid refresh token; rotation atomically replaces the stored token record. Revoke calls the discovered/authorized endpoint and reports the outcome without pretending every distributed validation cache already converged. Status reports nonsecret metadata/expiry and, only with the permitted client authority, actual introspection state; locally parsing a JWT is not server introspection. Lifecycle inputs for offline tokens, assertion refresh and device/CIBA polling are bounded by real server policy and protocol intervals. Interactive cancellation/expiry is a distinguishable failure, not an empty token.
+
+## 7. Short-operand administrator operations
+
+The specialized public group functions accept an action followed by ordinary domain operands and shared options from section 3. This is a **typed convenience layer** over the verified general request contract, never an alternate raw HTTP/SSH implementation. All ordinary operations work without a user-written JSON file; advanced or uncommon resource payloads remain accessible through request --body-stdin. No specialized command may assume that a server method not in the selected release inventory exists.
+
+| Group | Initial operator actions and domain identifiers |
+|---|---|
+| realm | list; get REALM; create REALM; update REALM --set FIELD=VALUE; delete REALM |
+| client | list REALM; get REALM CLIENT-ID; create REALM CLIENT-ID; update REALM CLIENT-ID --set FIELD=VALUE; delete REALM CLIENT-ID |
+| user | list REALM; get REALM USERNAME-OR-ID; create REALM USERNAME; update REALM USERNAME-OR-ID --set FIELD=VALUE; delete REALM USERNAME-OR-ID |
+| group | list REALM [--parent GROUP-PATH]; get REALM GROUP-PATH-OR-ID; create REALM NAME [--parent GROUP-PATH]; update REALM GROUP-PATH-OR-ID --set FIELD=VALUE; delete REALM GROUP-PATH-OR-ID |
+| role | list REALM [--client CLIENT-ID]; get REALM ROLE [--client CLIENT-ID]; create REALM ROLE [--client CLIENT-ID]; delete REALM ROLE [--client CLIENT-ID]; grant-user REALM ROLE USERNAME-OR-ID [--client CLIENT-ID]; revoke-user REALM ROLE USERNAME-OR-ID [--client CLIENT-ID]; grant-group/revoke-group REALM ROLE GROUP-PATH-OR-ID [--client CLIENT-ID] |
+| authorization | list REALM CLIENT-ID KIND; get REALM CLIENT-ID KIND IDENTIFIER; for complex policy/resource/scope/permission create/update/evaluate, use request with exact K01 typed payload unless the specialized action has a separately verified short operand contract |
+
+The general --target-realm option does not override an explicitly supplied specialized REALM operand; mismatches are rejected. A real clientId, username, role name, group path and organization name are distinct from internal UUIDs. Conveniences perform exact, permission-checked resolution where the server requires IDs: zero matches = not found, multiple matches = ambiguous, and unverified fuzzy search must not silently choose one. Realm names are not client IDs. Input strings may contain spaces, Unicode and punctuation supported by Keycloak; encode them as data.
+
+For create with only a required domain identity, construct the smallest server-supported representation without guessing credentials, redirect URIs, OIDC security flags or permissive policies. Optional domain flags may add explicit safe fields. An update --set is allowed only for a verified per-release field update that preserves unrelated state or uses an appropriate dedicated server operation. Do not implement a blind read-modify-PUT and claim lost-update protection if server offers no atomic conditional write. If safe field-level update cannot be verified, report unsupported and instruct the caller to use an explicit full JSON representation through request, with documented concurrency limitations. A delete explicitly names the target; never select by an ambiguous search or silently cascade beyond actual server semantics.
+
+## 8. Version, capability and evidence reporting
+
+Version and capabilities functions produce JSON on stdout, never an unqualified claim of compatibility. Version evidence is tagged observed (from a trustworthy actual server interface), operator-pinned, or unknown; an HTTP 403 from /admin/serverinfo is not a license to borrow master privileges or guess a version. Operator pins are useful for endpoint selection but not live observation. Both functions must be callable without superadmin merely to report that version/feature evidence is inaccessible, as distinct from a successful verified release.
+
+Capabilities queries report method, path, selected release, documented-vs-runtime evidence (documented, actually verified, absent from version inventory, preview/disabled, unknown), authorization constraints when known and the source reference. A 26.7.3 declaration unchanged in 26.8.1 does not prove behavior in intermediate or later releases. A method absent from one selected source is not synthesized from nearby CRUD endpoints. Unsupported, unknown, denied and not-observed are different states. K01's general v1 OpenAPI inventory does not implicitly authorize an Admin API v2 or custom extension surface.
+
+For a request whose selected release or method availability is not established, default to a precise unsupported/unverified result; an operator may explicitly select --version-pin and --accept-unverified-version only to request an **identified, documented** method with no silent fallback. This opt-in is not certification, cannot override detected contradictory runtime identity or create a new method/path, and cannot override TLS/authorization failure. Mutating operations remain blocked if endpoint/server identity or their method semantics are unknown in a way that could affect safety.
+
+## 9. Successful output, errors, status and diagnostics
+
+The public request success stream is exactly the response body; specialized list/get results are JSON shaped like the upstream operation, not an invented flattening. Informational version/capabilities/auth status returns structured nonsecret JSON. Diagnostics use stderr with branch-specific identities and safe context; never log secrets, whole HTTP headers, credentials, raw response bodies, full process argument vectors or sensitive query values. K04 must preserve distinction between remote process/sudo status and actual Keycloak HTTP status.
+
+New functions return 0 on verified success and the following public exit classes (not the existing rsudo parser/legacy function statuses):
+
+| Exit | Public failure class |
+|---|---|
+| 64 | invalid invocation/typed input |
+| 65 | untrusted or invalid server/endpoint selection |
+| 66 | ambiguous server/identity selection |
+| 67 | token issuer/target binding mismatch |
+| 68 | unavailable/unverified/unsupported release |
+| 69 | unsupported Admin method/path/media/capability |
+| 70 | missing, unreadable or unsafe credential source |
+| 71 | client authentication rejected (including invalid_client) |
+| 72 | grant rejected/invalid_grant/invalid_scope |
+| 73 | disabled/unsupported auth grant or client policy |
+| 74 | user cancelled or interactive flow expired |
+| 75 | TLS verification or client certificate failure |
+| 76 | DNS/connect/remote HTTP transport failure |
+| 77 | timeout |
+| 78 | HTTP 400 / malformed request rejected by Keycloak |
+| 79 | HTTP 401 / invalid or expired access token |
+| 80 | HTTP 403 / authenticated but forbidden |
+| 81 | HTTP 404 / absent resource, disabled API or filtered route (do not guess cause) |
+| 82 | HTTP 409 / conflict |
+| 83 | HTTP 429 / throttling |
+| 84 | other HTTP 4xx |
+| 85 | HTTP 5xx |
+| 86 | malformed/unexpected protocol response |
+| 87 | insecure/unavailable requested output sink |
+| 88 | mutation outcome indeterminate/partial completion |
+| 89 | missing remote/client prerequisite |
+| 90 | other internal failure |
+
+These are externally classified outcomes at the public boundary, not permission for distinct internal handled failure branches to collapse into a generic diagnostic. Allocate distinct local branch statuses and diagnostic identities under DIAGNOSTICS.md; translate only at the intentionally documented public category boundary. OAuth JSON error names and safely available HTTP status are separate diagnostic fields, not a substitute for the exit class. Do not print raw error responses to stdout as if successful JSON. A 204 success must be differentiated from empty list and 404 by exit result/optional metadata. A 401 may warrant an explicitly selected reauthentication path; a 403 must not cause an elevation/fallback attempt. Timeouts after a submitted write may require status 88 and operator reconciliation rather than automatic retry.
+
+## 10. Security, operability and implementation acceptance
+
+The primary ordinary path is: select a trusted server (explicitly or by provable unique discovery), choose an enabled client/auth method, perform authenticated realm/client/user/group/role administration with few operands; for complex operations use request with JSON on stdin. Neither rsudo SSH credentials nor an admin console browser session are assumed to be an OAuth client secret or a Keycloak admin bearer token.
+
+Secret channels and data channels remain distinct from shell source and command argv. Remote credential files and token stores require owner/permission/symlink checks, failure cleanup and no concurrent credential overwrite; protected transient material must not be left in predictable or world-readable paths. HTTP and SSH hostname trust, CA management and client mTLS key use are separate. No automatic unsafe secret echo, eval interpolation, redirect reuse, cross-origin bearer forwarding, tracing of protected data, stale refresh-token reuse or transparent legacy fallback is permitted. Unknown server privilege, feature, realm, version or endpoint identity fails closed with an actionable nonsecret diagnostic.
+
+K04 must implement authenticated transport and the offered acquisition mechanisms against eligible real isolated servers with no secret disclosures; K05 must cover each documented v1 method family, version/path/query/body semantics, non-JSON responses and failures; K06 must prove the domain conveniences and ID resolution through the real rsudo entrypoint; K08 must verify composed authentication, permission/FGAP and end-to-end resource scenarios on 26.7.3 and at least one later release. Use actual 26.7.3/26.8.1 and relevant configured clients; a source matrix, fixture, one-host runner or test double is not live server certification.
+
+This K03 specification is itself a forward implementation contract only. Until each next unit modifies product source, its operational manual and permanent tests within one authorized work unit, the current runtime implements only the existing legacy forwarding API. Do not advertise these new operations as executable today.
