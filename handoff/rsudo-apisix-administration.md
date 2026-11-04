@@ -9,12 +9,12 @@ Replace the incomplete existing rsudo APISIX administration module with a safe, 
 
 ## Current repository revisions
 
-- rumiai-dev: 7b0202d402491d7ee62eb592822ae15f3bc25c29 (before final CI evidence checkpoint)
-- rumiai-os: d228cf3236337976590f10c31d3f4a32abbe106b (mode and configured-only inspect, unchanged in this work unit)
-- rumiai-tests: 5dda91b2751b73f8f916dec790e77e306c5c13e7 (real parser matrix for APISIX 3.16 and 3.19)
-- m-os: 31693e814f682690adfd48185da822f7f5007f9e (not part of this work unit)
+- rumiai-dev: bcbdb61757584a403e2e6325128c26a76c2c2ee9 (before this checkpoint)
+- rumiai-os: 887f854178ff5a3eedf831f7341ebb7a3d1406b1 (read-only APISIX runtime evidence; unrelated concurrent commits preserved)
+- rumiai-tests: c2f7b9e47108da1aa9c33e5463a06e9fb735c191 (permanent missing-pidfile boundary test)
+- m-os: 31693e814f682690adfd48185da822f7f5007f9e (not involved)
 
-Fresh remote HEAD checks remain mandatory before each write.
+Fresh HEAD checks remain mandatory before each further RumiAI action.
 
 ## Applicable canonical sources
 
@@ -183,6 +183,13 @@ This is a resumable task implementation plan and a set of provisional technical 
 
 ## Completed
 
+- **Current checkpoint 2026-11-04 / Phase C partial:** introduced `rsudo apisix runtime <absolute-remote-apisix-home>` into the current APISIX library (`rumiai-os@d28a0986`), with matching operational manual (`rumiai-os@69feea0f`). This read-only operation checks a generated `conf/nginx.conf`, APISIX's standard `logs/nginx.pid`, and the visible nginx/OpenResty master `-p/-c` invocation through remote `ps`. It emits explicitly limited process evidence, never a verified source-config identity, health claim or mutation permission. Missing pidfile yields `pidfile-missing` (not `stopped`); malformed/mismatched evidence fails non-zero. Does not print process argv.
+- **Canonical specification (`rumiai-dev@bcbdb617`):** extended `specifications/rumiai-os/RSUDO-APISIX.md` for `runtime`, while preserving the already-defined `mode` and `inspect` interfaces and the configured-versus-live boundary.
+- **Test (`rumiai-tests@c2f7b9e`):** extended executable `tests/rumiai-os/rsudo/apisix-mode.test` through the real `m` entrypoint with a missing-PID read-only observation (SSH/sudo replaced at boundary). The matched master-process branch has **not** been exercised by a real APISIX instance. No gateway is started by this test.
+- **Scoped validation run 41818917877:** Ubuntu 26.04 ARM64 job completed with `legacy-modules.test`, `apisix-mode.test`, `apisix-parser-live.test` all PASS and task scope `VALIDATED` at frozen `rumiai-os@08e659858046c6e89610cddaf758b0c36dd2bb9f` / `rumiai-tests@c2f7b9e47108da1aa9c33e5463a06e9fb735c191`. The frozen product includes the new runtime function. Latest product HEAD adds only unrelated web-analyze changes to that frozen revision; APISIX source/manual unchanged. macOS job queued at last inspection: no macOS result claimed.
+- **Consistency gate:** read back current APISIX source/manual, new canonical spec, test, and focused GitHub Actions logs; compared work-unit diff across three repositories. Current `README.md` and `RULES.md` received unrelated concurrent explicit-`devplan` additions, re-read during reconciliation; plain `procedi` is not an invocation of that opt-in mode. No APISIX/Keycloak settings, credentials or running instances were modified.
+
+
 - **Continuation 2026-11-04:** retrieved exact GitHub Actions job logs: Ubuntu ARM64 validated the previous scoped legacy/mode test run against `d228cf32`; added a new real-APISIX-parser test and fixed-digest Docker provisioning to the focused Actions workflow, then verified the APISIX 3.19.0 test PASSED in run 41816598717.
 - **Comparative test checkpoint:** extended real parser execution to APISIX 3.16.0 and 3.19.0 with immutable multiarch digests. Run 41817022586 Ubuntu ARM64 PASS for three tests and scope VALIDATED against `rumiai-os@d228cf32` / `rumiai-tests@5dda91b2`. macOS still queued; this is parser validation, not a real gateway or SSH/sudo validation. No product code or APISIX service state was modified.
 
@@ -208,16 +215,16 @@ This is a resumable task implementation plan and a set of provisional technical 
 
 ## Current state
 
-The twelve-phase plan remains active. Phase A now has verified real-`m` shell boundary and actual installed APISIX 3.16.0 **and** 3.19.0 LuaJIT/YAML/default classification on Ubuntu ARM64, with three scoped PASS tests and scope VALIDATED in run 41817022586. macOS remains queued, so no cross-host validation is claimed. The current APISIX module still exposes read-only `mode` and configured-only `inspect`; 35 APISIX and 16 Keycloak original public functions retain legacy forwarding. No new authenticated API read, actual running-process identity, CRUD routing or mutation is implemented.
+Work units A/B/C remain active. The read-only configured-mode classifier `mode` has real installed-parser tests for APISIX 3.16.0 and 3.19.0 on Ubuntu ARM64; `inspect` states that this is disk-only evidence. The new `runtime` function records a *separate* process/PID observation for one explicitly identified installation, without asserting that the running gateway loaded the selected source configuration. It is not a full live-instance resolver. Traditional/standalone resource GET/list, safe authenticated transport, mutating backend routing and modern Keycloak are not yet implemented.
 
-`rumiai-os@d228cf3236337976590f10c31d3f4a32abbe106b` remains unchanged; `rumiai-tests@5dda91b2751b73f8f916dec790e77e306c5c13e7` contains the comparative test. The real-parser evidence does **not** validate SSH/sudo, live process identity, remote site layout, active `-c` selection, installed Keycloak or safe write readiness.
+At frozen product `rumiai-os@08e659858046c6e89610cddaf758b0c36dd2bb9f` and test suite `rumiai-tests@c2f7b9e47108da1aa9c33e5463a06e9fb735c191`, Ubuntu ARM64 returned three focused PASS tests and task-scope VALIDATED in run 41818917877. This only proves scoped shell/parser/boundary behavior. No real APISIX master match, SSH/sudo credentials, profile `-c`, network Admin API or backend mutation was validated. macOS continues queued/unverified.
 
 ## Next action
 
-1. Inspect the pending macOS job of comparative run 41817022586. Its Docker-based parser case is expected to SKIP when Docker is absent, while the real-`m` boundary/legacy cases must still PASS. If macOS remains unavailable, retain that limitation explicitly; Ubuntu ARM64 has validated all three tests.
-2. Finish Work-unit A active-instance/selected-config audit for custom `-c`, `APISIX_PROFILE`, multiple installs and container launches; no mutating path may trust disk-only configuration.
-3. Continue Work-unit B resource/method/version capability table from actual 3.16/3.19 endpoints and Work-unit C running-instance identity; then implement secret-safe D transport and read-only E operations. Keep G/H full snapshot concurrency unresolved until proved.
-
+1. Execute a **real APISIX gateway process** test with a known installation and verify the `runtime` master PID/evidence branch (including PID reuse, stale pidfile and wrong-prefix cases), preferably with isolated Docker or a disposable local target. Do not classify mutable `ps` titles alone as authoritative runtime identity. Keep automated external-boundary coverage honest.
+2. Correlate a selected running process with its *actual source* config (`-c`, `APISIX_PROFILE`, service manager, container namespace), plus effective provider/version, using APISIX-supported evidence. If correlation cannot be established, maintain `runtime_identity=...unverified` and refuse new backend mutations.
+3. Continue Work-unit B with a concrete per-resource/method/version matrix against APISIX 3.16.0 and 3.19.0, starting with route/service/upstream GET and standalone `/apisix/admin/configs` GET. Then Work-unit D secret-safe transport and Work-unit E generic read-only list/get, with tests and current manual/spec updates.
+4. Retrieve the still-queued macOS result of run 41818917877 and reconcile any real regression. Do not claim cross-host validation without that result.
 
 ## Blockers / open questions
 
