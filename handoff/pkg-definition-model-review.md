@@ -381,7 +381,14 @@ escaping or cyclic links. Resource export testing is out of scope.
 
 ## Current state
 
-**V2 consumer-launch environment checkpoint — 2026-11-04 (latest):**
+**V2 generic/osarch provider global environment checkpoint — 2026-11-04 (latest):**
+- At the start of this increment, verified all involved remote branch HEADs and reread current `rumiai-dev` rules, specifications, test contracts and this handoff. The previously queued `pkg-catalog` generic v2 workflow **`41787604558` completed 10/10 PASS**, including both macOS jobs; Node.js `41787611004` 2/2 PASS and Ollama `41787617458` 3/3 PASS at prior exact m-os `71b33c6c`. This closes that checkpoint's macOS queue without assigning those successes to newer revisions.
+- New `m-os/pkg-schema-v2@151cc99069e213d05469bce3f50665c02501910c` adds only `.github/scripts/pkg-v2-global-environment-test.sh`; `pkg-catalog/pkg-schema-v2@bb640f68b2ef48b98703327006beddb451dfc05e` adds the `v2-global-environment` Ubuntu/macOS CI matrix job and pins all six jobs to that exact m-os revision. Product implementation and operational manuals remain unchanged.
+- The new test copies the existing v2 Java facility contract **as test input** and extends only that copy with typed `CI_SHARED`, `CI_CLASS` and `PATH` members. It exercises real `pkg_facility_provider_validate`, `pkg_integrate` for two same-package/version concretes (one generic and one for the live host's `m_OSARCH`), public `pkg provider default`, actual global snapshot materialization for all six supported osarch values and real `m` bootstrap/command execution on the runner. It checks host-specific preference, generic fallback on other osarch classes, common versus osarch-delta assignments, explicit host-only pin without other-class fallback, and unset cleanup. No real Java upstream download is implied; this is integration/selector/environment **with a synthetic external provider payload**, not physical six-host execution.
+- Early trial runs isolated **fixture setup errors** before reaching the target property: missing explicit `osarch` library source, copied provider range outside required catalog `pkg/` tree, missing copied Java `env/PATH` contract marker, and uncreated real package store. Trace was removed once localized. The final Ubuntu `v2-global-environment` job in workflow `41790160639` **PASS**, and its other five Ubuntu regression/fixture jobs **PASS** at the last check (**6/12 PASS**, all six macOS jobs still queued). Do **not** claim complete current-revision macOS PASS until its jobs complete.
+- Remaining scope: full current-revision macOS matrix completion, multiple independent facility-default collision/ordering cases (this increment covers generic-versus-specific classes of one facility), macOS launchd supervision and stable physical reference hosts; no v2 merge to `m-os/master` or `pkg-catalog/main`.
+
+**V2 consumer-launch environment checkpoint — 2026-11-04 (prior):**
 - Current inspected branch HEADs: `m-os/pkg-schema-v2@71b33c6c811a1a7b4840dba0d2a3f86aa054ef3a`, `pkg-catalog/pkg-schema-v2@cc6be43aca57c05c840ec960cfdd350be76633cd`; mainline `m-os/master@ff55fc9f`, `pkg-catalog/main@35b230d4` were not modified, and no v2 merge occurred.
 - Verified a concrete v2 mismatch: `_pkg_integration_v2_validate_definition` rejected `dependency` even though the existing package dependency contract and v2 launcher consumed dependency metadata, and `pkg_integrate` already materialized it. Corrected the v2 envelope to reuse the **existing** `_pkg_dependency_file_validate` at `m-os@a4fc43e1`; no new dependency grammar, selector or projection interpreter introduced. Corrected outdated `res/sys/manual/pkg-launch.lib.sh` claim that facility `PATH` is invalid at `m-os@7763847e`; current contract permits ordered root/root-path PATH contributions.
 - `m-os@71b33c6c` extends the existing `.github/scripts/pkg-v2-facility-command-test.sh` fixture by integrating a v2 consumer with declared `java =21` dependency, real `link/bin → cmd → launcher → upstream` execution, package `env`, real provider `facility-cmd` and `facility-env`, final user package `.m/env`, and explicit consumer provider binding after clearing the independent global facility default. The upstream payload asserts actual JAVA_HOME, PATH precedence, selected `javac`, managed HOME and selected ordinary variable at exec. It succeeded in all three variants in the Ubuntu job logs. The Java provider is an integrated **fixture using a temporary copied catalog facility contract**, not a real Java provider downloaded from the catalog; the consumer's integration/launch code is real.
@@ -528,22 +535,21 @@ this Current state supersedes older stale 'no v2 PASS' claims.
 
 ## Next action
 
-1. Inspect the last two macOS jobs in `pkg-catalog` general v2 workflow
-   `41787604558` (`v2-facility-commands` and `v2-service-entry`);
-   distinguish an actual product failure from a runner/fixture failure,
-   and reconcile forward if necessary. The existing Node.js and Ollama
-   exact-revision workflows are already PASS.
-2. Extend current global provider environment validation to osarch-specific
-   versus osarch-independent contributions and mixed selectors. Preserve
-   technical command roots and deterministic provider PATH/ordinary
-   variable semantics; do not add a second interpreter to `context`.
-3. Validate macOS launchd user/system on an eligible controlled host and
-   Ubuntu ARM64 on the physical reference host when available.
+1. Inspect all remaining macOS jobs in exact-revision catalog workflow
+   `41790160639` (m-os `151cc990`). Record individual outcomes,
+   investigate any actual failing property, and reconcile forward before
+   reporting multi-host provider-class coverage.
+2. Verify remaining cross-facility global default precedence when two
+   independent facilities contribute overlapping ordinary variables
+   and PATH segments, without changing current deterministic facility
+   order or introducing a context-specific environment interpreter.
+3. Validate macOS launchd user/system with a controlled suitable host and
+   Ubuntu ARM64 on the reference host when available.
 4. Audit the remaining v2 wrapper/launcher semantics, mixed v1/v2
-   installed-concrete states and manuals, then promote only settled
-   complete v2 semantics and coordinate a forward-only merge after
-   acceptance. Resource export stays deferred to v3+; metadata
-   inheritance remains an open choice.
+   installed-concrete states, manuals and integration coverage; promote
+   only complete settled v2 semantics and merge forward after acceptance.
+   Resource export stays deferred to v3+; metadata inheritance remains
+   a separate open choice.
 
 ## Blockers / open questions
 
