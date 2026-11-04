@@ -9,10 +9,10 @@ Evolve the historically field-used `m-boot` into a standalone, reusable multiboo
 
 ## Current repository revisions
 
-- `massimilianonardi-ai/Ventoy` branch `m-boot-secondary-uefi`: `8ebc9a7adef342e803b70ab4c5a2b6926ea60bfa` (PoC 078 synthetic firmware BlockIo and EFI ISO9660 file-read CI `41819449870` SUCCESS; no real installer boot).
+- `massimilianonardi-ai/Ventoy` branch `m-boot-secondary-uefi`: `ceff79ca92d246928f86362a569f86c6d2ac130f` (PoCs 080 and 081 synthetic original EFI ISO loader → Linux full physical media remount tested in CI; product mode untouched).
 - `massimilianonardi-ai/Ventoy` master: `74cff34240dca6991b79c6656770670da7b0c39e` (unmodified fork baseline)
 - `massimilianonardi-ai/m-boot` main: `c06cd35a73b7e420c3a06dc51537c028ffa619d0` (Kali live+forensic menu and GRUB CI; Grml grub_memcpy note; runtime Kali validation pending)
-- `massimilianonardi-ai/rumiai-dev-PoCs` main: `457c95b06b56c3a4636ccafa0fd39beeaa6cb22c` (PoC 079 UEFI boot CI 41825303780 SUCCESS at pinned revision `759a430e93ce5517b8409c7320d986bfc73689cc`; concurrent editor-PoC changes preserved).
+- `massimilianonardi-ai/rumiai-dev-PoCs` main: `6dbafd60ce5a0c946335a36a097bee8ff9af75f7` (PoC 080 run `41838046494` PASS, PoC 081 run `41839593585` PASS, both pinned to their distinct source revisions; concurrent changes preserved).
 - `massimilianonardi-ai/rumiai-dev` main: check its live HEAD at preflight; a self-referential revision in an active handoff is not authoritative.
 
 ## Applicable canonical sources
