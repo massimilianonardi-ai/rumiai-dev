@@ -87,17 +87,35 @@ mutation_readiness=not-established
 
 Unexpected or unavailable process evidence fails non-zero. The operation never emits the process command line itself, because other process arguments might be sensitive. A PID file and process title can be stale or misleading and do **not** prove which source `config.yaml`, custom `-c`, profile, container namespace, or effective gateway settings the active process loaded. The method is a partial process observation, not a confirmed APISIX runtime identity, a healthy-server result, or permission to write configuration. An installation that exposes neither POSIX `ps` nor a readable Linux procfs command line, or is started with unrecognized OpenResty arguments, returns a distinct failure rather than guessing a matching instance. Even matched arguments do not establish which source APISIX configuration is active.
 
+## Explicit read-only Admin API transport (advanced, interim)
+
+The public shell command
+
+```sh
+rsudo apisix admin-read <resource> <absolute-remote-credential-header-file> [port]
+```
+
+and direct function `rsudo_mod_apisix_admin_read` perform one authorized read-only HTTP GET from the selected remote system, through the existing `rsudo` SSH/sudo execution. This is an **explicit low-level transport**, not the normal automatic provider-routed `list`/`get` interface.
+
+The permitted `resource` values are `configs`, `routes`, `services`, and `upstreams`. The target is *only* `http://127.0.0.1:<port>/apisix/admin/<resource>` within the remote host, with port 9180 used when unspecified. Resource names and ports are validated before remote execution and again on the target. The operation cannot follow redirects or contact a proxy; ordinary HTTP response content is forwarded on stdout unchanged for successful requests. Curl's exit status is propagated for transport and HTTP failures (including curl's code 22 for `--fail` HTTP error responses).
+
+The caller deliberately supplies the pathname of a **pre-existing operator-provisioned remote credential file**, containing exactly one newline-terminated `X-API-KEY: <non-whitespace-secret>` header. This file must be a readable regular file, not a symlink, and must have no group/other permission bits. The remote shell checks the single-header byte count and format before passing only the **file path**, using curl's supported `--header @file` syntax (curl 7.55.0 or later). Credential content is not interpolated into shell source or carried as an argument or diagnostic. This implementation does not provision or rotate credentials and does not require a locally authored JSON file.
+
+This provisional operation does **not** prove the caller selected the running APISIX instance, authenticate the host identity beyond the operator-selected remote system and loopback port, discover active deployment mode, or provide an automatic abstraction over traditional and standalone resource paths. The caller is responsible for choosing an authorized target and a protected credential file. In standalone API-driven mode `configs` is the full snapshot resource, while ordinary per-resource `routes`/`services`/`upstreams` endpoints are not exposed. This operation cannot authorize changes and is not evidence that the mutation safety gate has passed.
+
+Invalid local arguments and remote preconditions produce distinct non-zero statuses in the range 44–51 with non-sensitive diagnostics. An unavailable/unsupported remote `curl` is a prerequisite failure, not a reason to fall back to legacy behavior.
+
 ## Current limits and security boundary
 
 The current read-only resolvers do not prove which `-c`/profile, container, process or namespace is actively in use. It cannot be used by a new mutating backend router until live identity and safe update conditions are independently verified.
 
 Mode inspection does not emit API keys or the selected configuration contents. Credentials and target data remain subject to `RSUDO.md` and `DIAGNOSTICS.md`. The legacy APISIX functions retain previously documented unsafe JSON/request behavior, and their existence is not evidence that modern secure mutation is complete.
 
-The full traditional Admin API, standalone file-driven mutation, standalone API-driven snapshot mutation, generic resource API, simplified shell recipes and new Keycloak functionality are **not yet implemented** by the current safe backend. They are pending development, not current product guarantees.
+The complete mode-routed Admin API, standalone file-driven mutation, standalone API-driven snapshot mutation, generic resource API, simple `list`/`get` conveniences, simplified shell recipes and new Keycloak functionality are **not yet implemented** by the current safe backend. The explicit low-level `admin-read` endpoint above does not imply that they exist. They are pending development, not current product guarantees.
 
 ## Required mechanical protection
 
-The permanent tests `rumiai-tests/tests/rumiai-os/rsudo/legacy-modules.test` and `rumiai-tests/tests/rumiai-os/rsudo/apisix-mode.test` exercise module presence, loading and read-only selection/inspection/runtime observation behavior through the real `m` entrypoint up to the modeled external dependency boundary. A fixture boundary result does not prove live APISIX identity or production behavior. Real instance validation is separate and required before advertising corresponding backend support.
+The permanent tests `rumiai-tests/tests/rumiai-os/rsudo/legacy-modules.test`, `rumiai-tests/tests/rumiai-os/rsudo/apisix-mode.test` and `rumiai-tests/tests/rumiai-os/rsudo/apisix-admin-transport.test` exercise module loading, read-only selection/inspection/runtime observation and the credential-file HTTP transport through the real `m` entrypoint, up to the explicitly substituted SSH/sudo boundary. A fixture boundary result does not prove live APISIX identity or production behavior. Real instance validation is separate and required before advertising corresponding backend support.
 
 ## Invariants
 
