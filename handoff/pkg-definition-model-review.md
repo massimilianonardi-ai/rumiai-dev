@@ -393,7 +393,12 @@ escaping or cyclic links. Resource export testing is out of scope.
 
 ## Current state
 
-**Targeted GitHub Actions re-executions after upstream HTTP 403 — 2026-11-04 (latest):**
+**GitHub Actions pending macOS validation recheck — 2026-11-04 (latest):**
+- Completed the mandatory fresh HEAD/specification/handoff/test preflight. At the new check, exact jq macOS v1→v2 rerun `41829939821` attempt `2`, job `126763358351`, is still `queued`; it has no new execution result or log. Do not duplicate this already-accepted rerun or classify it PASS/FAIL.
+- Exact current-runtime permanent offline suite `41847205269` remains attempt `1`: Ubuntu job `126633726885` PASS, macOS job `126633727371` `cancelled`. A targeted rerun of the cancelled job was attempted, but the connected action was blocked and did not return success; subsequent GitHub run/job inspection still shows attempt `1` with the same cancelled macOS job. No retry execution may be claimed. Its concurrency policy cancels superseded runs of the same offline workflow; do not treat cancellation as product-test failure.
+- Prior real Node.js v1→v2 Ubuntu and macOS PASS from `41846697220` attempt `2` remains intact. No runtime/catalog/test/mainline modification or physical validation occurred in this check.
+
+**Targeted GitHub Actions re-executions after upstream HTTP 403 — 2026-11-04 (prior):**
 - On user request after several hours, executed two GitHub Actions API job rerun operations against the exact previously failed macOS jobs. Both requests returned `success=true`: jq job `126574203579` in run [41829939821](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/41829939821), and Node.js job `126631953172` in run [41846697220](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/41846697220). GitHub created attempt `2` for each run. Despite individually targeted rerun requests, GitHub also listed fresh jobs for other matrix entries; do not claim only the failed jobs physically executed.
 - **Node.js migration now PASS on both GitHub-hosted Ubuntu and macOS:** run `41846697220` attempt `2` completed SUCCESS. New macOS job `126763147857` completed PASS and full retrieved log shows real v1 Node.js removal with preserved managed HOME, live v2 Node.js HTTP index through public `pkg depend`, exact v2 install and provider/context/launcher assertions, v2 exact uninstall/reinstall, and successful rereading of both v1→v2 and v2→v2 HOME sentinels; terminal PASS marker at 2026-11-04T18:08:14Z. Pinned catalog `pkg-catalog@1a6190c29ba48bdef60d69022f6312c2e32122ae`, autonomous runtime `m-os@8fb1db493a3265f77bb36ac604a2a1a495a4d448`; this is hosted CI evidence, not a stable physical-host PASS.
 - Older broad jq v1→v2 migration run `41829939821` attempt `2` was still queued at the latest check. The new macOS jq job `126763358351` is queued, without a result or log. Other scheduled matrix entries already reported 12 PASS, while macOS v1 regression job was cancelled. The older broad workflow pins `pkg-catalog@25ca1daca3095f71614af1e7e9201fb97dfb6996` and `m-os@28d9ece912fef151e21a0bd0559904614c2a60e2`; keep this separate from newer catalog/current-runtime validations.
@@ -649,7 +654,7 @@ this Current state supersedes older stale 'no v2 PASS' claims.
 ## Next action
 
 1. Recheck exact jq macOS rerun job `126763358351` in GitHub Actions run `41829939821` attempt `2`; retrieve the real completion log and classify its outcome. The rerun is still queued at this checkpoint and is not PASS. Do not start another duplicate retry.
-2. Recheck and separately classify current-runtime offline macOS run `41847205269` (previously cancelled); do not treat that status as a failure of product behavior. Keep its pinned runtime/suite boundary distinct from the jq and Node.js runs.
+2. Current-runtime offline macOS run `41847205269` remains cancelled at attempt `1`; its targeted rerun did not receive a successful action response and was not scheduled. When GitHub Actions write access permits, retry that exact cancelled job and retrieve the `rumiai-test` results; keep revisions distinct from the jq and Node.js runs.
 3. Continue the independently owned `pkg-dependency-resolution` package-model/invalid-operand realignment, and resolve remaining Java-provider adapter and stable physical-host validation gaps before any v2 mainline promotion. Preserve the frozen v2 schema, package-store trust model, unchanged formal validation target and forward-only branch history.
 
 ## Blockers / open questions
