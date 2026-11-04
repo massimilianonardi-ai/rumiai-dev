@@ -381,7 +381,14 @@ escaping or cyclic links. Resource export testing is out of scope.
 
 ## Current state
 
-**V2 cross-facility global environment precedence checkpoint — 2026-11-04 (latest):**
+**V2 macOS jq upstream-rate-limit recovery checkpoint — 2026-11-04 (latest):**
+- User confirmed the repeated GitHub HTTP 403 is believed to arise from excessive anonymous requests and suggested staggered execution or waiting for the approximately hourly reset. Current GitHub REST documentation establishes **60 unauthenticated primary requests/hour per source IP**; a 403 itself is insufficient to establish the specific rate-limit category without `x-ratelimit-remaining`, `x-ratelimit-reset` or a secondary-limit response. Existing m GitHub adapter `_pkg_repository_github_get` uses unauthenticated `http-fetch` and the current workflow makes three attempts only four seconds apart. Earlier failed logs had HTTP 403 but did not capture authoritative rate-limit headers: exact cause remains an inference, not measured diagnosis.
+- Rather than trigger another full 12-job matrix, re-ran **only the failed macOS v1-regression job** `126448527466` after more than one hour from its last failure, using the linked GitHub Actions job rerun. Run `41792388863` **attempt 2, job `126453299092`, completed PASS**; job logs include the actual `PASS: unmodified v1 package installs and launches on upgraded m` after a real `pkg install jq@jq-1.8.2` and command execution. With the 11 previously successful jobs in attempt 1, the workflow's **latest attempt reports success**; this is not a single all-12 fresh re-execution. Exact tested revisions remain `pkg-catalog/pkg-schema-v2@e64aed2939d750b0fe261503696c228cf207b2dc` and `m-os/pkg-schema-v2@2caeb3f95f0e0281920da55a79382096208e05b8`.
+- Network-test operating decision for this active workstream: distinguish remote download failures from product regressions; do not rapidly repeat an entire matrix or use multiple four-second retries to diagnose a suspected primary limit. Where possible, inspect response rate-limit headers and wait until the reported reset (otherwise conservatively space retries) and re-run only the affected GitHub Actions job. Keep real upstream package installation tests intact; use independent no-network tests for implementation refinement. This work unit **did not change CI scheduling or runtime adapter**, because the targeted delayed rerun resolved the blocker without extra workflow activity or new commits.
+- Audited current `pkg-launch.lib.sh`, `pkg-integration.lib.sh`, the v1/v2 `context` coexistence fixture and operator manuals against current `PACKAGE-MODEL.md`: the current launcher reads the installed schema, routes a v1 command through `link/<command>` and v2 through `link/target/<command>`, then applies the same state, package/provider/user environment phases. Existing v2 jq flow covers a real v2 direct/wrapped executable and a co-installed synthetic v1 command through `context`; the isolated macOS v1 regression also confirms an independently installed real v1 jq. More complete tests for lifecycle/default transitions across mixed v1/v2 provider/consumer selection remain open. Audit did not establish a new code-vs-contract mismatch.
+- No product, fixture, canonical specification, or workflow files changed for this recovery work unit. Only this handoff changed; no mainline merge and no physical-host or macOS launchd validation claimed.
+
+**V2 cross-facility global environment precedence checkpoint — 2026-11-04 (prior):**
 - Verified remote repository HEADs and re-read the mandatory current rules/specifications, test contracts, implementation, existing workflow and this handoff before changing anything. The previously queued general v2 run `41790160639` (catalog `bb640f68` pinned to m-os `151cc990`) finished **10/12 jobs PASS**. Its macOS `v2-global-environment` failed during fixture setup due to nonportable `chmod +x --` (BSD `chmod` treated `--` as a pathname). Separately, macOS `v1-regression` failed after three upstream GitHub jq release API HTTP 403 responses. The other ten jobs, including macOS real v2 jq, passed. Neither failed job established a runtime product regression.
 - `m-os/pkg-schema-v2@2caeb3f95f0e0281920da55a79382096208e05b8` changes only `.github/scripts/pkg-v2-global-environment-test.sh`: removes the nonportable `chmod --`, checks for pre-existing fixture concretes and facility defaults before installing a destructive cleanup trap, and extends the synthetic external provider input with a second **independent `nodejs` facility**. It exercises the real v2 integration, global default mutations, snapshots, platform/generic selection and fresh bootstrap with overlapping ordinary `CI_SHARED` values and `PATH` roots. `java` precedes `nodejs` in LC_ALL=C facility order, so the later `nodejs` assignment must win and its PATH segment must precede java's; checks cover all six generated osarch snapshots, both runner-host executions, and changing the earlier java selector to a host-qualified pin while nodejs remains selected. No product/runtime code or operational manual changed.
 - `pkg-catalog/pkg-schema-v2@e64aed2939d750b0fe261503696c228cf207b2dc` pins all six matrix workflow jobs to that exact m-os revision. Workflow `41792388863` finished **11/12 PASS**: both `v2-global-environment` jobs (Ubuntu `126448527420`, macOS `126448527613`) PASS with explicit output; all v2 jq/other v2 fixture jobs and Ubuntu v1 regression PASS. The single failed job, macOS `v1-regression` `126448527466`, again received upstream jq release API HTTP 403 in all three installation attempts. This is an unresolved external fetch/CI reliability issue, **not** a 12/12 matrix PASS and not evidence of a v1 runtime regression. Earlier exact-revision real Node.js `41787611004` 2/2 and Ollama `41787617458` 3/3 PASS remain separately valid for their pinned runtime `71b33c6c`.
@@ -541,21 +548,25 @@ this Current state supersedes older stale 'no v2 PASS' claims.
 
 ## Next action
 
-1. Investigate the repeatable macOS `v1-regression` GitHub jq release
-   API HTTP 403 in runs `41790160639` and `41792388863` without
-   downgrading, bypassing or faking real v1 package installation. Separate
-   upstream request/rate-limit infrastructure from any package resolver
-   defect. A rerun is useful only if the provider endpoint is accessible;
-   do not recast an unavailable API as a product PASS.
-2. Audit remaining v2 wrapper target/launcher semantics and mixed v1/v2
-   installed-concrete and provider-selection states, applying settled
-   specifications and using real entrypoint tests. Global generic/osarch
-   and cross-facility ordering have hosted Ubuntu/macOS fixture PASS.
-3. Validate macOS launchd user/system on an eligible controlled host and
-   physical Ubuntu 26.04 ARM64 on the stable reference host when available.
-4. Promote complete stable v2 semantics only after remaining acceptance
-   coverage and coordinate a forward-only merge. Resource export stays
-   deferred to v3+ and metadata inheritance remains a separate open choice.
+1. Extend real normal-launch and lifecycle coverage for **mixed v1/v2
+   installed concretes**, including package-default changes, v1 command
+   and v2 direct/wrapped target paths, and provider binding/default
+   transitions. Reuse the current launcher/integrator; check existing
+   coverage before adding a new test. Perform focused no-network
+   development checks before a hosted multi-OS run.
+2. Preserve real GitHub-backed v1/v2 installation validation, but
+   stagger API-heavy CI execution. After an upstream HTTP 403, inspect
+   rate-limit/reset headers where available and retry only the failed
+   job after the appropriate delay; do not spin three four-second
+   retries or relabel an upstream outage as product PASS.
+3. Validate macOS launchd user/system supervision on an eligible
+   controlled account and physical Ubuntu 26.04 ARM64 on the reference
+   host when available. Hosted GitHub runners do not replace either.
+4. Audit remaining v2 wrapper/launcher and provider-selection edge
+   cases before promoting only complete settled v2 semantics into
+   canonical specifications and coordinating a forward-only merge.
+   Resources remain deferred to v3+; metadata inheritance is a
+   separate open choice.
 
 ## Blockers / open questions
 
