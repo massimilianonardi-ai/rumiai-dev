@@ -381,7 +381,16 @@ escaping or cyclic links. Resource export testing is out of scope.
 
 ## Current state
 
-**V2 mixed-schema uninstall, refusal and reintegration checkpoint — 2026-11-04 (latest):**
+**V2 permanent mixed-schema lifecycle suite checkpoint — 2026-11-04 (latest):**
+- Mandatory fresh preflight checked all involved current remote HEADs, `rumiai-dev/README.md`, `RULES.md`, `CONSISTENCY-GATE.md`, specification router, current package/state/bootstrap/test/runner/test-authoring contracts, and this active handoff. Inspected the real `m-os/pkg-schema-v2` implementation and existing permanent tests in `rumiai-tests/main`; the existing permanent `rumiai-os/pkg/{default,uninstall,state,native-launcher-reinstall}` tests already protect legacy semantics, so this increment adds **target-specific v2 coverage** rather than duplicating those normal v1 tests.
+- **Permanent tests committed** as `rumiai-tests/main@446e57294932d5add79d5d356f1d8a3a65dc8ff1`: `tests/m-os/pkg-schema-v2/mixed-default-lifecycle.test`, `mixed-provider-lifecycle.test` and the small `lib/m-os-target.lib` target-discovery helper. The two real integration/launcher fixture scenarios were transferred from m-os development scripts and run as independent executable `.test` files with canonical 0=PASS/1=FAIL/2=SKIP/3=ERROR statuses through `rumiai-test`. They require the **explicit** real autonomous `RUMIAI_TEST_M_OS_ROOT`; the provider test also requires `RUMIAI_TEST_PKG_CATALOG_ROOT` as a checked-out external facility-contract input. If no m-os target is supplied they are inapplicable and SKIP; a configured invalid target is an ERROR. These tests do not clone or fake the runtime or call GitHub Releases.
+- `pkg-catalog/pkg-schema-v2@a8ef00cf` introduced exact suite pin `rumiai-tests@446e5729` and real `m-os@ba42d7b0` with `rumiai-test --list` followed by normal selected-group execution on hosted Ubuntu/macOS. Run `41806159425` **2/2 jobs PASS**, each with both permanent tests PASS and zero FAIL/SKIP/ERROR; no external release downloads.
+- The now-duplicated `m-os/.github/scripts/pkg-v2-default-coexistence-test.sh` and `pkg-v2-mixed-provider-test.sh` were **deleted forward-only** (`m-os/pkg-schema-v2@cc589863090d5932f2d603985d6ec8dbd47ea696`). No production code was changed. `pkg-catalog/pkg-schema-v2@6cbc0effce563a06f218b43ec995a678a3553fb1` pins this new exact runtime commit; final workflow **`41806479535` 2/2 jobs PASS**, Ubuntu `126494649224` and macOS `126494649758`. Both logs show each test PASS and explicit runner summary **2 PASS, 0 FAIL, 0 SKIP, 0 ERROR**. This validates the retained permanent tests against the repository with duplicated scripts removed.
+- Formal validation distinction: current `rumiai-validate` specifically prepares **rumiai-os** product revisions; the focused `m-os` feature-branch checks here run through the genuine `rumiai-test` runner and real technical target, but **not** a formal `rumiai-validate` disposable product session. Hosted runners are not the stable physical ARM64 or real macOS launchd service hosts, and synthetic node executable payloads do not validate upstream Node.js install.
+- **Installed-link/rollback audit (source inspection only):** installed v2 `link/bin` commands are symlinks; `pkg default` checks their resolved file/executable state and the ownership of published *public* symlinks, but does not explicitly revalidate that a previously installed `link/bin` symlink still resolves only inside the concrete's `cmd` or useful `root`. The trusted launcher independently validates root containment for **wrapped** `link/target` execution, whereas a **direct** v2 symlink does not enter the launcher. Whether immutability of managed installed materialization is a sufficient post-install trust boundary or default revalidation should be strengthened needs a separate focused acceptance test and contract decision; no arbitrary executable-escaping link was actually executed in this increment, and no vulnerability/exploitability claim is established. Similarly, existing invalid-descriptor and broken-symlink tests prove **pre-mutation refusal**, not failure rollback after partial materialization. Both remain open; do not silently promote new semantics or fabricate a PASS.
+- Scope: only the new permanent test files/helper in `rumiai-tests`, deletion of duplicate m-os fixture test scripts, exact pinned catalog CI orchestration and this handoff. Current canonical specifications, m-os product code/manuals, `m-os/master`, `pkg-catalog/main`, and frozen product implementations were not edited. `v2` remains unmerged and master/v2 Node.js adapter reconciliation remains pending.
+
+**V2 mixed-schema uninstall, refusal and reintegration checkpoint — 2026-11-04 (prior):**
 - Preflight verified current remote HEADs and followed the mandatory current `README.md`, `RULES.md`, `CONSISTENCY-GATE.md`, package/state/testing specifications and active handoff before editing. Inspected the real v2-branch `pkg-uninstall`, `pkg-integration`, `pkg-state`, `pkg-provider`, the current offline mixed-schema fixtures, and their existing catalog-hosted matrix. There is **no product/runtime change** in this checkpoint.
 - `m-os/pkg-schema-v2@980401be` extends the existing mixed ordinary-package fixture with public `m pkg uninstall` of an unselected v2 concrete, local **re-`pkg_integrate`** from a fresh captured test payload, continued absence of an automatically selected default, and then removal of the current v2 concrete (the public selector and both ordinary command projections must disappear) while v1 remains independently installable/selectable. It checks `state-path user pkg <name> home` retains its user-written sentinel through both uninstall/reintegrate cycles and final legacy removal. A damaged **broken** installed link blocks a default change without losing the prior selection; an escaping `link/bin` **definition** is rejected before consuming the input root, publishing a concrete or altering the existing selected command. This does not establish rejection of *all* possible executable escaping installed links and does not exercise a partial post-mutation rollback; those are separate cases.
 - `m-os/pkg-schema-v2@b2a96632` extends the existing mixed consumer/provider fixture: public provider uninstall refuses a concrete referenced by a consumer binding and a different one referenced by the global facility default, leaving the referenced concrete and consumer execution intact. It also verifies release of these references, successful provider removal when no explicit reference remains, implicit single-provider consumer resolution, consumer v2 uninstall/reintegration with v1 default unchanged, retention of managed consumer user HOME, and clearing of the selected consumer default on uninstall. Providers' external command payloads remain synthetic and the central v2 nodejs facility contract is copied unchanged; all tested package/provider/default/launcher mechanisms are real.
@@ -565,27 +574,33 @@ this Current state supersedes older stale 'no v2 PASS' claims.
 
 ## Next action
 
-1. Reconcile representative real mixed-schema lifecycle acceptance
-   cases into the canonical permanent `rumiai-tests` suite and choose
-   appropriate isolated `rumiai-validate` scope; the current v2-branch
-   fixture scripts plus catalog-hosted workflows are integration evidence,
-   not formal suite validation.
-2. Audit adversarial installed *executable* escaping link/collision
-   semantics and specifically exercise failure after partial state/default
-   materialization to assess actual rollback rather than only preflight
-   rejection. Apply canonical rules and do not silently reinterpret v1.
-3. Exercise representative real catalog-backed v1/v2 artifact uninstall/
-   reinstall with explicit default restoration and mutable-state checks;
-   avoid repetitive anonymous GitHub Releases API calls by separating
-   offline tests and pacing release-backed jobs after the reported reset.
-4. Preserve concurrent mainline changes. Before a v2 merge, reconcile
-   current master Node.js adapter's major-filter policy with the v2
-   feature branch's prerelease policy using live tests and the
-   authoritative contract.
-5. Validate macOS launchd user/system on a controlled eligible host and
-   Ubuntu 26.04 ARM64 on the physical reference host when available.
-   Promote only settled complete v2 semantics; retain forward-only Git.
-   Resources stay deferred to v3+ and metadata inheritance stays open.
+1. Define and run a **focused adversarial observation** for an installed
+   v2 command projection redirected to an existing executable outside its
+   concrete. Distinguish immutable-package-store trust guarantees from
+   runtime/default-selection validation; if a current contract is violated,
+   implement the smallest supported fix with permanent regression and
+   command/library-manual consistency. Do not silently invent a new
+   security contract.
+2. Exercise a deterministic **post-mutation failure** of package/provider
+   default or state materialization, and observe actual selector, command
+   projection and generated-environment restoration. Current PASS covers
+   only refusal before mutation; avoid non-deterministic races or mocked
+   replacements for product transaction components.
+3. Decide the formally supported `m-os` target path in
+   `rumiai-validate` versus autonomous focused runner coverage without
+   weakening its current `rumiai-os` target contract. Current permanent
+   `rumiai-tests` v2 tests have hosted Ubuntu/macOS PASS through the real
+   runner, but not formal `rumiai-validate` PASS.
+4. Exercise representative **real upstream artifact-backed** v1/v2
+   reinstall and state migration with explicit default restoration;
+   pace real GitHub Releases tests to avoid the anonymous API limit.
+   Preserve the currently separate provider-fixture evidence.
+5. Before forward-only v2 mainline promotion, reconcile concurrent
+   m-os/master Node.js repository adapter changes with feature-branch
+   prerelease handling against current specs and live Node.js tests.
+   Physical Ubuntu ARM64 and macOS launchd user/system verification
+   remain open. Resources stay deferred to v3+; metadata inheritance
+   remains an open choice.
 
 ## Blockers / open questions
 
