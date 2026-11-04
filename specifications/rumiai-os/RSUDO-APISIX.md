@@ -1,0 +1,79 @@
+# rsudo APISIX Administration — Current Implemented Contract
+
+Status: **Current / partial implementation**
+Updated: 2026-11-04
+
+## Scope and ownership
+
+The `rsudo` APISIX module is an `m` shell library at `lib/sys/sh/rsudo/rsudo-mod-apisix.lib.sh`, loaded through the normal `rsudo` submodule dispatcher. SSH/sudo authentication, execution and stream semantics remain governed by `RSUDO.md`. This specification describes **only current implemented, operator-observable APISIX behavior**; it does not treat the active development plan as already delivered.
+
+The library's operational function signatures and current limitations are maintained in `rumiai-os/res/sys/manual/rsudo-mod-apisix.lib.sh`. The active implementation plan, pending design and version validation are kept in `rumiai-dev/handoff/rsudo-apisix-administration.md`, which is not normative.
+
+## Legacy separation
+
+The previous APISIX implementation is retained under `rsudo-mod-apisixlegacy.lib.sh` and the `rsudo apisixlegacy` dispatcher identity. Its public functions carry the prefix `rsudo_mod_apisixlegacy_`. The current APISIX module still forwards its pre-existing public operations to that retained implementation unless explicitly replaced.
+
+Similarly, the previous Keycloak module is retained under `rsudo-mod-keycloaklegacy.lib.sh`, while `rsudo-mod-keycloak.lib.sh` currently forwards to its retained implementation. Modern Keycloak administration is not yet delivered.
+
+The legacy interfaces retain their own documented limitations and must not be mistaken for the new safe, multi-backend administration implementation. No default or implicit fallback from an unsupported new backend operation to the unsafe legacy path is permitted.
+
+## Read-only APISIX configured-mode interface
+
+The public command
+
+```sh
+rsudo apisix mode [remote-apisix-home [remote-config.yaml]]
+```
+
+and direct function `rsudo_mod_apisix_mode` inspect one selected on-disk APISIX configuration using the installed APISIX LuaJIT/YAML parser and distributed defaults. Both optional selection paths must be absolute. Automatic discovery is best effort and fails for unresolved/ambiguous installations or profiles instead of silently claiming one.
+
+On success, stdout contains exactly one configured backend identifier:
+
+```text
+traditional-admin
+standalone-api
+standalone-file-yaml
+standalone-file-json
+no-admin-data-plane
+```
+
+Only one of these values is printed. Unknown roles/providers, invalid selections or missing dependencies yield non-zero status with a distinguishable diagnostic; no mode is guessed on failure. A successful result is evidence of the **selected on-disk configuration**, not of the actual running process.
+
+## Read-only APISIX inspection interface
+
+The public command
+
+```sh
+rsudo apisix inspect [remote-apisix-home [remote-config.yaml]]
+```
+
+and direct function `rsudo_mod_apisix_inspect` reuse the configured-mode resolver. On success, stdout contains four newline-separated key/value records, in this order:
+
+```text
+configured_mode=<one of the configured backend identifiers>
+configuration_evidence=on-disk
+runtime_identity=unverified
+mutation_readiness=not-established
+```
+
+If mode discovery fails, inspection fails without a successful inspection payload. An unexpected backend identifier is rejected. The inspection operation does not modify APISIX state, does not grant privileged API access and cannot be treated as a live health check or proof of configuration convergence.
+
+## Current limits and security boundary
+
+The current read-only resolver does not prove which `-c`/profile, container, process or namespace is actively in use. It cannot be used by a new mutating backend router until live identity and safe update conditions are independently verified.
+
+Mode inspection does not emit API keys or the selected configuration contents. Credentials and target data remain subject to `RSUDO.md` and `DIAGNOSTICS.md`. The legacy APISIX functions retain previously documented unsafe JSON/request behavior, and their existence is not evidence that modern secure mutation is complete.
+
+The full traditional Admin API, standalone file-driven mutation, standalone API-driven snapshot mutation, generic resource API, simplified shell recipes and new Keycloak functionality are **not yet implemented** by the current safe backend. They are pending development, not current product guarantees.
+
+## Required mechanical protection
+
+The permanent tests `rumiai-tests/tests/rumiai-os/rsudo/legacy-modules.test` and `rumiai-tests/tests/rumiai-os/rsudo/apisix-mode.test` exercise module presence, loading and read-only selection/inspection behavior through the real `m` entrypoint up to the modeled external dependency boundary. A fixture boundary result does not prove live APISIX identity or production behavior. Real instance validation is separate and required before advertising corresponding backend support.
+
+## Invariants
+
+- Configured mode and live runtime identity remain explicitly distinct.
+- Inspection has no write side effects and does not expose API keys or configuration content.
+- An unknown backend or ambiguous selection does not become a successful result.
+- Legacy operations remain addressable by their explicit legacy identity; new backend requests do not silently route to legacy.
+- New shell APIs and their operational manuals remain consistent with current implementation.

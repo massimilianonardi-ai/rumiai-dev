@@ -49,6 +49,7 @@ Read only the smallest complete set relevant to the task.
 | secret-line terminal input and verification | `rumiai-os/READPASS.md` |
 | OpenSSH authentication secret delivery, password-only invocation and stream transparency | `rumiai-os/SSH.md` |
 | remote SSH/sudo authentication, stdin separation and execution invariants | `rumiai-os/RSUDO.md` |
+| current rsudo APISIX configured-mode inspection, legacy interface and non-authoritative runtime boundary | `rumiai-os/RSUDO-APISIX.md` |
 
 ## Testing and development
 
