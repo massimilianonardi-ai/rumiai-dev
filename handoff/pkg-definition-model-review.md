@@ -1,7 +1,7 @@
 # pkg definition model review and migration
 
 Status: Active
-Updated: 2026-11-03
+Updated: 2026-11-04
 
 ## Goal
 
@@ -393,7 +393,13 @@ escaping or cyclic links. Resource export testing is out of scope.
 
 ## Current state
 
-**V2 package-store permission audit and Node.js branch alignment — 2026-11-04 (latest):**
+**Live Node.js HTTP index/resolve verification — 2026-11-04 (latest, awaiting execution evidence):**
+- Fresh preflight verified `m-os/pkg-schema-v2@8fb1db493a3265f77bb36ac604a2a1a495a4d448`, `pkg-catalog/pkg-schema-v2@1d8961c8654dc128581c11a8579d3f231cb6ae00` before the catalog write, `pkg-catalog/main@7892040e906723ef6641df88a03964c041cee9bc` and `rumiai-tests/main@b9daf4c6c73d151ffcc27709caf07891fbfacc04`. `rumiai-dev/main` advanced independently during retrieval; the intervening changes concern chat archiving and rsudo/Keycloak documentation, not this handoff's package authority.
+- Updated only `pkg-catalog/pkg-schema-v2@2c71b2180a4c5e270f33e00a67ddb8ca190d2b8c`, `.github/workflows/validate-v2-nodejs.yml`: exact-pin current `m-os` v2 HEAD and exercise public `m pkg depend nodejs` against the real upstream HTTP Node.js index before the existing real catalog-backed pinned Node.js install, command execution, managed HOME and state-preserving uninstall/reinstall assertions. Review of the committed diff confirmed this limited scope.
+- The workflow is configured for push to this branch, but its new exact-revision execution and Ubuntu/macOS conclusions have **not yet been retrieved/verified**. This change is test orchestration only; it supplies no new PASS evidence. The existing offline `rumiai-tests` index fixture remains a different, already validated boundary. No product runtime, catalog schema/data, test runner, `rumiai-validate`, canonical specification, operational manual, mainline merge or physical host was changed.
+- `pkg-catalog/pkg-schema-v2` was already 2 commits behind current `main` (recent v1 electron stream data); reconcile those changes forward during promotion preparation without discarding them. Keep package-store trust behavior and v2 contract unchanged per the user's fixed choices.
+
+**V2 package-store permission audit and Node.js branch alignment — 2026-11-04 (prior):**
 - Performed the current mandatory HEAD/specification/handoff preflight and inspected the live v2 `pkg-install`, `pkg-integration`, `pkg-uninstall`, state implementation, hosted permanent tests and current `rumiai-validate` target path.
 - **Filesystem audit:** `pkg install` sets `umask 077`; `pkg_integrate` creates the concrete, moves the useful `root/` tree and materializes symlink views, but has no final ownership or OS-enforced read-only sealing step. The existing permanent adversarial tests successfully replace installed links while run as the same owner. Thus the spec's **immutable concrete** describes managed materialization semantics, not a proven filesystem access-control guarantee against that owner. No `chmod`, privileged ownership switch or new mediated execution model was added: those would affect lifecycle, update, mutable-state routing and portability, requiring a deliberate contract choice. The selection-time `pkg default`/`context`/global-facility checks cannot protect direct symlinks modified *after* selection.
 - **Formal validation evaluation:** current `rumiai-validate` command, `lib/sh/rumiai-validate.lib.sh`, evidence metadata, checkout cloning and bootstrap are explicitly coupled to `rumiai-os`; simply adding a `validation/*.conf` selector for `m-os` would misidentify the target and would not prepare a clean autonomous checkout. Supported `m-os` formal validation needs a separately authorized target contract/launcher realignment, not an opportunistic config-only claim.
@@ -618,6 +624,8 @@ Previous Completed/Current state sections preserve prior checkpoints;
 this Current state supersedes older stale 'no v2 PASS' claims.
 
 ## Next action
+
+Before other new validation work, retrieve the exact CI run and both Ubuntu/macOS job logs for `pkg-catalog/pkg-schema-v2@2c71b2180a4c5e270f33e00a67ddb8ca190d2b8c`; classify real upstream/network failures separately from product failures and do not claim PASS until observed. If the run cannot be retrieved, preserve that evidence gap. Then continue with the ordered work below.
 
 1. Reconcile latest independently advanced `m-os/pkg-schema-v2`,
    `pkg-catalog/pkg-schema-v2` and `rumiai-tests/main` revisions
