@@ -1,7 +1,7 @@
 # Chromium manual-session analysis — web-analyze
 
 Status: Active
-Updated: 2026-11-03
+Updated: 2026-11-04
 
 ## Goal
 
@@ -9,9 +9,9 @@ Provide the `m` JavaScript library at `rumiai-os/lib/sys/js/web-analyze.lib.js` 
 
 ## Current repository revisions
 
-- rumiai-dev: 5ef9dd5bd85cb6ca8eb3de7e604e3861bebf258b (before this checkpoint)
-- rumiai-os: a8c96d53283ffb4b9d5cad36e99e3120c722aaa1 (rest acquisition, request metadata, startup, manuals)
-- rumiai-tests: cb717e50c2031be8e414f50d82f288b0c1dd1fb2 (pinned real Chromium rest and opt-in scroll tests)
+- rumiai-dev: c0677e0efd5e9e4121008d8697f88bd8d579e6a8 (before the WU-03 completion checkpoint; reconcile concurrent changes forward)
+- rumiai-os: 9217c8e004044f96c83dfc65db76a5a3faa5afaf (network durability, fallback, reporting and CI workflow)
+- rumiai-tests: a273137dcca43861d64778047a00de769260dbb7 (real Chromium network fixture pinned by the workflow)
 
 ## Applicable canonical sources
 
@@ -132,13 +132,14 @@ All raw data, including auth cookies/tokens, HTTP headers, message payloads, sto
 - Updated the native recorder's public library manual, rest library manual and command manual, plus readable report links. Permanent Chromium fixture creates same-origin/cross-origin iframe documents and dedicated/shared/service workers, verifies actual attached worker execution context and worker-global evidence, and validates that the cross-origin frame is represented in the page frame tree. OOPIF creation is Chromium-dependent and is not asserted merely because a frame is cross-origin.
 - Chromium run `41722677633` PASS for initial target/worker/iframe capture and `41723249494` PASS including shared/service workers. Subsequent changes for bounded stabilization, more accurate coverage statuses, source readability and non-applicable target handling are covered by final real-Chromium CI run `41723799071` **PASS**, with no test failures. The successful CI does not prove operator-host or arbitrary-site coverage. No operator physical browser or real external site proof.
 
-### WU-03 implementation checkpoint (2026-11-04; validation in progress)
+### WU-03 implementation checkpoint (2026-11-04; Chromium fixtures validated)
 
 - Current work extends `lib/sys/js/web-analyze.lib.js` without a new CDP provider or input simulation: per-target `Network.enable` buffer negotiation (64 MiB total, 32 MiB per resource, 1 MiB post-data inclusion), separate version-gated `Network.configureDurableMessages` and per-target outcome in `summary.resourceCapture.networkConfiguration`; optional read-only `Page.getResourceContent` fallback on a failed `Network.getResponseBody`. Chromium raw request/response/CDP events remain in the private `cdp-wire.jsonl` created by WU-01.
 - A first attempt to enable `Network.streamResourceContent` for all Fetch/XHR requests was **not reliable**: the real chunked-response fixture had a request still open at shutdown. It was changed to opt in only for actual EventSource or `text/event-stream` responses, retaining bounded buffered/chunk evidence (16 MiB per request; 64 MiB aggregate), with incomplete/aborted bodies marked `partial` and no automatic re-fetch. The initial response handler incorrectly referenced a missing `send` method and was corrected by passing the existing native-CDP sender. No unsupported stream method can be counted as successfully captured.
 - Resource outcomes now link redirect hops with source/destination and preserve cache/SW provenance; the archive distinguishes primary response-body reads, complete stream fallback, frame-content fallback, partial stream bytes and failures. `summary.resourceCapture` records incomplete body reads and network drain outcome. The command and library manuals and Markdown network/limitations report were realigned.
-- Permanent `rumiai-tests` real Chromium fixture adds 3 MiB binary integrity check, redirects, cacheable resources, chunked transfer, EventSource and aborted streams. It also tracks server-side completion and actual CDP lifecycle for diagnosis. Earlier CI `41785742536` failed an early slow-navigation startup race; `41785903873` passed the original fixture before new scenarios. Later new-scenario CI runs failed on an unfinished chunk response, a wrongly bound CDP sender, and one Chromium temporary cache cleanup race; these are **not PASS evidence**. The fixture now has bounded EventSource closure, persistent-connection cleanup and retryable temporary directory removal. At this checkpoint, the latest targeted CI run `41788086202` was still in progress; pending diagnostics and final Chromium fixture validation must be read before marking WU-03 complete.
-- Still pending for full WU-03: prove actual streaming partial-body bytes when supported, verify full chunked-body completion and large/redirect integrity on final revision, exercise representative cache/service-worker and process-swap cases, then operator-host/real-site confirmation without publishing secrets.
+- Permanent `rumiai-tests` real Chromium fixture adds 3 MiB binary integrity check, redirects, cacheable resources, chunked transfer, EventSource and aborted streams. It also tracks server-side completion and actual CDP lifecycle for diagnosis. Earlier CI `41785742536` failed an early slow-navigation startup race; `41785903873` passed the original fixture before new scenarios. Later new-scenario CI runs failed on an unfinished chunk response, a wrongly bound CDP sender, and one Chromium temporary cache cleanup race; these are **not PASS evidence**. The fixture now has bounded EventSource closure, persistent-connection cleanup and retryable temporary directory removal. The targeted CI run `41788086202` eventually **FAILED** and provided the decisive diagnosis: the fixture server sent all three chunks and closed its HTTP response, but Chromium emitted no `Network.loadingFinished` because the page had not consumed the response body (`fetch('/burst')` without reading it). The fixture now consumes the stream naturally with `response.text()` before asserting completeness; non-consumed or aborted requests remain incomplete instead of being promoted to complete. Subsequent GitHub Actions run `41788702684` **PASS** proves the bounded 3 MiB binary digest, redirect-chain, cacheable/stream/abort outcomes and rest/scroll regression at `rumiai-os@1de6bdad8116593d774290326dd1ae5ac61653dc` and `rumiai-tests@df7d31411ed2a9dc5d06a0d23f6f223348f14db7`.
+- Final incremental changes at `rumiai-os@9217c8e004044f96c83dfc65db76a5a3faa5afaf` add per-request stream provenance (`streamCapture`: observed/stored bytes, chunk count, missing-data event count, truncation and capability status) and prevent a partial stream with missing CDP data events from being treated as complete. The permanent test at `rumiai-tests@a273137dcca43861d64778047a00de769260dbb7` adds a **page-triggered** (not simulated input) navigation from `127.0.0.1` to `localhost`, preserving pre-navigation request outcome and the destination response. Real Chromium CI run `41789290070` **PASS** for provenance changes, and final run `41789460366` **PASS** for the pinned cross-origin navigation fixture. It proves observed request/response continuity across this navigation, **not** a forced/verified renderer-process swap.
+- **Unproven boundaries retained**: arbitrary-site interception fidelity, guaranteed complete partial-body reconstruction for all EventSource/browser revisions, explicit service-worker-served HTTP response/true renderer process-swap recovery, and operator-host/physical-browser validation. These are outstanding coverage/validation boundaries, not silently passed tests. API availability remains negotiated against the installed browser schema; disk output stays private. WU-03 is complete for its current real-Chromium fixture acceptance, not a universal CDP network completeness guarantee.
 
 ### Cross-unit validation discipline and completion gate
 
@@ -152,7 +153,7 @@ For **every work unit**: (1) reread latest HEADs and authoritative rules; (2) im
 | --- | --- | --- |
 | WU-01 | **Complete — Chromium fixture PASS** | `rumiai-os@783d0131bd29832c9c594d5c8efad5b560f256cf`, `rumiai-tests@cc7ca95a07ffb7f9ba93d22fa52b97d47fcea53f`, GitHub Actions `41719712596` PASS; full connected-CDP messages, browser protocol/schema, command-response correlation, private request headers, redacted diagnostics and restrictive permissions verified; physical-host/real-site coverage pending |
 | WU-02 | **Complete — real Chromium fixture PASS** | `rumiai-os@f457d1d36c174a3ddef65e481f98422b7fe5dd04`, `rumiai-tests@25ee0bd58166aaecde7e414dc6b04c8c69286067`; final GitHub Actions `41723799071` PASS with nested target/context graph, dedicated/shared/service workers, cross-origin iframe frame tree and private rest evidence; operator-host/real-site validation pending |
-| WU-03 | **In progress; Chromium regression NOT YET PASS** | Buffer and durable-message negotiation, read-only body fallbacks, redirect linking, bounded EventSource capture and per-request incomplete outcomes implemented; diagnostics of real chunked responses underway (latest run `41788086202` pending) |
+| WU-03 | **Complete — real Chromium fixture PASS (bounded)** | `rumiai-os@9217c8e004044f96c83dfc65db76a5a3faa5afaf`, `rumiai-tests@a273137dcca43861d64778047a00de769260dbb7`; final GitHub Actions `41789460366` PASS for 3 MiB binary integrity, naturally consumed chunked body, redirect and cacheable HTTP resources, interrupted/EventSource statuses, and natural cross-origin navigation continuity; true process swap and physical-host/site fidelity still unverified |
 | WU-04 | Pending | Complete DOM mutation chronology |
 | WU-05 | Pending | Reconciled integrity/coverage statuses |
 | WU-06 | Pending | Accessibility, CSS, runtime, storage, security and source fidelity |
@@ -181,7 +182,7 @@ Native-CDP manual capture remains available with historical user-operated share-
 
 ## Next action
 
-Continue WU-03 on the newest repository HEADs: inspect targeted Chromium fixture run `41788086202` and reconcile the server-side chunk completion/CDP lifecycle evidence before further changes. Do not equate initial browser startup success with network archive integrity. After reliable chunks, validate redirect/large/abort/stream/cache and process-swap behavior, update pinned tests and manuals, run consistency gate and only then close WU-03. Do not simulate user input or publish raw browser/session artifacts.
+Proceed to **WU-04**, using WU-01's raw connected-CDP ledger and WU-02's target/context graph plus WU-03's network evidence. Record complete-observable DOM mutation chronology from document start, including add/remove-before-settle, attributes/text, open Shadow DOM and frame relationships; preserve explicit missed-event and closed-shadow limitations. Validate on real Chromium with rapid transient nodes and multiple frame/shadow cases; do not enable synthetic user input or claim to reconstruct unvisited states. Keep service-worker-served response, genuine renderer process-swap and operator-host network-evidence verification as explicit WU-03 validation gaps to revisit within the active task.
 
 ## Blockers / open questions
 
