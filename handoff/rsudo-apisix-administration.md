@@ -167,6 +167,14 @@ This is a resumable task implementation plan and a set of provisional technical 
 5. **Safety:** simultaneous writers, stale snapshots, fail-over, atomic file publication, partial API success, recovery after interruption, controller co-ownership and worker convergence.
 6. **Test authenticity:** each claimed PASS must identify exactly what was run, server/host and revision; boundary fixture != live APISIX; passing focused test != passing full validation.
 
+### Keycloak `devplan` sufficiency gate (2026-11-04)
+
+A planning-only invocation `devplan rsudo keycloak` inspected current `rumiai-dev@666b90a8`, `rumiai-os@d0053161`, `rumiai-tests@114e4f9e`, and `pkg-catalog@7892040e`. Observed: the new-name Keycloak module is still a legacy forwarding facade, both library manuals document transitional/legacy behavior, and `tests/rumiai-os/rsudo/legacy-modules.test` protects loading/forwarding, not live Keycloak Admin API behavior. The catalog contains `keycloak/all/n0001=26.7.3`, which identifies a packaged revision but does not establish the module's target support range. No standalone promoted Keycloak administration contract is routed by `specifications/README.md`.
+
+**Verdict: `Specifiche insufficienti` for an executable delegated Keycloak implementation plan.** Resolve at the intended public-contract level before assigning independently executable work: (1) supported Keycloak versions and administrative endpoint/deployment selection boundary; (2) authorized admin principal/token acquisition modes and secret/TLS trust boundaries across the remote rsudo path; (3) new public shell API's resource/method scope, output/error semantics and explicit compatibility strategy for the existing forwarded public functions versus `keycloaklegacy`. The full-capability aspiration in work unit K is working design, not an accepted public interface. Ordinary internal implementation choices and upstream API inventory can be resolved autonomously after those boundaries are settled.
+
+No runnable implementation units, code changes, tests, deployment changes or new handoff were authorized by this invocation. Re-run `devplan` for Keycloak after the contract gaps close; existing APISIX work remains owned and scheduled by this handoff.
+
 ### Work-unit A observed evidence and B reconnaissance (2026-11-04)
 
 - Run 41815144458, product `rumiai-os@d228cf32`, suite `rumiai-tests@7f047fa5`: Ubuntu 26.04 ARM64 `legacy-modules.test` PASS and `apisix-mode.test` PASS through actual `m`; macOS queued at inspection time. The mode test used an external LuaJIT fixture, not installed APISIX.
