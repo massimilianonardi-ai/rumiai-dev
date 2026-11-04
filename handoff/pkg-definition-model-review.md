@@ -381,7 +381,15 @@ escaping or cyclic links. Resource export testing is out of scope.
 
 ## Current state
 
-**V2 macOS jq upstream-rate-limit recovery checkpoint — 2026-11-04 (latest):**
+**V2 mixed installed-schema/default/provider lifecycle checkpoint — 2026-11-04 (latest):**
+- Verified current involved remote HEADs, re-read the canonical `rumiai-dev` rules, package/default/launch/provider specs, testing contract and this active handoff, and inspected the existing current `m-os/pkg-schema-v2` launcher, schema reader, integrator, package-default transitions, provider selectors and prior fixture tests. The missing covered property was **transitioning an ordinary package default across genuine coinstalled v1 and v2 concretes of the same package identity**; the existing context coexistence fixture depended on an externally downloaded v2 jq and did not exercise package-default transitions.
+- Added test-only `m-os/.github/scripts/pkg-v2-default-coexistence-test.sh` at `m-os@fe8c3047`: integrates actual v1@1 and v2@2 concrete layouts from local fixture useful roots, then exercises public `m pkg default` v1 → v2 → v1 → unset, public command symlink target updates/removal, v1 launcher, v2 wrapped entry with fixed argv and package environment, v2 direct entry (which deliberately does not apply wrapper environment), failed nonexistent-version change preserving the previous view, and independent shell-local `context` selection/reset. This is an integration/launch test through real m code, not a download or upgrade-in-place scenario.
+- Added test-only `m-os/.github/scripts/pkg-v2-mixed-provider-test.sh` at `m-os@380d0f43`: copies the **actual** catalog v2 nodejs facility contract, integrates two synthetic-external-provider v2 package versions (same facility level), and both v1/v2 installed consumer schema versions declaring `nodejs =26`. It checks consumer version default transitions, global facility default v1-provider-version → v2-provider-version transitions, explicit consumer binding precedence surviving a consumer default change, restoration after unbinding, failure on unresolved ambiguity when no default/binding exists, and binding-based recovery. Every observed consumer output comes from the real package launcher/real selected facility command (external `node` payloads are fixtures). No GitHub Releases downloads.
+- The first focused catalog workflow `41796228855`, catalog `cb1f2b6b` pinned to `m-os@e79520a9`, completed **2/2 PASS** on hosted Ubuntu/macOS for the default/direct-wrapper scenario. Expanded exact workflow `pkg-catalog/pkg-schema-v2@a2f3e17a50b871bf935a9e4feee07c8ceafcab03` (run **`41796604094`, both jobs PASS**) checked both new fixtures on Ubuntu and macOS; verified each log prints both expected PASS markers and no failing assertions. Both checked out exact `m-os@380d0f43992c22123042cf389675c658e770d193`. This is **2/2 hosted CI jobs containing two genuine real-integration fixtures each**, not physical validation, and not a fresh rerun of prior jq/Ollama/Node.js workflows.
+- A newly introduced m-os-hosted workflow did not schedule from the feature branch; its untriggered copy was **deleted forward-only** at current `m-os/pkg-schema-v2@7fee9e02bb7e7b2ef377c05cb085b0155bde8706`. That commit differs from the tested `m-os@380d0f43` **only by deletion of this unused workflow**, not by a code/test behavior change. The effective focused CI lives in `pkg-catalog/.github/workflows/validate-v2-coexistence.yml`; unlike the broad jq tests, it requires no release API calls. No production library, operational manual, promoted specification, mainline branch or frozen repository changed.
+- Explicit remaining coverage: real upstream v1/v2 reinstall/migration and mutable-state preservation, uninstall/refusal/rollback branches, corrupt/escaping installed-link rejection, possible library/command collisions during transitions, macOS launchd host supervision, Ubuntu ARM64 reference host and eventual package-schema promotion. No new specification/implementation mismatch was established by these passing tests.
+
+**V2 macOS jq upstream-rate-limit recovery checkpoint — 2026-11-04 (prior):**
 - User confirmed the repeated GitHub HTTP 403 is believed to arise from excessive anonymous requests and suggested staggered execution or waiting for the approximately hourly reset. Current GitHub REST documentation establishes **60 unauthenticated primary requests/hour per source IP**; a 403 itself is insufficient to establish the specific rate-limit category without `x-ratelimit-remaining`, `x-ratelimit-reset` or a secondary-limit response. Existing m GitHub adapter `_pkg_repository_github_get` uses unauthenticated `http-fetch` and the current workflow makes three attempts only four seconds apart. Earlier failed logs had HTTP 403 but did not capture authoritative rate-limit headers: exact cause remains an inference, not measured diagnosis.
 - Rather than trigger another full 12-job matrix, re-ran **only the failed macOS v1-regression job** `126448527466` after more than one hour from its last failure, using the linked GitHub Actions job rerun. Run `41792388863` **attempt 2, job `126453299092`, completed PASS**; job logs include the actual `PASS: unmodified v1 package installs and launches on upgraded m` after a real `pkg install jq@jq-1.8.2` and command execution. With the 11 previously successful jobs in attempt 1, the workflow's **latest attempt reports success**; this is not a single all-12 fresh re-execution. Exact tested revisions remain `pkg-catalog/pkg-schema-v2@e64aed2939d750b0fe261503696c228cf207b2dc` and `m-os/pkg-schema-v2@2caeb3f95f0e0281920da55a79382096208e05b8`.
 - Network-test operating decision for this active workstream: distinguish remote download failures from product regressions; do not rapidly repeat an entire matrix or use multiple four-second retries to diagnose a suspected primary limit. Where possible, inspect response rate-limit headers and wait until the reported reset (otherwise conservatively space retries) and re-run only the affected GitHub Actions job. Keep real upstream package installation tests intact; use independent no-network tests for implementation refinement. This work unit **did not change CI scheduling or runtime adapter**, because the targeted delayed rerun resolved the blocker without extra workflow activity or new commits.
@@ -548,25 +556,26 @@ this Current state supersedes older stale 'no v2 PASS' claims.
 
 ## Next action
 
-1. Extend real normal-launch and lifecycle coverage for **mixed v1/v2
-   installed concretes**, including package-default changes, v1 command
-   and v2 direct/wrapped target paths, and provider binding/default
-   transitions. Reuse the current launcher/integrator; check existing
-   coverage before adding a new test. Perform focused no-network
-   development checks before a hosted multi-OS run.
-2. Preserve real GitHub-backed v1/v2 installation validation, but
-   stagger API-heavy CI execution. After an upstream HTTP 403, inspect
-   rate-limit/reset headers where available and retry only the failed
-   job after the appropriate delay; do not spin three four-second
-   retries or relabel an upstream outage as product PASS.
-3. Validate macOS launchd user/system supervision on an eligible
-   controlled account and physical Ubuntu 26.04 ARM64 on the reference
-   host when available. Hosted GitHub runners do not replace either.
-4. Audit remaining v2 wrapper/launcher and provider-selection edge
-   cases before promoting only complete settled v2 semantics into
-   canonical specifications and coordinating a forward-only merge.
-   Resources remain deferred to v3+; metadata inheritance is a
-   separate open choice.
+1. Extend the focused, no-release-download mixed v1/v2 integration
+   scenario to **uninstall/refusal/rollback and reinstallation** across
+   schemas, including preservation of current/default selectors and
+   mutable state, and rejection of malformed/escaping installed links.
+   Distinguish synthetic payload verification from real upstream
+   v1/v2 migration; do not introduce implicit conversion.
+2. Reconcile representative real mixed-schema scenarios into the
+   permanent `rumiai-tests` suite at the appropriate validation scope;
+   use `pkg-catalog` hosted fixtures as exact-revision integration
+   evidence, not a substitute for formal or physical validation.
+3. Preserve real upstream install tests while pacing GitHub Releases
+   API usage: on a suspected 403 limit, inspect rate-limit headers
+   when available and retry only the failed job after reset, not
+   whole matrices repeatedly.
+4. Validate macOS launchd user/system on an eligible controlled host
+   and Ubuntu 26.04 ARM64 on the physical reference host when available.
+   Audit remaining v2 wrapper/provider edge cases, then promote only
+   settled complete semantics and coordinate forward-only merge.
+   Resource export remains deferred to v3+; metadata inheritance is
+   still a separate open design choice.
 
 ## Blockers / open questions
 
