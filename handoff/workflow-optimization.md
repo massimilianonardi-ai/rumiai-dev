@@ -219,6 +219,10 @@ These points should later be reviewed together and promoted only in the smallest
 
 The exploratory executable-planning proposal was promoted into the dedicated root `DEVPLAN.md` current workflow contract, including exact opt-in activation, source-first insufficiency verdicts, progressively detailed work units, dependency/parallelism rules, clean-chat validation and planning-only authorization. The root router and `RULES.md` reference that single normative owner. This documentary change does not prove future assistant behavior.
 
+### First `devplan` insufficiency smoke test — 2026-11-04
+
+A separate project chat invoked `devplan astronave`. The assistant recognized the exact opt-in token, retrieved current RumiAI authority including `DEVPLAN.md`, and returned `Specifiche insufficienti` without inventing a spacecraft architecture or presenting executable work units. This is one observed conversational example, not a deterministic parser test, a proof of behavior across all clean chats, or validation of the sufficient-specification/agent-ready planning path.
+
 ### Code maintainability and scope gate
 
 The explicit user correction that working code must also be readable, bounded in responsibility, easy to modify, extensible and reusable was promoted as a completion criterion into `RULES.md`. `CONSISTENCY-GATE.md` now requires pre-implementation and post-change human review of those properties and of strict adherence to the authorized scope. No product code or deferred bootstrap TODO was changed.
@@ -358,7 +362,7 @@ The new code-maintainability and scope gate is current canonical workflow; it mu
 
 `workflow-optimization` remains active.
 
-The `devplan` planning-only procedure is now canonical in root `DEVPLAN.md` and routed by `README.md` and `RULES.md`. It gates executable planning on a current-source sufficiency assessment; actual fresh-chat invocation remains untested.
+The `devplan` planning-only procedure is now canonical in root `DEVPLAN.md` and routed by `README.md` and `RULES.md`. One separate-chat under-specified invocation (`devplan astronave`) returned the expected gap verdict without fictional design. The positive sufficiency case, independently executable plan quality, and cross-chat agent resumption remain untested.
 
 The workstream now also retains an adaptive cooperation model as working design. Its central distinction is execution autonomy versus decision autonomy, with escalation driven by semantic/architectural impact and contextual foundationality rather than raw technical complexity. A six-point promotable core has been isolated but intentionally not yet added to RULES.md.
 
@@ -380,7 +384,7 @@ Active task routing now uses resumable responsibility rather than topic labels. 
 
 ## Next action
 
-Try the current `DEVPLAN.md` contract in a new chat first on a genuinely under-specified task, then a well-specified RumiAI task; inspect its gap verdict, retrieval, lack of invented requirements, and independent-agent plan readiness. Keep this a test of actual behavior, not an automatic claim of compliance.
+Next exercise `DEVPLAN.md` on a genuinely well-specified RumiAI software task. Check source-first sufficiency, dependency and work-unit completeness, non-conflicting agent ownership, clean-chat resumability and the planning-only boundary. The under-specified `devplan astronave` conversational smoke test is recorded above; neither case alone proves future agent execution.
 
 Observe the TODO lifecycle, specification promotion gate and command/library manual gates in normal use. In particular:
 
@@ -402,7 +406,7 @@ Observe the TODO lifecycle, specification promotion gate and command/library man
 
 ## Blockers / open questions
 
-`devplan` has been documented as a RumiAI repository-routed convention, but no separate clean-chat behavioral validation has yet occurred. It is not a native platform command or background execution trigger.
+`devplan` has one separate-chat under-specified conversational smoke test but no verified positive-case executable plan or independent agent-resumption test. It is a repository-routed assistant convention, not a native platform command, deterministic parser or background execution trigger.
 
 The mirror was explicitly deactivated for this conversation on 2026-10-15; no `0009` snapshot or new Drive update should be generated until reactivation. The user separately confirmed that the periodic Drive→GitHub copy did not work and was deleted; that scheduled copy is discontinued and must not be silently recreated. The earlier automation inspection already showed no active archive task. Neither change alters the retained archive files.
 
