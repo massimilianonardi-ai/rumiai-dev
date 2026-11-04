@@ -168,7 +168,7 @@ APISIX integration contract/readiness ──────────────
 K04 + K05 + K06 (+ K07 when in scope) ────────────────────────────────────────────────────────> K08: composed acceptance / closure
 ```
 
-**K01 — supported-version and Admin API capability matrix (READY for source investigation).** Owner: Keycloak API inventory; target `rumiai-dev` handoff working-design checkpoint, with pinned upstream evidence and no product changes. Input: upstream 26.7.3 REST API, representative later released version(s) (26.8.1 available at planning time), migration notes, current catalog definition and legacy function inventory. Deliverable: resource × method × version × JSON/body/response shape inventory, including global and per-realm endpoints, querying/pagination, realm/client/user/group/role/authorization, special endpoints, generated IDs, non-JSON/binary exceptions, idempotence and known missing/preview behavior. Acceptance: every promised general capability is linked to the upstream method/path evidence; unsupported/unknown are explicitly distinguished. Validation: document/source inspection only until a real isolated server probe is run; never label source inventory as live execution. Manuals/tests: enumerate expected later coverage, do not rewrite them during research. Escalate only on a real conflict over the requested public scope, not local method mapping. Next: build the matrix and record the exact source versions.
+**K01 — supported-version and Admin API capability matrix (COMPLETE: version-pinned source inventory; live API testing deferred).** Owner: Keycloak API inventory; target `rumiai-dev` handoff working-design checkpoint, with pinned upstream evidence and no product changes. Input: upstream 26.7.3 REST API, representative later released version(s) (26.8.1 available at planning time), migration notes, current catalog definition and legacy function inventory. Deliverable: resource × method × version × JSON/body/response shape inventory, including global and per-realm endpoints, querying/pagination, realm/client/user/group/role/authorization, special endpoints, generated IDs, non-JSON/binary exceptions, idempotence and known missing/preview behavior. Acceptance: every promised general capability is linked to the upstream method/path evidence; unsupported/unknown are explicitly distinguished. Validation: document/source inspection only until a real isolated server probe is run; never label source inventory as live execution. Manuals/tests: enumerate expected later coverage, do not rewrite them during research. Escalate only on a real conflict over the requested public scope, not local method mapping. Next: build the matrix and record the exact source versions.
 
 **K02 — administrative endpoint, authentication and trust matrix (READY for independent investigation).** Owner: authentication/security research, separate working-design section in this handoff; no product change. Input: current `RSUDO.md`, `DIAGNOSTICS.md`, Keycloak discovery, grant/client-auth documentation and deployment/profile/URL evidence. Deliverable: server-supported grant × client-authentication × interactive/non-interactive × refresh/revocation × administrator-permission matrix, distinguishing externally supplied bearer tokens, service accounts, interactive authorization/device flows, conditional grants and deprecated/disabled flows. Include identity of admin server/realm/endpoint versus SSH host, explicit overrides and fail-closed ambiguity; TLS trust, remote-vs-local token handling, redaction, no sensitive argv/eval, expiration, HTTP error and retry boundaries. Do not treat every end-user login-factor or Keycloak-configurable authenticator as a separate CLI token grant, and do not require server-disabled/insecure grants to succeed. Acceptance: each offered auth path has an actual supported protocol, prerequisite/configuration, error contract and legitimate authority boundary; no silently selected insecure fallback. Validation: upstream/docs plus isolated proof where useful; not live auth evidence until executed. Manuals/tests: define the scenarios later needing real server verification. Escalate only if authenticated administration would require a new high-impact trust/deployment architecture. K01 and K02 can investigate in parallel, but a single handoff owner serializes edits to this file.
 
@@ -208,6 +208,574 @@ K04 + K05 + K06 (+ K07 when in scope) ──────────────
 ### Keycloak `devplan` sufficiency gate update (2026-11-04)
 
 The initial assessment was blocked by unselected supported versions, authentication and public API styles. The operator explicitly closed those scope choices: Keycloak >= 26.7.3, all supported relevant administrative authentication modes, general JSON administration and short-operand specialized CLI functions. Positive planning gate: `Specifiche sufficienti per la pianificazione`. Section K above now owns the readiness-gated executable plan. This promotes no provisional upstream methods, function spellings or unverified runtime claims to current specification. K01/K02 are the next independently researchable units; code requires the normal separate execution authorization.
+
+### K01 — inspected Admin REST API capability matrix (2026-11-04; source-only COMPLETE)
+
+**Unit:** K01 alone. **State:** accepted as a version-pinned source-inventory deliverable; **not** a server-executed certification. K02 authentication/endpoint research has separate ownership and remains outside this K01 result. K03 contract promotion still requires independently completed K02.
+
+**Pinning and provenance.** Official Keycloak published Admin REST API reference and OpenAPI for [26.7.3](https://www.keycloak.org/docs-api/26.7.3/rest-api/index.html) and [26.8.1](https://www.keycloak.org/docs-api/26.8.1/rest-api/index.html). Computable input: independently versioned upstream OpenAPI snapshots `kilork/keycloak@v26.7.300:api/openapi.json` (Git blob `87828a221265adc010418325cc5022e606796e7c`) and `kilork/keycloak@v26.8.100:api/openapi.json` (Git blob `1d2381dc8a43a40cd126fcfa4692f79993e984a9`), cross-checked against the official REST reference but not claimed byte-identical. Official source anchors: `keycloak/keycloak@26.7.3` and `@26.8.1`, especially `services/src/main/java/org/keycloak/services/resources/admin/{RealmAdminResource,ClientsResource,UsersResource}.java` and official release notes. External API declarations are technical evidence, not RumiAI's current promoted public interface.
+
+**Version scope.** The current `pkg-catalog/v1/pkg/keycloak/all/repository/versions` names 26.7.3, 26.7.4, 26.7.5, 26.8.0, 26.8.1. The K01 plan explicitly requires 26.7.3 plus a representative subsequent release, so this review compares **26.7.3 versus 26.8.1**. Intermediate 26.7.4/26.7.5/26.8.0 and future releases have **no independently compared method-by-method certificate**; avoid silently inferring their exact method/parameter behavior from either endpoint version. The catalog presence does not prove a deployed server or a verified protocol.
+
+**Completeness of source extraction.** Parsed all `273` path objects and `413` documented HTTP operations in 26.7.3; `274` paths and `415` HTTP operations in 26.8.1. Verbs 26.7.3: GET `210`, POST `88`, PUT `52`, DELETE `63`; 26.8.1: GET `210`, POST `88`, PUT `54`, DELETE `63`. Component schemas: 117 -> 119; the official OpenAPI describes 21 named tags, but **31 authorization-server operations have no tag** and are included explicitly below as `Authorization Services (untagged)`. The table rows below cover the **union of all 415 documented method/path signatures** across the two examined versions, including query-parameter names and defaults, request MIME/schema, success status and content schema, and declared failure status codes.
+
+**Matrix reading.** Path is the exact REST path *relative to the selected Keycloak server's base path*; placeholders must be resolved according to endpoint semantics and URL-encoded, not string-substituted unsafely. Query column records per-operation declared names, `!` for required and `=...` for documented default; unlisted parameters are not assumed supported. Request column records MIME and OpenAPI schema identity, not an imposed client serialization: `JSON` is application/json, `TEXT`, `YAML`, `XML`, `FORM`, `BIN`, `ANY` are other media. `200:JSON/Foo[]` means a documented success response; `204/∅` means an empty body. `undocumented` means OpenAPI lacks a declared 2xx response, **not** that operation fails. Failure codes reflect only those *listed in the snapshot*, not a complete network/authentication error universe. Flags: `both` means declared in both versions, `+26.8.1` newly declared; `Δ26.8.1` means a documented operation detail changed; `deprecated` reflects version-specific OpenAPI metadata. Unchanged declaration is **not** live compatibility proof.
+
+**Identity and non-CRUD safety findings.** A `{realm}` path selector is a realm **name**; `{client-uuid}` is the internal client UUID rather than the human `clientId`, which appears separately as a query filter. `{role-name}`, `{role-id}`, user/group/organization/component IDs, and certificate attributes have distinct identities; never reduce them to a generic `id` without an explicit resolver. The root `/admin/realms` collection is separate from per-realm `/admin/realms/{realm}`. A collection POST or a specialty action is not a guaranteed idempotent resource PUT: inspect server responses, Location headers, and authorization; generated IDs, 201/204 no-body responses and deletes need explicit treatment. Listings use operation-specific `first`/`max`/search filters; **do not** assume pagination on every list, uniform count data, stable ordering, or that missing IDs equal empty collections. Some actions affect sessions, token revocation, invitations, emails, key rotation, credential reset, federation sync, admin events or policy evaluation and cannot be exposed as generic safe CRUD/retry.
+
+**Non-JSON and compatibility guardrails.** Source declarations contain `application/octet-stream` certificate downloads, `application/yaml` workflows, `text/plain` localization, `application/xml` client-description input and `application/x-www-form-urlencoded` SMTP/invitations. The `/admin/realms` POST OpenAPI schema also contains an anomalous `string(binary)` request schema under JSON MIME: do not infer correct wire handling without checking the official implementation/real server. OpenAPI error/success schemas can be absent or inaccurate (e.g., role-to-groups response schema corrected across versions); `application/json` compatibility must therefore be per-operation. The experimental/version-gated Admin API v2 is not silently certified by this v1 OpenAPI inventory. Preview/server-configured capabilities and RBAC permissions require independent evaluation (K02 and actual K05/K08 server tests).
+
+**Diff 26.7.3 -> 26.8.1 (declaration, not runtime):** two added PUT operations, zero removed operations, 13 modified existing operation declarations, two added schemas, four changed schema declarations. Added paths:
+- `PUT /admin/realms/{realm}/organizations/{org-id}/identity-providers/{alias}` — `application/json` input, 204 no-content success, documented 400/403/404 failures.
+- `PUT /admin/realms/{realm}/organizations/{org-id}/members/{member-id}/membership-type` — `application/json` input, 204 no-content success, documented 400/403/404 failures.
+
+Changed operation declarations:
+- `POST /admin/realms/{realm}/clients/{client-uuid}/authz/resource-server/permission/evaluate` — responses.
+- `POST /admin/realms/{realm}/clients/{client-uuid}/authz/resource-server/policy/evaluate` — responses.
+- `POST /admin/realms/{realm}/clients/{client-uuid}/certificates/{attr}/download` — summary, deprecated.
+- `POST /admin/realms/{realm}/clients/{client-uuid}/certificates/{attr}/generate` — deprecated.
+- `POST /admin/realms/{realm}/clients/{client-uuid}/certificates/{attr}/generate-and-download` — deprecated.
+- `POST /admin/realms/{realm}/clients/{client-uuid}/certificates/{attr}/upload` — summary, deprecated.
+- `POST /admin/realms/{realm}/clients/{client-uuid}/nodes` — responses.
+- `GET /admin/realms/{realm}/clients/{client-uuid}/roles/{role-name}/groups` — responses.
+- `GET /admin/realms/{realm}/organizations` — parameters.
+- `GET /admin/realms/{realm}/organizations/count` — parameters.
+- `GET /admin/realms/{realm}/organizations/{org-id}/groups/group-by-path/{path}` — parameters.
+- `POST /admin/realms/{realm}/organizations/{org-id}/members/invite-user` — description, parameters.
+- `GET /admin/realms/{realm}/roles/{role-name}/groups` — responses.
+
+Changed/added JSON component schemas: `OrganizationIdentityProviderLinkRepresentation` and `RawJsonValue` added; `ClientPolicyConditionRepresentation.configuration` and `ClientPolicyExecutorRepresentation.configuration` now reference `RawJsonValue`; `IdentityProviderRepresentation.organizationId` marked deprecated/write-only and `organizationLinks` added; `OrganizationDomainRepresentation` gains `identityProviderAlias` and `autoRedirect`. The 26.8.1 Organization list/count accepts `identityProvider` filtering (not combined with `q`); its invite-user operation gains an optional `client_id`; two role-to-groups 200 schemas change from UserRepresentation[] to GroupRepresentation[], a **documentation** correction rather than proof that runtime changed.
+
+**Explicit unsupported/unknown distinctions.** `PATCH`/`HEAD`/`OPTIONS` have **no method/path entries in the two examined v1 OpenAPI snapshots**: not inventoried as supported v1 Admin REST operations; that is not a universal server-level rejection proof. Absent version-specific method/path, missing response schema, feature-preview alternative endpoint, and unverified server capability are separate states; they must not become implicit valid APIs or be routed to a nearby-looking path. This inventory is **not** a declaration of supported HTTP authentication grants (K02 scope).
+
+**Per-operation version-pinned matrix:**
+
+##### Attack Detection — 3 operations
+
+| HTTP method and path | Query parameters (defaults) | Request body MIME/schema | Success status / body | Other listed HTTP codes | Version / notes |
+|---|---|---|---|---|---|
+| `DELETE /admin/realms/{realm}/attack-detection/brute-force/users` | — | — | 204/∅ | — | both |
+| `DELETE /admin/realms/{realm}/attack-detection/brute-force/users/{userId}` | — | — | 204/∅ | — | both |
+| `GET /admin/realms/{realm}/attack-detection/brute-force/users/{userId}` | — | — | 200:JSON/object | — | both |
+
+##### Authentication Management — 39 operations
+
+| HTTP method and path | Query parameters (defaults) | Request body MIME/schema | Success status / body | Other listed HTTP codes | Version / notes |
+|---|---|---|---|---|---|
+| `DELETE /admin/realms/{realm}/authentication/config/{id}` | — | — | 204/∅ | — | both |
+| `DELETE /admin/realms/{realm}/authentication/executions/{executionId}` | — | — | 204/∅ | — | both |
+| `DELETE /admin/realms/{realm}/authentication/flows/{id}` | — | — | 204/∅ | — | both |
+| `DELETE /admin/realms/{realm}/authentication/required-actions/{alias}` | — | — | 204/∅ | — | both |
+| `DELETE /admin/realms/{realm}/authentication/required-actions/{alias}/config` | — | — | 204/∅ | — | both |
+| `GET /admin/realms/{realm}/authentication/authenticator-providers` | — | — | 200:JSON/object[] | — | both |
+| `GET /admin/realms/{realm}/authentication/client-authenticator-providers` | — | — | 200:JSON/object[] | — | both |
+| `GET /admin/realms/{realm}/authentication/config-description/{providerId}` | — | — | 200:JSON/AuthenticatorConfigInfoRepresentation | — | both |
+| `GET /admin/realms/{realm}/authentication/config/{id}` | — | — | 200:JSON/AuthenticatorConfigRepresentation | — | both |
+| `GET /admin/realms/{realm}/authentication/executions/{executionId}` | — | — | 200:JSON/AuthenticationExecutionRepresentation | — | both |
+| `GET /admin/realms/{realm}/authentication/executions/{executionId}/config/{id}` | — | — | 200:JSON/AuthenticatorConfigRepresentation | — | both;deprecated(26.8.1) |
+| `GET /admin/realms/{realm}/authentication/flows` | — | — | 200:JSON/AuthenticationFlowRepresentation[] | — | both |
+| `GET /admin/realms/{realm}/authentication/flows/{flowAlias}/executions` | — | — | 200:JSON/AuthenticationExecutionInfoRepresentation[] | — | both |
+| `GET /admin/realms/{realm}/authentication/flows/{id}` | — | — | 200:JSON/AuthenticationFlowRepresentation | — | both |
+| `GET /admin/realms/{realm}/authentication/form-action-providers` | — | — | 200:JSON/object[] | — | both |
+| `GET /admin/realms/{realm}/authentication/form-providers` | — | — | 200:JSON/object[] | — | both |
+| `GET /admin/realms/{realm}/authentication/per-client-config-description` | — | — | 200:JSON/object | — | both |
+| `GET /admin/realms/{realm}/authentication/required-actions` | — | — | 200:JSON/RequiredActionProviderRepresentation[] | — | both |
+| `GET /admin/realms/{realm}/authentication/required-actions/{alias}` | — | — | 200:JSON/RequiredActionProviderRepresentation | — | both |
+| `GET /admin/realms/{realm}/authentication/required-actions/{alias}/config` | — | — | 200:JSON/RequiredActionConfigRepresentation | — | both |
+| `GET /admin/realms/{realm}/authentication/required-actions/{alias}/config-description` | — | — | 200:JSON/RequiredActionConfigInfoRepresentation | — | both |
+| `GET /admin/realms/{realm}/authentication/unregistered-required-actions` | — | — | 200:JSON/object[] | — | both |
+| `POST /admin/realms/{realm}/authentication/config` | — | JSON:AuthenticatorConfigRepresentation | 201/∅ | 409 | both;deprecated(26.8.1) |
+| `POST /admin/realms/{realm}/authentication/executions` | — | JSON:AuthenticationExecutionRepresentation | 201/∅ | — | both |
+| `POST /admin/realms/{realm}/authentication/executions/{executionId}/config` | — | JSON:AuthenticatorConfigRepresentation | 201/∅ | 409 | both |
+| `POST /admin/realms/{realm}/authentication/executions/{executionId}/lower-priority` | — | — | 204/∅ | — | both |
+| `POST /admin/realms/{realm}/authentication/executions/{executionId}/raise-priority` | — | — | 204/∅ | — | both |
+| `POST /admin/realms/{realm}/authentication/flows` | — | JSON:AuthenticationFlowRepresentation | 201/∅ | 409 | both |
+| `POST /admin/realms/{realm}/authentication/flows/{flowAlias}/copy` | — | JSON:object | 201/∅ | 409 | both |
+| `POST /admin/realms/{realm}/authentication/flows/{flowAlias}/executions/execution` | — | JSON:object | 201/∅ | — | both |
+| `POST /admin/realms/{realm}/authentication/flows/{flowAlias}/executions/flow` | — | JSON:object | 201/∅ | 409 | both |
+| `POST /admin/realms/{realm}/authentication/register-required-action` | — | JSON:object | 204/∅ | — | both |
+| `POST /admin/realms/{realm}/authentication/required-actions/{alias}/lower-priority` | — | — | 204/∅ | — | both |
+| `POST /admin/realms/{realm}/authentication/required-actions/{alias}/raise-priority` | — | — | 204/∅ | — | both |
+| `PUT /admin/realms/{realm}/authentication/config/{id}` | — | JSON:AuthenticatorConfigRepresentation | 204/∅ | — | both |
+| `PUT /admin/realms/{realm}/authentication/flows/{flowAlias}/executions` | — | JSON:AuthenticationExecutionInfoRepresentation | 204/∅ | 409 | both |
+| `PUT /admin/realms/{realm}/authentication/flows/{id}` | — | JSON:AuthenticationFlowRepresentation | 204/∅ | 409 | both |
+| `PUT /admin/realms/{realm}/authentication/required-actions/{alias}` | — | JSON:RequiredActionProviderRepresentation | 204/∅ | — | both |
+| `PUT /admin/realms/{realm}/authentication/required-actions/{alias}/config` | — | JSON:RequiredActionConfigRepresentation | 204/∅ | — | both |
+
+##### Authorization Services (untagged) — 31 operations
+
+| HTTP method and path | Query parameters (defaults) | Request body MIME/schema | Success status / body | Other listed HTTP codes | Version / notes |
+|---|---|---|---|---|---|
+| `DELETE /admin/realms/{realm}/clients/{client-uuid}/authz/resource-server/resource/{resource-id}` | _id,deep,exactName,first,matchingUri,max=100,name,owner,scope,type,uri | — | 204/∅ | 404 | both |
+| `DELETE /admin/realms/{realm}/clients/{client-uuid}/authz/resource-server/scope/{scope-id}` | — | — | 200/∅ | — | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/authz/resource-server` | — | — | 200:JSON/ResourceServerRepresentation | — | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/authz/resource-server/permission` | fields,first,max=100,name,owner,permission,policyId,resource,resourceType,scope,type | — | 200:JSON/AbstractPolicyRepresentation[],204/∅ | — | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/authz/resource-server/permission/providers` | — | — | 200:JSON/PolicyProviderRepresentation[] | — | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/authz/resource-server/permission/search` | fields,name | — | 200:JSON/AbstractPolicyRepresentation,204/∅ | 400 | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/authz/resource-server/policy` | fields,first,max=100,name,owner,permission,policyId,resource,resourceType,scope,type | — | 200:JSON/AbstractPolicyRepresentation[],204/∅ | — | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/authz/resource-server/policy/providers` | — | — | 200:JSON/PolicyProviderRepresentation[] | — | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/authz/resource-server/policy/search` | fields,name | — | 200:JSON/AbstractPolicyRepresentation,204/∅ | 400 | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/authz/resource-server/resource` | _id,deep,exactName,first,matchingUri,max=100,name,owner,scope,type,uri,_id,deep,exactName,first,matchingUri,max=100,name,owner,scope,type,uri | — | 200:JSON/ResourceRepresentation[] | — | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/authz/resource-server/resource/{resource-id}` | _id,deep,exactName,first,matchingUri,max=100,name,owner,scope,type,uri | — | 200:JSON/ResourceRepresentation | 404 | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/authz/resource-server/resource/{resource-id}/attributes` | _id,deep,exactName,first,matchingUri,max=100,name,owner,scope,type,uri | — | 200/∅ | — | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/authz/resource-server/resource/{resource-id}/permissions` | _id,deep,exactName,first,matchingUri,max=100,name,owner,scope,type,uri | — | 200:JSON/PolicyRepresentation[] | 404 | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/authz/resource-server/resource/{resource-id}/scopes` | _id,deep,exactName,first,matchingUri,max=100,name,owner,scope,type,uri | — | 200:JSON/ScopeRepresentation[] | 404 | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/authz/resource-server/resource/search` | _id,deep,exactName,first,matchingUri,max=100,name,owner,scope,type,uri,name | — | 200:JSON/ResourceRepresentation,204/∅ | 400 | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/authz/resource-server/scope` | first,max,name,scopeId | — | 200:JSON/ScopeRepresentation[] | — | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/authz/resource-server/scope/{scope-id}` | — | — | 200:JSON/ScopeRepresentation | 404 | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/authz/resource-server/scope/{scope-id}/permissions` | — | — | 200:JSON/PolicyRepresentation[] | 404 | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/authz/resource-server/scope/{scope-id}/resources` | — | — | 200:JSON/ResourceRepresentation[] | 404 | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/authz/resource-server/scope/search` | name | — | 200:JSON/ScopeRepresentation[],204/∅ | 400 | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/authz/resource-server/settings` | — | — | 200:JSON/ResourceServerRepresentation | — | both |
+| `POST /admin/realms/{realm}/clients/{client-uuid}/authz/resource-server/import` | — | JSON:ResourceServerRepresentation | 204/∅ | — | both |
+| `POST /admin/realms/{realm}/clients/{client-uuid}/authz/resource-server/permission` | — | JSON:string | 201/∅ | — | both |
+| `POST /admin/realms/{realm}/clients/{client-uuid}/authz/resource-server/permission/evaluate` | — | JSON:PolicyEvaluationRequest | 200:JSON/PolicyEvaluationResponse | 403,500 | both;Δ26.8.1 |
+| `POST /admin/realms/{realm}/clients/{client-uuid}/authz/resource-server/policy` | — | JSON:string | 201/∅ | — | both |
+| `POST /admin/realms/{realm}/clients/{client-uuid}/authz/resource-server/policy/evaluate` | — | JSON:PolicyEvaluationRequest | 200:JSON/PolicyEvaluationResponse | 403,500 | both;Δ26.8.1 |
+| `POST /admin/realms/{realm}/clients/{client-uuid}/authz/resource-server/resource` | _id,deep,exactName,first,matchingUri,max=100,name,owner,scope,type,uri | JSON:ResourceRepresentation | 201:JSON/ResourceRepresentation | 400 | both |
+| `POST /admin/realms/{realm}/clients/{client-uuid}/authz/resource-server/scope` | — | JSON:ScopeRepresentation | 200/∅ | — | both |
+| `PUT /admin/realms/{realm}/clients/{client-uuid}/authz/resource-server` | — | JSON:ResourceServerRepresentation | 204/∅ | — | both |
+| `PUT /admin/realms/{realm}/clients/{client-uuid}/authz/resource-server/resource/{resource-id}` | _id,deep,exactName,first,matchingUri,max=100,name,owner,scope,type,uri | JSON:ResourceRepresentation | 204/∅ | 404 | both |
+| `PUT /admin/realms/{realm}/clients/{client-uuid}/authz/resource-server/scope/{scope-id}` | — | JSON:ScopeRepresentation | 200/∅ | — | both |
+
+##### Client Attribute Certificate — 7 operations
+
+| HTTP method and path | Query parameters (defaults) | Request body MIME/schema | Success status / body | Other listed HTTP codes | Version / notes |
+|---|---|---|---|---|---|
+| `GET /admin/realms/{realm}/clients/{client-uuid}/certificates/{attr}` | — | — | 200:JSON/CertificateRepresentation | — | both |
+| `POST /admin/realms/{realm}/clients/{client-uuid}/certificates/{attr}/download` | — | JSON:KeyStoreConfig | 200:BIN/string(binary) | — | both;Δ26.8.1;deprecated(26.8.1) |
+| `POST /admin/realms/{realm}/clients/{client-uuid}/certificates/{attr}/generate` | — | — | 200:JSON/CertificateRepresentation | — | both;Δ26.8.1;deprecated(26.8.1) |
+| `POST /admin/realms/{realm}/clients/{client-uuid}/certificates/{attr}/generate-and-download` | — | JSON:KeyStoreConfig | 200:BIN/string(binary) | — | both;Δ26.8.1;deprecated(26.8.1) |
+| `POST /admin/realms/{realm}/clients/{client-uuid}/certificates/{attr}/upload` | — | — | 200:JSON/CertificateRepresentation | — | both;Δ26.8.1;deprecated(26.8.1) |
+| `POST /admin/realms/{realm}/clients/{client-uuid}/certificates/{attr}/upload-certificate` | — | — | 200:JSON/CertificateRepresentation | — | both |
+| `POST /admin/realms/{realm}/identity-provider/upload-certificate` | — | — | 200:JSON/CertificateRepresentation | — | both |
+
+##### Client Initial Access — 3 operations
+
+| HTTP method and path | Query parameters (defaults) | Request body MIME/schema | Success status / body | Other listed HTTP codes | Version / notes |
+|---|---|---|---|---|---|
+| `DELETE /admin/realms/{realm}/clients-initial-access/{id}` | — | — | 204/∅ | — | both |
+| `GET /admin/realms/{realm}/clients-initial-access` | — | — | 200:JSON/ClientInitialAccessPresentation[] | — | both |
+| `POST /admin/realms/{realm}/clients-initial-access` | — | JSON:ClientInitialAccessCreatePresentation | 201:JSON/ClientInitialAccessCreatePresentation | — | both |
+
+##### Client Registration Policy — 1 operations
+
+| HTTP method and path | Query parameters (defaults) | Request body MIME/schema | Success status / body | Other listed HTTP codes | Version / notes |
+|---|---|---|---|---|---|
+| `GET /admin/realms/{realm}/client-registration-policy/providers` | — | — | 200:JSON/ComponentTypeRepresentation[] | — | both |
+
+##### Client Role Mappings — 15 operations
+
+| HTTP method and path | Query parameters (defaults) | Request body MIME/schema | Success status / body | Other listed HTTP codes | Version / notes |
+|---|---|---|---|---|---|
+| `DELETE /admin/realms/{realm}/groups/{group-id}/role-mappings/clients/{client-id}` | — | JSON:RoleRepresentation[] | 204/∅ | — | both |
+| `DELETE /admin/realms/{realm}/organizations/{org-id}/groups/{group-id}/role-mappings/clients/{client-id}` | — | JSON:RoleRepresentation[] | 204/∅ | — | both |
+| `DELETE /admin/realms/{realm}/users/{user-id}/role-mappings/clients/{client-id}` | — | JSON:RoleRepresentation[] | 204/∅ | — | both |
+| `GET /admin/realms/{realm}/groups/{group-id}/role-mappings/clients/{client-id}` | — | — | 200:JSON/RoleRepresentation[] | — | both |
+| `GET /admin/realms/{realm}/groups/{group-id}/role-mappings/clients/{client-id}/available` | — | — | 200:JSON/RoleRepresentation[] | — | both |
+| `GET /admin/realms/{realm}/groups/{group-id}/role-mappings/clients/{client-id}/composite` | briefRepresentation=true | — | 200:JSON/RoleRepresentation[] | — | both |
+| `GET /admin/realms/{realm}/organizations/{org-id}/groups/{group-id}/role-mappings/clients/{client-id}` | — | — | 200:JSON/RoleRepresentation[] | — | both |
+| `GET /admin/realms/{realm}/organizations/{org-id}/groups/{group-id}/role-mappings/clients/{client-id}/available` | — | — | 200:JSON/RoleRepresentation[] | — | both |
+| `GET /admin/realms/{realm}/organizations/{org-id}/groups/{group-id}/role-mappings/clients/{client-id}/composite` | briefRepresentation=true | — | 200:JSON/RoleRepresentation[] | — | both |
+| `GET /admin/realms/{realm}/users/{user-id}/role-mappings/clients/{client-id}` | — | — | 200:JSON/RoleRepresentation[] | — | both |
+| `GET /admin/realms/{realm}/users/{user-id}/role-mappings/clients/{client-id}/available` | — | — | 200:JSON/RoleRepresentation[] | — | both |
+| `GET /admin/realms/{realm}/users/{user-id}/role-mappings/clients/{client-id}/composite` | briefRepresentation=true | — | 200:JSON/RoleRepresentation[] | — | both |
+| `POST /admin/realms/{realm}/groups/{group-id}/role-mappings/clients/{client-id}` | — | JSON:RoleRepresentation[] | 204/∅ | — | both |
+| `POST /admin/realms/{realm}/organizations/{org-id}/groups/{group-id}/role-mappings/clients/{client-id}` | — | JSON:RoleRepresentation[] | 204/∅ | — | both |
+| `POST /admin/realms/{realm}/users/{user-id}/role-mappings/clients/{client-id}` | — | JSON:RoleRepresentation[] | 204/∅ | — | both |
+
+##### Client Scopes — 10 operations
+
+| HTTP method and path | Query parameters (defaults) | Request body MIME/schema | Success status / body | Other listed HTTP codes | Version / notes |
+|---|---|---|---|---|---|
+| `DELETE /admin/realms/{realm}/client-scopes/{client-scope-id}` | — | — | 204/∅ | 400,403,500 | both |
+| `DELETE /admin/realms/{realm}/client-templates/{client-scope-id}` | — | — | 204/∅ | 400,403,500 | both |
+| `GET /admin/realms/{realm}/client-scopes` | — | — | 200:JSON/ClientScopeRepresentation[] | 403 | both |
+| `GET /admin/realms/{realm}/client-scopes/{client-scope-id}` | — | — | 200:JSON/ClientScopeRepresentation | 403 | both |
+| `GET /admin/realms/{realm}/client-templates` | — | — | 200:JSON/ClientScopeRepresentation[] | 403 | both |
+| `GET /admin/realms/{realm}/client-templates/{client-scope-id}` | — | — | 200:JSON/ClientScopeRepresentation | 403 | both |
+| `POST /admin/realms/{realm}/client-scopes` | — | JSON:ClientScopeRepresentation | 201/∅ | 403,409 | both |
+| `POST /admin/realms/{realm}/client-templates` | — | JSON:ClientScopeRepresentation | 201/∅ | 403,409 | both |
+| `PUT /admin/realms/{realm}/client-scopes/{client-scope-id}` | — | JSON:ClientScopeRepresentation | 204/∅ | 400,403,409 | both |
+| `PUT /admin/realms/{realm}/client-templates/{client-scope-id}` | — | JSON:ClientScopeRepresentation | 204/∅ | 400,403,409 | both |
+
+##### Clients — 35 operations
+
+| HTTP method and path | Query parameters (defaults) | Request body MIME/schema | Success status / body | Other listed HTTP codes | Version / notes |
+|---|---|---|---|---|---|
+| `DELETE /admin/realms/{realm}/clients/{client-uuid}` | — | — | 204/∅ | — | both |
+| `DELETE /admin/realms/{realm}/clients/{client-uuid}/client-secret/rotated` | — | — | 200/∅ | — | both |
+| `DELETE /admin/realms/{realm}/clients/{client-uuid}/default-client-scopes/{clientScopeId}` | — | — | 204/∅ | — | both |
+| `DELETE /admin/realms/{realm}/clients/{client-uuid}/nodes/{node}` | — | — | 204/∅ | — | both |
+| `DELETE /admin/realms/{realm}/clients/{client-uuid}/optional-client-scopes/{clientScopeId}` | — | — | 204/∅ | — | both |
+| `GET /admin/realms/{realm}/clients` | clientId,first,max,q,search=false,viewableOnly=false | — | 200:JSON/ClientRepresentation[] | — | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}` | — | — | 200:JSON/ClientRepresentation | — | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/client-secret` | — | — | 200:JSON/CredentialRepresentation | — | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/client-secret/rotated` | — | — | 200:JSON/CredentialRepresentation | — | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/default-client-scopes` | — | — | 200:JSON/ClientScopeRepresentation[] | — | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/evaluate-scopes/generate-example-access-token` | audience,scope,userId | — | 200:JSON/AccessToken | 403,404 | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/evaluate-scopes/generate-example-id-token` | audience,scope,userId | — | 200:JSON/IDToken | 403,404 | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/evaluate-scopes/generate-example-saml-response` | audience,scope,userId | — | 200:JSON/SamlExampleResponse | — | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/evaluate-scopes/generate-example-userinfo` | scope,userId | — | 200:JSON/object | 403 | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/evaluate-scopes/protocol-mappers` | scope | — | 200:JSON/ProtocolMapperEvaluationRepresentation[] | 403 | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/evaluate-scopes/scope-mappings/{roleContainerId}/granted` | scope | — | 200:JSON/RoleRepresentation[] | 403 | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/evaluate-scopes/scope-mappings/{roleContainerId}/not-granted` | scope | — | 200:JSON/RoleRepresentation[] | 403 | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/installation/providers/{providerId}` | — | — | 200/∅ | — | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/management/permissions` | — | — | 200:JSON/ManagementPermissionReference | — | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/offline-session-count` | — | — | 200:JSON/object | — | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/offline-sessions` | first,max=100 | — | 200:JSON/UserSessionRepresentation[] | — | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/optional-client-scopes` | — | — | 200:JSON/ClientScopeRepresentation[] | — | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/service-account-user` | — | — | 200:JSON/UserRepresentation | — | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/session-count` | — | — | 200:JSON/object | — | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/test-nodes-available` | — | — | 200:JSON/GlobalRequestResult | — | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/user-sessions` | first,max=100 | — | 200:JSON/UserSessionRepresentation[] | — | both |
+| `POST /admin/realms/{realm}/clients` | — | JSON:ClientRepresentation | 201/∅ | 409 | both |
+| `POST /admin/realms/{realm}/clients/{client-uuid}/client-secret` | — | — | 200:JSON/CredentialRepresentation | — | both |
+| `POST /admin/realms/{realm}/clients/{client-uuid}/nodes` | — | JSON:object | 204/∅ | 400 | both;Δ26.8.1 |
+| `POST /admin/realms/{realm}/clients/{client-uuid}/push-revocation` | — | — | 200:JSON/GlobalRequestResult | — | both |
+| `POST /admin/realms/{realm}/clients/{client-uuid}/registration-access-token` | — | — | 200:JSON/ClientRepresentation | — | both |
+| `PUT /admin/realms/{realm}/clients/{client-uuid}` | — | JSON:ClientRepresentation | 204/∅ | 400,409 | both |
+| `PUT /admin/realms/{realm}/clients/{client-uuid}/default-client-scopes/{clientScopeId}` | — | — | 204/∅ | — | both |
+| `PUT /admin/realms/{realm}/clients/{client-uuid}/management/permissions` | — | JSON:ManagementPermissionReference | 200:JSON/ManagementPermissionReference | — | both |
+| `PUT /admin/realms/{realm}/clients/{client-uuid}/optional-client-scopes/{clientScopeId}` | — | — | 204/∅ | — | both |
+
+##### Component — 6 operations
+
+| HTTP method and path | Query parameters (defaults) | Request body MIME/schema | Success status / body | Other listed HTTP codes | Version / notes |
+|---|---|---|---|---|---|
+| `DELETE /admin/realms/{realm}/components/{id}` | — | — | 204/∅ | — | both |
+| `GET /admin/realms/{realm}/components` | name,parent,providerId,type | — | 200:JSON/ComponentRepresentation[] | — | both |
+| `GET /admin/realms/{realm}/components/{id}` | — | — | 200:JSON/ComponentRepresentation | — | both |
+| `GET /admin/realms/{realm}/components/{id}/sub-component-types` | type | — | 200:JSON/ComponentTypeRepresentation[] | — | both |
+| `POST /admin/realms/{realm}/components` | — | JSON:ComponentRepresentation | 200/∅ | — | both |
+| `PUT /admin/realms/{realm}/components/{id}` | — | JSON:ComponentRepresentation | 200/∅ | — | both |
+
+##### Groups — 11 operations
+
+| HTTP method and path | Query parameters (defaults) | Request body MIME/schema | Success status / body | Other listed HTTP codes | Version / notes |
+|---|---|---|---|---|---|
+| `DELETE /admin/realms/{realm}/groups/{group-id}` | — | — | 204/∅ | — | both |
+| `GET /admin/realms/{realm}/groups` | briefRepresentation=true,exact=false,first,max,populateHierarchy=true,q,search,subGroupsCount=true | — | 200:JSON/GroupRepresentation[] | — | both |
+| `GET /admin/realms/{realm}/groups/{group-id}` | — | — | 200:JSON/GroupRepresentation | — | both |
+| `GET /admin/realms/{realm}/groups/{group-id}/children` | briefRepresentation=false,exact,first=0,max=10,search,subGroupsCount=true | — | 200:JSON/GroupRepresentation[] | — | both |
+| `GET /admin/realms/{realm}/groups/{group-id}/management/permissions` | — | — | 200:JSON/ManagementPermissionReference | — | both |
+| `GET /admin/realms/{realm}/groups/{group-id}/members` | briefRepresentation,first,max | — | 200:JSON/UserRepresentation[] | — | both |
+| `GET /admin/realms/{realm}/groups/count` | search,top=false | — | 200:JSON/object | — | both |
+| `POST /admin/realms/{realm}/groups` | — | JSON:GroupRepresentation | 201/∅,204/∅ | 400,409 | both |
+| `POST /admin/realms/{realm}/groups/{group-id}/children` | — | JSON:GroupRepresentation | 201/∅,204/∅ | 400,409 | both |
+| `PUT /admin/realms/{realm}/groups/{group-id}` | — | JSON:GroupRepresentation | 204/∅ | 400,409 | both |
+| `PUT /admin/realms/{realm}/groups/{group-id}/management/permissions` | — | JSON:ManagementPermissionReference | 200:JSON/ManagementPermissionReference | — | both |
+
+##### Identity Providers — 17 operations
+
+| HTTP method and path | Query parameters (defaults) | Request body MIME/schema | Success status / body | Other listed HTTP codes | Version / notes |
+|---|---|---|---|---|---|
+| `DELETE /admin/realms/{realm}/identity-provider/instances/{alias}` | — | — | 200/∅ | — | both |
+| `DELETE /admin/realms/{realm}/identity-provider/instances/{alias}/mappers/{id}` | — | — | 204/∅ | — | both |
+| `GET /admin/realms/{realm}/identity-provider/instances` | briefRepresentation,capability,first,max,realmOnly,search,type | — | 200:JSON/IdentityProviderRepresentation[] | — | both |
+| `GET /admin/realms/{realm}/identity-provider/instances/{alias}` | — | — | 200:JSON/IdentityProviderRepresentation | — | both |
+| `GET /admin/realms/{realm}/identity-provider/instances/{alias}/export` | format | — | 200/∅ | — | both |
+| `GET /admin/realms/{realm}/identity-provider/instances/{alias}/management/permissions` | — | — | 200:JSON/ManagementPermissionReference | — | both |
+| `GET /admin/realms/{realm}/identity-provider/instances/{alias}/mapper-types` | — | — | 200:ANY/object | — | both |
+| `GET /admin/realms/{realm}/identity-provider/instances/{alias}/mappers` | — | — | 200:JSON/IdentityProviderMapperRepresentation[] | — | both |
+| `GET /admin/realms/{realm}/identity-provider/instances/{alias}/mappers/{id}` | — | — | 200:JSON/IdentityProviderMapperRepresentation | — | both |
+| `GET /admin/realms/{realm}/identity-provider/instances/{alias}/reload-keys` | — | — | 200:JSON/boolean | — | both |
+| `GET /admin/realms/{realm}/identity-provider/providers/{provider_id}` | — | — | 200:JSON/object | — | both |
+| `POST /admin/realms/{realm}/identity-provider/import-config` | — | JSON:object | 200:JSON/object | — | both |
+| `POST /admin/realms/{realm}/identity-provider/instances` | — | JSON:IdentityProviderRepresentation | 201/∅ | 400,409 | both |
+| `POST /admin/realms/{realm}/identity-provider/instances/{alias}/mappers` | — | JSON:IdentityProviderMapperRepresentation | 200/∅ | — | both |
+| `PUT /admin/realms/{realm}/identity-provider/instances/{alias}` | — | JSON:IdentityProviderRepresentation | 204/∅ | 400,409 | both |
+| `PUT /admin/realms/{realm}/identity-provider/instances/{alias}/management/permissions` | — | JSON:ManagementPermissionReference | 200:JSON/ManagementPermissionReference | — | both |
+| `PUT /admin/realms/{realm}/identity-provider/instances/{alias}/mappers/{id}` | — | JSON:IdentityProviderMapperRepresentation | 204/∅ | — | both |
+
+##### Key — 1 operations
+
+| HTTP method and path | Query parameters (defaults) | Request body MIME/schema | Success status / body | Other listed HTTP codes | Version / notes |
+|---|---|---|---|---|---|
+| `GET /admin/realms/{realm}/keys` | — | — | 200:JSON/KeysMetadataRepresentation | — | both |
+
+##### Organizations — 38 operations
+
+| HTTP method and path | Query parameters (defaults) | Request body MIME/schema | Success status / body | Other listed HTTP codes | Version / notes |
+|---|---|---|---|---|---|
+| `DELETE /admin/realms/{realm}/organizations/{org-id}` | — | — | 204/∅ | 400,403 | both |
+| `DELETE /admin/realms/{realm}/organizations/{org-id}/groups/{group-id}` | — | — | 204/∅ | 403,404 | both |
+| `DELETE /admin/realms/{realm}/organizations/{org-id}/groups/{group-id}/members/{userId}` | — | — | 204/∅ | 400,403,404 | both |
+| `DELETE /admin/realms/{realm}/organizations/{org-id}/identity-providers/{alias}` | — | — | 204/∅ | 400,403,404 | both |
+| `DELETE /admin/realms/{realm}/organizations/{org-id}/invitations/{id}` | — | — | 204/∅ | 403,404 | both |
+| `DELETE /admin/realms/{realm}/organizations/{org-id}/members/{member-id}` | — | — | 204/∅ | 400,403 | both |
+| `GET /admin/realms/{realm}/organizations` | briefRepresentation=true,exact,first=0,identityProvider,max=10,q,search | — | 200:JSON/OrganizationRepresentation[] | 403,404 | both;Δ26.8.1 |
+| `GET /admin/realms/{realm}/organizations/{org-id}` | — | — | 200:JSON/OrganizationRepresentation | 403 | both |
+| `GET /admin/realms/{realm}/organizations/{org-id}/groups` | briefRepresentation=true,exact=false,first,max,populateHierarchy=false,q,search,subGroupsCount=false | — | 200:JSON/GroupRepresentation[] | 403 | both |
+| `GET /admin/realms/{realm}/organizations/{org-id}/groups/{group-id}` | subGroupsCount=false | — | 200:JSON/GroupRepresentation | 403 | both |
+| `GET /admin/realms/{realm}/organizations/{org-id}/groups/{group-id}/children` | exact,first=0,max=10,search,subGroupsCount | — | 200:JSON/GroupRepresentation[] | 403 | both |
+| `GET /admin/realms/{realm}/organizations/{org-id}/groups/{group-id}/members` | briefRepresentation,first,max | — | 200:JSON/MemberRepresentation[] | 403 | both |
+| `GET /admin/realms/{realm}/organizations/{org-id}/groups/group-by-path/{path}` | briefRepresentation=true,subGroupsCount=false | — | 200:JSON/GroupRepresentation | 403,404 | both;Δ26.8.1 |
+| `GET /admin/realms/{realm}/organizations/{org-id}/identity-providers` | — | — | 200:JSON/IdentityProviderRepresentation[] | 403 | both |
+| `GET /admin/realms/{realm}/organizations/{org-id}/identity-providers/{alias}` | — | — | 200:JSON/IdentityProviderRepresentation | 403,404 | both |
+| `GET /admin/realms/{realm}/organizations/{org-id}/identity-providers/{alias}/groups` | briefRepresentation=true,exact=false,first,max,q,search,subGroupsCount=false | — | 200:JSON/GroupRepresentation[] | 403,404 | both |
+| `GET /admin/realms/{realm}/organizations/{org-id}/invitations` | email,first,firstName,lastName,max,search,status | — | 200:JSON/OrganizationInvitationRepresentation[] | 403 | both |
+| `GET /admin/realms/{realm}/organizations/{org-id}/invitations/{id}` | — | — | 200:JSON/OrganizationInvitationRepresentation | 403,404 | both |
+| `GET /admin/realms/{realm}/organizations/{org-id}/members` | briefRepresentation=true,exact,first=0,max=10,membershipType,search | — | 200:JSON/MemberRepresentation[] | 403 | both |
+| `GET /admin/realms/{realm}/organizations/{org-id}/members/{member-id}` | — | — | 200:JSON/MemberRepresentation | 400,403 | both |
+| `GET /admin/realms/{realm}/organizations/{org-id}/members/{member-id}/groups` | briefRepresentation=true,first,max,search | — | 200:JSON/GroupRepresentation[] | 400,403 | both |
+| `GET /admin/realms/{realm}/organizations/{org-id}/members/{member-id}/organizations` | briefRepresentation=true | — | 200:JSON/OrganizationRepresentation[] | 400,403 | both |
+| `GET /admin/realms/{realm}/organizations/{org-id}/members/count` | — | — | 200:JSON/integer | 403 | both |
+| `GET /admin/realms/{realm}/organizations/count` | exact,identityProvider,q,search | — | 200:JSON/integer | 403 | both;Δ26.8.1 |
+| `GET /admin/realms/{realm}/organizations/members/{member-id}/organizations` | briefRepresentation=true | — | 200:JSON/OrganizationRepresentation[] | 400,403 | both |
+| `POST /admin/realms/{realm}/organizations` | — | JSON:OrganizationRepresentation | 201/∅ | 400,403 | both |
+| `POST /admin/realms/{realm}/organizations/{org-id}/groups` | — | JSON:GroupRepresentation | 201/∅,204/∅ | 400,403,404,409 | both |
+| `POST /admin/realms/{realm}/organizations/{org-id}/groups/{group-id}/children` | — | JSON:GroupRepresentation | 201/∅,204/∅ | 400,403,404,409 | both |
+| `POST /admin/realms/{realm}/organizations/{org-id}/identity-providers` | — | JSON:string | 204/∅ | 400,403,409 | both |
+| `POST /admin/realms/{realm}/organizations/{org-id}/invitations/{id}/resend` | — | — | 204/∅ | 403,404 | both |
+| `POST /admin/realms/{realm}/organizations/{org-id}/members` | — | JSON:string | 201/∅ | 400,403,409 | both |
+| `POST /admin/realms/{realm}/organizations/{org-id}/members/invite-existing-user` | — | FORM:object | 204/∅ | 400,403,500 | both |
+| `POST /admin/realms/{realm}/organizations/{org-id}/members/invite-user` | client_id | FORM:object | 204/∅ | 400,403,409,500 | both;Δ26.8.1 |
+| `PUT /admin/realms/{realm}/organizations/{org-id}` | — | JSON:OrganizationRepresentation | 204/∅ | 400,403,409 | both |
+| `PUT /admin/realms/{realm}/organizations/{org-id}/groups/{group-id}` | — | JSON:GroupRepresentation | 204/∅ | 400,403,409 | both |
+| `PUT /admin/realms/{realm}/organizations/{org-id}/groups/{group-id}/members/{userId}` | — | — | 204/∅ | 400,403,404,409 | both |
+| `PUT /admin/realms/{realm}/organizations/{org-id}/identity-providers/{alias}` | — | JSON:OrganizationIdentityProviderLinkRepresentation | 204/∅ | 400,403,404 | +26.8.1 |
+| `PUT /admin/realms/{realm}/organizations/{org-id}/members/{member-id}/membership-type` | — | JSON:MembershipType | 204/∅ | 400,403,404 | +26.8.1 |
+
+##### Protocol Mappers — 21 operations
+
+| HTTP method and path | Query parameters (defaults) | Request body MIME/schema | Success status / body | Other listed HTTP codes | Version / notes |
+|---|---|---|---|---|---|
+| `DELETE /admin/realms/{realm}/client-scopes/{client-scope-id}/protocol-mappers/models/{id}` | — | — | 204/∅ | — | both |
+| `DELETE /admin/realms/{realm}/client-templates/{client-scope-id}/protocol-mappers/models/{id}` | — | — | 204/∅ | — | both |
+| `DELETE /admin/realms/{realm}/clients/{client-uuid}/protocol-mappers/models/{id}` | — | — | 204/∅ | — | both |
+| `GET /admin/realms/{realm}/client-scopes/{client-scope-id}/protocol-mappers/models` | — | — | 200:JSON/ProtocolMapperRepresentation[] | — | both |
+| `GET /admin/realms/{realm}/client-scopes/{client-scope-id}/protocol-mappers/models/{id}` | — | — | 200:JSON/ProtocolMapperRepresentation | — | both |
+| `GET /admin/realms/{realm}/client-scopes/{client-scope-id}/protocol-mappers/protocol/{protocol}` | — | — | 200:JSON/ProtocolMapperRepresentation[] | — | both |
+| `GET /admin/realms/{realm}/client-templates/{client-scope-id}/protocol-mappers/models` | — | — | 200:JSON/ProtocolMapperRepresentation[] | — | both |
+| `GET /admin/realms/{realm}/client-templates/{client-scope-id}/protocol-mappers/models/{id}` | — | — | 200:JSON/ProtocolMapperRepresentation | — | both |
+| `GET /admin/realms/{realm}/client-templates/{client-scope-id}/protocol-mappers/protocol/{protocol}` | — | — | 200:JSON/ProtocolMapperRepresentation[] | — | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/protocol-mappers/models` | — | — | 200:JSON/ProtocolMapperRepresentation[] | — | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/protocol-mappers/models/{id}` | — | — | 200:JSON/ProtocolMapperRepresentation | — | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/protocol-mappers/protocol/{protocol}` | — | — | 200:JSON/ProtocolMapperRepresentation[] | — | both |
+| `POST /admin/realms/{realm}/client-scopes/{client-scope-id}/protocol-mappers/add-models` | — | JSON:ProtocolMapperRepresentation[] | 204/∅ | — | both |
+| `POST /admin/realms/{realm}/client-scopes/{client-scope-id}/protocol-mappers/models` | — | JSON:ProtocolMapperRepresentation | 201/∅ | 409 | both |
+| `POST /admin/realms/{realm}/client-templates/{client-scope-id}/protocol-mappers/add-models` | — | JSON:ProtocolMapperRepresentation[] | 204/∅ | — | both |
+| `POST /admin/realms/{realm}/client-templates/{client-scope-id}/protocol-mappers/models` | — | JSON:ProtocolMapperRepresentation | 201/∅ | 409 | both |
+| `POST /admin/realms/{realm}/clients/{client-uuid}/protocol-mappers/add-models` | — | JSON:ProtocolMapperRepresentation[] | 204/∅ | — | both |
+| `POST /admin/realms/{realm}/clients/{client-uuid}/protocol-mappers/models` | — | JSON:ProtocolMapperRepresentation | 201/∅ | 409 | both |
+| `PUT /admin/realms/{realm}/client-scopes/{client-scope-id}/protocol-mappers/models/{id}` | — | JSON:ProtocolMapperRepresentation | 204/∅ | — | both |
+| `PUT /admin/realms/{realm}/client-templates/{client-scope-id}/protocol-mappers/models/{id}` | — | JSON:ProtocolMapperRepresentation | 204/∅ | — | both |
+| `PUT /admin/realms/{realm}/clients/{client-uuid}/protocol-mappers/models/{id}` | — | JSON:ProtocolMapperRepresentation | 204/∅ | — | both |
+
+##### Realms Admin — 45 operations
+
+| HTTP method and path | Query parameters (defaults) | Request body MIME/schema | Success status / body | Other listed HTTP codes | Version / notes |
+|---|---|---|---|---|---|
+| `DELETE /admin/realms/{realm}` | — | — | 204/∅ | 400,403,404 | both |
+| `DELETE /admin/realms/{realm}/admin-events` | — | — | 204/∅ | 403 | both |
+| `DELETE /admin/realms/{realm}/default-default-client-scopes/{clientScopeId}` | — | — | 204/∅ | 403,404 | both |
+| `DELETE /admin/realms/{realm}/default-groups/{groupId}` | — | — | 204/∅ | 403,404 | both |
+| `DELETE /admin/realms/{realm}/default-optional-client-scopes/{clientScopeId}` | — | — | 204/∅ | 403,404 | both |
+| `DELETE /admin/realms/{realm}/events` | — | — | 204/∅ | 403 | both |
+| `DELETE /admin/realms/{realm}/localization/{locale}` | — | — | 204/∅ | 403,404 | both |
+| `DELETE /admin/realms/{realm}/localization/{locale}/{key}` | — | — | 204/∅ | 403,404 | both |
+| `DELETE /admin/realms/{realm}/sessions/{session}` | isOffline=false | — | 204/∅ | 403,404 | both |
+| `GET /admin/realms` | briefRepresentation=false | — | 200:JSON/RealmRepresentation[] | 403 | both |
+| `GET /admin/realms/{realm}` | — | — | 200:JSON/RealmRepresentation | 403 | both |
+| `GET /admin/realms/{realm}/admin-events` | authClient,authIpAddress,authRealm,authUser,dateFrom,dateTo,direction,first,max,operationTypes,resourcePath,resourceTypes | — | 200:JSON/AdminEventRepresentation[] | 400,403 | both |
+| `GET /admin/realms/{realm}/client-policies/policies` | include-global-policies | — | 200:JSON/ClientPoliciesRepresentation | — | both |
+| `GET /admin/realms/{realm}/client-policies/profiles` | include-global-profiles | — | 200:JSON/ClientProfilesRepresentation | — | both |
+| `GET /admin/realms/{realm}/client-session-stats` | — | — | 200:JSON/object[] | 403 | both |
+| `GET /admin/realms/{realm}/client-types` | — | — | 200:JSON/ClientTypesRepresentation | — | both |
+| `GET /admin/realms/{realm}/credential-registrators` | — | — | 200:JSON/string[] | 403 | both |
+| `GET /admin/realms/{realm}/default-default-client-scopes` | — | — | 200:JSON/ClientScopeRepresentation[] | 403 | both |
+| `GET /admin/realms/{realm}/default-groups` | — | — | 200:JSON/GroupRepresentation[] | 403 | both |
+| `GET /admin/realms/{realm}/default-optional-client-scopes` | — | — | 200:JSON/ClientScopeRepresentation[] | 403 | both |
+| `GET /admin/realms/{realm}/events` | client,dateFrom,dateTo,direction,first,ipAddress,max=100,type,user | — | 200:JSON/EventRepresentation[] | 400,403 | both |
+| `GET /admin/realms/{realm}/events/config` | — | — | 200:JSON/RealmEventsConfigRepresentation | 403 | both |
+| `GET /admin/realms/{realm}/group-by-path/{path}` | — | — | 200:JSON/GroupRepresentation | 403,404 | both |
+| `GET /admin/realms/{realm}/localization` | — | — | 200:JSON/string[] | 403 | both |
+| `GET /admin/realms/{realm}/localization/{locale}` | useRealmDefaultLocaleFallback | — | 200:JSON/object | 403 | both |
+| `GET /admin/realms/{realm}/localization/{locale}/{key}` | — | — | 200:TEXT/string | 403,404 | both |
+| `GET /admin/realms/{realm}/users-management-permissions` | — | — | 200:JSON/ManagementPermissionReference | 403 | both |
+| `POST /admin/realms` | — | JSON:string(binary) | 201/∅ | 400,403,409,500 | both |
+| `POST /admin/realms/{realm}/client-description-converter` | — | JSON:string,XML:string,TEXT:string | 200:JSON/ClientRepresentation | 403,404 | both |
+| `POST /admin/realms/{realm}/localization/{locale}` | — | JSON:object | 204/∅ | 400,403 | both |
+| `POST /admin/realms/{realm}/logout-all` | — | — | 200:JSON/GlobalRequestResult | 403 | both |
+| `POST /admin/realms/{realm}/partial-export` | exportClients,exportGroupsAndRoles | — | 200:JSON/RealmRepresentation | 403 | both |
+| `POST /admin/realms/{realm}/partialImport` | — | JSON:string(binary) | 200:JSON/object | 403,409 | both |
+| `POST /admin/realms/{realm}/push-revocation` | — | — | 200:JSON/GlobalRequestResult | 403 | both |
+| `POST /admin/realms/{realm}/testSMTPConnection` | — | JSON:object,FORM:object | 204/∅ | 500 | both;deprecated(26.8.1) |
+| `PUT /admin/realms/{realm}` | — | JSON:RealmRepresentation | 204/∅ | 400,403,404,409,500 | both |
+| `PUT /admin/realms/{realm}/client-policies/policies` | — | JSON:ClientPoliciesRepresentation | 200/∅ | — | both |
+| `PUT /admin/realms/{realm}/client-policies/profiles` | — | JSON:ClientProfilesRepresentation | 200/∅ | — | both |
+| `PUT /admin/realms/{realm}/client-types` | — | JSON:ClientTypesRepresentation | 204/∅ | — | both |
+| `PUT /admin/realms/{realm}/default-default-client-scopes/{clientScopeId}` | — | — | 204/∅ | 403,404 | both |
+| `PUT /admin/realms/{realm}/default-groups/{groupId}` | — | — | 204/∅ | 403,404 | both |
+| `PUT /admin/realms/{realm}/default-optional-client-scopes/{clientScopeId}` | — | — | 204/∅ | 403,404 | both |
+| `PUT /admin/realms/{realm}/events/config` | — | JSON:RealmEventsConfigRepresentation | 204/∅ | 403 | both |
+| `PUT /admin/realms/{realm}/localization/{locale}/{key}` | — | TEXT:string | 204/∅ | 400,403 | both |
+| `PUT /admin/realms/{realm}/users-management-permissions` | — | JSON:ManagementPermissionReference | 200:JSON/ManagementPermissionReference | 403 | both |
+
+##### Role Mapper — 18 operations
+
+| HTTP method and path | Query parameters (defaults) | Request body MIME/schema | Success status / body | Other listed HTTP codes | Version / notes |
+|---|---|---|---|---|---|
+| `DELETE /admin/realms/{realm}/groups/{group-id}/role-mappings/realm` | — | JSON:RoleRepresentation[] | 204/∅ | 400,403,404,500 | both |
+| `DELETE /admin/realms/{realm}/organizations/{org-id}/groups/{group-id}/role-mappings/realm` | — | JSON:RoleRepresentation[] | 204/∅ | 400,403,404,500 | both |
+| `DELETE /admin/realms/{realm}/users/{user-id}/role-mappings/realm` | — | JSON:RoleRepresentation[] | 204/∅ | 400,403,404,500 | both |
+| `GET /admin/realms/{realm}/groups/{group-id}/role-mappings` | — | — | 200:JSON/MappingsRepresentation | 403 | both |
+| `GET /admin/realms/{realm}/groups/{group-id}/role-mappings/realm` | — | — | 200:JSON/RoleRepresentation[] | 403 | both |
+| `GET /admin/realms/{realm}/groups/{group-id}/role-mappings/realm/available` | — | — | 200:JSON/RoleRepresentation[] | 403 | both |
+| `GET /admin/realms/{realm}/groups/{group-id}/role-mappings/realm/composite` | briefRepresentation=true | — | 200:JSON/RoleRepresentation[] | 403 | both |
+| `GET /admin/realms/{realm}/organizations/{org-id}/groups/{group-id}/role-mappings` | — | — | 200:JSON/MappingsRepresentation | 403 | both |
+| `GET /admin/realms/{realm}/organizations/{org-id}/groups/{group-id}/role-mappings/realm` | — | — | 200:JSON/RoleRepresentation[] | 403 | both |
+| `GET /admin/realms/{realm}/organizations/{org-id}/groups/{group-id}/role-mappings/realm/available` | — | — | 200:JSON/RoleRepresentation[] | 403 | both |
+| `GET /admin/realms/{realm}/organizations/{org-id}/groups/{group-id}/role-mappings/realm/composite` | briefRepresentation=true | — | 200:JSON/RoleRepresentation[] | 403 | both |
+| `GET /admin/realms/{realm}/users/{user-id}/role-mappings` | — | — | 200:JSON/MappingsRepresentation | 403 | both |
+| `GET /admin/realms/{realm}/users/{user-id}/role-mappings/realm` | — | — | 200:JSON/RoleRepresentation[] | 403 | both |
+| `GET /admin/realms/{realm}/users/{user-id}/role-mappings/realm/available` | — | — | 200:JSON/RoleRepresentation[] | 403 | both |
+| `GET /admin/realms/{realm}/users/{user-id}/role-mappings/realm/composite` | briefRepresentation=true | — | 200:JSON/RoleRepresentation[] | 403 | both |
+| `POST /admin/realms/{realm}/groups/{group-id}/role-mappings/realm` | — | JSON:RoleRepresentation[] | 204/∅ | 400,403,404,500 | both |
+| `POST /admin/realms/{realm}/organizations/{org-id}/groups/{group-id}/role-mappings/realm` | — | JSON:RoleRepresentation[] | 204/∅ | 400,403,404,500 | both |
+| `POST /admin/realms/{realm}/users/{user-id}/role-mappings/realm` | — | JSON:RoleRepresentation[] | 204/∅ | 400,403,404,500 | both |
+
+##### Roles — 28 operations
+
+| HTTP method and path | Query parameters (defaults) | Request body MIME/schema | Success status / body | Other listed HTTP codes | Version / notes |
+|---|---|---|---|---|---|
+| `DELETE /admin/realms/{realm}/clients/{client-uuid}/roles/{role-name}` | — | — | 204/∅ | 400,403,404 | both |
+| `DELETE /admin/realms/{realm}/clients/{client-uuid}/roles/{role-name}/composites` | — | JSON:RoleRepresentation[] | 204/∅ | 403,404 | both |
+| `DELETE /admin/realms/{realm}/roles/{role-name}` | — | — | 204/∅ | 400,403,404 | both |
+| `DELETE /admin/realms/{realm}/roles/{role-name}/composites` | — | JSON:RoleRepresentation[] | 204/∅ | 403,404 | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/roles` | briefRepresentation=true,first,max,search= | — | 200:JSON/RoleRepresentation[] | 403 | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/roles/{role-name}` | — | — | 200:JSON/RoleRepresentation | 403,404 | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/roles/{role-name}/composites` | — | — | 200:JSON/RoleRepresentation[] | 403,404 | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/roles/{role-name}/composites/clients/{targetClientUuid}` | — | — | 200:JSON/RoleRepresentation[] | 403,404 | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/roles/{role-name}/composites/realm` | — | — | 200:JSON/RoleRepresentation[] | 403,404 | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/roles/{role-name}/groups` | briefRepresentation=true,first,max=100 | — | 200:JSON/GroupRepresentation[] | 403,404 | both;Δ26.8.1 |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/roles/{role-name}/management/permissions` | — | — | 200:JSON/ManagementPermissionReference | 403,404 | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/roles/{role-name}/users` | briefRepresentation,first,max=100 | — | 200:JSON/UserRepresentation[] | 403,404 | both |
+| `GET /admin/realms/{realm}/roles` | briefRepresentation=true,first,max,search= | — | 200:JSON/RoleRepresentation[] | 403 | both |
+| `GET /admin/realms/{realm}/roles/{role-name}` | — | — | 200:JSON/RoleRepresentation | 403,404 | both |
+| `GET /admin/realms/{realm}/roles/{role-name}/composites` | — | — | 200:JSON/RoleRepresentation[] | 403,404 | both |
+| `GET /admin/realms/{realm}/roles/{role-name}/composites/clients/{targetClientUuid}` | — | — | 200:JSON/RoleRepresentation[] | 403,404 | both |
+| `GET /admin/realms/{realm}/roles/{role-name}/composites/realm` | — | — | 200:JSON/RoleRepresentation[] | 403,404 | both |
+| `GET /admin/realms/{realm}/roles/{role-name}/groups` | briefRepresentation=true,first,max=100 | — | 200:JSON/GroupRepresentation[] | 403,404 | both;Δ26.8.1 |
+| `GET /admin/realms/{realm}/roles/{role-name}/management/permissions` | — | — | 200:JSON/ManagementPermissionReference | 403,404 | both |
+| `GET /admin/realms/{realm}/roles/{role-name}/users` | briefRepresentation,first,max=100 | — | 200:JSON/UserRepresentation[] | 403,404 | both |
+| `POST /admin/realms/{realm}/clients/{client-uuid}/roles` | — | JSON:RoleRepresentation | 201/∅ | 400,403,404,409,500 | both |
+| `POST /admin/realms/{realm}/clients/{client-uuid}/roles/{role-name}/composites` | — | JSON:RoleRepresentation[] | 204/∅ | 403,404 | both |
+| `POST /admin/realms/{realm}/roles` | — | JSON:RoleRepresentation | 201/∅ | 400,403,404,409,500 | both |
+| `POST /admin/realms/{realm}/roles/{role-name}/composites` | — | JSON:RoleRepresentation[] | 204/∅ | 403,404 | both |
+| `PUT /admin/realms/{realm}/clients/{client-uuid}/roles/{role-name}` | — | JSON:RoleRepresentation | 204/∅ | 400,403,404,409 | both |
+| `PUT /admin/realms/{realm}/clients/{client-uuid}/roles/{role-name}/management/permissions` | — | JSON:ManagementPermissionReference | 200:JSON/ManagementPermissionReference | 403,404 | both |
+| `PUT /admin/realms/{realm}/roles/{role-name}` | — | JSON:RoleRepresentation | 204/∅ | 400,403,404,409 | both |
+| `PUT /admin/realms/{realm}/roles/{role-name}/management/permissions` | — | JSON:ManagementPermissionReference | 200:JSON/ManagementPermissionReference | 403,404 | both |
+
+##### Roles (by ID) — 10 operations
+
+| HTTP method and path | Query parameters (defaults) | Request body MIME/schema | Success status / body | Other listed HTTP codes | Version / notes |
+|---|---|---|---|---|---|
+| `DELETE /admin/realms/{realm}/roles-by-id/{role-id}` | — | — | 204/∅ | 400,403 | both |
+| `DELETE /admin/realms/{realm}/roles-by-id/{role-id}/composites` | — | JSON:RoleRepresentation[] | 204/∅ | 403 | both |
+| `GET /admin/realms/{realm}/roles-by-id/{role-id}` | — | — | 200:JSON/RoleRepresentation | 403 | both |
+| `GET /admin/realms/{realm}/roles-by-id/{role-id}/composites` | first,max,search | — | 200:JSON/RoleRepresentation[] | 403 | both |
+| `GET /admin/realms/{realm}/roles-by-id/{role-id}/composites/clients/{clientUuid}` | — | — | 200:JSON/RoleRepresentation[] | 403,404 | both |
+| `GET /admin/realms/{realm}/roles-by-id/{role-id}/composites/realm` | — | — | 200:JSON/RoleRepresentation[] | 403 | both |
+| `GET /admin/realms/{realm}/roles-by-id/{role-id}/management/permissions` | — | — | 200:JSON/ManagementPermissionReference | 403 | both |
+| `POST /admin/realms/{realm}/roles-by-id/{role-id}/composites` | — | JSON:RoleRepresentation[] | 204/∅ | 403 | both |
+| `PUT /admin/realms/{realm}/roles-by-id/{role-id}` | — | JSON:RoleRepresentation | 204/∅ | 400,403 | both |
+| `PUT /admin/realms/{realm}/roles-by-id/{role-id}/management/permissions` | — | JSON:ManagementPermissionReference | 200:JSON/ManagementPermissionReference | 403 | both |
+
+##### Scope Mappings — 33 operations
+
+| HTTP method and path | Query parameters (defaults) | Request body MIME/schema | Success status / body | Other listed HTTP codes | Version / notes |
+|---|---|---|---|---|---|
+| `DELETE /admin/realms/{realm}/client-scopes/{client-scope-id}/scope-mappings/clients/{client}` | — | JSON:RoleRepresentation[] | 204/∅ | — | both |
+| `DELETE /admin/realms/{realm}/client-scopes/{client-scope-id}/scope-mappings/realm` | — | JSON:RoleRepresentation[] | 204/∅ | — | both |
+| `DELETE /admin/realms/{realm}/client-templates/{client-scope-id}/scope-mappings/clients/{client}` | — | JSON:RoleRepresentation[] | 204/∅ | — | both |
+| `DELETE /admin/realms/{realm}/client-templates/{client-scope-id}/scope-mappings/realm` | — | JSON:RoleRepresentation[] | 204/∅ | — | both |
+| `DELETE /admin/realms/{realm}/clients/{client-uuid}/scope-mappings/clients/{client}` | — | JSON:RoleRepresentation[] | 204/∅ | — | both |
+| `DELETE /admin/realms/{realm}/clients/{client-uuid}/scope-mappings/realm` | — | JSON:RoleRepresentation[] | 204/∅ | — | both |
+| `GET /admin/realms/{realm}/client-scopes/{client-scope-id}/scope-mappings` | — | — | 200:JSON/MappingsRepresentation | — | both;deprecated(26.8.1) |
+| `GET /admin/realms/{realm}/client-scopes/{client-scope-id}/scope-mappings/clients/{client}` | — | — | 200:JSON/RoleRepresentation[] | — | both |
+| `GET /admin/realms/{realm}/client-scopes/{client-scope-id}/scope-mappings/clients/{client}/available` | — | — | 200:JSON/RoleRepresentation[] | — | both |
+| `GET /admin/realms/{realm}/client-scopes/{client-scope-id}/scope-mappings/clients/{client}/composite` | briefRepresentation=true | — | 200:JSON/RoleRepresentation[] | — | both |
+| `GET /admin/realms/{realm}/client-scopes/{client-scope-id}/scope-mappings/realm` | — | — | 200:JSON/RoleRepresentation[] | — | both |
+| `GET /admin/realms/{realm}/client-scopes/{client-scope-id}/scope-mappings/realm/available` | — | — | 200:JSON/RoleRepresentation[] | — | both |
+| `GET /admin/realms/{realm}/client-scopes/{client-scope-id}/scope-mappings/realm/composite` | briefRepresentation=true | — | 200:JSON/RoleRepresentation[] | — | both |
+| `GET /admin/realms/{realm}/client-templates/{client-scope-id}/scope-mappings` | — | — | 200:JSON/MappingsRepresentation | — | both;deprecated(26.8.1) |
+| `GET /admin/realms/{realm}/client-templates/{client-scope-id}/scope-mappings/clients/{client}` | — | — | 200:JSON/RoleRepresentation[] | — | both |
+| `GET /admin/realms/{realm}/client-templates/{client-scope-id}/scope-mappings/clients/{client}/available` | — | — | 200:JSON/RoleRepresentation[] | — | both |
+| `GET /admin/realms/{realm}/client-templates/{client-scope-id}/scope-mappings/clients/{client}/composite` | briefRepresentation=true | — | 200:JSON/RoleRepresentation[] | — | both |
+| `GET /admin/realms/{realm}/client-templates/{client-scope-id}/scope-mappings/realm` | — | — | 200:JSON/RoleRepresentation[] | — | both |
+| `GET /admin/realms/{realm}/client-templates/{client-scope-id}/scope-mappings/realm/available` | — | — | 200:JSON/RoleRepresentation[] | — | both |
+| `GET /admin/realms/{realm}/client-templates/{client-scope-id}/scope-mappings/realm/composite` | briefRepresentation=true | — | 200:JSON/RoleRepresentation[] | — | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/scope-mappings` | — | — | 200:JSON/MappingsRepresentation | — | both;deprecated(26.8.1) |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/scope-mappings/clients/{client}` | — | — | 200:JSON/RoleRepresentation[] | — | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/scope-mappings/clients/{client}/available` | — | — | 200:JSON/RoleRepresentation[] | — | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/scope-mappings/clients/{client}/composite` | briefRepresentation=true | — | 200:JSON/RoleRepresentation[] | — | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/scope-mappings/realm` | — | — | 200:JSON/RoleRepresentation[] | — | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/scope-mappings/realm/available` | — | — | 200:JSON/RoleRepresentation[] | — | both |
+| `GET /admin/realms/{realm}/clients/{client-uuid}/scope-mappings/realm/composite` | briefRepresentation=true | — | 200:JSON/RoleRepresentation[] | — | both |
+| `POST /admin/realms/{realm}/client-scopes/{client-scope-id}/scope-mappings/clients/{client}` | — | JSON:RoleRepresentation[] | 204/∅ | — | both |
+| `POST /admin/realms/{realm}/client-scopes/{client-scope-id}/scope-mappings/realm` | — | JSON:RoleRepresentation[] | 204/∅ | — | both |
+| `POST /admin/realms/{realm}/client-templates/{client-scope-id}/scope-mappings/clients/{client}` | — | JSON:RoleRepresentation[] | 204/∅ | — | both |
+| `POST /admin/realms/{realm}/client-templates/{client-scope-id}/scope-mappings/realm` | — | JSON:RoleRepresentation[] | 204/∅ | — | both |
+| `POST /admin/realms/{realm}/clients/{client-uuid}/scope-mappings/clients/{client}` | — | JSON:RoleRepresentation[] | 204/∅ | — | both |
+| `POST /admin/realms/{realm}/clients/{client-uuid}/scope-mappings/realm` | — | JSON:RoleRepresentation[] | 204/∅ | — | both |
+
+##### Users — 34 operations
+
+| HTTP method and path | Query parameters (defaults) | Request body MIME/schema | Success status / body | Other listed HTTP codes | Version / notes |
+|---|---|---|---|---|---|
+| `DELETE /admin/realms/{realm}/users/{user-id}` | — | — | 204/∅ | 400,403 | both |
+| `DELETE /admin/realms/{realm}/users/{user-id}/consents/{client}` | — | — | 204/∅ | 403,404 | both |
+| `DELETE /admin/realms/{realm}/users/{user-id}/credentials/{credentialId}` | — | — | 204/∅ | 403,404 | both |
+| `DELETE /admin/realms/{realm}/users/{user-id}/federated-identity/{provider}` | — | — | 204/∅ | 403,404 | both |
+| `DELETE /admin/realms/{realm}/users/{user-id}/groups/{groupId}` | — | — | 204/∅ | 400,403,404,500 | both |
+| `GET /admin/realms/{realm}/users` | briefRepresentation,createdAfter,createdBefore,email,emailVerified,enabled,exact,first,firstName,idpAlias,idpUserId,lastName,max,q,search,username | — | 200:JSON/UserRepresentation[] | 403 | both |
+| `GET /admin/realms/{realm}/users/{user-id}` | userProfileMetadata | — | 200:JSON/UserRepresentation | 403 | both |
+| `GET /admin/realms/{realm}/users/{user-id}/configured-user-storage-credential-types` | — | — | 200:JSON/string[] | 403 | both |
+| `GET /admin/realms/{realm}/users/{user-id}/consents` | — | — | 200:JSON/object[] | 403 | both |
+| `GET /admin/realms/{realm}/users/{user-id}/credentials` | — | — | 200:JSON/CredentialRepresentation[] | 403 | both |
+| `GET /admin/realms/{realm}/users/{user-id}/federated-identity` | — | — | 200:JSON/FederatedIdentityRepresentation[] | 403 | both |
+| `GET /admin/realms/{realm}/users/{user-id}/groups` | briefRepresentation=true,first,max,search | — | 200:JSON/GroupRepresentation[] | 403 | both |
+| `GET /admin/realms/{realm}/users/{user-id}/groups/count` | search | — | 200:JSON/object | 403 | both |
+| `GET /admin/realms/{realm}/users/{user-id}/offline-sessions/{clientUuid}` | — | — | 200:JSON/UserSessionRepresentation[] | 403,404 | both |
+| `GET /admin/realms/{realm}/users/{user-id}/sessions` | — | — | 200:JSON/UserSessionRepresentation[] | 403 | both |
+| `GET /admin/realms/{realm}/users/{user-id}/unmanagedAttributes` | — | — | 200:JSON/object | 403 | both |
+| `GET /admin/realms/{realm}/users/count` | createdAfter,createdBefore,email,emailVerified,enabled,exact,firstName,idpAlias,idpUserId,lastName,q,search,username | — | 200:JSON/integer | 403 | both |
+| `GET /admin/realms/{realm}/users/profile` | — | — | 200:JSON/UPConfig | 403 | both |
+| `GET /admin/realms/{realm}/users/profile/metadata` | — | — | 200:JSON/UserProfileMetadata | 403 | both |
+| `POST /admin/realms/{realm}/users` | — | JSON:UserRepresentation | 201/∅ | 400,403,409,500 | both |
+| `POST /admin/realms/{realm}/users/{user-id}/credentials/{credentialId}/moveAfter/{newPreviousCredentialId}` | — | — | 204/∅ | 403,404 | both |
+| `POST /admin/realms/{realm}/users/{user-id}/credentials/{credentialId}/moveToFirst` | — | — | 204/∅ | 403,404 | both |
+| `POST /admin/realms/{realm}/users/{user-id}/federated-identity/{provider}` | — | JSON:FederatedIdentityRepresentation | 204/∅ | 403,409 | both |
+| `POST /admin/realms/{realm}/users/{user-id}/impersonation` | — | — | 200:JSON/object | 400,403 | both |
+| `POST /admin/realms/{realm}/users/{user-id}/logout` | — | — | 204/∅ | 403 | both |
+| `PUT /admin/realms/{realm}/users/{user-id}` | — | JSON:UserRepresentation | 204/∅ | 400,403,409,500 | both |
+| `PUT /admin/realms/{realm}/users/{user-id}/credentials/{credentialId}/userLabel` | — | TEXT:string | 204/∅ | 403,404 | both |
+| `PUT /admin/realms/{realm}/users/{user-id}/disable-credential-types` | — | JSON:string[] | 204/∅ | 403 | both |
+| `PUT /admin/realms/{realm}/users/{user-id}/execute-actions-email` | client_id,lifespan,redirect_uri | JSON:string[] | 204/∅ | 400,403,404,500 | both |
+| `PUT /admin/realms/{realm}/users/{user-id}/groups/{groupId}` | — | — | 204/∅ | 403,404 | both |
+| `PUT /admin/realms/{realm}/users/{user-id}/reset-password` | — | JSON:CredentialRepresentation | 204/∅ | 400,403,500 | both |
+| `PUT /admin/realms/{realm}/users/{user-id}/reset-password-email` | client_id,redirect_uri | — | 204/∅ | 400,403,404,500 | both;deprecated(26.8.1) |
+| `PUT /admin/realms/{realm}/users/{user-id}/send-verify-email` | client_id,lifespan,redirect_uri | — | 204/∅ | 400,403,500 | both |
+| `PUT /admin/realms/{realm}/users/profile` | — | JSON:UPConfig | 200:JSON/UPConfig | 403 | both |
+
+##### Workflows — 9 operations
+
+| HTTP method and path | Query parameters (defaults) | Request body MIME/schema | Success status / body | Other listed HTTP codes | Version / notes |
+|---|---|---|---|---|---|
+| `DELETE /admin/realms/{realm}/workflows/{id}` | — | — | 204/∅ | 400 | both |
+| `GET /admin/realms/{realm}/workflows` | exact,first=0,max=10,search | — | 200:YAML/WorkflowRepresentation,JSON/WorkflowRepresentation | 400 | both |
+| `GET /admin/realms/{realm}/workflows/{id}` | includeId | — | 200:YAML/WorkflowRepresentation,JSON/WorkflowRepresentation | 400 | both |
+| `GET /admin/realms/{realm}/workflows/scheduled/{resource-id}` | — | — | 200:JSON/WorkflowRepresentation | 400 | both |
+| `POST /admin/realms/{realm}/workflows` | — | YAML:WorkflowRepresentation,JSON:WorkflowRepresentation | 201/∅ | 400 | both |
+| `POST /admin/realms/{realm}/workflows/{id}/activate/{type}/{resourceId}` | notBefore | — | 204/∅ | 400 | both |
+| `POST /admin/realms/{realm}/workflows/{id}/deactivate/{type}/{resourceId}` | — | — | 204/∅ | 400 | both |
+| `POST /admin/realms/{realm}/workflows/migrate` | from,to | — | 204/∅ | 400 | both |
+| `PUT /admin/realms/{realm}/workflows/{id}` | — | YAML:WorkflowRepresentation,JSON:WorkflowRepresentation | 204/∅ | 400 | both |
+
+**K01 acceptance and consistency gate (documentation scope):** all 415/415 union operations accounted for; each row uniquely references its exact documented HTTP method and path, and carries source-derived query/body/response/HTTP codes; both input snapshots parsed as JSON, source diff reviewed, known exceptions and unknowns explicitly recorded. This is **source review only**, not running Keycloak, not a real HTTP/SSH/sudo request and not validation of an operator workflow; no `rumiai-os` code, public function, manual or `rumiai-tests` permanent test is modified by K01. K03/K05/K08 must establish the promoted public interface, credential-safe request implementation, exact server return behavior, permission and binary/YAML handling, and live isolated 26.7.3 and later-version verification before claiming those features work. No unresolved contract choice in K01's source-inventory scope; intermediate versions and preview support remain explicitly unverified.
 
 ### Work-unit A observed evidence and B reconnaissance (2026-11-04)
 
@@ -279,7 +847,7 @@ The current five-test APISIX scope PASSed on Ubuntu ARM64 in Actions run **41824
 
 ## Next action
 
-- Keycloak planning branch: K01 version/API matrix and K02 authentication/endpoint matrix may start independently as source-only research; do not conflate them with the APISIX next-action sequence. See work unit K for dependencies and evidence boundaries.
+- Keycloak planning branch: K01 version/API matrix source-inventory deliverable COMPLETE (see K01 section above); K02 authentication/endpoint matrix remains a separate research unit. K03 is blocked on K02 completion and subsequent public-contract reconciliation. Do not conflate with the APISIX next-action sequence. See work unit K for dependencies and evidence boundaries.
 
 1. Inspect the still-queued macOS result for run 41821503037; classify failures by cause, including known possible validation-evidence publication errors, rather than interpreting a hosted job failure as a product failure.
 2. Continue Work-unit C: correlate the selected running APISIX gateway with the **actual source configuration** (`-c`, `APISIX_PROFILE`, deployment manager/container namespace and effective provider) with authoritative APISIX/service evidence. Keep all new mutating paths disabled until provenance is proven; process title/PID alone are insufficient.
