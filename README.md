@@ -140,6 +140,7 @@ The full qualification, shape, activation and historical-recovery rules are defi
 README.md                 this routing entrypoint
 RULES.md                  canonical project-wide development rules
 CONSISTENCY-GATE.md       mandatory preflight and post-change consistency process
+DEVPLAN.md                explicitly invoked executable development planning (`devplan`)
 DEVELOPMENT.md            development workspace/bootstrap contract
 TESTING.md                canonical testing and validation contract
 RUNNER.md                 canonical rumiai-test runner contract
@@ -257,6 +258,10 @@ pkg-catalog
 ```
 
 The exact current HEAD of each repository must always be retrieved; no SHA written in documentation should be assumed to still be HEAD.
+
+## Opt-in executable development planning
+
+A current user message beginning with the exact standalone lowercase token `devplan` invokes the **planning-only** `DEVPLAN.md` procedure after the normal mandatory preflight. That procedure first checks whether the task's specifications and operating conditions are sufficient and reports blocking gaps rather than inventing them; an executable plan follows only after a positive gate. Normal requests and incidental mentions do not trigger it. `DEVPLAN.md` owns the full invocation and planning contract.
 
 ## Retrieval by topic
 

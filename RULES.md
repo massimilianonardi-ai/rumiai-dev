@@ -290,6 +290,10 @@ For new RumiAI-owned code, choosing a disfavored language must be deliberate and
 
 ## 16. Development workflow
 
+### Explicit `devplan` mode
+
+Only the user invocation defined in `DEVPLAN.md` activates its opt-in planning-only sufficiency and executable-plan workflow. This does not override the normal source hierarchy, preflight, change authorization or consistency gate, and ordinary development requests do not activate it implicitly.
+
 ### Code maintainability and disciplined scope
 
 Code quality is a delivery requirement, not merely passing tests or satisfying observable behavior. An implementation that the maintainer cannot reasonably understand, correct, extend or reuse is incomplete even when it works.

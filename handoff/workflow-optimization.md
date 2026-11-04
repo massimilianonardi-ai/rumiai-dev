@@ -24,6 +24,7 @@ Fresh remote HEAD retrieval remains mandatory before future analysis or writes.
 README.md
 RULES.md
 CONSISTENCY-GATE.md
+DEVPLAN.md
 specifications/README.md
 specifications/rumiai-os/COMMAND-ENTRYPOINTS.md
 specifications/rumiai-os/FILESYSTEM-NAMING.md
@@ -38,6 +39,8 @@ handoff/README.md
 Subsystem specifications are added only when a concrete workflow question reaches their responsibility.
 
 ## Fixed task-local choices
+
+- The operator approved an opt-in planning-only command `devplan`; its durable contract is in `DEVPLAN.md`, not duplicated here.
 
 - Stable task identity: `workflow-optimization` / `handoff/workflow-optimization.md`.
 - This task is intentionally long-lived across chats while the workflow continues to be evaluated.
@@ -68,25 +71,6 @@ Subsystem specifications are added only when a concrete workflow question reache
 - **2026-10-30 operator clarification — conversation/thought boundary:** Everything discussed or written in a chat remains an independent exploration, including critical Markdown reviews of several chats. Chats are free to challenge any premise, choice or current decision without thereby changing project authority. No summary, retrospective, recommendation, apparently accepted idea or archival write automatically becomes a project decision, rule, contract or implementation authorization. Moving a finding into the project requires an **explicit decision after its expected benefit and consequences have been assessed**; then update only the appropriate current project surface through the existing governance process. Retain the original reflection and its provenance without treating it as normative.
 
 ## Working design
-
-### Executable development planning for mature contracts — exploratory (2026-11-04)
-
-Question under review: when subsystem specifications and standards are already settled, how should a detailed implementation plan be represented so independent chats/agents can execute, validate and integrate cohesive portions without reconstructing intent?
-
-**Candidate model (not adopted policy):**
-
-- Keep authority in current canonical specifications and rules; use the active handoff to point to those sources and track execution state, not duplicate their contents.
-- Plan the full delivery at a coarse level as a dependency graph of outcomes and integration boundaries; detail only ready or near-ready work units so the plan does not become stale pseudo-specification.
-- For each executable work unit, record a stable task identity, outcome, applicable source paths, inputs/outputs and public contract, allowed scope and no-go boundaries, dependencies/prerequisites, deliverables, observable acceptance scenarios, authentic validation evidence needed, integration expectations, escalation triggers, and actual status/next action. Specific commands/paths should be resolved against current sources when the work is activated.
-- Distinguish architectural/interface decisions, which must be settled or explicitly escalated when high-impact, from local implementation choices where autonomous execution should remain strong. Task assignment never silently grants authority to redefine the surrounding model.
-- Enable parallel execution only after interfaces and ownership boundaries are stable. Independent agents should work on non-overlapping coherent scopes; shared files/contracts, integration sequencing and branch movement need an explicit single-owner/reconciliation discipline. Git remains forward-only and each execution resumes from freshly verified remote heads.
-- Use acceptance-first execution: baseline/contract checks, implementation, real proportional tests, operational manual and permanent test alignment when relevant, user-facing normal-path acceptance when relevant, post-change consistency gate, then evidence-based checkpoint. Completion claims must name actual validation scope, not merely "done".
-- Before adopting any recurring format or tooling, test a clean-chat handoff: can a fresh agent pick one ready unit, retrieve authority, implement within scope, verify acceptance and report exact state without undocumented conversation knowledge?
-
-Expected benefits: lower repeated context reconstruction, reduced architecture drift, safer concurrency, objective completion and easier recovery after interrupted work. Costs/risks: excessive task-card bureaucracy, prematurely freezing internal designs, duplicated authority, plan obsolescence, and integration overhead from too much parallelization. Favor the smallest usable unit representation and revise with observed execution results.
-
-**Open evaluation:** whether the active handoff alone can hold a concise dependency map plus current ready-unit cards, or whether sufficiently independent larger streams should use separate handoffs according to existing ownership rules; whether an external execution tracker would add real value without competing with canonical task state. No new directory, schema, required tool, agent platform or formal workflow is approved by this exploration.
-
 
 ### Thematic critical reviews of archived conversations — exploratory
 
@@ -231,6 +215,10 @@ These points should later be reviewed together and promoted only in the smallest
 
 ## Completed
 
+### Opt-in `devplan` procedure — 2026-11-04
+
+The exploratory executable-planning proposal was promoted into the dedicated root `DEVPLAN.md` current workflow contract, including exact opt-in activation, source-first insufficiency verdicts, progressively detailed work units, dependency/parallelism rules, clean-chat validation and planning-only authorization. The root router and `RULES.md` reference that single normative owner. This documentary change does not prove future assistant behavior.
+
 ### Code maintainability and scope gate
 
 The explicit user correction that working code must also be readable, bounded in responsibility, easy to modify, extensible and reusable was promoted as a completion criterion into `RULES.md`. `CONSISTENCY-GATE.md` now requires pre-implementation and post-change human review of those properties and of strict adherence to the authorized scope. No product code or deferred bootstrap TODO was changed.
@@ -370,7 +358,7 @@ The new code-maintainability and scope gate is current canonical workflow; it mu
 
 `workflow-optimization` remains active.
 
-An executable-development-planning approach is under exploratory review (2026-11-04): coarse dependency planning, ready work-unit acceptance contracts, source references rather than duplicated specification text, and controlled parallel integration. This is working design only, not an adopted process.
+The `devplan` planning-only procedure is now canonical in root `DEVPLAN.md` and routed by `README.md` and `RULES.md`. It gates executable planning on a current-source sufficiency assessment; actual fresh-chat invocation remains untested.
 
 The workstream now also retains an adaptive cooperation model as working design. Its central distinction is execution autonomy versus decision autonomy, with escalation driven by semantic/architectural impact and contextual foundationality rather than raw technical complexity. A six-point promotable core has been isolated but intentionally not yet added to RULES.md.
 
@@ -392,7 +380,7 @@ Active task routing now uses resumable responsibility rather than topic labels. 
 
 ## Next action
 
-Evaluate the executable-planning candidate on the next suitable command/library development plan: inspect one real clean-chat task assignment, measure ambiguity/retrieval overhead and integration conflicts, and decide whether a minimal planning convention is worth promotion. This is exploratory; existing next actions remain valid.
+Try the current `DEVPLAN.md` contract in a new chat first on a genuinely under-specified task, then a well-specified RumiAI task; inspect its gap verdict, retrieval, lack of invented requirements, and independent-agent plan readiness. Keep this a test of actual behavior, not an automatic claim of compliance.
 
 Observe the TODO lifecycle, specification promotion gate and command/library manual gates in normal use. In particular:
 
@@ -413,6 +401,8 @@ Observe the TODO lifecycle, specification promotion gate and command/library man
 15. keep the per-chat Google Drive + downloadable attachment mirror disabled following the user's explicit instruction; on a later authorized reactivation, evaluate update reliability, image links, ordering, retry semantics and latency. Do not consider always-on behavior without real observations.
 
 ## Blockers / open questions
+
+`devplan` has been documented as a RumiAI repository-routed convention, but no separate clean-chat behavioral validation has yet occurred. It is not a native platform command or background execution trigger.
 
 The mirror was explicitly deactivated for this conversation on 2026-10-15; no `0009` snapshot or new Drive update should be generated until reactivation. The user separately confirmed that the periodic Drive→GitHub copy did not work and was deleted; that scheduled copy is discontinued and must not be silently recreated. The earlier automation inspection already showed no active archive task. Neither change alters the retained archive files.
 
