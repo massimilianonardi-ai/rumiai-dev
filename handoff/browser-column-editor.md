@@ -1,7 +1,7 @@
 # Advanced browser/Electron text editor
 
-Status: Active — nested annotated Cell to Fold/Substitution CI-verified; general anchors and physical GUI remain open
-Updated: 2026-11-03
+Status: Active — real Document2D headless Chromium GUI PoC CI-verified; physical reference-host/Electron integration remains open
+Updated: 2026-11-04
 
 ## Goal
 
@@ -12,7 +12,14 @@ The JavaScript compilation, module loading and distribution concern has **indepe
 
 ## Current repository revisions
 
-**Current 2026-11-03 annotated nested Cell to Fold/Substitution proof:**
+**Current 2026-11-04 real Document2D browser GUI checkpoint:**
+- `rumiai-dev-PoCs` `7b061111a07ac3d9786140dff573f11e39ef20da`: separate `pocs/066-text-edit-browser-gui/document2d.html`, `document2d.js`, and `tests/document2d-browser.mjs`. The page consumes the **actual** `m.text.document.Document2D` public API on top of `Raw → Cell → Annotation → Cell → Fold/Substitution` and both physical backends, without changing the established TextEdit 0.8.2 GUI.
+- Tested product `rumiai-os` `c453b5764fec8403571125ea62107ae072a823a1`: its existing `jsc` compiles `lib/sys/js/core/modules-js.json` into a temporary classic browser script during PoC CI; no product source or public library changed. The checkout remains explicitly pinned to this revision. Later product commits affecting only unrelated `web-analyze` workflow do not inherit the browser evidence.
+- `rumiai-tests`: no change to permanent model regressions; previous core verification remains at its own exact revision. GUI prototype experiments and their Chromium scenarios live only with PoC 066.
+- Actual headless Chromium (Playwright 1.56.1, GitHub Ubuntu **24.04 x64**, Node 22): run `41786228407` **PASS**. Existing TextEdit 0.8.2 large-viewport/selection, 2D region, and DOM-independent scenario suites all passed alongside the new real-`Document2D` browser test on FlatDocument/PieceDocument. The new test checked initial DOM/overlay render, caret/keyboard input, allowed one-commit replacement, protected fold/substitution refusal, source edits in hidden/occupied content, annotation-only updates, correct `invalidation:{all:true}` and complete bounded viewport re-read. The previous baseline `ubuntu-latest` CI jobs failed **before tests** because its Ubuntu 26.04 x64 image was unsupported by the pinned Playwright Chromium installer; pinning the auxiliary CI runner to Ubuntu 24.04 restored genuine browser execution.
+- This **is browser execution, not physical Ubuntu 26.04 ARM64, macOS or Electron reference-host validation**. The new adapter is a small PoC, not a production GUI migration, general editing/input semantics, fine-grained invalidation, IME or huge-document performance proof.
+
+**Previous 2026-11-03 annotated nested Cell to Fold/Substitution proof:**
 - `rumiai-dev`: promoted clarified `TEXT-EDIT.md` contract `0fc0ad02a1a3c21419004ecfdf40bb46269c2b24`, stating old/new independent geometry through the verified immediate Cell and zero-width Annotation chain; no public mapping/API or persistent anchor contract.
 - `rumiai-os`: `caf94d9ad0e2ee7778e5ea3a9e6a574c1139a0a5` (exact tested product); Fold/Substitution production code unchanged because their private precommit and protected-region checks already handle certified immediate input. Only `.github/workflows/text-document-core.yml` updated to pin tests and syntax-check the new test file.
 - `rumiai-tests`: `77d73d547507cd3d587e8509ea855d38922fc066`; added permanent `cell-annotation-cell-protected.test.mjs` to actual compiled-core runner with both FlatDocument/PieceDocument.
@@ -42,7 +49,17 @@ The JavaScript compilation, module loading and distribution concern has **indepe
 - The JavaScript toolchain is owned by `handoff/javascript-build-and-runtime-loading.md`.
 
 
-## Resume checkpoint — 2026-11-03 (nested Cell through Fold/Substitution; read first)
+## Resume checkpoint — 2026-11-04 (real Document2D browser consumer; read first)
+
+**Delivered:** Existing PoC 066 remains the original standalone TextEdit 0.8.2 GUI with its physical selections and 100,000-row viewport test. A new independent `document2d.html` page in the **same PoC** consumes the actually generated browser-compatible `m.text.document` core (via the existing `jsc` compiler, not a second engine). Its `document2d.js` constructs `RawDocument2D → CellDocument2D → AnnotationDocument2D → CellDocument2D` with either `FoldDocument2D` or `SubstitutionDocument2D`; the GUI reads only the final `Document2D` public surface for bounded `getRegions` / `getRect`, `getSelections`, `setSelections`, `replace` and `subscribe`. It draws actual bounded DOM rows, annotates protected fold/substitution spans and zero-width overlays, positions a caret, handles a simple click/printable-key interaction and reacts to source notifications. Every `invalidation:{all:true}` triggers a complete **visible-window** re-read in the **new** view revision; precise edit endpoints are never misused as repaint boundaries. The only physical document/selection owner is in the composed product core.
+
+**Browser validation:** `pocs/066-text-edit-browser-gui/tests/document2d-browser.mjs` drives actual headless Chromium and asserts DOM regions, caret, view/source revisions, event payloads and commits on both FlatDocument and PieceDocument. Passed: initial fold & substitution renders, visible annotation, protected marker and occupied-region rejection without source commits, accepted edits and original/new endpoint correspondence, one physical transaction, keyboard insertion, whole-view invalidation and cleared synthetic config after external hidden/occupied edits, local annotation-only invalidation without physical change. The original PoC 066 browser tests (100k rows, keyboard/mouse, selection policies) remain unchanged and also passed. Exact PoC head `7b061111a07ac3d9786140dff573f11e39ef20da`, pinned product `c453b5764fec8403571125ea62107ae072a823a1`, actual Chromium workflow `41786228407` **PASS** on Ubuntu 24.04 x64. A generated browser compilation artifact is created **only on test/development hosts**, not checked in. The obsolete `ubuntu-latest` failure was environment-only (Playwright 1.56.1 unsupported Ubuntu 26.04 x64 browser download); it was corrected by pinning the runner, not by claiming unsupported physical host results.
+
+**Boundary:** This is a minimal **experiment** beside the old editor, not proof that the production browser/Electron GUI has migrated to `Document2D`. Rendering is a simple fixed-size cell/grid experiment, not measured glyph-width/pixel hit-testing parity, general gesture handling, huge-document performance, IME, clipboard or visual accessibility compliance. The prior model invariant remains: exact geometry endpoints do not justify incremental repaint, persistent anchor rebasing or unsafe protected edits. No canonical public API or new standalone TextEdit distribution has been introduced.
+
+**Next:** Physically exercise the PoC on Ubuntu 26.04 ARM64 reference browser (and macOS when relevant), comparing visible region positioning, clicked caret, keyboard input and re-render after both accepted and hidden-source edits. Then evaluate a bounded, consented integration path into the established PoC 066 renderer (without replacing its 0.8.2 contract), or create a product GUI adapter only after its interaction/layout contract is fixed. Physical Electron integration remains separately open.
+
+## Resume checkpoint — 2026-11-03 (prior nested Cell through Fold/Substitution)
 
 **Delivered:** The composed input chain `RawDocument2D → CellDocument2D → AnnotationDocument2D (one or two levels) → CellDocument2D` supplies independently authenticated precommit old-cell cuts and matching committed old/new geometry to existing `FoldDocument2D` and `SubstitutionDocument2D`. Neither upper derived view needs new implementation: it already captures the immediate input's old points before an edit, maps those points in its **own old protected layout**, verifies batch order, old points and revision against the certified committed input event, and emits the new endpoints in the **new unfurled/unsubstituted input space**. The old inline fold marker's left and right cuts map different input positions, while occupied Substitution boundaries account for different cumulative width changes. Whole-view invalidation stays mandatory and synthetic configurations clear.
 
@@ -204,18 +221,18 @@ The JavaScript compilation, module loading and distribution concern has **indepe
 
 ## Current state
 
-Direct Cell→Cell, zero-width annotated Cell→Cell and final Fold/Substitution old/new endpoint geometry above the verified nested chain are documented and hosted real-core CI-verified on Flat/Piece. Unproven arbitrary nonidentity compositions still invalidate conservatively. Synthetic configurations clear even with known edit endpoints. Precise edit coordinates do not imply fine-grained viewport invalidation, and physical browser/Electron GUI integration remains untested.
+Direct and annotated nested Cell/Fold/Substitution geometry remains hosted real-core CI-verified on Flat/Piece, and a **separate** real-core Document2D browser PoC has now passed actual headless Chromium DOM/selection/invalidation tests on both backends. The original TextEdit 0.8.2 GUI remains intact. This does not establish full production GUI migration or physical macOS/Ubuntu ARM64/Electron validation, nor allow general source-anchor rebasing or fine-grained repaint inference.
 
 ## Next action
 
-1. Recheck fresh remote HEADs and the canonical mandatory read order; inspect the actual browser/Electron editor consumer as implementation evidence.
-2. Define and run a bounded GUI integration scenario consuming the complete `Document2D` notifications from verified `Cell → Annotation → Cell → Fold/Substitution` views: initial paint, allowed caret edit, protected marker/occupied rejection, a physical edit triggering full invalidation and post-commit redraw/selection coherence. Keep the model and GUI roles distinct.
-3. Use real browser execution when possible and reserve physical macOS / Ubuntu 26.04 ARM64 host claims for actual reference-host tests. Do not infer real viewport performance, IME or accessibility from Node geometry-only passes.
-4. General persistent source-anchor rebasing, arbitrary cross-space mapping, history and new public interfaces remain separate and unapproved for this step.
+1. Reverify remote HEADs and current canonical specs/handoff; retain exact tested PoC/product pins.
+2. Run a **physical Ubuntu 26.04 ARM64 reference browser** session for the new real-`Document2D` PoC when that host is available: initial Unicode/TAB rendering, bounded viewport, caret hit-testing at protected boundaries, allowed keyboard edit, hidden/occupied external edit, and full repaint after fold/substitution invalidation. Record exact browser version and visible evidence rather than relabeling hosted Ubuntu 24.04 x64 headless Chromium as physical validation.
+3. Compare the new adapter's bounded public-interface consumer with the established 0.8.2 GUI's real pixel/selection behavior. Any full GUI migration needs a concrete interaction and rendering contract; do not silently replace the original PoC or change its established 0.8.2 library behavior.
+4. General provenance/anchors, arbitrary nonidentity composition, history, clipboard and IME remain distinct; avoid speculative API or runtime-loader changes.
 
 ## Blockers / open questions
 
-- **No blocker for certified final Fold/Substitution geometry above nested annotated Cells.** The next bounded validation concern is the real GUI consumer and rendering/selection response to whole-view invalidation. General persistent source anchors and arbitrary nonidentity provenance remain open.
+- **Headless Chromium browser integration with real Document2D is now CI-verified.** The remaining bounded validation is a physical Ubuntu 26.04 ARM64 reference-browser session and separate Electron/more complete GUI implementation. The original 0.8.2 GUI remains independent. General persistent source anchors and arbitrary nonidentity provenance remain open.
 - **Advanced logical Document2D:** source↔view mapping, nested view composition, grapheme/TAB/wide cells, folded/virtual/source-less regions, regions spanning multiple visual rows, rectangle boundaries intersecting tokens, virtual editability/overlay copy policies, and the output of a richer `getRect` without breaking the raw adapter's published behavior.
 - **Pluggability:** whether/when selection and insertion interpreters should be externally registered or configured (currently three/four built-in modes), mode-switch state and gesture boundaries, duplicate and overlapping targets, reverse-oriented editing and multi-mode `remSelection` semantics. The concrete implementation currently handles the tested mixed-mode case; more general policy remains intentionally deferred.
 - **Performance and validation:** `colCount` revision-cache invalidation still scans every row; `getRect` is bounded but no asymptotic/host evidence for enormous rows; no formal physical-host run of `RawDocument2D` or new editor integration.
