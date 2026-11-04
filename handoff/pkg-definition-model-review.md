@@ -401,12 +401,6 @@ escaping or cyclic links. Resource export testing is out of scope.
 - A genuine catalog-backed Java consumer path remains unproven: current `v1/pkg/maven` and `v1/pkg/temurin` use repository adapter types `apache-maven` and `temurin`, whereas the autonomous `m-os` repository currently has only artifact/chrome/chromium/github/nodejs repository libraries. Do not disguise setup-java or synthetic Java provider fixtures as a full catalog-backed install. Adding missing adapters or changing schema is not authorized by this checkpoint.
 - Concurrent `rumiai-dev` and `rumiai-tests` HEAD movements touched other task areas and were not overwritten. Physical Ubuntu 26.04 ARM64 and physical macOS launchd validation remain open. No `m-os/master` or `pkg-catalog/main` promotion occurred.
 
-**Live Node.js HTTP index/resolve verification — 2026-11-04 (prior, now verified above):**
-- Fresh preflight verified `m-os/pkg-schema-v2@8fb1db493a3265f77bb36ac604a2a1a495a4d448`, `pkg-catalog/pkg-schema-v2@1d8961c8654dc128581c11a8579d3f231cb6ae00` before the catalog write, `pkg-catalog/main@7892040e906723ef6641df88a03964c041cee9bc` and `rumiai-tests/main@b9daf4c6c73d151ffcc27709caf07891fbfacc04`. `rumiai-dev/main` advanced independently during retrieval; the intervening changes concern chat archiving and rsudo/Keycloak documentation, not this handoff's package authority.
-- Updated only `pkg-catalog/pkg-schema-v2@2c71b2180a4c5e270f33e00a67ddb8ca190d2b8c`, `.github/workflows/validate-v2-nodejs.yml`: exact-pin current `m-os` v2 HEAD and exercise public `m pkg depend nodejs` against the real upstream HTTP Node.js index before the existing real catalog-backed pinned Node.js install, command execution, managed HOME and state-preserving uninstall/reinstall assertions. Review of the committed diff confirmed this limited scope.
-- The workflow is configured for push to this branch, but its new exact-revision execution and Ubuntu/macOS conclusions have **not yet been retrieved/verified**. This change is test orchestration only; it supplies no new PASS evidence. The existing offline `rumiai-tests` index fixture remains a different, already validated boundary. No product runtime, catalog schema/data, test runner, `rumiai-validate`, canonical specification, operational manual, mainline merge or physical host was changed.
-- `pkg-catalog/pkg-schema-v2` was already 2 commits behind current `main` (recent v1 electron stream data); reconcile those changes forward during promotion preparation without discarding them. Keep package-store trust behavior and v2 contract unchanged per the user's fixed choices.
-
 **V2 package-store permission audit and Node.js branch alignment — 2026-11-04 (prior):**
 - Performed the current mandatory HEAD/specification/handoff preflight and inspected the live v2 `pkg-install`, `pkg-integration`, `pkg-uninstall`, state implementation, hosted permanent tests and current `rumiai-validate` target path.
 - **Filesystem audit:** `pkg install` sets `umask 077`; `pkg_integrate` creates the concrete, moves the useful `root/` tree and materializes symlink views, but has no final ownership or OS-enforced read-only sealing step. The existing permanent adversarial tests successfully replace installed links while run as the same owner. Thus the spec's **immutable concrete** describes managed materialization semantics, not a proven filesystem access-control guarantee against that owner. No `chmod`, privileged ownership switch or new mediated execution model was added: those would affect lifecycle, update, mutable-state routing and portability, requiring a deliberate contract choice. The selection-time `pkg default`/`context`/global-facility checks cannot protect direct symlinks modified *after* selection.
@@ -637,27 +631,6 @@ this Current state supersedes older stale 'no v2 PASS' claims.
 2. Complete the remaining real catalog-backed Java consumer integration only through a supported real adapter/definition path; currently the required Maven/Temurin adapters are absent from autonomous `m-os`, so keep this as an explicit gap rather than inventing an adapter as incidental fixture work.
 3. Arrange applicable physical macOS launchd and Ubuntu 26.04 ARM64 validation on the real reference hosts. Hosted runners do not substitute.
 4. Audit v2 runtime/catalog implementation, operational manuals, permanent coverage, authoritative specification-promotion scope and post-merge branch revisions. Promote forward-only into `m-os/master` and `pkg-catalog/main` only when the applicable evidence and canonical realignment are sufficient; otherwise keep the feature branches separate.
-
-1. Reconcile latest independently advanced `m-os/pkg-schema-v2`,
-   `pkg-catalog/pkg-schema-v2` and `rumiai-tests/main` revisions
-   with exact committed code, workflows and current evidence. Do not
-   mistake older pinned CI successes for newer revisions.
-2. Complete integration coverage: composed Node.js index/resolve at
-   the real external-HTTP boundary, catalog-backed v1/v2 exact
-   uninstall/reinstall and mutable state preservation, and a real
-   catalog-backed Java consumer. Use authentic artifacts and operations;
-   classify any inaccessible upstream artifact as a blocker.
-3. Exercise remaining applicable macOS `launchd` and physical Ubuntu
-   ARM64 checks on actual reference hosts, respecting `TESTING.md`
-   and `PHYSICAL-TESTING.md`. Hosted runners are supplemental only.
-4. Review the complete v2 runtime/catalog diffs against mainline and
-   the current canon, manuals, permanent tests and any concurrent edits.
-   Once required validation is genuinely satisfied, reconcile and
-   promote forward-only to `m-os/master` and `pkg-catalog/main`;
-   perform the final post-promotion consistency/operability gate.
-   If blocked, preserve branches and report exactly which evidence
-   is missing. Do not silently extend schema or security/validator
-   responsibilities already left unchanged by the user.
 
 ## Blockers / open questions
 
