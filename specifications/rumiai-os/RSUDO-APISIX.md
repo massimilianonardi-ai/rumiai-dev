@@ -58,9 +58,38 @@ mutation_readiness=not-established
 
 If mode discovery fails, inspection fails without a successful inspection payload. An unexpected backend identifier is rejected. The inspection operation does not modify APISIX state, does not grant privileged API access and cannot be treated as a live health check or proof of configuration convergence.
 
+## Read-only APISIX runtime process evidence
+
+The public command
+
+```sh
+rsudo apisix runtime <absolute-remote-apisix-home>
+```
+
+and direct function `rsudo_mod_apisix_runtime` observe a specifically selected remote installation. Automatic instance discovery is **not** implemented by this operation. The caller supplies an absolute installation root. The operation checks the generated `conf/nginx.conf` and `logs/nginx.pid`, then reads the PID's visible process arguments using the remote POSIX `ps` interface.
+
+If the PID file is missing, successful stdout is exactly:
+
+```text
+runtime_evidence=pidfile-missing
+runtime_identity=unverified
+mutation_readiness=not-established
+```
+
+This does **not** prove that the server is stopped. When a readable, ordinary PID file refers to an observable nginx/OpenResty master whose visible `-p` and `-c` operands match that installation's expected generated nginx configuration, stdout is:
+
+```text
+runtime_evidence=pidfile-and-master-args
+process_pid=<decimal-pid>
+runtime_identity=process-consistent-config-unverified
+mutation_readiness=not-established
+```
+
+Unexpected or unavailable process evidence fails non-zero. The operation never emits the process command line itself, because other process arguments might be sensitive. A PID file and process title can be stale or misleading and do **not** prove which source `config.yaml`, custom `-c`, profile, container namespace, or effective gateway settings the active process loaded. The method is a partial process observation, not a confirmed APISIX runtime identity, a healthy-server result, or permission to write configuration.
+
 ## Current limits and security boundary
 
-The current read-only resolver does not prove which `-c`/profile, container, process or namespace is actively in use. It cannot be used by a new mutating backend router until live identity and safe update conditions are independently verified.
+The current read-only resolvers do not prove which `-c`/profile, container, process or namespace is actively in use. It cannot be used by a new mutating backend router until live identity and safe update conditions are independently verified.
 
 Mode inspection does not emit API keys or the selected configuration contents. Credentials and target data remain subject to `RSUDO.md` and `DIAGNOSTICS.md`. The legacy APISIX functions retain previously documented unsafe JSON/request behavior, and their existence is not evidence that modern secure mutation is complete.
 
@@ -68,7 +97,7 @@ The full traditional Admin API, standalone file-driven mutation, standalone API-
 
 ## Required mechanical protection
 
-The permanent tests `rumiai-tests/tests/rumiai-os/rsudo/legacy-modules.test` and `rumiai-tests/tests/rumiai-os/rsudo/apisix-mode.test` exercise module presence, loading and read-only selection/inspection behavior through the real `m` entrypoint up to the modeled external dependency boundary. A fixture boundary result does not prove live APISIX identity or production behavior. Real instance validation is separate and required before advertising corresponding backend support.
+The permanent tests `rumiai-tests/tests/rumiai-os/rsudo/legacy-modules.test` and `rumiai-tests/tests/rumiai-os/rsudo/apisix-mode.test` exercise module presence, loading and read-only selection/inspection/runtime observation behavior through the real `m` entrypoint up to the modeled external dependency boundary. A fixture boundary result does not prove live APISIX identity or production behavior. Real instance validation is separate and required before advertising corresponding backend support.
 
 ## Invariants
 
