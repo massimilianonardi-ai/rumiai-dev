@@ -381,7 +381,15 @@ escaping or cyclic links. Resource export testing is out of scope.
 
 ## Current state
 
-**V2 context command-view validation — 2026-11-04 (latest):**
+**V2 global facility command projection confinement — 2026-11-04 (latest):**
+- Current remote HEADs, mandatory `rumiai-dev` read order, authoritative package/diagnostics/library/manual/testing contracts, active handoff and exact `m-os` provider planner and permanent suite were checked before this work. The previous exact hosted run `41814931647` was **cancelled** (Ubuntu PASS, macOS never completed), so the formerly queued macOS test must not be counted as PASS.
+- Source audit found that `_pkg_provider_global_plan_concrete` on v2 inspected a `facility-cmd/<facility>/<command>` symlink for executable resolution but did not verify that it still pointed to that concrete's own `../../link/bin/<command>` or that this nested v2 command view remained confined. This is distinct from previously fixed ordinary `pkg default` and `context` selection.
+- Extended permanent `rumiai-tests/tests/m-os/pkg-schema-v2/mixed-provider-lifecycle.test` at `rumiai-tests/main@152131dac7503d58ebcbabfb9cb57dae32b5611b` with two isolated, deliberately corrupted *installed* v2 projections: an altered `facility-cmd` symlink and an altered underlying direct `link/bin` symlink. It asserts public `m pkg provider default` refusal, preservation of the previous global provider selector/command, and no accidental execution of the external sentinel. The original runtime was confirmed failing the first new assertion on Ubuntu at exact `pkg-catalog` run `41818025055` (other two tests PASS); that run's macOS job was not completed and the run was superseded/cancelled.
+- `m-os/pkg-schema-v2@9e55d29fc6a1db285dac0715f03816e69e43a0de` adds a bounded v2-only validation at the existing provider-global-plan boundary: the installed facility member must retain its generated `../../link/bin/<same command>` projection, and the existing shared `_pkg_v2_installed_command_validate` must accept the concrete-local direct/wrapper view. Distinct internal errors use diagnostic identities `provider-global-command-link-unreadable`, `provider-global-command-link-invalid`, `provider-global-command-target-invalid` and statuses 3/4/5. Legacy v1 planning, public selector syntax and ownership model stay unchanged. `res/sys/manual/pkg-provider.lib.sh` was checked and updated for the observable selection-time behavior.
+- Exact pinned `pkg-catalog/pkg-schema-v2@e0240815b64faec5c9233f9511f3792e16e17d5d` CI run **`41818454082`**, Ubuntu job **`126535190399` PASS 3/3** permanent lifecycle, provider and rollback tests; runner summary 0 FAIL, 0 ERROR, 0 SKIP. The corresponding macOS job **`126535191057` was queued at last inspection**, not PASS. The tests used the real autonomous `m-os` integration/selector/launcher on hosted runners with external fixture executables, not an upstream artifact-backed or physical validation. No GitHub Releases downloads were required.
+- Trust boundary: all three selectors now validate installed v2 direct/wrapped paths **when changing selections**; subsequently modified package-store symlinks remain a filesystem integrity concern because native direct commands intentionally bypass the launcher. The current semantic model calls installed package materialization immutable but this increment does **not** establish OS-level write protection or a runtime sandbox. Do not claim post-selection resistance to an actor with filesystem write access or introduce a new execution boundary without an explicit settled contract.
+
+**V2 context command-view validation — 2026-11-04 (prior):**
 - Current repository preflight, mandatory read order and canonical package, bootstrap, library, diagnostics, documentation and testing rules were checked. Exact feature branches remain separate from mainline.
 - Added a permanent context activation regression in `rumiai-tests`. The old runtime accepted a modified installed v2 direct command link that should have been rejected, confirmed by Ubuntu CI `41813611577` (other tests passed).
 - `m-os/pkg-schema-v2@6168cb059592281700abe1e350f076afb1a7112e` shares one v2 command-target validation helper across `pkg default` and `context`. It preserves v1, checks root/wrapper destinations, and adds diagnostic `context-command-link-invalid` with return 18. Relevant operational manuals were updated.
@@ -590,26 +598,26 @@ this Current state supersedes older stale 'no v2 PASS' claims.
 
 ## Next action
 
-1. Verify the macOS job `126523286614` for exact run
-   `41814931647` (`m-os@6168cb05`, `rumiai-tests@9038a8c8`).
-   Capture PASS/FAIL/ERROR from that job, not an earlier revision.
-2. Assess installed v2 direct-command integrity **after** a valid
-   default/context selection, and the independent facility-global
-   command projection. Current selection-time validation does not
-   mediate future native command execution. Decide whether the
-   existing immutable managed-installation boundary suffices before
-   adding a stronger enforcement mechanism.
-3. Evaluate a formally supported autonomous m-os validation scope
-   without reinterpreting the current rumiai-os `rumiai-validate`
-   contract. Existing GitHub-hosted runner checks are not physical
-   or formal validation.
-4. Exercise real artifact-backed v1/v2 reinstallation and mutable
-   state on supported hosts, pacing GitHub Releases requests.
-   MacOS launchd and physical Ubuntu ARM64 remain unvalidated.
-5. Before forward-only promotion, reconcile m-os/master's current
-   Node.js repository adapter with feature-branch prerelease
-   handling. Package resources remain v3+; metadata inheritance
-   is still a separate open choice.
+1. Check exact macOS job `126535191057` from catalog workflow
+   `41818454082` (`m-os@9e55d29f`, `rumiai-tests@152131da`)
+   and record its real conclusion. Do not infer macOS PASS from
+   Ubuntu or another pinned revision; avoid repeated broad reruns.
+2. Examine whether the current immutable installed-concrete ownership
+   and filesystem permissions actually enforce the intended trust
+   boundary for native direct commands **after** a valid selection.
+   If stronger protection is needed, document the contract choice
+   explicitly before adding mediation/sandboxing. Preserve v1 and
+   valid direct/wrapped v2 semantics.
+3. Evaluate formal autonomous `m-os` `rumiai-validate` support
+   separately from the existing `rumiai-os` target; current hosted
+   `rumiai-test` results are not formal or physical validation.
+4. Validate real artifact-backed exact v1/v2 reinstall and state on
+   controlled hosts with paced GitHub Releases access; macOS launchd
+   and physical Ubuntu ARM64 remain outstanding.
+5. Before any forward-only promotion, reconcile `m-os/master`'s
+   Node.js repository adapter changes with feature-branch prerelease
+   handling under the current contract. Resource export is deferred
+   to v3+ and metadata inheritance remains open.
 
 ## Blockers / open questions
 
