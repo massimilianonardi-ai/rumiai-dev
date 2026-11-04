@@ -10,7 +10,7 @@ Maintain a long-lived meta-workstream for continuously evaluating and improving 
 ## Current repository revisions
 
 ```text
-rumiai-dev    3ce3ddb53fec4c0bac726101ed5e95dd0979ae4e  (pre-handoff HEAD with code-maintainability rule and gate)
+rumiai-dev    c72ce881e2d653595d048c4f3af290ce6cd8cf44  (last checked canonical `DEVPLAN.md` adoption commit; fresh remote HEAD is required on resume)
 rumiai-os     99ff4358104c2abf934a22d0bc186ec72dc43a7d  (current implementation inspected for diagnostic behavior; not modified)
 rumiai-tests  8a3c840dce33627cea622f1d147cef97a301bc57  (current log tests inspected; not modified)
 pkg-catalog   f0cdadb09ced5ca26c7745b5996de89cab24f7c1  (current remote HEAD; not involved in this correction)
