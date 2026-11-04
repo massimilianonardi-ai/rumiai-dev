@@ -9,12 +9,12 @@ Replace the incomplete existing rsudo APISIX administration module with a safe, 
 
 ## Current repository revisions
 
-- rumiai-dev: bb38cae58dd6c0024ea25478ce5bf6acb24277c6 (before implementation checkpoint)
-- rumiai-os: d228cf3236337976590f10c31d3f4a32abbe106b (read-only inspect)
-- rumiai-tests: 7f047fa541f2178afc424fb14f08c2c09ab0f048 (focused tests and Actions validation scope)
-- m-os: 31693e814f682690adfd48185da822f7f5007f9e (historical comparison repository, no edits intended)
+- rumiai-dev: 4160dc48064b8bfccc832e90d39394c8c48d27e3 (before this checkpoint)
+- rumiai-os: d228cf3236337976590f10c31d3f4a32abbe106b (mode and configured-only inspect, unchanged in this work unit)
+- rumiai-tests: 5dda91b2751b73f8f916dec790e77e306c5c13e7 (real parser matrix for APISIX 3.16 and 3.19)
+- m-os: 31693e814f682690adfd48185da822f7f5007f9e (not part of this work unit)
 
-Fresh HEAD checks remain required before edits/resumption.
+Fresh remote HEAD checks remain mandatory before each write.
 
 ## Applicable canonical sources
 
@@ -167,12 +167,24 @@ This is a resumable task implementation plan and a set of provisional technical 
 5. **Safety:** simultaneous writers, stale snapshots, fail-over, atomic file publication, partial API success, recovery after interruption, controller co-ownership and worker convergence.
 6. **Test authenticity:** each claimed PASS must identify exactly what was run, server/host and revision; boundary fixture != live APISIX; passing focused test != passing full validation.
 
+### Work-unit A observed evidence and B reconnaissance (2026-11-04)
+
+- Run 41815144458, product `rumiai-os@d228cf32`, suite `rumiai-tests@7f047fa5`: Ubuntu 26.04 ARM64 `legacy-modules.test` PASS and `apisix-mode.test` PASS through actual `m`; macOS queued at inspection time. The mode test used an external LuaJIT fixture, not installed APISIX.
+- Run 41816598717, product `rumiai-os@d228cf32`, suite `rumiai-tests@d5377fed`: Ubuntu 26.04 ARM64 focused task VALIDATED with three PASS tests; `apisix-parser-live.test` executes real APISIX 3.19.0 installed LuaJIT, `lyaml`, defaults and the exact `rsudo_mod_apisix_mode` remote shell program in the pinned Debian image. Only SSH/sudo is substituted by Docker stdin; this neither starts a gateway nor proves active runtime identity. Fixed multiarch image index digest: `sha256:9a7e45dc943fbf10ec916d1232bae4cda9302ae28a4696cfb83c2da01d261141`.
+- `rumiai-tests@5dda91b2` extends the real-parser test to APISIX 3.16.0 (pinned image index `sha256:b921bdef3cfb2ca72e483d643f40e7843683ff8e188984489c2020f17654ee88`) and 3.19.0, with seven valid mode configurations and five rejection cases per image. Run 41817022586 had completed image preparation and Ubuntu validation was in progress at the checkpoint; do not credit a PASS until inspecting its real outcome.
+- Both tagged APISIX sources `3.16.0` and `3.19.0` at `apisix/admin/init.lua` register core route, service, upstream, consumer, credentials, SSL, proto, stream routes, global rules, plugin metadata/config, consumer group and secrets handlers, as well as standalone `/apisix/admin/configs` paths. `3.19.0` additionally registers GraphQL cost decorations and a dedicated config validation handler. This is an implementation inventory, **not** proof that all HTTP methods or provider modes support those resources. Complete per-method/version evidence is Work-unit B, still open.
+- The APISIX 3.16.0 and 3.19.0 source files `apisix/cli/config.lua` and `apisix/cli/file.lua` confirm shipped defaults and conditional deployment provider mapping. The current mode classifier deliberately rejects unresolved environment-dependent provider values rather than guessing the runtime environment (which may differ under sudo). This conservative behavior is covered by a negative real-parser case.
+- Security boundary: the real-parser test runs without network, with a read-only container root and mounted synthetic read-only configuration. No real rsudo SSH/sudo, Admin API, remote credential source or deployed configuration was exercised.
+
 ### Current checkpoint and immediate implementation scope
 
 - The previous response introduced `rsudo apisix mode` as configured-on-disk inspection. Its real provider parser and live-runtime identity remain unverified. It shall not authorize writes.
 - **Immediate work unit: A**, first retrieve actual existing test outcomes, then strengthen a read-only, observable public operation in the current APISIX library and add a targeted permanent test/manual update. Do not modify any APISIX server configuration.
 
 ## Completed
+
+- **Continuation 2026-11-04:** retrieved exact GitHub Actions job logs: Ubuntu ARM64 validated the previous scoped legacy/mode test run against `d228cf32`; added a new real-APISIX-parser test and fixed-digest Docker provisioning to the focused Actions workflow, then verified the APISIX 3.19.0 test PASSED in run 41816598717.
+- **Comparative test checkpoint:** expanded the same executable parser test to include 3.16.0 and 3.19.0 releases, with multiarch immutable index digests, actual `m` invocation and the product's remote script. Latest test/workflow revision `5dda91b2`; comparative CI result not yet claimed while 41817022586 runs. No product code or APISIX service state was modified.
 
 - Verified remote HEADs and current relevant rules/specifications, current module source and rsudo dispatcher.
 - Compared the historical `m-os@fa3a90d` APISIX source with current rumiai-os: identical functional bodies except loader/logging differences; historical code is reference only.
@@ -196,16 +208,15 @@ This is a resumable task implementation plan and a set of provisional technical 
 
 ## Current state
 
-The detailed plan is persisted and Phase A has begun. The current APISIX public module now has both read-only `mode` and `inspect`, with explicit configured-only evidence; the 35 APISIX and 16 Keycloak previous functions continue to reach preserved legacy modules. No new safe CRUD or complete provider routing has been enabled. The current canonical implemented contract is `specifications/rumiai-os/RSUDO-APISIX.md` and library manual; unimplemented design remains in this handoff. APISIX configuration, secrets and deployed services have **not** been modified.
+The twelve-phase development plan remains active and Phase A has proven the module's real-`m` shell boundary plus **one actual installed APISIX parser**, APISIX 3.19.0, on Ubuntu ARM64. The release-comparison test for APISIX 3.16.0 and 3.19.0 is committed and its latest workflow is in progress. macOS results for the focused workflow have not yet been established. The current APISIX module still exposes read-only `mode` and configured-only `inspect`; 35 APISIX and 16 Keycloak original public functions retain legacy forwarding. No new authenticated API read, actual running-process identity, CRUD routing or mutation is implemented.
 
-`rumiai-os@d228cf32` and `rumiai-tests@7f047fa5` are the revisions for the new focused test; the scoped Actions run is queued/unverified at the last check. The earlier legacy-only CI PASS on `rumiai-os@213f673c` does not validate this revision. Installed APISIX runtime identity, multi-provider parser behavior, read API and mutations remain unvalidated.
-
+`rumiai-os@d228cf3236337976590f10c31d3f4a32abbe106b` remains unchanged; `rumiai-tests@5dda91b2751b73f8f916dec790e77e306c5c13e7` contains the comparative test. The real-parser evidence does **not** validate SSH/sudo, live process identity, remote site layout, active `-c` selection, installed Keycloak or safe write readiness.
 
 ## Next action
 
-1. Retrieve the result/logs of the focused rsudo-apisix Actions run 41815144458; fix any test or product regressions through forward commits and rerun equivalent scoped real-`m` tests. Treat queued, canceled and infrastructure-failed results honestly.
-2. Complete Work-unit A real installed-APISIX LuaJIT/config parser tests, then implement Work-unit C actual process/config identity evidence (custom `-c`, profiles, nonstandard homes, containers) without assuming on-disk mode means active mode.
-3. Resolve Work-unit B exact APISIX version/resource/method capability matrix and Work-unit D secret-safe HTTP transport. Implement Work-unit E read-only resource access only after its prerequisites; no writes until the relevant identity, concurrency and security gates are proven.
+1. Inspect Ubuntu/macOS job results for the exact comparative test run 41817022586. Fix a genuine 3.16/3.19 parser incompatibility in the real source or test, as appropriate, with forward commits and rerun until evidence is clear; do not infer PASS from a queued/in-progress workflow.
+2. Finish Work-unit A active-instance/selected-config audit for custom `-c`, `APISIX_PROFILE`, multiple installs and container launches; no mutating path may trust disk-only configuration.
+3. Continue Work-unit B resource/method/version capability table from actual 3.16/3.19 endpoints and Work-unit C running-instance identity; then implement secret-safe D transport and read-only E operations. Keep G/H full snapshot concurrency unresolved until proved.
 
 
 ## Blockers / open questions
