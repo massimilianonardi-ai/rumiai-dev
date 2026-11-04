@@ -9,12 +9,12 @@ Replace the incomplete existing rsudo APISIX administration module with a safe, 
 
 ## Current repository revisions
 
-- rumiai-dev: bcbdb61757584a403e2e6325128c26a76c2c2ee9 (before this checkpoint)
-- rumiai-os: 887f854178ff5a3eedf831f7341ebb7a3d1406b1 (read-only APISIX runtime evidence; unrelated concurrent commits preserved)
-- rumiai-tests: c2f7b9e47108da1aa9c33e5463a06e9fb735c191 (permanent missing-pidfile boundary test)
+- rumiai-dev: e0099564efe8e6ca96050562830a3eb6ecf86ebd (before this checkpoint)
+- rumiai-os: c7353b51e0560aa0b187e9397610a280b1709457 (read-only Docker/CLI runtime evidence, PID 1 and Linux procfs)
+- rumiai-tests: cf6ef10bc5d43f15988f23ba621515363a5bacb7 (real two-release APISIX runtime integration; concurrent other test edits preserved)
 - m-os: 31693e814f682690adfd48185da822f7f5007f9e (not involved)
 
-Fresh HEAD checks remain mandatory before each further RumiAI action.
+Fresh remote HEAD checks remain mandatory before each further RumiAI action.
 
 ## Applicable canonical sources
 
@@ -191,6 +191,15 @@ No runnable implementation units, code changes, tests, deployment changes or new
 
 ## Completed
 
+- **2026-11-04, APISIX real-process validation checkpoint:** verified upstream Apache APISIX Docker entrypoint starts OpenResty using `-p <home> -g 'daemon off;'`, unlike the CLI `-p <home> -c <home>/conf/nginx.conf` path. Modern current `rsudo-mod-apisix.lib.sh` was aligned forward to recognize both verified startup forms while retaining `runtime_identity=process-consistent-config-unverified` and `mutation_readiness=not-established` (`rumiai-os@0b3b45b6`). No privileges, routing, HTTP APIs or deployed services were changed.
+- **Container-specific failures found and fixed:** first integration run 41820176631 failed before execution because the newly added `apisix-runtime-live.test` had Git tree mode `100644`, corrected to `100755` in `rumiai-tests@9440718f`. Next live run 41820471877 failed because the official Docker entrypoint preserved an existing traditional/etcd `config.yaml` even with `APISIX_STAND_ALONE=true`; the test was corrected to mount its own standalone YAML config in the disposable container (not on deployed hosts) at `rumiai-tests@91155723`. Run 41820921134 then exposed that official APISIX Docker master can be namespace PID 1 and Debian image lacks `ps`. `rumiai-os@8cd6233b` permits PID 1 and uses a guarded Linux `/proc/<pid>/cmdline` fallback when POSIX `ps` is absent; `rumiai-os@a7d5b60c` distinguishes stale PID from absent inspector. Branch-specific failure statuses 40-43 were allocated for procfs failures without changing existing 30-39.
+- **Permanent real-gateway integration:** `rumiai-tests/tests/rumiai-os/rsudo/apisix-runtime-live.test` launches both immutable APISIX 3.16.0 and 3.19.0 official Debian images as genuinely running isolated standalone gateways with no network or host ports. It invokes the actual product module via real `m` and an external-boundary `docker exec` replacement for `rsudo`; verifies positive PID/master evidence, rejects an alternate fake installation root while the genuine master runs, and rejects an expired PID. It does **not** prove SSH/sudo transport, loaded source config identity, active provider selection on company infrastructure or API key security.
+- **Real scoped validation:** GitHub Actions `rsudo-apisix` run **41821503037**, Ubuntu 26.04 ARM64, froze `rumiai-os@a7d5b60cebc114954cbaae671552a5d4c8857d50` and `rumiai-tests@3b385bf2c4f0f6cecc0bec9a7b65ac40926f0993`. All four scoped tests PASS: `legacy-modules.test`, `apisix-mode.test`, `apisix-parser-live.test`, `apisix-runtime-live.test`; task scope `VALIDATED`. Both target APISIX release images were exercised with live master PID. macOS job was still queued at the checkpoint: no cross-host PASS. Current `rumiai-os@c7353b51e0560aa0b187e9397610a280b1709457` changes only the APISIX manual since the frozen product revision; current suite `cf6ef10bc5d43f15988f23ba621515363a5bacb7` includes subsequent unrelated concurrent changes.
+- **Documentation consistency:** current APISIX manual and `rumiai-dev/specifications/rumiai-os/RSUDO-APISIX.md` now cover official Docker foreground startup, PID 1 in a container and guarded Linux procfs fallback. The contract still reports only process-consistent evidence, never verified live source configuration, authorization to mutate, or gateway health.
+- **Work-unit B source reconnaissance (not tested HTTP behavior):** upstream APISIX tags `3.16.0` and `3.19.0`, `apisix/admin/init.lua`, register traditional/etcd `/apisix/admin/*` routing for GET/PUT/POST/DELETE/PATCH, and standalone API-driven `/apisix/admin/configs` GET/PUT/HEAD plus `/apisix/admin/configs/validate` POST. Resource-specific handlers, authorization, response semantics and per-method support still require verification; file-driven standalone has no equivalent local Admin API. Do not infer safe generic CRUD from route registration.
+- **Hosted macOS limitation:** earlier focused run 41816598717 completed `legacy-modules.test` PASS on macOS but failed at `rumiai-validate` evidence push, before the remaining tests; this is a publication failure, not a demonstrated APISIX regression. The current run's macOS matrix result is still pending.
+
+
 - **Current checkpoint 2026-11-04 / Phase C partial:** introduced `rsudo apisix runtime <absolute-remote-apisix-home>` into the current APISIX library (`rumiai-os@d28a0986`), with matching operational manual (`rumiai-os@69feea0f`). This read-only operation checks a generated `conf/nginx.conf`, APISIX's standard `logs/nginx.pid`, and the visible nginx/OpenResty master `-p/-c` invocation through remote `ps`. It emits explicitly limited process evidence, never a verified source-config identity, health claim or mutation permission. Missing pidfile yields `pidfile-missing` (not `stopped`); malformed/mismatched evidence fails non-zero. Does not print process argv.
 - **Canonical specification (`rumiai-dev@bcbdb617`):** extended `specifications/rumiai-os/RSUDO-APISIX.md` for `runtime`, while preserving the already-defined `mode` and `inspect` interfaces and the configured-versus-live boundary.
 - **Test (`rumiai-tests@c2f7b9e`):** extended executable `tests/rumiai-os/rsudo/apisix-mode.test` through the real `m` entrypoint with a missing-PID read-only observation (SSH/sudo replaced at boundary). The matched master-process branch has **not** been exercised by a real APISIX instance. No gateway is started by this test.
@@ -223,21 +232,21 @@ No runnable implementation units, code changes, tests, deployment changes or new
 
 ## Current state
 
-Work units A/B/C remain active. The read-only configured-mode classifier `mode` has real installed-parser tests for APISIX 3.16.0 and 3.19.0 on Ubuntu ARM64; `inspect` states that this is disk-only evidence. The new `runtime` function records a *separate* process/PID observation for one explicitly identified installation, without asserting that the running gateway loaded the selected source configuration. It is not a full live-instance resolver. Traditional/standalone resource GET/list, safe authenticated transport, mutating backend routing and modern Keycloak are not yet implemented.
+Work units A/B/C are still active. The current module's read-only `mode` and `inspect` distinguish selected-on-disk configuration from the gateway process. `runtime` now observes both APISIX CLI master and official Docker foreground master, including valid container PID 1, with POSIX `ps` and guarded minimal Linux `/proc` fallback. This is **process consistency evidence only**; there is no verified correlation to the active source `config.yaml`, `-c`, `APISIX_PROFILE` or running container namespace ownership. Mutation readiness is always `not-established`; all 35/16 legacy APISIX/Keycloak functions remain available through existing forwarding.
 
-At frozen product `rumiai-os@08e659858046c6e89610cddaf758b0c36dd2bb9f` and test suite `rumiai-tests@c2f7b9e47108da1aa9c33e5463a06e9fb735c191`, Ubuntu ARM64 returned three focused PASS tests and task-scope VALIDATED in run 41818917877. This only proves scoped shell/parser/boundary behavior. No real APISIX master match, SSH/sudo credentials, profile `-c`, network Admin API or backend mutation was validated. macOS continues queued/unverified.
+The four focused tests for frozen `rumiai-os@a7d5b60` and `rumiai-tests@3b385bf2` PASS on Ubuntu ARM64 in Actions run 41821503037 (scope VALIDATED). Real APISIX 3.16.0/3.19.0 masters were started in disposable network-disabled containers, tested through real `m`, and removed. The SSH/sudo boundary, deployed servers, Admin API/authentication, source-config identity, CRUD and Keycloak modernization remain unvalidated or unimplemented. macOS remains queued. All concurrent user/unrelated changes are preserved.
 
 ## Next action
 
-1. Execute a **real APISIX gateway process** test with a known installation and verify the `runtime` master PID/evidence branch (including PID reuse, stale pidfile and wrong-prefix cases), preferably with isolated Docker or a disposable local target. Do not classify mutable `ps` titles alone as authoritative runtime identity. Keep automated external-boundary coverage honest.
-2. Correlate a selected running process with its *actual source* config (`-c`, `APISIX_PROFILE`, service manager, container namespace), plus effective provider/version, using APISIX-supported evidence. If correlation cannot be established, maintain `runtime_identity=...unverified` and refuse new backend mutations.
-3. Continue Work-unit B with a concrete per-resource/method/version matrix against APISIX 3.16.0 and 3.19.0, starting with route/service/upstream GET and standalone `/apisix/admin/configs` GET. Then Work-unit D secret-safe transport and Work-unit E generic read-only list/get, with tests and current manual/spec updates.
-4. Retrieve the still-queued macOS result of run 41818917877 and reconcile any real regression. Do not claim cross-host validation without that result.
+1. Inspect the still-queued macOS result for run 41821503037; classify failures by cause, including known possible validation-evidence publication errors, rather than interpreting a hosted job failure as a product failure.
+2. Continue Work-unit C: correlate the selected running APISIX gateway with the **actual source configuration** (`-c`, `APISIX_PROFILE`, deployment manager/container namespace and effective provider) with authoritative APISIX/service evidence. Keep all new mutating paths disabled until provenance is proven; process title/PID alone are insufficient.
+3. Continue Work-unit B per-resource/method/version capability matrix for APISIX 3.16/3.19 with real HTTP behavior and response envelopes, starting with route/service/upstream read and standalone `GET /apisix/admin/configs`; do not treat generic router method registration as individual capability.
+4. Work-unit D: design/validate secret-safe authenticated Admin API access over real `rsudo`, then implement Work-unit E read-only resource list/get through the internal mode router; support common low-operand workflows without mandatory authored JSON files only after backend and security gates pass.
 
 ## Blockers / open questions
 
 - The current read-only classifier resolves an on-disk installation/configuration and cannot prove which custom `-c` profile or dynamic configuration the active gateway process actually loaded. Active runtime identity and container/nonstandard installations remain unresolved; modifications must not trust this result alone.
-- The actual installed APISIX LuaJIT/lyaml module paths and profile/environment behavior require real integration validation before this classifier can become a general supported guarantee.
+- The APISIX LuaJIT/lyaml mode classifier has executed successfully in real official 3.16/3.19 Debian images, but other packages, runtime environment variable substitution, explicit `-c`/profiles and effective process identity remain unverified.
 - Full-document read/modify/write strategy, concurrency and rollback semantics for file-driven and API-driven backends.
 - Retaining current Keycloak CLI usability while the new implementation is independently developed and legacy source is kept.
 - Concrete supported APISIX version set and authentication representations must be proved rather than guessed.
