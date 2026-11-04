@@ -386,7 +386,7 @@ escaping or cyclic links. Resource export testing is out of scope.
 - `rumiai-tests/main@ff7aeffdb5dbf619860fdf290bb429c405ea0a01` extends `mixed-default-lifecycle.test` with a **previously integrated v2 direct `link/bin` symlink redirected to a real executable outside the concrete**. The external sentinel executable is never run; only public `m pkg default` rejection, preserved legacy current/default and absence of the escaped public command are checked. Exact pre-fix `m-os@cc589863` + suite revision, catalog CI `41809197598`, failed that property on **both Ubuntu and macOS** while other lifecycle assertions passed: a real default-publication defect, not a fixture setup error.
 - `m-os/pkg-schema-v2@f8d091a9a1e9194bf542273fee48029c676ad4b4` modifies only `lib/sys/sh/pkg/pkg-integration.lib.sh`: introduces internal `_pkg_default_command_validate` for installed v2 `link/bin` entries and invokes it in existing current/new binding validation and new binding creation. For v2, a wrapper symlink must retain exactly `../../cmd/<same-command>` pointing at an executable non-symlink wrapper of the same concrete; a direct symlink must be shaped `../../root/<relative>` and resolve to an executable within that useful root via the already-owned `_pkg_integration_v2_root_target_validate`. V1 command view and public API/status contract remain unchanged. No novel schema, resolver, namespace, manual API or runtime abstraction; library manual `res/sys/manual/pkg-integration.lib.sh` remains semantically correct, as does the current package contract. Exact CI `41809602076` **2/2 PASS** on hosted Ubuntu and macOS for the amended two-test suite (including the adversarial regression). This proves rejection **on subsequent package-default selection**, not that an already-selected direct command stays safe after a later arbitrary store tamper or that all consumers revalidate link/bin at execution.
 - `rumiai-tests/main@009217b3` adds independent permanent `tests/m-os/pkg-schema-v2/default-transaction-rollback.test`. This test synthesizes only external provider contract/command input, integrates two real v2 package concretes with an env-only facility, selects version 1 and configures its **unversioned** global facility default, captures all seven materialized global-environment snapshot checksums and public command link, then corrupts the installed env value of version 2. The **real** `m pkg default <provider>@2` reaches package-default mutation but fails on global environment regeneration; assertions require restoration of package selector, command publication, facility-default intent, real bootstrap value, and identical snapshots. Repair of fixture metadata then permits v2 selection and renewed v1 selection. No product function/adapter replacement, race, API download or package-root clone.
-- First rollback workflow `41810323686` produced `ERROR` before scenario execution because the new `.test` had erroneously been committed with non-executable Git mode `100644`. Corrected forward-only to `100755` in `rumiai-tests/main@ffd8967fe97a4d4cab56ad3bc4d2ab8452aee817`. `pkg-catalog/pkg-schema-v2@4b8fdc2b3296d5cc140323cef03f5bd5a6f6a829` pins exact `m-os@f8d091a9` and `rumiai-tests@ffd8967f`. Run **`41810556130`**: **Ubuntu job `126508432936` PASS 3/3 permanent tests**, zero FAIL/ERROR/SKIP; macOS job `126508433074` **queued at last query**, not yet reported as macOS PASS for the rollback scenario. Earlier two-test macOS link-fix PASS remains valid for `41809602076`. No anonymous GitHub Releases API requests were made.
+- First rollback workflow `41810323686` produced `ERROR` before scenario execution because the new `.test` had erroneously been committed with non-executable Git mode `100644`. Corrected forward-only to `100755` in `rumiai-tests/main@ffd8967fe97a4d4cab56ad3bc4d2ab8452aee817`. `pkg-catalog/pkg-schema-v2@4b8fdc2b3296d5cc140323cef03f5bd5a6f6a829` pins exact `m-os@f8d091a9` and `rumiai-tests@ffd8967f`. Run **`41810556130` completed 2/2 hosted jobs PASS**: Ubuntu `126508432936` and macOS `126508433074` each log all **three permanent tests PASS**, with **0 FAIL, 0 ERROR, 0 SKIP**. This is six individual hosted test results; it covers the exact pinned technical runtime and suite revision, not physical-host or formal rumiai-os validation. Earlier two-test macOS link-fix PASS remains independently valid for `41809602076`. No anonymous GitHub Releases API requests were made.
 - `rumiai-tests/main@5f69fb7b1279398b6e7d323dbd0f0b14aab8eeae` additionally documents explicit autonomous m-os target selection, optional pkg-catalog path, and non-formal runner versus formal `rumiai-validate` distinction in suite README; no test behavior changed. Neither frozen `rumiai-os` nor `m-os/master`, package catalog mainline, or canonical specification was changed by this work unit. Physical host validation and formal m-os validation pathway remain open.
 
 **V2 permanent mixed-schema lifecycle suite checkpoint — 2026-11-04 (prior):**
@@ -582,24 +582,20 @@ this Current state supersedes older stale 'no v2 PASS' claims.
 
 ## Next action
 
-1. Check the exact macOS rollback job `126508433074` in
-   `pkg-catalog` run `41810556130`; record PASS/FAIL/ERROR without
-   transferring Ubuntu evidence or earlier revision results to it.
-   If it fails, fix the exact fixture/runtime defect forward-only.
-2. Audit whether installed v2 **direct** `link/bin` commands can be
+1. Audit whether installed v2 **direct** `link/bin` commands can be
    abused after a default is already published or through
    shell-local `context` without passing the new selection-time check.
    Resolve the active contract's trust boundary before broadening
    hardening. Preserve v1 and valid v2 wrapper/direct semantics.
-3. Review diagnostics and targeted scope beyond this passing fixture,
+2. Review diagnostics and targeted scope beyond this passing fixture,
    and determine whether a formal autonomous `m-os` target path in
    `rumiai-validate` is authorized; current runner-only hosted
    results are not formal `rumiai-os` validation.
-4. Exercise real artifact-backed v1/v2 reinstall/migration and
+3. Exercise real artifact-backed v1/v2 reinstall/migration and
    user/system state on applicable hosts, spacing GitHub Releases
    API calls according to rate-limit reset evidence. Validate
    macOS launchd and physical Ubuntu ARM64 separately.
-5. Before any forward-only v2 promotion, reconcile the concurrent
+4. Before any forward-only v2 promotion, reconcile the concurrent
    `m-os/master` Node.js adapter changes with the feature-branch
    prerelease behavior. Resource export remains v3+ and metadata
    inheritance is still an open choice.
