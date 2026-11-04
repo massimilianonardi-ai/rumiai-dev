@@ -50,7 +50,7 @@ Read only the smallest complete set relevant to the task.
 | OpenSSH authentication secret delivery, password-only invocation and stream transparency | `rumiai-os/SSH.md` |
 | remote SSH/sudo authentication, stdin separation and execution invariants | `rumiai-os/RSUDO.md` |
 | current rsudo APISIX configured-mode inspection, legacy interface and non-authoritative runtime boundary | `rumiai-os/RSUDO-APISIX.md` |
-| rsudo Keycloak administration target contract; K04 secure service-account authentication partially implemented; general Admin REST/CLI pending | `rumiai-os/RSUDO-KEYCLOAK.md` |
+| rsudo Keycloak administration target contract; K04 protected service-account and explicit confidential user Direct Access Grant partially implemented; general Admin REST/CLI pending | `rumiai-os/RSUDO-KEYCLOAK.md` |
 
 ## Testing and development
 
