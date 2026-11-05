@@ -66,6 +66,11 @@ Also inventory current repository adapter set (GitHub, Node.js, Chrome, Chromium
 
 ## Current state
 
+### S process-identity portability realignment pending (2026-11-05)
+
+- Final consistency check found a **current portability mismatch**: `srv_pid_start_identity_get` reads the host `ps -o lstart` field, which is implemented on the exercised Linux and anticipated macOS platforms but is **not** part of POSIX.1-2024's mandated `ps -o` format names. The portable `srv` baseline and `POSIX-PORTABILITY-LAYER.md` do not establish that extension as a general prerequisite. This needs a host-specific capability/adapter or a portable identity design/reconciliation before full portable acceptance; do not silently promote the current code to POSIX-conformant on untested hosts. The legacy no-snapshot branch and second-granularity collision limits remain separately open. Draft PR #4 is intentionally not merged.
+- Existing final-source `m-os@1903fb52c8a1b83f4d408c63fa6cdbad3f48f17d` Ubuntu jobs in [run 42098169071](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42098169071) both passed; macOS job had not executed when last inspected. No new status/translation branch was forced or mocked to claim a failure-code-specific PASS.
+
 ### S stale-PID identity regression and macOS upstream blockade (2026-11-05)
 
 - **Authentic regression FAIL:** standalone `m-os/m-os-completion-s@46be6d7a58ad213f06ea0cfdc4b14389f9619492` [CI run 42096777829](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42096777829), Ubuntu job `127488766744`, observed `srv start` return 0 / `already running pid=2497` when a disposable live `sleep` process was represented by complete persisted service metadata plus an intentionally obsolete process-start identity. An earlier fixture had written a nonnumeric `owner` and therefore produced a misleading negative-path success; that earlier claim is superseded for this *specific* regression. The revised fixture uses a valid numeric owner and yielded the authentic failure before a runtime fix. It does not send a stop signal to the unrelated process.
