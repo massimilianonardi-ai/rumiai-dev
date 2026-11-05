@@ -1,7 +1,7 @@
 # Advanced browser/Electron text editor
 
 Status: Active — real Document2D browser GUI PoC CI-verified; operator reference-VM/macOS validation and Electron integration remain open
-Updated: 2026-11-04
+Updated: 2026-11-05
 
 ## Goal
 
@@ -427,10 +427,13 @@ The launcher must resolve/pin the PoC commit before its run and retain the repor
 
 **GUI ↔ `Document2D` G00–G06 complete; G07 primary Ubuntu 26.04 ARM64 VM scoped browser test PASS with exact revisions confirmed.** The operator's real `vmdev` run on 2026-11-05 14:09:31 UTC completed six real-browser suites under headful Google Chrome for Testing 157, Wayland, VMware, Ubuntu 26.04 ARM64 and native Node 26.13. The operator provided `status.txt=PASS`, host metadata and exact pinned core `c453b5764fec8403571125ea62107ae072a823a1` plus PoC `1d8033f28cedde6df91c09269d4250ec14f39009`, independently confirmed as a real PoC Git revision. Per-test console results are PASS; pixel selection comparison was 0 px. **Full local logs and screenshots were not independently inspected, and this PoC launcher is not a `rumiai-validate` publication.** No new canonical API or runtime behavior is certified. Ubuntu x86_64 VM, macOS 27 ARM64, native Electron and remaining GUI parity/features are separately PENDING.
 
+
+**2026-11-05 G07 Ubuntu x86_64 host preparation (PoC-only):** `rumiai-dev-PoCs@5ed08502648154d4c8330251891a3787653edf86` added `pocs/066-text-edit-browser-gui/tests/g07-ubuntu-x86_64.sh` for the designated operator Ubuntu 24.04/26.04 x86_64 VM, with native x86_64 Node 22+, installed Chromium, six existing real-browser suites and local exact-revision reports; updated PoC README, the cross-host G07 browser-test comment and the PoC 066 workflow. The previous ARM64 launcher and production `rumiai-os` are unchanged. Hosted Ubuntu 24.04 x64 workflow [run 42050803058](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/42050803058) has already passed the new script's shell syntax/preflight and original Chromium-failure diagnostic checks; full workflow completion was still **IN PROGRESS** at this checkpoint. Such hosted smoke checks are auxiliary, not operator x86_64 reference-VM evidence. The actual operator x86_64 VM run, macOS 27 ARM64 and Electron remain **PENDING**.
+
 ## Next action
 
 1. **Preserve and, when required, inspect remaining local ARM64 evidence** in `/home/admino/rumiai-g07-20261105T140931Z`: six individual suite logs, five screenshots and full `host.txt`; avoid publishing sensitive host data. For formal `rumiai-tests` validation, use the existing `rumiai-validate`/session mechanism after defining the corresponding permanent GUI test scope; do not fabricate a formal runner session from the PoC's local `status.txt`.
-2. **Continue ordered reference-host execution** on the operator's Ubuntu 24.04/26.04 x86_64 VM, then macOS 27 ARM64, with exact revisions and scoped PASS/FAIL. ARM64 browser PASS does not establish the other hosts, native Electron or complete TextEdit 0.8.2 parity.
+2. **Continue ordered reference-host execution** with `sh rumiai-dev-PoCs/pocs/066-text-edit-browser-gui/tests/g07-ubuntu-x86_64.sh` on the operator's Ubuntu 24.04/26.04 x86_64 VM (from the parent of the checkout, after a forward-only pull); inspect and retain actual host logs/screenshots. Then validate macOS 27 ARM64, recording exact revisions and scoped PASS/FAIL. ARM64 browser PASS does not establish the other hosts, native Electron or complete TextEdit 0.8.2 parity.
 3. Revisit the former `tls-nss-sync` startup divergence only in its separately authorized runtime work unit if still applicable. The successful Chrome startup does not prove that legacy source was changed or that the defect is permanently removed.
 
 ## Blockers / open questions
