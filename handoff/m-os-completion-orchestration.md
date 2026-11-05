@@ -38,7 +38,7 @@ User-intent evidence was previously reviewed from `chats/m-os/` archives, notabl
 
 **Material contract gates:**
 - **G-CONTEXT:** `BOOTSTRAP-ENVIRONMENT.md` currently specifies only shell-local exact `pkg=` and no-argument **reset**. User-approved direction for a future full context instead calls for no-argument default initialization, ordered selections/presets, coherent provider/facility/owner/state/environment dimensions and protected child propagation. Exact public grammar, defaults, trusted metadata, library consumer binding and environment replacement are not promoted. Do not implement an invented API.
-- **G-PKG:** `PACKAGE-MODEL.md` Installation prose permits best-effort invalid operands but PKG-99 demands upfront full request validation; the dependency handoff records the selected upfront rule. Reconcile canonical prose + runtime + manuals before a claim of complete `pkg`/v2 semantics. Additionally, transparent ordinary-library consumer dependencies cannot be silently recast as facility dependencies.
+- **G-PKG:** The upfront full-request, single-catalog-snapshot, exact-root dependency-first rule has been reconciled in current `PACKAGE-MODEL.md` (P1 specification checkpoint `639e990c5ad61a5092f42561e8d151a99f2ef6b8`), but the autonomous `pkg` implementation and manuals are still P2 pending realignment and authentic proof. Transparent ordinary-library consumer dependencies cannot be silently recast as facility dependencies.
 - **G-HOST:** authorization and controlled infrastructure for privileged SSH/sudo, host-system service supervision and reference-host physical evidence are not implied by generic project authorization. Unrun required work remains PENDING, not PASS.
 
 **Scope excluded from `m-os` core completion:** finishing all separate APISIX/Keycloak administration features; migrating or editing frozen legacy product/suite; v3 resource descriptors; hardening package-store permissions; changing formal `rumiai-validate` target; adding all optional legacy commands indiscriminately. These remain their existing owners' tasks, and do not block core acceptance solely by being incomplete.
@@ -169,11 +169,11 @@ Mainline repository adapters: `pkg-repository-{artifact,chrome,chromium,github,n
 - **Acceptance:** genuine `m-core` / `m-term` / `m-rsudo` separate installed package views; sh source via `PATH` with existing `loadsyslib` used correctly, Java JAR `CLASSPATH` where a real package exports it; replacement order, collisions, shell-local state, reset, failed-selection no-mutation, user PATH preservation and child-shell function reinitialization. No synthetic package masquerading as end-to-end proof.
 - **Evidence:** real cross-package consumer output on Ubuntu/macOS and vmdev if applicable, pinned source/catalog/release identities, separate tests for error branches. C1 is **not** approval for default presets/providers/protected inheritance. Only C1 writer edits the current context library until G-CONTEXT is promoted.
 
-### P1 — Canonical pkg install contradiction (READY for authority reconciliation)
+### P1 — Canonical pkg install contradiction (SPECIFICATION RECONCILED; P2 RUNTIME PENDING)
 
-- **Owner:** `handoff/pkg-dependency-resolution.md`. Current `PACKAGE-MODEL` Installation best-effort sentence contradicts PKG-99. Already-fixed task-local direction: validate entire request list up front, one catalog snapshot, exact roots and dependency-first sequence. Compare current `m-os/lib/sys/sh/pkg/{pkg-install,pkg-depend,pkg-common}.lib.sh`, relevant manuals and actual public tests.
+- **Owner:** `handoff/pkg-dependency-resolution.md`. `PACKAGE-MODEL.md` now specifies upfront validation of every request, a single catalog snapshot, exact roots and dependency-first installation; the source/manual path remains P2 ownership. Compare current `m-os/lib/sys/sh/pkg/{pkg-install,pkg-depend,pkg-common}.lib.sh`, manuals and authentic public tests.
 - **Deliverable:** one consistent authoritative spec, command/manual behavior, regression expectations; do not silently let a convenience algorithm decide observable semantics.
-- **Done:** public invalid-first/valid-second and valid-first/invalid-second batch semantics have a deterministically specified result; failure-before-mutation evidence matches the promoted rule. Internal helper naming/private cross-library calls do not become new public APIs. P1 gates P2/V2.
+- **Done for P1 specification only:** deterministic full-batch failure-before-mutation and exact-root/snapshot semantics are promoted. P2 must still align implementation, operational manuals and real regression evidence; internal private cross-library calls do not become public APIs. P2 gates V2.
 
 ### P2 — Install/dependency/extract correctness (READY after P1, single pkg writer)
 
@@ -245,6 +245,10 @@ Mainline repository adapters: `pkg-repository-{artifact,chrome,chromium,github,n
 
 ## Current state
 
+### Branch V1 dispatch checkpoint (2026-11-05)
+
+The operator authorized starting Branch V. **V1 is active under the existing `handoff/pkg-definition-model-review.md` owner; V2 promotion remains BLOCKED.** A single scoped catalog-side workflow addition at `pkg-catalog/pkg-schema-v2@ae3e2011462be46c0326179f2117b81b85e5df5e` started [real v1 Java/Temurin/Maven CI run 42085304112](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42085304112) against pinned `m-os/pkg-schema-v2@1e3a038a5abf6f8c176272d8e44464c842d3cefd` and existing unpromoted Java permanent test `3f0eeb2d...`. Its Ubuntu/macOS jobs were queued at the checkpoint; no Java PASS is claimed. A failed-jobs-only rerun of the prior v2 catalog [run 42036487502](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42036487502) attempt 2 was also accepted and queued to recheck the sole macOS jq upstream HTTP 403; the first attempt's other 13 jobs were successful. Exact CI results and V1 next actions are tracked only in the owning pkg-definition handoff. No shared `m-os/pkg` runtime, catalog definition, release, `rumiai-tests/main`, or v2 mainline was modified; P2/P3/P4 and V1 evidence still gate V2.
+
 ### Branch S dispatch checkpoint (2026-11-05)
 
 The operator explicitly started S1/M12 and S2/M13. The isolated
@@ -307,13 +311,14 @@ Current mainline repository adapter sources: `pkg-repository-{artifact,chrome,ch
 
 ## Next action
 
-1. P2: implement in autonomous `m-os` the already-promoted P1 exact-root/same-catalog-snapshot installation model, with strict installed-store checks, nonduplicated resolver interfaces, matching command/library manuals and proportionate real public regressions. Recheck the current remote HEAD and own all shared pkg writes serially.
-2. Route P3 and P4 through the existing validation/source-composition owners after P2's stable interface checkpoint; P3 evidence analysis may precede shared runtime writes. Coordinate V2 only after P2/P3/P4 and V1 applicable readiness.
-3. Continue independent C2/J1/S*/A*/R* evidence/design lanes according to their ownership and gates; do not treat this P0/P1 document checkpoint as authorization to run frozen suites, privileged hosts or generalized context implementation.
+1. V1: inspect the queued exact Java and jq retry results; report authentic outcomes in the owning pkg-definition handoff and keep V2 blocked pending V1 plus P2/P3/P4.
+2. P2: implement in autonomous `m-os` the already-promoted P1 exact-root/same-catalog-snapshot installation model, with strict installed-store checks, nonduplicated resolver interfaces, matching command/library manuals and proportionate real public regressions. Recheck the current remote HEAD and own all shared pkg writes serially.
+3. Route P3 and P4 through the existing validation/source-composition owners after P2's stable interface checkpoint; P3 evidence analysis may precede shared runtime writes. Coordinate V2 only after P2/P3/P4 and V1 applicable readiness.
+4. Continue independent C2/J1/S*/A*/R* evidence/design lanes according to their ownership and gates; do not treat this P0/P1 document checkpoint as authorization to run frozen suites, privileged hosts or generalized context implementation.
 
 ## Blockers / open questions
 
 - Full generalized `context` public grammar/default/preset/profile and protected inheritance/consumer library selection is not promoted; `BOOTSTRAP-ENVIRONMENT` no-arg reset must not be silently replaced.
-- Canonical installation contradiction and downstream shared `pkg` integration ownership require P1 resolution.
+- P1 canonical installation text is reconciled, but P2 runtime/manual/source and downstream shared `pkg` integration still require acceptance before V2 promotion.
 - Privileged SSH/sudo, host service management and final reference-host runs need controlled authorized environments; required tests not run remain PENDING.
 - Legacy `rumiai-os` and `rumiai-tests` are frozen; final formal suite alignment/migration cannot be silently assumed authorized.
