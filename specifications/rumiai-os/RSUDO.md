@@ -155,7 +155,8 @@ The `exec inject` submodule operation provides composition between
 
 ```text
 [ shell-source | ] rsudo [options...] exec inject
-    [library-reference | --command command-name local-source]...
+    [library-reference | --library library-reference local-source |
+     --command command-name local-source]...
     [-- command-source [command-arg...]]
 ```
 
@@ -166,7 +167,7 @@ a recursive `rsudo` call.
 The generator owns:
 
 ```text
-selected embedded libraries
+selected embedded libraries (including explicit selected local package sources)
 repeatable named command-source definitions
 optional isolated one-shot command-source invocation
 optional non-TTY stdin source appended after them
