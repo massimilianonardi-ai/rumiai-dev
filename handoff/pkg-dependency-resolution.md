@@ -9,10 +9,10 @@ Complete and validate the promoted recursive `pkg install` model built around th
 
 ## Current repository revisions
 
-- `rumiai-dev/main`: 2026-11-05 canonical PACKAGE-MODEL update at `639e990c5ad61a5092f42561e8d151a99f2ef6b8`; refresh remote HEAD for later work.
-- `m-os/master@e0bcf2d69ba4e4209a93fd7d0c9b08a00def3a0f` current runtime (A1 CI-only addition since inspected pkg source at `31693e8`); feature `m-os/pkg-schema-v2@1e3a038a5abf6f8c176272d8e44464c842d3cefd` independent.
-- `pkg-catalog/main@3ee97d21bae3ee885b0fa987e1faee718fad8609`; `pkg-catalog/pkg-schema-v2@9d889cc265c29eeae456b8fe1ad638654c36e8c7`.
-- Frozen for modifications and execution: `rumiai-os/main@8ae78944ef5e8d6297c50898d856db1a20c6fd9a` and `rumiai-tests/main@b8e1c71db7aa4b94fedef323c5b3f1030dab1c24`. Read-only source inspection remains permitted.
+- `rumiai-dev/main@b487238ec4b481e7c6256b857d733817baaf5c71` observed before this checkpoint; canonical `PACKAGE-MODEL.md` P1 reconciliation committed at `639e990c5ad61a5092f42561e8d151a99f2ef6b8`.
+- `m-os/master@5884cf05ebd3033524db3890a7e34fc0decdd4f6` remains the target mainline. P2 implementation lives on forward-only `m-os/m-os-completion-p2@76897ac5653e4d7c787ec4b427b99545269ee17c`, [draft PR #3](https://github.com/massimilianonardi-ai/m-os/pull/3), not yet merged.
+- `pkg-catalog/main@3ee97d21bae3ee885b0fa987e1faee718fad8609`; `pkg-catalog/pkg-schema-v2@ed599dcd09a286eb3e0d21b4cc8f04adaada556c`.
+- `rumiai-tests/main@5675ed30e34b6ac795134965a5c8b6b2dd5c88d0` and `rumiai-os/main@461f4baf8c6f010a2891d104f0a58a0a69e06abf` remain frozen for edits/execution under this program. Read-only inspection was performed.
 
 ## Applicable canonical sources
 
@@ -54,6 +54,9 @@ Complete and validate the promoted recursive `pkg install` model built around th
 - P1 canonical authority reconciliation committed as `639e990c5ad61a5092f42561e8d151a99f2ef6b8`: `PACKAGE-MODEL.md` now states upfront full-request syntax validation, one catalog snapshot, exact concrete requested roots before dependency planning, and dependency-first installation of those same roots; PKG-18/96/97 match. This is **specification-only**, not product validation.
 - On inspected autonomous `m-os/master`, `extract` and `pkg-extract.lib.sh` with current manual identities already replace the old `*2` and `*_OLD` source identities; older frozen-legacy extractor issues are not current autonomous-source blockers.
 
+- P2 forward-only implementation staged on `m-os/m-os-completion-p2` in draft PR #3: existing dependency planner is exposed as `pkg_depend_plan <catalog-root> <roots...>` (one existing implementation, no parallel planner), and `pkg install` now resolves all requested roots to exact concretes before planning against the same catalog snapshot. The old duplicate installer resolver was removed; internal-only installer helpers were renamed with leading underscore; exact installed-concrete shortcut rejects symlink/non-directory entries. Dependency reuse and explicitly requested already-installed root errors are differentiated, with valid-execution status 1 / invalid-request status 2. The `pkg`, install-library and depend-library manuals and an existing repeat-root CI expectation were realigned.
+- P2 added `.github/workflows/m-pkg-p2-public.yml` for real public Ubuntu/macOS invalid-batch and genuine published mk/jsc/Node installation coverage, with branch push/PR triggers. The PR is draft because **no new Actions run was returned by GitHub** at the checkpoint. The source diff and manual/interface mapping were inspected; no runtime PASS, hosted PASS or formal/physical validation is claimed. P2 completion is pending actual execution and any required corrections.
+  
 ## Current implementation state
 
 Current `m-os/lib/sys/sh/pkg/pkg-install.lib.sh` validates all requested syntax before `_pkg_install_init`. However, `pkg_install` still invokes public `pkg depend` on unmodified roots, then installs those unmodified roots. Its existing `pkg_install_resolve` helper is not used in this public flow. Public `pkg depend` creates its own catalog snapshot. **Thus exact roots and the shared immutable catalog snapshot are not implemented yet.**
@@ -73,9 +76,9 @@ Required P2 checks on a disposable real `m-os` target: invalid-first/valid-secon
 
 ## Next action
 
-1. P2 under one `m-os/lib/sys/sh/pkg` integration writer: ensure exact root resolution and dependency planning share the current installation catalog snapshot, without breaking standalone read-only `pkg depend`.
-2. Restore strict concrete-store validation, remove the obsolete duplicate resolver after equivalence check, reconcile function visibility and the `pkg`/install-library manuals. Explicitly reconcile already-installed and valid-execution exit-status drift before changing their public behavior.
-3. Execute proportional authentic public CLI regression tests on isolated `m-os` and coordinate P3/P4 before changing shared provider/default/integration hooks. Keep frozen suite and legacy product untouched.
+1. Execute and inspect `m-pkg-p2-public.yml` on the exact draft PR #3 head (or an equivalent isolated genuine `m-os` checkout on Ubuntu/macOS) and correct any authentic failures before merging. No successful new Actions workflow was observed via repository API during this response.
+2. Validate exact-root same-snapshot planning, invalid-first/invalid-last no-mutation, dependency-first true artifacts, malicious/symlinked managed-store rejection, provider ambiguity and failure cleanup. Inspect root already-installed behavior and current/default diagnostics with real public CLI, plus relevant extractor and uninstall/reinstall cases. Current separate `pkg` publication still has runtime-test and upstream artifact availability risk.
+3. After actual proportional validation, reconcile any concurrent `m-os/master` changes forward, integrate PR #3 without force, update evidence/handoff and release the shared `pkg` writer boundary to P3/P4. Keep frozen suite and legacy product untouched.
 
 ## Deferred
 
