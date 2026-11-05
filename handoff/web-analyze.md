@@ -10,8 +10,8 @@ Provide the `m` JavaScript library at `rumiai-os/lib/sys/js/web-analyze.lib.js` 
 ## Current repository revisions
 
 - rumiai-dev: 543671033fdd05b5263d0840a99ba8a871f79381 (observed pre-checkpoint HEAD; refresh every work unit)
-- rumiai-os: 2f8a8bbaf67b5897af56fedadf0068308689948c (exact existing regression and HTTPS CI success)
-- rumiai-tests: e2fcac5fc79bebff2f412306177ce13eeb8ed46e (pinned real browser suite; nonreproducing cache fixture withdrawn)
+- rumiai-os: 8ae78944ef5e8d6297c50898d856db1a20c6fd9a (current observed HEAD includes later unrelated rsudo manual change; exactly tested web-analyze product 2f8a8bbaf67b5897af56fedadf0068308689948c)
+- rumiai-tests: fa4b6e96a9d777068f8940d0f5239d670f3d833e (current observed HEAD includes later unrelated rsudo test; pinned web-analyze suite e2fcac5fc79bebff2f412306177ce13eeb8ed46e)
 
 ## Applicable canonical sources
 
@@ -390,7 +390,7 @@ WU-07 includes passive Animation/Media/WebAudio/Preload and Network Reporting AP
 
 ## Next action
 
-After fresh remote HEADs and mandatory retrieval, perform a **revision-pinned targeted real capture on the operator's Ubuntu 26.04 ARM64 VM** to exercise the response-only branch, and compare redacted body/status/provenance counts without publishing private resources. Then diagnose the two cross-target request lifetime pairs using true frame/target transition evidence, and Amazon's two CDP instrumentation timeouts. Diagnose against current implementations and real reproducible target scenarios before proposing product changes. Keep the scoped step-state HTML cap separate from the existing full DOM-rest files. Recover exact repository revision identities for the operator-confirmed **Ubuntu 26.04 ARM64** runs if retained by host-local evidence; otherwise use a fresh explicitly pinned, bounded rerun *after* reproducible regression diagnostics. Only then advance to the second x86_64 VM and macOS reference environments as applicable. The archive alone cannot establish the target commit. The hosted public MDN/web.dev CI remains supplementary. Preserve raw resources/profile secrets privately; evaluate OPFS named-bucket limits only against authentic passive read-only protocol capabilities. Git remains forward-only.
+After fresh remote HEADs and mandatory retrieval, perform a **revision-pinned targeted real capture on the operator's Ubuntu 26.04 ARM64 VM** to exercise the response-only branch, and compare redacted body/status/provenance counts without publishing private resources. Then diagnose the two cross-target request lifetime pairs using true frame/target transition evidence, and Amazon's two CDP instrumentation timeouts. Demand real reproductions before any further product change. Keep the scoped step-state HTML cap separate from the existing full DOM-rest files. Recover exact repository revision identities for the operator-confirmed **Ubuntu 26.04 ARM64** runs if retained by host-local evidence; otherwise use a fresh explicitly pinned, bounded rerun of the two operator-authorized sites to validate the already bounded response-only change. Only then advance to the second x86_64 VM and macOS reference environments as applicable. The archive alone cannot establish the target commit. The hosted public MDN/web.dev CI remains supplementary. Preserve raw resources/profile secrets privately; evaluate OPFS named-bucket limits only against authentic passive read-only protocol capabilities. Git remains forward-only.
 
 ## Blockers / open questions
 
