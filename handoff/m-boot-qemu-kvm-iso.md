@@ -12,7 +12,7 @@ This workstream is concurrently active with the firmware/early-Linux pathway own
 ## Current repository revisions
 
 - rumiai-dev/main: verify live HEAD at every resume; parent execution plan in handoff/m-boot-standalone.md is the relationship and cross-track decision owner.
-- rumiai-dev-PoCs/main: observed 841a868168edbe62389b79c915ee405617e091dd before K-07 handoff update; K-07 CI pinned ac8abca7249043f9849c566b7498297246ba5f38, K-03 CI pinned 15954883ec1c84e909ca366c5fac53fa5f0e9af6, K-02 CI pinned 843c564d3ac918b3858ec5e78439b7b245f569c1. Reverify live HEAD on resumption.
+- rumiai-dev-PoCs/main: observed 0eeb350995b9a46e97925c5c148d585f29d1aeb8 during K-08 verification; K-07 CI pinned ac8abca7249043f9849c566b7498297246ba5f38, K-03 CI pinned 15954883ec1c84e909ca366c5fac53fa5f0e9af6, K-02 CI pinned 843c564d3ac918b3858ec5e78439b7b245f569c1. Reverify live HEAD on resumption.
 - m-boot/main: c06cd35a73b7e420c3a06dc51537c028ffa619d0 (no planned product changes).
 - Ventoy/m-boot-secondary-uefi: ceff79ca92d246928f86362a569f86c6d2ac130f (background evidence only; no planned fork edits).
 
@@ -265,7 +265,7 @@ K-02 → K-03 ──────→ K-07 ─────────────
 K-02 + K-03 + compatible host → K-06 (optional evidence; may stay BLOCKED)
 ```
 
-K-01/K-02 are independent ready starters; K-04 and K-05 are siblings after K-03, and K-06 is a separate host-capability gate. **No F or M dependency exists**. Each task uses track-owned PoC/workflow/output paths and records exact evidence here.
+K-01/K-02/K-03/K-07/K-08 have PASS at their explicitly bounded evidence levels; K-04 and K-05 independently WAITING safely accessible vendor ISO files; K-06 BLOCKED on accessible native x86_64 KVM. **No F or M dependency exists**. Each task uses track-owned PoC/workflow/output paths and records exact evidence here.
 
 ## Completed
 
