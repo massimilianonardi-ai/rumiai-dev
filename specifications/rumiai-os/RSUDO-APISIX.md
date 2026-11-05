@@ -1,7 +1,7 @@
 # rsudo APISIX Administration — Current Implemented Contract
 
 Status: **Current / partial implementation**
-Updated: 2026-11-04
+Updated: 2026-11-05
 
 ## Scope and ownership
 
@@ -13,7 +13,7 @@ The library's operational function signatures and current limitations are mainta
 
 The previous APISIX implementation is retained under `rsudo-mod-apisixlegacy.lib.sh` and the `rsudo apisixlegacy` dispatcher identity. Its public functions carry the prefix `rsudo_mod_apisixlegacy_`. The current APISIX module still forwards its pre-existing public operations to that retained implementation unless explicitly replaced.
 
-Similarly, the previous Keycloak module is retained under `rsudo-mod-keycloaklegacy.lib.sh`, while `rsudo-mod-keycloak.lib.sh` currently forwards to its retained implementation. Modern Keycloak administration is not yet delivered.
+Similarly, the previous Keycloak module is retained under `rsudo-mod-keycloaklegacy.lib.sh`. The current `rsudo-mod-keycloak.lib.sh` retains forwarding for its sixteen compatibility functions and separately implements a partial modern `auth` interface. Its scope and remaining work are owned by `RSUDO-KEYCLOAK.md`, not by this APISIX contract.
 
 The legacy interfaces retain their own documented limitations and must not be mistaken for the new safe, multi-backend administration implementation. No default or implicit fallback from an unsupported new backend operation to the unsafe legacy path is permitted.
 
@@ -111,7 +111,7 @@ The current read-only resolvers do not prove which `-c`/profile or effective con
 
 Mode inspection does not emit API keys or the selected configuration contents. Credentials and target data remain subject to `RSUDO.md` and `DIAGNOSTICS.md`. The legacy APISIX functions retain previously documented unsafe JSON/request behavior, and their existence is not evidence that modern secure mutation is complete.
 
-The complete mode-routed Admin API, standalone file-driven mutation, standalone API-driven snapshot mutation, generic resource API, simple `list`/`get` conveniences, simplified shell recipes and new Keycloak functionality are **not yet implemented** by the current safe backend. The explicit low-level `admin-read` endpoint above does not imply that they exist. They are pending development, not current product guarantees.
+The complete mode-routed Admin API, standalone file-driven mutation, standalone API-driven snapshot mutation, generic resource API, simple `list`/`get` conveniences and simplified shell recipes are **not yet implemented** by the current safe APISIX backend. The explicit low-level `admin-read` endpoint above does not imply that they exist. They are pending development, not current product guarantees.
 
 ## Required mechanical protection
 
