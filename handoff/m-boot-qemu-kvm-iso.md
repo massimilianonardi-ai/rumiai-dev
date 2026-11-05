@@ -44,12 +44,38 @@ This workstream is concurrently active with the firmware/early-Linux pathway own
 
 ### K-01 — Guest-versus-bare-metal feasibility
 
-- **Status / dependencies:** READY immediately, none.
+- **Status / dependencies:** PASS (2026-11-05; source/architecture assessment, no execution test), none.
 - **Objective:** determine precisely what a QEMU read-only virtual CD-ROM can deliver in the target m-boot user journey and where it is only a diagnostic control.
 - **Steps:** compare original goal (USB boots host CPU/hardware/recovery tools) with full QEMU guest execution; identify requirements for host Linux/hypervisor, disk access, network, firmware, actual target installation, performance and required machine ownership. Clarify that KVM does **not** transparently virtualize a single drive for an otherwise unvirtualized bare-metal Linux kernel.
 - **Output / acceptance:** two-scenario capability and exclusions matrix, minimum operator journey and explicit product-candidate vs diagnostic-only classification, with remaining open decisions identified.
 - **Stop boundary:** if a guest fails the bare-metal user scenario, retain the bounded test-harness alternative; no hypervisor-as-product implementation without explicit architecture selection.
 - **Out of scope:** QEMU boot test, new hypervisor, remote device virtualization, modification of m-boot boot process or physical USB.
+
+#### K-01 result — two-scenario capability and exclusions matrix
+
+**Scope of evidence:** source-backed feasibility/classification only. No QEMU guest boot, vendor media-recognition, KVM accelerator test, destructive installer or physical-host validation is implied.
+
+| Dimension | A. Standalone m-boot USB / target bare metal | B. Linux-hosted QEMU/KVM guest / read-only ISO file |
+|---|---|---|
+| Start and ownership | Boot the target computer directly from a prepared USB; no previously running Linux host. Booted native OS/tools own the actual machine. | A working Linux host with QEMU and guest firmware (OVMF for UEFI) is required first. QEMU virtualizes the **whole guest** including CPU, memory and devices; host hardware remains owned by the host. |
+| ISO lifecycle | Existing GRUB loopback reads an ISO at boot but does **not** make a persistent optical device visible to Linux, Windows PE or BSD. Native `findiso` recipes may work individually; actual Proxmox/TrueNAS media checks remain unproven. | A configured virtual optical controller with file-backed read-only CD is designed to remain visible after EFI bootloader exit to the guest operating system. K-03 must verify this property with guest-side post-kernel evidence; K-04/K-05 independently test real vendor recognition. |
+| Target disks and backups | Native recovery/backup tools may discover and access actual disks via their own drivers and operator choices. This is the current core goal. | Guest sees virtual disks only unless devices/images are deliberately passed or mapped in. It cannot transparently repair/backup the host's physical disks; physical-disk passthrough and writes are **not authorized** in this workstream. |
+| Hardware and firmware diagnostics | Native firmware, controllers and real system RAM are exercised, subject to actual tool support and physical testing. | Guest sees virtual firmware/controllers and assigned guest RAM. Guest diagnostics or memtest do **not** validate the host's physical RAM, native UEFI or attached peripherals. |
+| Network and peripherals | Real NIC/USB/controller availability depends on the selected native OS and host drivers. | Network requires virtual NIC plus host/NAT/bridge configuration. Real NIC, USB and storage controllers are not automatically guest-owned; passthrough is a separate capability/safety decision. |
+| Installation target | A native installer can address actual target disks when explicitly authorized; specific ISO installer completion is not yet established. | Installer normally addresses disposable **virtual** disks; direct host installation would require a separate unsafe assignment and is outside this task. Do not start installation in current QEMU tests. |
+| Portability and performance | USB alone is the boot medium on supported target architecture/firmware; actual ISO recipes have individual compatibility limits. | Depends on a running host, QEMU/OVMF, free memory/CPU and permissions. x86_64 guest on ARM64 Ubuntu uses **TCG, not x86_64 KVM**; x86_64 KVM is possible only on an appropriate Linux host with working acceleration. No performance numbers or measured compatibility are claimed. |
+| ISO preservation | Original payload copied to `MBOOTDATA/m/boot/iso/`; ISO remains unchanged but legacy GRUB menu entries are not CD emulation. | Original ISO may be used as a file-backed read-only virtual CD without a second ISO copy or unmounting the host USB. Actual source-hash preservation, guest read-only enforcement and cleanup are **future K-03/K-07 acceptance**, not a K-01 runtime PASS. |
+
+**Minimum operator journeys:**
+
+- **A — primary standalone user journey:** prepare USB once using the existing guarded m-boot media provisioner; copy the desired ISO under `MBOOTDATA/m/boot/iso/`; boot the computer needing recovery/installation; select the relevant firmware/GRUB recovery, diagnostic or installer entry; confirm that the *native OS/tool*, not just the menu, reaches usable physical hardware/media. Treat presently experimental ISO paths as unvalidated until independently proven.
+- **B — independent diagnostic user journey:** on an already booted Linux host, keep an existing ISO file readable (including from a mounted USB); after K-02 confirms QEMU/OVMF/controller prerequisites, start an isolated guest with an explicitly read-only file-backed virtual CD and no physical host disk target; observe post-kernel guest media discovery; stop before installation; validate source identity and cleanup under K-03/K-07. No host USB unmount/raw disk passthrough is required.
+
+**Product classification / stop boundary:** **Diagnostic-only test harness for the current standalone m-boot objective; not a product-equivalent bare-metal candidate.** A full QEMU guest is a useful control for *whether an unchanged vendor installer finds a normal optical device* and for separating vendor-media defects from GRUB-loopback defects. It cannot supply a virtual CD to a separate, directly hardware-owning bare-metal Linux kernel, and does not deliver standalone physical recovery on a machine without an already running host. An optional **host-assisted VM product** is only a *conditional future candidate* if the operator explicitly accepts a distinct host-OS-dependent journey and specifies acceptable physical disk access, networking, resources and installation safety. No product pivot or hypervisor implementation is authorized by K-01.
+
+**Open choices for the eventual cross-track comparison (not K-01 blockers):** Is a host-assisted journey useful alongside standalone m-boot? Is recovery of the actual target's physical storage/firmware mandatory? What hardware passthrough and safety boundary, if any, could be allowed? Are TCG memory/runtime cost or real KVM host prerequisites acceptable? Which outcomes from real Proxmox/TrueNAS tests materially change product fit? Keep K-02/K-03 independent from these future product decisions.
+
+**Source and evidence anchors:** `m-boot/main c06cd35a73b7e420c3a06dc51537c028ffa619d0` (`manual/boot-media`, `manual/usb-image`, `loader/menu/boot-media-iso`); `rumiai-dev-PoCs/main cbd5906b5af50c989764dabc9acba48dd5d43dc2` (PoC 081 and 086 READMEs: experimental **F/M** evidence, not K PASS); `rumiai-dev/main 8267b790b8864c12c821e9d57d658e45b36e4d90` (routing/plan). External reference: QEMU [system introduction](https://www.qemu.org/docs/master/system/introduction.html) and [invocation/block read-only options](https://www.qemu.org/docs/master/system/qemu-manpage.html). **K-01 PASS = documented classification and bounded operator feasibility only. No executable, vendor, KVM or physical validation performed.**
 
 ### K-02 — Host/guest QEMU capability and safety preflight
 
@@ -129,18 +155,19 @@ K-01/K-02 are independent ready starters; K-04 and K-05 are siblings after K-03,
 
 ## Completed
 
+- 2026-11-05: **K-01 PASS (source/architecture classification only)**: two-scenario matrix, minimum operator journeys, diagnostic-only classification and open decisions documented above. No K-02, K-03, QEMU or physical test executed.
 - 2026-11-05: independent workstream split from the global m-boot execution plan to allow concurrent development. No QEMU/KVM implementation, workflow or new test has yet been run as part of this new workstream. The PoC 081/087 baseline from the other track is reference only, not a KVM PASS.
 
 ## Current state
 
-Stable operator-addressable task catalog K-01…K-08 established. **K-01 and K-02 are READY immediately**, independent of F/M; K-03 awaits K-02; K-04/K-05 vendor tests are sibling tasks after K-03; K-06 waits for a compatible x86_64 KVM host; K-07/K-08 consolidate only evidence actually obtained. No new QEMU/KVM experiment or real ISO boot is claimed by this planning edit.
+Stable operator-addressable task catalog K-01…K-08 established. **K-01 PASS (assessment only), K-02 READY**, independent of F/M; K-03 awaits K-02; K-04/K-05 vendor tests are sibling tasks after K-03; K-06 waits for a compatible x86_64 KVM host; K-07/K-08 consolidate only evidence actually obtained. No new QEMU/KVM experiment or real ISO boot is claimed by K-01.
 
 ## Next action
 
-**K-01** classify guest vs bare-metal use cases, while **K-02** inventories real QEMU/OVMF capabilities independently. Then execute **K-03** genuine synthetic read-only optical guest boot. Do not wait for F/M, real USB or KVM host, and do not start original vendor tests before the K-03 acceptance gate.
+**K-02** is next eligible: inventory actual QEMU/OVMF prerequisites and safe optical controller flags. Only after K-02 acceptance is **K-03** eligible for real synthetic guest boot. This K-01 invocation does not automatically start either successor; vendor tests still await K-03.
 
 ## Blockers / open questions
 
 - An operator USB-backed genuine ISO file may not be currently visible on vmdev because its passthrough previously fell to 0B; a synthetic CI K2 test is not blocked by that.
 - No verified native x86_64 KVM host is identified for K5; a future host is a dependency for that acceptance, not for K0–K4 TCG.
-- Whether an OS running *inside a VM* satisfies the eventual physical recovery/installation goal remains an architectural selection to be made using evidence, not a settled contract.
+- K-01 establishes that VM execution is **not equivalent** to standalone physical recovery. Whether a separate optional host-assisted VM product journey is ever wanted remains an explicit architecture choice, not a settled product contract.
