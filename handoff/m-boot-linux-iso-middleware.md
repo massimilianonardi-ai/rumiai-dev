@@ -46,15 +46,39 @@ Implementation baseline: experimental Ventoy GRUB2/port/probe-linux-efi-consumer
 
 ### M-01 — Inventory of reusable early-Linux responsibilities
 
-- **Status / dependencies:** READY now, no new firmware work needed. Input ABI pinned to current `Ventoy@m-boot-secondary-uefi` source until coordinated change at the F/M integration gate.
+- **Status / dependencies:** **PASS — source/planning acceptance (2026-11-05)**; no new firmware work needed. Input ABI pinned to current `Ventoy@m-boot-secondary-uefi` source until coordinated change at the F/M integration gate.
 - **Objective:** inspect `probe-linux-efi-consumer.c`, `build-linux-handoff-initrd.sh`, current `init_chain` and existing Ventoy media hooks; establish the smallest reusable responsibility boundary.
 - **Steps:** itemize efivarfs access, map parsing, source GPT discovery, modules, `dmsetup`, device-node creation, ISO9660 mount, identity check, original `/init` transition, teardown and diagnostics. Classify each step as reusable, synthetic fixture, vendor adapter or test harness; mark privilege/module and lifetime assumptions.
 - **Output / acceptance:** a concise source-anchored responsibility map and a concrete minimal-change M-02 implementation/test plan; explain precisely which existing code is reused. Source inspection does **not** count as QEMU boot.
 - **Out of scope:** new public ABI/namespace, actual middleware refactoring, changes to F-owned C producer, any vendor initramfs rewrite or product integration.
 
+### M-01 source-inventory result — PASS (2026-11-05)
+
+**Evidence boundary:** completed source inspection and an actionable M-02 plan, *not* a new QEMU run, executable test, vendor boot, physical trial or middleware implementation. Inputs pinned to \`Ventoy/m-boot-secondary-uefi\` \`ceff79ca92d246928f86362a569f86c6d2ac130f\` and \`rumiai-dev-PoCs/main\` \`cbd5906b5af50c989764dabc9acba48dd5d43dc2\`. PoC 081 [run 41839593585](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/41839593585) remains prior synthetic EFI-to-Linux evidence only.
+
+| Concern | Current source-anchored inventory | M-01 classification / reuse boundary |
+|---|---|---|
+| EFI variable and map ABI | \`GRUB2/port/probe-linux-efi-consumer.c:21,122-147\` reads fixed efivarfs \`VtDmMapProbe\`; checks runtime attributes, \`VTDMAP01\`, chunk bounds, original Ventoy parameter checksum, image size | **Generic consumer logic, reuse unchanged at pinned revision**. Not a new public API; firmware producer and format belong to F |
+| Source identification and extents | Same C source \`:60-100,149-195\` enumerates disk devices; requires a unique matching primary GPT disk GUID and whole-disk byte size; checks partition sysfs start, chunk continuity and GPT partition bounds; emits a \`dm-linear\` table | **Generic consumer logic**. Requires privileged guest, real kernel block device and GPT. Does *not* currently prove GPT CRC, every arithmetic overflow, hostile-variable authenticity or source races; F-02 owns broader safety realignment |
+| Kernel and binary dependencies | \`GRUB2/port/build-linux-handoff-initrd.sh:9-109\` selects actual Ubuntu kernel/matching modules, builds static C consumer, bundles BusyBox, dmsetup with its ELF closure, and module dependencies for virtio, device mapper, ISO9660 and efivarfs | **Synthetic fixture/build harness**. Reuse for controlled M-02 guest, not an arbitrary vendor module/runtime contract |
+| Mounted early Linux and mapper | Same build script \`:111-154\` mounts proc, sys, devtmpfs, efivarfs; loads real modules; calls C consumer; creates \`dmsetup --readonly\`, resolves named mapper through \`/sys/block/dm-*/dm/name\` and major/minor rather than assuming \`dm-0\`; mounts ISO9660 with \`-o ro\` | **Reusable generic guest stage to isolate in M-02**. Root/CAP_SYS_ADMIN, available efivarfs/EFI Runtime Services, matching kernel modules and device-mapper support are prerequisites |
+| Identity assertion | Same build script \`:149-159\` hashes mapped device and compares a fixed \`.pve-cd-id.txt\` marker string; PoC 081 separately asserts unchanged source ISO digest and marker | **Test fixture only**. Keep marker and expected source hash in test assertions, never in generic stage or vendor policy |
+| Lifecycle and original init | Same build script \`:160-161\` forces poweroff on success and never hands over. \`IMG/cpio/ventoy/init:40-65\` dispatches to \`init_chain\`; \`init_chain:23-238\` unpacks original image and calls \`ventoy_chain.sh\`, whose \`:476-511\` executes detected real init or switch_root | **M-03 responsibility**, not achieved by M-02. Existing Ventoy init-chain is reference for lifecycle, not a ready-made portable handoff; preserve mounted /dev and ISO across any later transition |
+| Proxmox and TrueNAS discovery | \`hook/debian/pve-hook.sh:20-26\` rewrites real init media-device scanning and \`pve-disk.sh:21-44\` activates Ventoy disk hook. \`truenas-hook.sh:20-27\` inserts mountroot/live-media hooks; \`truenas-disk.sh:24-53\` uses vtoydm/FUSE ISO and mount | **Vendor adapters**; only M-05/M-06 after generic success and observed release-specific need. Their FUSE/directive approach is not the M-02 generic device mapper |
+| Teardown/diagnostics | Consumer emits specific \`VT_LINUX_HANDOFF_ERROR\` causes; build script has phase-specific \`VT_LINUX_*_FAILED\` markers. Fixture powers off and does not handle normal resource teardown. Consumer can leave a partial output table on an error; current caller checks nonzero return before \`dmsetup\` | **M-02 stage obligation**: require successful consumer exit before use; fail closed, clean any owned mount/mapping on error and report distinct guest phases. Do not edit F-owned C merely for convenience |
+
+**Minimal M-02 design and test sequence (not executed under M-01):**
+
+1. Create an **M-track-only** isolated PoC directory/workflow, separate from F/K. Pin the current C consumer, original PoC 081 EFI producer/virtual-ISO pathway and exact kernel/fixture provenance. Reuse existing compilation, module/dependency closure and QEMU runner inputs rather than cloning a competing EFI parser or modifying the fork, \`m-boot/main\` or GRUB core.
+2. Extract *only* the proc/sys/dev/efivarfs → modules → C table → read-only dm → stable device discovery → read-only ISO9660 mount sequence from the existing guest \`/init\` into a private reusable stage. Report actual mapped device/mount and explicit failure to the caller. Move hard-coded identity marker, independently expected digest and \`poweroff\` to the **test harness**; do not invent a public API or implement original-init handoff early.
+3. Validate with **real disposable QEMU/OVMF guest boot** using the pinned existing EFI map/unchanged Linux kernel and a synthetic source-backed GPT ISO. Require independent guest-phase logs for successful map, mapper/device, ISO mount and content read, plus source ISO hash unchanged before/after. Do not count host grep, EFI menu or the old PoC 081 run as an M-02 PASS.
+4. Exercise bounded real negative cases for absent/malformed variable, unavailable/ambiguous GPT source, missing module/device-mapper, wrong mapping or ISO read/mount failure. Observe no unintended mapped source, no fallback and cleanup of stage-owned resources. Use **only disposable virtual disks**, not host /dev, real USB or vendor installation media. Comprehensive GPT/CRC hardening stays in F-02.
+5. Stop at **generic read-only exposure**. M-03 separately proves an *independent* original init can still read the ISO after process handoff; M-04 separately joins the firmware F-05 gate. Neither successor is authorized by a request for M-01 alone.
+
+
 ### M-02 — Generic read-only ISO reconstruction stage
 
-- **Status / dependencies:** WAITING M-01; may run concurrently with F-02/F-03. Consume pinned already-PASS EFI producer map; F hardening completion is **not** a precondition for this isolated implementation.
+- **Status / dependencies:** **READY after M-01 PASS; not started**; may run concurrently with F-02/F-03. Consume pinned already-PASS EFI producer map; F hardening completion is **not** a precondition for this isolated implementation.
 - **Objective:** extract the existing Linux-side behavior into a bounded generic early-userspace stage, separately from PoC 081's synthetic `.pve-cd-id.txt` and unconditional `poweroff`.
 - **Steps:** require trustworthy variable/identity checks already present, load matching kernel modules, detect the unique physical GPT source, create only read-only `dm-linear`, resolve stable device identity, mount ISO9660 read-only and expose a clear success/failure result to the caller. Use current source, avoid rewriting existing parser wholesale.
 - **Positive test:** in real disposable QEMU Linux guest, unchanged synthetic ISO bytes/hash and marker, matching dm device and mount; distinct serial assertions for variable parsing, source discovery, device creation, read and mount. No success solely from host-side grep.
@@ -123,19 +147,20 @@ A blocked M-05 must not stop M-06, and K is completely independent. New child Po
 ## Completed
 
 - Prior factual baseline (not newly performed in this workstream): PoC 081 authentic QEMU/OVMF synthetic ISO → EFI variable → unchanged Ubuntu kernel → read-only dm-linear + ISO9660 + media ID PASS (run 41839593585). PoC 085 direct QEMU kernel/append-only vendor CPIO PASS (run 41855782625), but **not** EFI integrated vendor boot. PoC 087 malformed-variable original C consumer 13/13 early rejection PASS (run 42015054609), not GPT/physical bounds.
-- 2026-11-05: separated this self-contained middleware task from broader m-boot handoff so implementation can proceed concurrently with firmware and QEMU/KVM, while retaining shared input ABI as the only hard join point. No middleware code or new validation run has been completed under this new workstream yet.
+- 2026-11-05: separated this self-contained middleware task from broader m-boot handoff so implementation can proceed concurrently with firmware and QEMU/KVM, while retaining shared input ABI as the only hard join point.
+- 2026-11-05: completed **M-01 PASS (source inventory/planning)** at the pinned Ventoy/PoCs revisions and recorded the minimal M-02 implementation and validation path. No new middleware code, QEMU run or physical validation.
 
 ## Current state
 
-Task registry M-01…M-07 is now stable for operator addressing. M-01 is READY; M-02/M-03 depend only on prior M tasks and pinned PoC 081 evidence; M-04 alone waits for F-05 firmware gate; M-05 and M-06 are sibling vendor work units; M-07 compares evidence. No middleware implementation or new QEMU run is claimed by this **planning-only** change.
+Task registry M-01…M-07 is now stable for operator addressing. M-01 is **PASS (source inventory)**; M-02 is **READY but not started**; M-03 is **WAITING M-02**; both retain pinned PoC 081 input evidence; M-04 alone waits for F-05 firmware gate; M-05 and M-06 are sibling vendor work units; M-07 compares evidence. No middleware implementation, new QEMU run or physical test is claimed by this **source-only M-01** checkpoint.
 
 ## Next action
 
-**M-01**: inspect current Linux consumer/early-init source and produce the minimal reuse map; then **M-02** isolated generic read-only ISO remount test. Work may begin now, independently of F-02/F-03 and all K tasks. The only mandatory firmware join is M-04 ↔ F-05.
+**M-02 — READY, not started:** execute the isolated generic read-only ISO remount implementation/test plan above, independently of F-02/F-03 and all K tasks. The user selected M-01 only; successors are not automatically executed. The sole hard firmware join remains M-04 ↔ F-05.
 
 ## Blockers / open questions
 
 - Experimental producer/consumer interface is not a stable public contract. Preserve exact pinned data shape until concurrent firmware work is reconciled.
-- Method of preserving mounted ISO and device access across the original OS init/switch_root requires empirical M2 proof; do not assume that creating dm device alone is sufficient.
-- Existing 64 KiB EFI-sidecar limitation vs genuine vendor initrd sizes is an explicit M3 gate, not a reason to preemptively construct per-product initramfs.
+- Method of preserving mounted ISO and device access across the original OS init/switch_root requires empirical M-03 proof; do not assume that creating dm device alone is sufficient.
+- Existing 64 KiB EFI-sidecar limitation vs genuine vendor initrd sizes is an explicit M-04 gate, not a reason to preemptively construct per-product initramfs.
 - Secure Boot, BIOS/ARM64 and generalized install frameworks are outside M1 baseline; they are conditional future gates in the broader parent decision.
