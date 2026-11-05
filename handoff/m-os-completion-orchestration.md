@@ -245,6 +245,27 @@ Mainline repository adapters: `pkg-repository-{artifact,chrome,chromium,github,n
 
 ## Current state
 
+### Branch S dispatch checkpoint (2026-11-05)
+
+The operator explicitly started S1/M12 and S2/M13. The isolated
+`m-os/m-os-completion-s@25e66a829afb86d293d7e3bd9460249fc728a092`
+branch was created forward-only from current
+`m-os/master@e0bcf2d69ba4e4209a93fd7d0c9b08a00def3a0f`, preserving
+concurrent A1's separate workflow change. S1's existing real
+`m-srv-provider-live.yml` workflow was extended with genuine public
+negative/restart/ownership/provider-selection scenarios; S2 only has a
+non-administrator denial check prepared. No product code, catalog, release,
+frozen suite, or host-system registration was changed.
+**Result: PENDING** — no Actions run on this branch was observed at the
+checkpoint. Last inspected older master S1 run
+[41426638581](https://github.com/massimilianonardi-ai/m-os/actions/runs/41426638581)
+failed during real `pkg install` due unresolved `nodejs =26`, before
+reaching `srv`. P2 owns package resolution; S1 must recheck after that
+integration, without editing P2-owned code. S2 positive Linux/macOS
+user/system supervision remains controlled-host/authority gated.
+`handoff/m-autonomous-validation.md` owns the detailed M12/M13
+execution/evidence next action; this orchestration owns only dependencies.
+
 ### P0 — Current-source inventory checkpoint (2026-11-05)
 
 **Inspection complete for scope routing, not a runtime-validation PASS.** Read the actual `m-os/master@31693e814f682690adfd48185da822f7f5007f9e` tree, matching manuals and workflows, `m-os/pkg-schema-v2@1e3a038a5abf6f8c176272d8e44464c842d3cefd`, and `pkg-catalog/main@3ee97d21bae3ee885b0fa987e1faee718fad8609` / `pkg-schema-v2@9d889cc265c29eeae456b8fe1ad638654c36e8c7`. The source/manual inventory below is the *mainline target*, not proof of execution:
