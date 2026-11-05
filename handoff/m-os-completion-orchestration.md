@@ -258,6 +258,18 @@ R1 is active under the existing source-composition handoff. `m-rsudo/main@07017b
 
 The operator authorized starting Branch V. **V1 is active under the existing `handoff/pkg-definition-model-review.md` owner; V2 promotion remains BLOCKED.** A single scoped catalog-side workflow addition at `pkg-catalog/pkg-schema-v2@ae3e2011462be46c0326179f2117b81b85e5df5e` started [real v1 Java/Temurin/Maven CI run 42085304112](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42085304112) against pinned `m-os/pkg-schema-v2@1e3a038a5abf6f8c176272d8e44464c842d3cefd` and existing unpromoted Java permanent test `3f0eeb2d...`. Its Ubuntu/macOS jobs were queued at the checkpoint; no Java PASS is claimed. A failed-jobs-only rerun of the prior v2 catalog [run 42036487502](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42036487502) attempt 2 was also accepted and queued to recheck the sole macOS jq upstream HTTP 403; the first attempt's other 13 jobs were successful. Exact CI results and V1 next actions are tracked only in the owning pkg-definition handoff. No shared `m-os/pkg` runtime, catalog definition, release, `rumiai-tests/main`, or v2 mainline was modified; P2/P3/P4 and V1 evidence still gate V2.
 
+### Branch S independent offline safety checkpoint (2026-11-05)
+
+`m-os/m-os-completion-s@8a0451e08e808123cd74c0979e071b485249d75a`
+adds a real-public-command S1 fault-safety workflow for hosted Ubuntu/macOS,
+independent of genuine package installation. The exact new YAML and POSIX
+shell syntax passed checks on a byte-verified local copy; **no S-branch Actions
+run or behavioral result was observed**, so S1/S2 acceptance stays PENDING.
+P2 already owns the upstream `nodejs =26` install problem in its distinct
+draft PR; no `pkg` file was edited by S. S2 privileged positive host
+integration remains authorization/environment gated. Operational test detail
+and next action belong to `handoff/m-autonomous-validation.md`.
+
 ### Branch S dispatch checkpoint (2026-11-05)
 
 The operator explicitly started S1/M12 and S2/M13. The isolated
