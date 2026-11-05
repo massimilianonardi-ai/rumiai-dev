@@ -123,6 +123,83 @@ Scenarios 1 and 2 have initial direct-checkout smoke evidence on Ubuntu and macO
 
 ## Current state
 
+### C2 scenarios and C1 genuine-package validation (2026-11-05)
+
+**C1 independently writable validation surface.** Started the isolated
+`m-os/context-c1-real-validation` branch from
+`m-os/pkg-schema-v2@1e3a038a5abf6f8c176272d8e44464c842d3cefd`.
+Its HEAD `060a8f91532e7bb86469dff221a5aa97fc6a5e37`
+adds only `.github/scripts/context-real-packages-test.sh` and
+`.github/workflows/m-context-real-packages.yml`. The CI-only POSIX test
+uses the actual public `./m pkg install` on published immutable
+`m-core`, `m-term` and `m-rsudo` `v0.1.0` assets using
+`pkg-catalog/pkg-schema-v2@ae3e2011462be46c0326179f2117b81b85e5df5e`.
+It then exercises genuine selected `link/bin` commands and
+`array.lib.sh` through `context`, repeat selection without PATH
+growth, rejection of malformed and unavailable selections without
+mutating an active context, reinitialization within a child `m sh`,
+and no-argument reset. GitHub Actions is configured for Ubuntu/macOS.
+**No run result is established at this checkpoint**: the connector's
+visible workflow-run listing did not expose the new branch run, and
+the assistant environment cannot DNS-resolve GitHub for a local clone.
+A committed workflow and POSIX source parse are *not* a runtime PASS.
+The new branch has no `pkg`, `context`, catalog, legacy-product or
+frozen-suite source changes. This is auxiliary hosted evidence only
+and not formal `rumiai-validate` or physical-reference validation.
+No new real exported-Java-library consumer was identified/proven.
+
+**C2 implementation-independent acceptance scenarios (working design,
+not a public interface/grammar commitment):**
+
+1. A caller starts an ordinary managed shell without supplying an
+   installed package version, provider ID or internal state path. It
+   receives the authorized, coherent *per-dimension* default context
+   while the pre-existing host shell environment remains independent.
+2. The caller selects an existing named complete-context preset and
+   specifies one later package/provider override. The ordered
+   selection fold chooses the last overrideable binding for each
+   dimension; reversing the operand order changes the affected choice.
+   This is not authority to defeat a protected policy.
+3. Two independent consumers bind different installed compatible
+   provider concretes without changing the global facility default.
+   Each sees its own consistent command, environment and supported
+   library selections from one resolved exact concrete; the package
+   launcher remains responsible for package-specific preparation.
+4. A cooperating nested browser/Electron consumer explicitly carries
+   an authorized protected value, including a set-empty value where
+   valid, through intermediate execution. The final effective
+   `HOME` is respected by the existing trusted NSS synchronization
+   and an attempted unauthorized override fails rather than silently
+   changing the browser's trust context.
+5. An invalid preset, ambiguous provider, incompatible dependency or
+   unauthorized protected override fails *before* activation. The
+   invoking shell retains its prior active context, unowned host
+   environment modifications, PATH/CLASSPATH state and package views;
+   no per-call symlink graph is materialized.
+6. Activating context B after A replaces only A-owned contributions
+   and preserves permitted unowned state; reapplying B is idempotent.
+   There is no push/pop stack, automatic restore or mutable alias that
+   secretly changes an already pinned provider/env pairing.
+
+**Decision readiness.** These scenarios make the caller/system
+knowledge boundary explicit but do **not** settle public selection
+tokens, preset metadata format/trust, per-scope default storage and
+migration, protected-policy language/authority, ordinary-library
+dependency declaration or command exclusion. Those are high-impact
+interoperability/security/compatibility choices, not local helper
+details. The current `BOOTSTRAP-ENVIRONMENT.md` no-arg reset remains
+authoritative for C1 until a coherent promoted replacement and
+migration path exist. **C3 stays blocked on C2 + P4 + the
+applicable pkg/v2 interface checkpoint**.
+
+**Next C1/C2 work:** check the exact new Actions run/jobs and diagnose
+only real observed failures; do not infer PASS from workflow creation.
+For C2 compare the six scenarios against the existing state/pkg/launch
+and trust boundaries, select a minimal API model within the user's
+accepted conceptual direction, and escalate only irreducible public
+policy choices before canonical promotion. Do not edit shared pkg
+implementation while P2/P4 own it.
+
 ### Branch R activation and source correction (2026-11-05)
 
 The operator authorized R1/R2 under `handoff/m-os-completion-orchestration.md`. R1 nonprivileged independent-package integration is owned here; R2 real SSH/sudo and remote-menu tests remain G-HOST-gated until access to an explicitly authorized controlled target exists.
