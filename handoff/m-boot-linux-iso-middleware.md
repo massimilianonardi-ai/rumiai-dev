@@ -38,40 +38,87 @@ Implementation baseline: experimental Ventoy GRUB2/port/probe-linux-efi-consumer
 3. A corrupt/ambiguous map or missing kernel support cannot cause a mounted wrong device or silent fallback. Distinct errors are observable in guest serial evidence, and no write is attempted.
 4. On original Proxmox/TrueNAS media, the guest's **own real media-check logic** accepts the reconstructed support and progresses beyond the earlier failures. EFI-only boot or dmsetup alone is not vendor success.
 
-## Working design — granular work units
+## Working design — task registry (stable IDs M-01…M-07)
 
-**M0 — Baseline inventory (independent, start immediately).**
-- Read existing consumer C and initramfs builder as the only source of mechanics. Enumerate phases: efivarfs mounting, map parsing, disk/partition lookup, modules, dmsetup read-only mapping, /dev node creation, ISO9660 mount/identity verification, init control transfer, cleanup, diagnostics.
-- Classify each existing line as generic runtime, fixture-only marker/check, OS-specific adaptation, or test harness. Record assumptions, privileges, kernel modules, memory footprint and current failure paths without designing new abstractions.
-- Output responsibility map and a minimal-change proposal; NO implementation claim before a real test.
+**Task identity contract:** these are operator-addressable *planning* IDs, not software component/API names. Say `fai M-03` to select exactly one unit. IDs are permanent, never recycled or renumbered; changed scopes are recorded as revisions, and genuinely new work gets the next unused M-number. Any task must start with a fresh repository HEAD/canonical preflight, then synchronize this handoff and report the exact tested revision and evidence. No task in this track owns the firmware map producer or the KVM guest runtime.
 
-**M1 — Reusable, isolated middleware core (depends only on pinned map reader, can run alongside F3).**
-- Use the real existing consumer and shell machinery. Separate it from the PoC 081 fixture-specific .pve-cd-id.txt value and hardcoded poweroff. Do not create new public command names; if packaging needs an internal executable, verify ownership and naming contract first.
-- Parameterize only what the guest needs at boot, avoiding assumptions about /dev/vdb, dm-0, USB GPT p3 or one specific ISO path. Support bounded error diagnostics for missing efivarfs/modules, partition mismatch, incomplete extents, read failure and impossible mount.
-- Test in disposable guest with the existing synthetic ISO; verify original bytes/hash and read-only remount. Product-specific adaptation remains absent.
-- Exit: a smoke result that explicitly distinguishes parser success, dm device creation, read-only ISO9660 mount and identity. Document test-only assertions separately.
+**Existing baseline:** genuine QEMU synthetic ISO post-ExitBootServices reconstruction (PoC 081, run 41839593585) PASS; vendor-kernel direct-QEMU appended CPIO (PoC 085, run 41855782625) PASS *only for that separate scope*; early malformed-map refusal (PoC 087, run 42015054609) PASS *only for 13 parser cases*. None is a finished reusable middleware or vendor installer PASS.
 
-**M2 — Original init handoff (depends on M1 only).**
-- Construct a synthetic two-stage initramfs with an original next-stage init that independently checks that the ISO device and mount are present, then reports a unique marker. The middleware must invoke the actual original next stage, not print its marker itself.
-- Handle mount namespace inheritance, devtmpfs/udev and device node lifetime, /sys and /proc availability, signal/error propagation, root transition/switch_root when necessary; verify that teardown does not remove the medium before it is consumed.
-- Negative paths require no handoff to original init and no arbitrary disk access.
-- Exit: actual QEMU kernel execution of middleware followed by original init with surviving read-only media, log markers separately for each stage. Source ISO unchanged.
+### M-01 — Inventory of reusable early-Linux responsibilities
 
-**M3 — EFI delivery of the middleware into a stock original ISO boot (join with parent firmware on a pinned, successful interface).**
-- Reuse PoC 080 native EFI file-shadow and PoC 085 append-only/aligned CPIO observations, but verify the *combined* original EFI GRUB → unchanged vendor/kernel → injected early-userspace stage → original init path.
-- Test shadow/extents beyond PoC 080's small probe, including real 39–56 MiB initrd prefixes only when source retrieval can be bounded; explicitly validate checksum and exact original prefix identity. An appended CPIO alone is not proof that existing EFI loader reads the injected bytes.
-- Exit: QEMU/OVMF actual guest execution with unique firmware map, Linux ISO mount and original-init markers; no full vendor ISO copies or physical media. If EFI packaging conflicts with Secure Boot/signatures, declare a conditional limit rather than bypassing silently.
+- **Status / dependencies:** READY now, no new firmware work needed. Input ABI pinned to current `Ventoy@m-boot-secondary-uefi` source until coordinated change at the F/M integration gate.
+- **Objective:** inspect `probe-linux-efi-consumer.c`, `build-linux-handoff-initrd.sh`, current `init_chain` and existing Ventoy media hooks; establish the smallest reusable responsibility boundary.
+- **Steps:** itemize efivarfs access, map parsing, source GPT discovery, modules, `dmsetup`, device-node creation, ISO9660 mount, identity check, original `/init` transition, teardown and diagnostics. Classify each step as reusable, synthetic fixture, vendor adapter or test harness; mark privilege/module and lifetime assumptions.
+- **Output / acceptance:** a concise source-anchored responsibility map and a concrete minimal-change M-02 implementation/test plan; explain precisely which existing code is reused. Source inspection does **not** count as QEMU boot.
+- **Out of scope:** new public ABI/namespace, actual middleware refactoring, changes to F-owned C producer, any vendor initramfs rewrite or product integration.
 
-**M4 — Proxmox and TrueNAS *independent sibling vendor gates* (both depend on M3; run concurrently where resources permit).**
-- Proxmox: exact 9.2-1 original GRUB/kernel/initrd/media ID. Try generic middleware first, then inspect the real loader's media check and reuse the smallest available Ventoy pve-hook.sh behavior if required. PASS only when original installer recognizes its own ISO and progresses beyond the prior ID retry loop.
-- TrueNAS: exact 25.10.7 original GRUB/kernel/initrd and live-boot source lookup. Try generic middleware first, then reuse existing truenas-disk.sh/FUSE adapter if necessary. PASS only when its original media-recognition path succeeds and readable stable boot evidence exists.
-- Each keeps separate CI/logs/evidence and cannot block the other. A failure in one vendor does not cancel the other's independent test.
+### M-02 — Generic read-only ISO reconstruction stage
 
-**M5 — Bounded adapter policy and regression decision.**
-- For every adapter, record which actual initramfs framework/media-check behavior needs intervention, how many lines of existing Ventoy code are reused, signatures, kernel-module requirements and versions validated.
-- Apply a strict *evaluation trigger* if compatibility starts requiring a distinct whole-initramfs replacement for each vendor/release: stop incremental patching and compare stock Ventoy/GRUB loopback and the QEMU guest optical path. The trigger is provisional evaluation policy, not a claim every Linux installer shares one framework.
-- Include negative regression of original Linux /init, stock Ventoy boot, no EFI variable, media removal and too-many-fragment extent paths before any m-boot integration.
-- Exit: an evidence-backed recommendation about generic middleware plus family-level adapters, **not** an automatic production rollout.
+- **Status / dependencies:** WAITING M-01; may run concurrently with F-02/F-03. Consume pinned already-PASS EFI producer map; F hardening completion is **not** a precondition for this isolated implementation.
+- **Objective:** extract the existing Linux-side behavior into a bounded generic early-userspace stage, separately from PoC 081's synthetic `.pve-cd-id.txt` and unconditional `poweroff`.
+- **Steps:** require trustworthy variable/identity checks already present, load matching kernel modules, detect the unique physical GPT source, create only read-only `dm-linear`, resolve stable device identity, mount ISO9660 read-only and expose a clear success/failure result to the caller. Use current source, avoid rewriting existing parser wholesale.
+- **Positive test:** in real disposable QEMU Linux guest, unchanged synthetic ISO bytes/hash and marker, matching dm device and mount; distinct serial assertions for variable parsing, source discovery, device creation, read and mount. No success solely from host-side grep.
+- **Negative tests:** missing variable, corrupted/ambiguous map, wrong disk, unavailable modules/device-mapper, read failure; no wrong device mounted, no silent fallback and no host disk access.
+- **Output / acceptance:** isolated reusable code + CI log and manifest in track-owned PoC paths. Only a demonstrated guest mount passes.
+- **Out of scope:** calling vendor original `/init`, injecting into ISO EFI loader, vendor-specific hooks, physical USB testing, writable host disk passthrough.
+
+### M-03 — Control transfer to an independent original init
+
+- **Status / dependencies:** WAITING M-02; independent from remaining F hardening and from all K tasks.
+- **Objective:** show that early Linux middleware runs first and then a **distinct original next-stage** `/init` executes with the reconstructed ISO still available.
+- **Steps:** create a small test early userspace where independently authored next-stage init verifies expected ISO marker, `/dev` node and mounted media. Implement required mount namespace, devtmpfs/udev, `/proc`/`/sys` and lifecycle handling without assuming `dm-0`. Test process handoff/exit/error propagation and explicit cleanup.
+- **Positive test:** actual guest console shows unique middleware-before-handoff marker, next-stage-original-init marker emitted only by that original init, and an **independent** original-init read of the ISO contents/hash.
+- **Negative test:** corrupt map or vanished medium prevents next-stage execution with a specific error; no false PASS from a middleware-authored marker.
+- **Output / acceptance:** exact QEMU command/build revision/log, complete original-init lifecycle observation with unchanged ISO.
+- **Out of scope:** vendor Proxmox/TrueNAS bootloaders, EFI file shadow or general adapter support.
+
+### M-04 — Integration of middleware into original EFI ISO boot
+
+- **Status / dependencies:** WAITING M-03 **AND F-05** (the sole hard F/M join); no prerequisite from K.
+- **Objective:** traverse **original EFI ISO loader → original unchanged kernel → injected early Linux middleware → reconstructed ISO → original next-stage init**, rather than direct QEMU `-kernel` substitution.
+- **Steps:** reuse PoC 080 EFI file-shadow and PoC 085 aligned append-only CPIO evidence where applicable; check actual loader file access; lift existing tiny-overlay size limits for larger real initrds only when required, with bounded memory/disk. Preserve original ISO and original initrd **prefix bytes**, reconcile EFI variable source and map limits, no Secure Boot bypass.
+- **Positive test:** real QEMU/OVMF guest reports each stage through independent markers, full unchanged-source SHA-256/identity, original-init ISO read and no host storage writes. A successful EFI boot *without* Linux remount is FAIL.
+- **Negative/regression test:** original init not replaced unexpectedly; source identity mismatch/memory/size bound rejects; standard Ventoy behavior remains separately validated where the code overlaps.
+- **Output / acceptance:** version-pinned integrated PoC, real QEMU trace and evidence for entire chain.
+- **Out of scope:** claiming unmodified vendor installer success, bare-metal product integration or cross-architecture support.
+
+### M-05 — Proxmox VE 9.2-1 vendor media acceptance
+
+- **Status / dependencies:** WAITING M-04. **Independent sibling of M-06**; no requirement to finish M-06.
+- **Objective:** prove that Proxmox's original installer, reached through the original ISO's EFI path, recognizes the real ISO9660 support and its actual media ID.
+- **Steps:** use original Proxmox 9.2-1 kernel/initrd and vendor-owned media lookup; first try the unmodified generic middleware; only on observed incompatibility inspect and reuse the minimal current Ventoy `pve-hook.sh` / `pve-disk.sh` behavior. Preserve original ISO/bootloader/kernel bytes.
+- **Positive test:** original Proxmox log or observable guest behavior confirms ID acceptance and stable progression **past the previous retry/countdown**. Capture exact source ID/hash, path, actual device/mount, serial and graphics separately.
+- **Failure handling:** missing original image = BLOCKED (not implementation FAIL); vendor rejecting `dm*` = scoped adapter evidence. One vendor failure never blocks independent M-06/K tests.
+- **Output / acceptance:** isolated PoC/log plus result specific to this exact installer release, not generic Linux compatibility.
+- **Out of scope:** running installer onto a real host disk, copying multi-GB original ISO, per-release wholesale initramfs rewrite, changing guest firmware design.
+
+### M-06 — TrueNAS SCALE 25.10.7 vendor media acceptance
+
+- **Status / dependencies:** WAITING M-04. **Independent sibling of M-05**, eligible to run in parallel.
+- **Objective:** prove original TrueNAS installer discovers its source filesystem after the Linux transition, instead of treating EFI entry or framebuffer progress as success.
+- **Steps:** use original TrueNAS kernel/initrd/live-boot scripts; first generic middleware; only if real `live-boot` media discovery fails, inspect/adapt existing Ventoy `truenas-disk.sh` / FUSE behavior where needed. Keep guest video diagnostics separate from medium identity.
+- **Positive test:** actual original TrueNAS source-discovery path finds/mounts the expected media and reaches a stable, observable installer stage; retain original ISO checksum and readable serial/graphics logs where possible.
+- **Failure handling:** graphical corruption does not prove failure unless guest state/log corroborates; missing ISO = BLOCKED. No dependency on Proxmox test.
+- **Output / acceptance:** isolated release-specific PoC/log and media identity result.
+- **Out of scope:** installation, arbitrary TrueNAS releases, physical hardware claims, large copy or custom OS kernel.
+
+### M-07 — Adapter policy, regression and evidence handoff
+
+- **Status / dependencies:** results of M-05 and M-06, each of which may be PASS, FAIL or BLOCKED; reports can explicitly record partial coverage. No automatic requirement that both pass.
+- **Objective:** determine whether generic middleware plus a few existing framework-level hooks is maintainable compared with stock Ventoy, GRUB loopback and K guest optical solution.
+- **Steps:** measure adapter footprint and coverage by **actual initramfs/media-lookup mechanism**, not distro name alone; run proportionate synthetic/source-error regression and standard Ventoy regression only on changed surfaces; record missing EFI runtime, oversized fragmentation, source detach and original-init preservation. Apply adapter-growth stop criterion.
+- **Output / acceptance:** compact comparative table and supported/rejected/unknown release list with exact evidence, blockers, cost and regression status; send only cross-track decision evidence to parent.
+- **Out of scope:** automatic product promotion, unbounded vendor-specific patches or claiming hardware support without physical tests.
+
+### Internal sequence and parallel safety
+
+```text
+M-01 → M-02 → M-03 ─┐
+                    ├→ M-04 → { M-05 || M-06 } → M-07
+F-05 (parent) ──────┘
+```
+
+A blocked M-05 must not stop M-06, and K is completely independent. New child PoC code/workflow lives under a separate track-owned path from F and K. No shared writable outputs. IDs are frozen; updates happen in this handoff only, with parent retaining the short public index.
 
 ## Completed
 
@@ -80,11 +127,11 @@ Implementation baseline: experimental Ventoy GRUB2/port/probe-linux-efi-consumer
 
 ## Current state
 
-M0 and M1 can start immediately from the pinned consumer; F3 physical extent hardening and QEMU/KVM work are independent. M3 is the **first** firmware/consumer join gate, while M4 vendor cases are independent of each other after M3. No new vendor installer result is claimed.
+Task registry M-01…M-07 is now stable for operator addressing. M-01 is READY; M-02/M-03 depend only on prior M tasks and pinned PoC 081 evidence; M-04 alone waits for F-05 firmware gate; M-05 and M-06 are sibling vendor work units; M-07 compares evidence. No middleware implementation or new QEMU run is claimed by this **planning-only** change.
 
 ## Next action
 
-Perform M0 current-source responsibility inventory, then create one minimal isolated M1 PoC in rumiai-dev-PoCs that reuses the actual consumer, reconstructs a synthetic ISO read-only and removes fixture-specific behavior from the reusable stage. Validate real QEMU guest execution; do not start vendor adapters.
+**M-01**: inspect current Linux consumer/early-init source and produce the minimal reuse map; then **M-02** isolated generic read-only ISO remount test. Work may begin now, independently of F-02/F-03 and all K tasks. The only mandatory firmware join is M-04 ↔ F-05.
 
 ## Blockers / open questions
 
