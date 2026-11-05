@@ -136,7 +136,7 @@ The *existing* critical review identified false serial dependencies, misleading 
 - `massimilianonardi-ai/Ventoy` branch `m-boot-secondary-uefi`: `475db53dee122887fab3387db47fbb1f09ca71b7` (F-02 consumer/GPT/EFI publisher safety + F-03 opt-in non-sparse fragmented ISO QEMU fixture; real revised-source synthetic QEMU/OVMF EFI→Linux boot PASS run `42035454641`, two real extents; no product release).
 - `massimilianonardi-ai/Ventoy` master: `74cff34240dca6991b79c6656770670da7b0c39e` (unmodified fork baseline)
 - `massimilianonardi-ai/m-boot` main: `c06cd35a73b7e420c3a06dc51537c028ffa619d0` (Kali live+forensic menu and GRUB CI; Grml grub_memcpy note; runtime Kali validation pending)
-- `massimilianonardi-ai/rumiai-dev-PoCs` main: `b401b3a6173d9639e246db76717b06a67674996d` (F-03 revised-source QEMU/OVMF full boot PASS run `42035454641` and SHA report; F-02 compiled negative case run `42033679188` PASS; concurrent M-track PoC changes preserved; no physical disk).
+- `massimilianonardi-ai/rumiai-dev-PoCs` main: `6e85e058bc6cfb55731c877933bd6204c299c426` (F-03 revised-source QEMU/OVMF full boot PASS run `42035454641` and SHA report; F-02 compiled negative case run `42033679188` PASS; concurrent M-track PoC changes preserved; no physical disk).
 - `massimilianonardi-ai/rumiai-dev` main: check its live HEAD at preflight; a self-referential revision in an active handoff is not authoritative.
 
 ## Applicable canonical sources
