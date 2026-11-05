@@ -9,9 +9,9 @@ Complete and validate K04 Keycloak authentication and authenticated transport th
 
 ## Current repository revisions
 
-- rumiai-dev: a31fcd53cb536b49899db393d5251581c7d7857a (before this checkpoint; updated K04 spec at 1279dd0dac7769be0faec57cc832649857bf8554)
-- rumiai-os: 8ae78944ef5e8d6297c50898d856db1a20c6fd9a (owner-local Keycloak manual updated; no Keycloak product code change)
-- rumiai-tests: fa4b6e96a9d777068f8940d0f5239d670f3d833e (focused X509 diagnostic cleanup and macOS OpenSSL curl workflow)
+- rumiai-dev: 625f05655e6bdd11e6a5b24c7250fc059f739f59 (before this checkpoint; current Keycloak spec changed in b46ad0ef808c837ad3d17e8e456e00e0204b0372)
+- rumiai-os: 461f4baf8c6f010a2891d104f0a58a0a69e06abf (Keycloak manual safety clarification; no implementation change)
+- rumiai-tests: 281277b5f406c1b0a34a809a56c41a6b80ab673b (live certificate-binding validation frozen at c80b2dab5af462046dcaa0c5756ef795a0f530e8)
 
 Recheck all live remote HEADs and reconcile forward before each write/validation.
 
@@ -88,7 +88,7 @@ Recheck all live remote HEADs and reconcile forward before each write/validation
 
 - Inspected completed rsudo-keycloak diagnostic workflow 42072611910: on macOS the selected native curl 8.7.1 used SecureTransport and LibreSSL 3.3.6. The module's X509 acquire failed with status 75 and an independent real client-certificate HTTPS probe failed with curl 35; Ubuntu ARM64 passed. Curl's documented SecureTransport client identity requires PKCS#12 or keychain, not the separate PEM certificate/key inputs selected by the current K04 module.
 - Provisioned an actual OpenSSL-backed Homebrew curl in the GitHub Actions macOS focused scope (rumiai-tests 9a6806a0bcaa819717eff7faf12aced3dbf18d44). Validation 42076121536 completed SUCCESS on macOS and Ubuntu ARM64 against frozen rumiai-os 063d6868c33e43e9a8185cb57d6830031efe364d. Both legacy-modules.test and keycloak-auth-transport.test passed on macOS with real TLS. This evidence is conditional on compatible curl, not native SecureTransport compatibility or physical-host validation.
-- Removed the duplicate failure-only HTTPS diagnostic probe while retaining nonsecret selected curl backend provenance in keycloak-auth-transport.test (rumiai-tests fa4b6e96a9d777068f8940d0f5239d670f3d833e). Triggered focused validation 42076656057; Ubuntu ARM64 passed and macOS was queued at last observation. Do not transfer the prior run's validation result to this cleaned suite revision.
+- Removed the duplicate failure-only HTTPS diagnostic probe while retaining nonsecret selected curl backend provenance in keycloak-auth-transport.test (rumiai-tests fa4b6e96a9d777068f8940d0f5239d670f3d833e). Focused validation 42076656057 later completed SUCCESS on both Ubuntu ARM64 and macOS with OpenSSL-backed curl for the cleaned suite revision.
 - Documented the current X509 remote PEM-capable curl prerequisite, SecureTransport limitation and absence of automatic private-key format/keychain export in RSUDO-KEYCLOAK.md (rumiai-dev 1279dd0dac7769be0faec57cc832649857bf8554) and the owner-local manual (rumiai-os 8ae78944ef5e8d6297c50898d856db1a20c6fd9a). No product Keycloak implementation or authentication protocol was changed.
 
 ## Current state
