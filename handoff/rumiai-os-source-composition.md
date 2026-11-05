@@ -123,6 +123,71 @@ Scenarios 1 and 2 have initial direct-checkout smoke evidence on Ubuntu and macO
 
 ## Current state
 
+### Branch C activation (2026-11-05)
+
+The user authorized starting Branch C of
+`handoff/m-os-completion-orchestration.md`. This existing source-composition
+handoff owns C1/C2; orchestration coordinates dependencies. C1 source/evidence
+audit and C2 contract analysis have begun. C3 remains blocked by the
+unpromoted G-CONTEXT public contract and the P4 derived facility map / stable
+pkg-v2 integration. No permission was inferred to modify or run the frozen
+legacy `rumiai-os` and `rumiai-tests`.
+
+**Source/evidence checkpoint.** Fresh HEADs:
+`m-os/master@31693e814f682690adfd48185da822f7f5007f9e`;
+`m-os/pkg-schema-v2@1e3a038a5abf6f8c176272d8e44464c842d3cefd`;
+`pkg-catalog/main@3ee97d21bae3ee885b0fa987e1faee718fad8609`;
+`pkg-catalog/pkg-schema-v2@9d889cc265c29eeae456b8fe1ad638654c36e8c7`.
+First-party `m-core`, `m-term`, `m-rsudo` main HEADs match the prior
+2026-11-05 composed-release checkpoint. `rumiai-tests/main` advanced
+to `03616a323ef72efbfa172570d114530e6135d190`, but remains frozen.
+The current `PACKAGE-MODEL.md` advanced concurrently and now reconciles
+P1's upfront full-request validation and one-snapshot/exact-root policy;
+that unrelated change was preserved.
+
+**C1 findings.** Current `m-os/master` `context.lib.sh` + manual match
+`BOOTSTRAP-ENVIRONMENT.md`: already-installed exact `pkg=`, ordered
+replacement, PATH/CLASSPATH ownership/collision/atomic selection, and
+no-argument reset. Feature v2 uses schema-aware `link/bin` and
+`link/lib/{sh,java}`, not yet published on master. The existing
+`context-libraries-test.sh` exercises real `pkg_integrate` and
+POSIX/Java lookup over local test fixtures, not an authentic published
+package. Previously recorded `m-core` run `42037725004` exercised
+genuine three-package public install/shell consumers on Ubuntu/macOS
+at pinned revisions, but not all C1 cases. Still to validate: authentic
+Java-library consumer if available in the real catalog, negative and
+replace/reset cases with installed real packages, and independent child
+shell reinitialization. No new local/hosted/physical run was executed
+during this checkpoint.
+
+**C2 working design and blockers.** Settled task direction (not yet
+public grammar): one POSIX shell context replaced until exit without a
+stack; ordinary no-argument managed-shell defaults instead of present
+reset; independent system/user dimensions and per-dimension defaults;
+trusted or explicit consumer identity; left-to-right selections with
+inline named presets; exact concrete cmd/lib/env consistency; protected
+inherited values in cooperating nested consumers; pkg-created reusable
+views without context-time symlink publication.
+
+Material remaining contract decisions:
+1. Precise operands/presets/removal grammar and migration of the
+   existing no-argument reset.
+2. Trusted per-dimension default and consumer/profile identity sources,
+   state-selector migration and permissions.
+3. Protected propagation/override policy, unset versus empty values,
+   trust transfer through children, HOME and NSS projection.
+4. Provider/facility versus ordinary-library consumer dependencies
+   without duplicate authority or bypass of the package launcher.
+5. Command-view exclusion/collision and atomic application; a higher
+   PATH directory does not mask a lower directory's command by omission.
+
+**Next Branch C action.** Produce normal/negative public acceptance
+scenarios for C2, resolve only genuine high-impact ambiguities, promote
+a coherent contract through the normal specification gate, and run
+targeted real C1 checks without repeating already-PASS evidence. Recheck
+P4/v2 readiness before C3. No product, catalog, release or permanent
+suite modification was made at activation.
+
 ### Standalone POSIX `json` source-composition gap from archived m-os review (2026-11-05)
 
 - The operator's archived `chats/m-os/2026-11-03 json posix command/index.html` explicitly asks for a robust, generally usable standalone JSON query tool with a jq-like bounded read-only CLI, suitable for future early `m`/`pkg` use before jq or Node.js is available. The current canonical `specifications/rumiai-os/JSON-QUERY.md` already assigns `bin/sys/json` to technical `m` with a defined POSIX standalone interface; this is **not** a new devplan-invented API or authorization to implement another JSON parser.
