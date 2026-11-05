@@ -123,6 +123,12 @@ Scenarios 1 and 2 have initial direct-checkout smoke evidence on Ubuntu and macO
 
 ## Current state
 
+### Branch C1 cross-host completion and constrained macOS version retry (2026-11-05)
+
+- Actual [extended C1 real-package run 42094107131](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42094107131), attempt 2, **completed success**: Ubuntu job `127482074138` and macOS job `127482071039` both **PASS**. The macOS raw log reaches the genuine public `m pkg install`, expected negative operand/concrete/owned-PATH checks and final `PASS:` assertion. The first macOS attempt's upstream HTTP 403 before context assertions remains separate failed acquisition evidence.
+- Actual [published-version replacement run 42095853638](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42095853638), attempt 1, Ubuntu job `127485562287` **PASS** through authentic v0.1.0/v0.1.1 install and actual replacement assertions. macOS job `127485562874` **FAILED before assertions**, on GitHub Releases API HTTP 403 fetching `m-core@v0.1.0`; no macOS package-switch success/failure is demonstrated. One failed-job-only retry **attempt 2** was accepted; macOS job `127545828723` was QUEUED at this checkpoint. Do not submit duplicate work while queued.
+- The open [draft m-os PR #2](https://github.com/massimilianonardi-ai/m-os/pull/2) body was aligned with the observed evidence, with no merge, source runtime change or frozen repository activity. Real Java ordinary JAR selection remains unverified; hosted auxiliary results do not establish formal or physical-host validation.
+
 ### Branch C1: expanded authentic checks and published-version replacement (2026-11-05)
 
 - `m-os/context-c1-real-validation@fdb825a197fffdeb9d4adc87d04180cb30f8c5a7`
@@ -908,6 +914,63 @@ frozen `rumiai-os` or `rumiai-tests`; no new catalog package range
 was migrated to use these exports.
 
 ## Working design / open questions
+
+### C2 phase-order and cross-process contract gap (2026-11-05)
+
+Source-level dependency trace for the future generalized `context`
+migration, **working analysis only** (not promoted syntax or C3
+authorization):
+
+1. `m-os/m` exports readonly `m_STATE_SYS_DIR=state/system/current`
+   and `m_STATE_USER_DIR=state/user/current`, sources system
+   `sys/environment/cache/env` and `env-osarch` from that
+   selected system root, and prepends fixed `bin/sys*` and
+   `bin/ext*` directories to PATH **before** dispatching `m
+   shell` or other child commands. A later shell-local `context`
+   cannot make that already sourced system-global environment
+   correspond to a different shell-specific system profile. The
+   planned state/profile shift therefore needs explicit bootstrap
+   phase separation rather than an additive environment label.
+2. `bin/sys/state-path` runs in a **different process** with
+   the same readonly bootstrap roots and currently resolves
+   `system/current`, or `user/current` when it is a symlink,
+   else `user/default`. It does not consume a selected
+   shell-local context. Two managed shells requesting different
+   profile/user selections cannot both receive correct
+   `state-path` outputs under this unchanged implementation.
+   Any migration must keep `state-path` pure, separate logical
+   user state from host POSIX authentication, and reconcile
+   existing system `var/` and package-service State Instance
+   consumers.
+3. A plain selected shell currently stores package choices in
+   shell-local `m_CONTEXT_PACKAGES`, while the package launcher
+   resolves its own HOME, dependency/provider/environment using
+   `state-path`, selector configuration and executable `env`
+   sources. Neither command execution nor child authorization
+   can be inferred merely from PATH selection. A future trusted
+   child boundary must re-resolve exact concretes and identify
+   what protection can actually be guaranteed for cooperating
+   launchers, without claiming that forgeable exported environment
+   strings constrain arbitrary other processes.
+
+**Minimum design-gate acceptance traces** to settle before C3:
+(a) two simultaneous managed shells select different system/user
+profiles without mutating a global symlink, and their state-path
+and package launch results agree with each shell's selection;
+(b) a named full-context preset plus an ordered provider/package
+override yields one exact command/environment/library concrete,
+without executing package/user `env` code in the caller before
+validation; (c) a protected inherited value survives cooperating
+nested launchers, distinguishes unset from set-empty and rejects an
+unauthorized overwrite; (d) a reset/default migration retains
+C1's documented current no-argument reset until an explicit
+public-behavior transition is accepted.
+
+Current source inspection provides **no existing complete interface**
+satisfying these traces. Keep new default/preset file formats,
+public grammar, trusted child-policy authority and environment
+compatibility policy **unfixed**; P2/P4/V2 writer boundaries and
+G-CONTEXT promotion still gate generalized implementation.
 
 ### Branch C2: side-effect boundary and activation design gate (2026-11-05)
 
