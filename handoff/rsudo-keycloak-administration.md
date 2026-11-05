@@ -11,7 +11,7 @@ Complete and validate K04 Keycloak authentication and authenticated transport th
 
 - rumiai-dev: bbbba67e21775e1c2aadda6060e17b37f662c5bd (before this checkpoint; Keycloak canonical contract remains at b46ad0ef808c837ad3d17e8e456e00e0204b0372)
 - rumiai-os: 461f4baf8c6f010a2891d104f0a58a0a69e06abf (Keycloak manual safety clarification; no implementation change)
-- rumiai-tests: 63a8703a25d6c19b39006e9b937a2ab27ded58ed (real Keycloak self-signed RFC 8705 registration/provider evidence, validated run 42090626130)
+- rumiai-tests: de8ae2f9f79b7c2300be938f5410736880cb580c (current main at checkpoint; RFC 8705 proof frozen at 63a8703a25d6c19b39006e9b937a2ab27ded58ed, run 42090626130)
 
 Recheck all live remote HEADs and reconcile forward before each write/validation.
 
