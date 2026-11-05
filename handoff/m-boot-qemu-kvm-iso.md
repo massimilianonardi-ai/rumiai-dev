@@ -276,6 +276,12 @@ K-01/K-02/K-03/K-07/K-08 have PASS at their explicitly bounded evidence levels; 
 - 2026-11-05: **K-01 PASS (source/architecture classification only)**: two-scenario matrix, minimum operator journeys, diagnostic-only classification and open decisions documented above. No K-02, K-03, QEMU or physical test executed.
 - 2026-11-05: independent workstream split from the global m-boot execution plan to allow concurrent development. No QEMU/KVM implementation, workflow or new test has yet been run as part of this new workstream. The PoC 081/087 baseline from the other track is reference only, not a KVM PASS.
 
+## Scope correction from the operator (2026-11-05)
+
+The earlier K-08 **diagnostic-only / not bare-metal-equivalent** conclusion applied to a **full QEMU guest launched on an already running, unrelated Linux host**, and its tested K cases did not include a bootable host OS, GRUB path parameter, RAW container or real physical disk inventory. The operator has now explicitly requested a different architecture: **m-boot GRUB/EFI → minimal Ubuntu RAW host image → native-architecture QEMU ISO guest with every physical disk represented**. This is authorized as a new development objective, **not** contradicted or disallowed by the earlier limited K results.
+
+The independent implementation and validation are owned by `handoff/m-boot-ubuntu-qemu-host.md`, coordinated with parent `handoff/m-boot-standalone.md`. Keep K-02/K-03/K-07 actual optical evidence as reusable input, but do not claim the new operator journey validated; K-04/K-05/K-06 remain independent genuine-media/KVM evidence tasks.
+
 ## Current state
 
 Stable operator-addressable task catalog K-01…K-08 established. **K-01 PASS (assessment), K-02 PASS (host preflight), K-03 PASS (real synthetic Linux optical guest)**, all independently verified on their stated levels and no F/M dependency. K-07 PASS (isolated diagnostic safety and failure checks); K-08 PASS (bounded decision-input report above). The QEMU branch is validated as **diagnostic-only**, not a replacement for the USB-only bare-metal product. K-04/K-05 still WAITING safely available genuine vendor media; K-06 BLOCKED accessible x86_64 KVM host. Parent cross-track architecture decision remains open. No vendor, actual USB disconnect, KVM or operator-reference-host PASS is claimed.
