@@ -123,6 +123,14 @@ Scenarios 1 and 2 have initial direct-checkout smoke evidence on Ubuntu and macO
 
 ## Current state
 
+### Branch C real cross-host C1 validation (2026-11-05)
+
+Hosted catalog-side [run 42090408793](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42090408793) used actual public `m pkg install` for published `m-core@v0.1.0`, `m-term@v0.1.0` and `m-rsudo@v0.1.0`. It executed the isolated C1 shell test at `m-os/context-c1-real-validation@d0501e063459721bf69e14f6f29e28e675213482` from `pkg-catalog/context-c1-real-validation@4ad37228feef4b057e9ec9d968a22f0822b80b81`. Both hosted jobs **PASS**: Ubuntu `127466638082`, macOS `127466638553`. The raw logs confirm genuine shell-library consumption, idempotence, invalid-operand and unavailable-concrete rejection, failure atomicity, nested shell and no-argument reset. This is auxiliary CI evidence at those exact revisions, not formal or physical validation. The draft m-os PR #2 is not merged.
+
+C2 compatibility review: current `m-os/m` binds readonly state roots to `system/current` and `user/current`, while `STATE-MODEL.md` gives these precise meanings. `pkg-provider.lib.sh` owns provider defaults and consumer bindings; `pkg-launch.lib.sh` owns package HOME, environment and dependency application. The existing `m_ENV_DO_NOT_OVERRIDE` applies to one launch and is not a general trusted transitive child policy. Future per-shell default/profile choices and protected propagation need coordinated state/pkg/bootstrap changes, not only a `context` edit. The current no-argument reset and future default initialization also require an explicit compatibility decision. The v2 catalog has no ordinary Java JAR export descriptor, so that authentic C1 consumer remains untested.
+
+Accepted conceptual direction remains: one active context per shell, ordered per-dimension selections with inline presets, pinned concrete command/environment/library coherence, fail-before-apply and no per-call symlink materialization. **No public grammar or new trust/storage interface was promoted**; C2 is still design, and C3 is blocked by G-CONTEXT plus P4/P2/V2 prerequisites.
+
 ### C2 scenarios and C1 genuine-package validation (2026-11-05)
 
 **C1 independently writable validation surface.** Started the isolated
