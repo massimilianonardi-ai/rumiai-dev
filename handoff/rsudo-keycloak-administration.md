@@ -9,9 +9,9 @@ Complete and validate K04 Keycloak authentication and authenticated transport th
 
 ## Current repository revisions
 
-- rumiai-dev: 625f05655e6bdd11e6a5b24c7250fc059f739f59 (before this checkpoint; current Keycloak spec changed in b46ad0ef808c837ad3d17e8e456e00e0204b0372)
+- rumiai-dev: bbbba67e21775e1c2aadda6060e17b37f662c5bd (before this checkpoint; Keycloak canonical contract remains at b46ad0ef808c837ad3d17e8e456e00e0204b0372)
 - rumiai-os: 461f4baf8c6f010a2891d104f0a58a0a69e06abf (Keycloak manual safety clarification; no implementation change)
-- rumiai-tests: 281277b5f406c1b0a34a809a56c41a6b80ab673b (live certificate-binding validation frozen at c80b2dab5af462046dcaa0c5756ef795a0f530e8)
+- rumiai-tests: 5675ed30e34b6ac795134965a5c8b6b2dd5c88d0 (live X509 refresh rejection and OIDC metadata evidence, validated run 42087913118)
 
 Recheck all live remote HEADs and reconcile forward before each write/validation.
 
@@ -91,13 +91,15 @@ Recheck all live remote HEADs and reconcile forward before each write/validation
 - Removed the duplicate failure-only HTTPS diagnostic probe while retaining nonsecret selected curl backend provenance in keycloak-auth-transport.test (rumiai-tests fa4b6e96a9d777068f8940d0f5239d670f3d833e). Focused validation 42076656057 later completed SUCCESS on both Ubuntu ARM64 and macOS with OpenSSL-backed curl for the cleaned suite revision.
 - Documented the current X509 remote PEM-capable curl prerequisite, SecureTransport limitation and absence of automatic private-key format/keychain export in RSUDO-KEYCLOAK.md (rumiai-dev 1279dd0dac7769be0faec57cc832649857bf8554) and the owner-local manual (rumiai-os 8ae78944ef5e8d6297c50898d856db1a20c6fd9a). No product Keycloak implementation or authentication protocol was changed.
 
+- Extended the existing official-container Keycloak live test without modifying product code. It now verifies X509 refresh with a different valid client key/certificate is rejected while leaving the protected token store identical and without a stale refresh lock; it independently verifies that the token endpoint rejects an uncredentialed direct refresh with invalid_client. It also records whether OIDC discovery advertises the distinct RFC 8705 self_signed_tls_client_auth method without treating discovery as runtime certification. Frozen suite 5675ed30e34b6ac795134965a5c8b6b2dd5c88d0, product 461f4baf8c6f010a2891d104f0a58a0a69e06abf, GitHub-hosted Ubuntu ARM64 run 42087913118 PASS/VALIDATED for actual Keycloak 26.7.3 and 26.8.1 (session validation/20261105T184941+0000-6159). Neither version advertised self_signed_tls_client_auth; runtime support remains independently unverified. No physical validation.
+
 ## Current state
 
-K04 remains partially implemented; the 16 legacy operations are preserved. macOS isolated X509 transport is validated with an OpenSSL-backed curl, including the cleaned-suite run 42076656057 (PASS on macOS and Ubuntu ARM64). Real Keycloak 26.7.3 and 26.8.1 emitted JWTs with the expected certificate thumbprint. The selected Admin REST realm GET did not enforce the certificate binding, whereas the OIDC UserInfo endpoint did enforce it. The latter behavior was established with a separately requested openid-scope token. See rsudo-keycloak-live runs 42084364414 (suite ba16f9ea5) and 42085862336 (suite c80b2dab5, product 461f4baf). The canonical Keycloak specification and product manual were clarified in b46ad0ef and 461f4baf. No product module code changed. K05/K06 and physical reference-host validation remain pending.
+K04 remains partially implemented; the 16 legacy operations are preserved. macOS isolated X509 transport is validated with an OpenSSL-backed curl, including the cleaned-suite run 42076656057 (PASS on macOS and Ubuntu ARM64). Real Keycloak 26.7.3 and 26.8.1 emitted JWTs with the expected certificate thumbprint. The selected Admin REST realm GET did not enforce the certificate binding, whereas the OIDC UserInfo endpoint did enforce it. The latter behavior was established with a separately requested openid-scope token. See rsudo-keycloak-live runs 42084364414 (suite ba16f9ea5) and 42085862336 (suite c80b2dab5, product 461f4baf). The canonical Keycloak specification and product manual were clarified in b46ad0ef and 461f4baf. No product module code changed. The real-server K04 X509 wrong-identity and missing-identity refresh rejection paths also PASS on both 26.7.3/26.8.1, with no protected-store replacement. Neither version advertises self_signed_tls_client_auth in its OIDC metadata; this does not demonstrate that the distinct method is implemented or absent at runtime. K05/K06 and physical reference-host validation remain pending.
 
 ## Next action
 
-Continue K04 remaining independently supported authentication/grant modes on real Keycloak while preserving the proven distinction between OIDC token binding and Admin REST authorization. Do not describe the existing private Admin GET as sender-constrained; any such protection requires an independently verified resource-side enforcement contract. Keep K05/K06 gated.
+Continue K04 by independently checking the server-side trust/registration and actual runtime behavior of the distinct self_signed_tls_client_auth or federated-JWT mechanisms before implementing either. OIDC metadata non-advertisement is evidence only of the discovery document, not a negative runtime proof. Preserve the proven distinction between OIDC token binding and Admin REST authorization. Do not describe the existing private Admin GET as sender-constrained; any such protection requires an independently verified resource-side enforcement contract. Keep K05/K06 gated.
 
 ## Blockers / open questions
 
