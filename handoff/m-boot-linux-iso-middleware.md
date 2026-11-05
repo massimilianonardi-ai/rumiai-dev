@@ -165,7 +165,7 @@ Task registry M-01…M-07 is now stable for operator addressing. M-01 is **PASS 
 
 ## Next action
 
-**M-02 (IN_PROGRESS):** preserve the exact PASS on [QEMU run 42037354331](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/42037354331) (`1d8033f2`), and next exercise real missing-kernel-feature/device-mapper, source loss or block read EIO at the guest level when a safe disposable QEMU fault mechanism exists. Keep F-owned media-loss/EFI runtime hardening in F-04 and avoid duplicate unrelated F work. Do not mark full M-02 PASS or begin M-03 until required negative acceptance and evidence boundaries have been explicitly reconciled. Synchronize revision-specific evidence and do not start M-03 automatically. Sole hard firmware join remains M-04 ↔ F-05.
+**M-02 (IN_PROGRESS):** preserve the exact PASS on [QEMU run 42037354331](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/42037354331) (`1d8033f2`), and next exercise real missing-kernel-feature/device-mapper, source loss or block read EIO at the guest level when a safe disposable QEMU fault mechanism exists. Keep F-owned media-loss/EFI runtime hardening in F-04 and avoid duplicate unrelated F work. Do not mark full M-02 PASS or begin M-03 until required negative acceptance and evidence boundaries have been explicitly reconciled. Sole hard firmware join remains M-04 ↔ F-05.
 
 ## Blockers / open questions
 
