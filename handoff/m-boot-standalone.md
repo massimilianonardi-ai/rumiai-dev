@@ -97,10 +97,11 @@ The parent table is a **routing snapshot** of status. Actual M/K task-local stat
 M-01 → M-02 → M-03 ───────────────────────────────→ M-04 ─┬─→ M-05 ─┐
                                                           └─→ M-06 ─┴─→ M-07
 
-K-01 ────────────────────────────────────────────┐
-K-02 → K-03 ──┬─→ K-04 ──────────────────────────┼─→ K-07 → K-08
-              └─→ K-05 ──────────────────────────┘
-       K-06 (parallel host/KVM capability; can remain BLOCKED)
+K-01 ─────────────────────────────────┐
+K-02 → K-03 → K-07 ───────────────────┼→ K-08
+          ├→ K-04 (vendor evidence)    │
+          └→ K-05 (vendor evidence)    │
+K-02 + K-03 + compatible host → K-06 (optional; may stay BLOCKED)
 ```
 
 **Right now:** F-01, M-01, K-01 and K-02 are all assignable without waiting for each other; F-02 continues its known partial suite, but task ownership/producers must be checked via F-01 before editing shared sources. M-02/M-03 can run before F-05; **only M-04** joins F/M. K-04 and K-05 are siblings after K-03; M-05 and M-06 are siblings after M-04. K-06 can be BLOCKED without stalling K-08.
