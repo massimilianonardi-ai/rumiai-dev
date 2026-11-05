@@ -1,7 +1,7 @@
 # Autonomous m: complete functional validation
 
 Status: Active
-Updated: 2026-10-26
+Updated: 2026-11-05
 
 ## Goal
 
@@ -65,6 +65,15 @@ Also inventory current repository adapter set (GitHub, Node.js, Chrome, Chromium
 - Historic physical Ubuntu browser HTTPS/CA trust work on `m@47e6055`; separate older Electron NSS test, not transferred to current revision.
 
 ## Current state
+
+### A1 initiated: public bootstrap/state coverage (2026-11-05)
+
+- Fresh preflight used `rumiai-dev/main@f17b38d1e68489074e8497c3a984e2cc26ea67d4` (subsequently advanced forward), `m-os/master@31693e814f682690adfd48185da822f7f5007f9e` and current independent catalog/package HEADs. Later `rumiai-dev` movement was checked; only the unrelated browser-column handoff and the package model's own reconciliation changed before this checkpoint.
+- The mainline command/manual and repository-adapter inspection is recorded once as P0 in `handoff/m-os-completion-orchestration.md`; it does not supersede the M01–M15 evidence table above. Actual `m`, `osarch`, `state-path`, core/base/osarch libraries and their manuals were read against the root/bootstrap/state/entrypoint/POSIX contracts.
+- `m-os/master@e0bcf2d69ba4e4209a93fd7d0c9b08a00def3a0f` adds `.github/workflows/m-bootstrap-state-public.yml` only; no runtime product, catalog, package release or frozen `rumiai-tests` modifications. The A1 workflow invokes genuine public commands on hosted Ubuntu/macOS with physical-root/symlink/PATH bootstrap, no unmanaged state-path materialization, default/explicit user binding, package State Instance and malformed-operand statuses, as well as `osarch` explicit selection and unsupported-selection rejection.
+- **Result: PENDING.** The workflow source and commit diff were inspected. No run tied to that commit was confirmed at this checkpoint; no development host, reference host or physical test was executed. A generated workflow file is not runtime evidence. Previous M01–M03 evidence remains revision-specific to the exact earlier commits named above.
+- **Next A1 action:** obtain and inspect Ubuntu/macOS Actions job results for this exact commit, correct any observed failure within A1-owned files with manual/diagnostics consistency, then extend remaining selector fault/rollback and state-path abnormal-path cases proportionately. Do not mark A1 PASS until observed on required hosts. A2, A3 and A4 may proceed on their own nonconflicting files/state with fresh preflight; A3 must not edit P2-owned package extraction libraries.
+
 
 **Cross-workstream completion plan:** `handoff/m-os-completion-orchestration.md` now owns the detailed conditional P0/A*/J*/S*/R*/C*/P*/V*/I* dependency map and integration orchestration. This validation handoff remains owner of M01–M15 actual test/evidence state; this reference does not transfer or duplicate that state. The complete `m-os` DEVPLAN still carries explicit contract/host gates, so the new map is not blanket implementation authorization.
 
