@@ -1,7 +1,7 @@
 # RumiAI OS — Package model
 
 Status: **Current / normative**  
-Updated: 2026-11-02
+Updated: 2026-11-05
 
 This document defines the current semantic contract of the `m` package subsystem without duplicating implementation internals that belong in `rumiai-os`.
 
