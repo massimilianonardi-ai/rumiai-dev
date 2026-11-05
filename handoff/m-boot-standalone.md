@@ -7,6 +7,12 @@ Updated: 2026-11-05
 
 Evolve the historically field-used `m-boot` into a standalone, reusable multiboot medium focused primarily on recovery, backup and OS installation: prepare a suitable disk/USB drive once, then add/remove bootable ISO images and other supported payloads by ordinary file copy from compatible hosts, without repeatedly flashing devices, recreating media or requiring host-side privileged imaging tools for each payload. The product builds on Linux x86_64/ARM64 and targets applicable x86_64 BIOS, x86_64 UEFI and ARM64 UEFI machines. Integration into `m` is not a current dependency.
 
+## Operator correction — bootable Ubuntu RAW QEMU host (2026-11-05)
+
+The operator explicitly clarified the intended QEMU-assisted m-boot mechanism: a **file-backed RAW disk with a minimal Ubuntu OS** booted from existing m-boot GRUB/EFI, receiving the selected ISO pathname and source filesystem, running **native-architecture QEMU** and presenting **all real physical disks** to the guest. The prior K-only virtual-optical diagnostic report does **not** deliver that mechanism and does not settle whether this different, host-assisted m-boot path should be implemented. This current user instruction overrides the earlier assumption that the host-assisted path was outside the desired operator journey.
+
+The independently resumable implementation is owned by **`handoff/m-boot-ubuntu-qemu-host.md`**. The bounded original K-01…K-08 optical-device experiments and their exact evidence remain owned by `handoff/m-boot-qemu-kvm-iso.md` and must not be relabeled as RAW-host/grub-to-guest PASS. The Ubuntu RAW host must respect the standalone no-reflash ISO-file workflow, the existing GRUB core and separation of real physical disk ownership. All disks including source/boot media must be accounted for; any host-active/source disk cannot be exposed as simultaneously writable from host and guest. Test physical access only on disposable fixtures before any operator disk use.
+
 ## Parallel execution plan — stable operator task IDs (2026-11-05)
 
 **Active task registry, reviewed for parallel execution.** This is a task-local work plan under the canonical RumiAI repository rules, **not a product API, public namespace or promoted m-boot specification**. The earlier parallel plan's unnumbered F/M/K labels and wave descriptions are superseded **for task addressing** by the exact IDs below. Do not infer vendor/physical success from source inspection, a synthetic PoC or an EFI-only menu.
