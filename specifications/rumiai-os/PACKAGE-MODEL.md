@@ -231,7 +231,7 @@ Do not duplicate package catalog contents in `rumiai-dev` as a second editable s
 
 `pkg install` owns orchestration of the real install path.
 
-For a multi-operand invocation, installation is best-effort per operand. An operand that is syntactically invalid, unavailable, already installed or otherwise not installable does not prevent later independently installable operands from being attempted. Each failed operand emits an error diagnostic. The overall command succeeds only when every requested operand succeeds; a partially successful batch returns status `1`. Status `2` is reserved for a globally invalid invocation rather than for one bad operand inside an otherwise processable batch.
+Before catalog initialization, dependency planning, root resolution or package-store mutation, `pkg install` validates the complete original request list. A syntactically invalid operand aborts the entire invocation with status `2`, even when other operands are valid; no request in that batch is installed. Failures encountered after a syntactically valid invocation are execution failures (status `1` at the public command boundary), not invalid-arguments failures. This is not a promise of transactional rollback of earlier successfully installed concretes when a later valid request fails.
 
 If the resolved concrete package identity already exists as an installed concrete, `pkg install` does not reinstall or replace it. That operand fails with an `already-installed` diagnostic identifying both the installed concrete identity and the current/default concrete identity for the same package/platform class when one exists. Other operands in the same invocation continue to be processed.
 
@@ -851,17 +851,17 @@ The returned dependency plan is deduplicated and dependency-first. Provider depe
 
 The public `pkg install <package-spec>...` command first validates the complete original request list syntactically. If any request is invalid, installation fails before dependency planning, catalog resolution or package-store mutation.
 
-After successful validation, `pkg install` composes the two responsibilities directly:
+After successful validation, `pkg install` selects one immutable catalog snapshot and first resolves every original request to an exact concrete root identity against that snapshot, preserving request order. It then obtains the recursive dependency-first plan for those exact roots against **the same snapshot**, prepends the dependency concrete identities and installs the resulting concrete sequence:
 
 ```text
-validate original requests
-dependencies = pkg depend <original requests>
-install sequence = dependencies + original requests
+validate complete original request list
+initialize one catalog snapshot
+exact roots = resolve all original requests against that snapshot
+dependencies = plan dependencies of exact roots against that snapshot
+install sequence = dependencies + exact roots
 ```
 
-Dependency concretes are prepended to the untouched original request list. The dependency operands are therefore installed first, while requested roots retain their original package-spec form and are resolved by installation when reached. This keeps dependency discovery independent from requested-root installation and prevents a root package from disappearing merely because dependency planning changes.
-
-`pkg depend` owns the catalog snapshot used to discover dependencies. Its snapshot is not shared state with installation. `pkg install` resolves each operand against its own installation snapshot; exact dependency concretes remain exact requests, while original non-concrete roots are resolved normally by the installer.
+The exact roots supplied to dependency planning are the exact roots installed afterward. A mutable latest/default selection cannot independently change a requested root between the planning and installation stages. The public read-only `pkg depend` command retains its own invocation-private snapshot for standalone queries; the installation planner must reuse the installation snapshot, not fetch an independently advancing catalog state.
 
 `pkg depend` does not mutate package/provider state. Catalog cache refresh and invocation-private snapshot materialization are permitted operational side effects. Recursive dependency installation is now part of the canonical `pkg install` pipeline.
 
@@ -1020,7 +1020,7 @@ PKG-14  facility declarations are independent of package identity
 PKG-15  multiple installed providers of the same facility/compatibility are valid
 PKG-16  package-consumer resolution uses explicit binding, then facility default, then deterministic implicit installed-provider resolution; explicit configured intent never silently falls back
 PKG-17  provider selectors use package-spec grammar; omitted version follows package default and explicit version pins
-PKG-18  pkg install discovers recursive dependency providers through pkg depend, prepends their exact concrete identities to the original request list and installs dependencies before requested roots
+PKG-18  pkg install plans recursive dependency providers for exact resolved requested roots against the same catalog snapshot, prepends their exact concrete identities to those roots and installs dependency-first
 PKG-19  runtime re-resolves and validates mutable provider selection before provider use
 PKG-20  pkg provider configures facility defaults and per-consumer bindings
 PKG-21  provider-selection configuration is system-scoped authoritative conf state
@@ -1096,8 +1096,8 @@ PKG-92  pkg depend preserves consumer binding then facility-default precedence; 
 PKG-93  pkg depend treats multiple compatible provider packages as ambiguity and never silently ranks them
 PKG-94  pkg depend omits requested root nodes from output unless the same concrete is also selected as a dependency node
 PKG-95  every pkg depend output item is an exact concrete package identity valid as a direct install operand
-PKG-96  pkg install prepends pkg depend output to the untouched original request list so dependency concretes are installed before requested roots
-PKG-97  pkg install resolves original package-spec roots when reached while preserving exact dependency concretes as exact requests
+PKG-96  pkg install prepends dependency concrete identities to the exact resolved requested roots, preserving requested-root order and dependency-first installation
+PKG-97  pkg install resolves all original package-spec roots to exact concretes before dependency planning, and installs those same exact concretes
 PKG-98  recursive dependency installation is part of the canonical pkg install pipeline
 PKG-99  pkg install validates the complete original request list before dependency planning, catalog resolution or package-store mutation; any syntactically invalid request aborts the whole invocation
 PKG-100 pkg depend reports provider ambiguity with structured diagnostics identifying the facility, combined constraints, target osarch and exact compatible provider candidates; pkg install preserves that diagnostic and classifies the valid-request failure as execution failure rather than invalid arguments
