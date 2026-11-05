@@ -867,6 +867,97 @@ was migrated to use these exports.
 
 ## Working design / open questions
 
+### Branch C2: side-effect boundary and activation design gate (2026-11-05)
+
+This is **working design**, not a promoted public grammar or authority
+for C3 implementation. Current implementation inspection found a
+specific impediment to applying the accepted environment-first model:
+
+- The package launcher uses `_pkg_launch_env_apply` to POSIX-dot-source
+  the installed concrete's `env` and managed user
+  `<package-conf>/.m/env` into the launching process. Even after
+  `sh -n` syntax validation, a shell source is executable code,
+  not a pure typed environment descriptor. These scripts may change
+  state or exit; sourcing them in the invoking interactive shell
+  during generalized `context` preparation cannot provide the
+  required fail-before-shell-mutation property.
+- The same launcher resolves package HOME/conf, dependency providers
+  and final execution as part of `launcher`. That is the correct
+  existing **command-execution** responsibility, but it is not a
+  side-effect-free reusable public "prepare context" API.
+- `pkg-provider.lib.sh` already has provider selection and typed
+  facility-environment planning responsibilities. Reuse those
+  responsibilities rather than introducing a second facility/default
+  registry. Ordinary package libraries are separate from facilities.
+- `bin/sys/state-path` takes only
+  `scope owner identity area [instance]`; it reads readonly
+  bootstrap system/user roots rather than accepting a caller's
+  chosen profile. A per-shell selected system profile cannot be
+  made true merely by exporting a new context label while existing
+  consumers still resolve through `system/current`.
+- `m_ENV_DO_NOT_OVERRIDE` is consumed at one launcher boundary;
+  caller-supplied environment text cannot prove that a protected
+  value originated with an authorized parent. Arbitrary
+  non-cooperating grandchildren remain outside an enforceable
+  RumiAI policy boundary.
+
+**Refined future integration sequence to evaluate** (no new
+public identities/paths are fixed by this list):
+
+1. **Authoritative inputs.** Identify a trusted consumer when its
+   launch path establishes it; treat interactive shell identity as
+   untrusted application input. Resolve current authoritative
+   preferences and provider selections without claiming
+   `user` logical state names authenticate POSIX accounts.
+2. **Read-only resolution.** Expand permitted inherited selections
+   and named presets into one left-to-right per-dimension selection
+   fold; bind each provider/ordinary package to a verified exact
+   installed concrete and validate conflicts/collisions.
+   Inaccessible/invalid authoritative defaults fail; no automatic
+   catalog download on ordinary shell initialization.
+3. **Environment planning boundary.** Prefer already validated
+   declarative provider environment values and current package
+   library/command projections. For executable package/user `env`
+   sources, **do not** dot-source into the invoking shell as a
+   preparatory shortcut. C2 must choose the compatibility boundary:
+   either retain launcher-only preparation for such scripts, or
+   deliberately define a safe shared planning representation and
+   compatible migration for them. A subshell is not, on its own, a
+   guarantee against filesystem/process side effects.
+4. **Validated apply.** Compute one owned variable/path delta and
+   check previously owned PATH/CLASSPATH segments, unowned edits,
+   readonly variables, valid unset/set-empty/present distinctions,
+   provider consistency and protected inherited values **before**
+   applying changes to the caller. No per-activation symlink
+   materialization, no stack/push/pop and no blind rollback promise
+   for arbitrary externally executed shell code.
+5. **Trusted child handoff.** Only integrated package/service
+   launchers can interpret authenticated selection/policy provenance
+   and revalidate the chosen provider; ordinary exported
+   application values alone do not enforce transitive protection.
+   Browser trust remains synchronized against final effective HOME
+   through the existing trusted NSS integration.
+6. **Migration/acceptance.** Explicitly replace the public no-argument
+   reset behavior with agreed default initialization and a
+   discoverable deliberate-clear operation, align bootstrap
+   `state-path`, launcher, manuals and normal-path tests together,
+   and validate two independent shells with different profiles,
+   ordered preset overrides, ambiguous provider refusal, protected
+   child HOME, and A-to-B replacement.
+
+**Actual unresolved contract choices are now narrower:**
+(a) exact public operands and deliberate-clear spelling;
+(b) authorization and persistence of per-dimension defaults,
+user/system profile identities and complete presets;
+(c) package/user executable environment script compatibility
+versus a future pure planning format;
+(d) integrity/authority for protected child propagation and
+unselected command-name masking in PATH;
+(e) ordinary-library dependency declaration and real Java JAR
+consumer evidence. Existing canonical C1 behavior stays unchanged
+until an accepted coordinated migration. P4/P2/V2 remain separate
+owners; C3 must not start from this working sequence alone.
+
 ### Runtime composition matrix and resource packaging choices (2026-10-26, provisional)
 
 The user clarified that *logical resolution* means the already existing
