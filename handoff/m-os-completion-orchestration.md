@@ -245,6 +245,12 @@ Mainline repository adapters: `pkg-repository-{artifact,chrome,chromium,github,n
 
 ## Current state
 
+### Branch S forced-stop and native TERM evidence (2026-11-05)
+
+- S1 now explicitly protects an unrelated live PID from **forced `srv stop -f`** when persistent instance identity is stale: [real Ubuntu run `42116060510`](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42116060510) **PASS** against `m-os@d014d41e`. This extends earlier S1 rejection of `start` on the same stale process metadata.
+- S2 isolated real package-provider/native `systemd --user` coverage now checks foreground process SIGTERM and eventual old PID disappearance on **both restart and stop**: [real Ubuntu run `42116611051`](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42116611051) **PASS** against exact `m-os@fe344c6bb6a1dd939e1d0eb442633bcf84a38e47`. macOS 15 Intel and original macOS 26 ARM64 native-host jobs remain QUEUED, not accepted. This does not resolve upstream published-provider 403 on macOS.
+- The owning `handoff/m-autonomous-validation.md` records source/runner revisions, job IDs, and residual PID/system-host/physical gates. No shared P2, frozen tests or privileged production host touched. [Draft PR #4](https://github.com/massimilianonardi-ai/m-os/pull/4) remains unmerged.
+
 ### Branch S host-specific process verification and native-user exercise (2026-11-05)
 
 - [S1 exact-source run 42098169071](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42098169071) completed **3/3 PASS** on Ubuntu real provider/offline and macOS offline stale-identity regression. The S-owned process-start inspection is now explicitly confined to Linux/Darwin host backends with fail-closed behavior on other hosts (`m-os/m-os-completion-s@5c996d97`), and command manual updated. A later [Ubuntu exact-source run 42113668108](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42113668108) passed both jobs, macOS queued.
