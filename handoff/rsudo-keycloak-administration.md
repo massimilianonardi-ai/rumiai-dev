@@ -9,9 +9,9 @@ Complete and validate K04 Keycloak authentication and authenticated transport th
 
 ## Current repository revisions
 
-- rumiai-dev: 789991770d7f17f70d9fd93ee3c52407520f5e87 (before this checkpoint)
-- rumiai-os: 3611c62debd83b4e4bff4571b03d51eae3dc7067 (includes Keycloak private probe at af128698dd6044d00b424f10ff846393fcd32e29 and manual at fa0805d2653c0b6c65066060bb47842fd64bd608; later unrelated APISIX change)
-- rumiai-tests: bfd03487e03861c287ef3d3fe790a44fe95de9ee (includes Keycloak composed tests at fb8402a3b37f99f276d318a9f6c0f8e871ceabd5; later unrelated APISIX changes)
+- rumiai-dev: 582f206390fe55ee1997d9656dec136e0e4b97d5 (before this checkpoint)
+- rumiai-os: 69190b91ff5e6bf46a4f918f63fd38bfda1f7155 (current main, no Keycloak product change in this checkpoint)
+- rumiai-tests: 460a339a045e7d938cf53b27146ea40d290b9331 (focused macOS TLS diagnostic test change)
 
 Recheck all live remote HEADs and reconcile forward before each write/validation.
 
@@ -86,16 +86,19 @@ Recheck all live remote HEADs and reconcile forward before each write/validation
 - Actual composed SSH/sudo and Keycloak 26.7.3/26.8.1 passed the same protected fixed GET / forbidden response and wrong-certificate proof: `rsudo-keycloak-composed` PASS/VALIDATED Ubuntu ARM64, suite fb8402a3b37f99f276d318a9f6c0f8e871ceabd5, frozen product c7ff8bdec0c45d0a11513698638d94d76053a0f4, run 42053359024.
 - Important boundary: neither an optional TLS client cert nor a legitimate HTTP 403 independently proves that the Keycloak Admin REST API enforces `cnf.x5t#S256` certificate-binding for bearer tokens. Real binding enforcement and the general K05 request API remain separate pending work. No physical host validation was performed; GitHub-hosted ARM test environments and isolated Docker SSH/sudo compose are not physical validation.
 
+- Resumed from the current repository/specification/handoff preflight on 2026-11-05 and checked the previously queued isolated macOS runs. In both 42052273959 and 42052944188, Ubuntu ARM64 passed the rsudo-keycloak focused validation while macOS failed in keycloak-auth-transport.test after the legacy-module test passed. The published first session validation/20261105T155116+0000-5714 reports X509 mTLS client acquisition status 75. The second macOS run also failed to publish the validation branch; its recoverable artifact 13432302019 exists. These two workflow results are FAIL, not cross-platform validation.
+- Added failure-only, redacted diagnostics to the existing isolated X509 test: report the selected curl version/TLS backend and execute an independent local HTTPS client-certificate curl probe, reporting only its exit status and keeping response/diagnostics under the private disposable fixture. No product implementation, operational manual or normative Keycloak specification was changed. The change is rumiai-tests commit 460a339a045e7d938cf53b27146ea40d290b9331; push-triggered run 42072611910 was queued at last observation. This is instrumentation, not a fix or validation result.
+
 ## Current state
 
-The current K04 token lifecycle supports the explicitly documented secret/JWT asymmetric clients and X509 `tls-client-auth`. The private fixed read-only Admin REST probe now explicitly presents X509 client identity where selected and has passed isolated HTTPS, real Keycloak 26.7.3/26.8.1 and composed SSH/sudo tests on Ubuntu ARM64, including negative mismatched-key and insufficient-permission cases. The earlier macOS isolated mTLS workflow failed at an unrelated RSA handshake after modifying the shared TLS fixture; the fixture listener separation has now passed Ubuntu but its macOS workflow is queued. Full certificate-bound bearer enforcement at Admin REST, K05 general request API and K06 typed conveniences remain unimplemented.
+K04 has the explicitly documented secret/JWT asymmetric and X509 `tls-client-auth` subsets and the private fixed read-only Admin REST probe; corresponding Ubuntu isolated/live/composed evidence is recorded above. The separated mTLS fixture still fails on macOS during the X509 client acquisition with status 75 (both previously queued runs completed FAIL). The exact native curl TLS backend and underlying failure stage remain unproven. The new redacted diagnostic run is pending; do not claim a macOS fix or cross-platform PASS. Real certificate-bound bearer enforcement at Admin REST, K05 general request and K06 typed conveniences remain unimplemented.
 
 ## Next action
 
-Recheck the corrected isolated X509 workflows 42052273959 and 42052944188 on macOS and investigate any remaining TLS-specific failure before claiming cross-platform validation. Next prove actual certificate-bound access-token enforcement (including the `cnf.x5t#S256` claim and absent/wrong-certificate Admin REST behavior) against real Keycloak 26.7.3/26.8.1 before promoting sender-constrained Admin REST support. The distinct `self-signed-tls-client-auth` and federated-JWT modes require independent server/client trust proof; do not silently treat the existing `tls-client-auth` as either one. K05/K06 remain gated.
+Inspect the macOS job/session of rsudo-keycloak run 42072611910 at the exact frozen revisions. Use its redacted curl backend and direct client-TLS curl exit code to distinguish native TLS backend/PEM handling from handshake/issuer problems; correct only the demonstrated failure while retaining remote protected file and no-secret-disclosure invariants. Then rerun proportional isolated Linux/macOS validation on frozen revisions. After K04 cross-platform evidence is resolved, independently test actual certificate-bound access-token enforcement (`cnf.x5t#S256`, absent/wrong-certificate Admin REST) against Keycloak 26.7.3/26.8.1 before any contract promotion. `self-signed-tls-client-auth` and federated-JWT modes require independent trust proof; K05/K06 remain gated.
 
 ## Blockers / open questions
 
 - Ed448, `self-signed-tls-client-auth`, federated JWT, full mTLS certificate-bound Admin REST enforcement proof and other grant families remain pending; they need independently verified Keycloak client/server trust and protocol evidence.
-- The earlier X509 `tls-client-auth` macOS fixture run failed due to TLS error during an existing RSA request. Corrected macOS suites 42052273959 / 42052944188 are queued; neither is PASS yet. Physical reference hosts remain untested.
+- Both corrected macOS suites 42052273959 / 42052944188 completed FAIL in the X509 acquisition path; the published first test log shows status 75. The precise curl backend / low-level TLS failure is pending focused diagnostics (run 42072611910). The second failed macOS validation evidence push, but uploaded a recoverable artifact. Physical reference hosts remain untested.
 - Full K04 authenticated Admin REST transport, non-service-account grant families and multi-host physical validation are still pending.
