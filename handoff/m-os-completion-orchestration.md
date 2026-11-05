@@ -220,7 +220,37 @@ A work unit is *functionally independent* only if it does not consume an unsettl
 
 ## Current state
 
-- This is a **planning-only conditional program**. No agents dispatched, no product/runtime/catalog, package release or permanent-test edits, and no real test executed by this plan.
+### P0 — Current-source inventory checkpoint (2026-11-05)
+
+**Inspection complete for scope routing, not a runtime-validation PASS.** Read the actual `m-os/master@31693e814f682690adfd48185da822f7f5007f9e` tree, matching manuals and workflows, `m-os/pkg-schema-v2@1e3a038a5abf6f8c176272d8e44464c842d3cefd`, and `pkg-catalog/main@3ee97d21bae3ee885b0fa987e1faee718fad8609` / `pkg-schema-v2@9d889cc265c29eeae456b8fe1ad638654c36e8c7`. The source/manual inventory below is the *mainline target*, not proof of execution:
+
+| Public command | Current source | Current manual | Workstream |
+|---|---|---|---|
+| `m` | root `m` via `bin/sys/m` symlink | `res/sys/manual/m` | A1 |
+| `osarch` | `bin/sys/osarch` | `res/sys/manual/osarch` | A1 |
+| `state-path` | `bin/sys/state-path` | `res/sys/manual/state-path` | A1 |
+| `shell` | `bin/sys/shell` | `res/sys/manual/shell` | A2 |
+| `lang` | `bin/sys/lang` | `res/sys/manual/lang` | A2 |
+| `lang-set` | `bin/sys/lang-set` | `res/sys/manual/lang-set` | A2 |
+| `manual` | `bin/sys/manual` | `res/sys/manual/manual` | A2 |
+| `pager` | `bin/sys/pager` | `res/sys/manual/pager` | A2 |
+| `log` | `bin/sys/log` | `res/sys/manual/log` | A2 |
+| `http-fetch` | `bin/sys/http-fetch` | `res/sys/manual/http-fetch` | A3 |
+| `digest` | `bin/sys/digest` | `res/sys/manual/digest` | A3 |
+| `extract` | `bin/sys/extract` | `res/sys/manual/extract` | A3 |
+| `tls-ca` | `bin/sys/tls-ca` | `res/sys/manual/tls-ca` | A4 |
+| `tls-nss-sync` | `bin/sys/tls-nss-sync` | `res/sys/manual/tls-nss-sync` | A4 |
+| `srv` | `bin/sys/srv` | `res/sys/manual/srv` | S1/S2 |
+| `pkg` | `bin/sys/pkg` | `res/sys/manual/pkg` | P1–P4/V1/V2 |
+
+The 16 mainline command identities all have corresponding manual files; `lib/sys/sh` exported library manual leaf identities are present in the same source tree, but a semantic public-API/manual audit remains M15 PENDING. The independent `JSON-QUERY.md` contract for a standalone `bin/sys/json` and manual remains **unimplemented in both current m-os branches**; this is J1/source-composition ownership, not an A2 synonym for the existing `json.lib.sh`.
+
+Current mainline repository adapter sources: `pkg-repository-{artifact,chrome,chromium,github,nodejs}.lib.sh`. The v2 feature additionally contains `pkg-repository-{apache-maven,temurin}.lib.sh`. Catalog mainline currently has v1 package definitions including real `nodejs`, `mk`, `jsc`, `electron-web-control`, `ollama`; the v2 feature catalogs `jq`, `jsc`, `m-core`, `m-rsudo`, `m-term`, `mk`, `nodejs`, `ollama`. Catalog entries are not equivalent to a working installed-provider scenario. The *only* accepted M01–M15 run-by-host/revision classifications remain in `handoff/m-autonomous-validation.md`; historical CI jobs and physical evidence there are not transferred to the new `m-os` revision.
+
+**A1 dispatched as an authorized source-CI change:** `m-os/master@e0bcf2d69ba4e4209a93fd7d0c9b08a00def3a0f` added `.github/workflows/m-bootstrap-state-public.yml` for real public positive/negative bootstrap, symlink/PATH, state and osarch checks on hosted Ubuntu/macOS. This is test *authoring*, not a reported PASS; no executed job has been verified. A2/A3/A4 remain independently ready, their source files unchanged. The owning validation handoff records the A1 operational next action.
+
+
+- The conditional program remains governed by its existing gates. P0's mainline source/manual/adapters inventory is complete; A1 now has a committed product-owned CI smoke (unverified execution). No product runtime/catalog/package release or frozen permanent-suite change was made; no A1 PASS is claimed.
 - Already observed: genuine three-package published composed smoke Ubuntu/macOS PASS at `m-core` Actions run `42037725004` on pinned older revisions, and operator-reported `vmdev` interactive menu PASS; these are not full current product or authorized remote physical proof.
 - The previously supplied strategic map lacked complete task outcomes, dependency/write ownership, acceptance and integration gates. This document adds the bounded task details without falsely turning unsettled full-context design into an implementation API.
 
