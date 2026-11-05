@@ -245,6 +245,11 @@ Mainline repository adapters: `pkg-repository-{artifact,chrome,chromium,github,n
 
 ## Current state
 
+### Branch A2–A4 dispatch checkpoint (2026-11-05)
+
+The independently scoped branch A CI work advanced `m-os/master` forward from the A1 workflow commit `e0bcf2d69ba4e4209a93fd7d0c9b08a00def3a0f` to `8c21070960c46936d56ab3a0973770f863e9d022`. A2, A3 and A4 each have a dedicated genuine-public-command GitHub Actions workflow; the A4 revocation test checks the exact removed identity after a follow-up test correction. No runtime source, manuals, catalog, packages, shared `pkg` files, frozen legacy code or permanent suite were modified by branch A. **Execution remains PENDING**: no corresponding current `m-os` Actions run has been verified; authored workflows do not prove PASS. The exact operational scope and required result collection are owned solely by `handoff/m-autonomous-validation.md` (M01–M06/M14/M15). A3 must not modify P2-owned pkg extraction files; A4 real-browser/reference-host proof remains separate. These independent CI files do not release P2/V2/context gates.
+
+
 ### Branch R dispatch checkpoint (2026-11-05)
 
 R1 is active under the existing source-composition handoff. `m-rsudo/main@07017bfd4aa1809370ca30c4fe28bb0ab85021a6` made the bounded package-local `rssh` source/manual correction; `m-rsudo/v0.1.0` was not modified. Syntax and isolated source-view branching checks PASS, but no new public `pkg install`/interactive-shell/CI/remote/physical evidence exists. The owner must finish `rsudo-admin` injected-library/menu-source realignment, real installed consumer tests, then release/catalog integration only with authentic validation. R2 real remote SSH/sudo remains G-HOST-gated and PENDING explicit controlled authorization. Other branches and frozen legacy/permanent-suite work are unaffected.
