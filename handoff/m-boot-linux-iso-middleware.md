@@ -11,8 +11,8 @@ Operational progress and local implementation choices belong here. The parent ha
 
 ## Current repository revisions
 
-- Ventoy/m-boot-secondary-uefi: ceff79ca92d246928f86362a569f86c6d2ac130f (consumer implementation and PoC 081 pinned interface; recheck live HEAD).
-- rumiai-dev-PoCs/main: cbd5906b5af50c989764dabc9acba48dd5d43dc2 (PoCs 080/081/085/087, future middleware code lives under its own non-colliding path; recheck HEAD).
+- Ventoy/m-boot-secondary-uefi: current observed HEAD f213b860982f540f43d51a296b05768d13587af2 (F-owned C consumer safety change); M-02 PoC 088 remains intentionally pinned to pre-change ceff79ca92d246928f86362a569f86c6d2ac130f for the already-started original PoC 081 interface and must be reassessed before any later F/M integration.
+- rumiai-dev-PoCs/main: 1529c173c31744fa13b9c6d9a436293bfacb9aff (M-02 PoC 088 source and workflow; recheck live HEAD before further modification).
 - m-boot/main: c06cd35a73b7e420c3a06dc51537c028ffa619d0 (no authorized product modification).
 - rumiai-dev/main: recheck live HEAD; this handoff's relationship owner is parent.
 
@@ -78,13 +78,21 @@ Implementation baseline: experimental Ventoy GRUB2/port/probe-linux-efi-consumer
 
 ### M-02 — Generic read-only ISO reconstruction stage
 
-- **Status / dependencies:** **READY after M-01 PASS; not started**; may run concurrently with F-02/F-03. Consume pinned already-PASS EFI producer map; F hardening completion is **not** a precondition for this isolated implementation.
+- **Status / dependencies:** **IN_PROGRESS (implementation committed; authentic QEMU validation still running, no M-02 PASS yet)**; M-01 PASS. May run concurrently with F-02/F-03. Consume pinned already-PASS EFI producer map; F hardening completion is **not** a precondition for this isolated implementation.
 - **Objective:** extract the existing Linux-side behavior into a bounded generic early-userspace stage, separately from PoC 081's synthetic `.pve-cd-id.txt` and unconditional `poweroff`.
 - **Steps:** require trustworthy variable/identity checks already present, load matching kernel modules, detect the unique physical GPT source, create only read-only `dm-linear`, resolve stable device identity, mount ISO9660 read-only and expose a clear success/failure result to the caller. Use current source, avoid rewriting existing parser wholesale.
 - **Positive test:** in real disposable QEMU Linux guest, unchanged synthetic ISO bytes/hash and marker, matching dm device and mount; distinct serial assertions for variable parsing, source discovery, device creation, read and mount. No success solely from host-side grep.
 - **Negative tests:** missing variable, corrupted/ambiguous map, wrong disk, unavailable modules/device-mapper, read failure; no wrong device mounted, no silent fallback and no host disk access.
 - **Output / acceptance:** isolated reusable code + CI log and manifest in track-owned PoC paths. Only a demonstrated guest mount passes.
 - **Out of scope:** calling vendor original `/init`, injecting into ISO EFI loader, vendor-specific hooks, physical USB testing, writable host disk passthrough.
+
+### M-02 implementation checkpoint (2026-11-05; not yet accepted)
+
+- **PoC source:** [PoC 088](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/tree/main/pocs/088-m-boot-linux-generic-iso) contains `iso-stage.sh`, `guest-init.sh`, and scope/evidence README. Standalone [workflow](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/workflows/poc-088-m-boot-linux-generic-iso.yml) reuses the unchanged PoC 079 ISO/kernel, existing original Ventoy EFI→Linux path and the exact consumer from PoC 081; it runs only on disposable GPT/QEMU virtual media. The current PoC 088 source/workflow revision is `1529c173c31744fa13b9c6d9a436293bfacb9aff`.
+- **Code boundary:** private early-guest preparation and cleanup; preserve the original compiled consumer; load matching kernel modules, require complete successful map before DM creation, check read-only kernel mapper flag, resolve sysfs block ID, mount ISO9660 with `-o ro`, clean stage-owned mapping/mount on failure. Test-only init checks marker/hash and powers off. Original vendor init handoff remains exclusively M-03.
+- **Revision-specific CI:** [run 42033219716](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/42033219716) was **in progress** on first checkpoint; earlier runs 42032929485, 42033111292 and 42033131556 used superseded intermediate PoC revisions and must not be credited as final evidence. The latest job must show actual guest map, mapped-block read, SHA256 equality, ISO mount, cleanup, and bounded missing-consumer/module-manifest refusal before any scope-specific PASS.
+- **Important unfinished negative matrix:** corrupt/missing EFI variable, ambiguous/wrong GPT disk, media detach/failed block read, absent kernel device-mapper/ISO9660 support and broader teardown remain **NOT_TESTED** by PoC 088's two explicit dependency-negative fixtures. Prior PoC 087 isolated parser tests are not genuine guest substitutes. M-02 is not PASS while the required real guest and negative acceptance remain pending.
+- **Parallel F-owned input change:** after M-02 implementation began, Ventoy advanced from `ceff79c` to `f213b86` with tightened GPT header/partition CRC/extent validation in `probe-linux-efi-consumer.c`. The M-02 run still uses the explicitly pinned prior consumer to preserve its existing proven chain. This is a **known revision join to reconcile** before claiming current-F compatible integration; do not silently rewrite the pin or override the F owner's sources.
 
 ### M-03 — Control transfer to an independent original init
 
@@ -148,19 +156,20 @@ A blocked M-05 must not stop M-06, and K is completely independent. New child Po
 
 - Prior factual baseline (not newly performed in this workstream): PoC 081 authentic QEMU/OVMF synthetic ISO → EFI variable → unchanged Ubuntu kernel → read-only dm-linear + ISO9660 + media ID PASS (run 41839593585). PoC 085 direct QEMU kernel/append-only vendor CPIO PASS (run 41855782625), but **not** EFI integrated vendor boot. PoC 087 malformed-variable original C consumer 13/13 early rejection PASS (run 42015054609), not GPT/physical bounds.
 - 2026-11-05: separated this self-contained middleware task from broader m-boot handoff so implementation can proceed concurrently with firmware and QEMU/KVM, while retaining shared input ABI as the only hard join point.
-- 2026-11-05: completed **M-01 PASS (source inventory/planning)** at the pinned Ventoy/PoCs revisions and recorded the minimal M-02 implementation and validation path. No new middleware code, QEMU run or physical validation.
+- 2026-11-05: completed **M-01 PASS (source inventory/planning)** at the pinned Ventoy/PoCs revisions and recorded the minimal M-02 implementation and validation path.
+- 2026-11-05: implemented private M-02 stage/fixture/workflow in PoC 088 with forward-only PoCs commits through `1529c173c31744fa13b9c6d9a436293bfacb9aff`; GitHub Actions QEMU jobs launched, with no completed acceptance evidence yet at this checkpoint.
 
 ## Current state
 
-Task registry M-01…M-07 is now stable for operator addressing. M-01 is **PASS (source inventory)**; M-02 is **READY but not started**; M-03 is **WAITING M-02**; both retain pinned PoC 081 input evidence; M-04 alone waits for F-05 firmware gate; M-05 and M-06 are sibling vendor work units; M-07 compares evidence. No middleware implementation, new QEMU run or physical test is claimed by this **source-only M-01** checkpoint.
+Task registry M-01…M-07 is now stable for operator addressing. M-01 is **PASS (source inventory)**; M-02 is **IN_PROGRESS** (PoC 088 code committed, QEMU test pending); M-03 is **WAITING M-02**; both retain pinned PoC 081 input evidence; M-04 alone waits for F-05 firmware gate; M-05 and M-06 are sibling vendor work units; M-07 compares evidence. No current-revision QEMU acceptance, vendor, original-init handoff or reference-host physical PASS is claimed. The new M-02 workflow run has begun but is not completed.
 
 ## Next action
 
-**M-02 — READY, not started:** execute the isolated generic read-only ISO remount implementation/test plan above, independently of F-02/F-03 and all K tasks. The user selected M-01 only; successors are not automatically executed. The sole hard firmware join remains M-04 ↔ F-05.
+**M-02 (IN_PROGRESS):** inspect the completed PoC 088 run for exact revision `1529c173c31744fa13b9c6d9a436293bfacb9aff`, correct any observed failure forward-only and exercise the still-missing real guest negative acceptance where feasible. Reconcile the new F-owned consumer safely before further integration; update this handoff with real logs and bounded PASS/FAIL/BLOCKED. Do not automatically start M-03. The sole hard firmware join remains M-04 ↔ F-05.
 
 ## Blockers / open questions
 
-- Experimental producer/consumer interface is not a stable public contract. Preserve exact pinned data shape until concurrent firmware work is reconciled.
+- Experimental producer/consumer interface is not a stable public contract. M-02 uses the old `ceff79c` pin; F-owned Ventoy consumer is now `f213b86` with additional GPT/extent safety validation. Preserve the running revision and reconcile the new consumer in an explicit later PoC test, not by silently swapping sources.
 - Method of preserving mounted ISO and device access across the original OS init/switch_root requires empirical M-03 proof; do not assume that creating dm device alone is sufficient.
 - Existing 64 KiB EFI-sidecar limitation vs genuine vendor initrd sizes is an explicit M-04 gate, not a reason to preemptively construct per-product initramfs.
 - Secure Boot, BIOS/ARM64 and generalized install frameworks are outside M1 baseline; they are conditional future gates in the broader parent decision.
