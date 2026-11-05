@@ -218,47 +218,45 @@ A work unit is *functionally independent* only if it does not consume an unsettl
 
 **Executor protocol:** each independent chat receives (i) local unit ID from this handoff, (ii) owner handoff, (iii) source/branch checkpoint to freshly verify, (iv) exact writable files/branch and prohibited shared surfaces, (v) public expected tests + manual updates, (vi) expected upstream output and integration handoff. Every executor follows fresh HEAD preflight, no history by default, current source authority, proportional real tests, reviewed diff, forward-only updates and consistency gate. When an interface or host/privilege contract is unsettled, stop only that affected unit and escalate; do not freeze independent ready work.
 
+## P0 source inventory checkpoint (2026-11-05)
+
+At inspected `m-os/master@31693e814f682690adfd48185da822f7f5007f9e`, each of the **16** `bin/sys` command identities has a matching `res/sys/manual/<identity>` topic. Source/manual/acceptance allocation (one row per current command):
+
+| Source identity | Manual topic | Acceptance owner scope |
+|---|---|---|
+| `m` | `m` | M01 |
+| `osarch` | `osarch` | M02 |
+| `state-path` | `state-path` | M03 |
+| `lang` | `lang` | M04 |
+| `lang-set` | `lang-set` | M04 |
+| `manual` | `manual` | M04 |
+| `pager` | `pager` | M04 |
+| `shell` | `shell` | M05 |
+| `log` | `log` | M05 |
+| `http-fetch` | `http-fetch` | M06 |
+| `digest` | `digest` | M06 |
+| `extract` | `extract` | M06 |
+| `pkg` | `pkg` | M07–M11 |
+| `srv` | `srv` | M12–M13 |
+| `tls-ca` | `tls-ca` | M14 |
+| `tls-nss-sync` | `tls-nss-sync` | M14 |
+
+The **31** inspected `lib/sys/sh/**/*.lib.sh` identities each have a corresponding manual topic name; this is structural coverage, **not** public function/manual semantic verification or test PASS. The autonomous repository currently contains five package repository adapters: `artifact`, `chrome`, `chromium`, `github`, `nodejs`. The inspected catalog has 27 `v1/pkg` names on `pkg-catalog/main@3ee97d21` and 8 `v2/pkg` names on `pkg-catalog/pkg-schema-v2@9d889cc2`; no inference of adapter support for all named packages is permitted. Both `m-os/master` and `pkg-schema-v2` still omit the separate specified POSIX `bin/sys/json` command/manual, while retaining the distinct `json.lib.sh`; J1/source-composition owns that source gap.
+
+M01–M15 observations remain exclusively in `handoff/m-autonomous-validation.md`. On the inspected baseline those rows include older revision-pinned partial PASS and PENDING paths; **none** becomes current-revision PASS from this inventory. Existing `m-os/.github/workflows` provides eight target-owned workflows, including live package/provider/service scenarios; frozen `rumiai-tests` is read-only. P0 classified source/manual presence versus genuine missing command (`json`), semantic/manual drift (`pkg install`) and unexecuted breadth (M07–M11 negative/provider combinations), not a declaration of full validation.
+
 ## Current state
 
-### P0 — Current-source inventory checkpoint (2026-11-05)
-
-**Inspection complete for scope routing, not a runtime-validation PASS.** Read the actual `m-os/master@31693e814f682690adfd48185da822f7f5007f9e` tree, matching manuals and workflows, `m-os/pkg-schema-v2@1e3a038a5abf6f8c176272d8e44464c842d3cefd`, and `pkg-catalog/main@3ee97d21bae3ee885b0fa987e1faee718fad8609` / `pkg-schema-v2@9d889cc265c29eeae456b8fe1ad638654c36e8c7`. The source/manual inventory below is the *mainline target*, not proof of execution:
-
-| Public command | Current source | Current manual | Workstream |
-|---|---|---|---|
-| `m` | root `m` via `bin/sys/m` symlink | `res/sys/manual/m` | A1 |
-| `osarch` | `bin/sys/osarch` | `res/sys/manual/osarch` | A1 |
-| `state-path` | `bin/sys/state-path` | `res/sys/manual/state-path` | A1 |
-| `shell` | `bin/sys/shell` | `res/sys/manual/shell` | A2 |
-| `lang` | `bin/sys/lang` | `res/sys/manual/lang` | A2 |
-| `lang-set` | `bin/sys/lang-set` | `res/sys/manual/lang-set` | A2 |
-| `manual` | `bin/sys/manual` | `res/sys/manual/manual` | A2 |
-| `pager` | `bin/sys/pager` | `res/sys/manual/pager` | A2 |
-| `log` | `bin/sys/log` | `res/sys/manual/log` | A2 |
-| `http-fetch` | `bin/sys/http-fetch` | `res/sys/manual/http-fetch` | A3 |
-| `digest` | `bin/sys/digest` | `res/sys/manual/digest` | A3 |
-| `extract` | `bin/sys/extract` | `res/sys/manual/extract` | A3 |
-| `tls-ca` | `bin/sys/tls-ca` | `res/sys/manual/tls-ca` | A4 |
-| `tls-nss-sync` | `bin/sys/tls-nss-sync` | `res/sys/manual/tls-nss-sync` | A4 |
-| `srv` | `bin/sys/srv` | `res/sys/manual/srv` | S1/S2 |
-| `pkg` | `bin/sys/pkg` | `res/sys/manual/pkg` | P1–P4/V1/V2 |
-
-The 16 mainline command identities all have corresponding manual files; `lib/sys/sh` exported library manual leaf identities are present in the same source tree, but a semantic public-API/manual audit remains M15 PENDING. The independent `JSON-QUERY.md` contract for a standalone `bin/sys/json` and manual remains **unimplemented in both current m-os branches**; this is J1/source-composition ownership, not an A2 synonym for the existing `json.lib.sh`.
-
-Current mainline repository adapter sources: `pkg-repository-{artifact,chrome,chromium,github,nodejs}.lib.sh`. The v2 feature additionally contains `pkg-repository-{apache-maven,temurin}.lib.sh`. Catalog mainline currently has v1 package definitions including real `nodejs`, `mk`, `jsc`, `electron-web-control`, `ollama`; the v2 feature catalogs `jq`, `jsc`, `m-core`, `m-rsudo`, `m-term`, `mk`, `nodejs`, `ollama`. Catalog entries are not equivalent to a working installed-provider scenario. The *only* accepted M01–M15 run-by-host/revision classifications remain in `handoff/m-autonomous-validation.md`; historical CI jobs and physical evidence there are not transferred to the new `m-os` revision.
-
-**A1 dispatched as an authorized source-CI change:** `m-os/master@e0bcf2d69ba4e4209a93fd7d0c9b08a00def3a0f` added `.github/workflows/m-bootstrap-state-public.yml` for real public positive/negative bootstrap, symlink/PATH, state and osarch checks on hosted Ubuntu/macOS. This is test *authoring*, not a reported PASS; no executed job has been verified. A2/A3/A4 remain independently ready, their source files unchanged. The owning validation handoff records the A1 operational next action.
-
-
-- The conditional program remains governed by its existing gates. P0's mainline source/manual/adapters inventory is complete; A1 now has a committed product-owned CI smoke (unverified execution). No product runtime/catalog/package release or frozen permanent-suite change was made; no A1 PASS is claimed.
-- Already observed: genuine three-package published composed smoke Ubuntu/macOS PASS at `m-core` Actions run `42037725004` on pinned older revisions, and operator-reported `vmdev` interactive menu PASS; these are not full current product or authorized remote physical proof.
-- The previously supplied strategic map lacked complete task outcomes, dependency/write ownership, acceptance and integration gates. This document adds the bounded task details without falsely turning unsettled full-context design into an implementation API.
+- **P0 initial scope/source/manual/adapter inventory complete** on the explicitly inspected revisions; current M01–M15 validation/evidence remains PENDING where its owning ledger says so. The independently specified `json` source gap is delegated to J1/source-composition, not hidden inside pkg P2.
+- **P1 canonical reconciliation started and committed**: `rumiai-dev` specification change `639e990c5ad61a5092f42561e8d151a99f2ef6b8` fixes upfront full-batch validation and exact-root same-snapshot dependency planning. The owning dependency handoff checkpoint `d06a69253720a4806ef2f83209f7d7cce722d232` records the autonomous runtime/manual divergence. P1 is **not** yet complete until implementation/manual and real regressions agree.
+- **P2 next**, under a single `m-os/pkg` writer. P3/P4 remain serial for overlapping runtime files, with independent analysis permitted. C2 full-context design and V1 feature/catalog evidence remain separate owners.
+- No `m-os`, `pkg-catalog`, released first-party package, frozen legacy or permanent-suite files were changed or executed in this kickoff. No physical test or new runtime PASS was observed. The full generalized-context program remains insufficiently specified as described above.
 
 ## Next action
 
-1. Use P0 to confirm exact accepted scope/evidence and communicate unit ownership; concurrently have C2 resolve full-context interface gaps and P1 reconcile `pkg install` mismatch under their existing owners.
-2. Start independent nonconflicting public validation and authentic package integration checks once each executor has current repo preflight and applicable product/CI authorization. Prioritize usable real `m-os`, not fine-grained refactoring without consumer value.
-3. Once C2/P1/P2/V1 outcomes stabilize, rerun the complete `DEVPLAN.md` sufficiency and clean-chat resumption gates for C3/V2, and publish fully executable units only for those now-ready interfaces.
+1. P2: implement in autonomous `m-os` the already-promoted P1 exact-root/same-catalog-snapshot installation model, with strict installed-store checks, nonduplicated resolver interfaces, matching command/library manuals and proportionate real public regressions. Recheck the current remote HEAD and own all shared pkg writes serially.
+2. Route P3 and P4 through the existing validation/source-composition owners after P2's stable interface checkpoint; P3 evidence analysis may precede shared runtime writes. Coordinate V2 only after P2/P3/P4 and V1 applicable readiness.
+3. Continue independent C2/J1/S*/A*/R* evidence/design lanes according to their ownership and gates; do not treat this P0/P1 document checkpoint as authorization to run frozen suites, privileged hosts or generalized context implementation.
 
 ## Blockers / open questions
 
