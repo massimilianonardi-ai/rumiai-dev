@@ -10,9 +10,9 @@ Complete and validate the promoted recursive `pkg install` model built around th
 ## Current repository revisions
 
 - `rumiai-dev/main`: 2026-11-05 canonical PACKAGE-MODEL update at `639e990c5ad61a5092f42561e8d151a99f2ef6b8`; refresh remote HEAD for later work.
-- `m-os/master@31693e814f682690adfd48185da822f7f5007f9e` current runtime; feature `m-os/pkg-schema-v2@1e3a038a5abf6f8c176272d8e44464c842d3cefd` independent.
+- `m-os/master@e0bcf2d69ba4e4209a93fd7d0c9b08a00def3a0f` current runtime (A1 CI-only addition since inspected pkg source at `31693e8`); feature `m-os/pkg-schema-v2@1e3a038a5abf6f8c176272d8e44464c842d3cefd` independent.
 - `pkg-catalog/main@3ee97d21bae3ee885b0fa987e1faee718fad8609`; `pkg-catalog/pkg-schema-v2@9d889cc265c29eeae456b8fe1ad638654c36e8c7`.
-- Frozen for modifications and execution: `rumiai-os/main@8ae78944ef5e8d6297c50898d856db1a20c6fd9a` and `rumiai-tests/main@03616a323ef72efbfa172570d114530e6135d190`. Read-only source inspection remains permitted.
+- Frozen for modifications and execution: `rumiai-os/main@8ae78944ef5e8d6297c50898d856db1a20c6fd9a` and `rumiai-tests/main@b8e1c71db7aa4b94fedef323c5b3f1030dab1c24`. Read-only source inspection remains permitted.
 
 ## Applicable canonical sources
 
@@ -52,7 +52,7 @@ Complete and validate the promoted recursive `pkg install` model built around th
 ## Completed
 
 - P1 canonical authority reconciliation committed as `639e990c5ad61a5092f42561e8d151a99f2ef6b8`: `PACKAGE-MODEL.md` now states upfront full-request syntax validation, one catalog snapshot, exact concrete requested roots before dependency planning, and dependency-first installation of those same roots; PKG-18/96/97 match. This is **specification-only**, not product validation.
-- On inspected autonomous `m-os/master`, `extract` and `pkg-extract.lib.sh` with current manual identities already replace the old `*2` and `*_OLD` source identities; historical frozen-legacy observations below are not current autonomous-source blockers.
+- On inspected autonomous `m-os/master`, `extract` and `pkg-extract.lib.sh` with current manual identities already replace the old `*2` and `*_OLD` source identities; older frozen-legacy extractor issues are not current autonomous-source blockers.
 
 ## Current implementation state
 
