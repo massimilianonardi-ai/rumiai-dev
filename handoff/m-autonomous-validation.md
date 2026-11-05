@@ -66,6 +66,13 @@ Also inventory current repository adapter set (GitHub, Node.js, Chrome, Chromium
 
 ## Current state
 
+### S initiated: portable srv and host supervision (2026-11-05)
+
+- The operator authorized execution of Branch S of `m-os-completion`. The dedicated forward-only `m-os/m-os-completion-s` branch starts from `master@e0bcf2d69ba4e4209a93fd7d0c9b08a00def3a0f`; S1 workflow change is `25e66a829afb86d293d7e3bd9460249fc728a092` in `.github/workflows/m-srv-provider-live.yml`. No product runtime, catalog, first-party release, frozen legacy or permanent-suite file was modified.
+- S1 now has additional authentic public scenarios prepared around the existing real `electron-web-control@v0.1.0` install: missing default / malformed service name; repeat start; another caller's ordinary stop vs explicit `-f`; stop/start recovery; provider-default removal while the actual process runs; and a fresh launch after rebinding. Unrelated-PID takeover and stale-PID recycling are **not yet validated**. S2 has only a **prepared** non-root rejection check; user/system positive host-supervisor paths still require the controlled host/authority gate.
+- **Execution status: PENDING.** No GitHub Actions run for `m-os-completion-s` was listed at this checkpoint, so none of those prepared scenarios is a claimed PASS. Prior master `m-srv-provider-live` run [41426638581](https://github.com/massimilianonardi-ai/m-os/actions/runs/41426638581) at `3feb1f0cfa2b2bd74c82ec3aaf9e57726a6cd841` failed **before srv**, at the real `pkg install` dependency resolver (`nodejs =26` provider-unresolvable). This is a dependency/package integration blocker to route through the existing P2 owner, not evidence that an S1 lifecycle assertion failed.
+- **Next S action:** execute and inspect the exact S branch workflow on disposable hosted infrastructure, reconcile forward after P2 changes when real installation remains blocked, and correct actual S-owned failures only. Complete proportional S1 stale/lifecycle scenarios, then S2 user/system host operations on explicitly controlled applicable systemd/launchd environments; keep host and revision-specific outcomes separate from operator reference-host physical validation.
+
 ### A1 initiated: public bootstrap/state coverage (2026-11-05)
 
 - Fresh preflight used `rumiai-dev/main@f17b38d1e68489074e8497c3a984e2cc26ea67d4` (subsequently advanced forward), `m-os/master@31693e814f682690adfd48185da822f7f5007f9e` and current independent catalog/package HEADs. Later `rumiai-dev` movement was checked; only the unrelated browser-column handoff and the package model's own reconciliation changed before this checkpoint.
