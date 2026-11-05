@@ -372,11 +372,6 @@ P2 is **source-staged but unvalidated**, not absent: `m-os/m-os-completion-p2@f7
 4. Once applicable upstream surfaces are coherent, pin the integrated runtime/catalog/first-party release/test revisions and run actual M01–M15 public-command paths for I1, recording PASS/FAIL/PENDING by revision and host in the validation owner. Start I2 only after I1 and explicit controlled reference-host conditions are satisfied.
 
 
-1. V1: inspect the queued exact Java and jq retry results; report authentic outcomes in the owning pkg-definition handoff and keep V2 blocked pending V1 plus P2/P3/P4.
-2. P2: implement in autonomous `m-os` the already-promoted P1 exact-root/same-catalog-snapshot installation model, with strict installed-store checks, nonduplicated resolver interfaces, matching command/library manuals and proportionate real public regressions. Recheck the current remote HEAD and own all shared pkg writes serially.
-3. Route P3 and P4 through the existing validation/source-composition owners after P2's stable interface checkpoint; P3 evidence analysis may precede shared runtime writes. Coordinate V2 only after P2/P3/P4 and V1 applicable readiness.
-4. Continue independent C2/J1/S*/A*/R* evidence/design lanes according to their ownership and gates; do not treat this P0/P1 document checkpoint as authorization to run frozen suites, privileged hosts or generalized context implementation.
-
 ## Blockers / open questions
 
 - Full generalized `context` public grammar/default/preset/profile and protected inheritance/consumer library selection is not promoted; `BOOTSTRAP-ENVIRONMENT` no-arg reset must not be silently replaced.
