@@ -123,6 +123,14 @@ Scenarios 1 and 2 have initial direct-checkout smoke evidence on Ubuntu and macO
 
 ## Current state
 
+### Real two-package POSIX context consumer smoke prepared (2026-11-05)
+
+- Operator's vmdev terminal proved `m-os@44ba31c190c63567bcc73604c7c87faff9ba73b6` and `pkg-catalog@1d38ccf509797ae34f8aa6b090b934d0d6e65a51` on `linux-arm64`: `./m mk` executed one real goal (`mk OK`), and `./m jsc` compiled an actual module then `./m node` successfully imported it (`jsc OK`). The missing optional `google-closure-compiler` emitted a warning, not a test failure. This is a real operator-host smoke on vmdev; Ubuntu release and stable physical reference-host qualification were not independently established.
+- Operator requests deeper first-stage `context` validation: one package exporting ordinary POSIX sh source, another installed package executing a command that consumes that export and an `m` system shell library in the **same child process**. This is the already-promoted `PACKAGE-MODEL.md` ordinary-library view + `BOOTSTRAP-ENVIRONMENT.md` `context pkg=<exact concrete>` contract, not the still-pending full context environment/provider/nested-policy design.
+- Added `m-os/pkg-schema-v2@75a7d2df4dc55bcc05e5551a1e23d7e20b8410ab` executable `.github/scripts/context-package-consumer-test.sh`. It uses genuine `pkg_integrate` to install two temporary v2 package identities, `context-sh-ci-provider@1/@2` publishing `link/lib/sh/context-sh-ci-value.lib.sh` and `context-sh-ci-consumer@1` publishing a real `link/bin/context-sh-ci-probe` command. The consumer's native POSIX shell entrypoint sources `core.lib.sh`, invokes `loadsyslib "pkg/pkg-common"` and its public `pkg_concrete_read`, then POSIX-dot-sources the selected provider's library from `PATH`. Public `context` is applied in the live initialized shell: tests selected views, child inheritance of PATH, provider version replacement, idempotence, failed-selection state preservation, and reset preserving original PATH/CLASSPATH. No default selectors of operator-installed Node/mk/jsc are altered; the fixture checks its concrete names are unused and cleans up only its own installations.
+- The script passed `sh -n`/`dash -n` syntax checks and a focused here-document-generation probe in the auxiliary Linux environment. The exact committed script was re-read with original Git mode `100755` and scope-reviewed. **No actual vmdev execution/output has yet been provided**, so the cross-package composed behavior is NOT recorded as PASS. The test uses authentic `pkg_integrate` but does **not** test catalog Git lookup, remote artifact download, or `pkg install` itself; those claims remain separate.
+- Next: on existing vmdev checkout run `git pull --ff-only` and `./m sh .github/scripts/context-package-consumer-test.sh`, then inspect real output and repair any actual failure. Do not expand the v2 schema or implement hypothetical wider `context` policies merely to validate this bounded property. Full `context` semantics beyond the current shell package-view phase remain pending under this handoff.
+
 ### DEVPLAN review from m-os and m-context chat archives (2026-11-04)
 
 **Planning-only; verdict: Specifiche insufficienti for complete m-os /
@@ -1877,6 +1885,8 @@ resolve those questions or start implementation in the present unit.
 owned by `handoff/pkg-definition-model-review.md`. This source-
 composition handoff retains only that relationship; avoid duplicating
 its working schema, migration decisions or validation state here.
+
+**Immediate context validation (vmdev):** Run the real two-v2-package shell consumer test at `m-os/pkg-schema-v2@75a7d2df4dc55bcc05e5551a1e23d7e20b8410ab` with `./m sh .github/scripts/context-package-consumer-test.sh` after `git pull --ff-only`. Record actual PASS/FAIL and exact revision. This composes real pkg integration and selected sh library lookup with system `loadsyslib` but does not test catalog download. Do not misclassify syntax checks as runtime evidence.
 
 **Additional context/library work:** Validate the published `m`
 sh/Java library exports on the real hosted workflow and then through
