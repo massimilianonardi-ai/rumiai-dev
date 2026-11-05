@@ -97,21 +97,27 @@ provides:
 
 ```text
 loadlib_inject_stream
-    [<library-reference> | --command <command-name> <local-source>]...
+    [<library-reference> | --library <library-reference> <local-source> |
+     --command <command-name> <local-source>]...
     [-- <command-source> [<command-arg>...]]
 ```
 
-for generating one POSIX-shell source program that embeds an explicitly selected
-set of system shell libraries and local command sources for execution without a
-remote `m` library tree.
+for generating one POSIX-shell source program that embeds an explicitly
+selected set of system and package-owned shell library sources plus local
+command sources for execution without a remote `m` library tree.
 
 The caller owns the complete selected library and command-source set. The
 generator MUST NOT parse command or library sources to discover dependencies and
 MUST NOT compute or add transitive closure. No library identity is intrinsically
 mandatory or special.
 
-Before the final `--`, library references and repeatable `--command`
-registrations may be interleaved.
+Before the final `--`, bare system-library references, repeatable
+`--library <library-reference> <local-source>` selections and repeatable
+`--command` registrations may be interleaved. A bare library reference
+uses the current m-owned `lib/sys/sh/<reference>.lib.sh` source. An explicit
+`--library` selection binds that same in-memory reference to the exact
+caller-selected readable local source file, including selected package-owned
+`link/lib/sh` views. This does not create remote files or discover dependencies.
 
 For each selected library, the generated program installs one private wrapper
 and an in-memory `loadlib` dispatch for exactly the selected references. It
@@ -303,7 +309,7 @@ LIB-12  after base loading, every owned lib/sys/sh shell-library import uses loa
 LIB-13  loadsyslib/loadlib accept exactly one library reference and do not forward positional parameters
 LIB-14  runtime/external pathname sourcing remains ordinary POSIX dot-sourcing
 LIB-15  loadlib_inject_stream embeds only caller-selected libraries and performs no dependency discovery or automatic closure
-LIB-16  loadlib_inject_stream permits zero or more selected libraries, repeatable explicitly named isolated --command sources, one optional isolated one-shot command after --, and subsequent non-TTY stdin shell source
+LIB-16  loadlib_inject_stream permits zero or more selected libraries (bare system references or explicit --library reference/source pairs), repeatable explicitly named isolated --command sources, one optional isolated one-shot command after --, and subsequent non-TTY stdin shell source
 LIB-17  injected named and one-shot command bodies execute in subshells that isolate command-local process state while retaining access to the explicitly injected library environment
 LIB-18  --command names are caller-selected portable POSIX shell function identifiers; required/optionally-recognized POSIX reserved words, POSIX special built-in names, duplicate names and generator-reserved identities are rejected without filename derivation, sanitization or aliasing
 ```
