@@ -245,6 +245,24 @@ Mainline repository adapters: `pkg-repository-{artifact,chrome,chromium,github,n
 
 ## Current state
 
+### Branch S process-identity correction checkpoint (2026-11-05)
+
+S1 reproduced a genuine unrelated-live-PID acceptance regression
+[`pkg-catalog` run 42096777829](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42096777829)
+against `m-os@46be6d7a`. The isolated S owner corrected runtime process-start
+identity recording/verification and `srv` manual/status/localization
+(`m-os/m-os-completion-s@1903fb52c8a1b83f4d408c63fa6cdbad3f48f17d`).
+The focused real Ubuntu rerun [42097127805](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42097127805)
+passed both offline regression and real provider lifecycle; final-source
+[42098169071](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42098169071)
+had both Ubuntu jobs PASS and macOS queued. This is **not** universal process
+reuse safety, full M12/M13 completion, or physical validation. S2 macOS
+user-host first job failed **before srv** at upstream GitHub release HTTP 403,
+with rerun requested, while Linux user-host already passed. The existing
+`handoff/m-autonomous-validation.md` owns precise logs, SHAs and residual
+legacy-process-identity/system-host coverage. Draft `m-os` PR #4 is not merged;
+parallel package and catalog owners are unchanged.
+
 ### Branch S live CI evidence checkpoint (2026-11-05)
 
 S1 ran authenticated public `m-os` commands on exact target
