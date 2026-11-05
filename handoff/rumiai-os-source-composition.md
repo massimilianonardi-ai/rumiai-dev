@@ -2272,7 +2272,7 @@ its working schema, migration decisions or validation state here.
 
 **Previous source-extraction next action (completed):** The operator rejected the synthetic test, which was removed forward. The source repositories were populated with actual assets; the initial release/catalog/install composition is now implemented and hosted-validated, as recorded above.
 
-**Immediate next real validation:** The newer `rssh` and `rsudo-admin` source paths have been realigned. Finish macOS hosted source-composition CI, then publish and install coordinated real source releases after proportionate checks and validate actual selected package consumers. Verify actual SSH/sudo and remote browsing only against an explicitly authorized controlled target. Distinguish source tests, published packages, operator report and physical evidence.
+**Immediate next R1 validation:** The v0.1.1 packages and catalog integration are published; Ubuntu public install, context, native menu/admin preflight and selected `rssh` extension passed in run `42096124385`. Collect the still-queued macOS real installed-package evidence and extend authentic released-package source-injection checks where applicable. Actual SSH/sudo and interactive remote browsing remain R2 and require explicit controlled-target authorization. Distinguish hosted, operator-reported and physical evidence.
 
 **Additional context/library work:** Validate the published `m`
 sh/Java library exports on the real hosted workflow and then through
