@@ -9,7 +9,7 @@ Complete and validate K04 Keycloak authentication and authenticated transport th
 
 ## Current repository revisions
 
-- rumiai-dev: 1d658e40a6c91860aee82bb670d1ef1486918443 (before this checkpoint)
+- rumiai-dev: 7303adac013122d6249bcfda352f78bf1cb3da87 (before this checkpoint)
 - rumiai-os: c6cf9b57e5e6b9877ea20243aa5217cf87a92c45
 - rumiai-tests: 1a3b29eee2594911784d59c8a942e2385ae4b5c6
 
@@ -71,19 +71,19 @@ Recheck all live remote HEADs and reconcile forward before each write/validation
   - rsudo-keycloak-live PASS/VALIDATED, Ubuntu 26.04 ARM64, suite f88b258f854262c3997da5819854e4236f540f30, run 42042336408 (service-account acquire/status, Ed448 and RSA-identifier rejection).
   - rsudo-keycloak-live PASS/VALIDATED with additional user-password acquisition, protected refresh, refresh-token revocation and unregistered Ed25519 certificate rejection on both Keycloak versions: suite 1a3b29eee2594911784d59c8a942e2385ae4b5c6, run 42043079201.
   - rsudo-keycloak-composed PASS/VALIDATED through real SSH/sudo, Ubuntu 26.04 ARM64, suite ca7aec56378620b5a206466a2eefb775c5941d8d, run 42042747776.
-  - rsudo-keycloak isolated HTTPS/legacy PASS/VALIDATED, Ubuntu 26.04 ARM64, suite 83f91cbba375ae54e12c4f64dab451d78c487d70, run 42042536926. macOS remains queued at last review; the Ed25519 isolated subcase is conditional on that host's actual OpenSSL Ed25519 support, so a host-level scope PASS by itself does not imply Ed25519 was exercised on an unsupported macOS OpenSSL build.
+  - rsudo-keycloak isolated HTTPS/legacy PASS/VALIDATED on Ubuntu 26.04 ARM64 and macOS-latest, suite 83f91cbba375ae54e12c4f64dab451d78c487d70, run 42042536926. The Ed25519 subset is capability-conditional; the published macOS session's test log contained no skipped-Ed25519-backend marker, establishing that Ed25519 was exercised there rather than silently credited from other transport subcases.
 - No physical host validation was performed; GitHub-hosted ARM test environments and isolated Docker SSH/sudo compose are not physical validation.
 
 ## Current state
 
-The current private-key-jwt subset implements and documents RSA RS256/384/512, RSA-PSS PS256/384/512, ECDSA ES256/384/512 and EdDSA (Ed25519 only). The RSA-PSS and ECDSA increments have completed macOS and Ubuntu ARM64 isolated transport validation; Ed25519 has passed Ubuntu ARM64 independent HTTPS, actual Keycloak 26.7.3/26.8.1 and composed SSH/sudo, including the documented token lifecycle. The Ed25519 isolated macOS job is queued, not passed. This remains partial K04: remaining authenticators/grants and full authenticated Admin REST transport are pending; K05 general request API and K06 typed conveniences are not implemented.
+The current private-key-jwt subset implements and documents RSA RS256/384/512, RSA-PSS PS256/384/512, ECDSA ES256/384/512 and EdDSA (Ed25519 only). The RSA-PSS and ECDSA increments have completed macOS and Ubuntu ARM64 isolated transport validation; Ed25519 has passed Ubuntu ARM64 independent HTTPS, actual Keycloak 26.7.3/26.8.1 and composed SSH/sudo, including the documented token lifecycle. The Ed25519 isolated macOS job also completed PASS, with the Ed25519 subcase actually exercised. This remains partial K04: remaining authenticators/grants and full authenticated Admin REST transport are pending; K05 general request API and K06 typed conveniences are not implemented.
 
 ## Next action
 
-Recheck Ed25519 rsudo-keycloak run 42042536926's queued macOS job and distinguish an available Ed25519 backend from a skipped subcase. Then evaluate the next K04 authentication/transport family against actual Keycloak versions and explicit remote trust requirements (for example X509/mTLS or federated JWT); keep unsupported Ed448 and the other grants fail-closed. K05/K06 must remain gated until independently implemented and validated.
+Evaluate the next K04 authentication/transport family against actual Keycloak versions and explicit remote trust prerequisites (for example X509/mTLS or federated JWT), with its independent real Keycloak and composed SSH/sudo test evidence. Ed448 and other unsupported grants must remain fail-closed. K05/K06 remain gated until independently implemented and validated.
 
 ## Blockers / open questions
 
 - Ed448, X509/mTLS sender-constrained and federated JWT authenticators remain unimplemented; they need their own verified Keycloak client/server trust configuration and tests.
-- Ed25519 cross-platform isolated verification remains incomplete while the macOS job is queued. If the host OpenSSL lacks Ed25519, the test does not claim macOS EdDSA coverage even when its other transport subcases pass.
+- Ed25519 cross-platform isolated transport is now validated on the frozen Ubuntu/macOS scope. Physical reference hosts remain untested; GitHub-hosted test environments and Docker composition are not a substitute.
 - Full K04 authenticated Admin REST transport, non-service-account grant families and multi-host physical validation are still pending.
