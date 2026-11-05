@@ -245,6 +245,12 @@ Mainline repository adapters: `pkg-repository-{artifact,chrome,chromium,github,n
 
 ## Current state
 
+### Branch S host-specific process verification and native-user exercise (2026-11-05)
+
+- [S1 exact-source run 42098169071](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42098169071) completed **3/3 PASS** on Ubuntu real provider/offline and macOS offline stale-identity regression. The S-owned process-start inspection is now explicitly confined to Linux/Darwin host backends with fail-closed behavior on other hosts (`m-os/m-os-completion-s@5c996d97`), and command manual updated. A later [Ubuntu exact-source run 42113668108](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42113668108) passed both jobs, macOS queued.
+- S2 macOS published-provider attempt 2 again failed at GitHub Releases HTTP 403 before the target host-user lifecycle. To independently probe actual supervisor behavior, S introduced a separate local integrated provider fixture, **without pretending that published installation succeeded**: [run 42114372442](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42114372442) real Ubuntu `systemd --user` **PASS**, macOS `launchd` queued. Detailed test IDs, candidate revisions, setup correction and pending scope are in `handoff/m-autonomous-validation.md`.
+- No privileged system-host operation, reference-host physical validation, shared P2 files or frozen tests touched; [m-os draft PR #4](https://github.com/massimilianonardi-ai/m-os/pull/4) remains unmerged. Other POSIX host identity capabilities and same-second/legacy PID collision risk are not proven closed.
+
 ### Branch S process-identity correction checkpoint (2026-11-05)
 
 S1 reproduced a genuine unrelated-live-PID acceptance regression
