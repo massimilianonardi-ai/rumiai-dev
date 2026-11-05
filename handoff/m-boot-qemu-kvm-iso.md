@@ -118,9 +118,11 @@ This workstream is concurrently active with the firmware/early-Linux pathway own
 ### Sequence and concurrency
 
 ```text
-K-01 ────────────────────────────────┐
-K-02 → K-03 → { K-04 || K-05 } ─────┼→ K-07 → K-08
-   └──────────→ K-06 [x86_64 KVM] ──┘     (K-06 may remain BLOCKED)
+K-01 ───────────────────────────────────┐
+K-02 → K-03 ──────→ K-07 ───────────────┼→ K-08
+          ├────────→ K-04  (vendor evidence, as available)
+          └────────→ K-05  (vendor evidence, as available)
+K-02 + K-03 + compatible host → K-06 (optional evidence; may stay BLOCKED)
 ```
 
 K-01/K-02 are independent ready starters; K-04 and K-05 are siblings after K-03, and K-06 is a separate host-capability gate. **No F or M dependency exists**. Each task uses track-owned PoC/workflow/output paths and records exact evidence here.
