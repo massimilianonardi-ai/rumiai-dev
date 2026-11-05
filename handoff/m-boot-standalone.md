@@ -134,7 +134,7 @@ The *existing* critical review identified false serial dependencies, misleading 
 - `massimilianonardi-ai/Ventoy` branch `m-boot-secondary-uefi`: `ceff79ca92d246928f86362a569f86c6d2ac130f` (PoCs 080 and 081 synthetic original EFI ISO loader → Linux full physical media remount tested in CI; product mode untouched).
 - `massimilianonardi-ai/Ventoy` master: `74cff34240dca6991b79c6656770670da7b0c39e` (unmodified fork baseline)
 - `massimilianonardi-ai/m-boot` main: `c06cd35a73b7e420c3a06dc51537c028ffa619d0` (Kali live+forensic menu and GRUB CI; Grml grub_memcpy note; runtime Kali validation pending)
-- `massimilianonardi-ai/rumiai-dev-PoCs` main: `1ca12a58ed901e61cefb2b1acea5e3acdfb668b9` (new F-01 source ABI inventory linked by PoC 081 README; PoC 080/081 prior genuine QEMU synthetic PASS; PoC 087 prior 13/13 malformed-variable parser refusals, CI run `42015054609`; no new test or physical disk).
+- `massimilianonardi-ai/rumiai-dev-PoCs` main: `77778a78eb09928633978c203efec82d5c78d76c` (new F-01 source ABI inventory linked by PoC 081 README; PoC 080/081 prior genuine QEMU synthetic PASS; PoC 087 prior 13/13 malformed-variable parser refusals, CI run `42015054609`; no new test or physical disk).
 - `massimilianonardi-ai/rumiai-dev` main: check its live HEAD at preflight; a self-referential revision in an active handoff is not authoritative.
 
 ## Applicable canonical sources
