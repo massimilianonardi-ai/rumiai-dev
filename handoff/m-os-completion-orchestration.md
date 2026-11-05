@@ -84,6 +84,31 @@ A work unit is *functionally independent* only if it does not consume an unsettl
 - **Boundaries:** planning/documentation only; no test/CI/product changes. Existing validation owner maintains evidence, source-composition owner maintains scope. P0 coordinates references without duplicating per-unit operational state.
 - **Done:** every public command has a source/manual/accepted-scope row; real adapter availability, frozen legacy source-only gaps and outdated evidence are classified. A newly discovered contract conflict is routed to its owner, not silently fixed. **Feeds:** A*, J1, S*, P*, V1, I1.
 
+#### P0 source/manual manifest (2026-11-05)
+
+Source-inspected `m-os/master@31693e814f682690adfd48185da822f7f5007f9e` (before A1 CI commit), `m-os/pkg-schema-v2@1e3a038a5abf6f8c176272d8e44464c842d3cefd`, `pkg-catalog/main@3ee97d21bae3ee885b0fa987e1faee718fad8609` and `pkg-catalog/pkg-schema-v2@9d889cc265c29eeae456b8fe1ad638654c36e8c7`. Each current mainline `bin/sys` identity below has a matching operational manual; this is a **source inventory, not a behavioral PASS**.
+
+| Identity | Source | Manual | Acceptance owner |
+|---|---|---|---|
+| `m` | root `m` via `bin/sys/m` | `res/sys/manual/m` | A1 |
+| `osarch` | `bin/sys/osarch` | `res/sys/manual/osarch` | A1 |
+| `state-path` | `bin/sys/state-path` | `res/sys/manual/state-path` | A1 |
+| `shell` | `bin/sys/shell` | `res/sys/manual/shell` | A2 |
+| `lang` | `bin/sys/lang` | `res/sys/manual/lang` | A2 |
+| `lang-set` | `bin/sys/lang-set` | `res/sys/manual/lang-set` | A2 |
+| `manual` | `bin/sys/manual` | `res/sys/manual/manual` | A2 |
+| `pager` | `bin/sys/pager` | `res/sys/manual/pager` | A2 |
+| `log` | `bin/sys/log` | `res/sys/manual/log` | A2 |
+| `http-fetch` | `bin/sys/http-fetch` | `res/sys/manual/http-fetch` | A3 |
+| `digest` | `bin/sys/digest` | `res/sys/manual/digest` | A3 |
+| `extract` | `bin/sys/extract` | `res/sys/manual/extract` | A3 |
+| `tls-ca` | `bin/sys/tls-ca` | `res/sys/manual/tls-ca` | A4 |
+| `tls-nss-sync` | `bin/sys/tls-nss-sync` | `res/sys/manual/tls-nss-sync` | A4 |
+| `srv` | `bin/sys/srv` | `res/sys/manual/srv` | S1/S2 |
+| `pkg` | `bin/sys/pkg` | `res/sys/manual/pkg` | P1–P4/V1/V2 |
+
+Mainline repository adapters: `pkg-repository-{artifact,chrome,chromium,github,nodejs}.lib.sh`; the v2 feature adds `pkg-repository-{apache-maven,temurin}.lib.sh`. Catalog mainline has real `nodejs`, `mk`, `jsc`, `electron-web-control`, `ollama` definitions, among others; the v2 feature contains `jq`, `jsc`, `m-core`, `m-rsudo`, `m-term`, `mk`, `nodejs`, `ollama`. Catalog presence does not prove adapter correctness or complete public installation. The independently specified `bin/sys/json` and manual remain missing from both `m-os` branches; J1/source-composition owns that real implementation gap. M01–M15 PASS/PENDING and host/revision evidence remain exclusively in `handoff/m-autonomous-validation.md`; current-manual semantic verification remains M15 PENDING.
+
 ### A1 — Clean bootstrap/platform/state (M01–M03; READY after P0)
 
 - **Target:** `m-os/master` and then relevant feature revision; `m`, `bin/sys/osarch`, `bin/sys/state-path`, `lib/sys/sh/{core,base,osarch}.lib.sh` and associated manuals. Contracts: `BOOTSTRAP-ENVIRONMENT`, `STATE-MODEL`, `CURRENT-MODEL`, portability/entrypoint/diagnostics rules.
@@ -265,7 +290,7 @@ frozen-suite mutation/validation was performed by Branch C at activation.
 - **P0 initial scope/source/manual/adapter inventory complete** on the explicitly inspected revisions; current M01–M15 validation/evidence remains PENDING where its owning ledger says so. The independently specified `json` source gap is delegated to J1/source-composition, not hidden inside pkg P2.
 - **P1 canonical reconciliation started and committed**: `rumiai-dev` specification change `639e990c5ad61a5092f42561e8d151a99f2ef6b8` fixes upfront full-batch validation and exact-root same-snapshot dependency planning. The owning dependency handoff checkpoint `d06a69253720a4806ef2f83209f7d7cce722d232` records the autonomous runtime/manual divergence. P1 is **not** yet complete until implementation/manual and real regressions agree.
 - **P2 next**, under a single `m-os/pkg` writer. P3/P4 remain serial for overlapping runtime files, with independent analysis permitted. C2 full-context design and V1 feature/catalog evidence remain separate owners.
-- No `m-os`, `pkg-catalog`, released first-party package, frozen legacy or permanent-suite files were changed or executed in this kickoff. No physical test or new runtime PASS was observed. The full generalized-context program remains insufficiently specified as described above.
+- In parallel with P0/P1, A1 added the **CI-only** workflow `.github/workflows/m-bootstrap-state-public.yml` at `m-os/master@e0bcf2d69ba4e4209a93fd7d0c9b08a00def3a0f`. This is an authored Ubuntu/macOS real public bootstrap/state/osarch check, **not a verified run or PASS**; no current commit-matched Actions run was visible at this checkpoint. No runtime product code, `pkg-catalog`, first-party release, frozen legacy or permanent-suite files were changed by A1; no physical test was executed. The A1 run/evidence next action is owned by `handoff/m-autonomous-validation.md`. Full generalized context remains gated.
 
 ### Branch I — entry/readiness (2026-11-05)
 
