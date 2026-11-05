@@ -309,6 +309,10 @@ Current mainline repository adapter sources: `pkg-repository-{artifact,chrome,ch
 
 **P1 progress:** `rumiai-dev` commit `639e990c5ad61a5092f42561e8d151a99f2ef6b8` reconciled the canonical upfront-request syntax and exact-root/same-snapshot installation semantics, and owning handoff `d06a69253720a4806ef2f83209f7d7cce722d232` records current autonomous `pkg` implementation/manual mismatch. P1 remains **partial**, P2 requires one shared-pkg implementation writer and actual public test evidence. No pkg implementation, catalog or frozen suite was modified by P1.
 
+### Branch I — I1 readiness checkpoint (2026-11-05)
+
+Operator-authorized **I** is active for a read-only I1 entry audit. **I1 integrated execution is BLOCKED** until the upstream P2/P3/P4, V1/V2, J1 and current-context acceptance gates; **I2 is PENDING** until I1 passes and authorized reference hosts are available. The P0 inventory above and M01–M15 evidence owner remain unchanged. P1 has reconciled canonical upfront batch validation and exact-root-first planning, but `m-os` current install source still uses original operand requests for `pkg depend` and installation. The separate POSIX `json` entrypoint is missing. Hosted three-package PASS [run 42037725004] is pinned to feature revisions; catalog run 42036487502 had an upstream macOS jq HTTP 403 acquisition failure, not a proved product regression. No new branch-I runtime/host test or product edit was executed. Remote source review included `m-os/master@e0bcf2d69ba4e4209a93fd7d0c9b08a00def3a0f`, `pkg-catalog/pkg-schema-v2@ae3e2011462be46c0326179f2117b81b85e5df5e`, and frozen `rumiai-tests/main@53d9551d225d2bf2ecb5e3017b242cf2c417d833`. Refresh HEADs before I1 execution.
+
 ## Next action
 
 1. V1: inspect the queued exact Java and jq retry results; report authentic outcomes in the owning pkg-definition handoff and keep V2 blocked pending V1 plus P2/P3/P4.
