@@ -245,6 +245,22 @@ Mainline repository adapters: `pkg-repository-{artifact,chrome,chromium,github,n
 
 ## Current state
 
+### Branch S live CI evidence checkpoint (2026-11-05)
+
+S1 ran authenticated public `m-os` commands on exact target
+`11d01a1123022a6c05ce792063579fd1d115892f` through isolated,
+active `pkg-catalog` hosted Actions [42091997203](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42091997203):
+Ubuntu/macOS offline safety plus genuine Ubuntu published service all **PASS**.
+The independently routed S2 `host user` Linux lifecycle also **PASS** in
+[42092734957](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42092734957)
+at `m-os@5ec400f20638e4992f81c4b4d8468bc65406cabe`;
+macOS host-user was still queued. This does **not** cover S2 privileged system
+scope, source-change PID-recycling risk, or operator reference hosts.
+The isolated catalog branch only owns a temporary workflow; catalog main
+and product package definitions remain untouched. **Draft m-os PR #4** is
+unmerged; detailed job IDs, paths, and remaining S tasks belong to the existing
+`handoff/m-autonomous-validation.md` owner.
+
 ### Branch A2–A4 dispatch checkpoint (2026-11-05)
 
 The independently scoped branch A CI work advanced `m-os/master` forward from the A1 workflow commit `e0bcf2d69ba4e4209a93fd7d0c9b08a00def3a0f` to `4f4fcb58b7278a20f7b032ed4812152d2f49106b`. A2, A3 and A4 each have a dedicated genuine-public-command GitHub Actions workflow; the A3 HTTPS harness uses a distinct CA-signed server identity (auxiliary transport-harness check only) and the A4 NSS projection tests exact revocation plus preservation of unrelated NSS trust. No runtime source, manuals, catalog, packages, shared `pkg` files, frozen legacy code or permanent suite were modified by branch A. **Execution remains PENDING**: no corresponding current `m-os` Actions run has been verified; authored workflows do not prove PASS. The exact operational scope and required result collection are owned solely by `handoff/m-autonomous-validation.md` (M01–M06/M14/M15). A3 now includes hostile tar/zip traversal tests; an auxiliary host-backend check suggests the current direct `unzip` path may accept a traversing entry, but no real `m-os` FAIL has been observed. A4 now includes a conditional real browser HTTPS reject→trust→revoke smoke, also unexecuted. The owning validation handoff records precise evidence and next steps. A3 must not modify P2-owned pkg extraction files; final installed-package browser and reference-host proof remain separate. These independent CI files do not release P2/V2/context gates.
