@@ -18,7 +18,7 @@ No duplicate normative specification or separate product architecture is establi
 ## Current repository revisions
 
 Verified remote starting point:
-- `m-os/master@e0bcf2d69ba4e4209a93fd7d0c9b08a00def3a0f`; `m-os/pkg-schema-v2@1e3a038a5abf6f8c176272d8e44464c842d3cefd`.
+- `m-os/master@5884cf05ebd3033524db3890a7e34fc0decdd4f6`; `m-os/pkg-schema-v2@1e3a038a5abf6f8c176272d8e44464c842d3cefd`.
 - `pkg-catalog/main@3ee97d21bae3ee885b0fa987e1faee718fad8609`; `pkg-catalog/pkg-schema-v2@9d889cc265c29eeae456b8fe1ad638654c36e8c7`.
 - `m-core/main@0afb8752440808e9080a55c667576ff2f9b8eb32`, `m-term/main@c32aac18f6659ed4f569cb780080675fa64f9e3a`, `m-rsudo/main@07017bfd4aa1809370ca30c4fe28bb0ab85021a6`.
 - `m-mk/main@8c857460213199eeb4c5c070b4df60c885df376f`, `m-jsc/main@ca1b70d1e0c53e790244f28b67bcf2a2b7528c76`.
@@ -317,6 +317,10 @@ Current mainline repository adapter sources: `pkg-repository-{artifact,chrome,ch
 **Supplementary P0 structural observations on that same source checkpoint:** 31 observed `lib/sys/sh/**/*.lib.sh` identities have matching manual topic names (presence only, not public API correctness); `pkg-catalog/main` contains 27 v1 package-definition names and the v2 feature contains 8 names. The standalone `json` gap and `pkg install` drift remain classified separately. This is not new runtime PASS.
 
 **P1 progress:** `rumiai-dev` commit `639e990c5ad61a5092f42561e8d151a99f2ef6b8` reconciled the canonical upfront-request syntax and exact-root/same-snapshot installation semantics, and owning handoff `d06a69253720a4806ef2f83209f7d7cce722d232` records current autonomous `pkg` implementation/manual mismatch. P1 remains **partial**, P2 requires one shared-pkg implementation writer and actual public test evidence. No pkg implementation, catalog or frozen suite was modified by P1.
+
+### Branch P — P2 draft implementation checkpoint (2026-11-05)
+
+P0 source inventory and P1 canonical correction remain complete. P2 is **implemented only on a review branch** `m-os/m-os-completion-p2@76897ac5653e4d7c787ec4b427b99545269ee17c`, [draft PR #3](https://github.com/massimilianonardi-ai/m-os/pull/3), forward-reconciled with concurrent `m-os/master@5884cf05ebd3033524db3890a7e34fc0decdd4f6` CI-only additions. The branch changes `pkg-install.lib.sh`, `pkg-depend.lib.sh`, their manuals, the `pkg` manual, an existing provider-lifecycle assertion, and a P2-specific public Ubuntu/macOS workflow. It reuses one catalog snapshot for exact-root dependency planning and separates existing concrete dependencies from explicitly repeated roots. **No new Actions/public runtime test has been observed; the PR is not merged or validated.** Owner `handoff/pkg-dependency-resolution.md` records detail and next authenticity checks. P3/P4 and V2 remain gated by a validated P2 integration checkpoint; unrelated branch A/S/V/I work is unaffected.
 
 ### Branch I — I1 readiness checkpoint (2026-11-05)
 
