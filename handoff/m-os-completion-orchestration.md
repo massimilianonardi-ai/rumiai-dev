@@ -18,11 +18,11 @@ No duplicate normative specification or separate product architecture is establi
 ## Current repository revisions
 
 Verified remote starting point:
-- `m-os/master@31693e814f682690adfd48185da822f7f5007f9e`; `m-os/pkg-schema-v2@1e3a038a5abf6f8c176272d8e44464c842d3cefd`.
+- `m-os/master@e0bcf2d69ba4e4209a93fd7d0c9b08a00def3a0f`; `m-os/pkg-schema-v2@1e3a038a5abf6f8c176272d8e44464c842d3cefd`.
 - `pkg-catalog/main@3ee97d21bae3ee885b0fa987e1faee718fad8609`; `pkg-catalog/pkg-schema-v2@9d889cc265c29eeae456b8fe1ad638654c36e8c7`.
 - `m-core/main@0afb8752440808e9080a55c667576ff2f9b8eb32`, `m-term/main@c32aac18f6659ed4f569cb780080675fa64f9e3a`, `m-rsudo/main@2763019ada5b1e33151f0c1e58b75af22ed6e99c`.
 - `m-mk/main@8c857460213199eeb4c5c070b4df60c885df376f`, `m-jsc/main@ca1b70d1e0c53e790244f28b67bcf2a2b7528c76`.
-- Legacy `rumiai-os/main@8ae78944ef5e8d6297c50898d856db1a20c6fd9a` and permanent `rumiai-tests/main@fa4b6e96a9d777068f8940d0f5239d670f3d833e` are **frozen** for modification/execution unless the user explicitly lifts the freeze. Reading legacy source is permitted.
+- Legacy `rumiai-os/main@8ae78944ef5e8d6297c50898d856db1a20c6fd9a` and permanent `rumiai-tests/main@b8e1c71db7aa4b94fedef323c5b3f1030dab1c24` are **frozen** for modification/execution unless the user explicitly lifts the freeze. Reading legacy source is permitted.
 
 ## Applicable canonical sources
 
@@ -243,64 +243,46 @@ Mainline repository adapters: `pkg-repository-{artifact,chrome,chromium,github,n
 
 **Executor protocol:** each independent chat receives (i) local unit ID from this handoff, (ii) owner handoff, (iii) source/branch checkpoint to freshly verify, (iv) exact writable files/branch and prohibited shared surfaces, (v) public expected tests + manual updates, (vi) expected upstream output and integration handoff. Every executor follows fresh HEAD preflight, no history by default, current source authority, proportional real tests, reviewed diff, forward-only updates and consistency gate. When an interface or host/privilege contract is unsettled, stop only that affected unit and escalate; do not freeze independent ready work.
 
-## P0 source inventory checkpoint (2026-11-05)
-
-At inspected `m-os/master@31693e814f682690adfd48185da822f7f5007f9e`, each of the **16** `bin/sys` command identities has a matching `res/sys/manual/<identity>` topic. Source/manual/acceptance allocation (one row per current command):
-
-| Source identity | Manual topic | Acceptance owner scope |
-|---|---|---|
-| `m` | `m` | M01 |
-| `osarch` | `osarch` | M02 |
-| `state-path` | `state-path` | M03 |
-| `lang` | `lang` | M04 |
-| `lang-set` | `lang-set` | M04 |
-| `manual` | `manual` | M04 |
-| `pager` | `pager` | M04 |
-| `shell` | `shell` | M05 |
-| `log` | `log` | M05 |
-| `http-fetch` | `http-fetch` | M06 |
-| `digest` | `digest` | M06 |
-| `extract` | `extract` | M06 |
-| `pkg` | `pkg` | M07–M11 |
-| `srv` | `srv` | M12–M13 |
-| `tls-ca` | `tls-ca` | M14 |
-| `tls-nss-sync` | `tls-nss-sync` | M14 |
-
-The **31** inspected `lib/sys/sh/**/*.lib.sh` identities each have a corresponding manual topic name; this is structural coverage, **not** public function/manual semantic verification or test PASS. The autonomous repository currently contains five package repository adapters: `artifact`, `chrome`, `chromium`, `github`, `nodejs`. The inspected catalog has 27 `v1/pkg` names on `pkg-catalog/main@3ee97d21` and 8 `v2/pkg` names on `pkg-catalog/pkg-schema-v2@9d889cc2`; no inference of adapter support for all named packages is permitted. Both `m-os/master` and `pkg-schema-v2` still omit the separate specified POSIX `bin/sys/json` command/manual, while retaining the distinct `json.lib.sh`; J1/source-composition owns that source gap.
-
-M01–M15 observations remain exclusively in `handoff/m-autonomous-validation.md`. On the inspected baseline those rows include older revision-pinned partial PASS and PENDING paths; **none** becomes current-revision PASS from this inventory. Existing `m-os/.github/workflows` provides eight target-owned workflows, including live package/provider/service scenarios; frozen `rumiai-tests` is read-only. P0 classified source/manual presence versus genuine missing command (`json`), semantic/manual drift (`pkg install`) and unexecuted breadth (M07–M11 negative/provider combinations), not a declaration of full validation.
-
 ## Current state
 
-### Branch C dispatch checkpoint (2026-11-05)
+### P0 — Current-source inventory checkpoint (2026-11-05)
 
-The operator explicitly started Branch C. C1 current-contract source/manual
-and existing evidence were audited; remaining authentic package/Java,
-negative and nested-shell scenarios were identified without claiming
-new test execution. C2 compared current sources and accepted conceptual
-direction and identified unresolved public grammar, per-dimension
-defaults/identity, protected propagation, provider/library consistency and
-command-view exclusions. The operational checkpoint is owned by
-`handoff/rumiai-os-source-composition.md` (2026-11-05).
-C3 is still BLOCKED by promoted G-CONTEXT and P4/pkg-v2 prerequisites.
-The separate P1 installation contradiction was reconciled in the current
-`PACKAGE-MODEL.md` by a concurrent task. No product, catalog, release or
-frozen-suite mutation/validation was performed by Branch C at activation.
+**Inspection complete for scope routing, not a runtime-validation PASS.** Read the actual `m-os/master@31693e814f682690adfd48185da822f7f5007f9e` tree, matching manuals and workflows, `m-os/pkg-schema-v2@1e3a038a5abf6f8c176272d8e44464c842d3cefd`, and `pkg-catalog/main@3ee97d21bae3ee885b0fa987e1faee718fad8609` / `pkg-schema-v2@9d889cc265c29eeae456b8fe1ad638654c36e8c7`. The source/manual inventory below is the *mainline target*, not proof of execution:
 
-- **P0 initial scope/source/manual/adapter inventory complete** on the explicitly inspected revisions; current M01–M15 validation/evidence remains PENDING where its owning ledger says so. The independently specified `json` source gap is delegated to J1/source-composition, not hidden inside pkg P2.
-- **P1 canonical reconciliation started and committed**: `rumiai-dev` specification change `639e990c5ad61a5092f42561e8d151a99f2ef6b8` fixes upfront full-batch validation and exact-root same-snapshot dependency planning. The owning dependency handoff checkpoint `d06a69253720a4806ef2f83209f7d7cce722d232` records the autonomous runtime/manual divergence. P1 is **not** yet complete until implementation/manual and real regressions agree.
-- **P2 next**, under a single `m-os/pkg` writer. P3/P4 remain serial for overlapping runtime files, with independent analysis permitted. C2 full-context design and V1 feature/catalog evidence remain separate owners.
-- In parallel with P0/P1, A1 added the **CI-only** workflow `.github/workflows/m-bootstrap-state-public.yml` at `m-os/master@e0bcf2d69ba4e4209a93fd7d0c9b08a00def3a0f`. This is an authored Ubuntu/macOS real public bootstrap/state/osarch check, **not a verified run or PASS**; no current commit-matched Actions run was visible at this checkpoint. No runtime product code, `pkg-catalog`, first-party release, frozen legacy or permanent-suite files were changed by A1; no physical test was executed. The A1 run/evidence next action is owned by `handoff/m-autonomous-validation.md`. Full generalized context remains gated.
+| Public command | Current source | Current manual | Workstream |
+|---|---|---|---|
+| `m` | root `m` via `bin/sys/m` symlink | `res/sys/manual/m` | A1 |
+| `osarch` | `bin/sys/osarch` | `res/sys/manual/osarch` | A1 |
+| `state-path` | `bin/sys/state-path` | `res/sys/manual/state-path` | A1 |
+| `shell` | `bin/sys/shell` | `res/sys/manual/shell` | A2 |
+| `lang` | `bin/sys/lang` | `res/sys/manual/lang` | A2 |
+| `lang-set` | `bin/sys/lang-set` | `res/sys/manual/lang-set` | A2 |
+| `manual` | `bin/sys/manual` | `res/sys/manual/manual` | A2 |
+| `pager` | `bin/sys/pager` | `res/sys/manual/pager` | A2 |
+| `log` | `bin/sys/log` | `res/sys/manual/log` | A2 |
+| `http-fetch` | `bin/sys/http-fetch` | `res/sys/manual/http-fetch` | A3 |
+| `digest` | `bin/sys/digest` | `res/sys/manual/digest` | A3 |
+| `extract` | `bin/sys/extract` | `res/sys/manual/extract` | A3 |
+| `tls-ca` | `bin/sys/tls-ca` | `res/sys/manual/tls-ca` | A4 |
+| `tls-nss-sync` | `bin/sys/tls-nss-sync` | `res/sys/manual/tls-nss-sync` | A4 |
+| `srv` | `bin/sys/srv` | `res/sys/manual/srv` | S1/S2 |
+| `pkg` | `bin/sys/pkg` | `res/sys/manual/pkg` | P1–P4/V1/V2 |
 
-### Branch I — entry/readiness (2026-11-05)
+The 16 mainline command identities all have corresponding manual files; `lib/sys/sh` exported library manual leaf identities are present in the same source tree, but a semantic public-API/manual audit remains M15 PENDING. The independent `JSON-QUERY.md` contract for a standalone `bin/sys/json` and manual remains **unimplemented in both current m-os branches**; this is J1/source-composition ownership, not an A2 synonym for the existing `json.lib.sh`.
 
-The operator has authorized the start of branch I. **I1 readiness inspection has started; I1 integrated public validation remains BLOCKED until its upstream implementation, feature-promotion and evidence gates are accepted. I2 remains PENDING until I1 passes and designated controlled reference hosts are available.** This is an orchestration checkpoint, not transfer of M01–M15 validation ownership from `handoff/m-autonomous-validation.md`.
+Current mainline repository adapter sources: `pkg-repository-{artifact,chrome,chromium,github,nodejs}.lib.sh`. The v2 feature additionally contains `pkg-repository-{apache-maven,temurin}.lib.sh`. Catalog mainline currently has v1 package definitions including real `nodejs`, `mk`, `jsc`, `electron-web-control`, `ollama`; the v2 feature catalogs `jq`, `jsc`, `m-core`, `m-rsudo`, `m-term`, `mk`, `nodejs`, `ollama`. Catalog entries are not equivalent to a working installed-provider scenario. The *only* accepted M01–M15 run-by-host/revision classifications remain in `handoff/m-autonomous-validation.md`; historical CI jobs and physical evidence there are not transferred to the new `m-os` revision.
 
-Remote inspection found current v1 mainlines distinct from v2 feature branches, the J1 `json` executable/manual omission, and the existing generalized-context C2 gate. Concurrent P1 work has **already corrected** the `PACKAGE-MODEL.md` upfront-validation/exact-root prose (PKG-96/97/99); current `m-os` branch install implementations still plan `pkg depend "$@"` before concretizing requested roots, so P2 source/manual/test reconciliation remains required. Published three-package hosted Ubuntu/macOS smoke run `42037725004` is PASS only on its pinned feature revisions. Catalog v2 run `42036487502` had 13 successful jobs and one macOS jq acquisition failure after three GitHub API HTTP 403 responses, before compatibility assertions; that failed job is neither v2 functional PASS nor a proved product regression. Java live execution and full M01–M15 evidence remain pending.
+**A1 dispatched as an authorized source-CI change:** `m-os/master@e0bcf2d69ba4e4209a93fd7d0c9b08a00def3a0f` added `.github/workflows/m-bootstrap-state-public.yml` for real public positive/negative bootstrap, symlink/PATH, state and osarch checks on hosted Ubuntu/macOS. This is test *authoring*, not a reported PASS; no executed job has been verified. A2/A3/A4 remain independently ready, their source files unchanged. The owning validation handoff records the A1 operational next action.
 
-Fresh checks for this review included `m-os/master@e0bcf2d69ba4e4209a93fd7d0c9b08a00def3a0f`, `m-os/pkg-schema-v2@1e3a038a5abf6f8c176272d8e44464c842d3cefd`, `pkg-catalog/main@3ee97d21bae3ee885b0fa987e1faee718fad8609`, `pkg-catalog/pkg-schema-v2@ae3e2011462be46c0326179f2117b81b85e5df5e`; frozen `rumiai-os/main@8ae78944ef5e8d6297c50898d856db1a20c6fd9a` and `rumiai-tests/main@53d9551d225d2bf2ecb5e3017b242cf2c417d833`. Other involved source refs are recorded in the prior checkpoint and must be refreshed on execution. This I audit involved only remote source/Actions inspection; no runtime, permanent suite, CI dispatch, reference-host execution or product write occurred. The assistant container could not DNS-resolve github.com for a local clone.
 
-**Next I action:** track P2, P3/P4, V1/V2, C2/C3, J1 and the independent M01–M15 evidence owners through accepted outcomes; then pin the exact integrated revision set and run I1 through the public interfaces. Start I2 only after that success and the explicit host authority/access gate.
+- The conditional program remains governed by its existing gates. P0's mainline source/manual/adapters inventory is complete; A1 now has a committed product-owned CI smoke (unverified execution). No product runtime/catalog/package release or frozen permanent-suite change was made; no A1 PASS is claimed.
+- Already observed: genuine three-package published composed smoke Ubuntu/macOS PASS at `m-core` Actions run `42037725004` on pinned older revisions, and operator-reported `vmdev` interactive menu PASS; these are not full current product or authorized remote physical proof.
+- The previously supplied strategic map lacked complete task outcomes, dependency/write ownership, acceptance and integration gates. This document adds the bounded task details without falsely turning unsettled full-context design into an implementation API.
+
+
+**Supplementary P0 structural observations on that same source checkpoint:** 31 observed `lib/sys/sh/**/*.lib.sh` identities have matching manual topic names (presence only, not public API correctness); `pkg-catalog/main` contains 27 v1 package-definition names and the v2 feature contains 8 names. The standalone `json` gap and `pkg install` drift remain classified separately. This is not new runtime PASS.
+
+**P1 progress:** `rumiai-dev` commit `639e990c5ad61a5092f42561e8d151a99f2ef6b8` reconciled the canonical upfront-request syntax and exact-root/same-snapshot installation semantics, and owning handoff `d06a69253720a4806ef2f83209f7d7cce722d232` records current autonomous `pkg` implementation/manual mismatch. P1 remains **partial**, P2 requires one shared-pkg implementation writer and actual public test evidence. No pkg implementation, catalog or frozen suite was modified by P1.
 
 ## Next action
 
