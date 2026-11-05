@@ -1,7 +1,7 @@
 # pkg dependency resolution and recursive install
 
 Status: Active
-Updated: 2026-10-01
+Updated: 2026-11-05
 
 ## Goal
 
@@ -9,10 +9,10 @@ Complete and validate the promoted recursive `pkg install` model built around th
 
 ## Current repository revisions
 
-- rumiai-dev: 4e0cae49864a9dd5d5972eb776937f5aa9e82368 (pre-checkpoint HEAD)
-- rumiai-os: 6ce4fde2ee2a06091b56a7374f2a119cac6a2c57
-- rumiai-tests: a150d7d020602068b4af809bb440864766a03fe6
-- pkg-catalog: d63f87d2be67288ef57f4a5812fabbc3f0b24a0d
+- `rumiai-dev/main`: 2026-11-05 canonical PACKAGE-MODEL update at `639e990c5ad61a5092f42561e8d151a99f2ef6b8`; refresh remote HEAD for later work.
+- `m-os/master@31693e814f682690adfd48185da822f7f5007f9e` current runtime; feature `m-os/pkg-schema-v2@1e3a038a5abf6f8c176272d8e44464c842d3cefd` independent.
+- `pkg-catalog/main@3ee97d21bae3ee885b0fa987e1faee718fad8609`; `pkg-catalog/pkg-schema-v2@9d889cc265c29eeae456b8fe1ad638654c36e8c7`.
+- Frozen for modifications and execution: `rumiai-os/main@8ae78944ef5e8d6297c50898d856db1a20c6fd9a` and `rumiai-tests/main@03616a323ef72efbfa172570d114530e6135d190`. Read-only source inspection remains permitted.
 
 ## Applicable canonical sources
 
@@ -49,94 +49,33 @@ Complete and validate the promoted recursive `pkg install` model built around th
 - An unversioned root may reuse the valid installed current/default concrete for the selected package/platform class.
 - Malformed managed-store entries must not be accepted as valid already-installed concretes.
 
+## Completed
+
+- P1 canonical authority reconciliation committed as `639e990c5ad61a5092f42561e8d151a99f2ef6b8`: `PACKAGE-MODEL.md` now states upfront full-request syntax validation, one catalog snapshot, exact concrete requested roots before dependency planning, and dependency-first installation of those same roots; PKG-18/96/97 match. This is **specification-only**, not product validation.
+- On inspected autonomous `m-os/master`, `extract` and `pkg-extract.lib.sh` with current manual identities already replace the old `*2` and `*_OLD` source identities; historical frozen-legacy observations below are not current autonomous-source blockers.
+
 ## Current implementation state
 
-Current rumiai-os `c2f7c739b2ded45eeab6d0027aa2f99cf85d343e` keeps `_pkg_install_init` before request resolution and implements this flow:
+Current `m-os/lib/sys/sh/pkg/pkg-install.lib.sh` validates all requested syntax before `_pkg_install_init`. However, `pkg_install` still invokes public `pkg depend` on unmodified roots, then installs those unmodified roots. Its existing `pkg_install_resolve` helper is not used in this public flow. Public `pkg depend` creates its own catalog snapshot. **Thus exact roots and the shared immutable catalog snapshot are not implemented yet.**
 
-```text
-validate complete original request argv
-→ initialize install workspace/catalog
-→ resolve original requests to exact concrete roots
-→ pkg depend(exact concrete roots)
-→ prepend dependency concretes to concrete roots
-→ pkg_install_one for each concrete
-```
+Other current source/manual divergences:
+- `pkg_install_resolve_one` exact-installed shortcut tests only `-d` and can accept a symlinked concrete directory; obsolete `___pkg_install_resolve_one` remains.
+- `pkg_install_resolve_one`, `pkg_install_resolve`, `pkg_install_validate` are non-underscore, hence public under the naming contract, but not listed in `res/sys/manual/pkg-install.lib.sh`. Check actual consumers and reconcile interfaces; do not invent a new external API for an internal helper.
+- Both `res/sys/manual/pkg` and `pkg-install.lib.sh` still document planning from untouched roots; change with the runtime.
+- Existing valid concrete currently returns success without reinstalling, while current Installation prose still prescribes `already-installed` failure. Public valid-execution failure codes also require comparison with the 1/2 manual. These are **open mismatches**, not silently resolved public-policy changes.
+- No runtime/CI/permanent-suite test was executed in this P kickoff. Earlier evidence remains revision-specific.
 
-The simplified `pkg_install_resolve_one` delegates package-stream selection to `pkg_catalog_stream_resolve` and version selection to `pkg_catalog_version_resolve`, removing duplicated repository-adapter/version-resolution logic.
+## Validation / permanent-test state
 
-The previously proposed `pkg_local_current` function does not exist and is no longer assumed. The unversioned-local reuse path now calls:
+The frozen `rumiai-tests` suite may be inspected only. `m-os/.github/workflows/m-pkg-live-install.yml`, `m-pkg-provider-lifecycle.yml`, `m-pkg-v1-catalog.yml` and `m-composed-pkg-live.yml` can support current autonomous `m-os` development evidence, but do not automatically prove the changed contract.
 
-```sh
-_pkg_local_class_scan "$pkg_install_pkg" "$pkg_install_identity_osarch" || exit 5
-
-if [ -n "$pkg_local_class_current_name" ]
-then
-  printf -- '%s\n' "$pkg_local_class_current_name"
-  exit 0
-fi
-```
-
-This preserves the prior distinction between a valid class with no current concrete and an invalid/corrupt local class state.
-
-The exact-version already-installed shortcut in the simplified resolver still uses only:
-
-```sh
-[ -d "$m_PKG_DIR/$pkg_install_concrete" ]
-```
-
-and therefore still differs from the previous implementation's explicit `-e/-L` plus real-directory validation for malformed or symlinked managed-store entries. This remains open.
-
-The previous implementation remains temporarily present as `___pkg_install_resolve_one` for comparison and must be removed once equivalence is restored.
-
-A library-interface consistency mismatch remains open: `pkg_install_resolve_one`, `pkg_install_resolve`, and `pkg_install_validate` are currently non-underscore function names and therefore public by the current library-interface contract, but `res/sys/manual/pkg-install.lib.sh` does not expose them. Do not silently resolve this by documenting accidental helpers or renaming callable API without checking intended ownership and consumers; this requires explicit realignment in the continuing pkg work.
-
-The operational manual `res/sys/manual/pkg-install.lib.sh` was realigned in rumiai-os `c2f7c739b2ded45eeab6d0027aa2f99cf85d343e` to describe the current concrete-root-before-dependency-planning flow.
-
-The user commit rumiai-os `6ce4fde2ee2a06091b56a7374f2a119cac6a2c57` performs the intended extractor identity promotion:
-- `bin/sys/extract` is byte-identical to the previous `bin/sys/extract2`;
-- `lib/sys/sh/pkg/pkg-extract.lib.sh` is the previous `pkg-extract2.lib.sh` with only its four `extract2` delegations changed to `extract`;
-- `pkg-install.lib.sh` now loads `pkg/pkg-extract` and already calls `pkg_extract "$pkg_install_artifact" "$pkg_install_range" "$pkg_install_extract_dir"`, matching the promoted range-directory API.
-
-That commit is not yet a consistent completed rename. It leaves `bin/sys/extract_OLD` and `lib/sys/sh/pkg/pkg-extract_OLD.lib.sh` in the current tree. These are superseded implementation copies; their uppercase controlled names also violate the current filesystem naming contract, and the executable `extract_OLD` would additionally create an undocumented owned command identity if retained.
-
-Operational documentation is stale after the promotion:
-- `res/sys/manual/extract` still documents the old extractor and omits the promoted `pkg`, `appimage` and `executable` behavior;
-- `res/sys/manual/extract2` still documents the now-removed temporary command;
-- `res/sys/manual/pkg-extract.lib.sh` still documents the superseded direct-format API instead of the promoted range-directory API;
-- `res/sys/manual/pkg-extract2.lib.sh` still documents the now-removed temporary library.
-
-The intended correction is to move/realign the temporary manuals into the canonical topic identities and remove the stale temporary topics rather than keep parallel current documentation.
-
-## Permanent-test state
-
-Current rumiai-tests HEAD is `a150d7d020602068b4af809bb440864766a03fe6`.
-
-Relevant existing coverage includes:
-- `tests/rumiai-os/pkg/depend.test`
-- `tests/rumiai-os/pkg/catalog.test`
-- `tests/rumiai-os/pkg/install-dependency-order.test`
-- `tests/rumiai-os/pkg/install-live.test`
-- `tests/external/geoserver/install-dependency-live.test`
-
-`install-dependency-order.test` still encodes the earlier orchestration shape in which untouched original roots reach the install loop, so it requires realignment to the current concrete-root flow before it can be treated as coverage of the current implementation.
-
-The extractor rename also leaves the permanent suite stale against rumiai-os `6ce4fde2ee2a06091b56a7374f2a119cac6a2c57`:
-- `tests/rumiai-os/extract2/contract.test` still requires the removed `bin/sys/extract2`;
-- `tests/rumiai-os/pkg-extract2/contract.test` still targets the removed temporary library/command identities;
-- existing `tests/rumiai-os/pkg-extract/contract.test`, `flat-pkg.test` and `dmg-pkg.test` still exercise the superseded direct-format `pkg_extract` calling shape and therefore do not match the promoted `pkg_extract <artifact> <range-dir> <staging-dir>` API.
-
-These tests require identity/API realignment before they can be treated as coverage of the promoted extractor implementation.
-
-No executable validation was run against rumiai-os `6ce4fde2ee2a06091b56a7374f2a119cac6a2c57` in the assistant environment. The environment has no mounted RumiAI checkout; a fresh Git access attempt could not resolve github.com. The repository's available Actions do not provide a current automatic validation run for this HEAD. The findings above are repository/tree/manual/test consistency findings, not claimed runtime PASS evidence. Older PASS results remain revision-specific evidence only and are not evidence for this revision.
+Required P2 checks on a disposable real `m-os` target: invalid-first/valid-second and valid-first/invalid-second batch fail before catalog/store mutation; valid multi-root exact-root dependency-first planning uses one snapshot; corrupt/symlinked concrete is not reused; failure statuses, provider ambiguity propagation and cleanup match canonical contracts. Retain precise source/catalog/host revisions for any PASS.
 
 ## Next action
 
-1. Complete the extractor promotion by removing the `_OLD` implementation copies, realigning the canonical `extract` / `pkg-extract.lib.sh` manuals from the temporary `*2` manuals, removing stale `*2` manual topics, and realigning extractor permanent tests to the promoted identities/API.
-2. Restore strict managed-store entry validation in the exact-version shortcut of `pkg_install_resolve_one`.
-3. Resolve the public/internal naming mismatch for the resolver/validator helper functions and realign the library manual accordingly.
-4. Realign permanent install-order coverage to the concrete-root flow.
-5. Remove `___pkg_install_resolve_one` once the simplified implementation is behaviorally equivalent.
-6. Run proportional real validation, including the promoted extractor paths and the public GeoServer dependency-install path.
+1. P2 under one `m-os/lib/sys/sh/pkg` integration writer: ensure exact root resolution and dependency planning share the current installation catalog snapshot, without breaking standalone read-only `pkg depend`.
+2. Restore strict concrete-store validation, remove the obsolete duplicate resolver after equivalence check, reconcile function visibility and the `pkg`/install-library manuals. Explicitly reconcile already-installed and valid-execution exit-status drift before changing their public behavior.
+3. Execute proportional authentic public CLI regression tests on isolated `m-os` and coordinate P3/P4 before changing shared provider/default/integration hooks. Keep frozen suite and legacy product untouched.
 
 ## Deferred
 
