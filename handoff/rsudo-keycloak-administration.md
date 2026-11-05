@@ -9,9 +9,9 @@ Complete and validate K04 Keycloak authentication and authenticated transport th
 
 ## Current repository revisions
 
-- rumiai-dev: 21be0b6ce45678ea388e4ce1cfca178ec83085bf (before this checkpoint)
-- rumiai-os: 7c41b9c65a2b0521cb635640ffd18719ffecfd81
-- rumiai-tests: 568f11ecad918b0ae4213c429a37fd39ffd92bf2
+- rumiai-dev: 042343774bf6c29065fbc520431ca3decced83c4 (before this checkpoint)
+- rumiai-os: b8e93e7cf297792330990b20528b1f5a9e1eed8d
+- rumiai-tests: 0c3694375eae649d0f3a6db8c1a2b051df8d7432 (concurrent unrelated APISIX change after K04 tests at 22ddf02805b24f6fed7931475ae8deb9b3c90b79)
 
 Recheck all live remote HEADs and reconcile forward before each write/validation.
 
@@ -52,18 +52,26 @@ Recheck all live remote HEADs and reconcile forward before each write/validation
   - rsudo-keycloak-live, test revision 9a397c34e0b54e73b9d2ce1d366decae3806876a, product 7c41b9c65a2b0521cb635640ffd18719ffecfd81, run 42029919807.
   - rsudo-keycloak-composed, test revision 568f11ecad918b0ae4213c429a37fd39ffd92bf2, same product revision, run 42029948367.
   - rsudo-keycloak transport + legacy, ubuntu-26.04-arm, test revision d17cb9b63e7029c44fb79645349098c77d2a5df1, same product revision, run 42029136452 (macOS job was queued at this checkpoint).
+- The earlier RS256/384/512 rsudo-keycloak transport/legacy validation run 42029136452 completed PASS on both macOS and Ubuntu ARM64 for product 7c41b9c65a2b0521cb635640ffd18719ffecfd81 and suite d17cb9b63e7029c44fb79645349098c77d2a5df1.
+- Implemented RSA-PSS PS256/PS384/PS512 through the existing private-key-jwt authenticator with explicit algorithm selection, remote RSA key/certificate verification, OpenSSL PSS MGF1 and digest-sized salt, preserved remote credential boundaries, RS256 default and fail-closed unsupported selections (product b8e93e7cf297792330990b20528b1f5a9e1eed8d).
+- Inspected Keycloak 26.7.3 Java API PS256/PS384/PS512 client signature verifiers and independently tested OpenSSL PSS signing and verification. API evidence alone was not treated as live server certification.
+- Realigned the canonical RSUDO-KEYCLOAK.md and product module manual. Added direct real-server PS256/384/512 acquisition, introspection and wrong-algorithm rejection on Keycloak 26.7.3 and 26.8.1; PS256 additionally exercised password Direct Grant, protected refresh and explicit revocation. Expanded the composed SSH/sudo and isolated HTTPS tests.
+- RSA-PSS focused GitHub-hosted ubuntu-26.04-arm validation completed PASS/VALIDATED on the frozen product b8e93e7cf297792330990b20528b1f5a9e1eed8d:
+  - rsudo-keycloak-live: suite 8260aaece23bee0666fa80c518ef624579400052, run 42032373697.
+  - rsudo-keycloak-composed: suite 22ddf02805b24f6fed7931475ae8deb9b3c90b79, run 42032409528.
+  - rsudo-keycloak isolated transport/legacy: suite d788a371ccd5e05c21c7eb41e03cf66fec0ea188, run 42032313358, Ubuntu ARM64 PASS; macOS job remained queued as last observed.
 - No physical host validation was performed; GitHub-hosted ARM test environments and isolated Docker SSH/sudo compose are not physical validation.
 
 ## Current state
 
-RSA private-key-jwt RS256, RS384 and RS512 are implemented in the product, documented and validated on the exact frozen product/test pairs listed above. This is an incremental K04 result, not closure of K04. K05 general Admin REST request and K06 typed conveniences are still pending. The rsudo-keycloak macOS transport job was queued at the latest review and is not counted as PASS.
+RSA private-key-jwt RS256/384/512 and RSA-PSS PS256/384/512 are implemented and documented, and the new RSA-PSS subset passed the isolated Linux transport, actual Keycloak and composed SSH/sudo tests on the frozen pairs above. This is an incremental K04 result, not closure of K04. K05 general Admin REST request and K06 typed conveniences remain unimplemented. The RSA-PSS transport workflow's macOS job was still queued and is not counted as PASS.
 
 ## Next action
 
-Continue K04 with the next verified Keycloak confidential-client authentication subset (for example RSA-PSS algorithms, subject to current upstream capability and exact-policy validation), preserving the existing remote trust and protected credential boundary. Recheck the queued macOS rsudo-keycloak validation result before calling the cross-platform transport scope fully validated. Keep K05/K06 gated until their independent implementation and permanent evidence.
+Recheck rsudo-keycloak run 42032313358's queued macOS job and any HEAD movement; then examine the next still-pending K04 authenticator or grant family against actual Keycloak 26.7.3/26.8.1 capabilities and its trust prerequisites before extending the existing module. Keep K05/K06 gated until independently implemented and validated.
 
 ## Blockers / open questions
 
-- RSA-PSS, EC/EdDSA, mTLS/X509 sender-constrained and federated JWT authenticators remain unimplemented; they need their own verified Keycloak client/server configuration and tests.
-- The macOS transport validation job is pending; no PASS is claimed until it finishes.
+- EC/EdDSA, mTLS/X509 sender-constrained and federated JWT authenticators remain unimplemented; they need their own verified Keycloak client/server configuration and tests.
+- The current RSA-PSS transport macOS validation job remains pending; only the earlier RSA (RS256/384/512) cross-platform transport scope has full PASS evidence.
 - Full K04 authenticated Admin REST transport, non-service-account grant families and multi-host physical validation are still pending.
