@@ -66,6 +66,8 @@ Also inventory current repository adapter set (GitHub, Node.js, Chrome, Chromium
 
 ## Current state
 
+**Cross-workstream completion plan:** `handoff/m-os-completion-orchestration.md` now owns the detailed conditional P0/A*/J*/S*/R*/C*/P*/V*/I* dependency map and integration orchestration. This validation handoff remains owner of M01–M15 actual test/evidence state; this reference does not transfer or duplicate that state. The complete `m-os` DEVPLAN still carries explicit contract/host gates, so the new map is not blanket implementation authorization.
+
 ### DEVPLAN re-review of full m-os completion against m-os archived conversations (2026-11-05)
 
 **Verdict for one end-to-end executable plan: Specifiche insufficienti**, but the reason is narrower than in the preceding checkpoint. The **current-contract autonomous `m-os` validation** already has a bounded M01–M15 acceptance matrix and can advance independently; completion of the **user-requested general `context`** remains a separate high-impact unsettled public design. Do **not** hold the ready present-contract evidence streams behind that future design, invent a finished grammar, or treat this provisional dependency sketch as delegated executable units. `DEVPLAN.md` is the generic procedure; this active handoff owns the task-specific planning checkpoint.
