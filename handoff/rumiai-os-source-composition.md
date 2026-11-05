@@ -123,6 +123,11 @@ Scenarios 1 and 2 have initial direct-checkout smoke evidence on Ubuntu and macO
 
 ## Current state
 
+### Operator-reported vmdev interactive menu result (2026-11-05)
+
+- The operator confirms that the real interactive `menu` test works on `vmdev`. Mark the pending operator TTY usability check as **operator-reported PASS**. This report does not contain the raw terminal transcript, selected result, exact vmdev checkout SHAs or a formal physical-reference validation session; do not claim those as independently verified. The separate hosted Ubuntu/macOS package-composition smoke remains revision-pinned as recorded below.
+- Real `rsudo` privileged SSH/sudo execution still requires an explicitly authorized test target and access. `rssh` package-local shell-extension path and `rsudo-admin` remote source/menu injection remain separate unvalidated integration gaps. No product source, package release or catalog was changed by this checkpoint.
+
 ### Real m-core/m-term/m-rsudo v2 releases and hosted end-to-end PASS (2026-11-05)
 
 - Responding to the operator's insistence on **actual packages and actual consumers**, adapted the genuine extracted sources to consume selected package-local `link/lib/sh` views through POSIX dot lookup, retaining `loadsyslib` for real `m-os` system-library identities. `m-core` `ssh.lib.sh` and `ipc.lib.sh` now use the exported `rand`/`ipc` sources; `ssh_auth` resolves the actual selected package-owned `ssh-askpass` command and rejects absence. `m-term` `menu` and `menu.lib.sh` use installed `menu`, `term`, `array`, `map` exports. `m-rsudo` `rsudo`/`rsudo-admin` and module imports use actual selected package library views; the internal module lookup restricts loading to `m-rsudo` concrete `link/lib/sh` directories. No general `m-os` loader change, counterfeit package or synthetic test.
@@ -1909,7 +1914,7 @@ its working schema, migration decisions or validation state here.
 
 **Previous source-extraction next action (completed):** The operator rejected the synthetic test, which was removed forward. The source repositories were populated with actual assets; the initial release/catalog/install composition is now implemented and hosted-validated, as recorded above.
 
-**Immediate next real validation:** On the operator's existing `vmdev` checkout, update the sibling `pkg-catalog/pkg-schema-v2` branch with `git pull --ff-only`, install the three published exact v0.1.0 packages with public `./m pkg install`, initialize a real shell, select their exact concretes with `context`, and exercise interactive `menu` with a live TTY. Capture the true command outcome and any diagnostics. Test `rsudo` SSH/sudo only with an explicitly approved test host and real access; do not infer credentials from context. Treat the legacy `rssh` and `rsudo-admin` remote-injection path as separate actionable integration gaps to fix rather than claiming this hosted smoke proved them.
+**Immediate next real validation:** The operator has reported `vmdev` interactive menu operation PASS; do not repeat the same test without a material change. Verify actual `rsudo` SSH/sudo only against an explicitly authorized host with real access; do not infer credentials or authorization. Independently realign the legacy `rssh` shell-extension pathname and `rsudo-admin` remote stream/menu source assumptions to the selected real package views, then test those paths before publishing a changed immutable release. Distinguish source review, hosted CI, operator report and actual privileged remote validation.
 
 **Additional context/library work:** Validate the published `m`
 sh/Java library exports on the real hosted workflow and then through
