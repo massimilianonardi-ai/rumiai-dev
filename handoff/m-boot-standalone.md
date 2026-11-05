@@ -146,6 +146,7 @@ The following is the **critical assessment of the earlier plan and this revision
 | Medium | Host and guest provenance, controller/model, display and actual accelerator were not normalized | E0–E4 common evidence schema; separate graphics visibility failure from missing ISO identity |
 | Medium | BIOS/ARM64/Secure Boot/UEFI runtime capacity and fragment limits could be silently generalized | Preserve unsupported matrix; G-F only x86_64 UEFI until explicit tests |
 | Medium | No practical separation between diagnostics and operator product user journey | K0/K6 viability boundary, acceptance scenarios and eventual human architecture selection |
+| Medium | Active parent handoff already exceeds 200 KiB of accumulated task context; every fresh mandatory read becomes slower and old narrative may hide live gates | Child ownership prevents new operational duplication; defer only a **bounded, separately validated** pruning of truly superseded parent narrative so no active state/contract is lost |
 
 **Residual risks after this review (NOT yet solved):** no proven tamper-resistant runtime EFI variable or Secure Boot chain; unchanged source could change after map calculation; vendor initramfs can use other block-device discovery rules than the synthetic fixture; source extents may exceed current handoff capacity; real unmount/USB passthrough may detach media; 39–56 MiB initrd virtual override may require nontrivial EFI memory/fragment support; VM-based install may not access actual host hardware or satisfy recovery objectives; no native compatible x86_64 KVM test host has yet been identified. Each has a bounded gate above rather than a blanket compatibility promise.
 
@@ -160,6 +161,7 @@ The following is the **critical assessment of the earlier plan and this revision
 7. **No shared mutable resources:** version-pinned test inputs, distinct scratch dirs and separate CI workflows per path; one evidence manifest linked from parent; separate child state reduces coordination overhead.
 8. **Early pruning:** K0 can classify VM guest as diagnostic-only immediately if bare-metal is mandatory; M6 can discontinue an exploding adapter matrix; F capacity/security gaps can constrain the supported set before hardware testing.
 9. **Preserve alternatives:** compare actual outcomes against standard Ventoy and GRUB loopback; the custom route is not preferred automatically simply because it was built in-house.
+10. **Keep the handoff navigable:** the parent carries the dependency map and current F/decision state; M/K child files carry their operational checkpoints. Before further growth, evaluate controlled compaction of superseded long-form parent content with canonical-source cross-checks, not silent deletion of evidence.
 
 ### 12. Final decision, release guard and next actions
 
