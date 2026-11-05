@@ -135,7 +135,7 @@ The *existing* critical review identified false serial dependencies, misleading 
 - `massimilianonardi-ai/Ventoy` branch `m-boot-secondary-uefi`: `01e0398315c42442cb358ee25f80c7c2fc2df68f` (F-02 consumer safety changes / EFI publisher chunk limit; original PoC 080/081 QEMU synthetic boot PASS applies to prior `ceff79ca92d246928f86362a569f86c6d2ac130f` only; updated firmware/runtime source not boot-regressed yet).
 - `massimilianonardi-ai/Ventoy` master: `74cff34240dca6991b79c6656770670da7b0c39e` (unmodified fork baseline)
 - `massimilianonardi-ai/m-boot` main: `c06cd35a73b7e420c3a06dc51537c028ffa619d0` (Kali live+forensic menu and GRUB CI; Grml grub_memcpy note; runtime Kali validation pending)
-- `massimilianonardi-ai/rumiai-dev-PoCs` main: `eea03f55fe65a93a50000f735a8bf6e24875edd7` (F-01 inventory, F-02 executable 21-case compiled-consumer test, PoC 087 prior 13-case parser suite; [run `42033679188`](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/42033679188) SUCCESS on pinned Ventoy `01e0398`; concurrent other-workstream changes preserved; no physical disk).
+- `massimilianonardi-ai/rumiai-dev-PoCs` main: `78d58818bb7e4e921e5d09a10fc9a7e95b215f3d` (F-01 inventory, F-02 executable 21-case compiled-consumer test, PoC 087 prior 13-case parser suite; other concurrent PoC 088/M-track CI changes present at HEAD; [run `42033679188`](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/42033679188) SUCCESS on pinned Ventoy `01e0398`; concurrent other-workstream changes preserved; no physical disk).
 - `massimilianonardi-ai/rumiai-dev` main: check its live HEAD at preflight; a self-referential revision in an active handoff is not authoritative.
 
 ## Applicable canonical sources
