@@ -9,9 +9,9 @@ Replace the incomplete existing rsudo APISIX administration module with a safe, 
 
 ## Current repository revisions
 
-- rumiai-dev: 9179e195c73deb8796bf8b933e98187f391ea1d3 (pre-checkpoint HEAD; concurrent handoff/documentation changes preserved)
-- rumiai-os: 62bacb9048db0f4df230b88838ef9236b120aad0 (last observed HEAD, preserves APISIX host/Docker observer and manual; latest frozen APISIX validation used 13956e36)
-- rumiai-tests: 8340ef88bfa40d5ffd891a25b1b360d6e7f2110e (last observed HEAD, latest APISIX host-negative scenarios; concurrent Keycloak changes preserved)
+- rumiai-dev: a02c9485ea1c3895271b80480dc6bab549731493 (observed pre-checkpoint head; active handoff and concurrent Keycloak/documentation work preserved)
+- rumiai-os: b8e93e7cf297792330990b20528b1f5a9e1eed8d (observed head; frozen APISIX 9/9 validation product)
+- rumiai-tests: 0c3694375eae649d0f3a6db8c1a2b051df8d7432 (observed head; frozen APISIX 9/9 validation suite)
 - m-os: 31693e814f682690adfd48185da822f7f5007f9e (not involved)
 
 Fresh remote HEAD checks remain mandatory before each further RumiAI action.
