@@ -921,12 +921,11 @@ Source-level dependency trace for the future generalized `context`
 migration, **working analysis only** (not promoted syntax or C3
 authorization):
 
-1. `m-os/m` exports readonly `m_STATE_SYS_DIR=state/system/current`
-   and `m_STATE_USER_DIR=state/user/current`, sources system
+1. `m-os/m` exports readonly `m_STATE_SYS_DIR=$m_ROOT/state/system/current`
+   and `m_STATE_USER_DIR=$m_ROOT/state/user/current`, sources system
    `sys/environment/cache/env` and `env-osarch` from that
    selected system root, and prepends fixed `bin/sys*` and
-   `bin/ext*` directories to PATH **before** dispatching `m
-   shell` or other child commands. A later shell-local `context`
+   `bin/ext*` directories to PATH **before** dispatching `m shell` or other child commands. A later shell-local `context`
    cannot make that already sourced system-global environment
    correspond to a different shell-specific system profile. The
    planned state/profile shift therefore needs explicit bootstrap
