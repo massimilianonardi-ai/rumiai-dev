@@ -247,6 +247,21 @@ M01–M15 observations remain exclusively in `handoff/m-autonomous-validation.md
 
 ## Current state
 
+### Branch C dispatch checkpoint (2026-11-05)
+
+The operator explicitly started Branch C. C1 current-contract source/manual
+and existing evidence were audited; remaining authentic package/Java,
+negative and nested-shell scenarios were identified without claiming
+new test execution. C2 compared current sources and accepted conceptual
+direction and identified unresolved public grammar, per-dimension
+defaults/identity, protected propagation, provider/library consistency and
+command-view exclusions. The operational checkpoint is owned by
+`handoff/rumiai-os-source-composition.md` (2026-11-05).
+C3 is still BLOCKED by promoted G-CONTEXT and P4/pkg-v2 prerequisites.
+The separate P1 installation contradiction was reconciled in the current
+`PACKAGE-MODEL.md` by a concurrent task. No product, catalog, release or
+frozen-suite mutation/validation was performed by Branch C at activation.
+
 - **P0 initial scope/source/manual/adapter inventory complete** on the explicitly inspected revisions; current M01–M15 validation/evidence remains PENDING where its owning ledger says so. The independently specified `json` source gap is delegated to J1/source-composition, not hidden inside pkg P2.
 - **P1 canonical reconciliation started and committed**: `rumiai-dev` specification change `639e990c5ad61a5092f42561e8d151a99f2ef6b8` fixes upfront full-batch validation and exact-root same-snapshot dependency planning. The owning dependency handoff checkpoint `d06a69253720a4806ef2f83209f7d7cce722d232` records the autonomous runtime/manual divergence. P1 is **not** yet complete until implementation/manual and real regressions agree.
 - **P2 next**, under a single `m-os/pkg` writer. P3/P4 remain serial for overlapping runtime files, with independent analysis permitted. C2 full-context design and V1 feature/catalog evidence remain separate owners.
