@@ -71,13 +71,13 @@ The parent table is a **routing snapshot** of status. Actual M/K task-local stat
 - **Outside boundary:** new installer boot, general kernel adapter, broad refactor or fabricated claim of cryptographic EFI map authenticity.
 
 ### F-03 — Fragmented ISO across real firmware→Linux
-- **WAITING F-01 / inputs:** existing PoC 081 real QEMU chain; small **non-sparse** ISO on disposable GPT medium deliberately fragmented into verified multiple actual extents.
+- **READY / F-01 PASS inputs:** existing PoC 081 real QEMU chain; small **non-sparse** ISO on disposable GPT medium deliberately fragmented into verified multiple actual extents.
 - **Work:** original stock GRUB plus external module → Ventoy EDK2 virtual BlockIo → inner ISO EFI GRUB → **unchanged** Linux kernel → EFI runtime map consumer → read-only `dm-linear` and ISO9660. Collect actual extent count/coverage and source GPT identity.
 - **Deliverable / PASS:** genuine QEMU/OVMF logs with independent firmware and Linux post-kernel markers, full ISO SHA256/identity equality, multi-extent evidence and source unchanged before/after. One-extent and host-only map checks do not pass.
 - **Outside boundary:** real vendor media check, large per-vendor initramfs modifications, K CD-ROM simulation.
 
 ### F-04 — Runtime and failure semantics at EFI/Linux boundary
-- **WAITING F-01 / inputs:** interface inventory, pinned real kernel/firmware test fixture.
+- **READY / F-01 PASS inputs:** completed experimental interface inventory and pinned real kernel/firmware test fixture.
 - **Work:** isolate missing/expired EFI variable, EFI Runtime Services unavailable, map mutation or media detach between phase transitions, missing kernel modules/Device Mapper, oversized map/fragmentation, wrong disk candidate, cleanup and error observability. Explicitly flag Secure Boot signatures/trust, source races, firmware memory and portability limits as unresolved unless exercised.
 - **Deliverable / PASS:** bounded real negative tests where practical and a precise supported/unsupported matrix. Failure must not silently boot from or mount a different physical disk.
 - **Outside boundary:** claiming Secure Boot, x86 BIOS or ARM64 UEFI full support without real experiments; changing consumer ABI without M coordination.
