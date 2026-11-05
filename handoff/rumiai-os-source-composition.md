@@ -123,6 +123,50 @@ Scenarios 1 and 2 have initial direct-checkout smoke evidence on Ubuntu and macO
 
 ## Current state
 
+### Branch C1: expanded authentic checks and published-version replacement (2026-11-05)
+
+- `m-os/context-c1-real-validation@fdb825a197fffdeb9d4adc87d04180cb30f8c5a7`
+  contains only CI/test additions: current exact-package shell acceptance
+  with host PATH editing/lost ownership and set-empty CLASSPATH coverage;
+  a second standalone real version-replacement test; and the branch
+  workflow. Draft [m-os PR #2](https://github.com/massimilianonardi-ai/m-os/pull/2)
+  remains open/unmerged. No shared runtime/manual/pkg code was altered.
+- Initial public real `v0.1.0` composition remains **Ubuntu/macOS
+  PASS** in [catalog run 42090408793](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42090408793)
+  at its earlier exact revisions.
+- Expanded `v0.1.0` ownership test uses
+  `pkg-catalog/context-c1-real-validation@aef24f9e07a657d6f57ed5c672268a800704a5f6`
+  and `m-os@07764f66d6ed4614da1190833f354086f05fa4a5`:
+  [run 42094107131](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42094107131)
+  Ubuntu **PASS**; first macOS attempt **FAIL at GitHub Releases
+  HTTP 403 for `m-core@v0.1.0` before any context assertions**,
+  not a demonstrated product regression. One failed-job retry
+  (attempt 2) was accepted and remained QUEUED when recorded.
+- The independently verified official `m-core` and `m-term`
+  `v0.1.1` immutable releases and current
+  `pkg-catalog/pkg-schema-v2@a75f9be1c9a62a72899022eddf55e163d86ab630`
+  provide a new **authentic same-package version-switch** path
+  unavailable in earlier C1 releases. The isolated
+  `pkg-catalog/context-c1-version-replacement@ff2f7f184dfeb04cdcebd9a3dd82b160a24197a8`
+  workflow pins `m-os@fdb825a197fffdeb9d4adc87d04180cb30f8c5a7`,
+  installs `m-core/m-term` at `v0.1.0` and `v0.1.1` through
+  public `m pkg install`, and tests selected old→new→old concrete
+  command/library views, unrelated package retention, failure
+  atomicity and reset. [Corrected run 42095853638](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42095853638)
+  has Ubuntu **PASS**, macOS QUEUED at checkpoint. Its predecessor
+  run `42095707938` failed Ubuntu because the test incorrectly
+  used `command -v` for a non-executable `*.lib.sh` file; this was
+  a **test harness defect** confirmed by the log, corrected forward
+  to test POSIX PATH/dot-source selection. Do not present the
+  superseded harness failure as a target product failure.
+- All results above are auxiliary hosted and revision-specific;
+  neither permanent frozen `rumiai-tests/main` nor physical
+  reference-host validation was executed. Real ordinary Java JAR
+  export consumer remains PENDING. The new catalog package-release
+  additions are concurrent R1-owned work, not C1 package
+  modifications. C2 stays design-only under the working-design
+  section below; C3 remains blocked by G-CONTEXT and P4/P2/V2.
+
 ### Branch C real cross-host C1 validation (2026-11-05)
 
 Hosted catalog-side [run 42090408793](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42090408793) used actual public `m pkg install` for published `m-core@v0.1.0`, `m-term@v0.1.0` and `m-rsudo@v0.1.0`. It executed the isolated C1 shell test at `m-os/context-c1-real-validation@d0501e063459721bf69e14f6f29e28e675213482` from `pkg-catalog/context-c1-real-validation@4ad37228feef4b057e9ec9d968a22f0822b80b81`. Both hosted jobs **PASS**: Ubuntu `127466638082`, macOS `127466638553`. The raw logs confirm genuine shell-library consumption, idempotence, invalid-operand and unavailable-concrete rejection, failure atomicity, nested shell and no-argument reset. This is auxiliary CI evidence at those exact revisions, not formal or physical validation. The draft m-os PR #2 is not merged.
@@ -899,7 +943,7 @@ specific impediment to applying the accepted environment-first model:
   caller-supplied environment text cannot prove that a protected
   value originated with an authorized parent. Arbitrary
   non-cooperating grandchildren remain outside an enforceable
-  RumiAI policy boundary.
+  m-managed policy boundary.
 
 **Refined future integration sequence to evaluate** (no new
 public identities/paths are fixed by this list):
