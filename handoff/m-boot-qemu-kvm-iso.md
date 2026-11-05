@@ -204,11 +204,56 @@ qemu-system-x86_64 -nodefaults -no-user-config -machine q35,accel=tcg \
 
 ### K-08 — QEMU/KVM evidence report to shared decision
 
-- **Status / dependencies:** READY after K-01/K-03/K-07 PASS; include K-04/K-05/K-06 observed results or explicitly BLOCKED/UNTESTED. Do not wait indefinitely for an unavailable KVM host to summarize valid TCG/guest evidence.
+- **Status / dependencies:** PASS (2026-11-05; revision-pinned evidence synthesis and decision input only, no new guest/physical run). K-01, K-03 and K-07 prior PASS; K-04/K-05 WAITING original ISO; K-06 BLOCKED accessible KVM.
 - **Objective:** deliver a comparably structured and bounded decision input to the parent F/M/K architecture comparison.
 - **Steps:** report version, ISO digest and media ID, host/guest CPU, real accelerator, firmware, controller, boot milestones, media-check outcome, source integrity, resource cost, applicability to hardware-recovery purpose and unresolved limitations.
 - **Output / acceptance:** traceable report distinguishing synthetic guest optical proof, vendor media acceptance, optional KVM acceleration and actual product suitability; the track can finish as diagnostic PoC even if no product pivot is chosen.
 - **Out of scope:** implicit change to m-boot product architecture or a claim of bare-metal CD device transparency.
+
+#### K-08 result — bounded QEMU/KVM evidence report for the parent F/M/K decision (2026-11-05)
+
+**K-08 PASS for its reporting/decision-input acceptance only.** Evidence independently rechecked against the successful GitHub Actions **run status, exact tested commits and current artifacts**. No new QEMU run, product modification, host benchmark, genuine vendor installer run or physical validation is claimed for this documentation work unit.
+
+**Decision input:** retain the existing full-system QEMU/OVMF **virtual optical guest** as a **diagnostic-only comparator** for the native firmware/early-Linux F/M and current GRUB-loopback approaches. It is **not an equivalent implementation candidate for the original standalone m-boot USB recovery/backup/install goal**. The diagnostic result is strong within its actual scope: the guest's original EFI GRUB boots a genuine Linux kernel; after the firmware-to-kernel transition, Linux discovers the read-only virtual CD, mounts ISO9660, reads a known marker and hashes the entire CD with the same digest as the unchanged synthetic source. A working Linux host is a hard prerequisite, and guest hardware is virtual. **No decision to pivot product architecture, introduce virtualization, pass through disks or complete an installation is made by K-08**; the parent `handoff/m-boot-standalone.md` owns any later cross-track decision.
+
+##### Evidence ledger — run, version, observable and limits
+
+| Task | Evidence (version/revision) | Claim actually accepted | Not established |
+|---|---|---|---|
+| **K-01 PASS** | Current `m-boot/main c06cd35a73b7e420c3a06dc51537c028ffa619d0` `loader/menu/boot-media-iso`, `manual/boot-media`; K-01 matrix above | Architectural feasibility only: full guest optical drive is **not** a drive handed to an unvirtualized bare-metal OS; original GRUB loopback does not create an OS-visible CD | Runtime QEMU success, native vendor installer or new product choice |
+| **K-02 PASS** | [CI 42032540706](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/42032540706), exact PoC commit `843c564d3ac918b3858ec5e78439b7b245f569c1`, [artifact 13417260600](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/42032540706/artifacts/13417260600) | Real Ubuntu 24.04 x86_64 runner: QEMU **8.2.2**, private OVMF **4M**, Q35, AHCI/IDE-CD, regular-file read-only optical source and actual stopped QEMU block/device tree; scratch SHA256 unchanged | Guest Linux boot; accessible KVM (runner `/dev/kvm` present but inaccessible) |
+| **K-03 PASS** | [CI 42035789115](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/42035789115), exact PoC commit `15954883ec1c84e909ca366c5fac53fa5f0e9af6`, [artifact 13417623442](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/42035789115/artifacts/13417623442) | Genuine UEFI GRUB → original Ubuntu **6.8.0-147-generic x86_64 Linux** → guest `/dev/sr0` read-only ISO9660 marker/full hash after kernel start; synthetic source preserved; nonexistent ISO fails startup (exit **1**) | Original Proxmox/TrueNAS media ID or installation; physical USB and KVM |
+| **K-07 PASS** | [CI 42042675086](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/42042675086), exact PoC commit `ac8abca7249043f9849c566b7498297246ba5f38`, [artifact 13423036473](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/42042675086/artifacts/13423036473) | QMP `ro=true`; disposable ISO hardlink removed *after host QEMU open* but guest still reads correct content; QMP **pre-guest** optical eject; missing source exits **1**; no transient process/socket/private VARS/alias left and original ISO/firmware templates unchanged | Unplug of a real USB, unexpected real backing I/O loss, eject during Linux use, real guest/host storage passthrough |
+| **K-04 WAITING** | No qualified run; **genuine Proxmox VE 9.2-1 ISO file not available/verified** for this track | No real Proxmox media-ID recognition evidence | Whether unmodified Proxmox installer gets past its earlier media search |
+| **K-05 WAITING** | No qualified run; **genuine TrueNAS SCALE 25.10.7 ISO file not available/verified** for this track | No real TrueNAS medium-recognition evidence | Whether unmodified TrueNAS installer reaches a stable observable stage |
+| **K-06 BLOCKED** | No host with proven accessible x86_64 KVM for this track; tested runs used TCG | No KVM acceleration claim; x86_64 guest on operator Ubuntu ARM64 `vmdev` would require TCG | KVM correctness/performance/compatibility on an actual accelerated host |
+
+**Machine/media identity (never conflate two separate synthetic ISO builds):**
+
+| Property | K-03 actual guest proof | K-07 isolation run |
+|---|---|---|
+| Host/guest architecture | GitHub-hosted **x86_64 Linux** / **x86_64 Linux guest** | Same architecture, new runner and new disposable ISO |
+| Emulator and actual mode | QEMU **8.2.2**, **TCG** (not KVM) | QEMU **8.2.2**, **TCG** (not KVM) |
+| Firmware / controller | **OVMF_CODE_4M** + private writable VARS; `q35`, `ich9-ahci`, `ide-cd`; `media=cdrom,format=raw,readonly=on` | Same model, plus QMP inspected actual read-only backend |
+| Source | Self-generated El Torito **ISO9660**, volume label `VT079_LINUX_TEST`, **40,456,192 bytes**; marker `/vt079-marker` = `vt079-uefi-isolated-source` | New disposable ISO with the same volume label, marker and size; **different source bytes/hash** |
+| Host original SHA256 = guest optical SHA256 | `0b4724d4d0a6ebf3514d9f101bf84c4eee3dac5594c760ff38c935a3bbef8a8d` | `4a6d67e610ee46b2961b8dc0681791f5b1050f7789c85d0adeb1eedf8084b69f` |
+| Observation | EFI GRUB markers, Linux `/init` markers, read-only `/dev/sr0`, ISO9660 marker/hash; guest shutdown status 0 | Same post-kernel observations after temporary pathname unlink; QMP eject and quit on a separate paused VM |
+| Resource/cost statement | QEMU TCG run, no host/raw USB disk or NIC; no comparable benchmark | **2 GiB RAM / 2 vCPU assigned**, measured **6.744 s** synthetic boot, **0.067 s** paused eject/quit. One runner observation only; not actual RAM consumption, vendor timing, `vmdev` timing or KVM performance |
+
+The ISO label/marker above is **synthetic**; **no original Proxmox/TrueNAS installation-media volume ID, digest, vendor CD check or installer stage was observed in K runs**. QEMU CD read-only and source integrity were established for regular synthetic **files**, not for an operator-mounted USB filesystem. Runtime logs and build inputs remain in their pinned workflow artifacts, not reinterpreted as validation of later concurrent PoC HEADs.
+
+##### Capability versus standalone m-boot (decision boundary)
+
+| Criterion | Native m-boot/F/M experimental direction | QEMU/OVMF K direction | Implication |
+|---|---|---|---|
+| Starts on target hardware using only prepared USB | **Design goal**; actual supported tools and installer paths have separate, incomplete validation | **No**: requires a running host Linux with QEMU, OVMF, adequate CPU/RAM/storage | K cannot replace the standalone recovery operator journey |
+| Persistent CD after native kernel handoff | Legacy GRUB loopback **does not** provide this; F/M is an independent experimental EFI/kernel-map/middleware path owned by the parent/other child | **Yes within K-03 synthetic guest**, as real guest Linux `/dev/sr0` and ISO9660 read prove | K supplies a positive diagnostic/control for normal virtual optical media, not proof of F/M |
+| Real attached physical disks, network, firmware, memory | Native tools potentially use the target's actual hardware, subject to capability/authorization | Guest sees virtual devices; **no physical pass-through was attached or authorized** | Host-disk recovery and physical RAM/firmware diagnostics remain outside K |
+| Proprietary/vendor installers | Version-specific standalone status remains owned by the other tracks and physical evidence | **K-04/K-05 untested** | No vendor compatibility winner can be declared yet |
+| Operational safety | USB preparation can be destructive only under distinct explicit operator consent, not covered by K | Isolated synthetic runs had source read-only, private OVMF state, bounded timeout, clean shutdown, no writable guest host disk | Evidence supports an isolated test facility, **not** a generic product safety/capacity guarantee |
+| Host feasibility/acceleration | Dedicated host virtualization not required for standalone USB | Tested **x86_64 TCG** only; ARM64 `vmdev` x86_64 guest implies TCG; native x86_64 KVM **unverified** | No portable resource, latency or KVM-performance guarantee |
+
+**Report stop rule and next evidence needs:** deliver K's bounded diagnostic reference to the parent comparative review without selecting a new product architecture. **K-04 and K-05** can proceed independently only after each genuine unmodified vendor ISO is safely readable and identified; classify genuine source unavailable as **WAITING/BLOCKED**, never code FAIL or PASS. **K-06** remains **BLOCKED** pending an actually accessible compatible native x86_64 KVM host; it is not required to accept this report. Operator VM `vmdev`, real USB detachment, GUI/graphics and physical-host installer/media recognition are explicitly **NOT TESTED** in this workstream. No new physical validation or workflow was run for K-08; its PASS is the source-anchored reporting deliverable.
 
 ### Sequence and concurrency
 
@@ -224,6 +269,7 @@ K-01/K-02 are independent ready starters; K-04 and K-05 are siblings after K-03,
 
 ## Completed
 
+- 2026-11-05: **K-08 PASS (evidence report only)**: source-pinned K-01/02/03/07 proof and limitations, K-04/K-05 WAITING unmodified vendor ISO, K-06 BLOCKED accessible native KVM; diagnostic-only recommendation for parent F/M/K comparison. No new QEMU, installer, product or physical run.
 - 2026-11-05: **K-07 PASS (bounded CI isolation only)**: real QMP read-only source verification, hardlink alias disappearance followed by genuine Linux CD read, pre-boot QMP eject, missing-file nonzero, original ISO/OVMF hashes unchanged, no residual private VARS/socket/process; [run 42042675086](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/42042675086), pinned revision ac8abca, artifact 13423036473. Not a real USB detach, vendor, KVM or reference-host test.
 - 2026-11-05: **K-03 PASS** — real QEMU/OVMF TCG original Linux guest mounts the virtual read-only ISO after kernel start, reads marker and matches full optical device SHA256 to unchanged synthetic source; absent-file negative refuses with exit 1. CI run 42035789115, pinned PoC revision 15954883, artifact 13417623442. No vendor, KVM or reference-host PASS.
 - 2026-11-05: **K-02 PASS (host preflight on GitHub CI only)**: QEMU 8.2.2/OVMF 4M TCG stopped AHCI/IDE-CD setup, matching backing-file SHA256 and saved manifest; run 42032540706. No actual guest boot or real reference-host run.
@@ -232,11 +278,11 @@ K-01/K-02 are independent ready starters; K-04 and K-05 are siblings after K-03,
 
 ## Current state
 
-Stable operator-addressable task catalog K-01…K-08 established. **K-01 PASS (assessment), K-02 PASS (host preflight), K-03 PASS (real synthetic Linux optical guest)**, all independently verified on their stated levels and no F/M dependency. K-07 PASS (isolated diagnostic safety and failure checks); K-08 READY for a bounded cross-track evidence report. K-04/K-05 await actual safe original vendor ISO availability; K-06 BLOCKED on a suitable accessible x86_64 KVM host. No vendor, raw USB disconnect, KVM or reference-host PASS is claimed.
+Stable operator-addressable task catalog K-01…K-08 established. **K-01 PASS (assessment), K-02 PASS (host preflight), K-03 PASS (real synthetic Linux optical guest)**, all independently verified on their stated levels and no F/M dependency. K-07 PASS (isolated diagnostic safety and failure checks); K-08 PASS (bounded decision-input report above). The QEMU branch is validated as **diagnostic-only**, not a replacement for the USB-only bare-metal product. K-04/K-05 still WAITING safely available genuine vendor media; K-06 BLOCKED accessible x86_64 KVM host. Parent cross-track architecture decision remains open. No vendor, actual USB disconnect, KVM or operator-reference-host PASS is claimed.
 
 ## Next action
 
-**K-08** is now independently eligible: consolidate K-01/K-02/K-03/K-07 exact evidence and limitations into a bounded report for the parent architecture decision, explicitly listing K-04/K-05 as waiting for genuine vendor ISO and K-06 as blocked on accessible native KVM. **K-04/K-05** may each start independently if their original ISO becomes safely available. Do not start K-08 or any other task from the K-07-only invocation.
+**K-08 report is available above to the parent** `handoff/m-boot-standalone.md` for its eventual F/M/K comparison; no product path has been selected. Remaining independent K work is **K-04/K-05** when genuine Proxmox/TrueNAS ISO files become safely available, or **K-06** once an x86_64 host with usable KVM is verified. These successors are not started by K-08, and the K handoff stays Active for their distinct outcomes.
 
 ## Blockers / open questions
 
