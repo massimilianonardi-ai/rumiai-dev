@@ -9,9 +9,9 @@ Complete and validate K04 Keycloak authentication and authenticated transport th
 
 ## Current repository revisions
 
-- rumiai-dev: 7303adac013122d6249bcfda352f78bf1cb3da87 (before this checkpoint)
-- rumiai-os: c6cf9b57e5e6b9877ea20243aa5217cf87a92c45
-- rumiai-tests: 1a3b29eee2594911784d59c8a942e2385ae4b5c6
+- rumiai-dev: dd31adfa69658ebe0c55ce917f039716d5eba438 (before this checkpoint)
+- rumiai-os: 0883a781c02f67b080c8ca9f43792ec208c68ebc
+- rumiai-tests: ab45f151ff33214b93d35a09e72377318fd387a0
 
 Recheck all live remote HEADs and reconcile forward before each write/validation.
 
@@ -72,18 +72,25 @@ Recheck all live remote HEADs and reconcile forward before each write/validation
   - rsudo-keycloak-live PASS/VALIDATED with additional user-password acquisition, protected refresh, refresh-token revocation and unregistered Ed25519 certificate rejection on both Keycloak versions: suite 1a3b29eee2594911784d59c8a942e2385ae4b5c6, run 42043079201.
   - rsudo-keycloak-composed PASS/VALIDATED through real SSH/sudo, Ubuntu 26.04 ARM64, suite ca7aec56378620b5a206466a2eefb775c5941d8d, run 42042747776.
   - rsudo-keycloak isolated HTTPS/legacy PASS/VALIDATED on Ubuntu 26.04 ARM64 and macOS-latest, suite 83f91cbba375ae54e12c4f64dab451d78c487d70, run 42042536926. The Ed25519 subset is capability-conditional; the published macOS session's test log contained no skipped-Ed25519-backend marker, establishing that Ed25519 was exercised there rather than silently credited from other transport subcases.
-- No physical host validation was performed; GitHub-hosted ARM test environments and isolated Docker SSH/sudo compose are not physical validation.
+- Added explicit X.509 `tls-client-auth` (Keycloak `client-x509`) for client-credentials, enabled Direct Access Grant, online status/introspection, protected refresh and explicit revocation. The remote sudo target verifies certificate/private-key correspondence using OpenSSL before discovery. Remote curl sends only protected certificate and key paths with `--cert`/`--key` on every HTTPS request; no JWT/secret fallback, proxy, redirect or unsafe TLS override (product 0883a781c02f67b080c8ca9f43792ec208c68ebc). The same checked asymmetric keypair logic is reused by private-key-jwt.
+- The Keycloak test configuration explicitly enables `https-client-auth=request` with a dedicated mTLS CA truststore; registered confidential `client-x509` clients require the exact subject DN and trust-anchor CA subject DN. The HTTPS server certificate's `--ca-file` remains separate from the OAuth client CA. Keycloak 26.7.3 and 26.8.1 independently accept the expected client and reject a different subject DN; mismatched key/certificate is rejected before authentication.
+- Current focused X509 validation, all frozen product 0883a781c02f67b080c8ca9f43792ec208c68ebc:
+  - `rsudo-keycloak-live` PASS/VALIDATED Ubuntu ARM64, suite 48d26b99c260c6908ea255d8b9fd661a9053764d, run 42047931155; Keycloak 26.7.3/26.8.1 acquire/status and negative identity/key mismatch.
+  - `rsudo-keycloak-live` PASS/VALIDATED Ubuntu ARM64, suite ab45f151ff33214b93d35a09e72377318fd387a0, run 42049404392; additionally enabled password Direct Grant, protected refresh and explicit refresh-token revocation on both Keycloak versions.
+  - `rsudo-keycloak-composed` PASS/VALIDATED Ubuntu ARM64, suite 1637405a40e565ccf7b2eb3e5baed9f74de2496f, run 42048292983; actual SSH/sudo, remote certificate/key and real Keycloak 26.7.3/26.8.1, acquisition/status and wrong-subject rejection.
+  - `rsudo-keycloak` isolated HTTPS/legacy PASS/VALIDATED Ubuntu ARM64, suite 562a7b06a1303e5a1314ee2af96fe5426bb58cb5, run 42048677854; macOS workflow was queued at last observation.
+- Full mTLS sender-constrained Admin REST proof, `self-signed-tls-client-auth`, and other K04 grant/authenticator families are not yet implemented. No physical host validation was performed; GitHub-hosted ARM test environments and isolated Docker SSH/sudo compose are not physical validation.
 
 ## Current state
 
-The current private-key-jwt subset implements and documents RSA RS256/384/512, RSA-PSS PS256/384/512, ECDSA ES256/384/512 and EdDSA (Ed25519 only). The RSA-PSS and ECDSA increments have completed macOS and Ubuntu ARM64 isolated transport validation; Ed25519 has passed Ubuntu ARM64 independent HTTPS, actual Keycloak 26.7.3/26.8.1 and composed SSH/sudo, including the documented token lifecycle. The Ed25519 isolated macOS job also completed PASS, with the Ed25519 subcase actually exercised. This remains partial K04: remaining authenticators/grants and full authenticated Admin REST transport are pending; K05 general request API and K06 typed conveniences are not implemented.
+The existing private-key-jwt subset implements RSA RS256/384/512, RSA-PSS PS256/384/512, ECDSA ES256/384/512 and EdDSA (Ed25519 only). The newly implemented `tls-client-auth` subset has passed HTTPS fixture, actual Keycloak 26.7.3/26.8.1 and composed SSH/sudo on Ubuntu ARM64, including acquire, user Direct Grant, introspection, refresh and revocation. Its macOS isolated transport workflow is queued, not validated on that platform. This is an incremental K04 authentication result, not proof of full sender-constrained Admin REST usage. K05 general request API and K06 typed conveniences remain unimplemented.
 
 ## Next action
 
-Evaluate the next K04 authentication/transport family against actual Keycloak versions and explicit remote trust prerequisites (for example X509/mTLS or federated JWT), with its independent real Keycloak and composed SSH/sudo test evidence. Ed448 and other unsupported grants must remain fail-closed. K05/K06 remain gated until independently implemented and validated.
+Recheck the macOS job of X509 isolated transport workflow 42048677854, including its frozen suite/product revision. Next evaluate either the remaining `self-signed-tls-client-auth`/mTLS sender-constrained Admin REST proof or federated JWT against authoritative Keycloak configuration and real tests. Preserve the explicit OAuth authentication and remote trust boundary; keep K05/K06 gated.
 
 ## Blockers / open questions
 
-- Ed448, X509/mTLS sender-constrained and federated JWT authenticators remain unimplemented; they need their own verified Keycloak client/server trust configuration and tests.
-- Ed25519 cross-platform isolated transport is now validated on the frozen Ubuntu/macOS scope. Physical reference hosts remain untested; GitHub-hosted test environments and Docker composition are not a substitute.
+- Ed448, `self-signed-tls-client-auth`, federated JWT, full mTLS sender-constrained Admin REST proof and other grant families remain pending; they need independently verified Keycloak client/server trust and protocol evidence.
+- X509 `tls-client-auth` macOS isolated transport verification remains pending; existing RSA/PSS/ECDSA/Ed25519 cross-platform transport scopes already passed, but do not certify this new method. Physical reference hosts remain untested.
 - Full K04 authenticated Admin REST transport, non-service-account grant families and multi-host physical validation are still pending.
