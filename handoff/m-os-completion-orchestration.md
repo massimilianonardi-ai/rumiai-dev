@@ -1,6 +1,6 @@
 # Completion orchestration of autonomous m-os
 
-Status: Active — planning and dependency coordination only
+Status: Active — orchestration; branch I readiness started, I1 blocked, I2 pending
 Updated: 2026-11-05
 
 ## Goal
@@ -266,6 +266,16 @@ frozen-suite mutation/validation was performed by Branch C at activation.
 - **P1 canonical reconciliation started and committed**: `rumiai-dev` specification change `639e990c5ad61a5092f42561e8d151a99f2ef6b8` fixes upfront full-batch validation and exact-root same-snapshot dependency planning. The owning dependency handoff checkpoint `d06a69253720a4806ef2f83209f7d7cce722d232` records the autonomous runtime/manual divergence. P1 is **not** yet complete until implementation/manual and real regressions agree.
 - **P2 next**, under a single `m-os/pkg` writer. P3/P4 remain serial for overlapping runtime files, with independent analysis permitted. C2 full-context design and V1 feature/catalog evidence remain separate owners.
 - No `m-os`, `pkg-catalog`, released first-party package, frozen legacy or permanent-suite files were changed or executed in this kickoff. No physical test or new runtime PASS was observed. The full generalized-context program remains insufficiently specified as described above.
+
+### Branch I — entry/readiness (2026-11-05)
+
+The operator has authorized the start of branch I. **I1 readiness inspection has started; I1 integrated public validation remains BLOCKED until its upstream implementation, feature-promotion and evidence gates are accepted. I2 remains PENDING until I1 passes and designated controlled reference hosts are available.** This is an orchestration checkpoint, not transfer of M01–M15 validation ownership from `handoff/m-autonomous-validation.md`.
+
+Remote inspection found current v1 mainlines distinct from v2 feature branches, the J1 `json` executable/manual omission, and the existing generalized-context C2 gate. Concurrent P1 work has **already corrected** the `PACKAGE-MODEL.md` upfront-validation/exact-root prose (PKG-96/97/99); current `m-os` branch install implementations still plan `pkg depend "$@"` before concretizing requested roots, so P2 source/manual/test reconciliation remains required. Published three-package hosted Ubuntu/macOS smoke run `42037725004` is PASS only on its pinned feature revisions. Catalog v2 run `42036487502` had 13 successful jobs and one macOS jq acquisition failure after three GitHub API HTTP 403 responses, before compatibility assertions; that failed job is neither v2 functional PASS nor a proved product regression. Java live execution and full M01–M15 evidence remain pending.
+
+Fresh checks for this review included `m-os/master@e0bcf2d69ba4e4209a93fd7d0c9b08a00def3a0f`, `m-os/pkg-schema-v2@1e3a038a5abf6f8c176272d8e44464c842d3cefd`, `pkg-catalog/main@3ee97d21bae3ee885b0fa987e1faee718fad8609`, `pkg-catalog/pkg-schema-v2@ae3e2011462be46c0326179f2117b81b85e5df5e`; frozen `rumiai-os/main@8ae78944ef5e8d6297c50898d856db1a20c6fd9a` and `rumiai-tests/main@53d9551d225d2bf2ecb5e3017b242cf2c417d833`. Other involved source refs are recorded in the prior checkpoint and must be refreshed on execution. This I audit involved only remote source/Actions inspection; no runtime, permanent suite, CI dispatch, reference-host execution or product write occurred. The assistant container could not DNS-resolve github.com for a local clone.
+
+**Next I action:** track P2, P3/P4, V1/V2, C2/C3, J1 and the independent M01–M15 evidence owners through accepted outcomes; then pin the exact integrated revision set and run I1 through the public interfaces. Start I2 only after that success and the explicit host authority/access gate.
 
 ## Next action
 
