@@ -66,6 +66,13 @@ Also inventory current repository adapter set (GitHub, Node.js, Chrome, Chromium
 
 ## Current state
 
+### S1 offline fault safety workflow checkpoint (2026-11-05)
+
+- On the existing `m-os/m-os-completion-s` branch, `8a0451e08e808123cd74c0979e071b485249d75a` adds `.github/workflows/m-srv-safety-public.yml` without touching `srv`, `pkg`, package releases, catalog or frozen tests. This CI development workflow invokes genuine public `./m` / `srv` commands on hosted Ubuntu/macOS for no-default/invalid-operand exits, stale malformed runtime cleanup, fail-closed rejection of incomplete runtime metadata naming a *real live unrelated sleep process* (both start and stop), cleanup after that process exits, and non-root system-host registration denial. Fault metadata is an external state fixture, not a substituted product component.
+- **Static checks PASS only:** re-read the exact committed file, verified its Git blob SHA `9a07ee54ac35824dc318431b29dc326e153f7810` against a local byte-identical copy, parsed the YAML and ran `/bin/sh -n` on its 106-line job script successfully in a ChatGPT Linux x86_64 auxiliary container. This is not execution of `m-os` or a host/reference validation PASS.
+- **Behavioral CI remains PENDING:** GitHub Actions repository run listing still returned zero executions for `m-os-completion-s` after the new commit. Previous pre-rename master `srv` run failed at the real `pkg install` dependency prerequisite; P2 owns that issue and has a separate draft branch/PR. No S2 host supervisor was registered or changed.
+- **Next S action:** obtain an actual run of both S workflows on the exact S revision; investigate real S assertions only after reaching them. When P2 is validated/promoted, reconcile the new shared mainline forward and rerun the real provider-backed positive S1 workflow. S2 user/system manager positive paths await suitable explicit host authorization; no general `srv` completion claim yet.
+
 ### S initiated: portable srv and host supervision (2026-11-05)
 
 - The operator authorized execution of Branch S of `m-os-completion`. The dedicated forward-only `m-os/m-os-completion-s` branch starts from `master@e0bcf2d69ba4e4209a93fd7d0c9b08a00def3a0f`; S1 workflow change is `25e66a829afb86d293d7e3bd9460249fc728a092` in `.github/workflows/m-srv-provider-live.yml`. No product runtime, catalog, first-party release, frozen legacy or permanent-suite file was modified.
