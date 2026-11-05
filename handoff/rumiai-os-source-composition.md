@@ -192,6 +192,24 @@ authoritative for C1 until a coherent promoted replacement and
 migration path exist. **C3 stays blocked on C2 + P4 + the
 applicable pkg/v2 interface checkpoint**.
 
+**C1 catalog/PR follow-up:** At the fresh remote
+`pkg-catalog/pkg-schema-v2@ed599dcd09a286eb3e0d21b4cc8f04adaada556c`,
+the exact full (not truncated) tree has 2,661 entries and no
+`v2/pkg/*/lib/java` ordinary Java export descriptor; its only
+v2 first-party ordinary-library exports found in that search are
+`m-core`, `m-term` and `m-rsudo` `link/lib/sh`.
+The catalog change since the earlier C1 checkout only added
+`.github/workflows/validate-v2-mk-jsc-live.yml`, not a package
+definition. The C1 draft PR workflow's exact catalog expectation was
+therefore updated forward at
+`m-os/context-c1-real-validation@d0501e063459721bf69e14f6f29e28e675213482`.
+No authentic catalog-backed Java *ordinary-library export* consumer
+can be asserted from that v2 tree; the separately owned real
+Temurin/Maven facility scenario does not prove ordinary Java JAR
+projection by `context`. Do not create a counterfeit package to
+declare the real Java path complete. GitHub workflow-run checks still
+show no C1 run associated with the feature branch/PR head.
+
 **C1 PR checkpoint:** Follow-up feature-branch HEAD
 `m-os/context-c1-real-validation@919e4734ec9c66978380fd0ce18007f8a1e0f106`
 is an ahead-only three-commit branch with **exactly two added CI files**.
