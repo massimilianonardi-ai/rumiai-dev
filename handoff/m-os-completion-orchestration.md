@@ -20,7 +20,7 @@ No duplicate normative specification or separate product architecture is establi
 Verified remote starting point:
 - `m-os/master@e0bcf2d69ba4e4209a93fd7d0c9b08a00def3a0f`; `m-os/pkg-schema-v2@1e3a038a5abf6f8c176272d8e44464c842d3cefd`.
 - `pkg-catalog/main@3ee97d21bae3ee885b0fa987e1faee718fad8609`; `pkg-catalog/pkg-schema-v2@9d889cc265c29eeae456b8fe1ad638654c36e8c7`.
-- `m-core/main@0afb8752440808e9080a55c667576ff2f9b8eb32`, `m-term/main@c32aac18f6659ed4f569cb780080675fa64f9e3a`, `m-rsudo/main@2763019ada5b1e33151f0c1e58b75af22ed6e99c`.
+- `m-core/main@0afb8752440808e9080a55c667576ff2f9b8eb32`, `m-term/main@c32aac18f6659ed4f569cb780080675fa64f9e3a`, `m-rsudo/main@07017bfd4aa1809370ca30c4fe28bb0ab85021a6`.
 - `m-mk/main@8c857460213199eeb4c5c070b4df60c885df376f`, `m-jsc/main@ca1b70d1e0c53e790244f28b67bcf2a2b7528c76`.
 - Legacy `rumiai-os/main@8ae78944ef5e8d6297c50898d856db1a20c6fd9a` and permanent `rumiai-tests/main@b8e1c71db7aa4b94fedef323c5b3f1030dab1c24` are **frozen** for modification/execution unless the user explicitly lifts the freeze. Reading legacy source is permitted.
 
@@ -244,6 +244,10 @@ Mainline repository adapters: `pkg-repository-{artifact,chrome,chromium,github,n
 **Executor protocol:** each independent chat receives (i) local unit ID from this handoff, (ii) owner handoff, (iii) source/branch checkpoint to freshly verify, (iv) exact writable files/branch and prohibited shared surfaces, (v) public expected tests + manual updates, (vi) expected upstream output and integration handoff. Every executor follows fresh HEAD preflight, no history by default, current source authority, proportional real tests, reviewed diff, forward-only updates and consistency gate. When an interface or host/privilege contract is unsettled, stop only that affected unit and escalate; do not freeze independent ready work.
 
 ## Current state
+
+### Branch R dispatch checkpoint (2026-11-05)
+
+R1 is active under the existing source-composition handoff. `m-rsudo/main@07017bfd4aa1809370ca30c4fe28bb0ab85021a6` made the bounded package-local `rssh` source/manual correction; `m-rsudo/v0.1.0` was not modified. Syntax and isolated source-view branching checks PASS, but no new public `pkg install`/interactive-shell/CI/remote/physical evidence exists. The owner must finish `rsudo-admin` injected-library/menu-source realignment, real installed consumer tests, then release/catalog integration only with authentic validation. R2 real remote SSH/sudo remains G-HOST-gated and PENDING explicit controlled authorization. Other branches and frozen legacy/permanent-suite work are unaffected.
 
 ### Branch V1 dispatch checkpoint (2026-11-05)
 

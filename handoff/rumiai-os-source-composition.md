@@ -123,6 +123,16 @@ Scenarios 1 and 2 have initial direct-checkout smoke evidence on Ubuntu and macO
 
 ## Current state
 
+### Branch R activation and source correction (2026-11-05)
+
+The operator authorized R1/R2 under `handoff/m-os-completion-orchestration.md`. R1 nonprivileged independent-package integration is owned here; R2 real SSH/sudo and remote-menu tests remain G-HOST-gated until access to an explicitly authorized controlled target exists.
+
+At `m-rsudo/main@07017bfd4aa1809370ca30c4fe28bb0ab85021a6`, a two-file forward-only change corrected `bin/sys/rssh` to select a readable `rsudo.lib.sh` from the chosen `m-rsudo@*/link/lib/sh` PATH view and reject absent/ambiguous views; `res/sys/manual/rssh` was aligned. It changes no `m-os` shared pkg/context runtime, catalog, frozen repository, or immutable release. `m-rsudo/v0.1.0` still contains the previous source and must not be represented as fixed.
+
+Exact source blob `2cfd7136bd2aa56708ee54fc1091d7ccd8c5857d` was checked with POSIX `sh -n` and an isolated, stubbed core/shell branch test (single/missing/ambiguous selected views), all PASS for those limited properties. Post-change source/manual diff was reviewed. No genuinely installed-package `rssh`, SSH transport, remote privilege execution, TTY session, CI run or physical host PASS is attributed to this correction.
+
+Next R1 work: realign `rsudo-admin` Browse host's legacy global injected libraries and menu source against actual installed `m-core`/`m-term`/ `m-rsudo` views without inventing a second loader, and validate a real installed consumer/session before a new immutable release and catalog entry. R2 host/credentials/privileges remain PENDING explicit controlled authorization and authentic evidence.
+
 ### Branch C activation (2026-11-05)
 
 The user authorized starting Branch C of
@@ -207,7 +217,7 @@ suite modification was made at activation.
 
 **Known source mismatches / not operationally ready:**
 
-- `m-rsudo/bin/sys/rssh` still sets `m_SHELL_EXT` to the legacy global `$m_LIB_DIR/sys/sh/rsudo/rsudo.lib.sh`, not a selected package-owned library. This is a concrete path mismatch for the extracted distribution; the interactive `rssh` path is **not validated** as working.
+- On the originally inspected `m-rsudo/v0.1.0` release, `rssh` still selects the legacy global `$m_LIB_DIR/sys/sh/rsudo/rsudo.lib.sh`. The newer `m-rsudo/main@07017bfd4aa1809370ca30c4fe28bb0ab85021a6` source/manual resolves the selected package-local `link/lib/sh` view, but is unreleased and has not passed an installed-package interactive session. See Branch R checkpoint above.
 - `m-rsudo/bin/sys/rsudo-admin` Browse host still injects legacy global library names (`base array map term menu`) and `$m_BIN_SYS_DIR/menu`. The available `m-core` `loadlib_inject_stream` still resolves selected library references under global `$m_LIB_DIR/sys/sh`. The package-local `m-term`/core sources therefore need explicit injection/lookup realignment before the remote browser can be claimed operational. Other `rsudo-admin` workflows have not received complete real-package functional testing.
 - Real SSH authentication, privileged `rsudo` remote execution, interactive remote source injection and return/status handling remain **NOT TESTED** against an authorized SSH/sudo target. This is a validation gap, not evidence that the remote protocol failed.
 - The initial `context` does **not** automatically install dependent library packages, choose facility/provider bindings, compose full environment/state/profile/default presets, or guarantee protected variable propagation through nested consumers. Plain `context` currently **clears** its package selections, not initializes a finished default context. The intended full environment-first context remains design/work in progress.
@@ -2013,7 +2023,7 @@ its working schema, migration decisions or validation state here.
 
 **Previous source-extraction next action (completed):** The operator rejected the synthetic test, which was removed forward. The source repositories were populated with actual assets; the initial release/catalog/install composition is now implemented and hosted-validated, as recorded above.
 
-**Immediate next real validation:** The operator has reported `vmdev` interactive menu operation PASS; do not repeat the same test without a material change. Verify actual `rsudo` SSH/sudo only against an explicitly authorized host with real access; do not infer credentials or authorization. Independently realign the legacy `rssh` shell-extension pathname and `rsudo-admin` remote stream/menu source assumptions to the selected real package views, then test those paths before publishing a changed immutable release. Distinguish source review, hosted CI, operator report and actual privileged remote validation.
+**Immediate next real validation:** The operator has reported `vmdev` interactive menu operation PASS; do not repeat the same test without a material change. Verify the corrected `rssh` main source through a genuinely installed selected package, and realign the remaining `rsudo-admin` remote stream/menu source assumptions before publishing any new immutable release. Verify actual `rsudo` SSH/sudo only against an explicitly authorized controlled host. Distinguish isolated source checks from hosted package/remote/physical evidence.
 
 **Additional context/library work:** Validate the published `m`
 sh/Java library exports on the real hosted workflow and then through
