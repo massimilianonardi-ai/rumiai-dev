@@ -184,14 +184,31 @@ Given the same test, target, declared configuration and relevant host conditions
 
 A common property should normally use the same test across hosts. Do not create macOS/Linux/Windows copies merely to adapt expectations.
 
-Current stable reference hosts are:
+For **maximum real validation**, the operator's current reference environments
+have the following **descending priority order**:
 
-```text
-macOS
-Ubuntu 26.04 ARM64
-```
+1. **Operator's Ubuntu 26.04 ARM64 virtual machine.**
+2. **Operator's Ubuntu 24.04 or 26.04 x86_64 virtual machine.**
+3. **macOS 27 ARM64.**
 
-Periodic hosts may include Ubuntu x64 and POSIX-compatible Windows environments when relevant.
+The first two reference environments are **intentionally virtual machines**.
+Virtualization itself is never a reason to reject, downgrade or skip their
+reference-host validation. "Real" means executing the real target on the
+actual configured reference environment with its guest OS, architecture,
+runtime and relevant services, not replacing the target with mocks or
+declaring an unexecuted platform PASS. Bare-metal execution is **not**
+an additional entry requirement.
+
+The ordered list establishes the priority for the strongest
+cross-environment validation; a work unit still declares which applicable
+host-specific results it actually needs. Every result is attached to the
+host and exact revisions it exercised. A generic CI runner or other VM
+is useful additional evidence but does not automatically substitute for the
+operator's named reference VMs merely because its reported architecture or
+OS version matches.
+
+Periodic additional hosts may include POSIX-compatible Windows environments
+when relevant.
 
 Additional auxiliary environments are deliberately useful during development and test refinement. In particular, a Linux environment different from the stable hosts may expose accidental dependencies on a distribution, tool version or host-specific divergence that RumiAI abstractions should hide behind a common interface.
 

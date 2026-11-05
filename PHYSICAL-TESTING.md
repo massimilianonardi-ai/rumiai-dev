@@ -3,11 +3,19 @@
 Status: **Current / canonical**  
 Updated: 2026-09-17
 
-This document defines physical validation on real reference hosts. General testing rules remain in `TESTING.md`; runner behavior remains in `RUNNER.md`.
+This document defines final real-environment validation on the
+operator's reference hosts. The existing term **physical validation** names
+that final validation stage; it does **not** mean bare-metal-only execution.
+The designated Ubuntu virtual machines are first-class reference environments.
+General testing rules and the ordered host policy remain in `TESTING.md`;
+runner behavior remains in `RUNNER.md`.
 
 ## 1. Role
 
-Physical validation is the **final confirmation stage** for a work unit whose preceding real executions and permanent tests already make success the expected outcome.
+Physical validation is the **final confirmation stage on the actual configured reference environment**
+for a work unit whose preceding real executions and permanent tests already
+make success the expected outcome. This includes the operator's designated
+Ubuntu virtual machines.
 
 It is not the normal place to discover whether the product works for the first time.
 
@@ -21,14 +29,32 @@ If functional defects are repeatedly discovered first during physical validation
 
 The stable reference-host policy is defined in `TESTING.md`.
 
-Current stable host classes are:
+The current **maximum real-validation order** is:
 
-```text
-macOS
-Ubuntu 26.04 ARM64
-```
+1. **Operator's Ubuntu 26.04 ARM64 VM** — primary reference environment.
+2. **Operator's Ubuntu 24.04 or 26.04 x86_64 VM** — second reference environment.
+3. **macOS 27 ARM64** — third reference environment.
 
-A GitHub-hosted runner, AI-provided VM, headless display or other auxiliary environment is not physical validation of a stable host it did not physically exercise.
+These are the reference hosts, in that order, not a mandate to seek
+bare-metal hardware. A test launcher **MUST NOT reject a designated
+reference environment solely for running under a hypervisor**.
+Record virtualization/hypervisor identity, guest architecture, OS version
+and display/session type as useful evidence where observable; they are
+not disqualifying conditions by themselves.
+
+A test that actually runs the real product in the operator's designated
+Ubuntu VM is a real reference-host execution. A separate GitHub-hosted
+runner, AI-provided VM, container or unrelated guest is still auxiliary
+unless it actually is the requested reference environment. Real browser
+execution in a headless session can prove browser-level properties, but
+does not by itself prove compositor, window-manager, portal or Electron
+integration that the session did not exercise. These properties must
+be reported separately; do not make missing full desktop integration an
+automatic failure of unrelated browser/text-engine tests.
+
+As in `TESTING.md`, the work unit defines the applicable host-specific
+scope before execution. An unrun required host is **PENDING**, not PASS;
+a real test failure remains FAIL and may not be turned into a SKIP.
 
 ## 3. Exact revisions
 
@@ -120,7 +146,8 @@ A formal evidence record should include at least the applicable:
 target revision(s)
 rumiai-tests revision
 selection/scope
-host and architecture
+reference-host identity, guest OS/version/architecture and, where observable, virtualization type
+graphical/headless session and browser/toolchain versions when relevant
 date/time
 individual results
 runner/launcher status
@@ -149,7 +176,7 @@ State accurately that no physical validation was run when none was required.
 
 ```text
 PHYS-01  physical validation is final confirmation, not first-line debugging
-PHYS-02  stable-host evidence is host- and revision-specific
+PHYS-02  operator reference-host VM/macOS evidence is host- and revision-specific; bare-metal is not required
 PHYS-03  the operator session stays minimal; scenario mechanics belong in tests
 PHYS-04  physical execution does not legitimize mocked/replaced target behavior
 PHYS-05  required SKIP is not PASS
