@@ -192,6 +192,17 @@ authoritative for C1 until a coherent promoted replacement and
 migration path exist. **C3 stays blocked on C2 + P4 + the
 applicable pkg/v2 interface checkpoint**.
 
+**C1 PR checkpoint:** Follow-up feature-branch HEAD
+`m-os/context-c1-real-validation@919e4734ec9c66978380fd0ce18007f8a1e0f106`
+is an ahead-only three-commit branch with **exactly two added CI files**.
+Draft PR [#2](https://github.com/massimilianonardi-ai/m-os/pull/2)
+targets `pkg-schema-v2`; it is not merged. The workflow additionally
+uses `pull_request` to request hosted execution and pins checkout to the
+PR head SHA. The immediately inspected GitHub API returned **zero
+matching workflow runs**, so Ubuntu/macOS execution is still
+**NOT VERIFIED**; do not infer PASS or promise background completion.
+No shared runtime/catalog source changed.
+
 **Next C1/C2 work:** check the exact new Actions run/jobs and diagnose
 only real observed failures; do not infer PASS from workflow creation.
 For C2 compare the six scenarios against the existing state/pkg/launch
