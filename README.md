@@ -1,7 +1,25 @@
+
+
+6. Non inventare né promuovere abbreviazioni conversazionali, nomi, primitive, alias, namespace, componenti, API, convenzioni o architetture. Prima di introdurre una nuova responsabilità o astrazione, verifica se qualcosa di corrente copre già lo stesso ruolo.
+
+8. Git è **forward-only**. Non riscrivere la storia e non usare force push salvo esplicita istruzione corrente dell'utente. Preserva sempre modifiche concorrenti o apportate dall'utente. Se un HEAD cambia durante il task, rileggi il nuovo stato e riconcilia forward prima di continuare.
+
+10. Non considerare completato un task RumiAI finché non sono stati eseguiti sia il preflight iniziale sia il consistency check finale richiesti dalle fonti correnti.
+
+11. Se le fonti repository necessarie non sono accessibili o il preflight non può essere completato, dichiaralo esplicitamente. Non sostituire il repository con memoria, riassunti o supposizioni per produrre affermazioni normative o modifiche.
+
+
+
+
+
+
+
+
+
 # RumiAI development knowledge base
 
 Status: **Current**  
-Updated: 2026-09-30
+Updated: 2026-11-06
 
 `rumiai-dev` is the authoritative semantic knowledge base for RumiAI development.
 
@@ -13,31 +31,16 @@ For every RumiAI task, use this order before analysis or modification:
 
 1. verify the current remote HEAD of every involved repository;
 2. read `README.md` to route the task;
-3. read `RULES.md`;
-4. read `CONSISTENCY-GATE.md`;
-5. read `specifications/README.md` and only the current specifications relevant to the subsystem;
-6. read an active file under `handoff/` when the task is represented there;
-7. inspect the current implementation and permanent tests of the involved repositories when behavior or implementation state matters.
+3. use the smallest complete current source set;
+4. read `RULES.md`;
+5. read `CONSISTENCY-GATE.md`;
+6. read `specifications/README.md` and only the current specifications relevant to the subsystem;
+7. read an active file under `handoff/` when the task is represented there;
+8. inspect the current implementation and permanent tests of the involved repositories when behavior or implementation state matters.
+9. perform the task autonomously within those constraints
+10. run the final consistency gate
 
 Do not use conversation memory, old commit content or remembered decisions as a substitute for this retrieval.
-
-## External assistant / Project Instructions bootstrap
-
-External assistant instructions, including ChatGPT Project Instructions, must act only as a **bootstrap into this repository**.
-
-They should contain only the minimum stable rules needed to force fresh retrieval, preserve Git history and prevent memory from becoming authority. They should not duplicate POSIX rules, architecture, naming, testing policy, package semantics, state semantics or other subsystem contracts already maintained here.
-
-The intended external bootstrap is therefore conceptually:
-
-```text
-recognize a RumiAI task
-→ verify current remote HEADs
-→ read this README
-→ follow its mandatory read order
-→ use the smallest complete current source set
-→ perform the task autonomously within those constraints
-→ run the final consistency gate
-```
 
 If a repository source and an external assistant instruction ever duplicate the same RumiAI contract, the repository is the canonical maintenance location and the external instruction should be simplified rather than creating a second independently editable rule set.
 
