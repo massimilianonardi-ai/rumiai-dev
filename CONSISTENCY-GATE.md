@@ -212,24 +212,14 @@ After every modification:
 
 ## 12. Documentation consistency checks
 
-When documentation is touched, additionally verify:
+When documentation is touched, apply the current-source and specification-promotion gate (§3), the applicable command/library manual gate (§8), the deferred-work and handoff gate (§13), and the diagnostics requirements in `RULES.md` and `DIAGNOSTICS.md`. Additionally verify:
 
-- no current document claims a superseded contract;
-- no old decision is required to interpret the current specification;
-- topic routing in `README.md` / `specifications/README.md` still reaches the authoritative source directly;
-- no completed handoff remains in the current tree as competing authority;
-- no historical evidence is presented as current behavior;
-- cross-references point to paths that exist in the current tree;
-- repeated normative text is minimized;
-- current specifications contain only promoted contract and do not accumulate provisional design;
-- operational manual content remains revision-coupled to the implementation/API it describes;
-- mandatory command manual topics are not omitted because a command is technical/internal;
-- mandatory library manual topics are present for every `m`- or RumiAI-owned library identity;
-- library manuals expose the complete public function API and do not expose underscore-prefixed internal functions as callable API;
-- public/internal library function naming follows `LIBRARY-INTERFACES.md`;
-- diagnostic identities, statuses and observability follow `DIAGNOSTICS.md`; branch-specific failures are not flattened into generic messages;
-- TODO files contain only deferred-work planning state and do not become substitute specifications or task handoffs;
-- the same work is not represented simultaneously by a current TODO and an active handoff.
+1. Current documents do not assert superseded contracts or rely on historical decisions to establish current meaning; completed handoffs and historical evidence do not compete with current authority.
+2. `README.md` and `specifications/README.md` route directly to the correct current owner, and all affected cross-references resolve to paths in the current tree.
+3. Repeated normative text is minimized, and no provisional design is promoted into a current specification.
+4. Affected operational manuals remain revision-consistent with command/library implementation and public API; required topics, library visibility and structural coverage are checked under §8.
+5. Changed failure statuses, diagnostic identities and observability remain consistent with `DIAGNOSTICS.md`, without flattening distinct failure branches.
+6. TODOs contain only deferred work and do not duplicate an active handoff for the same responsibility.
 
 ## 13. Deferred work and active handoffs
 
