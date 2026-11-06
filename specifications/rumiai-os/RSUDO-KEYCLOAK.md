@@ -210,3 +210,70 @@ Secret channels and data channels remain distinct from shell source and command 
 K04 must finish authenticated transport and the remaining offered acquisition mechanisms against eligible real isolated servers with no secret disclosures; K05 must cover each documented v1 method family, version/path/query/body semantics, non-JSON responses and failures; K06 must prove the domain conveniences and ID resolution through the real rsudo entrypoint; K08 must verify composed authentication, permission/FGAP and end-to-end resource scenarios on 26.7.3 and at least one later release. Use actual 26.7.3/26.8.1 and relevant configured clients; a source matrix, fixture, one-host runner or test double is not live server certification.
 
 This K03 specification remains the forward implementation contract, with one **partial K04 implementation**: `rsudo keycloak auth acquire/refresh/revoke/status` for the currently documented protected-store service-account, RFC 7523 authorization grant, confidential user-password and explicit token-revocation variants described in section 2. The current runtime also still forwards the 16 old public operations to legacy. K04's other authentication and transport paths, K05's general JSON Admin REST API and K06's short-operand conveniences must not be advertised as executable until separately implemented with their operational manuals and permanent tests.
+
+
+## Official remote kcadm.sh adapter (operator-authorized 2026-11-06)
+
+The existing rsudo Keycloak module additionally exposes the following current
+operator-facing public operations, independent of legacy forwarding and of
+the partially implemented K04–K08 HTTP administration path:
+
+    rsudo [rsudo-options] keycloak discovery [--path ABSOLUTE-REMOTE-PATH]
+        [--interactive] [--find]
+    rsudo [rsudo-options] keycloak kcadm KCADM-ARGUMENTS...
+
+The module public functions are `rsudo_mod_keycloak_discovery` and
+`rsudo_mod_keycloak_kcadm`. The direct `m keycloak admin` CLI continues to
+exist independently and is not replaced.
+
+**Discovery:** `--path` accepts an operator-selected absolute pathname on the
+selected remote sudo target; only an executable regular file qualifies. Without
+`--path`, candidates may come from a selected environment path, a previous
+selection, remote `PATH`, `KEYCLOAK_HOME`, conventional installation roots,
+observable `-Dkc.home.dir` process arguments, or `find` of conventional
+roots. `--find` explicitly requests an additional whole-filesystem search.
+Duplicates are removed. A unique valid candidate is selected. Multiple
+candidates fail without guessing unless `--interactive` requests a numbered
+selection on the operator's local TTY. An explicit path is validated remotely.
+
+**Selection persistence:** a process cannot modify the environment of future
+SSH/sudo sessions. The selected path is stored in the effective sudo target
+account's `$HOME/.rsudo-keycloak-kcadm-path`, with restrictive permissions
+and atomic replacement, not installed into the remote shell profile. On each
+proxy invocation it is reloaded into `KEYCLOAK_KCADM_PATH`, then validated
+before execution. A caller-selected local `KEYCLOAK_KCADM_PATH` overrides
+that selection and is likewise validated on the remote target; invalid
+explicit selection does not silently fall back. The persistent file is not a
+password or token cache; Keycloak itself owns its `kcadm.config`.
+
+**Credential handling:** the operator may supply `KC_CLI_PASSWORD` in their
+current execution environment. To prevent exposing it in `ssh`, `sudo`,
+`sh -c` or `kcadm.sh` arguments, the module generates safely shell-quoted,
+non-interactive POSIX source and sends it to the existing rsudo `sh -s`
+stdin path. The remote shell assigns the password as a shell value and uses
+a *temporary per-command environment assignment* for the official
+`kcadm.sh` executable. There is no `export` of the secret in the containing
+remote shell, client-secret prerequisite, plaintext password file, or sourcing
+of the upstream launcher. Java necessarily receives the secret in its
+environment, which can be observable by privileged process inspectors; this
+is an explicit operator-approved boundary. Neither generated secret source
+nor any secret value is printed or included in command diagnostics. The
+existing rsudo interactive source-injection mode is **not** used for this
+credential-bearing path: it serializes source into `sh -c` argv.
+
+**Proxy boundary:** after valid selection the proxy passes its arbitrary
+CLI argument vector without shell interpretation, preserves stdout/stderr
+and propagates the official CLI status, including authentication failures.
+The injected source consumes remote stdin and does not currently forward an
+independent caller stdin payload into `kcadm.sh`. The module must not claim
+full stdin transparency, intercept the official CLI's session handling, alter
+the Keycloak server, silently enable password grants, or change the legacy
+module's existing operations. Native interactive Java console prompts are
+not part of the secret-bearing non-interactive proxy.
+
+The current implementation must be tested with normal public `rsudo` calls
+through representative SSH/sudo boundaries, including disabled/absent sudo
+password prompts, recovery after discovery, zero secret exposure to argv/logs,
+special-character arguments and passwords, missing/stale executable paths and
+non-zero CLI statuses. A synthetic rsudo transport fixture proves only remote
+source generation/operation, not a real SSH/sudo transport or Keycloak server.
