@@ -245,6 +245,12 @@ Mainline repository adapters: `pkg-repository-{artifact,chrome,chromium,github,n
 
 ## Current state
 
+### Branch S hosted macOS/Ubuntu matrix acceptance checkpoint (2026-11-06)
+
+- All previously queued S1 and S2 macOS jobs are **genuine PASS**, not merely queued or `SKIP`. In particular macOS 26 ARM64 native `launchd` with isolated integrated provider and macOS 15 Intel explicit native TERM/old-PID disappearance passed. Owning `handoff/m-autonomous-validation.md` has the complete source/runner/job IDs and distinct evidence boundaries.
+- Unified S1/S2 exact-source GitHub-hosted [run 42192103307](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42192103307) on `m-os/m-os-completion-s@433f341351ab8240563189229b0b3dd0ea2dda1e` **PASS 5/5** (Ubuntu/macOS 26 ARM64 offline, Ubuntu published real provider, Ubuntu/macOS 26 ARM64 native user supervisor). The macOS positive *portable* `srv start` / `srv stop -f` path now ran with a real local provider before native host-user operations, closing the prior hosted Darwin positive gap.
+- No full S/M12/M13 promotion or merge yet: macOS published Electron installation still has separate upstream HTTP 403, privileged host-system paths need explicit controlled G-HOST, legacy PID identity and same-second reuse remain open, and operator reference-host physical validation remains PENDING. [Draft PR #4](https://github.com/massimilianonardi-ai/m-os/pull/4) stays unmerged. No shared P2/V2, `pkg-catalog/main`, frozen runtime/test, or reference-host mutation by S.
+
 ### Branch S forced-stop and native TERM evidence (2026-11-05)
 
 - S1 now explicitly protects an unrelated live PID from **forced `srv stop -f`** when persistent instance identity is stale: [real Ubuntu run `42116060510`](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42116060510) **PASS** against `m-os@d014d41e`. This extends earlier S1 rejection of `start` on the same stale process metadata.
