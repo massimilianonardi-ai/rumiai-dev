@@ -215,6 +215,8 @@ These points should later be reviewed together and promoted only in the smallest
 
 ## Completed
 
+- 2026-11-06: Optimized `CONSISTENCY-GATE.md` §§11–12: consolidated post-change review into six grouped checks and documentation consistency into six source-linked checks; normative requirements and specialized gates remain in force (commits `957cba903bb96fe73ba46cdc6c0953b019957d46`, `643ad8f89ca6aeb36b5bd333a5ad45f7d757fbcd`).
+
 - 2026-11-06: Optimized `CONSISTENCY-GATE.md` §13 into six verification checks, preserving TODO activation, handoff ownership/synchronization and closure requirements while delegating lifecycle definitions to `todo/README.md` and `handoff/README.md` (commit `5364c5cf95eef1f52dcebc4c87424379db25b243`).
 
 ### Root README routing consolidation — 2026-11-06
