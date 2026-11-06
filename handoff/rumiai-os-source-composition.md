@@ -123,6 +123,12 @@ Scenarios 1 and 2 have initial direct-checkout smoke evidence on Ubuntu and macO
 
 ## Current state
 
+### C2 PoC 098 two-host standalone probe completion and authentic integrator gate (2026-11-06)
+
+- The earlier original standalone PoC 098 [run 42193917751](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/42193917751) at exact source `3633162592f70b62ef588b99007bec6e3113f6df` is now **COMPLETED SUCCESS 2/2**, Ubuntu job `127812311003` and macOS job `127812311245`. Mac job's real log contains all three expected `PASS:` assertions: one global `system/current` path under separately labelled processes, distinct prepared A/B views for an invoked-path-aware shell program, and direct immutable-root incompatibility. This **supersedes only the old macOS-queued observation** for that standalone POSIX filesystem PoC; not a product `context` implementation test.
+- The newer [run 42196202367](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/42196202367) at exact integration script/workflow SHA `29ee99b109ff40e8bf26fe52fa9026a345afcbcc`: `pkg_integrate` plus authentic GeoServer catalog descriptor / synthetic useful root **Ubuntu PASS**, job `127819943949` with public log assertions; the integrated macOS job `127819943618` was **QUEUED** at checkpoint. Its standalone Ubuntu check also passed. Do not transfer the earlier macOS standalone PASS to the distinct real-integrator scenario.
+- Both test paths are isolated auxiliary CI/PoC with pinned runtime and catalog where involved. The current product still uses global system `current` by design; `context` C2 profiles, provider/TLS/NSS/host services, physical reference-host and real GeoServer/Keycloak execution remain **PENDING** under their proper gates.
+
 ### C2 actual pkg integration: catalog GeoServer var descriptor (2026-11-06)
 
 - Catalog inventory at exact `pkg-catalog/pkg-schema-v2@a75f9be1c9a62a72899022eddf55e163d86ab630` contains **real** v1 `var/` descriptors for `geoserver/all/n0001=3.0.1/var/data` with `data_dir`, and `keycloak/all/n0001=26.7.3/var/{cache,conf,data}` with `lib/quarkus`, `conf`, `data`, respectively. These are production catalog declarations of the current static system-`current` path, not claims that the upstream binaries were downloaded or validated.
