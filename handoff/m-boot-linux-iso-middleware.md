@@ -1,7 +1,7 @@
 # m-boot — reusable early-Linux ISO middleware (independent parallel workstream)
 
 Status: Active
-Updated: 2026-11-05
+Updated: 2026-11-06
 
 ## Goal
 
