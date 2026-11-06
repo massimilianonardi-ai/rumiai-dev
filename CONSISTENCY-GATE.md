@@ -7,27 +7,14 @@ This document defines the mandatory consistency process for RumiAI work. Its pur
 
 ## 1. Mandatory preflight
 
-Before analysing, proposing or modifying an established RumiAI subsystem:
+Follow the mandatory workflow and authority hierarchy in `README.md` before analysing, proposing or modifying RumiAI work. This gate adds the following task-specific source requirements to that preflight:
 
-1. verify the current remote HEAD of every involved repository;
-2. read `README.md`;
-3. read current `RULES.md`;
-4. read this `CONSISTENCY-GATE.md`;
-5. use `specifications/README.md` to retrieve the smallest complete set of current specifications relevant to the task;
-6. read the active handoff under `handoff/` when the task has one;
-7. inspect the current implementation and permanent tests when behavior, API shape or mechanical coverage matters.
+- For a `m`- or RumiAI-owned directly executable command being created, renamed, removed or modified, read `specifications/rumiai-os/COMMAND-ENTRYPOINTS.md`, `specifications/rumiai-os/DOCUMENTATION-MODEL.md` and the affected operational manual topic.
+- For a `m`- or RumiAI-owned library or function being created, renamed, removed or modified, read `specifications/rumiai-os/FILESYSTEM-NAMING.md`, `specifications/rumiai-os/LIBRARY-INTERFACES.md`, `specifications/rumiai-os/DOCUMENTATION-MODEL.md` and the affected library manual topic.
+- For changes to handled failure branches, return/exit statuses, diagnostics, log severity/level behavior or significant runtime observability, read `specifications/rumiai-os/DIAGNOSTICS.md`.
+- Read `todo/README.md` and the relevant TODO item when selecting deferred work, checking an already known deferred issue, activating a TODO or maintaining the pending-work inventory. Unrelated tasks do not require reading `todo/`.
 
-This is an execution precondition, not a recommendation.
-
-Conversation memory, summaries and historical commits do not satisfy the preflight when current repository sources can answer the question.
-
-For any task that creates, renames, removes or modifies a `m`- or RumiAI-owned directly executable command, `specifications/rumiai-os/COMMAND-ENTRYPOINTS.md` and `specifications/rumiai-os/DOCUMENTATION-MODEL.md` are part of the smallest complete source set, and the affected operational manual topic must be inspected together with the command.
-
-For any task that creates, renames, removes or modifies a `m`- or RumiAI-owned library or one of its functions, `specifications/rumiai-os/FILESYSTEM-NAMING.md`, `specifications/rumiai-os/LIBRARY-INTERFACES.md` and `specifications/rumiai-os/DOCUMENTATION-MODEL.md` are part of the smallest complete source set, and the affected library manual topic must be inspected together with the library.
-
-For any task that creates or changes handled failure branches, return/exit statuses, diagnostics, log severity/level behavior or significant runtime observability, `specifications/rumiai-os/DIAGNOSTICS.md` is part of the smallest complete source set.
-
-`todo/` is not part of the mandatory preflight for unrelated tasks. Read `todo/README.md` and the relevant TODO item when choosing deferred work, checking whether a newly discovered deferred issue is already known, activating a TODO or maintaining the pending-work inventory.
+These sources are mandatory whenever their respective conditions apply; they supplement rather than replace the README preflight.
 
 ## 2. Extract the applicable invariants
 
