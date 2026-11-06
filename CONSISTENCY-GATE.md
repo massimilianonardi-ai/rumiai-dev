@@ -159,7 +159,7 @@ For established code, do not mechanically renumber public or consumed statuses m
 
 ## 8. Command/library manual consistency gate
 
-For each affected `m`- or RumiAI-owned command or library, verify the operational-manual and library-visibility contracts in `RULES.md`, `DOCUMENTATION-MODEL.md` and, for libraries, `LIBRARY-INTERFACES.md`:
+For each affected `m`- or RumiAI-owned command or library, verify the operational-manual and library-visibility contracts in `RULES.md`, `specifications/rumiai-os/DOCUMENTATION-MODEL.md` and, for libraries, `specifications/rumiai-os/LIBRARY-INTERFACES.md`:
 
 1. Confirm that every required command or library manual topic exists at its owner-local location and has the correct identity; independently packaged references remain package-local.
 2. For a created, renamed or removed command or library, confirm that its manual topic was created, realigned or removed in the same work unit.
@@ -203,13 +203,13 @@ After every modification, reread the resulting diff and verify:
 
 ## 12. Documentation consistency checks
 
-When documentation is touched, apply the current-source and specification-promotion gate (§3), the applicable command/library manual gate (§8), the deferred-work and handoff gate (§13), and the diagnostics requirements in `RULES.md` and `DIAGNOSTICS.md`. Additionally verify:
+When documentation is touched, apply the current-source and specification-promotion gate (§3), the applicable command/library manual gate (§8), the deferred-work and handoff gate (§13), and the diagnostics requirements in `RULES.md` and `specifications/rumiai-os/DIAGNOSTICS.md`. Additionally verify:
 
 1. Current documents do not assert superseded contracts or rely on historical decisions to establish current meaning; completed handoffs and historical evidence do not compete with current authority.
 2. `README.md` and `specifications/README.md` route directly to the correct current owner, and all affected cross-references resolve to paths in the current tree.
 3. Repeated normative text is minimized, and no provisional design is promoted into a current specification.
 4. Affected operational manuals remain revision-consistent with command/library implementation and public API; required topics, library visibility and structural coverage are checked under §8.
-5. Changed failure statuses, diagnostic identities and observability remain consistent with `DIAGNOSTICS.md`, without flattening distinct failure branches.
+5. Changed failure statuses, diagnostic identities and observability remain consistent with `specifications/rumiai-os/DIAGNOSTICS.md`, without flattening distinct failure branches.
 6. TODOs contain only deferred work and do not duplicate an active handoff for the same responsibility.
 
 ## 13. Deferred work and active handoffs
