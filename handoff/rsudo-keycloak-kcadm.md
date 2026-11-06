@@ -9,9 +9,9 @@ Implement an agentless `rsudo keycloak discovery` and `rsudo keycloak kcadm` int
 
 ## Current repository revisions
 
-- rumiai-dev: bb10f51eed0482cb7eb47186644156fef0b9c779
-- rumiai-os: e8504ab4652af626f1f72fe769bde742e6af4786
-- rumiai-tests: 0d88b06c8c3d3e5c9f61a698528a914e19db6816
+- rumiai-dev: 73410562a44e8e51a4634491b378797731a3bbe2
+- rumiai-os: 679cd66fd8329f077c0223972d4c5bee14629f05
+- rumiai-tests: 017613ca32053c99507b3b32b1a6d16d891eb1a9
 
 ## Applicable canonical sources
 
@@ -49,14 +49,17 @@ Implement an agentless `rsudo keycloak discovery` and `rsudo keycloak kcadm` int
 ## Completed
 
 - Retrieved current repository authority and inspected rsudo non-interactive/interactive source transport and existing Keycloak module.
+- Added discovery/kcadm operations to the existing facade, synchronized operational manual and canonical specification index/contract.
+- Added source-level proxy test and real SSH/sudo test with executable entrypoints and validation scope selections.
+- Focused Linux ARM64 and macOS validation passed at rumiai-tests 5aedb9b5e84d87d0ec00ea815b12695120dd504d and rumiai-os 679cd66fd8329f077c0223972d4c5bee14629f05.
 
 ## Current state
 
-Implementation not yet committed.
+Implemented and committed. Focused rsudo-keycloak workflow passed on Linux ARM64 and macOS after a shell portability fix. A separate real OpenSSH/sudo proxy test has been added to the SSH validation scope; its focused run is in progress.
 
 ## Next action
 
-Implement and test source/proxy and discovery, align specifications/manual, record validation evidence.
+Inspect the real SSH/sudo test result, address any failures, then complete the final consistency audit and close this handoff only after supported validation.
 
 ## Blockers / open questions
 
