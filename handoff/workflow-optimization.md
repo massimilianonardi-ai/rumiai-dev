@@ -215,6 +215,8 @@ These points should later be reviewed together and promoted only in the smallest
 
 ## Completed
 
+- 2026-11-06: Completed cross-document review of `README.md`, `RULES.md` and `CONSISTENCY-GATE.md`: authority/read-order, normative ownership, gate dependencies and final checklist were compared. Normalized remaining abbreviated specification paths in gate §§8 and 12 (commit `557f81516ab16bc64d7e709ffcba33abafb08993`). No contradictory authority or circular prerequisite was found in the reviewed documents; no implementation or runtime tests were needed for these documentation-only edits.
+
 - 2026-11-06: Cross-reviewed README/RULES/CONSISTENCY-GATE ownership and clarified the diagnostics specification path in the gate (commit `0ed4e728ae6f85c9979832ef64e720f0b7436e69`). Other abbreviated specification references remain for subsequent incremental cleanup.
 
 - 2026-11-06: Further consolidated `CONSISTENCY-GATE.md` §14 scope, proportional validation, diff integrity and handoff ownership/synchronization completion checks, retaining explicit obligations (commit `cdde0c4dbd6a80915f852768d220a56a97d3912b`).
