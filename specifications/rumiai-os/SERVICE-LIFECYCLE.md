@@ -56,6 +56,15 @@ Runtime metadata for a provider-backed service must therefore preserve enough co
 
 `srv stop <service>` operates on recorded runtime state and must not resolve another provider merely to stop an already-running instance.
 
+A live recorded PID without verifiable process-start identity must not be treated as
+the managed service. Both `start` and `stop` fail without changing that live
+process or its runtime record, including when `stop -f` overrides caller ownership.
+Older records lacking a process-start snapshot can still be cleaned as stale state
+after the recorded PID has exited. The `-f` override never replaces process-identity
+verification. Identity inspection that a host cannot provide must fail closed,
+and a coarse-grained observation must not be presented as proof against process
+recycling within that observation's resolution.
+
 ## State
 
 `srv` resolves its state roots through `state-path` rather than reconstructing the physical state tree.
@@ -272,4 +281,5 @@ SRV-38  system host reconciliation grants the execution account write ownership 
 SRV-39  system host uninstall removes native registration without deleting the POSIX account or authoritative package/service state
 SRV-40  Linux system supervision uses a systemd system unit with an explicit non-root User and direct foreground-provider supervision
 SRV-41  macOS system supervision uses a LaunchDaemon with an explicit non-root UserName and direct foreground-provider supervision
+SRV-42  an unverifiable live runtime PID is never considered a managed service or signaled, even with stop -f; dead legacy records remain removable as stale state
 ```
