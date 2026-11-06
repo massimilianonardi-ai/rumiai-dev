@@ -245,6 +245,11 @@ Mainline repository adapters: `pkg-repository-{artifact,chrome,chromium,github,n
 
 ## Current state
 
+### Branch S hosted macOS account routing and published service PASS (2026-11-06)
+
+- [Run 42195884135](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42195884135) pinned to `m-os/m-os-completion-s@8efbbff85e1b858066c37946ef62ef7eee63d679` completed **3/3 PASS**: Ubuntu 26.04, macOS 15 Intel and macOS 26 ARM64 real native host-user two-concrete default switching, TERM/exit and actual-account supervisor routing with redirected caller HOME/XDG. [Run 42193825267](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42193825267) on earlier test source `m-os@49ad0d9` completed **4/4 PASS**, including actual macOS ARM64 `electron-web-control@v0.1.0` published install and host-user install/start/readiness/restart/stop/uninstall; previously observed upstream 403 is not assumed permanently eliminated. Owning `handoff/m-autonomous-validation.md` records the exact runner/job IDs, split source scopes, and residual gates.
+- This is real GitHub-hosted evidence, not an operator macOS 27 reference-host physical PASS or privileged `srv host system` G-HOST authorization; legacy/no-snapshot PID records, same-second PID reuse, and other POSIX host adapters remain pending. [Draft PR #4](https://github.com/massimilianonardi-ai/m-os/pull/4) stays unmerged. Only S test workflow, isolated CI runner, PR and task handoffs changed; no S edits to production `srv`, shared P2 files, frozen repos or catalog main.
+
 ### Branch S native two-provider and actual-account host routing check (2026-11-06)
 
 - S2 exact `m-os@49ad0d9453a1ac0a67b9ad2ee4894bfd9a394848` native `srv host user` provider-version re-selection + live PID/TERM now **PASS Ubuntu 26.04 and macOS 15 Intel** in [run 42193825267](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42193825267), jobs `127812007937` and `127812008048`; macOS 26 ARM64 native version-switch has now **PASS** in the same run, job `127812007780`; independently published-Electron acquisition remains **QUEUED**.
