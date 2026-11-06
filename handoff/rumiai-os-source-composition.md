@@ -123,6 +123,13 @@ Scenarios 1 and 2 have initial direct-checkout smoke evidence on Ubuntu and macO
 
 ## Current state
 
+### C2 macOS PoC closure and merged-P2 routing checkpoint (2026-11-06)
+
+- Previously queued [PoC 098 run 42196202367](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/42196202367), exact test/workflow SHA `29ee99b109ff40e8bf26fe52fa9026a345afcbcc`, is **COMPLETED SUCCESS, 4/4 hosted Ubuntu/macOS jobs**. Verified real macOS raw logs: integrated actual `pkg_integrate` with exact published GeoServer `var/data` descriptor and **synthetic staged useful-root** (job `127819943618`) produced three expected `PASS:` assertions; the separate path/symlink probe (job `127819943925`) also produced three expected `PASS:` assertions. These supersede earlier QUEUED statuses only for this run.
+- Exact upstream-script-only [PoC 098 run 42198184832](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/42198184832) is **COMPLETED SUCCESS, 2/2 Ubuntu/macOS** at SHA `0b4d51da05b7f357e8032280db6d9f9763986353`. Mac job `127826609294` raw log proves three asserted observations: GeoServer 3.0.1 separates `GEOSERVER_DATA_DIR` from one `GEOSERVER_HOME`; Keycloak 26.7.3 resolves distinct symlinked launch scripts to one physical home/conf/classpath; inert Java recorded argv, **no real JVM/server ran**.
+- P2 owner [post-merge run 42197729661](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42197729661) now records accepted merged P2, **2/2 hosted PASS**, releasing the serialized P3/P4 shared-`pkg` writer (not proof that P4 is implemented or that V2 is promoted). Isolated [PoC 098 run 42240304820](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/42240304820) pins actual merged `m-os/master@e07fbec09fae49cab0d688940e6406a25b6b5e83` plus current v1 `pkg-catalog/main@4083aa19c4362f00ec62428a631edfa493faf7f0`, reusing unchanged integration script. Ubuntu job `127968512399` **PASS** with three assertions in raw log: merged mainline `pkg_integrate` still physically routes system package `var/` via global `state/system/current`. macOS job `127968512625` was **QUEUED** at checkpoint; do not infer PASS.
+- These are experimental and hosted CI results; none authorizes or tests live GeoServer/Keycloak, privileged systemd/launchd, real CA approval, or generalized `context` C2. Current no-arg `context` remains reset; `rumiai-os/main` and `rumiai-tests/main` remain frozen.
+
 ### C2 host-supervisor registration and launcher override scope (2026-11-06)
 
 - Read-only current source at exact `m-os/pkg-schema-v2@1e3a038a5abf6f8c176272d8e44464c842d3cefd` establishes **host-supervisor** (rather than shell-local) service identity: `bin/sys/srv` `srv_host_systemd_system_prepare/install` writes a systemd unit `/etc/systemd/system/m-srv-<service>.service`, containing `User=<host account>` and `ExecStart` that invokes the trusted `srv --host-system-run` entrypoint with the registered service and exact provider selection; `srv_host_launchd_system_prepare/install` writes `/Library/LaunchDaemons/m.srv.<service>.plist`, with its own fixed `Label`, `UserName` and `ProgramArguments`. Both registrations are indexed by the service name at host level. `srv_host_system_registration_prepare/write` persists the account/provider under `state-path system sys srv conf`; `srv_host_system_registration_current_require` checks that configured provider identity matches the registered one; `srv_host_system_run` re-resolves the expected concrete, exports `m_PKG_LAUNCH_CONTEXT=system-service` plus `m_PKG_LAUNCH_STATE_INSTANCE=<service>`, and execs a fresh `m` process. **Two concurrent shell context selections cannot automatically create two independent host services with the same service identity.** This is a current implementation fact, not proof that multiple service instances are impossible under a deliberately revised supervisor contract.
@@ -974,6 +981,47 @@ frozen `rumiai-os` or `rumiai-tests`; no new catalog package range
 was migrated to use these exports.
 
 ## Working design / open questions
+
+### C2 candidate: bind host services, authorize CA separately (2026-11-06)
+
+**Recommended working candidate; explicit operator agreement and G-CONTEXT
+canonical promotion required before runtime changes.**
+
+1. Preserve two concurrent managed shells selecting different system-profile
+   and logical user-state identities, with no global `current` symlink
+   mutation. For a selected package with static system `var/` access,
+   require a proven upstream data-path adapter, a compatible prepublished
+   view, or an explicit pre-launch failure; never silently read another
+   selected profile's state.
+2. Treat each host-supervised service as a **trusted separately initialized
+   consumer**. Bind its registered service identity, exact concrete, host
+   POSIX account and system profile at authorized installation/registration,
+   then use the same general context resolution engine at trusted service
+   start. Another shell's profile change must not retarget it. Multiple
+   concurrent instances of one facility require distinct qualified
+   supervisor/service identities and an explicit future host-administration
+   contract; present `srv <service>` does not already provide this.
+3. Distinguish administrative **authority to approve/revoke system TLS CAs**
+   from the **approved set consumed** by each validated profile-bound
+   client. An untrusted shell label cannot authorize a CA or service.
+   If profile-specific CA consumption is desired, it must be
+   administered through trusted host permissions, cannot silently
+   union distinct profiles, and needs a coordinated migration of today's
+   `state/system/current` TLS readers and final browser HOME/NSS
+   projections.
+4. Preserve the confirmed user choices (one active context per shell,
+   ordered inline selection/default/preset composition, fail-before-apply,
+   protected inherited values, no per-call symlink generation). Keep the
+   existing documented no-arg reset until a deliberate public migration.
+
+**Open operator choice:** Are host services to remain bound to trusted
+registration-time profiles (rather than the caller shell), while CA
+approval is host-authorized and CA *consumption* follows a verified
+selected system profile? This combined candidate retains independent
+shell selections without allowing arbitrary shell parameters to
+control a privileged host service or trust store. It is **not a
+current rule or API**. C2's syntax, provenance, persistence and
+P4/V2 interfaces are still unsettled; C3 remains blocked.
 
 ### C2 service/profile separation: acceptance and authority gate (2026-11-06)
 
