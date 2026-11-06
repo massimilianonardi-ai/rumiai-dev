@@ -233,39 +233,14 @@ When documentation is touched, additionally verify:
 
 ## 13. Deferred work and active handoffs
 
-`todo/README.md` defines the lifecycle for concrete known work that is intentionally deferred and not yet active. `handoff/README.md` defines the lifecycle for active resumable tasks.
+Verify deferred-work and active-task ownership against `todo/README.md` and `handoff/README.md`:
 
-A TODO may record only the minimal future intent, why the work remains pending, its scope and pointers to evidence. It must not accumulate active task progress, detailed design decisions or execution state.
-
-When a TODO is intentionally activated, ownership of current task state moves from `todo/` to `handoff/`:
-
-```text
-delete todo/<topic>.md
-create handoff/<task>.md
-```
-
-Perform both changes in the same authorized work unit and, when practical, the same commit. Do not retain duplicate current TODO and handoff representations for the same work.
-
-An active handoff exists only to preserve task continuity across chats/sessions. `handoff/README.md` defines its lifecycle and structure.
-
-Working design in a handoff is persistent task memory, not authority. It must be promoted, deferred or discarded before the task handoff is removed.
-
-For a substantial, parallel or multi-chat task, determine handoff ownership after preflight and before the first material task change when the need is already known. Before creating a new handoff, inspect the existing active handoffs and apply the ownership rule in `handoff/README.md`: reuse the existing owner when the work shares the same resumable responsibility and lacks a materially independent lifecycle; create a separate handoff only when independent goal/state/blocker/validation/completion ownership is concrete.
-
-A narrower task label is not sufficient reason to split an existing workstream. Long-lived handoffs are preferred owners within their standing responsibility, but they must not absorb work that has a genuinely independent lifecycle. When a specialized child handoff is justified, parent and child must not duplicate active operational state.
-
-When a response materially advances an active handoff task, required synchronization must complete **before** the user-visible final response.
-
-When the task closes:
-
-1. propagate durable content to canonical current sources;
-2. resolve remaining working design;
-3. capture concrete out-of-scope deferred work as minimal TODO items when applicable;
-4. complete the normal final consistency gate;
-5. write and commit a final handoff snapshot with `Status: Complete`;
-6. remove the handoff from the current tree in a later forward commit.
-
-Git history is the archive.
+1. Confirm that a TODO describes only concrete, intentionally deferred work with minimal intent, reason, scope and evidence pointers; it must not carry active design or execution state.
+2. Before material changes to a substantial, parallel or multi-chat task, identify its active handoff owner. Reuse an existing handoff for the same resumable responsibility unless a genuinely independent goal, state, blockers, validation and completion lifecycle warrants a separate owner. A narrower label alone does not justify splitting work; parent and child must not duplicate operational state.
+3. When activating a TODO, verify that its active state moves to a handoff and the TODO is removed in the same authorized work unit, preferably the same commit. Do not leave competing active representations.
+4. Treat handoff working design as non-authoritative task state. Before closure, verify that each remaining item is promoted to its canonical specification, deferred to a TODO or discarded.
+5. When an active task materially advances, confirm that its handoff is synchronized before the final user-visible response.
+6. At task closure, verify durable propagation, resolution of working design, capture of applicable deferred work, and the final consistency gate. Commit a final handoff snapshot marked `Status: Complete`, then remove it in a later forward commit; Git history retains the archive.
 
 ## 14. Completion checklist
 
