@@ -123,6 +123,13 @@ Scenarios 1 and 2 have initial direct-checkout smoke evidence on Ubuntu and macO
 
 ## Current state
 
+### C2 PoC 098: fixed var routing vs prepared views (2026-11-06)
+
+- New isolated [PoC 098](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/tree/context-c2-profile-state-views/pocs/098-context-profile-state-views) on `rumiai-dev-PoCs/context-c2-profile-state-views@3633162592f70b62ef588b99007bec6e3113f6df` reproduces actual `pkg-state.lib.sh` static `var/` link mechanics under two process-local profile labels. Linux disposable POSIX `sh` and `dash` parse/execution **PASS**: with shared `system/current=A`, both processes read A; changing the global selector to B also changes the A-labelled process read. This confirms the **physical path** boundary, not a behavior test of real `m`.
+- The same experiment pre-prepares **two distinct profile-specific execution views** pointing to one immutable shell program/file payload but to different A/B state directories. A path-aware program launched *through each view* resolves separate writable state without mutating `system/current`; launch through the shared physical program path fails, demonstrating nontransparent upstream compatibility. These are **candidate mechanics**, not a proven general package/launcher migration or new public API.
+- [Hosted PoC workflow 42193917751](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/42193917751) at exact PoC `363316259...`: Ubuntu job `127812311003` **PASS** with all three expected `PASS:` lines read from actual log; macOS job `127812311245` **QUEUED** at checkpoint. No completed macOS result claimed. This is auxiliary experimental evidence, not C1/C2 runtime, formal frozen suite, or physical reference-host acceptance.
+- PoC numbering collision with existing `097` m-boot workflow was reconciled **forward-only** before publication of `098`; latest branch contains only `pocs/098-context-profile-state-views/` and its workflow. No shared `m-os`, `pkg-catalog`, `rumiai-os` or `rumiai-tests` runtime/test changes were performed.
+
 ### R1 v0.1.1 released-package installation and shell consumption PASS on both hosted platforms (2026-11-06)
 
 - The previously reported macOS QUEUED status for [m-rsudo run 42097660573](https://github.com/massimilianonardi-ai/m-rsudo/actions/runs/42097660573) is **superseded**. It has **COMPLETED SUCCESS, 2/2**, Ubuntu job `127491838515` and macOS ARM64 job `127491839390`, both at `m-rsudo/main@d42da7c21bff0b26eea80de471bd1d6afd2241ca`. Both raw logs confirm the real public `./m pkg install m-core@v0.1.1 m-term@v0.1.1 m-rsudo@v0.1.1`, then `./m sh ../rsudo/.github/scripts/r1-installed-v011-test.sh`, and the explicit `PASS: public v0.1.1 installation, native commands and selected rssh shell extension` assertion. The workflow pins `m-os/pkg-schema-v2@1e3a038a5abf6f8c176272d8e44464c842d3cefd` and asserts exact `pkg-catalog/pkg-schema-v2@a75f9be1c9a62a72899022eddf55e163d86ab630` after checkout.
@@ -935,6 +942,20 @@ frozen `rumiai-os` or `rumiai-tests`; no new catalog package range
 was migrated to use these exports.
 
 ## Working design / open questions
+
+### C2 profile-state compatibility alternatives after PoC 098 (2026-11-06)
+
+**Evaluation, not contract promotion.** The accepted ideal of two simultaneous shells with distinct system/user context selections cannot be satisfied for *all* installed packages merely by changing `state-path` or exported variables. Current `pkg` makes an immutable package-concrete-relative `var/<area>` symbolic link resolve through the one global `state/system/current`. PoC 098 establishes these filesystem semantics on real POSIX host paths, not the full product's correctness.
+
+Candidate migration boundaries to resolve against real callers:
+
+1. **Preserve global-only `var/` for incompatible packages and system administration** while allowing independent shell-local selections only for consumers that can actually honor them. A selected incompatible per-shell profile must fail with a clear unsupported/authority result before launch, not silently read the wrong global state. A blanket downgrade of the user's already-confirmed concurrent-profile goal is **not authorized** by implementation convenience.
+2. **Pre-prepare per-profile execution/state views** from one immutable payload for a compatible package. Exact package identity, command wrappers and library views remain pinned, but the execution path is profile-specific and `var/` links target that profile. PoC 098 proves a path-aware POSIX launcher case; it does **not** prove compatibility for physical-path-canonicalizing executables, absolute-path data accesses, binaries with internal self-path lookup, JNI/JAR/module roots, service registration, upgrades, permissions or lifetime/cleanup. No view must be created per `context` invocation.
+3. **Use existing package launcher/state-path adaptation for programs whose mutable access is explicitly redirectable** without any per-profile program view. This preserves a single immutable root when the upstream command can accept managed HOME/conf/data paths, but does not repair packages with unredirectable relative/absolute `var/` accesses. This option does not authorize arbitrary shell `env` sourcing into the activating caller.
+
+Cross-cutting authority remains separate: system TLS CA approval/selection, NSS projection at the *final effective* browser HOME, provider defaults, system service State Instances and actual host account permissions must have explicit trusted-consumer semantics. A user-supplied profile label is not security authorization. For consumers with two simultaneous system profiles, define whether system CA trust is per-profile under authenticated authority, or globally administered regardless of shell-local selection. **That is a genuine policy/product choice still open.**
+
+**Next design validation:** inventory representative *real* installed packages with `var/` descriptors versus ordinary HOME/conf-aware launchers; identify which can use fixed-root or view-based access without altering their upstream binary, and run an authentic two-profile launch/negative test after P2/P4/V2 integration ownership permits it. Evaluate the trusted CA and service consequence before promoting a new profile/identity API. Keep the current `STATE-MODEL` (global `system/current`) and `BOOTSTRAP-ENVIRONMENT` (no-arg reset) authoritative until coordinated G-CONTEXT promotion, and C3 blocked.
 
 ### C2 physical package-var and system-trust profile boundary (2026-11-06)
 
