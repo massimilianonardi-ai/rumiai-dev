@@ -1,7 +1,7 @@
 # Completion orchestration of autonomous m-os
 
 Status: Active — orchestration; branch I readiness started, I1 blocked, I2 pending
-Updated: 2026-11-05
+Updated: 2026-11-06
 
 ## Goal
 
@@ -435,6 +435,14 @@ The V2 catalog [matrix run 42094814482](https://github.com/massimilianonardi-ai/
 The first-party `m-core`, `m-term` and `m-rsudo` immutable **`v0.1.1` releases now exist**, with real archives and `SHA256SUMS`. The [m-rsudo installed v0.1.1 public run 42096124385](https://github.com/massimilianonardi-ai/m-rsudo/actions/runs/42096124385) has **Ubuntu PASS** (`127486491314`), but macOS **FAIL during m-core release metadata download (HTTP 403)** (`127486491826`) before installed-path behavior. Do not claim released-source cross-host PASS or remote SSH/sudo acceptance from a successful source-injection CI job. S1 portable service evidence and S2 unprivileged user-host Ubuntu work progressed under the validation owner; macOS/native supervisor and protected host-system paths remain separately gated.
 
 **Outstanding integration-entry conditions:** P2 negative acceptance and forward-only merge; P3/P4 provider maps and uninstall/default evidence; coordinated V2 promotion with current-source tests; J1 standalone POSIX `bin/sys/json` and its manual (still **absent** on inspected `m-os/master` and `pkg-schema-v2`); C2/C3 contract decisions and implementation; R1 released source/installed-path coherence; and remaining M01–M15 current-revision evidence. I1 **BLOCKED**, I2 **PENDING** until actual integrated acceptance and authorized reference hosts. `rumiai-os` and `rumiai-tests/main` were not modified or executed by this coordination review.
+
+### Branch I — cross-workstream entry-gate reconciliation (2026-11-06)
+
+**I1 stays BLOCKED; I2 stays PENDING.** On fresh remote preflight, `m-os/master@1f8880c78febf390596faa9b6662ec8cab5c5e42` still exposes 16 `bin/sys` commands but lacks the separately specified POSIX `bin/sys/json` and its command manual. Its current `pkg install` still uses the pre-P2 public dependency planner. [P2 PR #3](https://github.com/massimilianonardi-ai/m-os/pull/3), [C1 PR #2](https://github.com/massimilianonardi-ai/m-os/pull/2), and [S PR #4](https://github.com/massimilianonardi-ai/m-os/pull/4) remain draft/unmerged; an auxiliary branch PASS does not substitute for integrated master acceptance.
+
+**Evidence newly closed after the prior I checkpoint:** [V2 catalog matrix 42094814482](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42094814482) is **completed SUCCESS 14/14**, exact `pkg-catalog/pkg-schema-v2@a75f9be1c9a62a72899022eddf55e163d86ab630`. The formerly queued macOS v2-jq job `127481972996` has log-confirmed **real public jq install and command/context PASS** at the run's pinned older `m-os` runtime; no new mainline promotion is implied. For S1, [42113668108](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42113668108) is **3/3 PASS** including macOS offline process-safety. For S2, [42114372442](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42114372442) is **2/2 PASS** for genuine Ubuntu/macOS user-supervisor operations with an isolated *local integrated provider*, and [42116611051](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42116611051) is **2/2 PASS** including macOS 15 Intel checks that the native restart/stop actually terminates the previous service PID. These are deliberately **not** published-release installation, privileged system-host, or operator reference-host PASS.
+
+**Separately unresolved:** [C1 published version-replacement attempt 2, run 42095853638](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42095853638), **Ubuntu PASS / macOS FAIL** before version-switch assertions due upstream GitHub API HTTP 403 retrieving `m-core@v0.1.0`; [R1 v0.1.1 installed run 42096124385](https://github.com/massimilianonardi-ai/m-rsudo/actions/runs/42096124385) has Ubuntu PASS / macOS same-class release acquisition HTTP 403 before behavior. P2 retains provider ambiguity, cleanup and installed-historical-root negatives despite genuine [2/2 public smoke](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42098513609); P3/P4, C2/C3 normative decisions/real implementation, J1, V2 forward integration and a pinned full M01–M15 execution still gate I1. Original V1/V2 upstream acquisition failures and later successful scoped jobs must remain separate revision-specific records. All findings were based on read-only source/CI inspection; no runtime, catalog definition, first-party release, frozen suite, privileged host or physical reference machine was modified/executed by I.
 
 ## Next action
 
