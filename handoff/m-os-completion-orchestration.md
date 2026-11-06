@@ -245,6 +245,11 @@ Mainline repository adapters: `pkg-repository-{artifact,chrome,chromium,github,n
 
 ## Current state
 
+### Branch S two-concrete native host-user provider re-resolution (2026-11-06)
+
+- S-owned isolated real-provider workflow at `m-os/m-os-completion-s@49ad0d9453a1ac0a67b9ad2ee4894bfd9a394848` now exercises two distinct installed concretes, public package-default transitions, native `srv host user start/restart/stop`, live PID stability, provider-specific TERM and stop. Real Ubuntu `systemd --user` **PASS** at [run 42193537286](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42193537286), job `127811076949`. First fixture-only failure [run 42193372851](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42193372851) was corrected by retaining a copy of source payload before real `pkg_integrate` consumes it, without modifying product `pkg`.
+- macOS 26 ARM64 two-concrete native `launchd` and genuine published Electron acquisition remain **QUEUED**, not PASS: [run 42193825267](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42193825267) pins exact S, includes Ubuntu native re-resolution PASS, macOS 15 Intel and ARM64 local-provider jobs plus separate published macOS provider retry. `handoff/m-autonomous-validation.md` owns exact runner/jobs, result follow-up, and G-HOST/legacy-PID/physical gates. Prior 5/5 Ubuntu/macOS S matrix PASS remains exact to earlier revision only. [Draft PR #4](https://github.com/massimilianonardi-ai/m-os/pull/4) still unmerged, no P2/shared runtime/frozen suite writes.
+
 ### Branch S hosted macOS/Ubuntu matrix acceptance checkpoint (2026-11-06)
 
 - All previously queued S1 and S2 macOS jobs are **genuine PASS**, not merely queued or `SKIP`. In particular macOS 26 ARM64 native `launchd` with isolated integrated provider and macOS 15 Intel explicit native TERM/old-PID disappearance passed. Owning `handoff/m-autonomous-validation.md` has the complete source/runner/job IDs and distinct evidence boundaries.
