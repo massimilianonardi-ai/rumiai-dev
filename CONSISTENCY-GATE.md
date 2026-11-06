@@ -228,11 +228,7 @@ Verify deferred-work and active-task ownership against `todo/README.md` and `han
 A RumiAI task is ready to report as complete only when every applicable item is true:
 
 ```text
-[ ] current remote HEADs were verified before writes
-[ ] README.md was used to route retrieval
-[ ] current RULES.md and CONSISTENCY-GATE.md were read
-[ ] relevant current specifications and active handoff were read
-[ ] relevant implementation/tests were inspected
+[ ] current remote HEADs were verified before writes; README.md routed retrieval; current RULES.md, CONSISTENCY-GATE.md, relevant specifications, active handoff and implementation/tests were read
 [ ] applicable invariants were identified before writing
 [ ] for user-visible behavior, the primary goal and realistic normal paths were identified before implementation
 [ ] the caller/system knowledge boundary was checked and avoidable implementation knowledge was not pushed onto the caller
