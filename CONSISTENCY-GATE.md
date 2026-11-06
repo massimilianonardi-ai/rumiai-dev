@@ -171,13 +171,14 @@ If required permanent coverage is missing or out of date, keep the documentation
 
 ## 9. Testing authenticity
 
-Mechanical checks must preserve the authenticity rules in `TESTING.md`.
+Verify each behavioral validation claim against the authenticity contract in `TESTING.md`:
 
-For a behavioral claim, execute the real target or a complete isolated replica through the real entrypoint/components that provide the claimed behavior.
+1. Identify the exact property claimed and the target execution path that supplies it.
+2. Confirm that the test exercises the real target or a complete isolated replica through that path.
+3. Identify any mocks, fixtures, stubs or synthetic inputs; verify that each simulated boundary is permitted and that the claim is limited to what was actually exercised.
+4. Confirm that automation infrastructure (including GitHub Actions and AI-provided VMs) has not been treated as a substitute for the target or its testing contract.
 
-Mocks, fixtures, stubs and synthetic input are permitted only at boundaries where simulation is explicitly appropriate. They validate only the property actually exercised and cannot be credited as proof of a replaced composed path.
-
-Automation environments, including GitHub Actions and AI-provided Linux VMs, are execution infrastructure; they are not alternative implementations of the target or test contract.
+Do not credit a test with proving a composed behavior when its relevant execution path was replaced.
 
 ## 10. Proportional validation
 
