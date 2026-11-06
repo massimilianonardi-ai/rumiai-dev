@@ -1,7 +1,7 @@
 # Chromium manual-session analysis — web-analyze
 
 Status: Active
-Updated: 2026-11-04
+Updated: 2026-11-06
 
 ## Goal
 
@@ -9,9 +9,9 @@ Provide the `m` JavaScript library at `rumiai-os/lib/sys/js/web-analyze.lib.js` 
 
 ## Current repository revisions
 
-- rumiai-dev: 4d8998f554fdc32767e0c010ed06c6abbe61da8b (observed pre-checkpoint HEAD; refresh next work unit)
-- rumiai-os: d9634206adc53198770b61e05336ecbc94539a4d (exact workflow/product revision exercised by Actions 42192418909)
-- rumiai-tests: 5b25f650e173db6a2fad0be1bb1b9f7d65ebe564 (observed current HEAD; exact tested pinned web-analyze suite 2b641750605e146296bb2a1bdf57bccb87d9f5d4)
+- rumiai-dev: c4e4f2b28d80fb87291e8dbd076fc77002cfa157 (HEAD used for this checkpoint; refresh on resume)
+- rumiai-os: c88f8c6b302b6408934e6a9487c19eb31e095aaf (current HEAD at checkpoint; web-analyze workflow pins the validated diagnostics)
+- rumiai-tests: a61710c858b48d7083884f9696386b4b114d0d5e (current HEAD); diagnostic revision pinned and exercised: 98cc17b811a10d3d88dd3eec932aa4a845376980
 
 ## Applicable canonical sources
 
