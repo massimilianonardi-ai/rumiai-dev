@@ -192,23 +192,14 @@ Verify the validation sequence and evidence against `TESTING.md` and `PHYSICAL-T
 
 ## 11. Post-change diff review
 
-After every modification:
+After every modification, reread the resulting diff and verify:
 
-1. reread the resulting diff;
-2. review changed code for maintainability, clear responsibilities, authorized scope and ease of a realistic future modification;
-3. re-evaluate it against `RULES.md` and the applicable current specifications;
-4. for user-visible behavior, rerun the intent and operability gate against the resulting interface and primary normal paths;
-5. when a specification was changed, reclassify every added design statement through the specification promotion gate;
-6. when failure/status/logging/observability behavior was created or changed, perform the diagnostics and observability gate;
-7. when a `m`- or RumiAI-owned command was created, renamed, removed or modified, perform the command/manual consistency gate;
-8. when a `m`- or RumiAI-owned library or function was created, renamed, removed or modified, verify library visibility naming and perform the library/manual consistency gate;
-9. scan the touched subsystem for superseded terminology/mechanisms;
-10. verify no unrelated user/repository changes were overwritten;
-11. run only tests proportional to the change under `TESTING.md`;
-12. state physical-validation status accurately and revision-specifically;
-13. verify Git history remains forward-only;
-14. if concrete unfinished work was discovered but intentionally deferred, ensure it is either already represented by an active task or captured once under `todo/`;
-15. when the task has an active handoff, determine whether the resulting state is a meaningful checkpoint and synchronize it before the final response when required.
+1. **Contract and scope:** the change respects `RULES.md`, applicable current specifications, authorized scope and existing responsibilities; code remains maintainable and a realistic small future change stays understandable.
+2. **Behavior and design:** user-visible changes pass the intent/operability gate (§2); changed specifications pass the promotion gate (§3); no obsolete terminology or mechanisms remain in the touched subsystem.
+3. **Specialized consistency:** changed diagnostics/observability satisfy their gate; affected commands and libraries pass the manual/visibility gate (§8); documentation changes pass §12.
+4. **Validation:** tests are proportional and evidence is limited to what was exercised under `TESTING.md`; physical-validation status is reported accurately for the actual revision and hosts.
+5. **Repository integrity:** unrelated or concurrent user changes were preserved and Git history remains forward-only.
+6. **Continuity:** unfinished deferred work is recorded once under `todo/` or its active owner; an active handoff is synchronized before the final response when the change is a material checkpoint (§13).
 
 ## 12. Documentation consistency checks
 
