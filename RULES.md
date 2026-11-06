@@ -13,42 +13,15 @@ Current repository sources are authoritative within their assigned responsibilit
 
 ## 2. Documentation model
 
-The current branch must describe the current project directly.
+The current branch must directly express the current project. Each current contract has one canonical owner; update that source when the contract changes, preferably in the same work unit. Do not require readers to compose historical specifications, subsequent decisions, corrections or handoffs to recover the current rule.
 
-Therefore:
+`specifications/README.md` routes topics to current specifications. `specifications/` contains only promoted, settled contracts that bind current implementation and future work, not candidates, provisional assumptions, unresolved alternatives, open questions, evaluation criteria or future-work backlogs. A deliberate absence of constraint may be specified only when it is itself a stable binding boundary; do not attach provisional choices to it.
 
-- one current contract has one canonical location;
-- current specifications must state the rule that applies now;
-- a new decision must not become a permanent patch that readers have to apply mentally to an older specification;
-- when a contract changes, update the canonical current specification in the same work unit whenever possible;
-- superseded documents, completed plans, closed handoffs and exploratory analysis are removed from the current tree once their durable content has been propagated;
-- ordinary chat transcripts are never current project authority and must not be treated as normative documentation; the separate operator-authorized chat mirror to Google Drive remains non-authoritative. The operator may also explicitly request publication of a **public ChatGPT shared-link offline export** under `chats/<topic>/<YYYY-MM-DD> <original chat title>/`, containing `index.html` and its relative resources, using the authorized GitHub Actions workflow. This is an opt-in public archive, not a reactivation of the former automatic GitHub chat mirror; legacy `chats/` material remains archival. Neither the public offline exports nor the Google Drive mirror substitutes for specifications, TODOs or handoffs;
-- Git history preserves those documents and their rationale forward-only;
-- historical evidence is never rewritten or relabelled as evidence for another revision.
+Unsettled design needed for safe resumption belongs in the active task handoff as working design. Experiments that resolve open questions belong in `rumiai-dev-PoCs` and are referenced from that handoff. Work intentionally deferred outside the active task belongs under `todo/`. When a design becomes binding, promote it to its canonical specification and remove the duplicated provisional handoff content. At task closure, promote, defer or discard remaining working design; do not relabel it as a current specification.
 
-`specifications/README.md` is the canonical topic-to-specification router.
+`handoff/` contains active task state only and cannot override project rules, the consistency gate or current specifications. Superseded documents, completed plans, closed handoffs and exploratory analysis leave the current tree after their durable content is propagated; Git history retains their rationale forward-only. Historical evidence must never be rewritten or represented as evidence for another revision.
 
-`specifications/` contains only **promoted current contracts**. A design statement may enter a current specification only when it is sufficiently settled that current implementation and future work must treat it as binding now.
-
-The following are not specification content merely because they may later become contractual:
-
-```text
-candidate choices
-provisional working assumptions
-alternatives still being compared
-decisions deliberately postponed inside an active task
-open questions
-evaluation criteria for an unresolved choice
-future-work or decision backlogs
-```
-
-During an active task, that material belongs in the task handoff as **working design state** when it is needed for safe resumption. Experiments used to resolve an open design question belong in `rumiai-dev-PoCs` and are referenced from the handoff. Concrete work postponed outside the active task belongs under `todo/`.
-
-A specification may state that it deliberately does **not constrain** a dimension only when that absence of constraint is itself a stable current boundary that future implementation must respect. Such a statement must express the boundary directly; it must not turn the specification into a list of candidates, comparisons or decisions still to be made.
-
-When working design becomes a durable subsystem contract, promote the resulting rule into the canonical current specification and remove the duplicated provisional material from the handoff. When an active task ends, any remaining working-design item must be promoted, converted into deferred work when still relevant, or discarded; it must not survive by being mislabeled as a specification.
-
-`handoff/` contains only active task state. A handoff never overrides `RULES.md`, `CONSISTENCY-GATE.md` or current specifications.
+Chat transcripts and archives are non-authoritative. The separate operator-authorized Google Drive chat mirror remains non-normative. Public ChatGPT shared-link offline exports are permitted only on explicit operator request through the authorized GitHub Actions workflow, following `chats/README.md`; the former automatic GitHub chat mirror is not reactivated. Neither archive is a substitute for specifications, TODOs or handoffs.
 
 ## 3. Repository roles
 
