@@ -26,6 +26,11 @@ Refresh HEADs and README mandatory source order before each follow-up task. Past
 
 ## Fixed task-local choices
 
+### Operator workflow deferral (2026-11-06)
+
+The operator explicitly authorized **skipping the unexecuted A1–A4 GitHub Actions workflows for now and advancing other authorized workstreams**. Hosted workflow execution is therefore not a scheduling prerequisite for independent next work. This is a deferral of one validation mechanism, **not** evidence of PASS, acceptance of uncovered archive/TLS/portability cases, authorization for privileged host changes, or completion of the A1–A4 / M01–M15 validation responsibility. Preserve revision- and host-specific `PENDING` for unexecuted scenarios, use real public-entrypoint or reference-host tests only when executable and separately authorized as required, and do not retry workflow dispatch as a blocker. If final acceptance still requires evidence, resume from the current exact revisions and applicable contracts rather than treating unrun CI as green.
+
+
 - **The test target is complete standalone m**, not independently published `mk` and `jsc` alone.
 - Operator-facing install is via `./m pkg install ...`, not manual clones of package source projects. Separate repository checkouts are permissible *inside CI* to reuse test-owned drivers, but do not replace ordinary user-facing installation.
 - For positive `srv` lifecycle, use a **real installed service provider** and its facility-service realization; an absent-service check alone is insufficient.
