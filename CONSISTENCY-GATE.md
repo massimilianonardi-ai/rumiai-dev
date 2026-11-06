@@ -137,7 +137,7 @@ Do not rewrite historical commits or historical validation evidence.
 
 ### Diagnostics and observability gate
 
-For every created or modified failure-handling path, apply `DIAGNOSTICS.md` before considering the code complete.
+For every created or modified failure-handling path, apply `specifications/rumiai-os/DIAGNOSTICS.md` before considering the code complete.
 
 Verify, as applicable:
 
