@@ -99,11 +99,11 @@ Do not reopen an already-settled choice merely because another design is locally
 
 ## 5. Existing responsibility first
 
-Before introducing a helper, alias, primitive, namespace, component, suffix, format or abstraction, search the current subsystem for an existing responsibility with the same semantic role.
+Apply the reuse and naming rules in `RULES.md` before introducing a helper, alias, primitive, namespace, component, suffix, format or abstraction:
 
-Reuse the existing primitive when its contract already matches.
-
-Do not create a second spelling for the same responsibility merely to make local code convenient.
+1. Search the current subsystem for the existing owner of the same semantic responsibility.
+2. Compare its contract with the proposed use; reuse it when the contracts match.
+3. If a new responsibility is genuinely required, verify that it does not create a competing spelling or duplicate ownership.
 
 ## 6. Conversational shorthand has no product authority
 
