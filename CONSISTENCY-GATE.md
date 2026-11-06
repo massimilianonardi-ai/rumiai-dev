@@ -230,25 +230,14 @@ A RumiAI task is ready to report as complete only when every applicable item is 
 ```text
 [ ] current remote HEADs were verified before writes; README.md routed retrieval; current RULES.md, CONSISTENCY-GATE.md, relevant specifications, active handoff and implementation/tests were read
 [ ] applicable invariants were identified before writing
-[ ] for user-visible behavior, the primary goal and realistic normal paths were identified before implementation
-[ ] the caller/system knowledge boundary was checked and avoidable implementation knowledge was not pushed onto the caller
-[ ] surprising user-visible restrictions or added steps were treated as explicit semantic decisions rather than incidental implementation consequences
-[ ] the resulting primary public workflow was exercised from the user/operator perspective when applicable
+[ ] for user-visible behavior, primary goal and realistic normal paths were identified before implementation; caller/system knowledge boundaries were respected, surprising restrictions or added steps were explicit design decisions, and the resulting public workflow was exercised where applicable
 [ ] changed code was reviewed for clear, bounded module/function responsibilities, readable flow and a realistic small future modification
 [ ] code changes stayed within the authorized scope; deferred TODO work and speculative mechanisms were not implemented
 [ ] no existing responsibility was duplicated under a new name
 [ ] no contract was changed silently
 [ ] every statement added to a current specification passed the specification promotion gate
-[ ] every affected failure branch has a distinguishable local status unless an explicit pass-through/external-status contract applies
-[ ] established status codes were not renumbered merely to preserve source order
-[ ] every logged failure branch has a branch-specific diagnostic identity and sufficient non-sensitive context
-[ ] significant flows have proportional info/debug/trace observability or a concrete justified logging omission
-[ ] failure propagation does not create redundant equivalent error/fatal logs or leak secrets
-[ ] every affected command has its required manual and passed a manual-consistency check
-[ ] every affected library has its required manual and passed a manual-consistency check
-[ ] every affected library function follows the public/internal leading-underscore contract
-[ ] each library manual exposes all public functions and no internal function as callable API
-[ ] mandatory command/library manual structural coverage is present or the corresponding completeness work remains explicitly open
+[ ] affected failure branches have distinguishable local statuses (except explicit pass-through/external-status contracts), with no renumbering merely for source order; logged failures have branch-specific identities and non-sensitive context; significant flows have proportional info/debug/trace observability or justified omissions; propagation avoids redundant error/fatal logs and secret leakage
+[ ] affected commands and libraries have required, implementation-consistent manuals; library functions follow public/internal underscore naming; manuals expose the complete public API without internal callable functions; mandatory structural coverage exists or the corresponding completeness work remains explicitly open
 [ ] tests/evidence claim no more than what was actually exercised
 [ ] resulting diff was reread and stale terminology/mechanisms were scanned
 [ ] cross-references/current routing remain valid
