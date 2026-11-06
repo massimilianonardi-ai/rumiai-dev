@@ -215,6 +215,8 @@ These points should later be reviewed together and promoted only in the smallest
 
 ## Completed
 
+- 2026-11-06: Continued `CONSISTENCY-GATE.md` §14 optimization by grouping behavior, diagnostics and command/library manual completion checks while retaining their individual requirements (commit `6b897ced53ecf4c214166f5097678a115c61440d`).
+
 - 2026-11-06: Began incremental simplification of `CONSISTENCY-GATE.md` §14 by merging five preflight completion items without removing their obligations (commit `54c4cc5f882dcd45011033bdd4a35a773359cc5f`). Remaining checklist consolidation is still open.
 
 - 2026-11-06: Optimized `CONSISTENCY-GATE.md` §§11–12: consolidated post-change review into six grouped checks and documentation consistency into six source-linked checks; normative requirements and specialized gates remain in force (commits `957cba903bb96fe73ba46cdc6c0953b019957d46`, `643ad8f89ca6aeb36b5bd333a5ad45f7d757fbcd`).
