@@ -123,6 +123,12 @@ Scenarios 1 and 2 have initial direct-checkout smoke evidence on Ubuntu and macO
 
 ## Current state
 
+### C2 host-supervisor registration and launcher override scope (2026-11-06)
+
+- Read-only current source at exact `m-os/pkg-schema-v2@1e3a038a5abf6f8c176272d8e44464c842d3cefd` establishes **host-supervisor** (rather than shell-local) service identity: `bin/sys/srv` `srv_host_systemd_system_prepare/install` writes a systemd unit `/etc/systemd/system/m-srv-<service>.service`, containing `User=<host account>` and `ExecStart` using the exact already-resolved provider/service command; `srv_host_launchd_system_prepare/install` writes `/Library/LaunchDaemons/m.srv.<service>.plist`, with its own fixed `Label`, `UserName` and `ProgramArguments`. Both registrations are indexed by the service name at host level. `srv_host_system_registration_prepare/write` persists the account/provider under `state-path system sys srv conf`; `srv_host_system_registration_current_require` checks that configured provider identity matches the registered one; `srv_host_system_run` re-resolves the expected concrete, exports `m_PKG_LAUNCH_CONTEXT=system-service` plus `m_PKG_LAUNCH_STATE_INSTANCE=<service>`, and execs a fresh `m` process. **Two concurrent shell context selections cannot automatically create two independent host services with the same service identity.** This is a current implementation fact, not proof that multiple service instances are impossible under a deliberately revised supervisor contract.
+- The same exact source `lib/sys/sh/pkg/pkg-launch.lib.sh` demonstrates that `m_ENV_DO_NOT_OVERRIDE` is a one-invocation, caller-supplied environment value snapshot carried to the final `exec` via `env`, **after** normal package/provider/conf environment evaluation. The current canonical `PACKAGE-MODEL.md` explicitly states that this does not select package/provider state, change `state-path`, alter the service instance or establish host identity. Neither this string nor caller-supplied `GEOSERVER_DATA_DIR` proves authorization for a trusted system-profile choice or protected transitive child policy. `m` bootstrap reads global `system/current` snapshots before command dispatch.
+- This extends—not replaces—the independent PoC 098 results: original path-only PoC Ubuntu/macOS PASS; real integration with GeoServer descriptor and synthetic payload Ubuntu PASS/macOS pending; exact upstream GeoServer/Keycloak inert-Java launcher Ubuntu PASS/macOS pending. **No host service was installed/started or privileged target touched.** Keep `C3` blocked until G-CONTEXT and shared P2/P4/V2 prereqs.
+
 ### C2 pinned upstream launcher evidence (2026-11-06)
 
 - Read exact release-tag upstream POSIX launcher sources: `geoserver/geoserver@804fe178e4ff3fb4d0a2d0a0751930b31bf43a2a` (`src/release/bin/startup.sh`, GeoServer 3.0.1) and `keycloak/keycloak@6d238b6558037085cc25c915893c3d301a80243e` (`quarkus/dist/src/main/content/bin/kc.sh`, Keycloak 26.7.3). Checked the original `pkg-catalog/pkg-schema-v2@a75f9be1c9a62a72899022eddf55e163d86ab630` definitions. GeoServer's catalog package `env` sets `GEOSERVER_HOME` to its immutable `pkg_launch_root`, but **does not** set `GEOSERVER_DATA_DIR`; the original upstream script supports explicit `GEOSERVER_DATA_DIR` and passes it separately from `GEOSERVER_HOME` to Java. Keycloak's catalog wrapper invokes the shared launcher, whose upstream `kc.sh` resolves the invoked symlink (`readlink -f` on Linux, `readlink` on Darwin) and derives `kc.home.dir`, `jboss.server.config.dir` and Quarkus classpath from that resolved physical script path. The separate official `--config-file` option for Keycloak's configuration file does not establish full install-root or `lib/quarkus` relocation.
@@ -961,6 +967,57 @@ frozen `rumiai-os` or `rumiai-tests`; no new catalog package range
 was migrated to use these exports.
 
 ## Working design / open questions
+
+### C2 service/profile separation: acceptance and authority gate (2026-11-06)
+
+**Working design only; no syntax or runtime authorization.** The current
+service lifecycle is a host-supervisor identity with its own host
+account, provider registration, state instance and one public
+service name. A generalized concurrent system-profile selection must
+say precisely whether the selected profile is intended to affect:
+
+- **Interactive package commands and read-only queries:** may be
+  shell-local only once state-path, environment planning and actual
+  package mutable paths are coherent for the selected profile.
+- **Existing system-hosted service operations:** currently
+  systemd/launchd registrations and running processes have one
+  host-global identity per service name, not a shell-local identity;
+  changing a calling shell's profile must not silently rewrite,
+  retarget or impersonate the existing registered service. Either
+  make this an explicit global-only administrative boundary with
+  clear unsupported errors for incompatible per-shell requests,
+  or promote and verify an explicitly qualified host service
+  identity/supervisor ownership model as a separate authorized
+  migration. A host supervisor cannot be treated as a shell
+  `PATH` lookup mechanism.
+- **System additional TLS CA authority:** remains bound to the
+  selected current system state and trusted administrative/host
+  filesystem permissions. No caller-provided profile name,
+  `HOME`, or one-shot environment-preservation list can grant CA
+  management authority or rewrite a client's trust set.
+
+**Minimum extra acceptance traces:** A and B shells select
+different proposed system profiles, while one already-installed
+system service and one explicit CA approval exist. An ordinary
+package command must use the intended correct profile state (or
+reject before launching if unsupported); administrative
+`srv start/stop` must refer to the already registered host
+service and not silently target the other shell's profile;
+provider/default changes must not retarget a running concrete;
+unprivileged user inputs must fail to grant service-account or CA
+management privileges. Confirm explicit success/unsupported
+behavior on both real systemd and launchd boundaries as applicable
+only after authorized host conditions exist. Do not use an untrusted
+environment marker as evidence of authentication.
+
+These constraints must be resolved jointly with the physical
+`var/` routing conflict, existing `state-path`, per-shell
+package/user profile semantics, and protected nested child
+propagation. The goal is coherent normal-path operation without
+forcing the caller to understand internal provider concrete
+identities. **No decision between global-only vs qualified
+multi-service host administration is promoted here**; C2 and
+C3 remain subject to G-CONTEXT and the existing task ownership.
 
 ### C2 upstream-specific relocation boundary (2026-11-06)
 
