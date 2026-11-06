@@ -159,39 +159,15 @@ For established code, do not mechanically renumber public or consumed statuses m
 
 ## 8. Command/library manual consistency gate
 
-Every `m`- or RumiAI-owned directly executable command identity is coupled to an owner-local operational manual topic under `DOCUMENTATION-MODEL.md`.
+For each affected `m`- or RumiAI-owned command or library, verify the operational-manual and library-visibility contracts in `RULES.md`, `DOCUMENTATION-MODEL.md` and, for libraries, `LIBRARY-INTERFACES.md`:
 
-For any command change:
+1. Confirm that every required command or library manual topic exists at its owner-local location and has the correct identity; independently packaged references remain package-local.
+2. For a created, renamed or removed command or library, confirm that its manual topic was created, realigned or removed in the same work unit.
+3. For every modified command, compare its documented purpose, invocation, operands, options, output, exit statuses, environment/files, side effects and other observable behavior against the implementation. Update the manual when these change; record that an internal-only change leaves it accurate otherwise.
+4. For every modified library, verify public/internal function classification and underscore naming. Confirm that the manual documents the complete public interface, excludes internal functions as callable API, and is updated in the same work unit for any public-function addition, removal, rename or contract change.
+5. Verify that permanent tests mechanically protect required command-to-manual and library-to-manual topic presence and identity. These structural checks do not prove semantic correctness of the prose or API descriptions.
 
-```text
-create / rename / remove
-    realign the command manual in the same work unit
-
-modify
-    manual-consistency check is mandatory
-```
-
-When documented observable behavior changes, update the manual in the same work unit. A purely internal command implementation change requires no textual manual edit when the existing page remains fully accurate.
-
-Every `m`- or RumiAI-owned library identity is likewise coupled to exactly one owner-local manual topic, and every defined library function is classified public or internal under `LIBRARY-INTERFACES.md`.
-
-For any library change:
-
-```text
-create / rename / remove
-    realign the library manual in the same work unit
-
-modify
-    verify public/internal function naming
-    perform a library/manual consistency check
-
-add/change/remove public function
-    update the library manual in the same work unit
-```
-
-Public function names must not begin with `_`; internal function names must begin with `_`. Internal functions must not be presented as callable API in the library manual. A purely internal library implementation change requires no manual text edit when the public page remains fully accurate.
-
-Command-to-manual and library-to-manual topic presence MUST be protected mechanically by permanent tests. These structural checks prove required topic presence/identity, not prose/API semantic correctness. If the applicable permanent coverage has not yet been implemented or realigned, the corresponding documentation-completeness work remains open rather than being reported complete.
+If required permanent coverage is missing or out of date, keep the documentation-completeness work explicitly open. Do not report a command or library work unit complete while a required topic is missing, its manual disagrees with implementation, or library visibility and naming disagree.
 
 ## 9. Testing authenticity
 
