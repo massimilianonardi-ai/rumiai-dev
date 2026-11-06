@@ -9,11 +9,11 @@ Complete and validate K04 Keycloak authentication and authenticated transport th
 
 ## Current repository revisions
 
-- rumiai-dev: mandatory preflight 232c41cbad873039416c782442403ceccf0098da; concurrent unrelated docs advanced to d1adda1bd9d3b7051bd26155af23ecea6b8a4d16 and this checkpoint was written forward afterward.
-- rumiai-os: d9634206adc53198770b61e05336ecbc94539a4d (frozen executable target for new direct JWT grant evidence; no product change).
-- rumiai-tests: 5b25f650e173db6a2fad0be1bb1b9f7d65ebe564 (new RFC 7523 real Keycloak direct-test scope).
+- rumiai-dev: 3fb45604f5be23aa625cc18554f8bfb314dde89d (handoff checkpoint); canonical RFC 7523 contract updated at 1516b52056ed25788653116aba59a605551e3504.
+- rumiai-os: 31150ae11ddda62bf93da67ad9a2e013c647df0c (implemented grant and module manual).
+- rumiai-tests: direct frozen suite 168a2b7dbc56214d9389c28a7c87bf92a8f3f6b4; composed frozen suite 6db571c29e5616f4efea933698649281c31e26ba. Subsequent concurrent test changes must not be treated as those revisions.
 
-Recheck all live remote HEADs and reconcile forward before each write/validation.
+Recheck live remote HEADs before any later write or validation.
 
 ## Applicable canonical sources
 
