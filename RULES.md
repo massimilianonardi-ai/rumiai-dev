@@ -1,17 +1,15 @@
 # RumiAI Development Rules
 
 Status: **Current / canonical**  
-Updated: 2026-10-10
+Updated: 2026-11-06
 
 This document contains project-wide rules that apply across RumiAI subsystems. Subsystem details belong in current specifications; historical rationale belongs in Git history.
 
 ## 1. Authority and retrieval
 
-`rumiai-dev` is authoritative for current development rules, workflow and semantic specifications.
+Follow the mandatory workflow and authority hierarchy defined in `README.md`.
 
-Before every RumiAI task, follow the read order in `README.md`. Current repository sources and explicit current user corrections prevail over model memory, conversation summaries, inference, old proposals, superseded documents and implementation convenience.
-
-A historical commit is not current authority merely because it contains a formerly accepted decision.
+Current repository sources are authoritative within their assigned responsibilities. Historical material and conversation context must not replace current canonical sources.
 
 ## 2. Documentation model
 
