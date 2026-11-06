@@ -123,6 +123,12 @@ Scenarios 1 and 2 have initial direct-checkout smoke evidence on Ubuntu and macO
 
 ## Current state
 
+### C1 replacement macOS acquisition outcome (2026-11-06)
+
+- [Catalog-side run 42095853638](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42095853638) **attempt 2 completed FAILURE**, job `127545828723` on macOS. Verified raw job log: `./m-source/m pkg install 'm-core@v0.1.0' 'm-term@v0.1.0'` stopped at `https://api.github.com/repos/massimilianonardi-ai/m-core/releases/tags/v0.1.0` HTTP **403** during public package download, with `pkg-install` stage `download`; no switch to `v0.1.1` nor `context` functional assertion ran. Attempt 1 macOS job `127485562874` failed at the same upstream acquisition point. **Classify the two macOS attempts as real upstream acquisition failures / context version-switch NOT TESTED**, not as target logic regressions. Ubuntu job `127485562287` remains authentic **PASS** at its exact pinned source/catalog SHA; extended C1 `42094107131` remains separate **2/2 Ubuntu/macOS PASS**. Do not rerun the unchanged failing matrix without a justified upstream/environment change.
+- [Draft m-os PR #2](https://github.com/massimilianonardi-ai/m-os/pull/2) now records attempt 2's real failure and remains unmerged. The native C1 workflow pin/follow-up at source `m-os/context-c1-real-validation@2f08ac1a618ec6bed4478936129943398b861dc3` is CI-only and has **no witnessed native workflow PASS**; its source change does not revalidate the earlier catalog-side jobs.
+- Outstanding C1 is genuine catalog-backed Java JAR export and macOS version replacement with a successful upstream acquisition. Neither is proven by an isolated Java fixture or by Ubuntu-only execution. No runtime/source interface, catalog definitions, immutable releases or frozen repositories changed here.
+
 ### C1 deterministic catalog pin and remaining hosted macOS gate (2026-11-05)
 
 - The extended genuine-published-package C1 test is **2/2 hosted PASS** on Ubuntu/macOS, [catalog run 42094107131](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42094107131), attempt 2, exact pinned source `m-os@07764f66d6ed4614da1190833f354086f05fa4a5`. Its former macOS initial GitHub API 403 remains a separate pre-assertion acquisition failure.
@@ -921,6 +927,75 @@ frozen `rumiai-os` or `rumiai-tests`; no new catalog package range
 was migrated to use these exports.
 
 ## Working design / open questions
+
+### C2 physical package-var and system-trust profile boundary (2026-11-06)
+
+This is a **specific source-confirmed incompatibility** in the proposed
+independent-per-shell system profile semantics, **not** a promoted
+contract or permission to implement C3:
+
+- `m-os/lib/sys/sh/pkg/pkg-state.lib.sh` creates each installed
+  concrete's `var/<area>` symlink with a literal target
+  `../../../state/system/current/pkg/<package>/<area>` in
+  `_pkg_state_var_area_ensure`; another fixed link routes
+  `root/<declared-path>` through `var/<area>`. This is a
+  **filesystem object shared across all processes** that use the
+  same installed concrete, independent of their inherited shell
+  environment. It always follows the process-independent
+  `state/system/current` binding. Merely teaching `state-path`
+  to return a different per-shell profile would produce two
+  conflicting views of the *same* package state.
+- `STATE-MODEL.md` deliberately prescribes static system-scoped
+  package `var/` routing through `system/current` (STATE-13).
+  Simultaneous independent system profiles against one physical
+  installed concrete are therefore **not supported now**. Treat
+  this as a migration boundary, not a defect in current C1 or a
+  license to mutate global `current` on each `context` call.
+- Both `bin/sys/tls-ca` and `bin/sys/tls-nss-sync` call
+  `$m_ROOT/m ... state-path system sys tls conf` in separate
+  child processes and require the same global
+  `m_STATE_SYS_DIR` symlink to exist. `m` re-exports its
+  readonly semantic state roots and sources
+  `sys/environment/cache/env*` before dispatch. Therefore
+  carrying only a protected `HOME` value to a nested browser
+  is **insufficient** to select another system-profile CA
+  authority coherently. Additional system TLS CA approval and
+  physical access rights remain separate from any logical
+  user/profile selection.
+- `bin/sys/srv` and the package launcher also call the real
+  `state-path` process for package/system-service State Instance,
+  while provider defaults and derived global environment snapshots
+  use global system roots. A shell-only profile label cannot
+  rebind all those consumers. Host POSIX execution identity and
+  permission policy must not be inferred from the logical profile.
+
+**C2 design choice requiring explicit promotion before runtime work:**
+decide the intended scope of concurrent system profiles **for packages
+with static system `var/` links**, for system trust/CA administration,
+and for running system services. Any proposed per-shell state model
+must either deliberately retain an explicitly global-only boundary
+for affected operations (with unambiguous rejection for incompatible
+requests), or provide an independently validated migration of the
+physical routing / state ownership. No portable generic per-process
+filesystem aliasing mechanism exists in this source contract. Do not
+claim compatibility with both sides by simply changing exported
+environment variable names.
+
+**Additional acceptance case:** two concurrent shells select
+different profiles and launch the *same installed package with
+declared `var/` state*. Verify their actual filesystem writes,
+`state-path` results, provider configuration, service-instance
+routing and authorized CA/NSS input are coherent with the
+promoted semantics; otherwise fail explicitly before activation.
+Include both global-only-compatibility and migrated-profile cases
+as appropriate, distinguish allowed OS permissions from logical
+selection, and ensure no global `current` symlink mutation is
+hidden in the activation path.
+
+Keep this evaluation in this existing source-composition owner
+handoff (not a duplicate specification); P2/P4/V2 shared `pkg`
+files stay under their assigned writer and generalized C3 remains
+blocked by G-CONTEXT.
 
 ### C2 phase-order and cross-process contract gap (2026-11-05)
 
