@@ -215,6 +215,8 @@ These points should later be reviewed together and promoted only in the smallest
 
 ## Completed
 
+- 2026-11-06: Cross-reviewed README/RULES/CONSISTENCY-GATE ownership and clarified the diagnostics specification path in the gate (commit `0ed4e728ae6f85c9979832ef64e720f0b7436e69`). Other abbreviated specification references remain for subsequent incremental cleanup.
+
 - 2026-11-06: Further consolidated `CONSISTENCY-GATE.md` §14 scope, proportional validation, diff integrity and handoff ownership/synchronization completion checks, retaining explicit obligations (commit `cdde0c4dbd6a80915f852768d220a56a97d3912b`).
 
 - 2026-11-06: Continued `CONSISTENCY-GATE.md` §14 optimization by grouping behavior, diagnostics and command/library manual completion checks while retaining their individual requirements (commit `6b897ced53ecf4c214166f5097678a115c61440d`).
