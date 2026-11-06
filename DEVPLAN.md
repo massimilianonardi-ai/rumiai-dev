@@ -40,6 +40,37 @@ First describe the requested outcome independently of any implementation strateg
 6. **Acceptance and validation:** success and failure scenarios, authentic test/validation method, operational manuals, evidence thresholds and required physical/host verification where applicable.
 7. **Feasibility of delegation:** prerequisites, settled shared contracts, potential file/interface overlap and remaining decisions affecting independent work.
 
+### Mandatory finished-product operability demonstration
+
+Before treating specifications as sufficient, write at least one **concrete,
+end-to-end normal operator interaction** with the proposed finished product.
+For a CLI, show the exact command entrypoint, required arguments, identity
+and credential source, execution host, relevant network boundary and visible
+success/failure result. For a graphical/service product, show the equivalent
+actual entry path, actors, interactions and observable outcome. Use the
+existing command/package inventory to check name collisions and ownership,
+not merely the existence of a plausible implementation technique.
+
+This is a design-level acceptance demonstration, **not** a fabricated
+runtime test or an assumption that the user's network/hosts/browser exist.
+Every prerequisite must be grounded in a current source, directly
+discoverable, or explicitly supplied by the user. If a normal operator
+cannot complete the depicted flow without deciding a missing host,
+callback, credential, command identity, authorization policy or required
+service, that is a **blocking gap** unless current authority deliberately
+leaves the choice to the operator. Mark it `Specifiche insufficienti`,
+not a ready implementation task.
+
+A proposed plan MUST NOT replace the finished-product demonstration
+with a sequence of component proofs, external-service experiments,
+internal protocol tests or generic validation tasks. After the sufficiency
+gate passes, make a **first usable vertical slice exercised through the
+actual public interface** an explicit early acceptance milestone before
+assigning broad implementation/test matrices. If this milestone fails,
+stop and reconcile the product contract before scaling out parallel tasks.
+Tests are evidence for the declared operator outcome; they cannot silently
+become that outcome.
+
 For each material condition classify it as: **settled by current authority**, **derivable through existing evidence or authorized local technical judgment**, **expressly non-constraining**, **blocking gap/conflict**, or **unverifiable due to access**. Name the canonical source/section that supports settled claims. Do not invent a universal checklist of mandatory product features: relevance depends on the task.
 
 A gap **blocks planning** only when different reasonable answers would materially change the intended outcome, contract, ownership, interoperability, important risk boundary, normal user path or acceptance test. Ordinary local algorithm choices and reversible internal implementation decisions inside settled contracts are not user questions. A high-impact/foundational decision cannot be silently made by an executor just because a local solution looks convenient.
