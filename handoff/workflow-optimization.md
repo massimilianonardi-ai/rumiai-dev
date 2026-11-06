@@ -215,6 +215,8 @@ These points should later be reviewed together and promoted only in the smallest
 
 ## Completed
 
+- 2026-11-06: Optimized `CONSISTENCY-GATE.md` §13 into six verification checks, preserving TODO activation, handoff ownership/synchronization and closure requirements while delegating lifecycle definitions to `todo/README.md` and `handoff/README.md` (commit `5364c5cf95eef1f52dcebc4c87424379db25b243`).
+
 ### Root README routing consolidation — 2026-11-06
 
 - The operator confirmed that ChatGPT Project Instructions should remain a single bootstrap instruction pointing to the current `rumiai-dev/README.md`.
