@@ -1,7 +1,7 @@
 # rsudo Keycloak administration — K04 authentication
 
 Status: Active
-Updated: 2026-11-05
+Updated: 2026-11-06
 
 ## Goal
 
@@ -9,9 +9,9 @@ Complete and validate K04 Keycloak authentication and authenticated transport th
 
 ## Current repository revisions
 
-- rumiai-dev: dc2ed6064584dbf7893a33f81a146f8cece4c7bf (pre-checkpoint; normative audience boundary updated at 219de8d3e6033eb71b875591d94c0e8c68cfbafb)
-- rumiai-os: 586c8987715a59ce90a88490c5e4544b56e23da3 (manual audience prerequisite; executable K04 remains frozen at 5644d8f39079a348ce76fe1b49f841aeef957a89)
-- rumiai-tests: 3a6dc12262660ba712f42ba3492a39ab75358ef5 (direct and composed audience-qualified federated lifecycle validation)
+- rumiai-dev: mandatory preflight 232c41cbad873039416c782442403ceccf0098da; concurrent unrelated docs advanced to d1adda1bd9d3b7051bd26155af23ecea6b8a4d16 and this checkpoint was written forward afterward.
+- rumiai-os: d9634206adc53198770b61e05336ecbc94539a4d (frozen executable target for new direct JWT grant evidence; no product change).
+- rumiai-tests: 5b25f650e173db6a2fad0be1bb1b9f7d65ebe564 (new RFC 7523 real Keycloak direct-test scope).
 
 Recheck all live remote HEADs and reconcile forward before each write/validation.
 
@@ -39,6 +39,7 @@ Recheck all live remote HEADs and reconcile forward before each write/validation
 - An operator with a registered confidential Signed JWT client and protected matching remote key/certificate can acquire, inspect, refresh when issued and revoke a token through rsudo while selecting an explicitly supported signing algorithm.
 - Wrong algorithm, untrusted certificate, mismatched key, unsafe paths or failed server authentication fail closed without credential disclosure or unintended store replacement.
 - The same public flows pass against real isolated Keycloak 26.7.3 and 26.8.1, including composed SSH/sudo where applicable; evidence identifies exact product/suite revisions.
+- A configured confidential client with an external identity-provider-linked user can explicitly exchange one current signed RFC 7523 JWT authorization assertion for a non-admin Keycloak token, without implicit refresh or exposing the assertion/token. Invalid issuer/subject, signature/audience/expiry/replay and disallowed client/IdP selection must fail closed. This scenario is verified at the upstream Keycloak boundary but remains pending through the rsudo public interface.
 
 ## Completed
 
