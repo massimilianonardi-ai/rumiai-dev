@@ -245,6 +245,12 @@ Mainline repository adapters: `pkg-repository-{artifact,chrome,chromium,github,n
 
 ## Current state
 
+### Branch S final-source hosted macOS PASS and safe exact-master integration probe (2026-11-06)
+
+- S1/S2 exact `m-os/m-os-completion-s@d8f96689e3b288ea56cc7ab4da96a0a14c62adec` is now **PASS 5/5** on [run 42199875387](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42199875387) and **PASS 6/6** on [run 42200525680](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42200525680), including the completed real macOS 26 ARM64 live legacy-PID safety, native two-concrete host-user manager lifecycle and auxiliary macOS 15 Intel safety checks. All raw macOS logs contained explicit terminal PASS rather than SKIP. Owning validation handoff has exact runner and job IDs; GitHub-hosted evidence does not imply operator physical PASS.
+- The separate [local GitHub-hosted integration probe 42240263411](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42240263411) pins current integrated `m-os/master@e07fbec09fae49cab0d688940e6406a25b6b5e83` and S `m-os@d8f96689`; it performs a **runner-only** Git merge and tests the merged tree via genuine S public commands. No conflicts; Ubuntu 26.04 offline safety, real published-provider cycle and native two-concrete host-user cycle **PASS 3/3**. macOS ARM64 offline/user and macOS 15 Intel offline remain queued at this checkpoint; no accepted macOS merged-tree evidence until their actual logs are checked.
+- [Draft PR #4](https://github.com/massimilianonardi-ai/m-os/pull/4) remains unmerged; S does not push a merge commit to source or mutate shared P2/V2 catalog, privileged manager or frozen legacy suite. Same-second PID recycling/read-to-kill atomicity, G-HOST, other POSIX backends, and operator physical reference hosts still gate full S acceptance.
+
 ### Branch S live legacy PID state fail-closed (2026-11-06)
 
 - S1 corrected a concrete remaining safety defect at `m-os/m-os-completion-s@d8f96689e3b288ea56cc7ab4da96a0a14c62adec`: complete older runtime records without process-start identity no longer authorize a live PID on public `srv start` / `srv stop -f`. Dead-PID state still cleans. Canonical `SERVICE-LIFECYCLE.md` now specifies SRV-42 and the revision-coupled `srv` manual documents this deliberate compatibility tradeoff; only S-owned runtime/manual/public safety workflow changed. A real live disposable unrelated PID is protected by the new test.
