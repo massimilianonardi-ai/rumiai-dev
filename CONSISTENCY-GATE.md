@@ -1,7 +1,7 @@
 # RumiAI Development Consistency Gate
 
 Status: **Current / canonical**  
-Updated: 2026-10-10
+Updated: 2026-11-06
 
 This document defines the mandatory consistency process for RumiAI work. Its purpose is to prevent drift between current rules, current specifications, implementation, tests, operational documentation, deferred work and active task state.
 
@@ -86,43 +86,21 @@ For work that creates, ports or changes code, apply the code-quality contract in
 This is a human design review. It must not be replaced by line-count thresholds or claims that automated checks prove readability.
 
 
-## 3. Current source, not historical patch composition
+## 3. Current-source and specification-promotion gate
 
-The current branch is expected to describe the current project directly.
+Verify that the current canonical sources directly express the applicable contracts, following the documentation model in `RULES.md`.
 
-A current rule must not require this reading strategy:
+Before accepting a documentation or implementation change:
 
-```text
-old specification
-+ later decision
-+ later correction
-+ later handoff
-= current meaning
-```
+1. Confirm that each affected contract has one canonical maintenance location.
+2. Confirm that the current contract can be understood without composing historical decisions, later corrections or task handoffs.
+3. When a contract changes, verify that its canonical specification is updated and superseded current material is removed after durable content is propagated.
+4. If implementation and specification disagree, explicitly determine whether implementation requires realignment or an authorized contract change is intended.
+5. Before adding content to `specifications/`, verify that it is a settled, binding current contract owned by that specification, not provisional design, an open question or deferred work.
+6. If a specification intentionally leaves a dimension unconstrained, verify that this is a stable contractual boundary and does not introduce candidate choices or future planning.
+7. Route non-promoted material to the appropriate active handoff, experiment or deferred-work record, without creating competing normative sources.
 
-Instead, when a contract changes, update the canonical current specification and remove superseded documents from the current tree once their durable content is propagated.
-
-Historical rationale remains in Git history. It must not compete with current authority during normal retrieval.
-
-If a current specification and current implementation disagree, do not silently choose one. Determine whether implementation is pending realignment or the specification itself is intentionally being changed, then make that state explicit before proceeding.
-
-### Specification promotion gate
-
-Before adding a design statement to `specifications/`, determine whether it is already a **promoted current contract**.
-
-A statement passes the gate only when all applicable conditions are true:
-
-```text
-it is settled enough to constrain current implementation and future work now
-it expresses what must remain true, not what is merely being considered
-it is not a candidate, provisional assumption, comparison, open question or postponed decision
-it is not a backlog of future design work
-its canonical ownership belongs to the specification being changed
-```
-
-If the statement does not pass, do not put it in a specification merely to preserve memory. During an active task, persist it in the task handoff under working design state. If experimental evidence is required, use `rumiai-dev-PoCs` and reference the experiment from the handoff. If the work is intentionally deferred outside the active task, use `todo/`.
-
-A stable statement that a specification deliberately leaves a dimension unconstrained may pass the gate when that **absence of constraint** is itself part of the current contract and materially prevents false inference. Express only that boundary. Do not attach candidate lists, evaluation matrices, preferred directions or the plan for making the later decision.
+A failed check must be resolved or reported explicitly; do not silently promote provisional material or infer current authority from historical evidence.
 
 ## 4. No silent design changes
 
