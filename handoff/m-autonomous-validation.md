@@ -1,7 +1,7 @@
 # Autonomous m: complete functional validation
 
 Status: Active
-Updated: 2026-11-05
+Updated: 2026-11-06
 
 ## Goal
 
@@ -25,11 +25,6 @@ Refresh HEADs and README mandatory source order before each follow-up task. Past
 `specifications/README.md`, `specifications/rumiai-os/{BOOTSTRAP-ENVIRONMENT,COMMAND-ENTRYPOINTS,DOCUMENTATION-MODEL,STATE-MODEL,PACKAGE-MODEL,SERVICE-LIFECYCLE,TLS-TRUST}.md`; supplement with feature-specific specifications when that feature is tested. The current `m` source, catalog and executable/manual inventory and read-only evidence from legacy tests are factual sources, not overrides.
 
 ## Fixed task-local choices
-
-### Operator workflow deferral (2026-11-06)
-
-The operator explicitly authorized **skipping the unexecuted A1–A4 GitHub Actions workflows for now and advancing other authorized workstreams**. Hosted workflow execution is therefore not a scheduling prerequisite for independent next work. This is a deferral of one validation mechanism, **not** evidence of PASS, acceptance of uncovered archive/TLS/portability cases, authorization for privileged host changes, or completion of the A1–A4 / M01–M15 validation responsibility. Preserve revision- and host-specific `PENDING` for unexecuted scenarios, use real public-entrypoint or reference-host tests only when executable and separately authorized as required, and do not retry workflow dispatch as a blocker. If final acceptance still requires evidence, resume from the current exact revisions and applicable contracts rather than treating unrun CI as green.
-
 
 - **The test target is complete standalone m**, not independently published `mk` and `jsc` alone.
 - Operator-facing install is via `./m pkg install ...`, not manual clones of package source projects. Separate repository checkouts are permissible *inside CI* to reuse test-owned drivers, but do not replace ordinary user-facing installation.
@@ -269,6 +264,21 @@ Current `m` CI Ubuntu: checkout smoke `121646679176` PASS, public mk install `12
 The `m/.github/workflows/m-technical-commands.yml` workflow was added, with no application/library changes, advancing standalone `m/master` to `cf3660ca0e206f94d0c8292b2b2cabeb096703ef`. On a real Ubuntu GitHub runner, it executed public `./m osarch update/show`, `digest -a sha256` compared against independent Python SHA-256 for both file and stdin, real `extract tar.gz` with byte comparison, and `http-fetch` against a real loopback Python HTTP server with body and Content-Length verification. It also exercised `state-path` nonmaterialization/invalid-scope rejection, `lang-set` query/invalid-locale, `lang` fallback, `manual` discovery/exact topic, `log` warn/invalid severity, and managed `shell`. **Ubuntu `technical-public` job `121650261617` PASS at `m@cf3660ca`**. Its macOS counterpart was queued at last observation; do not mark PASS yet. Further tests are required for HTTPS, paging, full locale catalogs, other archive formats, log variants and mutable-state ownership. Latest-m Ubuntu `srv-ubuntu-live` job `121650271263` and `pkg-public-lifecycle` job `121650259900` also PASS.
 
 A full source and catalog inventory was read: public `bin/sys` commands `digest`, `extract`, `http-fetch`, `lang`, `lang-set`, `log`, `manual`, `osarch`, `pager`, `pkg`, `shell`, `srv`, `state-path`, `tls-ca`, `tls-nss-sync` and exposed bootstrap `m`. Current `pkg` has install, uninstall, versions, depend, default, provider and requirement interfaces, facility typed parts; existing catalog provides real `nodejs 26` provider and `ollama 1` service provider with `ollama-serve` realization. Presence in catalog does not itself establish support by the limited set of adapters in current autonomous m.
+
+### Operator workflow deferral (2026-11-06)
+
+The operator explicitly authorized **skipping the unexecuted A1–A4 GitHub Actions workflows for now and advancing other authorized workstreams**. Hosted workflow execution is therefore not a scheduling prerequisite for independent next work. This is a deferral of one validation mechanism, **not** evidence of PASS, acceptance of uncovered archive/TLS/portability cases, authorization for privileged host changes, or completion of the A1–A4 / M01–M15 validation responsibility. Preserve revision- and host-specific `PENDING` for unexecuted scenarios, use real public-entrypoint or reference-host tests only when executable and separately authorized as required, and do not retry workflow dispatch as a blocker. If final acceptance still requires evidence, resume from the current exact revisions and applicable contracts rather than treating unrun CI as green.
+
+### A1–A4 local evidence without hosted workflows (2026-11-06)
+
+- **Preflight:** verified current live `m-os/master@1f8880c78febf390596faa9b6662ec8cab5c5e42`, `rumiai-dev/main` before this checkpoint, current catalog/feature HEADs, and the frozen legacy repositories. Read mandatory canonical rules, consistency gate, relevant subsystem specs, active A/orchestration handoffs, public command sources and manuals. The operator's deferral of hosted A1–A4 workflow runs remains in force.
+- **A1 (inspection only):** inspected the exact `m` bootstrap and `state-path` sources/manual. No complete source checkout, composed public `./m` execution, or host-specific State Instance result was obtained. A1 remains **PENDING**, not a source-reading PASS.
+- **A2 (real standalone pager):** copied the exact current `bin/sys/pager` 93-byte source into a disposable auxiliary Linux x86_64 directory and verified the local Git blob digest `1391a6d5382b9dc4b1090faa59358017357ee442` matches current GitHub. The real host `more` backend read stdin with exit 0 and read a file whose name contains a space in an isolated pseudo-terminal with exit 0. Isolated replaceable-backend probes additionally verified `less` preference, `more` fallback, ordered file operands with spaces, preserved caller environment/streams and backend exit-status propagation (probe statuses 17 and 19). The selection probes simulate the backend boundary and do **not** prove real `less` execution. The host `more` backend hangs on file operands without a terminal in this auxiliary execution mode; the interface deliberately delegates that behavior rather than correcting it in `pager`.
+- **A2/M15 (structural inventory only):** the complete exact-`m-os/master` Git tree was enumerated without truncation. All **16** global technical command identities exposed under `bin/sys` (counting `m` once) have a corresponding `res/sys/manual` topic; all **31** `lib/sys/**/*.lib.sh` source leaves have corresponding library topic leaves, with no unmatched library topics. This checks one-to-one *topic presence only*, not public function coverage, manual prose accuracy or a permanent executable suite PASS.
+- **A3 (real host archive backends, not public `m`):** disposable GNU tar and Info-ZIP UnZip examples with an **existing destination-child symlink** returned status 0 and wrote a test marker outside the chosen extraction directory. Their archive-created-symlink-followed-by-member counterparts returned status 2, did **not** write the marker outside, but **did leave the created symlink within the partial output**. This confirms the host/backend risk and why destination preflight and downstream error handling matter; it does not validate the composed current `./m extract` guard, macOS behavior, other formats or cleanup/security of partially extracted output. A3 public coverage remains **PENDING**.
+- **A4 (real isolated NSS backend, not managed `m`):** generated a one-day CA certificate solely for a disposable test. Real `certutil` created an isolated `sql:` NSS database, imported and listed the CA, then removed it; a post-removal lookup failed as expected (status 255). No existing user/system/browser trust store was changed. This proves only native NSS backend add/list/remove in the auxiliary Linux environment; `./m tls-ca`, `./m tls-nss-sync`, tamper protection, actual HTTPS browser rejection→trust→revocation and reference-host results remain **PENDING**.
+- **Next branch-A work:** continue actual public-command validation when a complete exact-revision `m-os` working tree or an authorized reference execution path is available; pursue remaining A2 semantic/manual checks and A3 backend-specific issues only within A ownership. Do not dispatch the deferred A1–A4 GitHub workflows as a prerequisite, change frozen repositories, modify P2-owned `pkg` files, or claim completed branch-A acceptance from these bounded probes.
+
 
 ## Next action
 
