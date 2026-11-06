@@ -123,6 +123,12 @@ Scenarios 1 and 2 have initial direct-checkout smoke evidence on Ubuntu and macO
 
 ## Current state
 
+### C2 pinned upstream launcher evidence (2026-11-06)
+
+- Read exact release-tag upstream POSIX launcher sources: `geoserver/geoserver@804fe178e4ff3fb4d0a2d0a0751930b31bf43a2a` (`src/release/bin/startup.sh`, GeoServer 3.0.1) and `keycloak/keycloak@6d238b6558037085cc25c915893c3d301a80243e` (`quarkus/dist/src/main/content/bin/kc.sh`, Keycloak 26.7.3). Checked the original `pkg-catalog/pkg-schema-v2@a75f9be1c9a62a72899022eddf55e163d86ab630` definitions. GeoServer's catalog package `env` sets `GEOSERVER_HOME` to its immutable `pkg_launch_root`, but **does not** set `GEOSERVER_DATA_DIR`; the original upstream script supports explicit `GEOSERVER_DATA_DIR` and passes it separately from `GEOSERVER_HOME` to Java. Keycloak's catalog wrapper invokes the shared launcher, whose upstream `kc.sh` resolves the invoked symlink (`readlink -f` on Linux, `readlink` on Darwin) and derives `kc.home.dir`, `jboss.server.config.dir` and Quarkus classpath from that resolved physical script path. The separate official `--config-file` option for Keycloak's configuration file does not establish full install-root or `lib/quarkus` relocation.
+- The isolated [PoC 098 upstream script workflow 42198184832](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/42198184832) pins both exact upstream commits; `tests/upstream-launcher-paths.sh` runs the unmodified scripts with an inert Java argv-capture stub and two independently labelled profile inputs. **Ubuntu PASS** job `127826608893` verified all three `PASS:` log lines: GeoServer passes distinct `GEOSERVER_DATA_DIR` A/B with a shared `GEOSERVER_HOME`; both Keycloak symlink launch paths resolve to one shared physical home, conf and classpath; no JVM/server executed. **macOS job `127826609294` QUEUED** at this checkpoint. Source test/workflow commit `rumiai-dev-PoCs/context-c2-profile-state-views@0b4d51da05b7f357e8032280db6d9f9763986353`; the subsequent README update `9e7c225cac724cb03b7ab40b949f4451048a7c0c` is documentation-only and is not a second validation.
+- Prior [authentic `pkg_integrate` + catalog GeoServer descriptor fixture 42196202367](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/42196202367) still has Ubuntu **PASS** and two macOS jobs **QUEUED** as most recently checked; independently the initial profile-view-only PoC 098 run `42193917751` is **Ubuntu/macOS 2/2 PASS**. Do not transfer host outcomes between these distinct source/test revisions. The new upstream probe does not install or boot an upstream release or validate live application behavior.
+
 ### C2 PoC 098 two-host standalone probe completion and authentic integrator gate (2026-11-06)
 
 - The earlier original standalone PoC 098 [run 42193917751](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/42193917751) at exact source `3633162592f70b62ef588b99007bec6e3113f6df` is now **COMPLETED SUCCESS 2/2**, Ubuntu job `127812311003` and macOS job `127812311245`. Mac job's real log contains all three expected `PASS:` assertions: one global `system/current` path under separately labelled processes, distinct prepared A/B views for an invoked-path-aware shell program, and direct immutable-root incompatibility. This **supersedes only the old macOS-queued observation** for that standalone POSIX filesystem PoC; not a product `context` implementation test.
@@ -955,6 +961,16 @@ frozen `rumiai-os` or `rumiai-tests`; no new catalog package range
 was migrated to use these exports.
 
 ## Working design / open questions
+
+### C2 upstream-specific relocation boundary (2026-11-06)
+
+Source and executed launcher analysis narrow—but do not settle—the C2 migration options:
+
+1. **GeoServer 3.0.1**: separate program installation (`GEOSERVER_HOME`) and profile-local data (`GEOSERVER_DATA_DIR`) are supported in the exact upstream `startup.sh`; the current `pkg` catalog intentionally uses static `data_dir` routing and has no selected per-profile data binding. Candidate is a coherent, validated launcher/data-path contract under the P2/P4/V2 owner boundary, with failure atomicity and permissions. This is **not** evidence that all GeoServer state is redirectable or that two live instances run safely on shared binaries.
+2. **Keycloak 26.7.3**: merely providing distinct symlink views to a single `kc.sh` is demonstrably insufficient because the exact script follows its own link and derives physical home, `conf` and `lib/quarkus-run.jar`. Its package declares static `var/cache`, `var/conf` and `var/data` and thus requires a stronger compatibility plan than changing PATH or one generic environment variable. Investigate explicit upstream configuration and real runtime/augmentation effects, but do not claim that `--config-file` alone moves Quarkus mutable state.
+3. Preserve the existing system-profile TLS CA/trust and system-service State Instance administrative boundaries. A general caller-selected profile is not an authenticated entitlement or a replacement for host filesystem permissions. The pending product-policy decision remains whether and how multiple concurrent system-profile authorities—including CA and host services—can be active without mutating `system/current`. Do not silently choose global-only degradation or an unverified generic execution-view mechanism.
+
+**Next gate:** independently reproduce exact upstream launch with **real immutable release assets** and supported Java if feasible, under controlled state and without granting trust/service privileges; validate the behavior and failure cases at the public `m pkg` boundary once the shared pkg writer is available. Resolve C2 public syntax, default/reset transition, authority and protected inheritance through G-CONTEXT before C3. No canonical contract promoted in this work unit.
 
 ### C2 profile-state compatibility alternatives after PoC 098 (2026-11-06)
 
