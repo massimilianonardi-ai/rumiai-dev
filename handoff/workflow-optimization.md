@@ -1,7 +1,7 @@
 # workflow-optimization
 
 Status: Active
-Updated: 2026-11-04
+Updated: 2026-11-06
 
 ## Goal
 
@@ -214,6 +214,14 @@ The following principles appear mature enough to be candidates for later promoti
 These points should later be reviewed together and promoted only in the smallest wording that preserves the behavior. The richer model above should remain available as working-design rationale until enough real cases establish which dimensions are genuinely useful.
 
 ## Completed
+
+### Root README routing consolidation — 2026-11-06
+
+- The operator confirmed that ChatGPT Project Instructions should remain a single bootstrap instruction pointing to the current `rumiai-dev/README.md`.
+- Replaced the root README with a four-section routing entrypoint (mandatory workflow, authority, source routing, documentation ownership), preserving preflight and final consistency obligations and delegating specialized procedures to their canonical sources.
+- README update commit: `e133db42a6c8be44b88ed490f5706ea97b50bc68`. No product/runtime changes.
+
+
 
 ### Opt-in `devplan` procedure — 2026-11-04
 
