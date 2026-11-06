@@ -1,6 +1,6 @@
 # rsudo Keycloak administration — K04 authentication
 
-Status: Active
+Status: Complete
 Updated: 2026-11-06
 
 ## Goal
@@ -136,3 +136,28 @@ When `m` is run on a headless host or through another remote terminal, a loopbac
 - Ed448, `self-signed-tls-client-auth`, federated-JWT refresh/password variants, mTLS-bound Admin REST resource enforcement and other grant families remain pending. Runtime client/IdP allowlist governance and external-provider trust require independent deployment-policy validation.
 - Native macOS SecureTransport remains incompatible with the selected PEM client-identity path. A compatible curl passed the cleaned macOS test suite 42076656057. Physical reference-host validation remains unperformed.
 - Full K04 authenticated Admin REST transport, non-service-account grant families and multi-host physical validation are still pending.
+
+## Final closure (operator-directed stop)
+
+On 2026-11-06 the operator explicitly stopped the rsudo-centric Keycloak
+implementation plan after finding that it failed to establish the usable
+operator-facing product before extensive test/deployment planning. This
+handoff is **retired by change of scope, not by fulfillment of K04–K08**.
+No further rsudo Keycloak implementation is authorized by this task, and no
+previous rsudo test/fixture is represented as a finished user command.
+The existing rsudo code, manual and test evidence remain intact.
+
+The replacement responsibility was delivered separately as the native
+technical command `m keycloak admin`, with `curl` HTTPS/OIDC and direct
+Admin REST, and a compatibility delegation that preserves the Keycloak server
+package's `keycloak start-dev` and other upstream invocations. Current
+canonical behavior is `specifications/rumiai-os/KEYCLOAK-CLI.md` and its
+product manual `res/sys/manual/keycloak`. Initial CLI direct-grant,
+service-account, bearer-token, CRUD and failure/permission scenarios passed
+against a verified HTTPS fixture and official Keycloak 26.7.3/26.8.1 in
+validation run 42271596456, frozen product a7d2dd1994e353f162decfc6961026f0394b66ea
+and test suite 2d0ac1f353b1e83ec6cc0830d6d504d7158a4a53, PASS 2 /
+FAIL 0 / SKIP 0 / ERROR 0, VALIDATED.
+
+This completed snapshot is removed from the current tree by a subsequent
+forward commit according to the handoff lifecycle; Git history preserves it.
