@@ -1,6 +1,6 @@
 # rsudo Keycloak official CLI proxy
 
-Status: Active
+Status: Complete
 Updated: 2026-11-06
 
 ## Goal
@@ -9,9 +9,9 @@ Implement an agentless `rsudo keycloak discovery` and `rsudo keycloak kcadm` int
 
 ## Current repository revisions
 
-- rumiai-dev: 73410562a44e8e51a4634491b378797731a3bbe2
+- rumiai-dev: c2e252680bb2ec79978f605fcd76d1c064d02db1 (pre-completion checkpoint)
 - rumiai-os: 679cd66fd8329f077c0223972d4c5bee14629f05
-- rumiai-tests: 017613ca32053c99507b3b32b1a6d16d891eb1a9
+- rumiai-tests: 43e198a6c9321f7a075f69232ef2adabf1d479c8 (current HEAD; unrelated work preserved)
 
 ## Applicable canonical sources
 
@@ -41,11 +41,6 @@ Implement an agentless `rsudo keycloak discovery` and `rsudo keycloak kcadm` int
 4. Missing or invalid executable selection fails without executing anything. Transport and remote command statuses are observable.
 5. Previously exposed `rsudo keycloak` operations remain callable.
 
-## Working design
-
-- External standard-input payloads for `kcadm` may require an independent channel; report the limitation if current rsudo script injection consumes caller stdin.
-- Real network and sudo integration need explicit host validation; tests may isolate only the external SSH/sudo boundary.
-
 ## Completed
 
 - Retrieved current repository authority and inspected rsudo non-interactive/interactive source transport and existing Keycloak module.
@@ -55,12 +50,24 @@ Implement an agentless `rsudo keycloak discovery` and `rsudo keycloak kcadm` int
 
 ## Current state
 
-Implemented and committed. Focused rsudo-keycloak workflow passed on Linux ARM64 and macOS after a shell portability fix. A separate real OpenSSH/sudo proxy test has been added to the SSH validation scope; its focused run is in progress.
+Completed and published. Existing Keycloak rsudo legacy and direct Keycloak CLI interfaces remain separate. 
+Validation evidence:
+- rsudo-keycloak: https://github.com/massimilianonardi-ai/rumiai-tests/actions/runs/42305858296
+  frozen rumiai-os 679cd66fd8329f077c0223972d4c5bee14629f05;
+  frozen rumiai-tests 5aedb9b5e84d87d0ec00ea815b12695120dd504d.
+  macOS ARM64 and Linux ARM64: 3/3 selected tests PASS per host.
+- rsudo-keycloak-ssh: https://github.com/massimilianonardi-ai/rumiai-tests/actions/runs/42306095159
+  frozen rumiai-os 679cd66fd8329f077c0223972d4c5bee14629f05;
+  frozen rumiai-tests 017613ca32053c99507b3b32b1a6d16d891eb1a9.
+  Real SSH/sudo to disposable Linux container: 2/2 selected tests PASS.
+
+No actual Keycloak server credential exchange or physical enterprise host was tested as part of this new CLI proxy; the SSH integration fixture uses an external kcadm.sh stand-in.
+The current source-over-stdin proxy intentionally does not forward an independent caller stdin payload to kcadm.sh, as explicitly recorded in the canonical specification/manual.
 
 ## Next action
 
-Inspect the real SSH/sudo test result, address any failures, then complete the final consistency audit and close this handoff only after supported validation.
+None. The task is complete. 
 
 ## Blockers / open questions
 
-- None for implementation; physical target validation remains dependent on operator infrastructure.
+None. This completed snapshot is retained only until its separate forward removal commit.
