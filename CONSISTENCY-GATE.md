@@ -232,23 +232,15 @@ A RumiAI task is ready to report as complete only when every applicable item is 
 [ ] applicable invariants were identified before writing
 [ ] for user-visible behavior, primary goal and realistic normal paths were identified before implementation; caller/system knowledge boundaries were respected, surprising restrictions or added steps were explicit design decisions, and the resulting public workflow was exercised where applicable
 [ ] changed code was reviewed for clear, bounded module/function responsibilities, readable flow and a realistic small future modification
-[ ] code changes stayed within the authorized scope; deferred TODO work and speculative mechanisms were not implemented
-[ ] no existing responsibility was duplicated under a new name
-[ ] no contract was changed silently
+[ ] code changes stayed within authorized scope, without implementing deferred TODOs or speculative mechanisms, duplicating existing responsibilities under new names, or silently changing contracts
 [ ] every statement added to a current specification passed the specification promotion gate
 [ ] affected failure branches have distinguishable local statuses (except explicit pass-through/external-status contracts), with no renumbering merely for source order; logged failures have branch-specific identities and non-sensitive context; significant flows have proportional info/debug/trace observability or justified omissions; propagation avoids redundant error/fatal logs and secret leakage
 [ ] affected commands and libraries have required, implementation-consistent manuals; library functions follow public/internal underscore naming; manuals expose the complete public API without internal callable functions; mandatory structural coverage exists or the corresponding completeness work remains explicitly open
-[ ] tests/evidence claim no more than what was actually exercised
-[ ] resulting diff was reread and stale terminology/mechanisms were scanned
-[ ] cross-references/current routing remain valid
-[ ] user/concurrent repository changes were preserved
-[ ] proportional tests were run or correctly classified as unnecessary
-[ ] concrete intentionally deferred work is represented once under todo/ when applicable
-[ ] no current TODO duplicates an active handoff for the same work
-[ ] before creating a new handoff, existing active handoff ownership was checked by resumable responsibility
-[ ] no parallel handoff duplicates an existing task lifecycle merely under a narrower or different label
-[ ] parent/child handoffs, when justified, do not duplicate active operational state
-[ ] active handoff was synchronized for every material checkpoint before the final response
+[ ] tests were proportional or correctly classified as unnecessary, and evidence claims only what was actually exercised
+[ ] resulting diff was reread; stale terminology/mechanisms were scanned; cross-references and current routing remain valid; user/concurrent repository changes were preserved
+[ ] concrete deferred work is represented once under todo/ when applicable, with no competing active TODO/handoff representation
+[ ] existing active handoff ownership was checked before creating another; separate handoffs require independent lifecycles, and justified parent/child handoffs do not duplicate operational state
+[ ] active handoffs were synchronized for every material checkpoint before the final response
 [ ] physical-validation status is stated accurately
 [ ] Git changes are forward-only
 ```
