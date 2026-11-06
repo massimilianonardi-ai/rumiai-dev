@@ -182,13 +182,13 @@ Do not credit a test with proving a composed behavior when its relevant executio
 
 ## 10. Proportional validation
 
-During development, use the fastest real environment that can materially exercise the property. Broaden to clean/multi-host automation when useful. Reach physical validation only when preceding evidence makes success the expected outcome.
+Verify the validation sequence and evidence against `TESTING.md` and `PHYSICAL-TESTING.md`:
 
-A recurring pattern of defects first discovered in physical validation is evidence that the earlier model is insufficient and must be improved.
-
-A GitHub-hosted runner, headless GUI session or AI-provided VM is not physical validation of a stable reference host it did not actually exercise.
-
-GitHub required status checks are not part of the current RumiAI workflow and must not be introduced without a new explicit decision.
+1. Confirm that development checks use the fastest real environment capable of materially exercising each claimed property, expanding to clean or multi-host automation where useful.
+2. Before physical validation, confirm that earlier evidence makes success the expected outcome and that the required reference-host scope is identified.
+3. Attribute every result to the actual host and revision exercised; do not label GitHub-hosted runners, headless GUI sessions or AI-provided VMs as physical validation of a different reference host.
+4. If defects repeatedly appear first during physical validation, identify and strengthen the earlier checks that should have exposed them.
+5. Confirm that no GitHub required status check or automatic merge gate was introduced without an explicit new decision.
 
 ## 11. Post-change diff review
 
