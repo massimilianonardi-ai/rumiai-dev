@@ -37,16 +37,24 @@ adds only the first explicit traditional-admin REST reads:
   pagination, URL IPv6 literals, version negotiation and live APISIX identity
   verification remain unsupported. Operation-specific legacy compatibility
   functions remain as before.
+- M2 container discovery now lists full-ID Docker/Podman containers in all
+  manager states, scans running container filesystems with a static `find`
+  program, reports stopped APISIX-looking containers from name/image evidence,
+  and emits manager uncertainty rows when enumeration or probes are partial.
+  Permanent discovery coverage uses synthetic Docker and Podman CLIs through
+  the real module and `m`; it does not claim a live container runtime test.
+  Stopped unnamed/custom-image candidates, mounts, service-manager
+  correlation and listener probes remain unresolved.
 - The permanent `apisix-admin-transport.test` passes against its local
   synthetic HTTP fixture through the real `m` loader and curl, substituting
   only rsudo's remote boundary. This is not a live APISIX, SSH target or CI
   validation. No deployment environment was modified.
-- Immediate next: run/review focused regression and full scoped CI at frozen
-  revisions; implement M2 Docker/Podman inventory independently; expand the
-  selected traditional REST read contract only with verified pagination and
-  real-server coverage; then implement standalone file/snapshot adapters and
-  backend-specific safe mutations. Discovery/source attribution research is
-  not a global prerequisite for explicitly selected operations.
+- Immediate next: run/review full scoped CI at frozen revisions; harden M2
+  using isolated real Docker/Podman and service/listener fixtures where
+  available; verify REST pagination/version behavior on supported APISIX
+  releases; then implement standalone file/snapshot reads and backend-specific
+  safe mutations. Discovery/source attribution research is not a global
+  prerequisite for explicitly selected operations.
 
 ## Implementation checkpoint: operator-owned discovery/context (2026-11-07)
 
