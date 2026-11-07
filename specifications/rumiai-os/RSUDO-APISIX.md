@@ -258,12 +258,32 @@ errors return nonzero without writing the response body to stdout. These
 checks protect the transport but do not prove that the URL belongs to the
 selected APISIX process or that credentials are authorized.
 
-Other scopes/adapters fail explicitly. Generic `create`, `update`, `delete`,
-`apply` and `request` currently fail as unimplemented; none falls back to a
-legacy function. Existing operation-specific compatibility functions retain
-their previous forwarding behavior. The permanent transport test exercises
-these reads against a local synthetic HTTP endpoint through the product
-module, not a live APISIX installation or deployed rsudo target.
+## Standalone JSON file list/get
+
+The same generic public `list` and `get` functions also route to the internal
+`file-json` adapter when the caller explicitly selects
+`RSUDO_APISIX_DEPLOYMENT=standalone-file-json` and an absolute
+`RSUDO_APISIX_DATA_FILE`. Host, Docker and Podman scopes are supported only
+when explicitly selected; container scope also requires the full lowercase
+container ID. The remote target checks that the selected file is a readable,
+ordinary non-symlink file and streams it through the existing rsudo boundary
+into a local temporary directory created under umask 077. The local standalone
+RumiAI `json` command validates the document and extracts the selected
+top-level `routes`, `services` or `upstreams` array. `get` compares each
+record's `id` without interpolating the caller's ID into a query; it succeeds
+only for exactly one match. The private temporary document and intermediate
+results are removed when the operation exits. Only selected records are
+written to stdout.
+
+This is a read of the operator-selected file contents, not proof that the
+running APISIX process loaded that file; APISIX environment substitutions are
+not resolved. Read-only `list/get` for other adapters still fail explicitly.
+Generic `create`, `update`, `delete`, `apply` and `request` currently fail as
+unimplemented; none falls back to a legacy function. Operation-specific
+compatibility functions retain their previous forwarding behavior. Permanent
+tests exercise the JSON adapter through real `m` and RumiAI `json`, with local
+synthetic host, Docker and Podman rsudo boundaries; they do not validate a live
+APISIX or SSH deployment.
 
 ## Current limits and security boundary
 
@@ -271,11 +291,12 @@ The current read-only resolvers do not prove which `-c`/profile or effective con
 
 Mode inspection does not emit API keys or the selected configuration contents. Credentials and target data remain subject to `RSUDO.md` and `DIAGNOSTICS.md`. The legacy APISIX functions retain previously documented unsafe JSON/request behavior, and their existence is not evidence that modern secure mutation is complete.
 
-The complete mode-routed Admin API, standalone file-driven and API-driven
-reads/mutations, generic writes, pagination, and simplified shell recipes
+The complete mode-routed Admin API, YAML-file reads, API-snapshot reads,
+standalone mutations, generic writes, pagination, and simplified shell recipes
 are **not yet implemented** by the current safe APISIX backend. The initial
-traditional REST `list/get` support above is partial and does not imply
-those capabilities. They are pending development, not current guarantees.
+traditional REST and JSON-file `list/get` adapters above are partial and do
+not imply those capabilities. They are pending development, not current
+guarantees.
 
 ## Required mechanical protection
 
