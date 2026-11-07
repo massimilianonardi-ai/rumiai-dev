@@ -36,11 +36,11 @@ discovery extension:
   validation repeats the checks. Curl preserves TLS verification, disables
   proxy/redirect use. REST response JSON is passed through; snapshot JSON is
   filtered locally. File JSON is staged privately and filtered locally.
-- `apply` fails explicitly as not implemented and never falls back to legacy.
-  **The earlier request implementation statement is historical**:
-  a later continuation checkpoint below implements `create/update/delete`
-  and a generic `request` for host-scoped traditional REST. YAML-file
-  reads and file/snapshot writes,
+- `create/update/delete` are implemented only for host-scoped traditional
+  REST. `apply` publishes a full document only for explicit standalone
+  file-json context. A generic `request` operates on caller-selected REST
+  paths/methods. YAML-file
+  reads and file/snapshot resource mutations,
   pagination, URL IPv6 literals, version negotiation and live APISIX identity
   verification remain unsupported. Operation-specific legacy compatibility
   functions remain as before.
@@ -79,12 +79,44 @@ discovery extension:
   synthetic HTTP fixture through the real `m` loader and curl, substituting
   only rsudo's remote boundary. This is not a live APISIX, SSH target or CI
   validation. No deployment environment was modified.
-- Immediate next: run/review full scoped CI at frozen revisions; harden M2
-  using isolated real Docker/Podman and systemd fixtures where available;
-  verify REST pagination/version behavior on supported APISIX releases; then
-  continue backend-specific safe mutations, starting with file-YAML and
-  snapshot publication. Discovery/source attribution research is not a global
-  prerequisite for explicitly selected operations.
+- Immediate next: validate file-json apply against APISIX parser/runtime
+  fixtures where available, then implement YAML file publication and safe
+  resource-level mutations for the file and snapshot backends. Continue scoped
+  CI and Docker-enabled parser checks. Discovery/source attribution research
+  is not a global prerequisite for explicitly selected operations.
+
+### Continuation checkpoint — standalone JSON full-document apply
+
+- The generic `rsudo_mod_apisix_apply` now supports only the explicitly
+  selected `standalone-file-json` adapter. It reads a complete replacement
+  document from stdin, validates exactly one JSON value using local RumiAI
+  `json --check`, and publishes to the caller-selected existing regular
+  non-symlink file. Host, Docker and Podman scopes use the same router and full
+  container ID selection as JSON-file reads. No resource-level JSON editing is
+  attempted because the `json` command is intentionally read-only.
+- The target stages in a private same-directory sibling, copies source
+  ownership/mode with `cp -p`, serializes concurrent apply calls through this
+  adapter with a per-file directory lock, compares a baseline copy and metadata before
+  publication, then uses same-filesystem `mv` for atomic replacement. It
+  rejects observed concurrent changes while staging. External writers that
+  ignore the lock are not coordinated, and the final compare/rename window
+  cannot be made conditional with the current POSIX interface. Success means
+  atomic file publication only; APISIX schema acceptance and hot reload are
+  not synchronously observed. An uncatchable interruption can leave a stale
+  lock that requires manual inspection.
+- Permanent `apisix-file-json-apply.test` covers real `m` and `json` with a
+  synthetic rsudo shell boundary, host/Docker/Podman routing, mode preservation,
+  malformed input rejection, stale-lock behavior, and a concurrent change
+  during staging that must not be overwritten. No live APISIX parser or
+  deployment test is claimed; the Docker-dependent parser suite remains
+  unavailable in this workspace. Frozen revisions are
+  `rumiai-os@fad46ceb5a0f0a35fd9cdc6f72320175d0bfcd61`,
+  `rumiai-tests@490c399b8e38eff4b4006f8d2da34ff38d770ebc`, and contract
+  `rumiai-dev@4c44cabb71f870dfb02fa9bf9363fd2301a0d6c8`.
+- Next: exercise the full replacement with a pinned APISIX JSON provider and
+  validate that the target accepts/reloads it; then design resource-level JSON
+  operations without losing unrelated JSON values and implement the YAML-file
+  and snapshot backends under their respective publication/version controls.
 
 ### Continuation checkpoint — generic traditional REST request
 
@@ -111,11 +143,11 @@ discovery extension:
   file-change reload behavior, but this product does not verify the selected
   file/provider or implement writes. This is not live APISIX, SSH or CI
   validation.
-- Next: implement file-backed changes only after defining full-document
-  validation, atomic replacement, metadata preservation and external-writer
-  concurrency behavior. The standalone `json` command supports query and
-  validation only; do not use it as a document mutation engine. Run YAML parser
-  coverage on Docker-enabled infrastructure and inspect scoped CI revisions.
+- Next (at that checkpoint): implement file-backed changes only after defining
+  full-document validation, atomic replacement, metadata preservation and
+  external-writer concurrency behavior. The standalone `json` command supports
+  query and validation only; do not use it as a document mutation engine.
+  Current file-json apply behavior is recorded in the newer checkpoint above.
 
 ### Continuation checkpoint — traditional REST create/update/delete via stdin
 
@@ -125,7 +157,7 @@ discovery extension:
   reads the request body from stdin and sends POST to the collection;
   `update resource id` reads the complete intended JSON body from stdin and
   sends PUT to that ID; `delete resource id` sends DELETE without a body or
-  force option. `apply` remains unimplemented. Generic `request` is
+  force option. At that checkpoint, `apply` was unimplemented. Generic `request` is
   implemented for the same explicit host traditional REST context. File-YAML,
   file-JSON and standalone snapshot mutations explicitly fail; there is no
   legacy fallback.
