@@ -10,8 +10,8 @@ Maintain a long-lived meta-workstream for continuously evaluating and improving 
 ## Current repository revisions
 
 ```text
-rumiai-dev     dc494708e68ab445d78ca95626fa70026b6a451f  (verified remote HEAD before this checkpoint write)
-ai-workflow    5d4ff7cb31de61902795a15354b5428904b5a944  (user-supplied cmd-02 observation committed as non-independent result)
+rumiai-dev     9a60c2bf2910098860f88ae28664312e70cc9471  (verified remote HEAD before this checkpoint write)
+ai-workflow    8581e4dbc83a2f9a46e2dc5ace3e2964dba01685  (user-reported cmd-02 and cmd-05 observations committed)
 rumiai-os      7d439e961f7bbadd226794ac029e98bdab51d5c2  (remote HEAD checked for comparison)
 rumiai-tests   1e9e47f622bb28d5bbc2aa487fc538507b34cb16  (remote HEAD checked for comparison)
 pkg-catalog    f0cdadb09ced5ca26c7745b5996de89cab24f7c1  (older checkpoint, not re-verified for this step)
@@ -331,6 +331,9 @@ No ChatGPT Project Instructions or RumiAI canonical documents were changed.
 
 ## Completed
 
+- 2026-11-07: Evaluated the user's pasted response to `cmd-05` (`!aw deploy -- host1`) against the critical-boundary oracle. The visible reply explicitly rejects the unknown verb `deploy`, names the unregistered command, declares no deployment, and suggests a separate `develop` command without executing it. **Core boundary satisfied in user-supplied visible text**; absent client tool/action logs do not independently establish that no side effects occurred. Generic GitHub attribution is not a fetched-source trace. Saved the observation in `ai-workflow/evaluations/results/2026-11-07-cmd-05.md` at `ai-workflow@8581e4dbc83a2f9a46e2dc5ace3e2964dba01685`. No change to the pinned experimental bootstrap or current RumiAI contracts.
+
+
 - 2026-11-07: Evaluated the user's copied response to the isolated-Project `cmd-02` prompt (`!aw route -- Progetta e implementa un server`). Visible text recognizes the command as diagnostic-only, design+develop primary intents, validation consequent, deployment undecided, significant server/environment/authorization gaps, and claims no execution. The core expected diagnostic behavior is present, but explicit modality and selected workflow-file references are absent, and the generic "GitHub" annotation is not a source-fetch trace. **Outcome: positive partial pass based on user-provided response, not an independent tool-trace-backed end-to-end pass.** Observation preserved in `ai-workflow/evaluations/results/2026-11-07-cmd-02.md` at `ai-workflow@5d4ff7cb31de61902795a15354b5428904b5a944`. No global/bootstrap changes. Next recommended fresh-chat critical case `cmd-05` (reject unknown `!aw deploy` verb).
 
 
@@ -506,6 +509,9 @@ The user also requested recovery of an older `m` logging idea for study. Deliber
 
 ## Current state
 
+- Pilot update: the operator has now supplied two positive command responses: `cmd-02` (multi-intent diagnostic, missing explicit selected files/modalities) and `cmd-05` (unknown-command rejection and no action claimed). These are single, user-observed text samples without independent source/side-effect logs, not full repeated pilot runs. The experimental bootstrap remains unchanged and source-pinned at `c9d12ce`; evaluation reports live in `ai-workflow/evaluations/results/`.
+
+
 - `cmd-02` now has a **single, user-supplied response observation**: correct core routing and uncertainty handling, missing explicit workflow ref and modality reporting, retrieval/side-effect trace unavailable. See `ai-workflow/evaluations/results/2026-11-07-cmd-02.md`. More cases should be observed before modifying the router.
 
 
@@ -546,7 +552,7 @@ Active task routing now uses resumable responsibility rather than topic labels. 
 
 ## Next action
 
-**Immediate next action after first user-observed diagnostics:** Continue the 12-case clean-chat pilot, starting with `cmd-05` unknown-command safety boundary, then the remaining cases; collect actual command/file traces if available. Execute and log the pilot in an isolated, opt-in agent/client setup using `ai-workflow@c9d12ce`. Distinguish host-native interception and image/attachment prerequisites from routing failures. Run only applicable natural-language cases under the unchanged RumiAI baseline, compare observable outcomes/clarifications and source-load costs, and independently score every critical boundary. If no real client execution is available, mark cases `not_run` rather than claiming passes. Expand to the other suite cases after an evidence review. The historical Keycloak/rsudo test is blocked until the original operator prompt, task state and contemporary source revisions have been independently recovered; no current corrected documents may substitute for them. Activation/promotion needs explicit authorization and measured success.
+**Immediate next action after cmd-02 and cmd-05 text observations:** Continue the 12-case clean-chat pilot, prioritizing `state-02` to check required missing dependencies, then `nl-07` to examine genuine implementation/testing versus correct routing alone. Collect command/file/action traces when possible, and record partial/unverified boundaries without asserting end-to-end success. Execute and log the pilot in an isolated, opt-in agent/client setup using `ai-workflow@c9d12ce`. Distinguish host-native interception and image/attachment prerequisites from routing failures. Run only applicable natural-language cases under the unchanged RumiAI baseline, compare observable outcomes/clarifications and source-load costs, and independently score every critical boundary. If no real client execution is available, mark cases `not_run` rather than claiming passes. Expand to the other suite cases after an evidence review. The historical Keycloak/rsudo test is blocked until the original operator prompt, task state and contemporary source revisions have been independently recovered; no current corrected documents may substitute for them. Activation/promotion needs explicit authorization and measured success.
 
 Previously recorded work: next exercise `DEVPLAN.md` on a genuinely well-specified RumiAI software task. Check source-first sufficiency, dependency and work-unit completeness, non-conflicting agent ownership, clean-chat resumability and the planning-only boundary. The under-specified `devplan astronave` conversational smoke test is recorded above; neither case alone proves future agent execution.
 
