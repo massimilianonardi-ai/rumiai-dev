@@ -118,8 +118,9 @@ endpoints or credentials. The read-only result includes
 `adapter` and relevant nonsecret selectors; the credential file
 is represented only as configured/not-configured. Supported internal
 adapter identifiers are `rest`, `snapshot`, `file-yaml`,
-`file-json` and `none`. Generic `list/get` currently route only the explicit
-host traditional-admin context to REST; other adapter operations fail
+`file-json` and `none`. Generic `list/get` route explicitly selected REST,
+host-scoped standalone API snapshot and host/container JSON-file contexts to
+their internal adapters; YAML-file reads and other adapter operations fail
 explicitly. Invalid inputs use
 distinct new-context status values 1–11 as described in the operational manual.
 The context is a **local declaration**: it does not establish a running
@@ -130,8 +131,9 @@ complete container source/mount attribution,
 JSON discovery output, standalone
 reads/writes and modern write operations. Initial host YAML port probes and
 textual systemd unit candidates are implemented. Initial host and
-Docker/Podman candidate inventory and traditional REST `list/get` support are
-described above/below. This staged implementation does
+Docker/Podman candidate inventory and the read-only traditional REST,
+standalone snapshot and JSON-file `list/get` adapters are described above/below.
+This staged implementation does
 not alter the older `mode`, `inspect`, `runtime`,
 `admin-read` or explicit legacy operations. In particular, the old
 no-argument runtime resolver may reject multiple candidates; the independent
@@ -258,6 +260,30 @@ errors return nonzero without writing the response body to stdout. These
 checks protect the transport but do not prove that the URL belongs to the
 selected APISIX process or that credentials are authorized.
 
+## Standalone API snapshot list/get
+
+The generic `list` and `get` functions also route to the `snapshot` adapter
+when the caller explicitly selects
+`RSUDO_APISIX_DEPLOYMENT=standalone-api`, supplies the Admin URL and protected
+header-file variables, and selects host scope. The adapter performs one
+authenticated read-only `GET /apisix/admin/configs`; it does not call a
+per-resource REST endpoint or change the snapshot. The full JSON response is
+staged under a local private temporary directory (umask 077), validated by
+RumiAI `json`, and filtered for the selected top-level `routes`, `services` or
+`upstreams` array. `get` compares IDs without interpolating them into a filter
+and succeeds only when exactly one item matches. Temporary files are removed
+on exit; only selected records reach stdout. The documented API-driven
+snapshot schema uses top-level resource arrays and per-resource
+`*_conf_version` fields ([Apache APISIX deployment modes](https://apisix.apache.org/docs/apisix/deployment-modes/)).
+
+This adapter currently supports host scope only. The operator-selected Admin
+URL and credentials are not cryptographically or process-bound to the chosen
+APISIX instance. The read does not prove the endpoint's live identity and does
+not resolve or write a full snapshot. The permanent test exercises response
+filtering through real `m`, `json` and curl against a local synthetic HTTP
+fixture. It does not verify this filtered workflow against a live APISIX or
+remote SSH deployment.
+
 ## Standalone JSON file list/get
 
 The same generic public `list` and `get` functions also route to the internal
@@ -277,7 +303,8 @@ written to stdout.
 
 This is a read of the operator-selected file contents, not proof that the
 running APISIX process loaded that file; APISIX environment substitutions are
-not resolved. Read-only `list/get` for other adapters still fail explicitly.
+not resolved. Read-only `list/get` for the YAML-file adapter still fails
+explicitly.
 Generic `create`, `update`, `delete`, `apply` and `request` currently fail as
 unimplemented; none falls back to a legacy function. Operation-specific
 compatibility functions retain their previous forwarding behavior. Permanent
@@ -291,10 +318,10 @@ The current read-only resolvers do not prove which `-c`/profile or effective con
 
 Mode inspection does not emit API keys or the selected configuration contents. Credentials and target data remain subject to `RSUDO.md` and `DIAGNOSTICS.md`. The legacy APISIX functions retain previously documented unsafe JSON/request behavior, and their existence is not evidence that modern secure mutation is complete.
 
-The complete mode-routed Admin API, YAML-file reads, API-snapshot reads,
-standalone mutations, generic writes, pagination, and simplified shell recipes
+The complete mode-routed Admin API, YAML-file reads, API-snapshot writes,
+standalone file mutations, generic writes, pagination, and simplified shell recipes
 are **not yet implemented** by the current safe APISIX backend. The initial
-traditional REST and JSON-file `list/get` adapters above are partial and do
+traditional REST, API-snapshot and JSON-file `list/get` adapters above are partial and do
 not imply those capabilities. They are pending development, not current
 guarantees.
 
