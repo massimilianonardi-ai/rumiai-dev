@@ -333,11 +333,15 @@ top-level `routes`, `services` or `upstreams` array. `get` compares each
 record's `id` without interpolating the caller's ID into a query; it succeeds
 only for exactly one match. The private temporary document and intermediate
 results are removed when the operation exits. Only selected records are
-written to stdout.
+written to stdout. Apache APISIX standalone file-driven mode supports a JSON
+source such as `conf/apisix.json` when `deployment.role_data_plane.config_provider`
+is `json`, and checks the file for updates ([Apache APISIX deployment modes](https://apisix.apache.org/docs/apisix/deployment-modes/)).
 
 This is a read of the operator-selected file contents, not proof that the
-running APISIX process loaded that file; APISIX environment substitutions are
-not resolved. For `standalone-file-yaml`, the caller also explicitly selects
+running APISIX process loaded that file or that APISIX is using the `json`
+provider; the operator must select the matching path and deployment mode.
+APISIX environment substitutions are not resolved. This adapter is read-only.
+For `standalone-file-yaml`, the caller also explicitly selects
 the absolute APISIX installation root in `RSUDO_APISIX_HOME`. The remote
 operation uses that installation's LuaJIT, `lyaml` and `cjson.safe` to parse
 the selected regular non-symlink YAML file and emits only the chosen resource
