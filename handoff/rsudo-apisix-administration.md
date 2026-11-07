@@ -38,7 +38,7 @@ discovery extension:
   filtered locally. File JSON is staged privately and filtered locally.
 - `create/update/delete` are implemented only for host-scoped traditional
   REST. `apply` publishes a full document only for explicit standalone
-  file-json context. A generic `request` operates on caller-selected REST
+  file-json/file-yaml context. A generic `request` operates on caller-selected REST
   paths/methods. YAML-file
   reads and file/snapshot resource mutations,
   pagination, URL IPv6 literals, version negotiation and live APISIX identity
@@ -79,11 +79,45 @@ discovery extension:
   synthetic HTTP fixture through the real `m` loader and curl, substituting
   only rsudo's remote boundary. This is not a live APISIX, SSH target or CI
   validation. No deployment environment was modified.
-- Immediate next: validate file-json apply against APISIX parser/runtime
-  fixtures where available, then implement YAML file publication and safe
-  resource-level mutations for the file and snapshot backends. Continue scoped
-  CI and Docker-enabled parser checks. Discovery/source attribution research
-  is not a global prerequisite for explicitly selected operations.
+- Immediate next: run the new YAML-apply integration on a Docker-enabled host,
+  then implement safe resource-level file mutations and snapshot writes under
+  their preservation/versioning rules. Continue scoped CI and
+  discovery/source attribution research without making it a global prerequisite
+  for explicitly targeted operations.
+
+### Continuation checkpoint — standalone YAML full-document apply
+
+- `rsudo_mod_apisix_apply` now also routes to explicit
+  `standalone-file-yaml` contexts. It requires absolute `RSUDO_APISIX_HOME`
+  and `RSUDO_APISIX_DATA_FILE`, an existing regular non-symlink target, and
+  explicit host/Docker/Podman scope. The full document is staged privately on
+  the selected target; a final `#END` line is required, and the selected
+  APISIX installation's LuaJIT/lyaml parses the complete YAML document into a
+  table before the common per-file lock, baseline/metadata checks and atomic
+  same-directory rename. The common publisher keeps mode/ownership where
+  `cp -p` can preserve them. This parses YAML syntax only: it does not run
+  APISIX resource schema validation, resolve substitutions, prove this is the
+  file loaded by a running gateway, or synchronously confirm reload.
+- The permanent `apisix-parser-live.test` now includes full YAML apply,
+  invalid-YAML rejection without publication, and missing-`#END` rejection
+  against installed Apache APISIX 3.16.0 and 3.19.0 parser images. In this
+  workspace it reports `SKIP` because Docker is unavailable; that parser
+  integration is not validated here. The existing JSON apply test still
+  passes through real `m` and `json`, including synthetic host/container
+  boundary, metadata and concurrency cases.
+- Validation on the committed product/test source passed shell syntax and
+  `git diff --check`, `apisix-context.test`, `apisix-discovery-host.test`,
+  `apisix-file-json-read.test`, `apisix-admin-transport.test` and
+  `apisix-file-json-apply.test`. `apisix-parser-live.test` was invoked and
+  skipped because Docker is unavailable. No live gateway, SSH, CI or
+  production deployment was exercised. Exact source revisions are
+  `rumiai-os@f31bd6600d8df7b8286174d76d9108f22ffdd61b`,
+  `rumiai-tests@438f134d8e86a0247006fc3a0f36e4bb6f11a28a`, and current
+  contract `rumiai-dev@ca97ecdb36163bc7749db44816866c3a727229d4`.
+- Next: implement safe resource-level file operations without losing
+  unrelated configuration, then snapshot writes/version controls. Re-run the
+  pinned parser test on a Docker-enabled host and continue scoped CI; no
+  production deployment validation is claimed.
 
 ### Continuation checkpoint — standalone JSON full-document apply
 
