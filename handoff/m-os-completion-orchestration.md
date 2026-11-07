@@ -1,7 +1,7 @@
 # Completion orchestration of autonomous m-os
 
 Status: Active — orchestration; branch I readiness started, I1 blocked, I2 pending
-Updated: 2026-11-06
+Updated: 2026-11-07
 
 ## Goal
 
@@ -18,6 +18,9 @@ No duplicate normative specification or separate product architecture is establi
 ## Current repository revisions
 
 Verified remote starting point:
+- `rumiai-dev/main@fb160e84f4f866aadefa1a46ac2f850058630fee` (current remote canonical state; local prior `main` is divergent and remains untouched).
+- `m-os/master@6e720be71a188b203aed2969399dedc90874d426`; PR #5 `b6f69d554d46ff4d9b67b86a10303615e381096b`; PR #6 `6fcb2f257448bbc4ce20e6eab9362fdbb7c8addb`.
+- `pkg-catalog/main@4083aa19c4362f00ec62428a631edfa493faf7f0`; V2 `pkg-schema-v2@2c0df87a488bfeac6d185336ea5ae5a4ea469c4a` (adds immutable m-rsudo v0.1.2 catalog content).
 - `m-os/master@5884cf05ebd3033524db3890a7e34fc0decdd4f6`; `m-os/pkg-schema-v2@1e3a038a5abf6f8c176272d8e44464c842d3cefd`.
 - `pkg-catalog/main@3ee97d21bae3ee885b0fa987e1faee718fad8609`; `pkg-catalog/pkg-schema-v2@9d889cc265c29eeae456b8fe1ad638654c36e8c7`.
 - `m-core/main@0afb8752440808e9080a55c667576ff2f9b8eb32`, `m-term/main@c32aac18f6659ed4f569cb780080675fa64f9e3a`, `m-rsudo/main@a7248612773cdbd8d9cb9781915065fba5f0cc4c`.
@@ -497,15 +500,27 @@ P2 [PR #3](https://github.com/massimilianonardi-ai/m-os/pull/3) merged forward t
 
 ## Next action
 
-1. **P2 accepted and shared `pkg` writer released for serialized P3/P4**: exact merged `m-os/master@a08f473...` [run 42197729661](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42197729661) is **Ubuntu/macOS 2/2 PASS on all four public/negative/controlled-corrupt-artifact groups**; owning P2 handoff has exact logs and scope. P3 owner (`handoff/m-autonomous-validation.md`, M07–M11): genuine dual published `web-control 1` providers uncovered a pinned generic-selector/default-resolution and command-projection mismatch; narrow fix in [draft m-os PR #5](https://github.com/massimilianonardi-ai/m-os/pull/5) is **Ubuntu PASS** for real dual-provider selection/projection and independent public fixture regression, with newest macOS jobs QUEUED; earlier genuine two-provider macOS was PASS at the first fix revision. Continue missing P3 acceptance and reconcile the PR before P4 shared writer handoff. P4 owner (`handoff/rumiai-os-source-composition.md`): implement/validate the canonical derived facility map through the shared integrator, serially with P3. Do not conflate deferred real GeoServer adapter work with P2 acceptance. P3 source/CI-only follow-up: reference/uninstall/fail-closed tests were extended and a richer concurrent negative-test workflow retained without duplication. New Ubuntu attempts [42240468903](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42240468903) and [42240526297](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42240526297) hit upstream m-mk release API HTTP 504 *before* product assertions; macOS pending at observation. P4 current-source map/hook/version-ordering audit is recorded in its source-composition owner; no P4 implementation or PASS yet.
+### Continuation checkpoint (2026-11-07)
+
+The active scope is the accepted **nonprivileged** m-os completion plan. Exact local replays establish A3/M06 and the NSS portion of A4/M14 at `m-os@6e720be...` on this Ubuntu ARM64 host; the A4 browser phase remains pending. J1 now has exact-source hosted Ubuntu/macOS 2/2 PASS at PR #6 `6fcb2f...` (run 42309469100). Current remote P3 PR #5 is `b6f69d...`: its exact-source pinned-selector and genuine provider-version jobs pass on both hosts, but the ambiguity job fails before assertions because its test passes a concrete package version to `state-path`; typed-env was cancelled. Local test correction `m-os-p3-env-review@7cc3e303...` uses package identity for state/binding paths and concrete identity for dependency operations, but has no hosted or end-to-end acceptance yet. Local rootless authentic install is still blocked by unmapped archive ownership. No P3 completion is claimed. `pkg-catalog/pkg-schema-v2` advanced to `2c0df87...` with only immutable m-rsudo v0.1.2 definition relative to the previously inspected V2 head.
+
+Ordered next work:
+
+1. Resolve P3 at the exact current product source and hosted scenarios; preserve P2 merged master and current V2 catalog additions.
+2. Hand the shared pkg writer to P4 only after P3 acceptance; implement and validate derived facility-map reconciliation with a chosen, tested offline-safe ordering boundary.
+3. Reconcile V2 runtime/catalog against merged P2+P3+P4 forward-only, then validate exact combined revisions.
+4. Record J1 exact-source hosted acceptance as closed; continue remaining active A2, C1/C2/C3, S/R nonprivileged and library-interface M15 work under their owners. Do not launch A1–A4 workflows because current handoff explicitly says to defer those runs.
+5. Freeze integrated revisions for I1's current nonprivileged M01–M15 evidence ledger; proceed to I2 only after I1 and ordinary reference-host conditions. Privileged operator work stays solely in `todo/m-os-operator-privileged-validation.md`.
+
+1. **P2 accepted; P3 must close before P4 shared writer handoff.** P2's exact merged `m-os/master@a08f473...` [run 42197729661](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42197729661) remains Ubuntu/macOS 2/2 PASS on all four recorded groups. Current PR #5 `b6f69d...` exact-source [run 42309471324](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42309471324) has pinned-selector and genuine provider-version jobs PASS on Ubuntu/macOS, but the authentic-ambiguity test fails before assertions because it passes a concrete version where `state-path` requires a package identity; typed-env was cancelled. Local test correction is `m-os-p3-env-review@7cc3e303...`, syntax/state-path checked but not hosted or end-to-end validated. Continue exact-current ambiguity/typed-env and remaining P3 negative/failure-state cases before handing the serialized writer to P4. P4 owner (`handoff/rumiai-os-source-composition.md`) then implements and validates the canonical derived facility map. Do not conflate deferred GeoServer adapter work with P2 acceptance; older P3 HTTP 504 observations remain scoped to their own runs.
 2. Preserve at exact feature/release revisions the **14/14 V1/V2 hosted matrix**, the independent Java/mk-jsc 2/2 runs and the newly verified **R1 released v0.1.1 public install/selected consumer 2/2 PASS**; do not rerun unchanged green cases. The R1 owner retains local, nonprivileged interactive/negative/consumer checks; privileged remote R2 is deferred, while the C owner retains the separately failed macOS v0.1.0→v0.1.1 acquisition/version-switch scenario. S retains local-provider/unprivileged host-user evidence; privileged host-system work is deferred.
-3. After P3/P4 acceptance, coordinate forward-only V2 runtime/catalog integration without reverting P2 exact-root/snapshot behavior or concurrent catalog v1 indices. Independently continue C1/C2/J1/S1/S2/A1–A4/R1 within existing ownership and explicit contract/host gates.
+3. After P3/P4 acceptance, coordinate forward-only V2 runtime/catalog integration without reverting P2 exact-root/snapshot behavior or concurrent catalog v1 indices. J1 exact-source hosted Ubuntu/macOS 2/2 PASS at PR #6 `6fcb2f...` is now recorded (run 42309469100); forward integration remains pending. Independently continue C1/C2/C3/S1/S2/A2/R1 within existing ownership and explicit contract/host gates. A1/A3/A4 hosted workflows remain paused by current handoff instruction; local A3/A4 evidence is separately bounded.
 4. Once applicable upstream surfaces are coherent, pin the integrated runtime/catalog/first-party release/test revisions and run actual M01–M15 public-command paths for I1, recording PASS/FAIL/PENDING by revision and host in the validation owner. Start nonprivileged I2 only after I1 and ordinary authorized reference-host conditions are satisfied; privileged cases are not prerequisites.
 
 
 ## Blockers / open questions
 
 - Full generalized `context` public grammar/default/preset/profile and protected inheritance/consumer library selection is not promoted; `BOOTSTRAP-ENVIRONMENT` no-arg reset must not be silently replaced.
-- P2 is accepted on merged master at its exact hosted validation SHA; **P3/P4 provider/map acceptance and coordinated V2 source/catalog integration remain pending** before V2 promotion. Preserve concurrent mainline changes.
+- P2 is accepted on merged master at its exact hosted validation SHA; **P3/P4 provider/map acceptance and coordinated V2 source/catalog integration remain pending** before V2 promotion. Preserve concurrent mainline changes. Local P3 source and A3/A4 validation results are not hosted integration evidence.
 - Operator-privileged SSH/sudo, protected-host services and CA changes and privileged reference-host steps are explicitly excluded to `todo/m-os-operator-privileged-validation.md`, not current blockers. Ordinary nonprivileged reference-host access remains a separate evidence condition.
 - Legacy `rumiai-os` and `rumiai-tests` are frozen; final formal suite alignment/migration cannot be silently assumed authorized.
