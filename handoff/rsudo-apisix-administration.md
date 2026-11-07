@@ -125,9 +125,9 @@ discovery extension:
   `rumiai-os@23150cc99c9266315eb9170f132e2c5c9aa41403`, manual
   `rumiai-os@11a00f0413613e0424bb2662041a19f32376cb1b`, test
   `rumiai-tests@1e86da666e002197b6cb1cc50dcbda45ea2ebf45`, test registration
-  `rumiai-tests@fc58175f83f1a1a6641aaf16414378b617f8d856`, contract
-  `rumiai-dev@88916f0098e8d541064d8fdfc6a3b3fa82bfdb2d` and this handoff
-  `rumiai-dev@8bd875d17125618867e21c8f18c46cb28f66025a`. GitHub CI status
+  `rumiai-tests@fc58175f83f1a1a6641aaf16414378b617f8d856`, and contract
+  `rumiai-dev@88916f0098e8d541064d8fdfc6a3b3fa82bfdb2d`. This active handoff
+  records the same checkpoint and is the current task-state source. GitHub CI status
   checks are empty for the new commits; CI is not claimed as PASS.
 - YAML-file reads, all new writes, pagination, and broader resource/provider
   coverage remain pending. No unsafe legacy
