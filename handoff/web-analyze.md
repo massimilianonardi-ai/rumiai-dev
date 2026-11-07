@@ -493,4 +493,4 @@ No blocker remains for the requested warning behavior or the verified Ubuntu 26.
 
 ## Downstream export metadata checkpoint (2026-11-07)
 
-The `states/dom-rest-final.json` metadata now records up to 256 non-zero document/nested scroll offsets as structural selectors for a standalone file export to restore. The selectors contain no page text. This output addition is in product branch `rumiai-os@bb5349d47b26d326e1a96cdc2017d66f09f991d3`, documented by the command manual and consumed under the standalone contract in `specifications/rumiai-os/WEB-EXPORT.md`; it does not change the analyzer's capture or event-correlation claims.
+The `states/dom-rest-final.json` metadata now records up to 256 non-zero document/nested scroll offsets as structural selectors for a standalone file export to restore. The selectors contain no page text. This output addition is in product branch `rumiai-os@be908b6012c9ec01d6c3fa0a4b6bf69a8da29897`, documented by the command manual and consumed under the standalone contract in `specifications/rumiai-os/WEB-EXPORT.md`; it does not change the analyzer's capture or event-correlation claims.

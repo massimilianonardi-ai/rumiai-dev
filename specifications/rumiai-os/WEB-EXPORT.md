@@ -19,7 +19,7 @@ The generated document has a restrictive no-network content policy. HTTP error/r
 
 When source resource elements carry cross-origin, integrity or referrer-policy metadata, that source-fetch metadata is removed from the rewritten local reference so it cannot prevent the local asset from loading or validate bytes that have changed during CSS rewriting.
 
-When the capture records non-zero document or nested scroll offsets, the exporter adds a content-addressed, exporter-generated local script to restore those offsets after the file loads. The captured offsets and script presence are listed in `manifest.json`. Site scripts remain removed; the generated helper is the only permitted script and the content policy permits local file scripts only. A browser that blocks file-to-file scripts may show the initial top-of-page view without affecting asset loading.
+When the capture records non-zero document or nested scroll offsets, the exporter embeds a generated script to restore those offsets after the file loads. Its SHA-256 content hash is the only script source authorized by the document policy; no script file needs to load. The captured offsets and helper presence are listed in `manifest.json`. Site scripts remain removed.
 
 The manifest records the output document and asset digests, source kind for each asset, counts of unavailable/ambiguous references, and these behavioral limits. The export is private local content and uses restrictive directory/file permissions. Temporary raw browser evidence is not included in the export.
 
@@ -42,6 +42,6 @@ WEBEXPORT-07  export creation never overwrites an existing destination
 WEBEXPORT-08  temporary raw capture data and private browser state are excluded from the export
 WEBEXPORT-09  each retained HTTP(S) subresource resolves to a local file; embedded data and fragments remain inline
 WEBEXPORT-10  non-HTTP(S) subresource schemes cannot make the local export read source-host files or opaque resources
-WEBEXPORT-11  only the exporter-generated scroll restoration helper may execute, and only from the export's local assets
+WEBEXPORT-11  only the SHA-256-authorized exporter-generated scroll helper may execute; no site script is retained
 WEBEXPORT-12  source CORS, integrity and referrer metadata cannot prevent rewritten local resources from loading
 ```
