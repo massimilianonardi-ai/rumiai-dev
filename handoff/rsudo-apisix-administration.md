@@ -18,6 +18,36 @@ The operator explicitly **replaces the previous universal automatic source-certi
 
 Immediate milestones: M0 synchronize these decisions in task state/current contract; M1 implement read-only host filesystem/process discovery with permanent synthetic-boundary tests; M2 Docker/Podman + service/listener correlation; M3 explicit environment and internal router; thereafter the initial read-only/CRUD REST backend and file/snapshot backends separately. Every delivered increment must be truthfully marked partial/validated by frozen evidence. The old multi-day Work-unit C introspection search remains historical research, no longer a global blocking gate.
 
+## Implementation checkpoint: operator-owned discovery/context (2026-11-07)
+
+The explicit operator decision above supersedes the prior automatic APISIX source-attestation gate. Following that decision, actual initial product development has started directly on GitHub **in this chat**. The attempted Codex handoff was not accepted; do not record this as a Codex/agent run.
+
+### M0 — completed for the new boundary
+
+- Handoff records inventory-only `discovery`, operator-owned target/deployment environment and the one-library internal routing model. The canonical current partial implementation contract has been updated accordingly; the old `runtime` observer and C research remain optional evidence, never a mandatory discovery gate.
+- Existing legacy forwarders and independent Keycloak work are unchanged.
+
+### M1 — first host discovery increment published; CI outcome unverified
+
+- `rumiai-os@57b6821f99fd97043b8d20aa2fe843f532c44c90` (subsequently superseded by product commits up through `@10eacdb0ea0db5b2f5274fef37d6ad95e5485dbc`) implements `rsudo_mod_apisix_discovery [absolute-remote-scan-root]` in the existing one-file module, with a static remote POSIX shell program through the normal rsudo/SSH/sudo boundary. Current behavior is limited to best-effort HOST candidate file enumeration and read-only `ps` observations; no uniqueness gate, automatic target selection, API invocation, secrets in output or mutation. Its output is a 5-column TSV with provenance and evidence-labelled candidate states. Scans rooted at `/` prune virtual filesystems and common container storage. No claim of exhaustive search; inaccessible trees may be omitted.
+- `rumiai-tests/tests/rumiai-os/rsudo/apisix-discovery-host.test` was added at `@155d5068c21bc43b533b561159d9ecd2fbb39fe2`; it exercises real `m` and product function while replacing only remote SSH/sudo and `ps` and using real `find`. It checks two installations plus profile, unrelated config exclusion, process-prefix candidate and failure cases. Registered under `validation/rsudo-apisix.conf`.
+- A separately reproduced host remote shell fragment passed `sh -n` and a local synthetic filesystem scan including three valid configuration candidates, one false-positive exclusion, relative-root and absent-root failures. This limited local experiment did **not** execute the complete product through real `m`, SSH, Docker or APISIX. The new revision's permanent CI results have NOT been read; **M1 is not yet scope-validated**.
+- Explicitly deferred to **M2**: Docker/Podman, rootless attribution, service-manager correlation, actual listener/socket probes, meaningful role/provider classification and JSON inventory format.
+
+### M3 — initial operator context parser and adapter selector published; no resource routing
+
+- The existing `rsudo-mod-apisix.lib.sh` now includes `rsudo_mod_apisix_context` and private `_rsudo_mod_apisix_selected_adapter`. The operator supplies `RSUDO_APISIX_SCOPE`, `RSUDO_APISIX_DEPLOYMENT`, and mode-specific ID/path/Admin URL/remote header-file references. The command validates shape, selects `rest`/`snapshot`/`file-yaml`/`file-json`/`none` and reports **`selection=operator-supplied-unverified`**. It does not require previous discovery, trigger transport, print URL/key, claim listener authorization or execute any CRUD.
+- `rumiai-tests/tests/rumiai-os/rsudo/apisix-context.test` was added at `@6bc52df3acbbaf5694feca3011509047a53d757d` and registered in the scoped validation. It covers traditional REST, standalone snapshot, Docker YAML, unknown deployment, bad ID and missing data path, with URL/secret redaction assertions. No frozen CI PASS has been established for the new test.
+- Follow-up development must implement M2 and a genuinely usable M3 backend transport/router; current private selection maps adapter *names only* and is not the requested uniform `list/get/create/update/delete` system.
+- Diagnostic contract review led to revision-specific per-callable sequential statuses; latest product implementation is `rumiai-os@10eacdb0ea0db5b2f5274fef37d6ad95e5485dbc` before concurrent refresh. Current manual/spec/test revisions were synchronized with the revised codes. **Always check fresh HEAD**, not the SHA listed here, before the next write.
+
+### Next independent validation and implementation work
+
+1. Inspect the scoped `rsudo-apisix` GitHub Actions CI run for the new tests at the actual frozen current product/test revisions; repair any failing case forward-only. Do not claim PASS from a commit or workflow dispatch alone.
+2. Develop M2 multi-candidate Docker/Podman inventory, mount/namespace association and conservative ports/services observation. The operator can still provide full explicit context even if discovery is partial.
+3. Expand M3 into a verified operator-context transport and implement uniform `list/get` traditional REST first, followed by safe CRUD, file-driven YAML/JSON and whole-snapshot API-driven adapters; all require their own real APISIX backend and concurrency validation.
+4. Keep permanent-test documentation and library manual aligned, and do not alter unrelated Keycloak or company deployment configuration.
+
 ## Current repository revisions
 
 - rumiai-dev: a02c9485ea1c3895271b80480dc6bab549731493 (observed pre-checkpoint head; active handoff and concurrent Keycloak/documentation work preserved)
