@@ -282,6 +282,45 @@ The operator reports creation of `massimilianonardi-ai/ai-workflow`. Connected G
 
 The next safe milestone is designing a minimal executable bootstrap route and a structured state-document header with explicit workflow/state references; validate direct-state resumption, routing, authority precedence, missing-source behavior and opt-in isolation before asking the operator to point a real ChatGPT Project bootstrap to it. Preserve current RumiAI canonical workflow unchanged for baseline.
 
+### `bootstrap.md` dispatcher design discussion — exploratory (2026-11-07)
+
+The operator requested a **proposal for discussion**, not activation of a
+bootstrap or promotion of a new global rule. In this experimental phase
+`README.md` retains its existing name, while proposed additional files,
+including `bootstrap.md`, use lowercase names; this is a task-local drafting
+preference only, not a documented/general naming contract.
+
+Current design topic: the first bootstrap dispatch should distinguish
+explicit commands from natural-language input. Its route must also respect
+platform-native modes (which a text-only document may not receive or
+control); host slash commands such as the historical ChatGPT `/agent`
+are not portable, so any experimental textual command prefix should be
+unambiguous and non-conflicting. Candidate, not accepted: `!aw` with an
+exact leading prefix, registered verbs, explicit context options and a
+`--` payload delimiter. Alternative slash-prefixed command syntax should
+be compared for actual host collision and passthrough.
+
+For natural language, evaluate a **multi-dimensional, multi-intent, open-set**
+classification: user goal/interaction, task operation (research, design,
+implement, reflect, review, verify, operate, resume, etc.), input/output
+modality (including image generation vs image understanding), scope/state,
+side effects/authorization and uncertainty. Avoid a single mutually
+exclusive taxonomy or promoting a retrieved source's relevance to authority.
+Recognize compound requests and unknown categories. Keep complete routing
+catalogs outside the minimal bootstrap; retrieve progressively.
+
+Candidate layouts are (A) self-contained bootstrap, (B) bootstrap delegating
+to an always-loaded registry, and (C) two-stage selective-disclosure
+bootstrap with a compact dispatch and conditional registry fetch.
+Compare on actual request sets before choosing. Research input used for
+this proposal includes current platform command references, open-world/
+multi-label intent-detection papers and progressive-disclosure skills
+documentation; these are evidence inputs, not imported authority.
+
+No `bootstrap.md`, command catalog, resolver or Project Instructions
+change is authorized by this discussion alone. Until accepted, the
+`ai-workflow` repository remains an isolated, non-active experiment.
+
 ## Completed
 
 - 2026-11-07: Completed a preliminary, explicitly non-binding routing/authority comparison in the operator-created `ai-workflow` repository. It was empty at preflight; committed a non-active README and `evaluations/routing-protocols.md` with hierarchy vs typed graph, direct-state/fresh-prompt traces, security/authority failures, a provisional header, falsifiable acceptance cases, and validation limits. GitHub readback verified `ai-workflow@4bf39c17c7c09c4435f24255dd640aa86b19f1cd`. This is a **design walkthrough**, not an executed resolver, historical Keycloak replay, provider integration or approved schema. Existing RumiAI rules, specifications and product code were unchanged. Concurrent `rumiai-dev@2d1cdeb` touched a chat export, not the handoff; it was preserved forward-only.
@@ -480,7 +519,7 @@ Active task routing now uses resumable responsibility rather than topic labels. 
 
 ## Next action
 
-**Priority after 2026-11-07 comparison:** Build a minimal **isolated fixture** for the candidate header-first lookup and two alternative routing policies; do not select either as current policy yet. First retrieve the original Keycloak/rsudo operator prompt, task state and frozen source revisions, then exercise direct state resume, fresh unscoped prompt, routine low-risk correction, cross-context scope, stale/missing source and conflict scenarios with actual observed retrieval logs. Compare against unchanged RumiAI bootstrap and record real operator-path evidence, interruptions, wrong assumptions and context cost. An independent opt-in Project test and eventual promotion require the separately established decision/validation gates.
+**Immediate discussion after 2026-11-07 user clarification:** Agree on a minimal `bootstrap.md` input-dispatch design before implementing it: distinguish host-native modes, an explicit workflow-command namespace and natural-language requests; compare command syntax and an open, multi-dimensional intent taxonomy; choose a smallest useful bootstrap with progressive routing and explicit unknown/conflict handling. The proposal is not yet an accepted contract. After agreement, build a minimal **isolated fixture** for direct-state, fresh-prompt, cross-modal, multi-intent and Keycloak/rsudo historical replay and compare it against the unchanged RumiAI baseline. No experimental bootstrap activation or canonical RumiAI changes are implied.
 
 Previously recorded work: next exercise `DEVPLAN.md` on a genuinely well-specified RumiAI software task. Check source-first sufficiency, dependency and work-unit completeness, non-conflicting agent ownership, clean-chat resumability and the planning-only boundary. The under-specified `devplan astronave` conversational smoke test is recorded above; neither case alone proves future agent execution.
 
