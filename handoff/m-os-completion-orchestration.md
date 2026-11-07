@@ -1,6 +1,6 @@
 # Completion orchestration of autonomous m-os
 
-Status: Active — P3/P4/J1/V2 runtime and catalog promotion merged; C2/C3 and I1 remain open
+Status: Active — P3/P4/J1/V2 promoted; S1 SRV-42 fix forward-integrated on PR #4 candidate; C2/C3 and I1 remain open
 Updated: 2026-11-07
 
 ## Goal
@@ -18,8 +18,9 @@ No duplicate normative specification or separate product architecture is establi
 ## Current repository revisions
 
 Verified remote starting point:
-- `rumiai-dev/main@170a8264f48690c005cd2bf0cf7876cc0e99e3e8` was the verified remote preflight before this handoff refresh; concurrent workflow-optimization updates were incorporated before writing.
+- `rumiai-dev/main@9735fc09b52bcaedfb23877bdf8ec6a1c8cdfb8d` is the verified remote preflight for this checkpoint; all cited coordination changes are based on this current source revision.
 - `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d`; PR #9 updates only README after tested runtime `ed5ec60...`. P3 PR #5 merged as `6db5531...`; J1 PR #6 merged as `1df35f70...`; V2 runtime PR #8 merged as `ed5ec60...`.
+- S branch `m-os/m-os-completion-s@15a2c4f96584c07b92088e5530d4ecb09a9477b8` now contains a forward-only merge of current master `a78a24bd...`; PR #4 remains draft/unmerged. Exact integrated candidate locally reproduces the SRV-42 fix; see the current M12 checkpoint in `handoff/m-autonomous-validation.md`.
 - P3/P4/J1 exact-master hosted runners on `pkg-catalog` commit heads `d352513`, `2a63b75`, `7827963` completed successfully: P3 6/6 current-source + 3/3 supporting public checks, P4 2/2, J1 2/2. See validation handoff for run IDs and limits.
 - `pkg-catalog/main@0b69223a5ebe7bc042aad50012ee8bc7e4a00442`; V2 source `pkg-schema-v2@2c0df87a488bfeac6d185336ea5ae5a4ea469c4a` merged forward in PR #2 (merge tree equals validated `5928848...`). V2 runtime merged at `m-os/master@ed5ec60...` (tree matches validated candidate `168b8656...`). Exact post-merge suites pass; catalog promotion is complete.
 - `m-os/master@5884cf05ebd3033524db3890a7e34fc0decdd4f6`; `m-os/pkg-schema-v2@1e3a038a5abf6f8c176272d8e44464c842d3cefd`.
@@ -245,6 +246,11 @@ Mainline repository adapters: `pkg-repository-{artifact,chrome,chromium,github,n
 **Executor protocol:** each independent chat receives (i) local unit ID from this handoff, (ii) owner handoff, (iii) source/branch checkpoint to freshly verify, (iv) exact writable files/branch and prohibited shared surfaces, (v) public expected tests + manual updates, (vi) expected upstream output and integration handoff. Every executor follows fresh HEAD preflight, no history by default, current source authority, proportional real tests, reviewed diff, forward-only updates and consistency gate. When an interface or host/privilege contract is unsettled, stop only that affected unit and escalate; do not freeze independent ready work.
 
 ## Current state
+
+### S1 current-master SRV-42 correction (2026-11-07)
+
+- A controlled public-command probe on current `m-os/master@a78a24bd...` showed that a complete legacy runtime record with a live PID but no process-start identity was accepted as already running and then signaled by `srv stop`; this contradicts current canonical SRV-42. The test used and terminated only its own `/bin/sleep` process.
+- Forward-merged current master into existing S branch and pushed `m-os/m-os-completion-s@15a2c4f96584c07b92088e5530d4ecb09a9477b8` (PR #4). The master branch was not changed. `srv start` and `srv stop -f` now reject the exact legacy fixture and stale start identity with `live-runtime-state-invalid`, preserving process/state; incomplete metadata, stale cleanup, missing default, invalid service, and non-root administrative refusal also passed locally on this exact candidate. No host supervisor or pre-existing process was touched. Hosted revalidation and PR integration remain pending.
 
 ### Latest integrated-source checkpoint (2026-11-07; current)
 
