@@ -60,8 +60,19 @@ candidates, but their filesystems cannot be searched. A running container
 with a failed probe is surfaced as uncertain when manager metadata suggests
 APISIX, and a manager-level partial/unavailable row records incomplete
 coverage. A stopped container whose metadata does not suggest APISIX can be
-missed; mount correlation, service-manager discovery and listener probes are
-not implemented. These records are candidates only, not runtime identity.
+missed; mount correlation and container-namespace listener probes are not
+implemented. These records are candidates only, not runtime identity.
+
+On hosts with `systemctl`, the inventory includes APISIX-matching loaded unit
+names/descriptions and installed unit-file names with their reported state.
+Descriptions are used only to match and are not returned. This is a textual
+service candidate, not proof that a unit owns an observed process. For host
+YAML candidates, discovery extracts numeric `port`/`ip` values only beneath
+`admin_listen`. It uses `nc` for a TCP connect-only probe when the bind is
+loopback, wildcard, or an address verified local by `ip`; remote or
+unverified addresses are reported as unprobed. `open`/`not-open` reports
+socket reachability only and does not identify APISIX or an Admin API. JSON
+listener extraction and container-namespace port probes are not implemented.
 
 For this first increment, successful stdout contains a tab-separated header
 `kind scope state identifier evidence` followed by zero or more candidate
@@ -98,9 +109,11 @@ distinct new-context status values 1–11 as described in the operational manual
 The context is a **local declaration**: it does not establish a running
 process, an authorized listener, actual backend support or write readiness.
 
-**Not yet implemented:** service-manager correlation, Admin listener probes,
-complete container source/mount attribution, JSON discovery output,
-standalone reads/writes and modern write operations. Initial host and
+**Not yet implemented:** service-to-process ownership correlation, JSON
+listener extraction/output, complete container source/mount attribution,
+container-namespace port probes, JSON discovery output, standalone
+reads/writes and modern write operations. Initial host YAML port probes and
+textual systemd unit candidates are implemented. Initial host and
 Docker/Podman candidate inventory and traditional REST `list/get` support are
 described above/below. This staged implementation does
 not alter the older `mode`, `inspect`, `runtime`,
