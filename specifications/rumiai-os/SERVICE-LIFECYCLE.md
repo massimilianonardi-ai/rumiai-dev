@@ -219,6 +219,14 @@ Neither system adapter introduces automatic account creation, automatic restart
 policy or dynamic/recycled service identities. Linux `DynamicUser=` is not the
 portable `m` baseline.
 
+## Approved generalized-context host-service profile binding
+
+For future generalized-context integration, a host-supervised service is a separately trusted consumer: its system profile is fixed by **authorized service registration**, together with its registered service identity, host account and validated provider/concrete selection. Service startup must resolve that trusted registered binding, not inherit or silently follow the current profile of an unrelated interactive shell. Replacing a shell context must not retarget an existing host registration or running service.
+
+Independent concurrent host-service instances of one facility need distinct, authorized, qualified supervisor/service identities and a separate explicit administration contract; existing unqualified `srv <service>` names do not implicitly create those instances. Ordinary context inputs are not host-service authorization.
+
+This policy is an approved binding for a later coordinated profile-aware integration; it does **not** claim the current host supervisor already persists and consumes the full generalized-context profile identity, or change its existing public CLI. Privileged positive administration/host tests are intentionally deferred outside the current autonomous-completion plan; normal unprivileged host-user lifecycle work remains in scope.
+
 ## Deferred unless separately specified
 
 The current portable baseline does not establish generic contracts for:
