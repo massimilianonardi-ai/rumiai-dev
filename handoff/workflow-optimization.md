@@ -10,15 +10,16 @@ Maintain a long-lived meta-workstream for continuously evaluating and improving 
 ## Current repository revisions
 
 ```text
-rumiai-dev     2d1cdeb8d74668c60215efb6c10cdf1b64d6a8e8  (verified remote HEAD before this checkpoint write)
-ai-workflow    4bf39c17c7c09c4435f24255dd640aa86b19f1cd  (experimental README/comparison read back)
+rumiai-dev     81dc3f3bc8e785a75c8859e304cf550e6eb80ae0  (verified remote HEAD before this checkpoint write)
+ai-workflow    ad76f16966131337e3c61b391d59fdc5108ffe7e  (bootstrap pilot + README correction, remote read back)
 rumiai-os      7d439e961f7bbadd226794ac029e98bdab51d5c2  (remote HEAD checked for comparison)
 rumiai-tests   1e9e47f622bb28d5bbc2aa487fc538507b34cb16  (remote HEAD checked for comparison)
 pkg-catalog    f0cdadb09ced5ca26c7745b5996de89cab24f7c1  (older checkpoint, not re-verified for this step)
 ```
 
-Verify remote HEADs before every future write. `ai-workflow` remains
-experimental and has no active bootstrap contract.
+Verify remote HEADs before every future write. `ai-workflow` now contains an
+accepted **experimental candidate** with a real bootstrap document, but it is
+not installed, empirically validated, or a replacement for RumiAI contracts.
 
 ## Applicable canonical sources
 
@@ -41,6 +42,8 @@ handoff/README.md
 Subsystem specifications are added only when a concrete workflow question reaches their responsibility.
 
 ## Fixed task-local choices
+
+- 2026-11-07 operator acceptance: implement the first isolated `ai-workflow` candidate with lowercase `bootstrap.md` (keeping the preexisting `README.md`), exact `!aw` command namespace, multi-label/open-set natural-language routing, progressive disclosure, separate workflow and state documents, and a tiny test fixture. Lowercase naming is a **phase-local preference**, not a new global naming rule. Publication does not authorize activating it in RumiAI or any ChatGPT Project.
 
 - The operator approved an opt-in planning-only command `devplan`; its durable contract is in `DEVPLAN.md`, not duplicated here.
 
@@ -282,10 +285,11 @@ The operator reports creation of `massimilianonardi-ai/ai-workflow`. Connected G
 
 The next safe milestone is designing a minimal executable bootstrap route and a structured state-document header with explicit workflow/state references; validate direct-state resumption, routing, authority precedence, missing-source behavior and opt-in isolation before asking the operator to point a real ChatGPT Project bootstrap to it. Preserve current RumiAI canonical workflow unchanged for baseline.
 
-### `bootstrap.md` dispatcher design discussion — exploratory (2026-11-07)
+### `bootstrap.md` dispatcher pilot — accepted for isolated implementation (2026-11-07)
 
-The operator requested a **proposal for discussion**, not activation of a
-bootstrap or promotion of a new global rule. In this experimental phase
+The operator accepted the preceding design proposals for an **isolated first
+implementation**; this is not activation in any ChatGPT Project, replacement
+of current RumiAI authority, or promotion of a new global rule. In this experimental phase
 `README.md` retains its existing name, while proposed additional files,
 including `bootstrap.md`, use lowercase names; this is a task-local drafting
 preference only, not a documented/general naming contract.
@@ -295,10 +299,10 @@ explicit commands from natural-language input. Its route must also respect
 platform-native modes (which a text-only document may not receive or
 control); host slash commands such as the historical ChatGPT `/agent`
 are not portable, so any experimental textual command prefix should be
-unambiguous and non-conflicting. Candidate, not accepted: `!aw` with an
-exact leading prefix, registered verbs, explicit context options and a
-`--` payload delimiter. Alternative slash-prefixed command syntax should
-be compared for actual host collision and passthrough.
+unambiguous and non-conflicting. Accepted for the experimental pilot: `!aw` with an exact leading prefix,
+registered verbs, explicit context options and a `--` payload delimiter.
+Platform-native modes remain distinct; host compatibility must still be
+validated through actual independent runs.
 
 For natural language, evaluate a **multi-dimensional, multi-intent, open-set**
 classification: user goal/interaction, task operation (research, design,
@@ -309,19 +313,25 @@ exclusive taxonomy or promoting a retrieved source's relevance to authority.
 Recognize compound requests and unknown categories. Keep complete routing
 catalogs outside the minimal bootstrap; retrieve progressively.
 
-Candidate layouts are (A) self-contained bootstrap, (B) bootstrap delegating
-to an always-loaded registry, and (C) two-stage selective-disclosure
-bootstrap with a compact dispatch and conditional registry fetch.
-Compare on actual request sets before choosing. Research input used for
+The operator accepted an initial **C — two-stage selective-disclosure**
+implementation while comparative evaluation against alternatives remains
+open. The bootstrap uses a compact dispatch and conditional registry fetch;
+actual routing efficiency still requires observed real-client trials. Research input used for
 this proposal includes current platform command references, open-world/
 multi-label intent-detection papers and progressive-disclosure skills
 documentation; these are evidence inputs, not imported authority.
 
-No `bootstrap.md`, command catalog, resolver or Project Instructions
-change is authorized by this discussion alone. Until accepted, the
-`ai-workflow` repository remains an isolated, non-active experiment.
+The initial candidate now exists at `ai-workflow@ad76f16966131337e3c61b391d59fdc5108ffe7e`:
+`bootstrap.md`, `routing/{commands.md,intents.yaml,index.yaml,resolution.md}`,
+`behavior/{intent.md,decisions.md,execution.md,evidence.md}`,
+`contexts/example/demo-state.md`, `evaluations/bootstrap-routing.md`, and an
+updated `README.md`. This is model-readable documentation and a pilot fixture,
+not a deterministic classifier, tested agent runtime, or installed bootstrap.
+No ChatGPT Project Instructions or RumiAI canonical documents were changed.
 
 ## Completed
+
+- 2026-11-07: Implemented and remote-verified the operator-approved isolated bootstrap pilot in `massimilianonardi-ai/ai-workflow`. Published the exact-leading `!aw` textual command grammar (including diagnostic-only `route`), a compact `bootstrap.md`, open multi-intent/multimodal intent catalog, selective resolution and context index, reusable workflow-method documents, and a header-first fictional demo state. Corrected experimental `README.md` to point to the new entrypoint without implying activation. Verified the remote HEAD `ad76f16966131337e3c61b391d59fdc5108ffe7e` and ran 32 static/invariant assertions against remote-retrieved files, all passing (links, command boundary, naming, register/fixture, image generation vs understanding, evidence scope). These checks **do not** prove actual LLM intent classification, fresh-chat routing, platform-native mode support, or historical Keycloak/rsudo replay. No RumiAI live bootstrap or product behavior was modified.
 
 - 2026-11-07: Completed a preliminary, explicitly non-binding routing/authority comparison in the operator-created `ai-workflow` repository. It was empty at preflight; committed a non-active README and `evaluations/routing-protocols.md` with hierarchy vs typed graph, direct-state/fresh-prompt traces, security/authority failures, a provisional header, falsifiable acceptance cases, and validation limits. GitHub readback verified `ai-workflow@4bf39c17c7c09c4435f24255dd640aa86b19f1cd`. This is a **design walkthrough**, not an executed resolver, historical Keycloak replay, provider integration or approved schema. Existing RumiAI rules, specifications and product code were unchanged. Concurrent `rumiai-dev@2d1cdeb` touched a chat export, not the handoff; it was preserved forward-only.
 
@@ -489,6 +499,8 @@ The user also requested recovery of an older `m` logging idea for study. Deliber
 
 ## Current state
 
+- The opt-in `ai-workflow` bootstrap pilot is now **published**, not activated. Entry: `ai-workflow/bootstrap.md` at `ad76f169`. Its commands and routing catalog are experimental; all 32 static checks passed and no real clean-chat route has yet been observed. The next action is an independent agent/client test and historical Keycloak replay, not more speculative taxonomy expansion.
+
 **2026-11-07 experiment checkpoint:** `ai-workflow` contains an explicitly inactive `README.md` and `evaluations/routing-protocols.md`. Neither candidate routing policy has been selected or tested in an independent clean chat; no executable bootstrap, resolver, source-pinned historical Keycloak/rsudo replay or agent-adapter validation has been completed. The current RumiAI bootstrap remains authoritative for baseline work.
 
 The original GitHub chat mirror is now disabled at the user's explicit request. Its pre-existing transcript is retained only as a non-authoritative, frozen archive; the active current chat mirror has moved to Google Drive under `ChatGPT/chats/2026-10-14-chat-mirror/`. Google Drive Markdown and the PNG asset were uploaded and verified; the local cumulative chat snapshot progressed to `0005`, with `0006` next. No unattended updates, PDF or invisible intermediate buffers are authorized. Evaluate multi-turn reliability and image rendering from real use.
@@ -519,7 +531,7 @@ Active task routing now uses resumable responsibility rather than topic labels. 
 
 ## Next action
 
-**Immediate discussion after 2026-11-07 user clarification:** Agree on a minimal `bootstrap.md` input-dispatch design before implementing it: distinguish host-native modes, an explicit workflow-command namespace and natural-language requests; compare command syntax and an open, multi-dimensional intent taxonomy; choose a smallest useful bootstrap with progressive routing and explicit unknown/conflict handling. The proposal is not yet an accepted contract. After agreement, build a minimal **isolated fixture** for direct-state, fresh-prompt, cross-modal, multi-intent and Keycloak/rsudo historical replay and compare it against the unchanged RumiAI baseline. No experimental bootstrap activation or canonical RumiAI changes are implied.
+**Next milestone after accepted experimental bootstrap:** Validate `ai-workflow@ad76f169` through clean, independent opt-in client runs: exact `!aw` detection and rejection, diagnostic-only `route`, zero/low-cost simple requests, multi-intent development/validation, image output vs image input routing, explicit demo-state resume, unknown/missing state and authority/conflict handling. Capture actual requested/fetched sources, missed/extra clarifications, misrouting and token cost, with the existing RumiAI workflow unchanged as baseline. Then reconstruct the original Keycloak/rsudo prompt, historical state and source revisions before replay; do not substitute current corrective documents. Keep any new activation or formal promotion behind an explicit decision and measured success.
 
 Previously recorded work: next exercise `DEVPLAN.md` on a genuinely well-specified RumiAI software task. Check source-first sufficiency, dependency and work-unit completeness, non-conflicting agent ownership, clean-chat resumability and the planning-only boundary. The under-specified `devplan astronave` conversational smoke test is recorded above; neither case alone proves future agent execution.
 
