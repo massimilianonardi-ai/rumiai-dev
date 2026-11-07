@@ -223,6 +223,39 @@ These points should later be reviewed together and promoted only in the smallest
 
 **Next design deliverable:** A comparative diagnosis of the present workflow and concrete failure mechanisms, followed by alternative end-to-end protocols with costs, operator interrupt policy, falsifiable acceptance scenarios and migration/validation strategy. Only then seek the architectural decision for a coherent replacement and promote minimal settled contracts to their canonical owners.
 
+### Experimental agent-agnostic bootstrap and contextual workflow repository — operator direction (2026-11-07)
+
+**Operator-approved direction (architectural intent, implementation still exploratory):** Move the future AI workflow/bootstrap out of `rumiai-dev` into an independent, separately testable repository. One tiny configurable bootstrap pointer in a ChatGPT Project, an individual chat or another compatible agent should resolve the new repository's root document. Keep the current RumiAI bootstrap and canonical authority intact for baseline work; allow deliberate opt-in/shadow tests of the experimental bootstrap in a separate ChatGPT Project or explicitly selected RumiAI chat. Initially store experimental context/project examples under one subdirectory in the same new repository; consider separating them into their own repositories only once the mechanism and costs have been validated. The operator reports already changing ChatGPT Project bootstrap instructions; this report is not independent verification of the live setting.
+
+**The central architectural question:** Build a general agent behavior/context/retrieval system, not a more elaborate RumiAI README, a ChatGPT-specific permanent contract, or a Hindsight clone. The file tree is storage; concepts such as project, task, chat, session, research, environment or agent are **parameterized contextual attributes/relationships**, not fixed directory levels or mandatory nested categories. A single item may be relevant to more than one context; physical path depth must not define authority, inheritance or retrieval priority. Keep model/provider adapters separate from general semantics.
+
+**First-principles hypotheses to evaluate, not yet current rules:**
+
+1. **Minimal universal entrypoint:** A versioned root document declares the applicable bootstrap protocol, lookup/route index, source-trust semantics, context/authority resolution and fallback when remote retrieval is unavailable. It should not force all topic rules into every prompt. A plain URL/pointer is not an execution environment: a client must actually be able to fetch the repository and interpret the protocol; test this assumption on each target ChatGPT/agent configuration.
+2. **Context graph and selective routing:** Stable context identifiers with metadata (e.g. kinds/tags/relationships, applicability predicates, source links, validity) and references to further knowledge/policy documents. Resolve an applicable context set from explicit user intent, entry configuration and current task evidence, not from folder placement. Distinguish routing to relevant material from permission to treat it as authoritative. LLM-assisted semantic retrieval may propose matches; explicit authority/precedence and ambiguity handling must not be silently delegated to a semantic score.
+3. **Separation of concerns:** (a) source facts and immutable/revision-pinned evidence, (b) authoritative current constraints, (c) active task/session state, (d) derived experiences/observations/hypotheses with provenance and invalidation, and (e) execution tools/agent-adapter capability. Derived memory remains advisory; never displace fresh current contracts or user corrections.
+4. **Adaptive decision protocol:** For substantial work, validate user/operator outcome and critical assumptions before committing to architecture; distinguish unknowns that can be investigated autonomously from high-impact choices requiring user decision. A user can delegate extensive implementation autonomy without delegating changes to mission, security, trust boundary, interface or foundational responsibility. Interruptions are useful for material architectural ambiguity and not for routine sequential execution or mere chat/context limits; explicit prolonged execution is an optional mode.
+5. **Outcome-coupled execution:** First representative finished-product interaction and early end-to-end proof before proliferating research/test units. Maintain a visible distinction between discovered fact, designed target, implemented path, independently tested property, and demonstrated operator outcome. Continue independently executable work while a separate branch awaits an operator decision.
+6. **Evidence-oriented learning:** Study Hindsight's retain/recall/reflect separation, scoped banks/tags, hybrid retrieval, source-linked observations and temporal correction, plus progressive disclosure of Agent Skills; start as reference concepts or PoC rather than a mandatory service. Preserve evidence versus inference, record correction/invalidation and prevent historical memory from becoming higher authority than current source.
+7. **Test the method, not only its prose:** Run clean-chat or separate-Project opt-in pilots against the existing RumiAI bootstrap, without modifying old current contracts. Replay the Keycloak/rsudo failure from only the information available at the time, plus contrasting unambiguous, simple, multi-repo and high-impact ambiguous cases. Measure missed critical questions, unnecessary interruptions, wrong-assumption rework, actual usable end-to-end results, context/latency cost, retrieval accuracy, and resumability. Claim observed behavior only, not native enforcement or unattended runtime where absent.
+8. **Safe transition:** Keep the new bootstrap and RumiAI original isolated. Do not install external agents or memory engines, change root Project Instructions, create a new GitHub repository, or re-promote policy merely because a proposal is recorded here. The initial name, concrete manifests, inheritance/override/conflict rules, security boundary and migration policy are to be designed and validated rather than guessed.
+
+**Provisional pilot storage sketch (conceptual, not a fixed schema):**
+
+```text
+<workflow-repository>/
+  README.md                   # minimal entrypoint, routing and authority
+  protocols/                  # general decision/execution protocols
+  indexes/                    # route/context descriptors
+  contexts/                   # experimental scoped data, including RumiAI
+  evaluations/                # reusable evaluation cases and measured results
+  adapters/                   # agent-specific integration notes, optional
+```
+
+Treat "project", "task" and "chat" as names that describe certain context entities, not required ancestors in these folders. Use references/metadata rather than nesting to express cross-cutting relationships. Separate contexts into different repositories later only if the evidence justifies it.
+
+**Next concrete design step:** Draft and compare at least two end-to-end routing/authority protocols (simple hierarchical progressive disclosure versus a typed context graph/overlay model) with the same example prompts, startup paths, costs, conflict resolution and failure behavior. Identify which aspects can be deterministic and which rely on model judgment. Only after selecting a testable pilot contract, establish a new dedicated repository and separate experimental ChatGPT Project. Preserve RumiAI current behavior unless independently authorized for an explicit test.
+
 ## Completed
 
 - 2026-11-06: Completed cross-document review of `README.md`, `RULES.md` and `CONSISTENCY-GATE.md`: authority/read-order, normative ownership, gate dependencies and final checklist were compared. Normalized remaining abbreviated specification paths in gate §§8 and 12 (commit `557f81516ab16bc64d7e709ffcba33abafb08993`). No contradictory authority or circular prerequisite was found in the reviewed documents; no implementation or runtime tests were needed for these documentation-only edits.
@@ -416,7 +449,7 @@ Active task routing now uses resumable responsibility rather than topic labels. 
 
 ## Next action
 
-**Priority after operator decision 2026-11-07:** First reconstruct the Keycloak/rsudo outcome failure and critically re-architect the workflow from mission intake through completion, including preflight and `devplan`. Evaluate alternatives and backtest them before promoting new canonical contracts. Existing procedural checks below remain secondary evidence, not the redesign method or an authorization to implement a piecemeal patch.
+**Priority after operator direction 2026-11-07:** Design and experimentally validate an independent agent-agnostic bootstrap repository and context-routing model, preserving RumiAI's current bootstrap for the baseline; reconstruct the Keycloak/rsudo outcome failure while comparing alternative complete decision/execution protocols. No new repo is yet created. Evaluate alternatives and backtest them before promoting new canonical contracts. Existing procedural checks below remain secondary evidence, not the redesign method or an authorization to implement a piecemeal patch.
 
 Previously recorded work: next exercise `DEVPLAN.md` on a genuinely well-specified RumiAI software task. Check source-first sufficiency, dependency and work-unit completeness, non-conflicting agent ownership, clean-chat resumability and the planning-only boundary. The under-specified `devplan astronave` conversational smoke test is recorded above; neither case alone proves future agent execution.
 
