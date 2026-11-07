@@ -127,8 +127,8 @@ process, an authorized listener, actual backend support or write readiness.
 
 **Not yet implemented:** stronger service-to-process ownership evidence,
 complete container source/mount attribution,
-JSON discovery output, standalone writes, `apply`/`request`, and generic
-write routing for other adapters. Initial host YAML port probes and
+JSON discovery output, standalone writes, `apply`, and generic write routing
+for other adapters. Initial host YAML port probes and
 textual systemd unit candidates are implemented. Initial host and
 Docker/Podman candidate inventory and traditional REST plus standalone
 snapshot, YAML-file and JSON-file `list/get` adapters are described above/below.
@@ -279,6 +279,21 @@ particular running process. The permanent transport test exercises
 POST/PUT/DELETE and protected stdin body delivery through real `m` and curl
 against a local synthetic HTTP fixture, not a live APISIX or SSH deployment.
 
+The advanced `request <relative-admin-path> [method]` function uses the same
+explicit host-scoped traditional REST context and protected transport for
+other Admin API endpoints. The path is appended beneath the fixed
+`/apisix/admin/` prefix and is restricted to nonempty slash-separated ASCII
+alphanumeric, dot, underscore, tilde and hyphen segments. Leading/trailing
+slashes, empty segments, `.`/`..` segments, query strings and fragments are
+rejected. The method defaults to GET and is restricted to GET, POST, PUT or
+DELETE; POST/PUT bodies are read from stdin, and GET/DELETE send no body.
+This advanced path exposes the selected endpoint directly to the operator;
+APISIX remains responsible for endpoint authorization and schema validation.
+It does not route to snapshot or file adapters and never falls back to legacy.
+The permanent transport test covers generic GET/POST routing, stdin body
+delivery, path traversal rejection and unsupported method rejection against
+the synthetic HTTP fixture.
+
 ## Standalone API snapshot list/get
 
 The generic `list` and `get` functions also route to the `snapshot` adapter
@@ -334,8 +349,9 @@ modified. The parser does not resolve APISIX environment substitutions or
 establish that the selected file is loaded by the running process. `get`
 requires exactly one matching string `id`.
 The file and snapshot adapters remain read-only. Generic `create`, `update`
-and `delete` fail explicitly for those backends; `apply` and `request` remain
-unimplemented for all backends. None falls back to a legacy function.
+and `delete` fail explicitly for those backends; `apply` remains unimplemented.
+Generic `request` is currently implemented only for the host traditional REST
+adapter described above. None falls back to a legacy function.
 Operation-specific compatibility functions retain their previous forwarding
 behavior. Permanent tests exercise the JSON adapter through real `m` and
 RumiAI `json`, with local synthetic host, Docker and Podman rsudo boundaries;
@@ -348,7 +364,7 @@ The current read-only resolvers do not prove which `-c`/profile or effective con
 Mode inspection does not emit API keys or the selected configuration contents. Credentials and target data remain subject to `RSUDO.md` and `DIAGNOSTICS.md`. The legacy APISIX functions retain previously documented unsafe JSON/request behavior, and their existence is not evidence that modern secure mutation is complete.
 
 The complete mode-routed Admin API, API-snapshot writes,
-standalone file mutations, `apply`/`request`, pagination, and simplified shell recipes
+standalone file mutations, `apply`, pagination, and simplified shell recipes
 are **not yet implemented** by the current safe APISIX backend. The initial
 traditional REST `list/get/create/update/delete` and API-snapshot, YAML-file
 and JSON-file `list/get` adapters above are partial and do
