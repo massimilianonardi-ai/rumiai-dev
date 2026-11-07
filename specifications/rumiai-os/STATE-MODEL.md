@@ -241,6 +241,14 @@ so a later system-profile switch is observed without rewriting every installed p
 
 `var/` never becomes a dynamic user-state router.
 
+## Accepted concurrent-context state boundary (future integration)
+
+The existing `state/system/current`, `state/user/current` and package `var/` routes above are the current implemented state model. For a future generalized `context`, independently running managed shells and ordinary child processes **must** be able to select different system-profile and logical user-state identities without changing either global `current` selector. A logical `user` state selection remains separate from authenticated POSIX account authority.
+
+The current static, system-scoped package `var/` links cannot express two different per-process system profiles for the same installed concrete. A future profile-aware package launch must use a verified upstream state-path adapter or an already prepared compatible profile-specific execution/state view; otherwise it must reject the incompatible selection **before** launching, without silently following another process's/global profile. No specific universal adapter or per-`context` filesystem regeneration is authorized by this boundary.
+
+This accepted design target does not make the existing `state-path` or package `var/` interfaces profile-aware today. A coordinated bootstrap/state/launcher migration and real consumer verification are required before claiming that behavior.
+
 ## Git boundary
 
 Operational state is not product source. In particular user state remains ignored by the product repository and is not committed merely to establish a binding/default identity.
