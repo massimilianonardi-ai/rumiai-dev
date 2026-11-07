@@ -113,27 +113,32 @@ discovery extension:
   IDs, malformed JSON, symlink rejection and preservation of the source file.
   `apisix-admin-transport.test` now checks API snapshot list/get filtering
   through real `m`, `json` and curl against a local HTTP fixture. This is
-  synthetic API-shape evidence, not live APISIX filtering, SSH, Docker or
-  Podman validation. On the published revisions, `apisix-file-json-read.test`,
-  `apisix-context.test`, `apisix-discovery-host.test` and
-  `apisix-admin-transport.test`, now covering snapshot list/get, passes through
-  real `m`, `json` and curl against its local synthetic endpoint. Together with
-  `apisix-file-json-read.test`, `apisix-context.test` and
-  `apisix-discovery-host.test`, all four focused tests PASS on the published
-  revisions. The product library passes `sh -n` and all three repositories
-  pass `git diff --check`. Exact current revisions: product
-  `rumiai-os@23150cc99c9266315eb9170f132e2c5c9aa41403`, manual
-  `rumiai-os@11a00f0413613e0424bb2662041a19f32376cb1b`, test
-  `rumiai-tests@1e86da666e002197b6cb1cc50dcbda45ea2ebf45`, test registration
-  `rumiai-tests@fc58175f83f1a1a6641aaf16414378b617f8d856`, and contract
-  `rumiai-dev@88916f0098e8d541064d8fdfc6a3b3fa82bfdb2d`. This active handoff
-  records the same checkpoint and is the current task-state source. GitHub CI status
-  checks are empty for the new commits; CI is not claimed as PASS.
-- YAML-file reads, all new writes, pagination, and broader resource/provider
-  coverage remain pending. No unsafe legacy
-  fallback is added. Next: inspect the new scoped CI status, then extend the
-  read-only adapters only after defining and testing each provider's actual
-  data and response shape; keep mutation work separately gated.
+  synthetic API-shape evidence, not live APISIX, SSH or container validation. At the
+  published revisions the focused context, discovery, JSON-file and Admin
+  transport tests passed; published CI status checks were empty and are not
+  claimed as PASS.
+
+### Continuation checkpoint — standalone YAML file list/get
+
+- The topic work adds `file-yaml` routing to read-only `list/get` for explicitly
+  selected host, Docker or Podman scopes. The operator supplies absolute
+  `RSUDO_APISIX_HOME` and `RSUDO_APISIX_DATA_FILE`. The target uses that APISIX
+  installation's LuaJIT, `lyaml` and `cjson.safe`, emits only selected records
+  as JSON Lines, and leaves the YAML file untouched. Locally, RumiAI `json`
+  validates records and `get` requires a unique string ID. The adapter does
+  not resolve APISIX substitutions or establish loaded-process identity.
+  Writes still fail explicitly without legacy fallback.
+- Permanent coverage extends `apisix-parser-live.test` to exercise YAML
+  list/get, missing and duplicate IDs, malformed YAML and record filtering
+  against the two pinned APISIX images. In this workspace Docker is absent, so
+  the test SKIPs before invoking either APISIX parser; parser behavior remains
+  unvalidated here. Existing `apisix-file-json-read.test` PASSes with real `m`
+  and `json`, as separate evidence. Update this checkpoint with exact
+  published revisions; the handoff remains the active task-state source and
+  does not self-reference its own commit.
+- Next: run `apisix-parser-live.test` on a Docker-enabled host, then continue
+  with backend-specific safe mutations and provider coverage as separately
+  tested increments.
 
 ## Implementation checkpoint: operator-owned discovery/context (2026-11-07)
 

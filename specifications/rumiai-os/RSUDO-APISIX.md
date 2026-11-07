@@ -303,8 +303,17 @@ written to stdout.
 
 This is a read of the operator-selected file contents, not proof that the
 running APISIX process loaded that file; APISIX environment substitutions are
-not resolved. Read-only `list/get` for the YAML-file adapter still fails
-explicitly.
+not resolved. For `standalone-file-yaml`, the caller also explicitly selects
+the absolute APISIX installation root in `RSUDO_APISIX_HOME`. The remote
+operation uses that installation's LuaJIT, `lyaml` and `cjson.safe` to parse
+the selected regular non-symlink YAML file and emits only the chosen resource
+records as JSON Lines. The local RumiAI `json` command validates each emitted
+record before `list`/`get` output. Unsupported YAML object shapes,
+non-JSON-compatible records or unavailable parser dependencies fail closed;
+the complete YAML document is never copied back and the source file is never
+modified. The parser does not resolve APISIX environment substitutions or
+establish that the selected file is loaded by the running process. `get`
+requires exactly one matching string `id`.
 Generic `create`, `update`, `delete`, `apply` and `request` currently fail as
 unimplemented; none falls back to a legacy function. Operation-specific
 compatibility functions retain their previous forwarding behavior. Permanent
@@ -318,10 +327,10 @@ The current read-only resolvers do not prove which `-c`/profile or effective con
 
 Mode inspection does not emit API keys or the selected configuration contents. Credentials and target data remain subject to `RSUDO.md` and `DIAGNOSTICS.md`. The legacy APISIX functions retain previously documented unsafe JSON/request behavior, and their existence is not evidence that modern secure mutation is complete.
 
-The complete mode-routed Admin API, YAML-file reads, API-snapshot writes,
+The complete mode-routed Admin API, API-snapshot writes,
 standalone file mutations, generic writes, pagination, and simplified shell recipes
 are **not yet implemented** by the current safe APISIX backend. The initial
-traditional REST, API-snapshot and JSON-file `list/get` adapters above are partial and do
+traditional REST, API-snapshot, YAML-file and JSON-file `list/get` adapters above are partial and do
 not imply those capabilities. They are pending development, not current
 guarantees.
 
