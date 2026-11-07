@@ -1,6 +1,6 @@
 # Completion orchestration of autonomous m-os
 
-Status: Active — orchestration; branch I readiness started, I1 blocked, I2 pending
+Status: Active — P3/P4/J1/V2 runtime and catalog promotion merged; C2/C3 and I1 remain open
 Updated: 2026-11-07
 
 ## Goal
@@ -18,9 +18,10 @@ No duplicate normative specification or separate product architecture is establi
 ## Current repository revisions
 
 Verified remote starting point:
-- `rumiai-dev/main@fb160e84f4f866aadefa1a46ac2f850058630fee` (current remote canonical state; local prior `main` is divergent and remains untouched).
-- `m-os/master@6e720be71a188b203aed2969399dedc90874d426`; PR #5 `b6f69d554d46ff4d9b67b86a10303615e381096b`; PR #6 `6fcb2f257448bbc4ce20e6eab9362fdbb7c8addb`.
-- `pkg-catalog/main@4083aa19c4362f00ec62428a631edfa493faf7f0`; V2 `pkg-schema-v2@2c0df87a488bfeac6d185336ea5ae5a4ea469c4a` (adds immutable m-rsudo v0.1.2 catalog content).
+- `rumiai-dev/main@b8a4b9f7c6e59beeddb18f3d87166c54adf2ccec` (canonical remote state; includes this turn's handoff refresh).
+- `m-os/master@ed5ec60e1c6289f93f68ab03e1eb71736aab6051`; P3 PR #5 merged as `6db5531de2956e64f0f57d0303508fb759f3cd1d`; J1 PR #6 merged as `1df35f70...`; V2 runtime PR #8 merged as `ed5ec60...`.
+- P3/P4/J1 exact-master hosted runners on `pkg-catalog` commit heads `d352513`, `2a63b75`, `7827963` completed successfully: P3 6/6 current-source + 3/3 supporting public checks, P4 2/2, J1 2/2. See validation handoff for run IDs and limits.
+- `pkg-catalog/main@0b69223a5ebe7bc042aad50012ee8bc7e4a00442`; V2 source `pkg-schema-v2@2c0df87a488bfeac6d185336ea5ae5a4ea469c4a` merged forward in PR #2 (merge tree equals validated `5928848...`). V2 runtime merged at `m-os/master@ed5ec60...` (tree matches validated candidate `168b8656...`). Exact post-merge suites pass; catalog promotion is complete.
 - `m-os/master@5884cf05ebd3033524db3890a7e34fc0decdd4f6`; `m-os/pkg-schema-v2@1e3a038a5abf6f8c176272d8e44464c842d3cefd`.
 - `pkg-catalog/main@3ee97d21bae3ee885b0fa987e1faee718fad8609`; `pkg-catalog/pkg-schema-v2@9d889cc265c29eeae456b8fe1ad638654c36e8c7`.
 - `m-core/main@0afb8752440808e9080a55c667576ff2f9b8eb32`, `m-term/main@c32aac18f6659ed4f569cb780080675fa64f9e3a`, `m-rsudo/main@a7248612773cdbd8d9cb9781915065fba5f0cc4c`.
@@ -244,6 +245,15 @@ Mainline repository adapters: `pkg-repository-{artifact,chrome,chromium,github,n
 **Executor protocol:** each independent chat receives (i) local unit ID from this handoff, (ii) owner handoff, (iii) source/branch checkpoint to freshly verify, (iv) exact writable files/branch and prohibited shared surfaces, (v) public expected tests + manual updates, (vi) expected upstream output and integration handoff. Every executor follows fresh HEAD preflight, no history by default, current source authority, proportional real tests, reviewed diff, forward-only updates and consistency gate. When an interface or host/privilege contract is unsettled, stop only that affected unit and escalate; do not freeze independent ready work.
 
 ## Current state
+
+### Latest integrated-source checkpoint (2026-11-07; current)
+
+- P3 and P4 are integrated on `m-os/master@1df35f70...`; J1 JSON is integrated in the same master. Exact final-master hosted checks completed successfully: P3 current-source run [42401852595](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42401852595) 6/6, P3 public lifecycle/protection runs [42401852426](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42401852426) 3/3 and [42401852487](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42401852487) 2/2, P4 map/lifecycle [42401870421](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42401870421) 2/2, and J1 public JSON/JSONTestSuite [42401889106](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42401889106) 2/2. Earlier post-merge HTTP 403 acquisition failures are superseded by these exact-master successes.
+- V2 runtime PR #8 is merged as `m-os/master@ed5ec60...`; catalog PR #2 is merged as `pkg-catalog/main@0b69223...`. Both merge commits have trees identical to the exact branches validated in CI. Exact merged-master full V2 matrix passed 16/16 [42403134850](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42403134850), mixed-schema 2/2 [42403134968](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42403134968), Java/Maven 2/2 [42403134965](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42403134965), mk/jsc 2/2 [42403134894](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42403134894), Node.js 2/2 [42403134876](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42403134876), and nonprivileged Ollama service/host-user [42403134864](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42403134864). The host-system job was explicitly skipped and excluded.
+- C2 accepted policy decisions are recorded; exact public context grammar/default/preset persistence, trusted child propagation, `env` compatibility, real `var/` behavior and ordinary library/provider consumer semantics remain unresolved. C3 is gated on those contracts. Full I1 M01–M15 current integrated matrix and I2 accessible reference-host checks remain open; privileged tasks stay deferred.
+- A1–A4 hosted runs remain explicitly deferred by current handoff. Do not resume them implicitly.
+
+The historical entries below retain the status observed at their dates and revisions. They do not override this current checkpoint: P3/P4/J1/V2 are merged, and V2 catalog promotion is complete.
 
 ### Operator-approved C2 invariants and privileged work deferral (2026-11-07)
 
@@ -500,17 +510,15 @@ P2 [PR #3](https://github.com/massimilianonardi-ai/m-os/pull/3) merged forward t
 
 ## Next action
 
-### Continuation checkpoint (2026-11-07)
+### Continuation checkpoint (superseded by latest integrated-source checkpoint above)
 
 The active scope is the accepted **nonprivileged** m-os completion plan. Exact local replays establish A3/M06 and the NSS portion of A4/M14 at `m-os@6e720be...` on this Ubuntu ARM64 host; the A4 browser phase remains pending. J1 now has exact-source hosted Ubuntu/macOS 2/2 PASS at PR #6 `6fcb2f...` (run 42309469100). Current remote P3 PR #5 is `b6f69d...`: its exact-source pinned-selector and genuine provider-version jobs pass on both hosts, but the ambiguity job fails before assertions because its test passes a concrete package version to `state-path`; typed-env was cancelled. Local test correction `m-os-p3-env-review@7cc3e303...` uses package identity for state/binding paths and concrete identity for dependency operations, but has no hosted or end-to-end acceptance yet. Local rootless authentic install is still blocked by unmapped archive ownership. No P3 completion is claimed. `pkg-catalog/pkg-schema-v2` advanced to `2c0df87...` with only immutable m-rsudo v0.1.2 definition relative to the previously inspected V2 head.
 
-Ordered next work:
+Historical ordered next work at that checkpoint (superseded):
 
-1. Resolve P3 at the exact current product source and hosted scenarios; preserve P2 merged master and current V2 catalog additions.
-2. Hand the shared pkg writer to P4 only after P3 acceptance; implement and validate derived facility-map reconciliation with a chosen, tested offline-safe ordering boundary.
-3. Reconcile V2 runtime/catalog against merged P2+P3+P4 forward-only, then validate exact combined revisions.
-4. Record J1 exact-source hosted acceptance as closed; continue remaining active A2, C1/C2/C3, S/R nonprivileged and library-interface M15 work under their owners. Do not launch A1–A4 workflows because current handoff explicitly says to defer those runs.
-5. Freeze integrated revisions for I1's current nonprivileged M01–M15 evidence ledger; proceed to I2 only after I1 and ordinary reference-host conditions. Privileged operator work stays solely in `todo/m-os-operator-privileged-validation.md`.
+P3/P4 and J1 have since merged and passed exact-master runners; runtime V2 has merged as `m-os/master@ed5ec60...`. Current next actions are: (1) finish the exact merged-master V2 catalog consumer runs now underway; (2) continue nonprivileged A2/M15 and contract-ready C2 work, then gate C3 on the completed contract; (3) freeze the integrated revision for I1's nonprivileged M01–M15 ledger, then I2 when ordinary reference-host conditions are available. Privileged operator work remains solely in `todo/m-os-operator-privileged-validation.md`.
+
+The numbered legacy sequence that follows is retained for history only; do not execute its P3/P4/J1 open tasks.
 
 1. **P2 accepted; P3 must close before P4 shared writer handoff.** P2's exact merged `m-os/master@a08f473...` [run 42197729661](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42197729661) remains Ubuntu/macOS 2/2 PASS on all four recorded groups. Current PR #5 `b6f69d...` exact-source [run 42309471324](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42309471324) has pinned-selector and genuine provider-version jobs PASS on Ubuntu/macOS, but the authentic-ambiguity test fails before assertions because it passes a concrete version where `state-path` requires a package identity; typed-env was cancelled. Local test correction is `m-os-p3-env-review@7cc3e303...`, syntax/state-path checked but not hosted or end-to-end validated. Continue exact-current ambiguity/typed-env and remaining P3 negative/failure-state cases before handing the serialized writer to P4. P4 owner (`handoff/rumiai-os-source-composition.md`) then implements and validates the canonical derived facility map. Do not conflate deferred GeoServer adapter work with P2 acceptance; older P3 HTTP 504 observations remain scoped to their own runs.
 2. Preserve at exact feature/release revisions the **14/14 V1/V2 hosted matrix**, the independent Java/mk-jsc 2/2 runs and the newly verified **R1 released v0.1.1 public install/selected consumer 2/2 PASS**; do not rerun unchanged green cases. The R1 owner retains local, nonprivileged interactive/negative/consumer checks; privileged remote R2 is deferred, while the C owner retains the separately failed macOS v0.1.0→v0.1.1 acquisition/version-switch scenario. S retains local-provider/unprivileged host-user evidence; privileged host-system work is deferred.
