@@ -17,6 +17,60 @@ Similarly, the previous Keycloak module is retained under `rsudo-mod-keycloakleg
 
 The legacy interfaces retain their own documented limitations and must not be mistaken for the new safe, multi-backend administration implementation. No default or implicit fallback from an unsupported new backend operation to the unsafe legacy path is permitted.
 
+## Operator-selected context and independent discovery boundary
+
+The operator is responsible for selecting the APISIX instance and the deployment mode
+used for administration. Read-only `discovery` is an independent inventory
+operation: it does **not** initialize or modify environment variables, does
+not choose a candidate, and does not require uniqueness. Explicit target
+context, rather than a universal automatic runtime-source certification
+procedure, is the planned basis for backend routing. Each actual mutation
+must still satisfy operation-specific safety and integrity preconditions;
+operator selection is not authorization to corrupt a file or overwrite a
+concurrently owned snapshot. A complete context parser and the
+provider-independent administration router are **not yet implemented**.
+
+The current first-stage public command
+
+```sh
+rsudo apisix discovery [absolute-remote-scan-root]
+```
+
+and library function `rsudo_mod_apisix_discovery` perform a **best-effort,
+read-only host inventory** over the selected rsudo remote target. The
+optional absolute scan root defaults to `/`; nonabsolute or unavailable
+roots are rejected. The implementation uses host `find` to report
+candidate `conf/config.yaml`, `conf/config-*.yaml`, `conf/apisix.yaml`
+and `conf/apisix.json` files when additional APISIX installation evidence
+is present, or when the installation directory carries a conventional
+APISIX leaf name. Host `ps` is optional and can contribute an independent
+candidate PID or a weak pathname/process-prefix correlation. Such evidence
+is labelled `configured-only`, `process-candidate`, or
+`process-prefix-candidate`, never silently promoted to verified runtime
+identity. Scanning `/` excludes virtual system directories and common
+container storage, and inaccessible subtrees may be omitted. The operation
+never reads or returns the contents of configuration files or credentials.
+
+For this first increment, successful stdout contains a tab-separated header
+`kind scope state identifier evidence` followed by zero or more candidate
+rows with exactly those five columns. An empty inventory is successful if the
+scan runs and no candidate is found. A host may yield multiple rows for the
+same installation when different profiles or data files are found; this is
+intentional, not an ambiguity error. A process candidate alone is not proof
+of a running, selected APISIX gateway. The additional `discovery` status
+codes are 71 (invalid argument count), 72 (nonabsolute root), 73 (find
+unavailable), 74 (unavailable root); rsudo transport failures retain their
+own status. Partial coverage is not proof that other instances do not exist.
+
+**Not yet implemented:** comprehensive host/service correlation, Admin
+listener probes, Docker and Podman inventory, JSON discovery output,
+environment-variable context selection, uniform backend-routed
+`list/get/create/update/delete`, and standalone updates. This staged
+implementation does not alter the older `mode`, `inspect`, `runtime`,
+`admin-read` or explicit legacy operations. In particular, the old
+no-argument runtime resolver may reject multiple candidates; the independent
+new `discovery` is intentionally allowed to report all of them.
+
 ## Read-only APISIX configured-mode interface
 
 The public command
