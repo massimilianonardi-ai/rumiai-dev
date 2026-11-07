@@ -53,6 +53,14 @@ The administrative interface does not confer privilege on its caller:
 permission to modify system trust is granted by the actual POSIX security
 boundary protecting the selected system-state tree.
 
+## Approved generalized-context profile consumption boundary
+
+Future generalized-context clients must keep **administrative CA approval/revocation authority** separate from **consumption of approved CA certificates**. Trusted host/system administrative controls determine authorization; a caller-supplied shell profile, logical user-state name, `HOME` value or inherited context token grants no CA-management permission.
+
+A context-aware managed client consumes only the approved CA set associated with its **verified selected system profile** and the applicable effective runtime/NSS projection. It must not silently union certificates from unrelated profiles or repoint a privileged service's trust by changing an ordinary caller's context. A profile not safely supported by the current CA/NSS consumer path must be rejected, not silently mapped to an unintended global profile.
+
+The initial current CA authority and consumer paths documented above still use the system `current` selector. Profile-aware reads, approval metadata, native/browser projections and corresponding real validation require a coordinated migration before being claimed available. This is a settled future integration boundary, not a new unprivileged certificate-approval API.
+
 ## Derived representations
 
 The managed CA set is one authoritative decision represented in whatever **non-authoritative derived projection** each supported TLS backend requires. Browser profile creation, package version changes and runtime updates must not require repeating CA authorization.
