@@ -26,11 +26,11 @@ Full functional validation of the autonomous `m` source is independently tracked
 
 ## Current repository revisions
 
-### Fresh continuation checkpoint (2026-11-07)
+### Fresh continuation checkpoint (2026-11-07; current)
 
-- `rumiai-dev/main@fb160e84f4f866aadefa1a46ac2f850058630fee` is the current remote canonical branch. Its accepted C2 policy and operator-privilege scope updates are read; do not merge or replace the divergent local `main` branch. This checkpoint is maintained in a separate local worktree based on that exact remote head.
-- `m-os/master@6e720be71a188b203aed2969399dedc90874d426`; PR #5 head `b6f69d554d46ff4d9b67b86a10303615e381096b`; PR #6 head `6fcb2f257448bbc4ce20e6eab9362fdbb7c8addb`.
-- `pkg-catalog/main@4083aa19c4362f00ec62428a631edfa493faf7f0`; `pkg-catalog/pkg-schema-v2@2c0df87a488bfeac6d185336ea5ae5a4ea469c4a` (adds immutable `m-rsudo@v0.1.2` relative to `a75f9be`; P2/P4 descriptors are unchanged).
+- `rumiai-dev/main@b8a4b9f7c6e59beeddb18f3d87166c54adf2ccec` is the current remote canonical branch.
+- `m-os/master@ed5ec60e1c6289f93f68ab03e1eb71736aab6051`; P3/P4/J1 and V2 runtime are integrated. Older PR #5/#6 source SHAs recorded below are historical feature checkpoints.
+- `pkg-catalog/main@0b69223a5ebe7bc042aad50012ee8bc7e4a00442`; V2 catalog PR #2 is merged and tree-identical to validated `5928848...`; V2 source feature SHA is `2c0df87a488bfeac6d185336ea5ae5a4ea469c4a` (includes `m-rsudo@v0.1.2`).
 - Local evidence sources: P3 continuation `m-os-p3-env-review@7cc3e30392b4a7e7459befa8306056f395a1a123`; A3/A4 workflow bodies were replayed at `6e720be...` locally as detailed in `handoff/m-autonomous-validation.md`. These local branches/results are not remote integration or hosted evidence.
 
 Repository identity checkpoint (2026-11-03): the GitHub source repository
@@ -2574,6 +2574,18 @@ resolve those questions or start implementation in the present unit.
 - Operator-privileged remote SSH/sudo, protected-host system service administration, protected-host CA operations and privileged physical actions moved to `todo/m-os-operator-privileged-validation.md`. They are not active completion blockers. Disposable CA/NSS and unprivileged user-service validation remain active where their own gates permit.
 - A read-only P4 audit sourced the current GitHub repository comparator and EWC catalog `versions` index. With both concrete tags present locally, the actual comparator returned `v0.1.4 < v0.1.5 < v0.1.6`; catalog metadata declares `web-control 2` on 0.1.4/0.1.5 and compatibility 3 on 0.1.6. A missing pair falls through to GitHub Releases API; `pkg_catalog_init` itself clones/pulls. This confirms the local-index case only. P4 still needs an ordering/reconciliation design that preserves offline mutation behavior when evidence is missing; no option is selected and no P4 product code changed.
 
+### C2 contract preparation after accepted invariants (2026-11-07)
+
+This checkpoint translates existing normative constraints into a design worklist. It does not approve new syntax or persistence behavior.
+
+- **Current behavior remains the migration source:** `BOOTSTRAP-ENVIRONMENT.md` defines `context` as a shell function accepting exact installed `pkg=` selections; selections fold left-to-right, no-argument invocation resets this function's package selections, and failure leaves the prior shell state intact. Until a coordinated migration is validated, preserve this API and behavior.
+- **Future generalized behavior already required:** ordinary shells/processes can choose distinct system profiles and logical user identities without changing global `state/*/current`; effective package/provider/state/environment/library behavior must be coherent; unsupported package `var/` must fail before activation; host services use a trusted registration-time identity/profile independent of the caller; CA authority remains administratively controlled while clients consume the selected verified profile's approved set.
+- **Safe candidate for design (not yet normative):** make no-argument `context` initialize the managed-shell default only as part of an explicit versioned migration; retain a distinct explicit reset operation so current scripts can migrate mechanically. Model a resolved context as one immutable selection value for a shell/process, with validated ordered inputs folded before activation. Named presets should expand to ordinary selections and must not silently write global package/provider defaults. Any persistence file, profile creation, default selection authority, or child propagation token needs a separately specified owner, location, trust boundary and failure behavior.
+- **Still requires evidence/design before spec promotion:** (1) public operand grammar and reset compatibility; (2) source and persistence of default/preset definitions; (3) authenticated child propagation across `exec` without trusting exported user variables; (4) exact mapping of `env` descriptors to an effective profile and behavior of older packages; (5) which actual catalog `var/` packages can use upstream state-path adaptation or prepared profile views; (6) whether ordinary library-only packages need package dependency edges and how their selected versions are pinned; (7) ordering/failure atomicity when one context input depends on unresolved providers. Do not assign answers by inference from archival chat examples.
+- **Next implementation-independent step:** build a read-only matrix from current specifications and representative installed catalog descriptors (including mutable `var`, provider `env`, shell libraries, Java libraries and package HOME/state behavior); derive only constraints that follow from current canonical sources. Then propose an explicit migration grammar and persistence/propagation design in this handoff for review against those constraints. C3 remains gated until that design is promoted and P4's integrated map is accepted.
+
+Older snapshots below are historical; the current repository revisions and integrated P3/P4/J1/V2 status are recorded at the top of this handoff and in the orchestration checkpoint.
+
 ## Next action
 
 **Related specialized pkg-definition work:** The comprehensive
@@ -2585,7 +2597,7 @@ its working schema, migration decisions or validation state here.
 
 **Previous source-extraction next action (completed):** The operator rejected the synthetic test, which was removed forward. The source repositories were populated with actual assets; the initial release/catalog/install composition is now implemented and hosted-validated, as recorded above.
 
-**Current next shared-package boundary:** P3/P4/J1 and V2 runtime are merged on `m-os/master@ed5ec60...`; the exact V2 candidate tree and public consumers passed, and catalog jobs are being re-pinned for merged-master SHA acceptance before catalog promotion. Then continue nonprivileged A2/M15 and contract-ready C2 work; prepare a concrete context contract from settled decisions and keep C3 implementation gated until grammar, defaults and propagation are sufficiently specified. Preserve current catalog V1 additions and frozen legacy repositories.
+**Current next shared-package boundary:** P3/P4/J1 and V2 runtime are merged on `m-os/master@ed5ec60...`; V2 catalog promotion is complete at `pkg-catalog/main@0b69223...`, and exact merged-master consumers passed. Continue the uncovered nonprivileged M01–M15 ledger and contract-ready C2 work; keep C3 implementation gated until grammar, defaults and propagation are specified and promoted. Preserve current catalog V1 additions and frozen legacy repositories.
 
 ### Historical next-action material below (superseded)
 

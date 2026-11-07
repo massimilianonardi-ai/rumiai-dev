@@ -1,6 +1,6 @@
 # Completion orchestration of autonomous m-os
 
-Status: Active — P3/P4/J1/V2 runtime merged; catalog promotion, C2/C3 and I1 remain open
+Status: Active — P3/P4/J1/V2 runtime and catalog promotion merged; C2/C3 and I1 remain open
 Updated: 2026-11-07
 
 ## Goal
@@ -18,10 +18,10 @@ No duplicate normative specification or separate product architecture is establi
 ## Current repository revisions
 
 Verified remote starting point:
-- `rumiai-dev/main@5428e1322aedef98a5a8d5e03b8440774c6ad55c` (canonical remote state; local clone fast-forwarded to this revision).
+- `rumiai-dev/main@b8a4b9f7c6e59beeddb18f3d87166c54adf2ccec` (canonical remote state; includes this turn's handoff refresh).
 - `m-os/master@ed5ec60e1c6289f93f68ab03e1eb71736aab6051`; P3 PR #5 merged as `6db5531de2956e64f0f57d0303508fb759f3cd1d`; J1 PR #6 merged as `1df35f70...`; V2 runtime PR #8 merged as `ed5ec60...`.
 - P3/P4/J1 exact-master hosted runners on `pkg-catalog` commit heads `d352513`, `2a63b75`, `7827963` completed successfully: P3 6/6 current-source + 3/3 supporting public checks, P4 2/2, J1 2/2. See validation handoff for run IDs and limits.
-- `pkg-catalog/main@0b69223a5ebe7bc042aad50012ee8bc7e4a00442`; V2 source `pkg-schema-v2@2c0df87a488bfeac6d185336ea5ae5a4ea469c4a` merged forward in PR #2 (merge tree equals validated `5928848...`). V2 runtime merged at `m-os/master@ed5ec60...` (tree matches validated candidate `168b8656...`). Exact suites pass; catalog PR #2 is merged.
+- `pkg-catalog/main@0b69223a5ebe7bc042aad50012ee8bc7e4a00442`; V2 source `pkg-schema-v2@2c0df87a488bfeac6d185336ea5ae5a4ea469c4a` merged forward in PR #2 (merge tree equals validated `5928848...`). V2 runtime merged at `m-os/master@ed5ec60...` (tree matches validated candidate `168b8656...`). Exact post-merge suites pass; catalog promotion is complete.
 - `m-os/master@5884cf05ebd3033524db3890a7e34fc0decdd4f6`; `m-os/pkg-schema-v2@1e3a038a5abf6f8c176272d8e44464c842d3cefd`.
 - `pkg-catalog/main@3ee97d21bae3ee885b0fa987e1faee718fad8609`; `pkg-catalog/pkg-schema-v2@9d889cc265c29eeae456b8fe1ad638654c36e8c7`.
 - `m-core/main@0afb8752440808e9080a55c667576ff2f9b8eb32`, `m-term/main@c32aac18f6659ed4f569cb780080675fa64f9e3a`, `m-rsudo/main@a7248612773cdbd8d9cb9781915065fba5f0cc4c`.
@@ -246,12 +246,14 @@ Mainline repository adapters: `pkg-repository-{artifact,chrome,chromium,github,n
 
 ## Current state
 
-### Latest integrated-source checkpoint (2026-11-07)
+### Latest integrated-source checkpoint (2026-11-07; current)
 
 - P3 and P4 are integrated on `m-os/master@1df35f70...`; J1 JSON is integrated in the same master. Exact final-master hosted checks completed successfully: P3 current-source run [42401852595](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42401852595) 6/6, P3 public lifecycle/protection runs [42401852426](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42401852426) 3/3 and [42401852487](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42401852487) 2/2, P4 map/lifecycle [42401870421](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42401870421) 2/2, and J1 public JSON/JSONTestSuite [42401889106](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42401889106) 2/2. Earlier post-merge HTTP 403 acquisition failures are superseded by these exact-master successes.
 - V2 runtime PR #8 is merged as `m-os/master@ed5ec60...`; catalog PR #2 is merged as `pkg-catalog/main@0b69223...`. Both merge commits have trees identical to the exact branches validated in CI. Exact merged-master full V2 matrix passed 16/16 [42403134850](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42403134850), mixed-schema 2/2 [42403134968](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42403134968), Java/Maven 2/2 [42403134965](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42403134965), mk/jsc 2/2 [42403134894](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42403134894), Node.js 2/2 [42403134876](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42403134876), and nonprivileged Ollama service/host-user [42403134864](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42403134864). The host-system job was explicitly skipped and excluded.
 - C2 accepted policy decisions are recorded; exact public context grammar/default/preset persistence, trusted child propagation, `env` compatibility, real `var/` behavior and ordinary library/provider consumer semantics remain unresolved. C3 is gated on those contracts. Full I1 M01–M15 current integrated matrix and I2 accessible reference-host checks remain open; privileged tasks stay deferred.
 - A1–A4 hosted runs remain explicitly deferred by current handoff. Do not resume them implicitly.
+
+The historical entries below retain the status observed at their dates and revisions. They do not override this current checkpoint: P3/P4/J1/V2 are merged, and V2 catalog promotion is complete.
 
 ### Operator-approved C2 invariants and privileged work deferral (2026-11-07)
 
