@@ -33,7 +33,8 @@ traditional-admin REST reads and an incremental M2 discovery extension:
   validation repeats the checks. Curl preserves TLS verification, disables
   proxy/redirect use, and successful response JSON is passed through.
 - `create`, `update`, `delete`, `apply` and `request` fail explicitly as not
-  implemented and never fall back to legacy. Standalone reads/writes,
+  implemented and never fall back to legacy. YAML-file and API-snapshot reads,
+  standalone writes,
   pagination, URL IPv6 literals, version negotiation and live APISIX identity
   verification remain unsupported. Operation-specific legacy compatibility
   functions remain as before.
@@ -78,6 +79,32 @@ traditional-admin REST reads and an incremental M2 discovery extension:
   releases; then implement standalone file/snapshot reads and backend-specific
   safe mutations. Discovery/source attribution research is not a global
   prerequisite for explicitly selected operations.
+
+### Continuation checkpoint — standalone JSON file reads
+
+- The generic public `list/get` router now also selects a read-only `file-json`
+  adapter for explicit `RSUDO_APISIX_DEPLOYMENT=standalone-file-json` contexts.
+  It supports the selected host, Docker or Podman scope and the caller-provided
+  absolute `RSUDO_APISIX_DATA_FILE`; it performs no discovery or source-file
+  mutation. The remote regular non-symlink JSON document is streamed through
+  rsudo into a local `umask 077` temporary directory and parsed by the
+  standalone RumiAI `json` command. Only selected top-level routes, services or
+  upstreams records reach stdout. `get` matches the caller ID without
+  interpolating it into a JSON filter and fails for zero or multiple matches.
+  Temporary document/results are removed on exit. This does not resolve
+  APISIX environment substitutions or prove that the selected file is loaded.
+- The permanent `apisix-file-json-read.test` exercises the real `m` and `json`
+  commands with synthetic rsudo host/Docker/Podman boundaries. It covers
+  list/get selection, no unrelated-resource leakage, missing IDs, duplicate
+  IDs, malformed JSON, symlink rejection and preservation of the source file.
+  This is local synthetic evidence, not live APISIX, SSH, Docker or Podman
+  validation. Relevant local tests currently pass; CI status for the new
+  revisions has not been observed.
+- YAML-file reads, standalone API snapshot reads, all new writes, pagination,
+  and broader resource/provider coverage remain pending. No unsafe legacy
+  fallback is added. Next: inspect the new scoped CI status, then extend the
+  read-only adapters only after defining and testing each provider's actual
+  data and response shape; keep mutation work separately gated.
 
 ## Implementation checkpoint: operator-owned discovery/context (2026-11-07)
 
