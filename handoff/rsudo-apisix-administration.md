@@ -104,8 +104,13 @@ discovery extension:
   `git diff --check` passed. Frozen implementation revisions are
   `rumiai-os@2157a312d95dd71c0fda3feda200df6e19069942`,
   `rumiai-tests@b6b485e177caf29f9f7ae019097f1e29938606bc`, and contract
-  `rumiai-dev@59f9beb1a00bf80de1d635dfcfe47949e7e868ec`. This is not live
-  APISIX, SSH or CI validation.
+  `rumiai-dev@59f9beb1a00bf80de1d635dfcfe47949e7e868ec`; the follow-up
+  contract clarifying that standalone JSON-file mode requires APISIX's JSON
+  provider is `rumiai-dev@8e1d19fd2e1669bb1b049cf01e999c0d677bf7cf`.
+  Official deployment documentation confirms JSON file-driven config and
+  file-change reload behavior, but this product does not verify the selected
+  file/provider or implement writes. This is not live APISIX, SSH or CI
+  validation.
 - Next: implement file-backed changes only after defining full-document
   validation, atomic replacement, metadata preservation and external-writer
   concurrency behavior. The standalone `json` command supports query and
