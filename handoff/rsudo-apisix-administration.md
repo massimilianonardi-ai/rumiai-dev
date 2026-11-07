@@ -21,9 +21,9 @@ Immediate milestones: M0 synchronize these decisions in task state/current contr
 ## Latest implementation checkpoint (2026-11-07)
 
 The earlier M0/M1/M3 checkpoint below was advanced on remote main by concurrent
-work after it was written. Before this REST increment, remote heads were read
-and isolated worktrees were based on those heads. The current implementation
-adds only the first explicit traditional-admin REST reads:
+work after it was written. Remote heads were read and isolated worktrees were
+based on those heads. The current topic branch contains the first explicit
+traditional-admin REST reads and an incremental M2 discovery extension:
 
 - `list` and `get` route internally to the traditional REST adapter for
   explicitly selected host scope. Supported collections are routes, services
@@ -44,14 +44,22 @@ adds only the first explicit traditional-admin REST reads:
   Permanent discovery coverage uses synthetic Docker and Podman CLIs through
   the real module and `m`; it does not claim a live container runtime test.
   Stopped unnamed/custom-image candidates, mounts, service-manager
-  correlation and listener probes remain unresolved.
+  process ownership and container-namespace listener probes remain unresolved.
+- Host discovery now lists APISIX-matching systemd unit names/descriptions
+  and installed unit-file names with their states, while never returning raw
+  descriptions. It parses numeric `admin_listen` IP/port pairs from YAML only
+  and uses connect-only `nc` probes for loopback, wildcard or `ip`-confirmed
+  local bind addresses. Remote/unverified binds are reported without probing.
+  Socket reachability and textual unit matches do not prove APISIX identity or
+  ownership. JSON parsing, container port probes and systemd MainPID/cgroup
+  correlation remain pending.
 - The permanent `apisix-admin-transport.test` passes against its local
   synthetic HTTP fixture through the real `m` loader and curl, substituting
   only rsudo's remote boundary. This is not a live APISIX, SSH target or CI
   validation. No deployment environment was modified.
 - Immediate next: run/review full scoped CI at frozen revisions; harden M2
-  using isolated real Docker/Podman and service/listener fixtures where
-  available; verify REST pagination/version behavior on supported APISIX
+  using isolated real Docker/Podman and systemd fixtures where available;
+  verify REST pagination/version behavior on supported APISIX
   releases; then implement standalone file/snapshot reads and backend-specific
   safe mutations. Discovery/source attribution research is not a global
   prerequisite for explicitly selected operations.
