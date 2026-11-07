@@ -62,9 +62,32 @@ codes are 71 (invalid argument count), 72 (nonabsolute root), 73 (find
 unavailable), 74 (unavailable root); rsudo transport failures retain their
 own status. Partial coverage is not proof that other instances do not exist.
 
+The first-stage `rsudo apisix context` / `rsudo_mod_apisix_context`
+command parses caller-owned environment without remote discovery, changing
+environment variables or issuing network requests. It requires
+`RSUDO_APISIX_SCOPE=host|docker|podman` and
+`RSUDO_APISIX_DEPLOYMENT` set to one of the five current mode identifiers.
+`RSUDO_APISIX_HOME` is an optional absolute installation root.
+Docker/Podman scopes require a full lowercase 64-hex
+`RSUDO_APISIX_CONTAINER_ID`; a container ID is forbidden in host scope.
+File-driven modes require an absolute `RSUDO_APISIX_DATA_FILE`;
+traditional-admin and standalone-api require an `http(s)`
+`RSUDO_APISIX_ADMIN_URL` and absolute `RSUDO_APISIX_HEADER_FILE`.
+The last two values are operator declarations, not independently verified
+endpoints or credentials. The read-only result includes
+`selection=operator-supplied-unverified`, `scope`, `deployment`,
+`adapter` and relevant nonsecret selectors; the credential file
+is represented only as configured/not-configured. Supported internal
+adapter identifiers are `rest`, `snapshot`, `file-yaml`,
+`file-json` and `none`. The adapter selection is not yet a
+fully implemented administration router. Invalid inputs use
+distinct status values 75–81 as described in the operational manual.
+The context is a **local declaration**: it does not establish a running
+process, an authorized listener, actual backend support or write readiness.
+
 **Not yet implemented:** comprehensive host/service correlation, Admin
 listener probes, Docker and Podman inventory, JSON discovery output,
-environment-variable context selection, uniform backend-routed
+complete environment-backed execution context and uniform backend-routed
 `list/get/create/update/delete`, and standalone updates. This staged
 implementation does not alter the older `mode`, `inspect`, `runtime`,
 `admin-read` or explicit legacy operations. In particular, the old
