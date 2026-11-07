@@ -28,9 +28,10 @@ Full functional validation of the autonomous `m` source is independently tracked
 
 ### Fresh continuation checkpoint (2026-11-07; current)
 
-- `rumiai-dev/main@5532e88226060f0400ce06813a88d1f9bfd77e07` is the refreshed remote checkpoint; its concurrent OUT-09 task-identity handoff update was fetched and preserved before these edits.
+- `rumiai-dev/main@ea62b55aa5866548f482f26eabc71c13357ee177` is the refreshed remote checkpoint; concurrent OUT-09/OUT-11 workflow handoff updates were fetched and preserved before these edits.
 - `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d`; PR #9 changes only README over tested runtime `ed5ec60...`; P3/P4/J1 and V2 runtime are integrated. Older PR #5/#6 source SHAs recorded below are historical feature checkpoints.
 - `pkg-catalog/main@0b69223a5ebe7bc042aad50012ee8bc7e4a00442`; V2 catalog PR #2 is merged and tree-identical to validated `5928848...`; V2 source feature SHA is `2c0df87a488bfeac6d185336ea5ae5a4ea469c4a` (includes `m-rsudo@v0.1.2`).
+- R1 package source heads refreshed read-only: `m-core/main@fb28e38fb478d0de01f379f6b4b5596c65921b2a`, `m-term/main@d75098655e24ee14e17789a0241a1781386dd75d`, `m-rsudo/main@f17e3826d5eb115cfafeeae7bdb292d53656531d`. Frozen references were fingerprinted only: `rumiai-os/main@be908b6012c9ec01d6c3fa0a4b6bf69a8da29897` and `rumiai-tests/main@4145fa8cdee162f9ba0e76baf5380fa72b6540b9`; do not modify, fetch or execute their contents under the standing freeze.
 - Local evidence sources: P3 continuation `m-os-p3-env-review@7cc3e30392b4a7e7459befa8306056f395a1a123`; A3/A4 workflow bodies were replayed at `6e720be...` locally as detailed in `handoff/m-autonomous-validation.md`. These local branches/results are not remote integration or hosted evidence.
 
 Repository identity checkpoint (2026-11-03): the GitHub source repository
