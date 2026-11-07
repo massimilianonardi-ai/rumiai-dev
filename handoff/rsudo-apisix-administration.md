@@ -46,20 +46,26 @@ traditional-admin REST reads and an incremental M2 discovery extension:
   contents are read. Permanent discovery
   coverage uses synthetic Docker and Podman CLIs through the real module and
   `m`; it does not claim a live container runtime test. Stopped unnamed
-  containers without APISIX-like mounts remain a discovery gap. Running-container YAML
-  admin_listen ports now receive a connect-only probe through that manager in
+  containers without APISIX-like mounts remain a discovery gap. Running-container
+  YAML admin_listen ports receive a connect-only probe through that manager in
   the container's own network namespace. The synthetic manager test confirms
   scope and evidence output; no real Docker/Podman namespace probe is claimed.
+  The same test now validates host and Podman JSON admin listener extraction
+  through the standalone RumiAI `json` command. Discovery validates JSON before
+  querying deployment.admin.admin_listen.ip/port, and does not copy config
+  contents across rsudo or add jq/Python. If remote `json` is unavailable, or
+  JSON validation/query fails, it emits an uncertainty row; JSON snapshots
+  without deployment/admin listener settings yield no endpoint.
 - Host discovery now lists APISIX-matching systemd unit names/descriptions
   and installed unit-file names with their states, while never returning raw
   descriptions. For active loaded units it compares systemd MainPID with the
   observed APISIX nginx-master PID; readable matching cgroup membership adds
   corroboration. This does not prove the loaded source configuration. It parses
-  numeric `admin_listen` IP/port pairs from YAML only
+  numeric `admin_listen` IP/port pairs from YAML and JSON
   and uses connect-only `nc` probes for loopback, wildcard or `ip`-confirmed
   local bind addresses. Remote/unverified binds are reported without probing.
-  Socket reachability does not prove APISIX identity. JSON parsing, stronger
-  stronger service-to-process ownership, correlation of mount sources to host
+  Socket reachability does not prove APISIX identity. Stronger
+  service-to-process ownership, correlation of mount sources to host
   discovery rows and detection of stopped unnamed containers without
   APISIX-like mount paths remain pending.
 - The permanent `apisix-admin-transport.test` passes against its local
