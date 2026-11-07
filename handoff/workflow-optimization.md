@@ -10,7 +10,7 @@ Maintain a long-lived meta-workstream for continuously evaluating and improving 
 ## Current repository revisions
 
 ```text
-rumiai-dev     532257af602a46b66a7dbe787b7d0f49e7256ddd  (verified remote HEAD before this checkpoint write)
+rumiai-dev     8c235e8618accda0c8695ff76a5930d885383326  (verified remote HEAD before this checkpoint write)
 ai-workflow    c9d12ce28f9948fe48625777e4d691dd8b4d5221  (test cases and protocol verified from remote)
 rumiai-os      7d439e961f7bbadd226794ac029e98bdab51d5c2  (remote HEAD checked for comparison)
 rumiai-tests   1e9e47f622bb28d5bbc2aa487fc538507b34cb16  (remote HEAD checked for comparison)
@@ -331,6 +331,8 @@ No ChatGPT Project Instructions or RumiAI canonical documents were changed.
 
 ## Completed
 
+- 2026-11-07: The operator reported that `!aw help` **works** in the new isolated ChatGPT Project configured with a pinned `ai-workflow@c9d12ce` bootstrap. This is a positive **user-reported smoke result**, not an independently inspected transcript: the actual fetched-file trace, command parser path, absence of side effects, latency and token cost were not observed. Do not score an independently verified pass from this feedback alone. Suggested immediate next case: `!aw route -- Progetta e implementa un server` in a fresh chat; expect design+develop classification and no execution.
+
 - 2026-11-07: Prepared and published a reproducible *specification* for bootstrap validation in `ai-workflow@c9d12ce28f9948fe48625777e4d691dd8b4d5221`: `evaluations/test-cases.json` (45 prompts with expected observable behavior and forbidden actions; 24 critical-boundary cases), `evaluations/test-protocol.md` (fresh-chat isolation, paired baseline limits, 12-case initial pilot, scoring, evidence collection, unknown telemetry reporting), and fictional `contexts/example/{blocked-state.md,untrusted-state.md}` fixtures indexed in `routing/index.yaml`. The new files and README/index changes were remote-read and checked for JSON parseability, unique case IDs, pilot ID coverage, fixture references, required output assertions, historical replay gating and explicit non-execution disclosure. This does **not** represent any observed agent routing, end-to-end outcome, production operation or real historical Keycloak replay. Existing RumiAI bootstrap, specifications and product repositories were not changed.
 
 - 2026-11-07: Implemented and remote-verified the operator-approved isolated bootstrap pilot in `massimilianonardi-ai/ai-workflow`. Published the exact-leading `!aw` textual command grammar (including diagnostic-only `route`), a compact `bootstrap.md`, open multi-intent/multimodal intent catalog, selective resolution and context index, reusable workflow-method documents, and a header-first fictional demo state. Corrected experimental `README.md` to point to the new entrypoint without implying activation. Verified the remote HEAD `ad76f16966131337e3c61b391d59fdc5108ffe7e` and ran 32 static/invariant assertions against remote-retrieved files, all passing (links, command boundary, naming, register/fixture, image generation vs understanding, evidence scope). These checks **do not** prove actual LLM intent classification, fresh-chat routing, platform-native mode support, or historical Keycloak/rsudo replay. No RumiAI live bootstrap or product behavior was modified.
@@ -500,6 +502,8 @@ Current implementation was inspected rather than assumed compliant. Existing pri
 The user also requested recovery of an older `m` logging idea for study. Deliberate historical retrieval found the concrete mechanism in `massimilianonardi-ai/m@2a57a29880c2d7a32e18782122062c695fcb1a3a`, especially `var/#_os/m/bin/m-log.lib` and `var/#_os/m/bin/log`. It tracked subprocess depth and exposed `LOG_SUBPROCESS_LEVEL`, `LOG_SUBPROCESS_LEVEL_STEP`, `LOG_SUBPROCESS_LEVEL_MAX` and `LOG_LEVEL_FORCE`, with depth-dependent effective log-level behavior and switch/restore diagnostics. This remains historical design evidence only; current analysis is captured by `todo/log-level-child-propagation-analysis.md` and automatic child-process log-level transformation is deliberately not specified by the current diagnostics contract.
 
 ## Current state
+
+- New ChatGPT Project smoke observation: operator reports `!aw help` working under pinned experimental bootstrap; detailed trace/evidence still unavailable. Proceed with isolated multi-intent routing dry-run next.
 
 
 - The experimental bootstrap has a now-published **evaluation plan**, but remains unvalidated: 45 documented cases, 24 marked critical, a first 12-case pilot, and test-only missing-dependency/untrusted-state fixtures. `historical-01` remains a nonrunnable placeholder until original dated sources are retrieved. The test plan itself has been statically checked; independent model/client trials and RumiAI baseline comparisons have not been performed.
