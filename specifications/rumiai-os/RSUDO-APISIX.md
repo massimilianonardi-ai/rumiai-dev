@@ -60,7 +60,10 @@ candidates, but their filesystems cannot be searched. A running container
 with a failed probe is surfaced as uncertain when manager metadata suggests
 APISIX, and a manager-level partial/unavailable row records incomplete
 coverage. A stopped container whose metadata does not suggest APISIX can be
-missed; mount correlation and container-namespace listener probes are not
+missed; mount-source correlation is not implemented. Running-container YAML
+files receive the same targeted connect-only netcat probe inside that
+container's network namespace, with the manager and full container ID in the
+row. JSON listener extraction and probes for non-YAML sources are not
 implemented. These records are candidates only, not runtime identity.
 
 On hosts with `systemctl`, the inventory includes APISIX-matching loaded unit
@@ -72,7 +75,7 @@ YAML candidates, discovery extracts numeric `port`/`ip` values only beneath
 loopback, wildcard, or an address verified local by `ip`; remote or
 unverified addresses are reported as unprobed. `open`/`not-open` reports
 socket reachability only and does not identify APISIX or an Admin API. JSON
-listener extraction and container-namespace port probes are not implemented.
+listener extraction is not implemented.
 
 For this first increment, successful stdout contains a tab-separated header
 `kind scope state identifier evidence` followed by zero or more candidate
@@ -111,7 +114,7 @@ process, an authorized listener, actual backend support or write readiness.
 
 **Not yet implemented:** service-to-process ownership correlation, JSON
 listener extraction/output, complete container source/mount attribution,
-container-namespace port probes, JSON discovery output, standalone
+JSON discovery output, standalone
 reads/writes and modern write operations. Initial host YAML port probes and
 textual systemd unit candidates are implemented. Initial host and
 Docker/Podman candidate inventory and traditional REST `list/get` support are
