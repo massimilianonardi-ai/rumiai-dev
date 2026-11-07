@@ -123,6 +123,11 @@ Scenarios 1 and 2 have initial direct-checkout smoke evidence on Ubuntu and macO
 
 ## Current state
 
+### Operator C2 decision and deferred privileges (2026-11-07)
+
+- Current canonical specifications now express the four approved policy boundaries, and this handoff owns only remaining unresolved generalized-context interface/migration work and nonprivileged source composition. The former C2 candidate requiring operator agreement was replaced with a settled-decision pointer; C3 still has no claimed implementation.
+- Operator-privileged R2 remote SSH/sudo, protected-host system-service administration, protected-host CA operations and privileged physical portions are **not active scope**; `todo/m-os-operator-privileged-validation.md` alone tracks reactivation. Real local `m-rsudo` commands/menu, ordinary package consumers, and nonprivileged context tests remain active.
+
 ### C2 macOS PoC closure and merged-P2 routing checkpoint (2026-11-06)
 
 - Previously queued [PoC 098 run 42196202367](https://github.com/massimilianonardi-ai/rumiai-dev-PoCs/actions/runs/42196202367), exact test/workflow SHA `29ee99b109ff40e8bf26fe52fa9026a345afcbcc`, is **COMPLETED SUCCESS, 4/4 hosted Ubuntu/macOS jobs**. Verified real macOS raw logs: integrated actual `pkg_integrate` with exact published GeoServer `var/data` descriptor and **synthetic staged useful-root** (job `127819943618`) produced three expected `PASS:` assertions; the separate path/symlink probe (job `127819943925`) also produced three expected `PASS:` assertions. These supersede earlier QUEUED statuses only for this run.
@@ -982,46 +987,14 @@ was migrated to use these exports.
 
 ## Working design / open questions
 
-### C2 candidate: bind host services, authorize CA separately (2026-11-06)
+### C2 operator-approved architecture policy, canonical promotion (2026-11-07)
 
-**Recommended working candidate; explicit operator agreement and G-CONTEXT
-canonical promotion required before runtime changes.**
+The operator accepted four binding boundaries for the generalized `context` design; their **sole normative owners** are now `BOOTSTRAP-ENVIRONMENT.md` (concurrent shell/ordinary-process selections), `STATE-MODEL.md` (unsupported package state fail-closed), `SERVICE-LIFECYCLE.md` (trusted registration-bound host service profile) and `TLS-TRUST.md` (separate CA approval authority and verified profile-bound consumption). Do **not** reopen these decisions as operator questions or treat the prior candidate alternatives below as current competing policies.
 
-1. Preserve two concurrent managed shells selecting different system-profile
-   and logical user-state identities, with no global `current` symlink
-   mutation. For a selected package with static system `var/` access,
-   require a proven upstream data-path adapter, a compatible prepublished
-   view, or an explicit pre-launch failure; never silently read another
-   selected profile's state.
-2. Treat each host-supervised service as a **trusted separately initialized
-   consumer**. Bind its registered service identity, exact concrete, host
-   POSIX account and system profile at authorized installation/registration,
-   then use the same general context resolution engine at trusted service
-   start. Another shell's profile change must not retarget it. Multiple
-   concurrent instances of one facility require distinct qualified
-   supervisor/service identities and an explicit future host-administration
-   contract; present `srv <service>` does not already provide this.
-3. Distinguish administrative **authority to approve/revoke system TLS CAs**
-   from the **approved set consumed** by each validated profile-bound
-   client. An untrusted shell label cannot authorize a CA or service.
-   If profile-specific CA consumption is desired, it must be
-   administered through trusted host permissions, cannot silently
-   union distinct profiles, and needs a coordinated migration of today's
-   `state/system/current` TLS readers and final browser HOME/NSS
-   projections.
-4. Preserve the confirmed user choices (one active context per shell,
-   ordered inline selection/default/preset composition, fail-before-apply,
-   protected inherited values, no per-call symlink generation). Keep the
-   existing documented no-arg reset until a deliberate public migration.
+The current C1 executable `context` behavior is unchanged. C2 still must resolve detailed public syntax, defaults/preset storage, cross-process trusted propagation, existing executable `env` script compatibility, real package-specific `var/` adaptation and library-consumer semantics before C3 can implement it. Approved independent profile selection does not mean every current package already supports profile-local mutable state: adapt and validate or reject the incompatible launch before applying it.
 
-**Open operator choice:** Are host services to remain bound to trusted
-registration-time profiles (rather than the caller shell), while CA
-approval is host-authorized and CA *consumption* follows a verified
-selected system profile? This combined candidate retains independent
-shell selections without allowing arbitrary shell parameters to
-control a privileged host service or trust store. It is **not a
-current rule or API**. C2's syntax, provenance, persistence and
-P4/V2 interfaces are still unsettled; C3 remains blocked.
+The operator also removed **all tests and operations requiring their privileged rights** from current m-os completion. They are owned only by `todo/m-os-operator-privileged-validation.md` until later explicit reactivation; do not schedule remote privileged R2, host-system administration, protected host CA operations or privileged physical tests as active source-composition or validation acceptance. Ordinary unprivileged local `m-rsudo` and package/context work proceeds.
+
 
 ### C2 service/profile separation: acceptance and authority gate (2026-11-06)
 
@@ -1070,9 +1043,7 @@ These constraints must be resolved jointly with the physical
 package/user profile semantics, and protected nested child
 propagation. The goal is coherent normal-path operation without
 forcing the caller to understand internal provider concrete
-identities. **No decision between global-only vs qualified
-multi-service host administration is promoted here**; C2 and
-C3 remain subject to G-CONTEXT and the existing task ownership.
+identities. The approved boundary now fixes **registration-bound host-service profiles**, independent of the caller shell. Qualified multiple-host-service-instance administration is a separate future contract, **not part of the present unprivileged completion**; C2/C3 still require the remaining G-CONTEXT interface and migration work.
 
 ### C2 upstream-specific relocation boundary (2026-11-06)
 
@@ -1080,7 +1051,7 @@ Source and executed launcher analysis narrow—but do not settle—the C2 migrat
 
 1. **GeoServer 3.0.1**: separate program installation (`GEOSERVER_HOME`) and profile-local data (`GEOSERVER_DATA_DIR`) are supported in the exact upstream `startup.sh`; the current `pkg` catalog intentionally uses static `data_dir` routing and has no selected per-profile data binding. Candidate is a coherent, validated launcher/data-path contract under the P2/P4/V2 owner boundary, with failure atomicity and permissions. This is **not** evidence that all GeoServer state is redirectable or that two live instances run safely on shared binaries.
 2. **Keycloak 26.7.3**: merely providing distinct symlink views to a single `kc.sh` is demonstrably insufficient because the exact script follows its own link and derives physical home, `conf` and `lib/quarkus-run.jar`. Its package declares static `var/cache`, `var/conf` and `var/data` and thus requires a stronger compatibility plan than changing PATH or one generic environment variable. Investigate explicit upstream configuration and real runtime/augmentation effects, but do not claim that `--config-file` alone moves Quarkus mutable state.
-3. Preserve the existing system-profile TLS CA/trust and system-service State Instance administrative boundaries. A general caller-selected profile is not an authenticated entitlement or a replacement for host filesystem permissions. The pending product-policy decision remains whether and how multiple concurrent system-profile authorities—including CA and host services—can be active without mutating `system/current`. Do not silently choose global-only degradation or an unverified generic execution-view mechanism.
+3. Preserve the existing system-profile TLS CA/trust and system-service State Instance administrative boundaries. A general caller-selected profile is not an authenticated entitlement or a replacement for host filesystem permissions. The accepted policy fixes independent ordinary-profile selection, separately registered host-service profiles, and authorized CA approval with verified-profile consumption; their safe technical migration away from global `system/current` remains to be designed and verified. Do not silently choose global-only degradation or an unverified generic execution-view mechanism.
 
 **Next gate:** independently reproduce exact upstream launch with **real immutable release assets** and supported Java if feasible, under controlled state and without granting trust/service privileges; validate the behavior and failure cases at the public `m pkg` boundary once the shared pkg writer is available. Resolve C2 public syntax, default/reset transition, authority and protected inheritance through G-CONTEXT before C3. No canonical contract promoted in this work unit.
 
@@ -1094,7 +1065,7 @@ Candidate migration boundaries to resolve against real callers:
 2. **Pre-prepare per-profile execution/state views** from one immutable payload for a compatible package. Exact package identity, command wrappers and library views remain pinned, but the execution path is profile-specific and `var/` links target that profile. PoC 098 proves a path-aware POSIX launcher case; it does **not** prove compatibility for physical-path-canonicalizing executables, absolute-path data accesses, binaries with internal self-path lookup, JNI/JAR/module roots, service registration, upgrades, permissions or lifetime/cleanup. No view must be created per `context` invocation.
 3. **Use existing package launcher/state-path adaptation for programs whose mutable access is explicitly redirectable** without any per-profile program view. This preserves a single immutable root when the upstream command can accept managed HOME/conf/data paths, but does not repair packages with unredirectable relative/absolute `var/` accesses. This option does not authorize arbitrary shell `env` sourcing into the activating caller.
 
-Cross-cutting authority remains separate: system TLS CA approval/selection, NSS projection at the *final effective* browser HOME, provider defaults, system service State Instances and actual host account permissions must have explicit trusted-consumer semantics. A user-supplied profile label is not security authorization. For consumers with two simultaneous system profiles, define whether system CA trust is per-profile under authenticated authority, or globally administered regardless of shell-local selection. **That is a genuine policy/product choice still open.**
+Cross-cutting authority remains separate: system TLS CA approval/selection, NSS projection at the *final effective* browser HOME, provider defaults, system service State Instances and actual host account permissions must have explicit trusted-consumer semantics. A user-supplied profile label is not security authorization. For consumers with two simultaneous system profiles, define whether system CA trust is per-profile under authenticated authority, or globally administered regardless of shell-local selection. **The operator has now decided:** CA approval/revocation stays under authorized host administration, while an integrated client consumes only its verified selected system profile's approved CA set. Technical migration and verification remain open, not the policy.
 
 **Next design validation:** inventory representative *real* installed packages with `var/` descriptors versus ordinary HOME/conf-aware launchers; identify which can use fixed-root or view-based access without altering their upstream binary, and run an authentic two-profile launch/negative test after P2/P4/V2 integration ownership permits it. Evaluate the trusted CA and service consequence before promoting a new profile/identity API. Keep the current `STATE-MODEL` (global `system/current`) and `BOOTSTRAP-ENVIRONMENT` (no-arg reset) authoritative until coordinated G-CONTEXT promotion, and C3 blocked.
 
@@ -2594,7 +2565,7 @@ its working schema, migration decisions or validation state here.
 
 **Previous source-extraction next action (completed):** The operator rejected the synthetic test, which was removed forward. The source repositories were populated with actual assets; the initial release/catalog/install composition is now implemented and hosted-validated, as recorded above.
 
-**Immediate next R1/R2 boundary:** Preserve exact hosted Ubuntu/macOS 2/2 R1 release-consumer PASS for both `v0.1.1` (run `42097660573`) and the guarded `m-rsudo/v0.1.2` (run `42200139984`); the older `v0.1.1` negative test failure remains separate, immutable evidence. Only genuinely uncovered nonprivileged cases, such as simultaneous selected real package versions, warrant additional local tests. R2 needs an explicitly authorized controlled SSH/sudo target before any real remote privileged/interactive execution, and cannot be labelled PASS from the local PTY. Distinguish hosted, operator-reported and physical evidence.
+**Immediate next R1-only boundary:** Preserve exact hosted Ubuntu/macOS 2/2 R1 release-consumer PASS for both `v0.1.1` (run `42097660573`) and guarded `m-rsudo/v0.1.2` (run `42200139984`); the old `v0.1.1` negative result is immutable separate evidence. Continue only truly uncovered **nonprivileged local** package-source, menu/PTY/source-injection and multi-version consumer cases. Privileged remote SSH/sudo R2 was removed from active work and deferred to `todo/m-os-operator-privileged-validation.md`; never infer remote PASS from local PTY. Keep hosted, operator and physical evidence distinct.
 
 **Additional context/library work:** Validate the published `m`
 sh/Java library exports on the real hosted workflow and then through
