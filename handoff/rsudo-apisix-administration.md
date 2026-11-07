@@ -1,7 +1,7 @@
 # rsudo APISIX and Keycloak module replacement
 
 Status: Active
-Updated: 2026-11-04
+Updated: 2026-11-07
 
 ## Goal
 
@@ -17,6 +17,36 @@ The operator explicitly **replaces the previous universal automatic source-certi
 4. Retain bounded *operation-local* safety checks (correct selected target/namespace, protected credentials, authenticated/authorized API, safe file/snapshot publication and concurrency). **Do not** require unauthenticated Control API plugins, an omniscient source resolver, or global discovery before executing an explicitly targeted valid operation.
 
 Immediate milestones: M0 synchronize these decisions in task state/current contract; M1 implement read-only host filesystem/process discovery with permanent synthetic-boundary tests; M2 Docker/Podman + service/listener correlation; M3 explicit environment and internal router; thereafter the initial read-only/CRUD REST backend and file/snapshot backends separately. Every delivered increment must be truthfully marked partial/validated by frozen evidence. The old multi-day Work-unit C introspection search remains historical research, no longer a global blocking gate.
+
+## Latest implementation checkpoint (2026-11-07)
+
+The earlier M0/M1/M3 checkpoint below was advanced on remote main by concurrent
+work after it was written. Before this REST increment, remote heads were read
+and isolated worktrees were based on those heads. The current implementation
+adds only the first explicit traditional-admin REST reads:
+
+- `list` and `get` route internally to the traditional REST adapter for
+  explicitly selected host scope. Supported collections are routes, services
+  and upstreams. It requires the operator-provided Admin URL origin and a
+  protected remote header file; local validation rejects URL userinfo, path,
+  query and fragment before passing the URL as an rsudo argument. Remote
+  validation repeats the checks. Curl preserves TLS verification, disables
+  proxy/redirect use, and successful response JSON is passed through.
+- `create`, `update`, `delete`, `apply` and `request` fail explicitly as not
+  implemented and never fall back to legacy. Standalone reads/writes,
+  pagination, URL IPv6 literals, version negotiation and live APISIX identity
+  verification remain unsupported. Operation-specific legacy compatibility
+  functions remain as before.
+- The permanent `apisix-admin-transport.test` passes against its local
+  synthetic HTTP fixture through the real `m` loader and curl, substituting
+  only rsudo's remote boundary. This is not a live APISIX, SSH target or CI
+  validation. No deployment environment was modified.
+- Immediate next: run/review focused regression and full scoped CI at frozen
+  revisions; implement M2 Docker/Podman inventory independently; expand the
+  selected traditional REST read contract only with verified pagination and
+  real-server coverage; then implement standalone file/snapshot adapters and
+  backend-specific safe mutations. Discovery/source attribution research is
+  not a global prerequisite for explicitly selected operations.
 
 ## Implementation checkpoint: operator-owned discovery/context (2026-11-07)
 
