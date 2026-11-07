@@ -52,7 +52,7 @@ All categories below must be accounted for; distinct supported-host behavior rem
 | M10 | recursive dependency planner | `pkg depend`, `pkg requirement list`, ordering, incompatible, no/ambiguous providers | Real shared Node provider dependency planning and deduplication PASS Ubuntu `m@1e1ce599`; incompatibility/ambiguity/multi-provider PENDING |
 | M11 | facility/provider semantics | `pkg provider default`, `pkg provider bind`, `pkg requirement resolve`, changing provider, typed cmd/env, runtime context, precedence, ambiguity | Real default/bind/requirement resolution, collision rejection, explicit ownership transition, consumer execution, unbind and unset PASS Ubuntu `m@1e1ce599`; multiple providers/env and ambiguity PENDING |
 | M12 | portable service lifecycle | real published service provider install/default/`srv start/stop`, restart semantics, PID/state/logs, idempotence, negative cases | **PASS normal real service start/responsive status/stop/idempotent stop Ubuntu `m@1e1ce599`** using published electron-web-control; restart, stale metadata, fault/ownership cases PENDING |
-| M13 | host service supervision | `srv host user` registration/start/restart/stop/remove on Linux systemd & macOS launchd; system registration with explicit account/admin under controlled host permissions | **PENDING**; explicit host capability/permissions needed for host-system positive path |
+| M13 | unprivileged host-user supervision | `srv host user` native registration/start/restart/stop/remove on supported systemd/launchd under controlled ordinary accounts; system-level privileged positive tests are excluded to `todo/m-os-operator-privileged-validation.md` | Genuine unprivileged Linux/macOS hosted checks exist at specified S revisions; full integrated-revision user-host acceptance PENDING. Privileged host-system outcomes remain deferred/unexecuted, never PASS |
 | M14 | TLS/CA/NSS & browser integration | CA add/list/remove, shared NSS synchronization, tamper fail closed, actual browser HTTPS acceptance/refusal | physical Ubuntu Chrome/Chromium PASS **on older `m@47e6055`**; refresh proportional evidence for current revision pending |
 | M15 | complete command/manual coverage and negative validation | every `bin/sys` public interface, status errors, manual coverage, platform differences, consistency | GitHub Ubuntu current basic smoke PASS; full coverage **PENDING** |
 
@@ -65,6 +65,11 @@ Also inventory current repository adapter set (GitHub, Node.js, Chrome, Chromium
 - Historic physical Ubuntu browser HTTPS/CA trust work on `m@47e6055`; separate older Electron NSS test, not transferred to current revision.
 
 ## Current state
+
+### Operator-authorized nonprivileged validation scope (2026-11-07)
+
+- The accepted generalized-context boundaries now live in canonical `BOOTSTRAP-ENVIRONMENT`, `STATE-MODEL`, `SERVICE-LIFECYCLE` and `TLS-TRUST`; C2 retains unresolved syntax/migration and C3 has no implementation PASS.
+- Former R2 privileged remote SSH/sudo, positive `srv host system`, real protected-host CA administration and privileged portions of reference-host physical validation are **removed** from the active M01–M15 acceptance plan, and retained only in `todo/m-os-operator-privileged-validation.md` for later explicit operator activation. Nonprivileged `srv host user`, local `m-rsudo` paths, isolated CA/NSS and normal reference-host tests remain in-scope. Earlier recorded unexecuted privileged cases and hosted job evidence are historical revision-specific evidence, not new assignments.
 
 ### P3 published dual-provider pinned-selector correction (2026-11-06)
 
@@ -342,7 +347,7 @@ The operator explicitly authorized **skipping the unexecuted A1–A4 GitHub Acti
 ## Next action
 
 1. P3 owner: check only the queued macOS jobs in exact-source [runs 42244745827](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42244745827) and [42244911629](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42244911629) for the private pinned selector and public command projection fix staged in [draft m-os PR #5](https://github.com/massimilianonardi-ai/m-os/pull/5). Preserve Ubuntu real-provider and lightweight PASS at exact listed revisions. If results justify, reconcile current `m-os/master` forward and accept only the pinned-provider correction. Continue M07/M09/M10/M11 authentic multiple-version/typed-env/negative and failure-state cases separately; a two-provider positive path is not the entire P3 matrix.
-2. Extend M12 beyond its successful real-service normal path to stale-PID, restart/error paths and explicit host user/system supervision M13. Host-system mutations require controlled account/permissions and must not touch unrelated production services.
+2. Extend M12 portable service safety/restart/error behavior and M13 **unprivileged `srv host user`** supervised lifecycle on ordinary test-owned accounts. Privileged `srv host system` tests are no longer active work; see `todo/m-os-operator-privileged-validation.md`.
 3. Expand uncovered M01–M06 and M14–M15 cases (pager, localization, errors, State Instances, HTTPS, archive backends and browser TLS on current m) across supported hosts. Keep macOS queued/cancelled separate; uncovered rows PENDING.
 4. Once earlier development/hosted validation is stable, request a **short public-command** physical Ubuntu confirmation plan for the full target without reinstalling already tested unrelated packages or manually cloning their source repositories.
 
@@ -350,4 +355,4 @@ The operator explicitly authorized **skipping the unexecuted A1–A4 GitHub Acti
 
 - Legacy `rumiai-os` and `rumiai-tests` are frozen by explicit current user instruction; no old-suite modification or execution.
 - A real positive service path exists through published `electron-web-control` on Ubuntu; next unknowns are extended lifecycle failures, host supervisor integration and additional platforms, not basic provider availability.
-- Physical host system-user supervisor validation needs a controlled pre-existing account and explicit administrative context; don't alter production services or host security from an inferred test requirement.
+- Privileged host-system service/SSH-sudo/real protected-host CA or physical administration is **outside this active validation handoff** and deferred to `todo/m-os-operator-privileged-validation.md`. Do not schedule, request credentials for, or count those scenarios as active M01–M15 gates. Unprivileged host-user and nonprivileged physical paths remain active.
