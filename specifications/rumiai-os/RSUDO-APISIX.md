@@ -51,6 +51,18 @@ identity. Scanning `/` excludes virtual system directories and common
 container storage, and inaccessible subtrees may be omitted. The operation
 never reads or returns the contents of configuration files or credentials.
 
+When the remote host has Docker or Podman, discovery also lists containers
+in every manager state. Running containers are probed through the manager
+with a fixed read-only `sh` program that searches for the same configuration
+filenames; returned config paths are qualified by the full container ID.
+Stopped containers whose image or name contains `apisix` remain visible as
+candidates, but their filesystems cannot be searched. A running container
+with a failed probe is surfaced as uncertain when manager metadata suggests
+APISIX, and a manager-level partial/unavailable row records incomplete
+coverage. A stopped container whose metadata does not suggest APISIX can be
+missed; mount correlation, service-manager discovery and listener probes are
+not implemented. These records are candidates only, not runtime identity.
+
 For this first increment, successful stdout contains a tab-separated header
 `kind scope state identifier evidence` followed by zero or more candidate
 rows with exactly those five columns. An empty inventory is successful if the
@@ -79,16 +91,18 @@ endpoints or credentials. The read-only result includes
 `adapter` and relevant nonsecret selectors; the credential file
 is represented only as configured/not-configured. Supported internal
 adapter identifiers are `rest`, `snapshot`, `file-yaml`,
-`file-json` and `none`. The adapter selection is not yet a
-fully implemented administration router. Invalid inputs use
+`file-json` and `none`. Generic `list/get` currently route only the explicit
+host traditional-admin context to REST; other adapter operations fail
+explicitly. Invalid inputs use
 distinct new-context status values 1–11 as described in the operational manual.
 The context is a **local declaration**: it does not establish a running
 process, an authorized listener, actual backend support or write readiness.
 
-**Not yet implemented:** comprehensive host/service correlation, Admin
-listener probes, Docker and Podman inventory, JSON discovery output,
-standalone reads/writes and modern write operations. Initial traditional
-REST `list/get` support is described below. This staged implementation does
+**Not yet implemented:** service-manager correlation, Admin listener probes,
+complete container source/mount attribution, JSON discovery output,
+standalone reads/writes and modern write operations. Initial host and
+Docker/Podman candidate inventory and traditional REST `list/get` support are
+described above/below. This staged implementation does
 not alter the older `mode`, `inspect`, `runtime`,
 `admin-read` or explicit legacy operations. In particular, the old
 no-argument runtime resolver may reject multiple candidates; the independent
