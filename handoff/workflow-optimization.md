@@ -1,7 +1,7 @@
 # workflow-optimization
 
 Status: Active
-Updated: 2026-11-06
+Updated: 2026-11-07
 
 ## Goal
 
@@ -10,13 +10,15 @@ Maintain a long-lived meta-workstream for continuously evaluating and improving 
 ## Current repository revisions
 
 ```text
-rumiai-dev    c72ce881e2d653595d048c4f3af290ce6cd8cf44  (last checked canonical `DEVPLAN.md` adoption commit; fresh remote HEAD is required on resume)
-rumiai-os     99ff4358104c2abf934a22d0bc186ec72dc43a7d  (current implementation inspected for diagnostic behavior; not modified)
-rumiai-tests  8a3c840dce33627cea622f1d147cef97a301bc57  (current log tests inspected; not modified)
-pkg-catalog   f0cdadb09ced5ca26c7745b5996de89cab24f7c1  (current remote HEAD; not involved in this correction)
+rumiai-dev     2d1cdeb8d74668c60215efb6c10cdf1b64d6a8e8  (verified remote HEAD before this checkpoint write)
+ai-workflow    4bf39c17c7c09c4435f24255dd640aa86b19f1cd  (experimental README/comparison read back)
+rumiai-os      7d439e961f7bbadd226794ac029e98bdab51d5c2  (remote HEAD checked for comparison)
+rumiai-tests   1e9e47f622bb28d5bbc2aa487fc538507b34cb16  (remote HEAD checked for comparison)
+pkg-catalog    f0cdadb09ced5ca26c7745b5996de89cab24f7c1  (older checkpoint, not re-verified for this step)
 ```
 
-Fresh remote HEAD retrieval remains mandatory before future analysis or writes.
+Verify remote HEADs before every future write. `ai-workflow` remains
+experimental and has no active bootstrap contract.
 
 ## Applicable canonical sources
 
@@ -282,6 +284,9 @@ The next safe milestone is designing a minimal executable bootstrap route and a 
 
 ## Completed
 
+- 2026-11-07: Completed a preliminary, explicitly non-binding routing/authority comparison in the operator-created `ai-workflow` repository. It was empty at preflight; committed a non-active README and `evaluations/routing-protocols.md` with hierarchy vs typed graph, direct-state/fresh-prompt traces, security/authority failures, a provisional header, falsifiable acceptance cases, and validation limits. GitHub readback verified `ai-workflow@4bf39c17c7c09c4435f24255dd640aa86b19f1cd`. This is a **design walkthrough**, not an executed resolver, historical Keycloak replay, provider integration or approved schema. Existing RumiAI rules, specifications and product code were unchanged. Concurrent `rumiai-dev@2d1cdeb` touched a chat export, not the handoff; it was preserved forward-only.
+
+
 - 2026-11-06: Completed cross-document review of `README.md`, `RULES.md` and `CONSISTENCY-GATE.md`: authority/read-order, normative ownership, gate dependencies and final checklist were compared. Normalized remaining abbreviated specification paths in gate §§8 and 12 (commit `557f81516ab16bc64d7e709ffcba33abafb08993`). No contradictory authority or circular prerequisite was found in the reviewed documents; no implementation or runtime tests were needed for these documentation-only edits.
 
 - 2026-11-06: Cross-reviewed README/RULES/CONSISTENCY-GATE ownership and clarified the diagnostics specification path in the gate (commit `0ed4e728ae6f85c9979832ef64e720f0b7436e69`). Other abbreviated specification references remain for subsequent incremental cleanup.
@@ -445,6 +450,8 @@ The user also requested recovery of an older `m` logging idea for study. Deliber
 
 ## Current state
 
+**2026-11-07 experiment checkpoint:** `ai-workflow` contains an explicitly inactive `README.md` and `evaluations/routing-protocols.md`. Neither candidate routing policy has been selected or tested in an independent clean chat; no executable bootstrap, resolver, source-pinned historical Keycloak/rsudo replay or agent-adapter validation has been completed. The current RumiAI bootstrap remains authoritative for baseline work.
+
 The original GitHub chat mirror is now disabled at the user's explicit request. Its pre-existing transcript is retained only as a non-authoritative, frozen archive; the active current chat mirror has moved to Google Drive under `ChatGPT/chats/2026-10-14-chat-mirror/`. Google Drive Markdown and the PNG asset were uploaded and verified; the local cumulative chat snapshot progressed to `0005`, with `0006` next. No unattended updates, PDF or invisible intermediate buffers are authorized. Evaluate multi-turn reliability and image rendering from real use.
 
 The new code-maintainability and scope gate is current canonical workflow; it must be exercised on future implementation tasks rather than treated as a claim that legacy code already complies.
@@ -473,7 +480,7 @@ Active task routing now uses resumable responsibility rather than topic labels. 
 
 ## Next action
 
-**Priority after operator clarification 2026-11-07:** Design and experimentally validate an independent agent-agnostic bootstrap repository with a strict separation of stable workflow/behavior documents from mutable contextual state documents. First compare header-first workflow/state reference resolution and alternative routing models using direct-state resume and fresh prompt cases; preserve the RumiAI current bootstrap as baseline, and reconstruct the Keycloak/rsudo failure. The operator-created `ai-workflow` repository is confirmed to exist but remains empty and experimental. Evaluate alternatives and backtest them before promoting new canonical contracts. Existing procedural checks below remain secondary evidence, not the redesign method or an authorization to implement a piecemeal patch.
+**Priority after 2026-11-07 comparison:** Build a minimal **isolated fixture** for the candidate header-first lookup and two alternative routing policies; do not select either as current policy yet. First retrieve the original Keycloak/rsudo operator prompt, task state and frozen source revisions, then exercise direct state resume, fresh unscoped prompt, routine low-risk correction, cross-context scope, stale/missing source and conflict scenarios with actual observed retrieval logs. Compare against unchanged RumiAI bootstrap and record real operator-path evidence, interruptions, wrong assumptions and context cost. An independent opt-in Project test and eventual promotion require the separately established decision/validation gates.
 
 Previously recorded work: next exercise `DEVPLAN.md` on a genuinely well-specified RumiAI software task. Check source-first sufficiency, dependency and work-unit completeness, non-conflicting agent ownership, clean-chat resumability and the planning-only boundary. The under-specified `devplan astronave` conversational smoke test is recorded above; neither case alone proves future agent execution.
 
