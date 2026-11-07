@@ -98,8 +98,17 @@ traditional-admin REST reads and an incremental M2 discovery extension:
   list/get selection, no unrelated-resource leakage, missing IDs, duplicate
   IDs, malformed JSON, symlink rejection and preservation of the source file.
   This is local synthetic evidence, not live APISIX, SSH, Docker or Podman
-  validation. Relevant local tests currently pass; CI status for the new
-  revisions has not been observed.
+  validation. On the published revisions, `apisix-file-json-read.test`,
+  `apisix-context.test`, `apisix-discovery-host.test` and
+  `apisix-admin-transport.test` each PASS locally through `m`; the product
+  library passes `sh -n` and all three repositories pass `git diff --check`.
+  Exact revisions: product `rumiai-os@c75bc597267d8b158a19f5ce92009c55efdda2b4`,
+  manual `rumiai-os@496cc2577a20e75f88b4bef99f6134c30637b2a3`, test
+  `rumiai-tests@57f72789ecd5d6bd250972b6f706c5d904513dff`, registration
+  `rumiai-tests@fc58175f83f1a1a6641aaf16414378b617f8d856`, contract
+  `rumiai-dev@b80a276afde3209cee552a6580bccfc1a94cef62` and this handoff
+  `rumiai-dev@6ab2e37f89bef5d57fb67c62262eb658caef0855`. GitHub CI status
+  checks for these revisions are empty; CI is not claimed as PASS.
 - YAML-file reads, standalone API snapshot reads, all new writes, pagination,
   and broader resource/provider coverage remain pending. No unsafe legacy
   fallback is added. Next: inspect the new scoped CI status, then extend the
