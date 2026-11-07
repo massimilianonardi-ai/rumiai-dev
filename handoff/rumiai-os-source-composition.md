@@ -29,7 +29,7 @@ Full functional validation of the autonomous `m` source is independently tracked
 ### Fresh continuation checkpoint (2026-11-07; current)
 
 - `rumiai-dev/main@170a8264f48690c005cd2bf0cf7876cc0e99e3e8` was the verified remote preflight before this handoff refresh; all intervening remote commits were incorporated before writing.
-- `m-os/master@ed5ec60e1c6289f93f68ab03e1eb71736aab6051`; P3/P4/J1 and V2 runtime are integrated. Older PR #5/#6 source SHAs recorded below are historical feature checkpoints.
+- `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d`; PR #9 changes only README over tested runtime `ed5ec60...`; P3/P4/J1 and V2 runtime are integrated. Older PR #5/#6 source SHAs recorded below are historical feature checkpoints.
 - `pkg-catalog/main@0b69223a5ebe7bc042aad50012ee8bc7e4a00442`; V2 catalog PR #2 is merged and tree-identical to validated `5928848...`; V2 source feature SHA is `2c0df87a488bfeac6d185336ea5ae5a4ea469c4a` (includes `m-rsudo@v0.1.2`).
 - Local evidence sources: P3 continuation `m-os-p3-env-review@7cc3e30392b4a7e7459befa8306056f395a1a123`; A3/A4 workflow bodies were replayed at `6e720be...` locally as detailed in `handoff/m-autonomous-validation.md`. These local branches/results are not remote integration or hosted evidence.
 
@@ -2608,10 +2608,10 @@ The suggested record separates system profile, logical user-state, locale, packa
 
 #### Current M01–M15 next-work ledger (2026-11-07)
 
-The following nonprivileged work remains actionable against exact `m-os/master@ed5ec60e1c6289f93f68ab03e1eb71736aab6051` and `pkg-catalog/main@0b69223a5ebe7bc042aad50012ee8bc7e4a00442`, subject to each owning handoff. A1–A4 hosted workflow dispatch remains explicitly deferred; this ledger does not override that instruction.
+The following nonprivileged work remains actionable against current `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d` (README-only commit over tested runtime `ed5ec60...`) and `pkg-catalog/main@0b69223a5ebe7bc042aad50012ee8bc7e4a00442`, subject to each owning handoff. A1–A4 hosted workflow dispatch remains explicitly deferred; this ledger does not override that instruction.
 
 1. **A2 rollback failure injection:** local public-command injection is now PASS at PR #10's exact source above. Keep hosted A1–A4 workflow dispatch deferred; cross-host A2 acceptance remains PENDING.
-2. **M12 service negative/restart cases:** one local public negative now passes at PR #10's exact candidate: an unconfigured provider fails before service/runtime publication. Continue allowed nonprivileged portable and host-user lifecycle coverage for real start failure, restart/stop state integrity and unrelated-process safety. Exclude host-system privilege.
+2. **M12 service negative/restart cases:** local public negatives now pass at PR #10's exact candidate: missing provider fails before publication, malformed live runtime metadata preserves the unrelated process and state, and a valid foreign-owner process remains running. Continue allowed nonprivileged lifecycle coverage for real-provider start failure, restart and state integrity. Exclude host-system privilege.
 3. **M14 current-runtime browser TLS/NSS:** current A4 local replay proved CA/NSS operations but explicitly left host Chrome/Chromium launch integration pending. Revalidate only against an exact current runtime in an authorized disposable environment; historical browser evidence at `m@47e6055` is not transferable.
 4. **M01–M15 residual platform/state/manual/network cases and M15 real library consumers:** inventory exact gaps before execution, use current public commands and authentic consumers, and avoid frozen `rumiai-tests`.
 5. **I1 then I2:** after C2/C3 decisions and applicable implementation work, freeze exact runtime/catalog/package revisions, complete the active nonprivileged M01–M15 ledger, then perform ordinary authorized reference-host checks. Privileged work remains only in its operator TODO.
@@ -2629,7 +2629,7 @@ its working schema, migration decisions or validation state here.
 
 **Previous source-extraction next action (completed):** The operator rejected the synthetic test, which was removed forward. The source repositories were populated with actual assets; the initial release/catalog/install composition is now implemented and hosted-validated, as recorded above.
 
-**Current next shared-package boundary:** P3/P4/J1 and V2 runtime are merged on `m-os/master@ed5ec60...`; V2 catalog promotion is complete at `pkg-catalog/main@0b69223...`, and exact merged-master consumers passed. Continue the uncovered nonprivileged M01–M15 ledger and contract-ready C2 work; keep C3 implementation gated until grammar, defaults and propagation are specified and promoted. Preserve current catalog V1 additions and frozen legacy repositories.
+**Current next shared-package boundary:** P3/P4/J1 and V2 runtime are merged on `m-os/master@a78a24bd...` (README-only advance over tested runtime `ed5ec60...`); V2 catalog promotion is complete at `pkg-catalog/main@0b69223...`, and exact merged-master consumers passed. Continue the uncovered nonprivileged M01–M15 ledger and contract-ready C2 work; keep C3 implementation gated until grammar, defaults and propagation are specified and promoted. Preserve current catalog V1 additions and frozen legacy repositories.
 
 ### Historical next-action material below (superseded)
 
