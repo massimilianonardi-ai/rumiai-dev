@@ -116,15 +116,19 @@ discovery extension:
   synthetic API-shape evidence, not live APISIX filtering, SSH, Docker or
   Podman validation. On the published revisions, `apisix-file-json-read.test`,
   `apisix-context.test`, `apisix-discovery-host.test` and
-  `apisix-admin-transport.test` each PASS locally through `m`; the product
-  library passes `sh -n` and all three repositories pass `git diff --check`.
-  Exact revisions: product `rumiai-os@c75bc597267d8b158a19f5ce92009c55efdda2b4`,
-  manual `rumiai-os@496cc2577a20e75f88b4bef99f6134c30637b2a3`, test
-  `rumiai-tests@57f72789ecd5d6bd250972b6f706c5d904513dff`, registration
+  `apisix-admin-transport.test`, now covering snapshot list/get, passes through
+  real `m`, `json` and curl against its local synthetic endpoint. Together with
+  `apisix-file-json-read.test`, `apisix-context.test` and
+  `apisix-discovery-host.test`, all four focused tests PASS on the published
+  revisions. The product library passes `sh -n` and all three repositories
+  pass `git diff --check`. Exact current revisions: product
+  `rumiai-os@23150cc99c9266315eb9170f132e2c5c9aa41403`, manual
+  `rumiai-os@11a00f0413613e0424bb2662041a19f32376cb1b`, test
+  `rumiai-tests@1e86da666e002197b6cb1cc50dcbda45ea2ebf45`, test registration
   `rumiai-tests@fc58175f83f1a1a6641aaf16414378b617f8d856`, contract
-  `rumiai-dev@b80a276afde3209cee552a6580bccfc1a94cef62` and this handoff
-  `rumiai-dev@6ab2e37f89bef5d57fb67c62262eb658caef0855`. GitHub CI status
-  checks for these revisions are empty; CI is not claimed as PASS.
+  `rumiai-dev@88916f0098e8d541064d8fdfc6a3b3fa82bfdb2d` and this handoff
+  `rumiai-dev@8bd875d17125618867e21c8f18c46cb28f66025a`. GitHub CI status
+  checks are empty for the new commits; CI is not claimed as PASS.
 - YAML-file reads, all new writes, pagination, and broader resource/provider
   coverage remain pending. No unsafe legacy
   fallback is added. Next: inspect the new scoped CI status, then extend the
