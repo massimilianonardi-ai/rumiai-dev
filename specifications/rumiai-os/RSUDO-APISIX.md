@@ -87,9 +87,9 @@ process, an authorized listener, actual backend support or write readiness.
 
 **Not yet implemented:** comprehensive host/service correlation, Admin
 listener probes, Docker and Podman inventory, JSON discovery output,
-complete environment-backed execution context and uniform backend-routed
-`list/get/create/update/delete`, and standalone updates. This staged
-implementation does not alter the older `mode`, `inspect`, `runtime`,
+standalone reads/writes and modern write operations. Initial traditional
+REST `list/get` support is described below. This staged implementation does
+not alter the older `mode`, `inspect`, `runtime`,
 `admin-read` or explicit legacy operations. In particular, the old
 no-argument runtime resolver may reject multiple candidates; the independent
 new `discovery` is intentionally allowed to report all of them.
@@ -193,13 +193,46 @@ This provisional operation does **not** prove the caller selected the running AP
 
 Invalid local arguments and remote preconditions produce distinct non-zero statuses in the range 44–51 with non-sensitive diagnostics. An unavailable/unsupported remote `curl` is a prerequisite failure, not a reason to fall back to legacy behavior.
 
+## Traditional REST list/get (initial read-only backend)
+
+The generic public `rsudo apisix list routes|services|upstreams` and
+`rsudo apisix get routes|services|upstreams <id>` use the internal REST
+adapter only when the caller explicitly selects `RSUDO_APISIX_SCOPE=host`
+and `RSUDO_APISIX_DEPLOYMENT=traditional-admin`. The operator supplies an
+`RSUDO_APISIX_ADMIN_URL` origin and an absolute remote
+`RSUDO_APISIX_HEADER_FILE`. The origin is restricted to HTTP or HTTPS and a
+hostname/port authority: userinfo, path, query and fragment are rejected
+locally before the value is passed to rsudo, and validated again remotely.
+The ID alphabet is ASCII letters, digits, dot, underscore, tilde and hyphen;
+`.` and `..` are rejected. Collection pagination and API-version negotiation
+are not implemented in this initial adapter.
+
+The remote header file must be an ordinary readable non-symlink file with
+mode 0600 and exactly one newline-terminated `X-API-KEY` header. Curl uses
+normal HTTPS trust verification, disables proxy use and redirects, and has
+connect/total timeouts. Successful JSON is passed through unchanged; HTTP
+errors return nonzero without writing the response body to stdout. These
+checks protect the transport but do not prove that the URL belongs to the
+selected APISIX process or that credentials are authorized.
+
+Other scopes/adapters fail explicitly. Generic `create`, `update`, `delete`,
+`apply` and `request` currently fail as unimplemented; none falls back to a
+legacy function. Existing operation-specific compatibility functions retain
+their previous forwarding behavior. The permanent transport test exercises
+these reads against a local synthetic HTTP endpoint through the product
+module, not a live APISIX installation or deployed rsudo target.
+
 ## Current limits and security boundary
 
-The current read-only resolvers do not prove which `-c`/profile or effective configuration is active or bind the Admin listener to a selected running process. The no-operand conventional host/Docker and narrowly process-prefix-derived same-namespace host/Docker discovery, plus the optional explicit Docker selector, scope process observation but cannot establish comprehensive installation discovery or authoritative source/listener attribution. It cannot be used by a new mutating backend router until live identity and safe update conditions are independently verified.
+The current read-only resolvers do not prove which `-c`/profile or effective configuration is active or bind the Admin listener to a selected running process. The no-operand conventional host/Docker and narrowly process-prefix-derived same-namespace host/Docker discovery, plus the optional explicit Docker selector, scope process observation but cannot establish comprehensive installation discovery or authoritative source/listener attribution. This does not globally block operations with explicit operator context; each operation must enforce the safety checks appropriate to its selected backend, target and effect. The initial REST reads above remain read-only and do not certify process identity.
 
 Mode inspection does not emit API keys or the selected configuration contents. Credentials and target data remain subject to `RSUDO.md` and `DIAGNOSTICS.md`. The legacy APISIX functions retain previously documented unsafe JSON/request behavior, and their existence is not evidence that modern secure mutation is complete.
 
-The complete mode-routed Admin API, standalone file-driven mutation, standalone API-driven snapshot mutation, generic resource API, simple `list`/`get` conveniences and simplified shell recipes are **not yet implemented** by the current safe APISIX backend. The explicit low-level `admin-read` endpoint above does not imply that they exist. They are pending development, not current product guarantees.
+The complete mode-routed Admin API, standalone file-driven and API-driven
+reads/mutations, generic writes, pagination, and simplified shell recipes
+are **not yet implemented** by the current safe APISIX backend. The initial
+traditional REST `list/get` support above is partial and does not imply
+those capabilities. They are pending development, not current guarantees.
 
 ## Required mechanical protection
 
