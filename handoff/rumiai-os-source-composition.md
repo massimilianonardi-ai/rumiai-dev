@@ -130,6 +130,13 @@ Scenarios 1 and 2 have initial direct-checkout smoke evidence on Ubuntu and macO
 
 ## Current state
 
+### Integrated P3/P4/J1 source checkpoint (2026-11-07)
+
+- `m-os/master@1df35f70e8841c831ecb5813106937fb382581f4` now contains merged P3, P4 and standalone JSON/J1. Exact-source final-master hosted acceptance passed: P3 current matrix 6/6 ([42401852595](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42401852595)), P3 lifecycle/config 3/3 ([42401852426](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42401852426)), provider protection 2/2 ([42401852487](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42401852487)), P4 derived map/provider lifecycle 2/2 ([42401870421](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42401870421)), and J1/JSONTestSuite 2/2 ([42401889106](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42401889106)). This closes those bounded hosted units, not the generalized context design or whole-plan acceptance.
+- V2 runtime was merged to master as `m-os@ed5ec60e1c6289f93f68ab03e1eb71736aab6051` through PR #8. Merge tree `7d267e0c...` is identical to candidate `168b8656...`. Exact merged-master hosted runs at catalog head `5928848...` pass: V2 matrix 16/16, mixed-schema 2/2, Java/Maven 2/2, mk/jsc 2/2, Node.js 2/2 and nonprivileged Ollama service/host-user 2/2; run details are in the validation and pkg-definition handoffs. Catalog PR #2 is merged; current runtime/catalog tree preservation was independently reviewed. Preserve P2 snapshot/exact-root semantics and P4 map behavior.
+- Accepted C2 policy decisions are canonical. Still open: public `context` grammar, default/preset persistence, trusted child-process propagation, package `env` compatibility, actual catalog `var/` adaptations and ordinary library/provider consumer semantics. C3 implementation must wait for those contracts.
+- All privileged operator acceptance remains deferred to `todo/m-os-operator-privileged-validation.md`; A1–A4 hosted workflows remain paused. Do not interpret old historical “P3/P4 open” entries below as current status.
+
 ### Operator C2 decision and deferred privileges (2026-11-07)
 
 - Current canonical specifications now express the four approved policy boundaries, and this handoff owns only remaining unresolved generalized-context interface/migration work and nonprivileged source composition. The former C2 candidate requiring operator agreement was replaced with a settled-decision pointer; C3 still has no claimed implementation.
@@ -2578,7 +2585,11 @@ its working schema, migration decisions or validation state here.
 
 **Previous source-extraction next action (completed):** The operator rejected the synthetic test, which was removed forward. The source repositories were populated with actual assets; the initial release/catalog/install composition is now implemented and hosted-validated, as recorded above.
 
-**Immediate next shared-package boundary:** scoped P3 acceptance is now complete on current PR #5 head `446de83af5e449734da0ec6f9e0f9b6c70f94ba6`: exact-source run 42371530867 passes 6/6 and referenced-provider/failure-state run 42371809045 attempt 3 passes 2/2 on Ubuntu/macOS. PR #5 remains open/draft and `master` is unchanged. P4 is the serialized next `pkg` writer; branch from the exact PR head, implement the canonical derived map, and retain the offline-ordering design as working state until a bounded solution is proven. After P4, reconcile V2 against the integrated P2+P3+P4 source while preserving the advanced `pkg-catalog/pkg-schema-v2@2c0df87...` `m-rsudo@v0.1.2` definition.
+**Current next shared-package boundary:** P3/P4/J1 and V2 runtime are merged on `m-os/master@ed5ec60...`; the exact V2 candidate tree and public consumers passed, and catalog jobs are being re-pinned for merged-master SHA acceptance before catalog promotion. Then continue nonprivileged A2/M15 and contract-ready C2 work; prepare a concrete context contract from settled decisions and keep C3 implementation gated until grammar, defaults and propagation are sufficiently specified. Preserve current catalog V1 additions and frozen legacy repositories.
+
+### Historical next-action material below (superseded)
+
+The following earlier extraction and implementation instructions are retained as history and must not override the current integrated checkpoint above. P3/P4 are implemented and merged; J1 is integrated; runtime V2 is merged. C2/C3 contract work and remaining M01–M15 evidence remain active.
 
 **Additional context/library work:** Validate the published `m`
 sh/Java library exports on the real hosted workflow and then through
