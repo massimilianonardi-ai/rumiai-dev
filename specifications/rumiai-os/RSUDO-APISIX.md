@@ -261,24 +261,22 @@ errors return nonzero without writing the response body to stdout. These
 checks protect the transport but do not prove that the URL belongs to the
 selected APISIX process or that credentials are authorized.
 
-For explicit host-scoped `traditional-admin` context, `create resource
-absolute-remote-json-file` issues POST to the resource collection,
-`update resource id absolute-remote-json-file` issues PUT to the selected ID,
-and `delete resource id` issues DELETE to that ID. These methods match the
+For explicit host-scoped `traditional-admin` context, `create resource` reads
+its JSON body from stdin and issues POST to the resource collection;
+`update resource id` reads its complete JSON body from stdin and issues PUT to
+the selected ID; `delete resource id` issues DELETE to that ID. These methods match the
 documented [Apache APISIX Admin API](https://apisix.apache.org/docs/apisix/admin-api/).
-POST may assign a random ID; update requires the complete intended resource
-JSON because partial PATCH is not implemented.
-The pre-existing remote body file for create/update must be an ordinary,
-readable, non-symlink file with mode 0600. Its contents are passed through
-curl's `--data-binary @file` support, not shell arguments or diagnostics;
-APISIX validates JSON and resource schema. Successful HTTP response bodies
-are written to stdout; HTTP error bodies are not. Delete does not request
+POST may assign a random ID; partial PATCH is not implemented. The body
+travels on the normal rsudo target-stdin channel, and curl reads it from stdin;
+the payload is not an argument, temporary file or diagnostic. APISIX validates
+JSON and resource schema. Successful HTTP response bodies are written to
+stdout; HTTP error bodies are not. Delete does not request
 forced deletion, so APISIX may reject resources that remain referenced.
 The protected header-file and HTTPS/proxy/redirect controls above apply.
 This is a direct Admin API write, not a transactional client-side
 read/modify/write, and does not establish that the endpoint belongs to a
 particular running process. The permanent transport test exercises
-POST/PUT/DELETE and protected body-file delivery through real `m` and curl
+POST/PUT/DELETE and protected stdin body delivery through real `m` and curl
 against a local synthetic HTTP fixture, not a live APISIX or SSH deployment.
 
 ## Standalone API snapshot list/get
