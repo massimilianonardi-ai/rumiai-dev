@@ -10,8 +10,8 @@ Maintain a long-lived meta-workstream for continuously evaluating and improving 
 ## Current repository revisions
 
 ```text
-rumiai-dev     81dc3f3bc8e785a75c8859e304cf550e6eb80ae0  (verified remote HEAD before this checkpoint write)
-ai-workflow    ad76f16966131337e3c61b391d59fdc5108ffe7e  (bootstrap pilot + README correction, remote read back)
+rumiai-dev     532257af602a46b66a7dbe787b7d0f49e7256ddd  (verified remote HEAD before this checkpoint write)
+ai-workflow    c9d12ce28f9948fe48625777e4d691dd8b4d5221  (test cases and protocol verified from remote)
 rumiai-os      7d439e961f7bbadd226794ac029e98bdab51d5c2  (remote HEAD checked for comparison)
 rumiai-tests   1e9e47f622bb28d5bbc2aa487fc538507b34cb16  (remote HEAD checked for comparison)
 pkg-catalog    f0cdadb09ced5ca26c7745b5996de89cab24f7c1  (older checkpoint, not re-verified for this step)
@@ -331,6 +331,8 @@ No ChatGPT Project Instructions or RumiAI canonical documents were changed.
 
 ## Completed
 
+- 2026-11-07: Prepared and published a reproducible *specification* for bootstrap validation in `ai-workflow@c9d12ce28f9948fe48625777e4d691dd8b4d5221`: `evaluations/test-cases.json` (45 prompts with expected observable behavior and forbidden actions; 24 critical-boundary cases), `evaluations/test-protocol.md` (fresh-chat isolation, paired baseline limits, 12-case initial pilot, scoring, evidence collection, unknown telemetry reporting), and fictional `contexts/example/{blocked-state.md,untrusted-state.md}` fixtures indexed in `routing/index.yaml`. The new files and README/index changes were remote-read and checked for JSON parseability, unique case IDs, pilot ID coverage, fixture references, required output assertions, historical replay gating and explicit non-execution disclosure. This does **not** represent any observed agent routing, end-to-end outcome, production operation or real historical Keycloak replay. Existing RumiAI bootstrap, specifications and product repositories were not changed.
+
 - 2026-11-07: Implemented and remote-verified the operator-approved isolated bootstrap pilot in `massimilianonardi-ai/ai-workflow`. Published the exact-leading `!aw` textual command grammar (including diagnostic-only `route`), a compact `bootstrap.md`, open multi-intent/multimodal intent catalog, selective resolution and context index, reusable workflow-method documents, and a header-first fictional demo state. Corrected experimental `README.md` to point to the new entrypoint without implying activation. Verified the remote HEAD `ad76f16966131337e3c61b391d59fdc5108ffe7e` and ran 32 static/invariant assertions against remote-retrieved files, all passing (links, command boundary, naming, register/fixture, image generation vs understanding, evidence scope). These checks **do not** prove actual LLM intent classification, fresh-chat routing, platform-native mode support, or historical Keycloak/rsudo replay. No RumiAI live bootstrap or product behavior was modified.
 
 - 2026-11-07: Completed a preliminary, explicitly non-binding routing/authority comparison in the operator-created `ai-workflow` repository. It was empty at preflight; committed a non-active README and `evaluations/routing-protocols.md` with hierarchy vs typed graph, direct-state/fresh-prompt traces, security/authority failures, a provisional header, falsifiable acceptance cases, and validation limits. GitHub readback verified `ai-workflow@4bf39c17c7c09c4435f24255dd640aa86b19f1cd`. This is a **design walkthrough**, not an executed resolver, historical Keycloak replay, provider integration or approved schema. Existing RumiAI rules, specifications and product code were unchanged. Concurrent `rumiai-dev@2d1cdeb` touched a chat export, not the handoff; it was preserved forward-only.
@@ -499,6 +501,9 @@ The user also requested recovery of an older `m` logging idea for study. Deliber
 
 ## Current state
 
+
+- The experimental bootstrap has a now-published **evaluation plan**, but remains unvalidated: 45 documented cases, 24 marked critical, a first 12-case pilot, and test-only missing-dependency/untrusted-state fixtures. `historical-01` remains a nonrunnable placeholder until original dated sources are retrieved. The test plan itself has been statically checked; independent model/client trials and RumiAI baseline comparisons have not been performed.
+
 - The opt-in `ai-workflow` bootstrap pilot is now **published**, not activated. Entry: `ai-workflow/bootstrap.md` at `ad76f169`. Its commands and routing catalog are experimental; all 32 static checks passed and no real clean-chat route has yet been observed. The next action is an independent agent/client test and historical Keycloak replay, not more speculative taxonomy expansion.
 
 **2026-11-07 experiment checkpoint:** `ai-workflow` contains an explicitly inactive `README.md` and `evaluations/routing-protocols.md`. Neither candidate routing policy has been selected or tested in an independent clean chat; no executable bootstrap, resolver, source-pinned historical Keycloak/rsudo replay or agent-adapter validation has been completed. The current RumiAI bootstrap remains authoritative for baseline work.
@@ -531,7 +536,7 @@ Active task routing now uses resumable responsibility rather than topic labels. 
 
 ## Next action
 
-**Next milestone after accepted experimental bootstrap:** Validate `ai-workflow@ad76f169` through clean, independent opt-in client runs: exact `!aw` detection and rejection, diagnostic-only `route`, zero/low-cost simple requests, multi-intent development/validation, image output vs image input routing, explicit demo-state resume, unknown/missing state and authority/conflict handling. Capture actual requested/fetched sources, missed/extra clarifications, misrouting and token cost, with the existing RumiAI workflow unchanged as baseline. Then reconstruct the original Keycloak/rsudo prompt, historical state and source revisions before replay; do not substitute current corrective documents. Keep any new activation or formal promotion behind an explicit decision and measured success.
+**Immediate next action after test-suite publication:** Execute and log the 12-case clean-chat pilot in an isolated, opt-in agent/client setup using `ai-workflow@c9d12ce`. Distinguish host-native interception and image/attachment prerequisites from routing failures. Run only applicable natural-language cases under the unchanged RumiAI baseline, compare observable outcomes/clarifications and source-load costs, and independently score every critical boundary. If no real client execution is available, mark cases `not_run` rather than claiming passes. Expand to the other suite cases after an evidence review. The historical Keycloak/rsudo test is blocked until the original operator prompt, task state and contemporary source revisions have been independently recovered; no current corrected documents may substitute for them. Activation/promotion needs explicit authorization and measured success.
 
 Previously recorded work: next exercise `DEVPLAN.md` on a genuinely well-specified RumiAI software task. Check source-first sufficiency, dependency and work-unit completeness, non-conflicting agent ownership, clean-chat resumability and the planning-only boundary. The under-specified `devplan astronave` conversational smoke test is recorded above; neither case alone proves future agent execution.
 
