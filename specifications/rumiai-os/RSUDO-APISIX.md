@@ -57,10 +57,10 @@ rows with exactly those five columns. An empty inventory is successful if the
 scan runs and no candidate is found. A host may yield multiple rows for the
 same installation when different profiles or data files are found; this is
 intentional, not an ambiguity error. A process candidate alone is not proof
-of a running, selected APISIX gateway. The additional `discovery` status
-codes are 71 (invalid argument count), 72 (nonabsolute root), 73 (find
-unavailable), 74 (unavailable root); rsudo transport failures retain their
-own status. Partial coverage is not proof that other instances do not exist.
+of a running, selected APISIX gateway. The local `discovery` status codes are 1 (invalid argument count) and
+2 (nonabsolute root); the remote scanner uses 1 (invalid root),
+2 (unavailable root) and 3 (find unavailable). The caller preserves
+remote rsudo status as an explicit transport result. Partial coverage is not proof that other instances do not exist.
 
 The first-stage `rsudo apisix context` / `rsudo_mod_apisix_context`
 command parses caller-owned environment without remote discovery, changing
@@ -81,7 +81,7 @@ is represented only as configured/not-configured. Supported internal
 adapter identifiers are `rest`, `snapshot`, `file-yaml`,
 `file-json` and `none`. The adapter selection is not yet a
 fully implemented administration router. Invalid inputs use
-distinct status values 75–81 as described in the operational manual.
+distinct new-context status values 1–11 as described in the operational manual.
 The context is a **local declaration**: it does not establish a running
 process, an authorized listener, actual backend support or write readiness.
 
