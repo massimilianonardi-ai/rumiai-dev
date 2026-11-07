@@ -64,7 +64,8 @@ is inspected; container environment values are never requested. A running contai
 with a failed probe is surfaced as uncertain when manager metadata suggests
 APISIX, and a manager-level partial/unavailable row records incomplete
 coverage. A stopped container whose metadata does not suggest APISIX can be
-missed; mount-source correlation is not implemented. Running-container YAML
+missed; correlation of mount sources to host-discovered files is not
+implemented. Running-container YAML
 files receive the same targeted connect-only netcat probe inside that
 container's network namespace, with the manager and full container ID in the
 row. JSON listener extraction and probes for non-YAML sources are not
