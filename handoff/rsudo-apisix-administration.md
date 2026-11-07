@@ -41,21 +41,25 @@ traditional-admin REST reads and an incremental M2 discovery extension:
   manager states, scans running container filesystems with a static `find`
   program, reports stopped APISIX-looking containers from name/image evidence,
   and emits manager uncertainty rows when enumeration or probes are partial.
-  Permanent discovery coverage uses synthetic Docker and Podman CLIs through
-  the real module and `m`; it does not claim a live container runtime test.
-  Stopped unnamed/custom-image candidates, mount-source attribution and
-  service-to-process ownership remain unresolved. Running-container YAML
+  Stopped candidates are also found through mount destination metadata; no
+  container environment values or file contents are read. Permanent discovery
+  coverage uses synthetic Docker and Podman CLIs through the real module and
+  `m`; it does not claim a live container runtime test. Stopped unnamed
+  containers without APISIX-like mounts remain a discovery gap. Running-container YAML
   admin_listen ports now receive a connect-only probe through that manager in
   the container's own network namespace. The synthetic manager test confirms
   scope and evidence output; no real Docker/Podman namespace probe is claimed.
 - Host discovery now lists APISIX-matching systemd unit names/descriptions
   and installed unit-file names with their states, while never returning raw
-  descriptions. It parses numeric `admin_listen` IP/port pairs from YAML only
+  descriptions. For active loaded units it compares systemd MainPID with the
+  observed APISIX nginx-master PID; readable matching cgroup membership adds
+  corroboration. This does not prove the loaded source configuration. It parses
+  numeric `admin_listen` IP/port pairs from YAML only
   and uses connect-only `nc` probes for loopback, wildcard or `ip`-confirmed
   local bind addresses. Remote/unverified binds are reported without probing.
-  Socket reachability and textual unit matches do not prove APISIX identity or
-  ownership. JSON parsing, container port probes and systemd MainPID/cgroup
-  correlation remain pending.
+  Socket reachability does not prove APISIX identity. JSON parsing, stronger
+  service-to-process ownership, mount-source reporting and detection of stopped
+  unnamed containers without APISIX-like mount paths remain pending.
 - The permanent `apisix-admin-transport.test` passes against its local
   synthetic HTTP fixture through the real `m` loader and curl, substituting
   only rsudo's remote boundary. This is not a live APISIX, SSH target or CI
