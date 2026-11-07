@@ -2604,3 +2604,10 @@ remaining standalone `m` catalog adapters, permanent test-suite realignment
 and coordinated legacy `mk` removal. A transient HTTP 403 from the upstream
 Node.js GitHub API caused the first macOS live install attempt to fail; its
 second attempt passed. No physical production-host deployment was performed.
+
+
+### P4 implementation follow-up (2026-11-07)
+
+- P4 work is implemented on draft PR #7, exact current branch head `m-os@3ef1a713fa5bcf31d0ee8b4f5d282ffc253c675d`, based on scoped-accepted P3 `446de83...`; master remains unchanged. It adds the derived facility map, provider-local offline ordering from installed repository snapshots, default projection, stage/backup reconciliation and hooks at install/uninstall/package-default/facility-default mutations. The unit test passes locally on the earlier implementation head; current exact-source hosted integration is the remaining P4 gate.
+- First hosted run 42374443146 failed both hosts at exit 57. A follow-up fixture substitution to PWC failed run 42374829124 at exit 16 because PWC v0.1.4 is compatibility 1. Exact pinned catalog review confirmed Electron Web Control v0.1.4 and v0.1.5 both declare compatibility 2; the test was restored to the authentic Electron releases. Product/test head is now `3ef1a713...`, runner pin commit is `pkg-catalog/m-os-completion-p4-ci@5b6dd71...`; its hosted result has not yet been observed. Treat P4 as PENDING, retain PR #7 draft, and do not integrate while current exact-source evidence is absent.
+- **Current next action:** retrieve the run for runner commit `5b6dd71...`; inspect exact job/step outcomes and fix any source/test defect forward-only. Once both hosted operating systems pass on the same exact source, complete PR review and scoped P4 closeout, then reconcile the deferred V2 `pkg-install.lib.sh`/manual overlap on the composed P2+P3+P4 source while preserving `pkg-schema-v2@2c0df87...` and its `m-rsudo@v0.1.2` descriptor. C2 syntax/migration decisions remain open and C3 remains gated; J1 integration and final M01–M15 acceptance remain separate.
