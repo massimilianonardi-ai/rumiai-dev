@@ -43,8 +43,11 @@ traditional-admin REST reads and an incremental M2 discovery extension:
   and emits manager uncertainty rows when enumeration or probes are partial.
   Permanent discovery coverage uses synthetic Docker and Podman CLIs through
   the real module and `m`; it does not claim a live container runtime test.
-  Stopped unnamed/custom-image candidates, mounts, service-manager
-  process ownership and container-namespace listener probes remain unresolved.
+  Stopped unnamed/custom-image candidates, mount-source attribution and
+  service-to-process ownership remain unresolved. Running-container YAML
+  admin_listen ports now receive a connect-only probe through that manager in
+  the container's own network namespace. The synthetic manager test confirms
+  scope and evidence output; no real Docker/Podman namespace probe is claimed.
 - Host discovery now lists APISIX-matching systemd unit names/descriptions
   and installed unit-file names with their states, while never returning raw
   descriptions. It parses numeric `admin_listen` IP/port pairs from YAML only
