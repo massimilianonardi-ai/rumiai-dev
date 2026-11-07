@@ -41,8 +41,9 @@ traditional-admin REST reads and an incremental M2 discovery extension:
   manager states, scans running container filesystems with a static `find`
   program, reports stopped APISIX-looking containers from name/image evidence,
   and emits manager uncertainty rows when enumeration or probes are partial.
-  Stopped candidates are also found through mount destination metadata; no
-  container environment values or file contents are read. Permanent discovery
+  Stopped candidates are also found through mount source/destination metadata;
+  candidate rows include those paths. No container environment values or file
+  contents are read. Permanent discovery
   coverage uses synthetic Docker and Podman CLIs through the real module and
   `m`; it does not claim a live container runtime test. Stopped unnamed
   containers without APISIX-like mounts remain a discovery gap. Running-container YAML
@@ -58,8 +59,9 @@ traditional-admin REST reads and an incremental M2 discovery extension:
   and uses connect-only `nc` probes for loopback, wildcard or `ip`-confirmed
   local bind addresses. Remote/unverified binds are reported without probing.
   Socket reachability does not prove APISIX identity. JSON parsing, stronger
-  service-to-process ownership, mount-source reporting and detection of stopped
-  unnamed containers without APISIX-like mount paths remain pending.
+  stronger service-to-process ownership, correlation of mount sources to host
+  discovery rows and detection of stopped unnamed containers without
+  APISIX-like mount paths remain pending.
 - The permanent `apisix-admin-transport.test` passes against its local
   synthetic HTTP fixture through the real `m` loader and curl, substituting
   only rsudo's remote boundary. This is not a live APISIX, SSH target or CI
