@@ -274,6 +274,12 @@ Treat "project", "task" and "chat" as names that describe certain context entiti
 
 **Next experiment:** Propose a small, explicit header format and a separate behavior-document protocol, then run routing/resumption examples (including Keycloak/rsudo) while measuring misrouting, stale state, duplication and unnecessary workflow reload. Do not turn this example into current RumiAI normative requirements or add a second metadata system to `rumiai-dev` yet.
 
+### Experimental repository created by operator (2026-11-07)
+
+The operator reports creation of `massimilianonardi-ai/ai-workflow`. Connected GitHub metadata independently confirms this repository exists, with default branch `main` and repository size 0 at inspection. It is the designated **separate experimental repository** for the proposed agent-agnostic bootstrap, reusable workflow protocols and parameterized contextual state documents. No working experimental bootstrap or agreed document schema exists there yet; do not infer activation, completeness or current RumiAI authority from repository creation.
+
+The next safe milestone is designing a minimal executable bootstrap route and a structured state-document header with explicit workflow/state references; validate direct-state resumption, routing, authority precedence, missing-source behavior and opt-in isolation before asking the operator to point a real ChatGPT Project bootstrap to it. Preserve current RumiAI canonical workflow unchanged for baseline.
+
 ## Completed
 
 - 2026-11-06: Completed cross-document review of `README.md`, `RULES.md` and `CONSISTENCY-GATE.md`: authority/read-order, normative ownership, gate dependencies and final checklist were compared. Normalized remaining abbreviated specification paths in gate §§8 and 12 (commit `557f81516ab16bc64d7e709ffcba33abafb08993`). No contradictory authority or circular prerequisite was found in the reviewed documents; no implementation or runtime tests were needed for these documentation-only edits.
@@ -467,7 +473,7 @@ Active task routing now uses resumable responsibility rather than topic labels. 
 
 ## Next action
 
-**Priority after operator clarification 2026-11-07:** Design and experimentally validate an independent agent-agnostic bootstrap repository with a strict separation of stable workflow/behavior documents from mutable contextual state documents. First compare header-first workflow/state reference resolution and alternative routing models using direct-state resume and fresh prompt cases; preserve the RumiAI current bootstrap as baseline, and reconstruct the Keycloak/rsudo failure. No new repo is yet created. Evaluate alternatives and backtest them before promoting new canonical contracts. Existing procedural checks below remain secondary evidence, not the redesign method or an authorization to implement a piecemeal patch.
+**Priority after operator clarification 2026-11-07:** Design and experimentally validate an independent agent-agnostic bootstrap repository with a strict separation of stable workflow/behavior documents from mutable contextual state documents. First compare header-first workflow/state reference resolution and alternative routing models using direct-state resume and fresh prompt cases; preserve the RumiAI current bootstrap as baseline, and reconstruct the Keycloak/rsudo failure. The operator-created `ai-workflow` repository is confirmed to exist but remains empty and experimental. Evaluate alternatives and backtest them before promoting new canonical contracts. Existing procedural checks below remain secondary evidence, not the redesign method or an authorization to implement a piecemeal patch.
 
 Previously recorded work: next exercise `DEVPLAN.md` on a genuinely well-specified RumiAI software task. Check source-first sufficiency, dependency and work-unit completeness, non-conflicting agent ownership, clean-chat resumability and the planning-only boundary. The under-specified `devplan astronave` conversational smoke test is recorded above; neither case alone proves future agent execution.
 
