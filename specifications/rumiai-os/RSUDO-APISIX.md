@@ -52,11 +52,15 @@ container storage, and inaccessible subtrees may be omitted. The operation
 never reads or returns the contents of configuration files or credentials.
 
 When the remote host has Docker or Podman, discovery also lists containers
-in every manager state. Running containers are probed through the manager
+in every manager state. For stopped containers it examines only mount source
+and destination metadata to find APISIX configuration mount candidates. Running
+containers are probed through the manager
 with a fixed read-only `sh` program that searches for the same configuration
 filenames; returned config paths are qualified by the full container ID.
-Stopped containers whose image or name contains `apisix` remain visible as
-candidates, but their filesystems cannot be searched. A running container
+Stopped containers whose image or name contains `apisix`, or whose inspected
+mount points expose an APISIX configuration path, remain visible as candidates,
+but their filesystems cannot be searched. Only mount source/destination metadata
+is inspected; container environment values are never requested. A running container
 with a failed probe is surfaced as uncertain when manager metadata suggests
 APISIX, and a manager-level partial/unavailable row records incomplete
 coverage. A stopped container whose metadata does not suggest APISIX can be
@@ -68,8 +72,11 @@ implemented. These records are candidates only, not runtime identity.
 
 On hosts with `systemctl`, the inventory includes APISIX-matching loaded unit
 names/descriptions and installed unit-file names with their reported state.
-Descriptions are used only to match and are not returned. This is a textual
-service candidate, not proof that a unit owns an observed process. For host
+Descriptions are used only to match and are not returned. For active loaded
+units, the reported MainPID is compared with APISIX nginx-master process
+evidence from `ps`; readable procfs cgroup membership is an additional
+correlation when it matches the unit ControlGroup. This does not prove which
+APISIX source configuration the process loaded. For host
 YAML candidates, discovery extracts numeric `port`/`ip` values only beneath
 `admin_listen`. It uses `nc` for a TCP connect-only probe when the bind is
 loopback, wildcard, or an address verified local by `ip`; remote or
@@ -112,7 +119,7 @@ distinct new-context status values 1–11 as described in the operational manual
 The context is a **local declaration**: it does not establish a running
 process, an authorized listener, actual backend support or write readiness.
 
-**Not yet implemented:** service-to-process ownership correlation, JSON
+**Not yet implemented:** stronger service-to-process ownership evidence, JSON
 listener extraction/output, complete container source/mount attribution,
 JSON discovery output, standalone
 reads/writes and modern write operations. Initial host YAML port probes and
