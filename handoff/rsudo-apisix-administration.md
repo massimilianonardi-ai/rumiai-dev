@@ -7,6 +7,17 @@ Updated: 2026-11-04
 
 Replace the incomplete existing rsudo APISIX administration module with a safe, complete shell administration API across APISIX deployment modes, while retaining the previous implementation as explicitly named legacy source. Also preserve the existing Keycloak module under a legacy name and reserve the original module name for its new implementation. Keep both responsibilities separate from rsudo SSH/sudo execution.
 
+## Operator correction and authorized implementation sequence (2026-11-07)
+
+The operator explicitly **replaces the previous universal automatic source-certification prerequisite** with this workflow:
+
+1. `rsudo apisix discovery` is an independent, remote **read-only inventory**: find APISIX configuration files and correlate best-effort `ps`/procfs, service-manager, listener probes, Docker and Podman data. Return **all** plausible candidates (including multiple, stopped, and partially attributable instances), with provenance and uncertainty, rather than rejecting ambiguous multi-instance hosts.
+2. The **operator** selects the target instance, deployment mode and relevant endpoints/paths explicitly via shell environment variables. The legacy `rsudo_mod_apisixlegacy_set_auth_vars` is compatibility evidence, not an acceptable secret-management implementation. Discovery does not initialize or alter the operator's environment.
+3. A **single** modern `rsudo-mod-apisix.lib.sh` provides the same public resource verbs across internal traditional REST, standalone file YAML/JSON and standalone API snapshot adapters. Do not silently fall back to unsafe legacy operations.
+4. Retain bounded *operation-local* safety checks (correct selected target/namespace, protected credentials, authenticated/authorized API, safe file/snapshot publication and concurrency). **Do not** require unauthenticated Control API plugins, an omniscient source resolver, or global discovery before executing an explicitly targeted valid operation.
+
+Immediate milestones: M0 synchronize these decisions in task state/current contract; M1 implement read-only host filesystem/process discovery with permanent synthetic-boundary tests; M2 Docker/Podman + service/listener correlation; M3 explicit environment and internal router; thereafter the initial read-only/CRUD REST backend and file/snapshot backends separately. Every delivered increment must be truthfully marked partial/validated by frozen evidence. The old multi-day Work-unit C introspection search remains historical research, no longer a global blocking gate.
+
 ## Current repository revisions
 
 - rumiai-dev: a02c9485ea1c3895271b80480dc6bab549731493 (observed pre-checkpoint head; active handoff and concurrent Keycloak/documentation work preserved)
