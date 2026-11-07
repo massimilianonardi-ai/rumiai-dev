@@ -132,10 +132,16 @@ discovery extension:
   list/get, missing and duplicate IDs, malformed YAML and record filtering
   against the two pinned APISIX images. In this workspace Docker is absent, so
   the test SKIPs before invoking either APISIX parser; parser behavior remains
-  unvalidated here. Existing `apisix-file-json-read.test` PASSes with real `m`
-  and `json`, as separate evidence. Update this checkpoint with exact
-  published revisions; the handoff remains the active task-state source and
-  does not self-reference its own commit.
+  unvalidated here. On the published tree, `apisix-file-json-read.test`,
+  `apisix-context.test`, `apisix-discovery-host.test` and
+  `apisix-admin-transport.test` PASS; the Docker-dependent parser test SKIPs.
+  The product library and parser test pass `sh -n`, and the product/test
+  commits pass `git show --check`. Exact tested revisions: product and manual
+  `rumiai-os@7dab721c5dc0967ee64a15597e4f46d843f340ab`, permanent test
+  `rumiai-tests@747efc24f8452c8830827b43475f2a8bef08889c`, and contract
+  `rumiai-dev@47831a2d4906b156c2cf5959d57c8e7a5e11be14`. This handoff remains
+  the active task-state source and does not self-reference its own commit. CI
+  status was not checked.
 - Next: run `apisix-parser-live.test` on a Docker-enabled host, then continue
   with backend-specific safe mutations and provider coverage as separately
   tested increments.
