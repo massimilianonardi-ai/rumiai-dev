@@ -36,10 +36,10 @@ discovery extension:
   validation repeats the checks. Curl preserves TLS verification, disables
   proxy/redirect use. REST response JSON is passed through; snapshot JSON is
   filtered locally. File JSON is staged privately and filtered locally.
-- `create`, `update`, `delete`, `apply` and `request` fail explicitly as not
-  implemented and never fall back to legacy. **This statement is historical**:
+- `apply` fails explicitly as not implemented and never falls back to legacy.
+  **The earlier request implementation statement is historical**:
   a later continuation checkpoint below implements `create/update/delete`
-  for host-scoped traditional REST using request bodies on stdin. YAML-file
+  and a generic `request` for host-scoped traditional REST. YAML-file
   reads and file/snapshot writes,
   pagination, URL IPv6 literals, version negotiation and live APISIX identity
   verification remain unsupported. Operation-specific legacy compatibility
@@ -86,6 +86,32 @@ discovery extension:
   snapshot publication. Discovery/source attribution research is not a global
   prerequisite for explicitly selected operations.
 
+### Continuation checkpoint — generic traditional REST request
+
+- The public `rsudo_mod_apisix_request relative-admin-path [method]` now
+  routes to the explicitly selected host `traditional-admin` REST adapter.
+  It appends a caller-selected relative path beneath the fixed
+  `/apisix/admin/` prefix, rejects leading/trailing or repeated slashes,
+  `.`/`..` segments, query/fragment syntax and characters outside a restricted
+  ASCII segment alphabet, and permits GET, POST, PUT or DELETE (GET default).
+  POST/PUT bodies remain on stdin; GET/DELETE send no body. Protected
+  credential-file and curl TLS/proxy/redirect behavior is shared with typed
+  CRUD, and unsupported backend/context/method cases fail without legacy
+  fallback. APISIX remains responsible for endpoint authorization and schema.
+- The permanent transport test now covers generic GET/POST, stdin delivery,
+  traversal rejection and unsupported method rejection through real curl and
+  `m` with only the rsudo boundary synthetic. The test, `sh -n` and
+  `git diff --check` passed. Frozen implementation revisions are
+  `rumiai-os@2157a312d95dd71c0fda3feda200df6e19069942`,
+  `rumiai-tests@b6b485e177caf29f9f7ae019097f1e29938606bc`, and contract
+  `rumiai-dev@59f9beb1a00bf80de1d635dfcfe47949e7e868ec`. This is not live
+  APISIX, SSH or CI validation.
+- Next: implement file-backed changes only after defining full-document
+  validation, atomic replacement, metadata preservation and external-writer
+  concurrency behavior. The standalone `json` command supports query and
+  validation only; do not use it as a document mutation engine. Run YAML parser
+  coverage on Docker-enabled infrastructure and inspect scoped CI revisions.
+
 ### Continuation checkpoint — traditional REST create/update/delete via stdin
 
 - The generic `create/update/delete` router now implements the first write
@@ -94,7 +120,8 @@ discovery extension:
   reads the request body from stdin and sends POST to the collection;
   `update resource id` reads the complete intended JSON body from stdin and
   sends PUT to that ID; `delete resource id` sends DELETE without a body or
-  force option. `apply` and `request` remain unimplemented. File-YAML,
+  force option. `apply` remains unimplemented. Generic `request` is
+  implemented for the same explicit host traditional REST context. File-YAML,
   file-JSON and standalone snapshot mutations explicitly fail; there is no
   legacy fallback.
 - The body stays off command arguments and remote temporary files: rsudo
@@ -115,13 +142,11 @@ discovery extension:
   APISIX YAML parser behavior remains unvalidated. Shell syntax and
   `git diff --check` passed. No live APISIX, SSH target, CI, or deployment
   validation is claimed; no deployment environment was modified.
-- Next: use the available `json` command for JSON data handling where
-  appropriate while implementing independently safe file-YAML and
-  standalone-snapshot mutations; preserve complete-document validation,
-  atomic publication and concurrency controls for file-backed writes, and
-  prevent snapshot updates from replacing unrelated resources or stale state.
-  Also run the YAML parser test on a Docker-enabled host and inspect scoped CI
-  for the frozen revisions.
+- Next: implement independently safe file-YAML and standalone-snapshot
+  mutations; preserve complete-document validation, atomic publication and
+  concurrency controls for file-backed writes, and prevent snapshot updates
+  from replacing unrelated resources or stale state. Also run the YAML parser
+  test on a Docker-enabled host and inspect scoped CI for the frozen revisions.
 
 ### Continuation checkpoint — standalone JSON and API snapshot list/get
 
