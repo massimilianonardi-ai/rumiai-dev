@@ -377,7 +377,7 @@ The operator explicitly authorized **skipping the unexecuted A1–A4 GitHub Acti
 ## Next action
 
 1. V2 runtime/catalog promotion is complete at `m-os/master@ed5ec60...` and `pkg-catalog/main@0b69223...`; all allowed exact merged-master hosted consumer checks are green.
-2. Continue the uncovered nonprivileged M01–M15 ledger on exact current master: A2 rollback failure injection, M12 service error/restart cases, current-m browser TLS, missing state/manual/network/platform cases and M15 real library consumers. Do not dispatch the deferred A1–A4 hosted workflows.
+2. Continue the uncovered nonprivileged M01–M15 ledger on the exact integrated candidate: prioritize M12 real published-provider failure/ownership/lifecycle scenarios when an authorized execution host is available; M14 browser TLS when a real browser is available; remaining state, manual, network and platform cases; and M15 behavioral command/manual review and real library consumers. Current-candidate local A2 rollback, A3 transfer, A4 CA/NSS and core technical-command checks are recorded above. Do not dispatch the deferred A1–A4 hosted workflows.
 3. After catalog promotion and contract-ready C2/C3 work, run the complete applicable M01–M15 evidence matrix pinned to resulting runtime/catalog/releases. Proceed to I2 only when ordinary authorized reference-host conditions are available. Keep privileged work solely in `todo/m-os-operator-privileged-validation.md`.
 
 ## Blockers / open questions
