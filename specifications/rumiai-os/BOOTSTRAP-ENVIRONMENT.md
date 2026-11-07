@@ -194,6 +194,16 @@ external `exec`, and therefore does not transfer shell functions
 into that child; callers needing `context` in a new shell must
 source `core.lib.sh` there.
 
+## Approved generalized-context boundaries (not yet implemented)
+
+The supported first-phase `context` grammar and no-argument reset above remain the current executable contract until a separately validated, coordinated migration. The approved **future generalized-context** requirements are:
+
+- Two managed shells and their ordinary managed child processes must be able to select distinct system profiles and logical user-state identities concurrently. One shell's selection must not mutate `state/system/current`, `state/user/current` or another process's active selection.
+- Package commands, libraries, provider resolution, mutable state and inherited environment must agree on the effective selected context. If an installed package cannot safely honor the selected profile using an upstream-supported state-path adaptation or an already prepared compatible per-profile view, its launch must fail before it could use another profile's state; it must never silently fall back to the global profile.
+- Host-supervised service profiles and system TLS CA authority are **not** untrusted shell-context selections. Their ownership rules are in `SERVICE-LIFECYCLE.md` and `TLS-TRUST.md`; mutable state routing is governed by `STATE-MODEL.md`.
+
+These are binding design and migration constraints, **not** claims that profile-aware bootstrap, `state-path`, package `var/` routing, trusted child propagation or the generalized public operand grammar already exist. Existing global-selector consumers remain supported under their current contracts until an explicitly validated transition; unsupported concurrent-profile use must fail closed rather than silently alter global state. The detailed grammar, persistence format and trusted propagation mechanics remain active design work, not accepted executable APIs.
+
 ## Generated global execution environment
 
 The execution phase consumes derived global environment state rooted at:
