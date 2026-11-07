@@ -213,6 +213,16 @@ The following principles appear mature enough to be candidates for later promoti
 
 These points should later be reviewed together and promoted only in the smallest wording that preserves the behavior. The richer model above should remain available as working-design rationale until enough real cases establish which dimensions are genuinely useful.
 
+### Workflow redesign from first principles — operator directive (2026-11-07)
+
+**Accepted operator decision:** For substantial tasks, a proportionate early check of actual outcome, intended operational use and high-impact architecture assumptions is mandatory. The assistant must actively escalate unresolved choices that could redirect the work, including at the beginning; interruptions for routine implementation progress are not the goal. A special extended/uninterrupted execution behavior remains opt-in, not the ordinary default. Execution autonomy does not confer authority to redefine the mission or architectural boundaries.
+
+**Redesign directive:** Reconsider the complete behavior/bootstrap and decision process from first principles rather than incrementally patching current preflight, `devplan`, handoff, tests or consistency gate. The operator reports `devplan` failed significantly in the Keycloak/rsudo episode: work units and tests appeared to progress while the requested rsudo-based operator outcome was not delivered and major assumptions were wrong. Treat this as a critical observed operator report requiring source- and revision-grounded reconstruction, not a claim that every individual implementation/test result was false.
+
+**Provisional redesign scope (not promoted policy):** Explicitly model mission/outcome validation, discoverable versus operator-owned decisions, decision impact and reversibility, first meaningful end-to-end outcome, autonomous execution and recovery, truthful evidence classification, feedback from both implementation failures and wrong goals, handoff minimality and context-aware lessons with provenance. Evaluate current requirements before choosing the eventual documents, gates or modes. Backtest competing models on Keycloak/rsudo and at least one contrasting routine/low-risk task. No patch-layer to canonical rules, no automatic adoption of Hindsight, and no product/runtime changes from this investigation alone.
+
+**Next design deliverable:** A comparative diagnosis of the present workflow and concrete failure mechanisms, followed by alternative end-to-end protocols with costs, operator interrupt policy, falsifiable acceptance scenarios and migration/validation strategy. Only then seek the architectural decision for a coherent replacement and promote minimal settled contracts to their canonical owners.
+
 ## Completed
 
 - 2026-11-06: Completed cross-document review of `README.md`, `RULES.md` and `CONSISTENCY-GATE.md`: authority/read-order, normative ownership, gate dependencies and final checklist were compared. Normalized remaining abbreviated specification paths in gate §§8 and 12 (commit `557f81516ab16bc64d7e709ffcba33abafb08993`). No contradictory authority or circular prerequisite was found in the reviewed documents; no implementation or runtime tests were needed for these documentation-only edits.
@@ -406,7 +416,9 @@ Active task routing now uses resumable responsibility rather than topic labels. 
 
 ## Next action
 
-Next exercise `DEVPLAN.md` on a genuinely well-specified RumiAI software task. Check source-first sufficiency, dependency and work-unit completeness, non-conflicting agent ownership, clean-chat resumability and the planning-only boundary. The under-specified `devplan astronave` conversational smoke test is recorded above; neither case alone proves future agent execution.
+**Priority after operator decision 2026-11-07:** First reconstruct the Keycloak/rsudo outcome failure and critically re-architect the workflow from mission intake through completion, including preflight and `devplan`. Evaluate alternatives and backtest them before promoting new canonical contracts. Existing procedural checks below remain secondary evidence, not the redesign method or an authorization to implement a piecemeal patch.
+
+Previously recorded work: next exercise `DEVPLAN.md` on a genuinely well-specified RumiAI software task. Check source-first sufficiency, dependency and work-unit completeness, non-conflicting agent ownership, clean-chat resumability and the planning-only boundary. The under-specified `devplan astronave` conversational smoke test is recorded above; neither case alone proves future agent execution.
 
 Observe the TODO lifecycle, specification promotion gate and command/library manual gates in normal use. In particular:
 
