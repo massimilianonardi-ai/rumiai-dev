@@ -37,8 +37,10 @@ discovery extension:
   proxy/redirect use. REST response JSON is passed through; snapshot JSON is
   filtered locally. File JSON is staged privately and filtered locally.
 - `create`, `update`, `delete`, `apply` and `request` fail explicitly as not
-  implemented and never fall back to legacy. YAML-file reads and all new
-  writes,
+  implemented and never fall back to legacy. **This statement is historical**:
+  a later continuation checkpoint below implements `create/update/delete`
+  for host-scoped traditional REST using request bodies on stdin. YAML-file
+  reads and file/snapshot writes,
   pagination, URL IPv6 literals, version negotiation and live APISIX identity
   verification remain unsupported. Operation-specific legacy compatibility
   functions remain as before.
@@ -79,10 +81,47 @@ discovery extension:
   validation. No deployment environment was modified.
 - Immediate next: run/review full scoped CI at frozen revisions; harden M2
   using isolated real Docker/Podman and systemd fixtures where available;
-  verify REST pagination/version behavior on supported APISIX
-  releases; then implement YAML-file reads and separately validated backend-
-  specific safe mutations. Discovery/source attribution research is not a global
+  verify REST pagination/version behavior on supported APISIX releases; then
+  continue backend-specific safe mutations, starting with file-YAML and
+  snapshot publication. Discovery/source attribution research is not a global
   prerequisite for explicitly selected operations.
+
+### Continuation checkpoint — traditional REST create/update/delete via stdin
+
+- The generic `create/update/delete` router now implements the first write
+  increment for explicitly selected `host` + `traditional-admin` contexts and
+  routes/resources `routes`, `services` and `upstreams`. `create resource`
+  reads the request body from stdin and sends POST to the collection;
+  `update resource id` reads the complete intended JSON body from stdin and
+  sends PUT to that ID; `delete resource id` sends DELETE without a body or
+  force option. `apply` and `request` remain unimplemented. File-YAML,
+  file-JSON and standalone snapshot mutations explicitly fail; there is no
+  legacy fallback.
+- The body stays off command arguments and remote temporary files: rsudo
+  invokes a static remote shell program and curl reads POST/PUT data using
+  `--data-binary @-`. APISIX validates JSON/resource schema. HTTP error bodies
+  are suppressed, while the HTTP/curl failure status remains visible. Existing
+  protected header-file and TLS/proxy/redirect controls apply. This direct
+  Admin API operation is not a client-side transaction and does not verify
+  that the chosen endpoint belongs to a particular APISIX process.
+- `rumiai-os@35f64e4901074d97e9c1e6a3fe3e5ecbdef8f068` contains the library
+  and manual update; `rumiai-tests@c2481f8fbeb83e55202d2b68d8983d13cfcb7b2a`
+  adds permanent real-curl/real-`m` transport coverage through a synthetic
+  HTTP server and rsudo boundary; `rumiai-dev@ba5fb6f10b241d53a2a188811f73cfae887fbc77`
+  updates the contract. The tests passed for REST transport (including body
+  stdin, POST/PUT/DELETE, API rejection, URL/ID validation and no legacy
+  fallback), context routing, JSON-file reads and host/container discovery.
+  `apisix-parser-live.test` skipped because Docker is unavailable, so installed
+  APISIX YAML parser behavior remains unvalidated. Shell syntax and
+  `git diff --check` passed. No live APISIX, SSH target, CI, or deployment
+  validation is claimed; no deployment environment was modified.
+- Next: use the available `json` command for JSON data handling where
+  appropriate while implementing independently safe file-YAML and
+  standalone-snapshot mutations; preserve complete-document validation,
+  atomic publication and concurrency controls for file-backed writes, and
+  prevent snapshot updates from replacing unrelated resources or stale state.
+  Also run the YAML parser test on a Docker-enabled host and inspect scoped CI
+  for the frozen revisions.
 
 ### Continuation checkpoint — standalone JSON and API snapshot list/get
 
