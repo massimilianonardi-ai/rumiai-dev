@@ -1,7 +1,7 @@
 # RumiAI OS source composition comparison
 
 Status: Active
-Updated: 2026-11-02
+Updated: 2026-11-07
 
 ## Goal
 
@@ -25,6 +25,13 @@ downstream `rumiai-os` composition and permanent-suite migration remain pending.
 Full functional validation of the autonomous `m` source is independently tracked in `handoff/m-autonomous-validation.md`, including `pkg` provider/dependency/uninstall, positive `srv` lifecycle, host supervision and all other technical commands. Partial `mk`/`jsc` PASS here does **not** close that workstream.
 
 ## Current repository revisions
+
+### Fresh continuation checkpoint (2026-11-07)
+
+- `rumiai-dev/main@fb160e84f4f866aadefa1a46ac2f850058630fee` is the current remote canonical branch. Its accepted C2 policy and operator-privilege scope updates are read; do not merge or replace the divergent local `main` branch. This checkpoint is maintained in a separate local worktree based on that exact remote head.
+- `m-os/master@6e720be71a188b203aed2969399dedc90874d426`; PR #5 head `b6f69d554d46ff4d9b67b86a10303615e381096b`; PR #6 head `6fcb2f257448bbc4ce20e6eab9362fdbb7c8addb`.
+- `pkg-catalog/main@4083aa19c4362f00ec62428a631edfa493faf7f0`; `pkg-catalog/pkg-schema-v2@2c0df87a488bfeac6d185336ea5ae5a4ea469c4a` (adds immutable `m-rsudo@v0.1.2` relative to `a75f9be`; P2/P4 descriptors are unchanged).
+- Local evidence sources: P3 continuation `m-os-p3-env-review@7cc3e30392b4a7e7459befa8306056f395a1a123`; A3/A4 workflow bodies were replayed at `6e720be...` locally as detailed in `handoff/m-autonomous-validation.md`. These local branches/results are not remote integration or hosted evidence.
 
 Repository identity checkpoint (2026-11-03): the GitHub source repository
 formerly `massimilianonardi-ai/m` is now
@@ -2554,6 +2561,12 @@ resolve those questions or start implementation in the present unit.
 - For each package's compatibility-specific `@latest`, ordinary pathname sorting is explicitly forbidden. Current `_pkg_catalog_compare_versions` invokes the provider's repository-specific adapter comparison and requires a catalog adapter/snapshot. `pkg_catalog_init` currently clones/pulls catalog cache; unconditional live catalog initialization inside uninstall/default would introduce a new network dependency for local mutations. **Working implementation question, not settled design:** choose a bounded, revision-coupled ordering/reconciliation path that fails closed when ordering cannot be proved and does not silently break legitimate offline uninstall/default operations. Preserve this uncertainty in the P4 owner until tested; do not promote a candidate workaround into the specification.
 - P4 next implementation unit: build and review the smallest complete reconcile/rollback boundary on an isolated forward-only `m-os` branch, derive and validate exact membership from installed validated metadata, test provider-local multi-version ordering and declared compatibility changes, then wire install/uninstall/package-default/facility-default changes with real public commands and revision-pinned Ubuntu/macOS evidence. Coordinate with P3 and the unpromoted V2 `pkg-install.lib.sh`/manual overlap before integration. **No P4 runtime change or PASS is claimed at this audit.**
 
+### C2 accepted policy and P4 comparator boundary (2026-11-07)
+
+- Current remote canonical specifications accept four C2 boundaries: independent ordinary shell/process profiles; packages with unsupported profile-local mutable `var` must adapt or fail closed before apply; host-supervised services bind to trusted registration-time service identity/profile independently of caller shell; CA approval/revocation remains with authorized host administrators while clients consume only the verified selected profile's approved CA set. C1 executable behavior remains unchanged. Public syntax, default/preset persistence, cross-process trusted provenance, existing executable `env` compatibility, real package `var` adaptations and ordinary-library dependency semantics remain open; C3 is unimplemented and gated.
+- Operator-privileged remote SSH/sudo, protected-host system service administration, protected-host CA operations and privileged physical actions moved to `todo/m-os-operator-privileged-validation.md`. They are not active completion blockers. Disposable CA/NSS and unprivileged user-service validation remain active where their own gates permit.
+- A read-only P4 audit sourced the current GitHub repository comparator and EWC catalog `versions` index. With both concrete tags present locally, the actual comparator returned `v0.1.4 < v0.1.5 < v0.1.6`; catalog metadata declares `web-control 2` on 0.1.4/0.1.5 and compatibility 3 on 0.1.6. A missing pair falls through to GitHub Releases API; `pkg_catalog_init` itself clones/pulls. This confirms the local-index case only. P4 still needs an ordering/reconciliation design that preserves offline mutation behavior when evidence is missing; no option is selected and no P4 product code changed.
+
 ## Next action
 
 **Related specialized pkg-definition work:** The comprehensive
@@ -2565,7 +2578,7 @@ its working schema, migration decisions or validation state here.
 
 **Previous source-extraction next action (completed):** The operator rejected the synthetic test, which was removed forward. The source repositories were populated with actual assets; the initial release/catalog/install composition is now implemented and hosted-validated, as recorded above.
 
-**Immediate next R1-only boundary:** Preserve exact hosted Ubuntu/macOS 2/2 R1 release-consumer PASS for both `v0.1.1` (run `42097660573`) and guarded `m-rsudo/v0.1.2` (run `42200139984`); the old `v0.1.1` negative result is immutable separate evidence. Continue only truly uncovered **nonprivileged local** package-source, menu/PTY/source-injection and multi-version consumer cases. Privileged remote SSH/sudo R2 was removed from active work and deferred to `todo/m-os-operator-privileged-validation.md`; never infer remote PASS from local PTY. Keep hosted, operator and physical evidence distinct.
+**Immediate next shared-package boundary:** P3 remains ahead of P4's shared `pkg` writer. Current PR #5 is `b6f69d...`; local composed P3 `92a522f...` contains unhosted follow-up changes for typed-env observation and public integration-helper boundaries, but its real install replay stopped at unmapped archive ownership before assertions. Do not transfer PASS. Inspect exact current PR/workflow evidence through authorized existing checks; only after P3 source and acceptance are settled, pass the serialized writer to P4. The local EWC comparator replay confirmed local-index ordering and the remote fallback boundary; retain the offline-ordering issue in P4 working design. After P3/P4, reconcile V2 against current P2 master while preserving the advanced `pkg-catalog/pkg-schema-v2@2c0df87...` `m-rsudo@v0.1.2` definition.
 
 **Additional context/library work:** Validate the published `m`
 sh/Java library exports on the real hosted workflow and then through
@@ -2578,7 +2591,7 @@ without a verified loader contract. This workstream is independent of facilities
 
 1. Finish the authorized incremental `context` capability: integrate no-argument initialization with managed shells, derive a coherent effective context with facility/provider selections and exact package runtime env, reconcile system/user/profile defaults and active-context replacement, implement validated protected inheritance and child propagation, and exercise actual installed package/provider and nested launch scenarios. Reuse already-installed command directories; do not introduce per-call symlink generation. The published first-phase shell function is not yet an environment/provider-context implementation. Preserve frozen repositories and real/authentic validation requirements.
 2. Implement the approved facility provider-map contract from `PACKAGE-MODEL.md` in the autonomous `m` repository as an isolated, validated work unit, beginning with derived provider membership and per-provider compatible-latest ordering. Then reconcile revision/platform/global defaults with authoritative state and existing `pkg provider default` without silently changing current public callers. Preserve pkg-owned install/uninstall/alias reconciliation, context-owned PATH and environment composition, and exact concrete cmd/env coherence. The separately proposed package `@latest`/`@default` alias redesign and policy still requires its own resolution; do not conflate generic package latest with facility-compatible provider latest. Validate cases for multiple provider versions, dropped compatibility, ambiguous defaults, user/consumer scopes, changed commands, removal and nested execution. Keep `rumiai-os` and `rumiai-tests` frozen.
-3. First classify the missing autonomous standalone `bin/sys/json` (current `JSON-QUERY.md` and legacy source/manual) against the fixed technical-core boundary, then continue analyzing ownership/dependency boundaries for `pkg-analyze`, terminal primitives/menu/vsed/editor, gitman, SSH/rsudo administration, testlab, JavaScript core/UI and Web components. Reuse existing independent projects and package facilities rather than duplicating implementation.
+3. J1's standalone POSIX `bin/sys/json` and manual now pass exact PR #6 hosted Ubuntu/macOS acceptance (run 42309469100 at `6fcb2f...`); forward integration into the current accepted source remains pending. After integration, continue analyzing ownership/dependency boundaries for `pkg-analyze`, terminal primitives/menu/vsed/editor, gitman, SSH/rsudo administration, testlab, JavaScript core/UI and Web components. Reuse existing independent projects and package facilities rather than duplicating implementation.
 4. **On hold until explicit user authorization:** any edit or migration to old `rumiai-os`, and any work on `rumiai-tests` (including re-alignment of its permanent suite). Do not treat those holds as validation blockers for independently released packages.
 5. Independently maintain core `m` package adapter completeness under a separate authorized workstream; its adapter gaps should not be mistaken for missing user-installable product packages.
 
