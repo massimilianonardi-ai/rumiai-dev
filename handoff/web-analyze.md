@@ -1,7 +1,7 @@
 # Chromium manual-session analysis — web-analyze
 
 Status: Active
-Updated: 2026-11-06
+Updated: 2026-11-07
 
 ## Goal
 
@@ -29,7 +29,7 @@ Provide the `m` JavaScript library at `rumiai-os/lib/sys/js/web-analyze.lib.js` 
 - On caller stop/SIGINT, wait up to 6 seconds for response lifecycle/body/source reads and require a 750ms quiet interval; unresolved requests, failed body retrieval, pending CDP reads and skipped redirect bodies remain explicit in per-resource indexes and summary. An external Chromium close cannot enforce network quiescence; long-lived SSE/WebSockets do not admit a global completion guarantee.
 - User-provided real acceptance URL: `https://chatgpt.com/share/6ad1c0d5-49ec-83eb-a79b-85b04b938835`.
 - The new command defaults to headless Chromium and **no automated input or scroll**: `m web-analyze <url> <analysis-path>` captures the page at rest, while explicit `--scroll` adds bounded passive document/nested-container scrolling (maximum 29 states). It inventories links/forms/controls, retains compiled scripts/response bodies and produces Markdown and Mermaid outputs. Each invocation creates an isolated private `run-*` child. No automatic click, form submission, login or challenge bypass; unobserved routes/behavior are not asserted.
-- Explicit 2026-11-03 correction: preserve a post-loading resting DOM, not just a fixed-delay or scrolling snapshot. Initial and final full main-document outerHTML is stored under `states/dom-rest-{initial,final}.html`, with JSON settlement evidence. Per-state bounded snapshots follow quiescence checks. `settled` requires document complete, fonts loaded, and 1.5s quiet DOM/network with no pending CDP requests/reads; unresolved but quiet requests after 4.5s yield `dom-quiet-network-pending` instead of a false completion claim. Initial/per-step waits are bounded at 15s/6s within a 45s exploration budget; non-converging pages retain snapshots marked `timeout`. These observations do not prove all eventual app work has completed.
+- Explicit 2026-11-03 correction: preserve a post-loading resting DOM, not just a fixed-delay or scrolling snapshot. Initial and final full main-document outerHTML is stored under `states/dom-rest-{initial,final}.html`, with JSON settlement evidence. Final state metadata also records up to 256 non-zero document/nested scroll offsets using structural selectors for downstream standalone rendering; these selector values contain no page text. Per-state bounded snapshots follow quiescence checks. `settled` requires document complete, fonts loaded, and 1.5s quiet DOM/network with no pending CDP requests/reads; unresolved but quiet requests after 4.5s yield `dom-quiet-network-pending` instead of a false completion claim. Initial/per-step waits are bounded at 15s/6s within a 45s exploration budget; non-converging pages retain snapshots marked `timeout`. These observations do not prove all eventual app work has completed.
 
 ## Acceptance scenarios
 
@@ -490,3 +490,7 @@ Validation: exact-revision local Chromium behavior tests `web-analyze.test`, `co
 ## Blockers / open questions
 
 No blocker remains for the requested warning behavior or the verified Ubuntu 26.04 ARM64 command path. The 15 event-specific HTTP body reads in the exact final ChatGPT run still return native CDP `-32000`; the product does not claim those original bodies were recovered. It reports CSS as warning-only only when the identical content was independently archived and hash-verified; other response-only cases remain partial. Other page-dependent CDP observations can also be incomplete, so an audit status of `partial` remains meaningful even when the command succeeds. Ubuntu x86_64 and macOS ARM64 host validation remain pending.
+
+## Downstream export metadata checkpoint (2026-11-07)
+
+The `states/dom-rest-final.json` metadata now records up to 256 non-zero document/nested scroll offsets as structural selectors for a standalone file export to restore. The selectors contain no page text. This output addition is in product branch `rumiai-os@be908b6012c9ec01d6c3fa0a4b6bf69a8da29897`, documented by the command manual and consumed under the standalone contract in `specifications/rumiai-os/WEB-EXPORT.md`; it does not change the analyzer's capture or event-correlation claims.
