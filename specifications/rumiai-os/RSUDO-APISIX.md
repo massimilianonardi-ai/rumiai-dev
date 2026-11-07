@@ -120,15 +120,16 @@ is represented only as configured/not-configured. Supported internal
 adapter identifiers are `rest`, `snapshot`, `file-yaml`,
 `file-json` and `none`. Generic `list/get` route supported explicit contexts
 to their internal adapters; `create/update/delete` are currently implemented
-only for host-scoped traditional REST. Invalid inputs use
+only for host-scoped traditional REST, and full-document `apply` is
+implemented only for standalone JSON files. Invalid inputs use
 distinct new-context status values 1–11 as described in the operational manual.
 The context is a **local declaration**: it does not establish a running
 process, an authorized listener, actual backend support or write readiness.
 
 **Not yet implemented:** stronger service-to-process ownership evidence,
 complete container source/mount attribution,
-JSON discovery output, standalone writes, `apply`, and generic write routing
-for other adapters. Initial host YAML port probes and
+JSON discovery output, standalone resource create/update/delete, snapshot and
+YAML writes, and generic write routing for other adapters. Initial host YAML port probes and
 textual systemd unit candidates are implemented. Initial host and
 Docker/Podman candidate inventory and traditional REST plus standalone
 snapshot, YAML-file and JSON-file `list/get` adapters are described above/below.
@@ -318,7 +319,7 @@ filtering through real `m`, `json` and curl against a local synthetic HTTP
 fixture. It does not verify this filtered workflow against a live APISIX or
 remote SSH deployment.
 
-## Standalone JSON file list/get
+## Standalone JSON file list/get/apply
 
 The same generic public `list` and `get` functions also route to the internal
 `file-json` adapter when the caller explicitly selects
@@ -340,7 +341,23 @@ is `json`, and checks the file for updates ([Apache APISIX deployment modes](htt
 This is a read of the operator-selected file contents, not proof that the
 running APISIX process loaded that file or that APISIX is using the `json`
 provider; the operator must select the matching path and deployment mode.
-APISIX environment substitutions are not resolved. This adapter is read-only.
+APISIX environment substitutions are not resolved.
+
+For this adapter, `apply` reads a complete intended JSON configuration from
+stdin and first validates exactly one JSON value with the local RumiAI `json`
+command. It requires an existing readable regular non-symlink selected file.
+The remote target stages the supplied bytes in a private sibling directory,
+copies source metadata with `cp -p`, and atomically renames the staged file
+over the selected path. A per-file lock serializes concurrent apply calls
+through this adapter, and
+a baseline copy plus metadata comparison rejects observed changes during
+staging. This does not coordinate external writers that ignore the lock, nor
+can it eliminate a non-cooperating write in the final compare/rename window.
+It does not parse APISIX schema or substitutions. A successful status reports
+atomic file publication only; it does not prove APISIX accepted or reloaded
+the new document. APISIX's file-driven JSON provider checks its selected file
+for changes ([Apache APISIX deployment modes](https://apisix.apache.org/docs/apisix/deployment-modes/)).
+
 For `standalone-file-yaml`, the caller also explicitly selects
 the absolute APISIX installation root in `RSUDO_APISIX_HOME`. The remote
 operation uses that installation's LuaJIT, `lyaml` and `cjson.safe` to parse
@@ -352,14 +369,16 @@ the complete YAML document is never copied back and the source file is never
 modified. The parser does not resolve APISIX environment substitutions or
 establish that the selected file is loaded by the running process. `get`
 requires exactly one matching string `id`.
-The file and snapshot adapters remain read-only. Generic `create`, `update`
-and `delete` fail explicitly for those backends; `apply` remains unimplemented.
-Generic `request` is currently implemented only for the host traditional REST
-adapter described above. None falls back to a legacy function.
+The file and snapshot adapters support no generic resource-level `create`,
+`update` or `delete` operations yet; those fail explicitly. `apply` is
+implemented only for file-json and remains unimplemented for file-yaml,
+snapshot and REST. Generic `request` is currently implemented only for the
+host traditional REST adapter described above. None falls back to a legacy
+function.
 Operation-specific compatibility functions retain their previous forwarding
-behavior. Permanent tests exercise the JSON adapter through real `m` and
-RumiAI `json`, with local synthetic host, Docker and Podman rsudo boundaries;
-they do not validate a live APISIX or SSH deployment.
+behavior. Permanent tests exercise JSON list/get and full-document apply
+through real `m` and RumiAI `json`, with local synthetic host, Docker and
+Podman rsudo boundaries; they do not validate a live APISIX or SSH deployment.
 
 ## Current limits and security boundary
 
@@ -367,9 +386,10 @@ The current read-only resolvers do not prove which `-c`/profile or effective con
 
 Mode inspection does not emit API keys or the selected configuration contents. Credentials and target data remain subject to `RSUDO.md` and `DIAGNOSTICS.md`. The legacy APISIX functions retain previously documented unsafe JSON/request behavior, and their existence is not evidence that modern secure mutation is complete.
 
-The complete mode-routed Admin API, API-snapshot writes,
-standalone file mutations, `apply`, pagination, and simplified shell recipes
-are **not yet implemented** by the current safe APISIX backend. The initial
+The complete mode-routed Admin API, API-snapshot writes, standalone
+resource-level file mutations, YAML-file apply, pagination, and simplified
+shell recipes are **not yet implemented** by the current safe APISIX backend.
+The file-json adapter supports full-document apply only. The initial
 traditional REST `list/get/create/update/delete` and API-snapshot, YAML-file
 and JSON-file `list/get` adapters above are partial and do
 not imply those capabilities. They are pending development, not current
