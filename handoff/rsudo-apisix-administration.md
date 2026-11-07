@@ -22,19 +22,23 @@ Immediate milestones: M0 synchronize these decisions in task state/current contr
 
 The earlier M0/M1/M3 checkpoint below was advanced on remote main by concurrent
 work after it was written. Remote heads were read and isolated worktrees were
-based on those heads. The current topic branch contains the first explicit
-traditional-admin REST reads and an incremental M2 discovery extension:
+based on those heads. The current topic branch contains read-only REST,
+standalone JSON-file and API-snapshot adapters, plus an incremental M2
+discovery extension:
 
 - `list` and `get` route internally to the traditional REST adapter for
-  explicitly selected host scope. Supported collections are routes, services
-  and upstreams. It requires the operator-provided Admin URL origin and a
+  explicitly selected host scope, the API snapshot adapter for explicitly
+  selected standalone-api host scope, and the JSON-file adapter for explicit
+  host/container file-json scope. Supported collections are routes, services
+  and upstreams. REST and snapshot require the operator-provided Admin URL and
   protected remote header file; local validation rejects URL userinfo, path,
   query and fragment before passing the URL as an rsudo argument. Remote
   validation repeats the checks. Curl preserves TLS verification, disables
-  proxy/redirect use, and successful response JSON is passed through.
+  proxy/redirect use. REST response JSON is passed through; snapshot JSON is
+  filtered locally. File JSON is staged privately and filtered locally.
 - `create`, `update`, `delete`, `apply` and `request` fail explicitly as not
-  implemented and never fall back to legacy. YAML-file and API-snapshot reads,
-  standalone writes,
+  implemented and never fall back to legacy. YAML-file reads and all new
+  writes,
   pagination, URL IPv6 literals, version negotiation and live APISIX identity
   verification remain unsupported. Operation-specific legacy compatibility
   functions remain as before.
@@ -76,11 +80,11 @@ traditional-admin REST reads and an incremental M2 discovery extension:
 - Immediate next: run/review full scoped CI at frozen revisions; harden M2
   using isolated real Docker/Podman and systemd fixtures where available;
   verify REST pagination/version behavior on supported APISIX
-  releases; then implement standalone file/snapshot reads and backend-specific
-  safe mutations. Discovery/source attribution research is not a global
+  releases; then implement YAML-file reads and separately validated backend-
+  specific safe mutations. Discovery/source attribution research is not a global
   prerequisite for explicitly selected operations.
 
-### Continuation checkpoint — standalone JSON file reads
+### Continuation checkpoint — standalone JSON and API snapshot list/get
 
 - The generic public `list/get` router now also selects a read-only `file-json`
   adapter for explicit `RSUDO_APISIX_DEPLOYMENT=standalone-file-json` contexts.
@@ -93,12 +97,24 @@ traditional-admin REST reads and an incremental M2 discovery extension:
   interpolating it into a JSON filter and fails for zero or multiple matches.
   Temporary document/results are removed on exit. This does not resolve
   APISIX environment substitutions or prove that the selected file is loaded.
+- The same internal `list/get` router now selects the `snapshot` adapter for
+  explicit `standalone-api` host contexts. It requests only the documented
+  `/apisix/admin/configs` snapshot with the existing protected header-file,
+  HTTPS, no-proxy and no-redirect curl controls, validates the response with
+  RumiAI `json`, and filters top-level resource arrays locally. `get` requires
+  one unique ID. The complete snapshot is staged under a private local
+  temporary directory and removed on exit. It does not write the snapshot or
+  prove the configured URL belongs to a selected APISIX process. The expected
+  response shape was checked against current official APISIX deployment-mode
+  documentation; scope is still host-only.
 - The permanent `apisix-file-json-read.test` exercises the real `m` and `json`
   commands with synthetic rsudo host/Docker/Podman boundaries. It covers
   list/get selection, no unrelated-resource leakage, missing IDs, duplicate
   IDs, malformed JSON, symlink rejection and preservation of the source file.
-  This is local synthetic evidence, not live APISIX, SSH, Docker or Podman
-  validation. On the published revisions, `apisix-file-json-read.test`,
+  `apisix-admin-transport.test` now checks API snapshot list/get filtering
+  through real `m`, `json` and curl against a local HTTP fixture. This is
+  synthetic API-shape evidence, not live APISIX filtering, SSH, Docker or
+  Podman validation. On the published revisions, `apisix-file-json-read.test`,
   `apisix-context.test`, `apisix-discovery-host.test` and
   `apisix-admin-transport.test` each PASS locally through `m`; the product
   library passes `sh -n` and all three repositories pass `git diff --check`.
@@ -109,8 +125,8 @@ traditional-admin REST reads and an incremental M2 discovery extension:
   `rumiai-dev@b80a276afde3209cee552a6580bccfc1a94cef62` and this handoff
   `rumiai-dev@6ab2e37f89bef5d57fb67c62262eb658caef0855`. GitHub CI status
   checks for these revisions are empty; CI is not claimed as PASS.
-- YAML-file reads, standalone API snapshot reads, all new writes, pagination,
-  and broader resource/provider coverage remain pending. No unsafe legacy
+- YAML-file reads, all new writes, pagination, and broader resource/provider
+  coverage remain pending. No unsafe legacy
   fallback is added. Next: inspect the new scoped CI status, then extend the
   read-only adapters only after defining and testing each provider's actual
   data and response shape; keep mutation work separately gated.
