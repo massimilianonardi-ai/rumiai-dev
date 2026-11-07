@@ -109,9 +109,9 @@ discovery extension:
   malformed input rejection, stale-lock behavior, and a concurrent change
   during staging that must not be overwritten. No live APISIX parser or
   deployment test is claimed; the Docker-dependent parser suite remains
-  unavailable in this workspace. Frozen revisions are
-  `rumiai-os@fad46ceb5a0f0a35fd9cdc6f72320175d0bfcd61`,
-  `rumiai-tests@490c399b8e38eff4b4006f8d2da34ff38d770ebc`, and contract
+  unavailable in this workspace. Tested branch-tip revisions, including the
+  concurrent main merges, are `rumiai-os@c01aa08d6532815d483d1081b7573bf67433b666`,
+  `rumiai-tests@0c0f629e995ee4ceb2263a7218d8f2f8ea2f6c31`, and contract
   `rumiai-dev@4c44cabb71f870dfb02fa9bf9363fd2301a0d6c8`.
 - Next: exercise the full replacement with a pinned APISIX JSON provider and
   validate that the target accepts/reloads it; then design resource-level JSON
