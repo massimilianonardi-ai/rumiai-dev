@@ -24,11 +24,11 @@ used for administration. Read-only `discovery` is an independent inventory
 operation: it does **not** initialize or modify environment variables, does
 not choose a candidate, and does not require uniqueness. Explicit target
 context, rather than a universal automatic runtime-source certification
-procedure, is the planned basis for backend routing. Each actual mutation
+procedure, is the basis for backend routing. Each actual mutation
 must still satisfy operation-specific safety and integrity preconditions;
 operator selection is not authorization to corrupt a file or overwrite a
-concurrently owned snapshot. A complete context parser and the
-provider-independent administration router are **not yet implemented**.
+concurrently owned snapshot. The context parser and internal router are
+implemented partially; backend coverage is described below.
 
 The current first-stage public command
 
@@ -118,21 +118,20 @@ endpoints or credentials. The read-only result includes
 `adapter` and relevant nonsecret selectors; the credential file
 is represented only as configured/not-configured. Supported internal
 adapter identifiers are `rest`, `snapshot`, `file-yaml`,
-`file-json` and `none`. Generic `list/get` route explicitly selected REST,
-host-scoped standalone API snapshot and host/container JSON-file contexts to
-their internal adapters; YAML-file reads and other adapter operations fail
-explicitly. Invalid inputs use
+`file-json` and `none`. Generic `list/get` route supported explicit contexts
+to their internal adapters; `create/update/delete` are currently implemented
+only for host-scoped traditional REST. Invalid inputs use
 distinct new-context status values 1–11 as described in the operational manual.
 The context is a **local declaration**: it does not establish a running
 process, an authorized listener, actual backend support or write readiness.
 
 **Not yet implemented:** stronger service-to-process ownership evidence,
 complete container source/mount attribution,
-JSON discovery output, standalone
-reads/writes and modern write operations. Initial host YAML port probes and
+JSON discovery output, standalone writes, `apply`/`request`, and generic
+write routing for other adapters. Initial host YAML port probes and
 textual systemd unit candidates are implemented. Initial host and
-Docker/Podman candidate inventory and the read-only traditional REST,
-standalone snapshot and JSON-file `list/get` adapters are described above/below.
+Docker/Podman candidate inventory and traditional REST plus standalone
+snapshot, YAML-file and JSON-file `list/get` adapters are described above/below.
 This staged implementation does
 not alter the older `mode`, `inspect`, `runtime`,
 `admin-read` or explicit legacy operations. In particular, the old
@@ -238,7 +237,7 @@ This provisional operation does **not** prove the caller selected the running AP
 
 Invalid local arguments and remote preconditions produce distinct non-zero statuses in the range 44–51 with non-sensitive diagnostics. An unavailable/unsupported remote `curl` is a prerequisite failure, not a reason to fall back to legacy behavior.
 
-## Traditional REST list/get (initial read-only backend)
+## Traditional REST resource operations
 
 The generic public `rsudo apisix list routes|services|upstreams` and
 `rsudo apisix get routes|services|upstreams <id>` use the internal REST
@@ -248,9 +247,11 @@ and `RSUDO_APISIX_DEPLOYMENT=traditional-admin`. The operator supplies an
 `RSUDO_APISIX_HEADER_FILE`. The origin is restricted to HTTP or HTTPS and a
 hostname/port authority: userinfo, path, query and fragment are rejected
 locally before the value is passed to rsudo, and validated again remotely.
-The ID alphabet is ASCII letters, digits, dot, underscore, tilde and hyphen;
-`.` and `..` are rejected. Collection pagination and API-version negotiation
-are not implemented in this initial adapter.
+Read IDs allow ASCII letters, digits, dot, underscore, tilde and hyphen;
+`.` and `..` are rejected. Mutation IDs use the narrower APISIX-compatible
+ASCII letters, digits, dot, underscore and hyphen alphabet, also rejecting
+`.` and `..`. Collection pagination and API-version negotiation are not
+implemented.
 
 The remote header file must be an ordinary readable non-symlink file with
 mode 0600 and exactly one newline-terminated `X-API-KEY` header. Curl uses
@@ -259,6 +260,26 @@ connect/total timeouts. Successful JSON is passed through unchanged; HTTP
 errors return nonzero without writing the response body to stdout. These
 checks protect the transport but do not prove that the URL belongs to the
 selected APISIX process or that credentials are authorized.
+
+For explicit host-scoped `traditional-admin` context, `create resource
+absolute-remote-json-file` issues POST to the resource collection,
+`update resource id absolute-remote-json-file` issues PUT to the selected ID,
+and `delete resource id` issues DELETE to that ID. These methods match the
+documented [Apache APISIX Admin API](https://apisix.apache.org/docs/apisix/admin-api/).
+POST may assign a random ID; update requires the complete intended resource
+JSON because partial PATCH is not implemented.
+The pre-existing remote body file for create/update must be an ordinary,
+readable, non-symlink file with mode 0600. Its contents are passed through
+curl's `--data-binary @file` support, not shell arguments or diagnostics;
+APISIX validates JSON and resource schema. Successful HTTP response bodies
+are written to stdout; HTTP error bodies are not. Delete does not request
+forced deletion, so APISIX may reject resources that remain referenced.
+The protected header-file and HTTPS/proxy/redirect controls above apply.
+This is a direct Admin API write, not a transactional client-side
+read/modify/write, and does not establish that the endpoint belongs to a
+particular running process. The permanent transport test exercises
+POST/PUT/DELETE and protected body-file delivery through real `m` and curl
+against a local synthetic HTTP fixture, not a live APISIX or SSH deployment.
 
 ## Standalone API snapshot list/get
 
@@ -314,12 +335,13 @@ the complete YAML document is never copied back and the source file is never
 modified. The parser does not resolve APISIX environment substitutions or
 establish that the selected file is loaded by the running process. `get`
 requires exactly one matching string `id`.
-Generic `create`, `update`, `delete`, `apply` and `request` currently fail as
-unimplemented; none falls back to a legacy function. Operation-specific
-compatibility functions retain their previous forwarding behavior. Permanent
-tests exercise the JSON adapter through real `m` and RumiAI `json`, with local
-synthetic host, Docker and Podman rsudo boundaries; they do not validate a live
-APISIX or SSH deployment.
+The file and snapshot adapters remain read-only. Generic `create`, `update`
+and `delete` fail explicitly for those backends; `apply` and `request` remain
+unimplemented for all backends. None falls back to a legacy function.
+Operation-specific compatibility functions retain their previous forwarding
+behavior. Permanent tests exercise the JSON adapter through real `m` and
+RumiAI `json`, with local synthetic host, Docker and Podman rsudo boundaries;
+they do not validate a live APISIX or SSH deployment.
 
 ## Current limits and security boundary
 
@@ -328,9 +350,10 @@ The current read-only resolvers do not prove which `-c`/profile or effective con
 Mode inspection does not emit API keys or the selected configuration contents. Credentials and target data remain subject to `RSUDO.md` and `DIAGNOSTICS.md`. The legacy APISIX functions retain previously documented unsafe JSON/request behavior, and their existence is not evidence that modern secure mutation is complete.
 
 The complete mode-routed Admin API, API-snapshot writes,
-standalone file mutations, generic writes, pagination, and simplified shell recipes
+standalone file mutations, `apply`/`request`, pagination, and simplified shell recipes
 are **not yet implemented** by the current safe APISIX backend. The initial
-traditional REST, API-snapshot, YAML-file and JSON-file `list/get` adapters above are partial and do
+traditional REST `list/get/create/update/delete` and API-snapshot, YAML-file
+and JSON-file `list/get` adapters above are partial and do
 not imply those capabilities. They are pending development, not current
 guarantees.
 

@@ -49,7 +49,7 @@ Read only the smallest complete set relevant to the task.
 | secret-line terminal input and verification | `rumiai-os/READPASS.md` |
 | OpenSSH authentication secret delivery, password-only invocation and stream transparency | `rumiai-os/SSH.md` |
 | remote SSH/sudo authentication, stdin separation and execution invariants | `rumiai-os/RSUDO.md` |
-| current rsudo APISIX configured-mode inspection, legacy interface and non-authoritative runtime boundary | `rumiai-os/RSUDO-APISIX.md` |
+| current rsudo APISIX discovery, explicit contexts, partial read/write backend routing, legacy interface and runtime-evidence boundary | `rumiai-os/RSUDO-APISIX.md` |
 | direct Keycloak shell administration, preservation of packaged server command, OIDC credential sources and HTTP Admin REST contract | `rumiai-os/KEYCLOAK-CLI.md` |
 | existing rsudo Keycloak compatibility and partially implemented HTTP API, plus the official remote kcadm.sh discovery and credential-safe proxy | `rumiai-os/RSUDO-KEYCLOAK.md` |
 
