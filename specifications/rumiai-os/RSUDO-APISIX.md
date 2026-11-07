@@ -65,11 +65,15 @@ with a failed probe is surfaced as uncertain when manager metadata suggests
 APISIX, and a manager-level partial/unavailable row records incomplete
 coverage. A stopped container whose metadata does not suggest APISIX can be
 missed; correlation of mount sources to host-discovered files is not
-implemented. Running-container YAML
-files receive the same targeted connect-only netcat probe inside that
-container's network namespace, with the manager and full container ID in the
-row. JSON listener extraction and probes for non-YAML sources are not
-implemented. These records are candidates only, not runtime identity.
+implemented. Running-container YAML and JSON files receive targeted
+connect-only netcat probes inside that container's network namespace, with
+the manager and full container ID in the row. JSON files are validated and
+queried with the standalone RumiAI `json` command for
+`deployment.admin.admin_listen.ip` and `.port`; no `jq` or Python dependency is
+required. If `json` is missing on the remote host/container or validation/query
+fails, discovery emits an uncertainty row. JSON snapshots without deployment
+admin listener settings yield no endpoint. These records are candidates only,
+not runtime identity.
 
 On hosts with `systemctl`, the inventory includes APISIX-matching loaded unit
 names/descriptions and installed unit-file names with their reported state.
@@ -81,9 +85,10 @@ APISIX source configuration the process loaded. For host
 YAML candidates, discovery extracts numeric `port`/`ip` values only beneath
 `admin_listen`. It uses `nc` for a TCP connect-only probe when the bind is
 loopback, wildcard, or an address verified local by `ip`; remote or
-unverified addresses are reported as unprobed. `open`/`not-open` reports
-socket reachability only and does not identify APISIX or an Admin API. JSON
-listener extraction is not implemented.
+unverified addresses are reported as unprobed. JSON candidates are validated
+and queried with RumiAI's standalone `json` command; a missing command, invalid
+JSON or unsupported query is reported as uncertainty. `open`/`not-open`
+reports socket reachability only and does not identify APISIX or an Admin API.
 
 For this first increment, successful stdout contains a tab-separated header
 `kind scope state identifier evidence` followed by zero or more candidate
@@ -120,8 +125,8 @@ distinct new-context status values 1–11 as described in the operational manual
 The context is a **local declaration**: it does not establish a running
 process, an authorized listener, actual backend support or write readiness.
 
-**Not yet implemented:** stronger service-to-process ownership evidence, JSON
-listener extraction/output, complete container source/mount attribution,
+**Not yet implemented:** stronger service-to-process ownership evidence,
+complete container source/mount attribution,
 JSON discovery output, standalone
 reads/writes and modern write operations. Initial host YAML port probes and
 textual systemd unit candidates are implemented. Initial host and
