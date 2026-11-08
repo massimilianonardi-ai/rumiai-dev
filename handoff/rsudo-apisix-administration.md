@@ -184,12 +184,46 @@ discovery extension:
   `apisix-parser-live.test` was invoked and returned SKIP because Docker is
   unavailable, so installed APISIX parsers were not exercised. No live APISIX, SSH, CI
   or production deployment was exercised.
-- Frozen revisions are `rumiai-os@3f805c01e1b8f1844e7af134540a7da4f637d4da`
-  and `rumiai-tests@51c246f29578038c5fee6a2afb4429a5c6f236b5`. The current
-  specification/handoff edits remain to be committed and the branches pushed.
-  Next: validate the pinned parser suite
+- Published revisions are `rumiai-os@3f805c01e1b8f1844e7af134540a7da4f637d4da`,
+  `rumiai-tests@51c246f29578038c5fee6a2afb4429a5c6f236b5` and
+  `rumiai-dev@ee93917280baba3542e53d6c3b4f6271c9d63776`; all three topic refs
+  were verified equal to their remote refs. Next: validate the pinned parser suite
   on a Docker-enabled host, then design resource-level snapshot updates without
   unsafe version guesses and YAML CRUD that preserves source comments.
+
+### Standalone API resource-mutation design research (2026-11-08)
+
+- Current APISIX upstream source `apisix/admin/standalone.lua` confirms the
+  endpoint's mutation rules: matching `X-Digest` returns 204 before any
+  version processing; omitted collection versions are set to current+1;
+  lower versions fail 400; equal versions retain the server's current
+  collection and ignore the submitted array; greater versions replace that
+  collection. The worker-side YAML configuration loader uses per-item
+  `modifiedIndex` to decide whether a resource value is replaced. Therefore a
+  resource edit must advance its collection version and change the target
+  item's `modifiedIndex`, while preserving all non-target collections and
+  version fields from a complete current snapshot. Sources:
+  [standalone Admin API implementation](https://github.com/apache/apisix/blob/master/apisix/admin/standalone.lua),
+  [worker configuration loader](https://github.com/apache/apisix/blob/master/apisix/core/config_yaml.lua).
+- Upstream deployment documentation describes API-driven mode as intended for
+  APISIX Ingress Controller/ADC and advises against direct use unless its
+  internals are understood. `PUT /configs` has no conditional `If-Match` or
+  compare-and-swap against the prior digest. A stale client that submits the
+  same collection version can receive success while its array is ignored.
+  Thus CRUD cannot claim general multi-writer safety. Any future resource
+  adapter must at minimum fetch the complete snapshot, preserve every resource
+  type, increment exactly the selected collection, update the target
+  `modifiedIndex`, use a content-derived fresh digest, then read back and
+  verify the intended resource/version. It must report a conflict when the
+  intended state did not land, never retry blindly, and state the remaining
+  single-writer assumption. Source:
+  [APISIX deployment modes](https://apisix.apache.org/docs/apisix/deployment-modes/).
+- The current full-snapshot `apply` remains explicit and caller-versioned; it
+  does not implement those CRUD semantics. Before resource CRUD, add tests
+  against pinned API-driven APISIX 3.16/3.19 for greater/equal/stale versions,
+  per-item `modifiedIndex`, digest no-op, read-back conflict and worker wait.
+  Docker is unavailable in this workspace, so source inspection is the only
+  new evidence in this research checkpoint.
 
 ### Continuation checkpoint — standalone JSON full-document apply
 
