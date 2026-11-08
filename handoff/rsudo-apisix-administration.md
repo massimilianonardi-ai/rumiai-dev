@@ -243,11 +243,15 @@ discovery extension:
 - GitHub runner investigation succeeded: `rumiai-tests` workflow run
   [42471744601](https://github.com/massimilianonardi-ai/rumiai-tests/actions/runs/42471744601)
   was dispatched for frozen product `rumiai-os@3f805c01e1b8f1844e7af134540a7da4f637d4da`.
-  At this checkpoint its macOS and Ubuntu ARM jobs are still running; the
-  pinned APISIX 3.16/3.19, etcd and systemd/nginx fixtures provisioned
-  successfully on Ubuntu ARM. No test outcome is claimed yet. The run does
-  not include product `rumiai-os@f2a4445` or test `rumiai-tests@58464c4a`;
-  it uses the previously frozen revisions.
+-  Both macOS and Ubuntu ARM jobs completed with failure. Ubuntu provisioned
+  the pinned APISIX 3.16/3.19, etcd and systemd/nginx fixtures, but the scope
+  ended `TEST ERROR`; its discovery/context/file-JSON selections reported
+  `ERROR`, and the parser-live test reported `FAIL`. macOS also ended `TEST
+  ERROR`, with Linux-only parser coverage skipped. The available run summary
+  does not expose the per-test diagnostics needed to classify these outcomes
+  as product defects or runner/environment failures. No validation credit is
+  claimed. The run does not include product `rumiai-os@f2a4445` or test
+  `rumiai-tests@58464c4a`; it uses the previously frozen revisions.
 - Next: inspect the frozen runner's completed results, then continue discovery
   evidence correlation and finish the remaining adapter work in bounded
   increments. Snapshot resource mutation still requires a JSON document
