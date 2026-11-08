@@ -445,7 +445,14 @@ Material remaining contract decisions:
    user state and does not authenticate a selected logical user.
    Existing package, provider, locale and platform selectors remain
    their own authorities; the new preference file must not duplicate
-   those registries or silently mutate global selectors.
+   those registries or silently mutate global selectors. The current
+   `state/system/current` selector and package `var/` links are
+   process-independent and system-scoped. The accepted concurrent-
+   context boundary requires distinct per-process profile selection;
+   a package whose `var/` cannot support that selection must use a
+   verified adapter/prepared compatible view or fail before launch.
+   Per-account defaults must not implement that boundary by switching
+   the shared `system/current` selector.
 3. Protected propagation/override policy, unset versus empty values,
    trust transfer through children, HOME and NSS projection.
 4. Provider/facility versus ordinary-library consumer dependencies
