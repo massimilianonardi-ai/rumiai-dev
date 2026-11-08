@@ -366,6 +366,28 @@ Share 2 remains **unacquired**. The operator's private existing-capture audit fo
 ## Blockers / open questions
 The complete Markdown scenario is no longer blocked: user has confirmed it. The fidelity and provenance of non-Markdown artifacts, automatic asset retrieval, and reproducibility across share versions remain open. The official permanent runner was not executed by this assistant in this checkpoint.
 
+## Generic offline interactions extension (2026-11-08)
+
+The current objective is to maximize the general-purpose, serverless offline `web-export` for arbitrary URLs. ChatGPT share is the first real-page check only. A future dedicated `web-export-chatgpt` may recover provider-specific data such as missing “Elaborato per” text; generic `web-export` must preserve the DOM control and local mouse interaction now without inventing unavailable content.
+
+Implementation remains isolated in three feature worktrees:
+- `rumiai-os/.worktrees/web-export-os`, branch `work/web-export-offline-interactions-20261107`, based on the OS snapshot checked out at preflight.
+- `.worktrees/web-export-tests`, same branch name, based on the test snapshot checked out at preflight.
+- `.worktrees/web-export-dev`, same branch name, now fast-forwarded to `rumiai-dev/main` at `b0368f787273c3c246be0757929f3e22d5115e79` before further documentation edits.
+- Fresh remote HEADs at 2026-11-08 preflight were obtained with `git fetch`: OS and tests heads are recorded in their worktree refs; dev `main=b0368f787273c3c246be0757929f3e22d5115e79`. No main checkouts were changed.
+
+The product helper now combines scroll restoration with local copy, any `aria-expanded` disclosure control (including non-button elements), and consent-notice dismissal. It does not execute source handlers or access the network. Absent disclosure content is counted in the manifest and is never fabricated. Source CSP and Permissions Policy metadata are removed from the captured DOM so they cannot block the generated helper; the output CSP authorizes only the helper's exact SHA-256 and denies network connections. Manifest coverage records interaction-control counts.
+
+Evidence to date:
+- Node syntax check and `git diff --check` pass on product and test changes.
+- The normal runner `rumiai-os/web-export/web-export.test` passes against the isolated product worktree on Ubuntu 26.04 ARM64. It exercises the exact `m web-export` flow, verifies the local file opens without source network requests, checks scroll restore and manifest digests, and uses CDP mouse input against a loopback export to verify exact clipboard text for response/code/table, disclosure toggle and local consent removal. A second CDP interaction scenario opens the same synthetic export as `file://` and verifies all three copy controls reach `copied`, the disclosure opens, the consent notice disappears, and no resource requests occur. The scroll restoration helper now restores at DOMContentLoaded and repeats at the next animation frame to avoid the observed timing race.
+- The operator-provided ChatGPT share was exported once successfully with `m web-export` using the runtime in `work/m-os/runtime-bin`. Its private export directory remains under the task's temporary output path and is excluded from Git. The saved manifest shows 31 verified local assets, 12 copy controls, 8 disclosure controls (5 with unavailable content), 459 omitted/unavailable references and (from the pre-refinement label counter) 4 consent-labelled controls. Re-evaluating the saved DOM with the final bounded consent-container predicate identifies one eligible dismissal control. Chromium opened that exact `file://` output. On this existing dump, CDP physical mouse input verified response copy (`data-web-export-copy-state=copied`, clipboard nonempty), the actual “Elaborato per” disclosure changed from `aria-expanded=false` to `true`, and a nearby consent notice was removed. Resource entries after those interactions contained zero HTTP(S) URLs. No source response body or missing disclosure payload was invented.
+- After that successful single web-export acquisition, an extra direct `web-analyze` forensic acquisition was mistakenly started before the operator's clarification. Its private temp data and profile were removed; it is not used as evidence. No further acquisitions should be run unless a concrete defect in `web-analyze` makes one necessary.
+- In `work/m-os`, Node.js is already installed as `nodejs@v26.13.0`. `pkg install chromium` refreshed the catalog but could not integrate Chromium because its package requires root ownership/setuid mode and `sudo` requested administrator authorization unavailable in this execution environment. The existing `runtime-bin/chromium` isolated runner worked for the actual browser checks; no product installation code was changed.
+- The first export attempt in this assistant environment used a PATH without Node and failed before Chromium; do not use that attempt as evidence about the website.
+
+Remaining work: audit full implementation/spec/test diffs and diagnostics, document the remote Actions limitation or execute applicable workflow, complete all consistency-gate checklist items, refresh all repository remotes, then commit and publish only if the gate passes. No commits or pushes have been made. User's earlier authorization to publish the product when ready persists. Preserve concurrent main work. Do not claim universal fidelity or complete acquisition from this one site. The generic product's measurable boundary remains captured DOM/assets plus locally emulatable controls; omitted resources/content are accurately counted.
+
 
 ## Codex shared-snapshot export extension (2026-11-02)
 
