@@ -453,6 +453,12 @@ Material remaining contract decisions:
    verified adapter/prepared compatible view or fail before launch.
    Per-account defaults must not implement that boundary by switching
    the shared `system/current` selector.
+   Storage candidates remain provisional: UID-keyed storage under
+   `$m_ROOT/state` best fits STATE-01 but a shared installation needs
+   safely provisioned per-account ownership; canonical-home lookup by
+   effective UID avoids trusting `HOME` but needs a host adapter and
+   an exception to the single-root rule; login `HOME` with UID/owner
+   checks is simpler but changing `HOME` changes the persistence path.
 3. Protected propagation/override policy, unset versus empty values,
    trust transfer through children, HOME and NSS projection.
 4. Provider/facility versus ordinary-library consumer dependencies
