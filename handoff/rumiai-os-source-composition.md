@@ -2666,6 +2666,50 @@ Node.js GitHub API caused the first macOS live install attempt to fail; its
 second attempt passed. No physical production-host deployment was performed.
 
 
+### C2 account-store provisioning decision and consumer audit (2026-11-08)
+
+- **User decision:** generalized-context persistent defaults belong to each
+  real POSIX account and use `$m_ROOT/state/<effective-UID>`. This host-account
+  authority is distinct from the composable logical `user` context dimension.
+- **Selected provisioning/safety rule:** a user-owned install may create only
+  its own leaf when the existing `state` parent is trusted and not
+  group/world-writable. Shared or read-only installs require prior
+  account-owned mode-0700 leaf provisioning by an installer or account
+  lifecycle administrator. Ordinary `context` never elevates, changes parent
+  permissions, or creates another account's leaf; absent/unsafe/unwritable
+  authority fails before active shell mutation. Never loosen the shared parent
+  to enable provisioning. This policy is promoted to `STATE-MODEL.md` and
+  `BOOTSTRAP-ENVIRONMENT.md`; implementation, diagnostic wording and
+  multi-account deployment validation remain open.
+- UID/default loading belongs to explicit shell `context` invocation; the
+  technical bootstrap's no-UID invariant remains intact. Canonical bootstrap
+  text now distinguishes the currently implemented no-argument shell-local
+  package reset from the agreed future behavior (bare invocation initializes
+  persistent defaults; an explicit clear operation removes them). Exact clear
+  syntax and record format remain open, and generalized C2 is not implemented.
+- **Provider precedence candidate, not promoted:** preserve an explicit
+  consumer/facility binding as strongest; apply a selected context provider
+  choice above the configured global system facility default; then retain
+  existing deterministic installed-provider fallback. This needs a real
+  acceptance case covering explicit binding, context override, global default,
+  missing and ambiguous candidates before specification promotion.
+- **Mutable package roots:** existing static `var/` links resolve through
+  `state/system/current` and cannot safely represent concurrent process-local
+  profiles. GeoServer's catalog declares `var/data=data_dir`; PoC 056 records
+  upstream `GEOSERVER_DATA_DIR` relocation evidence, making GeoServer a
+  plausible adapter candidate, but the same installed package launch and
+  complete mutable-path set still need integration validation. Keycloak's
+  catalog maps mutable `cache`, `conf`, and `data` paths; no complete
+  profile-aware adapter is evidenced. It remains unsupported for alternate
+  process-local profiles and must fail closed until its mutable roots are
+  adapted. Neither package is claimed context-compatible today.
+- Package/provider environment composition still needs a protected-field
+  contract. Current catalog `env` descriptors are executable shell snippets
+  (for example PATH prepends and package-specific HOME-derived values); future
+  context composition must preserve declared caller inheritance while
+  applying exact package/provider command and environment identity. No blanket
+  environment overwrite rule is accepted here.
+
 ### P4 implementation follow-up (2026-11-07)
 
 - P4 work is implemented on draft PR #7, exact current branch head `m-os@3ef1a713fa5bcf31d0ee8b4f5d282ffc253c675d`, based on scoped-accepted P3 `446de83...`; master remains unchanged. It adds the derived facility map, provider-local offline ordering from installed repository snapshots, default projection, stage/backup reconciliation and hooks at install/uninstall/package-default/facility-default mutations. The unit test passes locally on the earlier implementation head; current exact-source hosted integration is the remaining P4 gate.

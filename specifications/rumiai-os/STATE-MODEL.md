@@ -263,9 +263,24 @@ not the logical identity selected in the context's `user` dimension and is
 not, by itself, authority to access another account's state. The store cannot
 grant service-registration, CA-approval or other host-administrative
 authority. Per-account isolation is required. Provisioning the UID directory
-and its permissions for writable versus shared/read-only installations, the
-record format, and failure behavior remain part of the coordinated context
-migration; no directory mode or provisioning mechanism is selected here.
+and its permissions follows these rules:
+
+- In a user-owned installation, the account may create its own UID directory
+  only when the existing `state` parent is a trusted directory that is not
+  group- or world-writable.
+- In a shared or read-only installation, an installer or account-lifecycle
+  administrator must provision the account directory before use. It is owned
+  by that POSIX account and mode `0700`.
+- Ordinary `context` execution never elevates privileges, changes parent
+  permissions, or creates another account's directory. If the authority is
+  missing, unsafe, or unwritable, the operation fails with a diagnostic and
+  leaves the active shell context unchanged.
+
+Do not make the shared `state` parent group/world-writable or sticky to enable
+account provisioning. The directory record format and exact diagnostic remain
+part of the coordinated context migration. These are the selected security
+rules; deployment and multi-account validation remain required before the
+generalized context can claim acceptance.
 
 ## Git boundary
 

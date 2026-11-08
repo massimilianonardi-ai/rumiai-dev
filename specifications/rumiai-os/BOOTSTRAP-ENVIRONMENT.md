@@ -143,6 +143,26 @@ package selections are retained. The most recent selection has the
 highest search-path precedence. This is a shell-local context, not a
 new persisted package default.
 
+This describes the currently implemented initial package/library phase. The
+agreed generalized-context migration changes bare `context` to initialize
+the effective context from persistent per-account defaults and adds an
+explicit operation to clear those persisted defaults. Its exact public clear
+syntax and record format remain open. Until that migration is implemented,
+bare `context` retains the shell-local reset behavior above.
+
+The generalized-context default store is `$m_ROOT/state/<effective-UID>`.
+UID lookup and default loading occur only when the shell `context` function is
+invoked; the technical root bootstrap continues not to derive UID or load
+account defaults. A user-owned installation may create its own UID directory
+only when the existing `state` parent is trusted and not group/world-writable.
+Shared or read-only installations require an installer or account-lifecycle
+administrator to pre-provision an account-owned mode `0700` directory.
+Ordinary `context` execution never elevates privileges, changes parent
+permissions or creates another account's directory. Missing, unsafe or
+unwritable authority causes a diagnostic failure before changing the active
+shell context. Never make the shared parent group/world-writable or sticky to
+enable provisioning. Deployment and multi-account validation remain pending.
+
 For each selected concrete, `context` reads existing, separately
 materialized lookup views when present:
 
