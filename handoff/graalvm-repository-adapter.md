@@ -1,6 +1,6 @@
 # GraalVM repository adapter
 
-Status: Active — adapter/manual/workflow implemented; exact and latest Linux ARM64 public install/provider paths pass; hosted cross-platform checks are in progress
+Status: Active — adapter/manual/workflow implemented; exact/latest public install and provider paths pass on Linux ARM64 and Linux x86_64; macOS/Windows scope remains in validation
 Updated: 2026-11-08
 
 ## Goal
@@ -59,7 +59,7 @@ The adapter, manual and workflow are committed to `codex/graalvm-repository-adap
 
 ## Next action
 
-Refresh run 42488509763 and inspect exact platform jobs/logs. Fix only evidenced issues; keep PR #13 draft and unmerged until latest, exact, supported-stream artifact and provider acceptance plus formal review are addressed.
+Refresh run 42488509763 for GraalVM macOS and Windows metadata; inspect exact platform logs. Fix only evidenced issues; keep PR #13 draft and unmerged until latest, exact, supported-stream artifact and provider acceptance plus formal review are addressed.
 
 ## Blockers / open questions
 
