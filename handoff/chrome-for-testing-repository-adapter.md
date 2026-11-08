@@ -51,7 +51,7 @@ Private metadata helper branches now use distinct local statuses 1–11; fetch, 
 
 ## Next action
 
-The updated external adapter runner pins the new PR head `8703b99251c680feaa61a09b1d3109bb5d69c33a` (runner `fe2e865fdd0333c9199c25b7463c2fd3947f1d34`); hosted run [42489959582](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42489959582) is queued. Inspect its CfT exact/latest install/command job before claiming the diagnostics fix has hosted acceptance. Obtain formal PR review and validate any supported streams/hosts beyond Linux ARM64. Keep the PR open and unmerged.
+The updated external adapter runner pins the new PR head `8703b99251c680feaa61a09b1d3109bb5d69c33a` (runner `fe2e865fdd0333c9199c25b7463c2fd3947f1d34`); hosted run [42489959582](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42489959582) is active: updated CfT exact/latest install/command job `128759975106` passed. This closes hosted validation of the diagnostics-fix head on Linux ARM64; PR formal review and other supported-stream coverage remain open. Obtain formal PR review and validate any supported streams/hosts beyond Linux ARM64. Keep the PR open and unmerged.
 
 ## Blockers / open questions
 
