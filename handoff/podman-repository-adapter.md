@@ -39,7 +39,7 @@ Refresh all remote heads before the next repository write or validation.
 
 ## Current state
 
-Local branch `m-os/codex/podman-repository-adapter@b1ca4d2266cc5b44dbf3331655878441c41833ef` contains the adapter, manual and macOS 15 ARM64 public-path workflow; it is not pushed and has no PR. `sh -n`, workflow YAML parsing, `git diff --check` and validation of the pinned catalog repository descriptor pass. Live GitHub API lookup returned HTTP 403, so latest and exact asset metadata are **pending**, not PASS. No package installer or host service was run. Genuine flat-package extraction and command execution require the hosted macOS workflow.
+Draft PR [#15](https://github.com/massimilianonardi-ai/m-os/pull/15) is open and unmerged at `a11c944089a33fc0f23d02038e3f5f3fa60ee1bb`. `sh -n`, workflow YAML parsing, `git diff --check` and validation of the pinned catalog repository descriptor pass. Live GitHub API lookup returned HTTP 403, so latest and exact asset metadata are **pending**, not PASS. No hosted workflow run was visible at checkpoint. No package installer or host service was run. Genuine flat-package extraction and command execution require the hosted macOS workflow.
 
 Boundary incident: an executor accidentally created `/tmp/podman-sh.out` outside the user's allowed `/m/src/git/chatgpt` root. The executor was instructed not to access or modify that file again; no cleanup was attempted because it would itself write outside the authorized root. All subsequent work stayed in the isolated checkout under the allowed root.
 
