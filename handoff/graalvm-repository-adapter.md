@@ -1,6 +1,6 @@
 # GraalVM repository adapter
 
-Status: Active — adapter/manual/workflow implemented; duplicate-version API resolution and Linux ARM64 exact public install pass; latest install is pending after upstream API quota exhaustion
+Status: Active — adapter/manual/workflow implemented; exact and latest Linux ARM64 public install/provider paths pass; hosted cross-platform checks are in progress
 Updated: 2026-11-08
 
 ## Goal
@@ -12,6 +12,7 @@ Implement the missing `graalvm` repository adapter for the four catalog-declared
 - `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d`
 - `m-os/codex/graalvm-repository-adapter@73b238d42966c0da1d2aebb48b50bfba59b484cf` (draft [PR #13](https://github.com/massimilianonardi-ai/m-os/pull/13))
 - `pkg-catalog/main@0b69223a5ebe7bc042aad50012ee8bc7e4a00442`
+- `pkg-catalog/codex/m-os-adapter-runner@8e0e7d9d0ed274540b1ad1b2a68fb8ce455b1806` (test-only four-stream runner candidate)
 - `rumiai-dev/main@75e54c051f7a2893a4898c6b4e1b963fdfa84e94`
 
 Refresh all remote heads before the next write or validation.
@@ -49,19 +50,19 @@ The upstream stable tag families observed are `graal-<version>`, `jdk-<version>`
 - A live stable-release listing initially failed because several distinct stable tags normalize to the same package version. The adapter now keeps the newest record for each normalized version. The fixture includes the observed `graal-23.0.2`/`jdk-23.0.2` duplicate and passes; live version listing, latest resolution and exact `25.3.4.1` resolution then passed.
 - Final diff review caught and corrected the library manual's former statement that duplicate mapped versions fail closed; the manual now matches newest-chronology deduplication at `73b238d4`.
 - On the isolated Ubuntu ARM64 checkout, the public CLI `./m pkg uninstall graalvm@25.3.4.1!linux-arm64` followed by `./m pkg install graalvm@25.3.4.1!linux-arm64` completed successfully. `pkg versions` and `pkg default` reported that concrete, and `./m java -version` ran the installed GraalVM 25.0.4.1 runtime. The run exercised the public package pipeline and genuine catalog artifact.
-- A later unversioned install attempt failed before artifact resolution because GitHub returned HTTP 403 and the unauthenticated API quota was exhausted after repeated live diagnostics. This is **PENDING**, not an adapter/latest failure. The full releases endpoint returned 5,477,123 bytes; its POSIX JSON parser is CPU-bound on this response, so allow the hosted workflow its configured 35-minute timeout and avoid repeated live probes.
+- Exact and latest public Linux ARM64 installation both pass. After the rate-limit endpoint recovered, `./m pkg install graalvm` installed the current `graalvm@25.5.5.0.3!linux-arm64`; `pkg default` and `pkg versions` agreed, and selecting that Java provider made `./m java -version` report GraalVM CE 25.5.5.0.3. The exact anchor 25.3.4.1 was also installed and ran earlier. The full releases endpoint is 5,477,123 bytes and public resolution took about 100 seconds locally; avoid unnecessary repeated API probes.
 - Independent read-only source review found no concrete defect in the current adapter implementation. The workflow was corrected to install latest first and capture its concrete before installing the exact anchor, avoiding installed-current reuse.
 
 ## Current state
 
-The adapter, manual and workflow are committed to `codex/graalvm-repository-adapter@73b238d4` and published as draft PR #13, based on exact `m-os/master@a78a24bd`. Exact install and provider execution pass locally. Latest live install, four-platform hosted validation and formal PR review remain open. This work is separate from GeoServer PR #12. All local writes are under `/m/src/git/chatgpt`; frozen `rumiai-os` and `rumiai-tests` were not accessed.
+The adapter, manual and workflow are committed to `codex/graalvm-repository-adapter@73b238d4` and published as draft PR #13, based on exact `m-os/master@a78a24bd`. Exact and latest install/provider execution pass locally on Linux ARM64. Runner attempts [42487123865](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42487123865), [42487495004](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42487495004), and [42487697015](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42487697015) exposed harness issues: `pkg depend` does not print its root; exact Java execution must explicitly select the exact provider; direct use of the checkout's detached catalog caused `git pull` to fail; and cross-installing a Windows package through Linux reaches provider validation, so it cannot claim a Windows installation. Runner commit `8e0e7d9d0ed274540b1ad1b2a68fb8ce455b1806` also initializes core/json libraries before direct GraalVM metadata functions, fixing the evidenced harness failure in x86_64 artifact-only checks. Run [42488382382](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42488382382) on prior runner `843c478` had S1 and Chrome for Testing PASS, GraalVM Linux ARM64 PASS, GeoServer Ubuntu ARM64 PASS; GraalVM Linux x86_64 failed because the test shell had not loaded core/json functions, not because of an adapter assertion. ARM64/macos and other jobs had not all completed when the follow-up was started. New run [42488509763](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42488509763) on `8e0e7d9` is queued to rerun corrected checks; inspect before claiming final acceptance. Formal PR review remains open. This work is separate from GeoServer PR #12. All local writes are under `/m/src/git/chatgpt`; frozen `rumiai-os` and `rumiai-tests` were not accessed.
 
 ## Next action
 
-After the unauthenticated GitHub API rate limit resets, run one bounded public unversioned latest install, then verify installed versions/default and Java provider selection. Re-run shell syntax, fixture, embedded workflow syntax and diff checks on PR #13; record hosted/platform gates and any formal review. Keep the PR draft and unmerged until the latest/platform/hosted acceptance gates pass.
+Refresh run 42488509763 and inspect exact platform jobs/logs. Fix only evidenced issues; keep PR #13 draft and unmerged until latest, exact, supported-stream artifact and provider acceptance plus formal review are addressed.
 
 ## Blockers / open questions
 
-- Unauthenticated GitHub API quota is currently exhausted; read-only headers should be checked before retrying. Do not repeatedly poll the releases endpoint while it remains exhausted.
-- Only Linux ARM64 can be exercised in the current local environment. The other three declared streams require matching hosted-platform validation.
+- Native Windows execution/install is not established by the current `m-os` checkout; the Windows stream is limited to public target resolution and exact/latest asset metadata on Linux. Linux ARM64, Linux x86_64, and macOS ARM64 use native runners.
+- The other missing catalog repository types (`chrome-for-testing`, `gpgtools`, and `podman`) remain separate TODO work.
 - The other missing catalog repository types (`chrome-for-testing`, `gpgtools`, and `podman`) remain separate TODO work.

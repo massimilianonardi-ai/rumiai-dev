@@ -18,10 +18,11 @@ Current verified remote HEADs (2026-11-08 continuation):
 - `m-os/codex/a4-browser-observation@4b688d87b46a0320448ca4c86485a116760cc1b3` (A4 workflow observation fix; draft PR #11 open/unmerged; hosted A1–A4 dispatch remains deferred);
 - `m-os/m-os-completion-s@15a2c4f96584c07b92088e5530d4ecb09a9477b8` (S1/S2 candidate); test-only S follow-up `m-os/codex/srv-start-failure-ci@093bed9bbf29c0828c806689db7bd3d9b00149ee`;
 - `m-os/codex/geoserver-repository-adapter@ff90b05d231c122c8db07659d92e32f3316709f0` (PR #12; workflow-only follow-up);
+- `m-os/codex/graalvm-repository-adapter@73b238d42966c0da1d2aebb48b50bfba59b484cf` (draft PR #13; exact/latest Linux ARM64 public install and Java provider pass; hosted multi-target follow-up in progress);
 - `m-os/codex/a2-current-integration@84f436bffe1a79491609fcf3d1f93c2067174d60` (A2 manual candidate; PR #10 draft/unmerged; includes migration no-default restoration and semantic M15 manual corrections);
 - `pkg-catalog/main@0b69223a5ebe7bc042aad50012ee8bc7e4a00442`; the refreshed S runner is currently `pkg-catalog/m-os-completion-s-ci@0337ba7be828cd0a814eef8296d12404f33e91f1`.
-- `pkg-catalog/codex/m-os-adapter-runner@108eb1ef3ab3008c6d3b00599cfcb43f80a91faa` (external scoped runner; latest retry in progress at checkpoint);
-- `rumiai-dev/codex/rumiai-dev-remote-sync@830ce04c126710898f05732dc1d1bc68c5629051` (active handoff branch before this update).
+- `pkg-catalog/codex/m-os-adapter-runner@8e0e7d9d0ed274540b1ad1b2a68fb8ce455b1806` (external scoped runner; corrected GraalVM exact/latest multi-target acceptance queued as run 42487972888);
+- `rumiai-dev/codex/rumiai-dev-remote-sync@45b89828` (active handoff branch before this update).
 
 **Hosted-run availability check (2026-11-08):** GitHub Actions on the `m-os` fork are disabled by usage-scale policy; no setting was changed. The later hosted runs in this handoff were executed by separate test-only `pkg-catalog` runners. Interpret references to unavailable workflows above as repo-native `m-os` Actions only; they do not invalidate exact external-runner evidence already recorded below.
 
@@ -523,3 +524,11 @@ The operator explicitly authorized **skipping the unexecuted A1–A4 GitHub Acti
 - GeoServer Ubuntu ARM64 job `128746995307` was still in progress at the checkpoint; do not infer a result. Earlier exact run `42484994689` remains a valid Linux GeoServer exact/latest+WFS PASS and successful S1 composition result.
 - S1 composition proof is now closed for the specific Ubuntu current-master/live-legacy-PID regression; the previous line saying it remained open pending a corrected run is superseded by run `42484994689` and reconfirmed by `42485712210`. Same-second PID reuse, check-to-signal race, cross-platform S1 and review/integration remain open.
 - No product PR was merged. P3/P4/J1/V2 remain complete; C2/C3, the integrated I1 matrix, accessible nonprivileged I2, adapter reviews and the remaining plan gates are still open.
+
+### GraalVM exact/latest public acceptance (2026-11-08)
+
+- Draft m-os PR #13 head `73b238d42966c0da1d2aebb48b50bfba59b484cf`, exact master `a78a24bd37446ac9b7d510af5facc5c110de595d`, catalog `0b69223a5ebe7bc042aad50012ee8bc7e4a00442`.
+- On the isolated Linux ARM64 worktree, exact anchor `25.3.4.1` and unversioned current stable `25.5.5.0.3` both installed through public `pkg`; default/versions agreed, and Java provider selection ran both runtimes. Latest reported GraalVM CE `25.0.5.0.3`. Package/provider state and the local catalog override were removed/restored afterward; the worktree is clean.
+- External runner attempts 42487123865, 42487495004, and 42487697015 failed before complete product acceptance because of runner issues (wrong expected `pkg depend` output, detached-catalog `git pull`, omitted exact-provider selection) and because cross-installing Windows on Linux fails provider validation. These are not counted as adapter product failures or platform PASS.
+- Corrected external runner `pkg-catalog/codex/m-os-adapter-runner@8e0e7d9d0ed274540b1ad1b2a68fb8ce455b1806` pins catalog on a named local branch, selects exact and latest providers before checking their commands on Linux ARM64/Linux x86_64/macOS ARM64, and checks Windows exact/latest target resolution and asset metadata without claiming native Windows install. Run [42488382382](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42488382382) on runner `843c478` had S1, Chrome for Testing, GraalVM Linux ARM64 and GeoServer Ubuntu ARM64 pass; GraalVM Linux x86_64 failed because the artifact-only test shell omitted core/json initialization (runner harness defect). Corrected runner `8e0e7d9` adds that initialization and run [42488509763](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42488509763) is queued. Refresh exact jobs before platform claims.
+- PR #13 remains draft and unmerged; formal review and four-stream acceptance are open. Windows install/command execution is not established.
