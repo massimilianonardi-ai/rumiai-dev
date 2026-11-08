@@ -443,8 +443,10 @@ observed content/metadata changes during staging, and reports file replacement
 only. APISIX reload is not synchronously confirmed. The standalone JSON path
 continues to validate with local RumiAI `json --check` before transport.
 
-The YAML-file and snapshot adapters still support no generic resource-level
-`create`, `update` or `delete`; those fail explicitly. REST full-document
+The YAML-file adapter still supports no generic resource-level `create`,
+`update` or `delete`; those fail explicitly. The standalone API snapshot
+adapter supports host-scoped resource CRUD through versioned full-snapshot
+updates and read-back verification, as described above. REST full-document
 apply is unimplemented. Generic `request` is currently
 implemented only for the host traditional REST adapter described above. None
 falls back to a legacy function. Operation-specific compatibility functions
@@ -460,16 +462,18 @@ The current read-only resolvers do not prove which `-c`/profile or effective con
 
 Mode inspection does not emit API keys or the selected configuration contents. Credentials and target data remain subject to `RSUDO.md` and `DIAGNOSTICS.md`. The legacy APISIX functions retain previously documented unsafe JSON/request behavior, and their existence is not evidence that modern secure mutation is complete.
 
-The complete mode-routed Admin API, resource-level API-snapshot edits and
-automatic version calculation, standalone YAML resource mutations,
+The complete mode-routed Admin API, standalone YAML resource mutations,
 pagination, and simplified shell recipes are **not yet implemented** by the
-current safe APISIX backend.
+current safe APISIX backend. API-snapshot CRUD is implemented with the
+single-writer and read-back limitations documented above; it does not claim
+compare-and-swap protection.
 The file-json adapter supports full-document apply and resource-level
 create/update/delete; file-yaml supports full-document apply only. The initial
 traditional REST `list/get/create/update/delete` and API-snapshot
-`list/get/apply`, YAML-file and JSON-file `list/get` adapters above are partial and do
-not imply those capabilities. They are pending development, not current
-guarantees.
+`list/get/apply/create/update/delete`, YAML-file and JSON-file `list/get`
+adapters above are partial and do not imply those capabilities. REST and
+API-snapshot CRUD are implemented; other listed gaps remain pending
+development, not current guarantees.
 
 ## Required mechanical protection
 

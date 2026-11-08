@@ -281,12 +281,14 @@ discovery extension:
   as product defects or runner/environment failures. No validation credit is
   claimed. The run does not include product `rumiai-os@f2a4445` or test
   `rumiai-tests@58464c4a`; it uses the previously frozen revisions.
-- Next: inspect the frozen runner's completed results, then continue discovery
-  evidence correlation and finish the remaining adapter work in bounded
-  increments. Snapshot resource mutation still requires a JSON document
-  transformation path plus digest/version/read-back conflict handling; YAML
-  resource mutation still needs comment-preserving semantics. Do not claim
-  either operation implemented until their safety contract is realized.
+- The frozen runner evidence above is retained for the historical revisions;
+  no new runner has been dispatched for the current snapshot CRUD implementation.
+  Per the operator's direction, discovery work is paused. Continue with the
+  next explicitly selected APISIX backend/operation, keep YAML resource
+  mutation gated on comment-preserving semantics, and run the accumulated
+  suite together at the end. Snapshot CRUD is implemented but remains pending
+  live validation; it assumes a single writer because the API has no
+  compare-and-swap.
 
 ### Continuation checkpoint — standalone JSON full-document apply
 
