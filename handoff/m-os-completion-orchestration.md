@@ -1,9 +1,16 @@
 # Completion orchestration of autonomous m-os
 
-Status: Active — P3/P4/J1/V2 promoted; S1's composed current-master/live-legacy-PID regression passed on Ubuntu, while the SRV-42 PID identity/race and cross-platform gates remain open; A2/A4 hosted workflows deferred; C2/C3 and I1 remain open; repository adapter PRs #12–#16 are open and unmerged; GeoServer and Podman runner access has recovered intermittently; GraalVM exact/latest Linux ARM64 public install/provider passes and its corrected multi-target runner is in progress; integrated adapter and whole-plan acceptance remain pending
+Status: Active — P3/P4/J1/V2 promoted; S1 current-master/live-legacy-PID regression and the five-adapter exact-head composition smoke passed; SRV-42 identity/race and cross-platform gates remain open; A2/A4 hosted workflows deferred; C2/C3 and full I1/M01–M15 acceptance remain open; adapter PRs #12–#16 remain unmerged; runner `f2c339a` has current GPGTools/CfT/Podman/GeoServer and GraalVM Linux jobs passing, with GraalVM macOS ARM64 still in progress at run `42492295460`.
 Updated: 2026-11-08
 
 ### Current continuation checkpoint (2026-11-08)
+
+#### I1 adapter composition smoke and M15 follow-up
+
+- Exact current adapter PR heads #12–#16 composed without conflict on the test-only runner; hosted composition/syntax/manual job `128767096861` **PASS** at runner `f2c339aef07464876e30a93d6d3f91d6395bef14` / run [42492295460](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42492295460). The run's GPGTools, CfT, Podman, GeoServer Linux/macOS, GraalVM Linux ARM64/x86_64 and S1 jobs passed; GraalVM macOS job `128767096970` remains in progress at this checkpoint.
+- A local public `pkg depend` smoke on the composed tree and exact catalog/Podman candidate resolved the five adapter package requests; this is planning evidence only. M15's filtered-invalid-`log` status matrix also passed locally on A2 PR #10 `84f436bf`, candidate only. Full adapter install composition, current-master A2 validation, I1/M01–M15 closure and I2 remain open. Details are in `handoff/m-autonomous-validation.md`.
+- Current exact refs remain `m-os/master@a78a24bd`, adapter PRs #12–#16 `ff90b05d`, `73b238d4`, `eb4e45eb`, `17188da9`, `8703b992`; `pkg-catalog/main@0b69223a`, Podman candidate `c8a39f8b`, runner `f2c339a`. Refresh before further writes.
+
 
 #### Latest exact-source continuation (2026-11-08)
 
