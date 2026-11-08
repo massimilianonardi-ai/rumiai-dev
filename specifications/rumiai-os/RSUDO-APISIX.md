@@ -124,8 +124,8 @@ is represented only as configured/not-configured. Supported internal
 adapter identifiers are `rest`, `snapshot`, `file-yaml`,
 `file-json` and `none`. Generic `list/get` route supported explicit contexts
 to their internal adapters; `create/update/delete` are implemented for
-host-scoped traditional REST, explicit standalone JSON files and host-scoped
-standalone API snapshots. Full-document `apply` supports standalone JSON/YAML
+host-scoped traditional REST, explicit standalone JSON files and explicitly
+selected host or Docker/Podman standalone API snapshots. Full-document `apply` supports standalone JSON/YAML
 files and the standalone API snapshot adapter.
 Invalid inputs use
 distinct new-context status values 1–11 as described in the operational manual.

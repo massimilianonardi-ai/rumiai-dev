@@ -241,6 +241,10 @@ discovery extension:
   `apisix-admin-snapshot-mutate-live.test` is now authored and selected for
   pinned APISIX 3.16/3.19; it covers create/update/delete, one-step collection
   version increments and `modifiedIndex` on the returned/read-back resource.
+  Its source is configured to exercise the explicit full-ID Docker container
+  route; it has not been run. The same mutator now dispatches either to host rsudo or the selected Docker/Podman
+  container, with URL, header path and APISIX home interpreted inside that
+  target.
   It still needs the combined suite run and fuller failure/202 coverage.
   `json` remains read-only and validates the request body locally; the selected
   APISIX cjson handles the snapshot transform. cjson can normalize number
