@@ -49,7 +49,7 @@ Diagnostics fix (2026-11-08): the private latest-index helper now returns distin
 
 ## Next action
 
-The updated external runner pins GPGTools head `eb4e45eb6df167b6ad3780ca641f5a6d4d3abf7f`; hosted run [42489959582](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42489959582) is active and GPGTools macOS ARM64 job `128759975222` passed at the diagnostics-fix head. This closes the scoped hosted acceptance for the new head; formal PR review remains open. Formal review and merge remain open.
+The updated external runner pins GPGTools head `eb4e45eb6df167b6ad3780ca641f5a6d4d3abf7f`; hosted run [42489959582](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42489959582) is active and GPGTools macOS ARM64 job `128759975222` passed at the diagnostics-fix head. This closes the scoped hosted acceptance for the new head; formal PR review remains open.
 
 ## Blockers / open questions
 
