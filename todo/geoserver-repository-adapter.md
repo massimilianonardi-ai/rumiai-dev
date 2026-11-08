@@ -30,6 +30,11 @@ The branch adds `pkg-repository-geoserver.lib.sh` and its operational manual;
 GitHub Releases API for stable release identity/order and the exact-version
 SourceForge RSS record for binary size and MD5.
 
+An independent read-only review of the exact PR head against `master@a78a24bd`
+found no further concrete contract, interface or security defects after the
+version-validation ordering correction. This is an internal code review, not
+a GitHub approval or hosted check.
+
 On Ubuntu ARM64, against exact `m-os/master@a78a24bd` and
 `pkg-catalog/main@0b69223a`, shell syntax and `git diff --check` passed;
 public `pkg depend geoserver@3.0.1` and `pkg depend geoserver` selected
