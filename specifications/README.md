@@ -14,7 +14,7 @@ Read only the smallest complete set relevant to the task.
 | overall `m` / RumiAI architecture, layer ownership, top-level layout | `rumiai-os/CURRENT-MODEL.md` |
 | RumiAI sense definition, AI/control separation and sense invariants | `rumiai-os/SENSE-MODEL.md` |
 | deterministic Web observation/control capability, independent project/package boundary and provider contract | `rumiai-os/WEB-CONTROL.md` |
-| standalone, no-server rendered web-page export and local resource boundary | `rumiai-os/WEB-EXPORT.md` |
+| faithful rendered-page HTML export and verified resource relinking contract | `rumiai-os/WEB-EXPORT.md` |
 | root bootstrap, environment, PATH, branded activation | `rumiai-os/BOOTSTRAP-ENVIRONMENT.md` |
 | physical bootstrap/command root resolution | `rumiai-os/ENTRYPOINT-ROOT-RESOLUTION.md` |
 | command/runtime classification, shebangs and command identity | `rumiai-os/COMMAND-ENTRYPOINTS.md` |
@@ -51,8 +51,7 @@ Read only the smallest complete set relevant to the task.
 | OpenSSH authentication secret delivery, password-only invocation and stream transparency | `rumiai-os/SSH.md` |
 | remote SSH/sudo authentication, stdin separation and execution invariants | `rumiai-os/RSUDO.md` |
 | current rsudo APISIX configured-mode inspection, legacy interface and non-authoritative runtime boundary | `rumiai-os/RSUDO-APISIX.md` |
-| direct Keycloak shell administration, preservation of packaged server command, OIDC credential sources and HTTP Admin REST contract | `rumiai-os/KEYCLOAK-CLI.md` |
-| existing rsudo Keycloak compatibility and partially implemented HTTP API, plus the official remote kcadm.sh discovery and credential-safe proxy | `rumiai-os/RSUDO-KEYCLOAK.md` |
+| rsudo Keycloak administration target contract; K04 protected service-account/user grants and explicit OAuth token revocation partially implemented; general Admin REST/CLI pending | `rumiai-os/RSUDO-KEYCLOAK.md` |
 
 ## Testing and development
 
