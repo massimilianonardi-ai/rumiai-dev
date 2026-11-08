@@ -228,8 +228,9 @@ discovery extension:
 ### APISIX — standalone API resource CRUD implementation (2026-11-08; pending live validation)
 
 - The internal `create/update/delete` router now selects the standalone API
-  snapshot adapter for explicit `host` + `standalone-api` context. It reads a
-  complete `/apisix/admin/configs` snapshot on the remote host, modifies only
+  snapshot adapter for explicit `host`, Docker or Podman + `standalone-api`
+  context. It reads a complete `/apisix/admin/configs` snapshot on the selected
+  target, modifies only
   routes/services/upstreams using that selected installation's LuaJIT and
   `cjson.safe`, increments the selected collection's `*_conf_version`, and
   assigns the new version to the created/replaced resource's `modifiedIndex`.
@@ -244,19 +245,22 @@ discovery extension:
   Its source is configured to exercise the explicit full-ID Docker container
   route; it has not been run. The same mutator now dispatches either to host rsudo or the selected Docker/Podman
   container, with URL, header path and APISIX home interpreted inside that
-  target.
-  It still needs the combined suite run and fuller failure/202 coverage.
+  target. A permanent curl transport test now also has deterministic HTTP 202
+  response-preservation and read-back-conflict cases. Those cases use real
+  curl against the local HTTP fixture and a fake LuaJIT only to isolate the
+  post-staging branches; they do not validate cjson transformation or live
+  APISIX timeout semantics. Neither test has been run in this continuation.
   `json` remains read-only and validates the request body locally; the selected
   APISIX cjson handles the snapshot transform. cjson can normalize number
   lexemes/object key order. The API has no compare-and-swap against the prior
   digest, so concurrent writers remain a race and the operation requires a
   single-writer assumption. `RSUDO_APISIX_HOME` is now required to locate
-  LuaJIT/cjson/OpenSSL on the explicitly selected host.
+  LuaJIT/cjson/OpenSSL on the explicitly selected host or container.
 - Per the operator's latest direction, discovery is paused. The prior frozen
   runner failed on both platforms; its published aggregate and job output do
   not expose the per-test diagnostics needed to classify the failures. Next:
-  finish API-driven failure/202 coverage, then execute the accumulated suite
-  together. Do not resume discovery work.
+  execute the accumulated suite together and inspect outcomes before claiming
+  validation. Do not resume discovery work.
 
 ### APISIX M2 — running-container configuration bind-source correlation (2026-11-08; implementation pending validation)
 
