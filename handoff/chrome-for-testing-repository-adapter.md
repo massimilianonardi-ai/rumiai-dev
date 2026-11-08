@@ -1,6 +1,6 @@
 # Chrome for Testing repository adapter
 
-Status: Active — implementation authorized by the m-os completion request; fresh source review and branch work in progress
+Status: Active — adapter committed locally; public metadata/fixture checks pass; public package install and hosted acceptance pending
 Updated: 2026-11-08
 
 ## Goal
@@ -39,13 +39,13 @@ Refresh all remote heads before the next repository write or validation.
 
 ## Current state
 
-No implementation branch or PR has been published yet. Work is scoped to the adapter, its library manual and focused genuine-public validation. The owning source-composition and overall M10/M01–M15 ledgers need checkpoint updates after evidence changes.
+Local branch `m-os/codex/chrome-for-testing-adapter@267969440bbf7c5a4cb6e04ff203f097190d5777` contains only the adapter and manual; it is not pushed and has no PR. On Linux ARM64, official exact `153.0.8010.12` and Stable latest `157.0.8103.38` resolved; exact/latest Cloud Storage metadata yielded object size `195926016` and MD5 `72f3441dd3fde1ccdb2ef2ddcc8d5de0`. A temporary deterministic fake-transport fixture accepted exact/latest and the expected descriptor, and rejected wrong object name, zero size, malformed MD5, invalid archive regex and wrong digest type. `sh -n` and `git diff --check` pass. This evidence does not include public `pkg install`, durable CI fixture, or hosted ARM64 validation.
 
 ## Next action
 
-Inspect current CfT adapter contracts, catalog anchor and HTTP metadata behavior; implement in an isolated `m-os` branch, validate fixture and public exact/latest Linux ARM64 paths, then publish a draft PR with all evidence and remaining platform/hosted gates stated.
+Add a durable fixture and isolated public-command workflow, rerun the exact/current metadata checks, then publish a draft PR with all evidence and remaining platform/hosted gates stated.
 
 ## Blockers / open questions
 
-- Confirm which Cloud Storage metadata are available through the current `http-fetch` API and the exact checksum representation/decoding required by the catalog's MD5 contract.
-- Stable latest and exact asset equivalence must be proven against current official metadata; do not assume Chromium project version semantics are identical to CfT build-version semantics.
+- Public package install and a hosted Linux ARM64 run remain pending; current live metadata evidence is source/adapter-level only.
+- Stable latest and exact metadata were checked against official endpoints at the recorded date; rerun on the hosted workflow rather than assuming these values remain current.

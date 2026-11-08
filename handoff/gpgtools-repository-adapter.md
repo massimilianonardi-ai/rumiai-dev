@@ -1,6 +1,6 @@
 # GPGTools repository adapter
 
-Status: Active — implementation authorized by the m-os completion request; fresh source review and branch work in progress
+Status: Active — adapter and deterministic fixture committed locally; hosted macOS ARM64 validation pending
 Updated: 2026-11-08
 
 ## Goal
@@ -39,13 +39,12 @@ Refresh all remote heads before the next repository write or validation.
 
 ## Current state
 
-No implementation branch or PR has been published yet. Current local host is Linux ARM64, so source/fixture work can proceed here but genuine install acceptance requires a macOS ARM64 hosted or physical environment. No host keychain or trust store should be changed.
+Local branch `m-os/codex/gpgtools-repository-adapter@620cf9f7` contains the adapter, manual, deterministic fixture and macOS 15 ARM64 public-path workflow; it is not pushed and has no PR. The fixture passes under `./m shell` with a fake `http-fetch` executable: the exact pin makes zero transport calls; latest/list/artifact resolution yields `2026.1+3633n`, catalog range `n0001=2026.1+3633n`, size `67104027` and SHA-256 `16fa6c1dfa6b440e900632618a6ebaac7d974c3faed3a0e14ce3d1ee6826c9c5`; malformed index rejects. `sh -n`, workflow YAML parsing and `git diff --check` pass. Genuine macOS install/command evidence has not run.
 
 ## Next action
 
-Inspect current GitHub adapter/manual, exact catalog entry and official index semantics; implement a bounded adapter/manual and macOS ARM64 workflow on an isolated `m-os` branch, then publish a draft PR and report hosted execution requirements.
+Publish a draft PR and run its pinned macOS ARM64 workflow; record install and command outcome, with upstream acquisition failures kept distinct from adapter failures.
 
 ## Blockers / open questions
 
-- The official index is not a version history; confirm that the adapter contract and catalog's exact version behavior can be implemented without claiming unsupported listing/ordering semantics.
 - Genuine macOS ARM64 install evidence is required before claiming acceptance.

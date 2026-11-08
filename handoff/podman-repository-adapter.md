@@ -1,6 +1,6 @@
 # Podman repository adapter
 
-Status: Active — implementation authorized by the m-os completion request; fresh source review and branch work in progress
+Status: Active — adapter/manual/workflow committed locally; live metadata and hosted macOS ARM64 validation pending
 Updated: 2026-11-08
 
 ## Goal
@@ -39,13 +39,15 @@ Refresh all remote heads before the next repository write or validation.
 
 ## Current state
 
-No implementation branch or PR has been published yet. Current local host is Linux ARM64; genuine flat-package extraction and command execution acceptance requires macOS ARM64 hosted or physical validation. Do not install a system Podman runtime or alter host services.
+Local branch `m-os/codex/podman-repository-adapter@b1ca4d2266cc5b44dbf3331655878441c41833ef` contains the adapter, manual and macOS 15 ARM64 public-path workflow; it is not pushed and has no PR. `sh -n`, workflow YAML parsing, `git diff --check` and validation of the pinned catalog repository descriptor pass. Live GitHub API lookup returned HTTP 403, so latest and exact asset metadata are **pending**, not PASS. No package installer or host service was run. Genuine flat-package extraction and command execution require the hosted macOS workflow.
+
+Boundary incident: an executor accidentally created `/tmp/podman-sh.out` outside the user's allowed `/m/src/git/chatgpt` root. The executor was instructed not to access or modify that file again; no cleanup was attempted because it would itself write outside the authorized root. All subsequent work stayed in the isolated checkout under the allowed root.
 
 ## Next action
 
-Inspect the exact catalog package/range and current flat-package extractor support, then implement the smallest adapter/manual/workflow on an isolated `m-os` branch; publish a draft PR with local and hosted evidence clearly scoped.
+Publish a draft PR and run the macOS ARM64 workflow after an upstream retry window; keep HTTP 403 classified as acquisition pending and record the actual artifact/install outcome.
 
 ## Blockers / open questions
 
-- Confirm whether the current public extractor accepts the exact catalog flat-package format on macOS ARM64 without changing shared extraction semantics; escalate to A3/P2 ownership if not.
+- The live GitHub API returned 403 during local evidence collection; no latest or exact artifact PASS is claimed.
 - Genuine macOS ARM64 package install evidence remains required.
