@@ -1,6 +1,6 @@
 # GPGTools repository adapter
 
-Status: Active — adapter and deterministic fixture committed locally; hosted macOS ARM64 validation pending
+Status: Active — adapter diagnostics and malformed-index fixture fix pushed to PR #14; hosted macOS ARM64 validation pending
 Updated: 2026-11-08
 
 ## Goal
@@ -9,6 +9,7 @@ Implement and validate the `gpgtools` repository type for the one catalog-declar
 
 ## Current repository revisions
 
+- `m-os/codex/gpgtools-repository-adapter@eb4e45eb6df167b6ad3780ca641f5a6d4d3abf7f` (PR #14)
 - `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d`
 - `pkg-catalog/main@0b69223a5ebe7bc042aad50012ee8bc7e4a00442`
 - `rumiai-dev/main@b0368f787273c3c246be0757929f3e22d5115e79`
@@ -41,11 +42,13 @@ Refresh all remote heads before the next repository write or validation.
 
 Draft PR [#14](https://github.com/massimilianonardi-ai/m-os/pull/14) is open and unmerged at `620cf9f7a301d93a44d5702988c7bf59a8481292`. The fixture passes under `./m shell` with a fake `http-fetch` executable: the exact pin makes zero transport calls; latest/list/artifact resolution yields `2026.1+3633n`, catalog range `n0001=2026.1+3633n`, size `67104027` and SHA-256 `16fa6c1dfa6b440e900632618a6ebaac7d974c3faed3a0e14ce3d1ee6826c9c5`; malformed index rejects. `sh -n`, workflow YAML parsing and `git diff --check` pass. No hosted workflow run was visible at checkpoint; genuine macOS install/command evidence has not run.
 
-Exact-pinned local rerun (2026-11-08): on adapter head `620cf9f7a301d93a44d5702988c7bf59a8481292` with `pkg-catalog@0b69223a5ebe7bc042aad50012ee8bc7e4a00442`, the documented public-shell fixture command passed with its temporary directory explicitly rooted under `/m/src/git/chatgpt/tmp/gpgtools-adapter`; the fixture cleanup left no matching temp directory. This rechecks deterministic adapter logic only, not the macOS artifact/install acceptance.
+Exact-pinned local rerun (2026-11-08): on adapter head `620cf9f7a301d93a44d5702988c7bf59a8481292` with `pkg-catalog@0b69223a5ebe7bc042aad50012ee8bc7e4a00442`, the documented public-shell fixture command passed with its temporary directory explicitly rooted under `/m/src/git/chatgpt/tmp/gpgtools-adapter`; the fixture cleanup left no matching temp directory. This rechecked deterministic adapter logic only, not the macOS artifact/install acceptance.
+
+Diagnostics fix (2026-11-08): the private latest-index helper now returns distinct local status 1 for transport failure and 3 for malformed index, with diagnostics `latest-index-fetch-failed` and `latest-index-invalid`; the fixture now asserts both statuses and diagnostic identities while preserving fail-closed parsing. Operational manual and fixture updated. Focused fixture and `git diff --check` passed. Commit `eb4e45eb6df167b6ad3780ca641f5a6d4d3abf7f` is pushed to PR #14; remote branch head confirmed exact. This does not close public macOS install/command acceptance or formal review.
 
 ## Next action
 
-Publish a draft PR and run its pinned macOS ARM64 workflow; record install and command outcome, with upstream acquisition failures kept distinct from adapter failures.
+Run/refresh the pinned macOS ARM64 external adapter validation at `eb4e45eb6df167b6ad3780ca641f5a6d4d3abf7f`; inspect logs and keep upstream acquisition failures distinct from adapter failures. Formal review and merge remain open.
 
 ## Blockers / open questions
 
