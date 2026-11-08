@@ -10,9 +10,9 @@ Implement the catalog-declared GeoServer package repository type and validate ex
 ## Current repository revisions
 
 - `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d`
-- `m-os/codex/geoserver-repository-adapter@3a4510026339737dc583062f8473466805ad9849` (draft [PR #12](https://github.com/massimilianonardi-ai/m-os/pull/12))
+- `m-os/codex/geoserver-repository-adapter@ff90b05d231c122c8db07659d92e32f3316709f0` (draft [PR #12](https://github.com/massimilianonardi-ai/m-os/pull/12))
 - `pkg-catalog/main@0b69223a5ebe7bc042aad50012ee8bc7e4a00442`
-- `pkg-catalog/codex/m-os-adapter-runner@e9d2661785c6782e64d36532bdfef0430efe134e` (hosted runner configuration)
+- `pkg-catalog/codex/m-os-adapter-runner@108eb1ef3ab3008c6d3b00599cfcb43f80a91faa` (hosted runner configuration)
 - `rumiai-dev/codex/rumiai-dev-remote-sync@339e0f6d` at this checkpoint
 
 Refresh all remote heads before the next write or validation.
@@ -41,7 +41,7 @@ Refresh all remote heads before the next write or validation.
 ## Completed
 
 - Added `pkg-repository-geoserver.lib.sh` and its operational manual in adapter commit `c2a21cc2cbe0ca5760c16b254f355fa7949b17b4`.
-- Added a focused CI workflow, now updated in PR head `3a4510026339737dc583062f8473466805ad9849`. It pins the catalog, checks exact/latest public dependency selection, installs latest first and records the selected concrete, installs exact 3.0.1 only when distinct, accepts valid platform-independent identities without `!osarch`, then explicitly selects latest and probes/stops WFS. `git diff --check` and extracted shell syntax validation passed locally.
+- Added a focused CI workflow, now updated in PR head `ff90b05d231c122c8db07659d92e32f3316709f0`. It pins the catalog, checks exact/latest public dependency selection, installs latest first and records the selected concrete, installs exact 3.0.1 only when distinct (including concrete identities without `!osarch`), then explicitly selects latest and probes/stops WFS. `git diff --check` and extracted shell syntax validation passed locally.
 - Local Ubuntu ARM64 validation against exact `m-os/master@a78a24bd` and `pkg-catalog@0b69223a`: public exact/latest dependency planning selected `temurin@21+35!linux-arm64`; the adapter listed 69 stable versions and resolved latest 3.0.2; exact 3.0.1 artifact metadata matched its SourceForge RSS record; real exact 3.0.1 and latest 3.0.2 installs passed.
 - GeoServer 3.0.1 served local HTTP 302 and stopped cleanly. On a fresh exact-PR-head 3.0.2 run, missing GeoServer default correctly failed closed (`provider-resolution-failed`); after explicitly selecting Java 21 and GeoServer 3.0.2, six WFS requests returned HTTP 200 and stop succeeded.
 - Independent adapter review found no remaining concrete code defect. The follow-up CI workflow review concern about the single 3.0.1 range anchor was withdrawn after inspection of request/range resolution plus successful public latest install; the workflow asserts installed 3.0.2 explicitly.
@@ -63,3 +63,10 @@ Continue review of the current PR #12 diff against its adapter/manual contract a
 - Native PR workflow visibility remains unavailable while `m-os` Actions are disabled. External-runner evidence covers current latest/exact on Ubuntu and the older 3.0.1 latest set on macOS; current macOS 3.0.2 artifact acquisition returned upstream HTTP 403.
 - Other supported stream architectures and operating systems remain unvalidated.
 - This adapter does not close GeoServer mutable runtime-state migration or the overall M01–M15/I1 acceptance matrix.
+
+### Latest hosted retry (2026-11-08)
+
+- Exact refs: GeoServer PR #12 `ff90b05d231c122c8db07659d92e32f3316709f0`; catalog `0b69223a5ebe7bc042aad50012ee8bc7e4a00442`; external runner `108eb1ef3ab3008c6d3b00599cfcb43f80a91faa`; run [42485712210](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42485712210).
+- GeoServer macOS ARM64 again failed before artifact installation because the upstream Releases API returned HTTP 403. No runtime/service assertion ran on that host. Podman macOS independently hit HTTP 403 from its upstream GitHub Releases API. GPGTools, Chrome for Testing, and the S1 current-master composition job passed.
+- At the time of this update, GeoServer Ubuntu ARM64 job `128746995307` was still running; do not count it as a result until refreshed. Prior exact-current-latest Ubuntu service acceptance is PASS in run `42484994689`, job `128744823666`.
+- PR #12 remains draft/unmerged. Adapter review and mutable runtime-state migration remain open; cross-platform/other architecture coverage is not established.
