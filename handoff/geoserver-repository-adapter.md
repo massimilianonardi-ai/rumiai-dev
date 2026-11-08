@@ -1,6 +1,6 @@
 # GeoServer repository adapter
 
-Status: Hosted Linux ARM64 and macOS ARM64 acceptance complete on exact adapter head; PR review and mutable runtime-state work remain open
+Status: Latest/exact Linux ARM64 and live WFS pass on current workflow; macOS current-latest acquisition is blocked by upstream HTTP 403; PR review and mutable runtime-state work remain open
 Updated: 2026-11-08
 
 ## Goal
@@ -10,10 +10,10 @@ Implement the catalog-declared GeoServer package repository type and validate ex
 ## Current repository revisions
 
 - `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d`
-- `m-os/codex/geoserver-repository-adapter@b1e4f040506592f0433e26005741f887266f4462` (draft [PR #12](https://github.com/massimilianonardi-ai/m-os/pull/12))
+- `m-os/codex/geoserver-repository-adapter@3a4510026339737dc583062f8473466805ad9849` (draft [PR #12](https://github.com/massimilianonardi-ai/m-os/pull/12))
 - `pkg-catalog/main@0b69223a5ebe7bc042aad50012ee8bc7e4a00442`
-- `pkg-catalog/codex/m-os-adapter-runner@7556c8dd85b308474e02e5c54b8c89728d52c44f` (hosted runner configuration)
-- `rumiai-dev/main@efd2bb7d3ea7c394c5ac4255b504f4d8e1847496` at this checkpoint
+- `pkg-catalog/codex/m-os-adapter-runner@e9d2661785c6782e64d36532bdfef0430efe134e` (hosted runner configuration)
+- `rumiai-dev/codex/rumiai-dev-remote-sync@339e0f6d` at this checkpoint
 
 Refresh all remote heads before the next write or validation.
 
@@ -41,24 +41,25 @@ Refresh all remote heads before the next write or validation.
 ## Completed
 
 - Added `pkg-repository-geoserver.lib.sh` and its operational manual in adapter commit `c2a21cc2cbe0ca5760c16b254f355fa7949b17b4`.
-- Added a focused CI workflow in current PR head `b1e4f040506592f0433e26005741f887266f4462`. It pins the catalog, checks exact/latest public dependency selection, installs 3.0.1 and 3.0.2, asserts both installed concretes, and probes/stops the latest WFS service in one shell session. All three embedded shell blocks pass `sh -n`.
+- Added a focused CI workflow, now updated in PR head `3a4510026339737dc583062f8473466805ad9849`. It pins the catalog, checks exact/latest public dependency selection, installs latest first and records the selected concrete, installs exact 3.0.1 only when distinct, accepts valid platform-independent identities without `!osarch`, then explicitly selects latest and probes/stops WFS. `git diff --check` and extracted shell syntax validation passed locally.
 - Local Ubuntu ARM64 validation against exact `m-os/master@a78a24bd` and `pkg-catalog@0b69223a`: public exact/latest dependency planning selected `temurin@21+35!linux-arm64`; the adapter listed 69 stable versions and resolved latest 3.0.2; exact 3.0.1 artifact metadata matched its SourceForge RSS record; real exact 3.0.1 and latest 3.0.2 installs passed.
 - GeoServer 3.0.1 served local HTTP 302 and stopped cleanly. On a fresh exact-PR-head 3.0.2 run, missing GeoServer default correctly failed closed (`provider-resolution-failed`); after explicitly selecting Java 21 and GeoServer 3.0.2, six WFS requests returned HTTP 200 and stop succeeded.
 - Independent adapter review found no remaining concrete code defect. The follow-up CI workflow review concern about the single 3.0.1 range anchor was withdrawn after inspection of request/range resolution plus successful public latest install; the workflow asserts installed 3.0.2 explicitly.
-- Hosted run [42483023923](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42483023923), runner head `7556c8dd85b308474e02e5c54b8c89728d52c44f`, checked out exact adapter `b1e4f040506592f0433e26005741f887266f4462` and catalog `0b69223a5ebe7bc042aad50012ee8bc7e4a00442`. GeoServer jobs passed on `ubuntu-24.04-arm` (job `128738863340`) and `macos-15` (job `128738863297`): exact/latest dependency planning selected Temurin 21, exact 3.0.1 installed, latest request was safely recognized as already-installed 3.0.1, explicit Java/GeoServer defaults allowed service startup, WFS GetCapabilities succeeded, and public stop completed. The live stable release set at this run resolved latest to 3.0.1; the earlier local pinned validation that observed 3.0.2 remains separately recorded and is not substituted for this hosted result.
+- Hosted run [42483023923](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42483023923), runner head `7556c8dd85b308474e02e5c54b8c89728d52c44f`, checked out adapter `b1e4f040506592f0433e26005741f887266f4462` and catalog `0b69223a5ebe7bc042aad50012ee8bc7e4a00442`. GeoServer jobs passed on `ubuntu-24.04-arm` and `macos-15`: exact/latest planning selected Temurin 21, exact 3.0.1 installed, latest resolved to already-installed 3.0.1, explicit defaults allowed live WFS, and stop completed. This remains valid two-platform evidence for the then-current release set; it does not test current latest 3.0.2.
 - The same aggregate run is red because the unrelated Podman job `128738863351` received HTTP 403 from the upstream GitHub Releases API. GPGTools, Chrome for Testing and both GeoServer jobs passed. This does not change GeoServer job results.
+- Current workflow candidate `3a451002...` was tested through external runner `e9d2661...` in completed run [42484994689](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42484994689). Ubuntu ARM64 installed exact 3.0.1 and latest 3.0.2, selected latest for the real service, obtained WFS GetCapabilities, and stopped cleanly (**PASS**, job `128744823666`). macOS ARM64 passed planning but failed before artifact extraction/startup when the GeoServer Releases API returned HTTP 403 resolving the 3.0.2 release asset. This is an upstream acquisition failure, not a service/runtime failure. The same run passed the S1 composition, GPGTools, CfT and Podman jobs; aggregate 5/6 because of macOS acquisition. Earlier new-run attempts also encountered 403s before startup; details and exact refs are in `m-autonomous-validation.md`.
 - The task-specific checkpoint and M10/M12 evidence are recorded in `handoff/m-autonomous-validation.md`.
 
 ## Current state
 
-PR #12 is draft and unmerged. Exact-head hosted validation is recorded through the external runner; the PR's own workflow is still only on its branch and formal GitHub review is not recorded. All new local writes for this continuation were confined to `/m/src/git/chatgpt`; disposable validation artifacts were kept under that directory.
+PR #12 is draft and unmerged. Current workflow acceptance is PASS on Ubuntu ARM64; current macOS latest artifact acquisition remains pending an available upstream API response. The prior macOS PASS covers latest 3.0.1 at its exact recorded revision/release set. The PR's native workflow has no run because Actions are disabled on the `m-os` fork; no external status is represented as a native PR check. All local writes for this continuation stayed under `/m/src/git/chatgpt`.
 
 ## Next action
 
-Obtain formal PR review for PR #12, then reconcile the external hosted evidence into the PR workflow when its checks are available. GeoServer Linux ARM64 and macOS ARM64 hosted service acceptance is now complete. Keep PR #12 unmerged until required review gates are resolved; continue the separate mutable runtime-state task and overall M01–M15/I1 matrix.
+Continue review of the current PR #12 diff against its adapter/manual contract and retry only the macOS artifact acquisition when upstream API access is available. Keep the PR draft/unmerged; no merge or release is authorized by this validation. GeoServer Linux current-latest service acceptance is complete, macOS current-latest acceptance is not. Continue the separate mutable runtime-state task and overall M01–M15/I1 matrix.
 
 ## Blockers / open questions
 
-- The PR's own hosted workflow visibility remains pending because its workflow file is new to the default branch; external-runner hosted evidence now covers Ubuntu ARM64 and macOS ARM64.
+- Native PR workflow visibility remains unavailable while `m-os` Actions are disabled. External-runner evidence covers current latest/exact on Ubuntu and the older 3.0.1 latest set on macOS; current macOS 3.0.2 artifact acquisition returned upstream HTTP 403.
 - Other supported stream architectures and operating systems remain unvalidated.
 - This adapter does not close GeoServer mutable runtime-state migration or the overall M01–M15/I1 acceptance matrix.
