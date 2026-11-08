@@ -1,7 +1,7 @@
 # RumiAI OS — Standalone web export
 
 Status: **Current / normative**
-Updated: 2026-11-07
+Updated: 2026-11-08
 
 `web-export` creates a local, directly openable HTML snapshot of a rendered HTTP(S) page. It consumes the current `web-analyze` browser acquisition and emits no required local server.
 
@@ -19,9 +19,9 @@ The generated document has a restrictive no-network content policy. HTTP error/r
 
 When source resource elements carry cross-origin, integrity or referrer-policy metadata, that source-fetch metadata is removed from the rewritten local reference so it cannot prevent the local asset from loading or validate bytes that have changed during CSS rewriting.
 
-When the capture records non-zero document or nested scroll offsets, the exporter embeds a generated script to restore those offsets after the file loads. Its SHA-256 content hash is the only script source authorized by the document policy; no script file needs to load. The captured offsets and helper presence are listed in `manifest.json`. Site scripts remain removed.
+The exporter embeds one generated local-interaction script whose SHA-256 content hash is the only script source authorized by the document policy; no script file needs to load. It restores captured non-zero document/nested scroll offsets and preserves safe local controls: copy buttons copy text from their nearby code block, table or conversation article; controls with `aria-expanded` toggle their captured panel when present and always update their local expanded state; and buttons labelled accept/reject/dismiss/close remove a nearby cookie/consent/privacy notice. These handlers run locally and do not invoke the source page's removed event handlers or backend. Native `<details>` controls remain native. A disclosure whose content was not captured cannot be reconstructed; its control remains operable and the manifest counts it as unavailable. The manifest also reports counts of preserved controls and helper presence.
 
-The manifest records the output document and asset digests, source kind for each asset, counts of unavailable/ambiguous references, and these behavioral limits. The export is private local content and uses restrictive directory/file permissions. Temporary raw browser evidence is not included in the export.
+The manifest records the output document and asset digests, source kind for each asset, counts of unavailable/ambiguous references, supported local interactions, and these behavioral limits. The export is private local content and uses restrictive directory/file permissions. Temporary raw browser evidence is not included in the export.
 
 ## Deterministic boundary
 
@@ -42,6 +42,8 @@ WEBEXPORT-07  export creation never overwrites an existing destination
 WEBEXPORT-08  temporary raw capture data and private browser state are excluded from the export
 WEBEXPORT-09  each retained HTTP(S) subresource resolves to a local file; embedded data and fragments remain inline
 WEBEXPORT-10  non-HTTP(S) subresource schemes cannot make the local export read source-host files or opaque resources
-WEBEXPORT-11  only the SHA-256-authorized exporter-generated scroll helper may execute; no site script is retained
+WEBEXPORT-11  only the SHA-256-authorized exporter-generated local-interaction helper may execute; no site script is retained
 WEBEXPORT-12  source CORS, integrity and referrer metadata cannot prevent rewritten local resources from loading
+WEBEXPORT-13  exporter-generated copy, disclosure-toggle and consent-dismissal controls work without source scripts or network
+WEBEXPORT-14  absent disclosure content is reported and never fabricated
 ```
