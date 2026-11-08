@@ -370,7 +370,13 @@ Save every original current/default identity beforehand. After successful instal
 m pkg default <package>@<original-current-version>[!<osarch>]
 ```
 
-A class that had no default must not gain one merely because it was reinstalled. Do not assume that `pkg install` selects a default. Restart services and consumers only after validating new native launcher and package `env` contents, executable resolution, necessary provider bindings, preserved state and service-specific behavior.
+For each class recorded without a default, explicitly clear any selection created during installation and verify the query reports no selection before restarting consumers:
+
+```text
+m pkg default -u -- <package-class>
+```
+
+`pkg install` may automatically select an installed concrete as the default; the final state after restoration must match the recorded pre-migration state. Restart services and consumers only after validating new native launcher and package `env` contents, executable resolution, necessary provider bindings, preserved state and service-specific behavior.
 
 Dependency/provider references must be respected: removal of a referenced provider can fail by contract. Plan consumer-first removal and provider-first restoration where the actual installed dependencies require this; do not bypass a refusal or forcibly delete package directories. An entire multi-concrete migration is **not atomic**: after each failure, preserve the completed checkpoint and reconcile the remaining work explicitly instead of silently continuing.
 
