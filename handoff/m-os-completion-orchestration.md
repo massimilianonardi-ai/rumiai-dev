@@ -69,6 +69,26 @@ Verified remote starting point:
 - `m-mk/main@8c857460213199eeb4c5c070b4df60c885df376f`, `m-jsc/main@ca1b70d1e0c53e790244f28b67bcf2a2b7528c76`.
 - Legacy `rumiai-os/main@8ae78944ef5e8d6297c50898d856db1a20c6fd9a` and permanent `rumiai-tests/main@b8e1c71db7aa4b94fedef323c5b3f1030dab1c24` are **frozen** for modification/execution unless the user explicitly lifts the freeze. Reading legacy source is permitted.
 
+#### C2 decision alternatives requested by the operator (non-normative)
+
+The operator asked to see alternatives and impacts before choosing reset/default behavior. No option below changes the current contract. Sources: `specifications/rumiai-os/BOOTSTRAP-ENVIRONMENT.md` §§125–203, `STATE-MODEL.md` §§39–99, 203–244, `SERVICE-LIFECYCLE.md` §222, `TLS-TRUST.md`, and `PACKAGE-MODEL.md` §§407–453.
+
+| Decision | Alternative | Main impact |
+|---|---|---|
+| No-argument `context` | Keep current reset; require explicit selection/initialization | Preserves existing scripts and predictable reset; no implicit managed default for a fresh shell. |
+| No-argument `context` | Initialize the managed default; add explicit `context reset` | Convenient first use; breaks scripts that currently use bare `context` to clear selections and requires a versioned migration/compatibility path. |
+| No-argument `context` | Make bare invocation report/show state; use explicit `context use-default` and `context reset` | Avoids overloaded semantics, but changes current scripts and adds commands to document and validate. |
+| Preset/default persistence | No persisted preset/default; every process supplies selection or inherits validated context | Small authority surface; callers must pass context and bootstrap cannot infer a user's desired profile. |
+| Preset/default persistence | User-owned config under the logical user's state | Supports personal defaults; requires ownership, validation, precedence and migration rules, and must not become admin/service authority. |
+| Preset/default persistence | Host-admin-owned allowed profile/preset registry | Strong host policy and service separation; adds admin lifecycle/permissions and cannot be written by ordinary `context`. |
+| Child propagation | Versioned environment envelope treated as untrusted and revalidated | Natural across `exec`; visible/forgeable by child and must carry no CA/service/admin authority. |
+| Child propagation | Private descriptor file/handle with validated identity | Keeps payload out of ordinary env; adds lifecycle, permissions and inheritance/cleanup rules. |
+| Child propagation | Require each child entrypoint to receive explicit context operands | Simplest trust model; changes existing child workflows and does not satisfy transparent inheritance unless all callers pass arguments. |
+| State/provider | Keep global `m_STATE_*` roots and provider defaults; reject alternate context where no adapter exists | Safest compatibility-first rollout; concurrent profiles remain limited until `state-path` and provider integrations exist. |
+| State/provider | Add explicit context-aware state roots and bind provider resolution to selected profile | Coherent per-profile behavior; requires coordinated bootstrap, state-path, package `var/`, provider precedence and genuine package acceptance before rollout. |
+
+The current contract remains the first supported grammar and bare-invocation reset. The operator selected “show alternatives and impacts first”; all rows stay proposals. Await explicit choices on reset/default and prepare the remaining child/migration/provider decisions as a follow-up before canonical spec edits or C3 implementation.
+
 ## Applicable canonical sources
 
 `README.md`, `RULES.md`, `CONSISTENCY-GATE.md`, `DEVPLAN.md`, `TESTING.md`, `PHYSICAL-TESTING.md`, `handoff/README.md`, and `specifications/README.md`, routing as applicable to `rumiai-os/{CURRENT-MODEL,BOOTSTRAP-ENVIRONMENT,PACKAGE-MODEL,STATE-MODEL,LIBRARY-INTERFACES,FILESYSTEM-NAMING,COMMAND-ENTRYPOINTS,DOCUMENTATION-MODEL,DIAGNOSTICS,RESOURCE-MODEL,POSIX-PORTABILITY-LAYER,SERVICE-LIFECYCLE,TLS-TRUST,JSON-QUERY,RSUDO,SSH,MENU}.md`. Other command-specific specifications are mandatory when the corresponding implementation scope becomes active. Consult the owning handoffs above for task-local fixed choices.
