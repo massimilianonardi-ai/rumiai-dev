@@ -653,7 +653,7 @@ On exact current master `a78a24bd37446ac9b7d510af5facc5c110de595d`, `m_LOG_LEVEL
 ### P4 workflow trigger coverage correction (2026-11-08)
 
 - After confirming the P4-specific pull-request path gap, updated the existing draft PR #20 branch by fast-forward commit `a92d44864cd661a802d5f31d4d67c0bae202e5c7`. `.github/workflows/m-graalvm-repository.yml` now triggers on `pkg-catalog.lib.sh`, the GraalVM adapter, and the P4 offline regression; `.github/workflows/m-pkg-provider-lifecycle.yml` now also triggers on the GraalVM adapter used by its regression path.
-- Both workflow files parsed as YAML with the local parser and `git diff --check` passed. A fresh detached worktree at exact updated head `a92d44864cd661a802d5f31d4d67c0bae202e5c7` passed `sh -n` and the complete P4 shell regression, including corrupt/missing history closure and fixture cleanup. The remote branch `codex/p4-graalvm-local-order` remains at `a92d4486`; no workflow was dispatched and no product PR was merged.
+- Both workflow files parsed as YAML with the local parser and `git diff --check` passed. A fresh detached worktree at exact updated head `a92d44864cd661a802d5f31d4d67c0bae202e5c7` passed `sh -n` and the complete P4 shell regression, including corrupt/missing history closure and fixture cleanup. The remote branch `codex/p4-graalvm-local-order` remains at `a92d4486`; GitHub returned zero check runs for that exact commit, no workflow was dispatched, and no product PR was merged.
 
 ### P4 exact-head review follow-up (2026-11-08)
 
