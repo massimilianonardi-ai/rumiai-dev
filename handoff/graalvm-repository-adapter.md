@@ -1,6 +1,6 @@
 # GraalVM repository adapter
 
-Status: Active — exact upstream/catalog mapping verified; implementation and public install acceptance in progress
+Status: Active — adapter/manual/workflow implemented locally; fixture validation passes; live API and public installation pending
 Updated: 2026-11-08
 
 ## Goal
@@ -37,21 +37,23 @@ Refresh all remote heads before the next write or validation.
 
 ## Working design
 
-The current upstream release list contains modern `graal-<version>` tags and older stable `vm-<version>` tags. Establish the exact reversible tag/package-version mapping from official release records before implementing listing/comparison; fail closed for tags that cannot be mapped without ambiguity. Latest currently uses `graal-25.5.5.0.3`; exact catalog anchor `25.3.4.1` maps to `graal-25.3.4.1`.
+The upstream stable tag families observed are `graal-<version>`, `jdk-<version>`, and historical `vm-<version>`. Map each by stripping exactly one recognized prefix; fail closed on unknown tags and duplicate mapped versions. Latest currently uses `graal-25.5.5.0.3`; exact catalog anchor `25.3.4.1` maps to `graal-25.3.4.1`.
 
 ## Completed
 
 - Read-only audit confirmed the exact pinned catalog contains four GraalVM streams, each anchored at `25.3.4.1`, and current master has no `pkg-repository-graalvm.lib.sh`.
 - Official API evidence confirms exact and latest release tags, per-platform binary assets, positive sizes and SHA-256 digests. The exact Linux ARM64 anchor asset is `graalvm-community-jdk-25i3-25.0.4.1_linux-aarch64_bin.tar.gz`, size 326,402,344, digest `sha256:7e8a3fbc2e4c28566107039a298cef690d86a37599a8e50536fc5a65b7f1bd56`.
 - The latest stable upstream release observed in the research is `graal-25.5.5.0.3` (published 2026-11-03). Release tags and asset filenames use different embedded version strings.
+- Implemented the adapter, operational manual, and a focused pinned-catalog CI workflow on the local branch. A fixture-backed managed-shell check passes tag mapping (`vm-`, `jdk-`, `graal-`), chronology, exact/latest resolution, and exact asset size/digest/URL selection. Shell syntax, `git diff --check`, and all embedded workflow shell blocks pass.
+- Independent read-only source review found no concrete defect in the current adapter implementation. The workflow was corrected to install latest first and capture its concrete before installing the exact anchor, avoiding installed-current reuse.
 
 ## Current state
 
-Implementation has not started. The code belongs on a dedicated forward-only `m-os` branch/PR, separate from GeoServer PR #12. Keep all local writes under `/m/src/git/chatgpt`; do not access frozen `rumiai-os` or `rumiai-tests`.
+The adapter, manual and workflow are in the dedicated local branch `codex/graalvm-repository-adapter` based on exact `m-os/master@a78a24bd`; no commit or PR has been published yet. This work is separate from GeoServer PR #12. All local writes are under `/m/src/git/chatgpt`; frozen `rumiai-os` and `rumiai-tests` were not accessed.
 
 ## Next action
 
-Inspect the full official release-tag set and current generic GitHub adapter contract, pin the exact tag-to-package-version mapping, then implement the complete adapter/manual on a dedicated branch. Validate exact/latest resolution, the real Linux ARM64 anchor install, and a supported live service/Java command path; add focused hosted coverage if the repository workflow setup permits it without merging.
+After the unauthenticated GitHub API rate limit resets, run live exact/latest resolution and artifact metadata checks against the actual API. Then perform public exact/latest dependency planning and genuine Linux ARM64 installs of the pinned anchor and stable latest; verify Java provider selection, inspect the focused workflow, commit/push a dedicated PR branch, and record hosted/platform gates.
 
 ## Blockers / open questions
 
