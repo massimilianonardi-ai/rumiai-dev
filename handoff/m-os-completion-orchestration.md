@@ -3,6 +3,11 @@
 Status: Active — P3/P4/J1/V2 promoted; S PR #4 candidate has exact hosted checks but the SRV-42 PID identity/race gate remains open; A2/A4 hosted workflows deferred; C2/C3 and I1 remain open
 Updated: 2026-11-08
 
+### Current continuation checkpoint (2026-11-08)
+
+- This checkpoint is recorded on `rumiai-dev/main@9ebe5c8c5bf38a5b42989ddb2b7238b6914f34da` after fetching the current remote head. The detailed GeoServer adapter evidence and remaining gates are in `handoff/m-autonomous-validation.md` and `todo/geoserver-repository-adapter.md`.
+- GeoServer adapter work is now published as draft [m-os PR #12](https://github.com/massimilianonardi-ai/m-os/pull/12), head `c2a21cc2cbe0ca5760c16b254f355fa7949b17b4`, based on exact `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d`. It is not merged; no PR workflow run exists yet. Local Ubuntu evidence includes genuine 3.0.1 and 3.0.2 package installs, 3.0.1 service readiness, and an unresolved 3.0.2 service readiness failure. Do not mark adapter/GeoServer M10/M12 fully accepted until review and the remaining hosted/runtime gates close.
+
 ## Goal
 
 Finish the **autonomous technical `m` distribution** as a usable, real, coherent product: a POSIX bootstrap with a real `pkg` installation/provider/service path, its required built-in commands and manuals, independent usable first-party packages, a properly composed shell/runtime context, v1/v2 catalog continuity, and revision-specific validation of the whole accepted scope. Maximize **safe** parallel work without duplicating code or promoting unaccepted interfaces.
