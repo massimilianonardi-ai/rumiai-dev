@@ -1,7 +1,7 @@
 # rsudo APISIX Administration — Current Implemented Contract
 
 Status: **Current / partial implementation**
-Updated: 2026-11-07
+Updated: 2026-11-08
 
 ## Scope and ownership
 
@@ -119,17 +119,18 @@ endpoints or credentials. The read-only result includes
 is represented only as configured/not-configured. Supported internal
 adapter identifiers are `rest`, `snapshot`, `file-yaml`,
 `file-json` and `none`. Generic `list/get` route supported explicit contexts
-to their internal adapters; `create/update/delete` are currently implemented
-only for host-scoped traditional REST, and full-document `apply` is
-implemented for standalone JSON and YAML files. Invalid inputs use
+to their internal adapters; `create/update/delete` are implemented for
+host-scoped traditional REST and explicit standalone JSON files, and
+full-document `apply` is implemented for standalone JSON and YAML files.
+Invalid inputs use
 distinct new-context status values 1–11 as described in the operational manual.
 The context is a **local declaration**: it does not establish a running
 process, an authorized listener, actual backend support or write readiness.
 
 **Not yet implemented:** stronger service-to-process ownership evidence,
 complete container source/mount attribution,
-JSON discovery output, standalone resource create/update/delete, snapshot
-writes, and generic write routing for other adapters. Initial host YAML port probes and
+JSON discovery output, standalone YAML-file resource create/update/delete,
+snapshot writes, and generic write routing for other adapters. Initial host YAML port probes and
 textual systemd unit candidates are implemented. Initial host and
 Docker/Podman candidate inventory and traditional REST plus standalone
 snapshot, YAML-file and JSON-file `list/get` adapters are described above/below.
@@ -358,6 +359,32 @@ atomic file publication only; it does not prove APISIX accepted or reloaded
 the new document. APISIX's file-driven JSON provider checks its selected file
 for changes ([Apache APISIX deployment modes](https://apisix.apache.org/docs/apisix/deployment-modes/)).
 
+For `standalone-file-json`, `create`, `update` and `delete` also operate on one
+routes, services or upstreams resource while retaining the remaining parsed
+configuration. `create` reads one complete JSON object from stdin and requires
+its `id` to be a string or number with an identifier accepted by `get`.
+`update` reads a complete replacement object whose ID must match the selected
+resource ID; partial patch is not supported. `delete` requires exactly one
+matching resource. The selected context must include absolute
+`RSUDO_APISIX_HOME` and `RSUDO_APISIX_DATA_FILE`; host, Docker and Podman
+scopes are supported with an explicit full container ID where applicable.
+
+The target's APISIX LuaJIT and `cjson.safe` parse the existing complete file
+and the supplied resource while holding the same per-file publication lock
+used by `apply`. A missing resource array may be created by `create`; existing
+arrays must be valid JSON arrays, every record must have a supported ID, and
+duplicate matching IDs fail closed. The operation serializes the complete
+parsed document to a private sibling stage, verifies it can be parsed again,
+then applies the existing baseline/metadata comparison and same-directory
+atomic rename. This retains unrelated JSON values according to APISIX's Lua
+JSON parser representation; formatting and object-key order may be
+normalized, and numeric lexemes are round-tripped through Lua's number model
+rather than preserved byte-for-byte. It does not validate APISIX resource
+schemas or substitutions and does not synchronously confirm reload. Resource bodies and IDs are never
+interpolated into shell source or command arguments. The local RumiAI `json`
+command validates create/update bodies as exactly one JSON value before
+transport; it remains a read-only query/validation tool.
+
 For `standalone-file-yaml`, the caller also explicitly selects
 the absolute APISIX installation root in `RSUDO_APISIX_HOME`. The remote
 operation uses that installation's LuaJIT, `lyaml` and `cjson.safe` to parse
@@ -384,16 +411,16 @@ observed content/metadata changes during staging, and reports file replacement
 only. APISIX reload is not synchronously confirmed. The standalone JSON path
 continues to validate with local RumiAI `json --check` before transport.
 
-The file and snapshot adapters still support no generic resource-level
+The YAML-file and snapshot adapters still support no generic resource-level
 `create`, `update` or `delete`; those fail explicitly. Snapshot and REST
 full-document apply are unimplemented. Generic `request` is currently
 implemented only for the host traditional REST adapter described above. None
 falls back to a legacy function. Operation-specific compatibility functions
 retain their previous forwarding behavior. Permanent tests exercise JSON
-list/get and JSON full-document apply through real `m` and `json`, plus YAML
-full-document parsing/publication through the two pinned installed APISIX
-parser images when Docker is available. Synthetic rsudo boundaries do not
-validate a live APISIX gateway or SSH deployment.
+list/get, full-document apply and resource create/update/delete through real
+`m` and `json`, plus YAML full-document parsing/publication through the two
+pinned installed APISIX parser images when Docker is available. Synthetic
+rsudo boundaries do not validate a live APISIX gateway or SSH deployment.
 
 ## Current limits and security boundary
 
@@ -404,7 +431,8 @@ Mode inspection does not emit API keys or the selected configuration contents. C
 The complete mode-routed Admin API, API-snapshot writes, standalone
 resource-level file mutations, pagination, and simplified
 shell recipes are **not yet implemented** by the current safe APISIX backend.
-The file-json and file-yaml adapters support full-document apply only. The initial
+The file-json adapter supports full-document apply and resource-level
+create/update/delete; file-yaml supports full-document apply only. The initial
 traditional REST `list/get/create/update/delete` and API-snapshot, YAML-file
 and JSON-file `list/get` adapters above are partial and do
 not imply those capabilities. They are pending development, not current
