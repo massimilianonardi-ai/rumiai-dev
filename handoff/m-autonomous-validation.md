@@ -574,7 +574,11 @@ This evidence advances I1 only for the named Linux ARM64 scenarios. It does not 
 
 ## Current resumption action (2026-11-08)
 
-Continue the exact-revision nonprivileged M01–M15 evidence ledger. Refresh current repository heads before each scope; classify local compositions separately from integrated master and hosted runs. C2 remains pending the user's choice on no-argument reset/default migration, so do not implement C3 or silently alter current `context` behavior. Keep A1–A4 hosted workflows, privileged operations and frozen repositories deferred. The current-master filtered-log mismatch and exact candidate fix, terminal adapter runner statuses, local composed Linux ARM64 install results, and CfT authorization boundary are recorded above; none closes I1/I2.
+Continue the exact-revision nonprivileged M01–M15 evidence ledger. Refresh current repository heads before each scope; classify local compositions separately from integrated master and hosted runs. Keep A1–A4 hosted workflows, privileged operations and frozen repositories deferred. The current-master filtered-log mismatch and exact candidate fix, terminal adapter runner statuses, local composed Linux ARM64 install results, and CfT authorization boundary are recorded above; none closes I1/I2.
+
+C2 decision update: the user chose no-argument context initialization, a separate clear operation, and persistent defaults per real POSIX account. This changes the C2 status from awaiting the no-argument decision to contract work on safe account-home/storage resolution and permissions. C2 is still unpromoted; do not implement C3 until its complete contract passes review.
+
+J1 exact integrated replay on a clean detached worktree at current master `a78a24bd37446ac9b7d510af5facc5c110de595d` passed shell syntax for the command and both JSON scripts, the public command workflow, and pinned JSONTestSuite `test_parsing` at `1ef36fa01286573e846ac449e8683f8833c5b26a`: 95 valid, 188 invalid and 35 implementation-defined cases. No current exact-master check run was visible for merged PR #6; this is local Ubuntu evidence only, not macOS, frozen-suite or formal reference-host acceptance. All new corpus/test/worktree writes stayed under `/m/src/git/chatgpt`.
 
 ### M15 JSON and managed-shell manual semantics (2026-11-08)
 

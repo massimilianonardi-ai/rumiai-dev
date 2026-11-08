@@ -427,17 +427,25 @@ during this checkpoint.
 **C2 working design and blockers.** Settled task direction (not yet
 public grammar): one POSIX shell context replaced until exit without a
 stack; ordinary no-argument managed-shell defaults instead of present
-reset; independent system/user dimensions and per-dimension defaults;
+reset; persistent defaults owned per real POSIX account; independent
+system/user dimensions and per-dimension defaults;
 trusted or explicit consumer identity; left-to-right selections with
 inline named presets; exact concrete cmd/lib/env consistency; protected
 inherited values in cooperating nested consumers; pkg-created reusable
 views without context-time symlink publication.
 
 Material remaining contract decisions:
-1. Precise operands/presets/removal grammar and migration of the
-   existing no-argument reset.
-2. Trusted per-dimension default and consumer/profile identity sources,
-   state-selector migration and permissions.
+1. Exact operands/presets and the persistent-default set/clear grammar.
+   The user chose no-argument initialization and a separate clear
+   operation, but did not choose exact operand spellings or whether
+   clear also changes the active shell context.
+2. A trusted resolver/storage contract for the real POSIX account's
+   preference file, including safe account-home lookup, ownership and
+   permissions. This preference owner is separate from m's logical
+   user state and does not authenticate a selected logical user.
+   Existing package, provider, locale and platform selectors remain
+   their own authorities; the new preference file must not duplicate
+   those registries or silently mutate global selectors.
 3. Protected propagation/override policy, unset versus empty values,
    trust transfer through children, HOME and NSS projection.
 4. Provider/facility versus ordinary-library consumer dependencies
@@ -2677,9 +2685,9 @@ second attempt passed. No physical production-host deployment was performed.
 - External runner `pkg-catalog/context-c1-real-validation@9616a8ef538386ed8bc00a0d365924a540734e3d` pins exact current runtime `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d`, current catalog `pkg-catalog/main@0b69223a5ebe7bc042aad50012ee8bc7e4a00442`, and the test-only scenario at `m-os/context-c1-real-validation@2f08ac1a618ec6bed4478936129943398b861dc3`. Its [hosted run 42476617391, attempt 2](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42476617391) is **Ubuntu + macOS 2/2 PASS**. Genuine public installs supplied both `m-core` and `m-term` at v0.1.0 and v0.1.1; the current C1 `context` accepted simultaneous selections, replaced each same-package concrete while retaining the unrelated selection, exposed the exact v2 command/library views, ran the genuine `array` consumer, rejected an unavailable replacement atomically and reset to host state. Attempt 1 Ubuntu failed only during download with curl status 28 before the assertions; its failed job was rerun at the same pins and passed. This closes the authentic two-package version-replacement scenario at these exact revisions. It does not implement or validate generalized C2/C3 semantics.
 - **Still open for C1/source composition:** no catalog-declared ordinary Java library/JAR consumer exists to exercise, and authorized ordinary reference-host evidence remains. The genuine m-rsudo v0.1.2 consumer is now covered by hosted run 42476956578. Preserve the current C1 grammar and no-argument reset until the separately open C2 migration contract is promoted.
 
-### C2 no-argument migration decision (2026-11-08)
+### C2 default initialization and per-account preference decisions (2026-11-08)
 
-The user selected the migration contract: `context` with no arguments initializes persistent defaults for managed-shell startup; add an explicit clear command for those defaults. This supersedes the earlier instruction to preserve no-argument reset semantics after C2 is promoted. C2 still requires the coordinated normative edits across bootstrap/state/package specifications, including authority and storage rules for defaults; this decision alone does not settle the clear command's active-context effects, protected inheritance, child propagation, provider precedence, or authorize C3 ahead of P4 and full C2 promotion.
+The user selected the migration direction: context with no arguments initializes persistent defaults for managed-shell startup; a separate explicit clear operation clears those defaults; the persistent preference owner is the real POSIX account. This supersedes the earlier instruction to preserve no-argument reset semantics after C2 is promoted. Per-account context preferences are not m logical user state, do not derive or authenticate the logical user binding, and must not grant service, system-state or TLS trust authority. C2 still needs the host account/home lookup and storage-permission contract, exact set/clear grammar and active-shell effect, and coordinated propagation/environment/provider/state rules before specification promotion. No C3 implementation is authorized from this decision alone.
 
 
 ### C1/R1 current m-rsudo consumer hosted checkpoint (2026-11-08)
