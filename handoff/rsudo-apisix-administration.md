@@ -82,8 +82,8 @@ discovery extension:
   validation. No deployment environment was modified.
 - Immediate next: run the parser integration covering YAML apply and JSON
   resource CRUD on a Docker-enabled host. Then design YAML resource mutations
-  that preserve comments/formatting and snapshot writes with explicit
-  version/digest controls. Continue scoped CI and
+  that preserve comments/formatting and snapshot resource-level operations
+  that safely consume versions/digests. Continue scoped CI and
   discovery/source attribution research without making it a global prerequisite
   for explicitly targeted operations.
 
@@ -155,7 +155,41 @@ discovery extension:
   skipped because Docker is unavailable.
 - Next: run the parser integration on a Docker-enabled host, then design
   YAML mutations that preserve comments/formatting and standalone API snapshot
-  writes with explicit version/digest controls.
+  resource-level operations with explicit version/digest controls.
+
+### Continuation checkpoint — standalone API snapshot full apply
+
+- `rsudo_mod_apisix_apply` now also routes an explicitly selected host
+  `standalone-api` context to `PUT /apisix/admin/configs`. The caller supplies
+  a complete JSON snapshot on stdin and a required graphic `X-Digest` token
+  operand. The local RumiAI `json --check` validates the document before the
+  protected REST transport. `RSUDO_APISIX_WAIT_MS` selects APISIX's `wait`
+  parameter (default 0, maximum 60000); the transport timeout allows the
+  selected wait plus 15 seconds. No resource-level patching or automatic
+  `*_conf_version` calculation occurs: the caller owns the complete versioned
+  snapshot. Equal/stale/newer version behavior is documented in the current
+  APISIX contract from upstream documentation, but was not exercised against
+  a live gateway.
+- The permanent `apisix-admin-transport.test` now covers snapshot JSON stdin,
+  PUT path, digest header, wait values 0 and 5000, invalid digest rejection,
+  and synthetic accepted/applied/no-op response bodies. HTTP 202 preserves its
+  body and returns distinct shell status 97; HTTP 200/204 return zero. The
+  fixture does not test APISIX version, digest caching or worker-application
+  semantics.
+- Current validation: shell syntax and `git diff --check` pass for product
+  module/manual and test; the exact transport test passes. Regression tests
+  `apisix-context.test`, `apisix-discovery-host.test`,
+  `apisix-file-json-read.test`, `apisix-admin-transport.test` and
+  `apisix-file-json-apply.test` pass against the current source.
+  `apisix-parser-live.test` was invoked and returned SKIP because Docker is
+  unavailable, so installed APISIX parsers were not exercised. No live APISIX, SSH, CI
+  or production deployment was exercised.
+- Frozen revisions are `rumiai-os@3f805c01e1b8f1844e7af134540a7da4f637d4da`
+  and `rumiai-tests@51c246f29578038c5fee6a2afb4429a5c6f236b5`. The current
+  specification/handoff edits remain to be committed and the branches pushed.
+  Next: validate the pinned parser suite
+  on a Docker-enabled host, then design resource-level snapshot updates without
+  unsafe version guesses and YAML CRUD that preserves source comments.
 
 ### Continuation checkpoint — standalone JSON full-document apply
 

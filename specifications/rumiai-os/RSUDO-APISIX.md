@@ -121,7 +121,8 @@ adapter identifiers are `rest`, `snapshot`, `file-yaml`,
 `file-json` and `none`. Generic `list/get` route supported explicit contexts
 to their internal adapters; `create/update/delete` are implemented for
 host-scoped traditional REST and explicit standalone JSON files, and
-full-document `apply` is implemented for standalone JSON and YAML files.
+full-document `apply` is implemented for standalone JSON/YAML files and the
+standalone API snapshot adapter.
 Invalid inputs use
 distinct new-context status values 1–11 as described in the operational manual.
 The context is a **local declaration**: it does not establish a running
@@ -130,7 +131,7 @@ process, an authorized listener, actual backend support or write readiness.
 **Not yet implemented:** stronger service-to-process ownership evidence,
 complete container source/mount attribution,
 JSON discovery output, standalone YAML-file resource create/update/delete,
-snapshot writes, and generic write routing for other adapters. Initial host YAML port probes and
+resource-level snapshot editing with automatic version calculation, and generic write routing for other adapters. Initial host YAML port probes and
 textual systemd unit candidates are implemented. Initial host and
 Docker/Podman candidate inventory and traditional REST plus standalone
 snapshot, YAML-file and JSON-file `list/get` adapters are described above/below.
@@ -314,11 +315,27 @@ snapshot schema uses top-level resource arrays and per-resource
 
 This adapter currently supports host scope only. The operator-selected Admin
 URL and credentials are not cryptographically or process-bound to the chosen
-APISIX instance. The read does not prove the endpoint's live identity and does
-not resolve or write a full snapshot. The permanent test exercises response
+APISIX instance. The read does not prove the endpoint's live identity or
+configuration convergence. The permanent test exercises response
 filtering through real `m`, `json` and curl against a local synthetic HTTP
 fixture. It does not verify this filtered workflow against a live APISIX or
 remote SSH deployment.
+
+The same explicit host-scoped `standalone-api` context supports full-document
+`apply`. The caller supplies the entire JSON snapshot on stdin and a required
+`X-Digest` token as the sole operand; the module validates exactly one JSON
+value locally and sends `PUT /apisix/admin/configs` with the protected API key,
+digest header and `wait` from `RSUDO_APISIX_WAIT_MS` (default `0`, maximum
+`60000`). The module does not derive or increment `*_conf_version` fields:
+the caller supplies them. APISIX ignores equal versions, rejects stale
+versions and replaces data for greater versions. `wait=0` may return HTTP 202,
+which means accepted but not confirmed applied; an explicit positive wait can
+return 200 after worker confirmation or 202 on timeout. HTTP 202 preserves its
+response body and returns distinct shell status 97 (accepted, not confirmed);
+HTTP 200 and 204 return status zero, with 204 representing a digest-matched
+no-op. This is a full snapshot replacement, not a per-resource
+patch. The permanent transport test covers body/header/path/query behavior
+against a synthetic HTTP fixture, not APISIX version semantics or live workers.
 
 ## Standalone file list/get/apply
 
@@ -412,8 +429,8 @@ only. APISIX reload is not synchronously confirmed. The standalone JSON path
 continues to validate with local RumiAI `json --check` before transport.
 
 The YAML-file and snapshot adapters still support no generic resource-level
-`create`, `update` or `delete`; those fail explicitly. Snapshot and REST
-full-document apply are unimplemented. Generic `request` is currently
+`create`, `update` or `delete`; those fail explicitly. REST full-document
+apply is unimplemented. Generic `request` is currently
 implemented only for the host traditional REST adapter described above. None
 falls back to a legacy function. Operation-specific compatibility functions
 retain their previous forwarding behavior. Permanent tests exercise JSON
@@ -428,13 +445,14 @@ The current read-only resolvers do not prove which `-c`/profile or effective con
 
 Mode inspection does not emit API keys or the selected configuration contents. Credentials and target data remain subject to `RSUDO.md` and `DIAGNOSTICS.md`. The legacy APISIX functions retain previously documented unsafe JSON/request behavior, and their existence is not evidence that modern secure mutation is complete.
 
-The complete mode-routed Admin API, API-snapshot writes, standalone
-resource-level file mutations, pagination, and simplified
-shell recipes are **not yet implemented** by the current safe APISIX backend.
+The complete mode-routed Admin API, resource-level API-snapshot edits and
+automatic version calculation, standalone YAML resource mutations,
+pagination, and simplified shell recipes are **not yet implemented** by the
+current safe APISIX backend.
 The file-json adapter supports full-document apply and resource-level
 create/update/delete; file-yaml supports full-document apply only. The initial
-traditional REST `list/get/create/update/delete` and API-snapshot, YAML-file
-and JSON-file `list/get` adapters above are partial and do
+traditional REST `list/get/create/update/delete` and API-snapshot
+`list/get/apply`, YAML-file and JSON-file `list/get` adapters above are partial and do
 not imply those capabilities. They are pending development, not current
 guarantees.
 
