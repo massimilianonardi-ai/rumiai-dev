@@ -6,7 +6,7 @@ Updated: 2026-11-08
 ### Current continuation checkpoint (2026-11-08)
 
 - This checkpoint is recorded on `rumiai-dev/main@9ebe5c8c5bf38a5b42989ddb2b7238b6914f34da` after fetching the current remote head. The detailed GeoServer adapter evidence and remaining gates are in `handoff/m-autonomous-validation.md` and `todo/geoserver-repository-adapter.md`.
-- GeoServer adapter work is now published as draft [m-os PR #12](https://github.com/massimilianonardi-ai/m-os/pull/12), head `c2a21cc2cbe0ca5760c16b254f355fa7949b17b4`, based on exact `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d`. It is not merged; no PR workflow run exists yet. Local Ubuntu evidence includes genuine 3.0.1 and 3.0.2 package installs, 3.0.1 service readiness, and an unresolved 3.0.2 service readiness failure. Do not mark adapter/GeoServer M10/M12 fully accepted until review and the remaining hosted/runtime gates close.
+- GeoServer adapter work is now published as draft [m-os PR #12](https://github.com/massimilianonardi-ai/m-os/pull/12), current head `b1e4f040506592f0433e26005741f887266f4462`, based on exact `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d`. It is not merged and no hosted run exists. Local Ubuntu evidence includes genuine 3.0.1 and 3.0.2 installs; 3.0.1 returned HTTP 302 and 3.0.2 served WFS HTTP 200 after explicit provider defaults. The focused workflow is in the PR branch but GitHub does not list it until it reaches the default branch. Keep hosted/platform acceptance open.
 
 ## Goal
 
