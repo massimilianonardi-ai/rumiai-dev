@@ -1,6 +1,6 @@
 # Completion orchestration of autonomous m-os
 
-Status: Active — P3/P4/J1/V2 promoted; S PR #4 candidate has exact hosted checks but the SRV-42 PID identity/race gate remains open; A2/A4 hosted workflows deferred; C2/C3 and I1 remain open; three repository adapters are in local unpushed implementation branches
+Status: Active — P3/P4/J1/V2 promoted; S PR #4 candidate has exact hosted checks but the SRV-42 PID identity/race gate remains open; A2/A4 hosted workflows deferred; C2/C3 and I1 remain open; three repository adapter draft PRs #14–#16 are open and unmerged, with hosted acceptance pending
 Updated: 2026-11-08
 
 ### Current continuation checkpoint (2026-11-08)

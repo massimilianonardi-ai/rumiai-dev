@@ -1,6 +1,6 @@
 # Chrome for Testing repository adapter
 
-Status: Active — adapter committed locally; public metadata/fixture checks pass; public package install and hosted acceptance pending
+Status: Active — draft PR #16 open; live metadata/fixture pass; hosted Ubuntu ARM64 acceptance pending
 Updated: 2026-11-08
 
 ## Goal
@@ -39,11 +39,13 @@ Refresh all remote heads before the next repository write or validation.
 
 ## Current state
 
-Local branch `m-os/codex/chrome-for-testing-adapter@267969440bbf7c5a4cb6e04ff203f097190d5777` contains only the adapter and manual; it is not pushed and has no PR. On Linux ARM64, official exact `153.0.8010.12` and Stable latest `157.0.8103.38` resolved; exact/latest Cloud Storage metadata yielded object size `195926016` and MD5 `72f3441dd3fde1ccdb2ef2ddcc8d5de0`. A temporary deterministic fake-transport fixture accepted exact/latest and the expected descriptor, and rejected wrong object name, zero size, malformed MD5, invalid archive regex and wrong digest type. `sh -n` and `git diff --check` pass. This evidence does not include public `pkg install`, durable CI fixture, or hosted ARM64 validation.
+Draft PR [#16](https://github.com/massimilianonardi-ai/m-os/pull/16) is open and unmerged at `2f2e75bf66ef67ba6661fd51a9af55a05b158905`. On Linux ARM64, official exact `153.0.8010.12` and Stable latest `157.0.8103.38` resolved; exact/latest Cloud Storage metadata yielded object size `195926016` and MD5 `72f3441dd3fde1ccdb2ef2ddcc8d5de0`. The durable fake-transport fixture accepts exact/latest and expected descriptor, rejects wrong object name, zero size, malformed MD5, invalid archive regex and wrong digest type, and passed with its temp base under the checkout. `sh -n` and `git diff --check` pass. GitHub reports no workflow run yet; public `pkg install` and hosted ARM64 validation remain pending.
+
+Boundary incident: the first version of the fixture used the system `/tmp` default, and its executor ran it before the path issue was noticed. That script has been corrected to write under the checkout and was rerun with an explicit in-repo temp base. No `/tmp` cleanup or further access was attempted.
 
 ## Next action
 
-Add a durable fixture and isolated public-command workflow, rerun the exact/current metadata checks, then publish a draft PR with all evidence and remaining platform/hosted gates stated.
+Inspect and complete PR #16's hosted workflow; resolve any failures, then record full public install evidence and remaining platform/hosted gates.
 
 ## Blockers / open questions
 
