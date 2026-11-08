@@ -1,6 +1,6 @@
 # Chrome for Testing repository adapter
 
-Status: Hosted exact/latest install acceptance passes on Ubuntu ARM64; public command execution, PR review and other platform coverage remain open
+Status: Diagnostics fix pushed to PR #16; pinned Ubuntu ARM64 exact/latest public install/command acceptance passes; hosted revalidation at the new head and formal review remain open
 Updated: 2026-11-08
 
 ## Goal
@@ -9,9 +9,10 @@ Implement and validate the catalog-declared `chrome-for-testing` repository type
 
 ## Current repository revisions
 
+- `m-os/codex/chrome-for-testing-repository-adapter@8703b99251c680feaa61a09b1d3109bb5d69c33a` (PR #16)
 - `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d`
 - `pkg-catalog/main@0b69223a5ebe7bc042aad50012ee8bc7e4a00442`
-- `pkg-catalog/codex/m-os-adapter-runner@0437bf21009dd5378c09342887a15c3869ccb61b`
+- `pkg-catalog/codex/m-os-adapter-runner@8e0e7d9d0ed274540b1ad1b2a68fb8ce455b1806`
 - `rumiai-dev/main@efd2bb7d3ea7c394c5ac4255b504f4d8e1847496`
 
 Refresh all remote heads before the next repository write or validation.
@@ -44,9 +45,13 @@ Draft PR [#16](https://github.com/massimilianonardi-ai/m-os/pull/16) is open and
 
 Boundary incident: the first version of the fixture used the system `/tmp` default, and its executor ran it before the path issue was noticed. That script has been corrected to write under the checkout and was rerun with an explicit in-repo temp base. No `/tmp` cleanup or further access was attempted.
 
+## Diagnostics fix (2026-11-08)
+
+Private metadata helper branches now use distinct local statuses 1–11; fetch, JSON, name type/mismatch, size type/value and MD5 type/encoding failures emit distinct `pkg-repository-cft.*` identities. Fixture asserts representative status+identity pairs and verifies the public resolver retains documented status 1. Manual updated. `sh -n` for adapter/fixture, focused fixture (`fixture-pass`), and `git diff --check` passed. Commit `8703b99251c680feaa61a09b1d3109bb5d69c33a` is pushed to PR #16 after verifying prior remote head `2f2e75bf66ef67ba6661fd51a9af55a05b158905`; PR remains draft/unmerged.
+
 ## Next action
 
-Obtain formal PR review for PR #16 and validate any supported streams/hosts beyond Linux ARM64. Keep the PR open and unmerged; the scoped Linux ARM64 install and command path now pass.
+Update the external adapter runner's pinned CfT head to `8703b99251c680feaa61a09b1d3109bb5d69c33a` and rerun the hosted Ubuntu ARM64 exact/latest install/command scenario. Obtain formal PR review and validate any supported streams/hosts beyond Linux ARM64. Keep the PR open and unmerged.
 
 ## Blockers / open questions
 
