@@ -19,6 +19,8 @@ Current verified remote HEADs (2026-11-08 continuation):
 - `pkg-catalog/main@0b69223a5ebe7bc042aad50012ee8bc7e4a00442` and `pkg-catalog/m-os-completion-s-ci@835e0806190689a9f824627b3f718e94af8766dc`;
 - `rumiai-dev/main@06c372bd3bda807c1a42f1d2824451a401ad8753` (fresh remote HEAD after forward-only handoff reconciliation; no product runtime change).
 
+**Hosted-run availability check (2026-11-08):** GitHub's `m-os` Actions page says workflows are not currently being run on this fork due to Actions usage scale and offers re-enablement by a repository maintainer; newest visible run is Nov 2, 2026. No repository setting was changed. Therefore hosted evidence for later workflow commits and adapter PR heads remains pending until Actions is re-enabled or an authorized runner executes the exact revisions.
+
 `rumiai-os` and `rumiai-tests` remain frozen and were not accessed in this continuation; their previously recorded hashes are not reclassified as fresh remote HEADs. Refresh relevant HEADs and README mandatory source order before each follow-up task. Past physical PASS must retain its exact product revision.
 
 ## Applicable canonical sources
