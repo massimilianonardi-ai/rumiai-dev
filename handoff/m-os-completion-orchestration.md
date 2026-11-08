@@ -113,6 +113,7 @@ Refreshed the inventory against exact `m-os/master@a78a24bd37446ac9b7d510af5facc
 | `shell` | `bin/sys/shell` | `res/sys/manual/shell` | A2 |
 | `lang` | `bin/sys/lang` | `res/sys/manual/lang` | A2 |
 | `lang-set` | `bin/sys/lang-set` | `res/sys/manual/lang-set` | A2 |
+| `json` | `bin/sys/json` | `res/sys/manual/json` | J1 |
 | `manual` | `bin/sys/manual` | `res/sys/manual/manual` | A2 |
 | `pager` | `bin/sys/pager` | `res/sys/manual/pager` | A2 |
 | `log` | `bin/sys/log` | `res/sys/manual/log` | A2 |
@@ -125,6 +126,8 @@ Refreshed the inventory against exact `m-os/master@a78a24bd37446ac9b7d510af5facc
 | `pkg` | `bin/sys/pkg` | `res/sys/manual/pkg` | P1–P4/V1/V2 |
 
 Current master repository adapters: `pkg-repository-{apache-maven,artifact,chrome,chromium,github,nodejs,temurin}.lib.sh`. The pinned catalog contains real package definitions; catalog presence does not prove adapter correctness or complete public installation. All 17 current command identities have corresponding manual topics. M01–M15 PASS/PENDING and host/revision evidence remain exclusively in `handoff/m-autonomous-validation.md`; current-manual semantic verification remains M15 PENDING.
+
+The 2026-11-08 M15 source/prose audit found two exact-master documentation mismatches: `json` does not clearly say its first positional argument is always the filter, and `shell` omits that the selected shell's exit status is propagated. The paired manual corrections are present on unmerged PR #10 head `84f436bf...`; they are not treated as current-master fixes or PASS while the A2 hosted workflow remains explicitly deferred.
 
 ### A1 — Clean bootstrap/platform/state (M01–M03; READY after P0)
 
