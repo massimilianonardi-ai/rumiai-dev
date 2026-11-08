@@ -1,7 +1,7 @@
 # rsudo APISIX and Keycloak module replacement
 
 Status: Active
-Updated: 2026-11-07
+Updated: 2026-11-08
 
 ## Goal
 
@@ -36,9 +36,10 @@ discovery extension:
   validation repeats the checks. Curl preserves TLS verification, disables
   proxy/redirect use. REST response JSON is passed through; snapshot JSON is
   filtered locally. File JSON is staged privately and filtered locally.
-- `create/update/delete` are implemented only for host-scoped traditional
-  REST. `apply` publishes a full document only for explicit standalone
-  file-json/file-yaml context. A generic `request` operates on caller-selected REST
+- `create/update/delete` route to host traditional REST and explicit
+  standalone-file-json contexts; standalone-file-yaml and snapshot resource
+  mutations remain unsupported. `apply` publishes a full document only for
+  explicit standalone file-json/file-yaml context. A generic `request` operates on caller-selected REST
   paths/methods. YAML-file
   reads and file/snapshot resource mutations,
   pagination, URL IPv6 literals, version negotiation and live APISIX identity
@@ -79,9 +80,10 @@ discovery extension:
   synthetic HTTP fixture through the real `m` loader and curl, substituting
   only rsudo's remote boundary. This is not a live APISIX, SSH target or CI
   validation. No deployment environment was modified.
-- Immediate next: run the new YAML-apply integration on a Docker-enabled host,
-  then implement safe resource-level file mutations and snapshot writes under
-  their preservation/versioning rules. Continue scoped CI and
+- Immediate next: run the parser integration covering YAML apply and JSON
+  resource CRUD on a Docker-enabled host. Then design YAML resource mutations
+  that preserve comments/formatting and snapshot writes with explicit
+  version/digest controls. Continue scoped CI and
   discovery/source attribution research without making it a global prerequisite
   for explicitly targeted operations.
 
@@ -114,10 +116,46 @@ discovery extension:
   `rumiai-os@f31bd6600d8df7b8286174d76d9108f22ffdd61b`,
   `rumiai-tests@438f134d8e86a0247006fc3a0f36e4bb6f11a28a`, and current
   contract `rumiai-dev@ca97ecdb36163bc7749db44816866c3a727229d4`.
-- Next: implement safe resource-level file operations without losing
-  unrelated configuration, then snapshot writes/version controls. Re-run the
-  pinned parser test on a Docker-enabled host and continue scoped CI; no
-  production deployment validation is claimed.
+- Next: validate the parser integration on a Docker-enabled host; YAML
+  resource mutations and snapshot version controls remain pending.
+
+### Continuation checkpoint — standalone JSON resource CRUD
+
+- The internal mutation router now selects host-scoped traditional REST or
+  the explicitly selected `standalone-file-json` backend. JSON file create,
+  update and delete support routes, services and upstreams. Create/update
+  bodies are read from stdin and validated by local RumiAI `json --check`;
+  update requires a complete replacement resource whose ID matches the
+  selected ID. The selected operator context must also provide absolute
+  `RSUDO_APISIX_HOME` and `RSUDO_APISIX_DATA_FILE`.
+- The target LuaJIT/cjson.safe parser decodes the existing document while
+  holding the common per-file lock, rejects malformed resource arrays or
+  duplicate/invalid IDs, changes only the selected resource array, verifies
+  the encoded document can be parsed again, then applies baseline/metadata
+  checks and same-directory atomic rename. Other parsed JSON values are
+  retained according to APISIX's parser representation. Formatting, object
+  key order and numeric lexemes may change; the mutation does not run APISIX
+  schema validation or synchronously confirm hot reload. YAML resource CRUD
+  remains unsupported because a round-trip writer could lose user comments or
+  formatting; full-document YAML `apply` remains available.
+- `apisix-parser-live.test` now covers JSON-file create/update/delete in both
+  pinned APISIX images, including preservation of unrelated arrays and empty
+  JSON array/object distinction, mode retention, mismatched update IDs and
+  duplicate target IDs. This integration test is skipped in the current
+  workspace because Docker is unavailable; its Lua/cjson path has not been
+  executed here. Synthetic host-side context/discovery/read/REST/JSON-apply
+  tests pass; no live gateway, SSH, CI or production deployment was exercised.
+- After commit, exact revisions were checked with shell syntax and
+  `git diff --check`: `rumiai-os@a6b3662fd42d911c160991144e7ac9e40d45a034`,
+  `rumiai-tests@dee58b8786c7fca787dbe744860c1827d41b47dc`, and contract
+  `rumiai-dev@d979af4a257655a2da67dc8b8fa5ccc977b89b00`. The exact product
+  and test revisions pass `apisix-context.test`, `apisix-discovery-host.test`,
+  `apisix-file-json-read.test`, `apisix-admin-transport.test` and
+  `apisix-file-json-apply.test`. `apisix-parser-live.test` was invoked and
+  skipped because Docker is unavailable.
+- Next: run the parser integration on a Docker-enabled host, then design
+  YAML mutations that preserve comments/formatting and standalone API snapshot
+  writes with explicit version/digest controls.
 
 ### Continuation checkpoint — standalone JSON full-document apply
 
