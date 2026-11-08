@@ -1,7 +1,7 @@
 # RumiAI OS — Diagnostics and observability
 
 Status: **Current / normative**  
-Updated: 2026-10-10
+Updated: 2026-11-08
 
 This specification defines the current diagnostic, failure-status and observability contract for `m`- and RumiAI-owned code.
 
@@ -74,6 +74,38 @@ child_operation || return $?
 when `7` identifies the caller's own branch. The child status SHOULD be retained as diagnostic context when it materially helps investigation.
 
 Direct status preservation is valid only when the current contract intentionally defines the caller as a transparent/pass-through status boundary or when an external protocol/API requires that exact status.
+
+### Context account-preference failures
+
+The `context` shell function allocates stable local statuses 19–36 for its
+account-preference and preset operations. These statuses and their diagnostic
+identities are defined by `context.lib.sh` and its mandatory manual topic. The
+new branches use distinct identities:
+
+| Status | Diagnostic message id | Failure |
+|---:|---|---|
+| 19 | `context-preferences-unavailable` | Account defaults cannot be read safely during bare initialization. |
+| 20 | `context-preset-unavailable` | Named preset does not exist. |
+| 21 | `context-record-invalid` | Preference or preset record is not a valid private record. |
+| 22 | `context-record-version-invalid` | Record version is unsupported. |
+| 23 | `context-record-line-invalid` | Record contains an empty or unsupported selection line. |
+| 24 | `context-record-empty` | Record has no version header. |
+| 25 | `context-defaults-clear-failed` | Persisted account defaults could not be removed. |
+| 26 | `context-preset-clear-failed` | Named preset could not be removed. |
+| 27 | `context-preferences-write-failed` | Account defaults could not be committed atomically. |
+| 28 | `context-preset-write-failed` | Named preset could not be committed atomically. |
+| 29 | `context-preset-activation-storage-unavailable` | Preset storage is unsafe during activation. |
+| 30 | `context-defaults-clear-storage-unavailable` | Account storage is unsafe during defaults clear. |
+| 31 | `context-defaults-record-invalid` | Defaults clear found an unsafe record. |
+| 32 | `context-preset-clear-storage-unavailable` | Preset storage is unsafe during preset clear. |
+| 33 | `context-preset-clear-record-invalid` | Preset clear found an unsafe record. |
+| 34 | `context-defaults-set-storage-unavailable` | Account storage is unsafe during defaults update. |
+| 35 | `context-preset-set-storage-unavailable` | Preset storage is unsafe during preset update. |
+| 36 | `context-preset-record-invalid` | The selected preset record is unsafe. |
+
+The public manual carries the full return-status description. Emitting code
+uses the `execution` diagnostic domain and includes the affected operation or
+preference path/name without exposing record contents.
 
 ### Exhaustion and externally defined statuses
 

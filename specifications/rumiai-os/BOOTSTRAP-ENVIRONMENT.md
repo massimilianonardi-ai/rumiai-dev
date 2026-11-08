@@ -1,7 +1,7 @@
 # RumiAI OS — Bootstrap environment
 
 Status: **Current / normative**  
-Updated: 2026-11-02
+Updated: 2026-11-08
 
 This specification defines the environment established by the technical root runtime `$m_ROOT/m`.
 
@@ -128,20 +128,64 @@ The core runtime exposes the POSIX shell **function** `context` in the
 shell that sources `core.lib.sh`. It is not an external executable and
 cannot modify the invoking shell when run in a child process.
 
-The initial supported public grammar remains:
+The current public shell-local grammar for package selections and account
+preferences is:
 
 ```text
 context
 context pkg=<package>@<version>[!<osarch>] ...
+context preset=<name> ...
+context defaults set pkg=<package>@<version>[!<osarch>] ...
+context defaults clear
+context preset set <name> pkg=<package>@<version>[!<osarch>] ...
+context preset clear <name>
+context reset
 ```
 
-A no-argument invocation clears the active package selections owned by
-this function. A `pkg=` operand selects an already installed exact
-package concrete. Selections are folded left-to-right. A later selection
-of the same package replaces its earlier version, while unrelated
-package selections are retained. The most recent selection has the
-highest search-path precedence. This is a shell-local context, not a
-new persisted package default.
+A no-argument invocation initializes or replaces the active shell context
+from an empty package-selection baseline plus that POSIX account's persisted
+package defaults. It does not write defaults. `context reset` explicitly removes the
+active context's owned shell contributions and restores the host values captured
+before activation. `context defaults clear` removes persisted account defaults;
+it does not change the active shell context. `context defaults set` updates
+only the dimensions named by its operands and preserves other saved dimensions.
+`context preset set` stores a named, data-only
+selection sequence, and `context preset clear` removes that preset. Presets may
+be expanded inline with `preset=<name>` and are folded at their position in the
+operand list. These operations never mutate package defaults, facility defaults,
+consumer bindings or global `current` selectors.
+
+The currently implemented selection dimension is an exact installed package
+concrete. A later selection of the same package replaces its earlier concrete,
+while unrelated package selections are retained. Selection operands and inline
+presets are folded left-to-right. The most recent package selection has the
+highest search-path precedence. Activation replaces the one active context in
+the invoking shell; there is no restore stack. Failed validation leaves the
+active shell state and persisted preferences unchanged.
+
+Account defaults and presets are stored below
+`$m_ROOT/state/<effective-UID>/context/`. The effective UID is obtained using
+the host's `id -u` utility and validated as a decimal identifier; it only
+selects the preference directory and is not the
+logical `m` user identity and grants no authentication, service, system-state
+or TLS authority. Preference records are versioned data, never shell source or
+expressions. A record starts with `m-context-v1`; each subsequent line contains
+exactly one validated selection operand. Empty lines, unknown versions and
+malformed operands fail closed. Defaults updates replace only the dimensions
+named by their operands and preserve other saved dimensions.
+Preset updates replace that named preset. Updates use a same-directory
+temporary regular file and atomic rename. `$m_ROOT/state` must be a real
+directory owned by root or the effective account and must not be group- or
+world-writable. The account directory is owned by the effective UID with mode
+0700; preference records are owned by that UID with mode 0600. A shared
+protected installation requires administrator
+provisioning of the account directory; ordinary `context` never escalates
+privilege. Missing account preferences contribute no overrides and are not
+seeded from `state/system/current`, `state/user/current`, package defaults or
+facility defaults. Those existing installation-wide authorities remain the
+read-only baseline for dimensions the account has not overridden. An invalid,
+unavailable or unsafe preference store fails closed; there is no `$HOME`
+fallback.
 
 For each selected concrete, `context` reads existing, separately
 materialized lookup views when present:
@@ -183,10 +227,16 @@ directory but does not guarantee JAR enumeration order. An explicit
 Java `-cp` option overrides `CLASSPATH`; this variable does not
 govern every Java launch method.
 
-Provider environment/service coherence, dependency resolution, state
-profiles, named full-context presets and protected propagation policies
-remain outside this initial package command/library lookup phase.
-The existing package launcher continues to own those responsibilities.
+Generalized context dimensions include system profile, logical user-state,
+locale and provider choice. They are not yet executable operands in this
+package-selection increment and fail as unsupported input. Provider
+environment/service coherence, dependency resolution, context-aware state
+profiles and protected propagation policies are not implied by selecting
+`pkg=` or by an account preference. Existing package launchers continue to own
+package environment and provider resolution. If a selected context cannot be
+honored by a package's state or provider view, that package must fail before
+launch rather than silently use another context's or the global profile's
+mutable state.
 
 The technical root bootstrap merely loads the function definition as
 part of `core.lib.sh`. Ordinary `m` command execution uses an
@@ -194,15 +244,34 @@ external `exec`, and therefore does not transfer shell functions
 into that child; callers needing `context` in a new shell must
 source `core.lib.sh` there.
 
-## Approved generalized-context boundaries (not yet implemented)
+## Generalized-context authority and propagation
 
-The supported first-phase `context` grammar and no-argument reset above remain the current executable contract until a separately validated, coordinated migration. The approved **future generalized-context** requirements are:
+The following requirements govern the coordinated context migration. Existing
+global-selector consumers remain supported under their current contracts while
+their context-aware implementations are being completed. The accepted selection
+dimensions are system profile, logical user-state identity, locale, provider
+choice and exact package concrete; each is resolved only through its owning
+state, localization or package/provider authority, never from an arbitrary
+filesystem path.
 
 - Two managed shells and their ordinary managed child processes must be able to select distinct system profiles and logical user-state identities concurrently. One shell's selection must not mutate `state/system/current`, `state/user/current` or another process's active selection.
-- Package commands, libraries, provider resolution, mutable state and inherited environment must agree on the effective selected context. If an installed package cannot safely honor the selected profile using an upstream-supported state-path adaptation or an already prepared compatible per-profile view, its launch must fail before it could use another profile's state; it must never silently fall back to the global profile.
+- Package commands, libraries, provider resolution, mutable state and inherited environment must agree on the effective selected context. For provider-backed package consumers, selection precedence is explicit consumer binding, explicit context provider choice, account context default, configured system facility default, then the existing unique-compatible-installed-provider rule. An authoritative configured choice that is missing, invalid or incompatible fails; it does not fall through. A context override never writes a package default, consumer binding or system facility default.
+- If an installed package cannot safely honor the selected profile using an upstream-supported state-path adaptation or an already prepared compatible per-profile view, its launch must fail before it could use another profile's state; it must never silently fall back to the global profile.
+- A context envelope propagated through the environment is versioned, data-only and untrusted continuity information. Every cooperating `m` process validates its format, effective UID, selected identities, installed concrete/provider compatibility and available state view before use. It conveys no service registration, administrator, filesystem ownership or TLS CA approval authority. Invalid inherited context fails closed.
+- Context-owned environment fields are protected from package environment scripts. Package-defined environment effects remain available when compatible, but may not rewrite context identity, selected state roots or protected inherited values. Package launch and nested execution must preserve the coherent effective HOME and other explicitly protected values.
 - Host-supervised service profiles and system TLS CA authority are **not** untrusted shell-context selections. Their ownership rules are in `SERVICE-LIFECYCLE.md` and `TLS-TRUST.md`; mutable state routing is governed by `STATE-MODEL.md`.
 
-These are binding design and migration constraints, **not** claims that profile-aware bootstrap, `state-path`, package `var/` routing, trusted child propagation or the generalized public operand grammar already exist. Existing global-selector consumers remain supported under their current contracts until an explicitly validated transition; unsupported concurrent-profile use must fail closed rather than silently alter global state. The detailed grammar, persistence format and trusted propagation mechanics remain active design work, not accepted executable APIs.
+These are binding migration constraints, **not** claims that profile-aware
+bootstrap, `state-path`, package `var/` routing or trusted child propagation
+are already implemented. Existing global-selector consumers remain supported
+under their current contracts until an explicitly validated transition;
+unsupported concurrent-profile use must fail closed rather than silently alter
+global state. The existing C1 `pkg=` package-command/library API remains
+implemented. The package-only account defaults and named presets described
+above are implemented in the current candidate increment. Generalized profile,
+user, locale and provider operands, state routing and trusted child propagation
+remain unimplemented and require coordinated implementation and validation
+before they are reported as available.
 
 ## Generated global execution environment
 
