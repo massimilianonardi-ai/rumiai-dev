@@ -661,3 +661,9 @@ On exact current master `a78a24bd37446ac9b7d510af5facc5c110de595d`, `m_LOG_LEVEL
 ### M15 JSON/shell manual comparison on master and PR #18 (2026-11-08)
 
 Exact master `a78a24bd` and docs-only PR #18 `d4d875f5` return identical public behavior: `json . <file>` formats the full document with status 0, while `json <file>` treats the pathname as a filter and returns status 3; `SHELL=/bin/sh ./m shell -c 'exit 7'` propagates status 7. PR #18 changes only the JSON and shell manuals, clarifying these behaviors with explicit prose and an example. Candidate is unmerged and no A1–A4 workflow was run.
+
+### Integration preflight for open m-os changes (2026-11-08)
+
+- Re-queried live Git refs: master `a78a24bd`; PR #4 `15a2c4f`; #10 `91fef7e`; #11 `4b688d8`; #12 `ee58d78`; #13 `2b26a46`; #14 `eb4e45e`; #15 `4ac4365`; #16 `8703b99`; #17 `fe1d38d`; #18 `d4d875f`; #20 `e5b6e42`. These pull requests remain open. No GitHub review submissions or inline review threads were returned, and no native m-os check/status records were attached to these exact heads; preserve separately recorded external-runner results and do not infer a PASS from the empty native-check response.
+- For each listed head, a local three-way merge preview against current master was conflict-free, `git diff --check` passed, and `sh -n` passed for changed executable/library/test shell files. Manual-resource files ending in `.lib.sh` were excluded from shell parsing because they are documentation, not source. This is an integration preflight only; it is not a complete functional code review or merge approval.
+- No m-os source, PR branch or merge state changed. A1–A4 hosted workflow execution remains deferred, and the existing no-merge boundary remains in force pending complete review and authorization.
