@@ -650,6 +650,11 @@ On exact current master `a78a24bd37446ac9b7d510af5facc5c110de595d`, `m_LOG_LEVEL
 3. Adapter PRs #12–#16 are still draft/unmerged. Local composed Linux ARM64 fixtures/manuals and genuine GraalVM/GeoServer installs plus WFS service passed; CfT local install stopped at setuid sudo authorization. Hosted runner results are terminal and revision-scoped; retry only the specific macOS upstream API acquisition gaps when useful, without attributing HTTP 403 to product behavior.
 4. Keep full I1 and I2 open until current-source M01–M15, required integration/review and applicable nonprivileged host evidence are complete. Frozen `rumiai-os`/`rumiai-tests`, A1–A4 hosted execution, privileged host operations and product PR merges remain outside current authorization.
 
+### P4 workflow trigger coverage correction (2026-11-08)
+
+- After confirming the P4-specific pull-request path gap, updated the existing draft PR #20 branch by fast-forward commit `a92d44864cd661a802d5f31d4d67c0bae202e5c7`. `.github/workflows/m-graalvm-repository.yml` now triggers on `pkg-catalog.lib.sh`, the GraalVM adapter, and the P4 offline regression; `.github/workflows/m-pkg-provider-lifecycle.yml` now also triggers on the GraalVM adapter used by its regression path.
+- Both workflow files parsed as YAML with the local parser, `git diff --check` passed, and the P4 shell regression passed at its preceding exact product composition. The remote branch `codex/p4-graalvm-local-order` was verified at `a92d4486`; no workflow was dispatched and no product PR was merged.
+
 ### P4 exact-head review follow-up (2026-11-08)
 
 - Rechecked the focused offline facility-map regression on exact local composition `m-os@2022a247037017f091c0140fd86e5b73e58187ae` (PR #20 head `e5b6e42b` plus the invalid-index regression) with the authentic script: `sh -n` and `/bin/sh .github/scripts/m-pkg-p4-facility-map-unit.sh` passed. Expected fail-closed warnings were observed; the script cleaned only its own fixtures. No hosted workflow was run.
