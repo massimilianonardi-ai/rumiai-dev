@@ -575,3 +575,8 @@ This evidence advances I1 only for the named Linux ARM64 scenarios. It does not 
 ## Current resumption action (2026-11-08)
 
 Continue the exact-revision nonprivileged M01–M15 evidence ledger. Refresh current repository heads before each scope; classify local compositions separately from integrated master and hosted runs. C2 remains pending the user's choice on no-argument reset/default migration, so do not implement C3 or silently alter current `context` behavior. Keep A1–A4 hosted workflows, privileged operations and frozen repositories deferred. The current-master filtered-log mismatch and exact candidate fix, terminal adapter runner statuses, local composed Linux ARM64 install results, and CfT authorization boundary are recorded above; none closes I1/I2.
+
+### M15 JSON and managed-shell manual semantics (2026-11-08)
+
+- On exact `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d` and exact docs-only PR #18 head `d4d875f5147c49ec06ef486b3382423b4776f095`, public `./m json . <file>` returned 0 and formatted the full document; `./m json <file>` returned 3 with `json: filter-expected-dot at character 2`, confirming the first positional argument is always the filter. Public `SHELL=/bin/sh ./m shell -c 'exit 7'` returned 7 on both revisions, propagating the selected shell's exit status.
+- PR #18 changes only `res/sys/manual/json` and `res/sys/manual/shell`; its manual wording/examples resolve the observed ambiguities without runtime changes. The exact master behavior and candidate manuals were both inspected. Worktrees and fixtures were removed; no A1–A4 hosted workflow ran. This closes only these two M15 manual/behavior comparisons, not full M15 acceptance.
