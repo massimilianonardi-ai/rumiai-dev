@@ -225,6 +225,35 @@ discovery extension:
   Docker is unavailable in this workspace, so source inspection is the only
   new evidence in this research checkpoint.
 
+### APISIX — standalone API resource CRUD implementation (2026-11-08; pending live validation)
+
+- The internal `create/update/delete` router now selects the standalone API
+  snapshot adapter for explicit `host` + `standalone-api` context. It reads a
+  complete `/apisix/admin/configs` snapshot on the remote host, modifies only
+  routes/services/upstreams using that selected installation's LuaJIT and
+  `cjson.safe`, increments the selected collection's `*_conf_version`, and
+  assigns the new version to the created/replaced resource's `modifiedIndex`.
+  It computes a SHA-256 `X-Digest`, PUTs the complete document with the
+  operator-selected wait, GETs the snapshot again and checks the resource
+  state and collection version. `202` preserves the response and exits 97
+  (accepted, not confirmed); no blind retry is performed.
+- This code has **not been tested**. A permanent
+  `apisix-admin-snapshot-mutate-live.test` is now authored and selected for
+  pinned APISIX 3.16/3.19; it covers create/update/delete, one-step collection
+  version increments and `modifiedIndex` on the returned/read-back resource.
+  It still needs the combined suite run and fuller failure/202 coverage.
+  `json` remains read-only and validates the request body locally; the selected
+  APISIX cjson handles the snapshot transform. cjson can normalize number
+  lexemes/object key order. The API has no compare-and-swap against the prior
+  digest, so concurrent writers remain a race and the operation requires a
+  single-writer assumption. `RSUDO_APISIX_HOME` is now required to locate
+  LuaJIT/cjson/OpenSSL on the explicitly selected host.
+- Per the operator's latest direction, discovery is paused. The prior frozen
+  runner failed on both platforms; its published aggregate and job output do
+  not expose the per-test diagnostics needed to classify the failures. Next:
+  finish API-driven failure/202 coverage, then execute the accumulated suite
+  together. Do not resume discovery work.
+
 ### APISIX M2 — running-container configuration bind-source correlation (2026-11-08; implementation pending validation)
 
 - The discovery inventory now asks Docker/Podman for read-only mount metadata

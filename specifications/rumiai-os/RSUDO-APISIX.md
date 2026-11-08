@@ -124,9 +124,9 @@ is represented only as configured/not-configured. Supported internal
 adapter identifiers are `rest`, `snapshot`, `file-yaml`,
 `file-json` and `none`. Generic `list/get` route supported explicit contexts
 to their internal adapters; `create/update/delete` are implemented for
-host-scoped traditional REST and explicit standalone JSON files, and
-full-document `apply` is implemented for standalone JSON/YAML files and the
-standalone API snapshot adapter.
+host-scoped traditional REST, explicit standalone JSON files and host-scoped
+standalone API snapshots. Full-document `apply` supports standalone JSON/YAML
+files and the standalone API snapshot adapter.
 Invalid inputs use
 distinct new-context status values 1–11 as described in the operational manual.
 The context is a **local declaration**: it does not establish a running
@@ -135,7 +135,18 @@ process, an authorized listener, actual backend support or write readiness.
 **Not yet implemented:** stronger service-to-process ownership evidence,
 complete container source/mount attribution,
 JSON discovery output, standalone YAML-file resource create/update/delete,
-resource-level snapshot editing with automatic version calculation, and generic write routing for other adapters. Initial host YAML port probes and
+and generic write routing for other adapters. Standalone API resource CRUD
+uses a complete GET/modify/PUT/read-back cycle: it changes only the selected
+collection, increments its `*_conf_version`, changes a new or replaced
+resource's `modifiedIndex`, derives `X-Digest` from the resulting JSON, and
+verifies the resource and version after PUT. It relies on the selected
+installation's LuaJIT and `cjson.safe`; number lexemes and object order may be
+normalized. APISIX's API-driven endpoint has no compare-and-swap against the
+previous digest, so this operation requires a single writer. Read-back detects
+some conflicts but cannot prevent a concurrent writer from racing between GET
+and PUT. HTTP 202 is reported as accepted but not confirmed, and no blind
+retry is performed. This implementation remains pending pinned live API
+validation. Initial host YAML port probes and
 textual systemd unit candidates are implemented. Initial host and
 Docker/Podman candidate inventory and traditional REST plus standalone
 snapshot, YAML-file and JSON-file `list/get` adapters are described above/below.
