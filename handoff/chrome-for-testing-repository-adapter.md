@@ -12,7 +12,7 @@ Implement and validate the catalog-declared `chrome-for-testing` repository type
 - `m-os/codex/chrome-for-testing-repository-adapter@8703b99251c680feaa61a09b1d3109bb5d69c33a` (PR #16)
 - `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d`
 - `pkg-catalog/main@0b69223a5ebe7bc042aad50012ee8bc7e4a00442`
-- `pkg-catalog/codex/m-os-adapter-runner@8e0e7d9d0ed274540b1ad1b2a68fb8ce455b1806`
+- `pkg-catalog/codex/m-os-adapter-runner@fe2e865fdd0333c9199c25b7463c2fd3947f1d34`
 - `rumiai-dev/main@efd2bb7d3ea7c394c5ac4255b504f4d8e1847496`
 
 Refresh all remote heads before the next repository write or validation.
@@ -51,7 +51,7 @@ Private metadata helper branches now use distinct local statuses 1–11; fetch, 
 
 ## Next action
 
-Update the external adapter runner's pinned CfT head to `8703b99251c680feaa61a09b1d3109bb5d69c33a` and rerun the hosted Ubuntu ARM64 exact/latest install/command scenario. Obtain formal PR review and validate any supported streams/hosts beyond Linux ARM64. Keep the PR open and unmerged.
+The updated external adapter runner pins the new PR head `8703b99251c680feaa61a09b1d3109bb5d69c33a` (runner `fe2e865fdd0333c9199c25b7463c2fd3947f1d34`); hosted run [42489959582](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42489959582) is queued. Inspect its CfT exact/latest install/command job before claiming the diagnostics fix has hosted acceptance. Obtain formal PR review and validate any supported streams/hosts beyond Linux ARM64. Keep the PR open and unmerged.
 
 ## Blockers / open questions
 

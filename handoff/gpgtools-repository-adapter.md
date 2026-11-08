@@ -11,6 +11,7 @@ Implement and validate the `gpgtools` repository type for the one catalog-declar
 
 - `m-os/codex/gpgtools-repository-adapter@eb4e45eb6df167b6ad3780ca641f5a6d4d3abf7f` (PR #14)
 - `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d`
+- `pkg-catalog/codex/m-os-adapter-runner@fe2e865fdd0333c9199c25b7463c2fd3947f1d34` (pins updated GPGTools PR head)
 - `pkg-catalog/main@0b69223a5ebe7bc042aad50012ee8bc7e4a00442`
 - `rumiai-dev/main@b0368f787273c3c246be0757929f3e22d5115e79`
 
@@ -48,7 +49,7 @@ Diagnostics fix (2026-11-08): the private latest-index helper now returns distin
 
 ## Next action
 
-Run/refresh the pinned macOS ARM64 external adapter validation at `eb4e45eb6df167b6ad3780ca641f5a6d4d3abf7f`; inspect logs and keep upstream acquisition failures distinct from adapter failures. Formal review and merge remain open.
+The updated external runner pins GPGTools head `eb4e45eb6df167b6ad3780ca641f5a6d4d3abf7f`; hosted run [42489959582](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42489959582) is queued. Inspect its macOS ARM64 job and keep upstream acquisition failures distinct from adapter failures. Formal review and merge remain open.
 
 ## Blockers / open questions
 
