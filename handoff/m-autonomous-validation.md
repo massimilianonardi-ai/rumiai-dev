@@ -11,13 +11,13 @@ This is an independently resumable *validation* task, separate from the architec
 
 ## Current repository revisions
 
-Current verified remote HEADs (2026-11-07 continuation):
+Current verified remote HEADs (2026-11-08 continuation):
 - `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d`;
 - `m-os/codex/a4-browser-observation@4b688d87b46a0320448ca4c86485a116760cc1b3` (A4 workflow observation fix; draft PR #11 open/unmerged; hosted A1–A4 dispatch remains deferred);
 - `m-os/m-os-completion-s@15a2c4f96584c07b92088e5530d4ecb09a9477b8` (S1/S2 candidate);
 - `m-os/codex/a2-current-integration@84f436bffe1a79491609fcf3d1f93c2067174d60` (A2 manual candidate; PR #10 draft/unmerged; includes migration no-default restoration and semantic M15 manual corrections);
 - `pkg-catalog/main@0b69223a5ebe7bc042aad50012ee8bc7e4a00442` and `pkg-catalog/m-os-completion-s-ci@835e0806190689a9f824627b3f718e94af8766dc`;
-- `rumiai-dev/main@210cca0a5485e61ceb085a6b014a26f8ca378174` (fresh remote HEAD before this forward-only checkpoint update).
+- `rumiai-dev/main@06c372bd3bda807c1a42f1d2824451a401ad8753` (fresh remote HEAD after forward-only handoff reconciliation; no product runtime change).
 
 `rumiai-os` and `rumiai-tests` remain frozen and were not accessed in this continuation; their previously recorded hashes are not reclassified as fresh remote HEADs. Refresh relevant HEADs and README mandatory source order before each follow-up task. Past physical PASS must retain its exact product revision.
 
