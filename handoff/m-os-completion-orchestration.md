@@ -101,9 +101,9 @@ A work unit is *functionally independent* only if it does not consume an unsettl
 - **Boundaries:** planning/documentation only; no test/CI/product changes. Existing validation owner maintains evidence, source-composition owner maintains scope. P0 coordinates references without duplicating per-unit operational state.
 - **Done:** every public command has a source/manual/accepted-scope row; real adapter availability, frozen legacy source-only gaps and outdated evidence are classified. A newly discovered contract conflict is routed to its owner, not silently fixed. **Feeds:** A*, J1, S*, P*, V1, I1.
 
-#### P0 source/manual manifest (2026-11-05)
+#### P0 source/manual manifest (2026-11-08 refresh)
 
-Source-inspected `m-os/master@31693e814f682690adfd48185da822f7f5007f9e` (before A1 CI commit), `m-os/pkg-schema-v2@1e3a038a5abf6f8c176272d8e44464c842d3cefd`, `pkg-catalog/main@3ee97d21bae3ee885b0fa987e1faee718fad8609` and `pkg-catalog/pkg-schema-v2@9d889cc265c29eeae456b8fe1ad638654c36e8c7`. Each current mainline `bin/sys` identity below has a matching operational manual; this is a **source inventory, not a behavioral PASS**.
+Refreshed the inventory against exact `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d` and the pinned catalog `pkg-catalog/main@0b69223a5ebe7bc042aad50012ee8bc7e4a00442`. This is a **source inventory, not a behavioral PASS**. Current master has 17 `bin/sys` entrypoints, 51 manual topics and seven repository adapters. It includes the previously missing standalone `json` command and manual; this does not close J1's behavioral acceptance or make historical JSONTestSuite evidence apply automatically to this exact revision. The v2 feature tree is no longer treated as an unpromoted target after the recorded forward promotion.
 
 | Identity | Source | Manual | Acceptance owner |
 |---|---|---|---|
@@ -124,7 +124,7 @@ Source-inspected `m-os/master@31693e814f682690adfd48185da822f7f5007f9e` (before 
 | `srv` | `bin/sys/srv` | `res/sys/manual/srv` | S1/S2 |
 | `pkg` | `bin/sys/pkg` | `res/sys/manual/pkg` | P1–P4/V1/V2 |
 
-Mainline repository adapters: `pkg-repository-{artifact,chrome,chromium,github,nodejs}.lib.sh`; the v2 feature adds `pkg-repository-{apache-maven,temurin}.lib.sh`. Catalog mainline has real `nodejs`, `mk`, `jsc`, `electron-web-control`, `ollama` definitions, among others; the v2 feature contains `jq`, `jsc`, `m-core`, `m-rsudo`, `m-term`, `mk`, `nodejs`, `ollama`. Catalog presence does not prove adapter correctness or complete public installation. The independently specified `bin/sys/json` and manual remain missing from both `m-os` branches; J1/source-composition owns that real implementation gap. M01–M15 PASS/PENDING and host/revision evidence remain exclusively in `handoff/m-autonomous-validation.md`; current-manual semantic verification remains M15 PENDING.
+Current master repository adapters: `pkg-repository-{apache-maven,artifact,chrome,chromium,github,nodejs,temurin}.lib.sh`. The pinned catalog contains real package definitions; catalog presence does not prove adapter correctness or complete public installation. All 17 current command identities have corresponding manual topics. M01–M15 PASS/PENDING and host/revision evidence remain exclusively in `handoff/m-autonomous-validation.md`; current-manual semantic verification remains M15 PENDING.
 
 ### A1 — Clean bootstrap/platform/state (M01–M03; READY after P0)
 
