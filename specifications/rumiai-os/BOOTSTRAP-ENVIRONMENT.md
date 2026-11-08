@@ -1,7 +1,7 @@
 # RumiAI OS — Bootstrap environment
 
 Status: **Current / normative**  
-Updated: 2026-11-02
+Updated: 2026-11-08
 
 This specification defines the environment established by the technical root runtime `$m_ROOT/m`.
 
@@ -203,6 +203,18 @@ The supported first-phase `context` grammar and no-argument reset above remain t
 - Host-supervised service profiles and system TLS CA authority are **not** untrusted shell-context selections. Their ownership rules are in `SERVICE-LIFECYCLE.md` and `TLS-TRUST.md`; mutable state routing is governed by `STATE-MODEL.md`.
 
 These are binding design and migration constraints, **not** claims that profile-aware bootstrap, `state-path`, package `var/` routing, trusted child propagation or the generalized public operand grammar already exist. Existing global-selector consumers remain supported under their current contracts until an explicitly validated transition; unsupported concurrent-profile use must fail closed rather than silently alter global state. The detailed grammar, persistence format and trusted propagation mechanics remain active design work, not accepted executable APIs.
+
+Future generalized-context behavior is that bare `context` initializes the
+active context from persisted defaults, and an explicit clear operation
+clears those persisted defaults. The defaults belong to the real POSIX
+account running the shell and are stored under
+`$m_ROOT/state/<effective-UID>`. This storage identity is distinct from the
+logical `user` context dimension and grants no service-registration, CA
+approval or other host-administrative authority. This is a settled migration
+target, not the current executable API: the existing package-only no-argument
+reset remains in effect until a coordinated migration is validated. The exact
+command spelling, record format, account-directory provisioning, permissions
+and behavior when the store is unavailable remain active design work.
 
 ## Generated global execution environment
 

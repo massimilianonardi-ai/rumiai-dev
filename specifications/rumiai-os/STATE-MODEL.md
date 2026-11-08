@@ -1,7 +1,7 @@
 # RumiAI OS — State model
 
 Status: **Current / normative**  
-Updated: 2026-10-05
+Updated: 2026-11-08
 
 This document defines the current mutable-state contract.
 
@@ -248,6 +248,24 @@ The existing `state/system/current`, `state/user/current` and package `var/` rou
 The current static, system-scoped package `var/` links cannot express two different per-process system profiles for the same installed concrete. A future profile-aware package launch must use a verified upstream state-path adapter or an already prepared compatible profile-specific execution/state view; otherwise it must reject the incompatible selection **before** launching, without silently following another process's/global profile. No specific universal adapter or per-`context` filesystem regeneration is authorized by this boundary.
 
 This accepted design target does not make the existing `state-path` or package `var/` interfaces profile-aware today. A coordinated bootstrap/state/launcher migration and real consumer verification are required before claiming that behavior.
+
+### Generalized-context default ownership
+
+Persistent defaults used to initialize a generalized shell context are owned
+per real POSIX account and have the storage authority:
+
+```text
+$m_ROOT/state/<effective-UID>
+```
+
+The effective UID identifies the host account that owns the defaults; it is
+not the logical identity selected in the context's `user` dimension and is
+not, by itself, authority to access another account's state. The store cannot
+grant service-registration, CA-approval or other host-administrative
+authority. Per-account isolation is required. Provisioning the UID directory
+and its permissions for writable versus shared/read-only installations, the
+record format, and failure behavior remain part of the coordinated context
+migration; no directory mode or provisioning mechanism is selected here.
 
 ## Git boundary
 
