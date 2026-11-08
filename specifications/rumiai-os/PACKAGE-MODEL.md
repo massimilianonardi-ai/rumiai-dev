@@ -1,7 +1,7 @@
 # RumiAI OS — Package model
 
 Status: **Current / normative**  
-Updated: 2026-11-08
+Updated: 2026-11-05
 
 This document defines the current semantic contract of the `m` package subsystem without duplicating implementation internals that belong in `rumiai-os`.
 
@@ -738,27 +738,19 @@ dependency/default reference protections and reconcile derived map membership.
 
 Provider installation and explicit provider configuration are separate responsibilities.
 
-The context/account precedence levels below are binding for the coordinated
-generalized-context runtime. The current package-selection increment does not
-yet accept provider selections in `context` or provider entries in account
-preferences, so its effective runtime order remains consumer binding, system
-facility default and deterministic implicit provider resolution.
-
 For each facility required by a **package consumer**, runtime dependency resolution uses this precedence:
 
 1. an explicit binding for that consumer and facility, when present;
-2. otherwise an explicit provider selection in the active context, when present;
-3. otherwise that POSIX account's context default for the facility, when present;
-4. otherwise the configured system facility default, when present;
-5. otherwise deterministic implicit resolution from installed compatible provider concretes.
+2. otherwise the configured system facility default, when present;
+3. otherwise deterministic implicit resolution from installed compatible provider concretes.
 
 Implicit resolution is deliberately narrow. If exactly one compatible installed concrete exists for the consumer's applicable platform class, it is selected. If multiple compatible concretes all belong to the same provider package, that package's normal package default may disambiguate them when it resolves to one of those compatible concretes. Otherwise the requirement is ambiguous and resolution fails with the compatible candidates reported.
 
-An explicit binding, context selection, account context default or system facility default is authoritative intent at its precedence level. If it exists but is unavailable, invalid or incompatible, resolution fails rather than silently falling through to another selection or installed provider. Context selections and account context defaults are per-process/per-account selection intent; they do not change provider package defaults, consumer bindings, system facility defaults or global command publication. Global/non-package operations, including host-supervised service lifecycle, continue to use the configured system facility default and do not consult shell context.
+An explicit binding or facility default is authoritative intent. If it exists but is unavailable, invalid or incompatible, resolution fails rather than silently falling back to another installed provider.
 
 This fallback does not install packages and does not establish persistent provider configuration. Adding another distinct compatible provider may therefore turn an otherwise implicit resolution into an explicit ambiguity instead of silently changing the selected provider.
 
-A consumer binding is mutable independently of package installation and may be changed later. Removing a binding restores the active context selection, then the account context default, then the facility default when configured, otherwise the deterministic implicit package-consumer rule applies.
+A consumer binding is mutable independently of package installation and may be changed later. Removing a binding restores the facility default when one is configured, otherwise the deterministic implicit package-consumer rule applies.
 
 Package default and facility default are distinct selections:
 
@@ -818,7 +810,7 @@ runtime provider when it is used.
 
 ### Runtime provider application
 
-A package consumer resolves the effective provider using the precedence above. A context selection is pinned to a validated exact installed provider concrete for the active context; account defaults store selection intent and are resolved and validated on use. Neither operation writes shared provider configuration.
+A package consumer with an explicit binding uses that selector. Without a binding it uses the configured system facility default when one exists; when neither explicit surface exists it uses deterministic implicit installed-provider resolution according to the provider-selection rules above.
 
 Runtime launch must resolve and validate the effective provider before using it so that mutable bindings, mutable facility defaults, package-default changes and changes to the installed compatible-provider set are observed according to their respective semantics.
 
@@ -855,7 +847,7 @@ The public read-only dependency-planning surface is:
 pkg depend <package-spec>...
 ```
 
-`pkg depend` resolves every explicit request and recursively discovers facility dependencies against one exact catalog snapshot. Requirements that share the same effective provider-selection bucket are collected before provider concretization so every constraint in that bucket must be satisfied by the selected provider. Consumer binding remains highest precedence, followed by active context selection, account context default and system facility default. Without any configured selector, the planner prefers a compatible provider already present in the current plan, then an unambiguous compatible installed provider, and only then an unambiguous compatible provider package from the same catalog snapshot. Multiple compatible provider packages are an ambiguity and are never silently ranked.
+`pkg depend` resolves every explicit request and recursively discovers facility dependencies against one exact catalog snapshot. Requirements that share the same effective provider-selection bucket are collected before provider concretization so every constraint in that bucket must be satisfied by the selected provider. Consumer binding remains highest precedence, followed by the system facility default. Without either selector, the planner prefers a compatible provider already present in the current plan, then an unambiguous compatible installed provider, and only then an unambiguous compatible provider package from the same catalog snapshot. Multiple compatible provider packages are an ambiguity and are never silently ranked.
 
 Catalog fallback is planning only: it may add a concrete provider identity to the returned plan when no compatible planned or installed provider exists and exactly one provider package can satisfy the requirement. It does not download, extract, integrate or install that provider. When the repository-selected current/latest version of the unique provider package satisfies the complete constraint set, that concrete is selected; otherwise the newest compatible catalog range anchor is used as the concrete version.
 
@@ -879,7 +871,7 @@ The exact roots supplied to dependency planning are the exact roots installed af
 
 `pkg depend` does not mutate package/provider state. Catalog cache refresh and invocation-private snapshot materialization are permitted operational side effects. Recursive dependency installation is now part of the canonical `pkg install` pipeline.
 
-The query forms print the configured selector. The set forms replace the configured selector. The unset forms remove it; unsetting a consumer binding restores inheritance from the active context selection, account context default, then system facility default.
+The query forms print the configured selector. The set forms replace the configured selector. The unset forms remove it; unsetting a consumer binding restores inheritance from the facility default.
 
 Provider-selection configuration is system-scoped authoritative configuration.
 
@@ -889,13 +881,13 @@ A consumer binding is stored directly in that consumer package's system `conf` a
 <consumer-package-conf>/binding/<facility>
 ```
 
-The binding file contains exactly one provider selector followed by newline. If the binding file is absent, a package consumer uses the active context selection, account context default, system facility default, then deterministic implicit installed-provider resolution. Binding files are configuration, not installed-package material, and changing or removing one does not reinstall or rewrite the consumer package.
+The binding file contains exactly one provider selector followed by newline. If the binding file is absent, a package consumer uses the system facility default when configured and otherwise falls through to deterministic implicit installed-provider resolution. Binding files are configuration, not installed-package material, and changing or removing one does not reinstall or rewrite the consumer package.
 
 Facility defaults belong to the package subsystem's system `conf` area. Their concrete pathname layout is owned by the package subsystem and must not be reconstructed by consumers.
 
 Provider runtime application is owned generically by the launcher. Package command wrappers and package environment scripts must not contain provider-specific dependency logic such as Java-provider lookup, concrete binding reads or hardcoded `JAVA_HOME` construction.
 
-For the currently supported command/environment parts of a facility realization, provider packages describe the concrete commands and environment values through declarative package metadata. The launcher resolves the effective provider using the complete binding/context/default precedence above and the deterministic implicit fallback when none is configured, validates the selected concrete against the consumer dependency, interprets the applicable realization metadata and applies the resulting command-path and environment projection before launching the consumer.
+For the currently supported command/environment parts of a facility realization, provider packages describe the concrete commands and environment values through declarative package metadata. The launcher resolves the effective provider using explicit binding/default precedence and the deterministic implicit fallback when neither is configured, validates the selected concrete against the consumer dependency, interprets the applicable realization metadata and applies the resulting command-path and environment projection before launching the consumer.
 
 Launch-time environment precedence is:
 
@@ -1032,7 +1024,7 @@ PKG-12  mk lifecycle orchestration does not replace package-management, provider
 PKG-13  concrete package identity names the installed distribution/provider, not a generic facility
 PKG-14  facility declarations are independent of package identity
 PKG-15  multiple installed providers of the same facility/compatibility are valid
-PKG-16  package-consumer resolution uses explicit binding, context selection, account context default, system facility default, then deterministic implicit installed-provider resolution; configured intent never silently falls through
+PKG-16  package-consumer resolution uses explicit binding, then facility default, then deterministic implicit installed-provider resolution; explicit configured intent never silently falls back
 PKG-17  provider selectors use package-spec grammar; omitted version follows package default and explicit version pins
 PKG-18  pkg install plans recursive dependency providers for exact resolved requested roots against the same catalog snapshot, prepends their exact concrete identities to those roots and installs dependency-first
 PKG-19  runtime re-resolves and validates mutable provider selection before provider use

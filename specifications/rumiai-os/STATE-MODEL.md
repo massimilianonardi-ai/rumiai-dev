@@ -3,8 +3,7 @@
 Status: **Current / normative**  
 Updated: 2026-11-08
 
-This document defines the current mutable-state contract and the context-aware
-state boundary.
+This document defines the current mutable-state contract.
 
 ## Semantic root
 
@@ -37,22 +36,9 @@ scope -> owner -> identity -> area
 
 For packages, an optional State Instance is encoded in the identity as `<package>@!<instance>`.
 
-Account context preferences are separate technical metadata below the same
-root; they are not a `state-path` scope or an `m` logical user identity:
-
-```text
-state/<effective-UID>/context/defaults
-state/<effective-UID>/context/presets/<name>
-```
-
-The effective POSIX UID selects only the account-owned preference directory.
-It is obtained from the host account and grants no service, system-state, TLS
-or authentication authority. Records are versioned data, never sourced or
-evaluated as shell code. The state root is a real directory owned by root or
-the effective account and is not group- or world-writable. The account
-directory is owned by that UID with mode 0700; preference files are owned by
-that UID with mode 0600. Unsafe, invalid or unavailable storage fails closed, without
-falling back to another account's data or `$HOME`.
+Account context preferences are technical metadata below the state root, not
+a `state-path` scope or an `m` logical user identity. Their ownership and
+format are defined by `BOOTSTRAP-ENVIRONMENT.md`.
 
 ## Bootstrap roots
 
@@ -65,20 +51,6 @@ m_STATE_USER_DIR=$m_STATE_DIR/user/current
 ```
 
 These values are semantic pathnames. Bootstrap does not canonicalize selector targets and does not require the selectors to exist merely to start the technical runtime.
-
-The following context-aware behavior is the coordinated migration target. The
-current package-selection increment leaves `state-path` on the legacy roots
-until the profile-aware migration is implemented.
-
-After a managed shell applies a validated context, context-aware consumers use
-the resolved context's state roots through the context state interface. The
-active selection is process-local and must not be written to either global
-`current` selector. `state-path` remains the canonical resolver: without an
-active context it preserves the legacy behavior below; with an active context
-it resolves `system` and `user` under the validated selected roots and rejects
-a requested identity that conflicts with the context. It never derives a
-logical user from the POSIX UID. A child `m` process treats an inherited context
-envelope as untrusted and validates it before setting effective roots.
 
 ## System state
 
@@ -116,7 +88,7 @@ state/user/default
 
 `default` is not an authenticated principal, not a POSIX user mapping and not a security boundary.
 
-The logical `m` user identity is not derived from:
+The current `m` state model does not derive user identity from:
 
 ```text
 username
@@ -125,7 +97,7 @@ $HOME
 hostname
 ```
 
-Physical file permissions remain governed by the host and by responsibility-specific code; the user binding itself is not authentication. The separate account context preference store uses the effective UID only as its filesystem owner namespace.
+Physical file permissions remain governed by the host and by responsibility-specific code; the user binding itself is not authentication.
 
 ## Areas
 
@@ -202,14 +174,6 @@ state-path user pkg <package> home
 ```
 
 The package launcher creates/validates that HOME as needed and exports it for the launched process.
-
-Package HOME and every package state path must resolve through the effective
-context. A package whose `var/` projection is tied to the global
-`state/system/current` profile may not launch under a different selected system
-profile unless a validated upstream adapter or already-prepared compatible
-profile view is available. The launcher must fail before execution otherwise;
-context activation must not rewrite global `current` or regenerate a shared
-package projection for one shell.
 
 A package launched as a system-hosted service uses the existing system scope plus a
 package State Instance equal to the service/facility identity:

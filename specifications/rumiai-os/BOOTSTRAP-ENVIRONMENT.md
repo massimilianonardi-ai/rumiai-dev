@@ -180,12 +180,12 @@ world-writable. The account directory is owned by the effective UID with mode
 0700; preference records are owned by that UID with mode 0600. A shared
 protected installation requires administrator
 provisioning of the account directory; ordinary `context` never escalates
-privilege. Missing account preferences contribute no overrides and are not
-seeded from `state/system/current`, `state/user/current`, package defaults or
-facility defaults. Those existing installation-wide authorities remain the
-read-only baseline for dimensions the account has not overridden. An invalid,
-unavailable or unsafe preference store fails closed; there is no `$HOME`
-fallback.
+privilege. Missing account preferences contribute an empty package selection
+and are not seeded from `state/system/current`, `state/user/current`, package
+defaults or facility defaults. Those existing installation-wide authorities
+continue to govern their existing consumers; package-only `context` does not
+override them. An invalid, unavailable or unsafe preference store fails
+closed; there is no `$HOME` fallback.
 
 For each selected concrete, `context` reads existing, separately
 materialized lookup views when present:
@@ -244,34 +244,24 @@ external `exec`, and therefore does not transfer shell functions
 into that child; callers needing `context` in a new shell must
 source `core.lib.sh` there.
 
-## Generalized-context authority and propagation
+## Approved generalized-context boundaries (not yet implemented)
 
-The following requirements govern the coordinated context migration. Existing
-global-selector consumers remain supported under their current contracts while
-their context-aware implementations are being completed. The accepted selection
-dimensions are system profile, logical user-state identity, locale, provider
-choice and exact package concrete; each is resolved only through its owning
-state, localization or package/provider authority, never from an arbitrary
-filesystem path.
+The package-only `context` grammar above remains the current executable
+contract until a separately validated, coordinated migration. The approved
+future generalized-context requirements are:
 
 - Two managed shells and their ordinary managed child processes must be able to select distinct system profiles and logical user-state identities concurrently. One shell's selection must not mutate `state/system/current`, `state/user/current` or another process's active selection.
-- Package commands, libraries, provider resolution, mutable state and inherited environment must agree on the effective selected context. For provider-backed package consumers, selection precedence is explicit consumer binding, explicit context provider choice, account context default, configured system facility default, then the existing unique-compatible-installed-provider rule. An authoritative configured choice that is missing, invalid or incompatible fails; it does not fall through. A context override never writes a package default, consumer binding or system facility default.
-- If an installed package cannot safely honor the selected profile using an upstream-supported state-path adaptation or an already prepared compatible per-profile view, its launch must fail before it could use another profile's state; it must never silently fall back to the global profile.
-- A context envelope propagated through the environment is versioned, data-only and untrusted continuity information. Every cooperating `m` process validates its format, effective UID, selected identities, installed concrete/provider compatibility and available state view before use. It conveys no service registration, administrator, filesystem ownership or TLS CA approval authority. Invalid inherited context fails closed.
-- Context-owned environment fields are protected from package environment scripts. Package-defined environment effects remain available when compatible, but may not rewrite context identity, selected state roots or protected inherited values. Package launch and nested execution must preserve the coherent effective HOME and other explicitly protected values.
+- Package commands, libraries, provider resolution, mutable state and inherited environment must agree on the effective selected context. If an installed package cannot safely honor the selected profile using an upstream-supported state-path adaptation or an already prepared compatible per-profile view, its launch must fail before it could use another profile's state; it must never silently fall back to the global profile.
 - Host-supervised service profiles and system TLS CA authority are **not** untrusted shell-context selections. Their ownership rules are in `SERVICE-LIFECYCLE.md` and `TLS-TRUST.md`; mutable state routing is governed by `STATE-MODEL.md`.
 
-These are binding migration constraints, **not** claims that profile-aware
-bootstrap, `state-path`, package `var/` routing or trusted child propagation
-are already implemented. Existing global-selector consumers remain supported
-under their current contracts until an explicitly validated transition;
-unsupported concurrent-profile use must fail closed rather than silently alter
-global state. The existing C1 `pkg=` package-command/library API remains
-implemented. The package-only account defaults and named presets described
-above are implemented in the current candidate increment. Generalized profile,
-user, locale and provider operands, state routing and trusted child propagation
-remain unimplemented and require coordinated implementation and validation
-before they are reported as available.
+These are binding design and migration constraints, **not** claims that
+profile-aware bootstrap, `state-path`, package `var/` routing, trusted child
+propagation or the generalized public operand grammar already exist. Existing
+global-selector consumers remain supported under their current contracts
+until an explicitly validated transition; unsupported concurrent-profile use
+must fail closed rather than silently alter global state. The generalized
+grammar, migration, persistence format and trusted propagation mechanics
+remain active design work, not accepted executable APIs.
 
 ## Generated global execution environment
 
