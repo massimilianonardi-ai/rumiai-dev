@@ -124,9 +124,9 @@ is represented only as configured/not-configured. Supported internal
 adapter identifiers are `rest`, `snapshot`, `file-yaml`,
 `file-json` and `none`. Generic `list/get` route supported explicit contexts
 to their internal adapters; `create/update/delete` are implemented for
-host-scoped traditional REST, explicit standalone JSON files and explicitly
-selected host or Docker/Podman standalone API snapshots. Full-document `apply` supports standalone JSON/YAML
-files and the standalone API snapshot adapter.
+explicitly selected host or Docker/Podman traditional REST, standalone API
+snapshots, and standalone JSON files. Full-document `apply` supports
+standalone JSON/YAML files and the host-scoped standalone API snapshot adapter.
 Invalid inputs use
 distinct new-context status values 1–11 as described in the operational manual.
 The context is a **local declaration**: it does not establish a running
@@ -298,8 +298,8 @@ POST/PUT/DELETE and protected stdin body delivery through real `m` and curl
 against a local synthetic HTTP fixture, not a live APISIX or SSH deployment.
 
 The advanced `request <relative-admin-path> [method]` function uses the same
-explicit host-scoped traditional REST context and protected transport for
-other Admin API endpoints. The path is appended beneath the fixed
+explicit host or Docker/Podman traditional REST context and protected
+transport for other Admin API endpoints. The path is appended beneath the fixed
 `/apisix/admin/` prefix and is restricted to nonempty slash-separated ASCII
 alphanumeric, dot, underscore, tilde and hyphen segments. Leading/trailing
 slashes, empty segments, `.`/`..` segments, query strings and fragments are
@@ -445,10 +445,11 @@ continues to validate with local RumiAI `json --check` before transport.
 
 The YAML-file adapter still supports no generic resource-level `create`,
 `update` or `delete`; those fail explicitly. The standalone API snapshot
-adapter supports host-scoped resource CRUD through versioned full-snapshot
-updates and read-back verification, as described above. REST full-document
+adapter supports explicitly selected host/container resource CRUD through
+versioned full-snapshot updates and read-back verification, as described above.
+REST full-document
 apply is unimplemented. Generic `request` is currently
-implemented only for the host traditional REST adapter described above. None
+implemented only for the traditional REST adapter described above. None
 falls back to a legacy function. Operation-specific compatibility functions
 retain their previous forwarding behavior. Permanent tests exercise JSON
 list/get, full-document apply and resource create/update/delete through real

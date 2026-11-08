@@ -262,6 +262,21 @@ discovery extension:
   execute the accumulated suite together and inspect outcomes before claiming
   validation. Do not resume discovery work.
 
+### APISIX — explicit container-scoped traditional REST (2026-11-08; implementation pending suite)
+
+- Traditional REST `list/get/create/update/delete/request` now dispatches to
+  either the selected host or the explicit Docker/Podman full-ID container.
+  The Admin URL and protected header pathname are interpreted in that target,
+  so a loopback Admin listener can be reached without publishing a host port.
+  The call never discovers or selects a container. Request bodies continue to
+  stream on stdin through `exec -i`.
+- Updated the existing transport fixture to unwrap the explicit container
+  dispatch and exercise REST list through that branch. No new test suite was
+  added and no test was run. Snapshot `apply` remains host-scoped; this change
+  does not broaden its target support.
+- Next: move on to YAML resource mutations only after preserving comments and
+  document formatting safely; run the accumulated suite at the end as directed.
+
 ### APISIX M2 — running-container configuration bind-source correlation (2026-11-08; implementation pending validation)
 
 - The discovery inventory now asks Docker/Podman for read-only mount metadata
