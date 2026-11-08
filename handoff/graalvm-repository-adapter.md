@@ -11,7 +11,9 @@ Implement the missing `graalvm` repository adapter for the four catalog-declared
 
 - `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d`
 - `m-os/codex/graalvm-repository-adapter@73b238d42966c0da1d2aebb48b50bfba59b484cf` (draft [PR #13](https://github.com/massimilianonardi-ai/m-os/pull/13))
+- `m-os/codex/p4-graalvm-catalog-pin@e5b6e42b5e36b4e7d01dd7bf635c2047bd948af8` (draft [PR #20](https://github.com/massimilianonardi-ai/m-os/pull/20), stacked on PR #13)
 - `pkg-catalog/main@0b69223a5ebe7bc042aad50012ee8bc7e4a00442`
+- `pkg-catalog/codex/p4-graalvm-version-index@50faddb36f9c3e7c12fa53d46b94dd8098fa857b` (draft [PR #4](https://github.com/massimilianonardi-ai/pkg-catalog/pull/4))
 - `pkg-catalog/codex/m-os-adapter-runner@8e0e7d9d0ed274540b1ad1b2a68fb8ce455b1806` (test-only four-stream runner candidate)
 - `rumiai-dev/main@75e54c051f7a2893a4898c6b4e1b963fdfa84e94`
 
@@ -52,6 +54,7 @@ The upstream stable tag families observed are `graal-<version>`, `jdk-<version>`
 - On the isolated Ubuntu ARM64 checkout, the public CLI `./m pkg uninstall graalvm@25.3.4.1!linux-arm64` followed by `./m pkg install graalvm@25.3.4.1!linux-arm64` completed successfully. `pkg versions` and `pkg default` reported that concrete, and `./m java -version` ran the installed GraalVM 25.0.4.1 runtime. The run exercised the public package pipeline and genuine catalog artifact.
 - Exact and latest public Linux ARM64 installation both pass. After the rate-limit endpoint recovered, `./m pkg install graalvm` installed the current `graalvm@25.5.5.0.3!linux-arm64`; `pkg default` and `pkg versions` agreed, and selecting that Java provider made `./m java -version` report GraalVM CE 25.5.5.0.3. The exact anchor 25.3.4.1 was also installed and ran earlier. The full releases endpoint is 5,477,123 bytes and public resolution took about 100 seconds locally; avoid unnecessary repeated API probes.
 - Independent read-only source review found no concrete defect in the current adapter implementation. The workflow was corrected to install latest first and capture its concrete before installing the exact anchor, avoiding installed-current reuse.
+- **P4 ordered-history acceptance (2026-11-08):** the offline facility-map fixture on PR #20 head `e5b6e42b` passed duplicate/missing index fail-closed behavior while retaining concrete membership and reconciling provider-local `@latest`. A clean Ubuntu 26.04.1 ARM64 checkout pinned to that m-os head and catalog PR #4 head `50faddb` then passed public exact installation of 25.3.4.1 and a separate empty-store public unversioned latest installation of 25.5.5.0.3. Both installed concretes carried the 59-entry catalog history; `pkg default`, `pkg versions`, `facility/java/25/linux-arm64/graalvm@latest`, and public `./m java -version` agreed with the selected concrete in the respective run. The earlier isolated status-18 installation failure was not reproducible. Worktrees and all runtime/cache writes stayed under `/m/src/git/chatgpt/tmp/`.
 
 ## Current state
 
@@ -59,7 +62,7 @@ The adapter, manual and workflow are committed to `codex/graalvm-repository-adap
 
 ## Next action
 
-Refresh GraalVM macOS job `128757341992` in run 42488509763; inspect its exact log before closing platform acceptance. Fix only evidenced issues; keep PR #13 draft and unmerged until latest, exact, supported-stream artifact and provider acceptance plus formal review are addressed.
+Refresh the exact-head PR #13 hosted/retry results for the three API-dependent macOS jobs when the upstream Releases API permits a meaningful run. Complete formal review of PRs #13/#20 and catalog PR #4, including four-stream consistency; preserve their draft/unmerged state under the orchestration gate. The successful P4 public install evidence above is Linux ARM64 only and does not establish macOS, Windows execution, or catalog PR #4 synchronization behavior.
 
 ## Blockers / open questions
 
