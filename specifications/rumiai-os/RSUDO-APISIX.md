@@ -57,6 +57,10 @@ and destination metadata to find APISIX configuration mount candidates. Running
 containers are probed through the manager
 with a fixed read-only `sh` program that searches for the same configuration
 filenames; returned config paths are qualified by the full container ID.
+For discovered config files in running containers, manager mount destinations
+are matched by path prefix and a `mount` row may identify the corresponding
+host-side bind source. This is declaration-level path provenance only; it
+does not establish which file APISIX loaded or serves.
 Stopped containers whose image or name contains `apisix`, or whose inspected
 mount points expose an APISIX configuration path, remain visible as candidates,
 but their filesystems cannot be searched. Only mount source/destination metadata
@@ -64,8 +68,8 @@ is inspected; container environment values are never requested. A running contai
 with a failed probe is surfaced as uncertain when manager metadata suggests
 APISIX, and a manager-level partial/unavailable row records incomplete
 coverage. A stopped container whose metadata does not suggest APISIX can be
-missed; correlation of mount sources to host-discovered files is not
-implemented. Running-container YAML and JSON files receive targeted
+missed; automatic matching of mount sources to host-discovered file rows is
+not implemented. Running-container YAML and JSON files receive targeted
 connect-only netcat probes inside that container's network namespace, with
 the manager and full container ID in the row. JSON files are validated and
 queried with the standalone RumiAI `json` command for

@@ -225,6 +225,36 @@ discovery extension:
   Docker is unavailable in this workspace, so source inspection is the only
   new evidence in this research checkpoint.
 
+### APISIX M2 — running-container configuration bind-source correlation (2026-11-08; implementation pending validation)
+
+- The discovery inventory now asks Docker/Podman for read-only mount metadata
+  for each running container whose filesystem yielded APISIX config candidates.
+  A config path is matched against mount destinations, including nested paths,
+  and an additional `mount` row reports the corresponding declared host source.
+  An unavailable manager inspection emits an uncertainty row and marks that
+  manager's scan partial. This is path mapping evidence only; it does not prove
+  APISIX loaded or serves the bytes. It does not yet automatically join that
+  source to a host `find` row.
+- `apisix-discovery-host.test` now has synthetic Docker and Podman running
+  bind-mount cases and expected host-source rows. Tests have not been run in
+  this continuation, per the operator's request to run the suite together at
+  the end. The product manual and canonical `RSUDO-APISIX.md` describe the
+  limited evidence and its boundary.
+- GitHub runner investigation succeeded: `rumiai-tests` workflow run
+  [42471744601](https://github.com/massimilianonardi-ai/rumiai-tests/actions/runs/42471744601)
+  was dispatched for frozen product `rumiai-os@3f805c01e1b8f1844e7af134540a7da4f637d4da`.
+  At this checkpoint its macOS and Ubuntu ARM jobs are still running; the
+  pinned APISIX 3.16/3.19, etcd and systemd/nginx fixtures provisioned
+  successfully on Ubuntu ARM. No test outcome is claimed yet. The run does
+  not include product `rumiai-os@f2a4445` or test `rumiai-tests@58464c4a`;
+  it uses the previously frozen revisions.
+- Next: inspect the frozen runner's completed results, then continue discovery
+  evidence correlation and finish the remaining adapter work in bounded
+  increments. Snapshot resource mutation still requires a JSON document
+  transformation path plus digest/version/read-back conflict handling; YAML
+  resource mutation still needs comment-preserving semantics. Do not claim
+  either operation implemented until their safety contract is realized.
+
 ### Continuation checkpoint — standalone JSON full-document apply
 
 - The generic `rsudo_mod_apisix_apply` now supports only the explicitly
