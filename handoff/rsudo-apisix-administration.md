@@ -274,7 +274,10 @@ discovery extension:
   dispatch and exercise REST list through that branch. Snapshot `apply` now
   also streams the complete caller-supplied snapshot through host or selected
   container `exec -i`; the existing HTTP 202 case is routed through its
-  container branch. No new test suite was added and no test was run.
+  container branch. Snapshot `list/get` now use the same explicit host or
+  container route before local filtering. The existing transport fixture now
+  exercises snapshot list through Docker scope as well. No new test suite was
+  added and no test was run.
 - Next: move on to YAML resource mutations only after preserving comments and
   document formatting safely; run the accumulated suite at the end as directed.
 

@@ -122,10 +122,11 @@ endpoints or credentials. The read-only result includes
 `adapter` and relevant nonsecret selectors; the credential file
 is represented only as configured/not-configured. Supported internal
 adapter identifiers are `rest`, `snapshot`, `file-yaml`,
-`file-json` and `none`. Generic `list/get` route supported explicit contexts
-to their internal adapters; `create/update/delete` are implemented for
-explicitly selected host or Docker/Podman traditional REST, standalone API
-snapshots, and standalone JSON files. Full-document `apply` supports
+`file-json` and `none`. Generic `list/get` route supported explicit host or
+Docker/Podman REST and standalone API contexts to their internal adapters;
+`create/update/delete` are implemented for explicitly selected host or
+Docker/Podman traditional REST, standalone API snapshots, and standalone JSON
+files. Full-document `apply` supports
 standalone JSON/YAML files and standalone API snapshots on an explicitly
 selected host or Docker/Podman target.
 Invalid inputs use
