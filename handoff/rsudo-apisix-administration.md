@@ -271,9 +271,10 @@ discovery extension:
   The call never discovers or selects a container. Request bodies continue to
   stream on stdin through `exec -i`.
 - Updated the existing transport fixture to unwrap the explicit container
-  dispatch and exercise REST list through that branch. No new test suite was
-  added and no test was run. Snapshot `apply` remains host-scoped; this change
-  does not broaden its target support.
+  dispatch and exercise REST list through that branch. Snapshot `apply` now
+  also streams the complete caller-supplied snapshot through host or selected
+  container `exec -i`; the existing HTTP 202 case is routed through its
+  container branch. No new test suite was added and no test was run.
 - Next: move on to YAML resource mutations only after preserving comments and
   document formatting safely; run the accumulated suite at the end as directed.
 

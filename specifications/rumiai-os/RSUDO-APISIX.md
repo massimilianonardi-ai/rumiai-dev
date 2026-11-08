@@ -126,7 +126,8 @@ adapter identifiers are `rest`, `snapshot`, `file-yaml`,
 to their internal adapters; `create/update/delete` are implemented for
 explicitly selected host or Docker/Podman traditional REST, standalone API
 snapshots, and standalone JSON files. Full-document `apply` supports
-standalone JSON/YAML files and the host-scoped standalone API snapshot adapter.
+standalone JSON/YAML files and standalone API snapshots on an explicitly
+selected host or Docker/Podman target.
 Invalid inputs use
 distinct new-context status values 1–11 as described in the operational manual.
 The context is a **local declaration**: it does not establish a running
