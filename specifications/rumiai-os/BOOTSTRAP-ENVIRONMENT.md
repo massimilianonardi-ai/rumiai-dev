@@ -170,8 +170,12 @@ activation operand that expands named preset selections in place before later
 operands are folded. `--set-defaults` changes only the supplied per-account
 preference dimensions, while preset definition/deletion and default mutation
 do not change the active shell context. The account record is versioned,
-strict data and is never sourced or evaluated. This is the chosen target
-interface, not a claim that these operations are currently implemented.
+strict data and is never sourced or evaluated. This is the selected target
+interface, not a claim that these operations are currently implemented. The
+management option spellings and package/preset selection forms are fixed. The
+complete generalized `key=value` dimension grammar, validated installation
+baseline and runtime migration remain unimplemented and are not inferred by
+the package-only phase.
 
 ### Child context continuity
 
@@ -264,7 +268,7 @@ The supported first-phase `context` grammar and no-argument reset above remain t
 - Package commands, libraries, provider resolution, mutable state and inherited environment must agree on the effective selected context. If an installed package cannot safely honor the selected profile using an upstream-supported state-path adaptation or an already prepared compatible per-profile view, its launch must fail before it could use another profile's state; it must never silently fall back to the global profile.
 - Host-supervised service profiles and system TLS CA authority are **not** untrusted shell-context selections. Their ownership rules are in `SERVICE-LIFECYCLE.md` and `TLS-TRUST.md`; mutable state routing is governed by `STATE-MODEL.md`.
 
-These are binding design and migration constraints, **not** claims that profile-aware bootstrap, `state-path`, package `var/` routing, trusted child propagation or the generalized public operand grammar already exist. Existing global-selector consumers remain supported under their current contracts until an explicitly validated transition; unsupported concurrent-profile use must fail closed rather than silently alter global state. The detailed grammar, persistence format and trusted propagation mechanics remain active design work, not accepted executable APIs.
+These are binding design and migration constraints, **not** claims that profile-aware bootstrap, `state-path`, package `var/` routing or trusted child propagation already exist. Existing global-selector consumers remain supported under their current contracts until an explicitly validated transition; unsupported concurrent-profile use must fail closed rather than silently alter global state. The management operation spellings above are selected. The complete generalized operand-dimension grammar, validated installation baseline, persistence wire format and trusted propagation mechanics remain unimplemented; no executable API beyond the documented package-only phase is implied.
 
 Future generalized-context behavior is that bare `context` initializes the
 active context from persisted defaults, and an explicit clear operation
@@ -274,9 +278,11 @@ account running the shell and are stored under
 logical `user` context dimension and grants no service-registration, CA
 approval or other host-administrative authority. This is a settled migration
 target, not the current executable API: the existing package-only no-argument
-reset remains in effect until a coordinated migration is validated. The exact
-command spelling, record format, account-directory provisioning, permissions
-and behavior when the store is unavailable remain active design work.
+reset remains in effect until a coordinated migration is validated. The
+selected management command spellings and account-store authority/provisioning
+policy are documented above and in `STATE-MODEL.md`; implementation and
+deployment validation remain pending. The generalized record wire format and
+complete dimensions remain implementation work behind the selected API.
 
 ## Generated global execution environment
 

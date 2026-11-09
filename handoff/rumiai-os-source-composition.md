@@ -2720,6 +2720,13 @@ migration, child-envelope trust, provider precedence and protected environment
 behavior have now been recorded in the canonical bootstrap, state and package
 specifications. They do not claim runtime implementation or validation.
 
+The canonical bootstrap specification has been reconciled with those decisions:
+the management option spellings and account-store authority/provisioning policy
+are selected, while the full generalized operand-dimension grammar, validated
+installation baseline, generalized record wire format, migration and trusted
+propagation remain unimplemented. The current package-only grammar remains the
+only executable context API until the coordinated migration is validated.
+
 1. **Public operations and persistence.** `context` resolves and activates
    defaults; `context key=value...` resolves and activates a replacement,
    folding operands left-to-right and expanding `full-context=<name>` inline.
