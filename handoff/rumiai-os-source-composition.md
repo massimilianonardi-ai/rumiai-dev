@@ -2888,6 +2888,24 @@ are C3 acceptance requirements; C3 remains active until the full matrix passes.
   closes only the reproduced system-selector path; TOCTOU, broader state
   consumers, user-binding semantics and the rest of M03 remain open.
 
+### C3 account-record mutation serialization follow-up (2026-11-09)
+
+- The exact pushed follow-up is
+  `m-os/codex/c3-generalized-context@1a381d2abf0c564b28d6ce78b7b8fc7b20313298`,
+  based on `6a549246...`. Default update/clear already used the per-account
+  lock, but named preset create/delete did not. Both preset mutation paths now
+  acquire that same lock, use the existing bounded busy/invalid-store
+  diagnostics, and release owned locks through the existing shell-exit trap.
+  The operational manual describes the scope and stale-lock behavior.
+- Exact local checks: store ownership, atomic records, concurrent default
+  update, hostile-input and preset record read/replace/delete test PASS on
+  Ubuntu ARM64; public preset create/delete replay PASS; POSIX `sh` and `dash`
+  syntax checks and `git diff --check` PASS. The regression test now confines
+  all its account directories, records, locks and signal markers to its
+  synthetic temporary root; it does not mutate or remove
+  `$m_ROOT/state/<UID>`. No hosted workflow was run. This is a narrow C3 store
+  correctness increment and does not complete generalized context behavior.
+
 ### P4 implementation follow-up (2026-11-07; historical, superseded by integrated-master checkpoint above)
 
 - P4 work is implemented on draft PR #7, exact current branch head `m-os@3ef1a713fa5bcf31d0ee8b4f5d282ffc253c675d`, based on scoped-accepted P3 `446de83...`; master remains unchanged. It adds the derived facility map, provider-local offline ordering from installed repository snapshots, default projection, stage/backup reconciliation and hooks at install/uninstall/package-default/facility-default mutations. The unit test passes locally on the earlier implementation head; current exact-source hosted integration is the remaining P4 gate.
