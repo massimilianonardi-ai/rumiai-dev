@@ -2916,6 +2916,35 @@ are C3 acceptance requirements; C3 remains active until the full matrix passes.
   `$m_ROOT/state/<UID>`. No hosted workflow was run. This is a narrow C3 store
   correctness increment and does not complete generalized context behavior.
 
+### C3 next runtime integration stage (2026-11-09)
+
+- C2 public operations and per-POSIX-account storage/provisioning choices are
+  promoted in the canonical bootstrap, state and package specifications. The
+  user's selected behavior is bare `context` = initialize defaults,
+  `context --clear-defaults` = clear persistent defaults, and account storage
+  under `$m_ROOT/state/<effective-UID>`; do not ask for or silently alter these
+  choices.
+- Current exact implementation head is
+  `m-os/codex/c3-generalized-context@ed9a6e8be022dbe518ca5edae9d83535347dd178`.
+  It contains account package-default/preset persistence, lock serialization,
+  and the system-selector containment follow-up, but it is not integrated into
+  master and does not implement generalized context dimensions.
+- Next, inspect the active source and tests for an installation-managed,
+  permission-validated inventory of system profiles and logical user-state
+  identities before choosing baseline resolution or legacy migration behavior.
+  Do not adopt arbitrary `current` selector targets or infer identities from
+  directory names without checking the promoted migration contract.
+- The canonical package contract requires environment descriptors to run in a
+  staging subprocess, reject changes to protected root/state/context fields,
+  and apply only validated exports. The exact envelope names/encoding and
+  context-owned HOME behavior must be mapped to the C3 implementation before
+  integrating this launcher work; package env scripts must not acquire service
+  or CA authority. Continue unrelated fully specified C3 work in parallel.
+- C3 remains incomplete: baseline inventory/resolution, migration, trusted
+  child continuity, provider/context precedence, profile-local mutable state,
+  protected inheritance, actual consumer scenarios and hosted/macOS acceptance
+  are still open. No C3 completion or full-plan validation is claimed.
+
 ### P4 implementation follow-up (2026-11-07; historical, superseded by integrated-master checkpoint above)
 
 - P4 work is implemented on draft PR #7, exact current branch head `m-os@3ef1a713fa5bcf31d0ee8b4f5d282ffc253c675d`, based on scoped-accepted P3 `446de83...`; master remains unchanged. It adds the derived facility map, provider-local offline ordering from installed repository snapshots, default projection, stage/backup reconciliation and hooks at install/uninstall/package-default/facility-default mutations. The unit test passes locally on the earlier implementation head; current exact-source hosted integration is the remaining P4 gate.

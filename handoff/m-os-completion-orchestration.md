@@ -3,10 +3,11 @@
 Status: Active — P3/P4/J1/V2 promoted; S PR #4 candidate has exact hosted checks but the SRV-42 PID identity/race gate remains open; A1–A4 hosted workflows deferred; C2/C3 and I1 remain open
 Updated: 2026-11-09
 
-### Current continuation checkpoint (2026-11-08)
+### Current continuation checkpoint (2026-11-09)
 
-- This continuation started from verified `rumiai-dev/main@327ee61bd4065b3832be5b1d7e6be9d275f90cc8`; subsequent checkpoints are pushed forward-only. Detailed GeoServer adapter state is in `handoff/geoserver-repository-adapter.md`, with cross-plan M10/M12 evidence in `handoff/m-autonomous-validation.md`.
-- GeoServer adapter work is now published as draft [m-os PR #12](https://github.com/massimilianonardi-ai/m-os/pull/12), current head `b1e4f040506592f0433e26005741f887266f4462`, based on exact `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d`. It is not merged and no hosted run exists. Local Ubuntu evidence includes genuine 3.0.1 and 3.0.2 installs; 3.0.1 returned HTTP 302 and 3.0.2 served WFS HTTP 200 after explicit provider defaults. The focused workflow is in the PR branch but GitHub does not list it until it reaches the default branch. Keep hosted/platform acceptance open.
+- Fresh remote preflight: `rumiai-dev/main@084642281a282247c904c5b611e5af23833d2ac0`; current C2 decisions/specifications are on `rumiai-dev/codex/c2-account-defaults@7cbc8a1e48cfe335782a0044f6bc37bf39f8bfa7`. `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d`, `pkg-catalog/main@0b69223a5ebe7bc042aad50012ee8bc7e4a00442`, and the active context branch `m-os/codex/c3-generalized-context@ed9a6e8be022dbe518ca5edae9d83535347dd178` were also refreshed. Detailed GeoServer evidence is in its owning handoff and the M10/M12 ledger.
+- GeoServer draft [m-os PR #12](https://github.com/massimilianonardi-ai/m-os/pull/12) advanced to `6595bb10722d596d656327c5ee3d72a13cb106c9` on the same master base. Local exact-source replay found and fixed two CI defects: create a local branch from the pinned detached catalog checkout so repeated `pkg` calls can pull, and read back the selected facility provider with `pkg provider default`. The focused fixture passed; isolated Ubuntu evidence covers exact/latest dependency plans, real 3.0.1/3.0.2 installs, selected 3.0.2 WFS response and clean stop. A later clean replay hit upstream GitHub API HTTP 403 before package resolution. GitHub currently reports no hosted run or status for this PR head; PR remains draft/unmerged.
+- The user's C2 selections are already promoted and persisted on the C2 branch: bare `context` initializes per-account defaults; `context --clear-defaults` clears them; storage authority is `$m_ROOT/state/<effective-UID>`. C2 specification promotion is complete. C3 runtime acceptance remains open, including baseline inventory/resolution, migration, child envelope, context-aware provider/environment and real package consumers; do not revert to the obsolete claim that C2's public grammar/default storage decisions are still awaiting the user.
 
 ## Goal
 
@@ -23,7 +24,7 @@ No duplicate normative specification or separate product architecture is establi
 ## Current repository revisions
 
 Verified remote starting point:
-- `rumiai-dev/main@ea5d6259efb14b4527310a37b3cfe92980857619` is the verified remote preflight before this checkpoint; it includes the latest autonomous-validation evidence and preserves concurrent OUT-09/OUT-11 updates. Do not overwrite that work.
+- Fresh main and active task branch are recorded in the current continuation checkpoint above; the local `rumiai-dev/main` checkout is divergent/dirty and must not be modified. Do not overwrite concurrent work.
 - `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d`; PR #9 updates only README after tested runtime `ed5ec60...`. P3 PR #5 merged as `6db5531...`; J1 PR #6 merged as `1df35f70...`; V2 runtime PR #8 merged as `ed5ec60...`.
 - S branch `m-os/m-os-completion-s@15a2c4f96584c07b92088e5530d4ecb09a9477b8` now contains a forward-only merge of current master `a78a24bd...`; PR #4 remains draft/unmerged. Exact integrated candidate locally reproduces the SRV-42 fix; see the current M12 checkpoint in `handoff/m-autonomous-validation.md`. Its `ps -o lstart` identity snapshot is one-second resolution and `stop` checks then separately signals the PID; no portable POSIX atomic identity-checked signal exists. Keep the resulting SRV-42 same-second/PID-reuse race open; Linux `pidfd` would require a nonportable native helper and does not cover macOS.
 - P3/P4/J1 exact-master hosted runners on `pkg-catalog` commit heads `d352513`, `2a63b75`, `7827963` completed successfully: P3 6/6 current-source + 3/3 supporting public checks, P4 2/2, J1 2/2. See validation handoff for run IDs and limits.
@@ -546,6 +547,13 @@ P2 [PR #3](https://github.com/massimilianonardi-ai/m-os/pull/3) merged forward t
 **I1 stays BLOCKED; I2 PENDING.** There is still no coherent promoted P3/P4+V2+C2/C3+standalone J1 product revision, and the M01–M15 owner has not issued a complete exact-revision acceptance run. S1/S2 and R1 published package positive evidence remains separate hosted work; privileged/reference-host permissions remain gated. No I-owned production code, frozen legacy tests or physical host was modified or executed. An additional I-side temporary P3 CI branch could not be created because the available GitHub branch-creation action was blocked; therefore **no new I-side P3 workflow run or PASS is claimed**.
 
 ## Next action
+
+### Current continuation order (2026-11-09)
+
+1. Continue C3 from the published exact branch `m-os/codex/c3-generalized-context@ed9a6e8...`. The account-store defaults/presets slice and guarded system-selector follow-up are complete, but the full context still needs validated baseline/profile identity resolution, safe legacy-selector migration, child-envelope transport, package/provider environment staging, real provider/library consumers, and remaining C3 acceptance. C2 contract choices are promoted; do not ask the user to repeat them.
+2. Continue exact-source nonprivileged M01–M15 validation using disposable copies under `/m/src/git/chatgpt`; preserve frozen legacy repositories and keep A1–A4 hosted runs deferred. Prioritize current C3/M03 and M15 command/manual coverage, then the unfinished M12 failure/restart cases.
+3. PR #12 head `6595bb10...` is locally advanced and documented, but the connected GitHub API reports no hosted workflow run/status. Keep it draft and unmerged; a fresh public API 403 is an upstream acquisition failure. Recheck hosted evidence when an authorized run becomes available.
+4. I1 remains blocked until exact coherent product/catalog revisions exist and the active nonprivileged M01–M15 ledger is closed. I2 follows I1 and ordinary authorized reference-host conditions. Privileged actions stay deferred.
 
 ### Continuation checkpoint (superseded by latest integrated-source checkpoint above)
 
