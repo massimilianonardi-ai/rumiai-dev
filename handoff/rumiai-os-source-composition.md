@@ -2732,7 +2732,9 @@ specifications. They do not claim runtime implementation or validation.
    leaves saved presets intact. Preset/default names and identity values use
    strict documented character grammars; values are identifiers, never paths
    or shell text. The selected spelling is a design choice, not a prior user
-   quote, and none of these operations is implemented yet.
+   quote. The initial C3 package-selection increment now implements the
+   package-only subset of these operations; profile, user, provider, locale,
+   migration and child-envelope dimensions remain unimplemented.
 2. **Store and baseline.** Use a versioned, data-only account record under
    `$m_ROOT/state/<effective-UID>/context/`; never `source` or `eval` it.
    Writes stage in that account directory and atomically rename after strict
@@ -2809,20 +2811,56 @@ continuity and invalid-envelope rejection; protected HOME/browser NSS; package
 env attempts to alter reserved fields; unsupported Keycloak profile rejection;
 GeoServer only after complete adapter integration; ambiguity and missing
 provider atomic failure; and replacement A -> B without leaking A-owned
-variables. Until this matrix passes on the implemented revision, C2 remains a
-specification/acceptance gate and C3 must not start.
+variables. C2's specification-promotion gate is complete. These runtime cases
+are C3 acceptance requirements; C3 remains active until the full matrix passes.
 
-| C2 acceptance slice | Current evidence | Status |
+| C2/C3 runtime acceptance slice | Current evidence | Status |
 | --- | --- | --- |
-| Account-owned strict record, atomic replacement, concurrent writers, malformed/UID/symlink rejection | PoC 097 exact head `26276110...`, `sh` and `dash`, Linux ARM64 | **PoC PASS**; not the `m` implementation |
+| Account-owned strict record, atomic replacement, concurrent writers, malformed/UID/symlink rejection | `m-os/codex/c3-context-account-store@d7309cb5054c93e923f7aba2ed3596e78ea8d13b`; local checks listed below; foreign-owner rejection still untested | **Package-only Linux local slice PASS; cross-platform/hosted and foreign-owner PENDING** |
 | Shared/read-only account provisioning | Safety policy now canonical; no multi-account deployment run | **PENDING** |
-| Bare initialization, `--set-defaults`, `--clear-defaults`, preset definition/deletion | Target grammar now canonical; current C1 no-argument reset remains implemented | **PENDING implementation** |
+| Bare initialization, `--set-defaults`, `--clear-defaults`, preset definition/deletion | Package-only defaults and presets are implemented by C3 stage A; generalized dimensions and baseline resolution remain absent | **PARTIAL; full C3 acceptance PENDING** |
 | Safe one-time `current` migration | Identity and path constraints now canonical | **PENDING implementation and hostile-selector cases** |
 | Versioned child envelope and UID/root/identity validation | PoC 097 data-envelope checks only | **PENDING `m` integration and nested public launch** |
 | Provider precedence, unchanged consumer/system selectors, ambiguity atomicity | Target order in `PACKAGE-MODEL.md`; P4 map integrated | **PENDING context-aware runtime evidence** |
 | Protected environment fields and A-to-B cleanup | Target boundary in `PACKAGE-MODEL.md`; catalog descriptor audit recorded above | **PENDING real launcher cases** |
 | Profile-local mutable `var/` adaptation | GeoServer upstream env is an unintegrated candidate; Keycloak unsupported | **PENDING; fail closed** |
 | Service and TLS authority isolation | Existing canonical service/TLS boundaries; no generalized envelope consumer | **Policy PASS; integration PENDING** |
+
+### C3 runtime stage A — account package defaults (2026-11-09)
+
+- `m-os` worktree `/m/src/git/chatgpt/tmp/m-os-c3-context-store` is based on
+  the freshly verified `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d`.
+  Branch `codex/c3-context-account-store@d7309cb5054c93e923f7aba2ed3596e78ea8d13b`
+  is pushed to origin and implements the package-only account-store portion of
+  C3; it does not implement the full generalized context.
+- The increment adds strict versioned package-selector records below
+  `$m_ROOT/state/<effective-UID>/context/`, account ownership/mode and symlink
+  checks, same-directory atomic replacement, serialized default
+  read/merge/write, bare initialization, explicit set/clear, and named
+  package-only preset definition/use/deletion. It updates the context and
+  private-library manuals, localized diagnostics, and the public context
+  workflow/component security test. Concurrent default updates are serialized;
+  after an uncatchable termination, a stale private lock fails closed and may
+  be removed by its account owner only after confirming no update is running.
+- **Exact local evidence at `m-os@d7309cb`:** `sh -n` and `dash -n` pass for
+  both context libraries and the context-store test; `git diff --check` passes.
+  All three `m-context-shell.yml` run bodies were executed from a disposable
+  copy of this exact source on Linux ARM64. The copy's `state` directory was
+  set to mode `0755` to meet the store's specified non-group/world-writable
+  parent policy. The public shell test passed defaults, clear, presets,
+  replacement, no-mutation, error/rollback and concurrent distinct-package
+  updates; the store test passed mode/owner, malformed/oversized records,
+  symlink/unsafe-parent rejection, pre-provisioned read-only storage,
+  concurrent atomic records, trusted utility lookup and handled-signal lock
+  cleanup; the existing installed shell/Java library workflow passed. This is
+  local product-path evidence only: no hosted run or macOS execution is
+  claimed, and foreign-owner rejection remains untested.
+- Still required before C3 closure: baseline resolution, validated one-time
+  legacy-selector migration, profile/logical-user/system dimensions, provider
+  precedence/environment, protected inheritance and HOME, child envelope,
+  trusted service identity, CA authority integration, mutable `var/` adapter
+  enforcement, actual provider/nested-consumer scenarios, cross-platform
+  evidence, and the remainder of the C3 acceptance matrix above.
 
 ### P4 implementation follow-up (2026-11-07; historical, superseded by integrated-master checkpoint above)
 
