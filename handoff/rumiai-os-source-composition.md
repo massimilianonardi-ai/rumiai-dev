@@ -2891,12 +2891,15 @@ are C3 acceptance requirements; C3 remains active until the full matrix passes.
 ### C3 account-record mutation serialization follow-up (2026-11-09)
 
 - The exact pushed follow-up is
-  `m-os/codex/c3-generalized-context@1a381d2abf0c564b28d6ce78b7b8fc7b20313298`,
-  based on `6a549246...`. Default update/clear already used the per-account
-  lock, but named preset create/delete did not. Both preset mutation paths now
-  acquire that same lock, use the existing bounded busy/invalid-store
-  diagnostics, and release owned locks through the existing shell-exit trap.
-  The operational manual describes the scope and stale-lock behavior.
+  `m-os/codex/c3-generalized-context@ed9a6e8be022dbe518ca5edae9d83535347dd178`,
+  based on `1a381d2a...` and `6a549246...`. Default update/clear already used
+  the per-account lock, but named preset create/delete did not. Both preset
+  mutation paths now acquire that same lock, use the existing bounded
+  busy/invalid-store diagnostics, and release owned locks through the existing
+  shell-exit trap. The operational manual describes the scope and stale-lock
+  behavior. The exact added regression invokes public preset create/delete
+  against a held lock in a synthetic account root; each returns status 22 and
+  the pre-existing preset data remains unchanged.
 - Exact local checks: store ownership, atomic records, concurrent default
   update, hostile-input and preset record read/replace/delete test PASS on
   Ubuntu ARM64; public preset create/delete replay PASS; POSIX `sh` and `dash`
