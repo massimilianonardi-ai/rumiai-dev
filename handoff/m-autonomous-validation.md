@@ -443,6 +443,11 @@ The operator explicitly authorized **skipping the unexecuted A1–A4 GitHub Acti
 - Re-executed the unchanged full `run` body from `.github/workflows/m-transfer-integrity-public.yml` at exact `m-os/codex/c3-context-account-store@d7309cb5054c93e923f7aba2ed3596e78ea8d13b` on Linux `7.0.0-42-generic`, ARM64, UID 1000. The actual `./m digest`, `./m extract` and `./m http-fetch` assertions all passed, ending with `PASS: real m A3 HTTPS verification, digest and raw extraction`.
 - The test body came from the committed workflow YAML without assertion edits. Its `TMPDIR` and `HOME` were set inside `/m/src/git/chatgpt/tmp/m-os-c3-context-testroot`; the workflow's own trap removed its generated fixtures. This is local regression evidence for the current feature branch only. It does not produce hosted A3/macOS or reference-host evidence, and A1–A4 hosted workflows remain deferred.
 
+### M01–M05 current-branch A1/A2 workflow replay (2026-11-09)
+
+- From the same exact `m-os/codex/c3-context-account-store@d7309cb5054c93e923f7aba2ed3596e78ea8d13b` disposable copy, replayed the committed `.github/workflows/m-bootstrap-state-public.yml` and `.github/workflows/m-shell-resources-public.yml` `run` bodies unchanged on Linux `7.0.0-42-generic`, ARM64, UID 1000. A1 ended `PASS: real m A1 bootstrap, symlink/PATH, state identity and osarch negative paths`; A2 ended `PASS: real m A2 shell, language, manual, diagnostics`. Both exited 0.
+- The copy's `HOME` and `TMPDIR` were confined beneath `/m/src/git/chatgpt/tmp/m-os-c3-context-testroot`; all generated state was inside that disposable copy and was removed afterward. These results update only local Linux evidence for this exact C3 feature source. They do not execute GitHub Actions or establish macOS, reference-host, or full M01–M05 acceptance. A1–A4 hosted execution remains deferred.
+
 ## Next action
 
 1. V2 runtime/catalog promotion is complete at `m-os/master@ed5ec60...` and `pkg-catalog/main@0b69223...`; all allowed exact merged-master hosted consumer checks are green.
