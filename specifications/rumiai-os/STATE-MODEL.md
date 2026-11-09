@@ -277,10 +277,31 @@ and its permissions follows these rules:
   leaves the active shell context unchanged.
 
 Do not make the shared `state` parent group/world-writable or sticky to enable
-account provisioning. The directory record format and exact diagnostic remain
-part of the coordinated context migration. These are the selected security
-rules; deployment and multi-account validation remain required before the
+account provisioning. The context store is rooted under:
+
+```text
+$m_ROOT/state/<effective-UID>/context/
+```
+
+It contains versioned, strict data for explicit per-dimension preferences and
+named presets. It is never sourced or evaluated and contains no arbitrary
+paths, secrets, provider executable environments or administrative authority.
+Writes are staged in the account-owned directory and atomically renamed only
+after strict owner, mode and symlink validation. The exact wire format and
+diagnostic text are implementation details behind the public context API.
+Deployment and multi-account validation remain required before the
 generalized context can claim acceptance.
+
+Legacy `system/current` and `user/current` selectors remain available to
+existing consumers during staged migration. New generalized-context
+resolution does not follow them on each access or import arbitrary targets.
+A migration may translate only a direct canonical relative target that names
+a known managed identity under the expected state subtree and passes inventory
+and permission validation. Absolute, chained, escaping, unknown or malformed
+targets fail closed without changing the account store or active shell. No
+path-valued selector is persisted in the account store. Migration is explicit
+and idempotent; absent legacy selectors leave the dimension to the validated
+installation baseline.
 
 ## Git boundary
 

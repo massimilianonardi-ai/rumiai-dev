@@ -2584,11 +2584,11 @@ This checkpoint translates existing normative constraints into a design worklist
 
 - **Current implementation remains the migration source:** `BOOTSTRAP-ENVIRONMENT.md` defines `context` as a shell function accepting exact installed `pkg=` selections; selections fold left-to-right, no-argument invocation resets this function's package selections, and failure leaves the prior shell state intact. Preserve that behavior until a coordinated migration is validated. The user's later decision below fixes the *future* bare-invocation behavior and does not claim it is implemented.
 - **Future generalized behavior already required:** ordinary shells/processes can choose distinct system profiles and logical user identities without changing global `state/*/current`; effective package/provider/state/environment/library behavior must be coherent; unsupported package `var/` must fail before activation; host services use a trusted registration-time identity/profile independent of the caller; CA authority remains administratively controlled while clients consume the selected verified profile's approved set.
-- **Promoted user decisions:** bare `context` initializes from persisted defaults; explicit clear clears those defaults; defaults are per real POSIX account under `$m_ROOT/state/<effective-UID>`, distinct from the logical `user` dimension and from service/CA/admin authority. The current bootstrap and state specifications now record these settled future requirements. They are not implemented behavior; exact command spelling, record format, provisioning, migration and shell reset semantics remain open.
+- **Promoted user decisions:** bare `context` initializes from persisted defaults; explicit clear clears those defaults; defaults are per real POSIX account under `$m_ROOT/state/<effective-UID>`, distinct from the logical `user` dimension and from service/CA/admin authority. The current bootstrap and state specifications record these future requirements. They are not implemented behavior. The 2026-11-09 C2 design resolution below selects the operation spelling and safe account-store/migration behavior; release and acceptance remain open.
 - **Safe design constraints for the next review (working design, not yet normative):** keep one replaceable active context per shell/process; treat system profile and logical user as independent dimensions; resolve profile identities to validated managed selections rather than arbitrary `current` symlink targets; validate the complete resolved selection before changing shell state; and propagate only versioned data that each child revalidates as untrusted continuity data. Presets expand as data into the same resolver and do not mutate global package/provider selectors. Preserve the current executable contract until the coordinated migration is validated.
-- **Still requires evidence/design before C2 completion:** (1) full public operand grammar and exact reset/clear command spellings; (2) how unset dimensions are initialized and how legacy `system/current` and `user/current` choices map once into explicit identities without arbitrary-path authority; (3) preset names, scope and persistence format; (4) account-directory provisioning and permission behavior when `$m_ROOT/state` is shared or read-only; (5) child-envelope fields, UID binding, version handling and unavailable-store behavior; (6) executable `env` ownership and reserved context fields; (7) which actual catalog `var/` packages can use upstream state-path adaptation or prepared profile views; (8) whether ordinary library-only packages need dependency edges and how versions are pinned; (9) provider/default precedence and failure atomicity when an input depends on unresolved providers. Do not infer answers from archival chat examples.
+- **Still requires implementation evidence before C2 completion:** actual command and migration behavior; full package/provider compatibility and environment tests; tested profile-local mutable-state adapter(s); nested child/browser continuity; and promotion of the resolved cross-spec contract against the acceptance checklist. Library-only package dependency-edge semantics remain intentionally unchanged: exact-concrete library exports do not acquire implicit dependency edges absent catalog metadata.
 - **Completed evidence:** the catalog matrix below covers authentic V1 mutable-state and executable-env descriptors plus V2 `link/lib/sh` consumers at `pkg-catalog/main@0b69223...`; current `STATE-MODEL`, `SERVICE-LIFECYCLE`, `TLS-TRUST` and bootstrap boundaries were cross-checked. PoC `rumiai-dev-PoCs/codex/c2-context-envelope@26276110ea528661ae6c152959f8c307b85721fb` passed its same-account file-store and child-envelope checks under both `sh` and `dash` on Linux ARM64. It validated 0700/0600 entries, non-mutating empty reads, atomic replacement, concurrent writers, UID/malformed/injection/symlink rejection and refusal of a group/world-writable state root. This is PoC evidence only; it does not exercise `m`, prove multi-account isolation or resolve provisioning for shared/read-only roots.
-- **Next C2 step:** resolve the shared/read-only `$m_ROOT/state` provisioning path and finish the identity migration, grammar, presets, child envelope, package-environment, `var/` and provider-ordering design against current implementations and catalog cases. Record the resulting acceptance matrix and only then promote settled behavior across canonical bootstrap/state/package/library/service/TLS specifications. C3 remains gated until the coordinated contract is promoted and the required P4 integration boundary is accepted.
+- **Superseded next C2 step:** shared/read-only account-store provisioning and bounded design choices are resolved in the 2026-11-08/09 sections below. Implement and validate the resulting contract, finish the verified package/profile compatibility adapters, and reconcile all canonical specs before opening C3. P4 is now integrated on exact master per the current orchestration checkpoint; this removes only the P4 dependency and does not waive C2 acceptance.
 
 #### Current catalog examples for the C2 compatibility matrix
 
@@ -2634,7 +2634,7 @@ its working schema, migration decisions or validation state here.
 
 **Previous source-extraction next action (completed):** The operator rejected the synthetic test, which was removed forward. The source repositories were populated with actual assets; the initial release/catalog/install composition is now implemented and hosted-validated, as recorded above.
 
-**Current next shared-package boundary:** P3/P4/J1 and V2 runtime are merged on `m-os/master@a78a24bd...` (README-only advance over tested runtime `ed5ec60...`); V2 catalog promotion is complete at `pkg-catalog/main@0b69223...`, and exact merged-master consumers passed. S1 SRV-42 candidate `m-os/m-os-completion-s@15a2c4f...` now passes exact integrated hosted validation 6/6 on runner `pkg-catalog@835e080...` (run 42413203723), but PR #4 remains draft/unmerged; see `handoff/m-autonomous-validation.md`. Continue the uncovered nonprivileged M01–M15 ledger. C2 source audit is complete but specifications still need the coordinated decisions recorded in the orchestration handoff; keep C3 gated. Preserve current catalog V1 additions and frozen legacy repositories.
+**Current next shared-package boundary:** P3/P4/J1 and V2 runtime are merged on `m-os/master@a78a24bd...` (README-only advance over tested runtime `ed5ec60...`); V2 catalog promotion is complete at `pkg-catalog/main@0b69223...`, and exact merged-master consumers passed. S1 SRV-42 candidate `m-os/m-os-completion-s@15a2c4f...` passes exact integrated hosted validation 6/6 on runner `pkg-catalog@835e080...` (run 42413203723), but PR #4 remains draft/unmerged; see `handoff/m-autonomous-validation.md`. Continue the uncovered nonprivileged M01–M15 ledger. C2 decisions are now coordinated across the current bootstrap/state/package specs; its implemented-source acceptance remains open, so C3 stays gated. Preserve current catalog V1 additions and frozen legacy repositories.
 
 ### Historical next-action material below (superseded)
 
@@ -2686,13 +2686,15 @@ second attempt passed. No physical production-host deployment was performed.
   text now distinguishes the currently implemented no-argument shell-local
   package reset from the agreed future behavior (bare invocation initializes
   persistent defaults; an explicit clear operation removes them). Exact clear
-  syntax and record format remain open, and generalized C2 is not implemented.
-- **Provider precedence candidate, not promoted:** preserve an explicit
+-  syntax has since been selected as `context --clear-defaults`; the record is
+  versioned strict data with exact wire representation left to implementation.
+  Generalized C2 is not implemented.
+- **Provider precedence target, now promoted in `PACKAGE-MODEL.md`:** preserve an explicit
   consumer/facility binding as strongest; apply a selected context provider
   choice above the configured global system facility default; then retain
-  existing deterministic installed-provider fallback. This needs a real
-  acceptance case covering explicit binding, context override, global default,
-  missing and ambiguous candidates before specification promotion.
+  existing deterministic installed-provider fallback. Exact-source runtime
+  evidence for context override, retained other-consumer binding, missing and
+  ambiguous candidates remains required.
 - **Mutable package roots:** existing static `var/` links resolve through
   `state/system/current` and cannot safely represent concurrent process-local
   profiles. GeoServer's catalog declares `var/data=data_dir`; PoC 056 records
@@ -2703,14 +2705,126 @@ second attempt passed. No physical production-host deployment was performed.
   profile-aware adapter is evidenced. It remains unsupported for alternate
   process-local profiles and must fail closed until its mutable roots are
   adapted. Neither package is claimed context-compatible today.
-- Package/provider environment composition still needs a protected-field
-  contract. Current catalog `env` descriptors are executable shell snippets
-  (for example PATH prepends and package-specific HOME-derived values); future
-  context composition must preserve declared caller inheritance while
-  applying exact package/provider command and environment identity. No blanket
-  environment overwrite rule is accepted here.
+- The promoted `PACKAGE-MODEL.md` target protects `m_ROOT`, `m_STATE_*`,
+  context-envelope/identity fields and context-owned HOME from package/provider
+  executable env descriptors, while retaining permitted package values such
+  as PATH/NODE_PATH/sandbox settings. Catalog snippets remain executable shell
+  behavior; implementation must detect and reject protected-field changes.
+  Real descriptor and nested-launch tests remain required.
 
-### P4 implementation follow-up (2026-11-07)
+### C2 resolved design and outstanding acceptance (2026-11-09)
+
+The following conservative choices close the design questions listed in the
+2026-11-07 checkpoint. Public operations, account-store rules, legacy
+migration, child-envelope trust, provider precedence and protected environment
+behavior have now been recorded in the canonical bootstrap, state and package
+specifications. They do not claim runtime implementation or validation.
+
+1. **Public operations and persistence.** `context` resolves and activates
+   defaults; `context key=value...` resolves and activates a replacement,
+   folding operands left-to-right and expanding `full-context=<name>` inline.
+   Selection operands never persist implicitly. Choose
+   `context --set-defaults key=value...` to atomically update only the named
+   per-account preference dimensions, `context --clear-defaults` to remove
+   those preferences, `context --define-preset <name> key=value...` and
+   `context --delete-preset <name>` for optional named presets. These data
+   management operations do not change the active context. Clearing defaults
+   leaves saved presets intact. Preset/default names and identity values use
+   strict documented character grammars; values are identifiers, never paths
+   or shell text. The selected spelling is a design choice, not a prior user
+   quote, and none of these operations is implemented yet.
+2. **Store and baseline.** Use a versioned, data-only account record under
+   `$m_ROOT/state/<effective-UID>/context/`; never `source` or `eval` it.
+   Writes stage in that account directory and atomically rename after strict
+   ownership/mode/symlink validation. The account record stores explicit
+   per-dimension preferences and presets, not resolved arbitrary paths,
+   secrets, provider executable environments or administrative authority.
+   Empty/cleared preferences use only installation-managed, validated baseline
+   defaults and deterministic host values; if a required identity has no
+   approved baseline, activation fails before shell mutation with a specific
+   unconfigured diagnostic. Context activation itself performs no persistent
+   write. The exact wire format stays an implementation detail behind the
+   `context` API and must be versioned.
+3. **Legacy selectors.** Preserve `system/current` and `user/current` for
+   legacy consumers during staged migration. New context resolution does not
+   follow them on every access or import arbitrary targets. A one-time importer
+   may translate a selector only when it is a direct canonical relative link
+   to a known managed profile/user identity under the expected state subtree,
+   with the target verified against the managed inventory and permissions.
+   Absolute, chained, escaping, unknown or malformed targets fail closed and
+   leave the account store and active context unchanged. No path string is
+   copied into the account record. Migration is explicit and idempotent; absent
+   legacy selectors leave that dimension to the validated installation
+   baseline.
+4. **Child continuity envelope.** Ordinary child execution receives a
+   versioned data-only envelope containing the canonical `m_ROOT` identity,
+   effective UID, resolved logical identity/concrete package and provider
+   selections, locale/osarch, and explicitly permitted inheritance fields.
+   It contains no arbitrary filesystem paths, secrets, CA approval, service
+   registration or administrative claims. A child treats inherited data as
+   untrusted: verify version, root and UID, grammar, installed concrete
+   identities and compatibility before use. Unknown versions, malformed
+   fields, or UID/root mismatch fail closed; do not silently replace a present
+   invalid envelope with defaults. A child without an envelope resolves its
+   own context. Host-supervised services ignore caller envelopes and use only
+   their trusted registration record.
+5. **Provider precedence and atomicity.** Resolve an explicit consumer/facility
+   binding first; otherwise apply the context's explicit provider pin; then
+   the configured system facility default; then a deterministic sole
+   compatible installed provider. Zero or multiple compatible candidates
+   fail without guessing. Context pins affect only that context and never
+   mutate the consumer binding, system default or another shell. Resolve all
+   dependencies and exact concrete command/environment identities before
+   applying any shell changes. This ordering is promoted as the target in
+   `PACKAGE-MODEL.md`; it must be exercised against P4's derived map before
+   runtime acceptance.
+6. **Environment and library boundary.** Preserve allowed existing package
+   executable `env` effects, including PATH/NODE_PATH/sandbox variables, while
+   executing descriptor snippets in a staging subprocess. Reject changes to
+   reserved root/state/context-envelope/identity fields and to HOME when the
+   context owns HOME. Apply only validated exported results after complete
+   resolution; rebuild context-owned PATH and loader roots from the new
+   context so A-owned entries do not leak into B. HOME-dependent package data
+   must follow the selected logical user. Libraries remain exact-concrete
+   exports; do not infer dependency edges absent catalog declarations.
+7. **Failure and unsupported packages.** Validate the complete new selection,
+   permissions, provider compatibility, package mutable-state adapters,
+   protected inheritance and environment before changing the shell. Any error
+   preserves the previous active context byte-for-byte. A package with any
+   mutable `var/` path lacking a verified process-local adapter is rejected
+   before launch for an alternate profile. GeoServer remains an adapter
+   candidate; Keycloak remains unsupported until every declared mutable root
+   is adapted. CA projection consumes only the selected verified profile's
+   administrator-approved CA set; context preferences cannot approve or revoke
+   CAs.
+
+**Remaining cross-spec/acceptance checklist:** reconcile the canonical library,
+service and TLS references with the already updated bootstrap, state and
+package contracts; document the migration boundary and public command syntax;
+then exercise: fresh account
+bootstrap and clear/reinitialize; malformed and out-of-root legacy selectors;
+saved preset plus later operand override; two shells with independent profiles;
+provider override while a consumer binding remains pinned; nested child
+continuity and invalid-envelope rejection; protected HOME/browser NSS; package
+env attempts to alter reserved fields; unsupported Keycloak profile rejection;
+GeoServer only after complete adapter integration; ambiguity and missing
+provider atomic failure; and replacement A -> B without leaking A-owned
+variables. Until this matrix passes on the implemented revision, C2 remains a
+specification/acceptance gate and C3 must not start.
+
+| C2 acceptance slice | Current evidence | Status |
+| --- | --- | --- |
+| Account-owned strict record, atomic replacement, concurrent writers, malformed/UID/symlink rejection | PoC 097 exact head `26276110...`, `sh` and `dash`, Linux ARM64 | **PoC PASS**; not the `m` implementation |
+| Shared/read-only account provisioning | Safety policy now canonical; no multi-account deployment run | **PENDING** |
+| Bare initialization, `--set-defaults`, `--clear-defaults`, preset definition/deletion | Target grammar now canonical; current C1 no-argument reset remains implemented | **PENDING implementation** |
+| Safe one-time `current` migration | Identity and path constraints now canonical | **PENDING implementation and hostile-selector cases** |
+| Versioned child envelope and UID/root/identity validation | PoC 097 data-envelope checks only | **PENDING `m` integration and nested public launch** |
+| Provider precedence, unchanged consumer/system selectors, ambiguity atomicity | Target order in `PACKAGE-MODEL.md`; P4 map integrated | **PENDING context-aware runtime evidence** |
+| Protected environment fields and A-to-B cleanup | Target boundary in `PACKAGE-MODEL.md`; catalog descriptor audit recorded above | **PENDING real launcher cases** |
+| Profile-local mutable `var/` adaptation | GeoServer upstream env is an unintegrated candidate; Keycloak unsupported | **PENDING; fail closed** |
+| Service and TLS authority isolation | Existing canonical service/TLS boundaries; no generalized envelope consumer | **Policy PASS; integration PENDING** |
+
+### P4 implementation follow-up (2026-11-07; historical, superseded by integrated-master checkpoint above)
 
 - P4 work is implemented on draft PR #7, exact current branch head `m-os@3ef1a713fa5bcf31d0ee8b4f5d282ffc253c675d`, based on scoped-accepted P3 `446de83...`; master remains unchanged. It adds the derived facility map, provider-local offline ordering from installed repository snapshots, default projection, stage/backup reconciliation and hooks at install/uninstall/package-default/facility-default mutations. The unit test passes locally on the earlier implementation head; current exact-source hosted integration is the remaining P4 gate.
 - First hosted run 42374443146 failed both hosts at exit 57. A follow-up fixture substitution to PWC failed run 42374829124 at exit 16 because PWC v0.1.4 is compatibility 1. Exact pinned catalog review confirmed Electron Web Control v0.1.4 and v0.1.5 both declare compatibility 2; the test was restored to the authentic Electron releases. Product/test head is now `3ef1a713...`, runner pin commit is `pkg-catalog/m-os-completion-p4-ci@5b6dd71...`; its hosted result has not yet been observed. Treat P4 as PENDING, retain PR #7 draft, and do not integrate while current exact-source evidence is absent.

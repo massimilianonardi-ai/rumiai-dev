@@ -816,6 +816,35 @@ Runtime launch must resolve and validate the effective provider before using it 
 
 A facility provider may require a facility-specific runtime projection, including commands and environment needed to consume that facility. The facility default owns global command publication for that facility. A consumer-specific binding may override provider selection for a launched consumer through the package launcher without changing the global facility command publication.
 
+#### Generalized-context provider overlay (future contract)
+
+For a validated generalized context, provider selection is resolved in this
+order: explicit consumer/facility binding; explicit provider pin in the active
+context; configured system facility default; then the existing deterministic
+implicit installed-provider resolution. A context pin applies only to that
+shell/process. It does not write the consumer binding or system facility
+default, and does not alter another active shell. Ordinary launches without a
+validated context pin retain the existing binding/default/fallback behavior.
+
+The launcher must resolve and validate the exact compatible provider and its
+command/environment projection before applying the new context or launching
+the consumer. Zero or multiple compatible candidates fail without guessing.
+An error leaves the caller's active shell context and persistent selectors
+unchanged. These are generalized-context target semantics; they do not change
+the currently implemented provider precedence until the coordinated runtime
+migration is released.
+
+Package and provider executable environment descriptors may retain their
+declared package behavior, but may not silently change context-owned values:
+`m_ROOT`, `m_STATE_*`, context-envelope/identity fields, or `HOME` when the
+context owns HOME. The runtime must detect and reject a descriptor that changes
+one of these protected values. Permitted package values such as PATH,
+NODE_PATH, sandbox settings and other declared exports remain package-owned.
+When replacing context A with B, rebuild context-owned command and loader roots
+from B and remove A-owned contributions; do not carry them forward as inherited
+host values. Ordinary libraries continue to come from the exact selected
+package concrete. This contract creates no implicit library dependency edges.
+
 The public provider-selection configuration surface is:
 
 ```text

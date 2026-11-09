@@ -147,8 +147,50 @@ This describes the currently implemented initial package/library phase. The
 agreed generalized-context migration changes bare `context` to initialize
 the effective context from persistent per-account defaults and adds an
 explicit operation to clear those persisted defaults. Its exact public clear
-syntax and record format remain open. Until that migration is implemented,
+syntax is selected as `context --clear-defaults`; the operation clears only
+persistent per-account preferences and leaves the active shell context and
+saved presets unchanged. Clearing an already empty preference record is
+idempotent. Until that migration is implemented,
 bare `context` retains the shell-local reset behavior above.
+
+The selected generalized-context management forms are:
+
+```text
+context
+context key=value ...
+context --set-defaults key=value ...
+context --clear-defaults
+context --define-preset <name> key=value ...
+context --delete-preset <name>
+```
+
+Activation operands replace the current shell context after complete
+validation; they do not persist implicitly. `full-context=<name>` is an
+activation operand that expands named preset selections in place before later
+operands are folded. `--set-defaults` changes only the supplied per-account
+preference dimensions, while preset definition/deletion and default mutation
+do not change the active shell context. The account record is versioned,
+strict data and is never sourced or evaluated. This is the chosen target
+interface, not a claim that these operations are currently implemented.
+
+### Child context continuity
+
+An ordinary child may inherit a versioned, data-only context envelope that
+describes the resolved selections needed to continue the caller's context.
+It binds to the canonical `m_ROOT` identity and effective POSIX UID and carries
+semantic profile/user identities, exact installed package/provider concrete
+selections, locale/osarch and only explicitly permitted inherited values. It
+contains no arbitrary filesystem paths, secrets, CA approval, service
+registration or administrative authority.
+
+Every child treats the envelope as untrusted input and validates its version,
+root, UID, field grammar, installed identities and compatibility before use.
+A malformed or unsupported version, or a root/UID mismatch, fails closed; a
+present invalid envelope is not silently replaced with defaults. A child with
+no envelope resolves its own context. Host-supervised services ignore caller
+envelopes and use only the trusted service registration identity/profile.
+This is the target contract; current `m` does not yet implement generalized
+envelope propagation.
 
 The generalized-context default store is `$m_ROOT/state/<effective-UID>`.
 UID lookup and default loading occur only when the shell `context` function is
