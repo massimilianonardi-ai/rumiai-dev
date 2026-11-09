@@ -1,7 +1,7 @@
 # Completion orchestration of autonomous m-os
 
-Status: Active — P3/P4/J1/V2 promoted; S PR #4 candidate has exact hosted checks but the SRV-42 PID identity/race gate remains open; A2/A4 hosted workflows deferred; C2/C3 and I1 remain open
-Updated: 2026-11-08
+Status: Active — P3/P4/J1/V2 promoted; S PR #4 candidate has exact hosted checks but the SRV-42 PID identity/race gate remains open; A1–A4 hosted workflows deferred; C2/C3 and I1 remain open
+Updated: 2026-11-09
 
 ### Current continuation checkpoint (2026-11-08)
 
@@ -276,6 +276,12 @@ Mainline repository adapters: `pkg-repository-{artifact,chrome,chromium,github,n
 - C2's specification gate is complete on `rumiai-dev/codex/c2-account-defaults@a7e65ddb555bdf2056d4b4d04aa746e9ef32303d`; P4 and the accepted v2 runtime/catalog views are integrated at the exact heads recorded above. C3 is therefore active.
 - `m-os/codex/c3-context-account-store@d7309cb5054c93e923f7aba2ed3596e78ea8d13b`, based on exact `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d`, implements account-owned package defaults and package presets, strict storage, atomic replacement, serialized default merges and the shell-visible package-only behavior. Exact-source local Linux ARM64 tests pass as detailed in `handoff/rumiai-os-source-composition.md`; there is no hosted or macOS claim.
 - This is only C3 stage A. Validated installation baseline, profile/system/logical-user dimensions, legacy selector migration, provider/env resolution, protected inheritance/HOME, child envelopes, `var/` adapters, service/TLS authority integration and the complete C3 scenario matrix remain open. Do not close C3 or I1 on this branch alone.
+
+### C3 system-selector containment follow-up (2026-11-09)
+
+- A disposable exact-source `pkg_integrate` probe reproduced writes outside `m_ROOT/state` when an absolute symlink occupied `state/system/current` and a package declared mutable `var/` data. The exact `m-os/codex/c3-context-account-store@6a5492461e04866a5f3274b166a52122ea1714f3` candidate now validates the system selector before bootstrap environment sourcing, `state-path` results, `osarch` access and provider/package state materialization. Accepted selector shape is a direct relative `profile/<lowercase-identity>` link to an existing real direct child of `state/system/profile`; absent selectors are tolerated by bootstrap/pure `state-path`, but state materialization and `osarch` require a selected profile.
+- Local Ubuntu 26.04.1 ARM64 evidence at the exact candidate: exact A1 workflow run-body replay PASS; C3 account-store, context-library and new state-selector security scripts PASS. The regression proves valid direct profile selection still works; absolute system selectors and profile entries that are symlinks fail closed; package integration fails before creating a concrete or outside state leaf; bootstrap does not source an outside `env` fixture. No hosted A1–A4 workflow was dispatched; macOS, race/TOCTOU resistance and full M03 remain pending. The forward-only branch is pushed; no PR merge or mainline change was made.
+- C3 remains open for baseline authority, generalized profile/logical-user/provider/locale dimensions, selector migration, child envelope, context-aware package `var/` adapters, staged protected environments, service/TLS authority and its full acceptance matrix. Do not infer C3 or I1 completion from this security fix.
 
 The historical entries below retain the status observed at their dates and revisions. They do not override this current checkpoint: P3/P4/J1/V2 are merged, and V2 catalog promotion is complete.
 

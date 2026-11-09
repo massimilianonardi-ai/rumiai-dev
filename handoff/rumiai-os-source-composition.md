@@ -2816,7 +2816,7 @@ are C3 acceptance requirements; C3 remains active until the full matrix passes.
 
 | C2/C3 runtime acceptance slice | Current evidence | Status |
 | --- | --- | --- |
-| Account-owned strict record, atomic replacement, concurrent writers, malformed/UID/symlink rejection | `m-os/codex/c3-context-account-store@d7309cb5054c93e923f7aba2ed3596e78ea8d13b`; local checks listed below; foreign-owner rejection still untested | **Package-only Linux local slice PASS; cross-platform/hosted and foreign-owner PENDING** |
+| Account-owned strict record, atomic replacement, concurrent writers, malformed/UID/symlink rejection | `m-os/codex/c3-context-account-store@6a5492461e04866a5f3274b166a52122ea1714f3`; account-store code remains the d7309cb slice; local checks below plus system-selector regression; foreign-owner rejection still untested | **Package-only Linux local slice PASS; cross-platform/hosted and foreign-owner PENDING** |
 | Shared/read-only account provisioning | Safety policy now canonical; no multi-account deployment run | **PENDING** |
 | Bare initialization, `--set-defaults`, `--clear-defaults`, preset definition/deletion | Package-only defaults and presets are implemented by C3 stage A; generalized dimensions and baseline resolution remain absent | **PARTIAL; full C3 acceptance PENDING** |
 | Safe one-time `current` migration | Identity and path constraints now canonical | **PENDING implementation and hostile-selector cases** |
@@ -2861,6 +2861,32 @@ are C3 acceptance requirements; C3 remains active until the full matrix passes.
   trusted service identity, CA authority integration, mutable `var/` adapter
   enforcement, actual provider/nested-consumer scenarios, cross-platform
   evidence, and the remainder of the C3 acceptance matrix above.
+
+### C3 system-selector containment follow-up (2026-11-09)
+
+- Exact pushed branch head is now
+  `m-os/codex/c3-context-account-store@6a5492461e04866a5f3274b166a52122ea1714f3`,
+  based forward-only on `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d`.
+  An isolated package-state integration probe had demonstrated that a malformed
+  absolute `state/system/current` symlink could make a `var/` declaration write
+  outside the managed system-state tree. The fix validates existing system
+  selectors as direct relative `profile/<identity>` links to real direct
+  profile directories before bootstrap environment sourcing, `state-path`
+  system results, `osarch`, provider global-env materialization and package
+  state materialization. Bootstrap and pure state resolution still allow an
+  absent selector; mutating state and `osarch` require a valid selected profile.
+- **Exact local evidence at 6a549246 (Ubuntu 26.04.1 ARM64, Linux
+  7.0.0-42-generic):** the A1 workflow run body and all three C3 script checks
+  passed on a disposable exact-source copy with its `state` parent mode set to
+  `0755` for the account-store policy and `TMPDIR` kept inside the copy. The new
+  regression accepts a real relative profile, rejects an absolute selector and
+  a profile entry that is itself a symlink, verifies `state-path` status 3 and
+  empty stdout, confirms public `pkg_integrate` returns validation status 10
+  without creating a package concrete or outside state leaf, checks direct
+  `osarch`/provider materialization refusal, and proves `m` does not source an
+  outside `env` fixture. No hosted Action or macOS run was dispatched. This
+  closes only the reproduced system-selector path; TOCTOU, broader state
+  consumers, user-binding semantics and the rest of M03 remain open.
 
 ### P4 implementation follow-up (2026-11-07; historical, superseded by integrated-master checkpoint above)
 
