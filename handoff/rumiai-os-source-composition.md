@@ -2825,12 +2825,12 @@ are C3 acceptance requirements; C3 remains active until the full matrix passes.
 | --- | --- | --- |
 | Account-owned strict record, atomic replacement, concurrent writers, malformed/UID/symlink rejection | `m-os/codex/c3-context-account-store@6a5492461e04866a5f3274b166a52122ea1714f3`; account-store code remains the d7309cb slice; local checks below plus system-selector regression; foreign-owner rejection still untested | **Package-only Linux local slice PASS; cross-platform/hosted and foreign-owner PENDING** |
 | Shared/read-only account provisioning | Safety policy now canonical; no multi-account deployment run | **PENDING** |
-| Bare initialization, `--set-defaults`, `--clear-defaults`, preset definition/deletion | Package-only defaults and presets are implemented by C3 stage A; generalized dimensions and baseline resolution remain absent | **PARTIAL; full C3 acceptance PENDING** |
+| Bare initialization, `--set-defaults`, `--clear-defaults`, preset definition/deletion | Per-account package/system defaults, presets, v1-read/v2-write and installation baseline are implemented on C3 `1f989d7d`; other generalized dimensions and migration remain absent | **PARTIAL; full C3 acceptance PENDING** |
 | Safe one-time `current` migration | Identity and path constraints now canonical | **PENDING implementation and hostile-selector cases** |
-| Versioned child envelope and UID/root/identity validation | PoC 097 data-envelope checks only | **PENDING `m` integration and nested public launch** |
+| Versioned child envelope and UID/root/identity validation | C3 `1f989d7d` validates root, effective UID, profile, exact installed packages and classpath-host presence; local nested `m sh` profile propagation passes | **PARTIAL; full envelope and nested package-consumer acceptance PENDING** |
 | Provider precedence, unchanged consumer/system selectors, ambiguity atomicity | Target order in `PACKAGE-MODEL.md`; P4 map integrated | **PENDING context-aware runtime evidence** |
 | Protected environment fields and A-to-B cleanup | Target boundary in `PACKAGE-MODEL.md`; catalog descriptor audit recorded above | **PENDING real launcher cases** |
-| Profile-local mutable `var/` adaptation | GeoServer upstream env is an unintegrated candidate; Keycloak unsupported | **PENDING; fail closed** |
+| Profile-local mutable `var/` adaptation | No adapter exists; real package launcher regression confirms mutable `var/` is refused for a context profile different from `system/current` | **Fail-closed slice PASS; profile-local adapter PENDING** |
 | Service and TLS authority isolation | Existing canonical service/TLS boundaries; no generalized envelope consumer | **Policy PASS; integration PENDING** |
 
 ### C3 runtime stage A — account package defaults (2026-11-09)
