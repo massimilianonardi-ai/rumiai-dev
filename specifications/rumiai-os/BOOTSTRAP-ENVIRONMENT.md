@@ -173,15 +173,17 @@ do not change the active shell context. The account record is versioned,
 strict data and is never sourced or evaluated. This is the selected target
 interface, not a claim that these operations are currently implemented. The
 management option spellings and package/preset selection forms are fixed. The
-complete generalized `key=value` dimension grammar, exact registry wire
-format and runtime migration remain unimplemented and are not inferred by the
-package-only phase. System-profile identity inventory and its baseline are
-authoritative installation-managed data. The installer or installation
-administrator provisions that registry; `m` consumes it read-only and does not
-provide profile-provisioning commands. Only canonical identities listed in a
-validated registry may be selected or imported by migration. A missing or
-invalid registry cannot be replaced by directory scanning or the legacy
-`system/current` target.
+complete generalized `key=value` dimension grammar and runtime migration
+remain unimplemented and are not inferred by the package-only phase.
+System-profile inventory and baseline authority is an installation-managed
+registry at `$m_ROOT/state/system/profile/.inventory`. The installer or
+installation administrator provisions and atomically updates it; `m` consumes
+it read-only and provides no profile-provisioning commands. Its strict
+`m-system-profile-inventory-v1` format, bounded canonical identity list,
+baseline membership, owner/mode rules and fail-closed behavior are specified
+in `STATE-MODEL.md`. Only identities in a validated registry may be selected or
+imported by migration; directory scanning and the legacy `system/current`
+target cannot replace an absent or invalid registry.
 
 ### Child context continuity
 

@@ -301,11 +301,28 @@ no profile-provisioning API. A directory or `system/current` selector alone is
 never proof that an identity is managed. A selected or migrated profile must
 be a canonical identity present in a validated registry and must resolve to an
 expected, non-symlink profile directory under the system state subtree. The
-installation-managed registry identifies the baseline profile; an absent or
-invalid registry fails closed instead of guessing `main`, scanning profile
-directories, or trusting the current selector. Exact storage path and wire
-format are implementation details to settle against installer ownership and
-permission rules before runtime integration.
+installation-managed registry identifies the baseline profile.
+
+The registry is stored at
+`$m_ROOT/state/system/profile/.inventory`. Its bounded ASCII/LF format is:
+
+```text
+m-system-profile-inventory-v1
+baseline=<identity>
+profile=<identity>
+```
+
+Additional `profile=<identity>` lines list the remaining allowed identities;
+the baseline must occur exactly once in that list. Identities follow the
+canonical direct profile-name grammar already used by system state selectors.
+The file has one header, one baseline, one to 256 unique profile entries, no
+unknown or blank lines, and a 16 KiB maximum. It is a regular non-symlink file;
+the file and its `profile/` parent are owned by root or the installation-root
+owner and are not group/world writable. Each listed identity must resolve to a
+direct real profile directory under that parent. Installer/admin updates use
+same-directory atomic replacement. `m` only reads and validates this registry.
+An absent or invalid registry fails closed instead of guessing `main`, scanning
+profile directories, or trusting the current selector.
 
 Legacy `system/current` and `user/current` selectors remain available to
 existing consumers during staged migration. New generalized-context
