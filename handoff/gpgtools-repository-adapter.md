@@ -1,6 +1,6 @@
 # GPGTools repository adapter
 
-Status: Active — deterministic fixture and public exact/latest dependency resolution pass; macOS ARM64 installation and hosted validation remain pending
+Status: Active — deterministic fixture, public Linux ARM64 exact/latest dependency resolution, and isolated hosted macOS ARM64 install/CLI acceptance pass; feature integration remains pending
 Updated: 2026-11-10
 
 ## Goal
@@ -10,9 +10,10 @@ Complete bounded `gpgtools` support for the existing `macgpg/macos-arm64` catalo
 ## Current repository revisions
 
 - `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d`
-- `m-os/codex/gpgtools-repository-adapter@cd54a908530e5b53179ed47e849f8a91d771a339` (draft PR #14; macOS run awaits repository Actions reactivation)
+- `m-os/codex/gpgtools-repository-adapter@cd54a908530e5b53179ed47e849f8a91d771a339` (draft PR #14; exact source passed isolated hosted macOS acceptance)
 - `pkg-catalog/main@0b69223a5ebe7bc042aad50012ee8bc7e4a00442`
-- `rumiai-dev/codex/c2-account-defaults@8acd9889015995857905176677e5cb3e230bfd1a` (pre-update checkpoint; refresh before next write)
+- `pkg-catalog/codex/gpgtools-arm64-validation@2d832e9ceb67b8cb0521e412b863b2cec2a4e5c1` (isolated hosted macOS runner; run 42785101042 PASS)
+- `rumiai-dev/codex/c2-account-defaults@eab46707dc7b6e5ec6fd75e4d88e38931325635b` (pre-update checkpoint; refresh before next write)
 
 Refresh remote heads before further work.
 
@@ -48,15 +49,14 @@ Refresh remote heads before further work.
 
 ## Current state
 
-- The fixture is deterministic and uses a fake `http-fetch`; it does not validate network availability or install the package. Public dependency planning succeeded for exact and latest requests, but does not prove artifact download or installation.
-- GitHub Actions is disabled for this fork due to usage scale; no push, PR or manual run can currently provide required macOS evidence. Re-enabling Actions is a repository-wide maintainer setting and was not changed.
-- The adapter is absent from `m-os/master` and remains unsupported on the product mainline.
+- The fixture is deterministic and uses a fake `http-fetch`; the hosted public macOS workflow complements it with live resolution, verified exact artifact installation and packaged CLI execution.
+- The `m-os` fork Actions remains disabled. The successful result belongs to the separate `pkg-catalog` runner branch and validates the exact adapter source, but does not create a check on PR #14 itself.
+- The adapter is absent from `m-os/master` and remains unsupported on the product mainline pending normal forward integration and exact integrated-source validation.
 
 ## Next action
 
-After a repository maintainer re-enables GitHub Actions, run the workflow on exact PR #14 head `cd54a908` and inspect install/version/CLI logs. Do not claim adapter support on `m-os/master` until hosted macOS acceptance and authorized feature integration are complete.
+Continue with integration planning against the current `m-os` master and PR #14 heads. Do not claim adapter support on `m-os/master` until forward integration and validation of the resulting exact product revision are complete.
 
 ## Blockers / open questions
 
-- Public macOS ARM64 installation has not been validated on this Linux host.
-- Hosted PR status and exact workflow completion remain unverified because Actions is disabled for this fork; the Linux public planning commands do not replace macOS ARM64 acceptance.
+- PR #14 itself has no hosted check because Actions is disabled on the fork; hosted exact-source acceptance was completed through the isolated `pkg-catalog` runner.
