@@ -1,7 +1,7 @@
 # RumiAI OS — Package model
 
 Status: **Current / normative**  
-Updated: 2026-11-05
+Updated: 2026-11-10
 
 This document defines the current semantic contract of the `m` package subsystem without duplicating implementation internals that belong in `rumiai-os`.
 
@@ -145,6 +145,14 @@ on a particular host. The historical name `catalog` is not a package stream name
 and has no fallback semantics.
 
 Package definitions describe how a package is resolved/integrated. Repository-specific behavior belongs behind repository adapters rather than leaking provider-specific assumptions into the generic package orchestration.
+
+The process-local `m_CONTEXT_OSARCH` selected by `context osarch=<id>` is the
+default target for `pkg install`, `pkg depend` and `pkg requirement` when a request
+does not supply an explicit target. A fresh context initializes this dimension
+from detected host `m_OSARCH`. Explicit request qualifiers take precedence. The
+target affects catalog and dependency selection; it does not change detected
+host identity or authorize executing an incompatible concrete. Runtime command
+and provider execution remains host-compatible.
 
 
 A repository `type` is a **complete default adapter**. Selecting a type must be
@@ -741,16 +749,25 @@ Provider installation and explicit provider configuration are separate responsib
 For each facility required by a **package consumer**, runtime dependency resolution uses this precedence:
 
 1. an explicit binding for that consumer and facility, when present;
-2. otherwise the configured system facility default, when present;
-3. otherwise deterministic implicit resolution from installed compatible provider concretes.
+2. otherwise an explicit `provider.<facility>` pin in the active process context,
+   when present;
+3. otherwise the configured system facility default, when present;
+4. otherwise deterministic implicit resolution from installed compatible provider concretes.
 
 Implicit resolution is deliberately narrow. If exactly one compatible installed concrete exists for the consumer's applicable platform class, it is selected. If multiple compatible concretes all belong to the same provider package, that package's normal package default may disambiguate them when it resolves to one of those compatible concretes. Otherwise the requirement is ambiguous and resolution fails with the compatible candidates reported.
 
-An explicit binding or facility default is authoritative intent. If it exists but is unavailable, invalid or incompatible, resolution fails rather than silently falling back to another installed provider.
+An explicit consumer binding, context pin or facility default is authoritative
+intent. If the highest-precedence configured selector exists but is unavailable,
+invalid or incompatible, resolution fails rather than silently falling back to
+another installed provider. A context pin is process-local and never changes a
+consumer binding, system facility default or global command publication.
 
 This fallback does not install packages and does not establish persistent provider configuration. Adding another distinct compatible provider may therefore turn an otherwise implicit resolution into an explicit ambiguity instead of silently changing the selected provider.
 
-A consumer binding is mutable independently of package installation and may be changed later. Removing a binding restores the facility default when one is configured, otherwise the deterministic implicit package-consumer rule applies.
+A consumer binding is mutable independently of package installation and may be
+changed later. Removing a binding restores the active context pin when present,
+otherwise the facility default when configured, otherwise the deterministic
+implicit package-consumer rule applies.
 
 Package default and facility default are distinct selections:
 
@@ -784,7 +801,8 @@ the consumer concrete came from the `all` stream. Such a concrete remains
 platform-independent and has no `!<osarch>` suffix, but its dependencies are still
 resolved for an applicable target platform. During `pkg install`, that platform is
 the target osarch used for exact-stream selection before falling back to `all`.
-At runtime, a platform-independent consumer concrete uses the active `m_OSARCH`.
+At runtime, a platform-independent consumer concrete uses detected host
+`m_OSARCH`, regardless of a context's package-resolution target.
 An unqualified provider selector may therefore resolve to a matching
 osarch-specific provider, with the normal generic-provider fallback, while an
 explicitly osarch-qualified selector is eligible only when it matches that

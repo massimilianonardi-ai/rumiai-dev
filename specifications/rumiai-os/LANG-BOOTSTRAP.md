@@ -1,6 +1,6 @@
 # RumiAI OS — Language bootstrap (`lang`)
 
-Date: 2026-10-10  
+Date: 2026-11-10
 Status: **Current**
 
 ## 1. Scope
@@ -122,13 +122,19 @@ The function:
 lang <domain> <message-id>
 ```
 
-uses only the technical tree identified by `m_LANG_DIR`.
+uses only the technical tree identified by `m_LANG_DIR`. When the validated
+process context defines `m_CONTEXT_LOCALE`, lookup uses that direct locale
+catalog for this process. Otherwise it uses `m_LANG_CURRENT_DIR`. The context
+override does not mutate the global `current` selector and is propagated to
+ordinary child processes through the context envelope.
 
 Lookup order remains:
 
-1. selected-language catalog:
+1. process-context catalog, when `m_CONTEXT_LOCALE` is set, or otherwise the
+   selected global-language catalog:
 
    ```text
+   $m_LANG_DIR/$m_CONTEXT_LOCALE/<domain>/<message-id>
    $m_LANG_CURRENT_DIR/<domain>/<message-id>
    ```
 

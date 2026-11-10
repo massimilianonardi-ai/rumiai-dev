@@ -1,7 +1,7 @@
 # Autonomous m: complete functional validation
 
 Status: Active
-Updated: 2026-11-08
+Updated: 2026-11-10
 
 ## Goal
 
@@ -11,13 +11,15 @@ This is an independently resumable *validation* task, separate from the architec
 
 ## Current repository revisions
 
-Current verified remote HEADs (2026-11-08 continuation):
+Current verified remote HEADs (refreshed 2026-11-10):
 - `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d`;
 - `m-os/codex/a4-browser-observation@4b688d87b46a0320448ca4c86485a116760cc1b3` (A4 workflow observation fix; draft PR #11 open/unmerged; hosted A1–A4 dispatch remains deferred);
 - `m-os/m-os-completion-s@15a2c4f96584c07b92088e5530d4ecb09a9477b8` (S1/S2 candidate);
 - `m-os/codex/a2-current-integration@84f436bffe1a79491609fcf3d1f93c2067174d60` (A2 manual candidate; PR #10 draft/unmerged; includes migration no-default restoration and semantic M15 manual corrections);
 - `pkg-catalog/main@0b69223a5ebe7bc042aad50012ee8bc7e4a00442` and `pkg-catalog/m-os-completion-s-ci@835e0806190689a9f824627b3f718e94af8766dc`;
-- `rumiai-dev/main@06c372bd3bda807c1a42f1d2824451a401ad8753` (fresh remote HEAD after forward-only handoff reconciliation; no product runtime change).
+- `rumiai-dev/main@a0fd46ff70ed75cc56d246159cb0ff110278e990` (fresh remote HEAD for this continuation).
+- `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d` (confirmed unchanged); branch heads and scoped promotion history are revision-specific.
+- C3 and SRV-42 work remain isolated in `/m/src/git/chatgpt/tmp/m-os-c3-approved` and `/m/src/git/chatgpt/tmp/m-os-srv-supervisor`; neither is integrated.
 
 `rumiai-os` and `rumiai-tests` remain frozen and were not accessed in this continuation; their previously recorded hashes are not reclassified as fresh remote HEADs. Refresh relevant HEADs and README mandatory source order before each follow-up task. Past physical PASS must retain its exact product revision.
 
@@ -60,6 +62,14 @@ All categories below must be accounted for; distinct supported-host behavior rem
 
 Also inventory current repository adapter set (GitHub, Node.js, Chrome, Chromium, generic artifact) against installable catalog packages; missing adapter support must be reported as a product limitation rather than implicitly treating every catalog product as validated.
 
+## 2026-11-10 continuation status
+
+The current product baseline remains `m-os/master@a78a24bd...`; the P3/P4/J1/V2 exact-source promotions and hosted runs listed above are scoped evidence, not a complete plan acceptance. C3 contract/runtime implementation is isolated at `/m/src/git/chatgpt/tmp/m-os-c3-approved`; focused context, profile registry, selector-security and launch-state tests pass locally, as does the exact public context workflow replay on Linux. Supported-host hosted CI and integrated M01–M15 context acceptance remain pending.
+
+SRV-42 now follows the user-approved persistent child-owning supervisor contract on `/m/src/git/chatgpt/tmp/m-os-srv-supervisor`. Static review and shell/diff checks pass; no local C compiler is installed, so native compilation and Linux/macOS lifecycle execution are pending hosted CI. The repo still lacks a product installation/release path for a per-host native helper; that distribution gate remains open. Do not infer SRV completion from prior PID-record checks.
+
+The full M01–M15 matrix remains incomplete. Continue with exact current product revisions, preserve per-row historical PASS scopes, and keep deferred A1–A4 hosted workflows and privileged operator cases out of the active plan. I1 integrated acceptance and I2 ordinary nonprivileged reference-host evidence are open.
+
 ## Completed
 
 - Prior physical Ubuntu at `m@a033e509` demonstrated genuine `./m pkg install mk@v0.1.0 jsc@v0.1.0`, catalog discovery, managed Node `v26.8.2`, defaults, and real `./m mk` action plus `./m jsc` JS/CSS compilation and execution of generated JS. This completes only the observed portion of M08.
@@ -68,7 +78,7 @@ Also inventory current repository adapter set (GitHub, Node.js, Chrome, Chromium
 
 ## Current state
 
-### SRV-42 regression and forward-integrated S candidate (2026-11-07)
+### SRV-42 regression and forward-integrated S candidate (2026-11-07; historical, superseded by 2026-11-10 decision)
 
 - Exact integrated hosted validation completed in [run 42413203723](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42413203723), runner `pkg-catalog/m-os-completion-s-ci@835e0806190689a9f824627b3f718e94af8766dc`, with `m-os/master@a78a24bd...` and S candidate `15a2c4f9...` verified in the runner log: **6/6 PASS**. Explicit terminal PASS logs were inspected for offline safety Ubuntu/macOS ARM64/macOS 15 Intel; genuine published-provider lifecycle Ubuntu; and two-concrete native host-user lifecycle Ubuntu/macOS ARM64. This is hosted evidence on that exact merge, not operator physical-host evidence. Privileged system-positive work remains excluded.
 - Fresh remote `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d` reproduced a real M12 contract defect with only a harness-owned `/bin/sleep` and a unique checkout-local runtime record: `./m srv start devplan-m12-legacy-20261107` returned 0 / “already running”; `./m srv stop ...` returned 0 and delivered SIGTERM. No pre-existing process or host supervisor was touched. The current canonical `SERVICE-LIFECYCLE.md` SRV-42 requires live PIDs without verified start-time identity to fail closed and remain untouched.
@@ -448,6 +458,27 @@ The operator explicitly authorized **skipping the unexecuted A1–A4 GitHub Acti
 - Legacy `rumiai-os` and `rumiai-tests` are frozen by explicit current user instruction; no old-suite modification or execution.
 - A real positive service path exists through published `electron-web-control` on Ubuntu; next unknowns are extended lifecycle failures, host supervisor integration and additional platforms, not basic provider availability.
 - Privileged host-system service/SSH-sudo/real protected-host CA or physical administration is **outside this active validation handoff** and deferred to `todo/m-os-operator-privileged-validation.md`. Do not schedule, request credentials for, or count those scenarios as active M01–M15 gates. Unprivileged host-user and nonprivileged physical paths remain active.
+
+### SRV-42 selected supervisor architecture (2026-11-10)
+
+- The user selected a persistent supervisor that owns the portable service as an
+  unreaped direct child. The supervisor, not `srv`, will make the TERM decision;
+  persisted PID metadata will never authorize signaling. If the supervisor is
+  lost, the service becomes unmanaged and restart fails closed without signaling
+  it. The existing S candidate's `ps lstart` checks remain evidence for its
+  exact old revision only and do not close the new architecture gate.
+- Implementation now exists in isolated worktree
+  `/m/src/git/chatgpt/tmp/m-os-srv-supervisor` at base `15a2c4f9`: native helper,
+  source-checkout build script, `srv` lifecycle integration, bilingual
+  diagnostics/manual, and nonprivileged Linux/macOS workflow coverage. The
+  supervisor receives a per-request environment snapshot and executes the
+  service with that snapshot. Static shell syntax and `git diff --check` pass.
+- Local native compilation is **not available** because this host has no C
+  compiler; the build script exits before creating output and reports
+  `requires a C compiler: cc`. Native compile and public lifecycle evidence
+  remain pending on the hosted Linux/macOS workflow. Independent static review
+  is in progress; no commit or push has been made. Keep privileged host-system
+  operations and frozen `rumiai-tests` untouched.
 
 
 ### P4 derived facility map implementation and hosted validation checkpoint (2026-11-07; historical, superseded by exact integrated-master checkpoint above)
