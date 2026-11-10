@@ -2825,9 +2825,9 @@ are C3 acceptance requirements; C3 remains active until the full matrix passes.
 | --- | --- | --- |
 | Account-owned strict record, atomic replacement, concurrent writers, malformed/UID/symlink rejection | `m-os/codex/c3-context-account-store@6a5492461e04866a5f3274b166a52122ea1714f3`; account-store code remains the d7309cb slice; local checks below plus system-selector regression; foreign-owner rejection still untested | **Package-only Linux local slice PASS; cross-platform/hosted and foreign-owner PENDING** |
 | Shared/read-only account provisioning | Safety policy now canonical; no multi-account deployment run | **PENDING** |
-| Bare initialization, `--set-defaults`, `--clear-defaults`, preset definition/deletion | Per-account package/system defaults, presets, v1-read/v2-write and installation baseline are implemented on C3 `4166cc2e`; other generalized dimensions and migration remain absent | **PARTIAL; full C3 acceptance PENDING** |
+| Bare initialization, `--set-defaults`, `--clear-defaults`, preset definition/deletion | Per-account package/system defaults, presets, v1-read/v2-write and installation baseline are implemented on C3 `da4e9775`; other generalized dimensions and migration remain absent | **PARTIAL; full C3 acceptance PENDING** |
 | Safe one-time `current` migration | Identity and path constraints now canonical | **PENDING implementation and hostile-selector cases** |
-| Versioned child envelope and UID/root/identity validation | C3 `4166cc2e` validates root, effective UID, profile, exact installed packages and classpath-host presence; local nested `m sh` and package-command propagation pass | **PARTIAL; full envelope and catalog-backed consumer acceptance PENDING** |
+| Versioned child envelope and UID/root/identity validation | C3 `da4e9775` validates root, effective UID, profile, exact installed packages and classpath-host presence; nested `m sh` and package-command propagation pass. The real public bootstrap rejects unsupported version, duplicate field, wrong UID with correct root, unmanaged profile, unknown package, blank/CR records and oversized input before stdout | **PARTIAL; full envelope and catalog-backed consumer acceptance PENDING** |
 | Provider precedence, unchanged consumer/system selectors, ambiguity atomicity | Target order in `PACKAGE-MODEL.md`; P4 map integrated | **PENDING context-aware runtime evidence** |
 | Protected environment fields and A-to-B cleanup | Target boundary in `PACKAGE-MODEL.md`; catalog descriptor audit recorded above | **PENDING real launcher cases** |
 | Profile-local mutable `var/` adaptation | No adapter exists; real package launcher regression confirms mutable `var/` is refused for a context profile different from `system/current` | **Fail-closed slice PASS; profile-local adapter PENDING** |
@@ -2878,7 +2878,7 @@ are C3 acceptance requirements; C3 remains active until the full matrix passes.
   belong to each POSIX effective UID under
   `$m_ROOT/state/<effective-UID>/context/`. These choices are settled; do not
   ask the user to repeat them.
-- `m-os/codex/c3-generalized-context@4166cc2e` is pushed to its isolated remote
+- `m-os/codex/c3-generalized-context@da4e9775` is pushed to its isolated remote
   branch, based forward-only on `e883b3bc354f738b2d889b4cc0f277a85379e69d`.
   It adds profile selection/default/preset records to context record v2 while
   retaining v1 reads; applies the registry baseline for bare context; validates
@@ -2901,7 +2901,9 @@ are C3 acceptance requirements; C3 remains active until the full matrix passes.
   Java/POSIX library integration, and the new mutable-state launcher regression.
   After the protected-field change, account-store, registry, selector-security,
   library-integration and launcher/envelope-injection tests were rerun locally;
-  each returned 0. The account-store test emitted its expected lock-contention
+  each returned 0. The hostile-envelope matrix also passed every public child
+  bootstrap rejection case with empty stdout and nonempty diagnostics. The
+  account-store test emitted its expected lock-contention
   diagnostics, and isolated package-integration fixtures emitted the expected
   missing repository-ordering warnings.
   The new launcher regression's first fixture attempt exposed an executable-bit
