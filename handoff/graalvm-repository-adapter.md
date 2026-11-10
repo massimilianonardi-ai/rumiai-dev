@@ -1,6 +1,6 @@
 # GraalVM repository adapter
 
-Status: Active — adapter/manual/workflow implemented and local Linux ARM64 live public installation passed; hosted cross-platform validation and promotion remain open
+Status: Active — exact/latest live public installs pass locally on Linux ARM64; offline provider-map compatible-latest ordering, hosted cross-platform validation and promotion remain open
 Updated: 2026-11-10
 
 ## Goal
@@ -46,7 +46,7 @@ The upstream stable tag families observed are `graal-<version>`, `jdk-<version>`
 - The latest stable upstream release observed in the research is `graal-25.5.5.0.3` (published 2026-11-03). Release tags and asset filenames use different embedded version strings.
 - Implemented the adapter, operational manual, and a focused pinned-catalog CI workflow on the local branch. A fixture-backed managed-shell check passes tag mapping (`vm-`, `jdk-`, `graal-`), chronology, exact/latest resolution, and exact asset size/digest/URL selection. Shell syntax, `git diff --check`, and all embedded workflow shell blocks pass.
 - Independent read-only source review found no concrete defect in the current adapter implementation. The workflow installs latest first and captures its concrete before installing the exact anchor, avoiding installed-current reuse.
-- On 2026-11-10, the exact local adapter branch was exercised through public `m pkg install` in a disposable checkout under `/m/src/git/chatgpt`. Unversioned install selected the then-current stable `graalvm@25.5.5.0.3!linux-arm64`; exact `graalvm@25.3.4.1` also installed. `pkg versions graalvm` listed both, `pkg default graalvm` returned the exact anchor after that install, and selecting the latest as the Java provider made public `m java -version` report GraalVM CE 25.5.5.0.3 / OpenJDK 25.0.5.0.3. This is local Ubuntu ARM64 evidence. A facility-map version-order warning appeared during the second integration; package installation and Java launch still passed, so the warning is tracked as separate runtime behavior. The disposable package/catalog state was removed after recording results.
+- On 2026-11-10, the exact local adapter branch was exercised through public `m pkg install` in a disposable checkout under `/m/src/git/chatgpt`. Unversioned install selected the then-current stable `graalvm@25.5.5.0.3!linux-arm64`; exact `graalvm@25.3.4.1` also installed. `pkg versions graalvm` listed both, `pkg default graalvm` returned the exact anchor after that install, and selecting the latest as the Java provider made public `m java -version` report GraalVM CE 25.5.5.0.3 / OpenJDK 25.0.5.0.3. This is local Ubuntu ARM64 evidence. A facility-map version-order warning appeared after both versions were installed. The current map leaves its provider-local `@latest` alias unavailable when offline ordering cannot be established. The public package install and explicit Java provider selection still passed, but this means the facility-map acceptance is not closed. The disposable package/catalog state was removed after recording results.
 
 ## Current state
 
@@ -58,5 +58,6 @@ Refresh involved remote refs, rerun the focused pinned-catalog workflow on an au
 
 ## Blockers / open questions
 
+- `pkg_facility_map_reconcile` cannot currently rank two installed GraalVM versions from an immutable offline snapshot; it warns and omits the provider-local `@latest` projection. Preserve the offline map contract and record authoritative release order in a validated installed/catalog snapshot before claiming compatible-latest selection. The current public installs and explicit provider selection do not close this case.
 - Only Linux ARM64 has local live public-install evidence. The other three declared streams require matching hosted-platform validation.
 - The other missing catalog repository types (`chrome-for-testing`, `gpgtools`, and `podman`) remain separate TODO work.
