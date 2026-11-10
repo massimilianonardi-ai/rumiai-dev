@@ -33,7 +33,7 @@ Full functional validation of the autonomous `m` source is independently tracked
 - C3 candidate `2d4e3a1c` passes the exact public context workflow and focused suites locally and on hosted Ubuntu/macOS (`pkg-catalog` run 42884450945, jobs 130068959940/130068959577; exact runner overall PASS 5/5). Provider pins resolve against selected osarch and name installed concretes declaring the facility before activation, inheritance or persistence. Integrated acceptance remains open.
 - SRV-42 candidate `fc0f82b9` passes hosted native build and lifecycle safety on Ubuntu/macOS plus real Electron public service lifecycle on Ubuntu (`pkg-catalog` run 42884450945, jobs 130068959317/130068959729/130068959644). A static review found no definite remaining lifecycle defect. This source checkout has an explicit compiler-backed build command; external installed-product packaging and integrated/reference-host acceptance remain pending. Frozen `rumiai-os` and `rumiai-tests` are untouched.
 
-### Fresh continuation checkpoint (2026-11-08; current)
+### Historical continuation checkpoint (2026-11-08; superseded by the 2026-11-10 checkpoint above)
 
 - `rumiai-dev/main@ea5d6259efb14b4527310a37b3cfe92980857619` is the refreshed remote checkpoint before this handoff update; concurrent OUT-09/OUT-11 workflow updates and the latest autonomous-validation evidence are preserved.
 - `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d`; PR #9 changes only README over tested runtime `ed5ec60...`; P3/P4/J1 and V2 runtime are integrated. Older PR #5/#6 source SHAs recorded below are historical feature checkpoints.

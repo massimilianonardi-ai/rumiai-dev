@@ -3,7 +3,7 @@
 Status: Active — P2 is integrated and scoped-verified; P3/P4/J1/V2 have prior source promotions but their devplan reconciliation/final acceptance gates remain open; C3 contract is promoted and runtime is under review; SRV-42 supervisor implementation is under review; A2/A4 hosted workflows remain deferred; integrated I1/I2 remain open
 Updated: 2026-11-10
 
-### Current continuation checkpoint (2026-11-08)
+### Historical continuation checkpoint (2026-11-08; refreshed by 2026-11-10 checkpoint below)
 
 - This continuation started from verified `rumiai-dev/main@327ee61bd4065b3832be5b1d7e6be9d275f90cc8`; subsequent checkpoints are pushed forward-only. Detailed GeoServer adapter state is in `handoff/geoserver-repository-adapter.md`, with cross-plan M10/M12 evidence in `handoff/m-autonomous-validation.md`.
 - GeoServer adapter work is now published as draft [m-os PR #12](https://github.com/massimilianonardi-ai/m-os/pull/12), current head `b1e4f040506592f0433e26005741f887266f4462`, based on exact `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d`. It is not merged and no hosted run exists. Local Ubuntu evidence includes genuine 3.0.1 and 3.0.2 installs; 3.0.1 returned HTTP 302 and 3.0.2 served WFS HTTP 200 after explicit provider defaults. The focused workflow is in the PR branch but GitHub does not list it until it reaches the default branch. Keep hosted/platform acceptance open.

@@ -16,7 +16,7 @@ Current verified remote HEADs (refreshed 2026-11-10):
 - `m-os/codex/a4-browser-observation@4b688d87b46a0320448ca4c86485a116760cc1b3` (A4 workflow observation fix; draft PR #11 open/unmerged; hosted A1–A4 dispatch remains deferred);
 - `m-os/m-os-completion-s@15a2c4f96584c07b92088e5530d4ecb09a9477b8` (S1/S2 candidate);
 - `m-os/codex/a2-current-integration@84f436bffe1a79491609fcf3d1f93c2067174d60` (A2 manual candidate; PR #10 draft/unmerged; includes migration no-default restoration and semantic M15 manual corrections);
-- `pkg-catalog/main@0b69223a5ebe7bc042aad50012ee8bc7e4a00442` and `pkg-catalog/m-os-completion-s-ci@835e0806190689a9f824627b3f718e94af8766dc`;
+- `pkg-catalog/main@164b06441bef655eca2ac3f44ddee7e5b2c6cf3d` (refreshed remote head); earlier `pkg-catalog/m-os-completion-s-ci@835e0806190689a9f824627b3f718e94af8766dc` remains the exact runner for prior S evidence.
 - `rumiai-dev/main@a0fd46ff70ed75cc56d246159cb0ff110278e990` (fresh remote HEAD for this continuation; follow-up handoff updates are in PR #52).
 - `pkg-catalog/codex/m-os-context-srv-ci@6b0bcf6f` (temporary exact-source runner branch; not merged to catalog main).
 - `m-os/codex/c3-approved-generalized-context@2d4e3a1c650b199d3b0b2f60bad5a7fead81f9a6` and `m-os/codex/srv-persistent-supervisor@fc0f82b96cece42167c55a94231dbafe57f33a3a` (unmerged candidates).
