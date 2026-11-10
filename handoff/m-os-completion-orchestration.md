@@ -3,10 +3,11 @@
 Status: Active — P3/P4/J1/V2 promoted; S PR #4 candidate has exact hosted checks but the SRV-42 PID identity/race gate remains open; A1–A4 hosted workflows deferred; C2/C3 and I1 remain open
 Updated: 2026-11-10
 
-### Current continuation checkpoint (2026-11-10, exact-master A2 local replay)
+### Current continuation checkpoint (2026-11-10, exact-master A2 and technical API local replays)
 
 - Replayed the complete public A2 shell/language/manual/diagnostic workflow body from `.github/workflows/m-shell-resources-public.yml` against a disposable worktree at `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d`. Ubuntu ARM64 completed with `PASS: real m A2 shell, language, manual, diagnostics`; the replay covered real managed shell/library loading, missing-environment rejection, en_US/it_IT selection and invalid-locale preservation, manual discovery/content/missing-topic status, diagnostic filtering and invalid severity.
 - The temporary workdir was confined under the disposable worktree and the worktree was removed. This advances local M04/M05 evidence only; hosted A1–A4 remain deferred, macOS is unverified on this exact revision, and the complete M01–M15/I1 gates remain open.
+- Replayed the complete public `.github/workflows/m-technical-commands.yml` run body against exact `m-os/master@a78a24bd` on Ubuntu ARM64. `osarch update/show`, independent SHA-256 file/stdin checks, real TAR extraction, real loopback HTTP body/length checks, non-materializing `state-path`, localization/manual/log behavior and managed-shell startup all passed with the workflow's terminal PASS. The test workdir was confined under the isolated checkout using `TMPDIR` and cleaned; no tracked source changed. This extends exact-master local M02–M06 evidence only; hosted A1–A4 remain deferred, macOS remains unverified here, and I1 remains open.
 
 ### Current continuation checkpoint (2026-11-10, integrated J1/M15 local replay)
 

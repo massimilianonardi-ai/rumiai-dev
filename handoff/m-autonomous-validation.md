@@ -3,10 +3,11 @@
 Status: Active
 Updated: 2026-11-10
 
-### Current continuation checkpoint (2026-11-10, exact-master A2 local replay)
+### Current continuation checkpoint (2026-11-10, exact-master A2 and technical API local replays)
 
 - On a disposable worktree at exact `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d`, replayed the complete `run` body from `.github/workflows/m-shell-resources-public.yml` on Ubuntu ARM64. The real public shell/core loading, missing-`m_ROOT` rejection, en_US/it_IT language selection and invalid-language preservation, operational manual discovery/content/missing-topic status, and diagnostic filtering/invalid-severity assertions all completed with `PASS: real m A2 shell, language, manual, diagnostics`.
 - `mktemp` was constrained with `TMPDIR` to the disposable checkout's `.tmp`; the worktree and test data were removed afterward. This is local Ubuntu evidence for that exact source only. It is not hosted/macOS validation, does not close all M04/M05 cases, and does not execute the deferred hosted A1–A4 workflows.
+- Also replayed the complete `.github/workflows/m-technical-commands.yml` public run body on exact `m-os/master@a78a24bd` in an isolated local checkout. Ubuntu ARM64 passed `osarch update/show`, independent SHA-256 digest checks from file and stdin, real TAR extraction, real loopback HTTP fetch and content-length lookup, side-effect-free `state-path`, localization/manual/log checks, and managed-shell startup, ending with `PASS: real public m technical commands, state, digest/extract and loopback HTTP`. Its temporary data directory was confined under the checkout via `TMPDIR` and removed by the workflow cleanup; no tracked source changed. This adds exact-master local evidence for M02–M06 only, not macOS/hosted or the broader negative/archive matrix.
 
 ## Goal
 
