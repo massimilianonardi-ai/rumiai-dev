@@ -50,11 +50,11 @@ The upstream stable tag families observed are `graal-<version>`, `jdk-<version>`
 
 ## Current state
 
-The adapter, manual and workflow are in the dedicated local branch `codex/graalvm-repository-adapter` based on exact `m-os/master@a78a24bd`; the implementation is committed locally, but no PR has been published. This work is separate from GeoServer PR #12. All local writes are under `/m/src/git/chatgpt`; frozen `rumiai-os` and `rumiai-tests` were not accessed.
+The adapter, manual and workflow are in `m-os/codex/graalvm-repository-adapter@2b26a461`, based on exact `m-os/master@a78a24bd`, and are tracked by draft PR #13. Current-head local syntax/diff and diagnostic checks pass. The full latest/exact live public install evidence is on ancestor `73b238d4`; the current head adds operation-specific upstream failure diagnostics only, so do not report the install result as an exact-head replay. This work is separate from GeoServer PR #12. All local writes are under `/m/src/git/chatgpt`; frozen `rumiai-os` and `rumiai-tests` were not accessed.
 
 ## Next action
 
-Refresh involved remote refs, rerun the focused pinned-catalog workflow on an authorized hosted runner, review the exact branch diff, and prepare the adapter for promotion. Hosted macOS/Windows platform evidence is still required for the other catalog-declared streams. Do not publish or merge without explicit authorization.
+Refresh involved remote refs; run/retrieve the focused pinned-catalog workflow for the exact current head and collect hosted Linux/macOS/Windows evidence. Resolve the offline compatible-latest facility-map ordering gap before treating this adapter as fully integrated. Keep draft PR #13 open; do not merge.
 
 ## Blockers / open questions
 
