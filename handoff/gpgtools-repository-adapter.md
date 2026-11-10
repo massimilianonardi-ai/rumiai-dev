@@ -1,6 +1,6 @@
 # GPGTools repository adapter
 
-Status: Active — deterministic adapter fixture passes; public macOS ARM64 installation and hosted validation remain pending
+Status: Active — deterministic fixture and public exact/latest dependency resolution pass; macOS ARM64 installation and hosted validation remain pending
 Updated: 2026-11-10
 
 ## Goal
@@ -12,7 +12,7 @@ Complete bounded `gpgtools` support for the existing `macgpg/macos-arm64` catalo
 - `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d`
 - `m-os/codex/gpgtools-repository-adapter@eb4e45eb6df167b6ad3780ca641f5a6d4d3abf7f` (draft PR #14)
 - `pkg-catalog/main@0b69223a5ebe7bc042aad50012ee8bc7e4a00442`
-- `rumiai-dev/codex/c2-account-defaults@d18a40f99602f3153830c1b3564c0d4a397f594e`
+- `rumiai-dev/codex/c2-account-defaults@8acd9889015995857905176677e5cb3e230bfd1a` (pre-update checkpoint; refresh before next write)
 
 Refresh remote heads before further work.
 
@@ -41,17 +41,18 @@ Refresh remote heads before further work.
 - PR #14 contains the adapter, manual, deterministic fixture and macOS workflow; remote head matches local audited commit `eb4e45e`.
 - `sh -n` for the adapter and fixture and `git diff --check` passed at the exact PR head.
 - The first fixture invocation failed because the m-os clone has no embedded `catalog/` checkout. Rerunning at the same exact source with `GPGTOOLS_FIXTURE_CATALOG` pointed to the fresh `pkg-catalog/main@0b69223a` checkout passed: `PASS: GPGTools fixture parsing, exact anchor, live latest, artifact metadata and distinct upstream failure diagnostics`.
+- On Linux ARM64, the exact adapter checkout's public `./m pkg depend 'macgpg@2026.1+3633n!macos-arm64'` exited 0 against catalog main `0b69223a`. Public latest request `./m pkg depend 'macgpg!macos-arm64'` also exited 0 after the disposable test clone's catalog cache was placed on tracking branch `main`; the package has no declared dependencies, so both plans emitted no dependency rows. An initial latest attempt failed in the isolated harness because its detached catalog cache had no upstream branch; no product change was made. This demonstrates public exact/latest planning on this host and catalog revision, not artifact download, installation, or CLI execution.
 - No product source was changed during this validation.
 
 ## Current state
 
-- The fixture is deterministic and uses a fake `http-fetch`; it does not validate network availability or install the package.
-- Local exact PR refs are confirmed. Hosted workflow status could not be confirmed by the prior audit because repository lookups returned 404; do not infer PASS from workflow configuration.
+- The fixture is deterministic and uses a fake `http-fetch`; it does not validate network availability or install the package. Public dependency planning succeeded for exact and latest requests, but does not prove artifact download or installation.
+- Local exact PR refs are confirmed. The read-only GitHub audit found no PR-triggered workflow run for exact head `eb4e45e`; do not infer hosted PASS from workflow configuration.
 - The adapter is absent from `m-os/master` and remains unsupported on the product mainline.
 
 ## Next action
 
-Locate exact PR #14 workflow status through the canonical repository, then run only nonprivileged public resolution checks. The configured real install step must remain excluded because it invokes package installation and may perform privileged materialization. Complete the required public macOS ARM64 installation only under the separate authorized operator path.
+Complete exact public package installation, default/version listing, and `m gpg --version` on macOS ARM64 through a nonprivileged path, then inspect exact PR #14 checks again. Do not claim adapter support on `m-os/master` until the feature is reviewed and integrated through the authorized path.
 
 ## Blockers / open questions
 
