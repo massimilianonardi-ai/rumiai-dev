@@ -1,6 +1,6 @@
 # Completion orchestration of autonomous m-os
 
-Status: Active — P2 is integrated and scoped-verified; P3/P4/J1/V2 have prior source promotions but their devplan reconciliation/final acceptance gates remain open; C3 contract is promoted and runtime is under review; SRV-42 supervisor implementation is under review; A2/A4 hosted workflows remain deferred; integrated I1/I2 remain open
+Status: Active — P2 is integrated and scoped-verified; P3/P4/J1/V2 have prior source promotions but broader reconciliation/final acceptance remain open; C3 local+hosted suites pass and integrated acceptance remains open; SRV-42 native Linux/macOS and public provider hosted tests pass while product-distribution packaging remains open; A1–A4 hosted workflows remain deferred; I1/I2 remain open
 Updated: 2026-11-10
 
 ### Historical continuation checkpoint (2026-11-08; refreshed by 2026-11-10 checkpoint below)
@@ -28,7 +28,7 @@ No duplicate normative specification or separate product architecture is establi
 - `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d` and `pkg-catalog/main@164b06441bef655eca2ac3f44ddee7e5b2c6cf3d` are current remote heads. The P2 source commit is in master and its scoped acceptance remains verified. P3, P4, J1 and V2 source changes have historical exact-source promotion/evidence, but their broader plan workstreams remain active until the current composed runtime/catalog and M01–M15/I1 acceptance gates are reconciled and completed.
 - Current candidate refs: `m-os/m-os-completion-p2@f30d67f911b4c77516da69e024fd7dfa14cc742d`, `m-os/m-os-completion-p3-pinned-provider@c255efe24a34f1af655fe9310b7f1c2a36069c4d`, `m-os/m-os-completion-p4-facility-map@540b46db9582090262c1b3ab6ddd35b56c920ebb`, `m-os/m-os-completion-j1-json@ce60555e36e982de906d038d22eb3ba5c262d4be`, `m-os/pkg-schema-v2@1e3a038a5abf6f8c176272d8e44464c842d3cefd`, and `pkg-catalog/pkg-schema-v2@2c0df87a488bfeac6d185336ea5ae5a4ea469c4a`. These refs do not by themselves close the larger devplan gates.
 - C3 candidate is `m-os/codex/c3-approved-generalized-context@2d4e3a1c650b199d3b0b2f60bad5a7fead81f9a6` (PR #24 Draft); local Linux and exact hosted Ubuntu/macOS context suites pass, including provider-pin validation before activation, inheritance and persistence. Integrated acceptance remains open.
-- SRV-42 candidate is `m-os/codex/srv-persistent-supervisor@fc0f82b96cece42167c55a94231dbafe57f33a3a` (PR #25 Draft); exact hosted Ubuntu/macOS native build and lifecycle tests pass, and the real Electron public `m srv` lifecycle passes on Ubuntu. Source-checkout build instructions are documented; external installed-product packaging, integrated acceptance and reference-host checks remain open.
+- SRV-42 candidate is `m-os/codex/srv-persistent-supervisor@d509429b0e722c0998ac787de7d74c21456e905b` (PR #25 Draft); exact hosted Ubuntu/macOS native build and lifecycle tests pass, and the real Electron public `m srv` lifecycle passes on Ubuntu. Source-checkout build instructions are documented; external installed-product packaging, integrated acceptance and reference-host checks remain open.
 - A/S/R/C1 evidence remains scoped to its exact branches and hosts. Prior handoff restrictions on A1–A4 hosted dispatch and frozen `rumiai-os`/`rumiai-tests` remain in force.
 
 Verified remote starting point:
@@ -556,7 +556,7 @@ The numbered legacy sequence that follows is retained for history only; do not e
 ## Blockers / open questions
 
 - **C3 acceptance:** grammar, logical-user identity, migration and storage are promoted. Candidate local and exact hosted Ubuntu/macOS context suites pass on PR #24 head `2d4e3a1c`; integrated M01–M15 and I1 remain open.
-- **S/SRV-42 acceptance:** the user selected a persistent supervisor owning each service child. PR #25 head `fc0f82b9` passes native build and safety lifecycle checks on hosted Ubuntu/macOS and real Electron `./m srv` lifecycle on Ubuntu; independent static review found no definite remaining lifecycle defect. The source checkout now documents explicit helper build. External installed-product packaging, integrated current-master acceptance, long-socket-path handling and reference-host evidence remain open.
+- **S/SRV-42 acceptance:** the user selected a persistent supervisor owning each service child. PR #25 head `d509429b` passes native build and safety lifecycle checks on hosted Ubuntu/macOS, including a checkout beyond the Unix-socket path limit, and real Electron `./m srv` lifecycle on Ubuntu in run 42885777160 (total PASS 5/5); independent static review found no definite remaining lifecycle defect. The source checkout now documents explicit helper build. External installed-product packaging, integrated current-master acceptance, external installed-product packaging and reference-host evidence remain open.
 - **A2/A4 and final validation:** PR #10 and #11 remain Draft/unmerged because hosted A1–A4 workflow execution is explicitly deferred. M01–M15 has substantial exact-revision local and hosted evidence, but current runtime, platform and authorized nonprivileged reference-host acceptance is still incomplete. Continue local independent work; do not dispatch deferred workflows or claim skipped evidence as PASS.
 - Operator-privileged SSH/sudo, protected-host services and CA changes and privileged reference-host steps are explicitly excluded to `todo/m-os-operator-privileged-validation.md`, not current blockers. Ordinary nonprivileged reference-host access remains a separate evidence condition.
 - Legacy `rumiai-os` and `rumiai-tests` are frozen; final formal suite alignment/migration cannot be silently assumed authorized.
@@ -570,25 +570,13 @@ The numbered legacy sequence that follows is retained for history only; do not e
   `context --migrate-legacy` explicitly imports only validated direct legacy
   selectors. No-argument `context` initializes defaults; `--clear-defaults`
   removes persisted preferences. Canonical contract promotion is recorded in
-  `BOOTSTRAP-ENVIRONMENT.md`, `STATE-MODEL.md`, and `PACKAGE-MODEL.md`; focused local tests and independent review of the provider-pin validation fix pass. Exact hosted workflow and integrated acceptance remain open.
+  `BOOTSTRAP-ENVIRONMENT.md`, `STATE-MODEL.md`, and `PACKAGE-MODEL.md`; focused local tests, independent review and exact hosted Ubuntu/macOS suites pass in `pkg-catalog` run 42885777160, jobs `130073610768`/`130073610855`. Integrated acceptance remains open.
 - The user chose a persistent supervisor that owns each portable service child
-  as the SRV-42 race fix. Current S candidate `m-os/m-os-completion-s@15a2c4f9`
-  and merged `master@a78a24bd` were freshly verified. A read-only feasibility
-  review found that `m-os` has no native build/release path today; a C supervisor
-  cannot be added safely until the exact-source distribution path is designed
-  alongside the runtime. Work is proceeding on isolated branches; do not call
-  the SRV-42 gate closed until supervisor code, distribution, crash handling,
-  public-path tests and manuals agree.
-- The shared local `m-os` checkout remains on `m-os-completion-j1-json@ce60555e`
-  with a user modification to `state/system/profile/main/sys/pkg/conf/catalog`;
-  it is untouched. Implementation worktrees are
-  `/m/src/git/chatgpt/tmp/m-os-c3-approved` at `d510bf9d` and
-  `/m/src/git/chatgpt/tmp/m-os-srv-supervisor` at `15a2c4f9`. Current
-  `rumiai-dev/main@a0fd46ff` is the refreshed base for contract/handoff updates. The
-  frozen `rumiai-os` and `rumiai-tests` repositories remain untouched.
+  as the SRV-42 race fix. Current candidate is `m-os/codex/srv-persistent-supervisor@d509429b`; hosted native build/lifecycle passed on Ubuntu/macOS, the real public Electron provider lifecycle passed on Ubuntu, and static review found no definite remaining lifecycle defect. The source-checkout helper build is documented. `m-os` still has no installed-product release pipeline, so external distribution packaging and integrated M12 acceptance remain open.
+- The shared local `m-os` checkout remains on `m-os-completion-j1-json@ce60555e` with a user modification to `state/system/profile/main/sys/pkg/conf/catalog`; it is untouched. Product work remains in isolated worktrees under `/m/src/git/chatgpt/tmp/`. Current `rumiai-dev/main@a0fd46ff` is the base for the open handoff PR. Frozen `rumiai-os` and `rumiai-tests` remain untouched.
 
 ## Immediate continuation
 
-1. Publish the reviewed C3 branch and inspect its exact hosted workflow result; fix any failures forward-only. Then reconcile the C3 branch with the current product source and run integrated context/M01–M15 checks.
-2. Publish SRV-42 after the isolated branch static review; inspect hosted Linux/macOS compiler and lifecycle results. Resolve the still-open installation/release distribution path and add public `m srv` coverage before calling it accepted.
-3. Continue uncovered M01–M15 evidence and I1/I2 from the owning handoffs. Do not dispatch the explicitly deferred A1–A4 hosted workflows or alter frozen suites.
+1. Build a disposable integration candidate from the fresh `m-os/master` plus the reviewed C3 and SRV branches; preserve user changes and do not merge to `master`. Run affected public context/service scenarios and record the exact composite SHA.
+2. Continue uncovered M01–M15 evidence on that candidate and produce the full current-source PASS/FAIL/PENDING ledger. Keep old scoped promotions revision-specific; do not dispatch deferred A1–A4 workflows.
+3. Start I2 only when ordinary reference-host environments are available. Product image/release packaging remains with the external RumiAI distribution owner; do not claim that gate from source-checkout CI.

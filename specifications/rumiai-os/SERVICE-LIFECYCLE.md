@@ -111,10 +111,12 @@ an installation-wide system daemon
 Portable per-instance service supervision is an explicit exception to the
 no-daemon boundary: each managed service has a private, per-POSIX-UID native
 supervisor that owns only that service child. Its control endpoint is protected
-by host-account ownership and a private runtime directory and is bound to the
-exact canonical `m_ROOT`. The logical `state/user` identity is not POSIX-account
-authority. The native control transport and account-runtime directory lookup
-are host adapters; public `srv` behavior remains host-neutral.
+by host-account ownership and a private per-UID temporary directory. Its short
+socket name is keyed by that UID and a stable hash of the exact canonical
+`m_ROOT`, so deeply nested source checkouts do not exceed the host's Unix-socket
+path limit. The logical `state/user` identity is not POSIX-account authority.
+The native control transport and account-runtime directory lookup are host
+adapters; public `srv` behavior remains host-neutral.
 
 The supervisor executable is a build/distribution artifact of `m`. The
 installation build process compiles it for each supported host and includes
