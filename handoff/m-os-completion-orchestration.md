@@ -3,6 +3,13 @@
 Status: Active — P3/P4/J1/V2 promoted; S PR #4 candidate has exact hosted checks but the SRV-42 PID identity/race gate remains open; A1–A4 hosted workflows deferred; C2/C3 and I1 remain open
 Updated: 2026-11-10
 
+### Latest continuation checkpoint (2026-11-10, C3 system-profile runtime slice)
+
+- Freshly fetched `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d`, `m-os/codex/c3-generalized-context@d510bf9dfef0619d2e7aaa6786c391a6b32f6ae3`, `rumiai-dev/main@e3a51b443c1f11405954537513b1c5e9fc031260` and `rumiai-dev/codex/m-os-completion-progress@4076056515e1cbdda7ed3ff8c468f6b9901e4c18`. The C3 branch is forward-based on current `m-os/master`; the progress branch contains current `rumiai-dev/main`.
+- C3 now persists/selects the installation-registry system profile, applies the validated baseline on bare `context`, validates profile selections before shell mutation, and propagates a root/UID/profile/package/classpath envelope. Exact-source local Linux ARM64 context/store/registry/selector/library/launcher and hostile-envelope checks are recorded in `handoff/rumiai-os-source-composition.md`; hosted/macOS acceptance is not claimed for `d510bf9d`.
+- Remaining C3 gaps include the full dimension grammar and logical user-state authority, explicit migration entrypoint, provider-pin/runtime integration, complete HOME/environment and service/TLS boundaries, adapters for stateful package `var/`, authentic catalog-backed consumer coverage, and required cross-platform evidence. Do not guess the unresolved public grammar or logical-user authority. The earlier registry-reader-only checkpoint is historical and its statements that `system=`/baseline were not wired do not describe `d510bf9d`.
+- SRV-42 remains open: the current portable shell implementation cannot atomically verify a PID identity and signal it; retain the limitation and do not promote the S candidate as race-free. A1–A4 hosted workflows and privileged operations remain deferred as previously directed.
+
 ### Current continuation checkpoint (2026-11-10, exact-master A1/A2, technical API and M15 manual audit)
 
 - Replayed the complete public A2 shell/language/manual/diagnostic workflow body from `.github/workflows/m-shell-resources-public.yml` against a disposable worktree at `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d`. Ubuntu ARM64 completed with `PASS: real m A2 shell, language, manual, diagnostics`; the replay covered real managed shell/library loading, missing-environment rejection, en_US/it_IT selection and invalid-locale preservation, manual discovery/content/missing-topic status, diagnostic filtering and invalid severity.
@@ -16,9 +23,9 @@ Updated: 2026-11-10
 - Exact `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d` local Linux ARM64 replay passed both current J1/M15 JSON scripts: `.github/scripts/m-json-public.sh` reports `PASS: standalone POSIX json CLI, query, validation, atomic errors and caller-PATH isolation`; `.github/scripts/m-json-test-parsing.sh` reports PASS against the pinned `JSONTestSuite@1ef36fa01286573e846ac449e8683f8833c5b26a` corpus (95 valid, 188 invalid, 35 implementation-defined). The disposable checkout and all temporary files were under `/m/src/git/chatgpt/tmp`; no product source or frozen `rumiai-tests` files were changed.
 - This closes only the exact-master local Linux replay for the JSON command. It does not replace the earlier feature-branch hosted J1 evidence, establish an exact-master hosted/macOS replay, or close the remaining M01–M15 matrix and I1. Preserve those as separate pending evidence.
 
-### Current continuation checkpoint (2026-11-10, C3 registry reader)
+### Historical checkpoint (2026-11-10, C3 registry reader; superseded by the generalized-context slice below)
 
-- The C3 branch now contains read-only installation-registry validation at `m-os/codex/c3-generalized-context@e883b3bc354f738b2d889b4cc0f277a85379e69d`, with focused hostile-input coverage. Local exact-source C3 regressors passed on an isolated worktree. Hosted isolated run [42790296012](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42790296012) passed Ubuntu 24.04 and macOS 15 (2/2) at the exact C3 SHA using runner commit `pkg-catalog@e6e2bdbc14e368ec293c53d78487cdad7c91aea5`. The source `m-os` fork has Actions disabled, so this is not a PR status. This slice validates registry data only; it does not yet wire `system=` selection, baseline application, migration, profile-aware state/launch, or child context. See `handoff/rumiai-os-source-composition.md`.
+- At `e883b3bc354f738b2d889b4cc0f277a85379e69d`, this was a registry-reader-only slice. The later C3 branch checkpoint below supersedes its implementation boundary; retain its exact hosted runner result only as evidence for that earlier revision.
 
 ### Current continuation checkpoint (2026-11-10, GraalVM and C3 decisions)
 

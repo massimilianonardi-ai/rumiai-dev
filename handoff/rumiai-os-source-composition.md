@@ -1,7 +1,7 @@
 # RumiAI OS source composition comparison
 
 Status: Active
-Updated: 2026-11-08
+Updated: 2026-11-10
 
 ## Goal
 
@@ -2921,6 +2921,30 @@ are C3 acceptance requirements; C3 remains active until the full matrix passes.
   C3 on the pushed branch and preserve fail-closed behavior for unsupported
   stateful packages.
 
+### C3 next executable boundary after system-profile slice (2026-11-10)
+
+- The profile registry/baseline, package/profile account-record persistence,
+  protected child envelope and mutable-state fail-closed launch check are
+  implemented on `m-os/codex/c3-generalized-context@d510bf9d`. Exact-source
+  local evidence is recorded above; no hosted/macOS result is claimed for this
+  revision.
+- Continue with implementation only where the current promoted contract is
+  complete. Before exposing additional dimensions, resolve the full operand
+  grammar, logical user-state identity/authority and explicit migration
+  entrypoint through canonical authority. Then integrate provider-pin
+  precedence and authentic provider/consumer scenarios. Do not invent command
+  operands or infer user identities from directories or selectors.
+- The C3 branch remains separate from `master`; no merge/promotion is claimed.
+
+### C3 registry-reader checkpoint (historical; superseded by the slice above)
+
+The older registry-only checkpoint at `e883b3bc354f738b2d889b4cc0f277a85379e69d`
+and the exact-source audit below predate the generalized system-profile slice
+at `d510bf9d`. Their statements that the inventory was not connected to
+`system=` selection or baseline application describe those earlier revisions
+only. Keep their local/hosted results revision-specific; do not use their
+implementation-boundary statements as current status.
+
 ### C3 system-selector containment follow-up (2026-11-09)
 
 - Exact pushed branch head is now
@@ -2997,14 +3021,14 @@ are C3 acceptance requirements; C3 remains active until the full matrix passes.
   protected inheritance, actual consumer scenarios and hosted/macOS acceptance
   are still open. No C3 completion or full-plan validation is claimed.
 
-### C3 installation-managed profile registry reader (2026-11-10)
+### Historical C3 installation-managed profile registry reader (2026-11-10; superseded)
 
 - Implemented private read-only `_context_profile_registry_read` in `m-os/codex/c3-generalized-context@e883b3bc354f738b2d889b4cc0f277a85379e69d` with its focused `.github/scripts/context-profile-registry-test.sh`, loaded by the existing `context` library. It validates `$m_ROOT/state/system/profile/.inventory`, the versioned strict ASCII/LF record grammar, 1–256 unique canonical identities, baseline membership, direct real profile directories, owner/mode/symlink boundaries, bounded size, CR/blank/unknown records and final newline. It never sources/evaluates inventory data, mutates system state, or provisions profiles.
 - Exact-source local checks passed on an isolated `/m` worktree: registry hostile-input test, account store, full public context command-selection body, system-selector security, and shell/Java library consumers. The disposable worktree had its state parent mode set to 0755 and package directory prepared as the workflow does; no user account state was removed or changed.
 - Hosted isolated exact-source run [42790296012](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42790296012) passed Ubuntu 24.04 and macOS 15 (2/2) using runner commit `pkg-catalog@e6e2bdbc14e368ec293c53d78487cdad7c91aea5`. Logs show the new inventory check and all existing public context/store/selector/library checks PASS. This is not a check attached to the m-os branch because its Actions are disabled.
 - The reader is a bounded infrastructure slice only. No `system=` operand, installation provisioning command, baseline application, profile-aware package state routing, migration, or child-envelope behavior is implemented by this change. C3 and overall acceptance remain open.
 
-### C3 exact-source inventory audit (2026-11-10)
+### Historical C3 exact-source inventory audit (2026-11-10; superseded)
 
 - Re-read exact pushed `m-os/codex/c3-generalized-context@ed9a6e8be022dbe518ca5edae9d83535347dd178` and the promoted bootstrap/state/package contracts. The product checkout contains bootstrap `state/system/profile/main` and `system/current -> profile/main`; the tracked runtime has no profile registry, provisioning API, or installation inventory source. Installed packages still route mutable `var/` through global `system/current`, and launch/state-path do not resolve an independent active profile.
 - Two independent read-only C3 audits reached the same result: a directory name or `current` target alone is not evidence of a known managed identity. Adding a `system=` parser check without baseline inventory, a versioned multidimension record and an effective profile-aware launcher/state resolver would be dead or misleading behavior. Do not ship that partial support or import selectors.
