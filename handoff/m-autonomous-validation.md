@@ -18,12 +18,21 @@ Current verified remote HEADs (refreshed 2026-11-10):
 - `m-os/codex/a2-current-integration@84f436bffe1a79491609fcf3d1f93c2067174d60` (A2 manual candidate; PR #10 draft/unmerged; includes migration no-default restoration and semantic M15 manual corrections);
 - `pkg-catalog/main@164b06441bef655eca2ac3f44ddee7e5b2c6cf3d` (refreshed remote head); earlier `pkg-catalog/m-os-completion-s-ci@835e0806190689a9f824627b3f718e94af8766dc` remains the exact runner for prior S evidence.
 - `rumiai-dev/main@a0fd46ff70ed75cc56d246159cb0ff110278e990` (fresh remote HEAD before this evidence refresh; current handoff update follows in PR #52).
-- `pkg-catalog/codex/m-os-context-srv-ci@31bd4e4c548a55de8f341cd0b02bd9929b6b3b2d` (temporary exact-source and integrated runner branch; not merged to catalog main).
-- `m-os/codex/c3-approved-generalized-context@2d4e3a1c650b199d3b0b2f60bad5a7fead81f9a6` and `m-os/codex/srv-persistent-supervisor@d509429b0e722c0998ac787de7d74c21456e905b` (unmerged candidates).
+- `pkg-catalog/codex/m-os-context-srv-ci@ac7b3226426374a7d0545e9efb688caf207b645c` (temporary exact-source and integrated runner branch; not merged to catalog main).
+- `m-os/codex/c3-approved-generalized-context@5f57a7de9881c13998ebe23100eff674fd447e17`, `m-os/codex/srv-persistent-supervisor@d509429b0e722c0998ac787de7d74c21456e905b`, and test-only `m-os/codex/p3-pinned-catalog-ci@e4eb909ecc9c38ea9b99ba5c794b6a1d1a0a0905` (unmerged candidates; PRs #24, #25, #26).
+- Integrated composition: master `a78a24bd...` + C3 `5f57a7de...` + SRV `d509429b...` has tree `6296da51240f12e31c0e1ae327c88658a7ff8baf`; adding the test-only P3 pinned-catalog fixture correction gives tree `ec0bddbfdf5b5127c33b0697c02356f7629d6f83`.
 - `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d` (confirmed unchanged); branch heads and scoped promotion history are revision-specific.
 - C3 and SRV-42 work remain isolated in `/m/src/git/chatgpt/tmp/m-os-c3-approved` and `/m/src/git/chatgpt/tmp/m-os-srv-supervisor`; neither is integrated.
 
 `rumiai-os` and `rumiai-tests` remain frozen and were not accessed in this continuation; their previously recorded hashes are not reclassified as fresh remote HEADs. Refresh relevant HEADs and README mandatory source order before each follow-up task. Past physical PASS must retain its exact product revision.
+
+**Latest hosted composition evidence:** runner [42891477651](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42891477651) at `pkg-catalog/codex/m-os-context-srv-ci@ac7b3226426374a7d0545e9efb688caf207b645c` passed 13/13 jobs. It validates exact C3 (`5f57a7de`) and SRV (`d509429b`) candidates, master+C3+SRV public composition at tree `6296da...`, P3/P4 composition with the test-only pinned-catalog fixture correction at tree `ec0bdd...`, real provider and public `m srv`, provider ambiguity/typed environment, and standalone JSON with pinned JSONTestSuite on Ubuntu/macOS. Exact job mapping and evidence-driven fixes are recorded in the current C3/SRV/P3/J1 checkpoint below. This does not close all M01–M15 or I1/I2.
+
+### Current C3/SRV/P3/J1 hosted composition checkpoint (2026-11-10)
+
+Runner [`42891477651`](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42891477651), exact runner head `pkg-catalog/codex/m-os-context-srv-ci@ac7b3226426374a7d0545e9efb688caf207b645c`, completed **13/13 jobs PASS**. It covered exact C3 and supervisor source suites on Ubuntu/macOS (jobs `130093443494`, `130093443463`, `130093443470`, `130093443793`); public Electron `./m srv` lifecycle on Ubuntu (`130093442966`); integrated master+C3+SRV public suites on Ubuntu/macOS at tree `6296da...` (`130093443341`, `130093443396`); integrated real provider lifecycle on Ubuntu (`130093443405`); P3/P4 on the integrated tree plus the pinned test-fixture branch at tree `ec0bdd...` on Ubuntu/macOS (`130093443705`, `130093443696`); provider ambiguity and typed-environment checks on Ubuntu (`130093443579`); and standalone JSON plus pinned JSONTestSuite on Ubuntu/macOS (`130093443381`, `130093443397`).
+
+The run followed two evidence-driven fixes: C3 store-lock acquisition now retries only if the lock directory vanishes during a concurrent release, while unsafe/malformed locks still fail closed; and the P3 test fixture checks out the same pinned catalog SHA on a named local branch so the public refresh path can perform its required fast-forward pull. Neither alters catalog contents or the pinned revision. The isolated fixture correction is PR #26 and is not a product-source change. These results close those exact hosted scenarios only; they do not establish full M01–M15, I1, reference-host I2, installed-product distribution packaging, or deferred A1–A4 workflow acceptance.
 
 ## Applicable canonical sources
 
