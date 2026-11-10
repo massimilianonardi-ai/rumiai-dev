@@ -3,6 +3,10 @@
 Status: Active — P3/P4/J1/V2 promoted; S PR #4 candidate has exact hosted checks but the SRV-42 PID identity/race gate remains open; A1–A4 hosted workflows deferred; C2/C3 and I1 remain open
 Updated: 2026-11-10
 
+### Current continuation checkpoint (2026-11-10, C3 registry reader)
+
+- The C3 branch now contains read-only installation-registry validation at `m-os/codex/c3-generalized-context@e883b3bc354f738b2d889b4cc0f277a85379e69d`, with focused hostile-input coverage. Local exact-source C3 regressors passed on an isolated worktree. Hosted isolated run [42790296012](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42790296012) passed Ubuntu 24.04 and macOS 15 (2/2) at the exact C3 SHA using runner commit `pkg-catalog@e6e2bdbc14e368ec293c53d78487cdad7c91aea5`. The source `m-os` fork has Actions disabled, so this is not a PR status. This slice validates registry data only; it does not yet wire `system=` selection, baseline application, migration, profile-aware state/launch, or child context. See `handoff/rumiai-os-source-composition.md`.
+
 ### Current continuation checkpoint (2026-11-10, GraalVM and C3 decisions)
 
 - GraalVM exact stack `m-os@d4b4e387c0748599b7389daa7cf75a18b64b42c3` plus catalog history `pkg-catalog@50faddb36f9c3e7c12fa53d46b94dd8098fa857b` passed isolated hosted Ubuntu x86_64 and macOS ARM64 validation in `pkg-catalog` runner commit `da3588cbb8e1722a4d033468539d84c21f16c55d`, run [42786725669](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42786725669) attempt 2 (2/2). Both jobs passed diagnostics, P4 ordering fixtures, exact/latest planning and installs, versions listing, provider selection and Java CE 25.5.5.0.3 execution. MacOS attempt 1 hit upstream GitHub API HTTP 403 on latest resolution; attempt 2 passed. Linux ARM64 local acceptance was already recorded. Windows x86_64 remains pending. The separate runner is not a PR check; all feature PRs remain draft/unmerged. Details are in `handoff/graalvm-repository-adapter.md`.
@@ -12,7 +16,7 @@ Updated: 2026-11-10
 ### Current continuation checkpoint (2026-11-10, GPGTools hosted acceptance update)
 
 - GPGTools PR #14 exact adapter source `m-os/codex/gpgtools-repository-adapter@cd54a908530e5b53179ed47e849f8a91d771a339` and catalog `pkg-catalog/main@0b69223a5ebe7bc042aad50012ee8bc7e4a00442` passed isolated hosted macOS ARM64 public-path acceptance through `pkg-catalog/codex/gpgtools-arm64-validation@2d832e9ceb67b8cb0521e412b863b2cec2a4e5c1`, run [42785101042](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42785101042). The run installs the exact concrete, reads back `pkg default`, verifies `pkg versions`, and executes packaged `gpg --version` under isolated HOME/GNUPGHOME. Initial run 42784638323 exposed only a runner assertion defect: MacGPG prints a notice before its valid version line; the assertion was corrected and rerun successfully. This is exact-source hosted evidence, not a PR #14 check or product-mainline integration. Detailed evidence is in `handoff/gpgtools-repository-adapter.md`.
-- C2 public grammar was previously promoted. In this continuation the user selected per-POSIX-account storage under `$m_ROOT/state/<effective-UID>/context/`; record this on the C2 branch. C3 still has registry reader/baseline resolution, profile-aware state routing, migration and child-context integration gates.
+- C2 public grammar was previously promoted. In this continuation the user selected per-POSIX-account storage under `$m_ROOT/state/<effective-UID>/context/`; record this on the C2 branch. C3 still has registry-backed baseline/system selection, profile-aware state routing, migration and child-context integration gates.
 
 ### Current continuation checkpoint (2026-11-10, Podman hosted acceptance update)
 
