@@ -1,6 +1,6 @@
 # pkg dependency resolution and recursive install
 
-Status: Active
+Status: Active — merged P2 implementation accepted; current M15 manual alignment follow-up is draft PR #22
 Updated: 2026-11-05
 
 ## Goal
@@ -107,6 +107,11 @@ Complete and validate the promoted recursive `pkg install` model built around th
 - **P2 exact-root/dependency/install/extract technical work unit accepted for the proven scope at the merged source and both hosted platforms.** The shared `m-os/lib/sys/sh/pkg` writer is **released for serialized P3/P4 work**, using current merged master as authority. V2 owner must subsequently forward-reconcile its older `pkg-install.lib.sh` and manual with the P2 exact-root/snapshot design and run proportional integrated tests. This does not make V2, full M01–M15 or I2 accepted.
 
 ## Current implementation state
+
+### Current continuation checkpoint (2026-11-10, merged-source install manual alignment)
+
+- Rechecked exact `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d`. The runtime correctly names three installer helpers `_pkg_install_validate`, `_pkg_install_resolve_one` and `_pkg_install_resolve`, but `res/sys/manual/pkg-install.lib.sh` still documented the old unprefixed spellings as callable functions. The leading underscore marks them private under `LIBRARY-INTERFACES.md`; those entries have been removed on draft [m-os PR #22](https://github.com/massimilianonardi-ai/m-os/pull/22), head `d86848b04ac85213ac67d963772f84f2916ceffc`.
+- The real public `./m manual --no-pager pkg-install.lib.sh` output matches the edited page; a static source/manual check confirms the two remaining documented functions exactly match the source's non-private functions. No installer runtime behavior changed. PR #22 remains open/draft/unmerged; hosted workflows were not dispatched.
 
 The formerly staged P2 exact-root/install implementation is **merged into current `m-os/master@a08f4730323be108893b9a3327e63a36711f0158`**. Public `pkg install` validates its complete operand list before managed-state mutation, resolves exact roots and target contexts from one catalog snapshot, calls the shared `pkg_depend_plan` for those exact roots in dependency-first order, and distinguishes pre-existing roots from roots fulfilled within the same invocation. Invalid symlinked installed-concrete entries are rejected. The `pkg`, install-library and depend-library manuals and underscore-prefixed internal helpers were aligned on the merged source. The full public controlled-corrupt-artifact rejection is **hosted-PASS on Ubuntu and macOS at exact merged master `a08f473`** via run `42197729661` after branch-source 2/2 evidence.
 
