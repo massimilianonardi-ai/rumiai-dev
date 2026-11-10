@@ -3,6 +3,11 @@
 Status: Active — P3/P4/J1/V2 promoted; S PR #4 candidate has exact hosted checks but the SRV-42 PID identity/race gate remains open; A1–A4 hosted workflows deferred; C2/C3 and I1 remain open
 Updated: 2026-11-10
 
+### Current continuation checkpoint (2026-11-10, exact-master A2 local replay)
+
+- Replayed the complete public A2 shell/language/manual/diagnostic workflow body from `.github/workflows/m-shell-resources-public.yml` against a disposable worktree at `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d`. Ubuntu ARM64 completed with `PASS: real m A2 shell, language, manual, diagnostics`; the replay covered real managed shell/library loading, missing-environment rejection, en_US/it_IT selection and invalid-locale preservation, manual discovery/content/missing-topic status, diagnostic filtering and invalid severity.
+- The temporary workdir was confined under the disposable worktree and the worktree was removed. This advances local M04/M05 evidence only; hosted A1–A4 remain deferred, macOS is unverified on this exact revision, and the complete M01–M15/I1 gates remain open.
+
 ### Current continuation checkpoint (2026-11-10, integrated J1/M15 local replay)
 
 - Exact `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d` local Linux ARM64 replay passed both current J1/M15 JSON scripts: `.github/scripts/m-json-public.sh` reports `PASS: standalone POSIX json CLI, query, validation, atomic errors and caller-PATH isolation`; `.github/scripts/m-json-test-parsing.sh` reports PASS against the pinned `JSONTestSuite@1ef36fa01286573e846ac449e8683f8833c5b26a` corpus (95 valid, 188 invalid, 35 implementation-defined). The disposable checkout and all temporary files were under `/m/src/git/chatgpt/tmp`; no product source or frozen `rumiai-tests` files were changed.
