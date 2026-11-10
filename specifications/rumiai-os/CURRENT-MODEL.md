@@ -227,29 +227,34 @@ scope -> owner -> identity -> area
 
 with package State Instance encoded in the identity when present.
 
-The bootstrap exports semantic roots:
+The bootstrap exports semantic roots for the validated process context:
 
 ```text
 m_STATE_DIR=$m_ROOT/state
-m_STATE_SYS_DIR=$m_STATE_DIR/system/current
-m_STATE_USER_DIR=$m_STATE_DIR/user/current
+m_STATE_SYS_DIR=$m_STATE_DIR/system/profile/<effective-profile>
+m_STATE_USER_DIR=$m_STATE_DIR/user/<effective-logical-identity>
 ```
 
-These are semantic pathnames. The bootstrap does not resolve or validate their selector targets merely to start the runtime.
+The installation-managed registry authorizes system profile identities;
+logical user identities are direct names beneath `state/user/`, distinct from
+POSIX accounts. The legacy `current` selectors are not used for ordinary
+context selection and are imported only by explicit
+`context --migrate-legacy`. Full semantics are in `STATE-MODEL.md`.
 
-System state uses:
+The legacy system selector is:
 
 ```text
 state/system/current -> profile/<profile>
 ```
 
-User state uses one optional explicit global binding:
+The legacy user selector is:
 
 ```text
 state/user/current
 ```
 
-Only a symbolic link at `state/user/current` constitutes the explicit binding. Without it, user state resolves under:
+It is read only by explicit migration. Without a process-local context identity,
+user state resolves under:
 
 ```text
 state/user/default/
@@ -460,9 +465,9 @@ CURRENT-08   internal libraries are ownership-qualified under lib/sys or lib/ai
 CURRENT-09   state root is $m_ROOT/state
 CURRENT-10   state scopes are system and user
 CURRENT-11   state owner classes are sys, ai and pkg
-CURRENT-12   bootstrap exports semantic, unresolved system/current and user/current roots
-CURRENT-13   user state is not derived from POSIX UID or host-id
-CURRENT-14   absent an explicit user/current symlink, user state resolves under user/default
+CURRENT-12   bootstrap exports semantic state roots for the validated effective context
+CURRENT-13   logical user identity is not derived from POSIX UID or host-id
+CURRENT-14   logical user identity is distinct from POSIX account identity and defaults to user/default
 CURRENT-15   state-path is the canonical public state resolver
 CURRENT-16   package HOME/state is resolved through state-path
 CURRENT-17   package var routing is static and system-scoped

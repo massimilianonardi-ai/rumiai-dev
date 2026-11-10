@@ -1,12 +1,21 @@
 # Completion orchestration of autonomous m-os
 
-Status: Active — P3/P4/J1/V2 promoted; S PR #4 candidate has exact hosted checks but the SRV-42 PID identity/race gate remains open; A2/A4 hosted workflows deferred; C2/C3 and I1 remain open
-Updated: 2026-11-08
+Status: Active — C3/SRV-42 candidates and integrated P3/P4/J1 checks pass hosted run 42891477651; M01–M15/I1 and I2 remain open; A1–A4 hosted workflows and privileged host operations remain excluded
+Updated: 2026-11-10
 
-### Current continuation checkpoint (2026-11-08)
+### Historical continuation checkpoint (2026-11-08; superseded by the 2026-11-10 checkpoint below)
 
 - This continuation started from verified `rumiai-dev/main@327ee61bd4065b3832be5b1d7e6be9d275f90cc8`; subsequent checkpoints are pushed forward-only. Detailed GeoServer adapter state is in `handoff/geoserver-repository-adapter.md`, with cross-plan M10/M12 evidence in `handoff/m-autonomous-validation.md`.
 - GeoServer adapter work is now published as draft [m-os PR #12](https://github.com/massimilianonardi-ai/m-os/pull/12), current head `b1e4f040506592f0433e26005741f887266f4462`, based on exact `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d`. It is not merged and no hosted run exists. Local Ubuntu evidence includes genuine 3.0.1 and 3.0.2 installs; 3.0.1 returned HTTP 302 and 3.0.2 served WFS HTTP 200 after explicit provider defaults. The focused workflow is in the PR branch but GitHub does not list it until it reaches the default branch. Keep hosted/platform acceptance open.
+
+### Current continuation checkpoint (2026-11-10)
+
+- Fresh refs verified before this update: `rumiai-dev/main@a0fd46ff70ed75cc56d246159cb0ff110278e990`, `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d`, `pkg-catalog/main@164b06441bef655eca2ac3f44ddee7e5b2c6cf3d`, and `pkg-catalog/codex/m-os-context-srv-ci@ac7b3226426374a7d0545e9efb688caf207b645c`.
+- User decisions are settled: generalized `context` uses the approved dimensions and validated `--migrate-legacy`; account defaults use `$m_ROOT/state/<UID>`; no-argument `context` initializes defaults and `context --clear-defaults` clears them. SRV-42 uses a persistent per-service supervisor that owns the child.
+- Candidate refs: C3 PR #24 `82b08864820ff97f427d442b65841b1c0e03370d` (A1 test correction only; hosted C3 code suites pinned `5f57a7de...`), SRV PR #25 `d509429b0e722c0998ac787de7d74c21456e905b`, P3 fixture PR #26 `e4eb909ecc9c38ea9b99ba5c794b6a1d1a0a0905`. Hosted compositions are `6296da51240f12e31c0e1ae327c88658a7ff8baf` and `ec0bddbfdf5b5127c33b0697c02356f7629d6f83`.
+- Runner [42891477651](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42891477651) at `pkg-catalog@ac7b322...` completed **13/13 PASS**: C3/SRV exact public suites on Ubuntu/macOS, native supervisor lifecycle on both, integrated P3/P4 suites on both, JSONTestSuite on both, and Ubuntu authentic-provider ambiguity/typed-env plus genuine published-provider `srv` lifecycle. Exact job IDs and evidence limits are in `handoff/m-autonomous-validation.md`.
+- Local exact A1 workflow body at PR #24 head passed on integrated tree `ec0bddbf`; A2 and A3 workflow bodies also passed locally on that disposable source. A4 CA/NSS/revocation passed on Ubuntu ARM64 using extracted-only verified `certutil`; this session had no Chrome/Chromium, so the browser step stayed pending. Earlier full browser PASS remains separate evidence.
+- Remaining work: full current M01–M15/I1 ledger, host-user manager revalidation against the new supervisor, product distribution integration, residual adapter/platform/consumer gaps and nonprivileged I2. Do not dispatch hosted A1–A4, run privileged host operations, modify frozen repositories, or infer completion from the 13/13 matrix.
 
 ## Goal
 
@@ -25,7 +34,7 @@ No duplicate normative specification or separate product architecture is establi
 Verified remote starting point:
 - `rumiai-dev/main@ea5d6259efb14b4527310a37b3cfe92980857619` is the verified remote preflight before this checkpoint; it includes the latest autonomous-validation evidence and preserves concurrent OUT-09/OUT-11 updates. Do not overwrite that work.
 - `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d`; PR #9 updates only README after tested runtime `ed5ec60...`. P3 PR #5 merged as `6db5531...`; J1 PR #6 merged as `1df35f70...`; V2 runtime PR #8 merged as `ed5ec60...`.
-- S branch `m-os/m-os-completion-s@15a2c4f96584c07b92088e5530d4ecb09a9477b8` now contains a forward-only merge of current master `a78a24bd...`; PR #4 remains draft/unmerged. Exact integrated candidate locally reproduces the SRV-42 fix; see the current M12 checkpoint in `handoff/m-autonomous-validation.md`. Its `ps -o lstart` identity snapshot is one-second resolution and `stop` checks then separately signals the PID; no portable POSIX atomic identity-checked signal exists. Keep the resulting SRV-42 same-second/PID-reuse race open; Linux `pidfd` would require a nonportable native helper and does not cover macOS.
+- The then-current S branch `m-os/m-os-completion-s@15a2c4f96584c07b92088e5530d4ecb09a9477b8` contained a forward-only master merge and PR #4 was draft. Its `ps -o lstart` identity snapshot had one-second resolution and `stop` signaled after a separate check. These limitations belonged to the superseded PID-based design; the 2026-11-10 accepted persistent per-service supervisor candidate replaces that mechanism and has scoped hosted evidence recorded above.
 - P3/P4/J1 exact-master hosted runners on `pkg-catalog` commit heads `d352513`, `2a63b75`, `7827963` completed successfully: P3 6/6 current-source + 3/3 supporting public checks, P4 2/2, J1 2/2. See validation handoff for run IDs and limits.
 - A2 manual candidate `m-os/codex/a2-current-integration@84f436bffe1a79491609fcf3d1f93c2067174d60` (PR #10 Draft) contains the migration no-default restoration clarification and the two corrected JSON/shell manual semantics. PR #11 `m-os/codex/a4-browser-observation@4b688d87b46a0320448ca4c86485a116760cc1b3` remains Draft. Do not merge either while the operator-deferred A1–A4 hosted workflows would be triggered; local exact-source evidence is not hosted acceptance.
 - `pkg-catalog/main@0b69223a5ebe7bc042aad50012ee8bc7e4a00442`; V2 source `pkg-schema-v2@2c0df87a488bfeac6d185336ea5ae5a4ea469c4a` merged forward in PR #2 (merge tree equals validated `5928848...`). V2 runtime merged at `m-os/master@ed5ec60...` (tree matches validated candidate `168b8656...`). Exact post-merge suites pass; catalog promotion is complete.
@@ -256,7 +265,7 @@ Mainline repository adapters: `pkg-repository-{artifact,chrome,chromium,github,n
 
 **Executor protocol:** each independent chat receives (i) local unit ID from this handoff, (ii) owner handoff, (iii) source/branch checkpoint to freshly verify, (iv) exact writable files/branch and prohibited shared surfaces, (v) public expected tests + manual updates, (vi) expected upstream output and integration handoff. Every executor follows fresh HEAD preflight, no history by default, current source authority, proportional real tests, reviewed diff, forward-only updates and consistency gate. When an interface or host/privilege contract is unsettled, stop only that affected unit and escalate; do not freeze independent ready work.
 
-## Current state
+## Historical state checkpoints (superseded by the 2026-11-10 continuation checkpoint above)
 
 ### S1 current-master SRV-42 correction (2026-11-07)
 
@@ -528,26 +537,14 @@ P2 [PR #3](https://github.com/massimilianonardi-ai/m-os/pull/3) merged forward t
 
 ## Next action
 
-### Continuation checkpoint (superseded by latest integrated-source checkpoint above)
-
-The active scope is the accepted **nonprivileged** m-os completion plan. Exact local replays establish A3/M06 and the NSS portion of A4/M14 at `m-os@6e720be...` on this Ubuntu ARM64 host; the A4 browser phase remains pending. J1 now has exact-source hosted Ubuntu/macOS 2/2 PASS at PR #6 `6fcb2f...` (run 42309469100). Current remote P3 PR #5 is `b6f69d...`: its exact-source pinned-selector and genuine provider-version jobs pass on both hosts, but the ambiguity job fails before assertions because its test passes a concrete package version to `state-path`; typed-env was cancelled. Local test correction `m-os-p3-env-review@7cc3e303...` uses package identity for state/binding paths and concrete identity for dependency operations, but has no hosted or end-to-end acceptance yet. Local rootless authentic install is still blocked by unmapped archive ownership. No P3 completion is claimed. `pkg-catalog/pkg-schema-v2` advanced to `2c0df87...` with only immutable m-rsudo v0.1.2 definition relative to the previously inspected V2 head.
-
-Historical ordered next work at that checkpoint (superseded):
-
-P3/P4 and J1 have since merged and passed exact-master runners; runtime V2 has merged as `m-os/master@ed5ec60...`. Current next actions are: (1) finish the exact merged-master V2 catalog consumer runs now underway; (2) continue nonprivileged A2/M15 and contract-ready C2 work, then gate C3 on the completed contract; (3) freeze the integrated revision for I1's nonprivileged M01–M15 ledger, then I2 when ordinary reference-host conditions are available. Privileged operator work remains solely in `todo/m-os-operator-privileged-validation.md`.
-
-The numbered legacy sequence that follows is retained for history only; do not execute its P3/P4/J1 open tasks.
-
-1. **P2 accepted; P3 must close before P4 shared writer handoff.** P2's exact merged `m-os/master@a08f473...` [run 42197729661](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42197729661) remains Ubuntu/macOS 2/2 PASS on all four recorded groups. Current PR #5 `b6f69d...` exact-source [run 42309471324](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42309471324) has pinned-selector and genuine provider-version jobs PASS on Ubuntu/macOS, but the authentic-ambiguity test fails before assertions because it passes a concrete version where `state-path` requires a package identity; typed-env was cancelled. Local test correction is `m-os-p3-env-review@7cc3e303...`, syntax/state-path checked but not hosted or end-to-end validated. Continue exact-current ambiguity/typed-env and remaining P3 negative/failure-state cases before handing the serialized writer to P4. P4 owner (`handoff/rumiai-os-source-composition.md`) then implements and validates the canonical derived facility map. Do not conflate deferred GeoServer adapter work with P2 acceptance; older P3 HTTP 504 observations remain scoped to their own runs.
-2. Preserve at exact feature/release revisions the **14/14 V1/V2 hosted matrix**, the independent Java/mk-jsc 2/2 runs and the newly verified **R1 released v0.1.1 public install/selected consumer 2/2 PASS**; do not rerun unchanged green cases. The R1 owner retains local, nonprivileged interactive/negative/consumer checks; privileged remote R2 is deferred, while the C owner retains the separately failed macOS v0.1.0→v0.1.1 acquisition/version-switch scenario. S retains local-provider/unprivileged host-user evidence; privileged host-system work is deferred.
-3. After P3/P4 acceptance, coordinate forward-only V2 runtime/catalog integration without reverting P2 exact-root/snapshot behavior or concurrent catalog v1 indices. J1 exact-source hosted Ubuntu/macOS 2/2 PASS at PR #6 `6fcb2f...` is now recorded (run 42309469100); forward integration remains pending. Independently continue C1/C2/C3/S1/S2/A2/R1 within existing ownership and explicit contract/host gates. A1/A3/A4 hosted workflows remain paused by current handoff instruction; local A3/A4 evidence is separately bounded.
-4. Once applicable upstream surfaces are coherent, pin the integrated runtime/catalog/first-party release/test revisions and run actual M01–M15 public-command paths for I1, recording PASS/FAIL/PENDING by revision and host in the validation owner. Start nonprivileged I2 only after I1 and ordinary authorized reference-host conditions are satisfied; privileged cases are not prerequisites.
+1. Continue ready nonprivileged M01–M15 work using exact revisions; treat run 42891477651 as scoped candidate evidence, not a full-suite substitute. Keep hosted A1–A4 workflows deferred.
+2. Revalidate `srv host user` against the persistent-supervisor candidate only if the test-owned manager state stays within `/m/src/git/chatgpt`; otherwise keep that host row pending and advance independent gaps.
+3. Complete I1 when every applicable M01–M15 row has exact evidence or an explicit excluded/deferred owner. Proceed to nonprivileged I2 when ordinary authorized reference-host access is available.
 
 
 ## Blockers / open questions
 
-- **C2/C3:** The user has approved the boundaries recorded in `rumiai-os-source-composition.md` and the canonical bootstrap/state/service/TLS specifications. Public grammar, no-argument default versus reset, preset authority/storage, child propagation, context-aware state-root migration and provider precedence remain unapproved. Do not implement C3 or silently replace the current no-argument reset until those contract choices are settled.
-- **S/SRV-42:** PR #4 remains Draft/unmerged. The current candidate rejects unverifiable/stale identities, but one-second `ps lstart` and separate PID-check/`kill` leave same-second reuse and TOCTOU risk. POSIX shell has no atomic identity-checked signal; do not call this gate closed. A Linux-native `pidfd` helper would be nonportable to macOS; a cross-host lifecycle redesign needs a promoted design.
-- **A2/A4 and final validation:** PR #10 and #11 remain Draft/unmerged because hosted A1–A4 workflow execution is explicitly deferred. M01–M15 has substantial exact-revision local and hosted evidence, but current runtime, platform and authorized nonprivileged reference-host acceptance is still incomplete. Continue local independent work; do not dispatch deferred workflows or claim skipped evidence as PASS.
-- Operator-privileged SSH/sudo, protected-host services and CA changes and privileged reference-host steps are explicitly excluded to `todo/m-os-operator-privileged-validation.md`, not current blockers. Ordinary nonprivileged reference-host access remains a separate evidence condition.
-- Legacy `rumiai-os` and `rumiai-tests` are frozen; final formal suite alignment/migration cannot be silently assumed authorized.
+- C3 and SRV-42 decisions are settled and candidate implementations have exact/integrated hosted evidence. Final candidate review/integration, distribution packaging and full M01–M15/I1 remain open; M13 host-user integration needs current-source revalidation.
+- Hosted A1–A4 workflows remain explicitly deferred. Local replays do not replace them.
+- Nonprivileged I2 awaits ordinary authorized reference-host access. Privileged host-system services, remote SSH/sudo and protected-host CA administration remain in the operator TODO, outside this task.
+- `rumiai-os` and `rumiai-tests` remain frozen and untouched.

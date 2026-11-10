@@ -1,7 +1,7 @@
 # RumiAI OS source composition comparison
 
 Status: Active
-Updated: 2026-11-08
+Updated: 2026-11-10
 
 ## Goal
 
@@ -130,6 +130,15 @@ Scenarios 1 and 2 have initial direct-checkout smoke evidence on Ubuntu and macO
 - PoC 073 GitHub Actions run `40081595096`, initial SHA `6325990d`, **Ubuntu PASS**; extended run `40081898644`, SHA `596feac`, **Ubuntu PASS** including source-based package execution, real managed Node.js installation through `pkg`, `--goals`, `--plan`, executable actions, and package-local `--watch` re-entry on changed input. Final comment-only correction `caecb010ce7996d6a16435bb40d078ae9e4d285d`, run `40082091552`, **Ubuntu PASS**. All macOS jobs were still queued when last inspected, not validated. No full published `pkg install mk` test has run because the release repository/asset does not yet exist. Do not relabel queued macOS jobs or a direct `pkg_integrate` scenario as a published package install.
 
 ## Current state
+
+### Accepted context/SRV contracts and integrated candidate evidence (2026-11-10)
+
+- The user adopted the generalized context contract: `system`, logical `user`, exact `pkg`, `provider.<facility>`, `locale`, `osarch`, and named `full-context`; logical identities are direct canonical names under `$m_ROOT/state/user/`, separate from POSIX accounts, with `default` baseline. `context --migrate-legacy` imports only validated direct selectors. Accepted C2 choices remain: defaults are per POSIX account under `$m_ROOT/state/<UID>`, bare `context` initializes them, and `context --clear-defaults` clears them. Canonical specifications are being synchronized on this docs branch.
+- SRV-42 now uses a persistent per-service supervisor that owns its child. Candidate `m-os/codex/srv-persistent-supervisor@d509429...` makes the live parent-child relationship the signal authority; persisted PIDs do not authorize signals and supervisor loss fails closed for orphans.
+- Integrated run [42891477651](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42891477651), runner `pkg-catalog/codex/m-os-context-srv-ci@ac7b322...`, passed 13/13 on its pinned current-master/C3/SRV/P3-test compositions. C3/SRV public suites passed Ubuntu/macOS at tree `6296da51240f12e31c0e1ae327c88658a7ff8baf`; P3/P4 suites used `ec0bddbfdf5b5127c33b0697c02356f7629d6f83`; integrated JSONTestSuite passed both platforms. This does not complete I1.
+- Local exact A1 workflow body at PR #24 head `82b08864...` passed against `ec0bddbf`; local A2/A3 workflow bodies passed on the same disposable integration. Current-session A4 CA/NSS and revocation passed with extracted-only verified `certutil`; Chrome/Chromium was unavailable, so this replay's browser step was pending. Earlier exact-source browser PASS is separate evidence.
+- Continue residual M01–M15, M13 host-user revalidation against the new supervisor, remaining adapters/platform/consumers and I1 before nonprivileged I2. Preserve deferred A1–A4 hosted workflows, privileged exclusions and frozen repositories.
+
 
 ### Integrated P3/P4/J1 source checkpoint (2026-11-07)
 
@@ -2633,7 +2642,7 @@ its working schema, migration decisions or validation state here.
 
 **Previous source-extraction next action (completed):** The operator rejected the synthetic test, which was removed forward. The source repositories were populated with actual assets; the initial release/catalog/install composition is now implemented and hosted-validated, as recorded above.
 
-**Current next shared-package boundary:** P3/P4/J1 and V2 runtime are merged on `m-os/master@a78a24bd...` (README-only advance over tested runtime `ed5ec60...`); V2 catalog promotion is complete at `pkg-catalog/main@0b69223...`, and exact merged-master consumers passed. S1 SRV-42 candidate `m-os/m-os-completion-s@15a2c4f...` now passes exact integrated hosted validation 6/6 on runner `pkg-catalog@835e080...` (run 42413203723), but PR #4 remains draft/unmerged; see `handoff/m-autonomous-validation.md`. Continue the uncovered nonprivileged M01–M15 ledger. C2 source audit is complete but specifications still need the coordinated decisions recorded in the orchestration handoff; keep C3 gated. Preserve current catalog V1 additions and frozen legacy repositories.
+**Current next shared-package boundary:** P3/P4/J1 and V2 runtime are merged on `m-os/master@a78a24bd...`; V2 catalog promotion is on `pkg-catalog/main@164b0644...`. The user-approved C3 and SRV-42 candidates pass scoped exact/integrated hosted suites in run 42891477651 but remain isolated from master. Their design decisions are settled. Continue residual M01–M15 evidence, current-source host-user supervisor validation, distribution and adapter checks, then I1; I2 remains pending. Keep hosted A1–A4 deferred, privileged work excluded and frozen repositories untouched.
 
 ### Historical next-action material below (superseded)
 

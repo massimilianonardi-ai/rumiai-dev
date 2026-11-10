@@ -42,9 +42,22 @@ Starting a service requires a configured system facility default for that servic
 
 The baseline service facility contract requires `process = foreground`. The service target remains in foreground from its own perspective and must not self-daemonize in a way that causes `srv` to lose ownership of the managed process. The portable baseline does not require double-fork or an upstream PID-file contract.
 
-`srv start` is responsible for the generic lifecycle mechanics around the long-running process, including current implementation responsibilities such as serialization of same-service lifecycle operations, stale-runtime cleanup, background launch/logging and publication of runtime metadata.
+`srv start` resolves the exact provider realization and submits the selected
+argv, service identity, installation root and log path as framed data to the
+installation's per-POSIX-UID supervisor. The supervisor owns the provider
+process as its direct child and remains alive for the managed instance. It
+serializes same-service lifecycle operations and is the only component allowed
+to signal that child. Runtime files and PID values are inspection/recovery
+metadata; they are never authority to signal a process.
 
-`srv stop` is idempotent when no active managed service remains. The normal stop path uses SIGTERM and a finite clean-termination wait. The portable baseline does not automatically escalate to SIGKILL.
+`srv stop` addresses the recorded supervisor endpoint and does not re-resolve
+provider selection. The supervisor checks child status serially and, only while
+the child remains its unreaped direct child, sends SIGTERM to that child.
+Keeping an exited child unreaped until the signal decision prevents its PID from
+being recycled to an unrelated process between identity check and signal. The
+supervisor then waits a finite period for clean termination and reaps the child.
+It does not automatically escalate to SIGKILL. Stop is idempotent when no active
+managed service remains.
 
 The `-f` option is an explicit lifecycle override for the caller-ownership check; it is not authentication or a security boundary.
 
@@ -56,14 +69,12 @@ Runtime metadata for a provider-backed service must therefore preserve enough co
 
 `srv stop <service>` operates on recorded runtime state and must not resolve another provider merely to stop an already-running instance.
 
-A live recorded PID without verifiable process-start identity must not be treated as
-the managed service. Both `start` and `stop` fail without changing that live
-process or its runtime record, including when `stop -f` overrides caller ownership.
-Older records lacking a process-start snapshot can still be cleaned as stale state
-after the recorded PID has exited. The `-f` override never replaces process-identity
-verification. Identity inspection that a host cannot provide must fail closed,
-and a coarse-grained observation must not be presented as proof against process
-recycling within that observation's resolution.
+On-disk PID or start-time identity never authorizes a signal. If the supervisor
+is unavailable, `srv` fails closed and leaves any possibly orphaned process
+untouched; an operator must identify and recover that process independently.
+This applies to current and legacy runtime records and to `stop -f`. The `-f`
+override changes only the caller-ownership check. A supervisor that has lost its
+child relationship cannot reclaim or signal the old process.
 
 ## State
 
@@ -94,8 +105,26 @@ The portable baseline does **not** depend on:
 systemd
 launchd
 /proc-specific supervision APIs
-an internal permanent m supervisor daemon
+an installation-wide system daemon
 ```
+
+Portable per-instance service supervision is an explicit exception to the
+no-daemon boundary: each managed service has a private, per-POSIX-UID native
+supervisor that owns only that service child. Its control endpoint is protected
+by host-account ownership and a private runtime directory and is bound to the
+exact canonical `m_ROOT`. The logical `state/user` identity is not POSIX-account
+authority. The native control transport and account-runtime directory lookup
+are host adapters; public `srv` behavior remains host-neutral.
+
+The supervisor executable is a build/distribution artifact of `m`. The
+installation build process compiles it for each supported host and includes
+that host's executable in the distribution. The root `m` bootstrap never
+compiles code and has no C compiler prerequisite. A development source checkout
+must build the host helper before it can use portable `srv start/stop`.
+
+If the supervisor is killed or crashes, its child may become orphaned. Restart
+does not infer ownership from stale metadata and does not signal the orphan; the
+service remains unmanaged until an operator independently resolves it.
 
 Host-service integration is a separate, opt-in, host-specific capability and preserves the portable service/facility model rather than replacing it.
 
@@ -289,5 +318,5 @@ SRV-38  system host reconciliation grants the execution account write ownership 
 SRV-39  system host uninstall removes native registration without deleting the POSIX account or authoritative package/service state
 SRV-40  Linux system supervision uses a systemd system unit with an explicit non-root User and direct foreground-provider supervision
 SRV-41  macOS system supervision uses a LaunchDaemon with an explicit non-root UserName and direct foreground-provider supervision
-SRV-42  an unverifiable live runtime PID is never considered a managed service or signaled, even with stop -f; dead legacy records remain removable as stale state
+SRV-42  only the live per-service supervisor's unreaped direct-child relationship authorizes signaling; persisted PIDs never authorize it, and supervisor loss fails closed without signaling an orphan
 ```

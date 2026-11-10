@@ -741,16 +741,25 @@ Provider installation and explicit provider configuration are separate responsib
 For each facility required by a **package consumer**, runtime dependency resolution uses this precedence:
 
 1. an explicit binding for that consumer and facility, when present;
-2. otherwise the configured system facility default, when present;
-3. otherwise deterministic implicit resolution from installed compatible provider concretes.
+2. otherwise an explicit `provider.<facility>` pin in the active process context,
+   when present;
+3. otherwise the configured system facility default, when present;
+4. otherwise deterministic implicit resolution from installed compatible provider concretes.
 
 Implicit resolution is deliberately narrow. If exactly one compatible installed concrete exists for the consumer's applicable platform class, it is selected. If multiple compatible concretes all belong to the same provider package, that package's normal package default may disambiguate them when it resolves to one of those compatible concretes. Otherwise the requirement is ambiguous and resolution fails with the compatible candidates reported.
 
-An explicit binding or facility default is authoritative intent. If it exists but is unavailable, invalid or incompatible, resolution fails rather than silently falling back to another installed provider.
+An explicit consumer binding, context pin or facility default is authoritative
+intent. If the highest-precedence configured selector exists but is unavailable,
+invalid or incompatible, resolution fails rather than silently falling back to
+another installed provider. A context pin is process-local and never changes a
+consumer binding, system facility default or global command publication.
 
 This fallback does not install packages and does not establish persistent provider configuration. Adding another distinct compatible provider may therefore turn an otherwise implicit resolution into an explicit ambiguity instead of silently changing the selected provider.
 
-A consumer binding is mutable independently of package installation and may be changed later. Removing a binding restores the facility default when one is configured, otherwise the deterministic implicit package-consumer rule applies.
+A consumer binding is mutable independently of package installation and may be
+changed later. Removing a binding restores the active context pin when present,
+otherwise the facility default when configured, otherwise the deterministic
+implicit package-consumer rule applies.
 
 Package default and facility default are distinct selections:
 

@@ -38,45 +38,53 @@ For packages, an optional State Instance is encoded in the identity as `<package
 
 ## Bootstrap roots
 
-`m` exports readonly semantic roots:
+`m` exports semantic roots for the process's effective context:
 
 ```text
 m_STATE_DIR=$m_ROOT/state
-m_STATE_SYS_DIR=$m_STATE_DIR/system/current
-m_STATE_USER_DIR=$m_STATE_DIR/user/current
+m_STATE_SYS_DIR=$m_STATE_DIR/system/<effective-profile>
+m_STATE_USER_DIR=$m_STATE_DIR/user/<effective-logical-identity>
 ```
 
-These values are semantic pathnames. Bootstrap does not canonicalize selector targets and does not require the selectors to exist merely to start the technical runtime.
+The active context is process-local and is validated before bootstrap uses it.
+If no explicit context envelope is inherited, the managed baseline is used; the
+bootstrap does not read or mutate the legacy `current` selectors to choose an
+identity. The `state-path` command remains a pure resolver and does not create
+directories.
 
 ## System state
 
-System state is selected through:
+Legacy global system state is selected through:
 
 ```text
 state/system/current -> profile/<profile>
 ```
 
-`current` is operational state managed outside ordinary bootstrap.
+`current` is legacy operational state. Generalized `context` selection uses a
+registered profile identity without changing this selector.
 
-Consumers using system state resolve paths under the semantic `system/current` root. They do not copy the target profile pathname into their own contract.
+Consumers using system state resolve paths under the process's semantic
+`m_STATE_SYS_DIR` root. They do not copy the target profile pathname into their
+own contract.
 
-Changing the system profile is an administrative concern; no ordinary consumer should reconstruct profile selection semantics.
+The installation-managed registry is the authority for selectable system
+profiles and declares exactly one baseline. A directory or symlink alone does
+not make a profile selectable. Changing the legacy system profile remains an
+administrative concern; ordinary consumers use the validated process context.
 
 ## User state
 
 The `user` scope is an `m` namespace, not POSIX account identity.
 
-The only explicit global user binding pathname is:
+The legacy global user binding pathname is:
 
 ```text
 state/user/current
 ```
 
-An explicit binding exists only when that pathname is a symbolic link.
-
-When it is a symlink, `state-path user ...` preserves the semantic `state/user/current` pathname.
-
-When it is not a symlink, the implicit user state root is:
+The legacy selector is recognized only by explicit `context --migrate-legacy`.
+Ordinary `state-path user ...` resolution does not read, follow or mutate it. If
+no context identity is selected, the baseline user state root is:
 
 ```text
 state/user/default
@@ -84,7 +92,12 @@ state/user/default
 
 `default` is not an authenticated principal, not a POSIX user mapping and not a security boundary.
 
-The current `m` state model does not derive user identity from:
+Generalized context supports canonical logical user identities as direct real
+directories under `state/user/`. `default` is the baseline identity. These
+identities are distinct from POSIX accounts and do not grant authority. A
+process resolves its selected identity directly and never changes
+`state/user/current`. The current `m` state model does not derive logical user
+identity from:
 
 ```text
 UID
@@ -243,11 +256,20 @@ so a later system-profile switch is observed without rewriting every installed p
 
 ## Accepted concurrent-context state boundary (future integration)
 
-The existing `state/system/current`, `state/user/current` and package `var/` routes above are the current implemented state model. For a future generalized `context`, independently running managed shells and ordinary child processes **must** be able to select different system-profile and logical user-state identities without changing either global `current` selector. A logical `user` state selection remains separate from authenticated POSIX account authority.
+Independently running managed shells and ordinary child processes select their
+own registered system profile and canonical logical user identity without
+changing either global `current` selector. Logical `user` selection remains
+separate from authenticated POSIX account authority. The one-time explicit
+`context --migrate-legacy` operation may import only validated direct legacy
+selector values; it does not infer identities by directory scanning or change
+the legacy selectors.
 
-The current static, system-scoped package `var/` links cannot express two different per-process system profiles for the same installed concrete. A future profile-aware package launch must use a verified upstream state-path adapter or an already prepared compatible profile-specific execution/state view; otherwise it must reject the incompatible selection **before** launching, without silently following another process's/global profile. No specific universal adapter or per-`context` filesystem regeneration is authorized by this boundary.
+The current static, system-scoped package `var/` links cannot express two different per-process system profiles for the same installed concrete. A profile-aware package launch must use a verified upstream state-path adapter or an already prepared compatible profile-specific execution/state view; otherwise it rejects the incompatible selection **before** launching, without silently following another process's/global profile. Ordinary context activation does not regenerate package views.
 
-This accepted design target does not make the existing `state-path` or package `var/` interfaces profile-aware today. A coordinated bootstrap/state/launcher migration and real consumer verification are required before claiming that behavior.
+The `state-path` resolver and package launcher consume validated context identity.
+Legacy consumers that cannot honor the selected profile fail closed. The
+accepted behavior does not make unsupported upstream packages profile-aware;
+each adapter requires real consumer verification.
 
 ## Git boundary
 
@@ -260,10 +282,10 @@ STATE-01  state/ is the single semantic mutable-state root
 STATE-02  scopes are system and user
 STATE-03  owners are sys, ai and pkg
 STATE-04  identity precedes area
-STATE-05  bootstrap exports unresolved semantic current roots
-STATE-06  bootstrap does not derive user identity from host-id/UID
-STATE-07  only a user/current symlink is an explicit user binding
-STATE-08  absent explicit binding, user state resolves under user/default
+STATE-05  bootstrap exports semantic roots for the effective validated context
+STATE-06  logical user identity is distinct from POSIX account identity
+STATE-07  context selection does not mutate the legacy user/current selector
+STATE-08  absent explicit context selection, user state resolves under user/default
 STATE-09  user binding is not authentication/security identity
 STATE-10  state-path is the canonical public resolver and has no side effects
 STATE-11  package State Instance uses @! in the identity
@@ -274,4 +296,8 @@ STATE-15  an explicitly declared absent var leaf denotes an initially empty dire
 STATE-16  system package provider bindings live at <package-conf>/binding/<facility>, not under .m
 STATE-17  system-hosted package services use system package State Instance equal to service identity rather than mapping POSIX accounts into state/user
 STATE-18  system sys/environment cache owns regenerable global execution-environment snapshots and is never authoritative provider configuration
+STATE-19  selectable system profiles come only from the installation-managed registry and its declared baseline
+STATE-20  logical user identities are canonical direct state/user directories; the identity itself grants no host authority
+STATE-21  context --migrate-legacy imports only validated direct selector values and never scans or changes legacy selectors
+STATE-22  package var paths that cannot honor the effective system profile fail closed before launch
 ```
