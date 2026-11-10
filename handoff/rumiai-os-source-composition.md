@@ -2869,6 +2869,46 @@ are C3 acceptance requirements; C3 remains active until the full matrix passes.
   enforcement, actual provider/nested-consumer scenarios, cross-platform
   evidence, and the remainder of the C3 acceptance matrix above.
 
+### C3 generalized context system-profile slice (2026-11-10)
+
+- The user selected the installation-managed profile inventory already
+  specified in `STATE-MODEL.md` as the authority for selectable identities and
+  baseline. The user also confirmed bare `context` initializes per-account
+  defaults, `context --clear-defaults` explicitly clears them, and defaults
+  belong to each POSIX effective UID under
+  `$m_ROOT/state/<effective-UID>/context/`. These choices are settled; do not
+  ask the user to repeat them.
+- `m-os/codex/c3-generalized-context@1f989d7d` is pushed to its isolated remote
+  branch, based forward-only on `e883b3bc354f738b2d889b4cc0f277a85379e69d`.
+  It adds profile selection/default/preset records to context record v2 while
+  retaining v1 reads; applies the registry baseline for bare context; validates
+  the selected profile before changing shell state; and exports a versioned
+  root/UID/profile/package/classpath-presence envelope for child `m` bootstrap
+  validation. It updates the context manuals, English/Italian diagnostics and
+  public workflow. The global `state/system/current` selector is never changed.
+- Because package `var/` symlinks remain physically bound to `system/current`,
+  package launch rejects a context-selected profile that differs from that
+  selector when the selected concrete declares mutable state. Added a real
+  `pkg_integrate`/launcher regression for a fixture package: launch succeeds
+  under `main`, fails before target execution under `secondary`, and leaves
+  `system/current` unchanged.
+- Local Linux ARM64 exact-source-equivalent replay passed the public context
+  shell/default/profile/envelope body, account-store hostile-input test,
+  registry validator, system-selector security test, real package plus
+  Java/POSIX library integration, and the new mutable-state launcher regression.
+  The new launcher regression's first fixture attempt exposed an executable-bit
+  mismatch; correcting the fixture to the package integration contract made
+  the complete public-path test pass. POSIX `sh -n`, `dash -n` and
+  `git diff --check` pass. Hosted Ubuntu/macOS evidence is not claimed; the
+  `m-os` fork Actions remain disabled.
+- This implements a bounded system-profile slice, not full C3 acceptance.
+  Legacy-selector migration, logical user-state, provider/facility selection
+  and precedence, exact runtime environment, child trust policy, context-owned
+  HOME, CA/service authority, profile-local mutable-state adapters, real
+  catalog-backed consumers and multi-platform evidence remain open. Continue
+  C3 on the pushed branch and preserve fail-closed behavior for unsupported
+  stateful packages.
+
 ### C3 system-selector containment follow-up (2026-11-09)
 
 - Exact pushed branch head is now
