@@ -1,6 +1,6 @@
 # Podman repository adapter
 
-Status: Active — exact-head deterministic fixture passes; public macOS ARM64 installation remains pending
+Status: Active — exact-head deterministic fixture and isolated hosted macOS ARM64 install/default/version/CLI acceptance pass; feature integration remains pending
 Updated: 2026-11-10
 
 ## Goal
@@ -11,6 +11,8 @@ Complete bounded `podman` repository support for the catalog's macOS ARM64 strea
 
 - `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d`
 - `m-os/codex/podman-repository-adapter@4ac43658096b5e484f218190186c477d63b30153` (draft PR #15)
+- `pkg-catalog/codex/gpgtools-arm64-validation@0b5a79f83f78b1818bbd8426f56ef889732e1a48` (isolated hosted macOS runner; run 42785957757 PASS)
+- `pkg-catalog@c8a39f8bd099d65ed8520de574800f220d6119e1` (exact Podman catalog anchor commit; parent is `main@0b69223a5ebe7bc042aad50012ee8bc7e4a00442`)
 - `pkg-catalog/main@0b69223a5ebe7bc042aad50012ee8bc7e4a00442`
 - `rumiai-dev/codex/c2-account-defaults@8f3e3b80` (latest checkpoint at creation)
 
@@ -41,19 +43,19 @@ Refresh remote heads before further work.
 - Exact remote head was fetched into an isolated worktree at `4ac43658096b5e484f218190186c477d63b30153`; catalog `main@0b69223a5ebe7bc042aad50012ee8bc7e4a00442` was freshly fetched.
 - `sh -n` and `git diff --check` passed for the adapter and fixture.
 - The deterministic fake-transport fixture passed at the exact PR head with `PODMAN_FIXTURE_CATALOG` set to the exact catalog checkout: `PASS: Podman release fixtures, stable tag filtering, exact/latest chronology and anchor asset metadata`.
-- No product files were modified during validation.
+- Isolated macOS runner `pkg-catalog/codex/gpgtools-arm64-validation@0b5a79f83f78b1818bbd8426f56ef889732e1a48` checks out exact PR #15 source `4ac43658...` and exact catalog anchor `c8a39f8...`, then exercises the public path. Hosted run [42785957757](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42785957757) passed: the fixture passed; `pkg install podman` selected `podman@v6.1.4!macos-arm64`, ran `podman version 6.1.4`; exact `podman@v6.1.3` install/default ran `podman version 6.1.3`; `pkg versions` listed both concretes. No privileged host operation was used.
+- No Podman product files were modified during validation; only an isolated `pkg-catalog` acceptance workflow was added.
 
 ## Current state
 
 - The fixture covers exact/latest metadata, chronology, unsupported tags, request failures and catalog anchor metadata.
-- GitHub reports no hosted run/status for this PR head. The configured workflow requires actual macOS ARM64 `pkg install`; Linux fixture success is not install acceptance.
-- The adapter is absent from `m-os/master` and remains unsupported on the mainline.
+- `m-os` fork Actions is disabled, so the successful result is not attached as a PR check; the isolated runner validates exact source and catalog revisions.
+- The adapter is absent from `m-os/master` and remains unsupported on the mainline pending normal forward integration and exact integrated-source validation.
 
 ## Next action
 
-Verify exact PR #15 workflow status through the canonical repository. Complete real public installation and CLI checks only on macOS ARM64 through the authorized, nonprivileged path; keep PR #15 draft/unmerged pending that evidence.
+Continue forward-integration planning against current `m-os` master and PR #15. Do not claim Podman adapter support on mainline until the feature is integrated and the resulting exact product revision is validated.
 
 ## Blockers / open questions
 
-- This host is Linux ARM64, not the catalog's macOS ARM64 target.
-- Hosted status and real package installation remain unverified.
+- PR #15 itself has no hosted check because Actions is disabled on the fork; exact-source hosted acceptance was completed via the isolated `pkg-catalog` runner.
