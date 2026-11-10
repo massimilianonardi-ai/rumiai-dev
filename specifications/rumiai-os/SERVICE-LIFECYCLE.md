@@ -287,7 +287,7 @@ SRV-07  caller ownership metadata is lifecycle state, not authentication
 SRV-08  normal stop uses SIGTERM without automatic SIGKILL escalation
 SRV-09  generic readiness is not application health
 SRV-10  systemd/launchd integration is outside the portable baseline
-SRV-11  no permanent internal supervisor daemon is introduced by this contract
+SRV-11  each managed portable service has a private child-owning supervisor; no shared installation-wide service daemon is introduced
 SRV-12  baseline provider-backed service identity equals facility identity and no second service/provider registry exists
 SRV-13  baseline service contract requires package-command start, foreground process behavior and generic SIGTERM stop
 SRV-14  provider-backed start is tied to the exact selected provider concrete and uses its ordinary package command
