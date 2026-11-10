@@ -173,9 +173,15 @@ do not change the active shell context. The account record is versioned,
 strict data and is never sourced or evaluated. This is the selected target
 interface, not a claim that these operations are currently implemented. The
 management option spellings and package/preset selection forms are fixed. The
-complete generalized `key=value` dimension grammar, validated installation
-baseline and runtime migration remain unimplemented and are not inferred by
-the package-only phase.
+complete generalized `key=value` dimension grammar, exact registry wire
+format and runtime migration remain unimplemented and are not inferred by the
+package-only phase. System-profile identity inventory and its baseline are
+authoritative installation-managed data. The installer or installation
+administrator provisions that registry; `m` consumes it read-only and does not
+provide profile-provisioning commands. Only canonical identities listed in a
+validated registry may be selected or imported by migration. A missing or
+invalid registry cannot be replaced by directory scanning or the legacy
+`system/current` target.
 
 ### Child context continuity
 
@@ -268,7 +274,7 @@ The supported first-phase `context` grammar and no-argument reset above remain t
 - Package commands, libraries, provider resolution, mutable state and inherited environment must agree on the effective selected context. If an installed package cannot safely honor the selected profile using an upstream-supported state-path adaptation or an already prepared compatible per-profile view, its launch must fail before it could use another profile's state; it must never silently fall back to the global profile.
 - Host-supervised service profiles and system TLS CA authority are **not** untrusted shell-context selections. Their ownership rules are in `SERVICE-LIFECYCLE.md` and `TLS-TRUST.md`; mutable state routing is governed by `STATE-MODEL.md`.
 
-These are binding design and migration constraints, **not** claims that profile-aware bootstrap, `state-path`, package `var/` routing or trusted child propagation already exist. Existing global-selector consumers remain supported under their current contracts until an explicitly validated transition; unsupported concurrent-profile use must fail closed rather than silently alter global state. The management operation spellings above are selected. The complete generalized operand-dimension grammar, validated installation baseline, persistence wire format and trusted propagation mechanics remain unimplemented; no executable API beyond the documented package-only phase is implied.
+These are binding design and migration constraints, **not** claims that profile-aware bootstrap, `state-path`, package `var/` routing or trusted child propagation already exist. Existing global-selector consumers remain supported under their current contracts until an explicitly validated transition; unsupported concurrent-profile use must fail closed rather than silently alter global state. The management operation spellings above are selected. The installation-managed system-profile registry is authoritative for allowed identities and baseline; installers/administrators provision it and `m` consumes it without a provisioning API. Its exact path/wire format, permission validation, complete operand-dimension grammar, persistence format and trusted propagation mechanics remain unimplemented; no executable API beyond the documented package-only phase is implied.
 
 Future generalized-context behavior is that bare `context` initializes the
 active context from persisted defaults, and an explicit clear operation

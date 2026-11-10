@@ -292,6 +292,21 @@ diagnostic text are implementation details behind the public context API.
 Deployment and multi-account validation remain required before the
 generalized context can claim acceptance.
 
+### System-profile inventory authority
+
+The system-profile identity inventory and its baseline are authoritative
+installation-managed state. The installer or installation administrator
+provisions and updates this registry; `m` is a read-only consumer and exposes
+no profile-provisioning API. A directory or `system/current` selector alone is
+never proof that an identity is managed. A selected or migrated profile must
+be a canonical identity present in a validated registry and must resolve to an
+expected, non-symlink profile directory under the system state subtree. The
+installation-managed registry identifies the baseline profile; an absent or
+invalid registry fails closed instead of guessing `main`, scanning profile
+directories, or trusting the current selector. Exact storage path and wire
+format are implementation details to settle against installer ownership and
+permission rules before runtime integration.
+
 Legacy `system/current` and `user/current` selectors remain available to
 existing consumers during staged migration. New generalized-context
 resolution does not follow them on each access or import arbitrary targets.

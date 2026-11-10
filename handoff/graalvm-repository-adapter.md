@@ -1,6 +1,6 @@
 # GraalVM repository adapter
 
-Status: Active — adapter + GraalVM P4 history index have exact local Linux ARM64 public exact/latest install PASS; hosted cross-platform evidence pending
+Status: Active — exact local Linux ARM64 and hosted Ubuntu x86_64/macOS ARM64 public exact/latest install/provider checks pass; Windows x86_64 hosted validation and integration remain pending
 Updated: 2026-11-10
 
 ## Goal
@@ -14,7 +14,8 @@ Implement the missing `graalvm` repository adapter for the four catalog-declared
 - `m-os/codex/graalvm-repository-adapter@2b26a461dc673c9e4c1990b62aaa8a41ab47a03f` (PR #13)
 - `m-os/codex/p4-graalvm-local-order@d4b4e387c0748599b7389daa7cf75a18b64b42c3` (PR #20, exact validation head)
 - `pkg-catalog/codex/p4-graalvm-version-index@50faddb36f9c3e7c12fa53d46b94dd8098fa857b` (PR #4, exact validation catalog)
-- `rumiai-dev/codex/c2-account-defaults@be4f0fc4f8bc2b92de9485be8d3c6bfc756b86d6`
+- `pkg-catalog/codex/gpgtools-arm64-validation@da3588cbb8e1722a4d033468539d84c21f16c55d` (isolated hosted matrix runner; run 42786725669 attempt 2 PASS 2/2)
+- `rumiai-dev/codex/c2-account-defaults@e9839589d237684241c12381636fd75277715405`
 
 Refresh all remote heads before the next write or validation.
 
@@ -51,7 +52,7 @@ The upstream stable tag families observed are `graal-<version>`, `jdk-<version>`
 - Independent read-only source review found no concrete defect in the current adapter implementation. The workflow was corrected to install latest first and capture its concrete before installing the exact anchor, avoiding installed-current reuse.
 - The work is now published in draft PR #13; PR #20 adds the pinned GraalVM history index needed for installed facility ordering, and catalog PR #4 supplies that index. Fresh `git ls-remote` confirmed all three exact heads before validation.
 - At exact `m-os@d4b4e387c0748599b7389daa7cf75a18b64b42c3` plus `pkg-catalog@50faddb36f9c3e7c12fa53d46b94dd8098fa857b`, the Linux ARM64 isolated clone passed the upstream diagnostic fixture, offline P4 facility-map fixture, exact and unversioned `pkg depend`, public exact-anchor install `graalvm@25.3.4.1` (status 0), and public unversioned stable-latest install (status 0). `pkg versions` showed both `graalvm@25.3.4.1!linux-arm64` and `graalvm@25.5.5.0.3!linux-arm64`; selecting the latter as Java provider made public `./m java -version` report GraalVM CE 25.5.5.0.3. Captured install logs and Java output are under `/m/src/git/chatgpt/tmp/graalvm-public-validation/`.
-- Catalog history synchronization hosted run [42500901707](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42500901707) passed its sync job; this validates the catalog reconciler only, not the m-os public install workflow. GitHub reports no workflow run or status for m-os validation head `d4b4e387...`.
+- Catalog history synchronization hosted run [42500901707](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42500901707) passed its sync job; separately, isolated product-path run [42786725669](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42786725669) attempt 2 passed on Ubuntu x86_64 and macOS ARM64 for exact `m-os@d4b4e387...` plus exact catalog `pkg-catalog@50faddb3...`. Both hosts passed diagnostics, P4 facility-map regression, exact/latest dependency planning, installs, version listings, Java-provider selection and `java -version` output for GraalVM CE 25.5.5.0.3. The first macOS attempt received HTTP 403 from the public latest-release API before install; rerun attempt 2 succeeded. This runner lives in pkg-catalog because m-os fork Actions is disabled; it is not a PR check.
 
 ## Current state
 
@@ -59,10 +60,10 @@ The adapter, manual and workflow are in draft PR #13; the P4 ordering integratio
 
 ## Next action
 
-Keep PRs #13, #20 and catalog #4 draft until the exact-current workflow and cross-platform obligations are reviewed. The local Linux ARM64 public exact/latest path is now complete. Determine an authorized hosted runner for the m-os install workflow (native m-os currently returns no Actions run); do not treat the catalog sync run as product acceptance. Validate declared x86_64/macOS/Windows streams only on matching real hosted targets; do not infer those from ARM64. Then update this handoff and the PR evidence without merging.
+Keep PRs #13, #20 and catalog #4 draft. Exact-source Linux ARM64 local and Ubuntu x86_64/macOS ARM64 hosted public-path acceptance now pass. Validate the declared Windows x86_64 stream on a matching hosted target; do not infer it from POSIX hosts. Then update evidence and plan the forward integration without merging until all applicable gates are met.
 
 ## Blockers / open questions
 
 - Old `vm-` release tags must be mapped consistently with newer `graal-` tags before listing/comparison can claim completeness; fixtures cover the mapping, but per-stream historical API coverage remains bounded.
-- Only Linux ARM64 was exercised locally. Linux x86_64, macOS ARM64 and Windows x86_64 still require matching hosted-platform validation; no hosted m-os install run is available at this checkpoint.
+- Windows x86_64 remains unvalidated. The hosted runs are isolated exact-source acceptance in pkg-catalog, not checks attached to PR #13 because Actions is disabled on m-os.
 - The other missing catalog repository types (`chrome-for-testing`, `gpgtools`, and `podman`) have separate draft m-os PRs #16, #14 and #15; those adapter tasks and their acceptance remain independent.
