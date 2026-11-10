@@ -2934,6 +2934,14 @@ are C3 acceptance requirements; C3 remains active until the full matrix passes.
   entrypoint through canonical authority. Then integrate provider-pin
   precedence and authentic provider/consumer scenarios. Do not invent command
   operands or infer user identities from directories or selectors.
+- A concrete proposal has been sent to the operator for decision; it is not
+  accepted contract: dimensions `system=<profile>`, `user=<identity>`,
+  `pkg=<concrete>`, `provider.<facility>=<selector>`, `locale=<locale>`,
+  `osarch=<id>`, with `full-context=<name>` expansion; logical user names
+  remain distinct from POSIX accounts and use `default` as the baseline; and
+  `context --migrate-legacy` explicitly imports only validated direct legacy
+  selectors. Hold implementation of those public forms until the operator
+  accepts or revises the proposal.
 - The C3 branch remains separate from `master`; no merge/promotion is claimed.
 
 ### C3 registry-reader checkpoint (historical; superseded by the slice above)
