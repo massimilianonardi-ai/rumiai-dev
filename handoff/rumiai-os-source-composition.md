@@ -1,7 +1,7 @@
 # RumiAI OS source composition comparison
 
 Status: Active
-Updated: 2026-11-10
+Updated: 2026-11-11
 
 ## Goal
 
@@ -131,13 +131,13 @@ Scenarios 1 and 2 have initial direct-checkout smoke evidence on Ubuntu and macO
 
 ## Current state
 
-### Accepted context/SRV contracts and integrated candidate evidence (2026-11-10)
+### Accepted context/SRV contracts and integrated candidate evidence (2026-11-11)
 
-- The user adopted the generalized context contract: `system`, logical `user`, exact `pkg`, `provider.<facility>`, `locale`, `osarch`, and named `full-context`; logical identities are direct canonical names under `$m_ROOT/state/user/`, separate from POSIX accounts, with `default` baseline. `context --migrate-legacy` imports only validated direct selectors. Accepted C2 choices remain: defaults are per POSIX account under `$m_ROOT/state/<UID>`, bare `context` initializes them, and `context --clear-defaults` clears them. Canonical specifications are being synchronized on this docs branch.
-- SRV-42 now uses a persistent per-service supervisor that owns its child. Candidate `m-os/codex/srv-persistent-supervisor@d509429...` makes the live parent-child relationship the signal authority; persisted PIDs do not authorize signals and supervisor loss fails closed for orphans.
-- Integrated run [42891477651](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42891477651), runner `pkg-catalog/codex/m-os-context-srv-ci@ac7b322...`, passed 13/13 on its pinned current-master/C3/SRV/P3-test compositions. C3/SRV public suites passed Ubuntu/macOS at tree `6296da51240f12e31c0e1ae327c88658a7ff8baf`; P3/P4 suites used `ec0bddbfdf5b5127c33b0697c02356f7629d6f83`; integrated JSONTestSuite passed both platforms. This does not complete I1.
-- Local exact A1 workflow body at PR #24 head `82b08864...` passed against `ec0bddbf`; local A2/A3 workflow bodies passed on the same disposable integration. Current-session A4 CA/NSS and revocation passed with extracted-only verified `certutil`; Chrome/Chromium was unavailable, so this replay's browser step was pending. Earlier exact-source browser PASS is separate evidence.
-- Continue residual M01–M15, M13 host-user revalidation against the new supervisor, remaining adapters/platform/consumers and I1 before nonprivileged I2. Preserve deferred A1–A4 hosted workflows, privileged exclusions and frozen repositories.
+- The user-approved generalized context contract is promoted in the current specifications and implemented on candidate `m-os/codex/c3-approved-generalized-context@82b08864820ff97f427d442b65841b1c0e03370d`: `system`, logical `user`, exact `pkg`, `provider.<facility>`, `locale`, `osarch`, and named `full-context`; logical identities are canonical names under `$m_ROOT/state/user/`, separate from POSIX accounts, with `default` baseline. `context --migrate-legacy` imports only validated direct selectors. Defaults are per POSIX account under `$m_ROOT/state/<UID>`; bare `context` initializes them, and `context --clear-defaults` clears them. Canonical specifications are updated on this docs branch.
+- SRV-42 uses a persistent per-service supervisor that owns its child. Current candidate is `m-os/codex/srv-persistent-supervisor@a1ae9ac1553393a953495895656992a843664808`; the live parent-child relationship is the signal authority, persisted PIDs do not authorize signals, and supervisor loss fails closed for orphans.
+- Current integrated run [43032458717](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/43032458717), runner `pkg-catalog/codex/m-os-srv-host-user-validation@2eb5775647dcd85855e6c172f071ba18ef4274db`, validates exact C3/SRV heads over `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d`. Public context/supervisor, native supervisor safety/lifecycle and JSONTestSuite suites pass on Ubuntu/macOS; genuine published-provider `srv` and authentic-provider ambiguity/typed-env pass on Ubuntu. Integrated P3/P4 component suites pass on Ubuntu/macOS; the subsequent macOS authentic Electron acquisition is blocked by GitHub API HTTP 403, while Ubuntu completes the authentic provider lane. Exact job IDs and limits are recorded in `handoff/m-autonomous-validation.md`. This does not complete I1.
+- C3/SRV candidates remain unmerged pending final review and forward integration. M13 macOS host-user artifact acquisition also remains pending after the same upstream HTTP 403 class. Keep hosted A1–A4 workflows deferred, privileged exclusions and frozen repositories.
+- Continue residual M01–M15 evidence, current-source host-user retry when upstream acquisition permits, remaining adapters/platform/consumers and I1 before nonprivileged I2.
 
 
 ### Integrated P3/P4/J1 source checkpoint (2026-11-07)
@@ -2642,7 +2642,7 @@ its working schema, migration decisions or validation state here.
 
 **Previous source-extraction next action (completed):** The operator rejected the synthetic test, which was removed forward. The source repositories were populated with actual assets; the initial release/catalog/install composition is now implemented and hosted-validated, as recorded above.
 
-**Current next shared-package boundary:** P3/P4/J1 and V2 runtime are merged on `m-os/master@a78a24bd...`; V2 catalog promotion is on `pkg-catalog/main@164b0644...`. The user-approved C3 and SRV-42 candidates pass scoped exact/integrated hosted suites in run 42891477651 but remain isolated from master. Their design decisions are settled. Continue residual M01–M15 evidence, current-source host-user supervisor validation, distribution and adapter checks, then I1; I2 remains pending. Keep hosted A1–A4 deferred, privileged work excluded and frozen repositories untouched.
+**Current next shared-package boundary:** P3/P4/J1 and V2 runtime are merged on `m-os/master@a78a24bd...`; V2 catalog promotion is on `pkg-catalog/main@40c71c84b2046ccf2150941ddf1d40bf5228c6fb`. The approved C3 and SRV-42 candidates have current scoped/integrated hosted evidence in run 43032458717 and remain unmerged pending final review/integration. P3/P4 suites pass both hosts; macOS authentic Electron acquisition remains upstream-blocked. Continue residual M01–M15 evidence, M13 macOS retry when upstream works, distribution and adapter checks, then I1; I2 remains pending. Keep hosted A1–A4 deferred, privileged work excluded and frozen repositories untouched.
 
 ### Historical next-action material below (superseded)
 
