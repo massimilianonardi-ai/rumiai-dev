@@ -22,6 +22,12 @@ Current remote refs refreshed during the 2026-11-11 continuation:
 - `pkg-catalog/main@40c71c84b2046ccf2150941ddf1d40bf5228c6fb`; GraalVM history PR #4 `pkg-catalog/codex/p4-graalvm-version-index@50faddb36f9c3e7c12fa53d46b94dd8098fa857b`; historical integrated runner `pkg-catalog/codex/m-os-context-srv-ci@d3ea569849ab3c240a189cfc97bcb2197e1b9f87`; current integrated validation runner `pkg-catalog/codex/m-os-srv-host-user-validation@2eb5775647dcd85855e6c172f071ba18ef4274db` and adapter runner `pkg-catalog/codex/m-os-adapter-runner@3cddc00098e9dca032432ff8d9f9c03b2b14cc7e`.
 - `rumiai-os` and `rumiai-tests` remain frozen; their contents were not accessed or executed in this continuation. Old physical evidence remains attached to its exact recorded source.
 
+## 2026-11-11 continuation checkpoint
+
+- Adapter validation runner advanced to `pkg-catalog/codex/m-os-adapter-runner@ba5cca79cd2f1ab4b8b4e9730e5a46e51c20f67b`; the workflow now supports `workflow_dispatch`. YAML and embedded CFT shell parse locally. Hosted run [43096331604](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/43096331604) was observed queued; its jobs have not been inspected or treated as evidence yet.
+- At dispatch, pinned master and adapter #12–#16 source SHAs matched their current remote branch heads. The runner still tests its explicitly pinned prior S composition; it is not a current SRV-42 supervisor test.
+- Local changed-shell syntax validation passes on C3 candidate `82b08864820ff97f427d442b65841b1c0e03370d`. Local SRV supervisor compilation/public test was unavailable because this ARM64 environment has no C compiler. Exact SRV native and lifecycle acceptance remains dependent on hosted runs and later distribution integration.
+
 ## Applicable canonical sources
 
 `rumiai-dev/{README.md,RULES.md,CONSISTENCY-GATE.md,TESTING.md,PHYSICAL-TESTING.md,RUNNER.md}`;
