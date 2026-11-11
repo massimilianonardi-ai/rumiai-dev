@@ -1,6 +1,6 @@
 # Completion orchestration of autonomous m-os
 
-Status: Active — current C3/SRV-42 integrated suites pass on Ubuntu/macOS and P3/P4 component suites pass on both at run 43032458717; macOS authentic provider acquisition remains blocked by upstream HTTP 403; M13 Linux PASS, macOS artifact acquisition blocked; M01–M15/I1 and I2 remain open
+Status: Active — C3/SRV-42 integrated suites and P3/P4 component suites pass on Ubuntu/macOS at run 43032458717; exact adapter composition/manual/syntax and Ubuntu GeoServer/GraalVM lanes pass at run 43035328845; macOS release API acquisition is blocked and Chrome for Testing has an unresolved final version assertion; M01–M15/I1 and I2 remain open
 Updated: 2026-11-11
 
 ### Historical continuation checkpoint (2026-11-08; superseded by the 2026-11-10 checkpoint below)
@@ -19,6 +19,7 @@ Updated: 2026-11-11
 - Local exact A1 workflow body at PR #24 head passed on integrated tree `ec0bddbf`; A2 and A3 workflow bodies also passed locally on that disposable source. A4 CA/NSS/revocation passed on Ubuntu ARM64 using extracted-only verified `certutil`; this session had no Chrome/Chromium, so the browser step stayed pending. Earlier full browser PASS remains separate evidence.
 - Remaining work: full current M01–M15/I1 ledger, macOS P3/P4 and M13 authentic artifact lifecycle retry when upstream acquisition works, product distribution integration, residual adapter/platform/consumer gaps and nonprivileged I2. Do not dispatch hosted A1–A4, run privileged host operations, modify frozen repositories, or infer completion from the historical 13/13 matrix.
 - GraalVM M10 offline-order work is available as stacked draft `m-os` PR #20 (`d4b4e387...`) with catalog history draft PR #4 (`50faddb3...`). The exact P4 regression now passes locally and the catalog sync workflow passed, but no hosted m-os run exists; track detailed evidence in `handoff/m-autonomous-validation.md` and `handoff/graalvm-repository-adapter.md`.
+- **Adapter follow-up:** runner [43035328845](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/43035328845) at exact `pkg-catalog/codex/m-os-adapter-runner@c22e8b1bb62227a922cc30ce89e2104f2aa979b2` now composes current adapter PR #12–#16 heads and passes shell syntax/manual discovery; GeoServer genuine install/WFS service passes on Ubuntu ARM64, and GraalVM exact/latest install/provider paths pass on Ubuntu ARM64/x86_64 with Windows metadata resolution. GeoServer and GraalVM macOS lanes are blocked before product assertions by GitHub Release API HTTP 403. Chrome for Testing's ARM64 lane reaches its final `chromium --version` assertion and fails with captured output hidden; GPGTools/Podman jobs were cancelled. M10 adapter acceptance therefore remains partial; detailed job IDs and next remediation are in `handoff/m-autonomous-validation.md` and `handoff/geoserver-repository-adapter.md`.
 
 ## Goal
 
