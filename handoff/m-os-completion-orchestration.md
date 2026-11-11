@@ -1,22 +1,22 @@
 # Completion orchestration of autonomous m-os
 
-Status: Active — C3/SRV-42 candidates and integrated P3/P4/J1 checks pass hosted run 42891477651; M01–M15/I1 and I2 remain open; A1–A4 hosted workflows and privileged host operations remain excluded
-Updated: 2026-11-10
+Status: Active — historical C3/SRV-42/P3/P4/J1 matrix passed hosted run 42891477651; current SRV-42 host-user revalidation is Linux PASS and macOS upstream artifact-acquisition blocked; M01–M15/I1 and I2 remain open
+Updated: 2026-11-11
 
 ### Historical continuation checkpoint (2026-11-08; superseded by the 2026-11-10 checkpoint below)
 
 - This continuation started from verified `rumiai-dev/main@327ee61bd4065b3832be5b1d7e6be9d275f90cc8`; subsequent checkpoints are pushed forward-only. Detailed GeoServer adapter state is in `handoff/geoserver-repository-adapter.md`, with cross-plan M10/M12 evidence in `handoff/m-autonomous-validation.md`.
 - GeoServer adapter work is now published as draft [m-os PR #12](https://github.com/massimilianonardi-ai/m-os/pull/12), current head `b1e4f040506592f0433e26005741f887266f4462`, based on exact `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d`. It is not merged and no hosted run exists. Local Ubuntu evidence includes genuine 3.0.1 and 3.0.2 installs; 3.0.1 returned HTTP 302 and 3.0.2 served WFS HTTP 200 after explicit provider defaults. The focused workflow is in the PR branch but GitHub does not list it until it reaches the default branch. Keep hosted/platform acceptance open.
 
-### Current continuation checkpoint (2026-11-10)
+### Current continuation checkpoint (2026-11-11)
 
-- Fresh refs verified before this update: `rumiai-dev/main@a0fd46ff70ed75cc56d246159cb0ff110278e990`, `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d`, `pkg-catalog/main@164b06441bef655eca2ac3f44ddee7e5b2c6cf3d`, and `pkg-catalog/codex/m-os-context-srv-ci@ac7b3226426374a7d0545e9efb688caf207b645c`.
+- Fresh refs verified before this update: `rumiai-dev/main@a0fd46ff70ed75cc56d246159cb0ff110278e990`, `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d`, `pkg-catalog/main@40c71c84b2046ccf2150941ddf1d40bf5228c6fb`, integrated runner `pkg-catalog/codex/m-os-context-srv-ci@d3ea569849ab3c240a189cfc97bcb2197e1b9f87` (forward merge of the three Electron version-history additions), and task documentation branch `rumiai-dev/codex/m-os-validation-20261110@2c771ee4cdeb8ef089b2164093dc786891a325e4` before this checkpoint.
 - User decisions are settled: generalized `context` uses the approved dimensions and validated `--migrate-legacy`; account defaults use `$m_ROOT/state/<UID>`; no-argument `context` initializes defaults and `context --clear-defaults` clears them. SRV-42 uses a persistent per-service supervisor that owns the child.
-- Candidate refs: C3 PR #24 `82b08864820ff97f427d442b65841b1c0e03370d` (A1 test correction only; hosted C3 code suites pinned `5f57a7de...`), SRV PR #25 `d509429b0e722c0998ac787de7d74c21456e905b`, P3 fixture PR #26 `e4eb909ecc9c38ea9b99ba5c794b6a1d1a0a0905`. Hosted compositions are `6296da51240f12e31c0e1ae327c88658a7ff8baf` and `ec0bddbfdf5b5127c33b0697c02356f7629d6f83`.
-- Follow-up after that hosted checkpoint: PR #25 is now `c786bbef730c4efb2ff9423f3a43a52fa1688d6b` after CI-trigger updates; no run for that head is visible yet, so M13 current-source host-user revalidation remains open. `SERVICE-LIFECYCLE.md` SRV-11 now states the accepted private child-owning supervisor invariant in `rumiai-dev/codex/m-os-validation-20261110` commit `3dfbd23d`.
+- Candidate refs at historical run 42891477651: C3 PR #24 `82b08864820ff97f427d442b65841b1c0e03370d` (A1 test correction only; hosted C3 code suites pinned `5f57a7de...`), SRV PR #25 `d509429b0e722c0998ac787de7d74c21456e905b`, P3 fixture PR #26 `e4eb909ecc9c38ea9b99ba5c794b6a1d1a0a0905`. Hosted compositions were `6296da51240f12e31c0e1ae327c88658a7ff8baf` and `ec0bddbfdf5b5127c33b0697c02356f7629d6f83`.
+- Follow-up after that hosted checkpoint: current PR #25 head is `a1ae9ac1553393a953495895656992a843664808`; it extracts the genuine host-user acceptance script. GitHub has Actions disabled on the m-os fork. A focused runner `pkg-catalog/codex/m-os-srv-host-user-validation@912c607c0590ec57e7c235d5479f59aba1d7a342` ran the exact m-os head and pinned genuine catalog: [run 43028827059](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/43028827059) has Ubuntu lifecycle **PASS** and macOS 26 ARM64 blocked before lifecycle assertions by upstream GitHub API HTTP 403 acquiring Electron `v44.3.0`. The earlier runner attempt [43028593389](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/43028593389) failed in setup because it tried to create `conf/catalog` as a directory; corrected in runner commit `912c607c`. `SERVICE-LIFECYCLE.md` SRV-11 states the accepted private child-owning supervisor invariant in docs branch commit `3dfbd23d`.
 - Runner [42891477651](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42891477651) at `pkg-catalog@ac7b322...` completed **13/13 PASS**: C3/SRV exact public suites on Ubuntu/macOS, native supervisor lifecycle on both, integrated P3/P4 suites on both, JSONTestSuite on both, and Ubuntu authentic-provider ambiguity/typed-env plus genuine published-provider `srv` lifecycle. Exact job IDs and evidence limits are in `handoff/m-autonomous-validation.md`.
 - Local exact A1 workflow body at PR #24 head passed on integrated tree `ec0bddbf`; A2 and A3 workflow bodies also passed locally on that disposable source. A4 CA/NSS/revocation passed on Ubuntu ARM64 using extracted-only verified `certutil`; this session had no Chrome/Chromium, so the browser step stayed pending. Earlier full browser PASS remains separate evidence.
-- Remaining work: full current M01–M15/I1 ledger, host-user manager revalidation against the new supervisor, product distribution integration, residual adapter/platform/consumer gaps and nonprivileged I2. Do not dispatch hosted A1–A4, run privileged host operations, modify frozen repositories, or infer completion from the 13/13 matrix.
+- Remaining work: full current M01–M15/I1 ledger, macOS host-user retry when upstream artifact acquisition works, product distribution integration, residual adapter/platform/consumer gaps and nonprivileged I2. Do not dispatch hosted A1–A4, run privileged host operations, modify frozen repositories, or infer completion from the 13/13 matrix.
 - GraalVM M10 offline-order work is available as stacked draft `m-os` PR #20 (`d4b4e387...`) with catalog history draft PR #4 (`50faddb3...`). The exact P4 regression now passes locally and the catalog sync workflow passed, but no hosted m-os run exists; track detailed evidence in `handoff/m-autonomous-validation.md` and `handoff/graalvm-repository-adapter.md`.
 
 ## Goal
@@ -539,8 +539,8 @@ P2 [PR #3](https://github.com/massimilianonardi-ai/m-os/pull/3) merged forward t
 
 ## Next action
 
-1. Continue ready nonprivileged M01–M15 work using exact revisions; treat run 42891477651 as scoped candidate evidence, not a full-suite substitute. Keep hosted A1–A4 workflows deferred.
-2. Revalidate `srv host user` against the persistent-supervisor candidate only if the test-owned manager state stays within `/m/src/git/chatgpt`; otherwise keep that host row pending and advance independent gaps.
+1. Continue ready nonprivileged M01–M15 work using exact revisions; treat run 42891477651 as scoped historical candidate evidence, not a full-suite substitute. Keep hosted A1–A4 workflows deferred.
+2. Retry macOS host-user validation against the exact persistent-supervisor candidate when Electron release API access is available; Ubuntu lifecycle now has exact-source hosted PASS. Local host-user positives remain prohibited because the active manager would write outside `/m/src/git/chatgpt`.
 3. Complete I1 when every applicable M01–M15 row has exact evidence or an explicit excluded/deferred owner. Proceed to nonprivileged I2 when ordinary authorized reference-host access is available.
 
 
