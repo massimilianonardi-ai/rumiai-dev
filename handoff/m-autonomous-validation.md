@@ -11,15 +11,15 @@ This is an independently resumable *validation* task, separate from the architec
 
 ## Current repository revisions
 
-Current verified remote HEADs (2026-11-08 continuation):
-- `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d`;
-- `m-os/codex/a4-browser-observation@4b688d87b46a0320448ca4c86485a116760cc1b3` (A4 workflow observation fix; draft PR #11 open/unmerged; hosted A1–A4 dispatch remains deferred);
-- `m-os/m-os-completion-s@15a2c4f96584c07b92088e5530d4ecb09a9477b8` (S1/S2 candidate);
-- `m-os/codex/a2-current-integration@84f436bffe1a79491609fcf3d1f93c2067174d60` (A2 manual candidate; PR #10 draft/unmerged; includes migration no-default restoration and semantic M15 manual corrections);
-- `pkg-catalog/main@0b69223a5ebe7bc042aad50012ee8bc7e4a00442` and `pkg-catalog/m-os-completion-s-ci@835e0806190689a9f824627b3f718e94af8766dc`;
-- `rumiai-dev/main@06c372bd3bda807c1a42f1d2824451a401ad8753` (fresh remote HEAD after forward-only handoff reconciliation; no product runtime change).
-
-`rumiai-os` and `rumiai-tests` remain frozen and were not accessed in this continuation; their previously recorded hashes are not reclassified as fresh remote HEADs. Refresh relevant HEADs and README mandatory source order before each follow-up task. Past physical PASS must retain its exact product revision.
+Current remote refs refreshed during the 2026-11-10 continuation:
+- `rumiai-dev/main@a0fd46ff70ed75cc56d246159cb0ff110278e990`; SRV-11 invariant correction is recorded in task-branch commit `3dfbd23d`.
+- `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d`.
+- C3 PR #24 `m-os/codex/c3-approved-generalized-context@82b08864820ff97f427d442b65841b1c0e03370d` (A1 test expectation correction over C3 implementation `5f57a7de...`).
+- SRV-42 PR #25 `m-os/codex/srv-persistent-supervisor@c786bbef730c4efb2ff9423f3a43a52fa1688d6b`; the latest commit updates validation triggers. Hosted results for this commit have not appeared yet.
+- P3 fixture PR #26 `m-os/codex/p3-pinned-catalog-ci@e4eb909ecc9c38ea9b99ba5c794b6a1d1a0a0905`.
+- GraalVM adapter PR #13 `m-os/codex/graalvm-repository-adapter@2b26a461dc673c9e4c1990b62aaa8a41ab47a03f`; offline-order PR #20 `m-os/codex/p4-graalvm-local-order@d4b4e387c0748599b7389daa7cf75a18b64b42c3` is stacked on it.
+- `pkg-catalog/main@164b06441bef655eca2ac3f44ddee7e5b2c6cf3d`; GraalVM history PR #4 `pkg-catalog/codex/p4-graalvm-version-index@50faddb36f9c3e7c12fa53d46b94dd8098fa857b`; integrated runner `pkg-catalog/codex/m-os-context-srv-ci@ac7b3226426374a7d0545e9efb688caf207b645c`.
+- `rumiai-os` and `rumiai-tests` remain frozen; their contents were not accessed or executed in this continuation. Old physical evidence remains attached to its exact recorded source.
 
 ## Applicable canonical sources
 
@@ -65,6 +65,9 @@ Also inventory current repository adapter set (GitHub, Node.js, Chrome, Chromium
 - Prior physical Ubuntu at `m@a033e509` demonstrated genuine `./m pkg install mk@v0.1.0 jsc@v0.1.0`, catalog discovery, managed Node `v26.8.2`, defaults, and real `./m mk` action plus `./m jsc` JS/CSS compilation and execution of generated JS. This completes only the observed portion of M08.
 - Existing Ubuntu github-hosted core smoke and mk/jsc public installs are PASS on `a033e509`; corresponding latest macOS jobs were **cancelled**, not FAIL/PASS.
 - Historic physical Ubuntu browser HTTPS/CA trust work on `m@47e6055`; separate older Electron NSS test, not transferred to current revision.
+
+- **M10/P4 GraalVM chronology (2026-11-10):** refreshed PR #20 at exact `m-os@d4b4e387` and catalog PR #4 at `pkg-catalog@50faddb3`. The catalog branch carries 59 normalized releases and its sync workflow passed run [42500901707](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42500901707). The exact PR #20 facility-map regression passed locally on Ubuntu auxiliary at d4b4e387, including valid indexed ordering and fail-closed missing/corrupt ordering; expected warnings appeared for deliberately unordered non-GraalVM fixtures. The PR body records exact/latest public install and Java-provider PASS on that same product/catalog pair. No hosted m-os workflow run exists for d4b4e387, so keep hosted/platform evidence pending and do not treat the catalog sync run as product validation.
+- **M13 current supervisor revalidation (2026-11-10):** PR #25 advanced to `c786bbef` with push triggers for current `srv host user` and genuine-provider workflows. The YAML parsed and the shell entrypoints/fixtures passed `sh -n`; `git diff --check` passed. GitHub currently reports no Actions run for c786bbef. Local positive host-user execution remains excluded because the active systemd user manager writes persistent registration/runtime state outside `/m/src/git/chatgpt`. A local native-supervisor build attempt could not proceed because `cc`, `gcc`, `clang`, and `zig` are absent; no host toolchain was installed. M13 remains PENDING.
 
 ## Current state
 
@@ -451,7 +454,7 @@ The operator explicitly authorized **skipping the unexecuted A1–A4 GitHub Acti
 ## Next action
 
 1. Continue the remaining M01–M15 exact-revision ledger on the current integrated candidates; use run 42891477651 only for its pinned product/test trees and host scopes. Do not dispatch hosted A1–A4.
-2. Revalidate unprivileged `srv host user` only if all test-owned manager state can remain within `/m/src/git/chatgpt`; this host uses an active systemd user manager that would write registration/runtime state under the account manager outside the allowed root, so retain M13 local revalidation as pending. Continue independent adapter, manual and consumer gaps.
+2. Retrieve hosted results for the updated SRV-42 PR #25 branch `c786bbef` and revalidate `srv host user` on the exact persistent-supervisor source; no current run is visible. Do not run the host-user manager locally because its registration/runtime writes would escape `/m/src/git/chatgpt`. Continue independent adapter, manual and consumer gaps.
 3. Complete I1 only after each applicable M01–M15 row has current evidence or a specific excluded/deferred owner. Start nonprivileged I2 on ordinary authorized reference hosts only after I1; privileged work remains in its operator TODO.
 
 ## Blockers / open questions
