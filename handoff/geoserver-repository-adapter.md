@@ -1,7 +1,7 @@
 # GeoServer repository adapter
 
-Status: Active — adapter implementation and local public-path acceptance complete; hosted validation and PR review remain open
-Updated: 2026-11-08
+Status: Active — Linux ARM64 hosted acceptance passes on current PR #12 head; macOS artifact acquisition remains blocked upstream, PR review is open
+Updated: 2026-11-11
 
 ## Goal
 
@@ -10,11 +10,11 @@ Implement the catalog-declared GeoServer package repository type and validate ex
 ## Current repository revisions
 
 - `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d`
-- `m-os/codex/geoserver-repository-adapter@b1e4f040506592f0433e26005741f887266f4462` (draft [PR #12](https://github.com/massimilianonardi-ai/m-os/pull/12))
+- `m-os/codex/geoserver-repository-adapter@6595bb10722d596d656327c5ee3d72a13cb106c9` (draft [PR #12](https://github.com/massimilianonardi-ai/m-os/pull/12); latest commit updates its workflow catalog setup only)
 - `pkg-catalog/main@0b69223a5ebe7bc042aad50012ee8bc7e4a00442`
-- `rumiai-dev/main@7eee1f580355e21d6c16f9eeedb57ba99d21a1ad` at this checkpoint
+- `rumiai-dev/codex/m-os-validation-20261110@87e5d36510c9a2efe65e7ef617cff0f83988e9ab` at this checkpoint
 
-Refresh all remote heads before the next write or validation.
+Refresh all remote heads before any later write or validation.
 
 ## Applicable canonical sources
 
@@ -45,17 +45,18 @@ Refresh all remote heads before the next write or validation.
 - GeoServer 3.0.1 served local HTTP 302 and stopped cleanly. On a fresh exact-PR-head 3.0.2 run, missing GeoServer default correctly failed closed (`provider-resolution-failed`); after explicitly selecting Java 21 and GeoServer 3.0.2, six WFS requests returned HTTP 200 and stop succeeded.
 - Independent adapter review found no remaining concrete code defect. The follow-up CI workflow review concern about the single 3.0.1 range anchor was withdrawn after inspection of request/range resolution plus successful public latest install; the workflow asserts installed 3.0.2 explicitly.
 - The task-specific checkpoint and M10/M12 evidence are recorded in `handoff/m-autonomous-validation.md`.
+- **Hosted exact-head acceptance (2026-11-11):** focused runner [run 43035041027](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/43035041027), `pkg-catalog/codex/m-os-adapter-runner@d84c61809f2c3370cecede83e0cc8b8fc8e3a9ea`, checked out exact PR #12 head `6595bb10722d596d656327c5ee3d72a13cb106c9` and catalog `0b69223a5ebe7bc042aad50012ee8bc7e4a00442`. Ubuntu 24.04 ARM64 passed exact/latest dependency resolution, genuine GeoServer 3.0.1 and 3.0.2 installs, and a live WFS GetCapabilities request followed by clean stop. macOS 15 reached exact-version resolution but GitHub API returned HTTP 403 for `geoserver/geoserver` release 3.0.1 before install/service assertions; classify as upstream acquisition block, not product failure or PASS. Adapter syntax/manual smoke composed all five PR heads; that aggregate lane failed on a stale expected PR #14 head and was corrected in runner commit `c22e8b1bb62227a922cc30ce89e2104f2aa979b2`.
 
 ## Current state
 
-PR #12 is draft and unmerged. The workflow is present only on the PR branch; GitHub does not list/dispatch it until it exists on the default branch. No hosted run or formal GitHub review is recorded. All created test worktrees, mirrors, artifacts and logs were cleaned from `/m/src/git/chatgpt/tmp`; unrelated pre-existing files were preserved.
+PR #12 is draft and unmerged. Exact-head hosted Linux ARM64 install/service acceptance now passes through the independent adapter runner; the macOS lane is blocked before product assertions by upstream GitHub API HTTP 403. The PR-owned workflow remains present only on the PR branch, so no formal check attached to PR #12 is recorded. Final PR review and a successful macOS artifact lane remain open. All created test worktrees, mirrors, artifacts and logs remain confined to `/m/src/git/chatgpt/tmp`; unrelated pre-existing files were preserved.
 
 ## Next action
 
-Obtain hosted exact-head evidence for `.github/workflows/m-geoserver-repository.yml` and a formal PR review when GitHub exposes the workflow. Then validate the adapter on supported additional platforms, reconcile any findings forward, and update this handoff plus the M10/M12 evidence ledger. Keep PR #12 unmerged until its required review and hosted gates are resolved.
+Retry macOS exact-head install/service acceptance when the upstream GitHub API is available; then complete final PR review. The Linux ARM64 hosted run closes that platform’s public-path scenario only. Keep PR #12 unmerged until review and required platform gates are resolved.
 
 ## Blockers / open questions
 
-- Hosted workflow visibility/run is pending because the workflow file is new to the default branch; the PR remains draft and is not merged.
-- Only Ubuntu ARM64 has local install/service evidence. Hosted macOS and other supported stream behavior remain unvalidated.
+- The PR-owned workflow is not listed on the default branch; hosted evidence currently comes from the independent exact-head `pkg-catalog` runner.
+- Ubuntu ARM64 has local and hosted install/service evidence. macOS remains acquisition-blocked; other supported stream behavior remains unvalidated.
 - This adapter does not close GeoServer mutable runtime-state migration or the overall M01–M15/I1 acceptance matrix.
