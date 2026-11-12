@@ -3,6 +3,14 @@
 Status: Active — exact local Linux ARM64 and hosted Ubuntu x86_64/macOS ARM64/Windows x86_64 public exact/latest install/provider checks pass; forward integration remains pending
 Updated: 2026-11-10
 
+
+### Fresh integration checkpoint (2026-11-12)
+
+- Fresh remote heads: `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d`, adapter PR #13 branch `2b26a461dc673c9e4c1990b62aaa8a41ab47a03f`, stacked P4 ordering PR #20 branch `d4b4e387c0748599b7389daa7cf75a18b64b42c3`, `pkg-catalog/main@1559223f4e3e6d1764ebbf0b7f136a2dfbefdf3b`, and catalog PR #4 branch `50faddb36f9c3e7c12fa53d46b94dd8098fa857b`.
+- PR #13 remains open/draft and is based on the current `m-os/master`; PR #20 remains open/draft and is stacked on PR #13. Catalog PR #4 remains open/draft but its base is the older `pkg-catalog/main@0b69223a5ebe7bc042aad50012ee8bc7e4a00442`. The four catalog `graalvm` platform streams are still present on current main, while `v1/pkg/graalvm/all/repository/versions` is absent (404); the immutable history index is therefore not yet integrated into current catalog main.
+- The recorded exact-source GraalVM acceptance remains valid only for product `m-os@d4b4e387c0748599b7389daa7cf75a18b64b42c3` and catalog `pkg-catalog@50faddb36f9c3e7c12fa53d46b94dd8098fa857b`: local Linux ARM64 plus hosted Ubuntu x86_64/macOS ARM64 [run 42786725669](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42786725669) and hosted Windows x86_64 [run 42809456571](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42809456571). Catalog history-sync [run 42500901707](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42500901707) passed on catalog PR #4's old base. These do not constitute current-main or rebased-PR acceptance.
+- Current exact-source P3/P4/S1/S2 mainline hosted runs now pass their scoped matrices, but they did not include the unmerged GraalVM adapter/history changes. The remaining independently executable gate is to forward-reconcile catalog PR #4 onto current `main`, validate the history synchronizer against that head, then revalidate the stacked adapter/order candidate against the reconciled catalog and current master. Do not merge the dependent PRs or mark GraalVM integrated before those exact-head checks.
+
 ## Goal
 
 Implement the missing `graalvm` repository adapter for the four catalog-declared platform streams and validate exact/latest resolution plus a genuine public installation.
