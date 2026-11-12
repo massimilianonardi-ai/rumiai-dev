@@ -1,7 +1,21 @@
 # Autonomous m: complete functional validation
 
 Status: Active
-Updated: 2026-11-10
+Updated: 2026-11-12
+
+### Latest continuation checkpoint (2026-11-12)
+
+- Validation target is current `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d` with `pkg-catalog/main@1559223f4e3e6d1764ebbf0b7f136a2dfbefdf3b`. The permanent `rumiai-tests` suite and legacy `rumiai-os` remain frozen and untouched.
+- J1 is integrated on master: standalone `bin/sys/json`, its operational manual and pinned `JSONTestSuite` driver are present. Exact integrated-source hosted run [42401889106](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42401889106) passed 2/2 Ubuntu/macOS on its recorded product revision; exact current master also has the local Linux replay recorded below. Do not label this full M15 acceptance.
+- P3/P4 current-runtime reruns are in progress using the exact current master/catalog pins. P3 runner `1e2d912…` run [43263414785](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/43263414785) passed its provider/install subset 3/3. Other matrices exposed a stale catalog SHA and a detached-checkout `git pull` in the test harness; runner/test-harness correction is underway. P3/P4 integrated-current acceptance remains PENDING until corrected exact-run jobs pass.
+- SRV-42 design is resolved by the user's selection of a persistent process-owning supervisor. `m-os/codex/srv-persistent-supervisor@ffd1ad3ac1e2762144aff0e74c60d23bb979f2cd` built and passed the distribution public supervisor test on four hosted hosts in [run 43100653982](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/43100653982). This proves archive/build/supervisor smoke only; M12/M13 lifecycle coverage and the product candidate remain separate.
+- The user approved the proposed C3 operand grammar and explicit validated `context --migrate-legacy`. A broad C3 candidate exists at `m-os/codex/c3-approved-generalized-context@82b08864820ff97f427d442b65841b1c0e03370d`; code-to-contract review and current acceptance remain active. A1–A4 hosted runs stay deferred; no privileged host action is authorized by this checkpoint.
+
+## Next action
+
+1. Close the current exact-source P3/P4 hosted reruns after correcting only the stale catalog revision/branch handling in their CI harness; retain failures and acquisition issues with exact job-level evidence.
+2. Validate the persistent-supervisor candidate's public portable lifecycle and unprivileged host-user scenarios on the exact candidate, then record separately what remains pending for M12/M13.
+3. Continue the M01–M15 ledger against the frozen exact runtime/catalog set, using disposable worktrees and genuine public paths. Keep hosted A1–A4 deferred and all privileged/reference-host tasks outside this scope.
 
 ### Current continuation checkpoint (2026-11-10, exact-master A1/A2, technical API and M15 manual audit)
 
@@ -479,7 +493,7 @@ The operator explicitly authorized **skipping the unexecuted A1–A4 GitHub Acti
 - From the same exact `m-os/codex/c3-context-account-store@d7309cb5054c93e923f7aba2ed3596e78ea8d13b` disposable copy, replayed the committed `.github/workflows/m-bootstrap-state-public.yml` and `.github/workflows/m-shell-resources-public.yml` `run` bodies unchanged on Linux `7.0.0-42-generic`, ARM64, UID 1000. A1 ended `PASS: real m A1 bootstrap, symlink/PATH, state identity and osarch negative paths`; A2 ended `PASS: real m A2 shell, language, manual, diagnostics`. Both exited 0.
 - The copy's `HOME` and `TMPDIR` were confined beneath `/m/src/git/chatgpt/tmp/m-os-c3-context-testroot`; all generated state was inside that disposable copy and was removed afterward. These results update only local Linux evidence for this exact C3 feature source. They do not execute GitHub Actions or establish macOS, reference-host, or full M01–M05 acceptance. A1–A4 hosted execution remains deferred.
 
-## Next action
+## Historical next action (superseded 2026-11-12)
 
 1. V2 runtime/catalog promotion is complete at `m-os/master@ed5ec60...` and `pkg-catalog/main@0b69223...`; all allowed exact merged-master hosted consumer checks are green.
 2. Continue the uncovered nonprivileged M01–M15 ledger on exact current revisions: M01 path-with-spaces bootstrap and M09 seven user areas plus system service `conf` and no-default restoration now pass locally on A2 candidate `471089bd`; M11 exact-master catalog ambiguity and exact-candidate unconfigured queries pass locally on `a78a24bd` and A2 `471089bd`; M12 provider-start-failure/recovery passes locally on S candidate `15a2c4f...` and its real-provider restart is hosted PASS; M14 real Chromium HTTPS reject/approve/revoke passes locally on the exact runtime with A4 workflow fix on `4b688d8...`; the exact A3 archive block now passes locally on master `a78a24bd`; published first-party shell library and `rssh` consumers now pass on master/catalog heads in the source-composition handoff. Keep all hosted/reference-host statuses pending where not already evidenced. PR #10 head `84f436bf...` contains the migration no-default procedure and M15 manual corrections but remains unmerged because merging would trigger the deferred A2 workflow on master. Continue residual runtime negative-path and platform validation plus the remaining M03/M06–M15 cases. Current local A2 rollback, A3 transfer, A4 CA/NSS and core technical-command checks are recorded above. Do not dispatch deferred A1–A4 hosted workflows.

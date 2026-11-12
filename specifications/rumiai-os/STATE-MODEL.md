@@ -96,6 +96,26 @@ hostname
 
 Physical file permissions remain governed by the host and by responsibility-specific code; the user binding itself is not authentication.
 
+### Logical user identity for generalized context
+
+The approved generalized-context `user=<identity>` dimension names a logical
+state identity distinct from the POSIX account that owns the context
+preferences. Its baseline is `default`; the selected state root is the direct
+child `$m_ROOT/state/user/<identity>`. The identity is one canonical path
+component. Resolution must remain beneath `state/user` and must reject a
+symlink at the selected identity path. This selection does not change or
+follow the global `state/user/current` selector and does not grant access to
+another POSIX account's files. State areas continue to be created lazily by
+their normal consumers beneath the selected logical root.
+
+`context --migrate-legacy` may import the legacy `state/user/current`
+selection only when it is a validated direct relative selector to a canonical
+identity and that identity is not itself a symlink. It does not follow chained
+or arbitrary pathname targets. Existing non-context consumers continue to
+use the legacy selector during the staged migration. The per-account
+preference store remains separate at
+`$m_ROOT/state/<effective-UID>/context/`.
+
 ## Areas
 
 The canonical areas are:

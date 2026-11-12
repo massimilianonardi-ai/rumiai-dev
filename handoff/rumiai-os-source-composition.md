@@ -1,7 +1,15 @@
 # RumiAI OS source composition comparison
 
 Status: Active
-Updated: 2026-11-10
+Updated: 2026-11-12
+
+### Latest continuation checkpoint (2026-11-12)
+
+- Current remote source set: `rumiai-dev/main@a7d5c0ec92289e61845a1d8e9c65d375341d9c5a`, `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d`, and `pkg-catalog/main@1559223f4e3e6d1764ebbf0b7f136a2dfbefdf3b`.
+- The user accepted the complete proposed generalized-context grammar: `system=`, `user=`, `pkg=`, `provider.<facility>=`, `locale=`, `osarch=`, and inline `full-context=`; bare `context` initializes POSIX-account defaults, `context --clear-defaults` clears them, and `context --migrate-legacy` imports only validated direct legacy selectors. The logical `user` identity is distinct from POSIX authority, rooted under `$m_ROOT/state/user/`, and has `default` as baseline. The canonical bootstrap/state/package specifications are updated in this worktree; implementation remains under review.
+- The user selected a persistent supervisor that owns service children for SRV-42. `SERVICE-LIFECYCLE.md` is updated to describe child ownership, authenticated local requests, no adoption/signaling of unverifiable live PIDs, and separation from systemd/launchd. Candidate `m-os/codex/srv-persistent-supervisor@ffd1ad3ac1e2762144aff0e74c60d23bb979f2cd` passed the exact-host distribution build/extract/public-supervisor check 4/4 in [run 43100653982](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/43100653982); full S1/S2 acceptance and integration remain open.
+- P3/P4/J1/V2 are present in current `m-os/master`. P3/P4 exact-current CI reruns are in progress; initial jobs exposed a stale catalog pin in the test harness, and no complete current-source P3/P4 PASS is claimed. J1 is integrated and recorded in the validation handoff.
+- The broad C3 candidate is `m-os/codex/c3-approved-generalized-context@82b08864820ff97f427d442b65841b1c0e03370d`; it is not promoted to master. Continue the contract-to-code review and real acceptance on an isolated branch. Overall M01–M15/I1/I2 remain open; frozen repositories, deferred A1–A4 hosted workflows and privileged work remain untouched.
 
 ## Goal
 
@@ -2634,7 +2642,7 @@ its working schema, migration decisions or validation state here.
 
 **Previous source-extraction next action (completed):** The operator rejected the synthetic test, which was removed forward. The source repositories were populated with actual assets; the initial release/catalog/install composition is now implemented and hosted-validated, as recorded above.
 
-**Current next shared-package boundary:** P3/P4/J1 and V2 runtime are merged on `m-os/master@a78a24bd...` (README-only advance over tested runtime `ed5ec60...`); V2 catalog promotion is complete at `pkg-catalog/main@0b69223...`, and exact merged-master consumers passed. S1 SRV-42 candidate `m-os/m-os-completion-s@15a2c4f...` passes exact integrated hosted validation 6/6 on runner `pkg-catalog@835e080...` (run 42413203723), but PR #4 remains draft/unmerged; see `handoff/m-autonomous-validation.md`. Continue the uncovered nonprivileged M01–M15 ledger. C2 decisions are now coordinated across the current bootstrap/state/package specs; its implemented-source acceptance remains open, so C3 stays gated. Preserve current catalog V1 additions and frozen legacy repositories.
+**Current next action:** complete exact-current P3/P4 reruns after fixing the stale catalog test-harness pin; finish the full review and acceptance of the approved C3 candidate on its isolated branch; and validate the persistent-supervisor candidate's public portable lifecycle and unprivileged user-host paths. Record exact SHAs and job outcomes in the owning handoffs. Do not merge an unreviewed candidate or claim full M01–M15/I1 acceptance. Preserve current catalog additions, frozen legacy repositories, deferred A1–A4 hosted workflows, and the privileged-work exclusion.
 
 ### Historical next-action material below (superseded)
 
@@ -2934,14 +2942,14 @@ are C3 acceptance requirements; C3 remains active until the full matrix passes.
   entrypoint through canonical authority. Then integrate provider-pin
   precedence and authentic provider/consumer scenarios. Do not invent command
   operands or infer user identities from directories or selectors.
-- A concrete proposal has been sent to the operator for decision; it is not
-  accepted contract: dimensions `system=<profile>`, `user=<identity>`,
-  `pkg=<concrete>`, `provider.<facility>=<selector>`, `locale=<locale>`,
-  `osarch=<id>`, with `full-context=<name>` expansion; logical user names
-  remain distinct from POSIX accounts and use `default` as the baseline; and
-  `context --migrate-legacy` explicitly imports only validated direct legacy
-  selectors. Hold implementation of those public forms until the operator
-  accepts or revises the proposal.
+- **Superseded on 2026-11-12:** the operator accepted those proposed
+  dimensions (`system=<profile>`, `user=<identity>`, `pkg=<concrete>`,
+  `provider.<facility>=<selector>`, `locale=<locale>`, `osarch=<id>`, and
+  inline `full-context=<name>`), the `default` logical-user baseline distinct
+  from POSIX accounts, and explicit `context --migrate-legacy` restricted to
+  validated direct selectors. The current canonical specification records the
+  accepted contract; implementation and acceptance continue on the isolated
+  C3 branch.
 - The C3 branch remains separate from `master`; no merge/promotion is claimed.
 
 ### C3 registry-reader checkpoint (historical; superseded by the slice above)

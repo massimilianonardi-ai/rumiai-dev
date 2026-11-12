@@ -1,7 +1,23 @@
 # Completion orchestration of autonomous m-os
 
-Status: Active — P3/P4/J1/V2 promoted; S PR #4 candidate has exact hosted checks but the SRV-42 PID identity/race gate remains open; A1–A4 hosted workflows deferred; C2/C3 and I1 remain open
-Updated: 2026-11-10
+Status: Active — P3/P4/J1/V2 integrated; current-source P3/P4 revalidation and C3/SRV-42 candidate acceptance are active; A1–A4 hosted workflows deferred; M01–M15/I1 remain open
+Updated: 2026-11-12
+
+### Latest continuation checkpoint (2026-11-12)
+
+- Fresh remote heads: `rumiai-dev/main@a7d5c0ec92289e61845a1d8e9c65d375341d9c5a`; `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d`; `pkg-catalog/main@1559223f4e3e6d1764ebbf0b7f136a2dfbefdf3b`. `rumiai-os` and `rumiai-tests` remain frozen and untouched.
+- The user approved the complete proposed C3 grammar and `context --migrate-legacy` semantics. Per-POSIX-account defaults use `$m_ROOT/state/<UID>/context/`; logical users remain separate identities under `$m_ROOT/state/user/`, with `default` as baseline. Current canonical bootstrap/state/package specs are being updated in this forward-only documentation branch. This is a target-contract decision, not an implementation PASS.
+- The user selected a persistent process-owning supervisor for SRV-42. Canonical `SERVICE-LIFECYCLE.md` now describes supervisor-owned child signaling/reaping. Candidate `m-os/codex/srv-persistent-supervisor@ffd1ad3ac1e2762144aff0e74c60d23bb979f2cd` packaged/extracted and passed its public supervisor test on four hosted hosts in [run 43100653982](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/43100653982); this is distribution/SRV smoke evidence, not full M12/M13 acceptance or merge approval.
+- P3 and P4 runtime changes are integrated in current master; the existing hosted suites use older product/catalog pins. Refreshed current-source runner branches are `pkg-catalog/m-os-completion-p3-ci@1e2d91277c18cd3021aef9049d907b176d995e58` and `m-os-completion-p4-ci@3c40ad2c73001c18a5033fb39ab5ff671e971905`, pinning exact current product/catalog. Initial P3 provider subset [run 43263414785](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/43263414785) passed 3/3. Other matrices are running; current P3/P4 failures exposed a stale test-harness catalog pin and detached `git pull`, which is being corrected without weakening assertions. No integrated-current P3/P4 PASS is claimed yet.
+- J1 is already integrated: `bin/sys/json`, its manual and `JSONTestSuite` checks are in master; exact integrated-source hosted run [42401889106](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42401889106) passed Ubuntu/macOS 2/2. Remaining JSON evidence is tracked in the validation handoff.
+- C3 candidate `m-os/codex/c3-approved-generalized-context@82b08864820ff97f427d442b65841b1c0e03370d` contains broad implementation and tests, but code-to-approved-contract review and residual acceptance are still underway. Keep it separate from master until its full review and exact-run gates pass.
+- The current exact-source distribution, runner, and handoff updates do not close the complete M01–M15 matrix, I1, or I2. A1–A4 hosted jobs remain explicitly deferred; privileged host operations remain outside this plan.
+
+## Current next action
+
+1. Finish the exact-current P3/P4 hosted reruns, fix only test-harness pin/checkout defects, and record the exact runtime/catalog/runner revisions and job outcomes.
+2. Complete the C3 code-contract review and implement/test any remaining approved behavior on its isolated feature branch; validate supervisor S1/S2 behavior on the accepted supervisor design without running privileged host operations.
+3. Continue the owning M01–M15 evidence ledger on exact current revisions; then freeze the coherent revision set for I1. Keep I2 pending until I1 passes and ordinary authorized reference-host conditions are available.
 
 ### Latest continuation checkpoint (2026-11-10, C3 system-profile runtime slice)
 
@@ -594,7 +610,7 @@ P2 [PR #3](https://github.com/massimilianonardi-ai/m-os/pull/3) merged forward t
 
 **I1 stays BLOCKED; I2 PENDING.** There is still no coherent promoted P3/P4+V2+C2/C3+standalone J1 product revision, and the M01–M15 owner has not issued a complete exact-revision acceptance run. S1/S2 and R1 published package positive evidence remains separate hosted work; privileged/reference-host permissions remain gated. No I-owned production code, frozen legacy tests or physical host was modified or executed. An additional I-side temporary P3 CI branch could not be created because the available GitHub branch-creation action was blocked; therefore **no new I-side P3 workflow run or PASS is claimed**.
 
-## Next action
+## Historical next action (superseded 2026-11-12)
 
 ### Current continuation order (2026-11-10)
 

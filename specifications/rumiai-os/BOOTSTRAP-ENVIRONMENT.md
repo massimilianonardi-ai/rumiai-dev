@@ -172,9 +172,38 @@ preference dimensions, while preset definition/deletion and default mutation
 do not change the active shell context. The account record is versioned,
 strict data and is never sourced or evaluated. This is the selected target
 interface, not a claim that these operations are currently implemented. The
-management option spellings and package/preset selection forms are fixed. The
-complete generalized `key=value` dimension grammar and runtime migration
-remain unimplemented and are not inferred by the package-only phase.
+management option spellings and package/preset selection forms are fixed.
+The approved activation dimensions are:
+
+```text
+system=<profile>
+user=<logical-user>
+pkg=<exact-package-concrete>
+provider.<facility>=<provider-selector>
+locale=<locale>
+osarch=<supported-osarch>
+full-context=<name>
+```
+
+`system` names a profile in the validated installation-managed inventory;
+`user` names a canonical logical state identity under
+`$m_ROOT/state/user/`, with `default` as its baseline. A logical user is not a
+POSIX account. `pkg` selects an installed exact package concrete;
+`provider.<facility>` pins a compatible provider in the active process;
+`locale` names an installed language resource; and `osarch` names a platform
+supported by the installation. `full-context` expands a saved preset at that
+position in the operand sequence. Operands fold left-to-right: a later value
+replaces the same dimension while other selections remain. The complete
+request is resolved and validated before active shell state or stored defaults
+change.
+
+`context --migrate-legacy` explicitly imports only validated direct legacy
+system and user selector targets into the calling POSIX account's defaults.
+It does not trust arbitrary symlink destinations, follow chained selectors,
+or change the legacy selectors. Invalid selectors or inventory leave both
+defaults and active shell state unchanged. These choices are the approved
+target contract; the runtime migration and generalized dimensions remain
+under implementation and acceptance.
 System-profile inventory and baseline authority is an installation-managed
 registry at `$m_ROOT/state/system/profile/.inventory`. The installer or
 installation administrator provisions and atomically updates it; `m` consumes
