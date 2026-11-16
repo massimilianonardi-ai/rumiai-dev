@@ -227,35 +227,9 @@ scope -> owner -> identity -> area
 
 with package State Instance encoded in the identity when present.
 
-The bootstrap exports semantic roots:
+The bootstrap initializes `m_STATE_DIR=$m_ROOT/state` plus compatibility roots `m_STATE_SYS_DIR=$m_STATE_DIR/system/current` and `m_STATE_USER_DIR=$m_STATE_DIR/user/default`. After core loading, a validated generalized `context` selects real registered `state/system/profile/<profile>` and logical `state/user/<identity>` roots **per process**. The installation profile registry owns the allowed profiles/baseline. Independent shells and nested `m` commands may use different validated profiles without modifying `system/current` or `user/current`.
 
-```text
-m_STATE_DIR=$m_ROOT/state
-m_STATE_SYS_DIR=$m_STATE_DIR/system/current
-m_STATE_USER_DIR=$m_STATE_DIR/user/current
-```
-
-These are semantic pathnames. The bootstrap does not resolve or validate their selector targets merely to start the runtime.
-
-System state uses:
-
-```text
-state/system/current -> profile/<profile>
-```
-
-User state uses one optional explicit global binding:
-
-```text
-state/user/current
-```
-
-Only a symbolic link at `state/user/current` constitutes the explicit binding. Without it, user state resolves under:
-
-```text
-state/user/default/
-```
-
-The `user` scope is an `m` state namespace. It is **not** derived from POSIX UID, account name, host-id or `$HOME`, and it is not itself an authentication/security boundary.
+Legacy global symlinks remain compatibility/migration input and static package `var/` path targets, not concurrent context selectors. Packages with static `var/` that cannot safely follow the selected profile fail before launch. The logical `user` identity remains an `m` namespace, not an authenticated POSIX principal; effective UID separately protects each account's saved context preferences under `state/<uid>/context`.
 
 The public resolver is:
 
@@ -409,7 +383,7 @@ See `MK.md` for the current lifecycle contract.
 
 `srv` belongs to `m` and provides the current portable local service lifecycle baseline.
 
-It does not make `systemd` or `launchd` part of the portable core and does not introduce a generic internal supervisor daemon.
+It does not make `systemd` or `launchd` part of the portable core. Portable local services use a bounded, account-local native **child-owning** helper built/distributed for Linux/macOS; this is not a permanent system-wide supervisor daemon. Native host managers remain separate opt-in adapters.
 
 See `SERVICE-LIFECYCLE.md`.
 
@@ -460,15 +434,15 @@ CURRENT-08   internal libraries are ownership-qualified under lib/sys or lib/ai
 CURRENT-09   state root is $m_ROOT/state
 CURRENT-10   state scopes are system and user
 CURRENT-11   state owner classes are sys, ai and pkg
-CURRENT-12   bootstrap exports semantic, unresolved system/current and user/current roots
-CURRENT-13   user state is not derived from POSIX UID or host-id
-CURRENT-14   absent an explicit user/current symlink, user state resolves under user/default
+CURRENT-12   bootstrap initializes compatibility state roots and validates effective process-local context profile/user selections
+CURRENT-13   logical user state is not derived from UID/host-id; POSIX UID is used separately for context preference ownership
+CURRENT-14   absent saved or explicit logical user selection, managed context uses user/default; legacy user/current is explicit migration input
 CURRENT-15   state-path is the canonical public state resolver
 CURRENT-16   package HOME/state is resolved through state-path
-CURRENT-17   package var routing is static and system-scoped
+CURRENT-17   package var routing stays static/system-scoped; unsupported concurrent-profile launches fail closed
 CURRENT-18   resource root is res and package resources remain package-owned
 CURRENT-19   lang is the current localization facility name
-CURRENT-20   srv host supervision integrations are separate from the portable baseline
+CURRENT-20   native host supervision is separate; portable srv uses a bounded native child-owning helper
 CURRENT-21   POSIX.1-2024 Issue 8 is the platform baseline
 CURRENT-22   Git history and historical evidence remain forward-only and revision-specific
 CURRENT-23   mk owns project development-lifecycle management and orchestration
