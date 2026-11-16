@@ -137,6 +137,8 @@ Mainline repository adapters: `pkg-repository-{artifact,chrome,chromium,github,n
 
 ### A2 — Shell, localization, manuals, diagnostics and command coverage (M04–M05/M15; READY after P0)
 
+**2026-11-16:** A2 PR #10 remains a separate draft with local acceptance; its full hosted workflow has an explicit hold. It is not included in unified candidate #27, and local-only evidence is not retroactive merged acceptance.
+
 - **Target:** `m-os/bin/sys/{shell,lang,lang-set,manual,pager,log}`, `res/sys/{manual,lang}`, relevant shell libraries. Read `LANG-BOOTSTRAP`, `PAGER`, `LIBRARY-INTERFACES`, `DOCUMENTATION-MODEL`, `DIAGNOSTICS` before any code work.
 - **Acceptance:** managed-shell POSIX behavior; library sourcing only by supported identity; locale fallback and invalid language; exact manual topic discovery/paging and missing-topic handling; diagnostic severity/status meaning, no secret leakage; all published functions/commands have matching manuals.
 - **Validation:** real subprocess/shell tests with terminal/host-specific paths where applicable, not only greps of source; M15 inventory records separate negative status and manual checks. A2 owns any changes to shared `shell`/`core` until integrated; C1 does not concurrently edit them. Escalate any proposed public API change.
@@ -149,6 +151,8 @@ Mainline repository adapters: `pkg-repository-{artifact,chrome,chromium,github,n
 
 ### A4 — Managed CA/NSS/browser (M14; READY in disposable host environments)
 
+**2026-11-16:** browser-observation PR #11 is a separate unmerged workflow correction; isolated test observations do not constitute full exact-candidate browser trust/revocation or host privilege acceptance.
+
 - **Target:** `m-os/bin/sys/{tls-ca,tls-nss-sync}`, relevant manuals, `TLS-TRUST`, host adapter specs. Source is `m-os` current HEAD, not historical legacy HEAD.
 - **Acceptance:** test-only CA approval/list/removal, unrelated host/profile trust preserved, NSS projection and idempotence, tamper fail-closed, actual browser rejection -> trusted HTTPS -> revocation/rejection when supported. Do not change host system trust or unrelated user profiles.
 - **Evidence:** isolated real browser+HTTPS execution or marked unavailable host capability; earlier operator Chrome/Chromium PASS is revision-pinned older evidence, not automatic PASS for current revision. A4 does not share mutable CA state with other agents.
@@ -160,6 +164,8 @@ Mainline repository adapters: `pkg-repository-{artifact,chrome,chromium,github,n
 - **Proof:** self-contained real POSIX command testing, including `json --check`, read-only jq-subset extraction and negative cases; named M15 row, manual current. Source-composition owns J1; A2 coordinates manual-discovery impact. Frozen legacy remains untouched.
 
 ### S1 — Positive and negative portable service lifecycle (M12; READY after P0, current v1 accepted path)
+
+**2026-11-16:** initial accepted master retains an SRV-42 unsafe live-PID failure; the new native per-service supervisor exists in draft candidate PR #27 and has scoped hosted PASS, but no merged runtime/distribution acceptance or canonical SRV rewrite yet.
 
 - **Target:** `m-os/bin/sys/srv`, `m-os/lib/sys/sh/pkg/facility/*` service-boundary only under exclusive ownership; `SERVICE-LIFECYCLE` and applicable `PACKAGE-MODEL`. Public installed `electron-web-control`-like real catalog service evidence exists on an earlier exact revision.
 - **Acceptance:** install genuine provider through `./m pkg install`, select system service facility default, `srv start` and observe actual responsive process, stop/idempotent stop; restart/stale PID, mismatched provider/ownership, failure and no takeover of unrelated PID or port.
@@ -198,11 +204,15 @@ Mainline repository adapters: `pkg-repository-{artifact,chrome,chromium,github,n
 
 ### P3 — Version/default/negative provider and uninstall matrix (READY for isolated real evidence; shared pkg changes after P2)
 
+**2026-11-16:** canonical P3 implementation is merged, with exact-master hosted 6/6 plus supporting lifecycle/protection 3/3 and 2/2 PASS at the recorded 2026-11-07 revision. Additional independent PR #23/#26 test changes are not in the candidate and remain separate scoped review.
+
 - **Owner:** validation handoff M07–M11 with `pkg` integrator for any product fix. Target `m-os/lib/sys/sh/pkg/{pkg-versions,pkg-default,pkg-provider,pkg-requirement,pkg-uninstall,pkg-launch}.lib.sh`; `pkg-catalog` real providers; `PACKAGE-MODEL` current paths and manual `pkg`.
 - **Acceptance:** current vs exact concrete, incompatible/no/ambiguous provider, two providers and multiple versions, explicit consumer binding vs system default, typed cmd/env realization and collision rejection, referenced-provider removal protection, state untouched after failed uninstall, clean reinstall, runtime exact environment/command coherence.
 - **Proof:** revise the M07–M11 matrix using real public commands and genuine releases, not just Node/`mk` happy paths. Existing `.github/workflows/m-pkg-provider-lifecycle.yml` is starting evidence, not a new whole-m PASS. Data-only catalog coverage may run during P2; `pkg` code edits must serialize after P2.
 
 ### P4 — Derived installed facility map (G-PKG integration; contract settled, source edit serialized)
+
+**2026-11-16:** P4 map, compatible ordering/default hooks are merged and had 2/2 exact-master hosted acceptance. Candidate GraalVM history/provider ordering extends those accepted paths; do not reopen P4 as unimplemented.
 
 - **Owner:** source-composition handoff for accepted `PACKAGE-MODEL` facility-map behavior, single shared `pkg` integrator for implementation. Target `m-os/lib/sys/sh/pkg/pkg-provider.lib.sh` and installation/uninstall/default hooks only after P2 interface checkpoint.
 - **Acceptance:** `facility/<facility>/<compatibility>/<osarch>/` enumerates all installed validated provider concretes; provider-local compatible `@latest` obeys real version ordering even when the newest package release dropped compatibility; optional default selects exact concrete or that provider's `@latest`, never a cross-provider greatest version. Removing one unreferenced provider updates only its derived membership. The map is derived, not competing authority.
@@ -218,22 +228,25 @@ Mainline repository adapters: `pkg-repository-{artifact,chrome,chromium,github,n
 
 ### C2 — Promote full-context public contract (G-CONTEXT; DESIGN AUDIT COMPLETE, SPECIFICATION GATE OPEN)
 
+**2026-11-16:** C3 draft implementation is now available at pinned `m-os@d04e6d55` and passes scoped real hosted tests; the canonical public syntax/state/authority promotion remains open and must be compared against the candidate, not invented from it.
+
 - **Owner:** `handoff/rumiai-os-source-composition.md`; inspect current `BOOTSTRAP-ENVIRONMENT`, `PACKAGE-MODEL`, `STATE-MODEL`, `LIBRARY-INTERFACES`, `CURRENT-MODEL` and `m-os/lib/sys/sh/context.lib.sh`.
 - **Deliverable:** one noncontradictory, formally promoted public contract for: no-arg managed-shell startup/default vs old reset; one active context replaced until exit; strict left-to-right selection fold with inline named presets; existing package/facility/user/profile dimensions; system/default vs consumer-bound provider selection; exact concrete cmd+env+lib coherence; protected inherited variable ownership/trust, shell/child/nested execution and failure atomicity; no per-call symlink generation. Define what remains intentionally unsupported, rather than inventing Python/Node loader variables or a universal resource API.
 - **Current audit result:** independent source review confirms process-local isolation, fail-closed unsupported `var/`, trusted service registration, separate administrative CA authority, concrete-owned ordinary libraries, and no implicit library dependency graph. It also confirms that bootstrap, `state-path` and provider runtime still directly consume readonly `m_STATE_*` roots and global `current` selectors. Grammar/reset/default behavior, persistent default/preset authority, arbitrary legacy selector migration, child envelope, state-root compatibility and provider override precedence are not settled by current specifications or accepted user decisions. Automatic import of arbitrary `current` symlink targets into a new registry was rejected as an unjustified grant of path authority.
 - **Gate/acceptance:** C2 remains open until these choices are promoted coherently in `BOOTSTRAP-ENVIRONMENT`, `STATE-MODEL` and `PACKAGE-MODEL`, including a safe legacy migration boundary. Preserve current selectors and existing first-phase semantics meanwhile; do not start C3 against a guessed contract. Once promoted, require fresh managed-shell default initialization, overridden provider while another consumer remains pinned, nested child with protected HOME/browser NSS, ambiguous provider failure without environment change, and second `context` replacing the first.
 
-### C3 — Implement generalized context (BLOCKED until C2 + P4)
+### C3 — Generalized-context implementation (EXISTS IN DRAFT CANDIDATE; NOT YET PROMOTED)
 
-- **Future outcome only:** existing `context` shell surface and relevant `pkg` launcher/provider/state/managed-shell consumers implement the **promoted** default/preset/provider/propagation semantics without a second registry or per-call command-view publication. Preserve exact concrete commands plus libraries and atomic failure; support real nested consumers and respective manuals.
-- **Readiness:** only after C2 fixes grammar/trust and P4 has stable facility map + P2/V2 package layout. Then split into coherent ready units according to settled interfaces; do **not** preassign speculative functions or overlapping files.
-- **Acceptance outline:** operator normal no-argument shell, explicit ordered overrides, real provider-sensitive package, shared sh/Java consumer, nested context and negative/permission scenarios on required platforms. No present success claim.
+- **Owner:** source-composition handoff for normative C2; unified candidate [m-os PR #27](https://github.com/massimilianonardi-ai/m-os/pull/27) for exact code. C3 source is implemented on pinned runtime `d04e6d55`, including account defaults/presets, profile/state selectors, provider/command composition and trusted child envelope. This is **not** deployed on master.
+- **Observed acceptance:** [run 42891477651](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42891477651) has 13/13 at its own earlier C3/SRV candidate revision; [run 43717376235](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/43717376235) has 5/5 on the exact unified runtime/catalog pair, including normal real software plus profile/selector fixtures.
+- **Promotion gate:** canonical C2 grammar/default vs legacy reset, UID preference-store vs logical user identity, profile-aware state-path and `var/` compatibility, inherited context trust, CA/NSS and consumer provider semantics must match accepted public behavior. Reconcile affected manuals and validate all normal/negative paths. Passing CI is not the canonical design gate and not full M01–M15/I1.
 
-### V2 — Coordinated v2 promotion (BLOCKED until P1/P2 + applicable P3/P4 + V1)
+### V2 — Coordinated v2 runtime/catalog promotion (COMPLETED IN MASTER)
 
-- **Owner:** pkg-definition handoff and single `m-os` integration writer. Forward reconcile `m-os/pkg-schema-v2` into `m-os/master` and `pkg-catalog/pkg-schema-v2` into `pkg-catalog/main` without rewriting either history; preserve concurrent v1 catalog edits.
-- **Deliverables:** canonical `PACKAGE-MODEL` and bootstrap context wording match *actually promoted* `link/bin` / `link/lib` behavior; command/library manuals and current CI use matching revisions; no manual v1 installations silently invalidated. Check deployment from a clean clone and a real v1 installed-state migration/coexistence path. Publish additional package versions only when actually needed and validated.
-- **Evidence:** full post-merge diff review; real adapter/consumer/test smoke both hosted platforms; no promotion based on old green commits alone. A change in shared `pkg` contracts must return to P1/P2/P4 for reconciliation before merging.
+- **Owner:** pkg-definition handoff and shared runtime/catalog integrator.
+- **Current result:** `m-os/master@ed5ec60e1c6289f93f68ab03e1eb71736aab6051` merged V2 runtime, followed only by README documentation to current master `a78a24bd...`; `pkg-catalog/main@0b69223a5ebe7bc042aad50012ee8bc7e4a00442` merged V2 catalog, later advanced by normal version-history sync to `de8c5605...`.
+- **Exact merged-scope evidence:** hosted V2 [42403134850](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42403134850) 16/16, mixed-schema 2/2, Java/Maven 2/2, mk/jsc 2/2, Node 2/2 and nonprivileged Ollama lifecycle 2/2 (run links in validation/pkg-definition owners). This proves its own pinned versions, not new generalized C3/SRV behavior or whole-plan validation.
+- **Remaining:** preserve V2 exact roots, catalog snapshot, facility map and version-history semantics when integrating the new paired candidate forward; do not repeat unchanged green runs or overwrite other catalog mainline changes.
 
 ### I1 — Combined current technical acceptance and release coherence (BLOCKED until relevant implementation gates)
 
