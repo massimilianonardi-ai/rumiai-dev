@@ -40,30 +40,23 @@ Starting a service requires a configured system facility default for that servic
 
 ## Process model
 
-The baseline service facility contract requires `process = foreground`. The service target remains in foreground from its own perspective and must not self-daemonize in a way that causes `srv` to lose ownership of the managed process. The portable baseline does not require double-fork or an upstream PID-file contract.
+The baseline facility service requires `process = foreground`; upstream processes must not self-daemonize or require their own PID-file contract. Portable `srv start` and `srv stop [-f]` use a **native, child-owning POSIX supervisor helper** for process ownership rather than signaling an arbitrary recorded PID. `srv` resolves a genuine installed facility-service provider through `pkg`; the supervisor creates and retains the direct child process while it runs, and stop requests arrive through an owner-only local control socket. Runtime PID metadata is inspection/recovery state, **never** permission to signal an unrelated PID.
 
-`srv start` is responsible for the generic lifecycle mechanics around the long-running process, including current implementation responsibilities such as serialization of same-service lifecycle operations, stale-runtime cleanup, background launch/logging and publication of runtime metadata.
+The helper is scoped by the installation root and effective POSIX account. Only that account may access its private control socket; logical `m` user-state identity never grants access. Service launch receives the requesting process's bounded data-only environment, not a first-caller global environment or shell-evaluated text. The supervisor keeps a child unreaped through the `waitpid(WNOHANG)`/SIGTERM stop boundary so its PID cannot be reused for an unrelated process during a stop. Normal stop waits a bounded period, never silently escalates to SIGKILL, and remains idempotent if no service is managed. `-f` bypasses only ordinary caller-ownership metadata and does not authorize an unrelated process signal.
 
-`srv stop` is idempotent when no active managed service remains. The normal stop path uses SIGTERM and a finite clean-termination wait. The portable baseline does not automatically escalate to SIGKILL.
+The helper exits after a bounded idle period with no children (currently one minute) and is **not a permanent system-wide daemon**. A crashed supervisor may leave orphaned processes; later operations must fail closed and require explicit operator inspection/cleanup, never reuse an unverified PID record. This baseline needs no systemd, launchd or `/proc`-specific process supervision API. Host-supervised services remain a separate opt-in path.
 
-The `-f` option is an explicit lifecycle override for the caller-ownership check; it is not authentication or a security boundary.
+## Native supervisor distribution and build
+
+The separately built C helper is `native/sys/srv-supervisor.c` and the supported build entrypoint is `./tools/build-srv-supervisor.sh`, producing `libexec/sys/srv-supervisor` for the current host. A checkout must build it before portable service lifecycle use; a distributed `m` installation includes the already compiled helper and does **not** require a compiler merely for bootstrap.
+
+`./tools/package-m-distribution.sh` builds a relocatable host-specific archive under `dist/m-os-<osarch>.tar.gz` with a versioned `M-DISTRIBUTION` manifest recording its source commit and target. The native helper is included as an executable and tested after extract. The supported helper targets are Linux and macOS; the distribution contract may select the appropriate compiled artifact per architecture. A missing helper is a specific explicit `srv` error, not an invitation to fall back to unsafe PID killing. Ordinary C compilation during package **build** is a host-specific implementation capability behind the POSIX baseline, not a new universal runtime dependency.
 
 ## Provider and running-instance identity
 
-A provider-backed service start selects one concrete provider through the package facility/provider model. Selection configuration and running-instance identity are distinct: once started, runtime state belongs to the concrete process/provider instance, not to the mutable selector that happened to choose it.
+Service identity remains facility identity, independently of package/provider selector. A start resolves the configured **system facility default** to one installed concrete with a valid foreground service realization; consumer bindings and mere command-name/PATH discovery do not replace it. Selection intent and running-instance ownership are distinct: changing a provider default does not retarget an already-running child.
 
-Runtime metadata for a provider-backed service must therefore preserve enough concrete identity to keep later stop/inspection tied to the already-running instance. Changing a facility default after start does not retarget that process. A later new start or restart may resolve current provider selection again.
-
-`srv stop <service>` operates on recorded runtime state and must not resolve another provider merely to stop an already-running instance.
-
-A live recorded PID without verifiable process-start identity must not be treated as
-the managed service. Both `start` and `stop` fail without changing that live
-process or its runtime record, including when `stop -f` overrides caller ownership.
-Older records lacking a process-start snapshot can still be cleaned as stale state
-after the recorded PID has exited. The `-f` override never replaces process-identity
-verification. Identity inspection that a host cannot provide must fail closed,
-and a coarse-grained observation must not be presented as proof against process
-recycling within that observation's resolution.
+For an existing portable service, the owning live supervisor and its direct-child relationship are the authority for inspection/stop. A recorded PID with no verifiable live ownership is not a managed service, regardless of `stop -f`. Old/dead metadata may be cleaned only when no unrelated live process can be signaled. A restart is a new provider selection after the prior instance is safely stopped. Generic start survival is not application-specific readiness or health.
 
 ## State
 
@@ -94,8 +87,10 @@ The portable baseline does **not** depend on:
 systemd
 launchd
 /proc-specific supervision APIs
-an internal permanent m supervisor daemon
+a permanent system-wide m supervisor daemon
 ```
+
+It **does** require the separately built, account-local native child-owning supervisor described above.
 
 Host-service integration is a separate, opt-in, host-specific capability and preserves the portable service/facility model rather than replacing it.
 
@@ -219,13 +214,13 @@ Neither system adapter introduces automatic account creation, automatic restart
 policy or dynamic/recycled service identities. Linux `DynamicUser=` is not the
 portable `m` baseline.
 
-## Approved generalized-context host-service profile binding
+## Generalized-context host-service profile binding
 
-For future generalized-context integration, a host-supervised service is a separately trusted consumer: its system profile is fixed by **authorized service registration**, together with its registered service identity, host account and validated provider/concrete selection. Service startup must resolve that trusted registered binding, not inherit or silently follow the current profile of an unrelated interactive shell. Replacing a shell context must not retarget an existing host registration or running service.
+A host-supervised service is a separately trusted consumer: its **system profile is bound at authorized registration**, never inherited from an unrelated interactive shell. Registration and later launches validate the selected profile against the installation inventory. Changing a caller's context or account defaults does not retarget an existing registration or running provider.
 
-Independent concurrent host-service instances of one facility need distinct, authorized, qualified supervisor/service identities and a separate explicit administration contract; existing unqualified `srv <service>` names do not implicitly create those instances. Ordinary context inputs are not host-service authorization.
+User-host registration records the calling real POSIX account and validated selected system profile. Within that registered profile, each later start/restart resolves its current system facility-default intent; it does **not** freeze a provider concrete. System-host registration instead requires pre-existing effective UID 0, a specified pre-existing non-root execution account and a reconciled exact provider concrete. Later start/restart verifies that the registered profile's current facility default still resolves to that concrete and otherwise fails closed pending authorized reinstallation/reconciliation.
 
-This policy is an approved binding for a later coordinated profile-aware integration; it does **not** claim the current host supervisor already persists and consumes the full generalized-context profile identity, or change its existing public CLI. Privileged positive administration/host tests are intentionally deferred outside the current autonomous-completion plan; normal unprivileged host-user lifecycle work remains in scope.
+Ordinary context operands and inherited envelope fields are **never host-admin authority**. No service account is created/modified by `srv`; host managers remain independently authorized. Multiple simultaneous host registrations for one service/facility require a separate, explicit qualified-identity contract and are not invented by unqualified `srv` names. Privileged positive host-system tests remain deliberately deferred to `todo/m-os-operator-privileged-validation.md`.
 
 ## Deferred unless separately specified
 
@@ -258,12 +253,12 @@ SRV-07  caller ownership metadata is lifecycle state, not authentication
 SRV-08  normal stop uses SIGTERM without automatic SIGKILL escalation
 SRV-09  generic readiness is not application health
 SRV-10  systemd/launchd integration is outside the portable baseline
-SRV-11  no permanent internal supervisor daemon is introduced by this contract
+SRV-11  portable srv uses an account-local native child-owning helper that exits when idle, not a permanent global daemon
 SRV-12  baseline provider-backed service identity equals facility identity and no second service/provider registry exists
 SRV-13  baseline service contract requires package-command start, foreground process behavior and generic SIGTERM stop
 SRV-14  provider-backed start is tied to the exact selected provider concrete and uses its ordinary package command
 SRV-15  changing provider selection does not retarget an already-running service instance
-SRV-16  stop uses recorded runtime instance state rather than resolving a new provider
+SRV-16  stop uses verified supervisor direct-child ownership; runtime PID metadata never authorizes signaling
 SRV-17  endpoint, readiness and health are outside the baseline service typed part
 SRV-18  global provider-backed start uses the system facility default and never consumer package bindings
 SRV-19  srv start requires a configured system facility default and valid provider service realization; command naming/PATH lookup never substitutes for provider-backed service discovery
@@ -272,13 +267,13 @@ SRV-21  host user scope denotes the calling POSIX account/login supervisor conte
 SRV-22  user host install persists supervisor registration without starting the current hosted process
 SRV-23  user host stop leaves persistent host integration installed and uninstall removes it
 SRV-24  host managers supervise the provider foreground process directly rather than portable srv start
-SRV-25  each host-managed launch resolves current system facility-default intent; later selector changes do not mutate an already-running host process
+SRV-25  each host-managed launch resolves facility-default intent within its registered system profile; other shell contexts do not retarget it
 SRV-26  user host integration does not automatically enable linger or an automatic restart policy
 SRV-27  system host supervision exposes normalized install, uninstall, start, stop and restart actions behind an explicit administrative boundary
 SRV-28  host user definitions preserve exact relocatable m/srv argv as data and do not reinterpret `m` pathnames as generated shell source
 SRV-29  the systemd user adapter enters m through /bin/sh and serialized argv so arbitrary special-character m paths are not used as the systemd executable pathname
 SRV-30  the launchd user adapter uses a ProgramArguments argv array built through the host plist utility rather than manual XML interpolation
-SRV-31  persistent host definitions do not freeze a concrete provider; the internal foreground runner resolves current facility-default intent at each host start/restart
+SRV-31  user-host definitions pin a profile but not a concrete; system-host registration pins profile, account and reconciled concrete
 SRV-32  host-user registration and supervisor discovery follow the actual calling POSIX account context rather than caller-overridden HOME/XDG roots
 SRV-33  system host mutations require pre-existing effective UID 0 authority and never invoke an internal privilege-escalation mechanism
 SRV-34  system host install requires one explicit pre-existing non-root POSIX execution account and never creates, modifies or removes that account
@@ -289,5 +284,5 @@ SRV-38  system host reconciliation grants the execution account write ownership 
 SRV-39  system host uninstall removes native registration without deleting the POSIX account or authoritative package/service state
 SRV-40  Linux system supervision uses a systemd system unit with an explicit non-root User and direct foreground-provider supervision
 SRV-41  macOS system supervision uses a LaunchDaemon with an explicit non-root UserName and direct foreground-provider supervision
-SRV-42  an unverifiable live runtime PID is never considered a managed service or signaled, even with stop -f; dead legacy records remain removable as stale state
+SRV-42  only a live supervisor-owned direct child may be signaled; unverifiable or orphaned PID records never authorize signaling even with stop -f
 ```
