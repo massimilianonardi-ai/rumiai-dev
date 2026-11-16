@@ -26,6 +26,14 @@ Full functional validation of the autonomous `m` source is independently tracked
 
 ## Current repository revisions
 
+### Unified acceptance candidate checkpoint (2026-11-16; supersedes older source identities below)
+
+- `rumiai-dev/main@a7d5c0ec92289e61845a1d8e9c65d375341d9c5a` preflight; current documentation updates are forward-only.
+- `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d`; proposed [draft consolidated PR #27](https://github.com/massimilianonardi-ai/m-os/pull/27) is `m-os@d04e6d55a40382cf23474f673ed5a5e28d3dd2c7`.
+- `pkg-catalog/main@de8c560533d7e8ddc369a490fbc44bfb49feef67`; paired [draft candidate PR #11](https://github.com/massimilianonardi-ai/pkg-catalog/pull/11) is `pkg-catalog@90f08dc81cd59d0640e082cf219230ada48c7f56`.
+- Current candidate pair has scoped hosted [run 43717376235](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/43717376235) **5/5 PASS** on exactly pinned trees, not an accepted generalized C2/C3 public contract or a merged product.
+- The earlier source inventory is historical and must not override these exact current refs.
+
 ### Fresh continuation checkpoint (2026-11-08; current)
 
 - `rumiai-dev/main@ea5d6259efb14b4527310a37b3cfe92980857619` is the refreshed remote checkpoint before this handoff update; concurrent OUT-09/OUT-11 workflow updates and the latest autonomous-validation evidence are preserved.
@@ -130,6 +138,14 @@ Scenarios 1 and 2 have initial direct-checkout smoke evidence on Ubuntu and macO
 - PoC 073 GitHub Actions run `40081595096`, initial SHA `6325990d`, **Ubuntu PASS**; extended run `40081898644`, SHA `596feac`, **Ubuntu PASS** including source-based package execution, real managed Node.js installation through `pkg`, `--goals`, `--plan`, executable actions, and package-local `--watch` re-entry on changed input. Final comment-only correction `caecb010ce7996d6a16435bb40d078ae9e4d285d`, run `40082091552`, **Ubuntu PASS**. All macOS jobs were still queued when last inspected, not validated. No full published `pkg install mk` test has run because the release repository/asset does not yet exist. Do not relabel queued macOS jobs or a direct `pkg_integrate` scenario as a published package install.
 
 ## Current state
+
+### C2/C3 source consistency review of unified candidate (2026-11-16; CURRENT)
+
+- C3 candidate `m-os@d04e6d55` is now preserved in the coordinated draft [m-os PR #27](https://github.com/massimilianonardi-ai/m-os/pull/27), paired to exact [catalog PR #11](https://github.com/massimilianonardi-ai/pkg-catalog/pull/11). The 5/5 integrated hosted run exercises real GraalVM, GeoServer, GPGTools and context/profile fixtures on Linux/macOS; component C3+SRV earlier run 42891477651 is 13/13 at *different* pinned revisions. Mainline `m-os@a78a24bd` still has only first-phase `context`.
+- **Public API mismatch:** `BOOTSTRAP-ENVIRONMENT.md` currently specifies bare `context` resets package selection, while candidate `m` invokes `context` for per-account defaults at entry and exposes `--clear-defaults`, named presets, profile/user/provider/locale/osarch axes and an inherited envelope. The approved conceptual requirements are not a promoted complete CLI/persistence contract.
+- **State/authority mismatch:** candidate `context` stores per-effective-UID preferences under `$m_ROOT/state/<uid>/context`, selects logical user identity separately, and makes `state-path` profile-aware. Current `STATE-MODEL` still defines semantic global `system/current`/`user/current` selectors and static package `var/` compatibility; verified package-specific state adapters or fail-closed unsupported-path acceptance and real nested child/CA consumers must be reconciled.
+- **Host lifecycle boundary:** candidate supervises processes through a native C child-owning helper, compiled for the distribution and referenced by updated `srv` manual, plus registration-bound host profiles. The current `SERVICE-LIFECYCLE` baseline disallows a permanent global internal daemon and requires explicitly bounded host adapter/projection behavior. Review helper lifetime, artifact/host portability and profile/default semantics before canonical acceptance; privilege-dependent positive host-system behavior is **not** authorized in active scope.
+- No C2 syntax/authority migration is asserted complete and no production merge or final I1/I2 acceptance is claimed. Other adapter/A2/A4/M15 PR deltas remain with their independent owners; do not duplicate their task progress here. All operator-privileged validation remains solely under `todo/m-os-operator-privileged-validation.md`.
 
 ### Integrated P3/P4/J1 source checkpoint (2026-11-07)
 
@@ -2624,49 +2640,16 @@ Older snapshots below are historical; the current repository revisions and integ
 
 ## Next action
 
-**Related specialized pkg-definition work:** The comprehensive
-`pkg-catalog` definition-schema review and any coordinated
-`link/bin` / `link/lib` catalog-runtime migration are independently
-owned by `handoff/pkg-definition-model-review.md`. This source-
-composition handoff retains only that relationship; avoid duplicating
-its working schema, migration decisions or validation state here.
-
-**Previous source-extraction next action (completed):** The operator rejected the synthetic test, which was removed forward. The source repositories were populated with actual assets; the initial release/catalog/install composition is now implemented and hosted-validated, as recorded above.
-
-**Current next shared-package boundary:** P3/P4/J1 and V2 runtime are merged on `m-os/master@a78a24bd...` (README-only advance over tested runtime `ed5ec60...`); V2 catalog promotion is complete at `pkg-catalog/main@0b69223...`, and exact merged-master consumers passed. S1 SRV-42 candidate `m-os/m-os-completion-s@15a2c4f...` now passes exact integrated hosted validation 6/6 on runner `pkg-catalog@835e080...` (run 42413203723), but PR #4 remains draft/unmerged; see `handoff/m-autonomous-validation.md`. Continue the uncovered nonprivileged M01–M15 ledger. C2 source audit is complete but specifications still need the coordinated decisions recorded in the orchestration handoff; keep C3 gated. Preserve current catalog V1 additions and frozen legacy repositories.
-
-### Historical next-action material below (superseded)
-
-The following earlier extraction and implementation instructions are retained as history and must not override the current integrated checkpoint above. P3/P4 are implemented and merged; J1 is integrated; runtime V2 is merged. C2/C3 contract work and remaining M01–M15 evidence remain active.
-
-**Additional context/library work:** Validate the published `m`
-sh/Java library exports on the real hosted workflow and then through
-one real catalog-backed package installation/consumer where an
-actual package definition declares an export. Reconcile any failures
-forward, preserve exact package version binding and coexistence with
-existing command/loader defaults; do not rename or bypass the
-package `cmd/` entrypoints, and do not extend runtime support
-without a verified loader contract. This workstream is independent of facilities.
-
-1. Finish the authorized incremental `context` capability: integrate no-argument initialization with managed shells, derive a coherent effective context with facility/provider selections and exact package runtime env, reconcile system/user/profile defaults and active-context replacement, implement validated protected inheritance and child propagation, and exercise actual installed package/provider and nested launch scenarios. Reuse already-installed command directories; do not introduce per-call symlink generation. The published first-phase shell function is not yet an environment/provider-context implementation. Preserve frozen repositories and real/authentic validation requirements.
-2. Implement the approved facility provider-map contract from `PACKAGE-MODEL.md` in the autonomous `m` repository as an isolated, validated work unit, beginning with derived provider membership and per-provider compatible-latest ordering. Then reconcile revision/platform/global defaults with authoritative state and existing `pkg provider default` without silently changing current public callers. Preserve pkg-owned install/uninstall/alias reconciliation, context-owned PATH and environment composition, and exact concrete cmd/env coherence. The separately proposed package `@latest`/`@default` alias redesign and policy still requires its own resolution; do not conflate generic package latest with facility-compatible provider latest. Validate cases for multiple provider versions, dropped compatibility, ambiguous defaults, user/consumer scopes, changed commands, removal and nested execution. Keep `rumiai-os` and `rumiai-tests` frozen.
-3. J1's standalone POSIX `bin/sys/json` and manual now pass exact PR #6 hosted Ubuntu/macOS acceptance (run 42309469100 at `6fcb2f...`); forward integration into the current accepted source remains pending. After integration, continue analyzing ownership/dependency boundaries for `pkg-analyze`, terminal primitives/menu/vsed/editor, gitman, SSH/rsudo administration, testlab, JavaScript core/UI and Web components. Reuse existing independent projects and package facilities rather than duplicating implementation.
-4. **On hold until explicit user authorization:** any edit or migration to old `rumiai-os`, and any work on `rumiai-tests` (including re-alignment of its permanent suite). Do not treat those holds as validation blockers for independently released packages.
-5. Independently maintain core `m` package adapter completeness under a separate authorized workstream; its adapter gaps should not be mistaken for missing user-installable product packages.
+1. **C2 canonical contract reconciliation (source-composition owner):** review exact `m-os@d04e6d55` public `context` function, `m` bootstrap, `state-path`, package launch/provider/state, service profile registration, manuals and real acceptance traces against current `BOOTSTRAP-ENVIRONMENT`, `STATE-MODEL`, `PACKAGE-MODEL`, `SERVICE-LIFECYCLE`, `TLS-TRUST`, POSIX and library API contracts. Resolve default vs clear, named preset/default persistence under a POSIX account without conflating logical user, exact provider/command/env coherence, fail-closed incompatible `var/`, trusted child propagation and CA/NSS per-profile behavior. Update canonical specs and manuals only when the actual public semantics are justified; do not infer normative contracts merely from candidate code.
+2. **G-SRV integration boundary:** with the validation owner, classify the service-scoped native helper against the no-*permanent global* supervisor principle, build/distribution dependencies and host-user registration profile, then prove exact artifact behavior without operator privilege. Keep system host administration and protected host CA positive tests deferred.
+3. **Controlled candidate integration:** preserve accepted current P2/P3/P4/J1/V2 and the frozen exact candidate. Later necessary corrections are forward-only and require a **new** exact runtime/catalog CI pin. Do not silently pull in superseded PR #21 or untested product surfaces.
+4. **Acceptance:** hand complete nonprivileged public C3/consumer traces and their exact-host outcomes to `handoff/m-autonomous-validation.md` for I1; reference-host I2 needs ordinary authorized conditions. Never claim current first-phase context or the frozen repositories have changed.
 
 ## Blockers / open questions
 
-No blocking architecture decision remains for the independent `mk` release
-or the public `pkg install mk@v0.1.0` path: both are published and verified
-on hosted Ubuntu/macOS. Pending work concerns downstream RumiAI OS composition,
-remaining standalone `m` catalog adapters, permanent test-suite realignment
-and coordinated legacy `mk` removal. A transient HTTP 403 from the upstream
-Node.js GitHub API caused the first macOS live install attempt to fail; its
-second attempt passed. No physical production-host deployment was performed.
+- C3 candidate behavior is ahead of the current canonical first-phase `context` reset and bootstrap state contracts. Exact public operands, defaults/preset storage and profile authority must be promoted coherently before any full-context runtime merge.
+- Existing package `var/` static system/current routing, profile-aware `state-path`, browser CA/NSS and trusted child environment require the agreed fail-closed implementation and actual consumer evidence. A shell variable alone is not sufficient.
+- Per-service native supervisor and host-profile registration need a settled distribution/portability and current `SERVICE-LIFECYCLE` alignment, especially the no-permanent-global-daemon distinction. Unprivileged host-user acceptance is not host-system privileged acceptance.
+- Independent adapter/manual/A2/A4 integration, entire nonprivileged I1 M01–M15 and I2 are not completed by the 5/5 scoped hosted matrix. Do not rerun unchanged prior PASS merely to increase counts.
+- Frozen `rumiai-os`/`rumiai-tests` remain untouched. Operator-privileged paths are excluded from the current task and retained only in `todo/m-os-operator-privileged-validation.md`.
 
-
-### P4 implementation follow-up (2026-11-07)
-
-- P4 work is implemented on draft PR #7, exact current branch head `m-os@3ef1a713fa5bcf31d0ee8b4f5d282ffc253c675d`, based on scoped-accepted P3 `446de83...`; master remains unchanged. It adds the derived facility map, provider-local offline ordering from installed repository snapshots, default projection, stage/backup reconciliation and hooks at install/uninstall/package-default/facility-default mutations. The unit test passes locally on the earlier implementation head; current exact-source hosted integration is the remaining P4 gate.
-- First hosted run 42374443146 failed both hosts at exit 57. A follow-up fixture substitution to PWC failed run 42374829124 at exit 16 because PWC v0.1.4 is compatibility 1. Exact pinned catalog review confirmed Electron Web Control v0.1.4 and v0.1.5 both declare compatibility 2; the test was restored to the authentic Electron releases. Product/test head is now `3ef1a713...`, runner pin commit is `pkg-catalog/m-os-completion-p4-ci@5b6dd71...`; its hosted result has not yet been observed. Treat P4 as PENDING, retain PR #7 draft, and do not integrate while current exact-source evidence is absent.
-- **Current next action:** retrieve the run for runner commit `5b6dd71...`; inspect exact job/step outcomes and fix any source/test defect forward-only. Once both hosted operating systems pass on the same exact source, complete PR review and scoped P4 closeout, then reconcile the deferred V2 `pkg-install.lib.sh`/manual overlap on the composed P2+P3+P4 source while preserving `pkg-schema-v2@2c0df87...` and its `m-rsudo@v0.1.2` descriptor. C2 syntax/migration decisions remain open and C3 remains gated; J1 integration and final M01–M15 acceptance remain separate.
