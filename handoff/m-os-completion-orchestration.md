@@ -22,6 +22,13 @@ No duplicate normative specification or separate product architecture is establi
 
 ## Current repository revisions
 
+**Fresh candidate checkpoint (2026-11-16; authoritative for this work unit):**
+- `rumiai-dev/main@a7d5c0ec92289e61845a1d8e9c65d375341d9c5a` at preflight; the handoff update will advance this repository forward-only.
+- `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d` (accepted P2/P3/P4/J1/V2); the isolated exact candidate is `m-os/codex/m-os-unified-acceptance-candidate@d04e6d55a40382cf23474f673ed5a5e28d3dd2c7` and [draft PR #27](https://github.com/massimilianonardi-ai/m-os/pull/27).
+- `pkg-catalog/main@de8c560533d7e8ddc369a490fbc44bfb49feef67`; paired candidate `pkg-catalog/codex/pkg-catalog-unified-acceptance-candidate@90f08dc81cd59d0640e082cf219230ada48c7f56` and [draft PR #11](https://github.com/massimilianonardi-ai/pkg-catalog/pull/11).
+- These are **one pinned runtime/catalog candidate pair**, not mainline promotion. [Integrated run 43717376235](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/43717376235) 5/5 PASS on the exact pair. Earlier [run 42891477651](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42891477651) 13/13 PASS pins distinct C3/SRV revisions and is supplementary evidence only.
+- Frozen `rumiai-os/main@6a4b1023147331da91a737135a33398fc7c58c26` and `rumiai-tests/main@906d9890d5a408753631b33c7f411f5e5cb60b37` were HEAD-fingerprinted only, not modified or executed. The older revision inventory below is historical evidence, not the active source pair.
+
 Verified remote starting point:
 - `rumiai-dev/main@ea5d6259efb14b4527310a37b3cfe92980857619` is the verified remote preflight before this checkpoint; it includes the latest autonomous-validation evidence and preserves concurrent OUT-09/OUT-11 updates. Do not overwrite that work.
 - `m-os/master@a78a24bd37446ac9b7d510af5facc5c110de595d`; PR #9 updates only README after tested runtime `ed5ec60...`. P3 PR #5 merged as `6db5531...`; J1 PR #6 merged as `1df35f70...`; V2 runtime PR #8 merged as `ed5ec60...`.
@@ -47,16 +54,15 @@ User-intent evidence was previously reviewed from `chats/m-os/` archives, notabl
 
 ## Sufficiency gate / limits
 
-**Verdict for the complete general-context + m-os program: Specifiche insufficienti.** The current `m-os` public baseline and many M01–M15 tasks have sufficient settled contracts for bounded unit-level planning. This is a **detailed conditional execution sequence**, not a claim that every future unit is ready to code or that its full-context public grammar is already approved.
+**Current verdict (2026-11-16):** The accepted P2/P3/P4/J1/V2 runtime and catalog paths are integrated in mainline with authentic exact-source hosted evidence. The broader autonomous `m-os` plan is **not complete**. A combined C3/SRV/adapter candidate is now pinned in two draft review PRs but fails the canonical-contract promotion gate and has incomplete whole-plan acceptance.
 
-**Already settled:** core/optional-package responsibility principle; POSIX bootstrap independent of Node/`mk`; real public `pkg install` and genuine artifacts; actual `srv` positive paths; v2 `link/bin` as uniform entrypoint and `link/lib/{sh,java}` library views; existing `v1` retained; no v2 resource exports (deferred); package-store existing protection retained; `rumiai-validate` target unchanged; forward-only migration; no synthetic substitute for a claimed real end-to-end result.
+**G-CONTEXT — BLOCKING C3 PROMOTION, NOT SOURCE REVIEW:** current `BOOTSTRAP-ENVIRONMENT.md` still specifies bare `context` as package-selection reset and explicitly marks generalized syntax as future. The candidate instead initializes account defaults automatically and exposes `--clear-defaults`, profiles, presets and provider/child selection. Reconcile public grammar/default/clear/migration, state-path/readonly bootstrap invariants, inherited envelope authority, package `var/` fail-closed adaptations and trusted CA/NSS consumers in canonical sources before considering merge.
 
-**Material contract gates:**
-- **G-CONTEXT:** `BOOTSTRAP-ENVIRONMENT.md` currently specifies only shell-local exact `pkg=` and no-argument **reset**. Ordered selection/preset composition and no-argument default initialization were design proposals, not approved public behavior. The approved boundaries are listed in the C2 audit below; public grammar, defaults/reset migration, preset authority/storage, trusted child propagation, library consumer binding, state-root migration and provider precedence remain open. Do not implement an invented API.
-- **G-PKG:** P2 is accepted and implemented on merged master; P3/P4/J1 and V2 runtime/catalog promotions are also complete on their recorded revisions. Preserve the current upfront full-request, single-catalog-snapshot, exact-root dependency-first rule in `PACKAGE-MODEL.md`. Do not reopen completed milestones or assume their scoped PASS closes whole-plan validation. Transparent ordinary-library consumer dependencies cannot be silently recast as facility dependencies.
-- **G-ACCESS:** Only ordinary, nonprivileged authorized reference-host access remains a practical evidence condition. Operator-privileged remote SSH/sudo, system-supervisor, protected-host CA and privileged physical work is excluded from this plan and deferred to `todo/m-os-operator-privileged-validation.md`; its unexecuted status is not a gate for the active nonprivileged completion scope.
+**G-SRV — BLOCKING PORTABLE SERVICE PROMOTION:** the candidate introduces a native per-service child-owning supervisor and distribution-builder path. Review this against `SERVICE-LIFECYCLE.md` (portable baseline, SRV-11, SRV-42, host registration and pinned profile behavior), `POSIX-PORTABILITY-LAYER.md` and actual distribution packaging. Distinguish an idle-expiring service-scoped helper from a permanent global daemon; require actual native distribution/package validation and nonprivileged host acceptance.
 
-**Scope excluded from `m-os` core completion:** all operator-privileged acceptance/host administration (separate TODO); finishing all separate APISIX/Keycloak administration features; migrating or editing frozen legacy product/suite; v3 resource descriptors; hardening package-store permissions; changing formal `rumiai-validate` target; adding all optional legacy commands indiscriminately. These remain their existing owners' tasks, and do not block core acceptance solely by being incomplete.
+**G-EXACT:** a passing hosted fixture, source-level shell check or old PR-specific run is not final M01–M15/I1 or physical I2 acceptance. Exact candidate needs proportionate post-reconciliation checks, compatible manuals and the complete nonprivileged ledger.
+
+**Excluded:** operator-privileged remote SSH/sudo, protected-host CA changes, positive host-system supervisor administration and privileged physical/setuid installation; these remain only in `todo/m-os-operator-privileged-validation.md`. Frozen legacy `rumiai-os` and `rumiai-tests` are not writable/executable without separate explicit authorization. Unrelated APISIX/Keycloak administration, package-store redesign and speculative resource schema extensions are not added to the core scope.
 
 ## Acceptance scenarios and completion definition
 
@@ -71,25 +77,22 @@ User-intent evidence was previously reviewed from `chats/m-os/` archives, notabl
 ## Parallel execution graph
 
 ```text
-P0 authoritative source/target inventory
- ├─ A1 bootstrap/state ─ A2 manual/shell ─ A3 network/extract ─ A4 TLS/NSS
- ├─ J1 standalone json completeness (source-composition owner)
- ├─ S1 portable srv ─ S2 unprivileged host-user supervision
- ├─ R1 core/term/rsudo independent-package boundaries (local, nonprivileged)
- ├─ P1 pkg install canonical mismatch ─ P2 dependency/install/extract implementation
- │                                     ├─ P3 provider/version/default/uninstall reality
- │                                     └─ P4 installed facility derived-map integration
- ├─ V1 v1/v2 real adapter/library/Java coverage (independent catalog-side checks)
- │      └─ V2 runtime/catalog coordinated promotion (after P2 + P3/P4 as affected)
- └─ C1 accepted exact-package context tests (current contract)
-        └─ C2 full-context contract gate ─ C3 full-context implementation (after P4)
-A*, J1, S*, R*, and non-conflicting V1 / C1 evidence can run concurrently.
-P1/P2/P3/P4, V2 and C3 that edit common m-os pkg/context files are serial or
-coordinated by a single writer. Final I1 integration checks -> I2 nonprivileged physical evidence.
-Privileged operator validation is outside this DAG: `todo/m-os-operator-privileged-validation.md`.
+Accepted mainline P2 + P3 + P4 + J1 + V2
+           |
+           +--> pinned paired runtime/catalog candidate (PR m-os #27 + catalog #11)
+                     |
+                     +--> G-CONTEXT public grammar/state/authority/spec realignment
+                     +--> G-SRV per-service supervisor, native distribution and host contract review
+                     +--> missing independent PR deltas / authentic install inventory
+                     |
+                     +--> exact revised candidate + proportionate hosted public paths
+                                   |
+                                   +--> nonprivileged I1 M01–M15 full ledger
+                                            |
+                                            +--> nonprivileged I2 reference hosts when accessible
 ```
 
-A work unit is *functionally independent* only if it does not consume an unsettled upstream interface; it is *operationally independent* only if it does not write the same files, mutable catalog branch, package releases, host service or provider state. Shared `m-os` tree writes require one branch/file integration owner; distinct files alone are not permission to change shared public semantics in parallel.
+The pinned candidate is reviewable today; neither draft is a production/mainline merge authorization. Work requiring the operator's privileges is outside the active graph and separately deferred. If the candidate or current mainline advances, refresh both repository HEADs, recompose forward-only and repin tests before claiming acceptance.
 
 ## Detailed units: settled/current-contract work
 
@@ -246,17 +249,21 @@ Mainline repository adapters: `pkg-repository-{artifact,chrome,chromium,github,n
 
 ## Parallel dispatch order and conflict policy
 
-**Wave 0, immediate and planning-only authorization:** P0, P1's authoritative conflict review, C2's contract comparison, J1's source/manual inventory, V1's missing-run inventory and R1's package-path analysis can begin together. None needs a new public interface or privileged host.
-
-**Wave 1, after explicit product/CI authorization where applicable:** A1/A2/A3/A4, S1, J1 implementation (only after J1 boundary check), R1 nonprivileged remediation, V1 real published-artifact tests and C1 real package-context checks can proceed concurrently **only with disjoint files/state**. If A1 and A2 both need `core`, one integrator serializes their changes. P2 owns all `pkg` install/extract files; do not race P3/P4/V1 changes there.
-
-**Wave 2, serial shared-pkg integration:** P1 -> P2 -> P3/P4 interface reconciliations -> V2, with P3 and P4 test-data analysis performed in advance. Rebase/re-read forward whenever a shared HEAD advances; preserve other actor commits. C3 waits for C2 plus P4 and accepted v2 runtime views.
-
-**Wave 3, final:** I1 revision-specific integrated **nonprivileged** evidence -> I2 accessible nonprivileged reference-host checks -> close the active task only if its applicable M01–M15 and generalized-context acceptance pass. Operator-privileged tasks are excluded from scheduling, delegation and closure gates; they are deferred in `todo/m-os-operator-privileged-validation.md`.
-
-**Executor protocol:** each independent chat receives (i) local unit ID from this handoff, (ii) owner handoff, (iii) source/branch checkpoint to freshly verify, (iv) exact writable files/branch and prohibited shared surfaces, (v) public expected tests + manual updates, (vi) expected upstream output and integration handoff. Every executor follows fresh HEAD preflight, no history by default, current source authority, proportional real tests, reviewed diff, forward-only updates and consistency gate. When an interface or host/privilege contract is unsettled, stop only that affected unit and escalate; do not freeze independent ready work.
+1. **Single coordinated review ownership:** hold the exact linked candidate branches (`m-os@d04e6d55`, `pkg-catalog@90f08dc8`) for acceptance review. Do not rewrite or force-push the historical validated commits; track any necessary forward candidate corrections under a new SHA and revalidate the changed behavior.
+2. **Independent gating lanes:** C2 owner reconciles generalized context/State/CA public contracts; S owner reconciles the native per-service supervisor/distribution contract; adapter and A2/A4/M15 owners inspect deltas and accepted test scopes without writing shared source surfaces concurrently.
+3. **One integrator, no blind PR sweeping:** compare by exact tree/blob, source contract, host relevance and real evidence. Exclude superseded, privilege-gated and insufficiently validated PRs. Reconcile A2/A4 and manuals only when the owning hosted workflow hold and integration checks permit it.
+4. **Final acceptance:** validate one pinned resolved runtime+catalog+release set in actual public M01–M15 paths, then unprivileged I2 reference-host confirmation under normal access. Preserve green earlier evidence without relabelling its revision; report unexecutable tests as PENDING. No privileged job enters this sequence.
 
 ## Current state
+
+### Unified candidate consolidation and canonical review (2026-11-16; CURRENT)
+
+- **Published pinned draft review pair:** [m-os PR #27](https://github.com/massimilianonardi-ai/m-os/pull/27) at `d04e6d55a40382cf23474f673ed5a5e28d3dd2c7`, [pkg-catalog PR #11](https://github.com/massimilianonardi-ai/pkg-catalog/pull/11) at `90f08dc81cd59d0640e082cf219230ada48c7f56`. The product side is 103 commits/133 paths ahead of `master@a78a24bd`; catalog is 6 commits/7 paths ahead of `main@de8c5605`, zero behind on either.
+- **Current actual integrated evidence:** [run 43717376235](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/43717376235) completed **5/5** (Linux x86_64/ARM64 and macOS ARM64 GraalVM Java plus context/facility/adapter fixtures, real GeoServer WFS and `srv host user` on Ubuntu ARM64, real GPGTools macOS); exact workflow checks pin runtime `d04e6d55`, catalog `90f08dc8` and mainline `de8c5605`. The earlier [C3+SRV run 42891477651](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42891477651) **13/13** is separate exact-source branch evidence, not final candidate 13/13.
+- **Included PR ancestry:** m-os #4/#13/#14/#15/#20/#24/#25 heads are ancestors of the final candidate; GeoServer #12 code/manual blobs exactly match candidate but #12 PR branch and original workflow are not an ancestor/included. Accepted mainline P2/P3/P4/J1/V2 already precedes the pair.
+- **Not integrated/exact-head accepted in this pair:** A2 #10, browser A4 #11, malformed catalog #17, manuals #18/#22, hosted failure-start #19, selector workflows #23/#26; examine each independently rather than implicitly mark done. Old context #21 is superseded. Chrome-for-Testing #16 requires setuid-root for public install and is operator-privilege gated. Podman #15 source/fixture is present, but **current-catalog live install is PENDING after upstream HTTP 403**, not PASS from the fixture/old separate matrix.
+- **Canonical blockers found by actual source/spec comparison:** C3 bare `context` defaults and `--clear-defaults` conflict with the current initial no-arg reset contract; effective-UID account preferences, context-aware `state-path` and package `var/` semantics are not fully promoted. Native per-service supervisor/distribution and service profile pinning must be reconciled with the current `SRV` invariants. These are **review gates**, not permission to replace canonical contracts by a PR description. A1–A4 hosted workflow hold remains; full nonprivileged I1 and physical I2 are unproven.
+- **Privilege boundary intact:** only nonprivileged hosted local/user supervisor/CA fixtures are in scope; deferred operator-privileged work remains exclusively in `todo/m-os-operator-privileged-validation.md`. Neither master branch nor frozen legacy repositories was modified by this consolidation.
 
 ### S1 current-master SRV-42 correction (2026-11-07)
 
@@ -528,26 +535,16 @@ P2 [PR #3](https://github.com/massimilianonardi-ai/m-os/pull/3) merged forward t
 
 ## Next action
 
-### Continuation checkpoint (superseded by latest integrated-source checkpoint above)
-
-The active scope is the accepted **nonprivileged** m-os completion plan. Exact local replays establish A3/M06 and the NSS portion of A4/M14 at `m-os@6e720be...` on this Ubuntu ARM64 host; the A4 browser phase remains pending. J1 now has exact-source hosted Ubuntu/macOS 2/2 PASS at PR #6 `6fcb2f...` (run 42309469100). Current remote P3 PR #5 is `b6f69d...`: its exact-source pinned-selector and genuine provider-version jobs pass on both hosts, but the ambiguity job fails before assertions because its test passes a concrete package version to `state-path`; typed-env was cancelled. Local test correction `m-os-p3-env-review@7cc3e303...` uses package identity for state/binding paths and concrete identity for dependency operations, but has no hosted or end-to-end acceptance yet. Local rootless authentic install is still blocked by unmapped archive ownership. No P3 completion is claimed. `pkg-catalog/pkg-schema-v2` advanced to `2c0df87...` with only immutable m-rsudo v0.1.2 definition relative to the previously inspected V2 head.
-
-Historical ordered next work at that checkpoint (superseded):
-
-P3/P4 and J1 have since merged and passed exact-master runners; runtime V2 has merged as `m-os/master@ed5ec60...`. Current next actions are: (1) finish the exact merged-master V2 catalog consumer runs now underway; (2) continue nonprivileged A2/M15 and contract-ready C2 work, then gate C3 on the completed contract; (3) freeze the integrated revision for I1's nonprivileged M01–M15 ledger, then I2 when ordinary reference-host conditions are available. Privileged operator work remains solely in `todo/m-os-operator-privileged-validation.md`.
-
-The numbered legacy sequence that follows is retained for history only; do not execute its P3/P4/J1 open tasks.
-
-1. **P2 accepted; P3 must close before P4 shared writer handoff.** P2's exact merged `m-os/master@a08f473...` [run 42197729661](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42197729661) remains Ubuntu/macOS 2/2 PASS on all four recorded groups. Current PR #5 `b6f69d...` exact-source [run 42309471324](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/42309471324) has pinned-selector and genuine provider-version jobs PASS on Ubuntu/macOS, but the authentic-ambiguity test fails before assertions because it passes a concrete version where `state-path` requires a package identity; typed-env was cancelled. Local test correction is `m-os-p3-env-review@7cc3e303...`, syntax/state-path checked but not hosted or end-to-end validated. Continue exact-current ambiguity/typed-env and remaining P3 negative/failure-state cases before handing the serialized writer to P4. P4 owner (`handoff/rumiai-os-source-composition.md`) then implements and validates the canonical derived facility map. Do not conflate deferred GeoServer adapter work with P2 acceptance; older P3 HTTP 504 observations remain scoped to their own runs.
-2. Preserve at exact feature/release revisions the **14/14 V1/V2 hosted matrix**, the independent Java/mk-jsc 2/2 runs and the newly verified **R1 released v0.1.1 public install/selected consumer 2/2 PASS**; do not rerun unchanged green cases. The R1 owner retains local, nonprivileged interactive/negative/consumer checks; privileged remote R2 is deferred, while the C owner retains the separately failed macOS v0.1.0→v0.1.1 acquisition/version-switch scenario. S retains local-provider/unprivileged host-user evidence; privileged host-system work is deferred.
-3. After P3/P4 acceptance, coordinate forward-only V2 runtime/catalog integration without reverting P2 exact-root/snapshot behavior or concurrent catalog v1 indices. J1 exact-source hosted Ubuntu/macOS 2/2 PASS at PR #6 `6fcb2f...` is now recorded (run 42309469100); forward integration remains pending. Independently continue C1/C2/C3/S1/S2/A2/R1 within existing ownership and explicit contract/host gates. A1/A3/A4 hosted workflows remain paused by current handoff instruction; local A3/A4 evidence is separately bounded.
-4. Once applicable upstream surfaces are coherent, pin the integrated runtime/catalog/first-party release/test revisions and run actual M01–M15 public-command paths for I1, recording PASS/FAIL/PENDING by revision and host in the validation owner. Start nonprivileged I2 only after I1 and ordinary authorized reference-host conditions are satisfied; privileged cases are not prerequisites.
-
+1. **G-CONTEXT (owner: `handoff/rumiai-os-source-composition.md`):** compare exact C3 candidate `m-os@d04e6d55` and its operational manuals against current `BOOTSTRAP-ENVIRONMENT`, `STATE-MODEL`, `PACKAGE-MODEL`, `TLS-TRUST` and public normal paths. Reconcile no-arg default/clear syntax, state/profile and effective-UID account preference separation, preset persistence, package `var/` compatibility, trusted nested child inheritance and browser NSS, then promote only justified settled behavior. Do not present current mainline as already implementing C3.
+2. **G-SRV (owner: validation handoff):** review the per-service native supervisor, SRV-11/SRV-42, package/distribution build, startup failure and unprivileged host user registration with exact current `SERVICE-LIFECYCLE`/`POSIX` contracts. Establish runtime/package artifact and corresponding manuals; no operator-administered system host or real privileged remote scenario.
+3. **Candidate completeness:** review A2/A4/M15 and outstanding PR-specific deltas by exact blob and authentic validation. Integrate only truly accepted, compatible changes forward in one controlled candidate writer and freeze **new exact** runtime/catalog commits; do not discard independent PR branches or reclassify prior runs.
+4. **I1 then I2:** after contract reconciliation, run proportional public-command M01–M15 nonprivileged acceptance on the resulting pinned candidate, with precise PASS/FAIL/PENDING per host/revision. Execute nonprivileged I2 on authorized reference hosts if accessible. Keep privilege-gated cases exclusively deferred.
 
 ## Blockers / open questions
 
-- **C2/C3:** The user has approved the boundaries recorded in `rumiai-os-source-composition.md` and the canonical bootstrap/state/service/TLS specifications. Public grammar, no-argument default versus reset, preset authority/storage, child propagation, context-aware state-root migration and provider precedence remain unapproved. Do not implement C3 or silently replace the current no-argument reset until those contract choices are settled.
-- **S/SRV-42:** PR #4 remains Draft/unmerged. The current candidate rejects unverifiable/stale identities, but one-second `ps lstart` and separate PID-check/`kill` leave same-second reuse and TOCTOU risk. POSIX shell has no atomic identity-checked signal; do not call this gate closed. A Linux-native `pidfd` helper would be nonportable to macOS; a cross-host lifecycle redesign needs a promoted design.
-- **A2/A4 and final validation:** PR #10 and #11 remain Draft/unmerged because hosted A1–A4 workflow execution is explicitly deferred. M01–M15 has substantial exact-revision local and hosted evidence, but current runtime, platform and authorized nonprivileged reference-host acceptance is still incomplete. Continue local independent work; do not dispatch deferred workflows or claim skipped evidence as PASS.
-- Operator-privileged SSH/sudo, protected-host services and CA changes and privileged reference-host steps are explicitly excluded to `todo/m-os-operator-privileged-validation.md`, not current blockers. Ordinary nonprivileged reference-host access remains a separate evidence condition.
-- Legacy `rumiai-os` and `rumiai-tests` are frozen; final formal suite alignment/migration cannot be silently assumed authorized.
+- **BLOCKING MERGE:** current canonical C2 public grammar/initial reset, state/UID/default/preset and inherited environment/CA semantics have not been promoted to match C3. The 5/5 exact candidate hosted run proves scoped execution, not canonical agreement.
+- **BLOCKING MERGE:** native portable service supervisor/distribution and host-profile binding require a coherent explicit SRV contract and real installable artifacts. The candidate's user-service CI is not privileged positive host-system validation.
+- **INTEGRATION PENDING:** unmerged A2/A4/M15 and independent PR tests are not automatically part of the pinned candidate; Podman current-catalog live installation is not accepted after upstream acquisition failures; Chrome setuid positive install is out-of-scope privileges.
+- **FINAL ACCEPTANCE PENDING:** full exact integrated nonprivileged M01–M15/I1 ledger and I2 real reference-host evidence are not complete. An A1–A4 hosted workflow dispatch hold remains in the owning handoff.
+- **EXCLUDED:** all operator-privileged work is deferred in `todo/m-os-operator-privileged-validation.md`; `rumiai-os` and `rumiai-tests` remain frozen. These exclusions do not block closing a separately accepted nonprivileged scope.
+
