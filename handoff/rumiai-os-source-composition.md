@@ -26,6 +26,13 @@ Full functional validation of the autonomous `m` source is independently tracked
 
 ## Current repository revisions
 
+### Promoted generalized-context source and documentation (2026-11-16; current)
+
+- Operator-approved `m-os` generalized C3/registered-profile and bounded native supervisor source has now merged through PR #27 into `m-os/master@41ed0fcfa144e5b2b4d2da838f9ee1c9ce95434a` (also A2/A4/GeoServer/CfT/catalog-diagnostic/manual/P3 test additions). `VERSION=0.1.0-rc.1`.
+- `pkg-catalog/main@e22f3004532a2aa74e15a90eaf9b32ebfed5ae10` was the pinned catalog at the first postmerge CI; later Podman macOS ARM64 anchor PR #3 advanced main at `eb64ecc80353fa1896e7e840b8accbfb4e7167cc`, and normal version-history sync may advance it further. `VERSION=0.1.0-rc.1`; no tag/release created.
+- Canonical source `rumiai-dev/specifications/rumiai-os/{BOOTSTRAP-ENVIRONMENT,STATE-MODEL,PACKAGE-MODEL,SERVICE-LIFECYCLE,TLS-TRUST,CURRENT-MODEL,POSIX-PORTABILITY-LAYER}.md` was updated forward-only to match *implemented supported RC* semantics, including old `context` no-argument reset superseded by per-account defaults and an explicit clear.
+- `m-core/v0.1.1`, `m-term/v0.1.1`, `m-rsudo/v0.1.2` remain independently published sources. Frozen `rumiai-os`/`rumiai-tests` untouched; operator privileges remain in the separate TODO. Older candidate SHA/PR references below are audit history, not current work items.
+
 ### Unified acceptance candidate checkpoint (2026-11-16; supersedes older source identities below)
 
 - `rumiai-dev/main@a7d5c0ec92289e61845a1d8e9c65d375341d9c5a` preflight; current documentation updates are forward-only.
@@ -138,6 +145,14 @@ Scenarios 1 and 2 have initial direct-checkout smoke evidence on Ubuntu and macO
 - PoC 073 GitHub Actions run `40081595096`, initial SHA `6325990d`, **Ubuntu PASS**; extended run `40081898644`, SHA `596feac`, **Ubuntu PASS** including source-based package execution, real managed Node.js installation through `pkg`, `--goals`, `--plan`, executable actions, and package-local `--watch` re-entry on changed input. Final comment-only correction `caecb010ce7996d6a16435bb40d078ae9e4d285d`, run `40082091552`, **Ubuntu PASS**. All macOS jobs were still queued when last inspected, not validated. No full published `pkg install mk` test has run because the release repository/asset does not yet exist. Do not relabel queued macOS jobs or a direct `pkg_integrate` scenario as a published package install.
 
 ## Current state
+
+### Generalized context and source-composition RC merge (2026-11-16; CURRENT)
+
+- The previously open C2/C3 **policy/syntax migration gate** is now resolved at the contractual level: canonical bootstrap/context documentation specifies `context` initializes the effective POSIX account's persisted dimensions, `context --clear-defaults` clears them, `--set-defaults`/named presets are account scoped, `--migrate-legacy` is explicit, and a validated profile registry and read-only data envelope bind profile/user/provider selections to real runtime/UID authority. Do not follow outdated first-phase `context` bare-reset prose as current; normal shell/launcher mechanics still require exact host validation.
+- `m-os/master` now contains corresponding code and native service supervisor (bounded per-account helper, not a permanent global daemon), plus real GeoServer/GraalVM/GPGTools/Podman adapters and selected-profile `tls-ca`/`tls-nss-sync` correction. The package launcher still **rejects** selected system profile changes for installed static `var/` links unless compatible; it does not promise universal upstream profile adaptation.
+- The older exact candidate pair [run 43717376235](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/43717376235) passed 5/5; versioned candidate [run 43826976137](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/43826976137) passed 4/5 (macOS GraalVM API 403). First postmerge [run 43829619660](https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/43829619660) passed 3/5 actual jobs at `m-os@41ed0fc`+`catalog@e22f300`; macOS ARM64 and Ubuntu x86_64 GraalVM latest discovery were blocked on external HTTP 403 before install, not a product-specific failure finding. Linux ARM64 real CA add/list/remove against selected profile succeeded. None of these is complete M01–M15/I1 or I2.
+- All source candidate PRs that were explicitly included are now merged or individually closed with supersession explanation; there is no reason to reapply them. Catalog isolated hosted runner PRs remain separate validation assets, not pending source implementation. The operator-run minimal Ubuntu x86_64 real/privileged acceptance runbook is in `handoff/m-autonomous-validation.md`. Privileged host service/SSH/sudo/CA authority remains **unexecuted** and separately deferred.
+- Independent first-party releases, package classes, provider-command/library ownership and RumiAI/m isolation are unchanged. The legacy repository freeze remains binding.
 
 ### C2/C3 source consistency review of unified candidate (2026-11-16; CURRENT)
 
@@ -2640,16 +2655,16 @@ Older snapshots below are historical; the current repository revisions and integ
 
 ## Next action
 
-1. **C2 canonical contract reconciliation (source-composition owner):** review exact `m-os@d04e6d55` public `context` function, `m` bootstrap, `state-path`, package launch/provider/state, service profile registration, manuals and real acceptance traces against current `BOOTSTRAP-ENVIRONMENT`, `STATE-MODEL`, `PACKAGE-MODEL`, `SERVICE-LIFECYCLE`, `TLS-TRUST`, POSIX and library API contracts. Resolve default vs clear, named preset/default persistence under a POSIX account without conflating logical user, exact provider/command/env coherence, fail-closed incompatible `var/`, trusted child propagation and CA/NSS per-profile behavior. Update canonical specs and manuals only when the actual public semantics are justified; do not infer normative contracts merely from candidate code.
-2. **G-SRV integration boundary:** with the validation owner, classify the service-scoped native helper against the no-*permanent global* supervisor principle, build/distribution dependencies and host-user registration profile, then prove exact artifact behavior without operator privilege. Keep system host administration and protected host CA positive tests deferred.
-3. **Controlled candidate integration:** preserve accepted current P2/P3/P4/J1/V2 and the frozen exact candidate. Later necessary corrections are forward-only and require a **new** exact runtime/catalog CI pin. Do not silently pull in superseded PR #21 or untested product surfaces.
-4. **Acceptance:** hand complete nonprivileged public C3/consumer traces and their exact-host outcomes to `handoff/m-autonomous-validation.md` for I1; reference-host I2 needs ordinary authorized conditions. Never claim current first-phase context or the frozen repositories have changed.
+1. **No open C2/C3 interface-choice blocker remains for the merged RC:** use the promoted `BOOTSTRAP-ENVIRONMENT`, `STATE-MODEL`, `PACKAGE-MODEL`, `SERVICE-LIFECYCLE`, `TLS-TRUST`, `CURRENT-MODEL` and portability specifications as current contract. Review any new implementation bug against those canonical owners; do not restore old bare `context` reset or grant host authority through logical user/provider selections.
+2. **Exact-public consumer validation:** execute/record one real nonprivileged Ubuntu x86_64 acceptance of account defaults/presets/inherited profile/selected state, static package `var/` fail closed, genuine Java/GraalVM and GeoServer installs, bounded native supervisor, protected selected-profile CA projection and published first-party package shell/menu. The validation owner has the precise minimal operator checklist. A GitHub Releases HTTP 403 is a blocked acquisition, not a package PASS or a reason to fabricate an artifact.
+3. **Close I1/I2 proportionately:** pin actual current runtime/catalog first-party package revisions and record formal PASS/FAIL/BLOCKED/SKIP by host in the validation handoff. Ubuntu x86_64 alone cannot cover macOS ARM64 GPGTools/Podman or Linux ARM64 CfT setuid. Do not silently modify frozen repositories.
+4. **Privileged later activation:** real `rsudo` SSH/sudo, protected system CA authority and `srv host system` positive paths remain a separate explicit operator-administered TODO. No ongoing agents receive implied permission from the new Ubuntu manual checklist.
 
 ## Blockers / open questions
 
-- C3 candidate behavior is ahead of the current canonical first-phase `context` reset and bootstrap state contracts. Exact public operands, defaults/preset storage and profile authority must be promoted coherently before any full-context runtime merge.
-- Existing package `var/` static system/current routing, profile-aware `state-path`, browser CA/NSS and trusted child environment require the agreed fail-closed implementation and actual consumer evidence. A shell variable alone is not sufficient.
-- Per-service native supervisor and host-profile registration need a settled distribution/portability and current `SERVICE-LIFECYCLE` alignment, especially the no-permanent-global-daemon distinction. Unprivileged host-user acceptance is not host-system privileged acceptance.
-- Independent adapter/manual/A2/A4 integration, entire nonprivileged I1 M01–M15 and I2 are not completed by the 5/5 scoped hosted matrix. Do not rerun unchanged prior PASS merely to increase counts.
-- Frozen `rumiai-os`/`rumiai-tests` remain untouched. Operator-privileged paths are excluded from the current task and retained only in `todo/m-os-operator-privileged-validation.md`.
+- No remaining operator **architecture** decision is required for the currently merged C2/C3 public interface. Its actual product/host correctness is still subject to real nonprivileged I1 and physical I2 evidence; full completion cannot be claimed from a merge.
+- External upstream GitHub Releases HTTP 403 blocked current exact Ubuntu x86_64 and macOS ARM64 GraalVM live latest acquisition in run 43829619660; prior green runs are different revisions.
+- Special host/browser and static `var/` consumers may require their own adapter-specific tests. The generic launcher only promises explicit fail-closed when a selected profile would misroute static mutable state, not automatic migration of every upstream package.
+- Operator-privileged host administration and remote SSH/sudo have **not** been run/accepted. `todo/m-os-operator-privileged-validation.md` remains deferred. Frozen `rumiai-os`/`rumiai-tests` remain untouched.
+- Release metadata is a `VERSION` file only (`0.1.0-rc.1`); Git annotated tag/release and coordinated default branch rename `m-os master` → `main` still require separate release/administrator actions.
 
