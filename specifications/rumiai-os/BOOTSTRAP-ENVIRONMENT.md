@@ -1,7 +1,7 @@
 # RumiAI OS — Bootstrap environment
 
 Status: **Current / normative**  
-Updated: 2026-11-02
+Updated: 2026-11-16
 
 This specification defines the environment established by the technical root runtime `$m_ROOT/m`.
 
@@ -124,85 +124,33 @@ The root bootstrap performs no package/provider resolution or initialization.
 
 ## Shell context selection and library search roots
 
-The core runtime exposes the POSIX shell **function** `context` in the
-shell that sources `core.lib.sh`. It is not an external executable and
-cannot modify the invoking shell when run in a child process.
-
-The initial supported public grammar remains:
+The managed POSIX shell function `context` is loaded by `core.lib.sh`; it changes only its invoking shell. The **generalized context** contract is the accepted `m` runtime's selection and persistence interface:
 
 ```text
 context
-context pkg=<package>@<version>[!<osarch>] ...
+context [system=<profile> | user=<identity> | pkg=<package>@<version>[!<osarch>] | provider.<facility>=<selector> | locale=<locale> | osarch=<id> | full-context=<preset> ...]
+context --set-defaults [system=... | user=... | pkg=... | provider.<facility>=... | locale=... | osarch=... ...]
+context --clear-defaults
+context --define-preset <name> [system=... | user=... | pkg=... | provider.<facility>=... | locale=... | osarch=... ...]
+context --delete-preset <name>
+context --migrate-legacy
 ```
 
-A no-argument invocation clears the active package selections owned by
-this function. A `pkg=` operand selects an already installed exact
-package concrete. Selections are folded left-to-right. A later selection
-of the same package replaces its earlier version, while unrelated
-package selections are retained. The most recent selection has the
-highest search-path precedence. This is a shell-local context, not a
-new persisted package default.
+Bare `context` **initializes** the effective POSIX account's saved dimensions merged with validated installation baselines; it no longer means reset-to-empty. `--clear-defaults` deletes only persisted defaults, not named presets or the already active shell; a later bare invocation returns to the installation baseline. `--set-defaults` merges provided dimensions atomically into account preferences without changing the active selection. Named presets are account-scoped records expanded at their left-to-right `full-context=` position; preset define/delete do not activate. `--migrate-legacy` imports only independently validated **direct** former `system/current`, `user/current`, locale and osarch selectors into otherwise unspecified account defaults, without altering those selectors.
 
-For each selected concrete, `context` reads existing, separately
-materialized lookup views when present:
+The installation-managed registry at `state/system/profile/.inventory` declares an explicit baseline and permitted real system profiles. The runtime validates it as data, not sourced shell syntax, and fails closed on missing, unsafe, malformed or unregistered profiles. Independent managed shells and ordinary nested `m` processes can select different system profiles without changing a global `current` symlink. `user=` selects an `m` logical state identity under `state/user`, not a POSIX account or an authorization grant. Persisted preference **ownership** is based on effective POSIX UID and its protected `$m_ROOT/state/<uid>/context` store; these are distinct concepts. Locale and osarch selections validate actual supported resources/targets; a selected package's concrete still must be compatible with the real host platform.
 
-```text
-<concrete>/cmd        -> PATH, executable command lookup
-<concrete>/lib/sh     -> PATH, POSIX dot-source lookup
-<concrete>/lib/java   -> CLASSPATH, literal <directory>/* wildcard
-```
+Selections fold left-to-right starting with saved defaults. Repeated dimensions replace their previous value, repeated `pkg=` replaces that package's version, and unrelated packages remain selected. `provider.<facility>=` pins an already installed concrete declaring the facility; consumer bindings still take precedence and package resolution remains owned by `pkg`. `context` does not install packages, materialize missing command views, rerun catalog discovery, execute package `env` source directly or grant CA/host-service authority.
 
-A package may publish only libraries and no ordinary executable
-commands. The function neither builds nor refreshes the symlink
-views on activation. Libraries are ordinary package exports, not
-facility parts or independent provider selections.
+Selected v1 package views are `cmd`, `lib/sh` and `lib/java`; v2 views are `link/bin`, `link/lib/sh` and `link/lib/java`. Existing validated command and shell-library directories contribute to PATH; the Java JAR directory contributes its literal `<dir>/*` entry to CLASSPATH. Most recent package PATH contribution comes first, but protected `m` system identities and package/library leaf collisions are rejected. Selected shell libraries must be non-executable; Java libraries are JAR links. Unsupported language-specific loaders are not implied. A failed selection leaves PATH, CLASSPATH, and the old active selection unchanged; repeated selection does not duplicate path entries.
 
-For selected `cmd` entries, command names must not collide with
-one another or protected `m` sys command names. Library projections
-must be existing, non-symlink directories containing appropriately
-typed readable library links. Identical library leaf names between
-independently selected concretes for the same runtime are rejected
-rather than ambiguously ordered. POSIX shell source files must be
-non-executable; the two runtime groups are selected from the same
-pinned package-concrete identity.
+A versioned **data-only** inherited context envelope binds the selected dimensions to the runtime root, effective UID and registered system profile and is revalidated by each nested `m` bootstrap. Callers cannot obtain host administrative permission by forging HOME, an inherited variable or a logical identity. `state-path` and the package launcher consume the validated selected profile and user state; installed static package `var/` links still require the actual supported profile, and incompatible launches fail before execution instead of silently using global state. See `STATE-MODEL.md`, `PACKAGE-MODEL.md`, `SERVICE-LIFECYCLE.md` and `TLS-TRUST.md` for ownership boundaries.
 
-Before changing caller state, `context` validates operand identities,
-applicable platform, available concrete/lookup views, collisions,
-and the ownership of its previously installed search-path segments.
-It then replaces only its own `PATH` and `CLASSPATH` contributions;
-host contributions are retained. Repeated application is idempotent.
-When the incoming `CLASSPATH` was unset or set-empty, the two states
-are preserved on a no-argument reset. Failed selection does not
-change `PATH`, `CLASSPATH` or the previously active package set.
+## Generalized-context ownership and authorization boundary
 
-`PATH` is shared between executable command lookup and POSIX dot
-lookup, so publishing `lib/sh` has a common namespace and must not
-silently redefine existing `m`-owned `loadlib/loadsyslib` identities.
-For Java, the wildcard `<directory>/*` includes JARs in that
-directory but does not guarantee JAR enumeration order. An explicit
-Java `-cp` option overrides `CLASSPATH`; this variable does not
-govern every Java launch method.
+Generalized shell/process profiles, provider/package selections, UID-owned preference persistence and inherited validated child contexts are part of the release-candidate runtime contract. The context function is not authentication and never grants authority beyond host filesystem/account permissions. It does not mutate the installation profile inventory or retarget independently registered native host services.
 
-Provider environment/service coherence, dependency resolution, state
-profiles, named full-context presets and protected propagation policies
-remain outside this initial package command/library lookup phase.
-The existing package launcher continues to own those responsibilities.
-
-The technical root bootstrap merely loads the function definition as
-part of `core.lib.sh`. Ordinary `m` command execution uses an
-external `exec`, and therefore does not transfer shell functions
-into that child; callers needing `context` in a new shell must
-source `core.lib.sh` there.
-
-## Approved generalized-context boundaries (not yet implemented)
-
-The supported first-phase `context` grammar and no-argument reset above remain the current executable contract until a separately validated, coordinated migration. The approved **future generalized-context** requirements are:
-
-- Two managed shells and their ordinary managed child processes must be able to select distinct system profiles and logical user-state identities concurrently. One shell's selection must not mutate `state/system/current`, `state/user/current` or another process's active selection.
-- Package commands, libraries, provider resolution, mutable state and inherited environment must agree on the effective selected context. If an installed package cannot safely honor the selected profile using an upstream-supported state-path adaptation or an already prepared compatible per-profile view, its launch must fail before it could use another profile's state; it must never silently fall back to the global profile.
-- Host-supervised service profiles and system TLS CA authority are **not** untrusted shell-context selections. Their ownership rules are in `SERVICE-LIFECYCLE.md` and `TLS-TRUST.md`; mutable state routing is governed by `STATE-MODEL.md`.
-
-These are binding design and migration constraints, **not** claims that profile-aware bootstrap, `state-path`, package `var/` routing, trusted child propagation or the generalized public operand grammar already exist. Existing global-selector consumers remain supported under their current contracts until an explicitly validated transition; unsupported concurrent-profile use must fail closed rather than silently alter global state. The detailed grammar, persistence format and trusted propagation mechanics remain active design work, not accepted executable APIs.
+Host-service registration fixes the authorized service system profile separately from interactive selections; see `SERVICE-LIFECYCLE.md`. CA authorization/revocation remains separately controlled by the protected selected system CA configuration, while clients consume only that verified selected profile's approved certificates; see `TLS-TRUST.md`. A package whose installed mutable `var/` state cannot honor the selected system profile is rejected before launch. These are fail-closed limits, not permission to make global links process-local through unvalidated symlinks.
 
 ## Generated global execution environment
 
@@ -244,17 +192,9 @@ bootstrap. A source failure is a runtime execution error.
 
 ## State roots
 
-The bootstrap exports readonly semantic pathnames:
+The technical bootstrap exports readonly `m_STATE_DIR=$m_ROOT/state`. It initializes the compatibility roots `m_STATE_SYS_DIR=$m_STATE_DIR/system/current` and `m_STATE_USER_DIR=$m_STATE_DIR/user/default` before loading core; the validated `context` then selects a registered **real** system profile root and logical user-state root for its process and children. Those selected roots are no longer globally readonly aliases for `system/current`/`user/current`. The logical `user` selection never derives its identity from UID or hostname; effective UID is used only as authority for the preference store.
 
-```text
-m_STATE_DIR=$m_ROOT/state
-m_STATE_SYS_DIR=$m_STATE_DIR/system/current
-m_STATE_USER_DIR=$m_STATE_DIR/user/current
-```
-
-It does not resolve/canonicalize the targets of `system/current` or `user/current`, does not derive host-id or UID, and does not require those selectors to exist merely to initialize `m`.
-
-See `STATE-MODEL.md`.
+A validated versioned envelope is consumed on nested bootstrap, otherwise `context` initializes account defaults and installation baselines. The bootstrap rejects an invalid envelope/registry before executing a target. `state-path` returns selected semantic state paths without creating or mutating them; see `STATE-MODEL.md`.
 
 ## Command execution
 
@@ -271,18 +211,20 @@ BOOT-01  m is the technical root bootstrap
 BOOT-02  m uses #!/bin/sh
 BOOT-03  m_BOOTSTRAP_BIN and m_ROOT are physical validated roots
 BOOT-04  m PATH contains sys/ext layers, not ai
-BOOT-05  the technical m bootstrap does not add the RumiAI ai executable layer
-BOOT-06  core.lib.sh is the bootstrap entry library that defines filesystem loadlib and loads base.lib.sh
-BOOT-07  state roots are semantic pathnames, not eagerly resolved selectors
-BOOT-08  bootstrap does not derive user identity from host-id/UID
-BOOT-09  the bootstrap provides no inherited per-command m_COMMAND_BIN identity
-BOOT-10  before core is loaded, m defines only readpathce and export_readonly as bootstrap helper functions
-BOOT-11  m directly dot-sources core.lib.sh as the library-loading chicken/egg exception
-BOOT-12  loadlib is provided by core.lib.sh; base.lib.sh provides loadsyslib and the common base runtime
-BOOT-13  the root bootstrap performs no package/provider resolution or initialization
-BOOT-14  the root bootstrap is limited to root resolution, fundamental system-variable initialization, core loading, generated global-environment sourcing and execution
-BOOT-15  generated global environment is sourced from system sys/environment cache as env then env-osarch
-BOOT-16  command dispatch does not inspect shebang text or source the command
-BOOT-17  technical m PATH roots precede provider PATH contributions, which precede inherited host PATH
-BOOT-18  every command operand is executed externally with the original command vector
+BOOT-05  m bootstrap does not add the RumiAI ai executable layer
+BOOT-06  core.lib.sh is the bootstrap entry library defining loadlib and loading base.lib.sh
+BOOT-07  bootstrap initializes compatibility state roots; validated context selects effective profile/user roots process-locally
+BOOT-08  logical m user-state identity is not derived from host-id/UID; effective UID owns persisted account context preferences only
+BOOT-09  bootstrap provides no inherited per-command m_COMMAND_BIN identity
+BOOT-10  before core is loaded, m defines only readpathce and export_readonly as bootstrap helpers
+BOOT-11  m dot-sources core.lib.sh as the library-loading exception
+BOOT-12  loadlib comes from core.lib.sh; base.lib.sh provides loadsyslib and base runtime
+BOOT-13  bootstrap initializes and validates context (or inherited envelope), but never installs or refreshes packages/catalogs
+BOOT-14  bootstrap performs root, base variables, core load, context validation, generated environment and external dispatch
+BOOT-15  derived environment is consumed from the validated selected profile sys/environment/cache as env then env-osarch
+BOOT-16  command dispatch does not inspect shebang text or source command bodies
+BOOT-17  protected technical command roots precede selected package/provider and inherited host PATH
+BOOT-18  dispatched operands are executed externally with the original vector
+BOOT-19  independent shells/children can select different registered system profiles without changing global current selectors
+BOOT-20  saved account context defaults and presets never grant system CA or host-service authority
 ```
