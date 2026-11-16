@@ -45,6 +45,8 @@ from becoming the semantic contract seen by ordinary consumers.
 
 Before introducing a new host abstraction, verify that an existing current facility does not already own the responsibility.
 
+The portable `srv` service contract is implemented by a bounded, native **child-owning** C helper with a POSIX waitpid/signal/socket lifecycle, located at `native/sys/srv-supervisor.c`. Its build and distribution scripts produce a host/architecture-specific executable for supported Linux/macOS targets; the installed `m` bootstrap does not require a compiler. This is a declared distribution/build capability behind the neutral `srv start/stop` contract, not a claim that shell can atomically verify-and-signal arbitrary live PIDs or that a global supervisor daemon must run permanently. A missing or incompatible helper fails closed. systemd/launchd user/system managers remain separate host adapters.
+
 ## External tools
 
 Tools not guaranteed by the selected POSIX baseline are capabilities/dependencies, not POSIX primitives.
