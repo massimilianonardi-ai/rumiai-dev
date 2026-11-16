@@ -21,3 +21,4 @@ Reactivate only through explicit operator authorization and the normal TODO-to-a
 
 - `specifications/rumiai-os/{RSUDO,SSH,SERVICE-LIFECYCLE,TLS-TRUST}.md` and `PHYSICAL-TESTING.md` contain the relevant public contracts and host/authority requirements.
 - `handoff/{m-os-completion-orchestration,m-autonomous-validation,rumiai-os-source-composition}.md` retain the active **nonprivileged** implementation, CI and acceptance scope; exact older local/hosted observations remain evidence only for their recorded revisions.
+- `handoff/m-autonomous-validation.md` now contains the minimal operator-run **Ubuntu x86_64** real acceptance runbook, with distinct root-native system service, protected CA authority and SSH/sudo/rsudo menu steps. That checklist is a future manual validation aid, **not automatic activation or authorization for agents**.
