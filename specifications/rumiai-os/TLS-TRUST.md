@@ -5,17 +5,9 @@ Updated: 2026-10-23
 
 ## Purpose and authority
 
-`m` owns authorization and distribution of **additional public TLS certificate-authority (CA) trust** for managed clients. It does not replace the host operating-system trust store, TLS validation, the existing state model or package-owned application configuration.
+`m` manages authorization and distribution of **additional public TLS CA trust** for explicitly integrated clients; it does not replace the host operating-system trust store, existing TLS verification or application-specific credentials. The authoritative approval set for each **registered selected system profile** is resolved through `state-path system sys tls conf` under that profile. Selection is validated by the managed context registry/envelope, not by an unchecked `system/current` symlink or a caller's HOME value.
 
-The initial authoritative trust scope is **system**. Approved CA certificates and their authorization decisions belong to the technical system configuration resolved by:
-
-```text
-state-path system sys tls conf
-```
-
-The system profile selector determines which configuration is current. Administrative authorization is enforced by trusted operations and filesystem ownership/permissions, **not** merely by calling the state `system`. Consumers can read the public anchors when authorized by host permissions but do not gain write authority by consuming them. A managed service must not be allowed to modify its trusted CA set simply by being able to use that set.
-
-There is **no implicit user-scope CA overlay** in this initial contract. `state-path user ...` is not an authenticated POSIX identity: neither its default binding nor the `user/current` symbolic link authorizes trust additions. A future per-user authority requires a separately defined authenticated identity and access-control contract.
+**CA authorization and CA consumption are different responsibilities.** Approval and revocation use the actual POSIX ownership/permissions of the selected protected system configuration. No `context` operand, logical `user` selection, account-preference record or inherited environment value grants permission to add/remove approved CAs. A host service consumes the set associated with its separately registered profile and cannot follow another interactive shell's new profile. There is no implicit `state/user` CA overlay or authentication mapping.
 
 ## Trust semantics
 
@@ -28,9 +20,9 @@ There is **no implicit user-scope CA overlay** in this initial contract. `state-
 
 ## Consumers and security contexts
 
-An explicitly integrated managed client uses the current `system` approved CA set. This can include regular managed packages and system-hosted package services, subject to real POSIX filesystem access controls. Service State Instances continue to control per-service package `home` and `conf`, and a shared CA set does **not** share their authentication state or client certificates.
+An explicitly integrated managed client consumes only the approved CA set of its **verified effective system profile**, using `state-path system sys tls conf` from its validated context and the applicable runtime/backend projection. Distinct profiles must not be silently unioned. Host-supervised clients remain bound to their authorized registration profile, not the current profile of an unrelated caller. Clients outside the managed `m` environment are unaffected.
 
-Clients that do not participate in this integration and programs launched outside the selected `m` environment are not reconfigured implicitly. Existing host CA trust, upstream runtime-specific CA configuration and explicit application overrides remain distinct authorities. An `m` removal cannot revoke certificates that remain independently trusted elsewhere.
+Existing host CA anchors, independent client/trust overrides, TLS validation and package/service State Instance credentials remain separate. Removing an `m`-approved CA cannot revoke that same CA when trusted independently elsewhere. If a backend cannot safely resolve a selected profile, it must reject that launch/synchronization rather than silently trust the global profile.
 
 ## Current system CA management interface
 
@@ -53,13 +45,11 @@ The administrative interface does not confer privilege on its caller:
 permission to modify system trust is granted by the actual POSIX security
 boundary protecting the selected system-state tree.
 
-## Approved generalized-context profile consumption boundary
+## Generalized-context profile consumption boundary
 
-Future generalized-context clients must keep **administrative CA approval/revocation authority** separate from **consumption of approved CA certificates**. Trusted host/system administrative controls determine authorization; a caller-supplied shell profile, logical user-state name, `HOME` value or inherited context token grants no CA-management permission.
+The generalized-context runtime passes its already validated system profile to `state-path`. `tls-ca` reads/writes the corresponding profile's protected `sys/tls/conf/ca` set; `tls-nss-sync` consumes that exact set for the effective browser HOME and verifies its owned NSS projection. Both accept an effective real registered profile root as well as the legacy symlink selector when validated by their owning resolver; direct symlink-only assumptions are not a legitimate reason to reject a selected registered profile.
 
-A context-aware managed client consumes only the approved CA set associated with its **verified selected system profile** and the applicable effective runtime/NSS projection. It must not silently union certificates from unrelated profiles or repoint a privileged service's trust by changing an ordinary caller's context. A profile not safely supported by the current CA/NSS consumer path must be rejected, not silently mapped to an unintended global profile.
-
-The initial current CA authority and consumer paths documented above still use the system `current` selector. Profile-aware reads, approval metadata, native/browser projections and corresponding real validation require a coordinated migration before being claimed available. This is a settled future integration boundary, not a new unprivileged certificate-approval API.
+The CLI is still `tls-ca add`/`remove`/`list`, with host ownership determining who can write. The CA projection does not become an alternate privilege API, and ordinary context activation itself never approves a certificate. On Linux browser consumers, synchronization is requested by the trusted package launcher immediately before exec; no supported Windows/macOS NSS projection is implied. The actual cross-profile browser and protected-authority positive paths require exact-revision validation, not presumption based on a context fixture. Privileged host trust operations remain in `todo/m-os-operator-privileged-validation.md`.
 
 ## Derived representations
 
