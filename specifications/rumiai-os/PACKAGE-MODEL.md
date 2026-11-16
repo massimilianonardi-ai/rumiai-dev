@@ -1,7 +1,7 @@
 # RumiAI OS — Package model
 
 Status: **Current / normative**  
-Updated: 2026-11-05
+Updated: 2026-11-16
 
 This document defines the current semantic contract of the `m` package subsystem without duplicating implementation internals that belong in `rumiai-os`.
 
@@ -417,6 +417,8 @@ this command-versus-executable distinction.
 
 Integrated package commands execute through the package launcher contract.
 
+The launcher revalidates the inherited generalized-context root, effective UID, selected registered system profile and exact package selection before any target execution. Selected logical-user state controls normal HOME/conf resolution, not the caller's POSIX authority. Context control-plane fields and the computed package HOME remain protected from package/provider/user-env mutation; failing those checks leaves the target unexecuted. Full provider facility-env projection remains owned by the package subsystem and is not duplicated by the shell function.
+
 For a launched package, the launcher:
 
 - identifies the concrete managed package command/version from the real command pathname;
@@ -490,17 +492,13 @@ remain the enforcement boundary for service-account access to prepared state.
 
 subnamespace inside package `conf`.
 
-## `var/` compatibility
+## `var/` compatibility and selected context
 
-Package-local `var/` exists only for upstream software that requires mutable paths inside its installation tree.
+Package-local `var/` exists only for upstream software that requires mutable paths inside its installation tree. Installed `var/` bindings are **static and system-scoped** and may route through the legacy `state/system/current`; they never become a dynamic per-user state router.
 
-It is static and system-scoped. It may route to state under:
+The generalized `context` can select a **different registered process-local system profile** without moving that global selector. Before launching an installed concrete that declares mutable `var/` paths, the trusted package launcher revalidates its selected context envelope/profile, and rejects the launch if those static links would lead to another system profile. No implicit global-selector swap, writable per-call symlink tree, fallback to another profile or shell-selected privilege upgrade is permitted. A future concrete-specific, upstream-supported state-path adapter or verified prepared execution view can lift this restriction only after dedicated product and host validation.
 
-```text
-state/system/current
-```
-
-and must never become a dynamic path into user state.
+`pkg` continues to own installation, dependency/provider resolution, runtime environment, package HOME and user/system State Instance. `context` composes already installed command/library lookup, provider pins and selected logical identities; it does not re-execute package `env` source or create package projections. The child envelope is data-only and revalidated by nested `m` and package launches; consumer bindings keep their established precedence over context provider pins.
 
 ## Defaults
 
