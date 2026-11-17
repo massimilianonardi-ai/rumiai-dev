@@ -825,3 +825,9 @@ Operator explicitly directed migration of remaining v1-only packages to v2 and e
 - `pkg-catalog/main@e6b7d312d09c9abb6952fa54721caf7b24995f5f` adds v2 Pulsar `macos-arm64` and `macos-x86_64` streams. The 16 unchanged source descriptor blobs (including command wrappers and repository metadata) were reused; each stream's old flat `link/pulsar` was converted to `link/bin/pulsar -> ../../cmd/pulsar` and `link/target/pulsar -> ../../root/Pulsar.app/Contents/MacOS/Pulsar`. Existing v1 content was preserved.
 - Pulsar remains **partially migrated**: Linux ARM64/x86_64 require preserving `setuid_root` privilege semantics, and the Windows stream has not been migrated. No package runtime or host execution PASS is claimed; validation is structural only.
 - Eleven other v1-only package names remain unchanged. Next action: reconcile the v2 privilege/extraction/facility descriptor contracts before migrating the blocked streams and packages; then run real install/launch tests on applicable hosts. Do not revive M01–M15.
+
+## Catalog migration checkpoint (2026-11-17, Pulsar Windows)
+
+- `pkg-catalog/main@7ab9510a8ef9d5e0a2cc08230c793e7e55f82f05` adds the Pulsar `windows-x86_64` v2 stream: eight source descriptor blobs preserved and the flat link converted to `link/bin/pulsar -> ../../cmd/pulsar` plus `link/target/pulsar -> ../../root/Pulsar.exe`. The source v1 definition is untouched.
+- Post-write catalog tree inspection confirms 10 v2 file blobs in each of the three migrated Pulsar streams (macOS ARM64, macOS x86_64, Windows x86_64), with both required v2 link descriptors and no disallowed legacy descriptor paths; all 47 original Pulsar v1 blobs remain. This is structural verification, not a real `pkg install` or launcher execution.
+- Pulsar Linux ARM64 and x86_64 remain blocked on faithful `setuid_root` privilege migration. Other eleven package names remain v1-only. No M01–M15 work is authorized or claimed.
