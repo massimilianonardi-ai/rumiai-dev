@@ -805,3 +805,16 @@ The older P2/P3/P4 open-gate sequence is retained below for audit history only. 
 - Canonical `PACKAGE-MODEL.md` still specifies the published v1 baseline; v2 design in feature branches has not yet passed promotion and must not be described as current normative mainline.
 - The P1 canonical upfront-batch syntax and exact-root/same-catalog-snapshot semantics are now reconciled in current PACKAGE-MODEL; the autonomous install implementation and operational manuals still need the separately owned P2 realignment before promotion.
 - Older working-design candidates in this handoff are not permission to extend the frozen v2 scope; preserve the user's explicit instruction not to reopen schema, package-store security or formal-validation targets.
+
+
+## Catalog-only migration checkpoint (2026-11-17)
+
+Operator explicitly directed migration of remaining v1-only packages to v2 and excluded the M01–M15 acceptance campaign. This checkpoint does **not** claim M01–M15 completion.
+
+- Refreshed source HEADs: `pkg-catalog/main@54d1d4397750ac3d689f442d422a3e80795cd40e`, `m-os/master@6014adf353f18df44a359f1c1f86c1521069a355`, `rumiai-dev/main@a78b35ffde760a9c8038d31065320488bb7b6c40` before writes.
+- Published catalog commit `441c60fd11dde0f70423aace004c19fb7bad7d78`: v2 definitions for amazon-wishlist-extract, amazon-wishlist-monitor, dbeaver, maven, netbeans, playwright, tart, utm. Preserved 230 source descriptor blobs except v1 flat links; converted 24 flat links to v2 `link/bin` wrappers and `link/target` root targets. Source v1 remains intact. Structural tree check confirmed 24 corresponding cmd/bin/target entries.
+- Published catalog commit `f7708e7ae81123e3d058e0275b7f52668a9d8854`: GeoServer v2, including `var/` → `state-map/`, `link/bin/geoserver-start` and `link/target/geoserver-start`; source v1 preserved.
+- **Nine packages migrated in this session; twelve v1-only packages remain**: chrome, chromium, electron, electron-web-control, graalvm, macgpg, micromamba, podman, pulsar, pwc-web-control, rumiai-web-control, temurin.
+- Those twelve cannot be copied unchanged: current v2 validator rejects legacy `setuid_root`, `component`, `payload-root`, `overlay`, `facility-cmd` and `var` descriptors. Provider aliases (e.g. web-control/python-env) and Java platform executable suffixes require explicit semantic conversion; privilege and artifact extraction semantics must not be dropped. Inspect and reconcile runtime contracts before publishing each conversion.
+- No runtime product code was changed. Git tree shape checks were performed for the first eight, but **no real package install, artifact, platform or service execution was performed**; migrated package functional status is PENDING, not PASS. Before considering v2 authoritative for each package, run focused real public `pkg install`/launch tests on relevant platforms and repair any discovered incompatibility.
+- Next action: migrate the remaining twelve in bounded groups with full preservation of privileged/extraction/facility behavior, then perform focused catalog validation and reconcile the active handoff. Do not revive the excluded M01–M15 campaign as a prerequisite.
