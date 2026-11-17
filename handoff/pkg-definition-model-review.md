@@ -880,3 +880,10 @@ Operator explicitly requested the entire catalog verified through GitHub-hosted 
 - **Next action:** check the workflow's actual GitHub Actions run, wait for recorded completion in the four-host order, retrieve artifacts and diagnose exact failed/ERROR ranges without marking nonexecutions as PASS. If a stage is blocked by GitHub runner/environment issues, fix and rerun on the same specified platform; do not silently substitute other hosts. Preserve M01–M15 exclusion.
 
 This checkpoint records orchestration readiness and pinned source, **not completion of the requested hosted verification**.
+
+## Entire-catalog GitHub Actions run confirmation (2026-11-17)
+
+- A GitHub Actions run for the corrected, pinned catalog workflow is confirmed: **run `44074919355`**, `pkg-catalog/main@8cbe8e1eea0f4f3664a7d273e117d3179c414884`, URL `https://github.com/massimilianonardi-ai/pkg-catalog/actions/runs/44074919355`.
+- The superseded initial run `44074578477` at `b2dc58dae0d6e7072237444f1799b3f17d881107` completed `cancelled` after the correction, by design.
+- The actual GitHub Actions REST listing at `/repos/massimilianonardi-ai/pkg-catalog/actions/runs` is accessible through the GitHub connector, unlike the unsupported workflow-specific listing URL. The actual `fetch_workflow_run_jobs` query confirmed first job `134010456649`, **Ubuntu x64**, in progress: setup, exact catalog checkout, exact autonomous runtime checkout and exact permanent test-suite checkout completed successfully; `Prepare exact catalog and run permanent public-path test` was `in_progress`. Later platform jobs have not yet been created/executed. Fetching the in-progress job log returned a GitHub BlobNotFound response and is not evidence of test failure.
+- These are observations at the queried time, not a declared PASS. Continue to inspect status, per-package reports and remaining three hosts; don't infer completion from workflow registration or successful checkouts.
