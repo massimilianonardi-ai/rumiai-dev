@@ -138,12 +138,14 @@ User host integration does not silently enable a host policy that extends accoun
 The current **system host-supervision** surface is:
 
 ```text
-srv host system install <service> <account>
+srv host system install <service> <account> [unit-name]
 srv host system uninstall <service>
 srv host system start <service>
 srv host system stop <service>
 srv host system restart <service>
 ```
+
+Host registrations use the unprefixed service identity by default: on systemd, `<service>.service`; on launchd, `<service>` as the label. System-host install accepts an optional host registration name (`unit-name`) without the systemd `.service` suffix. The selected name is stored with the protected service registration, and subsequent system-host lifecycle actions resolve it from that registration using only the logical service identity. The name must be a valid single host-service identity and must not contain path separators. The optional name does not change the package facility identity.
 
 System-host operations are administrative. The baseline requires the caller to
 already execute with effective UID 0; `srv` does not invoke `sudo`, `doas` or
