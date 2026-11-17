@@ -1,7 +1,7 @@
 # RumiAI OS — Package model
 
 Status: **Current / normative**  
-Updated: 2026-11-16
+Updated: 2026-11-17
 
 This document defines the current semantic contract of the `m` package subsystem without duplicating implementation internals that belong in `rumiai-os`.
 
@@ -21,16 +21,40 @@ source continues to contain its original package implementation during
 migration. Not every legacy repository adapter is included in the independent
 `m` checkout yet.
 
-The current published catalog schema is `v1`, which retains the existing
-package and facility definition formats without modifying their contents.
-The two disjoint semantic areas share that versioned definition root:
+The catalog contains both the preserved `v1` definition generation and the
+preferred `v2` package-definition generation in one immutable snapshot:
 
 ```text
 pkg-catalog/
     v1/
         pkg/<package>/...
         facility/<facility>/...
+    v2/
+        pkg/<package>/...
+        facility/<facility>/...
 ```
+
+When `v2/pkg/<package>` exists, the current runtime selects that package's
+complete v2 definition, including its compatible v2 facility-contract view;
+it never mixes that package's v1 and v2 platform streams. Otherwise the
+original v1 definition is used. The v1 generation remains available for
+existing compatibility and explicitly is not rewritten during migration.
+
+V2 command exports use `link/bin/<command>` with direct useful-root
+executables or package-specific `cmd/<command>` wrappers; wrappers use
+`link/target/<command>` for the validated useful-root executable. V2 facility
+command conformance is contract-driven through those links or
+`facility-bin/<facility>`; typed environment contributions live below
+`facility-env/<facility>/<variable>`. V2 maps package state under `state-map/`
+instead of v1 `var/`. V2 also accepts the same validated Linux
+`setuid_root` and macOS `flat-pkg`/`dmg-pkg` `component`, `payload-root`
+and `overlay` metadata where applicable: the existing trusted privilege and
+extractor handlers continue to own their behavior. Conversion to v2 must
+not remove or silently reinterpret these effects.
+
+Catalog schema coverage is distinct from physical `pkg install`, service,
+privilege and executable validation; publishing a definition does not imply
+those checks have passed.
 
 `pkg/` contains installable package definitions. `facility/` contains provider-independent facility-contract definitions. The two namespaces are intentionally separate: a facility definition is never an installable package merely because both are catalog data. Both are read from the same immutable catalog revision/snapshot, so a package/provider realization and the facility contract it claims to satisfy are revision-coupled without a second catalog authority. The exact contents of `facility/<facility>/` are defined only by the promoted facility-contract meta-model; this layout decision does not predefine that still-open schema.
 
@@ -123,11 +147,14 @@ pkg/<package>
 
 relative to the selected catalog **schema definition root** inside one
 immutable `pkg-catalog` snapshot. The current `pkg_catalog_init`
-selects `v1/` when present and accepts an unversioned
-`pkg/`+`facility/` root only as the explicitly supported pre-versioning
-catalog shape with the same v1 descriptor semantics; a snapshot containing
-both shapes is invalid. Catalog schema version is distinct from upstream
-package version, facility compatibility level and Git snapshot revision.
+anchors the snapshot at `v1/` when present; per-package resolution prefers
+the sibling `v2/pkg/<package>` when available and does not fall back to a
+v1 platform stream if that chosen v2 package omits it. An unversioned
+`pkg/`+`facility/` root is accepted only as the explicitly supported
+pre-versioning catalog shape with v1 descriptor semantics; a snapshot
+containing both a top-level unversioned shape and a versioned `v1/` is
+invalid. Catalog schema version is distinct from upstream package
+version, facility compatibility level and Git snapshot revision.
  The `facility/` area is therefore outside the installable-package namespace and must never be enumerated or interpreted as a package merely because it is present in the same repository.
 
 Each installable package may expose one or both of these package streams:
