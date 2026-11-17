@@ -97,7 +97,7 @@ Host-service integration is a separate, opt-in, host-specific capability and pre
 The current **user host-supervision** surface is:
 
 ```text
-srv host user install <service>
+srv host user install <service> [unit-name]
 srv host user uninstall <service>
 srv host user start <service>
 srv host user stop <service>
@@ -145,7 +145,7 @@ srv host system stop <service>
 srv host system restart <service>
 ```
 
-Host registrations use the unprefixed service identity by default: on systemd, `<service>.service`; on launchd, `<service>` as the label. System-host install accepts an optional host registration name (`unit-name`) without the systemd `.service` suffix. The selected name is stored with the protected service registration, and subsequent system-host lifecycle actions resolve it from that registration using only the logical service identity. The name must be a valid single host-service identity and must not contain path separators. The optional name does not change the package facility identity.
+Host registrations use the unprefixed service identity by default: on systemd, `<service>.service`; on launchd, `<service>` as the label. Both user-host and system-host install accept an optional host registration name (`unit-name`) without the systemd `.service` suffix. The selected name is stored with the corresponding service registration, and subsequent host lifecycle actions resolve it from that registration using only the logical service identity. The name must be a valid single host-service identity and must not contain path separators. The optional name does not change the package facility identity.
 
 System-host operations are administrative. The baseline requires the caller to
 already execute with effective UID 0; `srv` does not invoke `sudo`, `doas` or
