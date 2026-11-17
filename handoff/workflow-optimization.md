@@ -1,7 +1,7 @@
 # workflow-optimization
 
 Status: Active
-Updated: 2026-11-07
+Updated: 2026-11-17
 
 ## Goal
 
@@ -618,6 +618,22 @@ The workflow now also treats primary user goals, normal public paths and caller/
 Failure handling now has its own current consistency surface: distinct local failure statuses, branch-specific diagnostic identity, useful structured context and proportional info/debug/trace observability are required by the canonical diagnostics contract. Legacy product realignment and child-process log-level policy analysis remain separate deferred work rather than implicit current behavior.
 
 Active task routing now uses resumable responsibility rather than topic labels. Existing long-lived owners are reused for work inside their standing responsibility unless a materially independent lifecycle exists; justified parent/child task splits keep operational state single-owned.
+
+### AI-Workflow reliability case — plausible command presented as verified (2026-11-17)
+
+**Observed evidence and provenance:** During live `m-os` / Keycloak validation, the assistant instructed the operator to execute `./m pkg list` to inspect installed packages. The actual host returned `[fatal] [execution.invalid-arguments] ... [operation="pkg"] [subcommand="list"]`. The assistant had not checked the current `pkg` command implementation or documented interface, despite having repository tools available. The operator challenged the reliability of this behavior; the assistant's subsequent self-critique was explicitly requested for preservation as input to AI-Workflow design.
+
+**Self-critique (faithful English rendering of the assistant's answer):** A random-number generator produces outputs without using context; a predictive language model produces plausible continuations from available context and learned patterns, but plausibility is not factual correctness. In this case the assistant (1) wanted to inspect installed packages, (2) recognized the common `list` subcommand pattern from other package managers, (3) predicted that `m-os` might follow that convention, and (4) **converted an unverified prediction into an operational instruction**. Step 4 was the decisive failure. General knowledge of package managers is not reliable evidence of the specific `m-os` interface. The assistant could have checked the repository and dispatcher first, but did not. Its later explanation that specifications should be checked came too late: **verification was required before suggesting the command, not after the operator encountered the error**. The failure was not merely an incorrect prediction; it was a failure to recognize that prediction alone was insufficient grounds for action.
+
+**Candidate AI-Workflow correctness discipline — evaluation pending, not yet normative:**
+
+1. Distinguish **verified knowledge**, **explicit inference/hypothesis**, and **unknown but verifiable information** before issuing technical instructions.
+2. For project-specific commands, APIs, paths, configurations and behavior, consult the current authoritative source and/or implementation before presenting an executable instruction as valid. Never infer existence from familiar conventions.
+3. If verification is unavailable, state that limitation, label the proposed command as unverified, and prefer a verified discovery step rather than an invented concrete command.
+4. Place the verification gate **before** the user executes a command, not after failure; assess how to make this economical through source routing, caching with revision checks, and risk-sensitive escalation.
+5. Treat post-hoc acknowledgement as a useful diagnosis but **not** as evidence that the preventive workflow has been implemented or validated.
+
+**Next AI-Workflow evaluation:** Inspect the current bootstrap and conditional methods for the best single canonical owner of a source-first operational-instruction gate; compare against existing evidence/verification obligations to avoid duplicate or conflicting rules. Define regression scenarios using the real `./m pkg list` failure and an unfamiliar but valid project-specific command. Promote only after operator approval and appropriate tests. This note records an observed failure and a design candidate, **not** authorization to modify the AI-Workflow bootstrap or RumiAI product behavior.
 
 ## Next action
 
