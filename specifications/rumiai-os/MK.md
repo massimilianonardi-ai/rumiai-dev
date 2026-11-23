@@ -1,7 +1,7 @@
 # RumiAI OS — `mk` development lifecycle
 
 Status: **Current / normative**  
-Updated: 2026-09-22
+Updated: 2026-11-23
 
 ## 1. Role
 
