@@ -243,6 +243,7 @@ Version 2 accepts these top-level members:
 
 ```text
 version
+context
 environment
 goals
 operations
@@ -252,6 +253,40 @@ dependencies
 requirements
 profiles
 ```
+
+### 6.3.1 Optional project context
+
+Version-2 `mk.json` MAY declare a non-empty ordered array of native m-os
+context selectors at the project root:
+
+```json
+"context": ["full-context=development", "provider.node=nodejs@v26.8.2"]
+```
+
+Selectors belong to m-os context: `pkg=`, `system=`, `user=`, `locale=`,
+`osarch=`, `provider.<facility>=` and `full-context=`. The field MUST
+not contain executable shell code or arbitrary environment expressions.
+Version 1 does not accept this field. Profile overlays do not change context
+in this revision.
+
+When context is absent, mk MUST continue using the inherited m environment
+without new activation. When present, mk MUST select the context in a child
+process before plan/execution, requirement resolution, fingerprints and watch
+trigger evaluation. Each active project dependency may select its own context.
+The parent environment and persistent package/context defaults MUST remain
+unchanged. Missing/incompatible context selections fail before project work.
+
+The owning m-os public interface is:
+
+```text
+m context-run <selector>... -- <command> [args...]
+m context-run --resolve <facility> <constraint>...
+```
+
+`context-run` validates and applies context, then re-enters m bootstrap
+using the exported validated context envelope, so selected system-level
+environment snapshots also apply. Context selection is not installation.
+Goal listing remains metadata-only and does not activate context.
 
 A version-2 goal may select root operations or providers.
 
@@ -519,17 +554,31 @@ Only requirements referenced by currently reachable lifecycle nodes are resolved
 
 Facility requirements are resolved by consuming the package subsystem's existing provider/facility contract. `mk` MUST NOT duplicate compatibility parsing, provider selection, package installation policy or facility conformance logic.
 
-A project is not a package consumer and does not acquire a synthetic package-consumer identity. The first baseline resolves a facility requirement against the configured **system facility default** using normal `pkg` package-class/osarch semantics.
+A project is not a package consumer and does not acquire a synthetic
+package-consumer identity. Without an active context provider pin, facility
+requirements retain the original **system facility default** resolution using
+normal `pkg` package-class/osarch semantics. When the validated active
+context pins a provider for that facility, the requirement MUST instead
+verify that concrete provider against the same facility compatibility
+constraints; it MUST NOT silently substitute the system default. This applies
+also when mk inherits an externally selected context.
 
 Requirement resolution is read-only. It MUST NOT install packages, create/change provider defaults, create package-consumer bindings or silently select among installed providers.
 
-The package query surface is:
+The read-only resolution surfaces are:
 
 ```text
 pkg requirement resolve <facility> <constraint>...
+context-run --resolve <facility> <constraint>...
 ```
 
-On success it prints the selected concrete provider identity. Status 1 means the requirement is not currently satisfiable; status 2 means invalid invocation/syntax. The query performs no provider/facility mutation.
+The second surface reads a validated active context pin and falls back to
+the same pkg system-default requirement query when no pin exists. On success
+it prints the selected concrete provider identity. Status 1 means the
+requirement is not currently satisfiable; status 2 means invalid invocation/
+syntax. Neither surface mutates package/provider configuration. mk falls
+back to the original pkg query on older m-os installations that do not yet
+provide context-run, provided the project does not request explicit context.
 
 A reachable requirement has plan state:
 
